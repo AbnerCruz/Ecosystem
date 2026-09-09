@@ -1,7 +1,7 @@
 {
   "name": "Urbe",
   "short_name": "Urbe",
-  "description": "Notas Markdown visualizadas como uma cidade isométrica, offline-first.",
+  "description": "Workspace local-first de arquivos visualizados como uma cidade pixel art.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
