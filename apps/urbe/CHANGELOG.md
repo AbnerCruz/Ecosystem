@@ -1,5 +1,48 @@
 # Urbe — Changelog
 
+## v0.23.0 — 2026-09-09
+
+Redesenho da casca do aplicativo. O motor não mudou: tudo abaixo delega para
+as funções que já existiam.
+
+Navegação
+- Dock inferior com quatro destinos — Mundo, Arquivos, Assistente, Vaults —
+  dentro da zona de alcance do polegar. A barra lateral esquerda saiu.
+- Uma única ação primária visível (botão ＋ flutuante), com menu de criação
+  por pressão longa: arquivo, pasta, desenhar pasta no mapa, importar.
+- Barra superior flutuante com o nome do vault, o ponto de estado da gravação
+  e os dois atalhos raros (mapa e configurações). O minimapa vivo, o HUD de
+  contadores e o selo de sincronização saíram da tela: os números aparecem no
+  mapa grande, sob demanda.
+- Nenhuma ferramenta fica ativa sem saída à vista: ao entrar em "desenhar
+  região" ou "construir", uma faixa explica o passo e oferece Cancelar.
+
+Superfícies
+- Diálogos viraram bottom sheets com alça, largura total e botões de 50px:
+  nova região, novo arquivo, configurações, contexto da IA e menu de ações.
+- A ficha do arquivo virou folha inferior, com a ação principal em destaque.
+- O toast virou snackbar acima do dock, sem cobrir conteúdo.
+- Painéis-destino convivem com o dock; só o editor entra em modo imersivo.
+
+Editor
+- Cabeçalho: voltar (←), nome do arquivo, controle segmentado Visual/Fonte e
+  menu de ações (⋮). O ícone críptico de alternância e o texto de gravação
+  saíram do cabeçalho — o estado de salvamento foi para o rodapé.
+- A barra de formatação voltou ao modo visual, agora funcional: títulos,
+  citação e listas trocam o tipo do bloco preservando negrito, links e
+  wiki-links; negrito e itálico agem sobre a seleção.
+- Corpo do texto em 15px com entrelinha 1.65.
+
+Bug encontrado no caminho
+- A v0.20 desligou o action sheet com `display:none!important` e nunca o
+  religou. Desde então "Mover" no Explorador, o seletor de destino e o de
+  importação (pasta ou arquivos) abriam invisíveis: o toque não fazia nada.
+  Religado.
+
+Toque e acessibilidade
+- Todos os alvos com no mínimo 44px; espaçamento em múltiplos de 4.
+- Áreas seguras (notch e barra de gestos) respeitadas no topo e no rodapé.
+
 ## v0.22.0 — 2026-09-09
 
 Correções sobre a v0.21, todas aplicadas como um bloco de patch no fim do

@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Urbe">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<title>Urbe v0.22.0</title>
+<title>Urbe v0.23.0</title>
 <style>
 :root{--bg:#0b1116;--panel:#101923;--panel2:#16242f;--line:#304654;--text:#eef5f8;--muted:#9db0bc;--accent:#4db7ff;--danger:#b74f4f}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
@@ -533,6 +533,185 @@ button,input,textarea,select{border-radius:0!important}
   .v21AiControls{grid-template-columns:minmax(0,1fr) auto auto}
   .v21AiControls #v21ModelSort{display:block;max-width:92px}
 }
+
+/* ============================================================
+   v0.23 — casca mobile-first
+   Princípios aplicados: navegação primária na zona do polegar,
+   uma única ação primária visível (FAB), bottom sheets no lugar de
+   modais centrais, alvos de 48px, hierarquia tipográfica de 3 níveis,
+   espaçamento em múltiplos de 4 e áreas seguras respeitadas.
+   ============================================================ */
+:root{
+  --v23-bg:#0b1117;--v23-panel:#101b22;--v23-panel2:#16242c;--v23-panel3:#1c2f38;
+  --v23-line:#24373f;--v23-line2:#35525e;--v23-ink:#e7f1f4;--v23-ink2:#8fa6af;--v23-ink3:#6d858f;
+  --v23-accent:#7fd4e6;--v23-accent-ink:#06222b;--v23-danger:#e78a80;--v23-ok:#77d494;
+  --v23-dock:62px;--v23-top:48px;
+  --v23-safe-b:env(safe-area-inset-bottom);--v23-safe-t:env(safe-area-inset-top);
+}
+
+/* ---------- barra superior flutuante ---------- */
+#v23Top{position:fixed;top:0;left:0;right:0;z-index:44;display:flex;align-items:center;gap:8px;
+  height:calc(var(--v23-top) + var(--v23-safe-t));padding:var(--v23-safe-t) 8px 0 12px;
+  background:linear-gradient(#0b1117f2 55%,#0b111700);pointer-events:none}
+#v23Top>*{pointer-events:auto}
+#v23VaultDot{width:8px;height:8px;flex:0 0 8px;background:var(--v23-ok)}
+#v23VaultDot.gravando{background:#e6c46a}
+#v23VaultDot.erro{background:var(--v23-danger)}
+#v23VaultName{flex:1;min-width:0;font:600 12px/1 ui-monospace,monospace;color:var(--v23-ink);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.04em}
+.v23TopBtn{width:44px;height:44px;display:grid;place-items:center;font-size:15px;
+  background:#101b22cc;border:2px solid var(--v23-line);color:var(--v23-ink)}
+.v23TopBtn:active{background:var(--v23-panel3)}
+
+/* ---------- faixa de modo (ferramenta ativa) ---------- */
+#v23ModeBar{position:fixed;z-index:44;left:8px;right:8px;top:calc(var(--v23-top) + var(--v23-safe-t));
+  display:none;align-items:center;gap:8px;padding:8px 8px 8px 12px;
+  background:var(--v23-panel3);border:2px solid var(--v23-line2)}
+#v23ModeBar.open{display:flex}
+#v23ModeBar span{flex:1;font:10px/1.35 ui-monospace,monospace;color:var(--v23-ink)}
+#v23ModeBar button{height:32px;padding:0 12px;background:#0b1117;border:2px solid var(--v23-line2);color:var(--v23-ink);font:10px ui-monospace,monospace}
+
+/* ---------- dock inferior ---------- */
+#v23Dock{position:fixed;left:0;right:0;bottom:0;z-index:45;
+  height:calc(var(--v23-dock) + var(--v23-safe-b));padding-bottom:var(--v23-safe-b);
+  display:grid;grid-template-columns:repeat(4,1fr);
+  background:var(--v23-panel);border-top:2px solid var(--v23-line)}
+#v23Dock button{display:grid;place-items:center;align-content:center;gap:3px;padding:0;
+  background:transparent;border:0;color:var(--v23-ink3);font:9px/1 ui-monospace,monospace;letter-spacing:.03em}
+#v23Dock .v23NavIco{width:46px;height:26px;display:grid;place-items:center;font-size:15px;border:2px solid transparent}
+#v23Dock button.ativo{color:var(--v23-accent)}
+#v23Dock button.ativo .v23NavIco{background:#18333d;border-color:var(--v23-accent)}
+#v23Dock button:active .v23NavIco{background:var(--v23-panel3)}
+
+/* ---------- ação primária ---------- */
+#v23Fab{position:fixed;right:14px;z-index:46;width:56px;height:56px;
+  bottom:calc(var(--v23-dock) + var(--v23-safe-b) + 14px);
+  display:grid;place-items:center;font-size:23px;line-height:1;
+  background:var(--v23-accent);color:var(--v23-accent-ink);border:2px solid #06131a;
+  box-shadow:4px 4px 0 #05161c}
+#v23Fab:active{transform:translate(2px,2px);box-shadow:2px 2px 0 #05161c}
+#v23Fab[hidden],#v23Dock[hidden],#v23Top[hidden]{display:none!important}
+
+/* ---------- painéis-destino ficam acima do dock, nunca embaixo ---------- */
+#fileSidebar,#aiPanel,#menuCidades{z-index:40!important}
+#fileSidebar,#aiPanel{padding-bottom:calc(var(--v23-dock) + var(--v23-safe-b))}
+#aiPanel.v23SobreEditor{z-index:56!important}
+#menuCidades .caixa{padding-bottom:calc(var(--v23-dock) + var(--v23-safe-b) + 12px)}
+#tools,#mini,#hud,#syncSelo,#viewModeBtn,#editorTop .saveState{display:none!important}
+
+/* ---------- folhas inferiores (bottom sheets) ---------- */
+/* a v0.20 desligou o action sheet com display:none!important e nunca o religou:
+   desde então "Mover", o seletor de destino e o de importação abriam invisíveis */
+#explorerActionSheet{z-index:72!important}
+#explorerActionSheet.open{display:flex!important}
+#dialog,#v21FileDialog,#v21GlobalSettings,#v21ContextDialog{align-items:flex-end!important;
+  place-items:end stretch!important;padding:0!important;z-index:70!important}
+#dialog .dialogBox,#v21FileDialog .v21DialogCard,#v21GlobalSettings .v21DialogCard,#v21ContextDialog .v21DialogCard,
+#explorerActionSheet .explorerSheet{
+  width:100%!important;max-width:none!important;max-height:86vh;overflow:auto;
+  padding:20px 16px calc(20px + var(--v23-safe-b))!important;
+  background:var(--v23-panel2)!important;border:0!important;border-top:2px solid var(--v23-line2)!important;
+  box-shadow:0 -14px 40px #000a!important}
+#dialog .dialogBox:before,#v21FileDialog .v21DialogCard:before,#v21GlobalSettings .v21DialogCard:before,
+#v21ContextDialog .v21DialogCard:before,#explorerActionSheet .explorerSheet:before,#housePanel:before{
+  content:'';display:block;width:44px;height:4px;margin:-8px auto 14px;background:var(--v23-line2)}
+#dialog h3,#v21FileDialog .v21DialogHead strong,#v21GlobalSettings .v21DialogHead strong{
+  font:600 15px/1.2 ui-monospace,monospace;color:var(--v23-ink);margin:0 0 14px}
+#dialog label,.v21Field{display:block;margin:0 0 14px}
+#dialog label{font:10px ui-monospace,monospace;color:var(--v23-ink2)}
+#dialog input,#dialog textarea,.v21Field input,.v21Field textarea{
+  width:100%;min-height:46px;margin-top:6px;padding:12px;font:13px ui-monospace,monospace;
+  background:#0a1319;border:2px solid var(--v23-line2);color:var(--v23-ink)}
+#dialog textarea,.v21Field textarea{min-height:76px}
+#dialog input:focus,.v21Field input:focus,#dialog textarea:focus,.v21Field textarea:focus{outline:0;border-color:var(--v23-accent)}
+#dialog .row,.v21DialogActions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+#dialog .row .btn,.v21DialogActions button{height:50px!important;font:12px ui-monospace,monospace!important;
+  background:var(--v23-panel3)!important;border:2px solid var(--v23-line2)!important;color:var(--v23-ink)!important}
+#dialog .row .btn#confirmRegion,.v21DialogActions .primary{
+  background:var(--v23-accent)!important;border-color:var(--v23-accent)!important;color:var(--v23-accent-ink)!important;font-weight:700}
+#explorerActionSheet .explorerSheetHead{margin-bottom:6px}
+.explorerAction{min-height:54px!important;font:12px ui-monospace,monospace!important;gap:14px!important;padding:0 4px!important}
+.explorerAction .ico{width:26px;text-align:center;font-size:16px}
+
+/* ---------- ficha do arquivo vira folha inferior ---------- */
+#housePanel{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;
+  width:auto!important;height:auto!important;max-height:80vh;overflow:auto;z-index:60!important;
+  background:var(--v23-panel2)!important;border:0!important;border-top:2px solid var(--v23-line2)!important;
+  padding:16px 16px calc(16px + var(--v23-safe-b))!important;box-shadow:0 -14px 40px #000a}
+#housePanel .panelHead{height:auto!important;background:transparent!important;border:0!important;padding:0 0 12px!important}
+#housePanel .panelHead img{width:22px;height:22px}
+#housePanel .panelBody{padding:0!important}
+#housePanel .openNote{min-height:56px!important;margin:14px 0 10px!important;
+  background:var(--v23-accent)!important;border:0!important;color:var(--v23-accent-ink)!important}
+#housePanel .openNote b{color:var(--v23-accent-ink)}
+#housePanel .openNote span{color:#0a3341}
+#housePanel .row{display:grid!important;grid-template-columns:1fr 1fr 1fr;gap:8px}
+#housePanel .row .btn{height:48px!important}
+#housePanel .noteCard{gap:12px}
+
+/* ---------- editor ---------- */
+#editorFull.open{grid-template-rows:auto auto minmax(0,1fr) auto}
+#editorTop{height:calc(52px + var(--v23-safe-t));padding-top:var(--v23-safe-t);gap:6px}
+#editorTop #sidebarToggleMobile{order:0;font-size:19px}
+#editorTop #fileNameDisplay{order:1;flex:1;min-width:0;font:600 13px ui-monospace,monospace}
+#editorTop #v23Seg{order:2}
+#editorTop #closeFullEditor{order:3;font-size:19px}
+#v23Seg{display:flex;border:2px solid var(--v23-line2);height:34px}
+#v23Seg button{min-width:56px;padding:0 10px;background:transparent;border:0;color:var(--v23-ink2);
+  font:10px ui-monospace,monospace;letter-spacing:.04em}
+#v23Seg button.ativo{background:var(--v23-accent);color:var(--v23-accent-ink);font-weight:700}
+#v23Seg[hidden]{display:none}
+#mdToolbar{gap:4px;padding:6px;overflow-x:auto;scroll-snap-type:x proximity}
+#mdToolbar .mdBtn{min-width:46px!important;height:44px!important;font-size:16px!important;scroll-snap-align:start}
+#v21CodeTools button{min-height:44px}
+#editorBottom{height:calc(52px + var(--v23-safe-b));padding-bottom:var(--v23-safe-b)}
+#editorBottom .statusText{font:9px ui-monospace,monospace;color:var(--v23-ink3)}
+#editorBottom .saveState{font:9px ui-monospace,monospace;color:var(--v23-ink3);margin-left:auto;padding-right:10px}
+#editorBottom #openAI{width:auto;min-width:96px;height:40px;padding:0 14px;gap:7px;
+  background:var(--v23-panel3);border:2px solid var(--v23-line2);color:var(--v23-ink);font:11px ui-monospace,monospace}
+#editorScroll{padding-bottom:24px}
+#bodyEditor,#renderedPreview{font-size:15px!important;line-height:1.65!important}
+
+/* ---------- explorador ---------- */
+#fileSidebar .sidebarTop{padding:calc(8px + var(--v23-safe-t)) 8px 8px;gap:6px;align-items:center}
+#v21ExplorerToolbar{gap:6px}
+/* criar/importar viraram a ação primária (FAB); a barra fica só com o que é contextual */
+#v21ExNew,#v21ExFolder,#v21ExImport{display:none!important}
+.v21ExBtn{min-width:44px!important;height:44px!important;font-size:16px!important}
+#v21ExplorerSearch{width:calc(100% - 16px);margin:0 8px 6px;min-height:44px;padding:0 12px;
+  background:#0a1319;border:2px solid var(--v23-line);color:var(--v23-ink);font:12px ui-monospace,monospace}
+#v21ExplorerSearch:focus{outline:0;border-color:var(--v23-accent)}
+.v21TreeRow{min-height:52px!important;gap:10px!important}
+.v21TreeName{font-size:12px!important}
+#explorerContext{padding:2px 10px 8px}
+#tree{padding-bottom:96px}
+
+/* ---------- snackbar ---------- */
+#toast{left:12px;right:12px;max-width:none;bottom:calc(var(--v23-dock) + var(--v23-safe-b) + 14px);
+  border:2px solid var(--v23-line2);border-radius:0;background:var(--v23-panel3);color:var(--v23-ink);
+  font:11px/1.4 ui-monospace,monospace;padding:12px 14px;box-shadow:4px 4px 0 #05161c}
+
+/* ---------- mapa grande ---------- */
+#mapao{z-index:68}
+#mapao .dica{font:10px ui-monospace,monospace;color:var(--v23-ink2)}
+
+/* ---------- menu de vaults ---------- */
+#menuCidades .v21CityOpen{min-height:56px}
+#menuCidades .v21IconBtn{min-width:44px;min-height:44px}
+#v21CityName{min-height:46px;padding:0 12px}
+
+/* ---------- posicionamento ---------- */
+#v21PlacementDock{bottom:calc(var(--v23-dock) + var(--v23-safe-b) + 14px)!important;left:12px!important;right:12px!important;
+  padding:10px!important;gap:10px!important;background:var(--v23-panel3)!important;border:2px solid var(--v23-line2)!important}
+#v21PlacementDock button{height:44px!important;min-width:52px!important}
+#v21PlacementText{max-width:none!important;flex:1}
+
+/* ---------- painel de IA ---------- */
+.v21AiHead{padding:calc(6px + var(--v23-safe-t)) 8px 6px}
+.v21AiControls{padding:8px}
+.v21AiControls select,.v21AiControls button{height:44px!important}
+#aiPanel .chatInput textarea{min-height:52px;font-size:14px}
+#aiPanel .chatInput .btn{min-height:52px;min-width:80px;background:var(--v23-accent)!important;color:var(--v23-accent-ink)!important;border:0!important;font-weight:700}
 </style>
 </head>
 <body>
@@ -4396,6 +4575,320 @@ v21InitAiUi=function(){
 };
 v21InitAiUi();
 
+
+
+/* ============================================================
+   Urbe v0.23 — casca mobile-first
+   O que muda é a navegação, não o motor: tudo abaixo delega para
+   as funções que já existiam. Padrões aplicados: dock inferior de
+   destinos, uma ação primária (FAB) com menu por pressão longa,
+   bottom sheets no lugar de modais, barra de modo com saída visível.
+   ============================================================ */
+V21_VERSION='0.23.0';
+document.title='Urbe v'+V21_VERSION;
+
+var v23Dock=null,v23Fab=null,v23ModeBar=null,v23Seg=null,v23Destino='mundo';
+
+(function v23Montar(){
+  var app=document.getElementById('app');
+
+  /* barra superior: identidade do vault, estado da gravação e atalhos raros */
+  var top=document.createElement('header');top.id='v23Top';
+  top.innerHTML='<span id="v23VaultDot"></span><span id="v23VaultName">Urbe</span>'+
+    '<button class="v23TopBtn" id="v23MapBtn" title="Mapa" aria-label="Mapa">◍</button>'+
+    '<button class="v23TopBtn" id="v23SettingsBtn" title="Configurações" aria-label="Configurações">⚙</button>';
+  app.appendChild(top);
+  top.querySelector('#v23MapBtn').onclick=function(){abrirMapao()};
+  top.querySelector('#v23SettingsBtn').onclick=function(){v21OpenGlobalSettings()};
+
+  /* barra de modo: nenhuma ferramenta fica ativa sem uma saída à vista */
+  v23ModeBar=document.createElement('div');v23ModeBar.id='v23ModeBar';
+  v23ModeBar.innerHTML='<span id="v23ModeTxt"></span><button id="v23ModeCancel">Cancelar</button>';
+  app.appendChild(v23ModeBar);
+  v23ModeBar.querySelector('#v23ModeCancel').onclick=function(){
+    if(v21Placement)v21CancelPlacement();else setTool('select');
+    v23Atualizar();
+  };
+
+  /* dock de destinos */
+  v23Dock=document.createElement('nav');v23Dock.id='v23Dock';
+  v23Dock.innerHTML=[['mundo','◰','Mundo'],['arquivos','▤','Arquivos'],['ia','✦','Assistente'],['vaults','⌂','Vaults']]
+    .map(function(x){return '<button data-nav="'+x[0]+'"><span class="v23NavIco">'+x[1]+'</span><span>'+x[2]+'</span></button>'}).join('');
+  app.appendChild(v23Dock);
+  v23Dock.querySelectorAll('[data-nav]').forEach(function(b){b.onclick=function(){v23Navegar(b.dataset.nav)}});
+
+  /* ação primária */
+  v23Fab=document.createElement('button');v23Fab.id='v23Fab';v23Fab.textContent='＋';
+  v23Fab.setAttribute('aria-label','Criar');app.appendChild(v23Fab);
+  var seg=null;
+  v23Fab.addEventListener('pointerdown',function(e){
+    clearTimeout(seg);
+    seg=setTimeout(function(){seg=null;if(navigator.vibrate)navigator.vibrate(14);v23Fab._marcarHold();v23MenuCriar()},480);
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+    v23Fab.addEventListener(ev,function(){if(seg){clearTimeout(seg);seg=null}});
+  });
+  var v23HoldVenceu=false;
+  v23Fab.addEventListener('pointerdown',function(){v23HoldVenceu=false});
+  v23Fab.onclick=function(){if(v23HoldVenceu){v23HoldVenceu=false;return}v23AcaoPrimaria()};
+  v23Fab._marcarHold=function(){v23HoldVenceu=true};
+})();
+
+function v23Aberto(el){return !!el&&el.classList.contains('open')}
+
+function v23Navegar(dest){
+  if(dest!=='mundo'&&v23Aberto(editorFull))closeFullEditor();
+  if(dest==='mundo'){
+    if(v23Aberto(editorFull))closeFullEditor();
+    fileSidebar.classList.remove('open');aiPanel.classList.remove('open');
+    fecharMenu();closeFilePreview();closeHouseSummary();
+  }else if(dest==='arquivos'){
+    aiPanel.classList.remove('open');fecharMenu();closeFilePreview();closeHouseSummary();
+    buildTree();fileSidebar.classList.add('open');
+  }else if(dest==='ia'){
+    fileSidebar.classList.remove('open');fecharMenu();
+    document.getElementById('openAI').click();
+  }else if(dest==='vaults'){
+    fileSidebar.classList.remove('open');aiPanel.classList.remove('open');
+    document.getElementById('cidadesBtn').click();
+  }
+  v23Destino=dest;v23Atualizar();
+}
+
+/* A ação primária muda com o destino, mas nunca deixa de existir. */
+function v23AcaoPrimaria(){
+  if(v23Aberto(fileSidebar))return v21CreateFileInRegion(explorerRegionTarget||null);
+  if(v23Aberto(menuEl))return;
+  v21BeginNewPlacement();
+  toast('Toque no mapa para escolher o terreno.');
+}
+function v23MenuCriar(){
+  var alvo=v23Aberto(fileSidebar)?(explorerRegionTarget||null):null;
+  abrirMenuExplorer('Criar',[
+    {ico:'＋',label:'Novo arquivo',run:function(){v21CreateFileInRegion(alvo)}},
+    {ico:'▣',label:'Nova pasta',run:function(){criarPastaNoDestino(alvo)}},
+    {ico:'◰',label:'Desenhar pasta no mapa',run:function(){
+      v23Navegar('mundo');setTool('region');v23Atualizar();
+    }},
+    {ico:'⇩',label:'Importar do dispositivo',run:function(){v21ImportPicker(alvo)}}
+  ]);
+}
+
+/* ---------- estado visível da casca ---------- */
+function v23Atualizar(){
+  var editor=v23Aberto(editorFull),menu=v23Aberto(menuEl),ia=v23Aberto(aiPanel),
+      arq=v23Aberto(fileSidebar),preview=v23Aberto(filePreview);
+  var atual=editor?'':menu?'vaults':ia?'ia':arq?'arquivos':'mundo';
+  if(v23Dock){
+    v23Dock.hidden=editor;
+    v23Dock.querySelectorAll('[data-nav]').forEach(function(b){b.classList.toggle('ativo',b.dataset.nav===atual)});
+  }
+  var topo=document.getElementById('v23Top');
+  if(topo)topo.hidden=editor||menu||ia||arq;
+  if(v23Fab)v23Fab.hidden=editor||menu||preview||!!v21Placement||tool!=='select';
+  /* barra de modo */
+  var txt=null;
+  if(v21Placement)txt=null; /* o dock de posicionamento já explica o passo */
+  else if(tool==='region')txt='Arraste no mapa para delimitar a nova pasta.';
+  else if(tool==='house')txt='Toque no mapa para escolher o terreno.';
+  if(v23ModeBar){
+    v23ModeBar.classList.toggle('open',!!txt&&!editor&&!menu&&!arq&&!ia);
+    if(txt)document.getElementById('v23ModeTxt').textContent=txt;
+  }
+  var nome=document.getElementById('v23VaultName');
+  if(nome)nome.textContent=(Disco.cidade||'Sem vault')+(Disco.modo==='pasta'?' · pasta':' · interno');
+}
+setInterval(v23Atualizar,260);
+
+/* o ponto da barra superior substitui o antigo selo de sincronização */
+var v23BaseStatus=statusSinc;
+statusSinc=function(estado,extra){
+  v23BaseStatus(estado,extra);
+  var d=document.getElementById('v23VaultDot');
+  if(d){d.classList.toggle('gravando',estado==='gravando');d.classList.toggle('erro',estado==='erro')}
+};
+
+/* ---------- editor: voltar, segmentado e menu de contexto ---------- */
+(function v23Editor(){
+  var topo=document.getElementById('editorTop'),
+      voltar=document.getElementById('sidebarToggleMobile'),
+      overflow=document.getElementById('closeFullEditor'),
+      rodape=document.getElementById('editorBottom'),
+      ia=document.getElementById('openAI'),
+      salvo=document.getElementById('saveState');
+
+  voltar.textContent='←';voltar.title='Voltar';voltar.setAttribute('aria-label','Voltar');
+  voltar.onclick=function(){closeFullEditor();v23Atualizar()};
+
+  v23Seg=document.createElement('div');v23Seg.id='v23Seg';
+  v23Seg.innerHTML='<button data-mode="preview">Visual</button><button data-mode="source">Fonte</button>';
+  topo.insertBefore(v23Seg,overflow);
+  v23Seg.querySelectorAll('[data-mode]').forEach(function(b){
+    b.onclick=function(e){e.preventDefault();setEditorViewMode(b.dataset.mode)};
+  });
+
+  overflow.textContent='⋮';overflow.title='Mais ações';overflow.setAttribute('aria-label','Mais ações');
+  overflow.onclick=function(){
+    if(!currentFile)return closeFullEditor();
+    abrirMenuExplorer(nomeCompletoNota(currentFile),[
+      {ico:'Aa',label:'Renomear',run:function(){renomearNota(currentFile)}},
+      {ico:'✦',label:'Assistente de IA',run:function(){ia.click()}},
+      {ico:'🗑',label:'Excluir arquivo',danger:true,run:function(){removerNota(currentFile)}},
+      {ico:'←',label:'Fechar arquivo',run:function(){closeFullEditor();v23Atualizar()}}
+    ]);
+  };
+
+  /* o estado de gravação sai do cabeçalho, onde empurrava os botões */
+  if(salvo&&rodape)rodape.insertBefore(salvo,ia);
+  ia.innerHTML='✦ Assistente';ia.title='Assistente de IA';
+  var abrirIa=ia.onclick;
+  ia.onclick=function(){
+    aiPanel.classList.toggle('v23SobreEditor',v23Aberto(editorFull));
+    if(abrirIa)abrirIa.call(this);
+  };
+})();
+
+/* ---------- barra de formatação que funciona no modo visual ----------
+   Na v0.21 os botões escreviam no textarea escondido e corrompiam o arquivo;
+   na v0.22 eu simplesmente escondi a barra. Aqui ela volta: no modo fonte usa
+   o caminho antigo, no modo visual age sobre o bloco do cursor — o mesmo
+   caminho que a digitação ao vivo já usava. */
+function v23BlocoAtual(){
+  var sel=window.getSelection();
+  if(!sel||!sel.rangeCount||!renderedPreview.contains(sel.anchorNode))return null;
+  var b=closestEditableBlock(sel.anchorNode);
+  return b&&b!==renderedPreview?b:null;
+}
+function v23GarantirBloco(){
+  var b=v23BlocoAtual();
+  if(b)return b;
+  renderedPreview.focus();
+  b=v23BlocoAtual();
+  if(b)return b;
+  var p=document.createElement('p');p.appendChild(document.createElement('br'));
+  renderedPreview.appendChild(p);setCaretEnd(p);return p;
+}
+/* Trocar o tipo do bloco preservando o que já estava escrito dentro dele:
+   converter por texto apagaria negrito, links e wiki-links da linha. */
+function v23SairDaLista(bloco){
+  if(bloco.tagName!=='LI')return bloco;
+  var lista=bloco.parentElement,p=document.createElement('p');
+  while(bloco.firstChild){
+    var n=bloco.firstChild;
+    if(n.nodeType===Node.ELEMENT_NODE&&n.tagName==='INPUT'){bloco.removeChild(n);continue}
+    p.appendChild(n);
+  }
+  lista.parentNode.insertBefore(p,lista.nextSibling);
+  bloco.remove();
+  if(!lista.querySelector('li'))lista.remove();
+  setCaretEnd(p);
+  return p;
+}
+function v23ParaLista(bloco,tipo,tarefa){
+  var lista=document.createElement(tipo),li=document.createElement('li');
+  while(bloco.firstChild)li.appendChild(bloco.firstChild);
+  if(tarefa){
+    var cb=document.createElement('input');cb.type='checkbox';li.className='task';
+    li.insertBefore(document.createTextNode(' '),li.firstChild);li.insertBefore(cb,li.firstChild);
+  }
+  lista.appendChild(li);bloco.replaceWith(lista);setCaretEnd(li);
+  return li;
+}
+function v23PrefixarBloco(prefixo){
+  var bloco=v23GarantirBloco(),m,naLista=bloco.tagName==='LI';
+  if((m=prefixo.match(/^(#{1,6})\s$/))){
+    var alvo='h'+m[1].length;
+    if(naLista)bloco=v23SairDaLista(bloco);
+    bloco=replaceBlockTag(bloco,bloco.tagName.toLowerCase()===alvo?'p':alvo);
+  }else if(/^>\s$/.test(prefixo)){
+    if(naLista)bloco=v23SairDaLista(bloco);
+    bloco=replaceBlockTag(bloco,bloco.tagName==='BLOCKQUOTE'?'p':'blockquote');
+  }else if(/^[-*+]\s\[\s\]\s$/.test(prefixo)){
+    bloco=naLista?v23SairDaLista(bloco):v23ParaLista(bloco,'ul',true);
+  }else if(/^[-*+]\s$/.test(prefixo)){
+    bloco=naLista?v23SairDaLista(bloco):v23ParaLista(bloco,'ul',false);
+  }else{
+    var txt=(bloco.textContent||'').replace(/\u200b/g,'');
+    bloco.textContent=prefixo+txt;setCaretEnd(bloco);transformLiveMarkdownBlock();
+    bloco=v23BlocoAtual()||bloco;
+  }
+  if(bloco&&!(bloco.textContent||'').trim()&&!bloco.querySelector('br,input'))bloco.appendChild(document.createElement('br'));
+  if(bloco)setCaretEnd(bloco);
+  syncVisualToMarkdown();
+}
+function v23Envolver(marca){
+  renderedPreview.focus();
+  var sel=window.getSelection(),texto=sel&&!sel.isCollapsed?sel.toString():'';
+  if(marca==='**')document.execCommand('bold');
+  else if(marca==='_')document.execCommand('italic');
+  else if(marca==='`')document.execCommand('insertHTML',false,'<code>'+escapeHTML(texto||'código')+'</code>');
+  syncVisualToMarkdown();
+}
+document.querySelectorAll('.mdBtn').forEach(function(btn){
+  var base=btn.onclick;
+  btn.onclick=function(){
+    if(editorViewMode!=='preview')return base.call(this);
+    var sel,texto;
+    if(btn.dataset.special==='noteLink'){
+      renderedPreview.focus();
+      document.execCommand('insertText',false,'[[');
+      updateVisualWiki();return;
+    }
+    if(btn.dataset.special==='link'){
+      var u=prompt('Endereço do link:','https://');if(!u)return;
+      renderedPreview.focus();
+      sel=window.getSelection();texto=sel&&!sel.isCollapsed?sel.toString():'link';
+      document.execCommand('insertHTML',false,'<a href="'+escapeHTML(u)+'" target="_blank" rel="noopener">'+escapeHTML(texto)+'</a>');
+      syncVisualToMarkdown();return;
+    }
+    if(btn.dataset.wrap)return v23Envolver(btn.dataset.wrap);
+    var md=btn.dataset.md||'';
+    if(md==='\\n---\\n'){renderedPreview.focus();document.execCommand('insertHTML',false,'<hr><p><br></p>');syncVisualToMarkdown();return}
+    if(md==='\\n\\n'){renderedPreview.focus();document.execCommand('insertParagraph');syncVisualToMarkdown();return}
+    v23PrefixarBloco(md);
+  };
+});
+function v23AtualizarToolbar(){
+  var t=document.getElementById('mdToolbar');if(!t||!currentFile)return;
+  var e=v21Kind(currentFile),isMd=e==='md'||e==='markdown';
+  t.style.setProperty('display',isMd?'flex':'none','important');
+}
+
+var v23BaseSetMode=setEditorViewMode;
+setEditorViewMode=function(mode){
+  v23BaseSetMode(mode);
+  v23AtualizarToolbar();
+  if(v23Seg)v23Seg.querySelectorAll('[data-mode]').forEach(function(b){
+    b.classList.toggle('ativo',b.dataset.mode===editorViewMode);
+  });
+};
+var v23BaseChrome=v21RefreshEditorChrome;
+v21RefreshEditorChrome=function(){
+  v23BaseChrome();
+  v23AtualizarToolbar();
+  if(!v23Seg)return;
+  v23Seg.hidden=!(currentFile&&v21CanPreview(currentFile));
+  v23Seg.querySelectorAll('[data-mode]').forEach(function(b){
+    b.classList.toggle('ativo',b.dataset.mode===editorViewMode);
+  });
+};
+
+/* ---------- ferramenta ativa avisa; o mapa mostra os números ---------- */
+var v23BaseSetTool=setTool;
+setTool=function(t){v23BaseSetTool(t);v23Atualizar()};
+var v23BaseAbrirMapao=abrirMapao;
+abrirMapao=function(){
+  v23BaseAbrirMapao();
+  var d=document.querySelector('#mapao .dica');
+  if(d)d.textContent=world.buildings.length+' arquivos · '+world.regions.length+' pastas · '+
+    world.links.length+' conexões — toque para ir até lá';
+};
+
+/* o painel de arquivo e o preview passam a conviver com o dock */
+var v23BaseCloseHouse=closeHouseSummary;
+closeHouseSummary=function(){v23BaseCloseHouse();v23Atualizar()};
+
+v23Atualizar();
 
 /* ---------- boot ---------- */
 (async()=>{
