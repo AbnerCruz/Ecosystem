@@ -1,5 +1,63 @@
 # Urbe — Changelog
 
+## v0.25.0 — 2026-09-10
+
+Fase 2 do Burgo: os moradores saem de casa.
+
+- **Pedestres nas estradas.** Cada nota ligada a outra manda gente andar entre
+  as duas, com a cor da guilda do bairro. Nota órfã não recebe ninguém — a rua
+  vazia é o diagnóstico.
+- **Andam por estrada, não por atalho.** O caminho é uma busca em largura sobre
+  a malha viária que já está desenhada. O A* do terreno não servia: ele recusa
+  justamente o vão de acesso da casa, que é por onde a pessoa sai.
+- **Densidade pelo número de wiki-links** e teto de andarilhos proporcional ao
+  ânimo do burgo: vila desanimada tem menos gente na rua.
+- **Orçamento de CPU como restrição de projeto**: teto de 18 caminhantes, só os
+  visíveis na tela, rotas em cache, no máximo quatro rotas novas por ciclo,
+  animação a 12 quadros e nada de desenhar abaixo de certo zoom. Quadro completo
+  medido em 2,9 ms. A animação pausa quando o mapa não está à vista.
+- Nada disso vai para o disco: o vaivém é leitura do vault, não estado de jogo.
+
+Ajuste da v0.24
+- **Piso de ânimo em 15%.** Ausência longa desanima o burgo, mas não o mata:
+  voltar precisa ser retomada, não ressurreição.
+
+Interno
+- `window.URBE` expõe leitura de estado para o harness de testes — o app inteiro
+  vive dentro de uma IIFE e não havia como verificá-lo de fora.
+
+## v0.24.0 — 2026-09-10
+
+Primeira camada de simulação: **o Burgo**. Um sim idle medieval que roda
+sobre a cidade, com três regras de projeto inegociáveis.
+
+Regras
+- A simulação **nunca escreve nas suas notas**. O vault é a geografia e a
+  economia do reino: é lido, jamais alterado.
+- O estado do burgo mora no IndexedDB, por vault. Não entra no mapa.json e
+  não gera gravação em disco a cada tique.
+- Nada de pontos inventados. O vigor de um morador é a data de edição da nota
+  dele; a vila prospera quando você escreve e definha quando você abandona.
+
+O que existe
+- Relógio do reino: um dia a cada 15 minutos reais. Ao voltar, todos os dias
+  de ausência são resolvidos, sem teto — 180 dias fora resolveram 17.280 dias
+  do reino em pouco mais de 3 segundos de boot.
+- Moradores: cada nota ganha um habitante com nome gerado, ofício, nível e
+  ânimo. Nota nova traz morador; nota apagada, despedida na crônica.
+- Guildas por bairro: a pasta define o ofício (Lavradores, Lenhadores,
+  Pedreiros, Ferreiros, Escribas, Mercadores, Curandeiros, Guardas). Nota na
+  raiz tira o ofício do próprio nome, para um vault plano não virar uma vila
+  de clones.
+- Economia: trigo, madeira, pedra, moedas e inspiração. Cada morador come; o
+  celeiro pode secar. Nota sem edição há meses derruba a produção dela.
+- Inspiração: gerada pelo que você escreve de verdade no editor.
+- Crônica: registro em prosa do que aconteceu — colheitas, fome, telhados que
+  cedem em notas esquecidas, feira semanal com a nota mais viva.
+- Painel próprio no dock (5º destino) com recursos, moradores e crônica.
+  Tocar num morador abre a nota em que ele mora.
+- `window.Burgo` expõe o estado para inspeção no console.
+
 ## v0.23.0 — 2026-09-09
 
 Redesenho da casca do aplicativo. O motor não mudou: tudo abaixo delega para

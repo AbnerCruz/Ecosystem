@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Urbe">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<title>Urbe v0.23.0</title>
+<title>Urbe v0.25.0</title>
 <style>
 :root{--bg:#0b1116;--panel:#101923;--panel2:#16242f;--line:#304654;--text:#eef5f8;--muted:#9db0bc;--accent:#4db7ff;--danger:#b74f4f}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
@@ -4889,6 +4889,543 @@ var v23BaseCloseHouse=closeHouseSummary;
 closeHouseSummary=function(){v23BaseCloseHouse();v23Atualizar()};
 
 v23Atualizar();
+
+
+/* ============================================================
+   Urbe v0.24 — O Burgo
+   Camada de simulação idle sobre a cidade. Regras de projeto:
+   1. A simulação NUNCA escreve nas suas notas. O vault é a
+      geografia e a economia do reino; ele é lido, nunca alterado.
+   2. O estado do burgo mora no IndexedDB, por vault — não entra
+      no mapa.json nem gera gravação em disco a cada tique.
+   3. Nada de pontos inventados: o vigor de um morador é a data de
+      edição da nota dele. A vila prospera quando você escreve e
+      definha quando você abandona o que escreveu.
+   ============================================================ */
+V21_VERSION='0.24.0';
+document.title='Urbe v'+V21_VERSION;
+
+var V24_DIA_MS=15*60*1000;   /* um dia do reino a cada 15 min reais */
+/* Ausência não pode matar a vila: voltar precisa ser retomada, não
+   ressurreição. O ânimo desce até um piso e para ali. */
+var V24_HUMOR_MIN=15;
+var V24_MAX_DIAS=50000;      /* sem teto na prática: 50 mil dias do reino equivalem
+                                a mais de um ano de ausência. O limite existe só para
+                                que uma data corrompida não trave o aparelho. */
+var sim=null,v24Painel=null,v24SalvarTimer=null;
+
+var V24_GUILDAS=[
+  {nome:'Lavradores',singular:'Lavrador',produz:{comida:1.35},consome:{}},
+  {nome:'Lenhadores',singular:'Lenhador',produz:{madeira:1.0},consome:{}},
+  {nome:'Pedreiros',singular:'Pedreiro',produz:{pedra:0.8},consome:{}},
+  {nome:'Ferreiros',singular:'Ferreiro',produz:{moedas:0.7},consome:{madeira:0.3}},
+  {nome:'Escribas',singular:'Escriba',produz:{inspiracao:0.6},consome:{}},
+  {nome:'Mercadores',singular:'Mercador',produz:{moedas:1.1},consome:{comida:0.25}},
+  {nome:'Curandeiros',singular:'Curandeiro',produz:{inspiracao:0.25},consome:{}},
+  {nome:'Guardas',singular:'Guarda',produz:{moedas:0.35},consome:{comida:0.15}}
+];
+var V24_RECURSOS=[['comida','Trigo'],['madeira','Madeira'],['pedra','Pedra'],['moedas','Moedas'],['inspiracao','Inspiração']];
+var V24_SIL1=['Al','Ber','Cor','Dun','Es','Fal','Gor','Hen','Il','Jor','Lu','Mar','Nor','Os','Per','Rou','Sal','Tor','Ur','Vel'];
+var V24_SIL2=['ba','dra','fim','gan','ir','len','mun','nir','rea','ros','sil','tan','ven','vor','zar','dis','mel','the'];
+var V24_SOBRE=['da Ponte','do Vale','das Pedras','do Moinho','de Aldeia','do Norte','da Fonte','do Bosque','da Colina','do Porto'];
+
+function v24Semente(txt){var h=2166136261;txt=String(txt);for(var i=0;i<txt.length;i++){h^=txt.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0)}
+function v24Nome(id){
+  var s=v24Semente(id);
+  return V24_SIL1[s%V24_SIL1.length]+V24_SIL2[(s>>>5)%V24_SIL2.length]+' '+V24_SOBRE[(s>>>11)%V24_SOBRE.length];
+}
+function v24GuildaDaRegiao(nome){return V24_GUILDAS[v24Semente(nome||'raiz')%V24_GUILDAS.length]}
+function v24DiasSem(iso){
+  var t=Date.parse(iso||'');
+  if(isNaN(t))return 0;
+  return Math.max(0,Math.floor((Date.now()-t)/86400000));
+}
+/* O vigor é a saúde da nota, não um número arbitrário. */
+function v24Vigor(b){
+  var d=v24DiasSem(b.modified||b.created);
+  var base=d<7?1:d<30?.72:d<90?.45:.22;
+  var corpo=Math.min(1.25,.55+((b.content||'').length/2200));
+  return base*corpo;
+}
+
+/* ---------- estado ---------- */
+function v24Vazio(){
+  return {v:1,dia:1,tsReal:Date.now(),escritaHoje:0,humor:70,
+    recursos:{comida:40,madeira:20,pedra:10,moedas:15,inspiracao:0},
+    moradores:{},cronica:[{dia:1,txt:'As primeiras estacas foram fincadas. O burgo tem nome e não tem ainda história.'}]};
+}
+function v24Cronica(txt){
+  if(!sim)return;
+  sim.cronica.push({dia:sim.dia,txt:txt});
+  if(sim.cronica.length>120)sim.cronica=sim.cronica.slice(-120);
+}
+function v24Sincronizar(){
+  if(!sim)return;
+  var vistos={},caminhos=(typeof caminhosRegioes==='function')?caminhosRegioes():new Map();
+  world.buildings.forEach(function(b){
+    if(b.tipo!=='nota')return;
+    vistos[b.id]=1;
+    var reg=world.regions.find(function(r){return r.id===b.regionId}),
+        chave=reg?('pasta:'+(caminhos.get(reg.id)||reg.name)):('nota:'+b.name),
+        g=v24GuildaDaRegiao(chave);
+    var m=sim.moradores[b.id];
+    if(!m){
+      m=sim.moradores[b.id]={nome:v24Nome(b.id),guilda:g.nome,nivel:1,xp:0,animo:70};
+      if(sim.dia>1)v24Cronica(m.nome+' ergueu casa entre os '+g.nome+'.');
+    }else m.guilda=g.nome;
+  });
+  Object.keys(sim.moradores).forEach(function(id){
+    if(!vistos[id]){
+      var m=sim.moradores[id];
+      v24Cronica(m.nome+' partiu do burgo; a casa foi desfeita.');
+      delete sim.moradores[id];
+    }
+  });
+}
+function v24Guilda(nome){
+  for(var i=0;i<V24_GUILDAS.length;i++)if(V24_GUILDAS[i].nome===nome)return V24_GUILDAS[i];
+  return V24_GUILDAS[0];
+}
+function v24Lista(){
+  var out=[];
+  world.buildings.forEach(function(b){
+    if(b.tipo!=='nota')return;
+    var m=sim.moradores[b.id];
+    if(m)out.push({b:b,m:m,vigor:v24Vigor(b)});
+  });
+  return out;
+}
+
+/* ---------- um dia do reino ---------- */
+function v24ResolverDia(){
+  var povo=v24Lista(),r=sim.recursos;
+  if(!povo.length){sim.dia++;return}
+  var vigorMedio=0,abandonadas=0;
+  povo.forEach(function(p){
+    var g=v24Guilda(p.m.guilda),k;
+    for(k in g.produz)r[k]=(r[k]||0)+g.produz[k]*p.vigor*(0.6+p.m.animo/250);
+    for(k in g.consome)r[k]=(r[k]||0)-g.consome[k];
+    p.m.xp+=Math.round(6*p.vigor);
+    while(p.m.xp>=80+p.m.nivel*40){p.m.xp-=80+p.m.nivel*40;p.m.nivel++;
+      if(p.m.nivel%5===0)v24Cronica(p.m.nome+' foi reconhecido mestre entre os '+p.m.guilda+' (nível '+p.m.nivel+').');}
+    p.m.animo=Math.max(5,Math.min(100,p.m.animo+(p.vigor>.6?2:-2)));
+    vigorMedio+=p.vigor;
+    if(p.vigor<.3)abandonadas++;
+  });
+  vigorMedio/=povo.length;
+
+  /* a inspiração vem do que você escreveu de verdade */
+  if(sim.escritaHoje>0){
+    r.inspiracao=(r.inspiracao||0)+Math.min(6,sim.escritaHoje/400);
+    if(sim.escritaHoje>1200)v24Cronica('Houve festa na praça: a pena não parou o dia inteiro.');
+    sim.escritaHoje=0;
+  }
+
+  var boca=povo.length*0.9;
+  r.comida-=boca;
+  if(r.comida<0){
+    r.comida=0;sim.humor=Math.max(V24_HUMOR_MIN,sim.humor-9);
+    v24Cronica('O celeiro secou. Houve fome nas ruas do burgo.');
+  }else sim.humor=Math.min(100,Math.max(V24_HUMOR_MIN,sim.humor)+(vigorMedio>.55?2:0.5));
+
+  var curandeiros=povo.filter(function(p){return p.m.guilda==='Curandeiros'}).length;
+  if(curandeiros)sim.humor=Math.min(100,sim.humor+curandeiros*0.4);
+
+  if(abandonadas>0&&sim.dia%4===0){
+    var alvo=povo.filter(function(p){return p.vigor<.3}).sort(function(a,b){return a.vigor-b.vigor})[0];
+    if(alvo)v24Cronica('O telhado da casa de '+alvo.m.nome+' cede: ninguém visita "'+alvo.b.name+'" há '+v24DiasSem(alvo.b.modified)+' dias.');
+  }
+  if(sim.dia%7===0){
+    var melhor=povo.slice().sort(function(a,b){return b.vigor-a.vigor})[0];
+    if(melhor)v24Cronica('Feira semanal. "'+melhor.b.name+'" foi o assunto de todos.');
+  }
+  Object.keys(sim.recursos).forEach(function(k){if(sim.recursos[k]<0)sim.recursos[k]=0});
+  sim.dia++;
+}
+function v24Avancar(){
+  if(!sim)return 0;
+  var passados=Math.floor((Date.now()-sim.tsReal)/V24_DIA_MS);
+  if(passados<=0)return 0;
+  var resolver=Math.min(passados,V24_MAX_DIAS);
+  v24Sincronizar();
+  for(var i=0;i<resolver;i++)v24ResolverDia();
+  sim.tsReal+=passados*V24_DIA_MS;
+  v24AgendarSalvar();
+  return resolver;
+}
+
+/* ---------- persistência (fora do vault, de propósito) ---------- */
+function v24Chave(){return 'urbe.sim.'+(Disco.cidade||'sem-vault')}
+function v24AgendarSalvar(){
+  clearTimeout(v24SalvarTimer);
+  v24SalvarTimer=setTimeout(function(){if(sim)DBK.set(v24Chave(),JSON.stringify(sim))},4000);
+}
+async function v24Carregar(){
+  sim=null;
+  if(!Disco.cidade)return;
+  try{var bruto=await DBK.get(v24Chave());sim=bruto?JSON.parse(bruto):v24Vazio()}catch(_){sim=v24Vazio()}
+  if(!sim||sim.v!==1)sim=v24Vazio();
+  v24Sincronizar();
+  var dias=v24Avancar();
+  if(dias>1)toast('Passaram-se '+dias+' dia(s) no burgo enquanto você esteve fora.');
+  v24Render();
+}
+var v24BaseAbrirCidade=abrirCidade;
+abrirCidade=async function(nome){
+  if(sim)try{await DBK.set(v24Chave(),JSON.stringify(sim))}catch(_){ }
+  await v24BaseAbrirCidade(nome);
+  await v24Carregar();
+};
+addEventListener('pagehide',function(){if(sim)DBK.set(v24Chave(),JSON.stringify(sim))});
+
+/* escrever é o que move a economia */
+var v24BaseMark=markChanged;
+markChanged=function(){
+  v24BaseMark();
+  if(sim)sim.escritaHoje=Math.min(4000,sim.escritaHoje+12);
+};
+
+/* ---------- painel ---------- */
+document.head.insertAdjacentHTML('beforeend','<style>'+
+'#v23Dock{grid-template-columns:repeat(5,1fr)}#v23Dock .v23NavIco{width:40px}'+
+'#v24Burgo{position:fixed;inset:0;z-index:40;display:none;flex-direction:column;background:var(--v23-bg);'+
+'padding-bottom:calc(var(--v23-dock) + var(--v23-safe-b))}'+
+'#v24Burgo.open{display:flex}'+
+'body.v24Burgando #v23Top,body.v24Burgando #v23Fab{display:none!important}'+
+'body.v24Burgando #v23Dock button.ativo{color:var(--v23-ink3)}'+
+'body.v24Burgando #v23Dock button.ativo .v23NavIco{background:transparent;border-color:transparent}'+
+'body.v24Burgando #v23Dock button[data-nav="burgo"]{color:var(--v23-accent)}'+
+'body.v24Burgando #v23Dock button[data-nav="burgo"] .v23NavIco{background:#18333d;border-color:var(--v23-accent)}'+
+'#v24Head{padding:calc(12px + var(--v23-safe-t)) 16px 10px;border-bottom:2px solid var(--v23-line)}'+
+'#v24Head h2{margin:0;font:700 16px/1.2 ui-monospace,monospace;color:var(--v23-ink)}'+
+'#v24Head p{margin:4px 0 0;font:10px ui-monospace,monospace;color:var(--v23-ink2)}'+
+'#v24Barra{height:6px;margin-top:10px;background:#0a1319;border:2px solid var(--v23-line)}'+
+'#v24BarraFill{height:100%;background:var(--v23-accent)}'+
+'#v24Corpo{flex:1;overflow:auto;padding:14px 16px 24px}'+
+'.v24Grade{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}'+
+'.v24Rec{padding:10px 12px;background:var(--v23-panel);border:2px solid var(--v23-line)}'+
+'.v24Rec b{display:block;font:700 15px ui-monospace,monospace;color:var(--v23-ink)}'+
+'.v24Rec span{font:9px ui-monospace,monospace;color:var(--v23-ink3);letter-spacing:.06em}'+
+'.v24Titulo{margin:0 0 10px;font:600 11px ui-monospace,monospace;color:var(--v23-ink2);letter-spacing:.1em}'+
+'.v24Morador{display:flex;gap:10px;align-items:center;width:100%;min-height:54px;padding:8px 10px;margin-bottom:6px;'+
+'background:var(--v23-panel);border:2px solid var(--v23-line);color:var(--v23-ink);text-align:left}'+
+'.v24Morador i{width:34px;height:34px;display:grid;place-items:center;font-style:normal;font:700 12px ui-monospace,monospace;'+
+'background:var(--v23-panel3);color:var(--v23-accent);border:2px solid var(--v23-line2)}'+
+'.v24Morador .txt{flex:1;min-width:0}'+
+'.v24Morador .txt b{display:block;font:600 12px ui-monospace,monospace}'+
+'.v24Morador .txt span{font:9px ui-monospace,monospace;color:var(--v23-ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}'+
+'.v24Vig{width:6px;height:34px;background:#0a1319}'+
+'.v24Cron{padding:9px 0;border-bottom:1px dashed var(--v23-line);font:10px/1.5 ui-monospace,monospace;color:var(--v23-ink2)}'+
+'.v24Cron b{color:var(--v23-ink3);font-weight:400}'+
+'</style>');
+
+(function v24Montar(){
+  v24Painel=document.createElement('section');v24Painel.id='v24Burgo';
+  v24Painel.innerHTML='<header id="v24Head"><h2 id="v24Titulo">Burgo</h2><p id="v24Sub"></p>'+
+    '<div id="v24Barra"><div id="v24BarraFill"></div></div></header><div id="v24Corpo"></div>';
+  document.getElementById('app').appendChild(v24Painel);
+  var btn=document.createElement('button');
+  btn.dataset.nav='burgo';
+  btn.innerHTML='<span class="v23NavIco">⚑</span><span>Burgo</span>';
+  btn.onclick=function(){v23Navegar('burgo')};
+  v23Dock.insertBefore(btn,v23Dock.children[2]);
+})();
+
+var v24BaseNavegar=v23Navegar;
+v23Navegar=function(dest){
+  if(dest==='burgo'){
+    fileSidebar.classList.remove('open');aiPanel.classList.remove('open');
+    fecharMenu();closeFilePreview();closeHouseSummary();
+    if(v23Aberto(editorFull))closeFullEditor();
+    v24Sincronizar();v24Avancar();v24Render();
+    v24Painel.classList.add('open');
+    v24AtualizarCasca();return;
+  }
+  v24Painel.classList.remove('open');
+  v24BaseNavegar(dest);
+  v24AtualizarCasca();
+};
+function v24AtualizarCasca(){
+  var aberto=!!(v24Painel&&v24Painel.classList.contains('open'));
+  document.body.classList.toggle('v24Burgando',aberto);
+}
+setInterval(function(){
+  v24AtualizarCasca();
+  if(!sim)return;
+  var novos=v24Avancar();
+  if(novos&&v24Painel.classList.contains('open'))v24Render();
+  else if(v24Painel.classList.contains('open'))v24Progresso();
+},1000);
+
+/* superfície mínima para inspeção e testes, já que todo o app vive num IIFE */
+window.Burgo={get sim(){return sim},avancar:function(){return v24Avancar()},render:function(){return v24Render()},sincronizar:function(){return v24Sincronizar()},chave:function(){return v24Chave()},lista:function(){return v24Lista()}};
+function v24Progresso(){
+  var f=document.getElementById('v24BarraFill');
+  if(f&&sim)f.style.width=Math.max(0,Math.min(100,100*((Date.now()-sim.tsReal)/V24_DIA_MS)))+'%';
+}
+function v24Render(){
+  if(!v24Painel)return;
+  var corpo=document.getElementById('v24Corpo');
+  if(!sim||!Disco.cidade){
+    document.getElementById('v24Titulo').textContent='Burgo';
+    document.getElementById('v24Sub').textContent='Abra um vault para fundar o burgo.';
+    corpo.innerHTML='';return;
+  }
+  var povo=v24Lista();
+  document.getElementById('v24Titulo').textContent='Burgo de '+Disco.cidade;
+  document.getElementById('v24Sub').textContent='Dia '+sim.dia+' do reinado · '+povo.length+
+    ' morador(es) · ânimo '+Math.round(sim.humor)+'%';
+  v24Progresso();
+
+  var html='<div class="v24Grade">';
+  V24_RECURSOS.forEach(function(r){
+    html+='<div class="v24Rec"><b>'+Math.floor(sim.recursos[r[0]]||0)+'</b><span>'+r[1].toUpperCase()+'</span></div>';
+  });
+  html+='</div>';
+
+  povo.sort(function(a,b){return (b.m.nivel-a.m.nivel)||(b.vigor-a.vigor)});
+  html+='<p class="v24Titulo">MORADORES</p>';
+  if(!povo.length)html+='<div class="v24Cron">Nenhuma casa de pé. Crie uma nota e alguém virá morar nela.</div>';
+  povo.slice(0,10).forEach(function(p){
+    var cor=p.vigor>.6?'#77d494':p.vigor>.35?'#e6c46a':'#e78a80';
+    html+='<button class="v24Morador" data-casa="'+escapeHTML(p.b.id)+'">'+
+      '<i>'+p.m.nivel+'</i><span class="txt"><b>'+escapeHTML(p.m.nome)+'</b>'+
+      '<span>'+escapeHTML(v24Guilda(p.m.guilda).singular)+' · '+escapeHTML(p.b.name)+'</span></span>'+
+      '<span class="v24Vig" style="background:'+cor+'"></span></button>';
+  });
+
+  html+='<p class="v24Titulo" style="margin-top:20px">CRÔNICA</p>';
+  sim.cronica.slice(-18).reverse().forEach(function(c){
+    html+='<div class="v24Cron"><b>Dia '+c.dia+' — </b>'+escapeHTML(c.txt)+'</div>';
+  });
+  corpo.innerHTML=html;
+  corpo.querySelectorAll('[data-casa]').forEach(function(el){
+    el.onclick=function(){
+      var b=world.buildings.find(function(x){return x.id===el.dataset.casa});
+      if(!b)return;
+      v24Painel.classList.remove('open');
+      openFullEditor(b);
+      v23Atualizar();
+    };
+  });
+}
+
+
+/* ============================================================
+   Urbe v0.25 — Fase 2: os moradores saem de casa
+   Pedestres percorrendo as estradas entre notas ligadas. Reaproveita
+   o A* já otimizado na v0.22 e não guarda nada em disco: o vaivém é
+   leitura do vault, não estado de jogo.
+   Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
+   cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
+   ============================================================ */
+V21_VERSION='0.25.0';
+document.title='Urbe v'+V21_VERSION;
+
+var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
+var V25_VEL=2.6;             /* tiles por segundo */
+var V25_FPS=80;              /* intervalo do quadro, em ms */
+var V25_CACHE_MAX=180;
+
+var v25Povo=[],v25Rotas=new Map(),v25Ligado=true,v25UltimoElenco=0,v25Relogio=null;
+
+function v25CorDaGuilda(b){
+  if(typeof sim!=='undefined'&&sim&&sim.moradores){
+    var m=sim.moradores[b.id];
+    if(m&&m.guilda){
+      var paleta={Lavradores:'#d9c26a',Lenhadores:'#8fbf72',Pedreiros:'#a9b3ba',Ferreiros:'#e08b5a',
+                  Escribas:'#7fd4e6',Mercadores:'#c79ae0',Curandeiros:'#7ee0a6',Guardas:'#e0786f'};
+      if(paleta[m.guilda])return paleta[m.guilda];
+    }
+  }
+  return '#d7e6ec';
+}
+
+/* Quem anda: só nota ligada a outra nota. Rua vazia é o diagnóstico
+   de nota órfã — o silêncio ali é informação, não falta de polimento. */
+function v25Vizinhos(b){
+  var saida=[];
+  for(var i=0;i<world.links.length;i++){
+    var l=world.links[i];
+    if(l.from===b.id)saida.push(l.to);
+    else if(l.to===b.id)saida.push(l.from);
+  }
+  return saida;
+}
+function v25Predio(id){
+  for(var i=0;i<world.buildings.length;i++)if(world.buildings[i].id===id)return world.buildings[i];
+  return null;
+}
+/* Andarilho anda por estrada, não por atalho: em vez de rodar o A* do
+   terreno (que recusa justamente o vão de acesso das casas, por onde a
+   pessoa sai), percorremos a malha viária que já está desenhada. */
+function v25EstradaPerto(b){
+  var base=lowerRoadStart(b);
+  for(var raio=0;raio<=4;raio++){
+    for(var dy=-raio;dy<=raio;dy++)for(var dx=-raio;dx<=raio;dx++){
+      if(Math.max(Math.abs(dx),Math.abs(dy))!==raio)continue;
+      var x=base.x+dx,y=base.y+dy;
+      if(world.roads.has(K(x,y)))return {x:x,y:y};
+    }
+  }
+  return null;
+}
+function v25Rota(a,b){
+  var chave=a.id+'>'+b.id,r=v25Rotas.get(chave);
+  if(r!==undefined)return r;
+  r=null;
+  var ini=v25EstradaPerto(a),fim=v25EstradaPerto(b);
+  if(ini&&fim){
+    var ki=K(ini.x,ini.y),kf=K(fim.x,fim.y);
+    if(ki===kf)r=null;
+    else{
+      var veio=new Map(),fila=[ki],cab=0;
+      veio.set(ki,null);
+      while(cab<fila.length){
+        var k=fila[cab++];
+        if(k===kf)break;
+        var c=k.indexOf(','),x=+k.slice(0,c),y=+k.slice(c+1);
+        var viz=[K(x+1,y),K(x-1,y),K(x,y+1),K(x,y-1)];
+        for(var j=0;j<4;j++){
+          var nk=viz[j];
+          if(world.roads.has(nk)&&!veio.has(nk)){veio.set(nk,k);fila.push(nk)}
+        }
+      }
+      if(veio.has(kf)){
+        var caminho=[],cur=kf;
+        while(cur){var cc=cur.indexOf(',');caminho.push({x:+cur.slice(0,cc),y:+cur.slice(cc+1)});cur=veio.get(cur)}
+        caminho.reverse();
+        if(caminho.length>2)r=caminho;
+      }
+    }
+  }
+  if(v25Rotas.size>V25_CACHE_MAX)v25Rotas.clear();
+  v25Rotas.set(chave,r);
+  return r;
+}
+
+/* O elenco é recontado de vez em quando, e só com o que está à vista:
+   o custo tem que caber no orçamento de quadro de um celular. */
+function v25Elenco(){
+  var f=faixaVisivel(),candidatos=[];
+  for(var i=0;i<world.buildings.length;i++){
+    var b=world.buildings[i];
+    if(b.tipo!=='nota')continue;
+    if(b.x+b.w<f.x0||b.x>f.x1||b.y+b.h<f.y0||b.y>f.y1)continue;
+    var viz=v25Vizinhos(b);
+    if(!viz.length)continue;
+    candidatos.push({b:b,viz:viz,peso:Math.min(4,viz.length)});
+  }
+  var teto=V25_MAX;
+  if(typeof sim!=='undefined'&&sim&&typeof sim.humor==='number')
+    teto=Math.max(4,Math.round(V25_MAX*(.35+sim.humor/100*.65)));
+  candidatos.sort(function(x,y){return y.peso-x.peso});
+  return candidatos.slice(0,teto);
+}
+function v25Nascer(c){
+  var alvoId=c.viz[Math.floor(Math.random()*c.viz.length)],alvo=v25Predio(alvoId);
+  if(!alvo)return null;
+  var rota=v25Rota(c.b,alvo);
+  if(!rota)return null;
+  return {de:c.b,para:alvo,rota:rota,i:0,f:Math.random(),volta:false,cor:v25CorDaGuilda(c.b)};
+}
+function v25Repovoar(){
+  var elenco=v25Elenco(),vivos=[],usados={},novasRotas=0;
+  /* mantém quem já está a caminho e ainda pertence ao elenco */
+  for(var i=0;i<v25Povo.length;i++){
+    var a=v25Povo[i];
+    if(elenco.some(function(c){return c.b===a.de})){vivos.push(a);usados[a.de.id]=true}
+  }
+  for(var j=0;j<elenco.length&&vivos.length<elenco.length;j++){
+    var c=elenco[j];
+    if(usados[c.b.id])continue;
+    if(novasRotas>=4)break;          /* no máximo quatro rotas novas por ciclo */
+    var novo=v25Nascer(c);
+    novasRotas++;
+    if(novo){vivos.push(novo);usados[c.b.id]=true}
+  }
+  v25Povo=vivos;
+}
+function v25Passo(dt){
+  var avanco=V25_VEL*dt;
+  for(var i=0;i<v25Povo.length;i++){
+    var a=v25Povo[i];
+    a.f+=avanco;
+    while(a.f>=1){
+      a.f-=1;
+      a.i+=a.volta?-1:1;
+      if(a.i>=a.rota.length-1){a.i=a.rota.length-1;a.volta=true}
+      else if(a.i<=0){a.i=0;a.volta=false}
+    }
+  }
+}
+function v25Desenhar(){
+  if(!v25Povo.length)return;
+  var z=camera.z;
+  if(z<.5)return;                     /* de longe viram ruído; não desenha */
+  var larg=Math.max(3,Math.round(5*z)),alt=Math.max(6,Math.round(9*z));
+  for(var i=0;i<v25Povo.length;i++){
+    var a=v25Povo[i],r=a.rota;
+    var p0=r[a.i],p1=r[Math.min(r.length-1,Math.max(0,a.i+(a.volta?-1:1)))];
+    if(!p0||!p1)continue;
+    var wx=(p0.x+(p1.x-p0.x)*a.f+.5)*TILE,wy=(p0.y+(p1.y-p0.y)*a.f+.5)*TILE;
+    var p=w2s(wx,wy);
+    ctx.fillStyle='#00000055';
+    ctx.fillRect(p.x-larg/2,p.y+alt*.35,larg,Math.max(1,Math.round(z)));
+    ctx.fillStyle=a.cor;
+    ctx.fillRect(p.x-larg/2,p.y-alt/2,larg,alt);
+    ctx.fillStyle='#f2e9d8';
+    ctx.fillRect(p.x-larg/2,p.y-alt/2-Math.max(2,Math.round(3*z)),larg,Math.max(2,Math.round(3*z)));
+  }
+}
+
+/* Entra no pipeline entre as árvores e os prédios, para que as casas
+   ocultem quem passa atrás delas. */
+var v25BaseDrawTrees=drawTrees;
+drawTrees=function(){v25BaseDrawTrees();v25Desenhar()};
+
+/* O laço de render só repinta sob demanda; aqui pedimos quadro apenas
+   enquanto há alguém andando e o mapa está à vista. */
+function v25MapaVisivel(){
+  if(typeof v23Aberto!=='function')return true;
+  if(v23Aberto(editorFull)||v23Aberto(fileSidebar)||v23Aberto(aiPanel)||v23Aberto(menuEl))return false;
+  var burgo=document.getElementById('v24Burgo');
+  if(burgo&&burgo.classList.contains('open'))return false;
+  return document.visibilityState!=='hidden';
+}
+function v25Ciclo(){
+  if(!v25Ligado||!v25MapaVisivel()){v25Povo.length&&(v25Povo=[]);return}
+  var agora=Date.now();
+  if(agora-v25UltimoElenco>2500){v25UltimoElenco=agora;v25Repovoar()}
+  if(!v25Povo.length)return;
+  v25Passo(V25_FPS/1000);
+  pedirDesenho();
+}
+v25Relogio=setInterval(v25Ciclo,V25_FPS);
+
+/* Gancho de inspeção: tudo do app vive dentro de uma IIFE, o que torna
+   impossível testar de fora. Estes acessos são só de leitura e existem
+   para o harness de verificação — nenhum deles altera estado sozinho. */
+window.URBE=window.URBE||{};
+Object.defineProperties(window.URBE,{
+  povo:{get:function(){return v25Povo},configurable:true},
+  rotas:{get:function(){return v25Rotas},configurable:true},
+  mundo:{get:function(){return world},configurable:true},
+  sim:{get:function(){return typeof sim!=='undefined'?sim:null},configurable:true}
+});
+Object.assign(window.URBE,{
+  passo:function(dt){v25Passo(dt)},
+  quadro:function(){drawGround();drawRegions();drawRoads();drawTrees();drawBuildings()},
+  resolverDia:function(){if(typeof v24ResolverDia==='function')v24ResolverDia()},
+  naEstrada:function(t){return world.roads.has(K(t.x,t.y))},
+  diagnostico:function(){return {mapaVisivel:v25MapaVisivel(),ligado:v25Ligado,
+    editor:v23Aberto(editorFull),explorador:v23Aberto(fileSidebar),ia:v23Aberto(aiPanel),
+    menu:v23Aberto(menuEl),visibilidade:document.visibilityState,povo:v25Povo.length}}
+});
+
+/* Mudou a geografia ou os links, as rotas guardadas não valem mais. */
+var v25BaseRebuild=rebuildRoadNetwork;
+rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[];return r};
 
 /* ---------- boot ---------- */
 (async()=>{
