@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-title" content="Urbe">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<title>Urbe v0.21.0</title>
+<title>Urbe v0.22.0</title>
 <style>
 :root{--bg:#0b1116;--panel:#101923;--panel2:#16242f;--line:#304654;--text:#eef5f8;--muted:#9db0bc;--accent:#4db7ff;--danger:#b74f4f}
 *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
@@ -493,6 +493,46 @@ button,input,textarea,select{border-radius:0!important}
   .v21AiControls{grid-template-columns:1fr auto}.v21AiControls #v21ModelSort{display:none}
 }
 
+
+/* ============================================================
+   v0.22 — correções de layout sobre a v0.21
+   ============================================================ */
+
+/* abas do editor ganham linha própria no grid (antes caíam no rodapé) */
+#editorFull.open{grid-template-rows:52px auto minmax(0,1fr) 54px}
+#editorFull.open #editorTop{grid-column:1;grid-row:1}
+#editorFull.open #v21EditorTabs{grid-column:1;grid-row:2}
+#editorFull.open #editorMain{grid-column:1;grid-row:3}
+#editorFull.open #editorBottom{grid-column:1;grid-row:4}
+#v21EditorTabs.v22Single{display:none}
+
+/* a toolbar Markdown não pode ficar visível no modo visual: seus botões
+   escrevem no textarea escondido e corrompem o arquivo */
+#editorMain.previewMode #mdToolbar{display:none!important}
+
+/* o atributo hidden precisa vencer o display:grid dos botões do Explorador */
+.v21ExBtn[hidden]{display:none!important}
+
+/* o texto "Salvando..." mudava a largura do cabeçalho entre o toque e o
+   soltar do dedo: o botão saía de baixo do dedo e o clique se perdia */
+#editorTop .saveState{min-width:66px;text-align:right;flex:0 0 auto}
+#editorTop #fileNameDisplay{min-width:0}
+
+/* HUD e selo de sincronização deixam de colidir com o minimapa */
+#hud{max-width:calc(100vw - 200px)}
+#syncSelo{left:62px;right:auto;top:auto;transform:none;bottom:max(8px,env(safe-area-inset-bottom))}
+
+@media (max-width:760px){
+  #editorFull.open{grid-template-rows:50px auto minmax(0,1fr) 50px}
+  #editorFull.open #editorTop{grid-row:1}
+  #editorFull.open #v21EditorTabs{grid-row:2}
+  #editorFull.open #editorMain{grid-row:3}
+  #editorFull.open #editorBottom{grid-row:4}
+  #hud #hint{display:none}
+  #syncSelo{left:56px}
+  .v21AiControls{grid-template-columns:minmax(0,1fr) auto auto}
+  .v21AiControls #v21ModelSort{display:block;max-width:92px}
+}
 </style>
 </head>
 <body>
@@ -4004,6 +4044,357 @@ v21EnsureExplorer();v21BuildTree();
 DBK.get('urbe.ai.global.v21').then(function(x){if(x)v21AiGlobal=x}).catch(function(){});DBK.get('urbe.ai.history.v21').then(function(x){if(Array.isArray(x))v21AiHistory=x;v21InitAiUi()}).catch(function(){v21InitAiUi()});
 
 
+
+
+
+/* ============================================================
+   Urbe v0.22 — correções sobre a v0.21
+   Cada bloco abaixo substitui um comportamento da versão anterior
+   sem reescrever o código original: o patch só reata os nomes.
+   ============================================================ */
+V21_VERSION='0.22.0';
+document.title='Urbe v'+V21_VERSION;
+
+/* ---------- 1. abrir um arquivo fecha o Explorador ----------
+   No celular o Explorador é uma folha em tela cheia (z-index 65) acima do
+   editor (z-index 50). A v0.21 abria o editor por baixo e o usuário
+   continuava vendo a lista, sem alcançar nenhum botão do cabeçalho. */
+var v22OpenFull=openFullEditor;
+openFullEditor=function(b){try{fileSidebar.classList.remove('open')}catch(_){ }return v22OpenFull(b)};
+var v22OpenPrev=openFilePreview;
+openFilePreview=function(b,i){try{fileSidebar.classList.remove('open')}catch(_){ }return v22OpenPrev(b,i)};
+
+/* ---------- 2. abas do editor ----------
+   A linha própria vem do CSS; aqui só escondemos a barra quando há um
+   único arquivo aberto, para não roubar 36px de altura no celular. */
+var v22RenderTabs=v21RenderTabs;
+v21RenderTabs=function(){
+  v22RenderTabs();
+  var box=document.getElementById('v21EditorTabs');
+  if(box)box.classList.toggle('v22Single',v21OpenTabs.length<2);
+};
+
+/* ---------- 3. toolbar Markdown fora do modo visual ----------
+   v21RefreshEditorChrome fixava display:flex inline e vencia a regra de
+   CSS que esconde a barra no preview. Os botões chamam insertAtCursor,
+   que escreve no textarea escondido: o texto entrava cru no arquivo. */
+var v22RefreshChrome=v21RefreshEditorChrome;
+v21RefreshEditorChrome=function(){
+  v22RefreshChrome();
+  var t=document.getElementById('mdToolbar');
+  if(t&&editorViewMode==='preview')t.style.display='';
+};
+var v22Insert=insertAtCursor;
+insertAtCursor=function(prefix,suffix){
+  if(editorViewMode==='preview')setEditorViewMode('source');
+  return v22Insert(prefix,suffix);
+};
+
+/* ---------- 4. cabeçalho vazio ("# ") ----------
+   renderMarkdown exigia conteúdo depois do #, então o template padrão
+   virava <p># </p> e o primeiro texto digitado saía como "#Texto".
+   Agora "# " vira um <h1> editável e o caminho de volta preserva o "# ". */
+var v22BaseRenderMarkdown=renderMarkdown;
+renderMarkdown=function(md){
+  var linhas=String(md==null?'':md).replace(/\r\n?/g,'\n').split('\n'),emCodigo=false;
+  for(var i=0;i<linhas.length;i++){
+    if(/^```/.test(linhas[i])){emCodigo=!emCodigo;continue}
+    if(emCodigo)continue;
+    var m=linhas[i].match(/^(#{1,6})[ \t]*$/);
+    if(m)linhas[i]=m[1]+' \u0001';
+  }
+  return v22BaseRenderMarkdown(linhas.join('\n')).replace(/\u0001/g,'<br>');
+};
+var v22BaseFromVisual=markdownFromVisual;
+markdownFromVisual=function(root){
+  return v22BaseFromVisual(root).replace(/\u200b/g,'').replace(/^(#{1,6})[ \t]*$/gm,'$1 ');
+};
+
+/* ---------- 5. mapa.json só é gravado quando muda de verdade ----------
+   O campo "salvo" trazia a hora atual, então a comparação com o snapshot
+   nunca batia e cada rajada de digitação (120ms) regravava o mapa inteiro
+   no disco — caro na SAF do Android. */
+var v22MapaChave=null,v22MapaSalvo=null;
+var v22BaseEstado=estadoDesejado;
+estadoDesejado=function(){
+  var st=v22BaseEstado();
+  try{
+    var txt=st.arquivos.get('.urbe/mapa.json');
+    if(txt){
+      var o=JSON.parse(txt),salvo=o.salvo;
+      delete o.salvo;
+      var chave=JSON.stringify(o);
+      if(v22MapaChave===chave&&v22MapaSalvo)salvo=v22MapaSalvo;
+      else{v22MapaChave=chave;v22MapaSalvo=salvo}
+      o.salvo=salvo;
+      st.arquivos.set('.urbe/mapa.json',JSON.stringify(o,null,1));
+    }
+  }catch(_){ }
+  return st;
+};
+
+/* ---------- 6. binários não são regravados a cada abertura ----------
+   v21IndexBinary zerava snapBin e não o semeava de volta, então o primeiro
+   sync relia e reescrevia todas as imagens/PDFs do vault. */
+var v22BaseIndexBin=v21IndexBinary;
+v21IndexBinary=async function(nome,rels,regPorCaminho,mapa){
+  await v22BaseIndexBin(nome,rels,regPorCaminho,mapa);
+  snapBin=new Map();
+  for(var i=0;i<world.buildings.length;i++){
+    var b=world.buildings[i];if(b.tipo==='nota')continue;
+    var fs=b.files||b.anexos||[];
+    for(var j=0;j<fs.length;j++){var a=fs[j];if(a&&a.relPath)snapBin.set(a.relPath,assinaturaBin(a,a.relPath))}
+  }
+};
+
+/* ---------- 7. malha viária e validação de lote pelo índice espacial ----------
+   tileBlockedByBuilding, isHouseAccessGap e loteValido varriam
+   world.buildings inteiro. O A* chama os dois primeiros dezenas de milhares
+   de vezes por rota: com algumas centenas de notas o celular travava. */
+var v22Occ=null,v22Gap=null;
+tileBlockedByBuilding=function(x,y){
+  if(v22Occ)return v22Occ.has(K(x,y));
+  if(idxSujo)indexar();
+  var a=idxB.get(chk(x,y));if(!a)return false;
+  for(var i=0;i<a.length;i++){var b=a[i];if(x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h)return true}
+  return false;
+};
+isHouseAccessGap=function(x,y){
+  if(v22Gap)return v22Gap.has(K(x,y));
+  if(idxSujo)indexar();
+  /* o vão fica logo abaixo do lote e pode cair no chunk seguinte */
+  var chaves=[chk(x,y),chk(x,y-1)];
+  for(var k=0;k<chaves.length;k++){
+    var a=idxB.get(chaves[k]);if(!a)continue;
+    for(var i=0;i<a.length;i++){var b=a[i];if(x===Math.round(b.x+(b.w-1)/2)&&y===b.y+b.h)return true}
+  }
+  return false;
+};
+function v22LoteConflita(x,y,ign){
+  if(idxSujo)indexar();
+  var x0=x-8,y0=y-8,x1=x+8,y1=y+8;
+  for(var cy=Math.floor(y0/CH);cy<=Math.floor(y1/CH);cy++)
+    for(var cx=Math.floor(x0/CH);cx<=Math.floor(x1/CH);cx++){
+      var a=idxB.get(cx+':'+cy);if(!a)continue;
+      for(var i=0;i<a.length;i++){
+        var b=a[i];
+        if(ign&&ign.has(b.id))continue;
+        if(x<b.x+b.w+LOTE_GAP&&x+3+LOTE_GAP>b.x&&y<b.y+b.h+LOTE_GAP&&y+3+LOTE_GAP>b.y)return true;
+      }
+    }
+  return false;
+}
+loteValido=function(x,y,ignorarIds,r){
+  ignorarIds=ignorarIds||new Set();
+  for(var yy=y;yy<y+3;yy++)for(var xx=x;xx<x+3;xx++){
+    if(ehAgua(xx,yy))return false;
+    if(r){
+      if(!regionHasTile(r,xx,yy))return false;
+      var maisInterna=regAt({x:xx,y:yy});
+      if(maisInterna&&maisInterna.id!==r.id)return false;
+    }
+  }
+  if(!acessosLote(x,y,r).some(function(a){return a.ok}))return false;
+  return !v22LoteConflita(x,y,ignorarIds);
+};
+var v22BaseRebuild=rebuildRoadNetwork;
+rebuildRoadNetwork=function(){
+  v22Occ=new Set();v22Gap=new Set();
+  for(var i=0;i<world.buildings.length;i++){
+    var b=world.buildings[i];
+    for(var y=b.y;y<b.y+b.h;y++)for(var x=b.x;x<b.x+b.w;x++)v22Occ.add(K(x,y));
+    v22Gap.add(K(Math.round(b.x+(b.w-1)/2),b.y+b.h));
+  }
+  try{return v22BaseRebuild()}finally{v22Occ=null;v22Gap=null}
+};
+
+/* ---------- 7b. o gargalo real: A* com fila ordenada e BFS repetido ----------
+   O perfil de CPU ao abrir um vault de 120 notas mostrou routeAStar,
+   roadComponentFrom e ehAgua no topo. O A* reordenava a lista aberta inteira
+   a cada passo (open.sort) e a componente viária era refeita por BFS a cada
+   consulta. Aqui: heap binário, rótulos de componente reaproveitados enquanto
+   a malha não cresce, e memória para o ruído do terreno. */
+var v22AguaCache=new Map();
+ehAgua=function(x,y){
+  var k=x+','+y,v=v22AguaCache.get(k);
+  if(v!==undefined)return v;
+  v=suave(x,y,11)>.70;
+  if(v22AguaCache.size>150000)v22AguaCache.clear();
+  v22AguaCache.set(k,v);
+  return v;
+};
+var v22CompTam=-1,v22CompId=null,v22CompNos=null;
+function v22Componentes(){
+  if(v22CompId&&v22CompTam===world.roads.size)return;
+  v22CompId=new Map();v22CompNos=[];
+  world.roads.forEach(function(s){
+    if(v22CompId.has(s))return;
+    var idc=v22CompNos.length,lista=[],fila=[s];
+    v22CompId.set(s,idc);
+    while(fila.length){
+      var k=fila.pop(),c=k.indexOf(','),x=+k.slice(0,c),y=+k.slice(c+1);
+      lista.push({x:x,y:y});
+      var viz=[K(x+1,y),K(x-1,y),K(x,y+1),K(x,y-1)];
+      for(var j=0;j<4;j++){
+        var nk=viz[j];
+        if(world.roads.has(nk)&&!v22CompId.has(nk)){v22CompId.set(nk,idc);fila.push(nk)}
+      }
+    }
+    v22CompNos.push(lista);
+  });
+  v22CompTam=world.roads.size;
+}
+roadComponentFrom=function(start){
+  var sk=K(start.x,start.y);
+  if(!world.roads.has(sk))return null;
+  v22Componentes();
+  var idc=v22CompId.get(sk);
+  return idc==null?null:v22CompNos[idc];
+};
+roadConnectedBetweenBuildings=function(a,b){
+  var sa=lowerRoadStart(a),sb=lowerRoadStart(b),ka=K(sa.x,sa.y),kb=K(sb.x,sb.y);
+  if(!world.roads.has(ka)||!world.roads.has(kb))return false;
+  v22Componentes();
+  var ia=v22CompId.get(ka),ib=v22CompId.get(kb);
+  return ia!=null&&ia===ib;
+};
+routeAStar=function(start,goal){
+  var dirs=[[1,0],[-1,0],[0,1],[0,-1]],distBase=manhattan(start,goal),envelopes=[24,48,96,192,384];
+  for(var e=0;e<envelopes.length;e++){
+    var extra=envelopes[e];
+    var minX=Math.min(start.x,goal.x)-extra,maxX=Math.max(start.x,goal.x)+extra;
+    var minY=Math.min(start.y,goal.y)-extra,maxY=Math.max(start.y,goal.y)+extra;
+    var heap=[],melhor=new Map(),veio=new Map(),alvo=null,passos=0;
+    var chave=function(x,y,d){return x+','+y+','+d};
+    var empurra=function(no){
+      heap.push(no);
+      var i=heap.length-1;
+      while(i>0){var pai=(i-1)>>1;if(heap[pai].f<=heap[i].f)break;var t=heap[pai];heap[pai]=heap[i];heap[i]=t;i=pai}
+    };
+    var retira=function(){
+      var topo=heap[0],ult=heap.pop();
+      if(heap.length){
+        heap[0]=ult;var i=0;
+        for(;;){var l=2*i+1,r=l+1,m=i;
+          if(l<heap.length&&heap[l].f<heap[m].f)m=l;
+          if(r<heap.length&&heap[r].f<heap[m].f)m=r;
+          if(m===i)break;var t=heap[m];heap[m]=heap[i];heap[i]=t;i=m}
+      }
+      return topo;
+    };
+    empurra({x:start.x,y:start.y,d:-1,g:0,f:distBase});
+    melhor.set(chave(start.x,start.y,-1),0);
+    while(heap.length&&passos++<120000){
+      var cur=retira();
+      var ck=chave(cur.x,cur.y,cur.d);
+      if(cur.g>(melhor.has(ck)?melhor.get(ck):Infinity))continue;
+      if(cur.x===goal.x&&cur.y===goal.y){alvo=cur;break}
+      for(var nd=0;nd<4;nd++){
+        var x=cur.x+dirs[nd][0],y=cur.y+dirs[nd][1];
+        if(x<minX||x>maxX||y<minY||y>maxY||ehAgua(x,y)||isHouseAccessGap(x,y))continue;
+        if(tileBlockedByBuilding(x,y)&&!(x===goal.x&&y===goal.y))continue;
+        var reuso=world.roads.has(K(x,y)),curva=(cur.d!==-1&&cur.d!==nd)?1.35:0,passo=reuso?.06:1;
+        var g=cur.g+passo+curva,nk=chave(x,y,nd);
+        if(g<(melhor.has(nk)?melhor.get(nk):Infinity)){
+          melhor.set(nk,g);
+          var no={x:x,y:y,d:nd,g:g,f:g+manhattan({x:x,y:y},goal)};
+          veio.set(nk,{prev:cur,node:no});
+          empurra(no);
+        }
+      }
+    }
+    if(alvo){
+      var caminho=[],no2=alvo;
+      while(no2){caminho.push({x:no2.x,y:no2.y});var rec=veio.get(chave(no2.x,no2.y,no2.d));no2=rec?rec.prev:null}
+      return caminho.reverse();
+    }
+  }
+  return [];
+};
+
+/* ---------- 8. sanitização do Markdown ----------
+   A chave da API fica no IndexedDB desta origem; um .md importado não pode
+   ganhar execução de script por um link javascript: nem por HTML injetado
+   no nome de uma nota. */
+/* A versão anterior gerava <a target="_blank"> e só depois aplicava itálico:
+   com dois links no mesmo parágrafo, o regex de "_" casava de um _blank ao
+   outro e destruía o HTML. Aqui os trechos já convertidos ficam guardados
+   como marcadores até o fim, e as URLs passam por uma checagem de esquema. */
+function v22Enfase(t){
+  return t.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>')
+          .replace(/__([^_\n]+)__/g,'<strong>$1</strong>')
+          .replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g,'<em>$1</em>')
+          .replace(/(?<!_)_([^_\n]+)_(?!_)/g,'<em>$1</em>')
+          .replace(/~~([^~\n]+)~~/g,'<del>$1</del>');
+}
+function v22Url(u){
+  var t=String(u).replace(/&(?:#\d+|#x[0-9a-fA-F]+|\w+);/g,'').replace(/[\s\u0000-\u001f]/g,'').toLowerCase();
+  if(/^(javascript|vbscript|file):/.test(t))return '#';
+  if(/^data:/.test(t)&&!/^data:image\//.test(t))return '#';
+  return u;
+}
+inlineMarkdown=function(s){
+  var x=escapeHTML(s),guarda=[];
+  var guardar=function(html){guarda.push(html);return '\u0002'+(guarda.length-1)+'\u0002'};
+  x=x.replace(/\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]/g,function(m,alvo,rotulo){
+    var nome=(rotulo||alvo).trim();
+    return guardar('<span class="wikilink" data-note-name="'+escapeHTML(alvo.trim())+'">'+escapeHTML(nome)+'</span>');
+  });
+  x=x.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,function(m,alt,src){
+    return guardar('<img src="'+v22Url(src)+'" alt="'+alt+'">');
+  });
+  x=x.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,function(m,txt,href){
+    return guardar('<a href="'+v22Url(href)+'" target="_blank" rel="noopener">'+v22Enfase(txt)+'</a>');
+  });
+  x=x.replace(/`([^`\n]+)`/g,function(m,c){return guardar('<code>'+c+'</code>')});
+  x=v22Enfase(x);
+  return x.replace(/\u0002(\d+)\u0002/g,function(m,i){return guarda[+i]});
+};
+renderWikiSuggestions=function(){
+  if(!wikiState.open){wikiSuggest.classList.remove('open');wikiSuggest.innerHTML='';return}
+  wikiSuggest.classList.add('open');
+  if(!wikiState.items.length){
+    wikiSuggest.innerHTML='<div class="wikiEmpty">Nenhuma nota encontrada.</div>';
+    positionWikiPopup();return;
+  }
+  wikiSuggest.innerHTML=wikiState.items.map(function(b,i){
+    return '<button class="wikiItem '+(i===wikiState.index?'active':'')+'" data-wiki="'+escapeHTML(b.id)+'" role="option">'+escapeHTML(b.name)+'</button>';
+  }).join('');
+  wikiSuggest.querySelectorAll('[data-wiki]').forEach(function(el){
+    el.addEventListener('pointerdown',function(e){
+      e.preventDefault();
+      var b=world.buildings.find(function(x){return x.id===el.dataset.wiki});
+      if(b)commitWikiSuggestion(b);
+    });
+  });
+  positionWikiPopup();
+};
+commitWikiSuggestion=function(b){
+  if(!wikiState.open)return;
+  var inicio=wikiState.start,fim=bodyEditor.selectionStart;
+  bodyEditor.setRangeText('[['+b.name+']]',inicio,fim,'end');
+  wikiState={open:false,start:-1,query:'',items:[],index:0};
+  renderWikiSuggestions();bodyEditor.focus();markChanged();
+};
+
+/* ---------- 9. contexto da IA à prova de nota sem conteúdo ---------- */
+var v22BaseCtx=v21ContextMessages;
+v21ContextMessages=function(){
+  for(var i=0;i<world.buildings.length;i++){
+    var b=world.buildings[i];
+    if(b.tipo==='nota'&&typeof b.content!=='string')b.content='';
+  }
+  return v22BaseCtx();
+};
+
+/* ---------- 10. detalhes do painel de IA ---------- */
+var v22BaseInitAi=v21InitAiUi;
+v21InitAiUi=function(){
+  v22BaseInitAi();
+  var i=document.getElementById('chatInput');
+  if(i&&!i.placeholder)i.placeholder='Revisar, organizar, explicar, reescrever…';
+};
+v21InitAiUi();
 
 
 /* ---------- boot ---------- */

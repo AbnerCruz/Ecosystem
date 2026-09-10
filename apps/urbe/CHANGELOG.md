@@ -1,5 +1,44 @@
 # Urbe — Changelog
 
+## v0.22.0 — 2026-09-09
+
+Correções sobre a v0.21, todas aplicadas como um bloco de patch no fim do
+script (mesma convenção das versões anteriores) mais um bloco de CSS.
+
+Bugs corrigidos
+- Abrir um arquivo pelo Explorador deixava o painel do Explorador (tela cheia,
+  z-index 65) por cima do editor (z-index 50): o editor abria invisível e
+  nenhum botão do cabeçalho recebia toque. Agora o Explorador fecha ao abrir.
+- A barra de abas do editor era injetada sem linha de grid e caía no rodapé,
+  sobre a barra de status. Ganhou linha própria e some quando há um só arquivo.
+- A toolbar Markdown continuava visível no modo visual e seus botões escreviam
+  no textarea escondido, injetando o texto cru no arquivo.
+- O texto "Salvando..." mudava a largura do cabeçalho entre o toque e o soltar
+  do dedo, e o botão de alternar fonte/visual escapava do dedo.
+- O template `# ` era renderizado como parágrafo, então o primeiro texto
+  digitado saía como `#Texto` em vez de virar título.
+- Os botões de mover e excluir do Explorador ficavam sempre visíveis: o
+  atributo `hidden` perdia para o `display:grid` da classe.
+- Dois links no mesmo parágrafo quebravam o HTML — o regex de itálico casava
+  de um `target="_blank"` ao outro.
+- Links `javascript:`, `vbscript:` e `data:` não-imagem passavam direto para o
+  preview; nomes de nota não eram escapados no autocompletar em modo fonte.
+- `mapa.json` era regravado a cada 120 ms de digitação porque o campo `salvo`
+  sempre mudava. Agora só grava quando o conteúdo do mapa muda de verdade.
+- Ao abrir um vault, o snapshot de binários era zerado e não semeado: todas as
+  imagens e PDFs eram relidos e reescritos no primeiro sync.
+- HUD e selo de sincronização colidiam com o minimapa.
+- O seletor de ordenação de modelos da IA estava escondido no celular.
+
+Desempenho
+- Abrir um vault de 120 notas com wiki-links: de 103 s para 6,2 s.
+  - `routeAStar` usava `open.sort()` a cada passo; agora usa heap binário.
+  - `roadComponentFrom` refazia um BFS da malha inteira a cada consulta; agora
+    os rótulos de componente são reaproveitados enquanto a malha não cresce.
+  - `tileBlockedByBuilding`, `isHouseAccessGap` e `loteValido` varriam
+    `world.buildings` inteiro; passaram a usar o índice por chunk.
+  - `ehAgua` ganhou memória para o ruído do terreno.
+
 ## v0.21.0 — 2026-09-09
 
 - Refeito o menu principal para linguagem visual pixel art, com versão visível, lista de vaults, criação pelo botão `+`, exclusão segura e indicador de carregamento.
