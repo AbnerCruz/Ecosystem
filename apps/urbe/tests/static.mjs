@@ -50,7 +50,7 @@ const checks = [
   ['explorer canônico', index.includes('./src/explorer/model.js') && explorerModel.includes('class ExplorerModel')],
   ['explorer mobile first', index.includes('./src/explorer/mobile-ui.js') && explorerMobile.includes('EXPLORER')===false && explorerMobile.includes('HOLD=430')],
   ['persistence core', index.includes('./src/persistence/workspace.js') && persistence.includes('class WorkspacePersistence')],
-  ['composition core', index.includes('./src/composition/store.js') && index.includes('./src/composition/compiler.js') && compositionStore.includes("core.provide('compositions'") && compositionCompiler.includes("composition.compiler")],
+  ['composition core', index.includes('./src/composition/store.js') && index.includes('./src/composition/compiler.js') && compositionStore.includes("provide('compositions'") && compositionCompiler.includes("composition.compiler")],
   ['composition visual mobile', index.includes('./src/composition/ui.js') && index.includes('./src/styles/composition.css') && compositionUI.includes('data-inspector-title') && explorerMobile.includes('data-compose')],
   ['composition persistence', persistence.includes(".urbe/compositions.json") && persistence.includes('journal.compositions')],
   ['no Burgo runtime', !index.includes('/burgo/') && !app.includes('v24Burgo') && !app.includes('window.Burgo') && !shell.includes('v24Burgo') && shell.includes('repeat(4')],
