@@ -3,6 +3,7 @@ import fs from 'node:fs';
 const read = p => fs.readFileSync(new URL('../'+p, import.meta.url), 'utf8');
 const index = read('index.html');
 const app = read('src/app.js');
+const shell = read('src/styles/shell.css');
 const core = read('src/core/core.js');
 const keymap = read('src/core/keymap.js');
 const palette = read('src/ui/command-palette.js');
