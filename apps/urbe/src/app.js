@@ -4246,13 +4246,7 @@ function v24AtualizarCasca(){
   var aberto=!!(v24Painel&&v24Painel.classList.contains('open'));
   document.body.classList.toggle('v24Burgando',aberto);
 }
-setInterval(function(){
-  v24AtualizarCasca();
-  if(!sim)return;
-  var novos=v24Avancar();
-  if(novos&&v24Painel.classList.contains('open'))v24Render();
-  else if(v24Painel.classList.contains('open'))v24Progresso();
-},1000);
+(function(){var scheduler=window.UrbeCore&&window.UrbeCore.service('scheduler');var tick=function(){v24AtualizarCasca();if(!sim)return;var novos=v24Avancar();if(novos&&v24Painel.classList.contains('open'))v24Render();else if(v24Painel.classList.contains('open'))v24Progresso()};if(scheduler)scheduler.add('legacy.burgo',tick,{interval:1000,whenVisible:false});else setInterval(tick,1000)})();
 
 /* superfície mínima para inspeção e testes, já que todo o app vive num IIFE */
 window.Burgo={get sim(){return sim},avancar:function(){return v24Avancar()},render:function(){return v24Render()},sincronizar:function(){return v24Sincronizar()},chave:function(){return v24Chave()},lista:function(){return v24Lista()}};
@@ -4498,7 +4492,7 @@ function v25Ciclo(){
   v25Passo(V25_FPS/1000);
   pedirDesenho();
 }
-v25Relogio=setInterval(v25Ciclo,V25_FPS);
+(function(){var scheduler=window.UrbeCore&&window.UrbeCore.service('scheduler');if(scheduler)scheduler.add('aquarium.pedestrians',v25Ciclo,{interval:V25_FPS,whenVisible:true});else v25Relogio=setInterval(v25Ciclo,V25_FPS)})();
 
 /* Gancho de inspeção: tudo do app vive dentro de uma IIFE, o que torna
    impossível testar de fora. Estes acessos são só de leitura e existem
