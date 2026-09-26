@@ -12,7 +12,7 @@
       if(trash){try{trash.import(JSON.parse(await this.adapter.read(vault,'.urbe/trash.json')||'null'))}catch(_){trash.import(null)}}
       var notesMeta=(meta&&meta.notas)||{},items=[];
       for(var i=0;i<md.length;i++){var path=md[i],m=notesMeta[path]||{};items.push({id:m.id||null,path:path,content:(await this.adapter.read(vault,path))||'',created:m.criado||null,modified:m.modificado||null})}
-      if(journal&&journal.version===1&&Array.isArray(journal.documents)){var byPath=new Map(items.map(function(d){return[d.path,d]}));journal.documents.forEach(function(d){if(d&&d.path)byPath.set(d.path,d)});items=Array.from(byPath.values());this.events.emit('workspace:recovered',{vault:vault,count:journal.documents.length,timestamp:journal.timestamp||null})}
+      if(journal&&journal.version===1&&Array.isArray(journal.documents)){items=journal.documents.filter(function(d){return d&&d.path});this.events.emit('workspace:recovered',{vault:vault,count:items.length,timestamp:journal.timestamp||null})}
       this.store.replaceAll(items,{source:'persistence.load',vault:vault});this.meta=meta||{};this.snapshot=new Map(items.map(function(d){return[d.path,d.content]}));this.suspended=false;
       this.events.emit('workspace:loaded',{vault:vault,documents:this.store.list(),metadata:meta,paths:paths});return{vault:vault,documents:this.store.list(),metadata:meta,paths:paths}
     }
