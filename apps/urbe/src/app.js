@@ -1370,7 +1370,7 @@ function loadFile(b){wikiState={open:false,start:-1,query:"",items:[],index:0};r
 function openFullEditor(b){closeHouseSummary();editorFull.classList.add("open");setEditorViewMode("preview");loadFile(b)}
 function closeFullEditor(){wikiState={open:false,start:-1,query:"",items:[],index:0};renderWikiSuggestions();editorFull.classList.remove("open");fileSidebar.classList.remove("open");currentFile=null}
 document.getElementById("closeFullEditor").onclick=closeFullEditor;
-document.getElementById("sidebarToggleMobile").onclick=()=>fileSidebar.classList.add("open");
+document.getElementById("sidebarToggleMobile").onclick=()=>{var c=window.UrbeCore&&window.UrbeCore.commands;if(c&&c.has("ui.explorer.open"))c.execute("ui.explorer.open",{source:"editor"});else fileSidebar.classList.add("open")};
 document.getElementById("closeSidebar").onclick=()=>fileSidebar.classList.remove("open");
 function markChanged(){
   if(!currentFile)return;
@@ -3748,7 +3748,7 @@ function v23Navegar(dest){
     fecharMenu();closeFilePreview();closeHouseSummary();
   }else if(dest==='arquivos'){
     aiPanel.classList.remove('open');fecharMenu();closeFilePreview();closeHouseSummary();
-    buildTree();fileSidebar.classList.add('open');
+    var exCmd=window.UrbeCore&&window.UrbeCore.commands;if(exCmd&&exCmd.has('ui.explorer.open'))exCmd.execute('ui.explorer.open',{source:'navigation'});else{buildTree();fileSidebar.classList.add('open');}
   }else if(dest==='ia'){
     fileSidebar.classList.remove('open');fecharMenu();
     document.getElementById('openAI').click();
