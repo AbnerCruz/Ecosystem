@@ -30,7 +30,7 @@
   }
   function render(){
     var q=(input.value||'').trim().toLowerCase();
-    visible=core.commands.list().map(function(c){return {command:c,score:score(c,q)}}).filter(function(x){return x.score>0&&x.command.enabled({source:'palette'})}).sort(function(a,b){return b.score-a.score||a.command.title.localeCompare(b.command.title)}).map(function(x){return x.command}).slice(0,40);
+    visible=core.commands.list().map(function(c){return {command:c,score:score(c,q)}}).filter(function(x){return x.score>0&&x.command.enabled({source:'palette'})}).sort(function(a,b){return b.score-a.score||a.command.title.localeCompare(b.command.title)}).map(function(x){return x.command}).filter(function(c,i,all){var key=(c.category||'')+'|'+c.title;return !all.some(function(o,j){return j>i&&(o.category||'')+'|'+o.title===key})}).slice(0,40);
     active=Math.min(active,Math.max(0,visible.length-1));
     list.innerHTML=visible.length?visible.map(function(c,i){return '<button type="button" class="ucp-item'+(i===active?' active':'')+'" data-command="'+escapeHtml(c.id)+'" role="option" aria-selected="'+(i===active)+'"><span>'+escapeHtml(c.title)+'</span><small>'+escapeHtml(c.category)+'</small></button>'}).join(''):'<div class="ucp-empty">Nenhum comando encontrado</div>';
     Array.prototype.forEach.call(list.querySelectorAll('[data-command]'),function(el){el.addEventListener('click',function(){run(el.getAttribute('data-command'))})});

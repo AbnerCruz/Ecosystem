@@ -1,5 +1,14 @@
 # Urbe — Changelog
 
+## v0.37.1 — Correções de integridade do editor e do save (2026-09-26)
+
+- Editor Visual: o texto digitado agora chega ao DocumentStore; antes a reconciliação do save descartava a edição e a nota voltava vazia ao recarregar.
+- O aviso “Esta nota está vazia.” passou a ser só visual (CSS) e não é mais gravado nem misturado ao texto digitado.
+- Excluir uma nota aberta no editor não a recria mais ao fechar/desfocar o editor.
+- Operações pendentes no debounce do save são gravadas ao fechar o app ou ir para segundo plano.
+- A primeira instalação do service worker não recarrega mais a página (o que descartava o que foi criado nos primeiros instantes).
+- Abrir um documento por qualquer comando fecha o Explorer móvel; a paleta não lista comandos duplicados.
+
 ## v0.37.0 — Vault único e integração móvel (2026-09-26)
 
 - O app abre diretamente um vault `Urbe`; cidades legadas são copiadas para `Cidades/<nome>` sem apagar as origens, com marcador de migração retomável.

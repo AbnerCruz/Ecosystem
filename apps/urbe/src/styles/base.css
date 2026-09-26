@@ -699,3 +699,5 @@ button,input,textarea,select{border-radius:0!important}
 .v21AiControls select,.v21AiControls button{height:44px!important}
 #aiPanel .chatInput textarea{min-height:52px;font-size:14px}
 #aiPanel .chatInput .btn{min-height:52px;min-width:80px;background:var(--v23-accent)!important;color:var(--v23-accent-ink)!important;border:0!important;font-weight:700}
+#renderedPreview.isEmpty{position:relative}
+#renderedPreview.isEmpty::before{content:"Esta nota está vazia.";position:absolute;top:.7em;left:0;color:#8296a3;pointer-events:none}
