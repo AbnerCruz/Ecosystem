@@ -4537,6 +4537,7 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
     if(!core.commands.has(item[0]))core.commands.register(item[0],{title:item[1],category:item[2],execute:item[3]});
   });
 
+  core.events.on('editor:navigation',function(evt){if(evt&&evt.id)core.commands.execute('document.open',{id:evt.id,source:'history'});});
   core.events.on('command:after',function(evt){
     if(evt.id.indexOf('workspace.navigate.')===0){
       core.state.patch({mode:evt.id.slice('workspace.navigate.'.length)},{source:evt.id});
