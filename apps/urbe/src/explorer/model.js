@@ -6,8 +6,10 @@
   function basename(p){p=norm(p);var i=p.lastIndexOf('/');return i<0?p:p.slice(i+1)}
   function folderId(path){return'folder:'+norm(path)}
   class ExplorerModel{
-    constructor(events,store){this.events=events;this.store=store;this.selection=new Set();this.favorites=new Set();this.recent=[];this.expanded=new Set(['']);this.revision=0;events.on('document:created',()=>this.changed('documents'));events.on('document:updated',()=>this.changed('documents'));events.on('document:removed',()=>this.changed('documents'));events.on('documents:reset',()=>this.changed('documents'))}
-    changed(type){this.revision++;this.events.emit('explorer:changed',{type:type,revision:this.revision,selection:this.selected()})}
+    constructor(events,store){this.events=events;this.store=store;this.selection=new Set();this.favorites=new Set();this.recent=[];this.expanded=new Set(['']);this.revision=0;this.storageKey='urbe.explorer.v2';this.restore();events.on('document:created',()=>this.changed('documents'));events.on('document:updated',()=>this.changed('documents'));events.on('document:removed',()=>this.changed('documents'));events.on('documents:reset',()=>this.changed('documents'))}
+    persist(){try{if(global.localStorage)global.localStorage.setItem(this.storageKey,JSON.stringify({favorites:Array.from(this.favorites),recent:this.recent,expanded:Array.from(this.expanded)}))}catch(_){}}
+    restore(){try{if(!global.localStorage)return;var x=JSON.parse(global.localStorage.getItem(this.storageKey)||'null');if(!x)return;this.favorites=new Set(x.favorites||[]);this.recent=(x.recent||[]).slice(0,30);this.expanded=new Set(x.expanded||['']);this.expanded.add('')}catch(_){}}
+    changed(type){if(type!=='selection')this.persist();this.revision++;this.events.emit('explorer:changed',{type:type,revision:this.revision,selection:this.selected()})}
     tree(){var root={id:folderId(''),kind:'folder',name:'Workspace',path:'',children:[]},folders=new Map([['',root]]);
       function ensure(path){path=norm(path);if(folders.has(path))return folders.get(path);var parent=ensure(dirname(path)),node={id:folderId(path),kind:'folder',name:basename(path),path:path,children:[]};folders.set(path,node);parent.children.push(node);return node}
       this.store.list().forEach(function(d){var parent=ensure(dirname(d.path));parent.children.push({id:d.id,kind:'document',name:d.title,path:d.path,document:d})});
