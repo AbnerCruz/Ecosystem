@@ -70,3 +70,4 @@ jobs:
           node tests/editor-persistence.mjs
           node tests/ui-shell.mjs
           node tests/search-editor.mjs
+          node tests/city.mjs

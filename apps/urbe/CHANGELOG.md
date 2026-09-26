@@ -1,5 +1,14 @@
 # Urbe — Changelog
 
+## v0.40.0 — Redesenho, fase 3: a cidade (2026-09-26)
+
+- Chão sem a “grade”: os tiles de grama e água traziam uma faixa escura herdada da folha de sprites; agora só a área limpa é usada, com contraste suavizado.
+- Ruas desenhadas como caminhos contínuos que se conectam aos vizinhos (antes, ruas horizontais apareciam como blocos soltos).
+- Nomes das casas e das pastas em pílulas com a fonte da interface; notas Markdown sem a extensão; a seleção virou um halo arredondado na cor de destaque.
+- A cidade abre enquadrando as notas quando há casas fora da tela; novo comando “Enquadrar todas as notas”.
+- Toda nota vira casa na hora, venha de onde vier (Notas, busca, lixeira), sem duplicar a casa criada pela própria cidade.
+- Ruas agora são refeitas ao abrir o vault (antes sumiam depois de recarregar) e quando links mudam fora do editor.
+
 ## v0.39.0 — Redesenho, fase 2: escrever e encontrar (2026-09-26)
 
 - Menu “/” no editor Visual: Título 1–3, Lista, Tarefa, Citação, Divisória, Link para nota e Link externo, com filtro por digitação e teclado (↑ ↓ Enter Esc).
