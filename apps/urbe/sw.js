@@ -11,6 +11,8 @@ const APP_SHELL = [
   './src/core/core.js',
   './src/core/documents.js',
   './src/core/knowledge-index.js',
+  './src/persistence/workspace.js',
+  './src/world/projection.js',
   './src/explorer/model.js',
   './src/explorer/operations.js',
   './src/explorer/mobile-ui.js',
