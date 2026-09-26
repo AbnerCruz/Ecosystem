@@ -4538,6 +4538,21 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
   });
 
   core.events.on('editor:navigation',function(evt){if(evt&&evt.id)core.commands.execute('document.open',{id:evt.id,source:'history'});});
+  /* Operações canônicas do Explorer são refletidas no vault legado durante a migração. */
+  core.events.on('explorer:operation',function(evt){
+    if(!evt)return;
+    if(evt.type==='rename'||evt.type==='move'){
+      var from=evt.from,to=evt.to,b=world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===from.title.toLowerCase()});
+      if(b){b.name=to.title;b.content=to.content;b.modified=nowDate();buildTree();agendarSalvar();marcarSinc()}
+    }else if(evt.type==='duplicate'&&evt.to){
+      /* A projeção geográfica completa será criada pelo fluxo de criação legado até WorldSystem assumir esta responsabilidade. */
+      agendarSalvar();marcarSinc();
+    }else if(evt.type==='delete'){
+      var names=new Set((evt.documents||[]).map(function(d){return d.title.toLowerCase()}));
+      world.buildings=world.buildings.filter(function(b){return b.tipo!=='nota'||!names.has(b.name.toLowerCase())});
+      buildTree();indexar();counts();scheduleRoadRebuild();agendarSalvar();marcarSinc();
+    }
+  });
   core.events.on('command:after',function(evt){
     if(evt.id.indexOf('workspace.navigate.')===0){
       core.state.patch({mode:evt.id.slice('workspace.navigate.'.length)},{source:evt.id});
