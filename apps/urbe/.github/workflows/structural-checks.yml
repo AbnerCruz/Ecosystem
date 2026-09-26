@@ -43,6 +43,8 @@ jobs:
           node --check src/core/keymap.js
           node --check src/ui/command-palette.js
           node --check src/ui/quick-open.js
+          node --check src/ui/icons.js
+          node --check src/ui/dialogs.js
           node --check src/app.js
           node --check sw.js
       - name: Structural invariants
@@ -64,3 +66,4 @@ jobs:
           node tests/integration-runtime.mjs
           node tests/app-loader.mjs
           node tests/editor-persistence.mjs
+          node tests/ui-shell.mjs

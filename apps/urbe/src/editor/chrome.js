@@ -12,7 +12,7 @@
   }
   function renderTabs(){
     ensure();if(!tabs)return;var items=session.listTabs();
-    tabs.innerHTML=items.map(function(t){return '<button type="button" role="tab" class="uec-tab'+(t.id===session.activeId?' active':'')+'" data-tab="'+esc(t.id)+'"><span>'+esc(t.document.title)+'</span><i data-x="'+esc(t.id)+'">×</i></button>'}).join('')+'<button type="button" class="uec-context-btn" title="Outline e backlinks" aria-label="Outline e backlinks">☷</button>';
+    tabs.innerHTML=items.map(function(t){return '<button type="button" role="tab" class="uec-tab'+(t.id===session.activeId?' active':'')+'" data-tab="'+esc(t.id)+'"><span>'+esc(t.document.title)+'</span><i data-x="'+esc(t.id)+'">×</i></button>'}).join('')+'<button type="button" class="uec-context-btn" title="Estrutura e backlinks" aria-label="Estrutura e backlinks">'+(global.UrbeIcons?global.UrbeIcons.icon('list'):'☷')+'</button>';tabs.classList.toggle('uec-single',items.length<2);
     Array.prototype.forEach.call(tabs.querySelectorAll('[data-tab]'),function(el){el.onclick=function(e){if(e.target.hasAttribute('data-x'))return;var doc=session.activate(el.getAttribute('data-tab'));if(doc)core.commands.execute('document.open',{id:doc.id,source:'tab'})}});
     Array.prototype.forEach.call(tabs.querySelectorAll('[data-x]'),function(el){el.onclick=function(e){e.stopPropagation();var id=el.getAttribute('data-x'),was=id===session.activeId;session.close(id);renderTabs();if(was&&session.active()){core.commands.execute('document.open',{id:session.activeId,source:'tab-close'})}}});
     var btn=tabs.querySelector('.uec-context-btn');if(btn)btn.onclick=renderContext;
