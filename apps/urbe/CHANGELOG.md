@@ -1,5 +1,17 @@
 # Urbe — Changelog
 
+## v0.32.0 — Persistence Core and World Projection (2026-09-26)
+
+- Added a canonical workspace persistence service with pluggable storage adapters.
+- Vault loading now hydrates canonical documents before the aquarium is projected.
+- Markdown save state is derived from DocumentStore instead of buildings.
+- Added a WorldProjection service that owns spatial metadata without owning note content.
+- Spatial state remains isolated in .urbe/mapa.json while Markdown remains clean.
+- The legacy FSA/IndexedDB layer now acts as a persistence adapter during migration.
+- Added world enable/disable and spatial move commands.
+- Verified that documents can load, change and save with the aquarium disabled.
+- Added automated persistence/world separation tests.
+
 ## v0.31.0 — Mobile-first Explorer Core (2026-09-26)
 
 - Added a document-first Explorer tree independent from aquarium buildings and regions.
