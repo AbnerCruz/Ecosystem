@@ -1,5 +1,14 @@
 # Urbe — Changelog
 
+## v0.27.0 — Workspace Core foundation (2026-09-26)
+
+- Reframed the runtime around a local-first workspace core; the city is an integrated spatial aquarium rather than the authority over documents.
+- Added `EventBus`, `CommandRegistry`, `StateStore` and service registry in `src/core/core.js`.
+- Added the first compatibility bridge for navigation, document creation, folder creation and workspace saving.
+- Added behavioral core tests and CI syntax coverage.
+- Fixed the v0.26 shell extraction: restored valid `shell.css` content and loaded it from `index.html`.
+- Added the core asset to the offline application shell.
+
 ## v0.26.0 — 2026-09-26
 
 Fundação estrutural para desmontar o monólito sem alterar o produto.
