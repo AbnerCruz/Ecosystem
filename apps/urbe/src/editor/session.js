@@ -14,11 +14,11 @@
       this.activeId=doc.id;this.ensureHistory(doc);this.events.emit('editor:session',{type:'open',document:doc,tabs:this.listTabs(),activeId:this.activeId});return doc;
     }
     close(id){
-      var i=this.tabs.findIndex(t=>t.id===id);if(i<0)return false;var was=this.activeId===id;this.tabs.splice(i,1);
+      var resolved=this.store.get(id),target=resolved?resolved.id:id;var i=this.tabs.findIndex(t=>t.id===target);if(i<0)return false;var was=this.activeId===target;this.tabs.splice(i,1);
       if(was)this.activeId=this.tabs[Math.min(i,this.tabs.length-1)]?.id||null;
-      this.events.emit('editor:session',{type:'close',id:id,tabs:this.listTabs(),activeId:this.activeId});return true;
+      this.events.emit('editor:session',{type:'close',id:target,tabs:this.listTabs(),activeId:this.activeId});return true;
     }
-    activate(id){if(!this.tabs.some(t=>t.id===id))return this.open(id);this.activeId=id;this.events.emit('editor:session',{type:'activate',id:id,tabs:this.listTabs(),activeId:id});return this.store.get(id);}
+    activate(id){var d=this.store.get(id),target=d?d.id:id;if(!this.tabs.some(t=>t.id===target))return this.open(id);this.activeId=target;this.events.emit('editor:session',{type:'activate',id:target,tabs:this.listTabs(),activeId:target});return this.store.get(target);}
     active(){return this.activeId?this.store.get(this.activeId):null;}
     listTabs(){return this.tabs.map(t=>({id:t.id,pinned:t.pinned,document:this.store.get(t.id)})).filter(t=>t.document);}
     pin(id,value){var t=this.tabs.find(x=>x.id===id);if(!t)return false;t.pinned=value!==false;this.events.emit('editor:session',{type:'pin',id:id,tabs:this.listTabs(),activeId:this.activeId});return true;}
