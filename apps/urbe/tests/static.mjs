@@ -50,6 +50,7 @@ const checks = [
   ['aquarium world system', index.includes('./src/world/system.js') && worldSystem.includes('class AquariumWorld')],
   ['incremental road graph', index.includes('./src/world/roads.js') && roads.includes('class RoadGraph')],
   ['scheduler aquarium renderer', index.includes('./src/world/renderer.js') && renderer.includes('class AquariumRenderer')],
+  ['scheduler loads before renderer', index.indexOf('./src/core/scheduler.js') < index.indexOf('./src/world/renderer.js')],
   ['mobile touch controller', index.includes('./src/world/touch.js') && touch.includes('class TouchController')],
   ['shared scheduler', index.includes('./src/core/scheduler.js') && scheduler.includes('class Scheduler')],
   ['burgo downstream', index.includes('./src/burgo/projection.js') && burgoProjection.includes('class BurgoProjection')],
