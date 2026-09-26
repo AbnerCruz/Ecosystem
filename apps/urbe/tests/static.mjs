@@ -13,6 +13,8 @@ const editorContext = read('src/editor/context.js');
 const editorChrome = read('src/editor/chrome.js');
 const editorWorkspace = read('src/editor/workspace.js');
 const editorSplit = read('src/editor/split.js');
+const explorerModel = read('src/explorer/model.js');
+const explorerMobile = read('src/explorer/mobile-ui.js');
 const sw = read('sw.js');
 
 const checks = [
@@ -33,12 +35,14 @@ const checks = [
   ['editor chrome', index.includes('./src/editor/chrome.js') && editorChrome.includes('urbeEditorChrome')],
   ['editor workspace', index.includes('./src/editor/workspace.js') && editorWorkspace.includes('editor.workspace')],
   ['editor split', index.includes('./src/editor/split.js') && index.includes('./src/editor/split-ui.js') && editorSplit.includes('editor.split')],
+  ['explorer canônico', index.includes('./src/explorer/model.js') && explorerModel.includes('class ExplorerModel')],
+  ['explorer mobile first', index.includes('./src/explorer/mobile-ui.js') && explorerMobile.includes('EXPLORER')===false && explorerMobile.includes('HOLD=430')],
   ['atalhos unificados', index.includes('./src/core/keymap.js') && keymap.includes("ui.commandPalette.open")],
   ['command palette', index.includes('./src/ui/command-palette.js') && palette.includes("ui.commandPalette.open")],
   ['quick open indexado', index.includes('./src/ui/quick-open.js') && keymap.includes("ui.quickOpen.open")],
   ['cache app', sw.includes("'./src/app.js'")],
   ['cache core', sw.includes("'./src/core/core.js'")],
-  ['cache conhecimento', sw.includes("'./src/core/documents.js'") && sw.includes("'./src/core/knowledge-index.js'") && sw.includes("'./src/editor/session.js'") && sw.includes("'./src/editor/context.js'") && sw.includes("'./src/editor/chrome.js'") && sw.includes("'./src/editor/workspace.js'") && sw.includes("'./src/editor/split.js'") && sw.includes("'./src/editor/split-ui.js'")],
+  ['cache conhecimento', sw.includes("'./src/core/documents.js'") && sw.includes("'./src/core/knowledge-index.js'") && sw.includes("'./src/editor/session.js'") && sw.includes("'./src/editor/context.js'") && sw.includes("'./src/editor/chrome.js'") && sw.includes("'./src/explorer/model.js'") && sw.includes("'./src/explorer/mobile-ui.js'") && sw.includes("'./src/editor/workspace.js'") && sw.includes("'./src/editor/split.js'") && sw.includes("'./src/editor/split-ui.js'")],
   ['cache comandos', sw.includes("'./src/core/keymap.js'") && sw.includes("'./src/ui/command-palette.js'") && sw.includes("'./src/ui/quick-open.js'")],
   ['cache css', sw.includes("'./src/styles/base.css'") && sw.includes("'./src/styles/shell.css'")],
   ['cache versionado', sw.includes('urbe-shell-v0.30.0')],
