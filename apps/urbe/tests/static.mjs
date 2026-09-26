@@ -4,6 +4,8 @@ const read = p => fs.readFileSync(new URL('../'+p, import.meta.url), 'utf8');
 const index = read('index.html');
 const app = read('src/app.js');
 const core = read('src/core/core.js');
+const keymap = read('src/core/keymap.js');
+const palette = read('src/ui/command-palette.js');
 const sw = read('sw.js');
 
 const checks = [
@@ -17,8 +19,11 @@ const checks = [
   ['ponte de comandos', app.includes("workspace.navigate.world") && app.includes("document.create") && app.includes("workspace.save")],
   ['diagnóstico Burgo', app.includes('window.Burgo')],
   ['core contratos', core.includes('class EventBus') && core.includes('class CommandRegistry') && core.includes('class StateStore')],
+  ['atalhos unificados', index.includes('./src/core/keymap.js') && keymap.includes("ui.commandPalette.open")],
+  ['command palette', index.includes('./src/ui/command-palette.js') && palette.includes("ui.commandPalette.open")],
   ['cache app', sw.includes("'./src/app.js'")],
   ['cache core', sw.includes("'./src/core/core.js'")],
+  ['cache comandos', sw.includes("'./src/core/keymap.js'") && sw.includes("'./src/ui/command-palette.js'")],
   ['cache css', sw.includes("'./src/styles/base.css'") && sw.includes("'./src/styles/shell.css'")],
   ['cache versionado', sw.includes('urbe-shell-v0.27.0')],
   ['sem runtime principal inline', !index.includes('V25_MAX=18')]
