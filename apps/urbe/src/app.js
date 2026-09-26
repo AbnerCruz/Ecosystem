@@ -1766,17 +1766,17 @@ function exigirJSZip(){return carregarJSZip()}
 
 /* ---------- vault: exportação ---------- */
 async function exportarVault(){
-  if(!world.buildings.length){toast("Nada para exportar.");return}
-  const JSZipLib=await exigirJSZip();
-  const zip=new JSZipLib();
-  for(const b of world.buildings){
-    const r=world.regions.find(x=>x.id===b.regionId);
-    const pasta=r?caminhoRegiao(r).map(x=>slug(x.name)).join("/"):"";
-    const dir=pasta?zip.folder(pasta):zip;
-    if(b.tipo==="nota")dir.file(slug(b.name)+extNota(b),b.content||"");
-    for(const a of (b.anexos||[])){
-      if(a.cacheId){try{const blob=await DBK.bGet(a.cacheId);if(blob){dir.file(a.nome,blob);continue}}catch(_){}}
-      if(a.dataUrl)dir.file(a.nome,a.dataUrl.split(",")[1],{base64:true});
+  const docs=window.UrbeCore&&window.UrbeCore.service('documents');
+  const documents=docs?docs.list():[];
+  if(!documents.length){toast("Nada para exportar.");return}
+  const JSZipLib=await exigirJSZip(),zip=new JSZipLib();
+  for(const d of documents){
+    zip.file(d.path,d.content||"");
+    const b=world.buildings.find(x=>x.tipo==="nota"&&x.documentId===d.id);
+    for(const a of ((b&&b.anexos)||[])){
+      const dir=d.path.includes("/")?d.path.slice(0,d.path.lastIndexOf("/")+1):"";
+      if(a.cacheId){try{const blob=await DBK.bGet(a.cacheId);if(blob){zip.file(dir+a.nome,blob);continue}}catch(_){}}
+      if(a.dataUrl)zip.file(dir+a.nome,a.dataUrl.split(",")[1],{base64:true});
     }
   }
   baixarBlob(await zip.generateAsync({type:"blob"}),"vault.zip");
