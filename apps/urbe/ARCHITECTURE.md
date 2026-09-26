@@ -48,3 +48,33 @@ Antes de cada extração:
 ## Estratégia
 
 A v0.26 é a fundação: separa documento, estilos e runtime, adiciona verificação automática e documenta fronteiras. As próximas extrações devem mover um domínio por vez e substituir wrappers históricos por um único ponto de implementação, nunca criar novos patches de versão no fim do arquivo.
+
+
+## Workspace Core — v0.27 foundation
+
+Urbe is treated as a local-first knowledge application with an integrated spatial aquarium, not as a game that happens to contain an editor.
+
+The canonical dependency direction is:
+
+```
+Documents / Vault
+       ↓
+  Workspace Core
+  ├─ Events
+  ├─ Commands
+  ├─ State
+  └─ Services
+       ↓
+Editor · Explorer · Search · AI · Aquarium
+                                  ↓
+                                Burgo
+```
+
+Rules introduced in v0.27:
+
+- Productive features must be callable through stable commands instead of UI-specific handlers.
+- New subsystems communicate through Core events/services; they must not wrap unrelated global functions.
+- The aquarium is a consumer/interface of workspace state, never the source of truth for document content.
+- Burgo remains downstream of the aquarium/workspace and cannot be required for editing or opening a vault.
+- Legacy code is migrated incrementally through `legacy.runtime`; compatibility bridges are temporary and replaceable.
+- A command has one canonical ID. Keyboard shortcuts, buttons, menus, gestures and the future command palette must invoke the same command.
