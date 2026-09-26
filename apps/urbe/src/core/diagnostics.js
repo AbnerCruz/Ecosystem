@@ -1,0 +1,8 @@
+(function(global){
+'use strict';var core=global.UrbeCore;if(!core)return;
+class Diagnostics{
+ snapshot(){var get=n=>{try{return core.service(n)}catch(_){return null}},docs=get('documents'),knowledge=get('knowledge'),p=get('persistence'),world=get('aquarium.world'),explorer=get('explorer'),scheduler=get('scheduler');return{version:global.V21_VERSION||null,timestamp:Date.now(),workspace:p&&p.vault||null,persistence:p?{state:p.state,pending:!!p.pending,busy:!!p.busy,lastSavedAt:p.lastSavedAt}:null,documents:docs?docs.list().length:0,knowledge:knowledge&&knowledge.stats?knowledge.stats():null,aquarium:world?{enabled:world.enabled,entities:world.list().length,links:world.links.length}:null,explorer:explorer&&explorer.snapshot?explorer.snapshot():null,scheduler:scheduler&&scheduler.stats?scheduler.stats():null}}
+ verify(){var s=this.snapshot(),issues=[];if(!s.persistence)issues.push('Persistência indisponível');if(!s.knowledge)issues.push('Índice de conhecimento indisponível');if(!s.aquarium)issues.push('Aquário indisponível');if(s.documents&&s.aquarium&&s.aquarium.entities===0)issues.push('Documentos existem, mas nenhuma entidade foi projetada no aquário');return{ok:issues.length===0,issues:issues,state:s}}
+}
+var d=new Diagnostics();core.provide('diagnostics',d);core.commands.register('workspace.diagnostics',{title:'Diagnóstico do workspace',category:'Workspace',execute:()=>d.verify()});global.UrbeDiagnostics={Diagnostics};
+})(window);
