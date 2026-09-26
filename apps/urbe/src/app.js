@@ -1951,10 +1951,14 @@ function limitesMundo(){
   const eng=(x,y,w,h)=>{x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x+w);y1=Math.max(y1,y+h)};
   for(const b of world.buildings)eng(b.x,b.y,b.w,b.h);
   for(const r of world.regions)eng(r.x,r.y,r.w,r.h);
-  const c={x:camera.x/TILE,y:camera.y/TILE};eng(c.x-12,c.y-12,24,24);
+  /* o mapa sempre mostra uma boa região em volta de onde se está: é para explorar */
+  const c={x:camera.x/TILE,y:camera.y/TILE};eng(c.x-120,c.y-90,240,180);
   if(x0>x1){x0=-25;y0=-25;x1=25;y1=25}
-  const m=Math.max(4,(x1-x0)*.06);
-  limitesCache={x0:x0-m,y0:y0-m,x1:x1+m,y1:y1+m};limitesT=agora;
+  const m=Math.max(4,(x1-x0)*.06);x0-=m;y0-=m;x1+=m;y1+=m;
+  /* mesma proporção do quadro do mapa: sem faixas vazias, e o toque continua batendo */
+  const cvM=document.getElementById('mapaoCv'),asp=cvM&&cvM.height?cvM.width/cvM.height:1,w=x1-x0,h=y1-y0;
+  if(w/h<asp){const nw=h*asp;x0-=(nw-w)/2;x1+=(nw-w)/2}else{const nh=w/asp;y0-=(nh-h)/2;y1+=(nh-h)/2}
+  limitesCache={x0,y0,x1,y1};limitesT=agora;
   return limitesCache;
 }
 function pintarMapa(c,L,W2,H2,detalhe){
@@ -1979,7 +1983,8 @@ function pintarMapa(c,L,W2,H2,detalhe){
   c.strokeRect(px(a.x/TILE),py(a.y/TILE),(b.x-a.x)/TILE*esc,(b.y-a.y)/TILE*esc);
   return {esc,px,py};
 }
-function desenharMini(){pintarMapa(mini,limitesMundo(),miniCv.width,miniCv.height,false)}
+/* o minimapa legado está oculto na interface atual: não gastar CPU pintando-o */
+function desenharMini(){var el=document.getElementById('mini');if(!el||!el.offsetParent)return;pintarMapa(mini,limitesMundo(),miniCv.width,miniCv.height,false)}
 function abrirMapao(){mapao.classList.add("open");pintarMapao()}
 function pintarMapao(){mapao._g=pintarMapa(mapaoCtx,limitesMundo(),mapaoCv.width,mapaoCv.height,true)}
 document.getElementById("mini").onclick=abrirMapao;
@@ -3590,9 +3595,9 @@ routeAStar=function(start,goal){
       if(cur.x===goal.x&&cur.y===goal.y){alvo=cur;break}
       for(var nd=0;nd<4;nd++){
         var x=cur.x+dirs[nd][0],y=cur.y+dirs[nd][1];
-        if(x<minX||x>maxX||y<minY||y>maxY||ehAgua(x,y)||isHouseAccessGap(x,y))continue;
+        if(x<minX||x>maxX||y<minY||y>maxY||urbeBloqueiaRua(x,y)||isHouseAccessGap(x,y))continue;
         if(tileBlockedByBuilding(x,y)&&!(x===goal.x&&y===goal.y))continue;
-        var reuso=world.roads.has(K(x,y)),curva=(cur.d!==-1&&cur.d!==nd)?1.35:0,passo=reuso?.06:1;
+        var reuso=world.roads.has(K(x,y)),curva=(cur.d!==-1&&cur.d!==nd)?1.35:0,passo=reuso?.06:urbeCustoRua(x,y);
         var g=cur.g+passo+curva,nk=chave(x,y,nd);
         if(g<(melhor.has(nk)?melhor.get(nk):Infinity)){
           melhor.set(nk,g);
@@ -4051,7 +4056,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.40.0';
+V21_VERSION='0.41.0';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
@@ -4245,6 +4250,8 @@ Object.defineProperties(window.URBE,{
 });
 Object.assign(window.URBE,{
   passo:function(dt){v25Passo(dt)},
+  olhar:function(x,y,z){camera.x=(x+.5)*TILE;camera.y=(y+.5)*TILE;if(z)camera.z=z;counts();pedirDesenho()},
+  camera:function(){return{x:camera.x/TILE,y:camera.y/TILE,z:camera.z}},
   quadro:function(){drawGround();drawRegions();drawRoads();drawTrees();drawBuildings()},
   naEstrada:function(t){return world.roads.has(K(t.x,t.y))},
   diagnostico:function(){return {mapaVisivel:v25MapaVisivel(),ligado:v25Ligado,
@@ -4647,6 +4654,179 @@ function urbeEnquadrarNotas(forcar){
   core.events.on('workspace:loaded',function(){requestAnimationFrame(function(){requestAnimationFrame(function(){urbeEnquadrarNotas(false)})})});
   core.commands.register('city.fit',{title:'Enquadrar todas as notas',category:'Cidade',execute:function(){return urbeEnquadrarNotas(true)}});
 })();
+
+/* ============================================================
+   v0.41 — mundo vivo
+   Terreno com geografia (src/world/terrain.js) e arte pixel medieval
+   (src/world/pixel-art.js). Regras: não se constrói em água, pântano,
+   montanha ou neve eterna; ruas cruzam rios e lagos por pontes, custam mais
+   em colinas, matas e pântanos, e não atravessam mar nem montanha.
+   ============================================================ */
+var MUNDO=window.UrbeTerrain?UrbeTerrain.createWorld('urbe',{spawnX:Math.floor(BASE_W/2),spawnY:Math.floor(BASE_H/2)}):null;
+var ARTE=window.UrbeArt||null;
+/* tile já ocupado pela cidade: casas antigas continuam válidas mesmo onde o
+   terreno novo é água ou montanha (a cidade “aterrou” o lugar) */
+function urbeAssentado(x,y){return world.roads.has(K(x,y))||!!bAt({x:x,y:y})}
+if(MUNDO){
+  ehAgua=function(x,y){return !MUNDO.buildable(x,y)&&!urbeAssentado(x,y)};
+  arvoreEm=function(x,y){var t=MUNDO.tree(x,y);return t?1:0};
+}
+function urbeBloqueiaRua(x,y){return MUNDO?(!MUNDO.roadable(x,y)&&!urbeAssentado(x,y)):ehAgua(x,y)}
+function urbeCustoRua(x,y){return MUNDO&&!urbeAssentado(x,y)?MUNDO.roadCost(x,y):1}
+function urbeMotivoTerreno(x,y,w,h){if(!MUNDO)return null;for(var yy=y;yy<y+(h||3);yy++)for(var xx=x;xx<x+(w||3);xx++){if(urbeAssentado(xx,yy))continue;var r=MUNDO.reason(xx,yy);if(r)return r}return null}
+
+/* ---------- chão: um canvas por chunk, gerado aos poucos ---------- */
+var urbeChunks=new Map(),URBE_CHUNKS_MAX=innerWidth<900?56:96,urbeFila=[];
+function urbeChunkPronto(cx,cy){var k=cx+':'+cy,c=urbeChunks.get(k);if(c){urbeChunks.delete(k);urbeChunks.set(k,c)}return c||null}
+/* os pixels do chão saem de um worker; a página só monta o canvas pronto */
+var urbeWorker=null,urbePedidos=new Set();
+(function(){
+  if(!MUNDO||!ARTE||!window.Worker||location.protocol==='file:')return;
+  try{
+    urbeWorker=new Worker('./src/world/chunk-worker.js');
+    urbeWorker.postMessage({type:'init',seed:MUNDO.seed,opts:{spawnX:Math.floor(BASE_W/2),spawnY:Math.floor(BASE_H/2)}});
+    urbeWorker.onmessage=function(e){var m=e.data;if(!m||m.type!=='chunk')return;var k=m.cx+':'+m.cy;urbePedidos.delete(k);if(m.bio)MUNDO.inject(m.cx,m.cy,new Uint8Array(m.bio),new Float32Array(m.elev));
+      urbeChunks.set(k,ARTE.canvasFromPixels(new Uint8ClampedArray(m.buf),m.n));
+      if(urbeChunks.size>URBE_CHUNKS_MAX)urbeChunks.delete(urbeChunks.keys().next().value);pedirDesenho()};
+    urbeWorker.onerror=function(){urbeWorker=null;urbePedidos.clear()};
+  }catch(_){urbeWorker=null}
+})();
+function urbeGerarChunks(orcamentoMs){
+  if(urbeWorker){ /* no máximo 6 pedidos em voo; o mais próximo do centro primeiro */
+    for(var i=0;i<urbeFila.length&&urbePedidos.size<6;i++){var q=urbeFila[i],k=q[0]+':'+q[1];if(urbeChunks.has(k)||urbePedidos.has(k))continue;urbePedidos.add(k);urbeWorker.postMessage({type:'chunk',cx:q[0],cy:q[1]})}
+    return;
+  }
+  var t0=performance.now();
+  while(urbeFila.length&&performance.now()-t0<orcamentoMs){
+    var q=urbeFila.shift(),k=q[0]+':'+q[1];if(urbeChunks.has(k))continue;
+    urbeChunks.set(k,ARTE.renderChunk(MUNDO,q[0],q[1]));
+    if(urbeChunks.size>URBE_CHUNKS_MAX)urbeChunks.delete(urbeChunks.keys().next().value);
+  }
+  if(urbeFila.length)pedirDesenho();
+}
+var urbeCorBioma=null;
+function urbeCores(){if(urbeCorBioma)return urbeCorBioma;urbeCorBioma=ARTE.IDS.map(function(id){return ARTE.PAL[id][0]});return urbeCorBioma}
+drawGround=function(){
+  if(!MUNDO||!ARTE){ctx.fillStyle='#4f7a3a';ctx.fillRect(0,0,cv.w,cv.h);return}
+  var f=faixaVisivel(),CHs=MUNDO.CH,cx0=Math.floor(f.x0/CHs),cx1=Math.floor(f.x1/CHs),cy0=Math.floor(f.y0/CHs),cy1=Math.floor(f.y1/CHs),lado=CHs*TILE*camera.z;
+  var faltam=[],cores=urbeCores();
+  ctx.save();ctx.imageSmoothingEnabled=false;
+  for(var cy=cy0;cy<=cy1;cy++)for(var cx=cx0;cx<=cx1;cx++){
+    var p=w2s(cx*CHs*TILE,cy*CHs*TILE),img=urbeChunkPronto(cx,cy),x=Math.floor(p.x),y=Math.floor(p.y),l=Math.ceil(lado)+1;
+    if(img)ctx.drawImage(img,x,y,l,l);
+    else{ /* enquanto o chunk não fica pronto: cor de cada tile se o terreno já é conhecido;
+             senão um tom neutro — o ruído não é calculado aqui quando há worker */
+      if(!urbeWorker||MUNDO.has(cx,cy)){var ch=MUNDO.chunk(cx,cy),s=TILE*camera.z;
+        for(var j=0;j<CHs;j++)for(var i=0;i<CHs;i++){ctx.fillStyle=cores[ch.bio[j*CHs+i]];ctx.fillRect(Math.floor(p.x+i*s),Math.floor(p.y+j*s),Math.ceil(s)+1,Math.ceil(s)+1)}}
+      else{ctx.fillStyle='#3d5a36';ctx.fillRect(x,y,l,l)}
+      faltam.push([cx,cy]);
+    }
+  }
+  /* aterro: casas antigas sobre terreno proibido ganham um lote de terra firme */
+  var grama=urbeTexturaGrama(),st=TILE*camera.z;
+  for(var bi=0;bi<world.buildings.length;bi++){var b=world.buildings[bi];if(b.x>f.x1||b.x+b.w<f.x0||b.y>f.y1||b.y+b.h<f.y0)continue;
+    for(var yy=b.y-1;yy<b.y+b.h+1;yy++)for(var xx=b.x-1;xx<b.x+b.w+1;xx++)if(!MUNDO.buildable(xx,yy)){var q=w2s(xx*TILE,yy*TILE);ctx.drawImage(grama,Math.floor(q.x),Math.floor(q.y),Math.ceil(st)+1,Math.ceil(st)+1)}}
+  ctx.restore();
+  if(faltam.length){ /* o que está mais perto do centro da tela sai primeiro */
+    var c0=s2w(cv.w/2,cv.h/2),ccx=c0.x/TILE/CHs,ccy=c0.y/TILE/CHs;
+    faltam.sort(function(a,b){return Math.hypot(a[0]+.5-ccx,a[1]+.5-ccy)-Math.hypot(b[0]+.5-ccx,b[1]+.5-ccy)});
+    urbeFila=faltam;urbeGerarChunks(8);
+  }
+  urbeAtualizarBioma();
+};
+var urbeGramaCv=null;
+function urbeTexturaGrama(){if(urbeGramaCv)return urbeGramaCv;var c=document.createElement('canvas');c.width=c.height=ARTE.PX;var x=c.getContext('2d'),img=x.createImageData(ARTE.PX,ARTE.PX);img.data.set(ARTE.texture('grass',1));x.putImageData(img,0,0);urbeGramaCv=c;return c}
+
+/* ---------- vegetação ---------- */
+var urbeArvoresCache=new Map();
+function urbeArvoresDoChunk(cx,cy){var k=cx+':'+cy,a=urbeArvoresCache.get(k);if(a)return a;a=[];var CHs=MUNDO.CH;
+  for(var j=0;j<CHs;j++)for(var i=0;i<CHs;i++){var x=cx*CHs+i,y=cy*CHs+j,t=MUNDO.tree(x,y);if(t)a.push(x,y,t)}
+  if(urbeArvoresCache.size>400)urbeArvoresCache.clear();urbeArvoresCache.set(k,a);return a}
+drawTrees=function(){
+  if(MUNDO&&ARTE&&camera.z>=.3){
+    var f=faixaVisivel(),CHs=MUNDO.CH,s=TILE*camera.z/ARTE.PX*1.3,p={x:0,y:0},vis=[];
+    for(var cy=Math.floor(f.y0/CHs);cy<=Math.floor(f.y1/CHs);cy++)for(var cx=Math.floor(f.x0/CHs);cx<=Math.floor(f.x1/CHs);cx++){
+      if(urbeWorker&&!MUNDO.has(cx,cy))continue; /* árvores aparecem junto com o chão */
+      var a=urbeArvoresDoChunk(cx,cy);
+      for(var i=0;i<a.length;i+=3){var x=a[i],y=a[i+1];if(x<f.x0||x>f.x1||y<f.y0||y>f.y1+2)continue;
+        /* ruas ganham acostamento livre; casas e bairros não têm árvores por cima */
+        if(world.roads.has(K(x,y))||world.roads.has(K(x+1,y))||world.roads.has(K(x-1,y))||world.roads.has(K(x,y+1)))continue;
+        p.x=x;p.y=y;if(bAt(p)||regAt(p))continue;p.y=y+1;if(bAt(p))continue;
+        vis.push(x,y,a[i+2])}
+    }
+    /* de trás para a frente: quem está mais ao sul cobre quem está atrás */
+    var ord=[];for(i=0;i<vis.length;i+=3)ord.push(i);ord.sort(function(m,n){return vis[m+1]-vis[n+1]||vis[m]-vis[n]});
+    ctx.save();ctx.imageSmoothingEnabled=false;
+    for(var o=0;o<ord.length;o++){var ix=ord[o],tx=vis[ix],ty=vis[ix+1],t=vis[ix+2],img=ARTE.tree(t.kind,t.v,t.snow),q=w2s((tx+.5)*TILE,(ty+1)*TILE),jx=(MUNDO.hash(tx,ty,31)-.5)*8*s,jy=(MUNDO.hash(tx,ty,32)-.5)*5*s;
+      ctx.drawImage(img,Math.round(q.x-12*s+jx),Math.round(q.y-30*s+jy),Math.ceil(24*s),Math.ceil(32*s))}
+    ctx.restore();
+  }
+  if(typeof v25Desenhar==='function')v25Desenhar();
+};
+
+/* ---------- construções no mesmo estilo do mundo ---------- */
+var URBE_OFICIO={md:'house',markdown:'house',txt:'house',html:'hall',htm:'hall',js:'workshop',mjs:'workshop',css:'dyer',json:'tower',yaml:'tower',yml:'tower',csv:'market'};
+function urbeArteDaConstrucao(b){
+  var kind=b.tipo==='nota'?(URBE_OFICIO[v21Kind(b)]||'house'):'store',cx=Math.floor(b.x+b.w/2),cy=Math.floor(b.y+b.h/2);
+  var bioma=MUNDO?ARTE.IDS[MUNDO.biome(cx,cy)]:'grass',variant=b.sprite==='house2'?1:b.sprite==='house3'?2:(semente(b.id||b.name)%3);
+  return ARTE.building(kind,ARTE.styleFor(bioma),variant,(semente(b.name||'')%3)===0);
+}
+function urbeDesenharConstrucao(b){
+  var img=urbeArteDaConstrucao(b),s=TILE*camera.z/ARTE.PX,p=w2s(b.x*TILE,b.y*TILE),w=48*s*(b.w/3),h=56*s*(b.h/3);
+  ctx.save();ctx.imageSmoothingEnabled=false;ctx.drawImage(img,Math.round(p.x),Math.round(p.y+b.h*TILE*camera.z-h),Math.ceil(w),Math.ceil(h));ctx.restore();
+}
+if(ARTE){v21DrawEditableBuilding=urbeDesenharConstrucao;drawArquivoBuilding=urbeDesenharConstrucao}
+
+/* ---------- ruas com pontes ---------- */
+var urbeRuasBase=drawRoads;
+drawRoads=function(){
+  urbeRuasBase();
+  if(!MUNDO)return;
+  var f=faixaVisivel(),a=roadsParsed(),s=TILE*camera.z;
+  ctx.save();
+  for(var i=0;i<a.length;i+=2){var x=a[i],y=a[i+1];if(x<f.x0||x>f.x1||y<f.y0||y>f.y1||!MUNDO.isWater(x,y))continue;
+    var p=w2s(x*TILE,y*TILE),hor=world.roads.has(K(x-1,y))||world.roads.has(K(x+1,y)),ver=world.roads.has(K(x,y-1))||world.roads.has(K(x,y+1));
+    ctx.fillStyle='#8a6440';ctx.fillRect(p.x,p.y+s*.14,s,s*.72);if(ver&&!hor){ctx.fillRect(p.x+s*.14,p.y,s*.72,s)}
+    ctx.fillStyle='#6b4a2e';
+    if(ver&&!hor){for(var k=1;k<5;k++)ctx.fillRect(p.x+s*.14,p.y+k*s/5,s*.72,Math.max(1,s*.04));ctx.fillStyle='#4f3520';ctx.fillRect(p.x+s*.1,p.y,Math.max(1,s*.06),s);ctx.fillRect(p.x+s*.84,p.y,Math.max(1,s*.06),s)}
+    else{for(k=1;k<5;k++)ctx.fillRect(p.x+k*s/5,p.y+s*.14,Math.max(1,s*.04),s*.72);ctx.fillStyle='#4f3520';ctx.fillRect(p.x,p.y+s*.1,s,Math.max(1,s*.06));ctx.fillRect(p.x,p.y+s*.84,s,Math.max(1,s*.06))}
+  }
+  ctx.restore();
+};
+
+/* ---------- mapa e minimapa com os biomas ---------- */
+if(MUNDO&&ARTE)pintarMapa=function(c,L,W2,H2,detalhe){
+  var esc=Math.min(W2/(L.x1-L.x0),H2/(L.y1-L.y0)),px=function(x){return(x-L.x0)*esc},py=function(y){return(y-L.y0)*esc},cores=urbeCores();
+  c.fillStyle='#23466f';c.fillRect(0,0,W2,H2);
+  var step=Math.max(1,Math.ceil(2/Math.max(.001,esc))),sz=Math.max(1,step*esc+.5);
+  for(var y=Math.floor(L.y0);y<L.y1;y+=step)for(var x=Math.floor(L.x0);x<L.x1;x+=step){
+    var e=MUNDO.elevation(x,y),e2=MUNDO.elevation(x+step,y-step),sh=Math.max(-.25,Math.min(.25,(e-e2)*6/step));
+    c.fillStyle=cores[MUNDO.biome(x,y)];c.fillRect(px(x),py(y),sz,sz);
+    if(sh){c.fillStyle=sh>0?'rgba(255,255,255,'+sh+')':'rgba(0,0,0,'+(-sh)+')';c.fillRect(px(x),py(y),sz,sz)}
+  }
+  for(var ri=0;ri<world.regions.length;ri++){var r=world.regions[ri];c.globalAlpha=.9;c.strokeStyle=r.color;c.lineWidth=1.5;c.strokeRect(px(r.x),py(r.y),r.w*esc,r.h*esc);
+    if(detalhe&&r.w*esc>45&&!r.parentId){c.fillStyle='#fff';c.font='600 10px '+URBE_FONTE;c.fillText(r.name,px(r.x)+3,py(r.y)+11)}}
+  c.globalAlpha=1;c.fillStyle='#e8d7b0';for(var road of world.roads){var q=road.split(',');c.fillRect(px(+q[0]),py(+q[1]),Math.max(1,esc),Math.max(1,esc))}
+  for(var bi=0;bi<world.buildings.length;bi++){var b=world.buildings[bi],z=Math.max(3,Math.min(6,3*esc));c.fillStyle='#fff';c.fillRect(px(b.x)-1,py(b.y)-1,z+2,z+2);c.fillStyle=b.tipo==='nota'?'#c9553d':'#8a6440';c.fillRect(px(b.x),py(b.y),z,z)}
+  var a0=s2w(0,0),a1=s2w(cv.w,cv.h);c.strokeStyle='#fff';c.lineWidth=2;c.strokeRect(px(a0.x/TILE),py(a0.y/TILE),(a1.x-a0.x)/TILE*esc,(a1.y-a0.y)/TILE*esc);
+  return{esc:esc,px:px,py:py};
+};
+
+/* ---------- explorar e construir onde se está olhando ---------- */
+centroBuscaRaiz=function(){return{x:Math.floor(camera.x/TILE)-1,y:Math.floor(camera.y/TILE)-1}};
+var urbeBiomaAtual=null,urbeBiomaT=0;
+function urbeAtualizarBioma(){
+  var agora=performance.now();if(agora-urbeBiomaT<250||!MUNDO)return;urbeBiomaT=agora;
+  var inf=MUNDO.info(Math.floor(camera.x/TILE),Math.floor(camera.y/TILE));if(inf===urbeBiomaAtual)return;urbeBiomaAtual=inf;
+  var el=document.getElementById('urbeBiome');if(!el){var brand=document.querySelector('#v23Top .v23Brand');if(!brand)return;el=document.createElement('span');el.id='urbeBiome';brand.appendChild(el)}
+  el.textContent=inf.nome;el.title=inf.build?'Dá para construir aqui':'Não dá para construir aqui';el.classList.toggle('bloqueado',!inf.build);
+}
+var urbeStatusBase=v21PlacementStatus;
+v21PlacementStatus=function(){
+  urbeStatusBase();var c=v21PlacementCandidate,txt=document.getElementById('v21PlacementText');if(!c||!txt||!v21Placement)return;
+  var ok=!document.getElementById('v21PlacementOk').disabled,motivo=urbeMotivoTerreno(c.x,c.y,3,3);
+  txt.textContent=ok?('Construir aqui · '+(MUNDO?MUNDO.info(c.x+1,c.y+1).nome:'')):(motivo?'Não dá: '+motivo:'Não dá: lote ocupado ou sem acesso para rua');
+};
 
 /* ---------- boot ---------- */
 (async()=>{

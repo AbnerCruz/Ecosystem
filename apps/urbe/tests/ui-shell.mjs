@@ -14,7 +14,7 @@ test('ícones e diálogos carregam antes do app; tema por último',()=>{
   if(links[links.length-1]!=='./src/styles/theme.css')throw new Error('theme.css precisa ser o último estilo');
 });
 test('cache offline inclui a nova casca',()=>{
-  for(const f of ['./src/styles/theme.css','./src/ui/icons.js','./src/ui/dialogs.js','./src/editor/visual-tools.js','./src/ui/tips.js'])if(!sw.includes("'"+f+"'"))throw new Error('sw.js sem '+f);
+  for(const f of ['./src/styles/theme.css','./src/ui/icons.js','./src/ui/dialogs.js','./src/editor/visual-tools.js','./src/ui/tips.js','./src/world/terrain.js','./src/world/pixel-art.js','./src/world/chunk-worker.js'])if(!sw.includes("'"+f+"'"))throw new Error('sw.js sem '+f);
 });
 test('sem cantos retos forçados globalmente',()=>{
   if(/button,input,textarea,select\{border-radius:0!important\}/.test(base))throw new Error('regra global de border-radius:0 voltou');

@@ -1,5 +1,15 @@
 # Urbe — Changelog
 
+## v0.41.0 — Mundo vivo (2026-09-26)
+
+- Novo gerador de mundo (`src/world/terrain.js`): continentes, cordilheiras, rios que descem ao mar, praias, e biomas derivados de elevação, temperatura (latitude e altitude) e umidade — campo, prado, floresta, mata fechada, pântano, taiga, tundra, neve, colinas, montanha, deserto, savana e estepe. Determinístico e infinito; o início é sempre um vale temperado.
+- Arte pixel medieval gerada em código (`src/world/pixel-art.js`) com paleta única: texturas por bioma com bordas orgânicas, relevo sombreado, espuma na costa e profundidade na água, flores/pedras/juncos, árvores por espécie (carvalho, bétula, pinheiro, salgueiro, acácia, palmeira, cacto), com neve no frio.
+- Construções em enxaimel com telhados, chaminés e janelas iluminadas; o material muda com o bioma (pedra e neve no frio, adobe no deserto, azul no litoral) e o tipo de arquivo vira um ofício (salão, oficina, tinturaria, torre, mercado).
+- Regras de terreno: não se constrói em água, pântano, montanha ou neve eterna; ruas atravessam rios e lagos com pontes e custam mais em matas e colinas. O posicionamento explica o motivo (“Não dá: Rio”). A barra mostra o bioma sob a câmera, e novas casas nascem perto de onde você está explorando.
+- Mapa grande mostra a região com biomas e relevo, na proporção do quadro.
+- Chão gerado num Web Worker: explorar e saltar pelo mapa mantém 60 fps mesmo com CPU 4× mais lenta.
+- Cidades existentes continuam válidas: casas antigas sobre terreno agora proibido ganham um lote aterrado.
+
 ## v0.40.0 — Redesenho, fase 3: a cidade (2026-09-26)
 
 - Chão sem a “grade”: os tiles de grama e água traziam uma faixa escura herdada da folha de sprites; agora só a área limpa é usada, com contraste suavizado.
