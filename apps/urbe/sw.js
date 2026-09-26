@@ -11,6 +11,7 @@ const APP_SHELL = [
   './src/core/knowledge-index.js',
   './src/core/keymap.js',
   './src/ui/command-palette.js',
+  './src/ui/quick-open.js',
   './src/app.js',
   './manifest.webmanifest',
   './icon-192.png',
