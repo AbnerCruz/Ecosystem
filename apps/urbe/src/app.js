@@ -2555,14 +2555,21 @@ function relBinUnico(dir,nome,usados){
 function metaAssetLimpa(a,rel){const o={...a,relPath:rel,folderPath:dirDe(rel)};delete o._blob;delete o.file;delete o.handle;delete o.dataUrl;return o}
 function metaAnexoNota(a){const o={...a};delete o._blob;delete o.file;delete o.handle;delete o.dataUrl;return o}
 function estadoDesejado(){
-  const cam=caminhosRegioes(),arquivos=new Map(),pastas=new Set(),usados=new Set(),usadosBin=new Set(),notas={},binarios=new Map();for(const r of world.regions)pastas.add(cam.get(r.id));
-  for(const b of world.buildings){if(b.tipo!=='nota')continue;const dir=b.regionId?(cam.get(b.regionId)||''):'',base=nomeSeguro(b.name),ext=extNota(b);let rel=(dir?dir+'/':'')+base+ext,n=2;while(usados.has(rel.toLowerCase()))rel=(dir?dir+'/':'')+base+' ('+(n++)+')'+ext;usados.add(rel.toLowerCase());arquivos.set(rel,b.content||'');notas[rel]={x:b.x,y:b.y,sprite:b.sprite,tags:b.tags||[],anexos:(b.anexos||[]).map(metaAnexoNota),criado:b.created||nowDate(),modificado:b.modified||nowDate()}}
+  const cam=caminhosRegioes(),arquivos=new Map(),pastas=new Set(),usadosBin=new Set(),notas={},binarios=new Map();
+  const docs=window.UrbeCore&&window.UrbeCore.service('documents'),projection=window.UrbeCore&&window.UrbeCore.service('world.projection');
+  for(const r of world.regions)pastas.add(cam.get(r.id));
+  if(docs)for(const d of docs.list()){
+    arquivos.set(d.path,d.content||'');const slash=d.path.lastIndexOf('/');if(slash>0)pastas.add(d.path.slice(0,slash));
+    const b=world.buildings.find(x=>x.tipo==='nota'&&(x.documentId===d.id||x.name.toLowerCase()===d.title.toLowerCase())),p=projection&&projection.projectDocument(d.id);
+    notas[d.path]={id:d.id,x:p&&p.x!=null?p.x:(b?b.x:0),y:p&&p.y!=null?p.y:(b?b.y:0),sprite:(p&&p.sprite)||(b&&b.sprite)||'house1',tags:d.tags||[],anexos:((b&&b.anexos)||[]).map(metaAnexoNota),criado:d.created||(b&&b.created)||nowDate(),modificado:d.modified||(b&&b.modified)||nowDate()};
+  }
   const construcoes=[];
   for(const b of world.buildings){if(b.tipo==='nota')continue;const fallbackDir=b.regionId?(cam.get(b.regionId)||''):'';const src=b.files||b.anexos||[],filesOut=[];
-    for(const a of src){const dir=typeof a.folderPath==='string'?a.folderPath:fallbackDir,rel=relBinUnico(dir,a.nome||b.fileName||b.name,usadosBin);filesOut.push(metaAssetLimpa(a,rel));binarios.set(rel,{asset:a,sourceRel:a.relPath||null})}
+    for(const a of src){const dir=typeof a.folderPath==='string'?a.folderPath:fallbackDir,rel=relBinUnico(dir,a.nome||b.fileName||b.name,usadosBin);filesOut.push(metaAssetLimpa(a,rel));binarios.set(rel,{asset:a,sourceRel:a.relPath||null});if(dir)pastas.add(dir)}
     construcoes.push({tipo:b.tipo,fileClass:b.fileClass||'other',name:b.name,fileName:b.fileName||null,caminho:fallbackDir,x:b.x,y:b.y,w:b.w||3,h:b.h||3,description:b.description||'',sprite:b.sprite||('file-'+(b.fileClass||'other')),parentNoteName:b.parentNoteId?(world.buildings.find(n=>n.id===b.parentNoteId)?.name||null):null,files:filesOut,anexos:filesOut,created:b.created||nowDate(),modified:b.modified||nowDate()});
   }
-  const mapa={v:3,app:APP_NOME,salvo:new Date().toISOString(),camera:{x:camera.x,y:camera.y,z:camera.z},regioes:world.regions.map(r=>({caminho:cam.get(r.id),nome:r.name,cor:r.color,x:r.x,y:r.y,w:r.w,h:r.h,cells:r.cells||null,descricao:r.description||''})),notas,construcoes};arquivos.set('.urbe/mapa.json',JSON.stringify(mapa,null,1));return{arquivos,pastas,binarios};
+  const mapa={v:4,app:APP_NOME,salvo:new Date().toISOString(),camera:{x:camera.x,y:camera.y,z:camera.z},regioes:world.regions.map(r=>({caminho:cam.get(r.id),nome:r.name,cor:r.color,x:r.x,y:r.y,w:r.w,h:r.h,cells:r.cells||null,descricao:r.description||''})),notas:notas,construcoes:construcoes};
+  arquivos.set('.urbe/mapa.json',JSON.stringify(mapa,null,1));return{arquivos,pastas,binarios};
 }
 var snapBin=new Map();
 function assinaturaBin(a,rel){return rel+'|'+(a?.tamanho||0)+'|'+(a?.cacheId||'')}
