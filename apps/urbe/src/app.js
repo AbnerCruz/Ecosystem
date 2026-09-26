@@ -4530,7 +4530,7 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
     ['workspace.navigate.ai','Abrir IA','Navegação',function(){return v23Navegar('ia')}],
     ['workspace.navigate.vaults','Abrir vaults','Navegação',function(){return v23Navegar('vaults')}],
     ['document.create','Nova nota','Documento',function(ctx){return criarNotaNoDestino(ctx&&ctx.regionId||null)}],
-    ['document.open','Abrir nota','Documento',function(ctx){var docs=core.service('documents'),doc=docs&&docs.get(ctx&&(ctx.id||ctx.path));if(!doc)return false;var b=world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===doc.title.toLowerCase()});if(!b)return false;openFullEditor(b);return true}],
+    ['document.open','Abrir nota','Documento',function(ctx){var docs=core.service('documents'),doc=docs&&docs.get(ctx&&(ctx.id||ctx.path));if(!doc)return false;var ws=core.service('editor.workspace');if(ws&&(!ctx||ctx.source!=='history'))ws.visit(doc.id);var b=world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===doc.title.toLowerCase()});if(!b)return false;openFullEditor(b);return true}],
     ['folder.create','Nova pasta','Documento',function(ctx){return criarPastaNoDestino(ctx&&ctx.parentId||null)}],
     ['workspace.save','Salvar workspace','Workspace',function(){return salvarCidade()}]
   ].forEach(function(item){
