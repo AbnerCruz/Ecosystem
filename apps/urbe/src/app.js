@@ -2151,17 +2151,17 @@ function caminhosRegioes(){
 }
 function estadoDesejado(){
   const cam=caminhosRegioes(),arquivos=new Map(),pastas=new Set(),usados=new Set(),notas={};
+  const canonicalDocs=window.UrbeCore&&window.UrbeCore.service('documents');
+  const projection=window.UrbeCore&&window.UrbeCore.service('world.projection');
   for(const r of world.regions)pastas.add(cam.get(r.id));
-  for(const b of world.buildings){
-    if(b.tipo!=="nota")continue;
-    const dir=b.regionId?(cam.get(b.regionId)||""):"";
-    const base=nomeSeguro(b.name);
-    let rel=(dir?dir+"/":"")+base+".md",n=2;
-    while(usados.has(rel.toLowerCase()))rel=(dir?dir+"/":"")+base+" ("+(n++)+").md";
-    usados.add(rel.toLowerCase());
-    arquivos.set(rel,b.content||"");
-    notas[rel]={x:b.x,y:b.y,sprite:b.sprite,tags:b.tags||[],anexos:b.anexos||[],
-      criado:b.created||nowDate(),modificado:b.modified||nowDate()};
+  if(canonicalDocs){
+    for(const d of canonicalDocs.list()){
+      arquivos.set(d.path,d.content||"");usados.add(d.path.toLowerCase());
+      const projected=projection&&projection.projectDocument(d.id),legacy=world.buildings.find(b=>b.tipo==="nota"&&b.name.toLowerCase()===d.title.toLowerCase());
+      notas[d.path]={x:projected&&projected.x!=null?projected.x:(legacy?legacy.x:0),y:projected&&projected.y!=null?projected.y:(legacy?legacy.y:0),sprite:(projected&&projected.sprite)||(legacy&&legacy.sprite)||"house1",tags:d.tags||[],anexos:(legacy&&legacy.anexos)||[],criado:d.created||(legacy&&legacy.created)||nowDate(),modificado:d.modified||(legacy&&legacy.modified)||nowDate()};
+    }
+  }else for(const b of world.buildings){
+    if(b.tipo!=="nota")continue;const dir=b.regionId?(cam.get(b.regionId)||""):"",base=nomeSeguro(b.name);let rel=(dir?dir+"/":"")+base+".md",n=2;while(usados.has(rel.toLowerCase()))rel=(dir?dir+"/":"")+base+" ("+(n++)+").md";usados.add(rel.toLowerCase());arquivos.set(rel,b.content||"");notas[rel]={x:b.x,y:b.y,sprite:b.sprite,tags:b.tags||[],anexos:b.anexos||[],criado:b.created||nowDate(),modificado:b.modified||nowDate()};
   }
   const construcoes=world.buildings.filter(b=>b.tipo!=="nota").map(b=>({
     tipo:b.tipo,fileClass:b.fileClass||"other",name:b.name,fileName:b.fileName||null,
