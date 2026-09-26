@@ -1,5 +1,17 @@
 # Urbe — Changelog
 
+## v0.26.0 — 2026-09-26
+
+Fundação estrutural para desmontar o monólito sem alterar o produto.
+
+- O `index.html` caiu de ~771 KB para ~115 KB: CSS e JavaScript foram extraídos para `src/`, mantendo a ordem original de execução e cascata.
+- O runtime principal agora vive em `src/app.js`; estilos foram separados em base e shell.
+- O service worker foi versionado e passou a pré-cachear todos os novos assets, preservando instalação e uso offline.
+- Adicionado `ARCHITECTURE.md` com princípios, fronteiras-alvo e ordem segura de decomposição por domínio.
+- Adicionada verificação automática no GitHub Actions: sintaxe JavaScript e invariantes estruturais/PWA.
+- `window.URBE` e `window.Burgo` continuam como contratos de diagnóstico para a próxima etapa.
+- Regra de manutenção: novas funcionalidades não devem voltar ao padrão de patches de versão sobrepostos no fim do runtime.
+
 ## v0.25.0 — 2026-09-10
 
 Fase 2 do Burgo: os moradores saem de casa.
