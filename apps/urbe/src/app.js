@@ -1366,7 +1366,7 @@ function buildTree(){
     ["pointerup","pointercancel","pointerleave"].forEach(ev=>el.addEventListener(ev,e=>{if(e.pointerType==="touch")return;cancelHold();if(dragState&&ev==="pointerup")soltarArrasto()}));
   });
 }
-function loadFile(b){wikiState={open:false,start:-1,query:"",items:[],index:0};renderWikiSuggestions();currentFile=b;selected=b;document.getElementById("fileNameDisplay").textContent=nomeCompletoNota(b);document.getElementById("documentWatermark").textContent=nomeCompletoNota(b);bodyEditor.value=b.content;renderProps(b);buildTree();updateStats();setEditorViewMode(editorViewMode)}
+function loadFile(b){wikiState={open:false,start:-1,query:"",items:[],index:0};renderWikiSuggestions();currentFile=b;selected=b;try{var _p=window.UrbeCore&&window.UrbeCore.service("legacy.documents");if(_p){var _d=_p.syncBuilding(b,"editor.open");window.UrbeCore.service("editor.session")?.open(_d&&_d.id)}}catch(_){}document.getElementById("fileNameDisplay").textContent=nomeCompletoNota(b);document.getElementById("documentWatermark").textContent=nomeCompletoNota(b);bodyEditor.value=b.content;renderProps(b);buildTree();updateStats();setEditorViewMode(editorViewMode)}
 function openFullEditor(b){closeHouseSummary();editorFull.classList.add("open");setEditorViewMode("preview");loadFile(b)}
 function closeFullEditor(){wikiState={open:false,start:-1,query:"",items:[],index:0};renderWikiSuggestions();editorFull.classList.remove("open");fileSidebar.classList.remove("open");currentFile=null}
 document.getElementById("closeFullEditor").onclick=closeFullEditor;
@@ -4552,6 +4552,12 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
   core.provide('legacy.documents',{
     syncBuilding:function(b,source){
       var path=caminhoDocumentoDoPredio(b);if(!path||!docs)return null;
+      var existing=docs.get(path);
+      if(existing&&existing.content===(b.content||''))return existing;
+      if(source==='editor.input'){
+        var session=core.service('editor.session');
+        if(existing&&session)return session.record(existing.id,b.content||'',{source:'editor.input',modified:b.modified||null});
+      }
       return docs.upsert({id:path,path:path,title:b.name,content:b.content||'',tags:b.tags||[],created:b.created||null,modified:b.modified||null},{source:source||'legacy.building'});
     },
     rebuild:function(){
