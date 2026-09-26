@@ -2232,6 +2232,13 @@ async function abrirCidade(nome){
     /* le o conteudo de todas as notas antes de mexer no mundo */
     const conteudos=new Map();
     for(const rel of mds)conteudos.set(rel,(await FS.ler(nome,rel))||"");
+    /* v0.28: documentos são a fonte lógica; a cidade passa a ser projeção. */
+    const documentStore=window.UrbeCore&&window.UrbeCore.service('documents');
+    if(documentStore)documentStore.replaceAll(mds.map(rel=>({
+      id:rel,path:rel,content:conteudos.get(rel)||"",
+      created:(geoNota.get(rel)&&geoNota.get(rel).criado)||null,
+      modified:(geoNota.get(rel)&&geoNota.get(rel).modificado)||null
+    })),{source:'vault.open',vault:nome});
 
     world.regions.length=0;world.buildings.length=0;world.roads.clear();
     world.links.length=0;selected=null;currentFile=null;
@@ -4534,6 +4541,35 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
       core.state.patch({mode:evt.id.slice('workspace.navigate.'.length)},{source:evt.id});
     }
   });
+  /* Mantém o modelo documental sincronizado enquanto a UI antiga ainda edita buildings. */
+  var docs=core.service('documents');
+  function caminhoDocumentoDoPredio(b){
+    if(!b||b.tipo!=='nota')return null;
+    var cam=caminhosRegioes(),dir=b.regionId?(cam.get(b.regionId)||''):'',base=nomeSeguro(b.name);
+    return (dir?dir+'/':'')+base+'.md';
+  }
+  core.provide('legacy.documents',{
+    syncBuilding:function(b,source){
+      var path=caminhoDocumentoDoPredio(b);if(!path||!docs)return null;
+      return docs.upsert({id:path,path:path,title:b.name,content:b.content||'',tags:b.tags||[],created:b.created||null,modified:b.modified||null},{source:source||'legacy.building'});
+    },
+    rebuild:function(){
+      if(!docs)return[];
+      var cam=caminhosRegioes(),used=new Set(),items=[];
+      world.buildings.filter(function(b){return b.tipo==='nota'}).forEach(function(b){
+        var dir=b.regionId?(cam.get(b.regionId)||''):'',base=nomeSeguro(b.name),path=(dir?dir+'/':'')+base+'.md',n=2;
+        while(used.has(path.toLowerCase()))path=(dir?dir+'/':'')+base+' ('+(n++)+').md';
+        used.add(path.toLowerCase());items.push({id:path,path:path,title:b.name,content:b.content||'',tags:b.tags||[],created:b.created||null,modified:b.modified||null});
+      });
+      return docs.replaceAll(items,{source:'legacy.rebuild'});
+    }
+  });
+  var oldMarkChanged=markChanged;
+  markChanged=function(){
+    var result=oldMarkChanged.apply(this,arguments);
+    if(currentFile&&currentFile.tipo==='nota')core.service('legacy.documents').syncBuilding(currentFile,'editor.input');
+    return result;
+  };
   core.start();
 })();
 
