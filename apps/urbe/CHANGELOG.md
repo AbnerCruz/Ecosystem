@@ -1,5 +1,15 @@
 # Urbe — Changelog
 
+## v0.33.0 — Aquarium World Core (2026-09-26)
+
+- Added AquariumWorld as a document-driven runtime projection.
+- Added incremental RoadGraph derived from the canonical KnowledgeIndex.
+- Wiki-link changes now invalidate semantic edges instead of defining workspace state through road tiles.
+- Added a shared visibility-aware scheduler foundation for later timer consolidation.
+- Added BurgoProjection as an optional downstream consumer of documents; it never writes note content.
+- Legacy road routing is now gated by the canonical semantic road graph while tile routing is migrated.
+- Added automated tests for aquarium projection, semantic roads and Burgo isolation.
+
 ## v0.32.0 — Persistence Core and World Projection (2026-09-26)
 
 - Added a canonical workspace persistence service with pluggable storage adapters.
