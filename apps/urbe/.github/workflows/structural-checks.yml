@@ -16,6 +16,9 @@ jobs:
       - name: JavaScript syntax
         run: |
           node --check src/legacy/bootstrap.js
+          node --check src/world/terrain.js
+          node --check src/world/pixel-art.js
+          node --check src/world/chunk-worker.js
           node --check src/core/core.js
           node --check src/core/documents.js
           node --check src/core/trash.js
@@ -71,3 +74,4 @@ jobs:
           node tests/ui-shell.mjs
           node tests/search-editor.mjs
           node tests/city.mjs
+          node tests/world-terrain.mjs
