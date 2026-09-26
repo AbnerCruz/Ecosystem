@@ -1,0 +1,13 @@
+import fs from 'node:fs';import vm from 'node:vm';
+const storage=new Map(),localStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)};
+const context={window:{},localStorage};context.window.localStorage=localStorage;vm.createContext(context);
+for(const file of ['src/core/core.js','src/core/documents.js','src/core/knowledge-index.js','src/editor/session.js','src/editor/workspace.js','src/editor/split.js'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
+const core=context.window.UrbeCore,docs=core.service('documents'),session=core.service('editor.session'),ws=core.service('editor.workspace'),split=core.service('editor.split');
+docs.replaceAll([{path:'A.md',content:'alpha beta alpha'},{path:'B.md',content:'bravo'},{path:'C.md',content:'charlie'}]);
+session.open('A.md');ws.visit('B.md');ws.visit('C.md');if(session.activeId!=='C.md')throw new Error('visit');
+ws.back();if(session.activeId!=='B.md')throw new Error('back');ws.forward();if(session.activeId!=='C.md')throw new Error('forward');
+session.activate('A.md');if(ws.find('alpha').length!==2)throw new Error('find');
+ws.replace('alpha','X',null,{all:true});if(docs.get('A.md').content!=='X beta X')throw new Error('replace all');
+session.pin('A.md',true);ws.persist();if(!storage.get('urbe.editor.workspace.v1'))throw new Error('persist');
+split.open('B.md');if(!split.snapshot().enabled||split.snapshot().secondary!=='B.md')throw new Error('split open');split.swap();if(split.snapshot().primary!=='B.md')throw new Error('split swap');split.ratio(.9);if(split.snapshot().ratio!==.75)throw new Error('split ratio clamp');split.close();if(split.snapshot().enabled)throw new Error('split close');
+console.log('OK   back/forward navigation');console.log('OK   find/replace');console.log('OK   session persistence');console.log('OK   split view model');
