@@ -9,6 +9,8 @@ const APP_SHELL = [
   './src/core/core.js',
   './src/core/documents.js',
   './src/core/knowledge-index.js',
+  './src/editor/session.js',
+  './src/editor/context.js',
   './src/core/keymap.js',
   './src/ui/command-palette.js',
   './src/ui/quick-open.js',
