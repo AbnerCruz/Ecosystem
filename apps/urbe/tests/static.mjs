@@ -25,10 +25,11 @@ const checks = [
   ['índice de conhecimento', index.includes('./src/core/knowledge-index.js') && knowledge.includes('class KnowledgeIndex')],
   ['atalhos unificados', index.includes('./src/core/keymap.js') && keymap.includes("ui.commandPalette.open")],
   ['command palette', index.includes('./src/ui/command-palette.js') && palette.includes("ui.commandPalette.open")],
+  ['quick open indexado', index.includes('./src/ui/quick-open.js') && keymap.includes("ui.quickOpen.open")],
   ['cache app', sw.includes("'./src/app.js'")],
   ['cache core', sw.includes("'./src/core/core.js'")],
   ['cache conhecimento', sw.includes("'./src/core/documents.js'") && sw.includes("'./src/core/knowledge-index.js'")],
-  ['cache comandos', sw.includes("'./src/core/keymap.js'") && sw.includes("'./src/ui/command-palette.js'")],
+  ['cache comandos', sw.includes("'./src/core/keymap.js'") && sw.includes("'./src/ui/command-palette.js'") && sw.includes("'./src/ui/quick-open.js'")],
   ['cache css', sw.includes("'./src/styles/base.css'") && sw.includes("'./src/styles/shell.css'")],
   ['cache versionado', sw.includes('urbe-shell-v0.27.0')],
   ['sem runtime principal inline', !index.includes('V25_MAX=18')]
