@@ -3793,7 +3793,12 @@ function v23Atualizar(){
   var nome=document.getElementById('v23VaultName');
   if(nome)nome.textContent=(Disco.cidade||'Sem vault')+(Disco.modo==='pasta'?' · pasta':' · interno');
 }
-setInterval(v23Atualizar,260);
+(function v23AtualizacaoReativa(){
+  var core=window.UrbeCore;
+  if(core){['workspace:loaded','workspace:dirty','workspace:saving','workspace:saved','workspace:saveError','document:created','document:updated','document:removed','explorer:selection'].forEach(function(ev){core.events.on(ev,v23Atualizar)})}
+  var obs=new MutationObserver(v23Atualizar);[editorFull,fileSidebar,aiPanel,menuEl,filePreview].filter(Boolean).forEach(function(el){obs.observe(el,{attributes:true,attributeFilter:['class','style','hidden']})});
+  addEventListener('visibilitychange',v23Atualizar);v23Atualizar();
+})();
 
 /* o ponto da barra superior substitui o antigo selo de sincronização */
 var v23BaseStatus=statusSinc;
