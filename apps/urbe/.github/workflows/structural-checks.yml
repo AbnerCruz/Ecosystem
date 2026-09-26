@@ -1,0 +1,22 @@
+name: Urbe structural checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: JavaScript syntax
+        run: |
+          node --check src/legacy/bootstrap.js
+          node --check src/app.js
+          node --check sw.js
+      - name: Structural invariants
+        run: node tests/static.mjs
