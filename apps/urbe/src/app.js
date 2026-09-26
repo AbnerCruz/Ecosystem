@@ -1288,7 +1288,7 @@ function moverArquivosParaRegiao(ids,regionId){
     const b=world.buildings.find(x=>x.id===idd);if(!b)continue;
     let pos=alvo?vagaNaRegiao(alvo,semente(b.id+Date.now()),ign):vagaAleatoria(semente(b.id+Date.now()),3,3);
     if(!pos){toast("Sem espaço construível no destino.");continue}
-    b.regionId=alvo?.id||null;b.x=pos.x;b.y=pos.y;b.modified=nowDate();
+    b.regionId=alvo?.id||null;b.x=pos.x;b.y=pos.y;b.modified=nowDate();try{var _wp=window.UrbeCore&&window.UrbeCore.service('world.projection');var _docs=window.UrbeCore&&window.UrbeCore.service('documents');var _doc=_docs&&_docs.list().find(function(d){return d.title.toLowerCase()===b.name.toLowerCase()});if(_wp&&_doc)_wp.setSpatial(_doc.id,{x:b.x,y:b.y})}catch(_){}
   }
   marcarIndice();indexar();scheduleRoadRebuild();buildTree();counts();agendarSalvar();
 }
