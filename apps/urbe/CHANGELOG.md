@@ -1,5 +1,16 @@
 # Urbe — Changelog
 
+## v0.42.0 — Assistente agêntico, independente de modelo (2026-09-26)
+
+- O chat antigo (um pedido ao OpenRouter com as notas coladas no prompt) deu lugar a agentes que trabalham no vault usando ferramentas.
+- Provedores (`src/ai/providers.js`): OpenRouter, Anthropic (API nativa), OpenAI, Google Gemini, Ollama local e qualquer servidor compatível com OpenAI (LM Studio, vLLM, Groq…). Streaming SSE com chamadas de ferramenta nos dois protocolos, novas tentativas em 429/5xx, cancelamento e mensagens de erro claras (chave recusada, sem créditos, modelo sem ferramentas, contexto estourado).
+- Ferramentas (`src/ai/tools.js`): visão geral do vault, listar, buscar, ler com números de linha, links e backlinks, tags, contexto do editor (nota aberta e seleção), criar, editar trecho exato, reescrever, acrescentar em seção, renomear/mover atualizando os [[links]], excluir para a lixeira, criar pasta, abrir nota e memorizar fatos.
+- Loop agêntico (`src/ai/agent.js`): vários passos até concluir, com limite configurável; políticas “Pede aprovação”, “Edita sozinho” e “Só leitura” (exclusões sempre pedem confirmação); recusas voltam ao modelo para ele ajustar o plano; subagente Pesquisador para pesquisas amplas em contexto próprio; compactação do contexto preservando pares de ferramenta; proteção contra instruções escondidas em notas.
+- Agentes: Assistente, Pesquisador, Escritor e Organizador, mais agentes personalizados com instruções e permissões próprias.
+- Interface (`src/ai/ui.js`): cada ação vira um cartão com status; aprovação mostra o diff da mudança; parar a qualquer momento; desfazer todas as alterações de uma resposta (sem atropelar edições feitas depois); [[links]] da resposta abrem a nota; histórico de conversas; troca de agente, provedor e modelo (lista com preço, contexto e aviso de modelos sem ferramentas); consumo de tokens e custo; memória e instruções editáveis. Conversas e chaves ficam só neste aparelho (IndexedDB); a configuração antiga do OpenRouter é importada.
+- Correção: abrir uma nota no editor Visual e sair dela reescrevia o arquivo (reformatação do Markdown, com linhas em branco entre itens de lista). Agora só grava quando há mudança real, e listas são serializadas sem linhas em branco.
+- O service worker não intercepta mais requisições a outras origens (APIs de modelos), evitando respostas antigas do cache.
+
 ## v0.41.0 — Mundo vivo (2026-09-26)
 
 - Novo gerador de mundo (`src/world/terrain.js`): continentes, cordilheiras, rios que descem ao mar, praias, e biomas derivados de elevação, temperatura (latitude e altitude) e umidade — campo, prado, floresta, mata fechada, pântano, taiga, tundra, neve, colinas, montanha, deserto, savana e estepe. Determinístico e infinito; o início é sempre um vale temperado.
