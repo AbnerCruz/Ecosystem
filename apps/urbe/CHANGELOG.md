@@ -1,5 +1,16 @@
 # Urbe — Changelog
 
+## v0.38.0 — Redesenho, fase 1: casca escura focada (2026-09-26)
+
+- Sistema visual único (`src/styles/theme.css`): paleta escura neutra com um acento, tipografia do sistema (monoespaçada só em código), escala de espaçamento e raios, sombras suaves. Os tokens antigos passam a apontar para a nova paleta.
+- Ícones SVG consistentes (`src/ui/icons.js`) no lugar de glifos Unicode que variavam por aparelho.
+- Diálogos próprios (`src/ui/dialogs.js`): folhas inferiores no celular e cartões centrais no desktop, com validação e teclado (Enter/Esc). Nenhum `prompt()`/`confirm()`/`alert()` nativo restante.
+- Navegação: dock com Cidade, Notas e Assistente (vira trilho lateral no desktop); barra superior flutuante com busca, mapa e configurações; o botão + só aparece na cidade.
+- Notas: cabeçalho enxuto (Nova, ⋯), busca, estados vazios explicativos, Recentes/Favoritos/Composições/Lixeira no menu ⋯, restauração direta da lixeira.
+- Editor: voltar, título, Visual/Fonte e menu ⋯ com semântica clara; barra de formatação legível (H1–H3, B, I, ícones); abas só com duas ou mais notas; texto em coluna confortável.
+- Primeiro acesso: cartão explica a cidade e cria a primeira nota; notas criadas pela cidade abrem direto no editor.
+- Removidas regras legadas que forçavam cantos retos, fundos azulados e aviso “N arquivo(s) editável(is)” ao abrir.
+
 ## v0.37.1 — Correções de integridade do editor e do save (2026-09-26)
 
 - Editor Visual: o texto digitado agora chega ao DocumentStore; antes a reconciliação do save descartava a edição e a nota voltava vazia ao recarregar.

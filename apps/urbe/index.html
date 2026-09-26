@@ -10,13 +10,14 @@
 <meta name="apple-mobile-web-app-title" content="Urbe">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-<title>Urbe v0.37.1</title>
+<title>Urbe v0.38.0</title>
 <link rel="stylesheet" href="./src/styles/base.css">
 <link rel="stylesheet" href="./src/styles/shell.css">
 <link rel="stylesheet" href="./src/styles/command-palette.css">
 <link rel="stylesheet" href="./src/styles/editor-chrome.css">
 <link rel="stylesheet" href="./src/styles/explorer-mobile.css">
 <link rel="stylesheet" href="./src/styles/composition.css">
+<link rel="stylesheet" href="./src/styles/theme.css">
 </head>
 <body>
 <div id="app">
@@ -102,24 +103,24 @@
   </header>
 
   <main id="editorMain">
-    <div id="mdToolbar">
-      <button class="mdBtn" data-md="# " title="Título 1" aria-label="Título 1">Ⅰ</button>
-      <button class="mdBtn" data-md="## " title="Título 2" aria-label="Título 2">Ⅱ</button>
-      <button class="mdBtn" data-md="### " title="Título 3" aria-label="Título 3">Ⅲ</button>
-      <button class="mdBtn" data-wrap="**" title="Negrito" aria-label="Negrito">𝐁</button>
-      <button class="mdBtn" data-wrap="_" title="Itálico" aria-label="Itálico">𝐼</button>
-      <button class="mdBtn" data-md="- " title="Lista" aria-label="Lista">☷</button>
-      <button class="mdBtn" data-md="- [ ] " title="Tarefa" aria-label="Tarefa">☑</button>
-      <button class="mdBtn" data-wrap="[]()" data-special="link" title="Link externo" aria-label="Link externo">🔗</button>
-      <button class="mdBtn" data-special="noteLink" title="Vincular nota" aria-label="Vincular nota">⛓</button>
-      <button class="mdBtn" data-md="> " title="Citação" aria-label="Citação">❞</button>
-      <button class="mdBtn" data-wrap="`" title="Código" aria-label="Código">⌘</button>
+    <div id="mdToolbar" role="toolbar" aria-label="Formatação">
+      <button class="mdBtn" data-md="# " title="Título 1" aria-label="Título 1">H1</button>
+      <button class="mdBtn" data-md="## " title="Título 2" aria-label="Título 2">H2</button>
+      <button class="mdBtn" data-md="### " title="Título 3" aria-label="Título 3">H3</button>
+      <span class="mdSep" aria-hidden="true"></span>
+      <button class="mdBtn" data-wrap="**" title="Negrito" aria-label="Negrito"><b style="font-weight:800">B</b></button>
+      <button class="mdBtn" data-wrap="_" title="Itálico" aria-label="Itálico"><i style="font-family:Georgia,serif;font-weight:600">I</i></button>
+      <button class="mdBtn" data-wrap="`" title="Código" aria-label="Código" data-icon="code"></button>
+      <span class="mdSep" aria-hidden="true"></span>
+      <button class="mdBtn" data-md="- " title="Lista" aria-label="Lista" data-icon="list"></button>
+      <button class="mdBtn" data-md="- [ ] " title="Tarefa" aria-label="Tarefa" data-icon="task"></button>
+      <button class="mdBtn" data-md="> " title="Citação" aria-label="Citação" data-icon="quote"></button>
+      <span class="mdSep" aria-hidden="true"></span>
+      <button class="mdBtn" data-special="noteLink" title="Vincular nota" aria-label="Vincular nota" data-icon="wikilink"></button>
+      <button class="mdBtn" data-wrap="[]()" data-special="link" title="Link externo" aria-label="Link externo" data-icon="link"></button>
       <button class="mdBtn" data-md="
 ---
-" title="Linha horizontal" aria-label="Linha horizontal">━</button>
-      <button class="mdBtn" data-md="
-
-" title="Novo parágrafo" aria-label="Novo parágrafo">↵</button>
+" title="Linha horizontal" aria-label="Linha horizontal" data-icon="rule"></button>
     </div>
     <div id="editorScroll">
       <div id="documentWatermark" aria-hidden="true">arquivo.md</div>
@@ -215,6 +216,8 @@
 
 
 
+<script src="./src/ui/icons.js"></script>
+<script src="./src/ui/dialogs.js"></script>
 <script src="./src/legacy/bootstrap.js"></script>
 <script src="./src/core/core.js"></script>
 <script src="./src/core/documents.js"></script>
