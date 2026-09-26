@@ -19,6 +19,9 @@ jobs:
           node --check src/core/core.js
           node --check src/core/documents.js
           node --check src/core/knowledge-index.js
+          node --check src/explorer/model.js
+          node --check src/explorer/operations.js
+          node --check src/explorer/mobile-ui.js
           node --check src/editor/session.js
           node --check src/editor/context.js
           node --check src/editor/workspace.js
@@ -38,3 +41,4 @@ jobs:
           node tests/documents.mjs
           node tests/editor.mjs
           node tests/editor-workspace.mjs
+          node tests/explorer.mjs
