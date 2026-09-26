@@ -4503,6 +4503,40 @@ Object.assign(window.URBE,{
 var v25BaseRebuild=rebuildRoadNetwork;
 rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[];return r};
 
+/* ---------- v0.27: ponte para o Workspace Core ---------- */
+(function registrarWorkspaceCore(){
+  var core=window.UrbeCore;
+  if(!core)return;
+
+  core.provide('legacy.runtime',{
+    openCity:function(nome){return abrirCidade(nome)},
+    save:function(){return salvarCidade()},
+    navigate:function(destino){return v23Navegar(destino)},
+    createNote:function(regionId){return criarNotaNoDestino(regionId||null)},
+    createFolder:function(parentId){return criarPastaNoDestino(parentId||null)},
+    rebuildRoads:function(){return rebuildRoadNetwork()}
+  });
+
+  [
+    ['workspace.navigate.world','Abrir aquário','Navegação',function(){return v23Navegar('mundo')}],
+    ['workspace.navigate.files','Abrir arquivos','Navegação',function(){return v23Navegar('arquivos')}],
+    ['workspace.navigate.ai','Abrir IA','Navegação',function(){return v23Navegar('ia')}],
+    ['workspace.navigate.vaults','Abrir vaults','Navegação',function(){return v23Navegar('vaults')}],
+    ['document.create','Nova nota','Documento',function(ctx){return criarNotaNoDestino(ctx&&ctx.regionId||null)}],
+    ['folder.create','Nova pasta','Documento',function(ctx){return criarPastaNoDestino(ctx&&ctx.parentId||null)}],
+    ['workspace.save','Salvar workspace','Workspace',function(){return salvarCidade()}]
+  ].forEach(function(item){
+    if(!core.commands.has(item[0]))core.commands.register(item[0],{title:item[1],category:item[2],execute:item[3]});
+  });
+
+  core.events.on('command:after',function(evt){
+    if(evt.id.indexOf('workspace.navigate.')===0){
+      core.state.patch({mode:evt.id.slice('workspace.navigate.'.length)},{source:evt.id});
+    }
+  });
+  core.start();
+})();
+
 /* ---------- boot ---------- */
 (async()=>{
   try{
