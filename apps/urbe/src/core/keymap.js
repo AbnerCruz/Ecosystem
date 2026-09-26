@@ -35,7 +35,7 @@
   bind('Mod+\\\\','editor.split.open',{allowInEditor:true});
   bind('Mod+N','document.create');
   bind('Mod+Shift+M','workspace.navigate.world');
-  bind('Mod+Shift+F','workspace.navigate.files');
+  bind('Mod+Shift+F','ui.explorer.open',{allowInEditor:true});
 
   core.provide('keymap',{
     bind:bind,
