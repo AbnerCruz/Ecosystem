@@ -2124,6 +2124,15 @@ const FS={
     await DBK.fDel(cidade+"/"+caminho+"/.pasta");
   }
 };
+/* v0.32: FS legado é apenas adapter do Persistence Core. */
+try{
+  var _persistence=window.UrbeCore&&window.UrbeCore.service('persistence');
+  if(_persistence)_persistence.configure({
+    list:function(vault){return FS.listar(vault)},read:function(vault,path){return FS.ler(vault,path)},
+    write:function(vault,path,content){return FS.escrever(vault,path,content)},remove:function(vault,path){return FS.apagar(vault,path)},
+    createFolder:function(vault,path){return FS.criarPasta(vault,path)},removeFolder:function(vault,path){return FS.apagarPasta(vault,path)}
+  });
+}catch(_){}
 
 /* ---------- caminhos derivados do mundo ---------- */
 function caminhosRegioes(){
@@ -2220,10 +2229,12 @@ function dirDe(rel){const i=rel.lastIndexOf("/");return i<0?"":rel.slice(0,i)}
 async function abrirCidade(nome){
   sincSuspenso=true;
   try{
-    const rels=await FS.listar(nome);
-    const mds=rels.filter(r=>/\.(md|markdown)$/i.test(r)&&!r.startsWith(".urbe/")&&!r.split("/").pop().startsWith("."));
-    let mapa=null;
-    try{mapa=JSON.parse(await FS.ler(nome,".urbe/mapa.json")||"null")}catch(_){}
+    const persistence=window.UrbeCore&&window.UrbeCore.service('persistence');
+    const loaded=persistence?await persistence.load(nome):null;
+    const rels=loaded?loaded.paths:await FS.listar(nome);
+    const mds=loaded?loaded.documents.map(d=>d.path):rels.filter(r=>/\.(md|markdown)$/i.test(r)&&!r.startsWith(".urbe/")&&!r.split("/").pop().startsWith("."));
+    let mapa=loaded?loaded.metadata:null;
+    if(!loaded){try{mapa=JSON.parse(await FS.ler(nome,".urbe/mapa.json")||"null")}catch(_){}}
     const geoReg=new Map(),geoNota=new Map();
     if(mapa){
       for(const r of mapa.regioes||[])geoReg.set(r.caminho,r);
@@ -2231,14 +2242,13 @@ async function abrirCidade(nome){
     }
     /* le o conteudo de todas as notas antes de mexer no mundo */
     const conteudos=new Map();
-    for(const rel of mds)conteudos.set(rel,(await FS.ler(nome,rel))||"");
+    if(loaded)for(const d of loaded.documents)conteudos.set(d.path,d.content||"");
+    else for(const rel of mds)conteudos.set(rel,(await FS.ler(nome,rel))||"");
+    const worldProjection=window.UrbeCore&&window.UrbeCore.service('world.projection');
+    if(worldProjection)worldProjection.load(mapa);
     /* v0.28: documentos são a fonte lógica; a cidade passa a ser projeção. */
     const documentStore=window.UrbeCore&&window.UrbeCore.service('documents');
-    if(documentStore)documentStore.replaceAll(mds.map(rel=>({
-      id:rel,path:rel,content:conteudos.get(rel)||"",
-      created:(geoNota.get(rel)&&geoNota.get(rel).criado)||null,
-      modified:(geoNota.get(rel)&&geoNota.get(rel).modificado)||null
-    })),{source:'vault.open',vault:nome});
+    if(documentStore&&!loaded)documentStore.replaceAll(mds.map(rel=>({id:rel,path:rel,content:conteudos.get(rel)||"",created:(geoNota.get(rel)&&geoNota.get(rel).criado)||null,modified:(geoNota.get(rel)&&geoNota.get(rel).modificado)||null})),{source:'vault.open',vault:nome});
 
     world.regions.length=0;world.buildings.length=0;world.roads.clear();
     world.links.length=0;selected=null;currentFile=null;
