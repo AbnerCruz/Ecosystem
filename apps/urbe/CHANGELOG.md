@@ -1,5 +1,16 @@
 # Urbe — Changelog
 
+## v0.28.0 — Canonical documents and knowledge index (2026-09-26)
+
+- Added a canonical `DocumentStore` independent from city buildings and rendering.
+- Documents now expose stable path, content, properties, tags and wiki-links.
+- Added an in-memory knowledge index for local search, tags, outgoing links and backlinks.
+- Opening an existing vault projects its Markdown files into the canonical document model.
+- Legacy editor changes synchronize into canonical documents while compatibility remains.
+- Added `document.open`, `document.update`, `document.remove` and `workspace.search` commands.
+- Added indexed Quick Open on `Ctrl/Cmd+P`.
+- Added automated tests for documents, wiki-links, backlinks, tags, search and reindexing.
+
 ## v0.27.0 — Workspace Core foundation (2026-09-26)
 
 - Reframed the runtime around a local-first workspace core; the city is an integrated spatial aquarium rather than the authority over documents.
