@@ -18,6 +18,7 @@ jobs:
           node --check src/legacy/bootstrap.js
           node --check src/core/core.js
           node --check src/core/documents.js
+          node --check src/core/history.js
           node --check src/core/trash.js\n          node --check src/core/knowledge-index.js
           node --check src/persistence/workspace.js
           node --check src/world/projection.js
@@ -47,6 +48,7 @@ jobs:
           node tests/static.mjs
           node tests/core.mjs
           node tests/documents.mjs\n          node tests/trash.mjs
+          node tests/recovery-history.mjs
           node tests/editor.mjs
           node tests/editor-workspace.mjs
           node tests/explorer.mjs
