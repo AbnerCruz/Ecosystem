@@ -3,7 +3,7 @@
   var core=global.UrbeCore,docs=core&&core.service('documents');if(!core||!docs)return;
   function dir(path){var i=String(path).lastIndexOf('/');return i<0?'':path.slice(0,i)}
   class WorldProjection{
-    constructor(events,store){this.events=events;this.store=store;this.spatial=new Map();this.regions=new Map();this.enabled=true;this.revision=0}
+    constructor(events,store){this.events=events;this.store=store;this.spatial=new Map();this.regions=new Map();this.enabled=true;this.revision=0;var self=this;events.on('document:updated',function(evt){if(!evt||!evt.previous||!evt.document||evt.previous.path===evt.document.path)return;var spatial=self.spatial.get(evt.previous.path);if(spatial){self.spatial.delete(evt.previous.path);self.spatial.set(evt.document.path,spatial);self.revision++;self.events.emit('world:projection',{type:'path-migrated',documentId:evt.document.id,from:evt.previous.path,to:evt.document.path,revision:self.revision})}})}
     load(metadata){
       this.spatial.clear();this.regions.clear();var m=metadata||{};
       (m.regioes||[]).forEach(r=>{if(r.caminho)this.regions.set(r.caminho,{...r})});
