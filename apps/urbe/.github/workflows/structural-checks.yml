@@ -20,6 +20,9 @@ jobs:
           node --check src/core/documents.js
           node --check src/core/trash.js
           node --check src/core/knowledge-index.js
+          node --check src/composition/store.js
+          node --check src/composition/compiler.js
+          node --check src/composition/ui.js
           node --check src/persistence/workspace.js
           node --check src/world/projection.js
           node --check src/world/system.js
@@ -48,6 +51,8 @@ jobs:
           node tests/core.mjs
           node tests/documents.mjs
           node tests/trash.mjs
+          node tests/composition.mjs
+          node tests/recovery-history.mjs
           node tests/editor.mjs
           node tests/editor-workspace.mjs
           node tests/explorer.mjs
