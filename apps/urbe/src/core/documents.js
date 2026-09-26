@@ -48,7 +48,7 @@
     make(input){
       var path=normalizePath(input.path),content=String(input.content||''),properties=input.properties||parseFrontmatter(content);
       return Object.freeze({
-        id:String(input.id||path),path:path,title:String(input.title||titleFromPath(path)),content:content,
+        id:String(input.id||createDocumentId()),path:path,title:String(input.title||titleFromPath(path)),content:content,
         properties:Object.freeze({...properties}),tags:Object.freeze((input.tags||parseTags(content,properties)).slice()),
         links:Object.freeze((input.links||parseLinks(content)).slice()),created:input.created||null,modified:input.modified||null,
         revision:Number(input.revision||0)
