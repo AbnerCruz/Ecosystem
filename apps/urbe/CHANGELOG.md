@@ -1,5 +1,16 @@
 # Urbe — Changelog
 
+## v0.29.0 — Editor Core (2026-09-26)
+
+- Added an editor session independent from the aquarium/runtime.
+- Added logical multi-document tabs with activation, closing and pin-ready state.
+- Added bounded document history with canonical undo/redo.
+- Added reusable editor context with Markdown outline, outgoing links and backlinks.
+- Connected the legacy editor to canonical editor sessions without replacing the current editing surface.
+- Added visible document tabs and a responsive outline/backlinks context panel.
+- Added `editor.undo`, `editor.redo`, `editor.closeTab` and `editor.contextPanel` commands.
+- Added automated editor tests for tabs, history, outline and backlinks.
+
 ## v0.28.0 — Canonical documents and knowledge index (2026-09-26)
 
 - Added a canonical `DocumentStore` independent from city buildings and rendering.
