@@ -78,3 +78,31 @@ Rules introduced in v0.27:
 - Burgo remains downstream of the aquarium/workspace and cannot be required for editing or opening a vault.
 - Legacy code is migrated incrementally through `legacy.runtime`; compatibility bridges are temporary and replaceable.
 - A command has one canonical ID. Keyboard shortcuts, buttons, menus, gestures and the future command palette must invoke the same command.
+
+
+## v0.33 — Aquarium runtime boundary
+
+The canonical dependency direction is now enforced in executable services:
+
+```
+Vault adapter
+    ↓
+Persistence Core
+    ↓
+DocumentStore ─→ KnowledgeIndex
+    ↓               ↓
+WorldProjection → AquariumWorld → RoadGraph
+    ↓
+render / interaction adapters
+    ↓
+Burgo (optional downstream simulation)
+```
+
+Invariants:
+
+- Markdown content is never sourced from aquarium entities.
+- Aquarium entities carry document identity plus spatial presentation only.
+- Semantic roads come from the KnowledgeIndex; tile paths are a rendering/materialization concern.
+- Burgo may observe documents and aquarium state but may not mutate document content.
+- Simulation/tick work should register with the shared Scheduler instead of creating independent perpetual timers.
+- Mobile interaction remains the primary interaction contract; desktop shortcuts and layouts are additive.
