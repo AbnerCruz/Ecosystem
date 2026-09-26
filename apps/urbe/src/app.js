@@ -2297,7 +2297,7 @@ async function abrirCidade(nome){
     for(const rel of mds){
       const cam=dirDe(rel),r=cam?regPorCaminho.get(cam):null;
       const g=geoNota.get(rel);
-      const b={id:id("b"),kind:"building",regionId:r?r.id:null,
+      const _docLoaded=documentStore&&documentStore.get(rel);const b={id:id("b"),documentId:_docLoaded&&_docLoaded.id||(g&&g.id)||null,kind:"building",regionId:r?r.id:null,
         x:0,y:0,w:3,h:3,name:limparNome(rel),ext:(rel.match(/\.(md|markdown)$/i)||[".md"])[0].toLowerCase(),description:"",
         content:conteudos.get(rel)||"",
         sprite:(g&&g.sprite)||["house1","house2","house3"][semente(rel)%3],
@@ -4549,7 +4549,7 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
     ['workspace.navigate.ai','Abrir IA','Navegação',function(){return v23Navegar('ia')}],
     ['workspace.navigate.vaults','Abrir vaults','Navegação',function(){return v23Navegar('vaults')}],
     ['document.create','Nova nota','Documento',function(ctx){return criarNotaNoDestino(ctx&&ctx.regionId||null)}],
-    ['document.open','Abrir nota','Documento',function(ctx){var docs=core.service('documents'),doc=docs&&docs.get(ctx&&(ctx.id||ctx.path));if(!doc)return false;var ws=core.service('editor.workspace');if(ws&&(!ctx||ctx.source!=='history'))ws.visit(doc.id);var b=world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===doc.title.toLowerCase()});if(!b)return false;openFullEditor(b);return true}],
+    ['document.open','Abrir nota','Documento',function(ctx){var docs=core.service('documents'),doc=docs&&docs.get(ctx&&(ctx.id||ctx.path));if(!doc)return false;var ws=core.service('editor.workspace');if(ws&&(!ctx||ctx.source!=='history'))ws.visit(doc.id);var b=world.buildings.find(function(x){return x.tipo==='nota'&&x.documentId===doc.id})||world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===doc.title.toLowerCase()});if(!b)return false;openFullEditor(b);return true}],
     ['folder.create','Nova pasta','Documento',function(ctx){return criarPastaNoDestino(ctx&&ctx.parentId||null)}],
     ['workspace.save','Salvar workspace','Workspace',function(){return salvarCidade()}]
   ].forEach(function(item){
@@ -4561,7 +4561,7 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
   core.events.on('explorer:operation',function(evt){
     if(!evt)return;
     if(evt.type==='rename'||evt.type==='move'){
-      var from=evt.from,to=evt.to,b=world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===from.title.toLowerCase()});
+      var from=evt.from,to=evt.to,b=world.buildings.find(function(x){return x.tipo==='nota'&&x.documentId===from.id})||world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===from.title.toLowerCase()});
       if(b){b.name=to.title;b.content=to.content;b.modified=nowDate();buildTree();agendarSalvar();marcarSinc()}
     }else if(evt.type==='duplicate'&&evt.to){
       /* A projeção geográfica completa será criada pelo fluxo de criação legado até WorldSystem assumir esta responsabilidade. */
@@ -4587,13 +4587,13 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
   core.provide('legacy.documents',{
     syncBuilding:function(b,source){
       var path=caminhoDocumentoDoPredio(b);if(!path||!docs)return null;
-      var existing=docs.get(path);
+      var existing=(b.documentId&&docs.get(b.documentId))||docs.get(path);
       if(existing&&existing.content===(b.content||''))return existing;
       if(source==='editor.input'){
         var session=core.service('editor.session');
         if(existing&&session)return session.record(existing.id,b.content||'',{source:'editor.input',modified:b.modified||null});
       }
-      return docs.upsert({id:path,path:path,title:b.name,content:b.content||'',tags:b.tags||[],created:b.created||null,modified:b.modified||null},{source:source||'legacy.building'});
+      var updated=docs.upsert({id:existing&&existing.id||b.documentId||undefined,path:path,title:b.name,content:b.content||'',tags:b.tags||[],created:b.created||null,modified:b.modified||null},{source:source||'legacy.building'});b.documentId=updated.id;return updated;
     },
     rebuild:function(){
       if(!docs)return[];
@@ -4601,7 +4601,7 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
       world.buildings.filter(function(b){return b.tipo==='nota'}).forEach(function(b){
         var dir=b.regionId?(cam.get(b.regionId)||''):'',base=nomeSeguro(b.name),path=(dir?dir+'/':'')+base+'.md',n=2;
         while(used.has(path.toLowerCase()))path=(dir?dir+'/':'')+base+' ('+(n++)+').md';
-        used.add(path.toLowerCase());items.push({id:path,path:path,title:b.name,content:b.content||'',tags:b.tags||[],created:b.created||null,modified:b.modified||null});
+        used.add(path.toLowerCase());var existing=(b.documentId&&docs.get(b.documentId))||docs.get(path);items.push({id:existing&&existing.id||b.documentId||undefined,path:path,title:b.name,content:b.content||'',tags:b.tags||[],created:b.created||null,modified:b.modified||null});
       });
       return docs.replaceAll(items,{source:'legacy.rebuild'});
     }
