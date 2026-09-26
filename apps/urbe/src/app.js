@@ -196,24 +196,15 @@ function normName(s){
   return slug(String(s||"").replace(/\.md$/i,"")).toLowerCase();
 }
 function linksFromContent(b){
-  const out=[];
-  const txt=b.content||"";
-  // Wiki links: [[Nome da nota]] or [[Nome da nota|rótulo]]
-  for(const m of txt.matchAll(/\[\[([^\]|#]+)(?:[|#][^\]]*)?\]\]/g)){
-    out.push(normName(m[1].trim()));
-  }
-  // Local Markdown links: [texto](arquivo.md) and paths ending in .md
-  for(const m of txt.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)){
-    let target=m[1].trim().split("#")[0];
-    if(/\.md$/i.test(target)){
-      target=target.split("/").pop();
-      out.push(normName(target));
-    }
-  }
-  return [...new Set(out)];
+  const core=window.UrbeCore,docs=core&&core.service('documents'),knowledge=core&&core.service('knowledge');
+  const doc=docs&&b&&docs.get(b.documentId||b.path||b.name);
+  if(doc&&knowledge)return knowledge.links(doc.id).map(d=>normName(d.title));
+  return doc?(doc.links||[]).map(normName):[];
 }
 function buildingByLinkName(name){
-  return world.buildings.find(b=>normName(b.name)===name);
+  const core=window.UrbeCore,docs=core&&core.service('documents');
+  const doc=docs&&docs.list().find(d=>normName(d.title)===name||normName(d.path)===name);
+  return doc?world.buildings.find(b=>b.documentId===doc.id):null;
 }
 function tileBlockedByBuilding(x,y){
   return world.buildings.some(b=>x>=b.x&&x<b.x+b.w&&y>=b.y&&y<b.y+b.h);
