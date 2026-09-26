@@ -1,5 +1,16 @@
 # Urbe — Changelog
 
+## v0.31.0 — Mobile-first Explorer Core (2026-09-26)
+
+- Added a document-first Explorer tree independent from aquarium buildings and regions.
+- Added canonical multi-selection, expanded folders, favorites and recent documents.
+- Added canonical rename, move, duplicate and delete commands.
+- Added a mobile-first full-screen Explorer with 44px+ touch targets, long-press selection, optional haptic feedback and a thumb-reachable bottom action bar.
+- Large screens derive from the mobile surface as a side panel instead of using a separate desktop-first implementation.
+- Routed the file-browser shortcut through the canonical Explorer.
+- Added compatibility projection for rename/move/delete while WorldSystem is still legacy.
+- Added automated Explorer tests for hierarchy, multi-selection, favorites, recent files and file operations.
+
 ## v0.30.0 — Editor Workspace (2026-09-26)
 
 - Added document back/forward navigation independent from aquarium navigation.
