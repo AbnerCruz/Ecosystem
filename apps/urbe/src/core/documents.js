@@ -57,7 +57,9 @@
     upsert(input,meta){
       if(!input||!input.path)throw new TypeError('document path is required');
       var path=normalizePath(input.path),existingId=this.pathIndex.get(path.toLowerCase()),id=String(input.id||existingId||createDocumentId());
-      var previous=this.docs.get(id)||null,next=this.make({...input,id:id,revision:(previous?previous.revision:0)+1});
+      var previous=this.docs.get(id)||null,data={...input,id:id,revision:(previous?previous.revision:0)+1};
+      if(previous&&String(input.content||'')!==previous.content){delete data.tags;delete data.links;delete data.properties}
+      var next=this.make(data);
       if(previous&&previous.path.toLowerCase()!==path.toLowerCase())this.pathIndex.delete(previous.path.toLowerCase());
       this.docs.set(id,next);this.pathIndex.set(path.toLowerCase(),id);this.revision++;
       this.events.emit(previous?'document:updated':'document:created',{document:next,previous:previous,meta:meta||null,storeRevision:this.revision});

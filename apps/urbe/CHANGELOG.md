@@ -1,5 +1,16 @@
 # Urbe — Changelog
 
+## v0.37.0 — Vault único e integração móvel (2026-09-26)
+
+- O app abre diretamente um vault `Urbe`; cidades legadas são copiadas para `Cidades/<nome>` sem apagar as origens, com marcador de migração retomável.
+- O carregamento real agora alimenta DocumentStore, composição e persistência; a gravação usa o conteúdo canônico e persiste IDs de documentos.
+- Recuperação do journal reaplica arquivos, exclusões e metadados físicos antes de removê-lo; links e tags acompanham edições.
+- Explorer móvel ganha criar nota/pasta, escolher pasta física, retomar composições e tolerância de gesto; o menu “+” expõe região e construção.
+- Links da nota visual abrem com toque; operações de mover, duplicar, excluir e restaurar alinham mundo e documentos por ID.
+- Composição reconhece frontmatter, listas, código e tabelas; estilos de bloco sobrevivem à inserção anterior, fonte/alinhamento refletem controles; CSS e HTML são editáveis e imagens locais podem ser embutidas na exportação.
+- Removidos scripts duplicados, atualizado cache offline e incluídas regressões de integração no CI.
+
+
 ## v0.35.1 — Workspace Integrity (2026-09-26)
 
 - Removed Burgo completely from runtime, navigation, cache, architecture and tests.

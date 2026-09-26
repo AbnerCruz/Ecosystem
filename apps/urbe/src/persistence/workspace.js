@@ -6,17 +6,18 @@
     configure(adapter){this.adapter=adapter;return this}
     async load(vault){
       if(!this.adapter)throw new Error('Persistence adapter not configured');this.suspended=true;this.vault=vault;
-      var paths=await this.adapter.list(vault),md=paths.filter(function(p){return /\.(md|markdown)$/i.test(p)&&!p.startsWith('.urbe/')&&!p.split('/').pop().startsWith('.')});
+      var paths=await this.adapter.list(vault),md=paths.filter(function(p){return /\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i.test(p)&&!p.split('/').some(function(part){return part.startsWith('.')})});
       var meta=null;try{meta=JSON.parse(await this.adapter.read(vault,'.urbe/mapa.json')||'null')}catch(_){}
       var journal=null;try{journal=JSON.parse(await this.adapter.read(vault,'.urbe/journal.json')||'null')}catch(_){}
       if(trash){try{trash.import(JSON.parse(await this.adapter.read(vault,'.urbe/trash.json')||'null'))}catch(_){trash.import(null)}}
       if(history){try{history.import(JSON.parse(await this.adapter.read(vault,'.urbe/history.json')||'null'))}catch(_){history.import(null)}}
       if(compositions){try{compositions.import(JSON.parse(await this.adapter.read(vault,'.urbe/compositions.json')||'null'))}catch(_){compositions.import(null)}}
-      if(compositions){try{compositions.import(JSON.parse(await this.adapter.read(vault,'.urbe/compositions.json')||'null'))}catch(_){compositions.import(null)}}
       var notesMeta=(meta&&meta.notas)||{},items=[];
-      for(var i=0;i<md.length;i++){var path=md[i],m=notesMeta[path]||{};items.push({id:m.id||null,path:path,content:(await this.adapter.read(vault,path))||'',created:m.criado||null,modified:m.modificado||null})}
-      if(journal&&journal.version===1&&Array.isArray(journal.documents)){items=journal.documents.filter(function(d){return d&&d.path});if(compositions&&journal.compositions)compositions.import(journal.compositions);this.events.emit('workspace:recovered',{vault:vault,count:items.length,timestamp:journal.timestamp||null})}
-      this.store.replaceAll(items,{source:'persistence.load',vault:vault});this.meta=meta||{};this.snapshot=new Map(items.map(function(d){return[d.path,d.content]}));this.suspended=false;
+      for(var i=0;i<md.length;i++){var path=md[i],m=notesMeta[path]||{};items.push({id:m.id||null,path:path,content:(await this.adapter.read(vault,path))||'',tags:m.tags||null,created:m.criado||null,modified:m.modificado||null})}
+      var physical=new Map(items.map(function(d){return[d.path,d.content]}));for(const path of ['.urbe/mapa.json','.urbe/trash.json','.urbe/history.json','.urbe/compositions.json'])if(paths.includes(path))physical.set(path,await this.adapter.read(vault,path));
+      if(journal&&journal.version===1&&Array.isArray(journal.documents)){items=journal.documents.filter(function(d){return d&&d.path});if(compositions&&journal.compositions)compositions.import(journal.compositions);if(journal.metadata)meta=journal.metadata;if(trash&&journal.trash)trash.import(journal.trash);if(history&&journal.history)history.import(journal.history);this.events.emit('workspace:recovered',{vault:vault,count:items.length,timestamp:journal.timestamp||null})}
+      this.store.replaceAll(items,{source:'persistence.load',vault:vault});this.meta=meta||{};this.snapshot=physical;this.suspended=false;
+      if(journal){await this.flush(this.meta)}
       this.events.emit('workspace:loaded',{vault:vault,documents:this.store.list(),metadata:meta,paths:paths});return{vault:vault,documents:this.store.list(),metadata:meta,paths:paths}
     }
     desired(metadata){var files=new Map();this.store.list().forEach(function(d){files.set(d.path,d.content)});if(metadata!==undefined)files.set('.urbe/mapa.json',JSON.stringify(metadata||{},null,1));if(trash)files.set('.urbe/trash.json',JSON.stringify(trash.export(),null,1));if(history)files.set('.urbe/history.json',JSON.stringify(history.export()));if(compositions)files.set('.urbe/compositions.json',JSON.stringify(compositions.export()));return files}
@@ -25,15 +26,16 @@
       if(this.suspended||!this.vault||!this.adapter)return false;if(this.busy){this.pending=true;return false}this.busy=true;this.pending=true;
       try{while(this.pending){this.pending=false;var desired=this.desired(metadata===undefined?this.meta:metadata);this.state='saving';this.events.emit('workspace:saving',{vault:this.vault});
         var changed=[];for(const pair of desired)if(this.snapshot.get(pair[0])!==pair[1]&&!pair[0].startsWith('.urbe/journal'))changed.push(pair[0]);
-        if(changed.length){var journal={version:1,timestamp:Date.now(),documents:this.store.list().map(function(d){return{id:d.id,path:d.path,content:d.content,created:d.created,modified:d.modified}}),compositions:compositions?compositions.export():null};await this.adapter.write(this.vault,'.urbe/journal.json',JSON.stringify(journal))}
+        var removed=Array.from(this.snapshot.keys()).filter(path=>!desired.has(path)&&!path.startsWith('.urbe/'));
+        if(changed.length||removed.length){var journal={version:1,timestamp:Date.now(),documents:this.store.list().map(function(d){return{id:d.id,path:d.path,content:d.content,tags:d.tags,created:d.created,modified:d.modified}}),metadata:metadata===undefined?this.meta:metadata,trash:trash?trash.export():null,history:history?history.export():null,compositions:compositions?compositions.export():null};await this.adapter.write(this.vault,'.urbe/journal.json',JSON.stringify(journal))}
         for(const pair of desired){if(this.snapshot.get(pair[0])!==pair[1]){await this.adapter.write(this.vault,pair[0],pair[1]);this.snapshot.set(pair[0],pair[1])}}
         for(const path of Array.from(this.snapshot.keys()))if(!desired.has(path)&&path!=='.urbe/journal.json'){await this.adapter.remove(this.vault,path);this.snapshot.delete(path)}
-        if(changed.length)try{await this.adapter.remove(this.vault,'.urbe/journal.json')}catch(_){}
+        if(changed.length||removed.length)await this.adapter.remove(this.vault,'.urbe/journal.json');
       }this.state='saved';this.lastSavedAt=Date.now();this.events.emit('workspace:saved',{vault:this.vault,savedAt:this.lastSavedAt});return true}catch(error){this.state='error';this.events.emit('workspace:saveError',{vault:this.vault,error:error});throw error}finally{this.busy=false}}
     suspend(value){this.suspended=value!==false}
   }
   var service=new WorkspacePersistence(core.events,docs);core.provide('persistence',service);
-  if(trash)core.events.on('trash:changed',function(){service.schedule()});if(history)core.events.on('history:changed',function(){service.schedule()});if(compositions){core.events.on('composition:created',function(){service.schedule()});core.events.on('composition:updated',function(){service.schedule()});core.events.on('composition:removed',function(){service.schedule()})}if(compositions){core.events.on('composition:created',function(){service.schedule()});core.events.on('composition:updated',function(){service.schedule()});core.events.on('composition:removed',function(){service.schedule()})}
+  if(trash)core.events.on('trash:changed',function(){service.schedule()});if(history)core.events.on('history:changed',function(){service.schedule()});if(compositions){core.events.on('composition:created',function(){service.schedule()});core.events.on('composition:updated',function(){service.schedule()});core.events.on('composition:removed',function(){service.schedule()})}
   core.events.on('document:created',function(){service.schedule()});core.events.on('document:updated',function(){service.schedule()});core.events.on('document:removed',function(){service.schedule()});
   core.commands.register('workspace.flush',{title:'Salvar workspace',category:'Workspace',execute:function(){return service.flush()}});
   global.UrbePersistence={WorkspacePersistence:WorkspacePersistence};

@@ -1,0 +1,10 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const source=f=>fs.readFileSync(new URL('../'+f,import.meta.url),'utf8'),app=source('src/app.js');
+const c={window:{},setTimeout,clearTimeout,Date,Math};vm.createContext(c);for(const f of ['src/core/core.js','src/core/documents.js','src/core/trash.js','src/core/history.js','src/composition/store.js','src/persistence/workspace.js','src/world/projection.js'])vm.runInContext(source(f),c);
+const files=new Map([['Urbe',new Map([['A.md','A'],['B.md','B'],['.urbe/mapa.json',JSON.stringify({notas:{'A.md':{id:'a'},'B.md':{id:'b'}}})]])]]),core=c.window.UrbeCore,p=core.service('persistence'),docs=core.service('documents');
+p.configure({async list(v){return [...files.get(v).keys()]},async read(v,k){return files.get(v).get(k)??null},async write(v,k,x){files.get(v).set(k,x)},async remove(v,k){files.get(v).delete(k)}});
+c.Disco={cidade:null};c.world={buildings:[]};c.v21StopSync=async()=>{};c.urbePersistence=p;c.urbeDocs=docs;c.urbeCore=core;c.caminhosRegioes=()=>new Map();c.urbeBuildingPath=b=>b.path;c.estadoDesejado=()=>{};c.marcarSinc=()=>{};
+c.abrirCidade=async v=>{assert.equal(docs.list().length,2,'documentos devem estar carregados antes do mundo');c.world.buildings=docs.list().map(d=>({tipo:'nota',path:d.path,documentId:null,content:'stale'}));c.Disco.cidade=v};
+const start=app.indexOf('var urbeOpenLegacy=abrirCidade;'),end=app.indexOf('/* An existing installation',start);assert(start>0&&end>start);vm.runInContext(app.slice(start,end),c);await vm.runInContext("abrirCidade('Urbe')",c);
+assert.equal(docs.list().length,2);assert.equal(c.world.buildings[0].documentId,'a');assert.equal(c.world.buildings[0].content,'A');assert.equal(p.vault,'Urbe');assert.equal(p.suspended,false);
+console.log('OK   entrada real liga vault, documentos, IDs e mundo');

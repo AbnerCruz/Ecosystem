@@ -52,6 +52,7 @@ jobs:
           node tests/documents.mjs
           node tests/trash.mjs
           node tests/composition.mjs
+          node tests/composition-regression.mjs
           node tests/recovery-history.mjs
           node tests/editor.mjs
           node tests/editor-workspace.mjs
@@ -60,3 +61,5 @@ jobs:
           node tests/world-system.mjs
           node tests/runtime-adapters.mjs
           node tests/production-order.mjs
+          node tests/integration-runtime.mjs
+          node tests/app-loader.mjs

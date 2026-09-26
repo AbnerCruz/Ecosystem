@@ -1,4 +1,4 @@
-const CACHE = 'urbe-shell-v0.36.1';
+const CACHE = 'urbe-shell-v0.37.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -13,9 +13,6 @@ const APP_SHELL = [
   './src/core/documents.js',
   './src/core/trash.js',
   './src/core/history.js',
-  './src/composition/store.js',
-  './src/composition/compiler.js',
-  './src/composition/ui.js',
   './src/composition/store.js',
   './src/composition/compiler.js',
   './src/composition/ui.js',

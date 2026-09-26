@@ -561,7 +561,7 @@ button,input,textarea,select{border-radius:0!important}
 /* ---------- dock inferior ---------- */
 #v23Dock{position:fixed;left:0;right:0;bottom:0;z-index:45;
   height:calc(var(--v23-dock) + var(--v23-safe-b));padding-bottom:var(--v23-safe-b);
-  display:grid;grid-template-columns:repeat(4,1fr);
+  display:grid;grid-template-columns:repeat(3,1fr);
   background:var(--v23-panel);border-top:2px solid var(--v23-line)}
 #v23Dock button{display:grid;place-items:center;align-content:center;gap:3px;padding:0;
   background:transparent;border:0;color:var(--v23-ink3);font:9px/1 ui-monospace,monospace;letter-spacing:.03em}

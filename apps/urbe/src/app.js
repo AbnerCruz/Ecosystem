@@ -898,13 +898,14 @@ function markdownFromVisual(root){
 function bindPreviewWikiLinks(){
   renderedPreview.querySelectorAll("[data-note-name]").forEach(el=>{
     el.onclick=e=>{
-      // Ctrl/Cmd+click opens linked note. Ordinary click leaves editing behavior intact.
-      if(!(e.ctrlKey||e.metaKey))return;
       e.preventDefault();
-      const target=buildingByLinkName(normName(el.dataset.noteName));
-      if(target){
-        loadFile(target);
-      }else toast("A nota vinculada não existe.");
+      e.stopPropagation();
+      const name=el.dataset.noteName,core=window.UrbeCore,docs=core&&core.service('documents');
+      const exact=docs&&(docs.get(name)||docs.get(name+'.md'));
+      const matches=docs?docs.list().filter(d=>d.title.toLowerCase()===name.toLowerCase()):[];
+      const target=exact||(matches.length===1?matches[0]:null);
+      if(target)core.commands.execute('document.open',{id:target.id,source:'wikilink'});
+      else toast(matches.length>1?'Link ambíguo: use o caminho da nota.':'A nota vinculada não existe.');
     };
   });
 }
@@ -927,7 +928,6 @@ function syncVisualToMarkdown(){
   agendarSalvar();
   document.getElementById("saveState").textContent="Salvando...";
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>document.getElementById("saveState").textContent="Salvo",450);
   updateStats();
 }
 
@@ -1757,21 +1757,23 @@ function exigirJSZip(){return carregarJSZip()}
 
 /* ---------- vault: exportação ---------- */
 async function exportarVault(){
-  const docs=window.UrbeCore&&window.UrbeCore.service('documents');
-  const documents=docs?docs.list():[];
-  if(!documents.length){toast("Nada para exportar.");return}
-  const JSZipLib=await exigirJSZip(),zip=new JSZipLib();
-  for(const d of documents){
-    zip.file(d.path,d.content||"");
-    const b=world.buildings.find(x=>x.tipo==="nota"&&x.documentId===d.id);
-    for(const a of ((b&&b.anexos)||[])){
-      const dir=d.path.includes("/")?d.path.slice(0,d.path.lastIndexOf("/")+1):"";
-      if(a.cacheId){try{const blob=await DBK.bGet(a.cacheId);if(blob){zip.file(dir+a.nome,blob);continue}}catch(_){}}
-      if(a.dataUrl)zip.file(dir+a.nome,a.dataUrl.split(",")[1],{base64:true});
+  if(!Disco.cidade)return toast('Abra o Urbe antes de exportar.');
+  try{
+    await rodarSinc(true);
+    const persistence=window.UrbeCore&&window.UrbeCore.service('persistence');
+    if(persistence){await persistence.flush();while(persistence.busy)await new Promise(r=>setTimeout(r,20))}
+    const JSZipLib=await exigirJSZip(),zip=new JSZipLib(),paths=await FS.listar(Disco.cidade);
+    const physical=new Set(paths);
+    for(const path of estadoDesejado().binarios.keys())if(!physical.has(path))throw Error('Anexo não gravado: '+path);
+    for(const path of paths){
+      if(path==='.urbe/journal.json')continue;
+      const blob=await FS.lerBlob(Disco.cidade,path);
+      if(!blob)throw Error('Arquivo indisponível: '+path);
+      zip.file(path,blob);
     }
-  }
-  baixarBlob(await zip.generateAsync({type:"blob"}),"vault.zip");
-  toast("Vault exportado.");
+    baixarBlob(await zip.generateAsync({type:'blob'}),'Urbe-vault.zip');
+    toast('Vault completo exportado.');
+  }catch(error){toast('Falhou ao exportar: '+error.message);throw error}
 }
 function baixarBlob(blob,nome){
   const u=URL.createObjectURL(blob),a=document.createElement("a");
@@ -2121,7 +2123,7 @@ try{
   if(_persistence)_persistence.configure({
     list:function(vault){return FS.listar(vault)},read:function(vault,path){return FS.ler(vault,path)},
     write:function(vault,path,content){return FS.escrever(vault,path,content)},remove:function(vault,path){return FS.apagar(vault,path)},
-    createFolder:function(vault,path){return FS.criarPasta(vault,path)},removeFolder:function(vault,path){return FS.apagarPasta(vault,path)}
+    createFolder:function(vault,path){return FS.criarPasta(vault,path)},removeFolder:function(vault,path){return FS.apagarPasta(vault,path)},readBlob:function(vault,path){return FS.lerBlob(vault,path)}
   });
 }catch(_){}
 
@@ -3290,7 +3292,7 @@ function v21FormatCurrent(){if(!currentFile)return;var e=v21Kind(currentFile);tr
 function v21MenuMarkup(){return '<div class="v21MenuHead"><div class="v21MenuLogo">URBE</div><span class="v21Version">v'+V21_VERSION+'</span></div><div class="v21StorageRow"><span class="v21StorageName" id="v21StorageName"></span><button class="v21IconBtn" id="v21PickRoot" title="Pasta dos vaults">▣</button></div><div class="v21CityPanel"><div class="v21CityToolbar"><strong>VAULTS</strong><button class="v21IconBtn" id="v21AddCity" title="Adicionar cidade">＋</button></div><div class="v21CityNew" id="v21CityNew"><input id="v21CityName" autocomplete="off"><button class="v21IconBtn" id="v21CreateCity">✓</button></div><div class="v21CityList" id="v21CityList"></div></div>'}
 abrirMenu=function(){menuEl.querySelector('.caixa').innerHTML=v21MenuMarkup();menuEl.classList.add('open');document.getElementById('v21PickRoot').onclick=v21PickRoot;document.getElementById('v21AddCity').onclick=function(){var row=document.getElementById('v21CityNew');row.classList.toggle('open');if(row.classList.contains('open'))document.getElementById('v21CityName').focus()};document.getElementById('v21CreateCity').onclick=v21CreateCity;document.getElementById('v21CityName').onkeydown=function(e){if(e.key==='Enter')v21CreateCity()};v21UpdateStorageName();listarCidadesUI()};
 function v21UpdateStorageName(){var e=document.getElementById('v21StorageName');if(e)e.textContent=Disco.modo==='pasta'?(Disco.raiz&&Disco.raiz.name||'Pasta selecionada'):'Armazenamento do aplicativo'}
-async function v21PickRoot(){if(!TEM_FSA)return toast('Este navegador usa o armazenamento do aplicativo.');try{var h=await window.showDirectoryPicker({mode:'readwrite',id:'urbe-vaults',startIn:'documents'});if(h.requestPermission&&await h.requestPermission({mode:'readwrite'})!=='granted')return;await v21StopSync();Disco.raiz=h;Disco.modo='pasta';Disco.cidade=null;Disco.hCidade=null;await DBK.set('pastaRaiz',h);v21UpdateStorageName();await listarCidadesUI();toast('Pasta dos vaults definida.')}catch(e){if(e&&e.name!=='AbortError')toast('Acesso à pasta recusado.')}}
+async function v21PickRoot(){if(!TEM_FSA)return toast('Este navegador usa o armazenamento do aplicativo.');try{var h=await window.showDirectoryPicker({mode:'readwrite',id:'urbe-vaults',startIn:'documents'});if(h.requestPermission&&await h.requestPermission({mode:'readwrite'})!=='granted')return;while(sincRodando)await new Promise(r=>setTimeout(r,20));await rodarSinc(true);var p=window.UrbeCore&&window.UrbeCore.service('persistence');if(p){await p.flush();while(p.busy)await new Promise(r=>setTimeout(r,20));p.suspend(true)}await v21StopSync();Disco.raiz=h;Disco.modo='pasta';Disco.cidade=null;Disco.hCidade=null;await DBK.set('pastaRaiz',h);await urbeEnsureSingleVault();await abrirCidade('Urbe');v21UpdateStorageName();toast('Pasta do Urbe definida.')}catch(e){if(e&&e.name!=='AbortError')toast('Não consegui abrir a pasta: '+e.message)}}
 async function v21CreateCity(){var input=document.getElementById('v21CityName'),nome=(input&&input.value||'').trim();if(!nome)nome='Cidade';var existing=await FS.cidades(),base=nome,n=2;while(existing.some(function(x){return x.toLowerCase()===nome.toLowerCase()}))nome=base+' ('+(n++)+')';try{await FS.criarCidade(nome);await abrirCidade(nome)}catch(e){toast('Não consegui criar o vault.')}}
 async function v21StopSync(){sincSuspenso=true;clearTimeout(sincTimer);sincTimer=null;sincPend=false;var guard=0;while(sincRodando&&guard++<100)await new Promise(function(r){setTimeout(r,20)})}
 listarCidadesUI=async function(){var el=document.getElementById('v21CityList')||document.getElementById('listaCidades');if(!el)return;el.innerHTML='<div class="v21MenuEmpty">...</div>';var nomes=[];try{nomes=await FS.cidades()}catch(_){el.innerHTML='<div class="v21MenuEmpty">Falha ao listar</div>';return}if(!nomes.length){el.innerHTML='<div class="v21MenuEmpty">Nenhum vault</div>';return}el.innerHTML='';nomes.forEach(function(nome){var div=document.createElement('div');div.className='v21City';div.innerHTML='<button class="v21CityOpen"><span></span><small></small></button><button class="v21CityDelete" title="Excluir">×</button>';div.querySelector('span').textContent=nome;div.querySelector('small').textContent=nome===Disco.cidade?'aberto':'';div.querySelector('.v21CityOpen').onclick=function(){abrirCidade(nome)};div.querySelector('.v21CityDelete').onclick=async function(){if(!confirm('Excluir o vault “'+nome+'” e todos os arquivos?'))return;try{if(Disco.cidade===nome){await v21StopSync();Disco.cidade=null;Disco.hCidade=null;statusSinc('ok')}await FS.excluirCidade(nome);await listarCidadesUI();toast('Vault excluído.')}catch(e){console.warn(e);toast('Não consegui excluir o vault.')}};el.appendChild(div)})};
@@ -3714,7 +3716,7 @@ var v23Dock=null,v23Fab=null,v23ModeBar=null,v23Seg=null,v23Destino='mundo';
 
   /* dock de destinos */
   v23Dock=document.createElement('nav');v23Dock.id='v23Dock';
-  v23Dock.innerHTML=[['mundo','◰','Mundo'],['arquivos','▤','Arquivos'],['ia','✦','Assistente'],['vaults','⌂','Vaults']]
+  v23Dock.innerHTML=[['mundo','◰','Mundo'],['arquivos','▤','Arquivos'],['ia','✦','Assistente']]
     .map(function(x){return '<button data-nav="'+x[0]+'"><span class="v23NavIco">'+x[1]+'</span><span>'+x[2]+'</span></button>'}).join('');
   app.appendChild(v23Dock);
   v23Dock.querySelectorAll('[data-nav]').forEach(function(b){b.onclick=function(){v23Navegar(b.dataset.nav)}});
@@ -3739,6 +3741,8 @@ var v23Dock=null,v23Fab=null,v23ModeBar=null,v23Seg=null,v23Destino='mundo';
 function v23Aberto(el){return !!el&&el.classList.contains('open')}
 
 function v23Navegar(dest){
+  var explorer=window.UrbeCore&&window.UrbeCore.service('explorer.ui');
+  if(dest!=='arquivos'&&explorer)explorer.close();
   if(dest!=='mundo'&&v23Aberto(editorFull))closeFullEditor();
   if(dest==='mundo'){
     if(v23Aberto(editorFull))closeFullEditor();
@@ -3750,19 +3754,14 @@ function v23Navegar(dest){
   }else if(dest==='ia'){
     fileSidebar.classList.remove('open');fecharMenu();
     document.getElementById('openAI').click();
-  }else if(dest==='vaults'){
-    fileSidebar.classList.remove('open');aiPanel.classList.remove('open');
-    document.getElementById('cidadesBtn').click();
   }
   v23Destino=dest;v23Atualizar();
 }
 
 /* A ação primária muda com o destino, mas nunca deixa de existir. */
 function v23AcaoPrimaria(){
-  if(v23Aberto(fileSidebar))return v21CreateFileInRegion(explorerRegionTarget||null);
   if(v23Aberto(menuEl))return;
-  v21BeginNewPlacement();
-  toast('Toque no mapa para escolher o terreno.');
+  v23MenuCriar();
 }
 function v23MenuCriar(){
   var alvo=v23Aberto(fileSidebar)?(explorerRegionTarget||null):null;
@@ -3772,6 +3771,7 @@ function v23MenuCriar(){
     {ico:'◰',label:'Desenhar pasta no mapa',run:function(){
       v23Navegar('mundo');setTool('region');v23Atualizar();
     }},
+    {ico:'⌂',label:'Adicionar construção',run:function(){v23Navegar('mundo');v21BeginNewPlacement();v23Atualizar()}},
     {ico:'⇩',label:'Importar do dispositivo',run:function(){v21ImportPicker(alvo)}}
   ]);
 }
@@ -3779,7 +3779,7 @@ function v23MenuCriar(){
 /* ---------- estado visível da casca ---------- */
 function v23Atualizar(){
   var editor=v23Aberto(editorFull),menu=v23Aberto(menuEl),ia=v23Aberto(aiPanel),
-      arq=v23Aberto(fileSidebar),preview=v23Aberto(filePreview);
+      arq=v23Aberto(fileSidebar)||!!(window.UrbeCore&&window.UrbeCore.service('explorer.ui')&&window.UrbeCore.service('explorer.ui').isOpen()),preview=v23Aberto(filePreview);
   var atual=editor?'':menu?'vaults':ia?'ia':arq?'arquivos':'mundo';
   if(v23Dock){
     v23Dock.hidden=editor;
@@ -3811,6 +3811,7 @@ function v23Atualizar(){
 var v23BaseStatus=statusSinc;
 statusSinc=function(estado,extra){
   v23BaseStatus(estado,extra);
+  if(estado==='erro')document.getElementById('saveState').textContent='Erro ao salvar';
   var d=document.getElementById('v23VaultDot');
   if(d){d.classList.toggle('gravando',estado==='gravando');d.classList.toggle('erro',estado==='erro')}
 };
@@ -4006,7 +4007,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.36.1';
+V21_VERSION='0.37.0';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
@@ -4229,9 +4230,9 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
     ['workspace.navigate.world','Abrir aquário','Navegação',function(){return v23Navegar('mundo')}],
     ['workspace.navigate.files','Abrir arquivos','Navegação',function(){return v23Navegar('arquivos')}],
     ['workspace.navigate.ai','Abrir IA','Navegação',function(){return v23Navegar('ia')}],
-    ['workspace.navigate.vaults','Abrir vaults','Navegação',function(){return v23Navegar('vaults')}],
+    ['workspace.navigate.vaults','Pasta do Urbe','Workspace',function(){return v21PickRoot()}],
     ['document.create','Nova nota','Documento',function(ctx){return criarNotaNoDestino(ctx&&ctx.regionId||null)}],
-    ['document.open','Abrir nota','Documento',function(ctx){var docs=core.service('documents'),doc=docs&&docs.get(ctx&&(ctx.id||ctx.path));if(!doc)return false;var ws=core.service('editor.workspace');if(ws&&(!ctx||ctx.source!=='history'))ws.visit(doc.id);var b=world.buildings.find(function(x){return x.tipo==='nota'&&x.documentId===doc.id})||world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===doc.title.toLowerCase()});if(!b)return false;openFullEditor(b);return true}],
+    ['document.open','Abrir nota','Documento',function(ctx){var docs=core.service('documents'),doc=docs&&docs.get(ctx&&(ctx.id||ctx.path));if(!doc)return false;var ws=core.service('editor.workspace');if(ws&&(!ctx||ctx.source!=='history'))ws.visit(doc.id);var b=world.buildings.find(function(x){return x.tipo==='nota'&&x.documentId===doc.id});if(!b){var path=dirDe(doc.path),paths=caminhosRegioes(),r=world.regions.find(x=>paths.get(x.id)===path),pos=r?vagaNaRegiao(r,semente(doc.path),new Set()):vagaAleatoria(semente(doc.path),3,3);b={id:id('b'),documentId:doc.id,kind:'building',tipo:'nota',regionId:r?r.id:null,x:pos?pos.x:0,y:pos?pos.y:0,w:3,h:3,name:doc.title,ext:(doc.path.match(/\.[^.]+$/)||['.md'])[0],content:doc.content,sprite:'house1',anexos:[],created:doc.created||nowDate(),modified:doc.modified||nowDate()};world.buildings.push(b);marcarIndice();indexar();buildTree();pedirDesenho()}openFullEditor(b);return true}],
     ['folder.create','Nova pasta','Documento',function(ctx){return criarPastaNoDestino(ctx&&ctx.parentId||null)}],
     ['workspace.save','Salvar workspace','Workspace',function(){return salvarCidade()}]
   ].forEach(function(item){
@@ -4246,11 +4247,12 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
       var from=evt.from,to=evt.to,b=world.buildings.find(function(x){return x.tipo==='nota'&&x.documentId===from.id})||world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===from.title.toLowerCase()});
       if(b){b.name=to.title;b.content=to.content;b.modified=nowDate();buildTree();agendarSalvar();marcarSinc()}
     }else if(evt.type==='duplicate'&&evt.to){
-      /* A projeção geográfica completa será criada pelo fluxo de criação legado até WorldSystem assumir esta responsabilidade. */
+      var source=world.buildings.find(function(b){return b.tipo==='nota'&&b.documentId===evt.from.id});
+      if(source){var copy={...source,id:id('b'),documentId:evt.to.id,name:evt.to.title,ext:(evt.to.path.match(/\.[^.]+$/)||['.md'])[0],content:evt.to.content,x:source.x+4,y:source.y+4,created:nowDate(),modified:nowDate()};world.buildings.push(copy);marcarIndice();indexar();buildTree();pedirDesenho()}
       agendarSalvar();marcarSinc();
     }else if(evt.type==='delete'){
-      var names=new Set((evt.documents||[]).map(function(d){return d.title.toLowerCase()}));
-      world.buildings=world.buildings.filter(function(b){return b.tipo!=='nota'||!names.has(b.name.toLowerCase())});
+      var ids=new Set((evt.documents||[]).map(function(d){return d.id}));
+      world.buildings=world.buildings.filter(function(b){return b.tipo!=='nota'||!ids.has(b.documentId)});
       buildTree();indexar();counts();scheduleRoadRebuild();agendarSalvar();marcarSinc();
     }
   });
@@ -4297,6 +4299,165 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
   core.start();
 })();
 
+/* The old world is a view of the vault. All textual content and identities
+   come from DocumentStore, including when legacy controls create a building. */
+var urbeCore=window.UrbeCore,urbeDocs=urbeCore.service('documents'),urbePersistence=urbeCore.service('persistence');
+urbeCore.events.on('workspace:dirty',()=>document.getElementById('saveState').textContent='Alterado');
+urbeCore.events.on('workspace:saving',()=>document.getElementById('saveState').textContent='Salvando...');
+urbeCore.events.on('workspace:saved',()=>document.getElementById('saveState').textContent='Salvo');
+urbeCore.events.on('workspace:saveError',()=>document.getElementById('saveState').textContent='Erro ao salvar');
+function urbeBuildingPath(b,regions){
+  var dir=b.regionId?(regions.get(b.regionId)||''):'';
+  return(dir?dir+'/':'')+nomeSeguro(b.name)+extNota(b);
+}
+function urbeReconcileWorld(){
+  var regions=caminhosRegioes();
+  for(const b of world.buildings){
+    if(b.tipo!=='nota')continue;
+    var path=urbeBuildingPath(b,regions),doc=b.documentId&&urbeDocs.get(b.documentId);
+    if(!doc)doc=urbeDocs.get(path);
+    if(doc&&!b.regionId&&doc.path.includes('/'))path=doc.path;
+    if(!doc){doc=urbeDocs.upsert({path:path,content:b.content||'',created:b.created,modified:b.modified},{source:'world.create'})}
+    else if(b.documentId&&doc.path!==path){doc=urbeDocs.upsert({...doc,path:path,content:b.content||''},{source:'world.move'})}
+    b.documentId=doc.id;b.content=doc.content;
+  }
+}
+var urbeLegacyDesired=estadoDesejado;
+estadoDesejado=function(){
+  urbeReconcileWorld();
+  var state=urbeLegacyDesired(),map=JSON.parse(state.arquivos.get('.urbe/mapa.json'));
+  for(const [path] of state.arquivos)if(path!=='.urbe/mapa.json'&&/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i.test(path))state.arquivos.delete(path);
+  var byId=new Map(world.buildings.filter(b=>b.tipo==='nota'&&b.documentId).map(b=>[b.documentId,b]));
+  var regions=caminhosRegioes();map.notas={};
+  for(const doc of urbeDocs.list()){
+    state.arquivos.set(doc.path,doc.content);
+    var b=byId.get(doc.id),old=b&&b.aiLocal;
+    var dir=doc.path.includes('/')?doc.path.slice(0,doc.path.lastIndexOf('/')):'';
+    if(dir)state.pastas.add(dir);
+    map.notas[doc.path]={id:doc.id,x:b?b.x:0,y:b?b.y:0,sprite:b?b.sprite:'house1',tags:doc.tags,anexos:b?(b.anexos||[]).map(metaAnexoNota):[],criado:doc.created||(b&&b.created)||nowDate(),modificado:doc.modified||(b&&b.modified)||nowDate(),aiLocal:old||null};
+  }
+  state.arquivos.set('.urbe/mapa.json',JSON.stringify(map,null,1));
+  urbePersistence.meta=map;
+  return state;
+};
+urbeCore.events.on('document:updated',function(evt){
+  var d=evt.document,b=world.buildings.find(x=>x.tipo==='nota'&&x.documentId===d.id);
+  if(b&&evt.meta&&evt.meta.source!=='editor.input'&&evt.meta.source!=='world.move'){
+    b.content=d.content;b.name=d.title;b.ext=(d.path.match(/\.[^.]+$/)||['.md'])[0];
+    var folder=dirDe(d.path),regions=caminhosRegioes();
+    var region=world.regions.find(r=>regions.get(r.id)===folder);
+    if(region||!folder)b.regionId=region?region.id:null;
+    if(currentFile===b){bodyEditor.value=d.content;renderCurrentPreview()}
+  }
+  marcarSinc();
+});
+urbeCore.events.on('document:removed',function(evt){
+  var b=world.buildings.find(x=>x.tipo==='nota'&&x.documentId===evt.document.id);
+  if(b){world.buildings=world.buildings.filter(x=>x!==b);if(currentFile===b)closeFullEditor();marcarIndice();indexar();buildTree();pedirDesenho()}
+  marcarSinc();
+});
+urbeCore.events.on('document:created',function(evt){
+  if(!evt.meta||evt.meta.source!=='trash.restore')return;
+  var d=evt.document,folder=dirDe(d.path),paths=caminhosRegioes(),region=world.regions.find(r=>paths.get(r.id)===folder);
+  var pos=region?vagaNaRegiao(region,semente(d.path),new Set()):vagaAleatoria(semente(d.path),3,3);
+  world.buildings.push({id:id('b'),documentId:d.id,kind:'building',tipo:'nota',regionId:region?region.id:null,x:pos?pos.x:0,y:pos?pos.y:0,w:3,h:3,name:d.title,ext:(d.path.match(/\.[^.]+$/)||['.md'])[0],content:d.content,sprite:'house1',anexos:[],created:d.created||nowDate(),modified:d.modified||nowDate()});
+  marcarIndice();indexar();buildTree();pedirDesenho();marcarSinc();
+});
+urbeCore.events.on('explorer:folderCreated',function(evt){
+  var paths=caminhosRegioes(),existing=world.regions.find(r=>paths.get(r.id)===evt.path);
+  if(existing)return;
+  var parentPath=dirDe(evt.path),parent=world.regions.find(r=>paths.get(r.id)===parentPath);
+  var region=criarRegiaoOrganica(evt.path.split('/').pop(),1,semente(evt.path),parent?parent.id:null,null,'');
+  if(region){marcarIndice();indexar();buildTree();pedirDesenho();marcarSinc()}
+});
+var urbeOpenLegacy=abrirCidade;
+abrirCidade=async function(name){
+  if(Disco.cidade&&Disco.cidade!==name){
+    while(sincRodando)await new Promise(r=>setTimeout(r,20));
+    await rodarSinc(true);
+    await urbePersistence.flush();while(urbePersistence.busy)await new Promise(r=>setTimeout(r,20));urbePersistence.suspend(true);
+  }
+  await v21StopSync();
+  await urbePersistence.load(name);
+  await urbeOpenLegacy(name);
+  if(Disco.cidade!==name)throw Error('Falha ao abrir o vault '+name);
+  var regions=caminhosRegioes();
+  for(const b of world.buildings){
+    if(b.tipo!=='nota')continue;
+    var path=urbeBuildingPath(b,regions),doc=urbeDocs.get(path);
+    if(doc){b.documentId=doc.id;b.content=doc.content}
+  }
+  var projection=urbeCore.service('world.projection');
+  if(projection)projection.load(urbePersistence.meta);
+  estadoDesejado();
+  var editorWorkspace=urbeCore.service('editor.workspace');
+  if(editorWorkspace)editorWorkspace.restore();
+  marcarSinc();
+};
+
+/* An existing installation may have several independent cities. Copy each
+   source into a named folder inside Urbe; leave every source intact. */
+async function urbeEnsureSingleVault(){
+  const target='Urbe',names=await FS.cidades();
+  if(!names.includes(target))await FS.criarCidade(target);
+  const markerPath='.urbe/merged-v1.json',done=JSON.parse(await FS.ler(target,markerPath)||'{}');
+  const existing=new Set(await FS.listar(target));
+  let targetMap;try{targetMap=JSON.parse(await FS.ler(target,'.urbe/mapa.json')||'null')}catch(_){}
+  if(!targetMap)targetMap={v:4,regioes:[],notas:{},construcoes:[]};
+  targetMap.regioes=targetMap.regioes||[];targetMap.notas=targetMap.notas||{};targetMap.construcoes=targetMap.construcoes||[];
+  for(const source of names){
+    if(source===target||done[source])continue;
+    const folder='Cidades/'+nomeSeguro(source),paths=await FS.listar(source);
+    for(const path of paths){
+      if(path.startsWith('.urbe/'))continue;
+      const dest=folder+'/'+path;
+      if(existing.has(dest))continue;
+      if(path==='.pasta'||path.endsWith('/.pasta')){await FS.criarPasta(target,dirDe(dest));existing.add(dest);continue}
+      if(/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i.test(path)){
+        const content=await FS.ler(source,path);
+        if(content==null)throw Error('Não consegui ler '+source+'/'+path);
+        await FS.escrever(target,dest,content);
+      }else{
+        const blob=await FS.lerBlob(source,path);
+        if(!blob)throw Error('Não consegui ler '+source+'/'+path);
+        await FS.escreverBlob(target,dest,blob);
+      }
+      existing.add(dest);
+    }
+    const oldMap=await FS.ler(source,'.urbe/mapa.json');
+    if(oldMap!=null){
+      await FS.escrever(target,'.urbe/origens/'+nomeSeguro(source)+'.json',oldMap);
+      const original=JSON.parse(oldMap),prefix=folder+'/',regions=original.regioes||[],notes=original.notas||{};
+      const positions=[...targetMap.regioes.map(r=>({x:r.x||0,w:r.w||0})),...targetMap.construcoes.map(b=>({x:b.x||0,w:b.w||0})),...Object.values(targetMap.notas).map(n=>({x:n.x||0,w:3}))];
+      const minX=Math.min(0,...regions.map(r=>r.x||0),...Object.values(notes).map(n=>n.x||0),...(original.construcoes||[]).map(b=>b.x||0));
+      const dx=positions.length?Math.max(...positions.map(p=>p.x+p.w))+40-minX:0;
+      const withPrefix=path=>path?prefix+path:folder;
+      const asset=a=>({...a,relPath:a.relPath?withPrefix(a.relPath):a.relPath,folderPath:a.folderPath?withPrefix(a.folderPath):folder});
+      const note=n=>({...n,x:(n.x||0)+dx,anexos:(n.anexos||[]).map(asset)});
+      for(const r of regions){const caminho=withPrefix(r.caminho);if(!targetMap.regioes.some(x=>x.caminho===caminho))targetMap.regioes.push({...r,caminho,x:(r.x||0)+dx})}
+      for(const [path,n] of Object.entries(notes))targetMap.notas[withPrefix(path)]=note(n);
+      for(const b of original.construcoes||[]){const caminho=withPrefix(b.caminho),files=(b.files||b.anexos||[]).map(asset);if(!targetMap.construcoes.some(x=>x.caminho===caminho&&x.name===b.name&&x.x===(b.x||0)+dx))targetMap.construcoes.push({...b,caminho,x:(b.x||0)+dx,files,anexos:files})}
+      await FS.escrever(target,'.urbe/mapa.json',JSON.stringify(targetMap));
+    }
+    done[source]={folder:folder,importedAt:Date.now()};
+    await FS.escrever(target,markerPath,JSON.stringify(done));
+  }
+  return target;
+}
+urbeCore.provide('workspace.storage',{chooseRoot:v21PickRoot});
+abrirMenu=function(){
+  menuEl.querySelector('.caixa').innerHTML='<div class="v21MenuHead"><div class="v21MenuLogo">URBE</div><span class="v21Version">v'+V21_VERSION+'</span></div><div class="v21StorageRow"><span class="v21StorageName" id="v21StorageName"></span><button class="v21IconBtn" id="v21PickRoot" title="Escolher pasta do Urbe" aria-label="Escolher pasta do Urbe">▣</button></div><p style="padding:1rem">Um mundo para todas as suas cidades. Organize os arquivos em pastas no explorador.</p>';
+  menuEl.classList.add('open');document.getElementById('v21PickRoot').onclick=v21PickRoot;v21UpdateStorageName();
+};
+var urbeConfirmOriginal=v21ConfirmPlacement,urbeConfirmBusy=false;
+v21ConfirmPlacement=async function(){
+  if(urbeConfirmBusy)return;
+  urbeConfirmBusy=true;
+  document.getElementById('v21PlacementOk').disabled=true;
+  try{await urbeConfirmOriginal()}finally{urbeConfirmBusy=false;v21PlacementStatus()}
+};
+document.getElementById('v21PlacementOk').onclick=v21ConfirmPlacement;
+
 /* ---------- boot ---------- */
 (async()=>{
   try{
@@ -4310,12 +4471,9 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
     }
     let migrada=null;
     try{migrada=await migrarAntiga()}catch(e){console.warn("migracao",e)}
-    const nomes=await FS.cidades();
-    const ultima=await DBK.get("ultimaCidade");
-    const alvo=(ultima&&nomes.includes(ultima))?ultima:(migrada&&Disco.modo==="interno"?migrada:null);
-    if(alvo)await abrirCidade(alvo);
-    else abrirMenu();
-    if(migrada)toast("Sua cidade antiga virou o vault \""+migrada+"\".");
+    const alvo=await urbeEnsureSingleVault();
+    await abrirCidade(alvo);
+    if(migrada)toast('Arquivos anteriores reunidos em Cidades.');
   }catch(e){console.warn("boot",e);abrirMenu()}
 })();
 
