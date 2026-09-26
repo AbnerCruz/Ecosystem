@@ -1,5 +1,15 @@
 # Urbe — Changelog
 
+## v0.30.0 — Editor Workspace (2026-09-26)
+
+- Added document back/forward navigation independent from aquarium navigation.
+- Added local editor session persistence for open tabs, active document and navigation history.
+- Added find/replace services and a responsive editor find bar.
+- Added split-view state with open, close, swap and bounded ratio commands.
+- Added a safe secondary split pane that renders canonical document content without creating a second competing editor state.
+- Added shortcuts for find, navigation and split view through the shared keymap.
+- Added automated tests for navigation, find/replace, persistence and split state.
+
 ## v0.29.0 — Editor Core (2026-09-26)
 
 - Added an editor session independent from the aquarium/runtime.
