@@ -1,4 +1,4 @@
-const CACHE = 'urbe-shell-v0.34.0';
+const CACHE = 'urbe-shell-v0.34.1';
 const APP_SHELL = [
   './',
   './index.html',
