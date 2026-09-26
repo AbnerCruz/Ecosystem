@@ -1,0 +1,13 @@
+import fs from 'node:fs';import vm from 'node:vm';
+const files=new Map([['V/A.md','alpha'],['V/Pasta/B.md','beta'],['V/.urbe/mapa.json',JSON.stringify({notas:{'A.md':{x:4,y:5,sprite:'house2'}},regioes:[]})]]);
+const adapter={async list(v){return Array.from(files.keys()).filter(k=>k.startsWith(v+'/')).map(k=>k.slice(v.length+1))},async read(v,p){return files.get(v+'/'+p)||null},async write(v,p,c){files.set(v+'/'+p,c)},async remove(v,p){files.delete(v+'/'+p)}};
+const context={window:{},setTimeout,clearTimeout};vm.createContext(context);
+for(const file of ['src/core/core.js','src/core/documents.js','src/persistence/workspace.js','src/world/projection.js'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
+const core=context.window.UrbeCore,p=core.service('persistence'),docs=core.service('documents'),world=core.service('world.projection');p.configure(adapter);
+const loaded=await p.load('V');world.load(loaded.metadata);
+if(docs.list().length!==2||docs.get('A.md').content!=='alpha')throw new Error('load documents');
+if(world.projectDocument('A.md').x!==4)throw new Error('spatial projection');
+docs.upsert({path:'A.md',content:'changed'});await p.flush(world.metadata(loaded.metadata));if(files.get('V/A.md')!=='changed')throw new Error('save document');
+world.setSpatial('A.md',{x:20,y:21});await p.flush(world.metadata(loaded.metadata));const meta=JSON.parse(files.get('V/.urbe/mapa.json'));if(meta.notas['A.md'].x!==20)throw new Error('save spatial metadata');
+world.setEnabled(false);docs.upsert({path:'Pasta/B.md',content:'works without aquarium'});await p.flush(world.metadata(meta));if(files.get('V/Pasta/B.md')!=='works without aquarium')throw new Error('aquarium independence');
+console.log('OK   persistence load');console.log('OK   canonical document save');console.log('OK   spatial metadata separation');console.log('OK   workspace works with aquarium disabled');
