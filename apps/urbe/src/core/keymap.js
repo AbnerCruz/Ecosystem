@@ -26,7 +26,7 @@
   });
 
   bind('Mod+K','ui.commandPalette.open',{allowInEditor:true});
-  bind('Mod+P','workspace.navigate.files',{allowInEditor:true});
+  bind('Mod+P','ui.quickOpen.open',{allowInEditor:true});
   bind('Mod+S','workspace.save',{allowInEditor:true});
   bind('Mod+N','document.create');
   bind('Mod+Shift+M','workspace.navigate.world');
