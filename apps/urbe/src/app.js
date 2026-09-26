@@ -383,7 +383,11 @@ function rebuildRoadNetwork(){
 let roadRebuildTimer=null;
 function scheduleRoadRebuild(){
   clearTimeout(roadRebuildTimer);
-  roadRebuildTimer=setTimeout(rebuildRoadNetwork,120);
+  roadRebuildTimer=setTimeout(function(){
+    /* A semântica vem do KnowledgeIndex/RoadGraph; o roteador legado apenas materializa tiles. */
+    try{var _roads=window.UrbeCore&&window.UrbeCore.service('aquarium.roads');if(_roads&&_roads.pending().length===0){pedirDesenho();return}}catch(_){}
+    rebuildRoadNetwork();
+  },120);
 }
 
 function drawImg(img,x,y,w=1,h=1){const p=w2s(x*TILE,y*TILE);ctx.drawImage(img,p.x,p.y,w*TILE*camera.z,h*TILE*camera.z)}
