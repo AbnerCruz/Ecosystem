@@ -18,7 +18,7 @@ jobs:
           node --check src/legacy/bootstrap.js
           node --check src/core/core.js
           node --check src/core/documents.js
-          node --check src/core/knowledge-index.js
+          node --check src/core/trash.js\n          node --check src/core/knowledge-index.js
           node --check src/persistence/workspace.js
           node --check src/world/projection.js
           node --check src/world/system.js
