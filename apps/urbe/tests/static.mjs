@@ -16,6 +16,7 @@ const editorSplit = read('src/editor/split.js');
 const explorerModel = read('src/explorer/model.js');
 const explorerMobile = read('src/explorer/mobile-ui.js');
 const persistence = read('src/persistence/workspace.js');
+const history = read('src/core/history.js');
 const worldProjection = read('src/world/projection.js');
 const worldSystem = read('src/world/system.js');
 const roads = read('src/world/roads.js');
@@ -44,6 +45,7 @@ const checks = [
   ['explorer canônico', index.includes('./src/explorer/model.js') && explorerModel.includes('class ExplorerModel')],
   ['explorer mobile first', index.includes('./src/explorer/mobile-ui.js') && explorerMobile.includes('EXPLORER')===false && explorerMobile.includes('HOLD=430')],
   ['persistence core', index.includes('./src/persistence/workspace.js') && persistence.includes('class WorkspacePersistence')],
+  ['revision history', index.includes('./src/core/history.js') && history.includes('class RevisionHistory')],
   ['world projection', index.includes('./src/world/projection.js') && worldProjection.includes('class WorldProjection')],
   ['aquarium world system', index.includes('./src/world/system.js') && worldSystem.includes('class AquariumWorld')],
   ['incremental road graph', index.includes('./src/world/roads.js') && roads.includes('class RoadGraph')],
@@ -56,10 +58,10 @@ const checks = [
   ['quick open indexado', index.includes('./src/ui/quick-open.js') && keymap.includes("ui.quickOpen.open")],
   ['cache app', sw.includes("'./src/app.js'")],
   ['cache core', sw.includes("'./src/core/core.js'")],
-  ['cache conhecimento', sw.includes("'./src/core/documents.js'") && sw.includes("'./src/core/knowledge-index.js'") && sw.includes("'./src/editor/session.js'") && sw.includes("'./src/editor/context.js'") && sw.includes("'./src/editor/chrome.js'") && sw.includes("'./src/persistence/workspace.js'") && sw.includes("'./src/world/projection.js'") && sw.includes("'./src/world/system.js'") && sw.includes("'./src/world/roads.js'") && sw.includes("'./src/world/renderer.js'") && sw.includes("'./src/world/touch.js'") && sw.includes("'./src/core/scheduler.js'") && sw.includes("'./src/explorer/model.js'") && sw.includes("'./src/explorer/mobile-ui.js'") && sw.includes("'./src/editor/workspace.js'") && sw.includes("'./src/editor/split.js'") && sw.includes("'./src/editor/split-ui.js'")],
+  ['cache conhecimento', sw.includes("'./src/core/documents.js'") && sw.includes("'./src/core/history.js'") && sw.includes("'./src/core/knowledge-index.js'") && sw.includes("'./src/editor/session.js'") && sw.includes("'./src/editor/context.js'") && sw.includes("'./src/editor/chrome.js'") && sw.includes("'./src/persistence/workspace.js'") && sw.includes("'./src/world/projection.js'") && sw.includes("'./src/world/system.js'") && sw.includes("'./src/world/roads.js'") && sw.includes("'./src/world/renderer.js'") && sw.includes("'./src/world/touch.js'") && sw.includes("'./src/core/scheduler.js'") && sw.includes("'./src/explorer/model.js'") && sw.includes("'./src/explorer/mobile-ui.js'") && sw.includes("'./src/editor/workspace.js'") && sw.includes("'./src/editor/split.js'") && sw.includes("'./src/editor/split-ui.js'")],
   ['cache comandos', sw.includes("'./src/core/keymap.js'") && sw.includes("'./src/ui/command-palette.js'") && sw.includes("'./src/ui/quick-open.js'")],
   ['cache css', sw.includes("'./src/styles/base.css'") && sw.includes("'./src/styles/shell.css'")],
-  ['cache versionado', sw.includes('urbe-shell-v0.35.0')],
+  ['cache versionado', sw.includes('urbe-shell-v0.35.1')],
   ['sem runtime principal inline', !index.includes('V25_MAX=18')]
 ];
 
