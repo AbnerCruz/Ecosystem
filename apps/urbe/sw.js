@@ -14,6 +14,7 @@ const APP_SHELL = [
   './src/editor/context.js',
   './src/editor/workspace.js',
   './src/editor/split.js',
+  './src/editor/split-ui.js',
   './src/editor/find-ui.js',
   './src/editor/chrome.js',
   './src/core/keymap.js',
