@@ -610,16 +610,12 @@ function getWikiContext(){
   return {start:open,query:afterOpen};
 }
 function wikiCandidates(query){
-  const q=String(query||"").trim().toLowerCase();
-  return world.buildings
-    .filter(b=>b!==currentFile)
-    .filter(b=>!q || b.name.toLowerCase().includes(q))
-    .sort((a,b)=>{
-      const al=a.name.toLowerCase(),bl=b.name.toLowerCase();
-      const as=al.startsWith(q)?0:1, bs=bl.startsWith(q)?0:1;
-      return as-bs || al.localeCompare(bl);
-    })
-    .slice(0,20);
+  const core=window.UrbeCore,knowledge=core&&core.service('knowledge'),docs=core&&core.service('documents');
+  if(knowledge&&docs){
+    const currentId=currentFile&&currentFile.documentId;
+    return knowledge.search(String(query||''),20).filter(d=>d.id!==currentId).map(d=>({id:d.id,name:d.title,path:d.path,documentId:d.id}));
+  }
+  return [];
 }
 function caretScreenPosition(textarea,pos){
   const mirror=document.createElement("div");
@@ -672,7 +668,7 @@ function renderWikiSuggestions(){
   wikiSuggest.querySelectorAll("[data-wiki]").forEach(el=>{
     el.addEventListener("pointerdown",e=>{
       e.preventDefault();
-      const b=world.buildings.find(x=>x.id===el.dataset.wiki);
+      const b=wikiState.items.find(x=>x.id===el.dataset.wiki);
       if(b)commitWikiSuggestion(b);
     });
   });
