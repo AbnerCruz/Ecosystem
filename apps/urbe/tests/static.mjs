@@ -46,7 +46,7 @@ const checks = [
   ['explorer canônico', index.includes('./src/explorer/model.js') && explorerModel.includes('class ExplorerModel')],
   ['explorer mobile first', index.includes('./src/explorer/mobile-ui.js') && explorerMobile.includes('EXPLORER')===false && explorerMobile.includes('HOLD=430')],
   ['persistence core', index.includes('./src/persistence/workspace.js') && persistence.includes('class WorkspacePersistence')],
-  ['no Burgo runtime', !index.includes('/burgo/') && !app.includes('v24Burgo') && !app.includes('window.Burgo')],
+  ['no Burgo runtime', !index.includes('/burgo/') && !app.includes('v24Burgo') && !app.includes('window.Burgo') && !shell.includes('v24Burgo') && shell.includes('repeat(4')],
   ['workspace diagnostics', index.includes('./src/core/diagnostics.js') && diagnostics.includes('class Diagnostics')],
   ['revision history', index.includes('./src/core/history.js') && history.includes('class RevisionHistory')],
   ['world projection', index.includes('./src/world/projection.js') && worldProjection.includes('class WorldProjection')],
