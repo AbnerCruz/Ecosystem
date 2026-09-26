@@ -46,7 +46,7 @@ jobs:
         run: |
           node tests/static.mjs
           node tests/core.mjs
-          node tests/documents.mjs
+          node tests/documents.mjs\n          node tests/trash.mjs
           node tests/editor.mjs
           node tests/editor-workspace.mjs
           node tests/explorer.mjs
