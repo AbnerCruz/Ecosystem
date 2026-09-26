@@ -14,6 +14,7 @@ const checks = [
   ['css shell externo', index.includes('./src/styles/shell.css')],
   ['versão 0.26', index.includes('Urbe v0.26.0') && app.includes("V21_VERSION='0.26.0'")],
   ['diagnóstico URBE', app.includes('window.URBE')],
+  ['ponte de comandos', app.includes("workspace.navigate.world") && app.includes("document.create") && app.includes("workspace.save")],
   ['diagnóstico Burgo', app.includes('window.Burgo')],
   ['core contratos', core.includes('class EventBus') && core.includes('class CommandRegistry') && core.includes('class StateStore')],
   ['cache app', sw.includes("'./src/app.js'")],
