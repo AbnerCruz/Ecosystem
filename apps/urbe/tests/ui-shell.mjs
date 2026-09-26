@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const index=read('index.html'),sw=read('sw.js'),theme=read('src/styles/theme.css'),base=read('src/styles/base.css');
-const ui=['src/app.js','src/explorer/mobile-ui.js','src/composition/ui.js'].map(f=>[f,read(f)]);
+const ui=['src/app.js','src/explorer/mobile-ui.js','src/composition/ui.js','src/ui/quick-open.js','src/ui/tips.js','src/editor/visual-tools.js'].map(f=>[f,read(f)]);
 function test(name,fn){try{fn();console.log('OK  ',name)}catch(e){console.error('FAIL',name,e.message);process.exitCode=1}}
 
 test('interface sem prompt/confirm/alert nativos',()=>{
@@ -14,7 +14,7 @@ test('ícones e diálogos carregam antes do app; tema por último',()=>{
   if(links[links.length-1]!=='./src/styles/theme.css')throw new Error('theme.css precisa ser o último estilo');
 });
 test('cache offline inclui a nova casca',()=>{
-  for(const f of ['./src/styles/theme.css','./src/ui/icons.js','./src/ui/dialogs.js'])if(!sw.includes("'"+f+"'"))throw new Error('sw.js sem '+f);
+  for(const f of ['./src/styles/theme.css','./src/ui/icons.js','./src/ui/dialogs.js','./src/editor/visual-tools.js','./src/ui/tips.js'])if(!sw.includes("'"+f+"'"))throw new Error('sw.js sem '+f);
 });
 test('sem cantos retos forçados globalmente',()=>{
   if(/button,input,textarea,select\{border-radius:0!important\}/.test(base))throw new Error('regra global de border-radius:0 voltou');

@@ -1,5 +1,13 @@
 # Urbe — Changelog
 
+## v0.39.0 — Redesenho, fase 2: escrever e encontrar (2026-09-26)
+
+- Menu “/” no editor Visual: Título 1–3, Lista, Tarefa, Citação, Divisória, Link para nota e Link externo, com filtro por digitação e teclado (↑ ↓ Enter Esc).
+- Bolha de formatação sobre o texto selecionado: negrito, itálico, código, transformar em link de nota, link externo, título e citação.
+- Busca global reescrita (botão de busca e Ctrl/⌘+P): acha trechos de palavras e ignora acentos (“pao” acha “Pão”), ordena título antes de conteúdo, mostra o trecho com o termo destacado, lista recentes quando vazia e cria a nota direto da busca.
+- Dicas de primeiro uso: ao voltar à cidade sem ligações, mostra como ligar notas com [[; avisa quando a primeira rua é construída.
+- Correções no editor Visual: o clique não desfaz mais a seleção de texto; a divisória (---) funciona no modo Visual; blocos criados ao sair de uma lista não perdem o conteúdo ao salvar.
+
 ## v0.38.0 — Redesenho, fase 1: casca escura focada (2026-09-26)
 
 - Sistema visual único (`src/styles/theme.css`): paleta escura neutra com um acento, tipografia do sistema (monoespaçada só em código), escala de espaçamento e raios, sombras suaves. Os tokens antigos passam a apontar para a nova paleta.
