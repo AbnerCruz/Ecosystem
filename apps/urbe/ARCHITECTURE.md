@@ -2,96 +2,69 @@
 
 ## Princípios
 
-1. **Local-first e offline-first.** O vault pertence ao usuário; a aplicação não depende de backend.
-2. **Notas são a fonte da verdade.** A simulação pode ler atividade e topologia, mas não altera conteúdo para satisfazer mecânicas do jogo.
-4. **Mobile-first.** Toda mudança deve preservar toque, safe areas e execução em navegador móvel.
-5. **Compatibilidade antes de refatoração.** A v0.26 começa separando assets sem alterar contratos do runtime.
+1. **Local-first e offline-first.** O vault pertence ao usuário; nenhuma função essencial depende de backend.
+2. **DocumentStore é a autoridade do conteúdo.** Markdown, paths e identidade documental nunca são derivados do aquário.
+3. **Identidade é estável.** Rename/move alteram `path`, não o `document.id`.
+4. **Aquário é projeção.** Geometria e visualização espacial podem mudar sem reescrever conteúdo.
+5. **Mobile-first.** Toque, safe areas, viewport estreito e custo de CPU são contratos de produto.
+6. **Uma ação, um comando.** Interfaces legadas devem delegar ao Core em vez de criar uma segunda implementação.
+7. **Persistência recuperável.** Gravações usam journal; lixeira e histórico são persistidos no vault.
 
-## Camadas atuais
+## Dependências canônicas
 
-- `index.html`: shell e superfícies DOM.
-- `src/styles/base.css`: estilos históricos/base.
-- `src/styles/shell.css`: casca visual mais recente.
-- `src/legacy/bootstrap.js`: dependências/runtime legado que precede o app.
-- `src/app.js`: runtime principal atual. Ainda é monolítico e será decomposto por domínio.
-- `sw.js`: cache offline do app shell.
-- Vault: arquivos do usuário e `mapa.json`.
+```
+Vault / Storage Adapter
+        ↓
+WorkspacePersistence
+        ↓
+DocumentStore ─────→ KnowledgeIndex
+    │     │                 │
+    │     ├→ RevisionHistory│
+    │     └→ Trash          │
+    │                       │
+    ├────────→ Explorer     │
+    ├────────→ Editor       │
+    ├────────→ AI           │
+    └→ WorldProjection → AquariumWorld → RoadGraph
+                              ↓
+                       render / interaction
+```
 
-## Fronteiras-alvo
+O aquário nunca é necessário para abrir, editar, mover, pesquisar, exportar ou recuperar documentos.
 
-A decomposição do `src/app.js` deve ocorrer nesta ordem, mantendo contratos explícitos:
+## Responsabilidades
 
-1. `core/`: eventos, estado compartilhado, utilidades e ciclo de vida.
-2. `persistence/`: IndexedDB, File System Access, vault e sincronização.
-3. `world/`: terreno, câmera, regiões, construções, estradas e pathfinding.
-4. `editor/`: edição, preview, wiki-links e formatos.
-5. `explorer/`: árvore, seleção, mover/importar/excluir.
-7. `ai/`: provedor, contexto, artefatos e histórico.
-8. `ui/`: navegação, sheets, dock, menus e feedback.
+- `core/`: eventos, comandos, documentos, conhecimento, histórico, lixeira e diagnóstico.
+- `persistence/`: leitura/gravação do vault, journal e adapters físicos.
+- `editor/`: sessão, contexto, navegação, busca/replace e superfícies de edição.
+- `explorer/`: árvore canônica, seleção e operações sobre documentos.
+- `world/`: projeção espacial, grafo viário, render e interação do aquário.
+- `ui/`: superfícies e navegação; não possui dados.
+- `src/app.js`: adapter de compatibilidade enquanto UI/render histórico é extraído. Não pode ser fonte de verdade.
 
-Nenhum módulo de simulação poderá escrever em notas. Nenhum módulo de UI deverá persistir dados diretamente.
+## Invariantes de dados
+
+- Conteúdo salvo vem de `DocumentStore`.
+- `.urbe/mapa.json` guarda metadados espaciais e IDs, nunca substitui Markdown.
+- `.urbe/trash.json` guarda itens recuperáveis.
+- `.urbe/history.json` guarda histórico limitado.
+- `.urbe/journal.json` existe apenas durante uma transação incompleta; se encontrado na abertura, é usado para recuperação.
+- Links semânticos vêm de `KnowledgeIndex`; estradas apenas os representam.
+- Rename/move preservam `document.id`.
+- Exclusão de nota passa pela lixeira.
 
 ## Contratos de regressão
 
-Antes de cada extração:
-- o PWA deve instalar e iniciar offline;
-- vault existente deve abrir sem migração destrutiva;
-- editor deve abrir/salvar e preservar wiki-links;
-- mundo deve reconstruir estradas e regiões;
-- assets extraídos devem constar no cache do service worker.
+Toda mudança deve manter:
+- inicialização e PWA offline;
+- abertura de vault antigo sem migração destrutiva;
+- criação, edição, rename, move, exclusão/restauração e reload;
+- journal de recuperação;
+- wiki-links/backlinks;
+- abertura e interação do aquário no viewport mobile;
+- documentos funcionais com aquário desativado;
+- nenhum polling permanente de UI quando eventos resolvem o problema.
 
-## Estratégia
+## Direção de migração
 
-A v0.26 é a fundação: separa documento, estilos e runtime, adiciona verificação automática e documenta fronteiras. As próximas extrações devem mover um domínio por vez e substituir wrappers históricos por um único ponto de implementação, nunca criar novos patches de versão no fim do arquivo.
-
-## Workspace Core — v0.27 foundation
-
-Urbe is treated as a local-first knowledge application with an integrated spatial aquarium, not as a game that happens to contain an editor.
-
-The canonical dependency direction is:
-
-```
-Documents / Vault
-       ↓
-  Workspace Core
-  ├─ Events
-  ├─ Commands
-  ├─ State
-  └─ Services
-       ↓
-Editor · Explorer · Search · AI · Aquarium
-                                  ↓
-```
-
-Rules introduced in v0.27:
-
-- Productive features must be callable through stable commands instead of UI-specific handlers.
-- New subsystems communicate through Core events/services; they must not wrap unrelated global functions.
-- The aquarium is a consumer/interface of workspace state, never the source of truth for document content.
-- Legacy code is migrated incrementally through `legacy.runtime`; compatibility bridges are temporary and replaceable.
-- A command has one canonical ID. Keyboard shortcuts, buttons, menus, gestures and the future command palette must invoke the same command.
-
-## v0.33 — Aquarium runtime boundary
-
-The canonical dependency direction is now enforced in executable services:
-
-```
-Vault adapter
-    ↓
-Persistence Core
-    ↓
-DocumentStore ─→ KnowledgeIndex
-    ↓               ↓
-WorldProjection → AquariumWorld → RoadGraph
-    ↓
-render / interaction adapters
-    ↓
-```
-
-Invariants:
-
-- Markdown content is never sourced from aquarium entities.
-- Aquarium entities carry document identity plus spatial presentation only.
-- Semantic roads come from the KnowledgeIndex; tile paths are a rendering/materialization concern.
-- Simulation/tick work should register with the shared Scheduler instead of creating independent perpetual timers.
-- Mobile interaction remains the primary interaction contract; desktop shortcuts and layouts are additive.
+Não adicionar novos wrappers de versão ao fim do monólito. Cada migração substitui uma autoridade antiga por um serviço canônico, adiciona teste do fluxo de produção e só então remove o código substituído.
