@@ -1,0 +1,26 @@
+import fs from 'node:fs';
+
+const read = p => fs.readFileSync(new URL('../'+p, import.meta.url), 'utf8');
+const index = read('index.html');
+const app = read('src/app.js');
+const sw = read('sw.js');
+
+const checks = [
+  ['runtime externo', index.includes('./src/app.js')],
+  ['css base externo', index.includes('./src/styles/base.css')],
+  ['css shell externo', index.includes('./src/styles/shell.css')],
+  ['versão 0.26', index.includes('Urbe v0.26.0') && app.includes("V21_VERSION='0.26.0'")],
+  ['diagnóstico URBE', app.includes('window.URBE')],
+  ['diagnóstico Burgo', app.includes('window.Burgo')],
+  ['cache app', sw.includes("'./src/app.js'")],
+  ['cache css', sw.includes("'./src/styles/base.css'") && sw.includes("'./src/styles/shell.css'")],
+  ['cache versionado', sw.includes('urbe-shell-v0.26.0')],
+  ['sem runtime principal inline', !index.includes('V25_MAX=18')]
+];
+
+let failed = 0;
+for (const [name, ok] of checks) {
+  console.log((ok ? 'OK  ' : 'FAIL') + ' ' + name);
+  if (!ok) failed++;
+}
+if (failed) process.exit(1);
