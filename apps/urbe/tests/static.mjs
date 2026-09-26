@@ -16,7 +16,7 @@ const checks = [
   ['core antes do legado', index.indexOf('./src/core/core.js') < index.indexOf('./src/app.js')],
   ['css base externo', index.includes('./src/styles/base.css')],
   ['css shell externo', index.includes('./src/styles/shell.css')],
-  ['versão 0.27', index.includes('Urbe v0.27.0') && app.includes("V21_VERSION='0.27.0'")],
+  ['versão 0.28', index.includes('Urbe v0.28.0') && app.includes("V21_VERSION='0.28.0'")],
   ['diagnóstico URBE', app.includes('window.URBE')],
   ['ponte de comandos', app.includes("workspace.navigate.world") && app.includes("document.create") && app.includes("workspace.save")],
   ['diagnóstico Burgo', app.includes('window.Burgo')],
@@ -31,7 +31,7 @@ const checks = [
   ['cache conhecimento', sw.includes("'./src/core/documents.js'") && sw.includes("'./src/core/knowledge-index.js'")],
   ['cache comandos', sw.includes("'./src/core/keymap.js'") && sw.includes("'./src/ui/command-palette.js'") && sw.includes("'./src/ui/quick-open.js'")],
   ['cache css', sw.includes("'./src/styles/base.css'") && sw.includes("'./src/styles/shell.css'")],
-  ['cache versionado', sw.includes('urbe-shell-v0.27.0')],
+  ['cache versionado', sw.includes('urbe-shell-v0.28.0')],
   ['sem runtime principal inline', !index.includes('V25_MAX=18')]
 ];
 
