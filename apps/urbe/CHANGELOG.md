@@ -8,6 +8,8 @@
 - Added behavioral core tests and CI syntax coverage.
 - Fixed the v0.26 shell extraction: restored valid `shell.css` content and loaded it from `index.html`.
 - Added the core asset to the offline application shell.
+- Added a unified keyboard shortcut registry and searchable Command Palette, sharing the same canonical commands used by the runtime.
+- Added responsive Command Palette UI for desktop and mobile.
 
 ## v0.26.0 — 2026-09-26
 
