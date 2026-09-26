@@ -2227,6 +2227,17 @@ async function rodarSinc(agora){
 
 /* ---------- abrir uma cidade do disco ---------- */
 function dirDe(rel){const i=rel.lastIndexOf("/");return i<0?"":rel.slice(0,i)}
+function enquadrarConteudoDoMundo(){
+  const itens=[...world.regions,...world.buildings];if(!itens.length)return false;
+  const f=faixaVisivel(),visivel=itens.some(o=>o.x<f.x1&&o.x+(o.w||1)>f.x0&&o.y<f.y1&&o.y+(o.h||1)>f.y0);
+  if(visivel)return false;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const o of itens){minX=Math.min(minX,o.x);minY=Math.min(minY,o.y);maxX=Math.max(maxX,o.x+(o.w||1));maxY=Math.max(maxY,o.y+(o.h||1))}
+  const ww=Math.max(4,maxX-minX),hh=Math.max(4,maxY-minY),vw=Math.max(240,cv.w||wrap.clientWidth||innerWidth),vh=Math.max(240,cv.h||wrap.clientHeight||innerHeight);
+  camera.x=(minX+maxX)*TILE/2;camera.y=(minY+maxY)*TILE/2;
+  camera.z=clamp(Math.min((vw*.78)/(ww*TILE),(vh*.72)/(hh*TILE),1.35),.5,2.8);
+  pedirDesenho();return true;
+}
 async function abrirCidade(nome){
   sincSuspenso=true;
   try{
@@ -2318,7 +2329,7 @@ async function abrirCidade(nome){
     const mj=await FS.ler(nome,".urbe/mapa.json");
     if(mj!=null)snapArq.set(".urbe/mapa.json",mj);
 
-    marcarIndice();indexar();rebuildRoadNetwork();counts();buildTree();pedirDesenho();
+    marcarIndice();indexar();rebuildRoadNetwork();enquadrarConteudoDoMundo();counts();buildTree();pedirDesenho();
     await DBK.set("ultimaCidade",nome);
     fecharMenu();
     sincSuspenso=false;
