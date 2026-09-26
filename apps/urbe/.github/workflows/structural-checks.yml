@@ -17,6 +17,8 @@ jobs:
         run: |
           node --check src/legacy/bootstrap.js
           node --check src/core/core.js
+          node --check src/core/documents.js
+          node --check src/core/knowledge-index.js
           node --check src/core/keymap.js
           node --check src/ui/command-palette.js
           node --check src/app.js
@@ -25,3 +27,4 @@ jobs:
         run: |
           node tests/static.mjs
           node tests/core.mjs
+          node tests/documents.mjs
