@@ -12,7 +12,7 @@ const checks = [
   ['core antes do legado', index.indexOf('./src/core/core.js') < index.indexOf('./src/app.js')],
   ['css base externo', index.includes('./src/styles/base.css')],
   ['css shell externo', index.includes('./src/styles/shell.css')],
-  ['versão 0.26', index.includes('Urbe v0.26.0') && app.includes("V21_VERSION='0.26.0'")],
+  ['versão 0.27', index.includes('Urbe v0.27.0') && app.includes("V21_VERSION='0.27.0'")],
   ['diagnóstico URBE', app.includes('window.URBE')],
   ['ponte de comandos', app.includes("workspace.navigate.world") && app.includes("document.create") && app.includes("workspace.save")],
   ['diagnóstico Burgo', app.includes('window.Burgo')],
