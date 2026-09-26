@@ -499,10 +499,16 @@ function drawOverlay(){
   if(regionDraft){const x=Math.min(regionDraft.a.x,regionDraft.b.x),y=Math.min(regionDraft.a.y,regionDraft.b.y),w=Math.abs(regionDraft.a.x-regionDraft.b.x)+1,h=Math.abs(regionDraft.a.y-regionDraft.b.y)+1,p=w2s(x*TILE,y*TILE);ctx.fillStyle="#61c8ff22";ctx.fillRect(p.x,p.y,w*TILE*camera.z,h*TILE*camera.z);ctx.strokeStyle="#9fe4ff";ctx.setLineDash([6,4]);ctx.strokeRect(p.x,p.y,w*TILE*camera.z,h*TILE*camera.z);ctx.setLineDash([])}
 }
 let ultimoDesenho=-1e9,ultimoMini=-1e9;
-function renderAquariumLegacy(){
-  if(idxSujo)indexar();ctx.clearRect(0,0,cv.w,cv.h);drawGround();drawRegions();drawRoads();drawTrees();drawBuildings();drawOverlay();
-}
-(function(){var renderer=window.UrbeCore&&window.UrbeCore.service('aquarium.renderer');if(renderer){renderer.configure({visible:function(){return document.visibilityState!=='hidden'},render:function(){precisaDesenhar=false;renderAquariumLegacy()},minimap:function(){desenharMini()}});var old=pedirDesenho;pedirDesenho=function(){precisaDesenhar=true;renderer.request();return old&&old()}}else{function frame(t){t=t||0;if(!(precisaDesenhar||idxSujo||t-ultimoDesenho>500)){requestAnimationFrame(frame);return}precisaDesenhar=false;ultimoDesenho=t;renderAquariumLegacy();if(t-ultimoMini>300){ultimoMini=t;desenharMini()}requestAnimationFrame(frame)}requestAnimationFrame(frame)}})();
+function frame(t){
+  t=t||0;
+  if(!(precisaDesenhar||idxSujo||t-ultimoDesenho>500)){requestAnimationFrame(frame);return}
+  precisaDesenhar=false;ultimoDesenho=t;
+  if(idxSujo)indexar();
+  ctx.clearRect(0,0,cv.w,cv.h);
+  drawGround();drawRegions();drawRoads();drawTrees();drawBuildings();drawOverlay();
+  if(t-ultimoMini>300){ultimoMini=t;desenharMini()}
+  requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
 
 const tools=[...document.querySelectorAll(".tool[data-tool]")],hint=document.getElementById("hint");
 function setTool(t){tool=t;ghost=null;pedirDesenho();tools.forEach(b=>b.classList.toggle("active",b.dataset.tool===t));hint.textContent={select:"Arraste para mover. Toque para selecionar. Pinça para zoom.",region:"Arraste para delimitar uma nova região.",house:"Toque em terra seca para construir. O acesso pode ficar em qualquer lado do lote."}[t]}
@@ -510,20 +516,17 @@ tools.forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
 function toast(s){const t=document.getElementById("toast");t.textContent=s;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),1800)}
 function counts(){document.getElementById("noteCount").textContent=world.buildings.filter(b=>b.tipo==="nota").length;document.getElementById("fileCount").textContent=world.buildings.filter(b=>b.tipo!=="nota").length;document.getElementById("regionCount").textContent=world.regions.length;document.getElementById("linkCount").textContent=world.links.length;document.getElementById("zoomPct").textContent=Math.round(camera.z*100)+"%";pedirDesenho()}counts();
 
-/* Touch gestures — adapter mobile-first sobre TouchController. */
-(function(){
-  var touch=window.UrbeCore&&window.UrbeCore.service('aquarium.touch');
-  if(!touch)return;
-  touch.attach(cv,{
-    start:function(e){var t=tileFromClient(e.clientX,e.clientY),g={mode:tool,start:t,cx:camera.x,cy:camera.y,z:camera.z};if(tool==='region')regionDraft={a:t,b:t};return g},
-    pinchStart:function(){return{z:camera.z}},
-    pinch:function(e,scale,data){camera.z=clamp((data&&data.z||camera.z)*scale,.5,2.8);counts();pedirDesenho()},
-    move:function(e,g){var t=tileFromClient(e.clientX,e.clientY),d=g.data||{};if(tool==='select'&&g.moved){camera.x=d.cx-g.dx/camera.z;camera.y=d.cy-g.dy/camera.z}else if(tool==='region'&&regionDraft)regionDraft.b=t;if(tool==='house')ghost=t;pedirDesenho()},
-    end:function(e,g){var t=tileFromClient(e.clientX,e.clientY);if(tool==='select'&&!g.moved){var b=bAt(t),rSel=regAt(t);selected=b||rSel||null;if(b){if(b.tipo==='nota')openHouseSummary(b);else openFilePreview(b)}else if(rSel){closeHouseSummary();closeFilePreview();openRegionEditDialog(rSel)}else{closeHouseSummary();closeFilePreview()}}else if(tool==='region'&&regionDraft){var a=regionDraft.a,b2=regionDraft.b;regionDraft=null;var x=Math.min(a.x,b2.x),y=Math.min(a.y,b2.y),w=Math.abs(a.x-b2.x)+1,h=Math.abs(a.y-b2.y)+1;if(w>=3&&h>=3)openRegionDialog({x:x,y:y,w:w,h:h});else toast('A região precisa ser maior.')}else if(tool==='house'&&!g.moved){if(canHouse(t)){var r=regAt(t),n=world.buildings.length%3+1,b={id:id('b'),kind:'building',regionId:r?r.id:null,x:t.x,y:t.y,w:3,h:3,name:'Nova nota',description:'',content:'',sprite:'house'+n,tipo:'nota',tags:[],created:nowDate(),modified:nowDate()};world.buildings.push(b);selected=b;marcarIndice();indexar();counts();scheduleRoadRebuild();agendarSalvar();marcarSinc();openHouseSummary(b);toast('Nota criada'+(r?' em '+r.name:' na raiz')+'.')}else toast('Lote inválido: precisa de espaço seco e acesso livre.')}pedirDesenho()},
-    cancel:function(){regionDraft=null;pedirDesenho()}
-  });
-  cv.addEventListener('wheel',function(e){e.preventDefault();camera.z=clamp(camera.z*(e.deltaY<0?1.12:.89),.5,2.8);counts()},{passive:false});
-})();
+/* Touch gestures */
+const pointers=new Map();let gesture=null;
+cv.addEventListener("pointerdown",e=>{cv.setPointerCapture(e.pointerId);pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointers.size===1){const t=tileFromClient(e.clientX,e.clientY);gesture={mode:tool,start:t,sx:e.clientX,sy:e.clientY,cx:camera.x,cy:camera.y,moved:false};if(tool==="region")regionDraft={a:t,b:t}}else if(pointers.size===2){const ps=[...pointers.values()];gesture={mode:"pinch",dist:Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y),z:camera.z}}});
+cv.addEventListener("pointermove",e=>{if(!pointers.has(e.pointerId))return;const p=pointers.get(e.pointerId);p.x=e.clientX;p.y=e.clientY;if(pointers.size===2&&gesture?.mode==="pinch"){const ps=[...pointers.values()],d=Math.hypot(ps[0].x-ps[1].x,ps[0].y-ps[1].y);camera.z=clamp(gesture.z*d/gesture.dist,.5,2.8);counts();return}if(pointers.size!==1||!gesture)return;const t=tileFromClient(e.clientX,e.clientY),dx=e.clientX-gesture.sx,dy=e.clientY-gesture.sy;if(Math.abs(dx)+Math.abs(dy)>7)gesture.moved=true;if(tool==="select"&&gesture.moved){camera.x=gesture.cx-dx/camera.z;camera.y=gesture.cy-dy/camera.z}else if(tool==="region"&&regionDraft)regionDraft.b=t;if(tool==="house")ghost=t});
+cv.addEventListener("pointerup",e=>{pointers.delete(e.pointerId);if(!gesture||gesture.mode==="pinch"){if(!pointers.size)gesture=null;return}const t=tileFromClient(e.clientX,e.clientY);if(tool==="select"&&!gesture.moved){const b=bAt(t),rSel=regAt(t);selected=b||rSel||null;if(b){if(b.tipo==="nota")openHouseSummary(b);else openFilePreview(b)}else if(rSel){closeHouseSummary();closeFilePreview();openRegionEditDialog(rSel)}else{closeHouseSummary();closeFilePreview()}}else if(tool==="region"&&regionDraft){const a=regionDraft.a,b=regionDraft.b;regionDraft=null;const x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x)+1,h=Math.abs(a.y-b.y)+1;if(w>=3&&h>=3)openRegionDialog({x,y,w,h});else toast("A região precisa ser maior.")}else if(tool==="house"&&!gesture.moved){if(canHouse(t)){const r=regAt(t),n=world.buildings.length%3+1,b={id:id("b"),kind:"building",regionId:r?r.id:null,x:t.x,y:t.y,w:3,h:3,name:"Nova nota",description:"",content:"",sprite:"house"+n,tipo:"nota",tags:[],created:nowDate(),modified:nowDate()};world.buildings.push(b);selected=b;marcarIndice();indexar();openHouseSummary(b);counts();scheduleRoadRebuild();agendarSalvar();toast("Nota criada"+(r?" em "+r.name:" na raiz")+".")}else toast("Lote inválido: precisa de 3x3 seco, acesso livre em pelo menos um dos 4 lados e 2 tiles de folga das vizinhas.")}gesture=null});
+cv.addEventListener("pointercancel",e=>{pointers.delete(e.pointerId);gesture=null;regionDraft=null});
+/* qualquer interacao com o canvas pede um quadro novo */
+["pointerdown","pointermove","pointerup","pointercancel","wheel"]
+  .forEach(ev=>cv.addEventListener(ev,pedirDesenho,{passive:true}));
+cv.addEventListener("wheel",e=>{e.preventDefault();camera.z=clamp(camera.z*(e.deltaY<0?1.12:.89),.5,2.8);counts()},{passive:false});
+
 
 /* ---------- Fase 2: preview nativo de arquivos ---------- */
 const filePreview=document.getElementById("filePreview"),filePreviewBody=document.getElementById("filePreviewBody"),filePreviewSelect=document.getElementById("filePreviewSelect");
