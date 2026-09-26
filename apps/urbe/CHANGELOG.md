@@ -1,5 +1,14 @@
 # Urbe — Changelog
 
+## v0.34.0 — Runtime Migration Complete (2026-09-26)
+
+- Moved aquarium frame scheduling out of the monolith into AquariumRenderer + shared Scheduler.
+- Replaced the monolithic pointer gesture block with a reusable mobile-first TouchController.
+- Canvas drawing functions remain a compatibility rendering adapter while canonical state lives outside app.js.
+- Burgo and pedestrian simulation ticks share the scheduler instead of independent perpetual timers.
+- Added runtime adapter tests and offline cache coverage.
+- The legacy app is now a compatibility/UI adapter over canonical workspace, persistence, knowledge, aquarium and simulation services rather than the data authority.
+
 ## v0.33.0 — Aquarium World Core (2026-09-26)
 
 - Added AquariumWorld as a document-driven runtime projection.
