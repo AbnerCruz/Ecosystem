@@ -53,3 +53,4 @@ jobs:
           node tests/persistence-world.mjs
           node tests/world-system.mjs
           node tests/runtime-adapters.mjs
+          node tests/production-order.mjs
