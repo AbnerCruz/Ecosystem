@@ -12,6 +12,7 @@
       if(trash){try{trash.import(JSON.parse(await this.adapter.read(vault,'.urbe/trash.json')||'null'))}catch(_){trash.import(null)}}
       if(history){try{history.import(JSON.parse(await this.adapter.read(vault,'.urbe/history.json')||'null'))}catch(_){history.import(null)}}
       if(compositions){try{compositions.import(JSON.parse(await this.adapter.read(vault,'.urbe/compositions.json')||'null'))}catch(_){compositions.import(null)}}
+      if(compositions){try{compositions.import(JSON.parse(await this.adapter.read(vault,'.urbe/compositions.json')||'null'))}catch(_){compositions.import(null)}}
       var notesMeta=(meta&&meta.notas)||{},items=[];
       for(var i=0;i<md.length;i++){var path=md[i],m=notesMeta[path]||{};items.push({id:m.id||null,path:path,content:(await this.adapter.read(vault,path))||'',created:m.criado||null,modified:m.modificado||null})}
       if(journal&&journal.version===1&&Array.isArray(journal.documents)){items=journal.documents.filter(function(d){return d&&d.path});if(compositions&&journal.compositions)compositions.import(journal.compositions);this.events.emit('workspace:recovered',{vault:vault,count:items.length,timestamp:journal.timestamp||null})}
@@ -32,7 +33,7 @@
     suspend(value){this.suspended=value!==false}
   }
   var service=new WorkspacePersistence(core.events,docs);core.provide('persistence',service);
-  if(trash)core.events.on('trash:changed',function(){service.schedule()});if(history)core.events.on('history:changed',function(){service.schedule()});if(compositions){core.events.on('composition:created',function(){service.schedule()});core.events.on('composition:updated',function(){service.schedule()});core.events.on('composition:removed',function(){service.schedule()})}
+  if(trash)core.events.on('trash:changed',function(){service.schedule()});if(history)core.events.on('history:changed',function(){service.schedule()});if(compositions){core.events.on('composition:created',function(){service.schedule()});core.events.on('composition:updated',function(){service.schedule()});core.events.on('composition:removed',function(){service.schedule()})}if(compositions){core.events.on('composition:created',function(){service.schedule()});core.events.on('composition:updated',function(){service.schedule()});core.events.on('composition:removed',function(){service.schedule()})}
   core.events.on('document:created',function(){service.schedule()});core.events.on('document:updated',function(){service.schedule()});core.events.on('document:removed',function(){service.schedule()});
   core.commands.register('workspace.flush',{title:'Salvar workspace',category:'Workspace',execute:function(){return service.flush()}});
   global.UrbePersistence={WorkspacePersistence:WorkspacePersistence};
