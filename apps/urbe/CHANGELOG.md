@@ -1,5 +1,18 @@
 # Urbe — Changelog
 
+## v0.35.1 — Workspace Integrity (2026-09-26)
+
+- Removed Burgo completely from runtime, navigation, cache, architecture and tests.
+- Added crash-safe workspace journal with authoritative recovery after interrupted writes.
+- Added bounded persistent document revision history.
+- Enforced stable document identity across rename/move and legacy UI actions.
+- Routed legacy note deletion through the recoverable trash.
+- Replaced permanent shell polling with event/MutationObserver-driven updates.
+- Made the final physical save state derive Markdown from DocumentStore rather than world buildings.
+- Routed legacy road semantics through KnowledgeIndex instead of parsing building content.
+- Added workspace diagnostics for persistence, documents, knowledge and aquarium projection.
+- Rewrote architecture invariants around a single canonical workspace authority.
+
 ## v0.34.0 — Runtime Migration Complete (2026-09-26)
 
 - Moved aquarium frame scheduling out of the monolith into AquariumRenderer + shared Scheduler.
