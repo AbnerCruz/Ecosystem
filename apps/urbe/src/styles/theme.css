@@ -92,14 +92,14 @@ html body #v23Fab:active{transform:scale(.94);box-shadow:0 4px 12px rgba(143,179
 html body #v23Fab .ui-icon{width:26px;height:26px;stroke-width:2.2}
 
 /* primeiro acesso: cidade vazia */
-#urbeWelcome{position:fixed;left:16px;right:16px;bottom:calc(var(--ui-dock) + var(--ui-safe-b) + 88px);z-index:43;max-width:420px;margin:0 auto;
+#urbeWelcome,#urbeTip{position:fixed;left:16px;right:16px;bottom:calc(var(--ui-dock) + var(--ui-safe-b) + 88px);z-index:43;max-width:420px;margin:0 auto;
   padding:20px;border-radius:var(--ui-r-xl);background:rgba(21,22,26,.94);border:1px solid rgba(255,255,255,.06);box-shadow:var(--ui-shadow-2);
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);animation:ui-rise .35s var(--ui-ease)}
-#urbeWelcome[hidden]{display:none}
-#urbeWelcome h2{margin:0 0 6px;font:700 19px/1.25 var(--ui-font);letter-spacing:-.01em}
-#urbeWelcome p{margin:0 0 16px;color:var(--ui-text-2);font:400 14px/1.5 var(--ui-font)}
-#urbeWelcome .uw-actions{display:flex;gap:10px}
-#urbeWelcome .uw-actions .ui-btn{flex:1}
+#urbeWelcome[hidden],#urbeTip[hidden]{display:none}
+#urbeWelcome h2,#urbeTip h2{margin:0 0 6px;font:700 19px/1.25 var(--ui-font);letter-spacing:-.01em}
+#urbeWelcome p,#urbeTip p{margin:0 0 16px;color:var(--ui-text-2);font:400 14px/1.5 var(--ui-font)}
+#urbeWelcome .uw-actions,#urbeTip .uw-actions{display:flex;gap:10px}
+#urbeWelcome .uw-actions .ui-btn,#urbeTip .uw-actions .ui-btn{flex:1}
 @keyframes ui-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
 /* ============================================================
@@ -405,7 +405,55 @@ html body #v21Loading{background:var(--ui-bg);font-family:var(--ui-font)}
   html body #toast{bottom:24px;margin-left:calc(var(--ui-rail)/2)}
   html body #v23ModeBar{left:calc(var(--ui-rail) + 16px);right:auto;max-width:520px}
   html body #v21PlacementDock{left:calc(var(--ui-rail) + 16px)!important;right:auto!important;bottom:24px!important;max-width:560px}
-  #urbeWelcome{bottom:104px;left:calc(var(--ui-rail) + 24px);right:auto;margin:0}
+  #urbeWelcome,#urbeTip{bottom:104px;left:calc(var(--ui-rail) + 24px);right:auto;margin:0}
 }
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* ============================================================
+   EDITOR VISUAL: bolha de seleção e menu "/"
+   ============================================================ */
+#urbeFormatBubble{position:fixed;z-index:10200;display:flex;align-items:center;gap:2px;padding:4px;border-radius:var(--ui-r-m);
+  background:#25272d;border:1px solid var(--ui-line-2);box-shadow:var(--ui-shadow-2);animation:ui-pop .12s var(--ui-ease)}
+#urbeFormatBubble[hidden]{display:none}
+#urbeFormatBubble button{width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:var(--ui-r-s);background:transparent;color:var(--ui-text);font:700 15px/1 var(--ui-font)}
+#urbeFormatBubble button i{font-family:Georgia,serif;font-weight:600}
+#urbeFormatBubble button:hover{background:rgba(255,255,255,.08)}
+#urbeFormatBubble .ui-icon{width:18px;height:18px}
+#urbeFormatBubble .ufb-sep{width:1px;height:20px;margin:0 3px;background:var(--ui-line-2)}
+#urbeSlashMenu{position:fixed;z-index:10200;width:min(300px,calc(100vw - 16px));max-height:min(340px,50vh);overflow:auto;padding:6px;border-radius:var(--ui-r-l);
+  background:var(--ui-surface-2);border:1px solid var(--ui-line-2);box-shadow:var(--ui-shadow-2);animation:ui-pop .12s var(--ui-ease)}
+#urbeSlashMenu[hidden]{display:none}
+.usm-item{width:100%;display:flex;align-items:center;gap:12px;min-height:48px;padding:6px 8px;border:0;border-radius:var(--ui-r-s);background:transparent;color:var(--ui-text);text-align:left;font:500 15px/1.25 var(--ui-font)}
+.usm-item.active,.usm-item:hover{background:var(--ui-accent-soft)}
+.usm-icon{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--ui-surface-3);color:var(--ui-text-2);font:700 12px var(--ui-font)}
+.usm-icon .ui-icon{width:18px;height:18px}
+.usm-text{display:flex;flex-direction:column;gap:1px;min-width:0}
+.usm-text strong{font-weight:500}
+.usm-text small{color:var(--ui-text-3);font-size:12px}
+.usm-empty{padding:14px;color:var(--ui-text-3);font:500 14px var(--ui-font)}
+@keyframes ui-pop{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}
+
+/* ============================================================
+   BUSCA GLOBAL
+   ============================================================ */
+html body .uqo-panel{margin-top:max(24px,12vh)}
+.uqo-field{display:flex;align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid var(--ui-line);color:var(--ui-text-3)}
+.uqo-field .ui-icon{width:20px;height:20px}
+html body .uqo-field .uqo-input{border:0;padding:18px 0;font:500 17px/1.3 var(--ui-font)}
+html body .uqo-list{padding:6px}
+.uqo-group{padding:10px 12px 4px;color:var(--ui-text-3);font:600 12px var(--ui-font);letter-spacing:.06em;text-transform:uppercase}
+html body .uqo-item{justify-content:flex-start;gap:12px;align-items:flex-start}
+.uqo-icon{width:32px;height:32px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--ui-surface-2);color:var(--ui-text-3)}
+.uqo-icon .ui-icon{width:18px;height:18px}
+.uqo-text{display:flex;flex-direction:column;gap:3px;min-width:0;padding-top:5px}
+.uqo-text strong{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body .uqo-text small{color:var(--ui-text-3);font:400 13px/1.4 var(--ui-font);white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.uqo-text mark{background:rgba(143,179,255,.22);color:var(--ui-text);border-radius:3px;padding:0 2px}
+.uqo-create .uqo-icon{background:var(--ui-accent-soft);color:var(--ui-accent)}
+.uqo-foot{display:flex;gap:16px;padding:10px 18px;border-top:1px solid var(--ui-line);color:var(--ui-text-3);font:500 12px var(--ui-font)}
+.uqo-foot kbd{display:inline-block;min-width:20px;margin-right:4px;padding:1px 5px;border-radius:5px;border:1px solid var(--ui-line-2);background:var(--ui-surface-2);font:600 11px var(--ui-font);text-align:center;color:var(--ui-text-2)}
+@media (max-width:600px){.uqo-foot{display:none}html body .uqo-panel{margin-top:0}}
+html body .uqo-input:focus,.ume-search input:focus{outline:none;box-shadow:none}
+.uqo-input::-webkit-search-cancel-button,.ume-search input::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;width:16px;height:16px;border-radius:50%;cursor:pointer;
+  background:var(--ui-text-3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M5 5l6 6M11 5l-6 6' stroke='%230e0f11' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") center/12px no-repeat}

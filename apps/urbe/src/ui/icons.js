@@ -34,7 +34,7 @@
     open:'<path d="M14 4.5h5.5V10"/><path d="M19.5 4.5L11 13"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/>',
     sidebar:'<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M15 4.5v15"/>',
     link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
-    wikilink:'<path d="M8 4.5H5.5v15H8M16 4.5h2.5v15H16"/><path d="M10 12h4"/>',
+    wikilink:'<path d="M7.5 5H5v14h2.5M10.5 5H8.5v14h2M13.5 5h2v14h-2M16.5 5H19v14h-2.5"/>',
     list:'<path d="M9.5 6.5h10M9.5 12h10M9.5 17.5h10"/><circle cx="5" cy="6.5" r=".9"/><circle cx="5" cy="12" r=".9"/><circle cx="5" cy="17.5" r=".9"/>',
     task:'<rect x="4" y="4.5" width="15" height="15" rx="3"/><path d="M8 12l2.8 2.8L16 9.5"/>',
     quote:'<path d="M5 8.5h5v5.5c0 2.5-1.5 4-4 4.5M14 8.5h5v5.5c0 2.5-1.5 4-4 4.5"/>',

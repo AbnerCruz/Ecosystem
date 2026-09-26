@@ -855,6 +855,11 @@ function markdownFromVisual(root){
       out.push("#".repeat(Number(tag[1]))+" "+textInline(el).trim());
       return;
     }
+    // O navegador cria <div> ao sair de uma lista; se ele contém blocos, serializa cada um.
+    if(tag==="div"&&[...el.children].some(c=>/^(P|DIV|H[1-6]|UL|OL|BLOCKQUOTE|PRE|HR|TABLE)$/.test(c.tagName))){
+      [...el.childNodes].forEach(block);
+      return;
+    }
     if(tag==="p"||tag==="div"){
       const t=textInline(el).trim();
       if(t)out.push(t);
@@ -954,6 +959,8 @@ function visualSelection(){
 function visualCaretRect(){
   const sel=visualSelection();
   if(!sel)return null;
+  // Com texto selecionado, nunca mexe no DOM nem colapsa a seleção do usuário.
+  if(!sel.isCollapsed)return sel.getRangeAt(0).getBoundingClientRect();
   const r=sel.getRangeAt(0).cloneRange();
   r.collapse(true);
   const rect=r.getBoundingClientRect();
@@ -3988,8 +3995,8 @@ document.querySelectorAll('.mdBtn').forEach(function(btn){
     }
     if(btn.dataset.wrap)return v23Envolver(btn.dataset.wrap);
     var md=btn.dataset.md||'';
-    if(md==='\\n---\\n'){renderedPreview.focus();document.execCommand('insertHTML',false,'<hr><p><br></p>');syncVisualToMarkdown();return}
-    if(md==='\\n\\n'){renderedPreview.focus();document.execCommand('insertParagraph');syncVisualToMarkdown();return}
+    if(/^\s*---\s*$/.test(md)){renderedPreview.focus();document.execCommand('insertHTML',false,'<hr><p><br></p>');syncVisualToMarkdown();return}
+    if(md&&!md.trim()){renderedPreview.focus();document.execCommand('insertParagraph');syncVisualToMarkdown();return}
     v23PrefixarBloco(md);
   };
 });
@@ -4044,7 +4051,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.38.0';
+V21_VERSION='0.39.0';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
