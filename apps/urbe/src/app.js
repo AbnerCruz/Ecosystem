@@ -499,16 +499,10 @@ function drawOverlay(){
   if(regionDraft){const x=Math.min(regionDraft.a.x,regionDraft.b.x),y=Math.min(regionDraft.a.y,regionDraft.b.y),w=Math.abs(regionDraft.a.x-regionDraft.b.x)+1,h=Math.abs(regionDraft.a.y-regionDraft.b.y)+1,p=w2s(x*TILE,y*TILE);ctx.fillStyle="#61c8ff22";ctx.fillRect(p.x,p.y,w*TILE*camera.z,h*TILE*camera.z);ctx.strokeStyle="#9fe4ff";ctx.setLineDash([6,4]);ctx.strokeRect(p.x,p.y,w*TILE*camera.z,h*TILE*camera.z);ctx.setLineDash([])}
 }
 let ultimoDesenho=-1e9,ultimoMini=-1e9;
-function frame(t){
-  t=t||0;
-  if(!(precisaDesenhar||idxSujo||t-ultimoDesenho>500)){requestAnimationFrame(frame);return}
-  precisaDesenhar=false;ultimoDesenho=t;
-  if(idxSujo)indexar();
-  ctx.clearRect(0,0,cv.w,cv.h);
-  drawGround();drawRegions();drawRoads();drawTrees();drawBuildings();drawOverlay();
-  if(t-ultimoMini>300){ultimoMini=t;desenharMini()}
-  requestAnimationFrame(frame);}
-requestAnimationFrame(frame);
+function renderAquariumLegacy(){
+  if(idxSujo)indexar();ctx.clearRect(0,0,cv.w,cv.h);drawGround();drawRegions();drawRoads();drawTrees();drawBuildings();drawOverlay();
+}
+(function(){var renderer=window.UrbeCore&&window.UrbeCore.service('aquarium.renderer');if(renderer){renderer.configure({visible:function(){return document.visibilityState!=='hidden'},render:function(){precisaDesenhar=false;renderAquariumLegacy()},minimap:function(){desenharMini()}});var old=pedirDesenho;pedirDesenho=function(){precisaDesenhar=true;renderer.request();return old&&old()}}else{function frame(t){t=t||0;if(!(precisaDesenhar||idxSujo||t-ultimoDesenho>500)){requestAnimationFrame(frame);return}precisaDesenhar=false;ultimoDesenho=t;renderAquariumLegacy();if(t-ultimoMini>300){ultimoMini=t;desenharMini()}requestAnimationFrame(frame)}requestAnimationFrame(frame)}})();
 
 const tools=[...document.querySelectorAll(".tool[data-tool]")],hint=document.getElementById("hint");
 function setTool(t){tool=t;ghost=null;pedirDesenho();tools.forEach(b=>b.classList.toggle("active",b.dataset.tool===t));hint.textContent={select:"Arraste para mover. Toque para selecionar. Pinça para zoom.",region:"Arraste para delimitar uma nova região.",house:"Toque em terra seca para construir. O acesso pode ficar em qualquer lado do lote."}[t]}
