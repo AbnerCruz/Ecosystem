@@ -21,3 +21,4 @@ jobs:
           node --check sw.js
       - name: Structural invariants
         run: node tests/static.mjs
+          node tests/core.mjs
