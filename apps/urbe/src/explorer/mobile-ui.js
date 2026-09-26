@@ -6,10 +6,10 @@
   function ensure(){
     if(root)return;
     root=document.createElement('section');root.id='urbeMobileExplorer';root.hidden=true;
-    root.innerHTML='<header><strong>Arquivos</strong><div><button data-recent title="Recentes">Recentes</button><button data-fav title="Favoritos">★</button><button data-trash title="Lixeira">Lixeira</button><button data-close aria-label="Fechar">×</button></div></header><div class="ume-list"></div><nav class="ume-actions" hidden><span data-count></span><button data-open>Abrir</button><button data-favorite>★</button><button data-duplicate>Duplicar</button><button data-delete>Excluir</button><button data-clear>×</button></nav>';
+    root.innerHTML='<header><strong>Arquivos</strong><div><button data-recent title="Recentes">Recentes</button><button data-fav title="Favoritos">★</button><button data-trash title="Lixeira">Lixeira</button><button data-close aria-label="Fechar">×</button></div></header><div class="ume-list"></div><nav class="ume-actions" hidden><span data-count></span><button data-open>Abrir</button><button data-favorite>★</button><button data-compose>Compor</button><button data-duplicate>Duplicar</button><button data-delete>Excluir</button><button data-clear>×</button></nav>';
     document.body.appendChild(root);list=root.querySelector('.ume-list');bar=root.querySelector('.ume-actions');
     root.querySelector('[data-close]').onclick=close;root.querySelector('[data-clear]').onclick=function(){model.clear()};
-    root.querySelector('[data-open]').onclick=openSelected;root.querySelector('[data-favorite]').onclick=favoriteSelected;root.querySelector('[data-duplicate]').onclick=duplicateSelected;root.querySelector('[data-delete]').onclick=deleteSelected;
+    root.querySelector('[data-open]').onclick=openSelected;root.querySelector('[data-compose]').onclick=composeSelected;root.querySelector('[data-favorite]').onclick=favoriteSelected;root.querySelector('[data-duplicate]').onclick=duplicateSelected;root.querySelector('[data-delete]').onclick=deleteSelected;
     root.querySelector('[data-recent]').onclick=function(){renderCollection('Recentes',model.listRecent())};root.querySelector('[data-fav]').onclick=function(){renderCollection('Favoritos',model.listFavorites())};if(trash)root.querySelector('[data-trash]').onclick=renderTrash;
   }
   function row(node,depth){
@@ -33,6 +33,7 @@
   function openId(id){var n=model.node(id);if(!n||n.kind!=='document')return;model.touchRecent(id);core.commands.execute('document.open',{id:id,source:'mobile-explorer'});close()}
   function openSelected(){var n=model.selected().find(x=>x.kind==='document');if(n)openId(n.id)}
   function favoriteSelected(){model.selected().forEach(n=>model.favorite(n.id,true))}
+  function composeSelected(){var ids=model.selected().filter(n=>n.kind==='document').map(n=>n.id);if(ids.length)core.commands.execute('ui.composition.create',{ids:ids,type:'document'});model.clear();close()}
   function duplicateSelected(){model.selected().filter(n=>n.kind==='document').forEach(n=>core.commands.execute('explorer.duplicate',{id:n.id}));model.clear()}
   function deleteSelected(){var ids=model.selected().filter(n=>n.kind==='document').map(n=>n.id);if(!ids.length)return;if(global.confirm&& !confirm('Excluir '+ids.length+' nota'+(ids.length===1?'':'s')+'?'))return;core.commands.execute('explorer.delete',{ids:ids})}
   function open(){ensure();root.hidden=false;root.querySelector('header strong').textContent='Arquivos';render()}
