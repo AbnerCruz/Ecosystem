@@ -18,7 +18,6 @@ const APP_SHELL = [
   './src/world/renderer.js',
   './src/world/touch.js',
   './src/core/scheduler.js',
-  './src/burgo/projection.js',
   './src/explorer/model.js',
   './src/explorer/operations.js',
   './src/explorer/mobile-ui.js',
