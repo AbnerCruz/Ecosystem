@@ -21,6 +21,10 @@ jobs:
           node --check src/core/knowledge-index.js
           node --check src/persistence/workspace.js
           node --check src/world/projection.js
+          node --check src/world/system.js
+          node --check src/world/roads.js
+          node --check src/core/scheduler.js
+          node --check src/burgo/projection.js
           node --check src/explorer/model.js
           node --check src/explorer/operations.js
           node --check src/explorer/mobile-ui.js
@@ -45,3 +49,4 @@ jobs:
           node tests/editor-workspace.mjs
           node tests/explorer.mjs
           node tests/persistence-world.mjs
+          node tests/world-system.mjs
