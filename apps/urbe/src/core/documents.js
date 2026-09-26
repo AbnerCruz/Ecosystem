@@ -4,6 +4,11 @@
   function normalizePath(path){
     return String(path||'').replace(/\\/g,'/').replace(/^\/+|\/+$/g,'').replace(/\/+/g,'/');
   }
+  var _idSeq=0;
+  function createDocumentId(){
+    if(global.crypto&&typeof global.crypto.randomUUID==='function')return 'doc_'+global.crypto.randomUUID();
+    _idSeq++;return 'doc_'+Date.now().toString(36)+'_'+_idSeq.toString(36);
+  }
   function titleFromPath(path){
     var file=normalizePath(path).split('/').pop()||'';
     return file.replace(/\.(md|markdown)$/i,'');
@@ -51,7 +56,7 @@
     }
     upsert(input,meta){
       if(!input||!input.path)throw new TypeError('document path is required');
-      var path=normalizePath(input.path),existingId=this.pathIndex.get(path.toLowerCase()),id=String(input.id||existingId||path);
+      var path=normalizePath(input.path),existingId=this.pathIndex.get(path.toLowerCase()),id=String(input.id||existingId||createDocumentId());
       var previous=this.docs.get(id)||null,next=this.make({...input,id:id,revision:(previous?previous.revision:0)+1});
       if(previous&&previous.path.toLowerCase()!==path.toLowerCase())this.pathIndex.delete(previous.path.toLowerCase());
       this.docs.set(id,next);this.pathIndex.set(path.toLowerCase(),id);this.revision++;
@@ -74,5 +79,5 @@
   core.provide('documents',store);
   core.commands.register('document.update',{title:'Atualizar documento',category:'Documento',execute:function(ctx){if(!ctx||!ctx.path)throw new TypeError('document.update requires path');return store.upsert(ctx,{source:ctx.source||'command'})}});
   core.commands.register('document.remove',{title:'Remover documento',category:'Documento',execute:function(ctx){return !!ctx&&store.remove(ctx.id||ctx.path,{source:ctx.source||'command'})}});
-  global.UrbeDocumentModel={DocumentStore:DocumentStore,parseLinks:parseLinks,parseTags:parseTags,parseFrontmatter:parseFrontmatter,normalizePath:normalizePath};
+  global.UrbeDocumentModel={DocumentStore:DocumentStore,parseLinks:parseLinks,parseTags:parseTags,parseFrontmatter:parseFrontmatter,normalizePath:normalizePath,createDocumentId:createDocumentId};
 })(window);
