@@ -4169,8 +4169,6 @@ drawTrees=function(){v25BaseDrawTrees();v25Desenhar()};
 function v25MapaVisivel(){
   if(typeof v23Aberto!=='function')return true;
   if(v23Aberto(editorFull)||v23Aberto(fileSidebar)||v23Aberto(aiPanel)||v23Aberto(menuEl))return false;
-  var burgo=document.getElementById('v24Burgo');
-  if(burgo&&burgo.classList.contains('open'))return false;
   return document.visibilityState!=='hidden';
 }
 function v25Ciclo(){
@@ -4190,13 +4188,12 @@ window.URBE=window.URBE||{};
 Object.defineProperties(window.URBE,{
   povo:{get:function(){return v25Povo},configurable:true},
   rotas:{get:function(){return v25Rotas},configurable:true},
-  mundo:{get:function(){return world},configurable:true},
-  sim:{get:function(){return typeof sim!=='undefined'?sim:null},configurable:true}
+  mundo:{get:function(){return world},configurable:true}
+
 });
 Object.assign(window.URBE,{
   passo:function(dt){v25Passo(dt)},
   quadro:function(){drawGround();drawRegions();drawRoads();drawTrees();drawBuildings()},
-  resolverDia:function(){if(typeof v24ResolverDia==='function')v24ResolverDia()},
   naEstrada:function(t){return world.roads.has(K(t.x,t.y))},
   diagnostico:function(){return {mapaVisivel:v25MapaVisivel(),ligado:v25Ligado,
     editor:v23Aberto(editorFull),explorador:v23Aberto(fileSidebar),ia:v23Aberto(aiPanel),
