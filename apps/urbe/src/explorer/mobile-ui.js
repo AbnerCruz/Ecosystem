@@ -47,6 +47,8 @@
   function open(){ensure();root.hidden=false;root.querySelector('header strong').textContent='Arquivos';render()}
   function close(){if(root)root.hidden=true}
   core.events.on('explorer:changed',function(){if(root&&!root.hidden)render()});
+  // Abrir um documento por qualquer caminho (atalho, paleta, link) revela o editor.
+  core.events.on('command:after',function(e){if(e&&e.id==='document.open')close()});
   core.commands.register('ui.explorer.open',{title:'Abrir arquivos',category:'Navegação',execute:open});
   core.provide('explorer.ui',{open:open,close:close,isOpen:function(){return !!root&&!root.hidden}});
 })(window);

@@ -37,6 +37,10 @@
   var service=new WorkspacePersistence(core.events,docs);core.provide('persistence',service);
   if(trash)core.events.on('trash:changed',function(){service.schedule()});if(history)core.events.on('history:changed',function(){service.schedule()});if(compositions){core.events.on('composition:created',function(){service.schedule()});core.events.on('composition:updated',function(){service.schedule()});core.events.on('composition:removed',function(){service.schedule()})}
   core.events.on('document:created',function(){service.schedule()});core.events.on('document:updated',function(){service.schedule()});core.events.on('document:removed',function(){service.schedule()});
+  /* O debounce não pode perder a última operação quando o app é fechado ou vai para segundo plano. */
+  function flushPending(){if(!service.timer&&!service.pending)return;if(service.timer){clearTimeout(service.timer);service.timer=null}service.flush().catch(function(){})}
+  if(global.addEventListener)global.addEventListener('pagehide',flushPending);
+  if(global.document&&global.document.addEventListener)global.document.addEventListener('visibilitychange',function(){if(global.document.hidden)flushPending()});
   core.commands.register('workspace.flush',{title:'Salvar workspace',category:'Workspace',execute:function(){return service.flush()}});
   global.UrbePersistence={WorkspacePersistence:WorkspacePersistence};
 })(window);

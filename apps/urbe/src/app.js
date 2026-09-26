@@ -811,7 +811,7 @@ function renderMarkdown(md){
   }
   closeList();
   flushCode();
-  return out||'<p style="color:#8296a3">Esta nota está vazia.</p>';
+  return out||'<p><br></p>';
 }
 
 let visualSyncLock=false;
@@ -914,7 +914,13 @@ function renderCurrentPreview(){
   visualSyncLock=true;
   renderedPreview.innerHTML=renderMarkdown(bodyEditor.value);
   bindPreviewWikiLinks();
+  updateVisualEmptyState();
   visualSyncLock=false;
+}
+
+/* O aviso de nota vazia é só visual (CSS); nunca entra no conteúdo editável. */
+function updateVisualEmptyState(){
+  renderedPreview.classList.toggle("isEmpty",!renderedPreview.textContent.replace(/\u200b/g,"").trim()&&!renderedPreview.querySelector("img,hr,table,input,iframe,li"));
 }
 
 function syncVisualToMarkdown(){
@@ -1126,8 +1132,9 @@ renderedPreview.addEventListener("keydown",e=>{
   else if(e.key==="Escape"){e.preventDefault();closeVisualWiki()}
 });
 
-renderedPreview.addEventListener("input",syncVisualToMarkdown);
-renderedPreview.addEventListener("blur",syncVisualToMarkdown);
+// Wrappers: syncVisualToMarkdown é redefinida por camadas posteriores.
+renderedPreview.addEventListener("input",()=>{updateVisualEmptyState();syncVisualToMarkdown()});
+renderedPreview.addEventListener("blur",()=>syncVisualToMarkdown());
 
 renderedPreview.addEventListener("change",e=>{
   if(editorViewMode==="preview" && e.target.matches('input[type="checkbox"]'))syncVisualToMarkdown();
@@ -2981,7 +2988,9 @@ moverArquivosParaRegiao=function(ids,regionId){
 (function registrarPWA(){
   if(!('serviceWorker' in navigator)||location.protocol==='file:')return;
   let regAtual=null,recarregando=false;const banner=document.getElementById('updateBanner'),bt=document.getElementById('reloadUpdateBtn');
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(recarregando)return;recarregando=true;location.reload()});
+  // Na primeira instalação clients.claim() também dispara controllerchange; só recarrega em atualização real.
+  const tinhaControlador=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(recarregando||!tinhaControlador)return;recarregando=true;location.reload()});
   navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(reg=>{regAtual=reg;if(reg.waiting&&navigator.serviceWorker.controller)banner.classList.add('open');reg.addEventListener('updatefound',()=>{const nw=reg.installing;if(!nw)return;nw.addEventListener('statechange',()=>{if(nw.state==='installed'&&navigator.serviceWorker.controller)banner.classList.add('open')})})}).catch(e=>console.warn('service worker',e));
   bt.onclick=()=>{if(regAtual?.waiting)regAtual.waiting.postMessage({type:'SKIP_WAITING'});else location.reload()};
 })();
@@ -4007,7 +4016,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.37.0';
+V21_VERSION='0.37.1';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
@@ -4272,6 +4281,8 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
     syncBuilding:function(b,source){
       var path=caminhoDocumentoDoPredio(b);if(!path||!docs)return null;
       var existing=(b.documentId&&docs.get(b.documentId))||docs.get(path);
+      // Documento excluído/movido para a lixeira: o editor não pode ressuscitá-lo.
+      if(b.documentId&&!docs.get(b.documentId))return null;
       if(existing&&existing.content===(b.content||''))return existing;
       if(source==='editor.input'){
         var session=core.service('editor.session');
@@ -4293,6 +4304,14 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
   var oldMarkChanged=markChanged;
   markChanged=function(){
     var result=oldMarkChanged.apply(this,arguments);
+    if(currentFile&&currentFile.tipo==='nota')core.service('legacy.documents').syncBuilding(currentFile,'editor.input');
+    return result;
+  };
+  /* O modo Visual grava direto em currentFile.content; sem isto o DocumentStore
+     ficava desatualizado e a reconciliação do save descartava a edição. */
+  var oldVisualSync=syncVisualToMarkdown;
+  syncVisualToMarkdown=function(){
+    var result=oldVisualSync.apply(this,arguments);
     if(currentFile&&currentFile.tipo==='nota')core.service('legacy.documents').syncBuilding(currentFile,'editor.input');
     return result;
   };

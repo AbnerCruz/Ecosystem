@@ -63,3 +63,4 @@ jobs:
           node tests/production-order.mjs
           node tests/integration-runtime.mjs
           node tests/app-loader.mjs
+          node tests/editor-persistence.mjs
