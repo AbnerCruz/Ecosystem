@@ -15,6 +15,8 @@ const APP_SHELL = [
   './src/world/projection.js',
   './src/world/system.js',
   './src/world/roads.js',
+  './src/world/renderer.js',
+  './src/world/touch.js',
   './src/core/scheduler.js',
   './src/burgo/projection.js',
   './src/explorer/model.js',
