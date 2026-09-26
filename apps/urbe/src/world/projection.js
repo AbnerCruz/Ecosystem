@@ -19,7 +19,7 @@
       var d=this.store.get(idOrPath);if(!d)return null;var prev=this.spatial.get(d.path)||{},next={...prev,...patch};this.spatial.set(d.path,next);this.revision++;this.events.emit('world:spatialChanged',{document:d,spatial:{...next},revision:this.revision});return this.projectDocument(d.id)
     }
     metadata(base){
-      var out={...(base||{})},notes={};this.store.list().forEach(d=>{var s=this.spatial.get(d.path)||{};notes[d.path]={...s,tags:d.tags||[],criado:d.created||s.criado||null,modificado:d.modified||s.modificado||null}});out.notas=notes;out.regioes=Array.from(this.regions.values()).map(r=>({...r}));return out
+      var out={...(base||{})},notes={};this.store.list().forEach(d=>{var s=this.spatial.get(d.path)||{};notes[d.path]={...s,id:d.id,tags:d.tags||[],criado:d.created||s.criado||null,modificado:d.modified||s.modificado||null}});out.notas=notes;out.regioes=Array.from(this.regions.values()).map(r=>({...r}));return out
     }
     snapshot(){return{enabled:this.enabled,revision:this.revision,documents:this.documents(),regions:Array.from(this.regions.values()).map(r=>({...r}))}}
     setEnabled(value){this.enabled=value!==false;this.events.emit('world:enabled',{enabled:this.enabled});return this.enabled}
