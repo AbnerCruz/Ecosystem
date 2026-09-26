@@ -7,6 +7,8 @@ const APP_SHELL = [
   './src/styles/command-palette.css',
   './src/legacy/bootstrap.js',
   './src/core/core.js',
+  './src/core/documents.js',
+  './src/core/knowledge-index.js',
   './src/core/keymap.js',
   './src/ui/command-palette.js',
   './src/app.js',
