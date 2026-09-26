@@ -22,6 +22,7 @@ const APP_SHELL = [
   './src/explorer/model.js',
   './src/explorer/operations.js',
   './src/explorer/mobile-ui.js',
+  './src/core/diagnostics.js',
   './src/editor/session.js',
   './src/editor/context.js',
   './src/editor/workspace.js',
