@@ -31,7 +31,7 @@ const checks = [
   ['core antes do legado', index.indexOf('./src/core/core.js') < index.indexOf('./src/app.js')],
   ['css base externo', index.includes('./src/styles/base.css')],
   ['css shell externo', index.includes('./src/styles/shell.css')],
-  ['versão 0.34', index.includes('Urbe v0.34.0') && app.includes("V21_VERSION='0.34.0'")],
+  ['versão 0.35.1', index.includes('Urbe v0.35.1') && app.includes("V21_VERSION='0.35.1'")],
   ['diagnóstico URBE', app.includes('window.URBE')],
   ['ponte de comandos', app.includes("workspace.navigate.world") && app.includes("document.create") && app.includes("workspace.save")],
   ['core contratos', core.includes('class EventBus') && core.includes('class CommandRegistry') && core.includes('class StateStore')],
