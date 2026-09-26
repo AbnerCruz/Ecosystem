@@ -10,6 +10,7 @@ const documents = read('src/core/documents.js');
 const knowledge = read('src/core/knowledge-index.js');
 const editorSession = read('src/editor/session.js');
 const editorContext = read('src/editor/context.js');
+const editorChrome = read('src/editor/chrome.js');
 const sw = read('sw.js');
 
 const checks = [
@@ -27,12 +28,13 @@ const checks = [
   ['índice de conhecimento', index.includes('./src/core/knowledge-index.js') && knowledge.includes('class KnowledgeIndex')],
   ['editor session', index.includes('./src/editor/session.js') && editorSession.includes('class EditorSession')],
   ['editor context', index.includes('./src/editor/context.js') && editorContext.includes("editor.context")],
+  ['editor chrome', index.includes('./src/editor/chrome.js') && editorChrome.includes('urbeEditorChrome')],
   ['atalhos unificados', index.includes('./src/core/keymap.js') && keymap.includes("ui.commandPalette.open")],
   ['command palette', index.includes('./src/ui/command-palette.js') && palette.includes("ui.commandPalette.open")],
   ['quick open indexado', index.includes('./src/ui/quick-open.js') && keymap.includes("ui.quickOpen.open")],
   ['cache app', sw.includes("'./src/app.js'")],
   ['cache core', sw.includes("'./src/core/core.js'")],
-  ['cache conhecimento', sw.includes("'./src/core/documents.js'") && sw.includes("'./src/core/knowledge-index.js'") && sw.includes("'./src/editor/session.js'") && sw.includes("'./src/editor/context.js'")],
+  ['cache conhecimento', sw.includes("'./src/core/documents.js'") && sw.includes("'./src/core/knowledge-index.js'") && sw.includes("'./src/editor/session.js'") && sw.includes("'./src/editor/context.js'") && sw.includes("'./src/editor/chrome.js'")],
   ['cache comandos', sw.includes("'./src/core/keymap.js'") && sw.includes("'./src/ui/command-palette.js'") && sw.includes("'./src/ui/quick-open.js'")],
   ['cache css', sw.includes("'./src/styles/base.css'") && sw.includes("'./src/styles/shell.css'")],
   ['cache versionado', sw.includes('urbe-shell-v0.28.0')],
