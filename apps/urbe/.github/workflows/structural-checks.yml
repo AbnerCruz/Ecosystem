@@ -21,6 +21,7 @@ jobs:
           node --check src/core/knowledge-index.js
           node --check src/editor/session.js
           node --check src/editor/context.js
+          node --check src/editor/chrome.js
           node --check src/core/keymap.js
           node --check src/ui/command-palette.js
           node --check src/ui/quick-open.js
