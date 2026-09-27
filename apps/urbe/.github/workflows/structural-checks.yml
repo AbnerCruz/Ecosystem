@@ -48,6 +48,8 @@ jobs:
           node --check src/ui/quick-open.js
           node --check src/ui/icons.js
           node --check src/ui/dialogs.js
+          node --check src/ui/touch-debug.js
+          node --check src/ui/settings.js
           node --check src/editor/visual-tools.js
           node --check src/ui/tips.js
           node --check src/ai/providers.js

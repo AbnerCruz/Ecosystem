@@ -73,37 +73,47 @@
     var tint=new Float32Array(W*W);for(j=0;j<W;j++)for(i=0;i<W;i++){var tx0=x0+i-1,ty0=y0+j-1;tint[j*W+i]=(vn(tx0/7,ty0/7)-.5)*.16+(vn(tx0/2.5+50,ty0/2.5)-.5)*.05}
     var ROCKY={mountain:1,peak:1,hills:1,snow:1};
     var IDX={};IDS.forEach(function(id,n){IDX[id]=n});
+    /* Divisas orgânicas: cada pixel consulta o bioma numa posição deformada por
+       ruído suave (≈1 tile de amplitude), então as bordas viram curvas em vez de
+       degraus da grade. Entre biomas de terra as texturas se misturam (ecótono);
+       água × terra fica nítida, com espuma seguindo a costa. */
+    function vns(x,y,s){var X=Math.floor(x),Y=Math.floor(y),fx=x-X,fy=y-Y,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy),a=hash(X,Y,s),b=hash(X+1,Y,s),c=hash(X,Y+1,s),d=hash(X+1,Y+1,s);return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v}
+    function sm(t){t=t<0?0:t>1?1:t;return t*t*(3-2*t)}
+    var VAR=new Uint8Array(W*W);for(j=0;j<W;j++)for(i=0;i<W;i++)VAR[j*W+i]=Math.floor(hash(x0+i-1,y0+j-1,5)*4);
+    function bioAt(u,v){var iu=Math.floor(u),iv=Math.floor(v);if(iu<-1)iu=-1;if(iu>CH)iu=CH;if(iv<-1)iv=-1;if(iv>CH)iv=CH;return(iv+1)*W+iu+1}
     for(var ty=0;ty<CH;ty++)for(var tx=0;tx<CH;tx++){
-      var k=(ty+1)*W+tx+1,id=bio[k],wx=x0+tx,wy=y0+ty,v=Math.floor(hash(wx,wy,5)*4),own=TEX[id][v];
-      var nL=bio[k-1],nR=bio[k+1],nU=bio[k-W],nD=bio[k+W],edge=nL!==id||nR!==id||nU!==id||nD!==id;
-      var texL=TEX[nL][v],texR=TEX[nR][v],texU=TEX[nU][v],texD=TEX[nD][v];
-      var water=!!WATER[id],landNear=water&&(!WATER[nL]||!WATER[nR]||!WATER[nU]||!WATER[nD]);
-      var deep=water?Math.max(0,Math.min(1,(sea-elev[k])/.12)):0,rocky=ROCKY[id]?10:5;
-      /* cantos do declive e do tom para interpolação bilinear dentro do tile */
+      var k=(ty+1)*W+tx+1,id=bio[k],wx=x0+tx,wy=y0+ty;
+      var nL=bio[k-1],nR=bio[k+1],nU=bio[k-W],nD=bio[k+W],nUL=bio[k-W-1],nUR=bio[k-W+1],nDL=bio[k+W-1],nDR=bio[k+W+1];
+      var uniform=nL===id&&nR===id&&nU===id&&nD===id&&nUL===id&&nUR===id&&nDL===id&&nDR===id,own=TEX[id][VAR[k]];
       var s00=slope[k-W-1]+slope[k-W]+slope[k-1]+slope[k],s10=slope[k-W]+slope[k-W+1]+slope[k]+slope[k+1],s01=slope[k-1]+slope[k]+slope[k+W-1]+slope[k+W],s11=slope[k]+slope[k+1]+slope[k+W]+slope[k+W+1];
       var t00=tint[k-W-1]+tint[k-W]+tint[k-1]+tint[k],t10=tint[k-W]+tint[k-W+1]+tint[k]+tint[k+1],t01=tint[k-1]+tint[k]+tint[k+W-1]+tint[k+W],t11=tint[k]+tint[k+1]+tint[k+W]+tint[k+W+1];
       for(var py=0;py<PX;py++){
-        var fy=(py+.5)/PX,row=((ty*PX+py)*N+tx*PX)*4,dU=py,dD=PX-1-py;
+        var fy=(py+.5)/PX,row=((ty*PX+py)*N+tx*PX)*4;
         var sl0=s00+(s01-s00)*fy,sl1=s10+(s11-s10)*fy,tn0=t00+(t01-t00)*fy,tn1=t10+(t11-t10)*fy;
         for(var px=0;px<PX;px++){
-          var o=(py*PX+px)*4,src=own,sw=water;
-          if(edge){ /* bordas orgânicas: perto da divisa, às vezes o pixel é do vizinho */
-            var hsh=hash(wx*PX+px,wy*PX+py,77),dL=px,dR=PX-1-px;
-            if(nL!==id&&dL<4&&hsh<(4-dL)*.2){src=texL;sw=!!WATER[nL]}
-            else if(nR!==id&&dR<4&&hsh<(4-dR)*.2){src=texR;sw=!!WATER[nR]}
-            else if(nU!==id&&dU<4&&hsh<(4-dU)*.2){src=texU;sw=!!WATER[nU]}
-            else if(nD!==id&&dD<4&&hsh<(4-dD)*.2){src=texD;sw=!!WATER[nD]}
+          var o=(py*PX+px)*4,to=row+px*4,fx=(px+.5)/PX,r,g,bl,shade,water,rocky=ROCKY[id]?10:5;
+          if(uniform){r=own[o];g=own[o+1];bl=own[o+2];water=!!WATER[id];if(water){var dp=Math.max(0,Math.min(1,(sea-elev[k])/.12));shade=-dp*.28}}
+          else{
+            var gx=wx*PX+px,gy=wy*PX+py;
+            var uu=tx+fx+(vns(gx/24,gy/24,301)-.5)*.7+(vns(gx/11,gy/11,303)-.5)*.12,vv=ty+fy+(vns(gx/24+57,gy/24-31,302)-.5)*.7+(vns(gx/11-19,gy/11+23,304)-.5)*.12;
+            var cu=uu-.5,cv=vv-.5,iu=Math.floor(cu),iv=Math.floor(cv);if(iu<-1)iu=-1;if(iu>CH-1)iu=CH-1;if(iv<-1)iv=-1;if(iv>CH-1)iv=CH-1;
+            var fu=Math.max(0,Math.min(1,cu-iu)),fv=Math.max(0,Math.min(1,cv-iv));
+            var ks=[(iv+1)*W+iu+1,(iv+1)*W+iu+2,(iv+2)*W+iu+1,(iv+2)*W+iu+2],wp=[(1-fu)*(1-fv),fu*(1-fv),(1-fu)*fv,fu*fv];
+            /* água: campo contínuo (fração de água interpolada entre os centros dos tiles) → margens curvas */
+            var wv=0,bestW=-1,kw=-1;for(var q=0;q<4;q++){if(WATER[bio[ks[q]]]){wv+=wp[q];if(wp[q]>bestW){bestW=wp[q];kw=ks[q]}}}
+            if(wv>0&&wv<1)wv+=(vns(gx/9,gy/9,305)-.5)*.16;
+            water=wv>.5;
+            if(water){var tw=TEX[bio[kw]][VAR[kw]];r=tw[o];g=tw[o+1];bl=tw[o+2];shade=-Math.max(0,Math.min(1,(sea-elev[kw])/.12))*.28;
+              if(wv<.57&&hash(gx,gy,78)<.75){r=236;g=244;bl=246;shade=0}else if(wv<.72)shade+=.12}
+            else{ /* terra: mistura das texturas dos tiles de terra vizinhos, transição suave (ecótono) */
+              var au=sm(fu),av=sm(fv),ws=[(1-au)*(1-av),au*(1-av),(1-au)*av,au*av],sr=0,sg=0,sb=0,sw=0,rk=0;
+              for(q=0;q<4;q++){var bq=bio[ks[q]],wq=ws[q];if(WATER[bq]||wq<=0)continue;var tq=TEX[bq][VAR[ks[q]]];sr+=tq[o]*wq;sg+=tq[o+1]*wq;sb+=tq[o+2]*wq;sw+=wq;rk+=(ROCKY[bq]?10:5)*wq}
+              if(sw>0){r=sr/sw;g=sg/sw;bl=sb/sw;rocky=rk/sw}
+              else{var kl=ks[0];for(q=0;q<4;q++)if(!WATER[bio[ks[q]]])kl=ks[q];var tn=TEX[bio[kl]][VAR[kl]];r=tn[o];g=tn[o+1];bl=tn[o+2]}
+            }
           }
-          var r=src[o],g=src[o+1],bl=src[o+2],shade;
-          if(sw){
-            shade=-deep*.28;
-            if(landNear){var dmin=99;if(!WATER[nL])dmin=px;if(!WATER[nR]&&PX-1-px<dmin)dmin=PX-1-px;if(!WATER[nU]&&dU<dmin)dmin=dU;if(!WATER[nD]&&dD<dmin)dmin=dD;
-              if(dmin<=1&&hash(wx*PX+px,wy*PX+py,78)<.75){r=236;g=244;bl=246;shade=0}else if(dmin<=3)shade+=.12}
-          }else{
-            var fx=(px+.5)/PX,sl=(sl0+(sl1-sl0)*fx)*.25,tn=(tn0+(tn1-tn0)*fx)*.25;
-            shade=sl*rocky;shade=(shade>.3?.3:shade<-.3?-.3:shade)+tn;
-          }
-          var f=1+shade,to=row+px*4;out[to]=r*f;out[to+1]=g*f;out[to+2]=bl*f;out[to+3]=255;
+          if(!water){var sl=(sl0+(sl1-sl0)*fx)*.25,tn2=(tn0+(tn1-tn0)*fx)*.25;shade=sl*rocky;shade=(shade>.3?.3:shade<-.3?-.3:shade)+tn2}
+          var f=1+shade;out[to]=r*f;out[to+1]=g*f;out[to+2]=bl*f;out[to+3]=255;
         }
       }
       /* detalhes embutidos no chão */

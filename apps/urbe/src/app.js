@@ -3741,7 +3741,7 @@ var v23Dock=null,v23Fab=null,v23ModeBar=null,v23Seg=null,v23Destino='mundo';
   app.appendChild(top);
   top.querySelector('#v23SearchBtn').onclick=function(){var c=window.UrbeCore&&window.UrbeCore.commands;if(c&&c.has('ui.quickOpen.open'))c.execute('ui.quickOpen.open',{source:'topbar'})};
   top.querySelector('#v23MapBtn').onclick=function(){abrirMapao()};
-  top.querySelector('#v23SettingsBtn').onclick=function(){v21OpenGlobalSettings()};
+  top.querySelector('#v23SettingsBtn').onclick=function(){var c=window.UrbeCore&&window.UrbeCore.commands;if(c&&c.has('ui.settings'))c.execute('ui.settings');else v21OpenGlobalSettings()};
 
   /* barra de modo: nenhuma ferramenta fica ativa sem uma saída à vista */
   v23ModeBar=document.createElement('div');v23ModeBar.id='v23ModeBar';
@@ -4070,7 +4070,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.45.0';
+V21_VERSION='0.46.0';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
@@ -4289,6 +4289,10 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
     createNote:function(regionId){return criarNotaNoDestino(regionId||null)},
     createFolder:function(parentId){return criarPastaNoDestino(parentId||null)},
     rebuildRoads:function(){return rebuildRoadNetwork()},
+    openVaults:function(){return abrirMenu()},
+    aiSettings:function(){return v21OpenGlobalSettings()},
+    version:function(){return V21_VERSION},
+    vaultName:function(){return Disco.cidade||'Urbe'},
     regions:function(){var cam=caminhosRegioes();return world.regions.map(function(r){return{id:r.id,name:r.name,path:cam.get(r.id)}})}
   });
 
@@ -4833,6 +4837,87 @@ if(MUNDO&&ARTE)pintarMapa=function(c,L,W2,H2,detalhe){
   var a0=s2w(0,0),a1=s2w(cv.w,cv.h);c.strokeStyle='#fff';c.lineWidth=2;c.strokeRect(px(a0.x/TILE),py(a0.y/TILE),(a1.x-a0.x)/TILE*esc,(a1.y-a0.y)/TILE*esc);
   return{esc:esc,px:px,py:py};
 };
+
+/* ---------- mapa explorável ----------
+   Arrastar explora, pinça/roda dá zoom, toque duplo aproxima. Um toque marca
+   o ponto e mostra o bioma com “Ir até lá” (arrastar nunca teleporta sem querer).
+   O terreno é amostrado direto do gerador (sem cachear chunks inteiros) e
+   desenhado em duas passadas: rápida e depois nítida. */
+(function urbeMapa(){
+  if(!MUNDO||!ARTE||!mapao)return;
+  mapao.onclick=null;mapao.classList.add('um');
+  mapao.innerHTML='<div class="um-top"><strong>Mapa</strong><span class="um-sub"></span><button type="button" class="um-b" data-a="close" aria-label="Fechar mapa">✕</button></div>'+
+    '<div class="um-stage"><canvas class="um-cv" aria-label="Mapa do mundo"></canvas><div class="um-pin" hidden><span class="um-pin-dot"></span><button type="button" class="um-go" data-a="go"></button></div>'+
+    '<div class="um-ctl"><button type="button" class="um-b" data-a="in" aria-label="Aproximar">+</button><button type="button" class="um-b" data-a="out" aria-label="Afastar">−</button><button type="button" class="um-b" data-a="me" aria-label="Voltar para onde estou">◎</button></div></div>'+
+    '<div class="um-hint">Arraste para explorar · pinça ou roda para zoom · toque num lugar para ir até lá</div>';
+  var cvm=mapao.querySelector('.um-cv'),g=cvm.getContext('2d'),pin=mapao.querySelector('.um-pin'),goBtn=mapao.querySelector('.um-go');
+  var st={cx:0,cy:0,tpp:1,w:1,h:1,dpr:1,base:null,job:0,pin:null};
+  var PAL=null;function pal(){if(PAL)return PAL;PAL=urbeCores().map(function(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]});return PAL}
+  function size(){var r=cvm.getBoundingClientRect();st.dpr=Math.min(2,window.devicePixelRatio||1);st.w=Math.max(1,Math.round(r.width));st.h=Math.max(1,Math.round(r.height));cvm.width=Math.round(st.w*st.dpr);cvm.height=Math.round(st.h*st.dpr)}
+  function toWorld(sx,sy){return{x:st.cx+(sx-st.w/2)*st.tpp,y:st.cy+(sy-st.h/2)*st.tpp}}
+  function toScreen(x,y){return{x:(x-st.cx)/st.tpp+st.w/2,y:(y-st.cy)/st.tpp+st.h/2}}
+  /* terreno: amostras numa grade; a imagem fica guardada com a vista em que foi feita */
+  function renderTerrain(step){var job=++st.job,gw=Math.ceil(st.w/step)+1,gh=Math.ceil(st.h/step)+1,view={cx:st.cx,cy:st.cy,tpp:st.tpp,step:step};
+    var bio=new Uint8Array(gw*gh),elv=new Float32Array(gw*gh),row=0,P=pal();
+    var off=document.createElement('canvas');off.width=gw;off.height=gh;var oc=off.getContext('2d'),img=oc.createImageData(gw,gh);
+    function slice(){if(job!==st.job)return;var t0=performance.now();
+      while(row<gh&&performance.now()-t0<12){for(var i=0;i<gw;i++){var w=toWorldV(view,i*step,row*step),smp=MUNDO.sample(w.x,w.y);bio[row*gw+i]=smp.b;elv[row*gw+i]=smp.e}row++}
+      if(row<gh){requestAnimationFrame(slice);return}
+      var k=6/Math.max(.35,view.tpp*step);
+      for(var j=0;j<gh;j++)for(i=0;i<gw;i++){var n=j*gw+i,c=P[bio[n]],e=elv[n],e2=elv[Math.max(0,j-1)*gw+Math.max(0,i-1)],sh=bio[n]<=3?-Math.max(0,Math.min(1,(MUNDO.sea-e)/.12))*.3:Math.max(-.28,Math.min(.28,(e-e2)*k)),f=1+sh,o=n*4;
+        img.data[o]=c[0]*f;img.data[o+1]=c[1]*f;img.data[o+2]=c[2]*f;img.data[o+3]=255}
+      oc.putImageData(img,0,0);st.base={cv:off,view:view};draw();
+      if(step>2)setTimeout(function(){if(job===st.job)renderTerrain(2)},30)}
+    requestAnimationFrame(slice)}
+  function toWorldV(v,sx,sy){return{x:v.cx+(sx-st.w/2)*v.tpp,y:v.cy+(sy-st.h/2)*v.tpp}}
+  var redrawT=0;function changed(){draw();clearTimeout(redrawT);st.job++;redrawT=setTimeout(function(){renderTerrain(5)},140)}
+  function draw(){var d=st.dpr;g.setTransform(d,0,0,d,0,0);g.fillStyle='#23466f';g.fillRect(0,0,st.w,st.h);
+    if(st.base){var v=st.base.view,sc=v.tpp/st.tpp,ox=(v.cx-st.cx)/st.tpp+st.w/2-st.w/2*sc,oy=(v.cy-st.cy)/st.tpp+st.h/2-st.h/2*sc;
+      g.imageSmoothingEnabled=v.tpp*v.step>1.2;g.drawImage(st.base.cv,ox,oy,st.base.cv.width*v.step*sc,st.base.cv.height*v.step*sc)}
+    var px=1/st.tpp;
+    /* pastas */
+    for(var ri=0;ri<world.regions.length;ri++){var r=world.regions[ri],a=toScreen(r.x,r.y);if(a.x>st.w||a.y>st.h||a.x+r.w*px<0||a.y+r.h*px<0)continue;
+      g.strokeStyle=r.color;g.lineWidth=1.5;g.globalAlpha=.95;g.strokeRect(a.x,a.y,r.w*px,r.h*px);g.globalAlpha=.14;g.fillStyle=r.color;g.fillRect(a.x,a.y,r.w*px,r.h*px);g.globalAlpha=1;
+      if(!r.parentId&&r.w*px>50){g.font='600 12px '+URBE_FONTE;g.lineWidth=3;g.strokeStyle='rgba(0,0,0,.55)';g.strokeText(r.name,a.x+4,a.y+14);g.fillStyle='#fff';g.fillText(r.name,a.x+4,a.y+14)}}
+    /* ruas */
+    g.fillStyle='#e8d7b0';var rs=Math.max(1,px);for(var road of world.roads){var q=road.split(','),rp=toScreen(+q[0],+q[1]);if(rp.x<-2||rp.y<-2||rp.x>st.w||rp.y>st.h)continue;g.fillRect(rp.x,rp.y,rs,rs)}
+    /* casas */
+    var z=Math.max(4,Math.min(10,3*px));for(var bi=0;bi<world.buildings.length;bi++){var b=world.buildings[bi],bp=toScreen(b.x+b.w/2,b.y+b.h/2);if(bp.x<-z||bp.y<-z||bp.x>st.w+z||bp.y>st.h+z)continue;
+      g.fillStyle='#fff';g.fillRect(bp.x-z/2-1,bp.y-z/2-1,z+2,z+2);g.fillStyle=b.tipo==='nota'?'#c9553d':'#8a6440';g.fillRect(bp.x-z/2,bp.y-z/2,z,z)}
+    /* onde estou */
+    var a0=s2w(0,0),a1=s2w(cv.w,cv.h),s0=toScreen(a0.x/TILE,a0.y/TILE),s1=toScreen(a1.x/TILE,a1.y/TILE);
+    g.strokeStyle='#fff';g.lineWidth=2;g.strokeRect(s0.x,s0.y,Math.max(6,s1.x-s0.x),Math.max(6,s1.y-s0.y));
+    var me=toScreen(camera.x/TILE,camera.y/TILE);g.fillStyle='#8fb3ff';g.beginPath();g.arc(me.x,me.y,5,0,7);g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke();
+    placePin();
+    var sub=mapao.querySelector('.um-sub');if(sub)sub.textContent=Math.round(st.w*st.tpp)+' × '+Math.round(st.h*st.tpp)+' tiles'}
+  function placePin(){if(!st.pin){pin.hidden=true;return}var p=toScreen(st.pin.x,st.pin.y);pin.hidden=false;pin.style.left=p.x+'px';pin.style.top=p.y+'px'}
+  function setPin(sx,sy){var w=toWorld(sx,sy),inf=MUNDO.info(Math.floor(w.x),Math.floor(w.y));st.pin={x:w.x,y:w.y};goBtn.textContent=inf.nome+' · Ir até lá';placePin()}
+  function zoomAt(f,sx,sy){var before=toWorld(sx,sy);st.tpp=Math.max(.06,Math.min(18,st.tpp*f));var after=toWorld(sx,sy);st.cx+=before.x-after.x;st.cy+=before.y-after.y;changed()}
+  function travel(){if(!st.pin)return;camera.x=st.pin.x*TILE;camera.y=st.pin.y*TILE;close();counts();try{v23Atualizar()}catch(_){}}
+  function close(){mapao.classList.remove('open');st.job++;st.pin=null}
+  function open(){mapao.classList.add('open');st.pin=null;requestAnimationFrame(function(){size();st.cx=camera.x/TILE;st.cy=camera.y/TILE;st.tpp=Math.max(.3,360/Math.max(st.w,st.h));st.base=null;draw();renderTerrain(6)})}
+  /* gestos */
+  var ptrs=new Map(),gest=null,lastTap=null;
+  cvm.addEventListener('pointerdown',function(e){cvm.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.offsetX,y:e.offsetY});
+    if(ptrs.size===1)gest={mode:'pan',x:e.offsetX,y:e.offsetY,cx:st.cx,cy:st.cy,t:performance.now(),moved:0};
+    else if(ptrs.size===2){var v=[...ptrs.values()],d=Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y);gest={mode:'pinch',d:d,tpp:st.tpp,mx:(v[0].x+v[1].x)/2,my:(v[0].y+v[1].y)/2,anchor:toWorld((v[0].x+v[1].x)/2,(v[0].y+v[1].y)/2),moved:99}}});
+  cvm.addEventListener('pointermove',function(e){if(!ptrs.has(e.pointerId)||!gest)return;ptrs.set(e.pointerId,{x:e.offsetX,y:e.offsetY});
+    if(gest.mode==='pan'&&ptrs.size===1){var dx=e.offsetX-gest.x,dy=e.offsetY-gest.y;gest.moved=Math.max(gest.moved,Math.hypot(dx,dy));if(gest.moved<6)return;st.cx=gest.cx-dx*st.tpp;st.cy=gest.cy-dy*st.tpp;changed()}
+    else if(gest.mode==='pinch'&&ptrs.size===2){var v=[...ptrs.values()],d=Math.max(10,Math.hypot(v[0].x-v[1].x,v[0].y-v[1].y)),mx=(v[0].x+v[1].x)/2,my=(v[0].y+v[1].y)/2;
+      st.tpp=Math.max(.06,Math.min(18,gest.tpp*gest.d/d));st.cx=gest.anchor.x-(mx-st.w/2)*st.tpp;st.cy=gest.anchor.y-(my-st.h/2)*st.tpp;changed()}});
+  function up(e){if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);if(!gest)return;
+    if(gest.mode==='pan'&&e.type==='pointerup'&&gest.moved<6&&performance.now()-gest.t<500){var now=performance.now();
+      if(lastTap&&now-lastTap.t<320&&Math.hypot(lastTap.x-gest.x,lastTap.y-gest.y)<30){lastTap=null;zoomAt(.5,gest.x,gest.y)}else{lastTap={t:now,x:gest.x,y:gest.y};setPin(gest.x,gest.y)}}
+    if(!ptrs.size)gest=null;else if(ptrs.size===1){var v=[...ptrs.values()][0];gest={mode:'pan',x:v.x,y:v.y,cx:st.cx,cy:st.cy,t:0,moved:99}}}
+  cvm.addEventListener('pointerup',up);cvm.addEventListener('pointercancel',up);
+  cvm.addEventListener('wheel',function(e){e.preventDefault();zoomAt(Math.exp(e.deltaY*.0015),e.offsetX,e.offsetY)},{passive:false});
+  mapao.addEventListener('click',function(e){var b=e.target.closest('[data-a]');if(!b)return;var a=b.dataset.a;
+    if(a==='close')close();else if(a==='go')travel();else if(a==='in')zoomAt(.6,st.w/2,st.h/2);else if(a==='out')zoomAt(1/.6,st.w/2,st.h/2);
+    else if(a==='me'){st.cx=camera.x/TILE;st.cy=camera.y/TILE;changed()}});
+  window.addEventListener('resize',function(){if(mapao.classList.contains('open')){size();changed()}});
+  abrirMapao=function(){open()};pintarMapao=function(){if(mapao.classList.contains('open'))changed()};
+  var d0=document.getElementById('mini');if(d0)d0.onclick=function(){open()};
+})();
 
 /* ---------- explorar e construir onde se está olhando ---------- */
 centroBuscaRaiz=function(){return{x:Math.floor(camera.x/TILE)-1,y:Math.floor(camera.y/TILE)-1}};

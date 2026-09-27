@@ -1,5 +1,23 @@
 # Urbe — Changelog
 
+## v0.46.0 — Mundo mais bonito, mapa explorável e toques no celular (2026-09-27)
+
+- **Biomas maiores**: continentes, clima e umidade em escalas 2–3× maiores e com menos detalhe miúdo. As regiões ficam coerentes (planícies, florestas, cordilheiras e lagos grandes) em vez de retalhos; o trecho médio de um bioma passou de 17,7 para 33 tiles. A área em volta da cidade continua amigável para construir.
+- **Transições suaves**:
+  - Entre biomas de terra, as texturas se misturam gradualmente (ecótono) em vez de trocar numa escadinha da grade.
+  - Margens de rios, lagos e mar são curvas, com a espuma seguindo a costa.
+  - O sombreamento do relevo também transiciona.
+  - As árvores avançam alguns tiles sobre o bioma vizinho, e bosques e campos se mesclam.
+- **Mapa refeito**:
+  - Arrastar para explorar, pinça ou roda para zoom, toque duplo para aproximar.
+  - Um toque marca o lugar e mostra o bioma com “Ir até lá”, então arrastar nunca teleporta sem querer.
+  - Botões fechar, +/− e “voltar para onde estou”, em tela cheia no celular.
+  - Terreno com relevo sombreado desenhado em duas passadas (rápida e nítida), com pastas, ruas, casas e onde você está.
+- **Configurações de verdade** (botão de ajustes na Cidade, que antes abria só o Assistente): cidade/vault, pasta no dispositivo, Assistente, Páginas, diagnóstico de toques e “Procurar atualização”, com a versão.
+- **Diagnóstico de toques** (Configurações): cada toque deixa um ponto verde (o botão recebeu) ou vermelho (não recebeu), e “Copiar relatório” gera um texto com o aparelho e o que aconteceu em cada toque, para achar botões que falham num celular específico.
+- **Todos os controles** usam `touch-action: manipulation`, sem espera de zoom por toque duplo.
+- **Matemática**: não existe mais “nota matemática” separada; fórmulas funcionam em qualquer nota.
+
 ## v0.45.0 — Matemática nas notas (fase 1) (2026-09-27)
 
 - **LaTeX em qualquer nota `.md`**, sem formato novo:

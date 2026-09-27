@@ -58,28 +58,28 @@
 
     function raw(x,y){
       /* continentes: ruído grande deformado (warp) para costas menos redondas */
-      var wx=x+fbm(nD,x/170,y/170,3,2,.5)*70,wy=y+fbm(nD,x/170+31,y/170+17,3,2,.5)*70;
-      var cont=fbm(nE,wx/300,wy/300,5,2.03,.5);                 /* ~[-.5,.5] */
+      var wx=x+fbm(nD,x/300,y/300,3,2,.5)*120,wy=y+fbm(nD,x/300+31,y/300+17,3,2,.5)*120;
+      var cont=fbm(nE,wx/560,wy/560,5,2.03,.5);                 /* ~[-.5,.5] */
       var e=.52+cont*1.05;
       /* cordilheiras: ruído “ridged” só onde já é terra alta */
-      var rid=1-Math.abs(fbm(nR,x/120,y/120,4,2.1,.52)*1.6);rid=Math.max(0,rid);rid=rid*rid;
+      var rid=1-Math.abs(fbm(nR,x/210,y/210,4,2.1,.5)*1.6);rid=Math.max(0,rid);rid=rid*rid;
       e+=rid*.26*smooth(.5,.7,e)-.05;
       /* colinas e detalhe */
-      e+=fbm(nE,x/38+100,y/38-40,3,2,.5)*.08;
+      e+=fbm(nE,x/60+100,y/60-40,3,2,.5)*.07;
       /* o lugar onde as cidades começam é sempre terra temperada e amigável */
-      var d=Math.hypot(x-SX,y-SY),w=1-smooth(50,170,d);
+      var d=Math.hypot(x-SX,y-SY),w=1-smooth(70,260,d);
       /* só corrige extremos (mar e picos) — o relevo local continua o do ruído */
       e=mix(e,Math.max(.48,Math.min(.63,e)),w);
       e=Math.max(0,Math.min(1,e));
       /* temperatura: faixas amplas de latitude + variação regional, esfria com a altitude */
-      var lat=Math.sin((y-SY)/560*Math.PI*.5+.3);
-      var t=.55+lat*.24+fbm(nT,x/260,y/260,3,2,.5)*.45-Math.max(0,e-.58)*1.35;
+      var lat=Math.sin((y-SY)/1100*Math.PI*.5+.3);
+      var t=.55+lat*.24+fbm(nT,x/680,y/680,3,2,.45)*.5-Math.max(0,e-.58)*1.35;
       t=mix(t,Math.max(.36,Math.min(.68,t)),w);
       /* umidade: massas de ar + costas e rios mais úmidos */
-      var m=.5+fbm(nM,x/190,y/190,4,2,.5)*1.1+(e<SEA+.05?.18:0);
+      var m=.5+fbm(nM,x/520,y/520,3,2,.45)*1.25+fbm(nM,x/70+500,y/70-500,2,2,.5)*.07+(e<SEA+.05?.16:0);
       m=mix(m,Math.max(.34,Math.min(.62,m)),w);
       /* rios: vales onde um ruído de baixa frequência cruza o meio; mais largos quando úmido */
-      var rv=Math.abs(fbm(nV,x/150,y/150,3,2,.45)),rw=.0075+Math.max(0,m-.4)*.012;
+      var rv=Math.abs(fbm(nV,x/260,y/260,3,2,.45)),rw=.0062+Math.max(0,m-.4)*.01;
       var river=e>SEA+.012&&e<.72&&rv<rw&&d>6;
       return{e:e,t:Math.max(0,Math.min(1,t)),m:Math.max(0,Math.min(1,m)),river:river,rv:rv};
     }
@@ -119,7 +119,10 @@
     var TREE={}; /* probabilidade e espécie por bioma */
     TREE[B.GRASS]=[.035,'oak'];TREE[B.MEADOW]=[.05,'birch'];TREE[B.FOREST]=[.34,'oak'];TREE[B.DENSE]=[.55,'oak'];TREE[B.TAIGA]=[.36,'pine'];
     TREE[B.TUNDRA]=[.03,'deadpine'];TREE[B.HILLS]=[.08,'pine'];TREE[B.SAVANNA]=[.05,'acacia'];TREE[B.DESERT]=[.018,'cactus'];TREE[B.SWAMP]=[.14,'willow'];TREE[B.STEPPE]=[.012,'oak'];TREE[B.BEACH]=[.01,'palm'];
-    function tree(x,y){var b=at(x,y),r=TREE[b];if(!r)return null;
+    function tree(x,y){var b0=at(x,y);if(b0<=3||b0===B.SNOW||b0===B.MOUNTAIN||b0===B.PEAK)return null;
+      /* ecótono: a densidade e a espécie vêm de um ponto sorteado até ~3 tiles em volta,
+         então bosques avançam sobre o campo aos poucos em vez de parar numa linha */
+      var jx=Math.round((h2(x,y,41)-.5)*6),jy=Math.round((h2(x,y,43)-.5)*6),bj=at(x+jx,y+jy),b=(bj<=3||bj===B.SNOW||bj===B.MOUNTAIN||bj===B.PEAK)?b0:bj,r=TREE[b];if(!r)return null;
       /* bosques em manchas, não sal-e-pimenta */
       var clump=.55+fbm(nM,x/9+300,y/9-300,2,2,.5)*1.4;
       if(h2(x,y,7)>r[0]*Math.max(.2,clump))return null;
@@ -133,6 +136,8 @@
     return{
       seed:seedText||'urbe',CH:CH,B:B,INFO:INFO,sea:SEA,
       raw:raw,biome:at,elevation:elevation,chunk:chunk,
+      /* amostra avulsa (mapa em escala grande): não guarda o chunk inteiro no cache */
+      sample:function(x,y){var cx=Math.floor(x/CH),cy=Math.floor(y/CH),c=cache.get(cx+':'+cy);if(c){var k=(Math.floor(y)-cy*CH)*CH+(Math.floor(x)-cx*CH);return{b:c.bio[k],e:c.elev[k]}}var r=raw(Math.floor(x),Math.floor(y));return{b:classify(r),e:r.e}},
       buildable:function(x,y){return INFO[at(x,y)].build},
       roadable:function(x,y){return INFO[at(x,y)].road},
       roadCost:function(x,y){return INFO[at(x,y)].cost},

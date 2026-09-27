@@ -117,8 +117,7 @@
   doc.body.appendChild(dock);
   var dcomp=completer(source,dock.querySelector('.mth-sugs'),function(){return !!currentMath()}),symsOpen=false;
   function currentMath(){if(isVisual()||doc.activeElement!==source)return null;var i=source.selectionStart;if(i!==source.selectionEnd)return null;return M.findAt(source.value,i)}
-  function mathNote(){return /^---[\s\S]*?\n(tipo|type):\s*(matem[aá]tica|math)\s*\n[\s\S]*?---/i.test(source.value.slice(0,600))}
-  function updateDock(){var it=currentMath(),show=!!it||(symsOpen&&doc.activeElement===source)||(coarse&&mathNote()&&doc.activeElement===source&&!isVisual());
+  function updateDock(){var it=currentMath(),show=!!it||(symsOpen&&doc.activeElement===source)||false;
     if(!show){dock.hidden=true;dcomp.close();return}
     dock.hidden=false;var prev=dock.querySelector('.mth-dock-prev');
     if(it){var err=M.error(it.tex,it.display);prev.innerHTML=it.tex.trim()?(err?'<span class="mth-dock-err">⚠ '+esc(err)+'</span>':M.render(it.tex,false)):'<span class="mth-ph">Fórmula vazia</span>'}
@@ -150,16 +149,8 @@
   var VT=global.UrbeVisualTools;if(VT&&VT.addItem){VT.addItem({label:'Fórmula',hint:'LaTeX no meio do texto',txt:'∑',keys:'formula latex matematica equacao math',run:function(){startFormula(false)}});
     VT.addItem({label:'Fórmula em destaque',hint:'Equação centralizada',txt:'∫',keys:'formula destaque bloco equacao latex math display',run:function(){startFormula(true)}})}
 
-  /* ---------------- nota matemática ---------------- */
-  var core=global.UrbeCore,D=global.UrbeDialogs;
-  var MODEL='---\ntipo: matematica\n---\n# {T}\n\nFórmulas no texto, como $f(x)=x^2$, ou em destaque:\n\n$$\n\\int_a^b f(x)\\,dx = F(b)-F(a)\n$$\n\nToque numa fórmula para editar · **∑** na barra (ou Ctrl+M) cria outra · digite `$…$` para converter na hora.\n';
-  async function newMathNote(folder){var docs=core&&core.service('documents');if(!docs||!D)return;
-    var name=await D.prompt({title:'Nova nota matemática',label:'Nome',placeholder:'Ex.: Cálculo I',confirm:'Criar nota',validate:function(v){return String(v||'').trim()?'':'Dê um nome.'}});
-    name=String(name||'').trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').slice(0,80);if(!name)return;
-    var base=(folder?folder+'/':'')+name,p=base+'.md',i=2;while(docs.get(p))p=base+' ('+(i++)+').md';
-    var d=docs.upsert({path:p,content:MODEL.replace('{T}',name)},{source:'math.new'});core.commands.execute('document.open',{id:d.id,source:'math.new'});return d}
-  if(core&&!core.commands.has('math.new'))core.commands.register('math.new',{title:'Nova nota matemática',category:'Matemática',execute:function(c){return newMathNote(c&&c.folder)}});
+  var core=global.UrbeCore;
   if(core&&!core.commands.has('math.insert'))core.commands.register('math.insert',{title:'Inserir fórmula',category:'Matemática',execute:function(c){startFormula(!!(c&&c.block))}});
 
-  global.UrbeMathEditor={newNote:newMathNote,serialize:serialize,open:openPane,insertAtom:insertAtom,start:startFormula,_dock:updateDock};
+  global.UrbeMathEditor={serialize:serialize,open:openPane,insertAtom:insertAtom,start:startFormula,_dock:updateDock};
 })(window);
