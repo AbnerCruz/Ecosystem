@@ -1,5 +1,14 @@
 # Urbe — Changelog
 
+## v0.42.2 — Atualizações chegam sozinhas; Assistente não entra em loop (2026-09-27)
+
+- O celular continuava rodando a versão antiga depois de uma correção publicada: o service worker servia tudo do cache e a versão nova só entrava ao tocar em “Recarregar”. Por isso Excluir e os outros botões de Notas seguiam quebrados mesmo após a v0.42.1.
+- O service worker agora busca na rede primeiro (o cache fica para uso sem internet ou rede muito lenta, acima de 4 s) e assume assim que é instalado. Quem ainda está numa versão antiga recebe esta sozinho ao abrir o app (uma recarga automática, uma única vez).
+- A troca de service worker não recarrega mais a página no meio da edição; o aviso “Nova versão” só aparece se a página aberta estiver realmente desatualizada.
+- Assistente: o modelo às vezes estraga emoji no caminho (“Teste/� Gue.md”) e a leitura falhava. Agora a nota é encontrada comparando só letras e números (ou pelo título).
+- Assistente: a mesma chamada que já falhou não é executada de novo; o modelo recebe um aviso para mudar de estratégia e, se insistir, o agente para com “Parei: o agente repetia uma ação que falhava” (em vez de uma fila de “falhou”).
+- Assistente: modelos que encerravam só com raciocínio depois de usar ferramentas (ex.: gpt-oss) deixavam a pergunta sem resposta. Agora são lembrados uma vez de responder em texto.
+
 ## v0.42.1 — Correções no celular: Notas e abas (2026-09-27)
 
 - Notas: tocar numa pasta a abria e fechava na mesma hora (a ação rodava no `pointerup`, a lista era redesenhada e o `click` seguinte caía na linha nova). Agora a ação acontece só no toque confirmado; o toque longo seleciona sem abrir a nota.

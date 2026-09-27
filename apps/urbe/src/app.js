@@ -3003,9 +3003,11 @@ moverArquivosParaRegiao=function(ids,regionId){
 (function registrarPWA(){
   if(!('serviceWorker' in navigator)||location.protocol==='file:')return;
   let regAtual=null,recarregando=false;const banner=document.getElementById('updateBanner'),bt=document.getElementById('reloadUpdateBtn');
-  // Na primeira instalação clients.claim() também dispara controllerchange; só recarrega em atualização real.
+  // O sw.js busca na rede primeiro, então a página aberta já é a versão publicada;
+  // quando um service worker novo assume, só avisa (nada de recarregar no meio da edição).
+  // Na primeira instalação clients.claim() também dispara controllerchange: ignora.
   const tinhaControlador=!!navigator.serviceWorker.controller;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(recarregando||!tinhaControlador)return;recarregando=true;location.reload()});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(recarregando||!tinhaControlador)return;fetch('./index.html',{cache:'no-store'}).then(r=>r.text()).then(t=>{if(!t.includes('Urbe v'+V21_VERSION+'<'))banner.classList.add('open')}).catch(()=>{})});
   navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(reg=>{regAtual=reg;if(reg.waiting&&navigator.serviceWorker.controller)banner.classList.add('open');reg.addEventListener('updatefound',()=>{const nw=reg.installing;if(!nw)return;nw.addEventListener('statechange',()=>{if(nw.state==='installed'&&navigator.serviceWorker.controller)banner.classList.add('open')})})}).catch(e=>console.warn('service worker',e));
   bt.onclick=()=>{if(regAtual?.waiting)regAtual.waiting.postMessage({type:'SKIP_WAITING'});else location.reload()};
 })();
@@ -4059,7 +4061,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.42.1';
+V21_VERSION='0.42.2';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */

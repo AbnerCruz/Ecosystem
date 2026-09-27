@@ -12,6 +12,7 @@
   function services(ctx){var core=ctx.core;return{core:core,docs:core.service('documents'),knowledge:core.service('knowledge'),trash:core.service('trash'),explorer:core.service('explorer'),persistence:core.service('persistence')}}
   function norm(p){return String(p||'').trim().replace(/\\/g,'/').replace(/^\/+|\/+$/g,'').replace(/\/+/g,'/')}
   function fold(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()}
+  function loose(s){return fold(s).replace(/[^\p{L}\p{N}\/]+/gu,'')}
   function words(t){var m=String(t||'').match(/\S+/g);return m?m.length:0}
   function clip(s,n){s=String(s);n=n||LIMIT;return s.length>n?s.slice(0,n)+'\n…[cortado: +'+(s.length-n)+' caracteres; peça um trecho com start_line]':s}
   function ToolError(msg){var e=new Error(msg);e.toolError=true;return e}
@@ -22,6 +23,9 @@
     var d=s.docs.get(p)||s.docs.get(p+'.md');
     if(!d){var t=fold(p.replace(/\.(md|markdown)$/i,'').split('/').pop()),hits=s.docs.list().filter(function(x){return fold(x.title)===t});if(hits.length===1)d=hits[0];
       else if(hits.length>1&&must!==false)throw ToolError('Há '+hits.length+' notas chamadas "'+p+'": '+hits.map(function(x){return x.path}).join(', ')+'. Use o caminho completo.')}
+    /* modelos às vezes estragam emoji/símbolos no caminho (“Teste/� Gue.md”): compara só letras e números */
+    if(!d){var base=function(x){return x.replace(/\.(md|markdown)$/i,'')},lk=loose(base(p)),lt=loose(base(p).split('/').pop());
+      if(lk){var lh=s.docs.list().filter(function(x){return loose(base(x.path))===lk});if(!lh.length&&lt)lh=s.docs.list().filter(function(x){return loose(x.title)===lt||loose(base(x.path).split('/').pop())===lt});if(lh.length===1)d=lh[0]}}
     if(!d&&must!==false){
       var near=s.docs.list().map(function(x){return{x:x,s:score(fold(x.path),fold(p))}}).filter(function(o){return o.s>0}).sort(function(a,b){return b.s-a.s}).slice(0,5).map(function(o){return o.x.path});
       throw ToolError('Nota não encontrada: '+p+(near.length?'. Parecidas: '+near.join(', '):'. Use search_notes ou list_notes para achar o caminho.'));
