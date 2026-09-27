@@ -4,14 +4,14 @@
 
 Cada nota vira uma casa, cada pasta um bairro e cada `[[link]]` uma rua. Moradores andam entre as notas ligadas, o mundo é um continente formado por placas tectônicas, com serras, clima e rios que descem até o mar, e tudo continua sendo arquivo `.md` comum, que abre em qualquer outro programa.
 
-> **Versão 1.2 beta.** Funciona no celular e no computador, instala como aplicativo e trabalha sem internet.
+> **Versão 1.3 beta.** Funciona no celular e no computador, instala como aplicativo e trabalha sem internet.
 
 ## O que o Urbe faz
 
 - **Cidade**: mundo em pixel-art gerado a partir das suas notas, com mapa, dia e noite, moradores e animais.
 - **Editor**: modo Visual e modo Fonte (Markdown), com tabelas, callouts, tarefas, listas aninhadas, links entre notas, tags, propriedades, abas, painel dividido, localizar e substituir, versões anteriores e lixeira.
 - **Matemática**: fórmulas LaTeX em qualquer nota (KaTeX embutido), com editor visual, símbolos, modelos e autocompletar.
-- **Páginas**: estúdio para montar sites (23 blocos, 9 modelos, 8 temas) a partir das notas, exportando HTML de arquivo único.
+- **Páginas**: estúdio para montar sites e **livros** (33 blocos, 11 modelos, 10 temas) a partir das notas, exportando HTML de arquivo único ou PDF pronto para imprimir, com tamanho de página, margens espelhadas e números de página.
 - **Composições**: junta várias notas num documento pronto para imprimir.
 - **Assistente de IA**: agentes que leem, buscam, escrevem e organizam o vault com ferramentas, mostrando cada passo e pedindo aprovação. Funciona com OpenRouter, Anthropic, OpenAI, Google Gemini, Ollama (local) ou qualquer API compatível com a da OpenAI.
 - **Personalização**: temas (inclusive claro, sépia e alto contraste), cores, fontes, densidade, editor, cidade, texturas desenhadas pixel a pixel, estilos CSS e **plugins** com uma API em português.
