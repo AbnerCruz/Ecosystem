@@ -78,7 +78,7 @@
     const commands = new CommandRegistry(events);
     const services = new Map();
     return Object.freeze({
-      version: '0.27.0-foundation',
+      version: '1.0.0-beta',
       events, state, commands,
       provide(name, service) { if (!name) throw new TypeError('service name is required'); if (services.has(name)) throw new Error('service already provided: '+name); services.set(name, service); events.emit('service:provided',{name,service}); return service; },
       service(name) { return services.get(name) || null; },

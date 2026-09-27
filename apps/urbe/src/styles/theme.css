@@ -527,3 +527,4 @@ html body #renderedPreview .callout-danger,html body #renderedPreview .callout-b
 html body #renderedPreview li>ul,html body #renderedPreview li>ol{margin:.2em 0}
 html body #renderedPreview pre[data-lang]{position:relative}
 html body #renderedPreview pre[data-lang]::after{content:attr(data-lang);position:absolute;top:6px;right:10px;font:600 11px var(--ui-font);color:var(--ui-text-3);text-transform:uppercase;letter-spacing:.05em}
+html body #housePanel .previewHouse img{width:66px;height:77px;max-width:none;max-height:none;image-rendering:pixelated;object-fit:contain}

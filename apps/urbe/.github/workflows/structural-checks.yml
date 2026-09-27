@@ -13,90 +13,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: JavaScript syntax
+      - name: JavaScript syntax (todos os arquivos)
         run: |
-          node --check src/legacy/bootstrap.js
-          node --check src/world/terrain.js
-          node --check src/world/pixel-art.js
-          node --check src/world/chunk-worker.js
-          node --check src/core/core.js
-          node --check src/core/documents.js
-          node --check src/core/trash.js
-          node --check src/core/knowledge-index.js
-          node --check src/composition/store.js
-          node --check src/composition/compiler.js
-          node --check src/composition/ui.js
-          node --check src/persistence/workspace.js
-          node --check src/world/projection.js
-          node --check src/world/system.js
-          node --check src/world/roads.js
-          node --check src/world/renderer.js
-          node --check src/world/touch.js
-          node --check src/core/scheduler.js
-          node --check src/explorer/model.js
-          node --check src/explorer/operations.js
-          node --check src/explorer/mobile-ui.js
-          node --check src/editor/session.js
-          node --check src/editor/context.js
-          node --check src/editor/workspace.js
-          node --check src/editor/split.js
-          node --check src/editor/split-ui.js
-          node --check src/editor/find-ui.js
-          node --check src/editor/chrome.js
-          node --check src/core/keymap.js
-          node --check src/ui/command-palette.js
-          node --check src/ui/quick-open.js
-          node --check src/ui/icons.js
-          node --check src/ui/dialogs.js
-          node --check src/ui/touch-debug.js
-          node --check src/ui/settings.js
-          node --check src/customize/customize.js
-          node --check src/customize/plugins.js
-          node --check src/customize/ai-tools.js
-          node --check src/customize/panel.js
-          node --check src/tutorial/content.js
-          node --check src/tutorial/tutorial.js
-          node --check src/editor/visual-tools.js
-          node --check src/ui/tips.js
-          node --check src/ai/providers.js
-          node --check src/ai/tools.js
-          node --check src/ai/store.js
-          node --check src/ai/agent.js
-          node --check src/ai/ui.js
-          node --check src/math/core.js
-          node --check src/math/editor.js
-          node --check src/pages/engine.js
-          node --check src/pages/templates.js
-          node --check src/pages/ai-tools.js
-          node --check src/pages/studio.js
-          node --check src/app.js
-          node --check sw.js
-      - name: Structural invariants
+          set -e
+          for f in $(git ls-files '*.js'); do node --check "$f"; done
+      - name: Tutorial em dia com as notas
+        run: node tools/build-tutorial.mjs --check
+      - name: Testes (todos os arquivos em tests/)
         run: |
-          node tests/static.mjs
-          node tests/core.mjs
-          node tests/documents.mjs
-          node tests/trash.mjs
-          node tests/composition.mjs
-          node tests/composition-regression.mjs
-          node tests/recovery-history.mjs
-          node tests/editor.mjs
-          node tests/editor-workspace.mjs
-          node tests/explorer.mjs
-          node tests/persistence-world.mjs
-          node tests/world-system.mjs
-          node tests/runtime-adapters.mjs
-          node tests/production-order.mjs
-          node tests/integration-runtime.mjs
-          node tests/app-loader.mjs
-          node tests/editor-persistence.mjs
-          node tests/ui-shell.mjs
-          node tests/pages.mjs
-          node tests/math.mjs
-          node tests/search-editor.mjs
-          node tests/city.mjs
-          node tests/world-terrain.mjs
-          node tests/ai-agent.mjs
-          node tests/customize.mjs
-          node tools/build-tutorial.mjs --check
-          node tests/tutorial.mjs
+          status=0
+          for t in tests/*.mjs; do
+            echo "::group::$t"
+            node "$t" || status=1
+            echo "::endgroup::"
+          done
+          exit $status

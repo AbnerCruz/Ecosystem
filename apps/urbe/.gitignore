@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+*.log
+# capturas e rascunhos de testes locais
+cz/
+au/
