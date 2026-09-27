@@ -4,6 +4,7 @@
 
 No menu **Exportar** do estúdio:
 
+- **Imprimir ou salvar PDF**: abre a impressão do navegador; escolha **Salvar como PDF** para gerar o arquivo. Num livro, saem o tamanho de página, as margens e os números do livro (veja [[Tutorial/Páginas/Livros|Livros]]).
 - **Baixar HTML**: um arquivo único, com tudo dentro, que funciona em qualquer hospedagem (GitHub Pages, Netlify, o servidor da sua escola…) ou até aberto direto no computador.
 - **Copiar HTML**: copia o código para colar em outro lugar.
 - **Salvar HTML no vault**: cria um arquivo `.html` ao lado da página, dentro do Urbe.

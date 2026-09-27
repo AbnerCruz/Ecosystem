@@ -8,6 +8,15 @@
   function btn(label,url,variant){return{label:label,url:url||'#',variant:variant||'primary'}}
   function page(meta,theme,layout,sections){return{version:1,kind:'urbe-page',meta:meta,theme:theme,layout:layout||{},sections:sections}}
   var year=new Date().getFullYear();
+  /* abertura e fechamento de um livro: capa, rosto, créditos, dedicatória, sumário … sobre o autor, colofão */
+  function bookSections(t,miolo){return [
+    sec('bookcover',{title:t,subtitle:'Um subtítulo que convida à leitura',author:'Nome do autor',publisher:'Editora',style:'classic'}),
+    sec('titlepage',{title:t,subtitle:'Um subtítulo que convida à leitura',author:'Nome do autor',publisher:'Editora',place:'Cidade',year:String(year)}),
+    sec('copyright',{}),
+    sec('dedication',{kind:'dedication',markdown:'Para quem lê.'}),
+    sec('booktoc',{title:'Sumário'})].concat(miolo,[
+    sec('about',{}),
+    sec('colophon',{})])}
 
   var LIST=[
     {id:'blank',name:'Em branco',icon:'＋',description:'Só uma capa e um texto para começar do zero.',
@@ -62,6 +71,20 @@
       build:function(c){var f=c.folder||'',t=c.title||(f?f.split('/').pop():'Documentação');return page({title:t,icon:'📚'},{preset:'oceano',width:1040},{brand:t,progress:true,footer:'Documentação gerada com Urbe'},[
         sec('hero',{title:t,subtitle:'Guia completo, organizado a partir das notas.',buttons:[btn('Começar','#conteudo')],layout:'left',height:'auto'},{padding:'m'}),
         sec('notes',{title:'Conteúdo',source:'folder',folder:f,layout:'list',limit:100,sort:'path',excerpt:true,expand:true},{anchor:'Conteúdo',menu:true,width:'narrow'})])}},
+
+    {id:'book',name:'Livro',icon:'📖',description:'Livro pronto para imprimir ou gerar PDF: capa, folha de rosto, créditos, dedicatória, sumário, partes e capítulos.',
+      build:function(c){var t=c.title||'O título do livro';return page({title:t,icon:'📖',description:'Um livro feito com o Urbe.'},{preset:'livro'},
+        {format:'book',pageSize:'a5',margins:'normal',pageNumbers:true,runningHead:t,chapterStyle:'word',nav:false,footer:''},bookSections(t,[
+        sec('part',{title:'O começo',markdown:'Onde tudo começa.'}),
+        sec('chapter',{title:'A cidade de papel',epigraph:'Toda cidade é um livro que se lê andando.',epigraphAuthor:'Anônimo',markdown:'Escreva aqui o primeiro capítulo. O primeiro parágrafo ganha uma **letra capitular** e a primeira linha em versalete.\n\nOs parágrafos seguintes têm recuo na primeira linha, texto justificado e hifenização, como num livro impresso.\n\n***\n\nTrês asteriscos sozinhos numa linha viram um ornamento de troca de cena.'}),
+        sec('chapter',{title:'Ruas e pontes',markdown:'Cada capítulo começa numa página nova. Para puxar o texto de uma nota, troque **Texto de onde** para **De uma nota**.'}),
+        sec('part',{title:'O caminho'}),
+        sec('chapter',{title:'Onde tudo se liga',markdown:'Para montar o livro inteiro a partir de uma pasta, use o bloco **Capítulos de uma pasta** ou o modelo **Livro de uma pasta**.'})]))}},
+
+    {id:'book-folder',name:'Livro de uma pasta',icon:'📚',needs:'folder',description:'Cada nota da pasta vira um capítulo do livro, com capa, folha de rosto, sumário e créditos.',
+      build:function(c){var f=c.folder||'',t=c.title||(f?f.split('/').pop():'Meu livro');return page({title:t,icon:'📖'},{preset:'livro'},
+        {format:'book',pageSize:'a5',margins:'normal',pageNumbers:true,runningHead:t,chapterStyle:'word',nav:false,footer:''},bookSections(t,[
+        sec('chapters',{folder:f,sort:'path',dropCap:true})]))}},
 
     {id:'links',name:'Links (bio)',icon:'🔗',description:'Página única e vertical com seus links principais — ótima para celular.',
       build:function(c){var t=c.title||'@seunome';return page({title:t,icon:'🔗'},{preset:'neon',width:560},{nav:false,backToTop:false,footer:''},[

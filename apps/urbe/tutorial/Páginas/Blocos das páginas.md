@@ -28,6 +28,8 @@ Cada seção de uma página usa um destes blocos. Para trocar o tipo de uma seç
 | **Divisor** | Separador ou espaço |
 | **HTML livre** | Seu próprio HTML, CSS e JavaScript (use com cuidado) |
 
+Há ainda os **blocos de livro** (capa, folha de rosto, créditos, dedicatória, sumário, parte, capítulo, capítulos de uma pasta, sobre o autor e colofão), explicados em [[Tutorial/Páginas/Livros|Livros]].
+
 ## Aparência de cada seção
 
 Além do conteúdo, toda seção tem **Aparência da seção**:

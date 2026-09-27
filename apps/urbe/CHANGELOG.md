@@ -1,5 +1,56 @@
 # Urbe — Changelog
 
+## v1.3.0-beta — Livros: páginas pensadas para produzir livros (2026-09-27)
+
+### Formato Livro
+- Novo campo **Formato** (Site ou Livro) em Página → Estrutura. No formato Livro:
+  - A tela mostra **folhas de papel** no tamanho escolhido.
+  - Imprimir ou salvar em PDF usa as regras de livro:
+    - **tamanho de página**: A5, 15,2 × 22,9 cm, bolso, A4 ou carta;
+    - **margens** estreitas, normais ou largas, **espelhadas** entre a página da esquerda e a da direita, com a maior do lado da lombada.
+  - Cada capítulo e cada parte **começam em página nova**, e há opção de começar sempre na página da direita.
+  - **Números de página** no pé e **título do livro no alto**:
+    - a capa sai sangrada, sem margem;
+    - as páginas iniciais (folha de rosto, créditos, dedicatória, sumário) ficam sem número;
+    - a abertura de capítulo e de parte fica sem o título no alto.
+  - O texto sai **justificado com hifenização**, com **recuo na primeira linha** (cada um pode ser desligado), e com controle de viúvas e órfãs.
+  - Numeração dos capítulos: "Capítulo 1", "Capítulo um", "1", "I" ou sem número.
+  - Barra de navegação, rodapé e botões de site somem.
+  - Um botão **Imprimir ou salvar PDF** aparece no HTML exportado.
+- **10 blocos de livro**:
+  - capa (clássica, moderna ou com imagem);
+  - folha de rosto;
+  - créditos e direitos (ISBN, ficha, equipe);
+  - dedicatória ou epígrafe;
+  - **sumário automático** com partes e capítulos;
+  - parte;
+  - **capítulo**, escrito na página ou puxado de uma nota, com epígrafe e **letra capitular**;
+  - **capítulos de uma pasta**, em que cada nota vira um capítulo;
+  - sobre o autor;
+  - colofão.
+- Numeração automática de partes (I, II…) e capítulos, contando também os que vêm de uma pasta. Um `[[link]]` para uma nota que é capítulo leva até ele.
+- `***` vira ornamento de troca de cena (⁂). A primeira linha do capítulo sai em versalete.
+- **Temas e fontes**:
+  - temas **Livro clássico** (papel creme, EB Garamond e Cormorant Garamond) e **Livro moderno**;
+  - fontes EB Garamond, Cormorant Garamond, Crimson Pro e Libre Baskerville.
+
+### Modelos
+- **Livro**: capa, folha de rosto, créditos, dedicatória, sumário, duas partes com capítulos de exemplo, sobre o autor e colofão.
+- **Livro de uma pasta**: a mesma estrutura, com cada nota da pasta virando um capítulo. O nome digitado vai para a capa, a folha de rosto e o título no alto das páginas.
+
+### Estúdio
+- **Exportar → Imprimir ou salvar PDF**, em qualquer página. A impressão roda num quadro isolado, sem acesso ao app.
+
+### Tutorial e testes
+- Nova nota **Tutorial/Páginas/Livros**; "Modelos e temas", "Blocos das páginas" e "Estúdio" apontam para ela.
+- Novo teste do livro:
+  - numeração, inclusive dos capítulos de uma pasta;
+  - sumário com links e wikilinks entre capítulos;
+  - regras de página, margens espelhadas, números e cabeçalho;
+  - todos os tamanhos e margens;
+  - HTML injetado bloqueado e cabeçalho escapado no CSS;
+  - blocos de livro no formato Site sem regras de impressão.
+
 ## v1.2.0-beta — Bairros organizados: hierarquia clara no chão e no mapa (2026-09-27)
 
 A cidade deixava as pastas parecerem uma bagunça: bairros em losango, contornos sobrepostos, subpastas espalhadas, casas jogadas em lugares aleatórios e nomes empilhados. Agora ela segue regras de verdade.

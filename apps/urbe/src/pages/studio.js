@@ -326,7 +326,15 @@
   function download(){var blob=new Blob([html(false)],{type:'text/html;charset=utf-8'}),a=doc.createElement('a');a.href=URL.createObjectURL(blob);a.download=fileBase()+'.html';doc.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href)},4000);toast('HTML baixado.')}
   function playNewTab(){var url=URL.createObjectURL(new Blob([html(false)],{type:'text/html'}));var w=global.open(url,'_blank');if(!w)toast('O navegador bloqueou a nova aba.');setTimeout(function(){URL.revokeObjectURL(url)},60000)}
   function saveHtmlToVault(){var d=docs.get(st.docId);if(!d)return;var p=d.path.replace(/\.page\.json$/i,'.html'),ex=docs.get(p);docs.upsert(Object.assign({},ex||{},{id:ex?ex.id:undefined,path:p,content:html(false)}),{source:'pages.export'});toast('Salvo como '+p.split('/').pop()+'.')}
+  /* imprimir ou salvar PDF: a página vai para um quadro isolado (sem acesso ao app) que chama a impressão
+     do navegador; no formato Livro saem o tamanho de página, as margens e os números do livro */
+  function printPdf(){var old=doc.getElementById('ps-print');if(old)old.remove();
+    var f=doc.createElement('iframe');f.id='ps-print';f.title='Impressão';f.setAttribute('sandbox','allow-scripts allow-modals');f.setAttribute('aria-hidden','true');
+    f.style.cssText='position:fixed;left:-10000px;top:0;width:900px;height:1200px;border:0;opacity:0;pointer-events:none';
+    f.srcdoc=html(false).replace('</body>','<script>addEventListener("load",function(){(document.fonts&&document.fonts.ready||Promise.resolve()).then(function(){setTimeout(function(){print()},250)})})<\/script></body>');
+    doc.body.appendChild(f);setTimeout(function(){if(f.parentNode)f.remove()},120000);toast('Abrindo a impressão… escolha “Salvar como PDF” para gerar o arquivo.')}
   function exportMenu(){D.menu('Exportar',[
+    {icon:'page',label:'Imprimir ou salvar PDF',detail:st.spec&&st.spec.layout.format==='book'?'Com o tamanho de página e as margens do livro':'Pela impressão do navegador',run:printPdf},
     {icon:'download',label:'Baixar HTML',detail:'Arquivo único, funciona em qualquer hospedagem',run:download},
     {icon:'open',label:'Abrir em nova aba',detail:MOD+'+P',run:playNewTab},
     {icon:'file',label:'Salvar HTML no vault',detail:'Ao lado desta página',run:saveHtmlToVault},
@@ -374,7 +382,8 @@
     }
     var t2=tplId.indexOf('doc:')===0?null:TPL.get(tplId);
     var name=await D.prompt({title:'Nome da página',label:'Nome',value:ctx.title||(spec&&spec.meta.title)||(t2&&t2.id!=='blank'?'':'Nova página'),placeholder:'Ex.: Meu portfólio',confirm:'Criar página',validate:function(v){return cleanName(v)?'':'Use um nome válido.'}});name=cleanName(name);if(!name)return;
-    if(t2){var person=tplId==='portfolio'||tplId==='resume';if(!person)ctx.title=ctx.title||name;spec=TPL.build(tplId,ctx);spec.meta.title=name;if(spec.layout.brand&&!person)spec.layout.brand=name;if(tplId==='blank')spec.sections[0].props.title=name}
+    if(t2){var person=tplId==='portfolio'||tplId==='resume';if(!person)ctx.title=ctx.title||name;spec=TPL.build(tplId,ctx);spec.meta.title=name;if(spec.layout.brand&&!person)spec.layout.brand=name;if(tplId==='blank')spec.sections[0].props.title=name;
+      if(spec.layout.format==='book'){spec.layout.runningHead=name;spec.sections.forEach(function(x){if(x.type==='bookcover'||x.type==='titlepage')x.props.title=name})}}
     else spec.meta.title=name;
     var p=uniquePath('Páginas/'+name+'.page.json'),d=docs.upsert({path:p,content:JSON.stringify(spec,null,2)+'\n'},{source:'pages.new'});
     var ex=core.service('explorer');if(ex&&ex.addFolder&&!ex.folders.has('Páginas'))try{ex.addFolder('Páginas')}catch(_){}
