@@ -2,9 +2,9 @@
 
 **Suas notas em Markdown, desenhadas como uma cidade.**
 
-Cada nota vira uma casa, cada pasta um bairro e cada `[[link]]` uma rua. Moradores andam entre as notas ligadas, o mundo tem florestas, rios, desertos e neve, e tudo continua sendo arquivo `.md` comum, que abre em qualquer outro programa.
+Cada nota vira uma casa, cada pasta um bairro e cada `[[link]]` uma rua. Moradores andam entre as notas ligadas, o mundo é um continente formado por placas tectônicas, com serras, clima e rios que descem até o mar, e tudo continua sendo arquivo `.md` comum, que abre em qualquer outro programa.
 
-> **Versão 1.0 beta.** Funciona no celular e no computador, instala como aplicativo e trabalha sem internet.
+> **Versão 1.1 beta.** Funciona no celular e no computador, instala como aplicativo e trabalha sem internet.
 
 ## O que o Urbe faz
 

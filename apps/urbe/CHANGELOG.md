@@ -1,5 +1,48 @@
 # Urbe — Changelog
 
+## v1.1.0-beta — Mundo realista: placas tectônicas, relevo, clima e rios de verdade (2026-09-27)
+
+O mundo deixou de ser ruído aleatório. Agora ele é simulado como um continente de verdade, numa grade de 512 × 512 células (cada uma com 4 × 4 tiles), em menos de um segundo ao abrir.
+
+### Placas tectônicas e relevo
+- 16 a 21 **placas** (continentais e oceânicas), cada uma com direção de movimento. As bordas são deformadas para não parecerem polígonos.
+- O que acontece em cada borda depende do tipo de encontro:
+  - colisão entre continentes: cordilheiras altas (tipo Himalaia);
+  - continente sobre oceano: serra costeira e fossa no mar (tipo Andes);
+  - oceano com oceano: arcos de ilhas;
+  - afastamento: vales em rift e dorsais no fundo do mar.
+- As cordilheiras têm cristas e picos, e o soerguimento é suavizado, sem listras.
+- **Curva hipsométrica real**: muita planície, colinas e poucas serras altas. A plataforma continental é rasa e o mar fica fundo longe da costa. A borda do mapa afunda no oceano de forma orgânica.
+
+### Clima
+- A temperatura cai com a latitude (polos nas pontas do mapa) e com a altitude.
+- O vento sopra em faixas de latitude (alísios e ventos de oeste) e leva umidade do mar. Ela chove na subida das serras e deixa **sombra de chuva** do outro lado.
+- As células de Hadley deixam o equador úmido e formam faixas secas de deserto.
+- Os biomas seguem o diagrama de Whittaker (temperatura × umidade).
+
+### Rios e lagos
+- **Drenagem de verdade** (priority-flood):
+  - toda célula escoa para o mar;
+  - depressões fechadas se enchem e viram lagos;
+  - o fluxo acumulado da bacia decide onde há rio.
+- Os rios nascem nas partes altas, **sempre descem**, recebem afluentes e ficam mais largos rio abaixo, até o mar ou um lago.
+- Um microrrelevo só para a drenagem faz os rios serpentearem nas planícies.
+- O traçado de cada tile é contínuo (segmentos entre células, com leve serpentear), e a costa e as margens dos lagos são orgânicas.
+
+### Cidade
+- A cidade começa num lugar escolhido pela geografia: clima temperado, relevo suave, um rio por perto e longe da costa e das serras.
+
+### Testes
+- Novos testes do mundo físico:
+  - placas;
+  - montanhas junto às bordas de placa;
+  - relevo e fração de terra;
+  - todo trecho de rio desce até o mar ou um lago;
+  - a vazão cresce rio abaixo e há confluências;
+  - clima por latitude e altitude;
+  - outras sementes.
+- O Tutorial explica como o mundo é formado (Cidade → Como a cidade funciona).
+
 ## v1.0.0-beta — Primeira beta: personalização, Tutorial e casa limpa (2026-09-27)
 
 ### Personalização completa
