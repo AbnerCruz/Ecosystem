@@ -398,5 +398,7 @@
 
   function opened(){if(!st.root)return;(st.ready||Promise.resolve()).then(function(){renderAll();var ta=st.root.querySelector('textarea');if(ta&&!coarse)setTimeout(function(){ta.focus()},60)})}
 
-  global.UrbeAgentUI={mount:mount,opened:opened,showSettings:function(o){showSettings(o)},configure:function(h){Object.assign(hooks,h)},_md:md,_diff:diffLines,state:st};
+  /* abre o composer com um começo de pedido (ex.: vindo do estúdio de páginas) */
+  function prefill(text){if(!st.root)return;var ta=st.root.querySelector('textarea');if(!ta)return;if(!ta.value.trim())ta.value=String(text||'');autosize();setTimeout(function(){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)},60)}
+  global.UrbeAgentUI={mount:mount,opened:opened,prefill:prefill,showSettings:function(o){showSettings(o)},configure:function(h){Object.assign(hooks,h)},_md:md,_diff:diffLines,state:st};
 })(window);

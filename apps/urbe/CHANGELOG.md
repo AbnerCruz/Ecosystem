@@ -1,5 +1,35 @@
 # Urbe — Changelog
 
+## v0.44.0 — Páginas: estúdio de sites e páginas HTML (2026-09-27)
+
+- **Páginas são arquivos do vault** (`.page.json`): um JSON com meta, tema, layout e seções. Você edita no estúdio visual, o Assistente cria e edita pelo JSON, e dá para abrir como texto. Exporta um único HTML independente, com o mesmo resultado da prévia.
+- **23 blocos**:
+  - Estrutura: capa, chamada, contato, contagem regressiva, sumário, divisor.
+  - Conteúdo: texto em Markdown (tabelas, tarefas, callouts, código, [[links]]), destaques, cartões, citação, depoimentos, números, linha do tempo, perguntas, colunas, planos, código com botão copiar.
+  - Mídia: imagem, galeria, vídeo (YouTube/Vimeo/arquivo).
+  - Notas: nota e coleção de notas, que puxam o conteúdo real e se atualizam sozinhos. Os [[links]] viram âncoras dentro da página.
+  - Avançado: HTML livre.
+- **8 temas** (Aurora, Papel, Grafite, Oceano, Floresta, Entardecer, Neon, Lavanda), cada um com modo claro, escuro ou automático. Dá para ajustar cores, 12 fontes, arredondamento, escala do texto, espaçamento, largura, sombras, fundo (degradê, aurora, pontos, grade) e animações ao rolar.
+- **Página publicada**: barra de navegação com menu no celular, botão claro/escuro, voltar ao topo e barra de progresso de leitura. É responsiva e respeita “reduzir movimento”.
+- **Estúdio**:
+  - Prévia ao vivo sem piscar, em celular, tablet ou computador.
+  - Toque ou clique numa parte da prévia para editar.
+  - Seções com arraste para reordenar, ocultar, duplicar e trocar de tipo.
+  - Inspetor gerado a partir de cada bloco, com listas editáveis e imagens reduzidas no aparelho.
+  - Editor de JSON com validação ao vivo.
+  - Desfazer/refazer e salvamento automático.
+  - Exportar: baixar HTML, abrir em nova aba, salvar no vault ou copiar.
+- **Celular**: barra de ferramentas embaixo (Seções, Editar, +, Tema, Página) e folha inferior arrastável.
+- **Computador**: painéis laterais e atalhos (`/` adicionar, ↑↓ selecionar, Alt+↑↓ mover, Ctrl+D, Delete, Ctrl+Z/Shift+Z, Ctrl+S, Ctrl+J, Ctrl+E, Ctrl+P, 1/2/3, T, ?).
+- **Modelos**: em branco, landing de produto, portfólio, artigo de uma nota, site de uma pasta, currículo, evento, documentação e links (bio). “Salvar como modelo” guarda os seus (`.template.json`).
+- **Assistente**:
+  - `page_schema` descreve o formato.
+  - `write_page` cria ou edita a página: valida antes de gravar, mostra o diff na aprovação e pode ser desfeito.
+  - O botão ✦ do estúdio abre o Assistente já com a página como contexto.
+  - Se a página mudar por fora enquanto está aberta, o estúdio atualiza (com Desfazer).
+- **Onde achar**: Notas → Nova → Nova página; Notas → ⋯ → Páginas; paleta de comandos (“Páginas”, “Nova página”). Abrir um `.page.json` por qualquer caminho leva ao estúdio.
+- **Correção**: arquivos `.json` (e outros não-Markdown) ganhavam a extensão duplicada no sync com a cidade (`X.page.json` → `X.page.json.json`).
+
 ## v0.43.0 — Agente mais minucioso (2026-09-27)
 
 - Leitura sem cortes: `read_note` entrega a nota inteira sempre que ela cabe no orçamento, que acompanha o contexto do modelo. Antes o modelo pedia 200 linhas, recebia metade e respondia com o que tinha. Notas enormes vêm em partes, com um aviso claro de LEITURA PARCIAL.
