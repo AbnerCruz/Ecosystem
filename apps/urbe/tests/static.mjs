@@ -36,8 +36,9 @@ const checks = [
   ['core antes do legado', index.indexOf('./src/core/core.js') < index.indexOf('./src/app.js')],
   ['css base externo', index.includes('./src/styles/base.css')],
   ['css shell externo', index.includes('./src/styles/shell.css')],
-  ['versão 1.1.0-beta', index.includes('Urbe v1.1.0-beta') && app.includes("V21_VERSION='1.1.0-beta'")],
+  ['versão 1.2.0-beta', index.includes('Urbe v1.2.0-beta') && app.includes("V21_VERSION='1.2.0-beta'")],
   ['diagnóstico URBE', app.includes('window.URBE')],
+  ['bairros organizados', app.includes("core.provide('city.layout'") && app.includes("register('city.reorganize'") && read('src/ui/settings.js').includes('city.reorganize')],
   ['ponte de comandos', app.includes("workspace.navigate.world") && app.includes("document.create") && app.includes("workspace.save")],
   ['core contratos', core.includes('class EventBus') && core.includes('class CommandRegistry') && core.includes('class StateStore')],
   ['documentos canônicos', index.includes('./src/core/documents.js') && documents.includes('class DocumentStore')],
@@ -72,7 +73,7 @@ const checks = [
   ['cache composition', sw.includes("'./src/composition/store.js'") && sw.includes("'./src/composition/compiler.js'") && sw.includes("'./src/composition/ui.js'") && sw.includes("'./src/styles/composition.css'")],
   ['cache comandos', sw.includes("'./src/core/keymap.js'") && sw.includes("'./src/ui/command-palette.js'") && sw.includes("'./src/ui/quick-open.js'")],
   ['cache css', sw.includes("'./src/styles/base.css'") && sw.includes("'./src/styles/shell.css'")],
-  ['cache versionado', sw.includes('urbe-shell-v1.1.0-beta')],
+  ['cache versionado', sw.includes('urbe-shell-v1.2.0-beta')],
   ['sem runtime principal inline', !index.includes('V25_MAX=18')]
 ];
 

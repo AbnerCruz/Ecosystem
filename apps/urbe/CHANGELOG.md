@@ -1,5 +1,41 @@
 # Urbe — Changelog
 
+## v1.2.0-beta — Bairros organizados: hierarquia clara no chão e no mapa (2026-09-27)
+
+A cidade deixava as pastas parecerem uma bagunça: bairros em losango, contornos sobrepostos, subpastas espalhadas, casas jogadas em lugares aleatórios e nomes empilhados. Agora ela segue regras de verdade.
+
+### Forma e lugar dos bairros
+- Os bairros são **arredondados e compactos**, do tamanho do que guardam. Eles crescem por prioridade a partir do centro, com um leve ondulado; antes cresciam em busca em largura e saíam em losango.
+- Cada **subpasta** fica **dentro** do bairro pai, com 1 tile de margem até a borda dele.
+- Bairros irmãos ficam separados por 1 tile, e bairros da raiz por 2. Nenhum contorno encosta em outro.
+- Um bairro novo nasce no espaço livre mais perto do centro da cidade (ou do bairro pai) que tenha folga. Por isso a cidade cresce junta, sem ilhas soltas.
+- Quando uma subpasta não cabe, o bairro pai cresce de forma arredondada em volta dele mesmo.
+- Na **importação**, as subpastas reservam espaço primeiro, e as casas da pasta ocupam o resto. O tamanho de cada bairro leva em conta a árvore inteira de subpastas, também ao abrir uma pasta do aparelho.
+- **Cores**: um bairro da raiz ganha a cor menos usada pelos vizinhos (paleta com 10 cores). As subpastas usam um tom mais claro da cor do bairro de cima, então a família de pastas se reconhece de longe.
+
+### Casas em quadras
+- As casas ocupam **quadras alinhadas** (passo de 6 tiles), do centro do bairro para fora, em vez de lugares sorteados.
+- As notas soltas na raiz também formam quadras em volta do centro, a 1 tile de qualquer bairro.
+
+### Desenho
+- O contorno é uma **curva suave**: a borda é traçada como polígono e arredondada, sem degraus.
+- Cada bairro é preenchido de uma vez, sem emendas nem manchas de sobreposição.
+- A hierarquia aparece na borda:
+  - pasta na raiz: borda grossa com halo escuro;
+  - subpasta: borda fina;
+  - do 3º nível para baixo: borda tracejada.
+- **Plaquinhas** no alto de cada bairro: um quadrado colorido para as pastas da raiz e uma bolinha para as subpastas.
+  - Os nomes das subpastas só aparecem com zoom suficiente.
+  - Uma plaquinha nunca fica sobre outra.
+  - Os nomes de casas que colidiriam com uma plaquinha ou com outro nome ficam escondidos; a casa selecionada sempre mostra o dela.
+- O **mapa** e o **minimapa** desenham a forma real de cada bairro, com a mesma hierarquia e os nomes, no lugar dos retângulos de antes.
+
+### Organizar uma cidade que já existe
+- Novo item **Configurações → Organizar os bairros** (comando `city.reorganize`).
+  - Redesenha todos os bairros, dos maiores para os menores e cada subpasta dentro da sua, e recoloca as casas em quadras.
+  - Notas, pastas e ligações não mudam.
+- Novo serviço `city.layout` com `validate()`, que confere as regras: subpasta dentro da margem do pai, irmãos sem encostar, casas inteiras no próprio bairro e sem sobreposição.
+
 ## v1.1.0-beta — Mundo realista: placas tectônicas, relevo, clima e rios de verdade (2026-09-27)
 
 O mundo deixou de ser ruído aleatório. Agora ele é simulado como um continente de verdade, numa grade de 512 × 512 células (cada uma com 4 × 4 tiles), em menos de um segundo ao abrir.
