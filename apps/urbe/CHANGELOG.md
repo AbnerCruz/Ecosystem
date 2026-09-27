@@ -1,5 +1,18 @@
 # Urbe — Changelog
 
+## v0.48.0 — Moradores de verdade (2026-09-27)
+
+- **Moradores em pixel-art**: no lugar dos retângulos, cada morador agora é um bonequinho no mesmo estilo do mundo, com contorno, sombra e animação de passos. Tem quatro quadros de caminhada e vira para frente, para trás e para os lados.
+- **Cada um é diferente**: tom de pele, cabelo, roupa (calça ou vestido), chapéu de palha, boné, capuz ou careca, e o que carrega (cesto, saco, balde ou cajado). A aparência é fixa por casa, então o mesmo morador é sempre reconhecível.
+  - A guilda da casa influencia a roupa: lavradores de chapéu de palha e cesto, escribas de capuz azul, guardas de vermelho com cajado, e assim por diante.
+- **Vida na rua**:
+  - Cada morador anda no seu ritmo, mais devagar que antes.
+  - Sai pela porta de casa e entra na casa do vizinho. Fica lá um pouco e depois volta.
+  - Anda do seu lado da rua, então quem vai e quem vem não se atravessa.
+  - Quando dois se cruzam, às vezes param para conversar, com um balão de "…".
+  - Em algumas casas, alguém fica à toa ao lado da porta, dando uns passos e olhando em volta, mesmo quando a nota ainda não tem ligações.
+- Animação mais fluida (quadro a cada 50 ms), e os moradores aparecem a partir de 38% de zoom.
+
 ## v0.47.0 — Mundo cheio de vida (2026-09-27)
 
 - **De longe, floresta continua floresta**: cada chunk ganha uma versão com as copas das árvores pintadas de cima (luz, sombra, neve), gerada no worker em meia resolução. Abaixo de 50% de zoom o mapa usa essa versão, então não fica mais um chão liso. Também é mais leve que desenhar milhares de árvores uma a uma. Bairros continuam sem árvores, como de perto.

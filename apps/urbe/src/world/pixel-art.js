@@ -311,5 +311,55 @@
     var c=canvas(w,h),x=c.getContext('2d');for(var j=0;j<h;j++)for(var i=0;i<g[j].length;i++){var ch=g[j][i];if(ch==='.')continue;x.fillStyle=d.pal[ch]||'#f0f';x.fillRect(flip?w-1-i:i,j,1,1)}
     return(ANIM[key]=c)}
 
-  global.UrbeArt={animal:animal,ANIMALS:ANIMALS,chunkFarPixels:chunkFarPixels,PX:PX,PAL:PAL,IDS:IDS,renderChunk:renderChunk,chunkPixels:chunkPixels,canvasFromPixels:canvasFromPixels,tree:tree,building:building,styleFor:styleFor,bridge:bridge,texture:function(id,v){return TEX[id][v||0]}};
+  /* ---------- moradores: bonequinhos medievais (cabeça grande, legíveis em tela pequena) ----------
+     look = {skin,hair,style,shirt,pants,dress,acc}; dir = 'down'|'up'|'side'; frame 0..3 (passos).
+     Grade 12×18 + 1 px de contorno escuro em volta (14×20). Olhando para a direita no 'side'. */
+  var SKIN=['#f1c9a5','#e0ac85','#c68b62','#9a6644','#6f4a33'],HAIR=['#2b211c','#5a3b24','#8a5a2c','#c9a063','#b8b2a8','#7a2e1f'],
+    PANTS=['#5a4a3a','#3f4a5a','#6b5a44','#4a5a3f','#5c3f3a'];
+  function shade(h,f){var c=rgb(h);return'rgb('+Math.round(Math.min(255,c[0]*f))+','+Math.round(Math.min(255,c[1]*f))+','+Math.round(Math.min(255,c[2]*f))+')'}
+  var VIL={};
+  function villager(look,dir,frame){var key=JSON.stringify(look)+dir+frame;if(VIL[key])return VIL[key];
+    var W=12,H=18,g=[];for(var i=0;i<W*H;i++)g.push(null);
+    function R(x,y,w,h,c){for(var j=0;j<h;j++)for(var k=0;k<w;k++){var xx=x+k,yy=y+j;if(xx>=0&&yy>=0&&xx<W&&yy<H)g[yy*W+xx]=c}}
+    function P(x,y,c){R(x,y,1,1,c)}
+    var skin=SKIN[look.skin%SKIN.length],skinD=shade(skin,.85),hair=HAIR[look.hair%HAIR.length],hairL=shade(hair,1.25),shirt=look.shirt,shirtD=shade(shirt,.78),shirtL=shade(shirt,1.12),
+      pants=PANTS[look.pants%PANTS.length],shoe='#3a2a20',belt='#5a3e27',eye='#1c1a1a',st=look.style,sw=[0,1,0,-1][frame&3];
+    var side=dir==='side',back=dir==='up';
+    /* pernas e sapatos */
+    if(look.dress){R(side?4:3,11,side?5:6,4,shirtD);R(side?4:3,14,side?5:6,1,shade(shirt,.65));
+      if(side){R(sw>0?4:sw<0?7:5,15,1,2,skinD);R(sw>0?7:sw<0?4:6,15,1,2,skinD);R(sw>0?3:sw<0?7:5,17,2,1,shoe);R(sw>0?7:sw<0?3:6,17,1,1,shoe)}
+      else{R(4,15,1,2,skinD);R(7,15,1,2,skinD);R(3+(sw>0?0:0),17-(sw>0?1:0),2,1,shoe);R(7,17-(sw<0?1:0),2,1,shoe)}}
+    else if(side){var fa=sw>0?6:sw<0?4:5,fb=sw>0?4:sw<0?6:5;R(fb,13,2,4,shade(pants,.8));R(fa,13,2,4,pants);R(fb,17,2,1,shoe);R(fa+(sw?1:0),17,2,1,shoe)}
+    else{var la=sw>0?1:0,ra=sw<0?1:0;R(4,13,2,4-la,pants);R(6,13,2,4-ra,shade(pants,.85));R(4,17-la,2,1,shoe);R(6,17-ra,2,1,shoe)}
+    /* tronco, cinto e braços */
+    if(side){R(4,7,4,5,shirt);R(4,7,1,5,shirtL);R(7,7,1,5,shirtD);R(4,11,4,1,look.dress?shirtD:belt);
+      var ax=5+(sw>0?1:sw<0?-1:0);R(ax,7,2,4,shirtD);P(ax+(sw>0?1:0),11,skin)}
+    else{R(3,7,6,5,shirt);R(3,7,1,5,shirtL);R(8,7,1,5,shirtD);if(!back){P(5,7,shirtD);P(6,7,shirtD)}R(3,11,6,1,look.dress?shirtD:belt);
+      R(2,7+(sw<0?1:0),1,4,shirtD);R(9,7+(sw>0?1:0),1,4,shirtD);P(2,11+(sw<0?1:0),skin);P(9,11+(sw>0?1:0),skin)}
+    /* pescoço e cabeça */
+    R(5,6,2,1,skinD);R(3,1,6,5,skin);R(3,5,6,1,skinD);
+    if(side){P(7,3,eye);P(8,4,skinD)}else if(!back){P(4,3,eye);P(7,3,eye);P(5,5,shade(skin,.9));P(6,5,shade(skin,.9))}
+    /* cabelo / chapéu */
+    if(st==='bald'){R(3,1,6,1,skinD);if(side)R(3,2,2,3,hair);else R(3,3,1,2,hair),R(8,3,1,2,hair);if(back)R(3,3,6,3,hair)}
+    else{var longo=st==='long';R(3,0,6,2,hair);R(3,0,6,1,hairL);
+      if(back)R(3,1,6,longo?7:5,hair);else if(side){R(3,1,3,longo?6:4,hair);P(8,1,hair)}else{R(3,1,1,longo?6:3,hair);R(8,1,1,longo?6:3,hair)}}
+    if(st==='straw'){var hs='#d8b765',hsD='#b38f45';R(3,-1,6,1,hs);R(3,0,6,1,hs);R(3,1,6,1,'#a4552f');R(1,2,10,1,hsD);if(side)R(1,2,11,1,hsD)}
+    else if(st==='hood'){var hc=look.hood||'#5b4a6a',hcD=shade(hc,.75);R(2,0,8,6,hc);R(2,0,8,1,shade(hc,1.15));if(!back){R(4,2,4,4,skin);P(4,3,eye);P(7,3,eye)}else R(3,1,6,5,hcD);if(side){R(2,0,5,6,hc);R(6,2,3,4,skin);P(7,3,eye)}R(2,6,8,2,hc)}
+    else if(st==='cap'){var cc=look.cap||'#a33c32';R(3,0,6,2,cc);R(3,0,6,1,shade(cc,1.2));if(!back)R(side?7:2,1,side?3:8,1,shade(cc,.8))}
+    /* acessórios */
+    if(look.acc==='basket'){var bk='#a8763e',bkD='#7a5228';if(side){R(7,9,3,3,bk);R(7,9,3,1,bkD);P(8,8,bkD)}else{R(9,9,3,3,bk);R(9,9,3,1,bkD)}}
+    else if(look.acc==='sack'){var sk='#c8b48a';if(back||!side)R(back?4:8,5,4,4,sk),R(back?4:8,5,4,1,shade(sk,.8));else R(2,5,3,5,sk)}
+    else if(look.acc==='staff'){R(side?9:10,2,1,15,'#7a5a3a');P(side?9:10,2,'#9a7a52')}
+    else if(look.acc==='bucket'){R(side?7:9,11,3,3,'#8c8a86');R(side?7:9,11,3,1,'#b0aea9')}
+    /* contorno */
+    var OW=W+2,OH=H+2,c=canvas(OW,OH),x=c.getContext('2d'),img=x.createImageData(OW,OH),d=img.data,ol=[34,26,22];
+    function has(i,j){return i>=0&&j>=0&&i<W&&j<H&&g[j*W+i]}
+    for(var j=-1;j<=H;j++)for(var i2=-1;i2<=W;i2++){var o=((j+1)*OW+(i2+1))*4,v=has(i2,j);
+      if(v){var cc2=v.charAt(0)==='#'?rgb(v):v.match(/\d+/g).map(Number);d[o]=cc2[0];d[o+1]=cc2[1];d[o+2]=cc2[2];d[o+3]=255}
+      else if(has(i2-1,j)||has(i2+1,j)||has(i2,j-1)||has(i2,j+1)){d[o]=ol[0];d[o+1]=ol[1];d[o+2]=ol[2];d[o+3]=230}}
+    x.putImageData(img,0,0);
+    return(VIL[key]=c)}
+  function villagerFlip(look,frame){var key='F'+JSON.stringify(look)+frame;if(VIL[key])return VIL[key];var src=villager(look,'side',frame),c=canvas(src.width,src.height),x=c.getContext('2d');x.translate(src.width,0);x.scale(-1,1);x.drawImage(src,0,0);return(VIL[key]=c)}
+
+  global.UrbeArt={villager:villager,villagerFlip:villagerFlip,animal:animal,ANIMALS:ANIMALS,chunkFarPixels:chunkFarPixels,PX:PX,PAL:PAL,IDS:IDS,renderChunk:renderChunk,chunkPixels:chunkPixels,canvasFromPixels:canvasFromPixels,tree:tree,building:building,styleFor:styleFor,bridge:bridge,texture:function(id,v){return TEX[id][v||0]}};
 })(typeof window!=='undefined'?window:self);

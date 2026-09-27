@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import fs from 'node:fs';import vm from 'node:vm';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 const index=read('index.html'),sw=read('sw.js'),theme=read('src/styles/theme.css'),base=read('src/styles/base.css');
 const ui=['src/app.js','src/explorer/mobile-ui.js','src/composition/ui.js','src/ui/quick-open.js','src/ui/tips.js','src/editor/visual-tools.js'].map(f=>[f,read(f)]);
@@ -46,6 +46,19 @@ test('Notas: lixeira funciona com pasta selecionada e contador distingue pastas'
   const m=read('src/explorer/mobile-ui.js');
   if(!/deleteFolder/.test(m))throw new Error('excluir ignora pastas');
   if(/textContent=n\+\(n===1\?' nota'/.test(m))throw new Error('contador chama pasta de nota');
+});
+test('moradores: sprites em pixel-art, variedade, ritmo próprio, pausa na porta e conversa',()=>{
+  const app=read('src/app.js'),art=read('src/world/pixel-art.js');
+  if(!/villager:villager/.test(art)||!/villagerFlip/.test(art))throw new Error('sprite de morador ausente');
+  if(/ctx\.fillRect\(p\.x-larg\/2/.test(app))throw new Error('moradores ainda são retângulos');
+  for(const k of ['function v25Visual','function v25Ociosos','a.conversa','a.pausa','UrbeArt.villager('])if(!app.includes(k))throw new Error('falta '+k);
+  /* desenha todas as combinações num canvas de mentira */
+  const data=[];const fake=()=>({width:0,height:0,getContext:()=>({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData:(img)=>data.push(img),translate(){},scale(){},drawImage(){}})});
+  const W={};vm.runInContext(art,vm.createContext({window:W,self:W,OffscreenCanvas:function(w,h){const c=fake();c.width=w;c.height=h;return c},console}));
+  const A=W.UrbeArt;
+  for(const style of ['short','long','straw','bald','cap','hood'])for(const acc of [null,'basket','sack','staff','bucket'])for(const dir of ['down','up','side'])for(let f=0;f<4;f++){
+    const c=A.villager({skin:f,hair:f,pants:f,style,shirt:'#b84a3a',acc,dress:f&1},dir,f);if(c.width!==14||c.height!==20)throw new Error('tamanho '+c.width+'x'+c.height)}
+  const px=data[0].data;let cheios=0;for(let i=3;i<px.length;i+=4)if(px[i])cheios++;if(cheios<120)throw new Error('sprite vazio: '+cheios);
 });
 test('mundo vivo: fauna registrada depois do terreno e visão de longe com copas',()=>{
   const app=read('src/app.js'),art=read('src/world/pixel-art.js'),wk=read('src/world/chunk-worker.js');
