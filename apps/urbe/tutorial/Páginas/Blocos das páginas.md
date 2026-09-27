@@ -39,5 +39,15 @@ Além do conteúdo, toda seção tem **Aparência da seção**:
 - **Alinhamento**: à esquerda ou centralizado.
 - **Âncora** e **mostrar no menu**: cria um item na barra de navegação que leva até a seção.
 - **Ocultar seção**: esconde a seção sem apagar.
+- **Cor de fundo própria** e **cor do texto própria**, só para aquela seção.
+- **Seção em caixa**: o conteúdo vira um cartão com borda e cantos.
+- **Altura mínima**: natural, meia tela ou tela cheia.
+- **Animação**: a do tema, nenhuma, aparecer, subir, aproximar, da esquerda ou da direita.
+
+Em **Avançado** ficam a âncora, o item do menu, uma **classe CSS** e o **CSS desta seção**. Nele, `&` é a própria seção: `& h2{color:tomato}` pinta só os títulos dela. Se você escrever só propriedades (sem chaves), elas valem para a seção inteira.
+
+## Meus blocos
+
+Montou uma seção do jeito que gosta? No menu **⋯** dela, toque em **Salvar como bloco reutilizável**. O bloco (conteúdo e aparência) vai para `Páginas/Blocos/` e aparece em **Meus blocos**, no topo da lista do **＋**, em qualquer página. Para apagar um bloco seu, apague o arquivo `.block.json` na aba Notas.
 
 Próximo: [[Tutorial/Páginas/Modelos e temas|Modelos e temas]]
