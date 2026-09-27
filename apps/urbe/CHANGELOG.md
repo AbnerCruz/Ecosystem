@@ -1,5 +1,22 @@
 # Urbe — Changelog
 
+## v0.47.0 — Mundo cheio de vida (2026-09-27)
+
+- **De longe, floresta continua floresta**: cada chunk ganha uma versão com as copas das árvores pintadas de cima (luz, sombra, neve), gerada no worker em meia resolução. Abaixo de 50% de zoom o mapa usa essa versão, então não fica mais um chão liso. Também é mais leve que desenhar milhares de árvores uma a uma. Bairros continuam sem árvores, como de perto.
+- **Chão muito mais rico** (18 tipos de detalhe, em ~28% dos tiles, até dois por tile):
+  - Campo e prado: canteiros de flores em manchas, capim alto, arbustos (alguns floridos) e pedrinhas.
+  - Floresta: cogumelos, samambaias, troncos caídos e tocos.
+  - Colinas e montanhas: rochas e matacões.
+  - Pântano: juncos e poças.
+  - Rios e lagos: vitórias-régias na margem.
+  - Praia: conchas e madeira trazida pelo mar.
+  - Savana, estepe e deserto: capim seco e arbustos secos.
+  - Tundra: manchas de neve.
+- **Fauna**: rebanhos de ovelhas e vacas pastando e andando pelos campos, cervos nas florestas, patos nadando em rios e lagos, e bandos de pássaros cruzando o céu com sombra no chão.
+  - Os animais evitam ruas, casas e bairros.
+  - Só existem perto do que está na tela.
+  - Usam o mesmo relógio leve dos moradores, com custo desprezível.
+
 ## v0.46.0 — Mundo mais bonito, mapa explorável e toques no celular (2026-09-27)
 
 - **Biomas maiores**: continentes, clima e umidade em escalas 2–3× maiores e com menos detalhe miúdo. As regiões ficam coerentes (planícies, florestas, cordilheiras e lagos grandes) em vez de retalhos; o trecho médio de um bioma passou de 17,7 para 33 tiles. A área em volta da cidade continua amigável para construir.

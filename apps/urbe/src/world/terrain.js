@@ -129,9 +129,26 @@
       var kind=r[1];if(b===B.FOREST&&h2(x,y,9)<.28)kind='birch';if(b===B.DENSE&&h2(x,y,9)<.35)kind='pine';if(b===B.TAIGA&&at(x,y)===B.TAIGA&&h2(x,y,3)<.1)kind='deadpine';
       return{kind:kind,v:Math.floor(h2(x,y,11)*3),snow:b===B.TUNDRA||(b===B.TAIGA&&elevation(x,y)>.62)};
     }
-    function decor(x,y){var b=at(x,y),r=h2(x,y,21);
-      if(b===B.MEADOW&&r<.16)return'flowers';if(b===B.GRASS&&r<.05)return'flowers';if((b===B.HILLS||b===B.MOUNTAIN)&&r<.1)return'rock';
-      if(b===B.DESERT&&r<.04)return'rock';if(b===B.SWAMP&&r<.22)return'reeds';if(b===B.BEACH&&r<.03)return'shell';if(b===B.STEPPE&&r<.08)return'tuft';return null}
+    /* detalhes do chão: até dois por tile, em manchas (flores em canteiros, capim em tufos) */
+    function decor(x,y){var b=at(x,y),r=h2(x,y,21),q=h2(x,y,22),o=[];
+      var patch=fbm(nM,x/6-900,y/6+900,2,2,.5),wet=b<=3;
+      if(wet){if((b===B.LAKE||b===B.RIVER||b===B.SEA)&&r<(b===B.SEA?.02:.16)){var nl=at(x+1,y)>3||at(x-1,y)>3||at(x,y+1)>3||at(x,y-1)>3;if(nl)o.push(b===B.SEA?'shorerock':'lily')}return o.length?o:null}
+      switch(b){
+        case B.GRASS:if(patch>.12?r<.55:r<.07)o.push('flowers');if(q<.13)o.push('bush');else if(q<.36)o.push('tallgrass');else if(q<.42)o.push('pebbles');break;
+        case B.MEADOW:if(patch>0?r<.7:r<.22)o.push('flowers');if(q<.32)o.push('tallgrass');else if(q>.96)o.push('bush');break;
+        case B.FOREST:case B.DENSE:if(r<.1)o.push('mushroom');else if(r<.26)o.push('fern');if(q<.05)o.push('log');else if(q<.09)o.push('stump');else if(q<.2)o.push('bush');break;
+        case B.TAIGA:if(r<.18)o.push('fern');else if(r<.24)o.push('mushroom');if(q<.08)o.push('rock');else if(q<.12)o.push('stump');break;
+        case B.SWAMP:if(r<.4)o.push('reeds');if(q<.22)o.push('puddle');else if(q<.3)o.push('lily');break;
+        case B.BEACH:if(r<.05)o.push('shell');if(q<.03)o.push('driftwood');else if(q<.1)o.push('pebbles');break;
+        case B.DESERT:if(r<.05)o.push('rock');if(q<.07)o.push('drybush');else if(q<.1)o.push('pebbles');break;
+        case B.SAVANNA:if(r<.4)o.push('drygrass');if(q<.08)o.push('drybush');else if(q<.11)o.push('rock');break;
+        case B.STEPPE:if(r<.18)o.push('tuft');if(q<.25)o.push('drygrass');else if(q<.3)o.push('pebbles');break;
+        case B.HILLS:if(r<.14)o.push('rock');else if(r<.2)o.push('flowers');if(q<.16)o.push('pebbles');else if(q<.4)o.push('tallgrass');break;
+        case B.MOUNTAIN:case B.PEAK:if(r<.22)o.push('rock');if(q<.07)o.push('boulder');break;
+        case B.TUNDRA:if(r<.22)o.push('snowpatch');if(q<.1)o.push('rock');else if(q<.2)o.push('tuft');break;
+        case B.SNOW:if(r<.06)o.push('rock');break;
+      }
+      return o.length?o:null}
     function info(x,y){return INFO[at(x,y)]}
     return{
       seed:seedText||'urbe',CH:CH,B:B,INFO:INFO,sea:SEA,

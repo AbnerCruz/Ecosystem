@@ -4070,7 +4070,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.46.0';
+V21_VERSION='0.47.0';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
@@ -4259,7 +4259,8 @@ window.URBE=window.URBE||{};
 Object.defineProperties(window.URBE,{
   povo:{get:function(){return v25Povo},configurable:true},
   rotas:{get:function(){return v25Rotas},configurable:true},
-  mundo:{get:function(){return world},configurable:true}
+  mundo:{get:function(){return world},configurable:true},
+  fauna:{get:function(){return urbeFauna},configurable:true}
 
 });
 Object.assign(window.URBE,{
@@ -4712,7 +4713,7 @@ var urbeWorker=null,urbePedidos=new Set();
     urbeWorker=new Worker('./src/world/chunk-worker.js');
     urbeWorker.postMessage({type:'init',seed:MUNDO.seed,opts:{spawnX:Math.floor(BASE_W/2),spawnY:Math.floor(BASE_H/2)}});
     urbeWorker.onmessage=function(e){var m=e.data;if(!m||m.type!=='chunk')return;var k=m.cx+':'+m.cy;urbePedidos.delete(k);if(m.bio)MUNDO.inject(m.cx,m.cy,new Uint8Array(m.bio),new Float32Array(m.elev));
-      urbeChunks.set(k,ARTE.canvasFromPixels(new Uint8ClampedArray(m.buf),m.n));
+      var cvc=ARTE.canvasFromPixels(new Uint8ClampedArray(m.buf),m.n);if(m.far)cvc.far=ARTE.canvasFromPixels(new Uint8ClampedArray(m.far),m.n>>1);urbeChunks.set(k,cvc);
       if(urbeChunks.size>URBE_CHUNKS_MAX)urbeChunks.delete(urbeChunks.keys().next().value);pedirDesenho()};
     urbeWorker.onerror=function(){urbeWorker=null;urbePedidos.clear()};
   }catch(_){urbeWorker=null}
@@ -4739,7 +4740,14 @@ drawGround=function(){
   ctx.save();ctx.imageSmoothingEnabled=false;
   for(var cy=cy0;cy<=cy1;cy++)for(var cx=cx0;cx<=cx1;cx++){
     var p=w2s(cx*CHs*TILE,cy*CHs*TILE),img=urbeChunkPronto(cx,cy),x=Math.floor(p.x),y=Math.floor(p.y),l=Math.ceil(lado)+1;
-    if(img)ctx.drawImage(img,x,y,l,l);
+    if(img){
+      /* longe: versão com as copas das árvores pintadas; bairros ficam sem árvores, como de perto */
+      if(img.far&&camera.z<URBE_LONGE){ctx.imageSmoothingEnabled=camera.z<.2;ctx.drawImage(img.far,x,y,l,l);ctx.imageSmoothingEnabled=false;
+        var cx0t=cx*CHs,cy0t=cy*CHs,px2=img.width/CHs;
+        for(var ri=0;ri<world.regions.length;ri++){var rg=world.regions[ri],ax=Math.max(rg.x,cx0t),ay=Math.max(rg.y,cy0t),bx=Math.min(rg.x+rg.w,cx0t+CHs),by=Math.min(rg.y+rg.h,cy0t+CHs);if(ax>=bx||ay>=by)continue;
+          ctx.drawImage(img,(ax-cx0t)*px2,(ay-cy0t)*px2,(bx-ax)*px2,(by-ay)*px2,x+(ax-cx0t)*TILE*camera.z,y+(ay-cy0t)*TILE*camera.z,Math.ceil((bx-ax)*TILE*camera.z)+1,Math.ceil((by-ay)*TILE*camera.z)+1)}}
+      else ctx.drawImage(img,x,y,l,l);
+    }
     else{ /* enquanto o chunk não fica pronto: cor de cada tile se o terreno já é conhecido;
              senão um tom neutro — o ruído não é calculado aqui quando há worker */
       if(!urbeWorker||MUNDO.has(cx,cy)){var ch=MUNDO.chunk(cx,cy),s=TILE*camera.z;
@@ -4768,8 +4776,9 @@ var urbeArvoresCache=new Map();
 function urbeArvoresDoChunk(cx,cy){var k=cx+':'+cy,a=urbeArvoresCache.get(k);if(a)return a;a=[];var CHs=MUNDO.CH;
   for(var j=0;j<CHs;j++)for(var i=0;i<CHs;i++){var x=cx*CHs+i,y=cy*CHs+j,t=MUNDO.tree(x,y);if(t)a.push(x,y,t)}
   if(urbeArvoresCache.size>400)urbeArvoresCache.clear();urbeArvoresCache.set(k,a);return a}
+var URBE_LONGE=.5;
 drawTrees=function(){
-  if(MUNDO&&ARTE&&camera.z>=.3){
+  if(MUNDO&&ARTE&&camera.z>=(urbeWorker?URBE_LONGE:.3)){
     var f=faixaVisivel(),CHs=MUNDO.CH,s=TILE*camera.z/ARTE.PX*1.3,p={x:0,y:0},vis=[];
     for(var cy=Math.floor(f.y0/CHs);cy<=Math.floor(f.y1/CHs);cy++)for(var cx=Math.floor(f.x0/CHs);cx<=Math.floor(f.x1/CHs);cx++){
       if(urbeWorker&&!MUNDO.has(cx,cy))continue; /* árvores aparecem junto com o chão */
@@ -4789,6 +4798,69 @@ drawTrees=function(){
   }
   if(typeof v25Desenhar==='function')v25Desenhar();
 };
+/* ---------- fauna: ovelhas, vacas, cervos, patos e pássaros ----------
+   Só existe em volta do que está na tela e só em chunks já prontos (nada de
+   calcular terreno na thread principal). Evita ruas, casas e bairros.
+   Mesmo relógio dos moradores: ~12 quadros por segundo, e só pede quadro
+   quando há bicho visível. */
+var urbeFauna=[],urbeFaunaT=0,urbeFaunaUlt=0,urbeFaunaAves=0;
+(function(){
+  if(!MUNDO||!ARTE||!ARTE.animal)return;
+  var B=MUNDO.B,VEL={sheep:.5,cow:.38,deer:.9,duck:.32},MAX=18;
+  function pronto(x,y){return MUNDO.has(Math.floor(x/MUNDO.CH),Math.floor(y/MUNDO.CH))}
+  function classe(x,y){if(!pronto(x,y))return null;var b=MUNDO.biome(x,y);
+    if(b===B.LAKE||b===B.RIVER)return'agua';if(b===B.GRASS||b===B.MEADOW||b===B.STEPPE||b===B.SAVANNA||b===B.HILLS)return'campo';if(b===B.FOREST||b===B.DENSE||b===B.TAIGA)return'mata';return null}
+  function livre(x,y){x=Math.floor(x);y=Math.floor(y);if(world.roads.has(K(x,y)))return false;var p={x:x,y:y};return !bAt(p)&&!regAt(p)}
+  function nascer(f){
+    var w=f.x1-f.x0,h=f.y1-f.y0;
+    for(var tent=0;tent<14;tent++){var x=f.x0-3+Math.random()*(w+6),y=f.y0-3+Math.random()*(h+6),c=classe(Math.floor(x),Math.floor(y));if(!c||!livre(x,y))continue;
+      var kind=c==='agua'?'duck':c==='mata'?(Math.random()<.45?'deer':null):(Math.random()<.72?'sheep':'cow');if(!kind)continue;
+      var n=kind==='deer'?1+(Math.random()<.4?1:0):kind==='duck'?2+Math.floor(Math.random()*2):2+Math.floor(Math.random()*3);
+      for(var i=0;i<n;i++){var ax=x+(Math.random()-.5)*2.4,ay=y+(Math.random()-.5)*1.8;if(classe(Math.floor(ax),Math.floor(ay))!==c||!livre(ax,ay))continue;
+        urbeFauna.push({kind:kind,c:c,x:ax,y:ay,tx:ax,ty:ay,st:'idle',t:Math.random()*3,fr:0,ft:0,flip:Math.random()<.5})}
+      return}
+  }
+  function aves(f){var n=3+Math.floor(Math.random()*3),fromLeft=Math.random()<.5,y=f.y0+Math.random()*(f.y1-f.y0),x=fromLeft?f.x0-4:f.x1+4,vx=(fromLeft?1:-1)*(3+Math.random()*1.5),vy=(Math.random()-.5)*1.2;
+    for(var i=0;i<n;i++)urbeFauna.push({kind:'bird',x:x-(fromLeft?1:-1)*i*.9,y:y+(i%2?.6:-.6)*Math.ceil(i/2),vx:vx,vy:vy,fr:i%2,ft:0,flip:!fromLeft,alt:1.6+Math.random()*.8})}
+  function passo(dt,f){
+    var cx=(f.x0+f.x1)/2,cy=(f.y0+f.y1)/2,lim=Math.max(f.x1-f.x0,f.y1-f.y0)*1.2+8;
+    urbeFauna=urbeFauna.filter(function(a){return Math.abs(a.x-cx)<lim&&Math.abs(a.y-cy)<lim});
+    for(var i=0;i<urbeFauna.length;i++){var a=urbeFauna[i];a.ft+=dt;
+      if(a.kind==='bird'){a.x+=a.vx*dt;a.y+=a.vy*dt;if(a.ft>.16){a.ft=0;a.fr^=1}continue}
+      if(a.st==='walk'){var dx=a.tx-a.x,dy=a.ty-a.y,d=Math.hypot(dx,dy),v=VEL[a.kind]*dt;
+        if(d<=v){a.x=a.tx;a.y=a.ty;a.st=Math.random()<.6&&a.kind!=='duck'?'graze':'idle';a.t=1.5+Math.random()*4}else{a.x+=dx/d*v;a.y+=dy/d*v;a.flip=dx<0}
+        if(a.ft>.22){a.ft=0;a.fr=a.fr===0?1:0}}
+      else{a.t-=dt;a.fr=a.st==='graze'?2:(a.kind==='duck'?(a.ft>.6?(a.ft=0,a.fr^1):a.fr):0);
+        if(a.t<=0){for(var k=0;k<6;k++){var nx=a.x+(Math.random()-.5)*6,ny=a.y+(Math.random()-.5)*4;if(classe(Math.floor(nx),Math.floor(ny))===a.c&&livre(nx,ny)){a.tx=nx;a.ty=ny;a.st='walk';break}}if(a.st!=='walk')a.t=1+Math.random()*2}}
+    }
+  }
+  function ciclo(){
+    if(typeof v25MapaVisivel==='function'&&!v25MapaVisivel())return;
+    var agora=performance.now(),dt=Math.min(.25,(agora-(urbeFaunaUlt||agora))/1000);urbeFaunaUlt=agora;
+    if(camera.z<.3){if(urbeFauna.length)urbeFauna=[];return}
+    var f=faixaVisivel();
+    if(agora-urbeFaunaT>900){urbeFaunaT=agora;var chao=0;for(var i=0;i<urbeFauna.length;i++)if(urbeFauna[i].kind!=='bird')chao++;if(chao<MAX)nascer(f);
+      if(agora-urbeFaunaAves>14000&&Math.random()<.25){urbeFaunaAves=agora;aves(f)}}
+    if(!urbeFauna.length)return;passo(dt,f);pedirDesenho();
+  }
+  var sch=window.UrbeCore&&window.UrbeCore.service('scheduler');if(sch)sch.add('world.fauna',ciclo,{interval:83,whenVisible:true});else setInterval(ciclo,83);
+})();
+function urbeDesenharFauna(){
+  if(!urbeFauna.length||camera.z<.3)return;var sp=TILE*camera.z/16,f=faixaVisivel(),ord=urbeFauna.slice().sort(function(a,b){return a.y-b.y});
+  ctx.save();ctx.imageSmoothingEnabled=false;
+  for(var i=0;i<ord.length;i++){var a=ord[i];if(a.x<f.x0-2||a.x>f.x1+2||a.y<f.y0-2||a.y>f.y1+3)continue;
+    if(a.kind==='bird'){ /* sombra no chão e o bando no alto */
+      var qs=w2s(a.x*TILE,a.y*TILE),img=ARTE.animal('bird',a.fr,a.flip);ctx.fillStyle='rgba(0,0,0,.16)';ctx.beginPath();ctx.ellipse(qs.x,qs.y,3*sp,1.2*sp,0,0,7);ctx.fill();
+      ctx.drawImage(img,Math.round(qs.x-img.width*sp/2),Math.round(qs.y-a.alt*TILE*camera.z),Math.ceil(img.width*sp),Math.ceil(img.height*sp));continue}
+    if(camera.z<.45)continue;
+    var q=w2s(a.x*TILE,a.y*TILE),im=ARTE.animal(a.kind,a.fr,a.flip),w=im.width*sp,h=im.height*sp;
+    if(a.kind!=='duck'){ctx.fillStyle='rgba(0,0,0,.2)';ctx.beginPath();ctx.ellipse(q.x,q.y,w*.38,sp*1.4,0,0,7);ctx.fill()}
+    ctx.drawImage(im,Math.round(q.x-w/2),Math.round(q.y-h+(a.kind==='duck'?sp*2:0)),Math.ceil(w),Math.ceil(h))}
+  ctx.restore();
+}
+
+/* fauna por cima das árvores e dos moradores, antes das casas */
+var urbeFaunaBaseTrees=drawTrees;drawTrees=function(){urbeFaunaBaseTrees();urbeDesenharFauna()};
 
 /* ---------- construções no mesmo estilo do mundo ---------- */
 var URBE_OFICIO={md:'house',markdown:'house',txt:'house',html:'hall',htm:'hall',js:'workshop',mjs:'workshop',css:'dyer',json:'tower',yaml:'tower',yml:'tower',csv:'market'};

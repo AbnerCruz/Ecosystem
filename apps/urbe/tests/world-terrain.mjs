@@ -42,3 +42,10 @@ test('app integra terreno com regras e pontes',()=>{
   for(let i=0;i<200;i++){const x=Math.floor(Math.sin(i)*900),y=Math.floor(Math.cos(i*1.3)*700),s=W2.sample(x,y);if(s.b!==W2.biome(x,y))throw new Error('sample difere em '+x+','+y)}
   console.log('OK   biome scale (trecho médio '+len.toFixed(1)+' tiles) and map sampling');
 }
+{ /* chão cheio: detalhes variados por bioma (até dois por tile) */
+  const W3=c.UrbeTerrain.createWorld('urbe',{spawnX:36,spawnY:25}),kinds=new Set();let tiles=0,withDecor=0;
+  for(let y=-200;y<200;y+=3)for(let x=-250;x<250;x+=3){const d=W3.decor(x,y);tiles++;if(d){withDecor++;(Array.isArray(d)?d:[d]).forEach(k=>kinds.add(k))}}
+  if(kinds.size<14)throw new Error('pouca variedade de detalhes: '+[...kinds].join(','));
+  if(withDecor/tiles<.25)throw new Error('chão vazio: só '+Math.round(withDecor/tiles*100)+'% dos tiles com detalhe');
+  console.log('OK   ground detail ('+kinds.size+' tipos, '+Math.round(withDecor/tiles*100)+'% dos tiles)');
+}
