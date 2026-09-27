@@ -7,6 +7,7 @@ Comece uma página a partir de um modelo e depois troque os textos:
 | Modelo | O que monta |
 |---|---|
 | **Vazio** | O mínimo do mínimo: nenhuma seção, sem barra, sem rodapé e sem animações. Você monta tudo |
+| **Tela livre** | Tudo em layout livre: capa, imagem + texto e cartões, peça por peça ([[Tutorial/Páginas/Layout livre|Layout livre]]) |
 | **Simples** | O básico, genérico e resumido: um título, um texto e um rodapé |
 | **Landing de produto** | Capa, números, recursos, depoimentos, planos, perguntas e chamada final |
 | **Portfólio** | Apresentação, projetos em cartões, trajetória e contato |

@@ -22,6 +22,13 @@
     {id:'empty',name:'Vazio',icon:'○',description:'O mínimo do mínimo: nenhuma seção, sem barra, sem rodapé, sem animações. Você monta tudo.',
       build:function(c){return page({title:c.title||'Nova página',icon:'✦'},{preset:'grafite',animations:false,shadow:'none'},{nav:false,footer:'',themeToggle:false,backToTop:false,progress:false},[])}},
 
+    {id:'canvas',name:'Tela livre',icon:'⊞',description:'Tudo em layout livre: capa, colunas e cartões montados peça por peça, cada um com estilo próprio para computador, tablet e celular.',
+      build:function(c){var t=c.title||'Minha página',X=P.free,m=X.make;
+        var capa=X.PRESETS.capa.build();capa.children[0].content.text=t;
+        var cols=X.PRESETS['imagem-texto'].build();var cards=X.PRESETS['grade-cartoes'].build();
+        var root=m('box',{},{gap:'64px',padding:'0 0 48px'},[capa,cols,m('box',{},{gap:'18px'},[m('heading',{text:'Destaques',level:2},{textAlign:'center'}),cards])]);
+        return page({title:t,icon:'⊞'},{preset:'aurora'},{nav:false,footer:'',themeToggle:false},[sec('free',{root:root},{padding:'s'})])}},
+
     {id:'blank',name:'Simples',icon:'＋',description:'O básico, genérico e resumido: um título, um texto e um rodapé.',
       build:function(c){var t=c.title||'Nova página';return page({title:t,icon:'✦'},{preset:'papel',animations:false},{nav:false,footer:'© '+year+' '+t,themeToggle:false},[
         sec('hero',{title:t,subtitle:'Uma frase curta sobre o que é esta página.',buttons:[],height:'auto',layout:'left'},{padding:'l'}),
@@ -81,6 +88,7 @@
         sec('part',{title:'O começo',markdown:'Onde tudo começa.'}),
         sec('chapter',{title:'A cidade de papel',epigraph:'Toda cidade é um livro que se lê andando.',epigraphAuthor:'Anônimo',markdown:'Escreva aqui o primeiro capítulo. O primeiro parágrafo ganha uma **letra capitular** e a primeira linha em versalete.\n\nOs parágrafos seguintes têm recuo na primeira linha, texto justificado e hifenização, como num livro impresso.\n\n***\n\nTrês asteriscos sozinhos numa linha viram um ornamento de troca de cena.'}),
         sec('chapter',{title:'Ruas e pontes',markdown:'Cada capítulo começa numa página nova. Para puxar o texto de uma nota, troque **Texto de onde** para **De uma nota**.'}),
+        sec('free',{sheet:'page',root:P.free.make('box',{},{gap:'14px'},[P.free.make('heading',{text:'Uma página montada peça por peça',level:2},{textAlign:'center'}),P.free.make('text',{text:'Esta página é um **layout livre**: cada título, parágrafo, imagem ou caixa é uma peça que você move, aninha e estiliza.'}),P.free.PRESETS.destaque.build(),P.free.make('text',{text:'Qualquer bloco do livro também pode virar layout livre: menu ⋯ da seção → **Converter em layout livre**.'})])}),
         sec('part',{title:'O caminho'}),
         sec('chapter',{title:'Onde tudo se liga',markdown:'Para montar o livro inteiro a partir de uma pasta, use o bloco **Capítulos de uma pasta** ou o modelo **Livro de uma pasta**.'})]))}},
 

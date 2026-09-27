@@ -41,6 +41,10 @@ A barra de navegação, o rodapé e os botões de site não aparecem num livro.
 
 A numeração dos capítulos é automática e segue a ordem das seções, contando também os capítulos que vêm de uma pasta.
 
+## Liberdade total no livro
+
+Qualquer bloco do livro (capa, folha de rosto, capítulo…) pode virar **layout livre** pelo menu **⋯** → **Converter em layout livre**: cada título e parágrafo passa a ser uma peça que você move e estiliza. **Capítulos de uma pasta** pode ser separado em um capítulo por nota (**⋯** → **Separar em capítulos**). Veja [[Tutorial/Páginas/Layout livre|Layout livre]].
+
 ## Detalhes de tipografia
 
 - O primeiro parágrafo de cada capítulo ganha **letra capitular** (dá para desligar) e a primeira linha em versalete.
