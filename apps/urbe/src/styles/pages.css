@@ -179,3 +179,8 @@
 .fx-op{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;padding:4px 2px;border:1px solid var(--ui-line);border-radius:10px;background:var(--ui-surface-2);color:var(--ui-text);font:inherit;cursor:pointer}
 .fx-op span{font-size:16px;line-height:1;display:grid;place-items:center;height:20px}.fx-op span .ui-icon{width:18px;height:18px}.fx-op small{font-size:11px;color:var(--ui-text-2)}
 .fx-op:disabled{opacity:.35;cursor:default}.fx-op.danger{color:var(--ui-danger,#f47174)}.fx-op:not(:disabled):hover{border-color:var(--ui-accent)}
+/* ---------- Inserir: abas ---------- */
+.ps-lib-tabs{display:flex;gap:4px;padding:0 12px 8px;overflow-x:auto;scrollbar-width:none;flex:none}.ps-lib-tabs::-webkit-scrollbar{display:none}
+.ps-lib-tabs button{flex:none;min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--ui-line);background:transparent;color:var(--ui-text-2);font:600 13.5px var(--ui-font);white-space:nowrap}
+.ps-lib-tabs button.on{background:var(--ui-accent);border-color:var(--ui-accent);color:var(--ui-accent-ink)}.ps-lib-tabs small{opacity:.75;font-weight:500}
+.ps-lib-body .ps-hint{margin:4px 0 10px}.ps-lib-body .ps-tpls{margin-top:0}.ps-lib-body .ps-empty{margin-top:24px}

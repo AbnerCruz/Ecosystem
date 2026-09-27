@@ -11,7 +11,7 @@ Cada nota vira uma casa, cada pasta um bairro e cada `[[link]]` uma rua. Morador
 - **Cidade**: mundo em pixel-art gerado a partir das suas notas, com mapa, dia e noite, moradores e animais.
 - **Editor**: modo Visual e modo Fonte (Markdown), com tabelas, callouts, tarefas, listas aninhadas, links entre notas, tags, propriedades, abas, painel dividido, localizar e substituir, versões anteriores e lixeira.
 - **Matemática**: fórmulas LaTeX em qualquer nota (KaTeX embutido), com editor visual, símbolos, modelos e autocompletar.
-- **Páginas**: estúdio para montar sites e **livros** (34 blocos, **layout livre** peça por peça e responsivo, 13 modelos, 10 temas, blocos próprios e CSS livre) a partir das notas, exportando HTML de arquivo único ou PDF pronto para imprimir, com tamanho de página, margens espelhadas e números de página.
+- **Páginas**: estúdio para montar sites e **livros** (34 blocos, **layout livre** peça por peça e responsivo com 19 peças e 24 composições prontas, 13 modelos carregáveis dentro do editor, 10 temas, blocos próprios e CSS livre) a partir das notas, exportando HTML de arquivo único ou PDF pronto para imprimir, com tamanho de página, margens espelhadas e números de página.
 - **Composições**: junta várias notas num documento pronto para imprimir.
 - **Assistente de IA**: agentes que leem, buscam, escrevem e organizam o vault com ferramentas, mostrando cada passo e pedindo aprovação. Funciona com OpenRouter, Anthropic, OpenAI, Google Gemini, Ollama (local) ou qualquer API compatível com a da OpenAI.
 - **Personalização**: temas (inclusive claro, sépia e alto contraste), cores, fontes, densidade, editor, cidade, texturas desenhadas pixel a pixel, estilos CSS e **plugins** com uma API em português.

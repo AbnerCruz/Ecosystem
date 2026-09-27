@@ -1,5 +1,28 @@
 # Urbe — Changelog
 
+## v1.6.0-beta — Estúdio como ambiente único: entre direto e construa (2026-09-27)
+
+### Entrar direto no ambiente
+- **Nova página** abre **direto no estúdio**, com uma seção em layout livre (título e parágrafo) já selecionada. Não há mais a escolha de modelo antes.
+- **Nome no topo renomeia o arquivo**: uma página "Nova página" passa a se chamar como o título que você der (sem sobrescrever outra).
+- A tela **Páginas** mostra só as suas páginas; modelos, blocos e composições ficam dentro do editor.
+
+### Uma biblioteca só (＋ → Inserir)
+- Abas **Blocos**, **Composições**, **Meus blocos** e **Modelos**, com busca, e a última aba usada fica lembrada.
+- **Composições** entram no layout livre selecionado (na peça atual) ou numa seção nova.
+- **Modelos dentro do editor**:
+  - **Substituir a página**, **Adicionar as seções ao fim** ou **Só o visual** (tema e formato);
+  - variante **Completo**, **Simplificado** ou **Só a estrutura**;
+  - **Desfazer** logo após carregar.
+
+### Mais ferramentas
+- Peças novas: **Tabela**, **Código** (com botão de copiar), **Fórmula** (LaTeX), **Selo** e **Incorporar** (só `https://`, em moldura isolada). São 19 peças ao todo.
+- 17 composições novas, 24 ao todo:
+  - cabeçalho, rodapé, capa com imagem, capa dividida, números, depoimentos;
+  - planos e preços, perguntas, equipe, chamada, galeria, linha do tempo;
+  - citação grande, barra lateral, contato, abertura de capítulo, página em duas colunas.
+- Tamanhos aceitam `clamp()`, `min()`, `max()` e `calc()` (para textos que crescem com a tela). Continuam bloqueando qualquer tentativa de injeção.
+
 ## v1.5.0-beta — Layout livre: páginas e livros montados peça por peça (2026-09-27)
 
 ### Layout livre (bloco novo, no topo da lista do ＋)
