@@ -132,7 +132,7 @@
   function cleanName(s){return String(s||'').trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/^\.+|\.+$/g,'').slice(0,90)}
   function where(folder){return folder?'Em “'+folder+'”.':'Na raiz das notas.'}
   function newMenu(){
-    D.menu('Criar',[{icon:'file',label:'Nova nota',detail:where(currentFolder()),run:createNote},{icon:'page',label:'Nova página',detail:'Site ou página HTML com modelos prontos.',run:function(){close();core.commands.execute('pages.new')}},{icon:'folder',label:'Nova pasta',detail:'Vira uma região na cidade.',run:createFolder}]);
+    D.menu('Criar',[{icon:'file',label:'Nova nota',detail:where(currentFolder()),run:createNote},{icon:'math',label:'Nova nota matemática',detail:'Com fórmulas LaTeX e símbolos.',run:function(){close();core.commands.execute('math.new',{folder:currentFolder()})}},{icon:'page',label:'Nova página',detail:'Site ou página HTML com modelos prontos.',run:function(){close();core.commands.execute('pages.new')}},{icon:'folder',label:'Nova pasta',detail:'Vira uma região na cidade.',run:createFolder}]);
   }
   function moreMenu(){
     var storage=core.service('workspace.storage');
