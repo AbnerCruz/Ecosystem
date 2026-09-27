@@ -4070,13 +4070,14 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.47.0';
+V21_VERSION='0.48.0';
 document.title='Urbe v'+V21_VERSION;
 
-var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
-var V25_VEL=2.6;             /* tiles por segundo */
-var V25_FPS=80;              /* intervalo do quadro, em ms */
+var V25_MAX=22;              /* andarilhos vivos ao mesmo tempo */
+var V25_VEL=1.35;            /* tiles por segundo (média; cada um tem o seu passo) */
+var V25_FPS=50;              /* intervalo do quadro, em ms */
 var V25_CACHE_MAX=180;
+var V25_OCIOSOS=8;           /* moradores à toa na frente de casa */
 
 var v25Povo=[],v25Rotas=new Map(),v25Ligado=true,v25UltimoElenco=0,v25Relogio=null;
 
@@ -4173,19 +4174,126 @@ function v25Elenco(){
   candidatos.sort(function(x,y){return y.peso-x.peso});
   return candidatos.slice(0,teto);
 }
+/* v0.48: cada morador tem aparência própria (pele, cabelo, chapéu, roupa
+   do ofício, o que carrega), anda no seu ritmo, para na porta antes de
+   voltar, conversa quando cruza com alguém e há quem fique à toa em frente
+   de casa. O desenho é pixel-art do mesmo atlas do mundo. */
+var V25_OFICIO={Lavradores:{shirt:['#c9a24a','#b58b3c'],style:'straw',acc:'basket'},Lenhadores:{shirt:['#5f8a3e','#4e7a44'],style:'cap',cap:'#6d8a3a',acc:'sack'},
+  Pedreiros:{shirt:['#8e8f8a','#7b7466'],style:'bald',acc:'bucket'},Ferreiros:{shirt:['#8a4a33','#6a3a2c'],style:'short',acc:'bucket'},
+  Escribas:{shirt:['#3f6fa0','#35557f'],style:'hood',hood:'#2f4f78'},Mercadores:{shirt:['#8a4f9a','#a3584f'],style:'cap',cap:'#7a3f8a',acc:'sack'},
+  Curandeiros:{shirt:['#e6e2d3','#5a8f6a'],style:'hood',hood:'#4f7f5f',acc:'staff'},Guardas:{shirt:['#9a3a32','#7a2f2a'],style:'cap',cap:'#9a3a32',acc:'staff'}};
+var V25_CAMISAS=['#b84a3a','#3d6fb0','#5f8f4a','#c9a24a','#7a5b8a','#c7703c','#4a8a8a','#e0ddd0','#9a4f6a'],V25_ESTILOS=['short','short','long','straw','bald','cap','hood'];
+function v25Hash(t){var h=2166136261;t=String(t);for(var i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}
+function v25Visual(b,sal){
+  var h=v25Hash((b&&b.id||'')+'#'+sal),g=null;
+  if(typeof sim!=='undefined'&&sim&&sim.moradores){var m=sim.moradores[b.id];if(m&&m.guilda)g=V25_OFICIO[m.guilda]}
+  var r=function(n){var v=h%n;h=Math.floor(h/n)^(h>>>7);return v},dress=r(3)===0;
+  var look={skin:r(5),hair:r(6),pants:r(5),style:V25_ESTILOS[r(V25_ESTILOS.length)],shirt:V25_CAMISAS[r(V25_CAMISAS.length)],dress:dress?1:0};
+  if(look.style==='long'&&!dress&&r(2))look.dress=1;
+  if(look.style==='hood')look.hood=['#5b4a6a','#6a5a3a','#3f5a6a','#7a3f3a'][r(4)];
+  if(look.style==='cap')look.cap=['#a33c32','#3f5f8a','#5a7a3a','#8a6a3a'][r(4)];
+  var sorte=r(10);look.acc=sorte<2?'basket':sorte<4?'sack':sorte<5?'bucket':null;
+  if(g&&r(4)){look.shirt=g.shirt[r(g.shirt.length)];if(r(3))look.style=g.style;if(g.cap)look.cap=g.cap;if(g.hood)look.hood=g.hood;if(g.acc&&r(2))look.acc=g.acc}
+  if(look.style==='hood'&&look.acc==='sack')look.acc=null;
+  return look;
+}
+function v25Porta(b){return {x:Math.round(b.x+(b.w-1)/2),y:b.y+b.h}}
 function v25Nascer(c){
   var alvoId=c.viz[Math.floor(Math.random()*c.viz.length)],alvo=v25Predio(alvoId);
   if(!alvo)return null;
   var rota=v25Rota(c.b,alvo);
   if(!rota)return null;
-  return {de:c.b,para:alvo,rota:rota,i:0,f:Math.random(),volta:false,cor:v25CorDaGuilda(c.b)};
+  /* sai pela porta de casa e entra pela porta do vizinho */
+  var r=[v25Porta(c.b)].concat(rota,[v25Porta(alvo)]),sal=Math.floor(Math.random()*3);
+  return {tipo:'andarilho',de:c.b,para:alvo,rota:r,s:Math.random()*Math.max(1,r.length-2)+.5,sentido:1,i:0,f:0,volta:false,
+    vel:V25_VEL*(.8+Math.random()*.45),pausa:0,passo:Math.random()*4,faixa:Math.random()<.5?-1:1,
+    look:v25Visual(c.b,sal),cor:v25CorDaGuilda(c.b),x:0,y:0,dx:0,dy:1,conversa:0};
 }
+/* À toa em frente de casa: dá uns passos, para, olha em volta. */
+function v25Ociosos(vivos){
+  var f=faixaVisivel(),ja={},n=0;
+  for(var i=0;i<v25Povo.length;i++){var a=v25Povo[i];if(a.tipo==='ocioso'&&a.casa.x+a.casa.w>=f.x0&&a.casa.x<=f.x1&&a.casa.y+a.casa.h>=f.y0&&a.casa.y<=f.y1&&world.buildings.indexOf(a.casa)>=0&&n<V25_OCIOSOS){vivos.push(a);ja[a.casa.id]=true;n++}}
+  for(var j=0;j<world.buildings.length&&n<V25_OCIOSOS;j++){
+    var b=world.buildings[j];if(b.tipo!=='nota'||ja[b.id])continue;
+    if(b.x+b.w<f.x0||b.x>f.x1||b.y+b.h<f.y0||b.y>f.y1)continue;
+    if(v25Hash(b.id+'ocioso')%3)continue;             /* nem toda casa tem alguém na porta */
+    var p=v25Porta(b),lado=(v25Hash(b.id)&1)?1:-1,x=p.x+.5+lado*Math.max(1.3,b.w/2-.2),y=p.y+.55;   /* ao lado da porta, fora do letreiro */
+    vivos.push({tipo:'ocioso',casa:b,de:b,x:x,y:y,ox:x,oy:y,alvo:null,vel:.55+Math.random()*.3,pausa:1+Math.random()*3,passo:0,
+      look:v25Visual(b,'porta'),dx:0,dy:1,conversa:0});
+    ja[b.id]=true;n++;
+  }
+}
+function v25Livre(x,y){var t={x:Math.floor(x),y:Math.floor(y)};if(bAt(t))return false;if(MUNDO&&MUNDO.isWater&&MUNDO.isWater(t.x,t.y))return false;return true}
+function v25Posicionar(a){
+  var r=a.rota,n=r.length-1,s=Math.max(0,Math.min(n,a.s)),i=Math.min(n-1,Math.floor(s)),f=s-i,p0=r[i],p1=r[i+1];
+  var dx=p1.x-p0.x,dy=p1.y-p0.y;if(a.sentido<0){dx=-dx;dy=-dy}
+  if(a.pausa<=0&&(dx||dy)){a.dx=dx;a.dy=dy}
+  /* mão dupla: cada um anda do seu lado da rua, menos na porta */
+  var lado=(i===0||i===n-1)?0:.2*a.faixa*(a.sentido),ox=-dy*lado,oy=dx*lado;
+  a.x=p0.x+(p1.x-p0.x)*f+.5+ox;a.y=p0.y+(p1.y-p0.y)*f+.62+oy;
+  a.i=i;a.f=f;a.volta=a.sentido<0;
+}
+function v25Passo(dt){
+  for(var i=0;i<v25Povo.length;i++){
+    var a=v25Povo[i];
+    if(a.conversa>0)a.conversa-=dt;
+    if(a.pausa>0){a.pausa-=dt;if(a.tipo==='andarilho')v25Posicionar(a);continue}
+    if(a.tipo==='ocioso'){
+      if(!a.alvo){var tx=a.ox+(Math.random()*1.6-.8),ty=a.oy+(Math.random()*.6-.1);if(v25Livre(tx,ty))a.alvo={x:tx,y:ty};else{a.pausa=1;continue}}
+      var ddx=a.alvo.x-a.x,ddy=a.alvo.y-a.y,d=Math.hypot(ddx,ddy),st=a.vel*dt;
+      if(d<=st){a.x=a.alvo.x;a.y=a.alvo.y;a.alvo=null;a.pausa=1.5+Math.random()*4;a.dx=0;a.dy=Math.random()<.6?1:0;if(!a.dy)a.dx=Math.random()<.5?-1:1}
+      else{a.x+=ddx/d*st;a.y+=ddy/d*st;a.passo+=st*4;if(Math.abs(ddx)>Math.abs(ddy)){a.dx=ddx>0?1:-1;a.dy=0}else{a.dx=0;a.dy=ddy>0?1:-1}}
+      continue;
+    }
+    var n=a.rota.length-1,av=a.vel*dt;
+    a.s+=av*a.sentido;a.passo+=av*4;
+    if(a.s>=n){a.s=n;a.sentido=-1;a.pausa=2+Math.random()*4;a.dx=0;a.dy=1}      /* chegou: entra, visita e sai de novo */
+    else if(a.s<=0){a.s=0;a.sentido=1;a.pausa=2+Math.random()*4;a.dx=0;a.dy=1}
+    v25Posicionar(a);
+  }
+  /* cruzou com alguém na rua? às vezes param para um dedo de prosa */
+  for(var p=0;p<v25Povo.length;p++){var A=v25Povo[p];if(A.tipo!=='andarilho'||A.pausa>0||A.conversa>-4)continue;
+    for(var q=p+1;q<v25Povo.length;q++){var B=v25Povo[q];if(B.pausa>0||B.conversa>-4)continue;
+      if(Math.abs(A.x-B.x)+Math.abs(A.y-B.y)<.75&&(A.dx*B.dx+A.dy*B.dy)<0){
+        if(Math.random()<.45){var t=2.5+Math.random()*2.5;A.pausa=B.pausa=t;A.conversa=B.conversa=t;
+          var ddx2=B.x-A.x,ddy2=B.y-A.y;if(Math.abs(ddx2)>=Math.abs(ddy2)){A.dx=ddx2>=0?1:-1;A.dy=0}else{A.dx=0;A.dy=ddy2>=0?1:-1}B.dx=-A.dx;B.dy=-A.dy}
+        else{A.conversa=B.conversa=-.001}
+        break}}}
+  for(var k=0;k<v25Povo.length;k++)if(v25Povo[k].conversa<=0&&v25Povo[k].conversa>-10)v25Povo[k].conversa-=dt;
+}
+function v25Desenhar(){
+  if(!v25Povo.length||!window.UrbeArt||!UrbeArt.villager)return;
+  var z=camera.z;
+  if(z<.38)return;                    /* de longe viram ruído; não desenha */
+  var sp=TILE*z/20,f=faixaVisivel(),ord=v25Povo.slice().sort(function(a,b){return a.y-b.y}),agora=Date.now();
+  ctx.save();ctx.imageSmoothingEnabled=false;
+  for(var i=0;i<ord.length;i++){
+    var a=ord[i];if(!a.x&&!a.y)continue;
+    if(a.tipo==='andarilho'&&a.pausa>0&&(a.s<=0||a.s>=a.rota.length-1))continue;   /* entrou em casa: está de visita */
+    if(a.x<f.x0-2||a.x>f.x1+2||a.y<f.y0-2||a.y>f.y1+3)continue;
+    var parado=a.pausa>0,fr=parado?0:(Math.floor(a.passo)&3),dir=a.dx?'side':a.dy<0?'up':'down';
+    var im=dir==='side'&&a.dx<0?UrbeArt.villagerFlip(a.look,fr):UrbeArt.villager(a.look,dir,fr);
+    var q=w2s(a.x*TILE,a.y*TILE),w=im.width*sp,h=im.height*sp,bob=(!parado&&(fr&1))?sp:0;
+    ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(q.x,q.y,w*.34,sp*1.6,0,0,7);ctx.fill();
+    ctx.drawImage(im,Math.round(q.x-w/2),Math.round(q.y-h+sp*1.2-bob),Math.ceil(w),Math.ceil(h));
+    if(a.conversa>0&&z>=.55){ /* balão com reticências, piscando */
+      var bx=q.x+w*.25,by=q.y-h-sp*2,bw=sp*9,bh=sp*6;
+      ctx.fillStyle='rgba(255,252,240,.95)';ctx.strokeStyle='rgba(40,30,25,.8)';ctx.lineWidth=Math.max(1,sp*.6);
+      ctx.beginPath();if(ctx.roundRect)ctx.roundRect(bx,by-bh,bw,bh,sp*2);else ctx.rect(bx,by-bh,bw,bh);ctx.fill();ctx.stroke();
+      ctx.beginPath();ctx.moveTo(bx+sp*1.5,by);ctx.lineTo(bx,by+sp*2);ctx.lineTo(bx+sp*3.5,by);ctx.fill();
+      var on=Math.floor(agora/350+(a.x*7|0))%4;ctx.fillStyle='#3a2e28';
+      for(var d=0;d<3;d++)if(d<on||on===0)ctx.fillRect(Math.round(bx+sp*(1.8+d*2.2)),Math.round(by-bh/2-sp*.6),Math.ceil(sp*1.2),Math.ceil(sp*1.2));
+    }
+  }
+  ctx.restore();
+}
+
 function v25Repovoar(){
   var elenco=v25Elenco(),vivos=[],usados={},novasRotas=0;
   /* mantém quem já está a caminho e ainda pertence ao elenco */
   for(var i=0;i<v25Povo.length;i++){
     var a=v25Povo[i];
-    if(elenco.some(function(c){return c.b===a.de})){vivos.push(a);usados[a.de.id]=true}
+    if(a.tipo!=='ocioso'&&elenco.some(function(c){return c.b===a.de})){vivos.push(a);usados[a.de.id]=true}
   }
   for(var j=0;j<elenco.length&&vivos.length<elenco.length;j++){
     var c=elenco[j];
@@ -4195,41 +4303,9 @@ function v25Repovoar(){
     novasRotas++;
     if(novo){vivos.push(novo);usados[c.b.id]=true}
   }
+  v25Ociosos(vivos);
   v25Povo=vivos;
 }
-function v25Passo(dt){
-  var avanco=V25_VEL*dt;
-  for(var i=0;i<v25Povo.length;i++){
-    var a=v25Povo[i];
-    a.f+=avanco;
-    while(a.f>=1){
-      a.f-=1;
-      a.i+=a.volta?-1:1;
-      if(a.i>=a.rota.length-1){a.i=a.rota.length-1;a.volta=true}
-      else if(a.i<=0){a.i=0;a.volta=false}
-    }
-  }
-}
-function v25Desenhar(){
-  if(!v25Povo.length)return;
-  var z=camera.z;
-  if(z<.5)return;                     /* de longe viram ruído; não desenha */
-  var larg=Math.max(3,Math.round(5*z)),alt=Math.max(6,Math.round(9*z));
-  for(var i=0;i<v25Povo.length;i++){
-    var a=v25Povo[i],r=a.rota;
-    var p0=r[a.i],p1=r[Math.min(r.length-1,Math.max(0,a.i+(a.volta?-1:1)))];
-    if(!p0||!p1)continue;
-    var wx=(p0.x+(p1.x-p0.x)*a.f+.5)*TILE,wy=(p0.y+(p1.y-p0.y)*a.f+.5)*TILE;
-    var p=w2s(wx,wy);
-    ctx.fillStyle='#00000055';
-    ctx.fillRect(p.x-larg/2,p.y+alt*.35,larg,Math.max(1,Math.round(z)));
-    ctx.fillStyle=a.cor;
-    ctx.fillRect(p.x-larg/2,p.y-alt/2,larg,alt);
-    ctx.fillStyle='#f2e9d8';
-    ctx.fillRect(p.x-larg/2,p.y-alt/2-Math.max(2,Math.round(3*z)),larg,Math.max(2,Math.round(3*z)));
-  }
-}
-
 /* Entra no pipeline entre as árvores e os prédios, para que as casas
    ocultem quem passa atrás delas. */
 var v25BaseDrawTrees=drawTrees;
