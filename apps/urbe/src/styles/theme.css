@@ -462,3 +462,17 @@ html body .uqo-input:focus,.ume-search input:focus{outline:none;box-shadow:none}
 #urbeBiome{font:500 13px/1 var(--ui-font);color:var(--ui-text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
 #urbeBiome::before{content:'·';margin:0 7px 0 1px;color:var(--ui-text-3)}
 #urbeBiome.bloqueado{color:var(--ui-warn)}
+.ume-row{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* uma barra de abas só: a legada (v21) ficava escondida atrás da nova e criava uma faixa vazia */
+html body #v21EditorTabs{display:none!important}
+html body .uec-tab{padding-right:2px}
+html body .uec-x{width:32px;height:32px;flex:none;display:grid;place-items:center;border-radius:8px;font:400 18px/1 var(--ui-font);color:var(--ui-text-3)}
+html body .uec-x:hover,html body .uec-x:active{background:rgba(255,255,255,.08);color:var(--ui-text)}
+/* barra da seleção: tudo cabe na largura do celular */
+html body .ume-actions{gap:2px;padding:6px;overflow:visible}
+html body .ume-actions .ume-sp{flex:1}
+html body .ume-actions span[data-count]{padding:0 6px;white-space:nowrap}
+html body .ume-actions button{width:38px;min-height:44px;padding:0;display:grid;place-items:center;background:transparent;color:var(--ui-text-2)}
+html body .ume-actions button:active,html body .ume-actions button:hover{background:rgba(255,255,255,.08);color:var(--ui-text)}
+html body .ume-actions button .ui-icon{width:20px;height:20px}
+html body .ume-actions button[data-delete]{color:var(--ui-danger)}

@@ -20,7 +20,9 @@
       '<div class="ume-search"><label>'+ic('search')+'<input type="search" placeholder="Buscar notas" aria-label="Buscar notas" autocomplete="off" spellcheck="false"></label></div>'+
       '<div class="ume-crumb" hidden></div>'+
       '<div class="ume-list" role="tree"></div>'+
-      '<nav class="ume-actions" hidden><span data-count></span><button data-open>Abrir</button><button data-favorite>Favoritar</button><button data-compose>Compor</button><button data-duplicate>Duplicar</button><button data-delete>Excluir</button><button data-clear aria-label="Limpar seleção">'+ic('close')+'</button></nav>';
+      '<nav class="ume-actions" hidden aria-label="Ações da seleção"><button data-clear aria-label="Limpar seleção" title="Limpar seleção">'+ic('close')+'</button><span data-count></span><span class="ume-sp"></span>'+
+      '<button data-open aria-label="Abrir" title="Abrir">'+ic('open')+'</button><button data-favorite aria-label="Favoritar" title="Favoritar">'+ic('star')+'</button><button data-move aria-label="Mover para pasta" title="Mover para pasta">'+ic('move')+'</button>'+
+      '<button data-compose aria-label="Compor documento" title="Compor documento">'+ic('layers')+'</button><button data-duplicate aria-label="Duplicar" title="Duplicar">'+ic('copy')+'</button><button data-delete aria-label="Mover para a lixeira" title="Mover para a lixeira">'+ic('trash')+'</button></nav>';
     document.body.appendChild(root);
     list=root.querySelector('.ume-list');bar=root.querySelector('.ume-actions');search=root.querySelector('.ume-search input');crumb=root.querySelector('.ume-crumb');
     root.querySelector('[data-close]').onclick=close;
@@ -28,7 +30,7 @@
     root.querySelector('[data-new]').onclick=newMenu;
     root.querySelector('[data-more]').onclick=moreMenu;
     root.querySelector('[data-clear]').onclick=function(){model.clear()};
-    root.querySelector('[data-open]').onclick=openSelected;root.querySelector('[data-compose]').onclick=composeSelected;root.querySelector('[data-favorite]').onclick=favoriteSelected;root.querySelector('[data-duplicate]').onclick=duplicateSelected;root.querySelector('[data-delete]').onclick=deleteSelected;
+    root.querySelector('[data-open]').onclick=openSelected;root.querySelector('[data-compose]').onclick=composeSelected;root.querySelector('[data-favorite]').onclick=favoriteSelected;root.querySelector('[data-duplicate]').onclick=duplicateSelected;root.querySelector('[data-move]').onclick=moveSelected;root.querySelector('[data-delete]').onclick=deleteSelected;
     search.addEventListener('input',function(){query=search.value.trim();show(query?'search':'tree')});
     root.addEventListener('keydown',function(e){if(e.key==='Escape'&&!document.querySelector('.udlg')){if(query){search.value='';query='';show('tree')}else close()}});
   }
@@ -75,20 +77,38 @@
     list.querySelectorAll('[data-composition]').forEach(function(el){el.onclick=function(){var id=el.dataset.composition;close();core.commands.execute('ui.composition.open',{id:id})}});bar.hidden=true;
   }
   function bindEmpty(){var b=list.querySelector('[data-empty-action]');if(b)b.onclick=createNote}
+  /* Toque: a ação acontece só no click (que o navegador não dispara quando o dedo
+     rola a lista). Antes a ação rodava no pointerup, a lista era redesenhada e o
+     click seguinte caía na linha nova e desfazia a ação (pasta abria e fechava).
+     O toque longo seleciona e silencia o click que vem logo depois. */
   function bindRows(){Array.prototype.forEach.call(list.querySelectorAll('.ume-row'),function(el){
-    var id=el.getAttribute('data-id'),kind=el.getAttribute('data-kind'),moved=false;
-    var origin=null,longPressed=false,lastPointer=0;
-    el.addEventListener('pointerdown',function(e){origin={x:e.clientX,y:e.clientY,id:e.pointerId};moved=false;longPressed=false;hold=setTimeout(function(){hold=null;longPressed=true;model.select(id,'toggle');navigator.vibrate&&navigator.vibrate(18)},HOLD)});
-    el.addEventListener('pointermove',function(e){if(!origin||e.pointerId!==origin.id)return;if(Math.hypot(e.clientX-origin.x,e.clientY-origin.y)>12){moved=true;if(hold){clearTimeout(hold);hold=null}}});
-    el.addEventListener('pointerup',function(e){lastPointer=Date.now();if(e.pointerType==='mouse'&&e.button!==0)return;if(hold){clearTimeout(hold);hold=null;if(moved)return;if(model.selection.size){model.select(id,'toggle');return}if(kind==='folder'){var n=model.node(id);model.expand(n.path,!model.isExpanded(n.path));return}openId(id)}origin=null});
-    el.addEventListener('pointercancel',function(){if(hold)clearTimeout(hold);hold=null});
-    el.addEventListener('click',function(){if(Date.now()-lastPointer<600||longPressed)return;if(kind==='folder'){var n=model.node(id);model.expand(n.path,!model.isExpanded(n.path))}else openId(id)});
+    var id=el.getAttribute('data-id'),kind=el.getAttribute('data-kind'),origin=null;
+    if(!id)return;
+    el.addEventListener('pointerdown',function(e){if(e.pointerType==='mouse'&&e.button!==0)return;origin={x:e.clientX,y:e.clientY,id:e.pointerId};quietNext=false;clearTimeout(hold);
+      hold=setTimeout(function(){hold=null;quietNext=true;model.select(id,'toggle');navigator.vibrate&&navigator.vibrate(18)},HOLD)});
+    el.addEventListener('pointermove',function(e){if(!origin||e.pointerId!==origin.id)return;if(Math.hypot(e.clientX-origin.x,e.clientY-origin.y)>12){clearTimeout(hold);hold=null}});
+    el.addEventListener('pointerup',function(){clearTimeout(hold);hold=null;origin=null});
+    el.addEventListener('pointercancel',function(){clearTimeout(hold);hold=null;origin=null});
+    el.addEventListener('contextmenu',function(e){e.preventDefault()});
+    el.addEventListener('click',function(e){if(quietNext){quietNext=false;e.preventDefault();return}activate(id,kind)});
   })}
-  function renderBar(){var n=model.selection.size;bar.hidden=!n;bar.querySelector('[data-count]').textContent=n+' selecionada'+(n===1?'':'s')}
+  var quietNext=false; /* o click que fecha o gesto de toque longo não abre nada */
+  function activate(id,kind){
+    if(model.selection.size){model.select(id,'toggle');return}
+    if(kind==='folder'){var n=model.node(id);if(n)model.expand(n.path,!model.isExpanded(n.path));return}
+    openId(id);
+  }
+  function renderBar(){var n=model.selection.size;bar.hidden=!n;bar.querySelector('[data-count]').textContent=n+(n===1?' nota':' notas')}
   function openId(id){var n=model.node(id);if(!n||n.kind!=='document')return;model.touchRecent(id);core.commands.execute('document.open',{id:id,source:'mobile-explorer'});close()}
   function openSelected(){var n=model.selected().find(x=>x.kind==='document');if(n)openId(n.id)}
   function favoriteSelected(){model.selected().forEach(n=>model.favorite(n.id,true));model.clear()}
   function composeSelected(){var ids=model.selected().filter(n=>n.kind==='document').map(n=>n.id);if(ids.length)core.commands.execute('ui.composition.create',{ids:ids,type:'document'});model.clear();close()}
+  function folders(){var out=[];(function walk(n){(n.children||[]).forEach(function(c){if(c.kind==='folder'){out.push(c.path);walk(c)}})})(model.tree());return out}
+  async function moveSelected(){
+    var ids=model.selected().filter(n=>n.kind==='document').map(n=>n.id);if(!ids.length)return;
+    var dest=await D.choose({title:'Mover para',options:[{value:'',label:'Raiz',icon:'notes',detail:'Fora de qualquer pasta'}].concat(folders().map(function(f){return{value:f,label:f.split('/').pop(),icon:'folder',detail:f}}))});
+    if(dest===undefined)return;ids.forEach(function(id){core.commands.execute('explorer.move',{id:id,folder:dest})});model.clear();
+  }
   function duplicateSelected(){model.selected().filter(n=>n.kind==='document').forEach(n=>core.commands.execute('explorer.duplicate',{id:n.id}));model.clear()}
   function deleteSelected(){var ids=model.selected().filter(n=>n.kind==='document').map(n=>n.id);if(!ids.length)return;
     confirmAction({title:'Mover para a lixeira?',message:ids.length===1?'A nota poderá ser restaurada pela Lixeira.':ids.length+' notas poderão ser restauradas pela Lixeira.',confirm:'Mover para a lixeira',danger:true}).then(function(ok){if(ok)core.commands.execute('explorer.delete',{ids:ids})})}

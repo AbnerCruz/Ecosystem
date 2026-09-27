@@ -28,3 +28,10 @@ test('diálogos: API assíncrona completa',()=>{
   for(const k of ['prompt:prompt','confirm:confirm','alert:alert','choose:choose','menu:menu'])if(!d.includes(k))throw new Error('UrbeDialogs sem '+k);
   if(!d.includes("aria-modal=\"true\""))throw new Error('diálogo sem aria-modal');
 });
+
+test('celular: uma só barra de abas, × com área de toque, barra de seleção sem rolagem',()=>{
+  if(!/#v21EditorTabs\{display:none!important\}/.test(theme))throw new Error('barra de abas legada visível');
+  const chrome=read('src/editor/chrome.js');if(!chrome.includes('class="uec-x"')||!chrome.includes("e.target.closest('[data-x]')"))throw new Error('fechar aba sem alvo de toque');
+  const ex=read('src/explorer/mobile-ui.js');if(!ex.includes('data-move')||/ume-actions[^\n]*>Abrir</.test(ex))throw new Error('barra de seleção antiga');
+  if(/addEventListener\('pointerup',function\(e\)\{[^}]*openId/.test(ex))throw new Error('ação no pointerup volta a disparar duas vezes');
+});
