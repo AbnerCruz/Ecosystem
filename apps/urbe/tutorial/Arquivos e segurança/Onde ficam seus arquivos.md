@@ -19,6 +19,15 @@ Em navegadores de computador que permitem (como **Chrome** e **Edge**), você po
 - Escolha a pasta e permita o acesso. O Urbe copia as notas para lá.
 - Se o navegador não permitir, aparece o aviso "Este navegador usa o armazenamento do aplicativo".
 
+### Quando a pasta some ou pede permissão de novo
+
+Ao abrir, o Urbe confere a pasta. Se algo mudou, ele **pergunta** o que fazer, em vez de seguir sozinho:
+
+- **O aparelho pediu permissão de novo** (comum no Android depois de reiniciar): toque em **Permitir acesso à pasta**. Suas notas continuam lá.
+- **A pasta foi apagada, movida ou renomeada**: escolha **outra pasta** ou passe a usar o **armazenamento do aplicativo**.
+
+Uma pasta **nova e vazia** começa do zero, com a pasta **Tutorial** criada nela, mesmo que você já tenha usado o Urbe antes neste aparelho.
+
 ## O que tem na pasta
 
 ```

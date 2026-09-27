@@ -3919,7 +3919,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='1.3.2-beta';
+V21_VERSION='1.3.3-beta';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=22;              /* andarilhos vivos ao mesmo tempo */
@@ -5358,23 +5358,56 @@ function urbeLayoutNomesBairros(){
 }
 function urbeDesenharNomesBairros(boxes){boxes.forEach(function(b){urbePilulaBairro(ctx,b)})}
 
-/* ---------- boot ---------- */
-(async()=>{
-  try{
-    Disco.modo="interno";
-    if(TEM_FSA){
-      const h=await DBK.get("pastaRaiz");
-      if(h&&h.queryPermission){
-        const st=await h.queryPermission({mode:"readwrite"});
-        if(st==="granted"){Disco.raiz=h;Disco.modo="pasta"}
-      }
+/* ---------- boot ----------
+   Com uma pasta do aparelho escolhida, três casos pedem a pessoa em vez de seguir calado:
+   a permissão expirou (comum no Android), a pasta foi apagada/movida, ou abrir falhou.
+   Antes, o primeiro caia sem aviso no armazenamento interno (parecia que as notas
+   tinham sumido) e os outros num menu sem explicação. */
+async function urbePastaExiste(h){try{for await(const _ of h.values())break;return true}catch(e){return !(e&&(e.name==='NotFoundError'||e.name==='NotAllowedError'))}}
+async function urbeUsarInterno(esquecer){Disco.raiz=null;Disco.modo='interno';if(esquecer){try{await DBK.del?DBK.del('pastaRaiz'):DBK.set('pastaRaiz',null)}catch(_){}}}
+async function urbeResolverPasta(h,motivo){
+  var nome=h&&h.name?'“'+h.name+'”':'escolhida';
+  var msg=motivo==='permissao'?'O aparelho pediu de novo a permissão para o Urbe usar a pasta '+nome+'. Suas notas continuam lá.'
+    :'A pasta '+nome+' não foi encontrada. Ela pode ter sido apagada, movida ou renomeada.';
+  var ops=(motivo==='permissao'?[{value:'permitir',icon:'check',label:'Permitir acesso à pasta '+nome,detail:'Continua de onde parou'}]:[])
+    .concat([{value:'outra',icon:'folder',label:'Escolher outra pasta',detail:motivo==='permissao'?'Outra pasta do aparelho':'Pode ser uma pasta nova e vazia: o Urbe começa do zero nela'},
+      {value:'interno',icon:'storage',label:'Usar o armazenamento do aplicativo',detail:'Guarda as notas dentro do navegador, sem pasta'}]);
+  var r=await UD.choose({title:motivo==='permissao'?'Acesso à pasta do Urbe':'Pasta do Urbe não encontrada',message:msg,options:ops});
+  if(r==='permitir'){try{if(await h.requestPermission({mode:'readwrite'})==='granted'&&await urbePastaExiste(h)){Disco.raiz=h;Disco.modo='pasta';return true}}catch(e){console.warn('permissão',e)}
+    toast('O acesso não foi liberado.');return urbeResolverPasta(h,motivo)}
+  if(r==='outra'){try{var nh=await window.showDirectoryPicker({mode:'readwrite',id:'urbe-vaults',startIn:'documents'});if(nh.requestPermission&&await nh.requestPermission({mode:'readwrite'})!=='granted')return urbeResolverPasta(h,motivo);
+      Disco.raiz=nh;Disco.modo='pasta';await DBK.set('pastaRaiz',nh);return true}catch(e){if(e&&e.name!=='AbortError')toast('Não consegui abrir a pasta: '+e.message);return urbeResolverPasta(h,motivo)}}
+  /* armazenamento do aplicativo: se a pasta sumiu, esquece; se só faltou permissão, pergunta de novo na próxima vez */
+  await urbeUsarInterno(motivo!=='permissao');return true;
+}
+async function urbeIniciar(){
+  Disco.modo="interno";Disco.raiz=null;
+  if(TEM_FSA){
+    const h=await DBK.get("pastaRaiz");
+    if(h&&h.queryPermission){
+      const st=await h.queryPermission({mode:"readwrite"});
+      if(st==="granted"&&await urbePastaExiste(h)){Disco.raiz=h;Disco.modo="pasta"}
+      else await urbeResolverPasta(h,st==="granted"?'sumiu':'permissao');
     }
-    let migrada=null;
-    try{migrada=await migrarAntiga()}catch(e){console.warn("migracao",e)}
-    const alvo=await urbeEnsureSingleVault();
-    await abrirCidade(alvo);
-    if(migrada)toast('Arquivos anteriores reunidos em Cidades.');
-  }catch(e){console.warn("boot",e);abrirMenu()}
+  }
+  let migrada=null;
+  try{migrada=await migrarAntiga()}catch(e){console.warn("migracao",e)}
+  const alvo=await urbeEnsureSingleVault();
+  await abrirCidade(alvo);
+  if(migrada)toast('Arquivos anteriores reunidos em Cidades.');
+}
+(async()=>{
+  for(let tentativa=0;;tentativa++){
+    try{await urbeIniciar();return}
+    catch(e){console.warn("boot",e);try{v21SetLoading(false)}catch(_){}
+      const pasta=Disco.modo==='pasta';
+      const r=await UD.choose({title:'Não consegui abrir o Urbe',message:'Erro: '+((e&&e.message)||e)+(pasta?'\n\nA pasta do Urbe pode estar indisponível.':''),
+        options:[{value:'de-novo',icon:'restore',label:'Tentar de novo'}].concat(TEM_FSA?[{value:'outra',icon:'folder',label:'Escolher outra pasta'}]:[],pasta?[{value:'interno',icon:'storage',label:'Usar o armazenamento do aplicativo'}]:[])});
+      if(r==='outra'){await v21PickRoot();return}
+      if(r==='interno')await urbeUsarInterno(true);
+      if(!r&&tentativa>2){abrirMenu();return}
+    }
+  }
 })();
 
 

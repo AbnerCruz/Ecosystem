@@ -1,7 +1,9 @@
 (function(global){
   'use strict';
-  /* Pasta "Tutorial": criada sozinha na primeira vez que uma cidade abre neste aparelho
-     (e só uma vez: se a pessoa apagar, não volta). "Restaurar o Tutorial" recria o que
+  /* Pasta "Tutorial": criada sozinha na primeira vez que uma cidade (a pasta de verdade)
+     abre, e só uma vez: se a pessoa apagar, não volta. A marca que vale é a que fica
+     DENTRO da cidade (.urbe/tutorial.json). A do aparelho só é usada quando não dá para
+     gravar na cidade: senão uma pasta nova, com o mesmo nome "Urbe", ficava sem Tutorial. "Restaurar o Tutorial" recria o que
      falta e pergunta antes de substituir notas que a pessoa mudou.
      O conteúdo vem de src/tutorial/content.js, gerado a partir de tutorial/*.md. */
   var core=global.UrbeCore,C=global.UrbeTutorialContent;if(!core||!C)return;
@@ -20,6 +22,7 @@
     Object.keys(qtd).forEach(function(k){var filhos=Object.keys(qtd).filter(function(x){return x.indexOf(k+'/')===0&&x.split('/').length===k.split('/').length+1}).length;qtd[k]+=filhos*3});
     try{rt.ensureFolders(qtd)}catch(e){console.warn('tutorial: bairros',e)}
   }
+  function temVault(){var p=persist();return !!(p&&p.adapter&&p.vault)}
   async function marcaNoVault(){var p=persist();try{if(p&&p.adapter&&p.vault)return !!(await p.adapter.read(p.vault,MARCA))}catch(_){}return false}
   async function marcar(){var s=store();try{s&&s.setItem(chave(),C.version)}catch(_){}
     var p=persist();try{if(p&&p.adapter&&p.vault)await p.adapter.write(p.vault,MARCA,JSON.stringify({versao:C.version,em:new Date().toISOString()}))}catch(_){}}
@@ -51,9 +54,9 @@
 
   /* primeira vez nesta cidade: cria a pasta e, se a cidade estava vazia, abre o começo */
   async function semear(){
-    var s=store(),ja=false;try{ja=!!(s&&s.getItem(chave()))}catch(_){}
-    if(ja||tem())return false;
-    if(await marcaNoVault())return false;
+    if(tem())return false;
+    if(temVault()){if(await marcaNoVault())return false}
+    else{var s=store(),ja=false;try{ja=!!(s&&s.getItem(chave()))}catch(_){}if(ja)return false}
     var vazia=!docs.list().some(function(d){return d.path.indexOf('Personalização/')!==0});
     prepararBairros(Object.keys(C.files));
     Object.keys(C.files).forEach(function(p){criar(p,C.files[p])});
