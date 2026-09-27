@@ -61,6 +61,25 @@ await test('modelos embutidos: todos válidos e renderizáveis',()=>{
   for(const t of TPL.list()){const spec=TPL.build(t.id,{title:'X',folder:'Guia',note:{title:'Uso',path:'Guia/Uso.md'}}),n=P.normalize(spec);eq(n.errors,[],t.id);ok(n.spec.sections.length>0,t.id);ok(P.render(spec,{documents:docs}).length>3000,t.id)}
 });
 
+await test('livro: capítulos numerados (inclusive de uma pasta), sumário com links, páginas de impressão e injeção barrada',()=>{
+  const sp=TPL.build('book',{title:'A Cidade'});eq(sp.layout.format,'book');
+  sp.sections.push({type:'chapters',props:{folder:'Guia',sort:'path'}});
+  const h=P.render(sp,{documents:docs});
+  ok(/<html[^>]*class="[^"]*book/.test(h),'html.book');ok(!/class="nav/.test(h)&&!/class="foot/.test(h)&&/fab-print/.test(h),'sem barra e rodapé; com botão de imprimir');
+  ok(/@page\{size:148mm 210mm/.test(h)&&/@page :left/.test(h)&&/@page :right/.test(h),'A5 com margens espelhadas');
+  ok(/@bottom-center\{content:counter\(page\)/.test(h)&&/@top-center\{content:"A Cidade"/.test(h),'número de página e cabeçalho');
+  ok(/@page cover\{margin:0/.test(h)&&/\.bk-front\{page:front\}/.test(h)&&/@page chapter:first/.test(h),'capa sangrada, páginas iniciais sem número, abertura de capítulo sem cabeçalho');
+  ['Capítulo 1','Capítulo 2','Capítulo 3','Capítulo 4','Capítulo 5','Parte I','Parte II'].forEach(t=>ok(h.includes(t),'falta '+t));
+  ok(/bk-toc"[\s\S]*href="#nota-instalacao"[\s\S]*href="#nota-uso"/.test(h),'sumário lista os capítulos da pasta com links');
+  ok(/<article class="sheet bk-chap dropcap" id="nota-instalacao"/.test(h),'capítulo da pasta com âncora e capitular');
+  ok(/<a class="wikilink" href="#nota-uso">/.test(h),'[[Uso]] vira link para o capítulo');
+  const sheets=(h.match(/class="sheet /g)||[]).length;ok(sheets>=13,'folhas: '+sheets);
+  const evil=P.render({layout:{format:'book',runningHead:'x"}body{display:none}'},sections:[{type:'chapter',props:{title:'<img src=x onerror=alert(1)>',markdown:'<script>alert(1)</script>'}}]});
+  ok(!/<img src=x/.test(evil)&&!/<script>alert/.test(evil),'sem HTML injetado');ok(evil.includes('content:"x\\"}body{display:none}"'),'cabeçalho escapado no CSS');
+  for(const size of ['a5','6x9','pocket','a4','letter'])for(const m of ['narrow','normal','wide'])ok(/@page\{size:[\d.]+mm [\d.]+mm;margin:[\d.]+mm/.test(P.render({layout:{format:'book',pageSize:size,margins:m},sections:[]})),size+'/'+m);
+  const web=P.render({sections:[{type:'chapter',props:{title:'Só'}}]});ok(!/@page\{size/.test(web)&&/class="bk-wrap"/.test(web),'no formato Site, o bloco aparece sem regras de impressão');
+});
+
 await test('Assistente: page_schema descreve todos os blocos; write_page valida, cria, edita e desfaz',async()=>{
   const sc=(await T.get('page_schema').run({},{core})).content;for(const k of Object.keys(P.BLOCKS))ok(sc.includes('\n'+k+' — '),'schema sem '+k);
   const w=T.get('write_page');

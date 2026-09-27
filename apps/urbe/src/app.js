@@ -1625,6 +1625,7 @@ function posicaoAdjacenteArquivo(dono,r,sem){
 function distribuirNotas(r,arquivos,mapa){
   for(let i=0;i<arquivos.length;i++){const arq=arquivos[i],pos=r?vagaNaRegiao(r,semente(arq.rel+":"+i),new Set()):vagaAleatoria(semente(arq.rel+":"+i));if(!pos){toast("Sem lote para "+arq.nome+" em "+(r?r.name:"raiz")+".");continue}const b=criarCasa(arq,pos.x,pos.y,r?r.id:null);mapa.set(baseNome(arq.rel),b);mapa.set(baseNome(arq.rel).replace(/\.md$/i,""),b)}
 }
+function contarPastasNo(no){let n=0;for(const f of no.filhas.values())n+=1+contarPastasNo(f);return n}
 function contarItensNo(no){let n=no.arquivos.length;for(const f of no.filhas.values())n+=contarItensNo(f);return n}
 function importarItens(itens,opcoes={}){
   const mapa=new Map(),arvore=montarArvore(itens),itemRegion=new Map();
@@ -1637,13 +1638,14 @@ function importarItens(itens,opcoes={}){
   const importarNo=(no,parent,isRoot=false)=>{
     let r=parent;
     if(!isRoot){
-      const qtd=Math.max(1,contarItensNo(no));
+      const qtd=Math.max(1,contarItensNo(no)+contarPastasNo(no)*2);
       r=criarRegiaoOrganica(no.nome,qtd,semente(no.nome+qtd+":"+(parent?.id||"root")),parent?.id||null,null,"Pasta importada do Vault.");
       if(!r){toast("Não coube criar a sub-região "+no.nome+".");return}
     }
     for(const it of no.arquivos)itemRegion.set(it,r||null);
-    distribuirNotas(r,no.arquivos.filter(i=>EXT_MD.test(i.rel)),mapa);
+    /* subpastas primeiro: reservam o espaço delas; as casas desta pasta ocupam o resto */
     for(const filha of no.filhas.values())importarNo(filha,r,false);
+    distribuirNotas(r,no.arquivos.filter(i=>EXT_MD.test(i.rel)),mapa);
   };
   importarNo(arvore,destino,true);
 
@@ -3093,7 +3095,7 @@ pintarMapa=function(c,L,W2,H2,detalhe){var esc=Math.min(W2/(L.x1-L.x0),H2/(L.y1-
 estadoDesejado=function(){var cam=caminhosRegioes(),arquivos=new Map(),pastas=new Set(),usados=new Set(),usadosBin=new Set(),notas={},binarios=new Map();world.regions.forEach(function(r){pastas.add(cam.get(r.id))});world.buildings.forEach(function(b){if(b.tipo!=='nota')return;var dir=b.regionId?(cam.get(b.regionId)||''):'',base=nomeSeguro(b.name),ext=extNota(b),rel=(dir?dir+'/':'')+base+ext,n=2;while(usados.has(rel.toLowerCase()))rel=(dir?dir+'/':'')+base+' ('+(n++)+')'+ext;usados.add(rel.toLowerCase());arquivos.set(rel,b.content||'');notas[rel]={x:b.x,y:b.y,sprite:b.sprite,tags:b.tags||[],anexos:(b.anexos||[]).map(metaAnexoNota),criado:b.created||nowDate(),modificado:b.modified||nowDate(),aiLocal:b.aiLocal||null}});var construcoes=[];world.buildings.forEach(function(b){if(b.tipo==='nota')return;var fallbackDir=b.regionId?(cam.get(b.regionId)||''):'',src=b.files||b.anexos||[],filesOut=[];src.forEach(function(a){var dir=typeof a.folderPath==='string'?a.folderPath:fallbackDir,rel=relBinUnico(dir,a.nome||b.fileName||b.name,usadosBin);filesOut.push(metaAssetLimpa(a,rel));binarios.set(rel,{asset:a,sourceRel:a.relPath||null})});construcoes.push({tipo:b.tipo,fileClass:b.fileClass||'other',name:b.name,fileName:b.fileName||null,caminho:fallbackDir,x:b.x,y:b.y,w:b.w||3,h:b.h||3,description:b.description||'',sprite:b.sprite||('file-'+(b.fileClass||'other')),parentNoteName:b.parentNoteId?(world.buildings.find(function(n){return n.id===b.parentNoteId})||{}).name||null:null,files:filesOut,anexos:filesOut,created:b.created||nowDate(),modified:b.modified||nowDate()})});var mapa={v:4,app:APP_NOME,version:V21_VERSION,salvo:new Date().toISOString(),camera:{x:camera.x,y:camera.y,z:camera.z},regioes:world.regions.map(function(r){return{caminho:cam.get(r.id),nome:r.name,cor:r.color,x:r.x,y:r.y,w:r.w,h:r.h,cells:r.cells||null,descricao:r.description||''}}),notas:notas,construcoes:construcoes};arquivos.set('.urbe/mapa.json',JSON.stringify(mapa,null,1));return{arquivos:arquivos,pastas:pastas,binarios:binarios}};
 
 async function v21OpenCity(nome){sincSuspenso=true;v21SetLoading(true,7,'Lendo vault');try{var rels=await FS.listar(nome),texts=rels.filter(function(r){return v21IsEditablePath(r)&&!r.startsWith('.urbe/')&&!r.split('/').some(function(p){return p.startsWith('.')})});v21SetLoading(true,23,'Indexando arquivos');var mapa=null;try{mapa=JSON.parse(await FS.ler(nome,'.urbe/mapa.json')||'null')}catch(_){ }var geoReg=new Map(),geoNota=new Map();if(mapa){(mapa.regioes||[]).forEach(function(r){geoReg.set(r.caminho,r)});Object.keys(mapa.notas||{}).forEach(function(k){geoNota.set(k,mapa.notas[k])})}var conteudos=new Map();for(var i=0;i<texts.length;i++){conteudos.set(texts[i],(await FS.ler(nome,texts[i]))||'');if(i%8===0)v21SetLoading(true,23+Math.round(27*(i/Math.max(1,texts.length))),'Lendo '+(i+1)+' / '+texts.length)}
-    world.regions.length=0;world.buildings.length=0;world.roads.clear();world.links.length=0;selected=null;currentFile=null;idxB=new Map();idxR=new Map();var caminhos=new Set();(mapa&&mapa.regioes||[]).forEach(function(r){if(r.caminho)caminhos.add(r.caminho)});texts.forEach(function(rel){var d=dirDe(rel);while(d){caminhos.add(d);d=dirDe(d)}});var ordenados=[...caminhos].sort(function(a,b){return a.split('/').length-b.split('/').length||a.localeCompare(b)}),regPorCaminho=new Map();ordenados.forEach(function(cam){var paiCam=dirDe(cam),pai=paiCam?regPorCaminho.get(paiCam):null,g=geoReg.get(cam),nomeR=g&&g.nome||cam.split('/').pop(),quantos=texts.filter(function(r){return dirDe(r)===cam}).length||1,r;if(g&&typeof g.x==='number'&&g.w>0){r={id:id('r'),kind:'region',x:g.x,y:g.y,w:g.w,h:g.h,cells:g.cells||null,name:nomeR,description:g.descricao||'',parentId:pai?pai.id:null,color:g.cor||colors[world.regions.length%colors.length]};if(r.cells)r._cellSet=new Set(r.cells);world.regions.push(r);indexarUm(idxR,r)}else r=criarRegiaoOrganica(nomeR,quantos,semente(cam+quantos),pai?pai.id:null,null,'');regPorCaminho.set(cam,r)});v21SetLoading(true,58,'Construindo cidade');var semLugar=[];texts.forEach(function(rel){var cam=dirDe(rel),r=cam?regPorCaminho.get(cam):null,g=geoNota.get(rel),ext=(rel.match(V21_EXT_RE)||['.md'])[0].toLowerCase(),b={id:id('b'),kind:'building',regionId:r?r.id:null,x:0,y:0,w:3,h:3,name:v21Stem(rel.split('/').pop()),ext:ext,description:'',content:conteudos.get(rel)||'',sprite:g&&g.sprite||['house1','house2','house3'][semente(rel)%3],tipo:'nota',tags:g&&g.tags||[],anexos:g&&g.anexos||[],created:g&&g.criado||nowDate(),modified:g&&g.modificado||nowDate(),aiLocal:g&&g.aiLocal||{instructions:'',memory:'',artifacts:[]}};if(g&&typeof g.x==='number'){b.x=g.x;b.y=g.y;world.buildings.push(b);indexarUm(idxB,b)}else semLugar.push({b:b,r:r,rel:rel})});semLugar.forEach(function(o){var pos=o.r?posicaoAleatoriaNaRegiao(o.r,semente(o.rel)):vagaAleatoria(semente(o.rel),3,3);o.b.x=pos?pos.x:0;o.b.y=pos?pos.y:0;world.buildings.push(o.b);indexarUm(idxB,o.b)});(mapa&&mapa.construcoes||[]).forEach(function(g){var r=g.caminho?regPorCaminho.get(g.caminho)||null:null,paiNota=g.parentNoteName?world.buildings.find(function(n){return n.tipo==='nota'&&n.name===g.parentNoteName}):null,b={id:id('b'),kind:'building',regionId:r?r.id:null,x:g.x||0,y:g.y||0,w:g.w||3,h:g.h||3,name:g.name||g.fileName||'Arquivo',fileName:g.fileName||null,description:g.description||'',content:'',sprite:g.sprite||('file-'+(g.fileClass||'other')),tipo:g.tipo||'arquivo',fileClass:g.fileClass||'other',parentNoteId:paiNota&&paiNota.id||null,files:g.files||g.anexos||[],anexos:g.anexos||g.files||[],tags:[],created:g.created||nowDate(),modified:g.modified||nowDate()};world.buildings.push(b);indexarUm(idxB,b)});if(mapa&&mapa.camera)camera={...camera,...mapa.camera};camera.z=clamp(camera.z,.22,2.8);Disco.cidade=nome;Disco.hCidade=Disco.modo==='pasta'?await handleCidade(nome):null;snapArq=new Map();snapPastas=new Set(caminhos);texts.forEach(function(rel){snapArq.set(rel,conteudos.get(rel)||'')});var mj=await FS.ler(nome,'.urbe/mapa.json');if(mj!=null)snapArq.set('.urbe/mapa.json',mj);v21SetLoading(true,82,'Sincronizando mundo');await v21IndexBinary(nome,rels,regPorCaminho,mapa);marcarIndice();indexar();rebuildRoadNetwork();counts();v21BuildTree();pedirDesenho();await DBK.set('ultimaCidade',nome);fecharMenu();sincSuspenso=false;statusSinc('ok');marcarSinc();v21SetLoading(true,100,'Pronto');setTimeout(function(){v21SetLoading(false)},130)
+    world.regions.length=0;world.buildings.length=0;world.roads.clear();world.links.length=0;selected=null;currentFile=null;idxB=new Map();idxR=new Map();var caminhos=new Set();(mapa&&mapa.regioes||[]).forEach(function(r){if(r.caminho)caminhos.add(r.caminho)});texts.forEach(function(rel){var d=dirDe(rel);while(d){caminhos.add(d);d=dirDe(d)}});var ordenados=[...caminhos].sort(function(a,b){return a.split('/').length-b.split('/').length||a.localeCompare(b)}),regPorCaminho=new Map();ordenados.forEach(function(cam){var paiCam=dirDe(cam),pai=paiCam?regPorCaminho.get(paiCam):null,g=geoReg.get(cam),nomeR=g&&g.nome||cam.split('/').pop(),quantos=(texts.filter(function(r){return r.indexOf(cam+'/')===0}).length+ordenados.filter(function(c){return c.indexOf(cam+'/')===0}).length*2)||1,r;if(g&&typeof g.x==='number'&&g.w>0){r={id:id('r'),kind:'region',x:g.x,y:g.y,w:g.w,h:g.h,cells:g.cells||null,name:nomeR,description:g.descricao||'',parentId:pai?pai.id:null,color:g.cor||colors[world.regions.length%colors.length]};if(r.cells)r._cellSet=new Set(r.cells);world.regions.push(r);indexarUm(idxR,r)}else r=criarRegiaoOrganica(nomeR,quantos,semente(cam+quantos),pai?pai.id:null,null,'');regPorCaminho.set(cam,r)});v21SetLoading(true,58,'Construindo cidade');var semLugar=[];texts.forEach(function(rel){var cam=dirDe(rel),r=cam?regPorCaminho.get(cam):null,g=geoNota.get(rel),ext=(rel.match(V21_EXT_RE)||['.md'])[0].toLowerCase(),b={id:id('b'),kind:'building',regionId:r?r.id:null,x:0,y:0,w:3,h:3,name:v21Stem(rel.split('/').pop()),ext:ext,description:'',content:conteudos.get(rel)||'',sprite:g&&g.sprite||['house1','house2','house3'][semente(rel)%3],tipo:'nota',tags:g&&g.tags||[],anexos:g&&g.anexos||[],created:g&&g.criado||nowDate(),modified:g&&g.modificado||nowDate(),aiLocal:g&&g.aiLocal||{instructions:'',memory:'',artifacts:[]}};if(g&&typeof g.x==='number'){b.x=g.x;b.y=g.y;world.buildings.push(b);indexarUm(idxB,b)}else semLugar.push({b:b,r:r,rel:rel})});semLugar.forEach(function(o){var pos=o.r?posicaoAleatoriaNaRegiao(o.r,semente(o.rel)):vagaAleatoria(semente(o.rel),3,3);o.b.x=pos?pos.x:0;o.b.y=pos?pos.y:0;world.buildings.push(o.b);indexarUm(idxB,o.b)});(mapa&&mapa.construcoes||[]).forEach(function(g){var r=g.caminho?regPorCaminho.get(g.caminho)||null:null,paiNota=g.parentNoteName?world.buildings.find(function(n){return n.tipo==='nota'&&n.name===g.parentNoteName}):null,b={id:id('b'),kind:'building',regionId:r?r.id:null,x:g.x||0,y:g.y||0,w:g.w||3,h:g.h||3,name:g.name||g.fileName||'Arquivo',fileName:g.fileName||null,description:g.description||'',content:'',sprite:g.sprite||('file-'+(g.fileClass||'other')),tipo:g.tipo||'arquivo',fileClass:g.fileClass||'other',parentNoteId:paiNota&&paiNota.id||null,files:g.files||g.anexos||[],anexos:g.anexos||g.files||[],tags:[],created:g.created||nowDate(),modified:g.modified||nowDate()};world.buildings.push(b);indexarUm(idxB,b)});if(mapa&&mapa.camera)camera={...camera,...mapa.camera};camera.z=clamp(camera.z,.22,2.8);Disco.cidade=nome;Disco.hCidade=Disco.modo==='pasta'?await handleCidade(nome):null;snapArq=new Map();snapPastas=new Set(caminhos);texts.forEach(function(rel){snapArq.set(rel,conteudos.get(rel)||'')});var mj=await FS.ler(nome,'.urbe/mapa.json');if(mj!=null)snapArq.set('.urbe/mapa.json',mj);v21SetLoading(true,82,'Sincronizando mundo');await v21IndexBinary(nome,rels,regPorCaminho,mapa);marcarIndice();indexar();rebuildRoadNetwork();counts();v21BuildTree();pedirDesenho();await DBK.set('ultimaCidade',nome);fecharMenu();sincSuspenso=false;statusSinc('ok');marcarSinc();v21SetLoading(true,100,'Pronto');setTimeout(function(){v21SetLoading(false)},130)
   }catch(e){console.warn(e);sincSuspenso=true;v21SetLoading(false);toast('Não consegui abrir: '+(e&&e.message||e))}}
 async function v21IndexBinary(nome,rels,regPorCaminho,mapa){snapBin=new Map();var existingByRel=new Set();world.buildings.filter(function(b){return b.tipo!=='nota'}).forEach(function(b){(b.files||b.anexos||[]).forEach(function(a){if(a.relPath)existingByRel.add(a.relPath.toLowerCase())})});var assets=rels.filter(function(r){return !v21IsEditablePath(r)&&!r.startsWith('.urbe/')&&!r.split('/').some(function(p){return p.startsWith('.')})&&!/\/\.pasta$|^\.pasta$/.test(r)});for(var i=0;i<assets.length;i++){var rel=assets[i];if(existingByRel.has(rel.toLowerCase()))continue;var dir=dirDe(rel),r=dir?regPorCaminho.get(dir)||null:null,pos=r?vagaNaRegiao(r,semente(rel),new Set()):vagaAleatoria(semente(rel),3,3);if(!pos)continue;var nomeA=rel.split('/').pop(),meta={nome:nomeA,tipo:(nomeA.split('.').pop()||'').toLowerCase(),mime:mimePorNome(nomeA),relPath:rel,folderPath:dir};try{var blob=await FS.lerBlob(nome,rel);if(blob){meta.tamanho=blob.size;meta.mime=blob.type||meta.mime;meta.cacheId=cacheAssetKey();try{await DBK.bSet(meta.cacheId,blob)}catch(_){delete meta.cacheId}}}catch(_){ }criarPredioArquivo({rel:rel,nome:v21Stem(nomeA),anexo:meta},pos.x,pos.y,r?r.id:null,{files:[meta],fileClass:classificarArquivo(nomeA),name:nomeA})}}
 abrirCidade=v21OpenCity;
@@ -3899,7 +3901,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='1.0.0-beta';
+V21_VERSION='1.3.0-beta';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=22;              /* andarilhos vivos ao mesmo tempo */
@@ -4521,6 +4523,7 @@ function urbeRotulo(texto,cx,topo,opts){
   ctx.save();ctx.font=(opts.peso||600)+' '+tam+'px '+URBE_FONTE;ctx.textAlign='center';ctx.textBaseline='middle';
   var larg=ctx.measureText(texto).width,padX=Math.round(tam*.65),alt=Math.round(tam*1.75),x=cx-larg/2-padX,w=larg+padX*2;
   if(opts.esquerda){x=cx;ctx.textAlign='left'}
+  if(opts.medir){ctx.restore();return{x:x,y:topo,w:w+(opts.ponto?padX*.7:0),h:alt}}
   urbeRetanguloArredondado(ctx,x,topo,w,alt,alt/2);ctx.fillStyle=opts.fundo||'rgba(14,15,17,.82)';ctx.fill();
   if(opts.borda){ctx.strokeStyle=opts.borda;ctx.lineWidth=1.5;ctx.stroke()}
   if(opts.ponto){ctx.fillStyle=opts.ponto;ctx.beginPath();ctx.arc(x+padX*.9,topo+alt/2,tam*.28,0,Math.PI*2);ctx.fill();ctx.fillStyle=opts.cor||'#ececf0';ctx.fillText(texto,opts.esquerda?x+padX*1.6:cx+padX*.35,topo+alt/2+.5)}
@@ -4541,9 +4544,16 @@ drawBuildings=function(){
     if((camera.z>=.42&&urbeOpcoes.nomes)||selected===b)rotulos.push(b);
   }
   if(typeof urbeAntesDosRotulos==='function')urbeAntesDosRotulos();
-  /* rótulos por último, para nunca ficarem sob outra casa */
-  for(var j=0;j<rotulos.length;j++){var r=rotulos[j],q=w2s((r.x+r.w/2)*TILE,(r.y+r.h)*TILE);
-    urbeRotulo(urbeNomeCasa(r),q.x,q.y+4*camera.z,selected===r?{fundo:'#8fb3ff',cor:'#0b1325'}:null)}
+  /* rótulos por último, para nunca ficarem sob outra casa. Os nomes dos bairros
+     têm a vez; nome de casa que encostaria em outro nome fica escondido
+     (a casa selecionada sempre mostra o dela) */
+  var usados=typeof urbeLayoutNomesBairros==='function'?urbeLayoutNomesBairros():[],bairros=usados.slice();
+  rotulos.sort(function(a,b){return(selected===b)-(selected===a)});
+  for(var j=0;j<rotulos.length;j++){var r=rotulos[j],q=w2s((r.x+r.w/2)*TILE,(r.y+r.h)*TILE),op=selected===r?{fundo:'#8fb3ff',cor:'#0b1325'}:{},nome=urbeNomeCasa(r);
+    var cx=urbeRotulo(nome,q.x,q.y+4*camera.z,Object.assign({medir:true},op));
+    if(selected!==r&&usados.some(function(u){return cx.x<u.x+u.w+3&&cx.x+cx.w+3>u.x&&cx.y<u.y+u.h+2&&cx.y+cx.h+2>u.y}))continue;
+    usados.push(cx);urbeRotulo(nome,q.x,q.y+4*camera.z,op)}
+  if(typeof urbeDesenharNomesBairros==='function')urbeDesenharNomesBairros(bairros);
 };
 
 drawRegions=function(){
@@ -4829,11 +4839,12 @@ if(MUNDO&&ARTE)pintarMapa=function(c,L,W2,H2,detalhe){
     c.fillStyle=cores[MUNDO.biome(x,y)];c.fillRect(px(x),py(y),sz,sz);
     if(sh){c.fillStyle=sh>0?'rgba(255,255,255,'+sh+')':'rgba(0,0,0,'+(-sh)+')';c.fillRect(px(x),py(y),sz,sz)}
   }
-  for(var ri=0;ri<world.regions.length;ri++){var r=world.regions[ri];c.globalAlpha=.9;c.strokeStyle=r.color;c.lineWidth=1.5;c.strokeRect(px(r.x),py(r.y),r.w*esc,r.h*esc);
-    if(detalhe&&r.w*esc>45&&!r.parentId){c.fillStyle='#fff';c.font='600 10px '+URBE_FONTE;c.fillText(r.name,px(r.x)+3,py(r.y)+11)}}
+  var visM=world.regions.filter(function(r){return r.w});
+  if(visM.length){c.save();c.translate(-L.x0*esc,-L.y0*esc);c.scale(esc,esc);urbeDesenharBairros(c,esc,visM);c.restore()}
   c.globalAlpha=1;c.fillStyle='#e8d7b0';for(var road of world.roads){var q=road.split(',');c.fillRect(px(+q[0]),py(+q[1]),Math.max(1,esc),Math.max(1,esc))}
   for(var bi=0;bi<world.buildings.length;bi++){var b=world.buildings[bi],z=Math.max(3,Math.min(6,3*esc));c.fillStyle='#fff';c.fillRect(px(b.x)-1,py(b.y)-1,z+2,z+2);c.fillStyle=b.tipo==='nota'?'#c9553d':'#8a6440';c.fillRect(px(b.x),py(b.y),z,z)}
   var a0=s2w(0,0),a1=s2w(cv.w,cv.h);c.strokeStyle='#fff';c.lineWidth=2;c.strokeRect(px(a0.x/TILE),py(a0.y/TILE),(a1.x-a0.x)/TILE*esc,(a1.y-a0.y)/TILE*esc);
+  if(detalhe&&visM.length)urbeNomesBairros(c,visM,function(x,y){return{x:px(x),y:py(y)}},esc);
   return{esc:esc,px:px,py:py};
 };
 
@@ -4874,15 +4885,16 @@ if(MUNDO&&ARTE)pintarMapa=function(c,L,W2,H2,detalhe){
     if(st.base){var v=st.base.view,sc=v.tpp/st.tpp,ox=(v.cx-st.cx)/st.tpp+st.w/2-st.w/2*sc,oy=(v.cy-st.cy)/st.tpp+st.h/2-st.h/2*sc;
       g.imageSmoothingEnabled=v.tpp*v.step>1.2;g.drawImage(st.base.cv,ox,oy,st.base.cv.width*v.step*sc,st.base.cv.height*v.step*sc)}
     var px=1/st.tpp;
-    /* pastas */
-    for(var ri=0;ri<world.regions.length;ri++){var r=world.regions[ri],a=toScreen(r.x,r.y);if(a.x>st.w||a.y>st.h||a.x+r.w*px<0||a.y+r.h*px<0)continue;
-      g.strokeStyle=r.color;g.lineWidth=1.5;g.globalAlpha=.95;g.strokeRect(a.x,a.y,r.w*px,r.h*px);g.globalAlpha=.14;g.fillStyle=r.color;g.fillRect(a.x,a.y,r.w*px,r.h*px);g.globalAlpha=1;
-      if(!r.parentId&&r.w*px>50){g.font='600 12px '+URBE_FONTE;g.lineWidth=3;g.strokeStyle='rgba(0,0,0,.55)';g.strokeText(r.name,a.x+4,a.y+14);g.fillStyle='#fff';g.fillText(r.name,a.x+4,a.y+14)}}
+    /* pastas: a forma real de cada bairro, com a hierarquia do contorno */
+    var visR=world.regions.filter(function(r){if(!r.w)return false;var a=toScreen(r.x,r.y);return !(a.x>st.w||a.y>st.h||a.x+r.w*px<0||a.y+r.h*px<0)});
+    if(visR.length){g.save();g.translate(st.w/2-st.cx*px,st.h/2-st.cy*px);g.scale(px,px);urbeDesenharBairros(g,px,visR);g.restore()}
     /* ruas */
     g.fillStyle='#e8d7b0';var rs=Math.max(1,px);for(var road of world.roads){var q=road.split(','),rp=toScreen(+q[0],+q[1]);if(rp.x<-2||rp.y<-2||rp.x>st.w||rp.y>st.h)continue;g.fillRect(rp.x,rp.y,rs,rs)}
     /* casas */
     var z=Math.max(4,Math.min(10,3*px));for(var bi=0;bi<world.buildings.length;bi++){var b=world.buildings[bi],bp=toScreen(b.x+b.w/2,b.y+b.h/2);if(bp.x<-z||bp.y<-z||bp.x>st.w+z||bp.y>st.h+z)continue;
       g.fillStyle='#fff';g.fillRect(bp.x-z/2-1,bp.y-z/2-1,z+2,z+2);g.fillStyle=b.tipo==='nota'?'#c9553d':'#8a6440';g.fillRect(bp.x-z/2,bp.y-z/2,z,z)}
+    /* nomes dos bairros por cima das casas */
+    if(visR.length)urbeNomesBairros(g,visR,toScreen,px);
     /* onde estou */
     var a0=s2w(0,0),a1=s2w(cv.w,cv.h),s0=toScreen(a0.x/TILE,a0.y/TILE),s1=toScreen(a1.x/TILE,a1.y/TILE);
     g.strokeStyle='#fff';g.lineWidth=2;g.strokeRect(s0.x,s0.y,Math.max(6,s1.x-s0.x),Math.max(6,s1.y-s0.y));
@@ -5025,6 +5037,299 @@ function urbeAntesDosRotulos(){
     buildingKinds:function(){return['house','hall','workshop','dyer','tower','market','store']}
   });
 })();
+
+/* ============================================================
+   v1.2 — bairros organizados
+   Cada pasta é um bairro compacto e arredondado. Subpastas ficam DENTRO do
+   bairro pai, com 1 tile de margem até a borda dele; bairros irmãos ficam a
+   1 tile um do outro e os bairros da raiz a 2 tiles. Assim nenhum contorno
+   encosta em outro. As casas se agrupam perto do centro do bairro, num
+   arranjo orgânico (sem grade), em vez de cair espalhadas.
+   ============================================================ */
+var URBE_CORES_BAIRRO=['#5bc2ff','#e38eff','#7ee3a0','#ffd567','#ff9a88','#8fa8ff','#5fd4c4','#f7a95c','#c9a0ff','#b5d96a'];
+function urbeAreaBairro(q){return Math.round(26+Math.max(1,q)*36)}
+function urbeRaizDe(r){var n=0;while(r&&r.parentId&&n++<64){var p=regPai(r);if(!p)break;r=p}return r}
+function urbeNivel(r){return caminhoRegiao(r).length-1}
+function urbeCelulas(r){if(!r.cells){r.cells=[];for(var y=r.y;y<r.y+r.h;y++)for(var x=r.x;x<r.x+r.w;x++)r.cells.push(K(x,y))}if(!r._cellSet||r._cellSet.size!==r.cells.length)r._cellSet=new Set(r.cells);return r.cells}
+function urbeCentroide(r){var cs=urbeCelulas(r),sx=0,sy=0;if(!cs.length)return{x:r.x+r.w/2,y:r.y+r.h/2};for(var i=0;i<cs.length;i++){var j=cs[i].indexOf(',');sx+=+cs[i].slice(0,j);sy+=+cs[i].slice(j+1)}return{x:sx/cs.length+.5,y:sy/cs.length+.5}}
+function urbeLimites(r){var cs=urbeCelulas(r);if(!cs.length){r.w=0;r.h=0;return}var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(var i=0;i<cs.length;i++){var j=cs[i].indexOf(','),x=+cs[i].slice(0,j),y=+cs[i].slice(j+1);if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}r.x=x0;r.y=y0;r.w=x1-x0+1;r.h=y1-y0+1}
+
+/* grade local de bloqueio (1 = não pode virar parte do bairro) */
+function urbeGradeBairro(parent,self,x0,y0,x1,y1){
+  var W=x1-x0+1,H=y1-y0+1,bl=new Uint8Array(W*H),x,y,i;
+  var g={x0:x0,y0:y0,W:W,H:H,bl:bl};
+  function marca(cx,cy,raio){for(var yy=Math.max(y0,cy-raio);yy<=Math.min(y1,cy+raio);yy++)for(var xx=Math.max(x0,cx-raio);xx<=Math.min(x1,cx+raio);xx++)bl[(yy-y0)*W+(xx-x0)]=1}
+  for(y=y0;y<=y1;y++)for(x=x0;x<=x1;x++)if(ehAgua(x,y))bl[(y-y0)*W+(x-x0)]=1;
+  if(parent){var ps=(urbeCelulas(parent),parent._cellSet);
+    for(y=y0;y<=y1;y++)for(x=x0;x<=x1;x++){i=(y-y0)*W+(x-x0);if(bl[i])continue;
+      /* margem de 1 tile por dentro da borda do pai */
+      for(var dy=-1;dy<=1&&!bl[i];dy++)for(var dx=-1;dx<=1;dx++)if(!ps.has(K(x+dx,y+dy))){bl[i]=1;break}}}
+  var pid=parent?parent.id:null,raio=parent?1:2;
+  world.regions.forEach(function(o){
+    if(o===self||o===parent||(o.parentId||null)!==pid)return;
+    if(o.x>x1+raio||o.y>y1+raio||o.x+o.w<x0-raio||o.y+o.h<y0-raio)return;
+    urbeCelulas(o).forEach(function(c){var j=c.indexOf(',');marca(+c.slice(0,j),+c.slice(j+1),raio)});
+  });
+  /* casas do próprio pai são obstáculo para as subpastas (as da raiz podem ser incorporadas) */
+  if(parent)world.buildings.forEach(function(b){if(b.regionId!==parent.id)return;for(var yy=b.y-1;yy<b.y+b.h+1;yy++)for(var xx=b.x-1;xx<b.x+b.w+1;xx++)if(xx>=x0&&yy>=y0&&xx<=x1&&yy<=y1)bl[(yy-y0)*W+(xx-x0)]=1});
+  return g;
+}
+/* distância até o obstáculo mais próximo (8 vizinhos) — o "miolo" livre */
+function urbeFolga(g){
+  var W=g.W,H=g.H,d=new Int16Array(W*H).fill(32767),q=new Int32Array(W*H),h=0,t=0,i;
+  for(i=0;i<W*H;i++){var x=i%W,y=(i/W)|0;if(g.bl[i]){d[i]=0;q[t++]=i}else if(x===0||y===0||x===W-1||y===H-1){d[i]=1;q[t++]=i}}
+  while(h<t){i=q[h++];var cx=i%W,cy=(i/W)|0;for(var dy=-1;dy<=1;dy++)for(var dx=-1;dx<=1;dx++){var xx=cx+dx,yy=cy+dy;if(xx<0||yy<0||xx>=W||yy>=H)continue;var j=yy*W+xx;if(d[j]>d[i]+1){d[j]=d[i]+1;q[t++]=j}}}
+  return d;
+}
+/* ponto de partida: o lugar mais perto do centro que tenha folga suficiente */
+function urbeMelhorPonto(g,cx,cy,raio){
+  var d=urbeFolga(g),best=-1,bs=-1e18;
+  for(var i=0;i<d.length;i++){if(g.bl[i])continue;var x=g.x0+i%g.W+.5,y=g.y0+((i/g.W)|0)+.5,s=Math.min(d[i],raio)*1000-Math.hypot(x-cx,y-cy);if(s>bs){bs=s;best=i}}
+  return best<0?null:{x:g.x0+best%g.W,y:g.y0+((best/g.W)|0),folga:d[best]};
+}
+/* crescimento por prioridade (distância ao centro com um leve ondulado): sai um
+   bairro arredondado, e não o losango da busca em largura */
+function urbeCrescer(g,cx,cy,alvo,sem,ja){
+  var W=g.W,H=g.H,N=W*H,rand=rng(sem),a1=rand()*6.3,a2=rand()*6.3,a3=rand()*6.3;
+  var dentro=new Uint8Array(N),visto=new Uint8Array(N),hk=[],hv=[],total=0,novos=0;
+  function custo(i){var x=g.x0+i%W+.5-cx,y=g.y0+((i/W)|0)+.5-cy,t=Math.atan2(y,x);return Math.hypot(x,y)*(1+.14*Math.sin(2*t+a1)+.09*Math.sin(3*t+a2)+.05*Math.sin(5*t+a3))}
+  function push(i){var c=custo(i),n=hk.length;hk.push(c);hv.push(i);while(n>0){var p=(n-1)>>1;if(hk[p]<=hk[n])break;var tk=hk[p];hk[p]=hk[n];hk[n]=tk;var tv=hv[p];hv[p]=hv[n];hv[n]=tv;n=p}}
+  function pop(){var v=hv[0],lk=hk.pop(),lv=hv.pop();if(hk.length){hk[0]=lk;hv[0]=lv;var n=0,L=hk.length;for(;;){var a=2*n+1,b=a+1,m=n;if(a<L&&hk[a]<hk[m])m=a;if(b<L&&hk[b]<hk[m])m=b;if(m===n)break;var tk=hk[m];hk[m]=hk[n];hk[n]=tk;var tv=hv[m];hv[m]=hv[n];hv[n]=tv;n=m}}return v}
+  function viz(i,f){var x=i%W,y=(i/W)|0;if(x>0)f(i-1);if(x<W-1)f(i+1);if(y>0)f(i-W);if(y<H-1)f(i+W)}
+  function em(x,y){return x>=g.x0&&y>=g.y0&&x<g.x0+W&&y<g.y0+H}
+  if(ja){ja.forEach(function(k){var j=k.indexOf(','),x=+k.slice(0,j),y=+k.slice(j+1);if(!em(x,y))return;var i=(y-g.y0)*W+(x-g.x0);dentro[i]=2;visto[i]=1;total++});
+    for(var i0=0;i0<N;i0++)if(dentro[i0]===2)viz(i0,function(j){if(!visto[j])push(j)});
+    total=ja.size}
+  else{var s=(cy|0)-g.y0,s2=(cx|0)-g.x0;if(s<0||s2<0||s>=H||s2>=W)return[];push(s*W+s2)}
+  while(hk.length&&total<alvo){var i=pop();if(visto[i])continue;visto[i]=1;if(g.bl[i])continue;dentro[i]=1;total++;novos++;viz(i,function(j){if(!visto[j])push(j)})}
+  /* acabamento: fecha buracos e tira pontas soltas */
+  for(var pass=0;pass<3;pass++)for(var k=0;k<N;k++){var n=0;viz(k,function(j){if(dentro[j])n++});
+    if(!dentro[k]&&!g.bl[k]&&n>=3)dentro[k]=1;else if(dentro[k]===1&&n<=1)dentro[k]=0}
+  var out=[];for(var k2=0;k2<N;k2++)if(dentro[k2]===1)out.push(K(g.x0+k2%W,g.y0+((k2/W)|0)));
+  return out;
+}
+/* centro da cidade: média ponderada dos bairros da raiz e das casas soltas */
+function urbeCentroCidade(){
+  var sx=0,sy=0,n=0;
+  world.regions.forEach(function(r){if(r.parentId||!r.w)return;var c=urbeCentroide(r),p=Math.max(1,(r.cells||[]).length);sx+=c.x*p;sy+=c.y*p;n+=p});
+  world.buildings.forEach(function(b){if(b.regionId)return;sx+=(b.x+1.5)*9;sy+=(b.y+1.5)*9;n+=9});
+  return n?{x:sx/n,y:sy/n}:{x:Math.floor(camera.x/TILE),y:Math.floor(camera.y/TILE)};
+}
+function urbeMascara(sem,alvo,origem,parent){
+  var raio=Math.max(3,Math.sqrt(alvo/Math.PI)*.8),p=null,g=null,cx,cy;
+  if(parent){urbeCelulas(parent);var c=urbeCentroide(parent);cx=c.x;cy=c.y;
+    g=urbeGradeBairro(parent,null,parent.x,parent.y,parent.x+parent.w-1,parent.y+parent.h-1);p=urbeMelhorPonto(g,cx,cy,raio)}
+  else{var c2=origem||urbeCentroCidade();cx=c2.x;cy=c2.y;
+    for(var m=Math.ceil(Math.sqrt(alvo))*2+14,t=0;t<4;t++,m*=2){
+      g=urbeGradeBairro(null,null,Math.floor(cx-m),Math.floor(cy-m),Math.ceil(cx+m),Math.ceil(cy+m));
+      p=urbeMelhorPonto(g,cx,cy,raio);if(p&&p.folga>=Math.min(raio,6))break}}
+  if(!p)return null;
+  var cells=urbeCrescer(g,p.x+.5,p.y+.5,alvo,sem,null);if(!cells.length)return null;
+  var r={cells:cells};urbeLimites(r);return{cells:cells,x:r.x,y:r.y,w:r.w,h:r.h};
+}
+construirMascaraRegiao=function(sem,quantidade,origem,parent){
+  var alvo=urbeAreaBairro(quantidade),res=null;
+  for(var t=0;t<4;t++){
+    res=urbeMascara(sem+t,alvo,t?null:origem,parent||null);
+    if(res&&res.cells.length>=alvo*.85)return res;
+    if(!parent)break;
+    /* não coube: o pai cresce e tenta de novo */
+    if(!expandirRegiao(parent,Math.round(alvo*1.3)+40)&&res)break;
+  }
+  return res&&res.cells.length>=12?res:null;
+};
+expandirRegiao=function(r,extra){
+  urbeCelulas(r);var parent=r.parentId?regPai(r):null,alvo=r.cells.length+Math.max(1,Math.round(extra)),m=Math.ceil(Math.sqrt(alvo)*.7)+6;
+  var g=urbeGradeBairro(parent,r,r.x-m,r.y-m,r.x+r.w-1+m,r.y+r.h-1+m),c=urbeCentroide(r);
+  var novos=urbeCrescer(g,c.x,c.y,alvo,semente(r.id||r.name),r._cellSet);
+  if(novos.length<extra*.5&&parent&&expandirRegiao(parent,Math.round(extra*1.4)+30)){
+    g=urbeGradeBairro(parent,r,r.x-m,r.y-m,r.x+r.w-1+m,r.y+r.h-1+m);var mais=urbeCrescer(g,c.x,c.y,alvo,semente(r.id||r.name)+1,r._cellSet);if(mais.length>novos.length)novos=mais}
+  if(!novos.length)return 0;
+  novos.forEach(function(k){r.cells.push(k);r._cellSet.add(k)});urbeLimites(r);r._lotes=null;marcarIndice();indexar();return novos.length;
+};
+/* cor: bairros da raiz com a cor menos usada pelos vizinhos; subpastas no tom do bairro de cima */
+function urbeMisturar(h,alvo,f){var a=parseInt(h.slice(1),16),b=parseInt(alvo.slice(1),16),o='#';for(var s=16;s>=0;s-=8){var c=Math.round(((a>>s)&255)*(1-f)+((b>>s)&255)*f);o+=(c<16?'0':'')+c.toString(16)}return o}
+function urbeCorFilha(r){var raiz=urbeRaizDe(r),n=urbeNivel(r),base=/^#[0-9a-f]{6}$/i.test(raiz&&raiz.color||'')?raiz.color:'#5bc2ff';return n?urbeMisturar(base,'#ffffff',Math.min(.55,.22*n)):base}
+function urbeCorRaiz(r){var c=urbeCentroide(r),uso={};URBE_CORES_BAIRRO.forEach(function(k){uso[k]=0});
+  world.regions.forEach(function(o){if(o===r||o.parentId||!o.w||!(o.color in uso))return;var d=Math.hypot(urbeCentroide(o).x-c.x,urbeCentroide(o).y-c.y);uso[o.color]+=1+200/(20+d)});
+  return URBE_CORES_BAIRRO.slice().sort(function(a,b){return uso[a]-uso[b]||URBE_CORES_BAIRRO.indexOf(a)-URBE_CORES_BAIRRO.indexOf(b)})[0]}
+function urbeCorAutomatica(c){return colors.indexOf(c)>=0||URBE_CORES_BAIRRO.indexOf(c)>=0}
+var urbeCriarRegiaoAntes=criarRegiaoOrganica;
+criarRegiaoOrganica=function(nome,quantidade,sem,parentId,origem,descricao){
+  var r=urbeCriarRegiaoAntes.apply(null,arguments);if(!r)return r;
+  r.color=r.parentId?urbeCorFilha(r):urbeCorRaiz(r);marcarIndice();indexar();return r;
+};
+
+/* ---------- casas agrupadas, sem grade ----------
+   As casas se juntam perto do centro do bairro, mas em arranjo orgânico: a ordem
+   dos lotes é a distância ao centro com um ondulado e um sorteio fixo por lote
+   (mesmo bairro, mesma ordem), sem alinhamento. O afastamento mínimo entre
+   casas continua o da regra de lote. */
+function urbeSorteioLote(x,y,s){var h=Math.imul(x^0x27d4eb2d,0x165667b1)^Math.imul(y^s,0x9e3779b1);h^=h>>>15;h=Math.imul(h,0x85ebca6b);h^=h>>>13;return(h>>>0)/4294967296}
+function urbeOrdemOrganica(cx,cy,sem){var rand=rng(sem),a1=rand()*6.3,a2=rand()*6.3;
+  return function(x,y){var dx=x-cx,dy=y-cy,t=Math.atan2(dy,dx);return Math.hypot(dx,dy)*(1+.18*Math.sin(2*t+a1)+.1*Math.sin(3*t+a2))+urbeSorteioLote(x,y,sem)*2.6}}
+function urbeLotes(r){
+  urbeCelulas(r);var key=r.cells.length+':'+r.x+':'+r.y+':'+r.w+':'+r.h;
+  if(r._lotes&&r._lotes.key===key)return r._lotes.list;
+  var c=urbeCentroide(r),ordem=urbeOrdemOrganica(c.x,c.y,semente('lotes:'+(r.id||r.name))),list=[];
+  for(var y=r.y;y<=r.y+r.h-3;y++)for(var x=r.x;x<=r.x+r.w-3;x++){
+    if(!r._cellSet.has(K(x,y))||!r._cellSet.has(K(x+2,y+2))||!r._cellSet.has(K(x+2,y))||!r._cellSet.has(K(x,y+2)))continue;
+    list.push({x:x,y:y,s:ordem(x+1.5,y+1.5)});
+  }
+  list.sort(function(a,b){return a.s-b.s});r._lotes={key:key,list:list};return list;
+}
+posicaoAleatoriaNaRegiao=function(r,sem,ignorarIds){
+  ignorarIds=ignorarIds||new Set();if(idxSujo)indexar();var L=urbeLotes(r);
+  for(var i=0;i<L.length;i++)if(casaCabeNaRegiao(r,L[i].x,L[i].y,ignorarIds))return{x:L[i].x,y:L[i].y};
+  return null;
+};
+/* notas soltas (raiz): agrupadas em volta do centro, do mesmo jeito orgânico, a 1 tile de qualquer bairro */
+var urbeVagaAntes=vagaAleatoria;
+vagaAleatoria=function(sem,w,h,area){
+  w=w||3;h=h||3;var c=area||centroBuscaRaiz(),cx=Math.round(c.x),cy=Math.round(c.y),ordem=urbeOrdemOrganica(cx,cy,semente('raiz'));if(idxSujo)indexar();
+  for(var R=12,feito=-1;R<=192;feito=R,R*=2){var cand=[];
+    for(var dy=-R;dy<=R;dy++)for(var dx=-R;dx<=R;dx++){var d=Math.hypot(dx,dy);if(d>R||d<=feito)continue;cand.push({x:cx+dx,y:cy+dy,s:ordem(cx+dx+1.5,cy+dy+1.5)})}
+    cand.sort(function(a,b){return a.s-b.s});
+    for(var j=0;j<cand.length;j++)if(loteForaDeRegioes(cand[j].x-1,cand[j].y-1,w+2,h+2)&&loteValido(cand[j].x,cand[j].y))return{x:cand[j].x,y:cand[j].y}}
+  return urbeVagaAntes(sem,w,h,area);
+};
+
+/* ---------- reorganizar uma cidade que já existe ----------
+   Refaz todos os bairros (maiores primeiro, cada subpasta dentro da sua) e
+   reagrupa as casas perto do centro de cada bairro. Notas, pastas e ligações não mudam. */
+function urbeReorganizarCidade(){
+  if(idxSujo)indexar();
+  var regs=world.regions.slice(),casas=world.buildings.slice(),itens=new Map(),filhos=new Map(),centro=urbeCentroCidade();
+  regs.forEach(function(r){itens.set(r.id,0);filhos.set(r.id,[])});
+  regs.forEach(function(r){if(r.parentId&&filhos.has(r.parentId))filhos.get(r.parentId).push(r);else r.parentId=null});
+  casas.forEach(function(b){var r=b.regionId?regs.find(function(x){return x.id===b.regionId}):null;if(b.tipo==='anexo')return;while(r){itens.set(r.id,itens.get(r.id)+1);r=r.parentId?regs.find(function(x){return x.id===r.parentId}):null}});
+  function peso(r){return itens.get(r.id)+filhos.get(r.id).reduce(function(s,f){return s+2+peso(f)*.25},0)}
+  regs.forEach(function(r){r.cells=[];r._cellSet=new Set();r.w=0;r.h=0;r._lotes=null});
+  world.buildings.length=0;marcarIndice();indexar();
+  var ordem=regs.filter(function(r){return!r.parentId}).sort(function(a,b){return peso(b)-peso(a)}),falhas=0;
+  function montar(r,parent,primeiro){
+    var m=urbeMascara(semente('bairro:'+r.id),urbeAreaBairro(peso(r)),primeiro?centro:null,parent);
+    if(!m&&parent){expandirRegiao(parent,urbeAreaBairro(peso(r))+40);m=urbeMascara(semente('bairro:'+r.id)+1,urbeAreaBairro(peso(r)),null,parent)}
+    if(!m){falhas++;return}
+    r.cells=m.cells;r._cellSet=new Set(m.cells);urbeLimites(r);
+    if(urbeCorAutomatica(r.color))r.color=parent?urbeCorFilha(r):urbeCorRaiz(r);
+    marcarIndice();indexar();
+    filhos.get(r.id).slice().sort(function(a,b){return peso(b)-peso(a)}).forEach(function(f){montar(f,r,false)});
+  }
+  ordem.forEach(function(r,i){montar(r,null,i===0)});
+  /* casas: notas primeiro (em ordem de nome, para ficar estável), depois arquivos */
+  var notas=casas.filter(function(b){return b.tipo!=='anexo'}).sort(function(a,b){return String(a.name).localeCompare(String(b.name))}),anexos=casas.filter(function(b){return b.tipo==='anexo'});
+  function colocar(b,pos){if(pos){b.x=pos.x;b.y=pos.y}world.buildings.push(b);indexarUm(idxB,b)}
+  notas.forEach(function(b){var r=b.regionId?regs.find(function(x){return x.id===b.regionId&&x.w}):null;if(b.regionId&&!r)b.regionId=null;
+    colocar(b,r?vagaNaRegiao(r,semente(b.id),new Set()):vagaAleatoria(semente(b.id),b.w,b.h,centro))});
+  anexos.forEach(function(b){var dono=world.buildings.find(function(x){return x.id===b.parentNoteId}),r=b.regionId?regs.find(function(x){return x.id===b.regionId&&x.w}):null;
+    colocar(b,(dono&&posicaoAdjacenteArquivo(dono,r,b.id))||(r?vagaNaRegiao(r,semente(b.id),new Set()):vagaAleatoria(semente(b.id),b.w,b.h,centro)))});
+  marcarIndice();indexar();rebuildRoadNetwork();counts();buildTree();agendarSalvar();marcarSinc();
+  try{urbeEnquadrarNotas(true)}catch(_){}pedirDesenho();
+  return{bairros:regs.length-falhas,casas:world.buildings.length,falhas:falhas};
+}
+/* confere as regras dos bairros: subpasta dentro do pai (com margem), irmãos sem
+   encostar, casas inteiras dentro do próprio bairro e sem sobreposição */
+function urbeValidarBairros(){
+  if(idxSujo)indexar();var erros=[],viz8=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+  world.regions.forEach(function(r){if(!r.w)return;urbeCelulas(r);var pai=r.parentId?regPai(r):null;
+    if(pai){urbeCelulas(pai);var fora=0;r.cells.forEach(function(k){var j=k.indexOf(','),x=+k.slice(0,j),y=+k.slice(j+1);if(!pai._cellSet.has(k)||viz8.some(function(d){return!pai._cellSet.has(K(x+d[0],y+d[1]))}))fora++});if(fora)erros.push(r.name+': '+fora+' tile(s) fora da margem de '+pai.name)}
+    world.regions.forEach(function(o){if(o===r||!o.w||(o.parentId||null)!==(r.parentId||null)||o.id<r.id)return;urbeCelulas(o);
+      var toca=r.cells.some(function(k){var j=k.indexOf(','),x=+k.slice(0,j),y=+k.slice(j+1);return o._cellSet.has(k)||viz8.some(function(d){return o._cellSet.has(K(x+d[0],y+d[1]))})});if(toca)erros.push(r.name+' encosta em '+o.name)})});
+  world.buildings.forEach(function(b,i){var r=b.regionId?world.regions.find(function(x){return x.id===b.regionId}):null;
+    for(var y=b.y;y<b.y+b.h;y++)for(var x=b.x;x<b.x+b.w;x++){var a=regAt({x:x,y:y});if((a?a.id:null)!==(r?r.id:null)){erros.push('casa '+b.name+' fora do bairro '+(r?r.name:'raiz'));y=1e9;break}}
+    for(var j=i+1;j<world.buildings.length;j++){var o=world.buildings[j];if(b.x<o.x+o.w&&b.x+b.w>o.x&&b.y<o.y+o.h&&b.y+b.h>o.y)erros.push('casas sobrepostas: '+b.name+' e '+o.name)}});
+  return{bairros:world.regions.length,casas:world.buildings.length,erros:erros};
+}
+(function(){var core=window.UrbeCore;if(!core)return;
+  core.provide('city.layout',{reorganize:urbeReorganizarCidade,validate:urbeValidarBairros});
+  core.commands.register('city.reorganize',{title:'Organizar os bairros',category:'Cidade',execute:async function(){
+    if(!world.regions.length&&!world.buildings.length){toast('A cidade ainda está vazia.');return}
+    var ok=await UD.confirm({title:'Organizar os bairros?',message:'Os bairros são redesenhados (cada subpasta dentro da sua pasta) e as casas se agrupam perto do centro de cada bairro. Notas, pastas e ligações não mudam; só o lugar de cada coisa no mapa.',confirm:'Organizar'});
+    if(!ok)return;var r=urbeReorganizarCidade();toast(r.falhas?'Cidade organizada ('+r.falhas+' bairro(s) sem espaço).':'Cidade organizada.');return r}});
+})();
+
+/* ---------- desenho: formas guardadas em Path2D (em tiles) ----------
+   Um preenchimento por bairro (sem emendas) e o contorno em traços contínuos.
+   Hierarquia: bairro da raiz com borda grossa e halo escuro; subpastas mais
+   finas; do 3º nível para baixo, tracejadas. */
+function urbeForma(r){
+  urbeCelulas(r);var g=r._forma;if(g&&g.cells===r.cells&&g.n===r.cells.length)return g;
+  var set=r._cellSet,linhas=new Map(),x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+  r.cells.forEach(function(k){var j=k.indexOf(','),x=+k.slice(0,j),y=+k.slice(j+1);var a=linhas.get(y);if(!a)linhas.set(y,a=[]);a.push(x);if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y});
+  var topo=new Map();
+  linhas.forEach(function(xs,y){xs.forEach(function(x){if(!topo.has(x)||topo.get(x)>y)topo.set(x,y)})});
+  /* contorno: arestas da borda orientadas (bairro à direita), ligadas em laços,
+     sem pontos colineares e arredondadas (Chaikin) — sai uma curva, não degraus */
+  var sai=new Map(),n=0;
+  function aresta(ax,ay,bx,by){var k=ax+','+ay,l=sai.get(k);if(!l)sai.set(k,l=[]);l.push([bx,by]);n++}
+  r.cells.forEach(function(k){var j=k.indexOf(','),x=+k.slice(0,j),y=+k.slice(j+1);
+    if(!set.has(K(x,y-1)))aresta(x,y,x+1,y);if(!set.has(K(x+1,y)))aresta(x+1,y,x+1,y+1);
+    if(!set.has(K(x,y+1)))aresta(x+1,y+1,x,y+1);if(!set.has(K(x-1,y)))aresta(x,y+1,x,y)});
+  var lacos=[];
+  sai.forEach(function(l,k){while(l.length){var j=k.indexOf(','),sx=+k.slice(0,j),sy=+k.slice(j+1),px=sx,py=sy,dx=0,dy=0,pts=[[sx,sy]],guard=0;
+    for(;;){var lst=sai.get(px+','+py);if(!lst||!lst.length)break;var idx=0;
+      /* num ponto de encontro de dois cantos, vira para a direita (mantém os laços separados) */
+      if(lst.length>1){for(var q=0;q<lst.length;q++){var ex=lst[q][0]-px,ey=lst[q][1]-py;if(ex===-dy&&ey===dx){idx=q;break}}}
+      var nx=lst[idx][0],ny=lst[idx][1];lst.splice(idx,1);dx=nx-px;dy=ny-py;px=nx;py=ny;
+      if(px===sx&&py===sy)break;pts.push([px,py]);if(++guard>1e6)break}
+    lacos.push(pts)}});
+  function simplificar(p){var o=[];for(var i=0;i<p.length;i++){var a=p[(i+p.length-1)%p.length],b=p[i],c=p[(i+1)%p.length];if((b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0])!==0)o.push(b)}return o.length>=3?o:p}
+  function chaikin(p){var o=[];for(var i=0;i<p.length;i++){var a=p[i],b=p[(i+1)%p.length];o.push([a[0]*.75+b[0]*.25,a[1]*.75+b[1]*.25],[a[0]*.25+b[0]*.75,a[1]*.25+b[1]*.75])}return o}
+  var fill=new Path2D();
+  lacos.forEach(function(p){p=simplificar(p);for(var it=0;it<3;it++)p=chaikin(p);fill.moveTo(p[0][0],p[0][1]);for(var i=1;i<p.length;i++)fill.lineTo(p[i][0],p[i][1]);fill.closePath()});
+  var edge=fill;
+  /* rótulo: no alto do bairro, sobre a coluna do centro */
+  var c=urbeCentroide(r),cx=Math.floor(c.x),best=null;
+  for(var dx=0;dx<=Math.max(2,r.w/4)&&best===null;dx++)[cx-dx,cx+dx].forEach(function(x){if(best===null&&topo.has(x))best={x:x+.5,y:topo.get(x)}});
+  r._forma=g={cells:r.cells,n:r.cells.length,fill:fill,edge:edge,rot:best||{x:c.x,y:r.y},c:c,x0:x0,y0:y0,x1:x1+1,y1:y1+1};
+  return g;
+}
+function urbeCorRGBA(h,a){var n=parseInt(String(h||'#5bc2ff').slice(1),16);return'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+a+')'}
+/* desenha todos os bairros num contexto já transformado para tiles; px = pixels por tile */
+function urbeDesenharBairros(c,px,vis){
+  var ordem=vis.map(function(r){return{r:r,n:urbeNivel(r)}}).sort(function(a,b){return a.n-b.n});
+  ordem.forEach(function(o){var f=urbeForma(o.r);c.fillStyle=urbeCorRGBA(o.r.color,o.n?.10:.13);c.fill(f.fill)});
+  ordem.forEach(function(o){var f=urbeForma(o.r),n=o.n,w=n===0?3:n===1?2:1.5;
+    c.lineCap='round';c.lineJoin='round';
+    if(n===0){c.strokeStyle='rgba(8,10,14,.55)';c.lineWidth=(w+2.5)/px;c.setLineDash([]);c.stroke(f.edge)}
+    c.strokeStyle=urbeCorRGBA(o.r.color,n?.85:.95);c.lineWidth=w/px;c.setLineDash(n>=2?[5/px,4/px]:[]);c.stroke(f.edge)});
+  c.setLineDash([]);
+}
+drawRegions=function(){
+  var f=faixaVisivel(),vis=world.regions.filter(function(r){return r.w&&r.x<f.x1+1&&r.x+r.w>f.x0-1&&r.y<f.y1+1&&r.y+r.h>f.y0-1}),s=TILE*camera.z,o=w2s(0,0);
+  if(!vis.length)return;
+  ctx.save();ctx.translate(o.x,o.y);ctx.scale(s,s);urbeDesenharBairros(ctx,s,vis);ctx.restore();
+};
+/* etiqueta de bairro: quadrado para bairro da raiz, ponto para subpasta */
+function urbeCaixaBairro(c,r,n,x,y){
+  var nome=r.name.length>26?r.name.slice(0,24)+'…':r.name,tam=n?11:13,fonte=(n?600:700)+' '+tam+'px '+URBE_FONTE;
+  c.save();c.font=fonte;var tw=c.measureText(nome).width;c.restore();var alt=n?22:26,w=tw+(n?30:36);
+  return{x:x-w/2,y:y-alt/2,w:w,h:alt,r:r,n:n,nome:nome,fonte:fonte,cy:y};
+}
+function urbePilulaBairro(c,box){
+  var r=box.r,n=box.n,y=box.cy;c.save();
+  urbeRetanguloArredondado(c,box.x,box.y,box.w,box.h,box.h/2);c.fillStyle=n?'rgba(20,22,27,.86)':'rgba(12,13,16,.92)';c.fill();
+  c.strokeStyle=urbeCorRGBA(r.color,n?.7:.95);c.lineWidth=n?1.5:2;c.stroke();
+  c.fillStyle=r.color;c.beginPath();if(n)c.arc(box.x+12,y,3.5,0,7);else c.rect(box.x+10,y-4.5,9,9);c.fill();
+  c.font=box.fonte;c.textBaseline='middle';c.textAlign='left';c.fillStyle=n?'#dfe3ea':'#fff';c.fillText(box.nome,box.x+(n?21:25),y+.5);c.restore();
+}
+/* escolhe os nomes que cabem: os de cima primeiro, subpastas só com zoom suficiente, nada sobreposto */
+function urbeLayoutNomes(c,vis,toS,px){
+  var usados=[];
+  vis.map(function(r){return{r:r,n:urbeNivel(r)}}).filter(function(o){return o.n===0||px>=(o.n===1?7:12)})
+    .sort(function(a,b){return a.n-b.n||b.r.cells.length-a.r.cells.length}).forEach(function(o){
+      var g=urbeForma(o.r);if((g.x1-g.x0)*px<(o.n?60:34))return;var p=toS(g.rot.x,g.rot.y),box=urbeCaixaBairro(c,o.r,o.n,p.x,p.y);
+      if(usados.some(function(u){return box.x<u.x+u.w+4&&box.x+box.w+4>u.x&&box.y<u.y+u.h+3&&box.y+box.h+3>u.y}))return;usados.push(box)});
+  return usados;
+}
+function urbeNomesBairros(c,vis,toS,px){urbeLayoutNomes(c,vis,toS,px).forEach(function(b){urbePilulaBairro(c,b)})}
+function urbeLayoutNomesBairros(){
+  if(!urbeOpcoes.bairros||camera.z<.28)return[];
+  var f=faixaVisivel(),vis=world.regions.filter(function(r){return r.w&&r.x<f.x1&&r.x+r.w>f.x0&&r.y<f.y1&&r.y+r.h>f.y0});
+  return urbeLayoutNomes(ctx,vis,function(x,y){return w2s(x*TILE,y*TILE)},TILE*camera.z);
+}
+function urbeDesenharNomesBairros(boxes){boxes.forEach(function(b){urbePilulaBairro(ctx,b)})}
 
 /* ---------- boot ---------- */
 (async()=>{

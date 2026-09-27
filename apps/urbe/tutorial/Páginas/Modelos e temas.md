@@ -15,6 +15,10 @@ Comece uma página a partir de um modelo e depois troque os textos:
 | **Evento** | Data, contagem regressiva, programação, palestrantes e inscrição |
 | **Documentação** | Sumário e as notas de uma pasta em sequência |
 | **Links (bio)** | Página vertical com seus links principais, ótima no celular |
+| **Livro** | Livro para imprimir ou gerar PDF: capa, folha de rosto, créditos, dedicatória, sumário, partes e capítulos |
+| **Livro de uma pasta** | O mesmo, com cada nota de uma pasta virando um capítulo |
+
+Para tudo sobre livros, veja [[Tutorial/Páginas/Livros|Livros]].
 
 ## Seus próprios modelos
 
@@ -22,7 +26,7 @@ No menu da página, **Salvar como modelo** guarda a página atual como modelo, e
 
 ## Temas das páginas
 
-Oito temas prontos: **Aurora**, **Papel**, **Grafite**, **Oceano**, **Floresta**, **Entardecer**, **Neon** e **Lavanda**. Em cada um você pode mudar:
+Dez temas prontos: **Aurora**, **Papel**, **Grafite**, **Oceano**, **Floresta**, **Entardecer**, **Neon**, **Lavanda**, **Livro clássico** e **Livro moderno**. Em cada um você pode mudar:
 
 - modo claro, escuro ou automático (segue o aparelho de quem visita);
 - fonte dos títulos e do texto;

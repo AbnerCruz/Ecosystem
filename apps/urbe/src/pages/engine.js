@@ -95,6 +95,10 @@
     fraunces:{label:'Fraunces',stack:"'Fraunces',Georgia,serif",g:'Fraunces:wght@400;600;700;800'},
     lora:{label:'Lora',stack:"'Lora',Georgia,serif",g:'Lora:wght@400;500;600;700'},
     merriweather:{label:'Merriweather',stack:"'Merriweather',Georgia,serif",g:'Merriweather:wght@400;700'},
+    garamond:{label:'EB Garamond',stack:"'EB Garamond',Garamond,Georgia,serif",g:'EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400'},
+    cormorant:{label:'Cormorant Garamond',stack:"'Cormorant Garamond',Garamond,Georgia,serif",g:'Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500'},
+    crimson:{label:'Crimson Pro',stack:"'Crimson Pro',Georgia,serif",g:'Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400'},
+    baskerville:{label:'Libre Baskerville',stack:"'Libre Baskerville',Baskerville,Georgia,serif",g:'Libre+Baskerville:ital,wght@0,400;0,700;1,400'},
     mono:{label:'JetBrains Mono',stack:"'JetBrains Mono',ui-monospace,monospace",g:'JetBrains+Mono:wght@400;600;700'},
     system:{label:'Do sistema',stack:"system-ui,-apple-system,'Segoe UI',Roboto,sans-serif",g:''},
     serif:{label:'Serifa do sistema',stack:"Georgia,'Times New Roman',serif",g:''}
@@ -115,6 +119,10 @@
       light:pal('#fff7ef','#ffffff','#2a1409','#7a5a48','#ea580c','#db2777','rgba(42,20,9,.1)'),dark:pal('#1a0f0a','#261711','#fbe9dd','#c4a594','#fb923c','#f472b6','rgba(251,233,221,.12)','#1a0f0a')},
     neon:{label:'Neon',mode:'dark',fonts:{heading:'grotesk',body:'inter'},radius:12,background:'dots',
       dark:pal('#06060b','#0f0f19','#eef0ff','#8d90b3','#22d3ee','#f472b6','rgba(34,211,238,.18)','#06060b'),light:pal('#f7f7ff','#ffffff','#10102a','#5c5f87','#0891b2','#db2777','rgba(16,16,42,.1)')},
+    livro:{label:'Livro clássico',mode:'light',fonts:{heading:'cormorant',body:'garamond'},radius:0,background:'plain',
+      light:pal('#f7f2e7','#fffdf7','#221d17','#6f6557','#7a2e1f','#9a7b3f','rgba(34,29,23,.14)'),dark:pal('#1b1814','#24201a','#efe7d8','#b3a792','#d9825f','#c9a861','rgba(239,231,216,.14)','#1b1814')},
+    moderno:{label:'Livro moderno',mode:'light',fonts:{heading:'grotesk',body:'crimson'},radius:0,background:'plain',
+      light:pal('#f1f1ee','#ffffff','#141414','#6a6a66','#1f4fd6','#e4572e','rgba(20,20,20,.12)'),dark:pal('#121212','#1c1c1c','#ededea','#9d9d98','#7aa0ff','#ff8a65','rgba(237,237,234,.12)','#121212')},
     lavanda:{label:'Lavanda',mode:'light',fonts:{heading:'manrope',body:'inter'},radius:18,background:'mesh',
       light:pal('#faf7ff','#ffffff','#1c1433','#6a5f86','#7c3aed','#0ea5e9','rgba(28,20,51,.1)'),dark:pal('#110c1d','#1a132b','#efe9ff','#a89bc7','#a78bfa','#38bdf8','rgba(239,233,255,.12)','#110c1d')}
   };
@@ -238,6 +246,65 @@
     fields:[F('code','HTML','code',{default:'<div style="text-align:center">Olá!</div>'})],
     render:function(p){return String(p.code||'')}});
 
+  /* ---------------- livro ----------------
+     Blocos pensados para produzir livros: cada um vira uma ou mais "folhas".
+     No formato Livro (layout.format = "book") a página mostra folhas de papel na
+     tela e, ao imprimir ou salvar em PDF, usa o tamanho de página, as margens
+     espelhadas, os números de página e as quebras de página do livro. */
+  function roman(n){var r='',m=[[1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],[100,'C'],[90,'XC'],[50,'L'],[40,'XL'],[10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']];n=Math.max(1,n|0);m.forEach(function(x){while(n>=x[0]){r+=x[1];n-=x[0]}});return r}
+  var NUMERAIS=['zero','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez','onze','doze','treze','catorze','quinze','dezesseis','dezessete','dezoito','dezenove','vinte'];
+  function chapterLabel(n,style){if(!n||style==='none')return '';if(style==='number')return String(n);if(style==='roman')return roman(n);if(style==='words')return 'Capítulo '+(NUMERAIS[n]||n);return 'Capítulo '+n}
+  function chapterHtml(c,o){
+    var lab=chapterLabel(o.num,c.book.style);
+    return '<article class="sheet bk-chap'+(o.dropCap?' dropcap':'')+'"'+(o.anchor?' id="'+esc(o.anchor)+'"':'')+'>'+
+      '<header class="bk-chhead">'+(lab?'<p class="bk-chnum">'+esc(lab)+'</p>':'')+(o.title?'<h2 class="bk-chtitle">'+inline(o.title,c.md)+'</h2>':'')+
+      (o.epigraph?'<blockquote class="bk-epi">'+markdown(o.epigraph,c.md)+(o.epigraphAuthor?'<cite>— '+inline(o.epigraphAuthor,c.md)+'</cite>':'')+'</blockquote>':'')+'</header>'+
+      '<div class="prose bk-text">'+o.body+'</div></article>'}
+  block('bookcover',{label:'Capa do livro',icon:'📕',group:'Livro',description:'Capa com título, subtítulo, autor e editora (clássica, moderna ou com imagem).',
+    fields:[F('title','Título','text',{default:'O título do livro'}),F('subtitle','Subtítulo','text'),F('author','Autor','text',{default:'Nome do autor'}),F('publisher','Editora ou selo','text'),F('image','Imagem','image'),
+      F('style','Estilo','select',{options:['classic','modern','image'],labels:['Clássica','Moderna','Com imagem'],default:'classic'})],
+    render:function(p){var u=safeUrl(p.image,true),bg=u&&p.style==='image'?' style="background-image:url(\''+esc(u).replace(/'/g,'%27')+'\')"':'';
+      return '<div class="sheet bk-full bk-cover s-'+esc(p.style)+'"'+bg+'><div class="bk-cover-in">'+(p.style==='modern'?'<span class="bk-bar"></span>':'')+
+        '<div class="bk-cover-top"><h1>'+inline(p.title,{})+'</h1>'+(p.subtitle?'<p class="bk-cover-sub">'+inline(p.subtitle,{})+'</p>':'')+'</div>'+
+        (u&&p.style!=='image'?'<figure class="bk-cover-img">'+img(u,p.title)+'</figure>':'')+
+        '<div class="bk-cover-bottom">'+(p.author?'<p class="bk-author">'+esc(p.author)+'</p>':'')+(p.publisher?'<p class="bk-pub">'+esc(p.publisher)+'</p>':'')+'</div></div></div>'}});
+  block('titlepage',{label:'Folha de rosto',icon:'📄',group:'Livro',description:'Página com título, subtítulo, autor e editora, cidade e ano.',
+    fields:[F('title','Título','text',{default:'O título do livro'}),F('subtitle','Subtítulo','text'),F('author','Autor','text',{default:'Nome do autor'}),F('publisher','Editora ou selo','text'),F('place','Cidade','text'),F('year','Ano','text',{default:String(new Date().getFullYear())})],
+    render:function(p){return '<div class="sheet bk-full bk-front bk-title"><div class="bk-title-top"><p class="bk-author">'+esc(p.author)+'</p></div><div class="bk-title-mid"><h1>'+inline(p.title,{})+'</h1>'+(p.subtitle?'<p class="bk-title-sub">'+inline(p.subtitle,{})+'</p>':'')+'<span class="bk-orn">❦</span></div>'+
+      '<div class="bk-title-bottom">'+(p.publisher?'<p class="bk-pub">'+esc(p.publisher)+'</p>':'')+((p.place||p.year)?'<p class="bk-place">'+esc([p.place,p.year].filter(Boolean).join(' · '))+'</p>':'')+'</div></div>'}});
+  block('copyright',{label:'Créditos e direitos',icon:'©',group:'Livro',description:'Página de créditos: direitos autorais, edição, ISBN, ficha catalográfica e equipe.',
+    fields:[F('markdown','Texto','markdown',{default:'Copyright © '+new Date().getFullYear()+' Nome do autor\n\nTodos os direitos reservados. Nenhuma parte desta obra pode ser reproduzida sem autorização por escrito do autor.\n\n1ª edição\n\n**Revisão:** Nome  \n**Capa:** Nome  \n**Diagramação:** Urbe\n\nISBN 000-00-00000-00-0'})],
+    render:function(p,c){return '<div class="sheet bk-full bk-front bk-copy"><div class="prose">'+markdown(p.markdown,c.md)+'</div></div>'}});
+  block('dedication',{label:'Dedicatória ou epígrafe',icon:'❧',group:'Livro',description:'Página curta e centralizada: dedicatória, agradecimento breve ou epígrafe com autor.',
+    fields:[F('kind','Tipo','select',{options:['dedication','epigraph'],labels:['Dedicatória','Epígrafe'],default:'dedication'}),F('markdown','Texto','markdown',{default:'Para quem sempre acreditou.'}),F('author','Autor da epígrafe','text')],
+    render:function(p,c){return '<div class="sheet bk-full bk-front bk-ded k-'+esc(p.kind)+'"><div class="bk-ded-in"><div class="prose">'+markdown(p.markdown,c.md)+'</div>'+(p.author?'<p class="bk-ded-author">— '+inline(p.author,c.md)+'</p>':'')+'</div></div>'}});
+  block('booktoc',{label:'Sumário do livro',icon:'☰',group:'Livro',description:'Sumário automático com as partes e os capítulos do livro, com links.',
+    fields:[F('title','Título','text',{default:'Sumário'})],
+    render:function(p,c){var e=c.book.entries;if(!e.length)return '<div class="sheet bk-front bk-toc"><h2>'+esc(p.title)+'</h2><p class="missing">Adicione capítulos para o sumário aparecer.</p></div>';
+      return '<div class="sheet bk-front bk-toc"><h2>'+esc(p.title)+'</h2><ol>'+e.map(function(x){var lab=x.kind==='part'?'Parte '+roman(x.num):chapterLabel(x.num,c.book.style==='words'?'number':c.book.style);
+        return '<li class="k-'+x.kind+'"><a href="#'+esc(x.anchor)+'">'+(lab?'<span class="n">'+esc(lab.replace(/^Capítulo /,''))+'</span>':'')+'<span class="t">'+inline(x.title||'',{})+'</span><span class="lead" aria-hidden="true"></span></a></li>'}).join('')+'</ol></div>'}});
+  block('part',{label:'Parte',icon:'Ⅰ',group:'Livro',description:'Página de abertura de uma parte do livro (Parte I, Parte II…), com texto opcional.',
+    fields:[F('title','Título','text',{default:'Título da parte'}),F('markdown','Texto de abertura','markdown')],
+    render:function(p,c,sec){return '<div class="sheet bk-full bk-part"'+(sec._anchor?' id="'+esc(sec._anchor)+'"':'')+'><p class="bk-partnum">Parte '+roman(sec._num||1)+'</p><h2>'+inline(p.title,c.md)+'</h2>'+(p.markdown?'<div class="prose">'+markdown(p.markdown,c.md)+'</div>':'')+'</div>'}});
+  block('chapter',{label:'Capítulo',icon:'§',group:'Livro',description:'Capítulo numerado, começando em página nova: título, epígrafe e texto escrito aqui ou puxado de uma nota.',
+    fields:[F('title','Título','text',{default:'Título do capítulo'}),F('source','Texto de onde','select',{options:['text','note'],labels:['Escrito aqui','De uma nota'],default:'text'}),
+      F('markdown','Texto','markdown',{default:'Era uma vez uma cidade feita de notas.\n\nCada parágrafo ganha recuo na primeira linha, como num livro impresso.\n\n***\n\nUma linha com três asteriscos vira um ornamento de troca de cena.'}),F('path','Nota','note'),
+      F('epigraph','Epígrafe','textarea'),F('epigraphAuthor','Autor da epígrafe','text'),F('numbered','Numerar o capítulo','boolean',{default:true}),F('dropCap','Letra capitular','boolean',{default:true})],
+    render:function(p,c,sec){var body,t=p.title;
+      if(p.source==='note'){var d=c.note(p.path);if(!d)return '<div class="sheet bk-chap"><div class="missing">Nota não encontrada: '+esc(p.path||'(escolha uma nota)')+'</div></div>';if(!t)t=d.title;body=markdown(stripTitle(d.content,d.title,true),c.mdNote(d,2))}
+      else body=markdown(p.markdown,Object.assign({},c.md,{shift:2}));
+      return chapterHtml(c,{num:sec._num,anchor:sec._anchor,title:t,epigraph:p.epigraph,epigraphAuthor:p.epigraphAuthor,dropCap:p.dropCap,body:body})}});
+  block('chapters',{label:'Capítulos de uma pasta',icon:'📚',group:'Livro',description:'Cada nota de uma pasta vira um capítulo, na ordem escolhida (por nome, caminho ou data).',
+    fields:[F('folder','Pasta','folder'),F('sort','Ordem','select',{options:['path','title','modified'],labels:['Caminho','Título','Mais recentes'],default:'path'}),F('dropCap','Letra capitular','boolean',{default:true})],
+    render:function(p,c,sec){var l=sec._list||[];if(!l.length)return '<div class="sheet bk-chap"><div class="missing">Nenhuma nota na pasta '+esc(p.folder||'(escolha uma pasta)')+'.</div></div>';
+      return l.map(function(x){return chapterHtml(c,{num:x.num,anchor:x.anchor,title:x.d.title,dropCap:p.dropCap,body:markdown(stripTitle(x.d.content,x.d.title,true),c.mdNote(x.d,2))})}).join('')}});
+  block('about',{label:'Sobre o autor',icon:'✒',group:'Livro',description:'Página com foto e uma breve biografia do autor.',
+    fields:[F('title','Título','text',{default:'Sobre o autor'}),F('image','Foto','image'),F('markdown','Texto','markdown',{default:'Nome do autor nasceu em … e escreve sobre …'})],
+    render:function(p,c){return '<div class="sheet bk-about"><h2>'+esc(p.title)+'</h2>'+(safeUrl(p.image,true)?'<figure class="bk-photo">'+img(p.image,p.title)+'</figure>':'')+'<div class="prose">'+markdown(p.markdown,c.md)+'</div></div>'}});
+  block('colophon',{label:'Colofão',icon:'⁂',group:'Livro',description:'Nota final de produção: fontes, papel, gráfica e data de impressão.',
+    fields:[F('markdown','Texto','markdown',{default:'Este livro foi composto em EB Garamond e Cormorant Garamond e produzido com o Urbe.'})],
+    render:function(p,c){return '<div class="sheet bk-full bk-colophon"><div class="prose">'+markdown(p.markdown,c.md)+'</div></div>'}});
+
   function stripTitle(content,title,shown){if(!shown)return content;var t=String(content||''),m=t.replace(/^---[\s\S]*?\n---\n?/,'').match(/^\s*#\s+(.+)\n?/);if(m&&m[1].trim().toLowerCase()===String(title).trim().toLowerCase())return t.replace(/^(---[\s\S]*?\n---\n?)?\s*#\s+.+\n?/,'$1');return t}
 
   /* ---------------- tema, layout e estilo de seção ---------------- */
@@ -253,7 +320,14 @@
     F('animations','Animações ao rolar','boolean',{default:true})];
   var LAYOUT_FIELDS=[F('nav','Barra de navegação','boolean',{default:true}),F('brand','Nome na barra','text'),F('sticky','Barra fixa no topo','boolean',{default:true}),
     F('navCta','Botão da barra','text'),F('navCtaUrl','Link do botão da barra','url'),
-    F('footer','Rodapé (Markdown)','markdown',{default:''}),F('themeToggle','Botão claro/escuro','boolean',{default:true}),F('backToTop','Botão voltar ao topo','boolean',{default:true}),F('progress','Barra de progresso de leitura','boolean',{default:false})];
+    F('footer','Rodapé (Markdown)','markdown',{default:''}),F('themeToggle','Botão claro/escuro','boolean',{default:true}),F('backToTop','Botão voltar ao topo','boolean',{default:true}),F('progress','Barra de progresso de leitura','boolean',{default:false}),
+    F('format','Formato','select',{options:['web','book'],labels:['Site','Livro'],default:'web'}),
+    F('pageSize','Tamanho da página (livro)','select',{options:['a5','6x9','pocket','a4','letter'],labels:['A5 · 14,8 × 21 cm','15,2 × 22,9 cm (6 × 9 pol.)','Bolso · 11 × 18 cm','A4 · 21 × 29,7 cm','Carta · 21,6 × 27,9 cm'],default:'a5'}),
+    F('margins','Margens (livro)','select',{options:['narrow','normal','wide'],labels:['Estreitas','Normais','Largas'],default:'normal'}),
+    F('pageNumbers','Números de página (livro)','boolean',{default:true}),F('runningHead','Cabeçalho das páginas (livro)','text'),
+    F('chapterStyle','Número dos capítulos (livro)','select',{options:['word','words','number','roman','none'],labels:['Capítulo 1','Capítulo um','1','I','Sem número'],default:'word'}),
+    F('recto','Capítulos começam na página da direita (livro)','boolean',{default:false}),
+    F('justify','Texto justificado com hifenização (livro)','boolean',{default:true}),F('indent','Recuo na primeira linha dos parágrafos (livro)','boolean',{default:true})];
   var META_FIELDS=[F('title','Título da página','text',{default:'Página sem título'}),F('description','Descrição (buscadores e compartilhamento)','textarea'),F('lang','Idioma','text',{default:'pt-BR'}),F('icon','Ícone (emoji)','text',{default:'✦'}),F('image','Imagem de compartilhamento','image')];
   var SECTION_FIELDS=[F('anchor','Âncora (#link) e item do menu','text'),F('menu','Mostrar no menu','boolean',{default:false}),
     F('background','Fundo','select',{options:['none','surface','primary','gradient','image','inverse'],labels:['Transparente','Superfície','Cor principal','Degradê','Imagem','Invertido'],default:'none'}),
@@ -394,6 +468,67 @@
     '@media (max-width:560px){body{font-size:calc(16px*var(--fs))}.g2,.g3,.g4{grid-template-columns:1fr}.sec{padding:calc(52px*var(--sp)) 18px}.sec.p-l{padding:calc(76px*var(--sp)) 18px}.sec.p-xl{padding:calc(104px*var(--sp)) 18px}.btns .btn{flex:1 1 auto;justify-content:center}.cd div{min-width:68px}.plan.hot{transform:none}}',
     '@media print{.nav,.fab,.progress{display:none!important}.sec{padding:24px 0}.card{box-shadow:none}}'
   ].join('');
+  var PAGE_SIZES={a5:[148,210],'6x9':[152.4,228.6],pocket:[110,180],a4:[210,297],letter:[215.9,279.4]};
+  var MARGINS={narrow:[14,16,16,12],normal:[18,21,20,15],wide:[24,27,26,20]}; /* topo, pé, lado da lombada, lado de fora (mm) */
+  function bookCss(s,book){
+    var L=s.layout,sz=PAGE_SIZES[L.pageSize]||PAGE_SIZES.a5,W=sz[0],H=sz[1],k=W>200?1.2:W<120?.85:1,m=(MARGINS[L.margins]||MARGINS.normal).map(function(v){return Math.round(v*k*10)/10}),mt=m[0],mb=m[1],mi=m[2],mo=m[3];
+    var pct=function(v){return(v/W*100).toFixed(3)+'%'},q=function(t){return '"'+String(t).replace(/[\\"]/g,'\\$&').replace(/[\n\r]/g,' ')+'"'};
+    var css=[
+      '.sheet{--pw:'+W+';--ph:'+H+'}',
+      /* folhas na tela */
+      '.bk-wrap{container-type:inline-size;display:flex;flex-direction:column;align-items:center;gap:22px;width:100%}',
+      '.sheet{position:relative;width:min('+W+'mm,100%);aspect-ratio:'+W+'/'+H+';padding:'+pct(mt)+' '+pct(mo)+' '+pct(mb)+' '+pct(mi)+';background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08),0 14px 40px -18px rgba(0,0,0,.45);font-size:clamp(13px,calc(min('+W+'mm,100cqw)*.0285),17.5px);line-height:1.55;text-align:left;overflow-wrap:break-word}',
+      '.sheet h1,.sheet h2,.sheet h3,.sheet h4{letter-spacing:0}.sheet h1 strong,.sheet h2 strong{background:none;color:inherit}',
+      '.bk-full{display:flex;flex-direction:column}',
+      /* capa */
+      '.bk-cover{padding:0;overflow:hidden}.bk-cover-in{flex:1;display:flex;flex-direction:column;padding:12% 10% 10%;gap:6%;position:relative}',
+      '.bk-cover h1{font-family:var(--fh);font-size:2.9em;line-height:1.02;margin:0;font-weight:700;text-wrap:balance}.bk-cover-sub{font-size:1.15em;margin:.8em 0 0;opacity:.85;font-style:italic}',
+      '.bk-cover-bottom{margin-top:auto}.bk-author{font-family:var(--fh);font-size:1.15em;letter-spacing:.18em;text-transform:uppercase;margin:0}.bk-pub{font-size:.78em;letter-spacing:.14em;text-transform:uppercase;opacity:.75;margin:.9em 0 0}',
+      '.bk-cover-img{margin:0 auto;max-width:78%}.bk-cover-img img{width:100%;height:auto}',
+      '.bk-cover.s-classic{background:var(--primary);color:#f6efe2;text-align:center}.bk-cover.s-classic .bk-cover-in::before{content:"";position:absolute;inset:5%;border:1.5px solid color-mix(in srgb,#f6efe2 60%,transparent);outline:1px solid color-mix(in srgb,#f6efe2 35%,transparent);outline-offset:-7px;pointer-events:none}',
+      '.bk-cover.s-classic .bk-cover-top{margin-top:18%}.bk-cover.s-modern{background:var(--surface)}.bk-cover.s-modern h1{font-size:3.3em;font-weight:800;letter-spacing:-.02em}.bk-bar{display:block;width:34%;height:.5em;background:var(--accent)}',
+      '.bk-cover.s-image{background-size:cover;background-position:center;color:#fff}.bk-cover.s-image::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,.1) 45%,rgba(0,0,0,.65))}.bk-cover.s-image h1{text-shadow:0 2px 18px rgba(0,0,0,.35)}',
+      /* folha de rosto, créditos, dedicatória */
+      '.bk-title{text-align:center}.bk-title-mid{margin:auto 0}.bk-title h1{font-family:var(--fh);font-size:2.3em;line-height:1.08;margin:0}.bk-title-sub{font-style:italic;font-size:1.1em;color:var(--muted);margin:.6em 0 0}.bk-orn{display:block;margin-top:1.2em;color:var(--primary);font-size:1.3em}',
+      '.bk-title-bottom{margin-top:auto}.bk-place{font-size:.8em;color:var(--muted);margin:.4em 0 0}',
+      '.bk-copy{justify-content:flex-end;font-size:.78em;color:var(--muted)}.bk-copy .prose p{margin:0 0 .8em;text-indent:0!important;text-align:left!important}',
+      '.bk-ded{justify-content:flex-start}.bk-ded-in{margin-top:28%;text-align:center;font-style:italic}.bk-ded.k-epigraph .bk-ded-in{margin-left:30%;text-align:right}.bk-ded .prose p{text-indent:0!important;text-align:inherit!important}.bk-ded-author{font-style:normal;font-size:.9em;color:var(--muted);margin-top:.6em}',
+      /* sumário */
+      '.bk-toc h2,.bk-about h2{font-family:var(--fh);font-size:1.6em;text-align:center;margin:8% 0 10%;font-weight:600}.bk-toc ol{list-style:none;margin:0;padding:0}',
+      '.bk-toc li{margin:0 0 .55em}.bk-toc a{display:flex;align-items:baseline;gap:.6em;color:inherit;text-decoration:none}.bk-toc .n{min-width:1.8em;color:var(--muted);font-variant-numeric:oldstyle-nums}.bk-toc .lead{flex:1;border-bottom:1px dotted color-mix(in srgb,var(--text) 35%,transparent);transform:translateY(-.3em)}',
+      '.bk-toc li.k-part{margin:1.1em 0 .6em;font-family:var(--fh);font-variant:small-caps;letter-spacing:.06em;font-size:1.05em}.bk-toc li.k-part .lead{display:none}.bk-toc li.k-part .n{min-width:auto;color:var(--primary)}',
+      /* parte */
+      '.bk-part{align-items:center;justify-content:center;text-align:center}.bk-partnum{font-family:var(--fh);letter-spacing:.3em;text-transform:uppercase;color:var(--primary);margin:0 0 .6em}.bk-part h2{font-family:var(--fh);font-size:2.1em;margin:0}.bk-part .prose{margin-top:1.5em;font-style:italic;max-width:80%}',
+      /* capítulo */
+      '.bk-chhead{text-align:center;margin:14% 0 9%}.bk-chnum{font-family:var(--fh);letter-spacing:.24em;text-transform:uppercase;font-size:.82em;color:var(--primary);margin:0 0 .7em}',
+      '.bk-chtitle{font-family:var(--fh);font-size:1.9em;line-height:1.12;font-weight:600;margin:0}.bk-epi{margin:1.6em 0 0 28%;padding:0;border:0;text-align:right;font-style:italic;font-size:.9em;color:var(--muted)}.bk-epi p{margin:0;text-indent:0!important}.bk-epi cite{display:block;font-style:normal;font-size:.9em;margin-top:.4em}',
+      '.sheet .prose{max-width:none;font-size:1em}.sheet .prose p{margin:0'+(L.indent?'':' 0 .9em')+'}'+(L.indent?'.sheet .prose p+p{text-indent:1.4em}':''),
+      L.justify?'.sheet .prose p,.sheet .prose li{text-align:justify;hyphens:auto;-webkit-hyphens:auto}':'',
+      '.sheet .prose h3,.sheet .prose h4{font-family:var(--fh);font-weight:600;margin:1.4em 0 .6em;font-size:1.12em}.sheet .prose h3+p,.sheet .prose hr+p,.sheet .prose blockquote+p{text-indent:0}',
+      '.sheet .prose hr{border:0;text-align:center;margin:1.2em 0;height:auto}.sheet .prose hr::after{content:"⁂";color:var(--muted);letter-spacing:.3em}',
+      '.sheet .prose blockquote{margin:1em 1.4em;padding:0;border:0;font-style:italic}',
+      '.dropcap .bk-text>p:first-of-type{text-indent:0}.dropcap .bk-text>p:first-of-type::first-letter{float:left;font-family:var(--fh);font-size:3.55em;line-height:.8;padding:.06em .08em 0 0;color:var(--primary);font-weight:600}',
+      '.dropcap .bk-text>p:first-of-type::first-line{font-variant:small-caps;letter-spacing:.04em}',
+      /* sobre o autor e colofão */
+      '.bk-photo{width:34%;margin:0 auto 1.4em}.bk-photo img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:50%}',
+      '.bk-colophon{justify-content:flex-end;text-align:center;font-size:.8em;color:var(--muted)}.bk-colophon .prose p{text-indent:0!important;text-align:center!important}',
+      '.sheet .missing{margin:auto 0}'
+    ];
+    if(book){
+      css.push('html.book{scroll-behavior:auto}html.book body{background:color-mix(in srgb,var(--text) 9%,var(--bg))}.book main{padding:26px 12px 90px;display:flex;flex-direction:column;gap:22px}.book .sec{padding:0}',
+        '.fab-print{position:fixed;right:18px;bottom:18px;z-index:40;height:48px;padding:0 18px;border-radius:24px;border:0;background:var(--primary);color:var(--on-primary);font:600 15px var(--fb);box-shadow:0 10px 30px -10px rgba(0,0,0,.5);cursor:pointer}',
+        '@page{size:'+W+'mm '+H+'mm;margin:'+mt+'mm '+mo+'mm '+mb+'mm '+mi+'mm'+
+          (L.pageNumbers?';@bottom-center{content:counter(page);font:9pt var(--fb);color:#555}':'')+(L.runningHead?';@top-center{content:'+q(L.runningHead)+';font:italic 8.5pt var(--fb);color:#666}':'')+'}',
+        '@page :left{margin-left:'+mo+'mm;margin-right:'+mi+'mm}@page :right{margin-left:'+mi+'mm;margin-right:'+mo+'mm}',
+        '@page cover{margin:0;@bottom-center{content:none}@top-center{content:none}}@page front{@bottom-center{content:none}@top-center{content:none}}@page part{@top-center{content:none}}@page chapter:first{@top-center{content:none}}',
+        '@media print{html,html.book body{background:#fff!important}.book main{display:block}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-size:10.5pt}.book main{padding:0}.bk-wrap{display:block;container-type:normal}',
+        '.fab-print{display:none}.sheet{width:auto;aspect-ratio:auto;padding:0;box-shadow:none;background:none;font-size:10.5pt;break-before:page;page-break-before:always}',
+        '.sheet.flow{break-before:auto;page-break-before:auto}.bk-full{height:'+(H-mt-mb-.5).toFixed(1)+'mm;break-inside:avoid}',
+        '.bk-cover{page:cover;width:'+W+'mm;height:'+H+'mm!important;margin:0}.bk-front{page:front}.bk-chap{page:chapter}.bk-part{page:part}'+(L.recto?'.bk-chap,.bk-part{break-before:right}':''),
+        '.sheet h2,.sheet h3,.bk-chhead{break-after:avoid;page-break-after:avoid}.sheet p{orphans:2;widows:2}.sheet img{break-inside:avoid}a{color:inherit;text-decoration:none}}');
+    }
+    return css.join('');
+  }
   var ANIM_CSS='@media (prefers-reduced-motion:no-preference){.rv{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}.rv.in{opacity:1;transform:none}}';
 
   /* pequeno script da página: tema, voltar ao topo, progresso, animações, contagem, copiar código */
@@ -418,7 +553,8 @@
     var docs=ctx.documents||null,anchors={};
     function noteAnchor(d){return 'nota-'+slug(d.title)}
     function note(path){if(!path||!docs)return null;var p=String(path).trim();return docs.get(p)||docs.get(p+'.md')||docs.list().find(function(d){return d.title.toLowerCase()===p.replace(/\.md$/i,'').toLowerCase()})||null}
-    var included={};s.sections.forEach(function(sec){if(sec.style.hidden)return;if(sec.type==='notes'&&sec.props.expand)notesFor(sec.props).forEach(function(d){included[d.title.toLowerCase()]=noteAnchor(d)})});
+    var included={};s.sections.forEach(function(sec){if(sec.style.hidden)return;if(sec.type==='notes'&&sec.props.expand)notesFor(sec.props).forEach(function(d){included[d.title.toLowerCase()]=noteAnchor(d)});
+      if(sec.type==='chapters'&&sec.props.folder)notesFor({source:'folder',folder:sec.props.folder,sort:sec.props.sort,limit:200}).forEach(function(d){included[d.title.toLowerCase()]=noteAnchor(d)})});
     function wikilink(target,label){var key=String(target).replace(/\.md$/i,'').split('/').pop().toLowerCase(),a=included[key];return a?'<a class="wikilink" href="#'+esc(a)+'">'+esc(label||target)+'</a>':'<span class="wikilink">'+esc(label||String(target).split('/').pop())+'</span>'}
     function notesFor(p){if(!docs)return[];var all=docs.list().filter(function(d){return /\.(md|markdown|txt)$/i.test(d.path)}),out;
       if(p.source==='folder'){var f=String(p.folder||'').replace(/^\/+|\/+$/g,'').toLowerCase();out=all.filter(function(d){return !f||d.path.toLowerCase().indexOf(f+'/')===0})}
@@ -429,23 +565,36 @@
       return out.slice(0,p.limit||24)}
     var md={wikilink:wikilink},toc=[];
     s.sections.forEach(function(sec){if(sec.style.hidden)return;var t=sec.props.title||(sec.type==='note'&&note(sec.props.path)||{}).title;var a=sec.style.anchor?slug(sec.style.anchor):(t?slug(t):'');if(a){while(anchors[a])a+='-2';anchors[a]=1}sec._anchor=a;if(t&&a)toc.push({id:sec.id,anchor:a,title:sec.style.anchor||t,menu:sec.style.menu})});
-    var c={md:md,note:note,notes:notesFor,noteAnchor:noteAnchor,toc:function(){return toc},mdNote:function(d,shift){return{wikilink:wikilink,shift:shift||0,idPrefix:noteAnchor(d)+'-'}}};
+    /* livro: numera partes e capítulos (inclusive os de uma pasta) e monta o sumário */
+    var bk={entries:[],style:s.layout.chapterStyle},chN=0,ptN=0,usesBook=false;
+    s.sections.forEach(function(sec){if(sec.style.hidden)return;var b=BLOCKS[sec.type];if(b&&b.group==='Livro')usesBook=true;
+      if(sec.type==='part'){sec._num=++ptN;if(!sec._anchor)sec._anchor='parte-'+ptN;bk.entries.push({kind:'part',num:ptN,title:sec.props.title,anchor:sec._anchor})}
+      else if(sec.type==='chapter'){var t=sec.props.title||(sec.props.source==='note'&&note(sec.props.path)||{}).title||'';sec._num=sec.props.numbered?++chN:0;if(!sec._anchor)sec._anchor='capitulo-'+(chN||sec.id);bk.entries.push({kind:'chapter',num:sec._num,title:t,anchor:sec._anchor})}
+      else if(sec.type==='chapters'){sec._list=sec.props.folder?notesFor({source:'folder',folder:sec.props.folder,sort:sec.props.sort,limit:200}):[];
+        sec._list=sec._list.map(function(d){var x={d:d,num:++chN,anchor:noteAnchor(d)};bk.entries.push({kind:'chapter',num:x.num,title:d.title,anchor:x.anchor});return x})}});
+    var book=s.layout.format==='book';
+    var c={book:bk,md:md,note:note,notes:notesFor,noteAnchor:noteAnchor,toc:function(){return toc},mdNote:function(d,shift){return{wikilink:wikilink,shift:shift||0,idPrefix:noteAnchor(d)+'-'}}};
     var body=s.sections.filter(function(sec){return !sec.style.hidden||preview}).map(function(sec){var b=BLOCKS[sec.type],st=sec.style,html;c.section=sec;
       try{html=b.render(sec.props,c,sec)}catch(e){html='<div class="missing">Erro ao montar “'+esc(b.label)+'”: '+esc(e.message)+'</div>'}
+      if(book){if(!/class="sheet/.test(html))html='<div class="sheet flow">'+html+'</div>';
+        return '<section class="bk-wrap b-'+sec.type+(st.hidden?' is-hidden':'')+'"'+(sec._anchor&&sec.type!=='part'&&sec.type!=='chapter'?' id="'+esc(sec._anchor)+'"':'')+(preview?' data-sid="'+esc(sec.id)+'"':'')+'>'+html+'</section>'}
+      if(/class="sheet/.test(html))html='<div class="bk-wrap">'+html+'</div>';
       var cls='sec b-'+sec.type+' p-'+st.padding+' w-'+st.width+' a-'+st.align+(st.background!=='none'?' bg-'+st.background:'')+(s.theme.animations&&sec.type!=='hero'?' rv':'')+(st.hidden?' is-hidden':'');
       var bgi=st.background==='image'&&safeUrl(st.image,true)?' style="background-image:url(\''+esc(safeUrl(st.image,true)).replace(/'/g,'%27')+'\')"':'';
       return '<section class="'+cls+'"'+(sec._anchor?' id="'+esc(sec._anchor)+'"':'')+(preview?' data-sid="'+esc(sec.id)+'"':'')+bgi+'><div class="wrap">'+html+'</div></section>'}).join('\n');
     var L=s.layout,M=s.meta,menu=toc.filter(function(t){return t.menu});
+    if(book){L=Object.assign({},L,{nav:false,footer:'',progress:false,backToTop:false,themeToggle:false})}
     var nav=L.nav?'<header class="nav'+(L.sticky?' sticky':'')+'"><div class="wrap"><a class="brand" href="#top">'+(M.icon?'<span>'+esc(M.icon)+'</span>':'')+esc(L.brand||M.title)+'</a><input type="checkbox" id="nav-t" aria-hidden="true"><label class="nav-burger" for="nav-t" aria-label="Menu"><span></span></label><nav class="nav-links">'+
       menu.map(function(t){return '<a href="#'+esc(t.anchor)+'">'+esc(t.title)+'</a>'}).join('')+(L.navCta?'<a class="btn btn-primary" href="'+esc(safeUrl(L.navCtaUrl)||'#')+'">'+esc(L.navCta)+'</a>':'')+'</nav></div></header>':'';
     var foot=L.footer?'<footer class="foot"><div class="wrap">'+markdown(L.footer,md)+'</div></footer>':'';
     var pr=THEMES[s.theme.preset]||THEMES.aurora,fonts=[fontOf(s.theme.headingFont,pr.fonts.heading),fontOf(s.theme.bodyFont,pr.fonts.body)].filter(function(f,i,a){return f.g&&a.indexOf(f)===i}).map(function(f){return 'family='+f.g});
     var mode=s.theme.mode||pr.mode,iconSvg="data:image/svg+xml,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">'+String(M.icon||'✦').replace(/[<>&]/g,'')+'</text></svg>');
-    return '<!doctype html>\n<html lang="'+esc(M.lang||'pt-BR')+'" class="'+(mode==='dark'?'dark-default':mode==='light'?'light-default':'')+'">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<title>'+esc(M.title)+'</title>\n'+
+    return '<!doctype html>\n<html lang="'+esc(M.lang||'pt-BR')+'" class="'+(mode==='dark'?'dark-default':mode==='light'?'light-default':'')+(book?' book':'')+'">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<title>'+esc(M.title)+'</title>\n'+
       (M.description?'<meta name="description" content="'+esc(M.description)+'">\n<meta property="og:description" content="'+esc(M.description)+'">\n':'')+'<meta property="og:title" content="'+esc(M.title)+'">\n'+(M.image&&safeUrl(M.image,true)&&!/^data:/.test(M.image)?'<meta property="og:image" content="'+esc(safeUrl(M.image,true))+'">\n':'')+
       '<meta name="generator" content="Urbe">\n<link rel="icon" href="'+esc(iconSvg)+'">\n'+(fonts.length?'<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'+fonts.join('&')+'&display=swap">\n':'')+
-      (/class="katex/.test(body+foot)?'<link rel="stylesheet" href="'+(preview?new URL('vendor/katex/katex.min.css',(global.location&&global.location.href)||'http://localhost/').href:'https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css')+'">\n':'')+'<style>'+css(s)+(preview?PREVIEW_CSS+'.is-hidden{opacity:.35}':'')+'</style>\n</head>\n<body id="top">\n'+(L.progress?'<div class="progress" aria-hidden="true"></div>':'')+nav+'<main>\n'+body+'\n</main>\n'+foot+
+      (/class="katex/.test(body+foot)?'<link rel="stylesheet" href="'+(preview?new URL('vendor/katex/katex.min.css',(global.location&&global.location.href)||'http://localhost/').href:'https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css')+'">\n':'')+'<style>'+css(s)+(usesBook||book?bookCss(s,book):'')+(preview?PREVIEW_CSS+'.is-hidden{opacity:.35}':'')+'</style>\n</head>\n<body id="top">\n'+(L.progress?'<div class="progress" aria-hidden="true"></div>':'')+nav+'<main>\n'+body+'\n</main>\n'+foot+
       (L.themeToggle?'<button class="fab fab-theme" type="button" aria-label="Alternar tema claro/escuro"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>':'')+(L.backToTop?'<button class="fab fab-top" type="button" aria-label="Voltar ao topo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>':'')+
+      (book&&!preview?'<button class="fab-print" type="button" onclick="print()">Imprimir ou salvar PDF</button>':'')+
       '\n<script>'+RUNTIME+(preview?PREVIEW:'')+'<\/script>\n</body>\n</html>\n';
   }
 

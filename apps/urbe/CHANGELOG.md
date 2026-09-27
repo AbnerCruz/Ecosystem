@@ -1,5 +1,135 @@
 # Urbe — Changelog
 
+## v1.3.0-beta — Livros: páginas pensadas para produzir livros (2026-09-27)
+
+### Formato Livro
+- Novo campo **Formato** (Site ou Livro) em Página → Estrutura. No formato Livro:
+  - A tela mostra **folhas de papel** no tamanho escolhido.
+  - Imprimir ou salvar em PDF usa as regras de livro:
+    - **tamanho de página**: A5, 15,2 × 22,9 cm, bolso, A4 ou carta;
+    - **margens** estreitas, normais ou largas, **espelhadas** entre a página da esquerda e a da direita, com a maior do lado da lombada.
+  - Cada capítulo e cada parte **começam em página nova**, e há opção de começar sempre na página da direita.
+  - **Números de página** no pé e **título do livro no alto**:
+    - a capa sai sangrada, sem margem;
+    - as páginas iniciais (folha de rosto, créditos, dedicatória, sumário) ficam sem número;
+    - a abertura de capítulo e de parte fica sem o título no alto.
+  - O texto sai **justificado com hifenização**, com **recuo na primeira linha** (cada um pode ser desligado), e com controle de viúvas e órfãs.
+  - Numeração dos capítulos: "Capítulo 1", "Capítulo um", "1", "I" ou sem número.
+  - Barra de navegação, rodapé e botões de site somem.
+  - Um botão **Imprimir ou salvar PDF** aparece no HTML exportado.
+- **10 blocos de livro**:
+  - capa (clássica, moderna ou com imagem);
+  - folha de rosto;
+  - créditos e direitos (ISBN, ficha, equipe);
+  - dedicatória ou epígrafe;
+  - **sumário automático** com partes e capítulos;
+  - parte;
+  - **capítulo**, escrito na página ou puxado de uma nota, com epígrafe e **letra capitular**;
+  - **capítulos de uma pasta**, em que cada nota vira um capítulo;
+  - sobre o autor;
+  - colofão.
+- Numeração automática de partes (I, II…) e capítulos, contando também os que vêm de uma pasta. Um `[[link]]` para uma nota que é capítulo leva até ele.
+- `***` vira ornamento de troca de cena (⁂). A primeira linha do capítulo sai em versalete.
+- **Temas e fontes**:
+  - temas **Livro clássico** (papel creme, EB Garamond e Cormorant Garamond) e **Livro moderno**;
+  - fontes EB Garamond, Cormorant Garamond, Crimson Pro e Libre Baskerville.
+
+### Modelos
+- **Livro**: capa, folha de rosto, créditos, dedicatória, sumário, duas partes com capítulos de exemplo, sobre o autor e colofão.
+- **Livro de uma pasta**: a mesma estrutura, com cada nota da pasta virando um capítulo. O nome digitado vai para a capa, a folha de rosto e o título no alto das páginas.
+
+### Estúdio
+- **Exportar → Imprimir ou salvar PDF**, em qualquer página. A impressão roda num quadro isolado, sem acesso ao app.
+
+### Tutorial e testes
+- Nova nota **Tutorial/Páginas/Livros**; "Modelos e temas", "Blocos das páginas" e "Estúdio" apontam para ela.
+- Novo teste do livro:
+  - numeração, inclusive dos capítulos de uma pasta;
+  - sumário com links e wikilinks entre capítulos;
+  - regras de página, margens espelhadas, números e cabeçalho;
+  - todos os tamanhos e margens;
+  - HTML injetado bloqueado e cabeçalho escapado no CSS;
+  - blocos de livro no formato Site sem regras de impressão.
+
+## v1.2.0-beta — Bairros organizados: hierarquia clara no chão e no mapa (2026-09-27)
+
+A cidade deixava as pastas parecerem uma bagunça: bairros em losango, contornos sobrepostos, subpastas espalhadas, casas jogadas em lugares aleatórios e nomes empilhados. Agora ela segue regras de verdade.
+
+### Forma e lugar dos bairros
+- Os bairros são **arredondados e compactos**, do tamanho do que guardam. Eles crescem por prioridade a partir do centro, com um leve ondulado; antes cresciam em busca em largura e saíam em losango.
+- Cada **subpasta** fica **dentro** do bairro pai, com 1 tile de margem até a borda dele.
+- Bairros irmãos ficam separados por 1 tile, e bairros da raiz por 2. Nenhum contorno encosta em outro.
+- Um bairro novo nasce no espaço livre mais perto do centro da cidade (ou do bairro pai) que tenha folga. Por isso a cidade cresce junta, sem ilhas soltas.
+- Quando uma subpasta não cabe, o bairro pai cresce de forma arredondada em volta dele mesmo.
+- Na **importação**, as subpastas reservam espaço primeiro, e as casas da pasta ocupam o resto. O tamanho de cada bairro leva em conta a árvore inteira de subpastas, também ao abrir uma pasta do aparelho.
+- **Cores**: um bairro da raiz ganha a cor menos usada pelos vizinhos (paleta com 10 cores). As subpastas usam um tom mais claro da cor do bairro de cima, então a família de pastas se reconhece de longe.
+
+### Casas agrupadas, sem grade
+- As casas se **agrupam perto do centro do bairro** num arranjo orgânico: a ordem dos lotes segue a distância ao centro com um leve ondulado e um sorteio fixo por lote. Não há fileiras nem grade. Antes as casas caíam espalhadas em lugares sorteados.
+- As notas soltas na raiz se agrupam do mesmo jeito em volta do centro, a 1 tile de qualquer bairro.
+
+### Desenho
+- O contorno é uma **curva suave**: a borda é traçada como polígono e arredondada, sem degraus.
+- Cada bairro é preenchido de uma vez, sem emendas nem manchas de sobreposição.
+- A hierarquia aparece na borda:
+  - pasta na raiz: borda grossa com halo escuro;
+  - subpasta: borda fina;
+  - do 3º nível para baixo: borda tracejada.
+- **Plaquinhas** no alto de cada bairro: um quadrado colorido para as pastas da raiz e uma bolinha para as subpastas.
+  - Os nomes das subpastas só aparecem com zoom suficiente.
+  - Uma plaquinha nunca fica sobre outra.
+  - Os nomes de casas que colidiriam com uma plaquinha ou com outro nome ficam escondidos; a casa selecionada sempre mostra o dela.
+- O **mapa** e o **minimapa** desenham a forma real de cada bairro, com a mesma hierarquia e os nomes, no lugar dos retângulos de antes.
+
+### Organizar uma cidade que já existe
+- Novo item **Configurações → Organizar os bairros** (comando `city.reorganize`).
+  - Redesenha todos os bairros, dos maiores para os menores e cada subpasta dentro da sua, e reagrupa as casas perto do centro de cada bairro.
+  - Notas, pastas e ligações não mudam.
+- Novo serviço `city.layout` com `validate()`, que confere as regras: subpasta dentro da margem do pai, irmãos sem encostar, casas inteiras no próprio bairro e sem sobreposição.
+
+## v1.1.0-beta — Mundo realista: placas tectônicas, relevo, clima e rios de verdade (2026-09-27)
+
+O mundo deixou de ser ruído aleatório. Agora ele é simulado como um continente de verdade, numa grade de 512 × 512 células (cada uma com 4 × 4 tiles), em menos de um segundo ao abrir.
+
+### Placas tectônicas e relevo
+- 16 a 21 **placas** (continentais e oceânicas), cada uma com direção de movimento. As bordas são deformadas para não parecerem polígonos.
+- O que acontece em cada borda depende do tipo de encontro:
+  - colisão entre continentes: cordilheiras altas (tipo Himalaia);
+  - continente sobre oceano: serra costeira e fossa no mar (tipo Andes);
+  - oceano com oceano: arcos de ilhas;
+  - afastamento: vales em rift e dorsais no fundo do mar.
+- As cordilheiras têm cristas e picos, e o soerguimento é suavizado, sem listras.
+- **Curva hipsométrica real**: muita planície, colinas e poucas serras altas. A plataforma continental é rasa e o mar fica fundo longe da costa. A borda do mapa afunda no oceano de forma orgânica.
+
+### Clima
+- A temperatura cai com a latitude (polos nas pontas do mapa) e com a altitude.
+- O vento sopra em faixas de latitude (alísios e ventos de oeste) e leva umidade do mar. Ela chove na subida das serras e deixa **sombra de chuva** do outro lado.
+- As células de Hadley deixam o equador úmido e formam faixas secas de deserto.
+- Os biomas seguem o diagrama de Whittaker (temperatura × umidade).
+
+### Rios e lagos
+- **Drenagem de verdade** (priority-flood):
+  - toda célula escoa para o mar;
+  - depressões fechadas se enchem e viram lagos;
+  - o fluxo acumulado da bacia decide onde há rio.
+- Os rios nascem nas partes altas, **sempre descem**, recebem afluentes e ficam mais largos rio abaixo, até o mar ou um lago.
+- Um microrrelevo só para a drenagem faz os rios serpentearem nas planícies.
+- O traçado de cada tile é contínuo (segmentos entre células, com leve serpentear), e a costa e as margens dos lagos são orgânicas.
+
+### Cidade
+- A cidade começa num lugar escolhido pela geografia: clima temperado, relevo suave, um rio por perto e longe da costa e das serras.
+
+### Testes
+- Novos testes do mundo físico:
+  - placas;
+  - montanhas junto às bordas de placa;
+  - relevo e fração de terra;
+  - todo trecho de rio desce até o mar ou um lago;
+  - a vazão cresce rio abaixo e há confluências;
+  - clima por latitude e altitude;
+  - outras sementes.
+- O Tutorial explica como o mundo é formado (Cidade → Como a cidade funciona).
+
 ## v1.0.0-beta — Primeira beta: personalização, Tutorial e casa limpa (2026-09-27)
 
 ### Personalização completa

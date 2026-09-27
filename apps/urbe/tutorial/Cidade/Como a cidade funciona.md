@@ -36,4 +36,13 @@ O material das casas também muda com o terreno: no deserto são de barro, na ne
 
 A cidade fica num mundo grande, gerado a partir do nome da sua cidade: campos, florestas, montanhas, rios, lagos, praias, desertos e neve. O nome do terreno onde você está aparece no topo da tela, ao lado de **Urbe**.
 
+Esse mundo é um continente formado como a Terra de verdade:
+
+- **Placas tectônicas**: o chão é dividido em placas que se empurram. Onde duas se chocam nascem as cordilheiras e as montanhas nevadas; onde se afastam, vales e mares.
+- **Relevo**: a maior parte da terra é planície, com colinas e poucas serras bem altas, e o mar vai ficando mais fundo longe da costa.
+- **Clima**: faz mais frio perto dos polos (as pontas do mapa) e no alto das montanhas. O vento traz a chuva do mar; ela cai na subida das serras, e do outro lado fica mais seco. Por isso os desertos aparecem em faixas e as florestas perto das costas úmidas.
+- **Rios**: nascem nas partes altas, sempre descem, recebem afluentes e ficam mais largos até chegar ao mar ou a um lago. Onde a água fica presa numa baixada, forma-se um lago.
+
+Abra o **Mapa** (botão de mapa no topo) e afaste o zoom para ver o continente inteiro.
+
 Próximo: [[Tutorial/Cidade/Andar pela cidade|Andar pela cidade]] · Voltar: [[Tutorial/Comece aqui|Comece aqui]]
