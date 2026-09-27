@@ -8,7 +8,7 @@
   var RESULT_LIMIT=30000;
 
   /* ---------------- agentes ---------------- */
-  var READ={read:1,ui:1,memory:1};
+  var READ={read:1,ui:1,memory:1,plan:1};
   var AGENTS=[
     {id:'geral',name:'Assistente',icon:'sparkle',description:'Faz de tudo no vault: pesquisa, escreve, organiza.',tools:'all',delegate:true,prompt:''},
     {id:'pesquisador',name:'Pesquisador',icon:'search',description:'Responde com base nas suas notas e cita as fontes. Não altera nada.',tools:'read',prompt:'Seu papel: pesquisar no vault e responder com base nele. Busque com vários termos e sinônimos, leia as notas relevantes e cite cada fonte como [[Título]]. Diga claramente quando o vault não tem a informação; não complete com suposições.'},
@@ -38,6 +38,10 @@
       '',
       '## Como trabalhar',
       '- Use as ferramentas para ver o vault real. Nunca invente conteúdo, títulos ou caminhos de notas.',
+      '- Seja minucioso: leia as notas relevantes por inteiro antes de responder. Se um resultado disser LEITURA PARCIAL, continue lendo (start_line) antes de concluir.',
+      '- Para achar onde algo aparece (nomes, termos, datas, trechos) use grep_notes; para temas amplos, search_notes. Siga os [[links]] e backlinks (get_links) quando o assunto se espalhar por várias notas.',
+      '- Chamadas de leitura independentes podem ir juntas na mesma resposta (elas rodam em paralelo); read_notes lê várias notas de uma vez.',
+      '- Em tarefas com 3 ou mais passos, registre o plano com update_plan no começo e atualize conforme avança.',
       '- Leia uma nota (read_note) antes de editá-la. Para mudanças parciais use edit_note copiando o trecho exato; write_note só para reescrever tudo.',
       '- Antes de criar uma nota, busque (search_notes) para não duplicar. Ligue notas relacionadas com [[Título]].',
       '- Faça o trabalho com as ferramentas em vez de só descrever o que faria. Pergunte antes apenas se o pedido for ambíguo ou arriscado.',
@@ -99,7 +103,10 @@
   /* ---------------- execução ---------------- */
   async function run(o){
     var agent=o.agent||AGENTS[0],policy=o.policy||'ask',messages=o.messages,signal=o.signal,emit=o.onUpdate||function(){};
-    var ctx={core:o.core,agentId:agent.id,editor:o.editor,openNote:o.openNote,remember:o.remember};
+    /* orçamento de leitura proporcional ao contexto do modelo: notas inteiras sempre que possível */
+    var readChars=Math.max(16000,Math.min(120000,Math.floor((o.contextTokens||128000)*3.2*0.2))),resultLimit=Math.max(RESULT_LIMIT,readChars+4000);
+    var ctx={core:o.core,agentId:agent.id,editor:o.editor,openNote:o.openNote,remember:o.remember,readChars:readChars,
+      setPlan:function(steps){result.plan=steps;emit({type:'plan',steps:steps})}};
     var tools=T.list(function(t){return allowTool(agent,policy,t)});
     if(agent.delegate&&!o.isSubagent)tools=tools.concat([DELEGATE]);
     var schemas=tools.map(T.schema),byName={};tools.forEach(function(t){byName[t.name]=t});
@@ -107,7 +114,7 @@
     var system=systemPrompt({agent:agent,policy:policy,vaultName:o.vaultName,noteCount:docs.list().length,openNote:open&&open.path,instructions:o.instructions,memory:o.memory});
     var budget=Math.max(20000,Math.floor((o.contextTokens||128000)*3.2*0.7)),maxSteps=o.maxSteps||30;
     var result={changes:[],usage:{input:0,output:0,cost:null},steps:0,stopped:'end',error:null},runAllow=false;
-    var failed={},repeats=0,nudged=false;
+    var failed={},repeats=0,nudged=false,partialNudged=false,partial=new Map();
 
     for(var step=0;step<maxSteps;step++){
       if(signal&&signal.aborted){result.stopped='aborted';break}
@@ -136,22 +143,29 @@
         /* alguns modelos (ex.: gpt-oss) encerram só com raciocínio depois das ferramentas: a resposta sumia. Pede uma vez o texto final. */
         var said=res.content.some(function(b){return b.type==='text'&&String(b.text).trim()}),prev=messages[messages.length-1];
         if(!said&&!nudged&&prev&&prev.meta&&prev.meta.toolResults){nudged=true;prev.content.push({type:'text',text:'[Contexto do sistema] Você não escreveu a resposta. Responda agora ao usuário, em texto, com base nos resultados acima.'});continue}
+        /* respondeu tendo lido só parte de uma nota: pede uma vez para terminar a leitura e revisar a resposta */
+        if(partial.size&&!partialNudged&&!(signal&&signal.aborted)){partialNudged=true;
+          var draft=messages[messages.length-1];if(draft&&draft.role==='assistant'){draft.meta.draft=true;emit({type:'final',message:draft,usage:result.usage})}
+          var list=[];partial.forEach(function(v){list.push('- '+v.path+': faltam as linhas '+v.next+'–'+v.total+' (read_note start_line='+v.next+')')});
+          var nudge={id:uid('m'),role:'user',content:[{type:'text',text:'[Contexto do sistema] Você respondeu sem terminar de ler:\n'+list.join('\n')+'\nLeia o restante e então dê a resposta completa e revisada ao usuário (substituindo a anterior).'}],meta:{toolResults:true}};
+          messages.push(nudge);emit({type:'message',message:nudge});continue}
         break;
       }
 
       var answer={id:uid('m'),role:'user',content:[],meta:{toolResults:true}};messages.push(answer);emit({type:'message',message:answer});
-      for(var k=0;k<calls.length;k++){
-        var call=calls[k],tool=byName[call.name],out;
-        if(signal&&signal.aborted){out={content:'Interrompido pelo usuário.',is_error:true,status:'aborted'}}
-        else{
-          /* a mesma chamada que já falhou não é executada de novo: o modelo recebe o aviso para mudar de estratégia */
-          var sig=call.name+' '+JSON.stringify(call.input||{});
-          if(failed[sig]){repeats++;out={content:'Esta chamada idêntica já falhou: '+failed[sig]+' Não repita. Corrija os argumentos (use search_notes ou list_notes para achar o caminho exato) ou explique o problema ao usuário.',is_error:true}}
-          else{out=await execute(call,tool);if(out.is_error&&out.status!=='aborted'&&out.status!=='rejected')failed[sig]=String(out.content).slice(0,300)}
-        }
-        var block={type:'tool_result',tool_use_id:call.id,content:String(out.content).slice(0,RESULT_LIMIT),is_error:!!out.is_error,_status:out.status||(out.is_error?'error':'done'),_changes:out.changes&&out.changes.length||0};
+      /* leituras independentes rodam juntas; escrita, aprovação e subagente continuam em ordem */
+      var finish=function(call,out){
+        var block={type:'tool_result',tool_use_id:call.id,content:String(out.content).slice(0,resultLimit),is_error:!!out.is_error,_status:out.status||(out.is_error?'error':'done'),_changes:out.changes&&out.changes.length||0};
         answer.content.push(block);emit({type:'tool',call:call,result:block});
         if(out.changes)result.changes=result.changes.concat(out.changes);
+        (out.reads||[]).forEach(function(r){if(r.partial)partial.set(r.path,r.partial);else partial.delete(r.path)});
+      };
+      /* cada resultado aparece assim que fica pronto */
+      var k=0;
+      while(k<calls.length){
+        var j=k;while(j<calls.length&&parallelOk(calls[j]))j++;
+        if(j>k+1){await Promise.all(calls.slice(k,j).map(function(c){return runOne(c).then(function(out){finish(c,out)})}));k=j;continue}
+        finish(calls[k],await runOne(calls[k]));k++;
       }
       if(signal&&signal.aborted){result.stopped='aborted';break}
       if(repeats>=3){result.stopped='loop';break}
@@ -159,6 +173,16 @@
     }
     return result;
 
+    function parallelOk(call){var t=byName[call.name];return !!t&&t!==DELEGATE&&t.access==='read'}
+    async function runOne(call){
+      var tool=byName[call.name];
+      if(signal&&signal.aborted)return{content:'Interrompido pelo usuário.',is_error:true,status:'aborted'};
+      /* a mesma chamada que já falhou não é executada de novo: o modelo recebe o aviso para mudar de estratégia */
+      var sig=call.name+' '+JSON.stringify(call.input||{});
+      if(failed[sig]){repeats++;return{content:'Esta chamada idêntica já falhou: '+failed[sig]+' Não repita. Corrija os argumentos (use search_notes, grep_notes ou list_notes para achar o caminho exato) ou explique o problema ao usuário.',is_error:true}}
+      var out=await execute(call,tool);if(out.is_error&&out.status!=='aborted'&&out.status!=='rejected')failed[sig]=String(out.content).slice(0,300);
+      return out;
+    }
     async function execute(call,tool){
       if(!tool)return{content:'Ferramenta desconhecida: '+call.name+'. Disponíveis: '+Object.keys(byName).join(', '),is_error:true};
       var errs=T.validate(tool,call.input);if(errs.length)return{content:'Argumentos inválidos para '+tool.name+': '+errs.join('; ')+'.',is_error:true};
@@ -174,7 +198,7 @@
         else if(ans!=='approve'){var why=ans&&ans.reason?' Motivo: '+ans.reason:'';return{content:'O usuário recusou esta ação.'+why+' Não tente de novo da mesma forma; ajuste o plano ou pergunte.',is_error:true,status:'rejected'}}
         emit({type:'tool_status',call:call,status:'running'});
       }
-      try{var r=await tool.run(call.input,ctx);return{content:r.content,changes:r.changes}}
+      try{var r=await tool.run(call.input,ctx);return{content:r.content,changes:r.changes,reads:r.reads}}
       catch(e){return{content:(e&&e.toolError?'':'Falha na ferramenta: ')+(e&&e.message||String(e)),is_error:true}}
     }
     async function delegate(call){

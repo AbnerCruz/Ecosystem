@@ -110,11 +110,15 @@
       return '<div class="ag-msg ag-user" data-mid="'+m.id+'">'+ctx+'<div class="ag-bubble">'+esc(t).replace(/\n/g,'<br>')+'</div></div>'}
     var h='';
     if(m.meta&&m.meta.reasoning)h+='<details class="ag-think"><summary>'+(m.meta.streaming&&!m.content.length?'Pensando…':'Raciocínio')+'</summary><div>'+esc(m.meta.reasoning).replace(/\n/g,'<br>')+'</div></details>';
-    m.content.forEach(function(b){if(b.type==='text')h+='<div class="ag-md">'+md(b.text)+'</div>';else if(b.type==='tool_use')h+=toolCard(b,m)});
+    /* resposta dada antes de terminar a leitura: fica recolhida, a versão revisada vem em seguida */
+    m.content.forEach(function(b){if(b.type==='text')h+=m.meta&&m.meta.draft?'<details class="ag-draft"><summary>Resposta preliminar (substituída pela revisada abaixo)</summary><div class="ag-md">'+md(b.text)+'</div></details>':'<div class="ag-md">'+md(b.text)+'</div>';else if(b.type==='tool_use')h+=toolCard(b,m)});
     if(m.meta&&m.meta.streaming&&!m.content.length&&!m.meta.reasoning)h+='<div class="ag-typing" aria-label="Pensando"><i></i><i></i><i></i></div>';
     return '<div class="ag-msg ag-ai" data-mid="'+m.id+'">'+h+'</div>';
   }
-  var ACCESS_ICON={read:'search',write:'edit',destructive:'trash',ui:'open',memory:'star'};
+  var ACCESS_ICON={read:'search',write:'edit',destructive:'trash',ui:'open',memory:'star',plan:'check'};
+  function latestPlanId(){var ms=st.conv?st.conv.messages:[];for(var i=ms.length-1;i>=0;i--){var c=ms[i].content||[];for(var j=c.length-1;j>=0;j--)if(c[j].type==='tool_use'&&c[j].name==='update_plan'&&!c[j]._pending)return c[j].id}return null}
+  function planHtml(steps){var mark={done:'✓',in_progress:'◐',pending:'○'};
+    return '<ol class="ag-plan">'+(steps||[]).map(function(x){var s=x&&x.status||'pending';return '<li class="p-'+esc(s)+'"><span>'+(mark[s]||'○')+'</span>'+esc(x&&x.step||'')+'</li>'}).join('')+'</ol>'}
   function toolCard(b,m){
     var tool=T.get(b.name)||(b.name==='delegate_research'?{access:'read',label:function(i){return 'Pesquisador: '+String(i.task||'').slice(0,70)}}:null);
     var label=tool&&tool.label&&!b._pending?safeLabel(tool,b.input):(b._pending?'Preparando '+b.name+'…':b.name);
@@ -124,8 +128,10 @@
     var h='<div class="ag-tool s-'+status+'" data-tool="'+esc(b.id)+'"><div class="ag-tool-head"><span class="ag-tool-ic">'+ic(ACCESS_ICON[tool&&tool.access]||'layers')+'</span><span class="ag-tool-label">'+esc(label)+'</span>'+
       (status==='running'||status==='pending'?'<span class="ag-spin"></span>':status==='done'?'<span class="ag-ok">'+ic('check')+'</span>':'<span class="ag-st">'+esc(stTxt)+'</span>')+'</div>';
     if(prog&&!r)h+='<div class="ag-tool-prog">'+esc(prog)+'</div>';
+    /* só o plano mais recente aparece aberto, como checklist */
+    if(b.name==='update_plan'&&!b._pending&&b.id===latestPlanId())h+=planHtml(b.input&&b.input.steps);
     if(pend)h+=approvalHtml(st.pending);
-    else if(r||!b._pending){h+='<details class="ag-tool-more"><summary>Detalhes</summary>'+(b._pending?'':'<pre class="ag-pre">'+esc(JSON.stringify(b.input,null,2)).slice(0,3000)+'</pre>')+(r?'<pre class="ag-pre ag-res'+(r.is_error?' err':'')+'">'+esc(String(r.content).slice(0,4000))+(String(r.content).length>4000?'\n…':'')+'</pre>':'')+'</details>'}
+    else if(r||!b._pending){h+='<details class="ag-tool-more"><summary>Detalhes</summary>'+(b._pending?'':'<pre class="ag-pre">'+esc(JSON.stringify(b.input,null,2)).slice(0,3000)+'</pre>')+(r?'<pre class="ag-pre ag-res'+(r.is_error?' err':'')+'">'+esc(String(r.content).slice(0,60000))+(String(r.content).length>60000?'\n…':'')+'</pre>':'')+'</details>'}
     return h+'</div>';
   }
   function safeLabel(t,i){try{return t.label(i||{})}catch(_){return t.name}}

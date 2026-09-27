@@ -22,7 +22,7 @@ const provider={id:'m',preset:'custom',kind:'mock',baseUrl:'mock://'};
 const tu=(name,input,id)=>({type:'tool_use',id:id||('t'+Math.random().toString(36).slice(2,7)),name,input});
 const say=t=>[{type:'text',text:t}];
 function userMsg(t){return{role:'user',content:[{type:'text',text:t}]}}
-async function go(o){return A.run({core,provider,model:'m1',messages:o.messages,agent:o.agent&&A.agentById(o.agent),policy:o.policy,approve:o.approve,signal:o.signal,maxSteps:o.maxSteps,editor:()=>({path:'Diário.md',selection:'um trecho'}),remember:o.remember,onUpdate:o.onUpdate})}
+async function go(o){return A.run({core,provider,model:'m1',messages:o.messages,agent:o.agent&&A.agentById(o.agent),policy:o.policy,approve:o.approve,signal:o.signal,maxSteps:o.maxSteps,contextTokens:o.contextTokens,editor:()=>({path:'Diário.md',selection:'um trecho'}),remember:o.remember,onUpdate:o.onUpdate})}
 
 docs.upsert({path:'Diário.md',content:'# Diário\n\nHoje choveu.\n'});
 docs.upsert({path:'Projetos/Urbe.md',content:'# Urbe\n\nVeja [[Diário]].\n\n## Tarefas\n- revisar\n'});
@@ -108,6 +108,48 @@ await test('modelo que termina só com raciocínio depois das ferramentas é lem
   const msgs=[userMsg('ache')];const r=await go({messages:msgs});
   eq(r.stopped,'end');const last=msgs[msgs.length-1];ok(last.role==='assistant'&&/Achei/.test(last.content[0].text),'resposta final escrita');
   ok(seen[seen.length-1].messages.some(m=>m.content.some(b=>b.type==='text'&&/não escreveu a resposta/.test(b.text))),'lembrete enviado');
+});
+
+await test('read_note entrega a nota inteira mesmo se o modelo pedir só 200 linhas',async()=>{
+  docs.upsert({path:'Longa.md',content:Array.from({length:500},(_,i)=>'linha '+(i+1)).join('\n')});
+  script=[[tu('read_note',{path:'Longa.md',max_lines:200})],say('ok')];const msgs=[userMsg('x')];await go({messages:msgs});
+  const r=msgs[2].content[0].content;ok(/linha 500/.test(r)&&/completa/.test(r)&&!/PARCIAL/.test(r),r.slice(-200));
+});
+
+await test('leitura parcial: o modelo que responde sem terminar é lembrado; a resposta vira preliminar',async()=>{
+  docs.upsert({path:'Enorme.md',content:Array.from({length:4000},(_,i)=>'linha '+(i+1)+' '+'x'.repeat(40)).join('\n')});
+  script=[[tu('read_note',{path:'Enorme.md'})],say('Resposta apressada.'),
+    req=>{const last=req.messages[req.messages.length-1];const t=last.content.map(b=>b.text||'').join('');ok(/sem terminar de ler/.test(t)&&/Enorme\.md/.test(t),'lembrete com a nota: '+t);
+      const m=t.match(/start_line=(\d+)/);return[tu('read_note',{path:'Enorme.md',start_line:+m[1]})]},
+    say('Resposta completa.')];
+  const msgs=[userMsg('resuma')];const r=await go({messages:msgs,contextTokens:20000});
+  eq(r.stopped,'end');const ans=msgs.filter(m=>m.role==='assistant'&&m.content.some(b=>b.type==='text'));
+  ok(ans[0].meta.draft&&/apressada/.test(ans[0].content[0].text),'primeira resposta marcada como preliminar');ok(/completa/.test(ans[ans.length-1].content[0].text));
+  ok(/PARCIAL/.test(msgs[2].content[0].content),'primeira leitura foi parcial');
+});
+
+await test('grep_notes: linhas exatas, sem acento/caixa, regex e contexto',async()=>{
+  const g=T.get('grep_notes');let r=await g.run({pattern:'DIARIO'},{core});ok(/Projetos\/Urbe\.md\n\s+3: Veja \[\[Diário\]\]/.test(r.content),r.content);
+  r=await g.run({pattern:'^## ',regex:true},{core});ok(/Tarefas/.test(r.content));
+  r=await g.run({pattern:'revisar',context:1},{core});ok(/5- ## Tarefas/.test(r.content)&&/6: - revisar/.test(r.content),r.content);
+  r=await g.run({pattern:'inexistente-xyz'},{core});ok(/Nenhuma/.test(r.content));
+});
+
+await test('read_notes lê várias notas numa chamada (aceita lista em texto)',async()=>{
+  const t=T.get('read_notes'),input={paths:'["Diário.md","Projetos/Urbe.md","Nada.md"]'};eq(T.validate(t,input),[]);
+  const r=await t.run(input,{core});ok(/Hoje choveu/.test(r.content)&&/## Tarefas/.test(r.content)&&/erro: Nota não encontrada/.test(r.content));eq(r.reads.length,2);
+});
+
+await test('update_plan mostra o plano e fica no resultado da execução',async()=>{
+  const plans=[];script=[[tu('update_plan',{steps:[{step:'Buscar',status:'done'},{step:'Escrever',status:'in_progress'}]})],say('ok')];
+  const r=await go({messages:[userMsg('x')],onUpdate:e=>{if(e.type==='plan')plans.push(e.steps)}});
+  eq(r.plan.length,2);eq(plans.length,1);ok(A.needsApproval(T.get('update_plan'),'ask',false)===false,'plano não pede aprovação');
+});
+
+await test('leituras independentes do mesmo passo rodam em paralelo',async()=>{
+  T.register({name:'lenta',access:'read',description:'x',parameters:{type:'object',properties:{},additionalProperties:false},run:()=>new Promise(r=>setTimeout(()=>r({content:'ok'}),150))});
+  script=[[tu('lenta',{},'a1'),tu('lenta',{},'a2'),tu('lenta',{},'a3')],say('fim')];const t0=Date.now();const msgs=[userMsg('x')];await go({messages:msgs});
+  const dt=Date.now()-t0;ok(dt<400,'demorou '+dt+'ms');eq(msgs[2].content.length,3);
 });
 
 await test('erro do provedor encerra com mensagem',async()=>{

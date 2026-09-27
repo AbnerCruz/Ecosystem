@@ -76,13 +76,49 @@
       else hits=s.knowledge.search(q,i.limit||12).map(function(d){return '- '+d.path});
       return{content:hits.length?hits.join('\n'):'Nada encontrado para "'+q+'".'}}});
 
+  /* Leitura: a nota vem inteira sempre que cabe no orçamento (proporcional ao contexto do modelo).
+     Antes o modelo pedia max_lines:200, recebia metade e respondia com o que tinha. */
+  function readBudget(ctx){return Math.max(8000,ctx&&ctx.readChars||24000)}
+  function readSlice(d,start,maxLines,budget){
+    var lines=String(d.content).split('\n'),total=lines.length,s=Math.min(Math.max(1,start||1),total),rest=lines.slice(s-1).join('\n').length,e;
+    e=s-1;var used=0;while(e<total&&(used+lines[e].length+8<=budget||e===s-1)){used+=lines[e].length+8;e++}
+    if(rest>budget&&maxLines)e=Math.min(e,s-1+maxLines); /* nota maior que o orçamento: respeita o trecho pedido */
+    var w=String(e).length,out=[];for(var i=s;i<=e;i++)out.push(String(i).padStart(w,' ')+'| '+lines[i-1]);
+    var head='# '+d.path+' ('+total+' linhas'+(d.tags&&d.tags.length?' · tags: '+d.tags.map(function(t){return '#'+t}).join(' '):'')+')'+(s>1||e<total?' — linhas '+s+'–'+e:' — completa');
+    var body=d.content?out.join('\n'):'(nota vazia)',partial=e<total?{path:d.path,next:e+1,total:total}:null;
+    if(partial)body+='\n\n⚠ LEITURA PARCIAL: faltam as linhas '+(e+1)+'–'+total+'. Antes de responder sobre esta nota, chame read_note com path="'+d.path+'" e start_line='+(e+1)+'.';
+    return{text:head+'\n'+body,partial:partial,done:!partial?d.path:null};
+  }
   def({name:'read_note',access:'read',
-    description:'Lê uma nota com números de linha. Para notas longas, use start_line e max_lines. Leia antes de editar.',
-    parameters:{type:'object',properties:{path:{type:'string'},start_line:{type:'integer',minimum:1},max_lines:{type:'integer',minimum:1,maximum:2000}},required:['path'],additionalProperties:false},
-    label:function(i){return 'Lendo '+i.path},
-    run:function(i,ctx){var d=resolveDoc(ctx,i.path),n=numbered(d.content,i.start_line,i.max_lines);
-      var head='# '+d.path+' ('+n.total+' linhas'+(d.tags.length?' · tags: '+d.tags.map(function(t){return '#'+t}).join(' '):'')+')';
-      return{content:head+'\n'+(d.content?n.text:'(nota vazia)')+(n.end<n.total?'\n…[linhas '+(n.end+1)+'–'+n.total+' não mostradas]':'')}}});
+    description:'Lê uma nota inteira, com números de linha. Notas muito longas vêm em partes: se o resultado disser LEITURA PARCIAL, continue com start_line antes de responder. Leia antes de editar.',
+    parameters:{type:'object',properties:{path:{type:'string'},start_line:{type:'integer',minimum:1,description:'Linha inicial (para continuar uma leitura parcial)'},max_lines:{type:'integer',minimum:1,maximum:5000,description:'Opcional; se a nota couber inteira, ela vem inteira mesmo assim'}},required:['path'],additionalProperties:false},
+    label:function(i){return 'Lendo '+i.path+(i.start_line>1?' (a partir da linha '+i.start_line+')':'')},
+    run:function(i,ctx){var d=resolveDoc(ctx,i.path),r=readSlice(d,i.start_line,i.max_lines,readBudget(ctx));
+      return{content:r.text,reads:[{path:d.path,partial:r.partial}]}}});
+
+  def({name:'read_notes',access:'read',
+    description:'Lê várias notas de uma vez (até 10), cada uma inteira quando cabe. Use quando já sabe quais notas precisa, em vez de várias chamadas de read_note.',
+    parameters:{type:'object',properties:{paths:{type:'array',items:{type:'string'},minItems:1,maxItems:10}},required:['paths'],additionalProperties:false},
+    label:function(i){var n=(i.paths||[]).length;return 'Lendo '+n+' nota'+(n===1?'':'s')},
+    run:function(i,ctx){var paths=(i.paths||[]).slice(0,10),share=Math.max(4000,Math.floor(readBudget(ctx)/Math.max(1,paths.length))),out=[],reads=[];
+      paths.forEach(function(p){try{var d=resolveDoc(ctx,p),r=readSlice(d,1,0,share);out.push(r.text);reads.push({path:d.path,partial:r.partial})}catch(e){out.push('# '+p+'\n(erro: '+e.message+')')}});
+      return{content:out.join('\n\n━━━━━━━━\n\n'),reads:reads}}});
+
+  def({name:'grep_notes',access:'read',
+    description:'Procura um texto (ou expressão regular) dentro de todas as notas e devolve as linhas exatas com caminho e número da linha. Ignora maiúsculas e acentos no modo texto. Ótimo para achar onde algo é citado, nomes, datas e trechos para editar.',
+    parameters:{type:'object',properties:{pattern:{type:'string'},regex:{type:'boolean',description:'Tratar pattern como expressão regular (padrão false)'},folder:{type:'string',description:'Limitar a uma pasta'},context:{type:'integer',minimum:0,maximum:3,description:'Linhas de contexto antes/depois (padrão 0)'},limit:{type:'integer',minimum:1,maximum:200,description:'Máximo de linhas (padrão 60)'}},required:['pattern'],additionalProperties:false},
+    label:function(i){return 'Procurando “'+String(i.pattern).slice(0,50)+'” nas notas'},
+    run:function(i,ctx){var s=services(ctx),pat=String(i.pattern||''),f=norm(i.folder).toLowerCase(),lim=i.limit||60,cx=i.context||0,test;
+      if(!pat.trim())throw ToolError('pattern vazio.');
+      if(i.regex){var re;try{re=new RegExp(pat,'i')}catch(e){throw ToolError('Expressão regular inválida: '+e.message)}test=function(l){return re.test(l)}}
+      else{var q=fold(pat);test=function(l){return fold(l).indexOf(q)>=0}}
+      var out=[],hits=0,files=0,more=false;
+      s.docs.list().slice().sort(function(a,b){return a.path.localeCompare(b.path)}).forEach(function(d){if(more||f&&d.path.toLowerCase().indexOf(f+'/')!==0)return;
+        var lines=String(d.content).split('\n'),shown=new Set(),block=[];
+        lines.forEach(function(l,n){if(more||!test(l))return;if(hits>=lim){more=true;return}hits++;for(var k=Math.max(0,n-cx);k<=Math.min(lines.length-1,n+cx);k++)if(!shown.has(k)){shown.add(k);block.push('  '+(k+1)+(k===n?': ':'- ')+clip(lines[k],300))}});
+        if(block.length){files++;out.push(d.path+'\n'+block.join('\n'))}});
+      if(!hits)return{content:'Nenhuma linha contém "'+pat+'"'+(f?' em '+i.folder:'')+'.'};
+      return{content:hits+' linha(s) em '+files+' nota(s)'+(more?' (limite atingido; refine a busca ou aumente limit)':'')+':\n\n'+out.join('\n\n')}}});
 
   def({name:'get_links',access:'read',
     description:'Mostra as ligações de uma nota: links [[...]] que ela faz (e quais não existem), notas que apontam para ela (backlinks) e tags.',
@@ -193,6 +229,15 @@
     label:function(i){return 'Abrir '+i.path},
     run:function(i,ctx){var s=services(ctx),d=resolveDoc(ctx,i.path);if(ctx.openNote)ctx.openNote(d.id);else s.core.commands.execute('document.open',{id:d.id,source:'ai.agent'});return{content:'Aberta: '+d.path}}});
 
+  def({name:'update_plan',access:'plan',
+    description:'Mostra ao usuário o seu plano como uma lista de passos com status. Use em tarefas com 3 ou mais passos: crie o plano no começo e atualize a cada passo concluído (envie a lista inteira).',
+    parameters:{type:'object',properties:{steps:{type:'array',maxItems:20,items:{type:'object',properties:{step:{type:'string'},status:{type:'string',enum:['pending','in_progress','done']}},required:['step','status']}}},required:['steps'],additionalProperties:false},
+    label:function(i){var st=i.steps||[],d=st.filter(function(x){return x&&x.status==='done'}).length;return 'Plano: '+d+'/'+st.length+' passos'},
+    run:function(i,ctx){var st=(i.steps||[]).filter(function(x){return x&&String(x.step||'').trim()}).slice(0,20).map(function(x){return{step:String(x.step).trim().slice(0,200),status:['pending','in_progress','done'].indexOf(x.status)>=0?x.status:'pending'}});
+      if(!st.length)throw ToolError('Envie ao menos um passo.');if(ctx.setPlan)ctx.setPlan(st);
+      var d=st.filter(function(x){return x.status==='done'}).length,next=st.find(function(x){return x.status!=='done'});
+      return{content:'Plano atualizado: '+d+'/'+st.length+' concluídos.'+(next?' Próximo: '+next.step:' Todos os passos concluídos; responda ao usuário.'),plan:st}}});
+
   def({name:'remember',access:'memory',
     description:'Guarda um fato durável sobre o usuário ou o vault (preferências, convenções, objetivos) na memória do Assistente, usada em conversas futuras. Não guarde conteúdo de notas.',
     parameters:{type:'object',properties:{fact:{type:'string'}},required:['fact'],additionalProperties:false},
@@ -211,6 +256,8 @@
       var v=input[k],t=p.type;
       if(t==='string'&&typeof v!=='string'){if(typeof v==='number')input[k]=String(v);else errs.push('"'+k+'" deve ser texto')}
       if(t==='integer'){var n=Number(v);if(!Number.isInteger(n))errs.push('"'+k+'" deve ser inteiro');else{input[k]=n;if(p.minimum!=null&&n<p.minimum)input[k]=p.minimum;if(p.maximum!=null&&n>p.maximum)input[k]=p.maximum}}
+      if(t==='array'&&!Array.isArray(v)){if(typeof v==='string'){try{var pv=JSON.parse(v);if(Array.isArray(pv))input[k]=v=pv}catch(_){input[k]=v=[v]}}if(!Array.isArray(input[k]))errs.push('"'+k+'" deve ser uma lista')}
+      if(t==='array'&&Array.isArray(input[k])&&p.items&&p.items.type==='string')input[k]=input[k].map(String);
       if(t==='boolean'&&typeof v!=='boolean'){if(v==='true'||v==='false')input[k]=v==='true';else errs.push('"'+k+'" deve ser true/false')}});
     return errs;
   }
