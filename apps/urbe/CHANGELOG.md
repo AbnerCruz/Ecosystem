@@ -1,5 +1,37 @@
 # Urbe — Changelog
 
+## v1.7.0-beta — Urbe instalável: Windows e Android, com pasta real e atualização (2026-09-27)
+
+### Instalar de verdade
+- **Windows**: instalador `Urbe-Setup-(versão).exe`, com atalho na área de trabalho e no menu Iniciar.
+- **Android**: `Urbe-(versão).apk`.
+- Os dois ficam na página de lançamentos do GitHub, e o site continua funcionando no navegador.
+
+### Pasta de verdade
+- As notas, o **Tutorial**, as páginas, os anexos e o mapa passam a ser **arquivos reais** em `Documentos/Urbe`, visíveis no explorador ou gerenciador de arquivos.
+- No Windows dá para escolher outra pasta, inclusive uma do OneDrive, Dropbox ou Google Drive.
+- No Android, o app pede o "acesso a todos os arquivos" (opcional) para enxergar também o que for copiado para a pasta por outro app ou pelo computador.
+- **Mudanças feitas por fora** (Explorer, Obsidian, sincronizadores) entram no app: na hora no Windows, ao voltar para o app no Android.
+  - Uma edição local ainda não salva nunca é atropelada.
+- Proteção: o app só lê e grava dentro da pasta do Urbe (nem `..`, nem caminho absoluto, nem atalho para fora). A gravação é por troca atômica, então um corte de energia não deixa nota pela metade.
+
+### Atualizações
+- **Windows**: baixa a versão nova sozinho e oferece **Reiniciar e atualizar**.
+- **Android**: avisa a versão nova e baixa o APK com **Baixar e instalar**.
+- **Configurações → Procurar atualização** também funciona no app instalado.
+- A cada versão nova na `main`, o GitHub Actions constrói o `.exe` e o `.apk` e publica o lançamento.
+
+### No app instalado
+- **Imprimir ou salvar PDF**:
+  - no Windows, gera o PDF direto, com o tamanho de página e as margens do livro;
+  - no Android, abre a impressão do sistema.
+- **Exportações** (HTML, `.zip`) vão para onde você escolher no Windows e para `Downloads/Urbe` no Android.
+- Links externos abrem no navegador.
+- **Voltar do Android**:
+  - fecha o que estiver aberto;
+  - depois sai da nota;
+  - na cidade, minimiza (nunca fecha o app de repente).
+
 ## v1.6.0-beta — Estúdio como ambiente único: entre direto e construa (2026-09-27)
 
 ### Entrar direto no ambiente

@@ -495,7 +495,9 @@
   function saveHtmlToVault(){var d=docs.get(st.docId);if(!d)return;var p=d.path.replace(/\.page\.json$/i,'.html'),ex=docs.get(p);docs.upsert(Object.assign({},ex||{},{id:ex?ex.id:undefined,path:p,content:html(false)}),{source:'pages.export'});toast('Salvo como '+p.split('/').pop()+'.')}
   /* imprimir ou salvar PDF: a página vai para um quadro isolado (sem acesso ao app) que chama a impressão
      do navegador; no formato Livro saem o tamanho de página, as margens e os números do livro */
-  function printPdf(){var old=doc.getElementById('ps-print');if(old)old.remove();
+  function printPdf(){var N=global.UrbeNative;
+    if(N&&N.printHtml){toast('Preparando o PDF…');N.printHtml(html(false),fileBase()).then(function(r){if(r&&r.saved)toast('PDF salvo em '+r.saved+'.');else if(r&&r.canceled)toast('Cancelado.')}).catch(function(e){toast('Não consegui gerar o PDF: '+(e&&e.message||e))});return}
+    var old=doc.getElementById('ps-print');if(old)old.remove();
     var f=doc.createElement('iframe');f.id='ps-print';f.title='Impressão';f.setAttribute('sandbox','allow-scripts allow-modals');f.setAttribute('aria-hidden','true');
     f.style.cssText='position:fixed;left:-10000px;top:0;width:900px;height:1200px;border:0;opacity:0;pointer-events:none';
     f.srcdoc=html(false).replace('</body>','<script>addEventListener("load",function(){(document.fonts&&document.fonts.ready||Promise.resolve()).then(function(){setTimeout(function(){print()},250)})})<\/script></body>');

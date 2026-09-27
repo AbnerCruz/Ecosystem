@@ -1,4 +1,4 @@
-const CACHE = 'urbe-shell-v1.6.0-beta';
+const CACHE = 'urbe-shell-v1.7.0-beta';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const APP_SHELL = [
   './src/styles/theme.css',
   './src/ui/icons.js',
   './src/ui/dialogs.js',
+  './src/native/bridge.js',
   './src/ui/touch-debug.js',
   './src/ui/settings.js',
   './src/customize/customize.js',

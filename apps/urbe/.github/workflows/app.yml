@@ -1,0 +1,154 @@
+name: Urbe instalável (Windows e Android)
+
+# Constrói o instalador do Windows e o APK do Android.
+# - Em PR que mexe no app instalado: só constrói (confere que continua compilando).
+# - Na main: se a versão do package.json ainda não tem lançamento, constrói e publica um
+#   GitHub Release "vX.Y.Z". Os apps instalados olham esse lançamento para se atualizar.
+# - "Run workflow" (manual): constrói; marque "publicar" para lançar a versão atual.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - 'native/**'
+      - 'src/native/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - 'tools/build-www.mjs'
+      - '.github/workflows/app.yml'
+  workflow_dispatch:
+    inputs:
+      publicar:
+        description: 'Publicar esta versão como lançamento (se ainda não existir)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  versao:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # a versão do app (site) e a do instalador precisam ser a mesma
+          grep -q "V21_VERSION='$VERSION'" src/app.js || { echo "::error::src/app.js (V21_VERSION) não está em $VERSION"; exit 1; }
+          WANT=false
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ inputs.publicar }}" = "true" ]; then WANT=true; fi
+          if [ "$WANT" = "true" ] && gh release view "v$VERSION" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Já existe o lançamento v$VERSION: nada a publicar."; WANT=false
+          fi
+          echo "release=$WANT" >> "$GITHUB_OUTPUT"
+          echo "Versão $VERSION · publicar: $WANT"
+
+  windows:
+    needs: versao
+    if: needs.versao.outputs.release == 'true' || github.event_name != 'push'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Instalador (NSIS)
+        run: npx electron-builder --win --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            dist/*.exe
+            dist/*.exe.blockmap
+            dist/latest.yml
+          if-no-files-found: error
+
+  android:
+    needs: versao
+    if: needs.versao.outputs.release == 'true' || github.event_name != 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: App web para o Android
+        run: node tools/build-www.mjs && npx cap sync android
+      - name: Chave de assinatura
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/urbe.keystore"
+            echo "URBE_KEYSTORE=$RUNNER_TEMP/urbe.keystore" >> "$GITHUB_ENV"
+            echo "URBE_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "Assinando com a chave do Urbe."
+          elif [ "${{ needs.versao.outputs.release }}" = "true" ]; then
+            echo "::error::Faltam os secrets ANDROID_KEYSTORE_BASE64 e ANDROID_KEYSTORE_PASSWORD (Settings → Secrets and variables → Actions). Sem a chave, o APK não pode ser atualizado depois."
+            exit 1
+          else
+            echo "::notice::Sem a chave do Urbe: APK de teste assinado com a chave de depuração."
+          fi
+      - name: APK
+        working-directory: native/android
+        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
+      - name: Nome do arquivo
+        run: |
+          mkdir -p out
+          cp native/android/app/build/outputs/apk/release/app-release.apk "out/Urbe-${{ needs.versao.outputs.version }}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: out/*.apk
+          if-no-files-found: error
+
+  lancamento:
+    needs: [versao, windows, android]
+    if: needs.versao.outputs.release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefatos
+      - name: Notas do lançamento (do CHANGELOG)
+        run: |
+          V="${{ needs.versao.outputs.version }}"
+          awk -v v="## v$V" 'index($0,v)==1{p=1;next} /^## v/{if(p)exit} p' CHANGELOG.md > notas.md
+          printf '\n---\n**Instalar:** Windows → `Urbe-Setup-%s.exe` · Android → `Urbe-%s.apk`\n' "$V" "$V" >> notas.md
+          cat notas.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.versao.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          name: Urbe ${{ needs.versao.outputs.version }}
+          body_path: notas.md
+          make_latest: true
+          files: |
+            artefatos/windows/*
+            artefatos/android/*

@@ -1,0 +1,13 @@
+{
+  "appId": "app.urbe",
+  "appName": "Urbe",
+  "webDir": "native/www",
+  "android": {
+    "path": "native/android",
+    "backgroundColor": "#0b0e14",
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

@@ -17,7 +17,11 @@
       core.commands.has('pages.home')?{icon:'page',label:'Páginas',detail:'Sites e páginas HTML do vault',run:function(){core.commands.execute('pages.home')}}:null,
       dbg?{icon:'select',label:'Diagnóstico de toques',detail:dbg.isOn()?'Ligado — toque para desligar':'Para descobrir botões que não respondem',run:function(){var v=!dbg.isOn();dbg.set(v);
         if(v)D.alert({title:'Diagnóstico ligado',message:'Agora toque nos botões que não funcionam. Cada toque deixa um ponto: verde = o botão recebeu o toque; vermelho = não recebeu.\n\nDepois toque em “Copiar relatório” no quadro do topo e cole na conversa. Para desligar, use o × do quadro.'})}}:null,
-      {icon:'restore',label:'Procurar atualização',detail:'Versão '+(r.version?r.version():''),run:function(){var sw=global.navigator.serviceWorker;
+      {icon:'restore',label:'Procurar atualização',detail:'Versão '+(r.version?r.version():''),run:function(){var N=global.UrbeNative;
+        if(N&&N.update){N.update.check({manual:true}).then(function(s){
+          var m=!s||s.state==='none'?'Você já está na versão mais nova.':s.state==='error'?'Não consegui verificar agora: '+(s.message||'sem conexão')+'.':s.state==='ready'?'A versão '+s.version+' já foi baixada. Toque em “Reiniciar e atualizar” no aviso embaixo.':'A versão '+(s.version||'nova')+' está disponível. Use o aviso embaixo da tela.';
+          D.alert({title:'Atualização',message:m+'\n\nVersão instalada: '+(r.version?r.version():'')})}).catch(function(){});return}
+        var sw=global.navigator.serviceWorker;
         (sw&&sw.getRegistration?sw.getRegistration().then(function(g){return g&&g.update()}):Promise.resolve()).catch(function(){}).then(function(){global.location.reload()})}}
     ].filter(Boolean));
   }
