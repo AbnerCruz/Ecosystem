@@ -1,5 +1,10 @@
 # Urbe — Changelog
 
+## v1.3.2-beta — A migração leva a cidade para terra firme (2026-09-27)
+
+- Algumas cidades antigas ficaram inteiras **no meio do oceano** do mundo novo. A reorganização da 1.3.1 procurava espaço em volta do centro atual da cidade, que era o mar. Agora a migração leva a cidade para o **ponto de partida do mundo**, escolhido pelo gerador em terra boa, com rio por perto, e a câmera vai junto.
+- "Organizar os bairros" e os bairros novos também conferem se o centro tem terra firme por perto. Se não tiver, usam o ponto de partida.
+
 ## v1.3.1-beta — Correção: cidades antigas travavam em "Sincronizando mundo" (2026-09-27)
 
 - **Causa**: uma cidade criada antes do mundo novo tinha casas em lugares que agora são água ou montanha. Para cada ligação impossível entre essas casas, o traçado das ruas percorria até 5 janelas de 120 mil passos. No celular isso levava minutos, e a tela de carregamento parecia travada. Num computador, bastavam 6 casas na água para levar 18 s.
