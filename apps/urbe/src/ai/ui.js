@@ -202,7 +202,9 @@
     s=s.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>').replace(/(^|[^*\w])\*([^*\n]+)\*(?!\w)/g,'$1<em>$2</em>').replace(/(^|[^\w])_([^_\n]+)_(?!\w)/g,'$1<em>$2</em>').replace(/~~([^~\n]+)~~/g,'<del>$1</del>');
     return s.replace(/\u0000(\d+)\u0000/g,function(_,i){return '<code>'+esc(codes[+i])+'</code>'});
   }
-  function md(src){
+  /* fórmulas LaTeX nas respostas ($…$, $$…$$) quando o módulo de matemática está carregado */
+  function md(src){var Mth=global.UrbeMath;return Mth?Mth.renderWith(mdPlain,src):mdPlain(src)}
+  function mdPlain(src){
     var lines=String(src||'').replace(/\r\n?/g,'\n').split('\n'),out=[],i=0,list=null;
     function closeList(){if(list){out.push('</'+list+'>');list=null}}
     while(i<lines.length){var l=lines[i],m;

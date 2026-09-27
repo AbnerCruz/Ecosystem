@@ -84,6 +84,7 @@
     }
     b.textContent='';b.appendChild(doc.createElement('br'));
     var r=doc.createRange();r.setStart(b,0);r.collapse(true);var s=global.getSelection();s.removeAllRanges();s.addRange(r);
+    if(x.run){x.run(b);return}
     run(x.act);
   }
   menu.addEventListener('pointerdown',function(e){e.preventDefault()});
@@ -99,5 +100,5 @@
   editor.addEventListener('blur',function(){setTimeout(function(){if(doc.activeElement!==editor)closeMenu()},120)});
   doc.addEventListener('selectionchange',function(){if(state.open&&!slashQuery())closeMenu()});
 
-  global.UrbeVisualTools={run:run,isSlashOpen:function(){return state.open}};
+  global.UrbeVisualTools={run:run,isSlashOpen:function(){return state.open},addItem:function(item){ITEMS.push(item)}};
 })(window);

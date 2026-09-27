@@ -3420,6 +3420,14 @@ markdownFromVisual=function(root){
   return v22BaseFromVisual(root).replace(/\u200b/g,'').replace(/^(#{1,6})[ \t]*$/gm,'$1 ');
 };
 
+/* ---------- matemática (src/math) ----------
+   As fórmulas saem do Markdown antes da renderização e voltam como blocos
+   atômicos; no caminho de volta cada uma é reescrita com os delimitadores
+   originais. Tudo o que é específico de matemática vive em src/math. */
+var urbeMathBaseRender=renderMarkdown,urbeMathBaseFromVisual=markdownFromVisual;
+renderMarkdown=function(md){var M=window.UrbeMath;return M?M.renderWith(urbeMathBaseRender,md,{editable:true}):urbeMathBaseRender(md)};
+markdownFromVisual=function(root){var E=window.UrbeMathEditor;return E&&E.serialize?E.serialize(urbeMathBaseFromVisual,root):urbeMathBaseFromVisual(root)};
+
 /* ---------- 5. mapa.json só é gravado quando muda de verdade ----------
    O campo "salvo" trazia a hora atual, então a comparação com o snapshot
    nunca batia e cada rajada de digitação (120ms) regravava o mapa inteiro
@@ -4062,7 +4070,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.44.0';
+V21_VERSION='0.45.0';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */

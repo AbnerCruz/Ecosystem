@@ -1,5 +1,24 @@
 # Urbe — Changelog
 
+## v0.45.0 — Matemática nas notas (fase 1) (2026-09-27)
+
+- **LaTeX em qualquer nota `.md`**, sem formato novo:
+  - Fórmulas no texto com `$…$` ou `\(…\)`; em destaque com `$$…$$` ou `\[…\]`.
+  - Blocos de código e `\$` ficam como estão, e preços como “R$ 10” não viram fórmula.
+  - Renderização com KaTeX embutido no app (`vendor/katex`), que funciona offline.
+- **Editor visual**:
+  - Fórmulas são blocos que não se desmontam ao editar o texto em volta.
+  - Tocar ou clicar numa fórmula abre um painel com prévia ao vivo, erros explicados, autocompletar de comandos, símbolos (Básico, Grego, Cálculo, Conjuntos, Setas) e 18 modelos (fração, integral, somatório, limite, derivadas, matrizes, sistema, por partes, alinhado…).
+  - No celular, o painel sobe como folha inferior. **Tab** pula para a próxima `{}` a preencher.
+  - Digitar `$x^2$` converte na hora.
+  - Botão **∑** na barra (ou **Ctrl+M**; **Ctrl+Shift+M** para destaque) e itens “Fórmula” e “Fórmula em destaque” no menu `/`.
+  - O Markdown volta exatamente como estava: cada fórmula guarda seus delimitadores, e abrir e sair não altera o arquivo.
+- **Modo Fonte**:
+  - Com o cursor dentro de uma fórmula, aparece uma barra com a prévia (ou o erro), o autocompletar (`\fr` → `\frac{}{}`, Tab/Enter) e os símbolos.
+  - No celular, a barra fica logo acima do teclado. Em notas com `tipo: matematica` no cabeçalho, ela aparece sempre.
+- **Nota matemática**: Notas → Nova → “Nova nota matemática” (ou a paleta de comandos) cria a nota com `tipo: matematica` e um exemplo.
+- **Fórmulas também no Assistente e nas Páginas** (o HTML exportado leva o CSS do KaTeX). O Assistente foi orientado a escrever matemática em LaTeX.
+
 ## v0.44.0 — Páginas: estúdio de sites e páginas HTML (2026-09-27)
 
 - **Páginas são arquivos do vault** (`.page.json`): um JSON com meta, tema, layout e seções. Você edita no estúdio visual, o Assistente cria e edita pelo JSON, e dá para abrir como texto. Exporta um único HTML independente, com o mesmo resultado da prévia.

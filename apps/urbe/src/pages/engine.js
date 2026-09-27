@@ -39,7 +39,9 @@
       .replace(/~~([^~]+)~~/g,'<del>$1</del>').replace(/==([^=]+)==/g,'<mark>$1</mark>');
     return s.replace(/\u0000(\d+)\u0001/g,function(_,i){return keep[+i]});
   }
-  function markdown(src,o){
+  /* fórmulas LaTeX nas páginas: renderizadas com KaTeX quando disponível (o CSS vai junto no HTML) */
+  function markdown(src,o){var Mth=global.UrbeMath;if(Mth&&Mth.ready()&&!(o&&o._noMath)){var x=Mth.extract(src);if(x.items.length){o=Object.assign({},o||{},{_noMath:true});if(o.mathUsed)o.mathUsed.v=true;return Mth.restore(markdownRaw(x.text,o),x.items,{})}}return markdownRaw(src,o)}
+  function markdownRaw(src,o){
     o=o||{};var lines=String(src==null?'':src).replace(/\r\n?/g,'\n').split('\n'),out=[],i=0;
     if(lines[0]==='---'){var fm=lines.indexOf('---',1);if(fm>0)i=fm+1}
     var headings=o.headings;
@@ -378,7 +380,7 @@
     '.countdown{text-align:center}.cd{display:flex;justify-content:center;gap:14px;flex-wrap:wrap}.cd div{min-width:86px;padding:16px 10px;border-radius:var(--r);background:var(--surface);border:1px solid var(--border)}.cd strong{display:block;font:800 2.4rem/1 var(--fh);font-variant-numeric:tabular-nums}.cd span{color:var(--muted);font-size:.85rem}',
     '.toc{padding:22px 24px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);max-width:560px}.toc ol{margin:10px 0 0;padding-left:1.2em;display:grid;gap:6px}',
     '.divider{margin:0 auto;max-width:var(--w)}.d-line{border-top:1px solid var(--border)}.d-dots{height:6px;background:radial-gradient(circle,var(--muted) 1.5px,transparent 2px) center/18px 6px repeat-x;opacity:.6}.d-space{height:24px}.wave{width:100%;height:40px;color:var(--border)}',
-    '.missing{padding:20px;border:1px dashed var(--border);border-radius:var(--rs);color:var(--muted);text-align:center}',
+    '.umath-block{display:block;margin:1.2em 0;text-align:center;overflow-x:auto}.katex{font-size:1.08em}.katex-display{overflow-x:auto;overflow-y:hidden}.missing{padding:20px;border:1px dashed var(--border);border-radius:var(--rs);color:var(--muted);text-align:center}',
     /* navegação, rodapé, extras */
     '.nav{position:relative;z-index:50;background:color-mix(in srgb,var(--bg) 78%,transparent);-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--border)}.nav.sticky{position:sticky;top:0}',
     '.nav .wrap{display:flex;align-items:center;gap:20px;min-height:64px;padding:0 20px}.brand{display:flex;align-items:center;gap:10px;font:800 1.1rem var(--fh);color:var(--text);text-decoration:none;letter-spacing:-.02em}.brand:hover{color:var(--text)}.nav-links{display:flex;gap:4px;margin-left:auto;align-items:center}',
@@ -442,7 +444,7 @@
     return '<!doctype html>\n<html lang="'+esc(M.lang||'pt-BR')+'" class="'+(mode==='dark'?'dark-default':mode==='light'?'light-default':'')+'">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n<title>'+esc(M.title)+'</title>\n'+
       (M.description?'<meta name="description" content="'+esc(M.description)+'">\n<meta property="og:description" content="'+esc(M.description)+'">\n':'')+'<meta property="og:title" content="'+esc(M.title)+'">\n'+(M.image&&safeUrl(M.image,true)&&!/^data:/.test(M.image)?'<meta property="og:image" content="'+esc(safeUrl(M.image,true))+'">\n':'')+
       '<meta name="generator" content="Urbe">\n<link rel="icon" href="'+esc(iconSvg)+'">\n'+(fonts.length?'<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'+fonts.join('&')+'&display=swap">\n':'')+
-      '<style>'+css(s)+(preview?PREVIEW_CSS+'.is-hidden{opacity:.35}':'')+'</style>\n</head>\n<body id="top">\n'+(L.progress?'<div class="progress" aria-hidden="true"></div>':'')+nav+'<main>\n'+body+'\n</main>\n'+foot+
+      (/class="katex/.test(body+foot)?'<link rel="stylesheet" href="'+(preview?new URL('vendor/katex/katex.min.css',(global.location&&global.location.href)||'http://localhost/').href:'https://cdn.jsdelivr.net/npm/katex@0.16.47/dist/katex.min.css')+'">\n':'')+'<style>'+css(s)+(preview?PREVIEW_CSS+'.is-hidden{opacity:.35}':'')+'</style>\n</head>\n<body id="top">\n'+(L.progress?'<div class="progress" aria-hidden="true"></div>':'')+nav+'<main>\n'+body+'\n</main>\n'+foot+
       (L.themeToggle?'<button class="fab fab-theme" type="button" aria-label="Alternar tema claro/escuro"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>':'')+(L.backToTop?'<button class="fab fab-top" type="button" aria-label="Voltar ao topo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>':'')+
       '\n<script>'+RUNTIME+(preview?PREVIEW:'')+'<\/script>\n</body>\n</html>\n';
   }

@@ -55,6 +55,8 @@ jobs:
           node --check src/ai/store.js
           node --check src/ai/agent.js
           node --check src/ai/ui.js
+          node --check src/math/core.js
+          node --check src/math/editor.js
           node --check src/pages/engine.js
           node --check src/pages/templates.js
           node --check src/pages/ai-tools.js
@@ -82,6 +84,7 @@ jobs:
           node tests/editor-persistence.mjs
           node tests/ui-shell.mjs
           node tests/pages.mjs
+          node tests/math.mjs
           node tests/search-editor.mjs
           node tests/city.mjs
           node tests/world-terrain.mjs
