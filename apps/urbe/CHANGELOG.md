@@ -1,5 +1,40 @@
 # Urbe — Changelog
 
+## v0.47.0 — Mundo cheio de vida (2026-09-27)
+
+- **De longe, floresta continua floresta**: cada chunk ganha uma versão com as copas das árvores pintadas de cima (luz, sombra, neve), gerada no worker em meia resolução. Abaixo de 50% de zoom o mapa usa essa versão, então não fica mais um chão liso. Também é mais leve que desenhar milhares de árvores uma a uma. Bairros continuam sem árvores, como de perto.
+- **Chão muito mais rico** (18 tipos de detalhe, em ~28% dos tiles, até dois por tile):
+  - Campo e prado: canteiros de flores em manchas, capim alto, arbustos (alguns floridos) e pedrinhas.
+  - Floresta: cogumelos, samambaias, troncos caídos e tocos.
+  - Colinas e montanhas: rochas e matacões.
+  - Pântano: juncos e poças.
+  - Rios e lagos: vitórias-régias na margem.
+  - Praia: conchas e madeira trazida pelo mar.
+  - Savana, estepe e deserto: capim seco e arbustos secos.
+  - Tundra: manchas de neve.
+- **Fauna**: rebanhos de ovelhas e vacas pastando e andando pelos campos, cervos nas florestas, patos nadando em rios e lagos, e bandos de pássaros cruzando o céu com sombra no chão.
+  - Os animais evitam ruas, casas e bairros.
+  - Só existem perto do que está na tela.
+  - Usam o mesmo relógio leve dos moradores, com custo desprezível.
+
+## v0.46.0 — Mundo mais bonito, mapa explorável e toques no celular (2026-09-27)
+
+- **Biomas maiores**: continentes, clima e umidade em escalas 2–3× maiores e com menos detalhe miúdo. As regiões ficam coerentes (planícies, florestas, cordilheiras e lagos grandes) em vez de retalhos; o trecho médio de um bioma passou de 17,7 para 33 tiles. A área em volta da cidade continua amigável para construir.
+- **Transições suaves**:
+  - Entre biomas de terra, as texturas se misturam gradualmente (ecótono) em vez de trocar numa escadinha da grade.
+  - Margens de rios, lagos e mar são curvas, com a espuma seguindo a costa.
+  - O sombreamento do relevo também transiciona.
+  - As árvores avançam alguns tiles sobre o bioma vizinho, e bosques e campos se mesclam.
+- **Mapa refeito**:
+  - Arrastar para explorar, pinça ou roda para zoom, toque duplo para aproximar.
+  - Um toque marca o lugar e mostra o bioma com “Ir até lá”, então arrastar nunca teleporta sem querer.
+  - Botões fechar, +/− e “voltar para onde estou”, em tela cheia no celular.
+  - Terreno com relevo sombreado desenhado em duas passadas (rápida e nítida), com pastas, ruas, casas e onde você está.
+- **Configurações de verdade** (botão de ajustes na Cidade, que antes abria só o Assistente): cidade/vault, pasta no dispositivo, Assistente, Páginas, diagnóstico de toques e “Procurar atualização”, com a versão.
+- **Diagnóstico de toques** (Configurações): cada toque deixa um ponto verde (o botão recebeu) ou vermelho (não recebeu), e “Copiar relatório” gera um texto com o aparelho e o que aconteceu em cada toque, para achar botões que falham num celular específico.
+- **Todos os controles** usam `touch-action: manipulation`, sem espera de zoom por toque duplo.
+- **Matemática**: não existe mais “nota matemática” separada; fórmulas funcionam em qualquer nota.
+
 ## v0.45.0 — Matemática nas notas (fase 1) (2026-09-27)
 
 - **LaTeX em qualquer nota `.md`**, sem formato novo:

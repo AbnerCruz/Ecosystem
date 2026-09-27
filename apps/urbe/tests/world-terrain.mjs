@@ -34,3 +34,18 @@ test('app integra terreno com regras e pontes',()=>{
   if(index.indexOf('./src/world/terrain.js')<0||index.indexOf('./src/world/terrain.js')>index.indexOf('./src/app.js'))throw new Error('ordem');
   for(const k of ['urbeBloqueiaRua(x,y)','passo=reuso?.06:urbeCustoRua(x,y)','function urbeMotivoTerreno','chunk-worker.js'])if(!app.includes(k))throw new Error('falta '+k);
 });
+{ /* biomas grandes: ao atravessar o mundo em linha reta, cada trecho de bioma dura em média bem mais que antes (17,7 tiles na versão anterior) */
+  const W2=c.UrbeTerrain.createWorld('urbe',{spawnX:36,spawnY:25});let runs=0,len=0,cur=-1,n=0;
+  for(let y=-600;y<=600;y+=150){cur=-1;for(let x=-800;x<=800;x++){const b=W2.biome(x,y);if(b!==cur){runs++;cur=b}n++}}
+  len=n/runs;if(len<25)throw new Error('biomas pequenos demais: trecho médio '+len.toFixed(1)+' tiles');
+  /* amostra avulsa do mapa = bioma do chunk */
+  for(let i=0;i<200;i++){const x=Math.floor(Math.sin(i)*900),y=Math.floor(Math.cos(i*1.3)*700),s=W2.sample(x,y);if(s.b!==W2.biome(x,y))throw new Error('sample difere em '+x+','+y)}
+  console.log('OK   biome scale (trecho médio '+len.toFixed(1)+' tiles) and map sampling');
+}
+{ /* chão cheio: detalhes variados por bioma (até dois por tile) */
+  const W3=c.UrbeTerrain.createWorld('urbe',{spawnX:36,spawnY:25}),kinds=new Set();let tiles=0,withDecor=0;
+  for(let y=-200;y<200;y+=3)for(let x=-250;x<250;x+=3){const d=W3.decor(x,y);tiles++;if(d){withDecor++;(Array.isArray(d)?d:[d]).forEach(k=>kinds.add(k))}}
+  if(kinds.size<14)throw new Error('pouca variedade de detalhes: '+[...kinds].join(','));
+  if(withDecor/tiles<.25)throw new Error('chão vazio: só '+Math.round(withDecor/tiles*100)+'% dos tiles com detalhe');
+  console.log('OK   ground detail ('+kinds.size+' tipos, '+Math.round(withDecor/tiles*100)+'% dos tiles)');
+}

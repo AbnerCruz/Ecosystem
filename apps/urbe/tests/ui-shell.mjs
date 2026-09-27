@@ -47,3 +47,9 @@ test('Notas: lixeira funciona com pasta selecionada e contador distingue pastas'
   if(!/deleteFolder/.test(m))throw new Error('excluir ignora pastas');
   if(/textContent=n\+\(n===1\?' nota'/.test(m))throw new Error('contador chama pasta de nota');
 });
+test('mundo vivo: fauna registrada depois do terreno e visão de longe com copas',()=>{
+  const app=read('src/app.js'),art=read('src/world/pixel-art.js'),wk=read('src/world/chunk-worker.js');
+  if(app.indexOf("sch.add('world.fauna'")<app.indexOf('var MUNDO='))throw new Error('fauna precisa iniciar depois de MUNDO');
+  if(!/drawTrees=function\(\)\{urbeFaunaBaseTrees\(\);urbeDesenharFauna\(\)\}/.test(app))throw new Error('fauna fora do desenho');
+  if(!/chunkFarPixels/.test(art)||!/far:far\.buffer/.test(wk)||!/img\.far&&camera\.z<URBE_LONGE/.test(app))throw new Error('visão de longe ausente');
+});

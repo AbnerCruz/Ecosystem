@@ -58,28 +58,28 @@
 
     function raw(x,y){
       /* continentes: ruído grande deformado (warp) para costas menos redondas */
-      var wx=x+fbm(nD,x/170,y/170,3,2,.5)*70,wy=y+fbm(nD,x/170+31,y/170+17,3,2,.5)*70;
-      var cont=fbm(nE,wx/300,wy/300,5,2.03,.5);                 /* ~[-.5,.5] */
+      var wx=x+fbm(nD,x/300,y/300,3,2,.5)*120,wy=y+fbm(nD,x/300+31,y/300+17,3,2,.5)*120;
+      var cont=fbm(nE,wx/560,wy/560,5,2.03,.5);                 /* ~[-.5,.5] */
       var e=.52+cont*1.05;
       /* cordilheiras: ruído “ridged” só onde já é terra alta */
-      var rid=1-Math.abs(fbm(nR,x/120,y/120,4,2.1,.52)*1.6);rid=Math.max(0,rid);rid=rid*rid;
+      var rid=1-Math.abs(fbm(nR,x/210,y/210,4,2.1,.5)*1.6);rid=Math.max(0,rid);rid=rid*rid;
       e+=rid*.26*smooth(.5,.7,e)-.05;
       /* colinas e detalhe */
-      e+=fbm(nE,x/38+100,y/38-40,3,2,.5)*.08;
+      e+=fbm(nE,x/60+100,y/60-40,3,2,.5)*.07;
       /* o lugar onde as cidades começam é sempre terra temperada e amigável */
-      var d=Math.hypot(x-SX,y-SY),w=1-smooth(50,170,d);
+      var d=Math.hypot(x-SX,y-SY),w=1-smooth(70,260,d);
       /* só corrige extremos (mar e picos) — o relevo local continua o do ruído */
       e=mix(e,Math.max(.48,Math.min(.63,e)),w);
       e=Math.max(0,Math.min(1,e));
       /* temperatura: faixas amplas de latitude + variação regional, esfria com a altitude */
-      var lat=Math.sin((y-SY)/560*Math.PI*.5+.3);
-      var t=.55+lat*.24+fbm(nT,x/260,y/260,3,2,.5)*.45-Math.max(0,e-.58)*1.35;
+      var lat=Math.sin((y-SY)/1100*Math.PI*.5+.3);
+      var t=.55+lat*.24+fbm(nT,x/680,y/680,3,2,.45)*.5-Math.max(0,e-.58)*1.35;
       t=mix(t,Math.max(.36,Math.min(.68,t)),w);
       /* umidade: massas de ar + costas e rios mais úmidos */
-      var m=.5+fbm(nM,x/190,y/190,4,2,.5)*1.1+(e<SEA+.05?.18:0);
+      var m=.5+fbm(nM,x/520,y/520,3,2,.45)*1.25+fbm(nM,x/70+500,y/70-500,2,2,.5)*.07+(e<SEA+.05?.16:0);
       m=mix(m,Math.max(.34,Math.min(.62,m)),w);
       /* rios: vales onde um ruído de baixa frequência cruza o meio; mais largos quando úmido */
-      var rv=Math.abs(fbm(nV,x/150,y/150,3,2,.45)),rw=.0075+Math.max(0,m-.4)*.012;
+      var rv=Math.abs(fbm(nV,x/260,y/260,3,2,.45)),rw=.0062+Math.max(0,m-.4)*.01;
       var river=e>SEA+.012&&e<.72&&rv<rw&&d>6;
       return{e:e,t:Math.max(0,Math.min(1,t)),m:Math.max(0,Math.min(1,m)),river:river,rv:rv};
     }
@@ -119,20 +119,42 @@
     var TREE={}; /* probabilidade e espécie por bioma */
     TREE[B.GRASS]=[.035,'oak'];TREE[B.MEADOW]=[.05,'birch'];TREE[B.FOREST]=[.34,'oak'];TREE[B.DENSE]=[.55,'oak'];TREE[B.TAIGA]=[.36,'pine'];
     TREE[B.TUNDRA]=[.03,'deadpine'];TREE[B.HILLS]=[.08,'pine'];TREE[B.SAVANNA]=[.05,'acacia'];TREE[B.DESERT]=[.018,'cactus'];TREE[B.SWAMP]=[.14,'willow'];TREE[B.STEPPE]=[.012,'oak'];TREE[B.BEACH]=[.01,'palm'];
-    function tree(x,y){var b=at(x,y),r=TREE[b];if(!r)return null;
+    function tree(x,y){var b0=at(x,y);if(b0<=3||b0===B.SNOW||b0===B.MOUNTAIN||b0===B.PEAK)return null;
+      /* ecótono: a densidade e a espécie vêm de um ponto sorteado até ~3 tiles em volta,
+         então bosques avançam sobre o campo aos poucos em vez de parar numa linha */
+      var jx=Math.round((h2(x,y,41)-.5)*6),jy=Math.round((h2(x,y,43)-.5)*6),bj=at(x+jx,y+jy),b=(bj<=3||bj===B.SNOW||bj===B.MOUNTAIN||bj===B.PEAK)?b0:bj,r=TREE[b];if(!r)return null;
       /* bosques em manchas, não sal-e-pimenta */
       var clump=.55+fbm(nM,x/9+300,y/9-300,2,2,.5)*1.4;
       if(h2(x,y,7)>r[0]*Math.max(.2,clump))return null;
       var kind=r[1];if(b===B.FOREST&&h2(x,y,9)<.28)kind='birch';if(b===B.DENSE&&h2(x,y,9)<.35)kind='pine';if(b===B.TAIGA&&at(x,y)===B.TAIGA&&h2(x,y,3)<.1)kind='deadpine';
       return{kind:kind,v:Math.floor(h2(x,y,11)*3),snow:b===B.TUNDRA||(b===B.TAIGA&&elevation(x,y)>.62)};
     }
-    function decor(x,y){var b=at(x,y),r=h2(x,y,21);
-      if(b===B.MEADOW&&r<.16)return'flowers';if(b===B.GRASS&&r<.05)return'flowers';if((b===B.HILLS||b===B.MOUNTAIN)&&r<.1)return'rock';
-      if(b===B.DESERT&&r<.04)return'rock';if(b===B.SWAMP&&r<.22)return'reeds';if(b===B.BEACH&&r<.03)return'shell';if(b===B.STEPPE&&r<.08)return'tuft';return null}
+    /* detalhes do chão: até dois por tile, em manchas (flores em canteiros, capim em tufos) */
+    function decor(x,y){var b=at(x,y),r=h2(x,y,21),q=h2(x,y,22),o=[];
+      var patch=fbm(nM,x/6-900,y/6+900,2,2,.5),wet=b<=3;
+      if(wet){if((b===B.LAKE||b===B.RIVER||b===B.SEA)&&r<(b===B.SEA?.02:.16)){var nl=at(x+1,y)>3||at(x-1,y)>3||at(x,y+1)>3||at(x,y-1)>3;if(nl)o.push(b===B.SEA?'shorerock':'lily')}return o.length?o:null}
+      switch(b){
+        case B.GRASS:if(patch>.12?r<.55:r<.07)o.push('flowers');if(q<.13)o.push('bush');else if(q<.36)o.push('tallgrass');else if(q<.42)o.push('pebbles');break;
+        case B.MEADOW:if(patch>0?r<.7:r<.22)o.push('flowers');if(q<.32)o.push('tallgrass');else if(q>.96)o.push('bush');break;
+        case B.FOREST:case B.DENSE:if(r<.1)o.push('mushroom');else if(r<.26)o.push('fern');if(q<.05)o.push('log');else if(q<.09)o.push('stump');else if(q<.2)o.push('bush');break;
+        case B.TAIGA:if(r<.18)o.push('fern');else if(r<.24)o.push('mushroom');if(q<.08)o.push('rock');else if(q<.12)o.push('stump');break;
+        case B.SWAMP:if(r<.4)o.push('reeds');if(q<.22)o.push('puddle');else if(q<.3)o.push('lily');break;
+        case B.BEACH:if(r<.05)o.push('shell');if(q<.03)o.push('driftwood');else if(q<.1)o.push('pebbles');break;
+        case B.DESERT:if(r<.05)o.push('rock');if(q<.07)o.push('drybush');else if(q<.1)o.push('pebbles');break;
+        case B.SAVANNA:if(r<.4)o.push('drygrass');if(q<.08)o.push('drybush');else if(q<.11)o.push('rock');break;
+        case B.STEPPE:if(r<.18)o.push('tuft');if(q<.25)o.push('drygrass');else if(q<.3)o.push('pebbles');break;
+        case B.HILLS:if(r<.14)o.push('rock');else if(r<.2)o.push('flowers');if(q<.16)o.push('pebbles');else if(q<.4)o.push('tallgrass');break;
+        case B.MOUNTAIN:case B.PEAK:if(r<.22)o.push('rock');if(q<.07)o.push('boulder');break;
+        case B.TUNDRA:if(r<.22)o.push('snowpatch');if(q<.1)o.push('rock');else if(q<.2)o.push('tuft');break;
+        case B.SNOW:if(r<.06)o.push('rock');break;
+      }
+      return o.length?o:null}
     function info(x,y){return INFO[at(x,y)]}
     return{
       seed:seedText||'urbe',CH:CH,B:B,INFO:INFO,sea:SEA,
       raw:raw,biome:at,elevation:elevation,chunk:chunk,
+      /* amostra avulsa (mapa em escala grande): não guarda o chunk inteiro no cache */
+      sample:function(x,y){var cx=Math.floor(x/CH),cy=Math.floor(y/CH),c=cache.get(cx+':'+cy);if(c){var k=(Math.floor(y)-cy*CH)*CH+(Math.floor(x)-cx*CH);return{b:c.bio[k],e:c.elev[k]}}var r=raw(Math.floor(x),Math.floor(y));return{b:classify(r),e:r.e}},
       buildable:function(x,y){return INFO[at(x,y)].build},
       roadable:function(x,y){return INFO[at(x,y)].road},
       roadCost:function(x,y){return INFO[at(x,y)].cost},

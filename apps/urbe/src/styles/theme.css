@@ -477,3 +477,24 @@ html body .ume-actions button:active,html body .ume-actions button:hover{backgro
 html body .ume-actions button .ui-icon{width:20px;height:20px}
 html body .ume-actions button[data-delete]{color:var(--ui-danger)}
 html body .ume-actions button:disabled{opacity:.3;pointer-events:none}
+
+/* toques: sem espera de zoom por toque duplo em nenhum controle */
+button,a,[role=button],summary,label,input,select,textarea,.mdBtn,[data-nav]{touch-action:manipulation}
+
+/* ---------- mapa explorável ---------- */
+html body #mapao.um{position:fixed;inset:0;z-index:68;padding:calc(10px + var(--ui-safe-t)) 10px calc(10px + var(--ui-safe-b))}
+html body #mapao.um.open{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:8px}
+#mapao.um .um-top{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 4px 0 8px;color:var(--ui-text)}
+#mapao.um .um-top strong{font:700 17px var(--ui-font)}#mapao.um .um-sub{flex:1;color:var(--ui-text-3);font:500 12.5px var(--ui-font)}
+#mapao.um .um-stage{position:relative;flex:1;min-height:0;border-radius:var(--ui-r-l);overflow:hidden;box-shadow:0 0 0 1px var(--ui-line-2),var(--ui-shadow-2);background:#23466f}
+#mapao.um canvas.um-cv{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;border:0;border-radius:0;box-shadow:none;touch-action:none;cursor:grab;image-rendering:auto;background:transparent}
+#mapao.um canvas.um-cv:active{cursor:grabbing}
+#mapao.um .um-b{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;border:1px solid var(--ui-line-2);background:rgba(21,22,26,.92);color:var(--ui-text);font:600 20px/1 var(--ui-font);cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#mapao.um .um-b:active{transform:scale(.95)}
+#mapao.um .um-ctl{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:8px}
+#mapao.um .um-pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;pointer-events:none}
+#mapao.um .um-pin[hidden]{display:none}
+#mapao.um .um-go{pointer-events:auto;order:-1;margin-bottom:6px;min-height:42px;padding:0 16px;border-radius:99px;border:0;background:var(--ui-accent);color:var(--ui-accent-ink);font:700 14px var(--ui-font);white-space:nowrap;box-shadow:0 8px 22px rgba(0,0,0,.45);cursor:pointer}
+#mapao.um .um-pin-dot{width:14px;height:14px;border-radius:50%;background:var(--ui-accent);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);transform:translateY(7px)}
+#mapao.um .um-hint{position:static;text-align:center;color:var(--ui-text-3);font:500 12.5px var(--ui-font)}
+@media (min-width:900px){html body #mapao.um{padding:4vh 6vw}}
