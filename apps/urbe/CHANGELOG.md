@@ -1,5 +1,59 @@
 # Urbe — Changelog
 
+## v1.5.0-beta — Layout livre: páginas e livros montados peça por peça (2026-09-27)
+
+### Layout livre (bloco novo, no topo da lista do ＋)
+- Uma **árvore de peças**: containers que guardam outras peças (quantos níveis quiser), títulos H1–H6, parágrafos em Markdown, imagens, botões, listas, citações, ícones, divisores, espaços, vídeos, notas do vault, HTML livre e quebra de página.
+- **Containers responsivos** sem coordenadas fixas:
+  - **empilhados**;
+  - **lado a lado**, quebrando linha sozinho abaixo de uma largura mínima;
+  - **grade**, com colunas fixas ou automáticas.
+- **Estilo de cada peça**:
+  - arranjo, distribuição e alinhamento;
+  - largura, altura, proporção e ajuste da imagem;
+  - espaçamento interno e externo;
+  - fundo em cor, degradê ou imagem;
+  - borda, cantos, sombra e opacidade;
+  - fonte, tamanho, peso, altura da linha, espaço entre letras, alinhamento, maiúsculas e itálico;
+  - classe e CSS da peça (`&` é a própria peça).
+- **Estilo por tamanho de tela**: base (computador), tablet (até 900 px) e celular (até 600 px). O editor segue o tamanho da prévia. Cada campo mostra o valor herdado do computador, e há um botão para voltar ao estilo do computador.
+- **Editor**:
+  - **Camadas** em árvore;
+  - tocar na prévia seleciona a peça, e **tocar de novo num texto** permite escrever direto nele;
+  - adicionar dentro ou depois;
+  - **7 composições prontas**: duas colunas, imagem + texto, grade de cartões, capa centralizada, cartão, caixa de destaque e página de livro;
+  - subir, descer, sair e entrar num container, envolver, duplicar e apagar, com botões rotulados para o toque;
+  - tudo com desfazer.
+- **Converter em layout livre**: capa, folha de rosto, créditos, dedicatória, parte, capítulo (inclusive o que vem de uma nota), sobre o autor, colofão, texto, capa de site, citação, imagem e nota viram peças soltas, um título ou parágrafo por peça.
+- **Separar em capítulos**: "Capítulos de uma pasta" vira um bloco de capítulo por nota.
+- **No livro**, cada layout livre pode ser folha própria, página inteira (sem margem) ou continuação do texto.
+- O Assistente recebe a descrição completa da árvore e sabe montar layouts livres.
+
+### Modelos
+- **Tela livre**: capa, imagem + texto e grade de cartões, tudo em peças soltas.
+- O modelo **Livro** ganhou uma página em layout livre de exemplo.
+
+### Arquivo `.page.json` enxuto
+- O arquivo grava só o que difere do padrão. Um livro de exemplo caiu de 6,2 KB para 1,3 KB, e ele abre exatamente igual.
+
+### Segurança
+- Estilos das peças são validados: medidas, cores e opções.
+- A URL de imagem de fundo é codificada e não sai do `url(...)`.
+- No CSS escrito pela pessoa, `<` vira escape de CSS, e nada fecha a tag `<style>`.
+- Duas seções livres nunca colidem: as classes levam o id da seção.
+
+### Testes e Tutorial
+- `tests/pages-free.mjs`:
+  - árvore, validação e ids únicos;
+  - CSS responsivo (lado a lado, grade, tablet e celular);
+  - segurança;
+  - classes por seção;
+  - conversões;
+  - modos no livro;
+  - arquivo enxuto em ida e volta em todos os modelos;
+  - composições.
+- Nova nota **Tutorial/Páginas/Layout livre**; Blocos das páginas, Livros e Modelos apontam para ela.
+
 ## v1.4.0-beta — Estúdio de páginas: toques no celular, personalização e modelos vazio/simplificado (2026-09-27)
 
 ### Toques no celular

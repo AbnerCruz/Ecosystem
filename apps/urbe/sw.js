@@ -1,4 +1,4 @@
-const CACHE = 'urbe-shell-v1.4.0-beta';
+const CACHE = 'urbe-shell-v1.5.0-beta';
 const APP_SHELL = [
   './',
   './index.html',
@@ -86,6 +86,7 @@ const APP_SHELL = [
   './src/math/editor.js',
   './src/styles/math.css',
   './src/pages/engine.js',
+  './src/pages/free.js',
   './src/pages/templates.js',
   './src/pages/ai-tools.js',
   './src/pages/studio.js',

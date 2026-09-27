@@ -1,5 +1,8 @@
 # Blocos das páginas
 
+> [!tip] Quer liberdade total?
+> O bloco **Layout livre** monta a seção peça por peça, com estilo próprio para computador, tablet e celular. Veja [[Tutorial/Páginas/Layout livre|Layout livre]].
+
 Cada seção de uma página usa um destes blocos. Para trocar o tipo de uma seção já criada, use **Trocar tipo de bloco…** no menu dela.
 
 | Bloco | Para quê |
