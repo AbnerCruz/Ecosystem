@@ -3302,7 +3302,7 @@ function v21ChooseImportMode(){return new Promise(function(resolve){abrirMenuExp
 
 /* Editor tabs + adaptive behavior */
 var v21BaseLoadFile=loadFile;loadFile=function(b){if(!b.ext)b.ext='.md';v21BaseLoadFile(b);v21TouchTab(b);v21RefreshEditorChrome()};
-openFullEditor=function(b){closeHouseSummary();editorFull.classList.add('open');v21TouchTab(b);loadFile(b);setEditorViewMode(v21CanPreview(b)?'preview':'source')};
+openFullEditor=function(b){closeHouseSummary();editorFull.classList.add('open');v21TouchTab(b);loadFile(b);setEditorViewMode(v21CanPreview(b)&&urbeOpcoes.editor!=='texto'?'preview':'source')};
 closeFullEditor=function(){if(editorViewMode==='preview')syncVisualToMarkdown();editorFull.classList.remove('open');fileSidebar.classList.remove('open');currentFile=null;v21RenderTabs()};document.getElementById('closeFullEditor').onclick=closeFullEditor;
 function v21TouchTab(b){if(!b)return;v21OpenTabs=v21OpenTabs.filter(function(x){return world.buildings.includes(x)});if(!v21OpenTabs.includes(b))v21OpenTabs.push(b);v21RenderTabs()}
 function v21RenderTabs(){var box=document.getElementById('v21EditorTabs');if(!box)return;box.innerHTML=v21OpenTabs.map(function(b){return '<button class="v21Tab '+(b===currentFile?'active':'')+'" data-tab="'+b.id+'"><span class="v21TabLabel">'+escapeHTML(nomeCompletoNota(b))+'</span><span class="v21TabClose" data-close-tab="'+b.id+'">×</span></button>'}).join('');box.querySelectorAll('[data-tab]').forEach(function(t){t.onclick=function(e){var close=e.target.closest('[data-close-tab]'),b=world.buildings.find(function(x){return x.id===t.dataset.tab});if(close){e.stopPropagation();v21OpenTabs=v21OpenTabs.filter(function(x){return x.id!==close.dataset.closeTab});if(currentFile&&currentFile.id===close.dataset.closeTab){var next=v21OpenTabs[v21OpenTabs.length-1];if(next)loadFile(next);else closeFullEditor()}v21RenderTabs();return}if(b&&b!==currentFile){if(editorViewMode==='preview')syncVisualToMarkdown();loadFile(b)}}})}
@@ -4691,8 +4691,9 @@ drawBuildings=function(){
       ctx.save();urbeRetanguloArredondado(ctx,sp.x,sp.y,sw,sh,10*camera.z);ctx.fillStyle='rgba(143,179,255,.16)';ctx.fill();ctx.strokeStyle='#8fb3ff';ctx.lineWidth=2;ctx.stroke();ctx.restore();
     }
     if(b.tipo==='nota')v21DrawEditableBuilding(b);else drawArquivoBuilding(b);
-    if(camera.z>=.42||selected===b)rotulos.push(b);
+    if((camera.z>=.42&&urbeOpcoes.nomes)||selected===b)rotulos.push(b);
   }
+  if(typeof urbeAntesDosRotulos==='function')urbeAntesDosRotulos();
   /* rótulos por último, para nunca ficarem sob outra casa */
   for(var j=0;j<rotulos.length;j++){var r=rotulos[j],q=w2s((r.x+r.w/2)*TILE,(r.y+r.h)*TILE);
     urbeRotulo(urbeNomeCasa(r),q.x,q.y+4*camera.z,selected===r?{fundo:'#8fb3ff',cor:'#0b1325'}:null)}
@@ -4713,7 +4714,7 @@ drawRegions=function(){
       ctx.stroke();
     }else{var p2=w2s(r.x*TILE,r.y*TILE);urbeRetanguloArredondado(ctx,p2.x,p2.y,r.w*sz,r.h*sz,8*camera.z);ctx.fill();ctx.setLineDash(nivel?[4,4]:[]);ctx.stroke();ctx.setLineDash([])}
     ctx.restore();
-    if(camera.z>=.35){var t=w2s(r.x*TILE,r.y*TILE);urbeRotulo(r.name,t.x+8,t.y+8,{esquerda:true,ponto:r.color,peso:nivel?500:650})}
+    if(camera.z>=.35&&urbeOpcoes.bairros){var t=w2s(r.x*TILE,r.y*TILE);urbeRotulo(r.name,t.x+8,t.y+8,{esquerda:true,ponto:r.color,peso:nivel?500:650})}
   });
 };
 
@@ -4782,13 +4783,13 @@ function urbeMotivoTerreno(x,y,w,h){if(!MUNDO)return null;for(var yy=y;yy<y+(h||
 var urbeChunks=new Map(),URBE_CHUNKS_MAX=innerWidth<900?56:96,urbeFila=[];
 function urbeChunkPronto(cx,cy){var k=cx+':'+cy,c=urbeChunks.get(k);if(c){urbeChunks.delete(k);urbeChunks.set(k,c)}return c||null}
 /* os pixels do chão saem de um worker; a página só monta o canvas pronto */
-var urbeWorker=null,urbePedidos=new Set();
+var urbeWorker=null,urbePedidos=new Set(),urbeGeracaoChao=0;
 (function(){
   if(!MUNDO||!ARTE||!window.Worker||location.protocol==='file:')return;
   try{
     urbeWorker=new Worker('./src/world/chunk-worker.js');
     urbeWorker.postMessage({type:'init',seed:MUNDO.seed,opts:{spawnX:Math.floor(BASE_W/2),spawnY:Math.floor(BASE_H/2)}});
-    urbeWorker.onmessage=function(e){var m=e.data;if(!m||m.type!=='chunk')return;var k=m.cx+':'+m.cy;urbePedidos.delete(k);if(m.bio)MUNDO.inject(m.cx,m.cy,new Uint8Array(m.bio),new Float32Array(m.elev));
+    urbeWorker.onmessage=function(e){var m=e.data;if(!m||m.type!=='chunk')return;var k=m.cx+':'+m.cy;urbePedidos.delete(k);if((m.gen|0)!==urbeGeracaoChao){pedirDesenho();return}if(m.bio)MUNDO.inject(m.cx,m.cy,new Uint8Array(m.bio),new Float32Array(m.elev));
       var cvc=ARTE.canvasFromPixels(new Uint8ClampedArray(m.buf),m.n);if(m.far)cvc.far=ARTE.canvasFromPixels(new Uint8ClampedArray(m.far),m.n>>1);urbeChunks.set(k,cvc);
       if(urbeChunks.size>URBE_CHUNKS_MAX)urbeChunks.delete(urbeChunks.keys().next().value);pedirDesenho()};
     urbeWorker.onerror=function(){urbeWorker=null;urbePedidos.clear()};
@@ -4796,7 +4797,7 @@ var urbeWorker=null,urbePedidos=new Set();
 })();
 function urbeGerarChunks(orcamentoMs){
   if(urbeWorker){ /* no máximo 6 pedidos em voo; o mais próximo do centro primeiro */
-    for(var i=0;i<urbeFila.length&&urbePedidos.size<6;i++){var q=urbeFila[i],k=q[0]+':'+q[1];if(urbeChunks.has(k)||urbePedidos.has(k))continue;urbePedidos.add(k);urbeWorker.postMessage({type:'chunk',cx:q[0],cy:q[1]})}
+    for(var i=0;i<urbeFila.length&&urbePedidos.size<6;i++){var q=urbeFila[i],k=q[0]+':'+q[1];if(urbeChunks.has(k)||urbePedidos.has(k))continue;urbePedidos.add(k);urbeWorker.postMessage({type:'chunk',cx:q[0],cy:q[1],gen:urbeGeracaoChao})}
     return;
   }
   var t0=performance.now();
@@ -4879,6 +4880,8 @@ drawTrees=function(){
    calcular terreno na thread principal). Evita ruas, casas e bairros.
    Mesmo relógio dos moradores: ~12 quadros por segundo, e só pede quadro
    quando há bicho visível. */
+/* opções do mundo que a Personalização liga e desliga */
+var urbeOpcoes={moradores:true,fauna:true,nomes:true,bairros:true,ambiente:'dia',editor:'visual'};
 var urbeFauna=[],urbeFaunaT=0,urbeFaunaUlt=0,urbeFaunaAves=0;
 (function(){
   if(!MUNDO||!ARTE||!ARTE.animal)return;
@@ -4913,7 +4916,7 @@ var urbeFauna=[],urbeFaunaT=0,urbeFaunaUlt=0,urbeFaunaAves=0;
   function ciclo(){
     if(typeof v25MapaVisivel==='function'&&!v25MapaVisivel())return;
     var agora=performance.now(),dt=Math.min(.25,(agora-(urbeFaunaUlt||agora))/1000);urbeFaunaUlt=agora;
-    if(camera.z<.3){if(urbeFauna.length)urbeFauna=[];return}
+    if(camera.z<.3||!urbeOpcoes.fauna){if(urbeFauna.length){urbeFauna=[];pedirDesenho()}return}
     var f=faixaVisivel();
     if(agora-urbeFaunaT>900){urbeFaunaT=agora;var chao=0;for(var i=0;i<urbeFauna.length;i++)if(urbeFauna[i].kind!=='bird')chao++;if(chao<MAX)nascer(f);
       if(agora-urbeFaunaAves>14000&&Math.random()<.25){urbeFaunaAves=agora;aves(f)}}
@@ -4942,6 +4945,7 @@ var urbeFaunaBaseTrees=drawTrees;drawTrees=function(){urbeFaunaBaseTrees();urbeD
 var URBE_OFICIO={md:'house',markdown:'house',txt:'house',html:'hall',htm:'hall',js:'workshop',mjs:'workshop',css:'dyer',json:'tower',yaml:'tower',yml:'tower',csv:'market'};
 function urbeArteDaConstrucao(b){
   var kind=b.tipo==='nota'?(URBE_OFICIO[v21Kind(b)]||'house'):'store',cx=Math.floor(b.x+b.w/2),cy=Math.floor(b.y+b.h/2);
+  if(urbeSpritesProprios[kind])return urbeSpritesProprios[kind];
   var bioma=MUNDO?ARTE.IDS[MUNDO.biome(cx,cy)]:'grass',variant=b.sprite==='house2'?1:b.sprite==='house3'?2:(semente(b.id||b.name)%3);
   return ARTE.building(kind,ARTE.styleFor(bioma),variant,(semente(b.name||'')%3)===0);
 }
@@ -5118,6 +5122,62 @@ syncVisualToMarkdown=function(){
   document.getElementById('openAI').onclick=function(){aiPanel.classList.toggle('v23SobreEditor',v23Aberto(editorFull));aiPanel.classList.add('open');UrbeAgentUI.opened()};
   v21OpenGlobalSettings=function(){aiPanel.classList.toggle('v23SobreEditor',v23Aberto(editorFull));aiPanel.classList.add('open');UrbeAgentUI.showSettings()};
   v21RefreshBalance=function(){return Promise.resolve()};
+})();
+
+/* ============================================================
+   v1.0 — Personalização do mundo (serviço 'world.custom')
+   Opções da cidade, luz do dia, paleta e texturas do chão, desenho
+   próprio das construções e camadas que plugins desenham no mapa.
+   ============================================================ */
+var urbeCamadas=[],urbeSpritesProprios={};
+function urbeAmbienteAgora(){var a=urbeOpcoes.ambiente;if(a!=='auto')return a;var h=new Date().getHours();return h>=6&&h<17?'dia':(h>=17&&h<19?'entardecer':'noite')}
+function urbeVista(){
+  var f=faixaVisivel();
+  return{ctx:ctx,tile:TILE*camera.z,zoom:camera.z,centro:{x:camera.x/TILE,y:camera.y/TILE},visivel:{x0:f.x0,y0:f.y0,x1:f.x1,y1:f.y1},largura:cv.w,altura:cv.h,
+    paraTela:function(x,y){return w2s(x*TILE,y*TILE)},
+    casas:function(){return world.buildings.filter(function(b){return b.x<=f.x1&&b.x+b.w>=f.x0&&b.y<=f.y1&&b.y+b.h>=f.y0}).map(function(b){return{nome:urbeNomeCasa(b),tipo:b.tipo,x:b.x,y:b.y,w:b.w,h:b.h,id:b.documentId||b.id}})},
+    ambiente:urbeAmbienteAgora()};
+}
+function urbeAntesDosRotulos(){
+  if(urbeCamadas.length){var vista=urbeVista();
+    for(var i=urbeCamadas.length-1;i>=0;i--){var c=urbeCamadas[i];ctx.save();
+      try{c.fn(ctx,vista)}catch(e){c.erros=(c.erros||0)+1;console.warn('camada '+c.id,e);if(c.erros>=3){urbeCamadas.splice(i,1);if(c.onError)c.onError(e)}}
+      finally{ctx.restore()}}}
+  var amb=urbeAmbienteAgora();if(amb!=='entardecer'&&amb!=='noite')return;
+  ctx.save();ctx.globalCompositeOperation='multiply';ctx.fillStyle=amb==='noite'?'rgb(86,102,168)':'rgb(255,200,158)';ctx.fillRect(0,0,cv.w,cv.h);
+  if(amb==='noite'&&camera.z>=.3){ /* janelas acesas */
+    ctx.globalCompositeOperation='lighter';var f=faixaVisivel(),z=camera.z;
+    for(var j=0;j<world.buildings.length;j++){var b=world.buildings[j];if(b.x>f.x1||b.x+b.w<f.x0||b.y>f.y1||b.y+b.h<f.y0)continue;
+      var p=w2s((b.x+b.w/2)*TILE,(b.y+b.h*.7)*TILE),r=TILE*z*1.7,g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
+      g.addColorStop(0,'rgba(255,186,92,.42)');g.addColorStop(1,'rgba(255,186,92,0)');ctx.fillStyle=g;ctx.fillRect(p.x-r,p.y-r,r*2,r*2)}}
+  ctx.restore();
+}
+(function urbeMundoPersonalizavel(){
+  var core=window.UrbeCore;if(!core||core.service('world.custom'))return;
+  var sch=core.service('scheduler'),ultimaHora=-1;
+  if(sch)sch.add('world.ambiente',function(){if(urbeOpcoes.ambiente!=='auto')return;var h=new Date().getHours();if(h!==ultimaHora){ultimaHora=h;pedirDesenho()}},{interval:60000,whenVisible:true});
+  core.provide('world.custom',{
+    options:function(o){
+      if(o&&typeof o==='object'){Object.keys(urbeOpcoes).forEach(function(k){if(o[k]!==undefined)urbeOpcoes[k]=o[k]});
+        v25Ligado=urbeOpcoes.moradores!==false;if(!v25Ligado)v25Povo=[];pedirDesenho()}
+      return Object.assign({},urbeOpcoes);
+    },
+    /* paleta {bioma:[4 cores]} e texturas {bioma:[RGBA 16×16, até 4 variações]} */
+    terrain:function(cfg){
+      if(!ARTE||!ARTE.configure)return false;cfg=cfg||{};ARTE.configure(cfg);
+      if(urbeWorker)urbeWorker.postMessage({type:'config',cfg:cfg});
+      urbeGeracaoChao++;urbeChunks.clear();urbePedidos.clear();urbeCorBioma=null;pedirDesenho();return true;
+    },
+    /* imagens próprias por tipo de construção (house, hall, workshop, dyer, tower, market, store) */
+    sprites:function(map){urbeSpritesProprios={};Object.keys(map||{}).forEach(function(k){if(map[k])urbeSpritesProprios[k]=map[k]});pedirDesenho()},
+    layer:function(id,fn,onError){var c={id:String(id||'camada'),fn:fn,onError:onError};urbeCamadas.push(c);pedirDesenho();
+      return function(){var i=urbeCamadas.indexOf(c);if(i>=0)urbeCamadas.splice(i,1);pedirDesenho()}},
+    view:urbeVista,
+    redraw:function(){pedirDesenho()},
+    goTo:function(x,y,z){camera.x=(x+.5)*TILE;camera.y=(y+.5)*TILE;if(z)camera.z=Math.max(.1,Math.min(3,z));counts();pedirDesenho()},
+    biomes:function(){return ARTE?ARTE.IDS.slice():[]},
+    buildingKinds:function(){return['house','hall','workshop','dyer','tower','market','store']}
+  });
 })();
 
 /* ---------- boot ---------- */

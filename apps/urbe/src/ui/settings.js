@@ -7,6 +7,7 @@
   function open(){
     var r=rt(),storage=core.service('workspace.storage'),dbg=global.UrbeTouchDebug;
     D.menu('Configurações',[
+      core.commands.has('ui.customize')?{icon:'brush',label:'Personalização',detail:'Tema, cores, fontes, cidade, texturas, estilos e plugins',run:function(){core.commands.execute('ui.customize')}}:null,
       r.openVaults?{icon:'city',label:'Cidade: '+(r.vaultName?r.vaultName():'Urbe'),detail:'Trocar, criar ou gerenciar cidades',run:function(){r.openVaults()}}:null,
       storage?{icon:'storage',label:'Pasta no dispositivo',detail:'Onde os arquivos ficam salvos',run:function(){storage.chooseRoot()}}:null,
       r.aiSettings?{icon:'sparkle',label:'Assistente',detail:'Provedores, modelos, instruções e memória',run:function(){r.aiSettings()}}:null,

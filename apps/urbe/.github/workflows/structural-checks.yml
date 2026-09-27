@@ -50,6 +50,10 @@ jobs:
           node --check src/ui/dialogs.js
           node --check src/ui/touch-debug.js
           node --check src/ui/settings.js
+          node --check src/customize/customize.js
+          node --check src/customize/plugins.js
+          node --check src/customize/ai-tools.js
+          node --check src/customize/panel.js
           node --check src/editor/visual-tools.js
           node --check src/ui/tips.js
           node --check src/ai/providers.js
@@ -91,3 +95,4 @@ jobs:
           node tests/city.mjs
           node tests/world-terrain.mjs
           node tests/ai-agent.mjs
+          node tests/customize.mjs
