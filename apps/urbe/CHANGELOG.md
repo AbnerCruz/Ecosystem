@@ -1,5 +1,16 @@
 # Urbe — Changelog
 
+## v1.3.1-beta — Correção: cidades antigas travavam em "Sincronizando mundo" (2026-09-27)
+
+- **Causa**: uma cidade criada antes do mundo novo tinha casas em lugares que agora são água ou montanha. Para cada ligação impossível entre essas casas, o traçado das ruas percorria até 5 janelas de 120 mil passos. No celular isso levava minutos, e a tela de carregamento parecia travada. Num computador, bastavam 6 casas na água para levar 18 s.
+- **Ruas**: a busca agora desiste na hora quando a ligação é impossível:
+  - ponta na água ou na montanha;
+  - ponta numa ilha, detectada por uma inundação curta com as mesmas regras da busca.
+  - Janelas maiores só são tentadas quando ajudam, e há um orçamento total de passos por ligação.
+  - No mesmo caso das 6 casas na água, o tempo caiu de 18 s para 0,25 s. As cidades normais não mudam.
+- **Migração**: o mapa salvo agora guarda a versão do mundo. Ao abrir uma cidade salva com outro mundo, o Urbe reorganiza os bairros e as casas uma vez, no terreno novo, e avisa. Notas, pastas e ligações não mudam.
+- **Bairros novos** (por exemplo, o do Tutorial criado ao abrir uma cidade antiga) contornam as casas soltas do mesmo nível, em vez de passar por cima delas.
+
 ## v1.3.0-beta — Livros: páginas pensadas para produzir livros (2026-09-27)
 
 ### Formato Livro
