@@ -2836,8 +2836,16 @@ moverArquivosParaRegiao=function(ids,regionId){
 
 /* ---------- PWA / atualização ---------- */
 (function registrarPWA(){
+  const banner=document.getElementById('updateBanner'),bt=document.getElementById('reloadUpdateBtn');
+  if(window.UrbeNative){const U=window.UrbeNative.update;if(!U)return;const txt=banner.querySelector('span');
+    U.onStatus(s=>{if(!s)return;
+      if(s.state==='ready'){txt.textContent='Atualização '+(s.version||'')+' pronta.';bt.textContent='Reiniciar e atualizar';bt.disabled=false;banner.classList.add('open')}
+      else if(s.state==='available'&&s.manualInstall){txt.textContent='Nova versão do Urbe: '+(s.version||'');bt.textContent='Baixar e instalar';bt.disabled=false;banner.classList.add('open')}
+      else if(s.state==='downloading'){txt.textContent='Baixando a versão '+(s.version||'')+(s.percent!=null?' · '+Math.round(s.percent)+'%':'')+'…';bt.textContent='Aguarde';bt.disabled=true;banner.classList.add('open')}});
+    bt.onclick=()=>{banner.classList.remove('open');U.install()};
+    setTimeout(()=>{U.check().catch(()=>{})},6000);return}
   if(!('serviceWorker' in navigator)||location.protocol==='file:')return;
-  let regAtual=null,recarregando=false;const banner=document.getElementById('updateBanner'),bt=document.getElementById('reloadUpdateBtn');
+  let regAtual=null,recarregando=false;
   // O sw.js busca na rede primeiro, então a página aberta já é a versão publicada;
   // quando um service worker novo assume, só avisa (nada de recarregar no meio da edição).
   // Na primeira instalação clients.claim() também dispara controllerchange: ignora.
@@ -3146,7 +3154,7 @@ function v21FormatCurrent(){if(!currentFile)return;var e=v21Kind(currentFile);tr
 function v21MenuMarkup(){return '<div class="v21MenuHead"><div class="v21MenuLogo">URBE</div><span class="v21Version">v'+V21_VERSION+'</span></div><div class="v21StorageRow"><span class="v21StorageName" id="v21StorageName"></span><button class="v21IconBtn" id="v21PickRoot" title="Pasta dos vaults">▣</button></div><div class="v21CityPanel"><div class="v21CityToolbar"><strong>VAULTS</strong><button class="v21IconBtn" id="v21AddCity" title="Adicionar cidade">＋</button></div><div class="v21CityNew" id="v21CityNew"><input id="v21CityName" autocomplete="off"><button class="v21IconBtn" id="v21CreateCity">✓</button></div><div class="v21CityList" id="v21CityList"></div></div>'}
 abrirMenu=function(){menuEl.querySelector('.caixa').innerHTML=v21MenuMarkup();menuEl.classList.add('open');document.getElementById('v21PickRoot').onclick=v21PickRoot;document.getElementById('v21AddCity').onclick=function(){var row=document.getElementById('v21CityNew');row.classList.toggle('open');if(row.classList.contains('open'))document.getElementById('v21CityName').focus()};document.getElementById('v21CreateCity').onclick=v21CreateCity;document.getElementById('v21CityName').onkeydown=function(e){if(e.key==='Enter')v21CreateCity()};v21UpdateStorageName();listarCidadesUI()};
 function v21UpdateStorageName(){var e=document.getElementById('v21StorageName');if(e)e.textContent=Disco.modo==='pasta'?(Disco.raiz&&Disco.raiz.name||'Pasta selecionada'):'Armazenamento do aplicativo'}
-async function v21PickRoot(){if(!TEM_FSA)return toast('Este navegador usa o armazenamento do aplicativo.');try{var h=await window.showDirectoryPicker({mode:'readwrite',id:'urbe-vaults',startIn:'documents'});if(h.requestPermission&&await h.requestPermission({mode:'readwrite'})!=='granted')return;while(sincRodando)await new Promise(r=>setTimeout(r,20));await rodarSinc(true);var p=window.UrbeCore&&window.UrbeCore.service('persistence');if(p){await p.flush();while(p.busy)await new Promise(r=>setTimeout(r,20));p.suspend(true)}await v21StopSync();Disco.raiz=h;Disco.modo='pasta';Disco.cidade=null;Disco.hCidade=null;await DBK.set('pastaRaiz',h);await urbeEnsureSingleVault();await abrirCidade('Urbe');v21UpdateStorageName();toast('Pasta do Urbe definida.')}catch(e){if(e&&e.name!=='AbortError')toast('Não consegui abrir a pasta: '+e.message)}}
+async function v21PickRoot(){if(window.UrbeNative&&!window.UrbeNative.pickVault)return UD.alert({title:'Pasta do Urbe',message:'No Android, suas notas ficam em Documentos/Urbe (no armazenamento interno do aparelho). Dá para abrir essa pasta no gerenciador de arquivos e copiar para o computador.'});if(!TEM_FSA)return toast('Este navegador usa o armazenamento do aplicativo.');try{var h=await window.showDirectoryPicker({mode:'readwrite',id:'urbe-vaults',startIn:'documents'});if(h.requestPermission&&await h.requestPermission({mode:'readwrite'})!=='granted')return;while(sincRodando)await new Promise(r=>setTimeout(r,20));await rodarSinc(true);var p=window.UrbeCore&&window.UrbeCore.service('persistence');if(p){await p.flush();while(p.busy)await new Promise(r=>setTimeout(r,20));p.suspend(true)}await v21StopSync();Disco.raiz=h;Disco.modo='pasta';Disco.cidade=null;Disco.hCidade=null;_hCache={nome:null,h:null};if(!window.UrbeNative)await DBK.set('pastaRaiz',h);await urbeEnsureSingleVault();await abrirCidade('Urbe');v21UpdateStorageName();toast('Pasta do Urbe definida.')}catch(e){if(e&&e.name!=='AbortError')toast('Não consegui abrir a pasta: '+e.message)}}
 async function v21CreateCity(){var input=document.getElementById('v21CityName'),nome=(input&&input.value||'').trim();if(!nome)nome='Cidade';var existing=await FS.cidades(),base=nome,n=2;while(existing.some(function(x){return x.toLowerCase()===nome.toLowerCase()}))nome=base+' ('+(n++)+')';try{await FS.criarCidade(nome);await abrirCidade(nome)}catch(e){toast('Não consegui criar o vault.')}}
 async function v21StopSync(){sincSuspenso=true;clearTimeout(sincTimer);sincTimer=null;sincPend=false;var guard=0;while(sincRodando&&guard++<100)await new Promise(function(r){setTimeout(r,20)})}
 listarCidadesUI=async function(){var el=document.getElementById('v21CityList')||document.getElementById('listaCidades');if(!el)return;el.innerHTML='<div class="v21MenuEmpty">...</div>';var nomes=[];try{nomes=await FS.cidades()}catch(_){el.innerHTML='<div class="v21MenuEmpty">Falha ao listar</div>';return}if(!nomes.length){el.innerHTML='<div class="v21MenuEmpty">Nenhum vault</div>';return}el.innerHTML='';nomes.forEach(function(nome){var div=document.createElement('div');div.className='v21City';div.innerHTML='<button class="v21CityOpen"><span></span><small></small></button><button class="v21CityDelete" title="Excluir">×</button>';div.querySelector('span').textContent=nome;div.querySelector('small').textContent=nome===Disco.cidade?'aberto':'';div.querySelector('.v21CityOpen').onclick=function(){abrirCidade(nome)};div.querySelector('.v21CityDelete').onclick=async function(){if(!(await UD.confirm({title:'Excluir o vault “'+nome+'”?',message:'Todos os arquivos dele serão apagados.',confirm:'Excluir',danger:true})))return;try{if(Disco.cidade===nome){await v21StopSync();Disco.cidade=null;Disco.hCidade=null;statusSinc('ok')}await FS.excluirCidade(nome);await listarCidadesUI();toast('Vault excluído.')}catch(e){console.warn(e);toast('Não consegui excluir o vault.')}};el.appendChild(div)})};
@@ -3919,7 +3927,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='1.6.0-beta';
+V21_VERSION='1.7.0-beta';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=22;              /* andarilhos vivos ao mesmo tempo */
@@ -5380,9 +5388,29 @@ async function urbeResolverPasta(h,motivo){
   /* armazenamento do aplicativo: se a pasta sumiu, esquece; se só faltou permissão, pergunta de novo na próxima vez */
   await urbeUsarInterno(motivo!=='permissao');return true;
 }
+/* App instalado (Windows/Android): a pasta do Urbe é uma pasta de verdade no aparelho
+   (por padrão Documentos/Urbe). No Android 11+ pede o "acesso a todos os arquivos" para também
+   enxergar o que for copiado para lá por outro app ou pelo computador. */
+async function urbeNativoPreparar(){
+  const N=window.UrbeNative;
+  if(N.storage&&N.storage.status){
+    try{
+      const s=await N.storage.status();
+      if(s&&s.legacy)await N.storage.requestLegacy();
+      else if(s&&s.needsAllFiles&&!s.allFiles&&!(await DBK.get('nativoAcessoRecusado'))){
+        const r=await UD.choose({title:'Pasta do Urbe no aparelho',message:'Suas notas ficam em Documentos/Urbe, como arquivos normais que você vê no gerenciador de arquivos e pode copiar para o computador.\n\nPara o Urbe também ler arquivos que você colocar lá por outro app (ou depois de reinstalar), o Android pede o acesso a todos os arquivos.',
+          options:[{value:'sim',icon:'check',label:'Permitir acesso',detail:'Abre a tela do Android: ligue “Permitir acesso para gerenciar todos os arquivos” e volte'},{value:'nao',icon:'folder',label:'Agora não',detail:'O Urbe grava e lê normalmente o que ele mesmo criar'}]});
+        if(r==='sim'){await N.storage.requestAllFiles();await new Promise(ok=>{const f=()=>{if(document.visibilityState==='visible'){document.removeEventListener('visibilitychange',f);setTimeout(ok,300)}};document.addEventListener('visibilitychange',f);setTimeout(()=>{document.removeEventListener('visibilitychange',f);ok()},120000)})}
+        else await DBK.set('nativoAcessoRecusado',1);
+      }
+    }catch(e){console.warn('permissão de arquivos',e)}
+  }
+  Disco.raiz=await window.UrbeNativeFS.root();Disco.modo='pasta';_hCache={nome:null,h:null};
+}
 async function urbeIniciar(){
   Disco.modo="interno";Disco.raiz=null;
-  if(TEM_FSA){
+  if(window.UrbeNativeFS)await urbeNativoPreparar();
+  else if(TEM_FSA){
     const h=await DBK.get("pastaRaiz");
     if(h&&h.queryPermission){
       const st=await h.queryPermission({mode:"readwrite"});

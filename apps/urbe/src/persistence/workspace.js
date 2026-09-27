@@ -33,6 +33,28 @@
         if(changed.length||removed.length)await this.adapter.remove(this.vault,'.urbe/journal.json');
       }this.state='saved';this.lastSavedAt=Date.now();this.events.emit('workspace:saved',{vault:this.vault,savedAt:this.lastSavedAt});return true}catch(error){this.state='error';this.events.emit('workspace:saveError',{vault:this.vault,error:error});throw error}finally{this.busy=false}}
     suspend(value){this.suspended=value!==false}
+    /* Relê o que mudou na pasta por fora do app (Explorer, Obsidian, OneDrive, outro aparelho).
+       Uma mudança de fora só entra se a nota não tem edição local ainda não gravada: nada se perde.
+       paths: só esses caminhos (o app de computador avisa quais mudaram); sem paths: a pasta toda. */
+    async syncFromDisk(paths){
+      if(this.suspended||!this.vault||!this.adapter)return 0;
+      if(this.busy||this.timer){var self=this;return new Promise(function(ok){setTimeout(function(){self.syncFromDisk(paths).then(ok,function(){ok(0)})},1200)})}
+      var editable=function(p){return /\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i.test(p)&&!p.split('/').some(function(part){return part.startsWith('.')})};
+      var all=!paths,onDisk;
+      if(all){onDisk=new Set((await this.adapter.list(this.vault)).filter(editable));paths=Array.from(onDisk)}
+      else paths=paths.map(function(p){return String(p).replace(/\\/g,'/')}).filter(editable);
+      var byPath=new Map(this.store.list().map(function(d){return[d.path,d]})),changed=0;
+      for(var i=0;i<paths.length;i++){var path=paths[i],disk=await this.adapter.read(this.vault,path),snap=this.snapshot.get(path),d=byPath.get(path);
+        if(disk==null){if(!all&&d&&d.content===snap){this.snapshot.delete(path);this.store.remove(d.id,{source:'disk'});changed++}continue}
+        if(disk===snap)continue;
+        if(d&&snap!==undefined&&d.content!==snap)continue;
+        this.snapshot.set(path,disk);
+        if(d){if(d.content!==disk){this.store.upsert(Object.assign({},d,{content:disk}),{source:'disk'});changed++}}
+        else{this.store.upsert({path:path,content:disk},{source:'disk'});changed++}}
+      if(all)for(const pair of Array.from(this.snapshot)){var pth=pair[0];if(!editable(pth)||onDisk.has(pth))continue;var doc=byPath.get(pth);if(doc&&doc.content===pair[1]){this.snapshot.delete(pth);this.store.remove(doc.id,{source:'disk'});changed++}}
+      if(changed)this.events.emit('workspace:external',{vault:this.vault,changed:changed});
+      return changed;
+    }
   }
   var service=new WorkspacePersistence(core.events,docs);core.provide('persistence',service);
   if(trash)core.events.on('trash:changed',function(){service.schedule()});if(history)core.events.on('history:changed',function(){service.schedule()});if(compositions){core.events.on('composition:created',function(){service.schedule()});core.events.on('composition:updated',function(){service.schedule()});core.events.on('composition:removed',function(){service.schedule()})}

@@ -4,7 +4,16 @@
 
 Cada nota vira uma casa, cada pasta um bairro e cada `[[link]]` uma rua. Moradores andam entre as notas ligadas, o mundo é um continente formado por placas tectônicas, com serras, clima e rios que descem até o mar, e tudo continua sendo arquivo `.md` comum, que abre em qualquer outro programa.
 
-> **Versão 1.5 beta.** Funciona no celular e no computador, instala como aplicativo e trabalha sem internet.
+> **Versão 1.7 beta.** App de verdade para **Windows** e **Android**, que guarda as notas numa pasta real e se atualiza sozinho. Também abre no navegador.
+
+## Instalar
+
+Baixe em **[Lançamentos](https://github.com/AbnerCruz/Urbe/releases/latest)**:
+
+- **Windows**: `Urbe-Setup-(versão).exe`. As notas ficam em `Documentos\Urbe` (ou na pasta que você escolher). O app se atualiza sozinho.
+- **Android**: `Urbe-(versão).apk`. As notas ficam em `Documentos/Urbe`. O app avisa quando sai versão nova.
+
+Editar as notas por fora (Explorer, Obsidian, OneDrive…) funciona: o Urbe percebe as mudanças.
 
 ## O que o Urbe faz
 
@@ -15,11 +24,18 @@ Cada nota vira uma casa, cada pasta um bairro e cada `[[link]]` uma rua. Morador
 - **Composições**: junta várias notas num documento pronto para imprimir.
 - **Assistente de IA**: agentes que leem, buscam, escrevem e organizam o vault com ferramentas, mostrando cada passo e pedindo aprovação. Funciona com OpenRouter, Anthropic, OpenAI, Google Gemini, Ollama (local) ou qualquer API compatível com a da OpenAI.
 - **Personalização**: temas (inclusive claro, sépia e alto contraste), cores, fontes, densidade, editor, cidade, texturas desenhadas pixel a pixel, estilos CSS e **plugins** com uma API em português.
-- **Tutorial**: uma pasta com 46 notas que explica tudo, criada na primeira vez que o app abre.
+- **Tutorial**: uma pasta com 46 notas que explica tudo, criada na primeira vez que o app abre (no app instalado, como arquivos de verdade).
 
-## Como usar
+## Desenvolvimento
 
-É um aplicativo web estático, sem etapa de build e sem servidor próprio:
+O app é web estático, sem etapa de build. O mesmo código roda no navegador e dentro dos apps instalados:
+
+- `native/desktop/`: casca **Electron** (Windows). `npm run desktop` abre o app; `npm run desktop:build` gera o instalador.
+- `native/android/`: projeto **Capacitor** (Android). `npm run android:sync` copia o app para o projeto.
+- `src/native/bridge.js`: a ponte. No app instalado, dá ao Urbe "handles" de pasta sobre o disco real, com a mesma interface do File System Access do navegador.
+- `.github/workflows/app.yml`: a cada versão nova na `main`, constrói o `.exe` e o `.apk` e publica o lançamento que os apps usam para se atualizar.
+
+No navegador:
 
 ```bash
 # qualquer servidor de arquivos estáticos serve
@@ -31,7 +47,7 @@ Publicar é só copiar a pasta para uma hospedagem estática (GitHub Pages, Netl
 
 ## Onde ficam os dados
 
-Tudo fica **no aparelho**: no armazenamento do navegador ou, no Chrome e no Edge de computador, numa pasta de verdade escolhida por você. Dentro do vault:
+Tudo fica **no aparelho**. No app instalado, numa pasta de verdade (`Documentos/Urbe`). No navegador, no armazenamento do navegador ou, no Chrome e no Edge de computador, numa pasta escolhida por você. Dentro do vault:
 
 ```
 Tutorial/          notas do tutorial
