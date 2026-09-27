@@ -4062,7 +4062,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.43.0';
+V21_VERSION='0.44.0';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
@@ -4303,10 +4303,10 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
     if(!evt)return;
     if(evt.type==='rename'||evt.type==='move'){
       var from=evt.from,to=evt.to,b=world.buildings.find(function(x){return x.tipo==='nota'&&x.documentId===from.id})||world.buildings.find(function(x){return x.tipo==='nota'&&x.name.toLowerCase()===from.title.toLowerCase()});
-      if(b){b.name=to.title;b.content=to.content;b.modified=nowDate();buildTree();agendarSalvar();marcarSinc()}
+      if(b){b.name=urbeNomeDoc(to);b.content=to.content;b.modified=nowDate();buildTree();agendarSalvar();marcarSinc()}
     }else if(evt.type==='duplicate'&&evt.to){
       var source=world.buildings.find(function(b){return b.tipo==='nota'&&b.documentId===evt.from.id});
-      if(source){var copy={...source,id:id('b'),documentId:evt.to.id,name:evt.to.title,ext:(evt.to.path.match(/\.[^.]+$/)||['.md'])[0],content:evt.to.content,x:source.x+4,y:source.y+4,created:nowDate(),modified:nowDate()};world.buildings.push(copy);marcarIndice();indexar();buildTree();pedirDesenho()}
+      if(source){var copy={...source,id:id('b'),documentId:evt.to.id,name:urbeNomeDoc(evt.to),ext:(evt.to.path.match(/\.[^.]+$/)||['.md'])[0],content:evt.to.content,x:source.x+4,y:source.y+4,created:nowDate(),modified:nowDate()};world.buildings.push(copy);marcarIndice();indexar();buildTree();pedirDesenho()}
       agendarSalvar();marcarSinc();
     }else if(evt.type==='delete'){
       var ids=new Set((evt.documents||[]).map(function(d){return d.id}));
@@ -4374,6 +4374,8 @@ urbeCore.events.on('workspace:dirty',()=>document.getElementById('saveState').te
 urbeCore.events.on('workspace:saving',()=>document.getElementById('saveState').textContent='Salvando...');
 urbeCore.events.on('workspace:saved',()=>document.getElementById('saveState').textContent='Salvo');
 urbeCore.events.on('workspace:saveError',()=>document.getElementById('saveState').textContent='Erro ao salvar');
+/* nome da casa = título sem a extensão (senão “X.page.json” vira “X.page.json.json” no sync) */
+function urbeNomeDoc(d){var ext=(String(d.path).match(/\.[^./]+$/)||['.md'])[0],t=String(d.title||'');return t.toLowerCase().endsWith(ext.toLowerCase())?t.slice(0,-ext.length):t}
 function urbeBuildingPath(b,regions){
   var dir=b.regionId?(regions.get(b.regionId)||''):'';
   return(dir?dir+'/':'')+nomeSeguro(b.name)+extNota(b);
@@ -4412,7 +4414,7 @@ urbeCore.events.on('document:updated',function(evt){
   var d=evt.document,b=world.buildings.find(x=>x.tipo==='nota'&&x.documentId===d.id);
   if(b&&evt.meta&&evt.meta.source!=='editor.input'&&evt.meta.source!=='world.move'){
     if(assinaturaLinks(b.content||'')!==assinaturaLinks(d.content))scheduleRoadRebuild();
-    b.content=d.content;b.name=d.title;b.ext=(d.path.match(/\.[^.]+$/)||['.md'])[0];
+    b.content=d.content;b.name=urbeNomeDoc(d);b.ext=(d.path.match(/\.[^.]+$/)||['.md'])[0];
     var folder=dirDe(d.path),regions=caminhosRegioes();
     var region=world.regions.find(r=>regions.get(r.id)===folder);
     if(region||!folder)b.regionId=region?region.id:null;
@@ -4440,7 +4442,7 @@ urbeCore.events.on('document:created',function(evt){
 function urbeCasaParaDocumento(d){
   var folder=dirDe(d.path),paths=caminhosRegioes(),region=world.regions.find(r=>paths.get(r.id)===folder);
   var pos=region?vagaNaRegiao(region,semente(d.path),new Set()):vagaAleatoria(semente(d.path),3,3);
-  world.buildings.push({id:id('b'),documentId:d.id,kind:'building',tipo:'nota',regionId:region?region.id:null,x:pos?pos.x:0,y:pos?pos.y:0,w:3,h:3,name:d.title,ext:(d.path.match(/\.[^.]+$/)||['.md'])[0],content:d.content,sprite:['house1','house2','house3'][semente(d.path)%3],anexos:[],created:d.created||nowDate(),modified:d.modified||nowDate()});
+  world.buildings.push({id:id('b'),documentId:d.id,kind:'building',tipo:'nota',regionId:region?region.id:null,x:pos?pos.x:0,y:pos?pos.y:0,w:3,h:3,name:urbeNomeDoc(d),ext:(d.path.match(/\.[^.]+$/)||['.md'])[0],content:d.content,sprite:['house1','house2','house3'][semente(d.path)%3],anexos:[],created:d.created||nowDate(),modified:d.modified||nowDate()});
   marcarIndice();indexar();buildTree();if(assinaturaLinks(d.content))scheduleRoadRebuild();pedirDesenho();marcarSinc();
 }
 /* pasta excluída pelo explorador novo: a região (e subpastas) sai da cidade; o sync apaga o diretório vazio */
@@ -4863,6 +4865,7 @@ syncVisualToMarkdown=function(){
   UrbeAgentUI.configure({
     vaultName:function(){return Disco.cidade||'Urbe'},
     editor:function(){
+      var ps=core.service('pages.studio'),pg=ps&&ps.current&&ps.current();if(pg)return{id:pg.id,path:pg.path};
       if(!v23Aberto(editorFull)||!currentFile)return null;
       var d=docsA&&currentFile.documentId&&docsA.get(currentFile.documentId);
       return{id:d?d.id:null,path:d?d.path:nomeCompletoNota(currentFile)};

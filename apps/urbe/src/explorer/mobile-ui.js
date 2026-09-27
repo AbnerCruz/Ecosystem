@@ -38,7 +38,7 @@
   function row(node,depth,withPath){
     var selected=model.selection.has(node.id),folder=node.kind==='folder',open=folder&&model.isExpanded(node.path);
     return '<button type="button" role="treeitem" class="ume-row'+(selected?' selected':'')+(open?' expanded':'')+'" data-id="'+esc(node.id)+'" data-kind="'+node.kind+'" style="--depth:'+depth+'"'+(folder?' aria-expanded="'+open+'"':'')+'>'+
-      '<span class="ume-icon">'+ic(folder?'folder':'file')+'</span><span class="ume-name">'+esc(node.name)+'</span>'+
+      '<span class="ume-icon">'+ic(folder?'folder':/\.(page|template)\.json$/i.test(node.path||'')?'page':'file')+'</span><span class="ume-name">'+esc(node.name)+'</span>'+
       (folder?'<span class="ume-caret">'+ic('chevron')+'</span>':'')+(withPath&&!folder&&node.path.includes('/')?'<small>'+esc(node.path.slice(0,node.path.lastIndexOf('/')))+'</small>':'')+'</button>';
   }
   function flatten(node,depth,out){node.children.forEach(function(n){out.push(row(n,depth));if(n.kind==='folder'&&model.isExpanded(n.path))flatten(n,depth+1,out)})}
@@ -132,13 +132,14 @@
   function cleanName(s){return String(s||'').trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/^\.+|\.+$/g,'').slice(0,90)}
   function where(folder){return folder?'Em “'+folder+'”.':'Na raiz das notas.'}
   function newMenu(){
-    D.menu('Criar',[{icon:'file',label:'Nova nota',detail:where(currentFolder()),run:createNote},{icon:'folder',label:'Nova pasta',detail:'Vira uma região na cidade.',run:createFolder}]);
+    D.menu('Criar',[{icon:'file',label:'Nova nota',detail:where(currentFolder()),run:createNote},{icon:'page',label:'Nova página',detail:'Site ou página HTML com modelos prontos.',run:function(){close();core.commands.execute('pages.new')}},{icon:'folder',label:'Nova pasta',detail:'Vira uma região na cidade.',run:createFolder}]);
   }
   function moreMenu(){
     var storage=core.service('workspace.storage');
     var items=[
       {icon:'clock',label:'Recentes',run:function(){show('recent')}},
       {icon:'star',label:'Favoritos',run:function(){show('favorites')}},
+      {icon:'page',label:'Páginas',detail:'Sites e páginas HTML do vault',run:function(){close();core.commands.execute('pages.home')}},
       {icon:'layers',label:'Composições',run:function(){show('compositions')}},
       trash?{icon:'trash',label:'Lixeira',detail:(trash.list().length||'Nenhum')+' item(ns)',run:function(){show('trash')}}:null,
       storage?{icon:'storage',label:'Pasta do Urbe no dispositivo',detail:'Escolher onde os arquivos ficam salvos',run:function(){storage.chooseRoot()}}:null

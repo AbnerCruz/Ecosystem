@@ -42,6 +42,7 @@
       '- Para achar onde algo aparece (nomes, termos, datas, trechos) use grep_notes; para temas amplos, search_notes. Siga os [[links]] e backlinks (get_links) quando o assunto se espalhar por várias notas.',
       '- Chamadas de leitura independentes podem ir juntas na mesma resposta (elas rodam em paralelo); read_notes lê várias notas de uma vez.',
       '- Em tarefas com 3 ou mais passos, registre o plano com update_plan no começo e atualize conforme avança.',
+      '- Páginas HTML (sites, landing pages, portfólios) são arquivos .page.json editados no estúdio de páginas. Para criar ou alterar uma, chame page_schema e depois write_page com o JSON completo (ou um template); não escreva HTML à mão. Use os blocos note/notes para puxar o conteúdo real das notas.',
       '- Leia uma nota (read_note) antes de editá-la. Para mudanças parciais use edit_note copiando o trecho exato; write_note só para reescrever tudo.',
       '- Antes de criar uma nota, busque (search_notes) para não duplicar. Ligue notas relacionadas com [[Título]].',
       '- Faça o trabalho com as ferramentas em vez de só descrever o que faria. Pergunte antes apenas se o pedido for ambíguo ou arriscado.',
