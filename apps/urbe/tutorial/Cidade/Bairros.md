@@ -19,7 +19,7 @@ Todo bairro tem nome, cor e descrição. A cor aparece no chão da cidade e no [
 - Cada bairro é uma área **arredondada**, do tamanho do que ela guarda.
 - Uma **subpasta** fica sempre **dentro** do bairro da pasta de cima, com uma margem até a borda. Assim dá para ver na hora o que está dentro do quê.
 - Bairros vizinhos nunca encostam: sempre sobra um caminho entre eles.
-- As casas ficam em **quadras alinhadas**, do centro do bairro para fora.
+- As casas se **agrupam perto do centro** do bairro, sem fileiras nem grade, como numa vila.
 
 Dá para reconhecer o nível de cada bairro pela borda e pela plaquinha:
 
@@ -37,7 +37,7 @@ Mover uma nota para outra pasta faz a casa **mudar de bairro**. Apagar uma pasta
 
 Quando você importa uma pasta cheia de subpastas, cada subpasta ganha o seu lugar primeiro, e as casas da pasta ocupam o espaço que sobra.
 
-Sua cidade ficou bagunçada, por exemplo porque foi criada numa versão antiga? Vá em **Configurações → Organizar os bairros**. O Urbe redesenha todos os bairros e coloca as casas em quadras. Nenhuma nota, pasta ou ligação muda: só o lugar de cada coisa no mapa.
+Sua cidade ficou bagunçada, por exemplo porque foi criada numa versão antiga? Vá em **Configurações → Organizar os bairros**. O Urbe redesenha todos os bairros e reagrupa as casas perto do centro de cada bairro. Nenhuma nota, pasta ou ligação muda: só o lugar de cada coisa no mapa.
 
 > [!note] Esta pasta é um bairro
 > O próprio **Tutorial** é um bairro na sua cidade, com um sub-bairro para cada assunto. Procure por ele no mapa!

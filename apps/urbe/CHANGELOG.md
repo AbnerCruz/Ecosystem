@@ -13,9 +13,9 @@ A cidade deixava as pastas parecerem uma bagunça: bairros em losango, contornos
 - Na **importação**, as subpastas reservam espaço primeiro, e as casas da pasta ocupam o resto. O tamanho de cada bairro leva em conta a árvore inteira de subpastas, também ao abrir uma pasta do aparelho.
 - **Cores**: um bairro da raiz ganha a cor menos usada pelos vizinhos (paleta com 10 cores). As subpastas usam um tom mais claro da cor do bairro de cima, então a família de pastas se reconhece de longe.
 
-### Casas em quadras
-- As casas ocupam **quadras alinhadas** (passo de 6 tiles), do centro do bairro para fora, em vez de lugares sorteados.
-- As notas soltas na raiz também formam quadras em volta do centro, a 1 tile de qualquer bairro.
+### Casas agrupadas, sem grade
+- As casas se **agrupam perto do centro do bairro** num arranjo orgânico: a ordem dos lotes segue a distância ao centro com um leve ondulado e um sorteio fixo por lote. Não há fileiras nem grade. Antes as casas caíam espalhadas em lugares sorteados.
+- As notas soltas na raiz se agrupam do mesmo jeito em volta do centro, a 1 tile de qualquer bairro.
 
 ### Desenho
 - O contorno é uma **curva suave**: a borda é traçada como polígono e arredondada, sem degraus.
@@ -32,7 +32,7 @@ A cidade deixava as pastas parecerem uma bagunça: bairros em losango, contornos
 
 ### Organizar uma cidade que já existe
 - Novo item **Configurações → Organizar os bairros** (comando `city.reorganize`).
-  - Redesenha todos os bairros, dos maiores para os menores e cada subpasta dentro da sua, e recoloca as casas em quadras.
+  - Redesenha todos os bairros, dos maiores para os menores e cada subpasta dentro da sua, e reagrupa as casas perto do centro de cada bairro.
   - Notas, pastas e ligações não mudam.
 - Novo serviço `city.layout` com `validate()`, que confere as regras: subpasta dentro da margem do pai, irmãos sem encostar, casas inteiras no próprio bairro e sem sobreposição.
 

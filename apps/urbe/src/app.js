@@ -5043,10 +5043,9 @@ function urbeAntesDosRotulos(){
    Cada pasta é um bairro compacto e arredondado. Subpastas ficam DENTRO do
    bairro pai, com 1 tile de margem até a borda dele; bairros irmãos ficam a
    1 tile um do outro e os bairros da raiz a 2 tiles. Assim nenhum contorno
-   encosta em outro. As casas ocupam quadras alinhadas a partir do centro do
-   bairro, em vez de cair em lugares aleatórios.
+   encosta em outro. As casas se agrupam perto do centro do bairro, num
+   arranjo orgânico (sem grade), em vez de cair espalhadas.
    ============================================================ */
-var URBE_PASSO=6; /* casa 3×3 + 3 tiles de quintal e rua */
 var URBE_CORES_BAIRRO=['#5bc2ff','#e38eff','#7ee3a0','#ffd567','#ff9a88','#8fa8ff','#5fd4c4','#f7a95c','#c9a0ff','#b5d96a'];
 function urbeAreaBairro(q){return Math.round(26+Math.max(1,q)*36)}
 function urbeRaizDe(r){var n=0;while(r&&r.parentId&&n++<64){var p=regPai(r);if(!p)break;r=p}return r}
@@ -5161,17 +5160,21 @@ criarRegiaoOrganica=function(nome,quantidade,sem,parentId,origem,descricao){
   r.color=r.parentId?urbeCorFilha(r):urbeCorRaiz(r);marcarIndice();indexar();return r;
 };
 
-/* ---------- casas em quadras ----------
-   Candidatos em ordem: primeiro os lotes alinhados à grade do bairro (passo 6),
-   do centro para fora; depois qualquer lote que caiba. */
+/* ---------- casas agrupadas, sem grade ----------
+   As casas se juntam perto do centro do bairro, mas em arranjo orgânico: a ordem
+   dos lotes é a distância ao centro com um ondulado e um sorteio fixo por lote
+   (mesmo bairro, mesma ordem), sem alinhamento. O afastamento mínimo entre
+   casas continua o da regra de lote. */
+function urbeSorteioLote(x,y,s){var h=Math.imul(x^0x27d4eb2d,0x165667b1)^Math.imul(y^s,0x9e3779b1);h^=h>>>15;h=Math.imul(h,0x85ebca6b);h^=h>>>13;return(h>>>0)/4294967296}
+function urbeOrdemOrganica(cx,cy,sem){var rand=rng(sem),a1=rand()*6.3,a2=rand()*6.3;
+  return function(x,y){var dx=x-cx,dy=y-cy,t=Math.atan2(dy,dx);return Math.hypot(dx,dy)*(1+.18*Math.sin(2*t+a1)+.1*Math.sin(3*t+a2))+urbeSorteioLote(x,y,sem)*2.6}}
 function urbeLotes(r){
   urbeCelulas(r);var key=r.cells.length+':'+r.x+':'+r.y+':'+r.w+':'+r.h;
   if(r._lotes&&r._lotes.key===key)return r._lotes.list;
-  var c=urbeCentroide(r),ax=Math.round(c.x-1.5),ay=Math.round(c.y-1.5),P=URBE_PASSO,list=[];
+  var c=urbeCentroide(r),ordem=urbeOrdemOrganica(c.x,c.y,semente('lotes:'+(r.id||r.name))),list=[];
   for(var y=r.y;y<=r.y+r.h-3;y++)for(var x=r.x;x<=r.x+r.w-3;x++){
     if(!r._cellSet.has(K(x,y))||!r._cellSet.has(K(x+2,y+2))||!r._cellSet.has(K(x+2,y))||!r._cellSet.has(K(x,y+2)))continue;
-    var alin=((x-ax)%P+P)%P===0&&((y-ay)%P+P)%P===0;
-    list.push({x:x,y:y,s:Math.hypot(x+1.5-c.x,(y+1.5-c.y)*1.15)+(alin?0:1e4)});
+    list.push({x:x,y:y,s:ordem(x+1.5,y+1.5)});
   }
   list.sort(function(a,b){return a.s-b.s});r._lotes={key:key,list:list};return list;
 }
@@ -5180,21 +5183,20 @@ posicaoAleatoriaNaRegiao=function(r,sem,ignorarIds){
   for(var i=0;i<L.length;i++)if(casaCabeNaRegiao(r,L[i].x,L[i].y,ignorarIds))return{x:L[i].x,y:L[i].y};
   return null;
 };
-/* notas soltas (raiz): quadras em volta do centro, a 1 tile de qualquer bairro */
+/* notas soltas (raiz): agrupadas em volta do centro, do mesmo jeito orgânico, a 1 tile de qualquer bairro */
 var urbeVagaAntes=vagaAleatoria;
 vagaAleatoria=function(sem,w,h,area){
-  w=w||3;h=h||3;var c=area||centroBuscaRaiz(),P=URBE_PASSO;if(idxSujo)indexar();
-  for(var R=0;R<48;R++){var anel=[];
-    if(!R)anel.push([0,0]);else for(var i=-R;i<=R;i++){anel.push([i,-R],[i,R]);if(i>-R&&i<R)anel.push([-R,i],[R,i])}
-    anel.sort(function(a,b){return Math.hypot(a[0],a[1]*1.15)-Math.hypot(b[0],b[1]*1.15)});
-    for(var j=0;j<anel.length;j++){var x=Math.round(c.x)+anel[j][0]*P,y=Math.round(c.y)+anel[j][1]*P;
-      if(loteForaDeRegioes(x-1,y-1,w+2,h+2)&&loteValido(x,y))return{x:x,y:y}}}
+  w=w||3;h=h||3;var c=area||centroBuscaRaiz(),cx=Math.round(c.x),cy=Math.round(c.y),ordem=urbeOrdemOrganica(cx,cy,semente('raiz'));if(idxSujo)indexar();
+  for(var R=12,feito=-1;R<=192;feito=R,R*=2){var cand=[];
+    for(var dy=-R;dy<=R;dy++)for(var dx=-R;dx<=R;dx++){var d=Math.hypot(dx,dy);if(d>R||d<=feito)continue;cand.push({x:cx+dx,y:cy+dy,s:ordem(cx+dx+1.5,cy+dy+1.5)})}
+    cand.sort(function(a,b){return a.s-b.s});
+    for(var j=0;j<cand.length;j++)if(loteForaDeRegioes(cand[j].x-1,cand[j].y-1,w+2,h+2)&&loteValido(cand[j].x,cand[j].y))return{x:cand[j].x,y:cand[j].y}}
   return urbeVagaAntes(sem,w,h,area);
 };
 
 /* ---------- reorganizar uma cidade que já existe ----------
    Refaz todos os bairros (maiores primeiro, cada subpasta dentro da sua) e
-   recoloca as casas em quadras. Notas, pastas e ligações não mudam. */
+   reagrupa as casas perto do centro de cada bairro. Notas, pastas e ligações não mudam. */
 function urbeReorganizarCidade(){
   if(idxSujo)indexar();
   var regs=world.regions.slice(),casas=world.buildings.slice(),itens=new Map(),filhos=new Map(),centro=urbeCentroCidade();
@@ -5243,7 +5245,7 @@ function urbeValidarBairros(){
   core.provide('city.layout',{reorganize:urbeReorganizarCidade,validate:urbeValidarBairros});
   core.commands.register('city.reorganize',{title:'Organizar os bairros',category:'Cidade',execute:async function(){
     if(!world.regions.length&&!world.buildings.length){toast('A cidade ainda está vazia.');return}
-    var ok=await UD.confirm({title:'Organizar os bairros?',message:'Os bairros são redesenhados (cada subpasta dentro da sua pasta) e as casas vão para quadras alinhadas. Notas, pastas e ligações não mudam; só o lugar de cada coisa no mapa.',confirm:'Organizar'});
+    var ok=await UD.confirm({title:'Organizar os bairros?',message:'Os bairros são redesenhados (cada subpasta dentro da sua pasta) e as casas se agrupam perto do centro de cada bairro. Notas, pastas e ligações não mudam; só o lugar de cada coisa no mapa.',confirm:'Organizar'});
     if(!ok)return;var r=urbeReorganizarCidade();toast(r.falhas?'Cidade organizada ('+r.falhas+' bairro(s) sem espaço).':'Cidade organizada.');return r}});
 })();
 
