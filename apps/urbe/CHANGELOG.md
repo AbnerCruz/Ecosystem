@@ -1,5 +1,60 @@
 # Urbe — Changelog
 
+## v1.0.0-beta — Primeira beta: personalização, Tutorial e casa limpa (2026-09-27)
+
+### Personalização completa
+- **Tela de Personalização** (Configurações → Personalização) com 8 abas: Aparência, Texto, Editor, Cidade, Texturas, Estilos CSS, Plugins e Arquivo. Tudo aparece na hora, com prévia ao vivo enquanto você arrasta cores e controles.
+- **Temas**: 8 prontos (Escuro, Meia-noite, Floresta, Oceano, Vinho, Claro, Sépia e Alto contraste), cor de destaque, as 14 cores uma a uma e temas salvos em `Personalização/temas/`.
+  - O texto sobre o destaque fica preto ou branco, o que der mais contraste.
+  - Trocar o fundo decide sozinho se o tema é claro ou escuro.
+  - O CSS do app passou a usar variáveis, então os temas claros funcionam em todas as telas.
+- **Texto e forma**: 7 famílias de fonte (ou qualquer fonte instalada), tamanhos, altura da linha, cantos, densidade, efeito de vidro e animações.
+- **Editor**: largura do texto, modo inicial (Visual ou Texto) e corretor ortográfico.
+- **Cidade**:
+  - liga e desliga moradores, animais e nomes das casas e dos bairros;
+  - hora do dia: tarde dourada, noite com janelas acesas, ou automática pelo relógio;
+  - cor de cada bioma.
+- **Texturas próprias**: pacotes JSON com o chão de cada bioma e o desenho de cada tipo de construção, em grade de pixels ou imagem.
+  - Editor de pixels por toque, com lápis, balde, conta-gotas e desfazer.
+  - Importar imagem do aparelho.
+- **Estilos CSS** ligáveis um a um, mais um CSS rápido.
+- **Modo seguro** (na tela ou com `?seguro=1`): desliga estilos e plugins sem apagar nada.
+- **Plugins** em `Personalização/plugins/`:
+  - API em português: comandos, botões na cidade, notas, eventos, estilos, desenho sobre o mapa, ferramentas para o Assistente, dados e temporizadores. Tudo é desfeito ao desligar.
+  - Segurança: nada roda sem o usuário ligar neste aparelho. A aprovação guarda o SHA-256 do código, e qualquer mudança no arquivo pede nova revisão. Erros ficam isolados.
+  - 4 modelos para começar.
+- Tudo mora em `Personalização/tema.json` (validado, com erros apontados por caminho) e vai junto com o vault. O Assistente ganhou `appearance_schema`, `set_appearance` e `plugin_guide`.
+
+### Pasta Tutorial
+- **46 notas** em linguagem simples, cobrindo: cidade, mapa, construções, bairros e vida na cidade; notas, aba Notas, editor, Markdown, links, tags, busca, comandos, abas e painel dividido; lixeira, versões e tipos de arquivo; fórmulas e uma galeria delas; páginas, blocos, modelos, estúdio e composições; o Assistente (conexão, agentes, modos, ferramentas e bons pedidos); toda a personalização com as referências da API de plugins e do `tema.json`; arquivos, backup e recuperação; instalação, gestos, atalhos e diagnóstico de toques; solução de problemas e glossário. Inclui uma página de exemplo.
+- Criada sozinha na primeira abertura, uma vez por cidade (se você apagar, não volta), com um bairro para cada assunto. Numa cidade vazia, abre em "Comece aqui".
+- **Configurações → Tutorial** abre ou restaura. Restaurar recria o que falta e pergunta antes de substituir notas que você mudou.
+- As notas vêm de `tutorial/*.md`. `tools/build-tutorial.mjs` confere se todo link aponta para uma nota que existe, se não há tags acidentais e se tudo é alcançável a partir de "Comece aqui".
+
+### Editor
+- O modo Visual mostra e salva **sem perdas**: tabelas (com alinhamento), citações de várias linhas, **callouts** (`> [!tip]`, 12 tipos), **listas aninhadas**, a linguagem dos blocos de código e links com rótulo `[[caminho|rótulo]]`. Antes, tabelas viravam parágrafos soltos ao editar, e rótulos e sublistas se perdiam.
+- `[[...]]`, `**` e `_` dentro de trechos de código são mostrados como texto.
+- **Versões anteriores** no menu ⋯ da nota: lista por data com prévia e restaura (até 40 versões por nota).
+- **Ctrl+\** pergunta qual nota abrir ao lado (antes abria a mesma nota).
+- **Localizar e substituir** passa para o modo Fonte sozinho.
+
+### Correções encontradas na varredura
+- **Excluir no painel da casa** mandava a nota para lugar nenhum: o desenho sumia, a nota continuava e a casa voltava. Agora vai para a Lixeira.
+- **Pastas criadas pelo Assistente, por importação ou por plugins** viram bairros na cidade. Antes, só as criadas pelo botão viravam; os bairros filhos fazem o pai crescer quando não cabem.
+- **Tags e links dentro de código** (exemplos de `#tag`, CSS como `#renderedPreview`, `[[link]]` entre crases) não contam mais como tags e ligações.
+- **Lixeira**: excluir de vez e esvaziar (antes só dava para restaurar).
+- **Backup**: "Exportar tudo (.zip)" e "Importar arquivos" voltaram a ser alcançáveis (menu ⋯ da aba Notas e Configurações).
+- **Diagnóstico do workspace** mostra o resultado na tela.
+- **Aba Notas**: Ctrl/⌘+clique seleciona várias no computador.
+- As Configurações não abrem mais a tela antiga de cidades, que não tinha como fechar.
+
+### Casa limpa
+- Saíram ~250 KB de imagens PNG embutidas do visual antigo (`app.js` e `index.html`). A prévia do painel da casa e a "casa fantasma" ao posicionar usam a arte atual.
+- O CI confere a sintaxe de **todos** os `.js` e roda **todos** os testes de `tests/`.
+  - Antes, dois módulos do núcleo estavam fora da lista.
+  - Novo teste de consistência: todo arquivo está no `index.html` e no service worker, e há uma versão só em todo lugar.
+- README novo, ARCHITECTURE atualizado e `.gitignore`.
+
 ## v0.48.0 — Moradores de verdade (2026-09-27)
 
 - **Moradores em pixel-art**: no lugar dos retângulos, cada morador agora é um bonequinho no mesmo estilo do mundo, com contorno, sombra e animação de passos. Tem quatro quadros de caminhada e vira para frente, para trás e para os lados.

@@ -40,7 +40,7 @@
   function upsert(ctx,data){var s=services(ctx);return s.docs.upsert(data,{source:'ai.agent',agent:ctx.agentId||null})}
 
   var TOOLS=[];
-  function def(t){TOOLS.push(t)}
+  function def(t){var i=TOOLS.findIndex(function(x){return x.name===t.name});if(i>=0)TOOLS.splice(i,1);TOOLS.push(t);return function(){var j=TOOLS.indexOf(t);if(j>=0)TOOLS.splice(j,1)}}
 
   /* ---------------- leitura ---------------- */
   def({name:'workspace_overview',access:'read',
@@ -278,5 +278,5 @@
   function list(filter){return TOOLS.filter(function(t){return !filter||filter(t)})}
   function get(name){return TOOLS.find(function(t){return t.name===name})||null}
   function schema(t){return{name:t.name,description:t.description,parameters:t.parameters}}
-  global.UrbeAITools={list:list,get:get,schema:schema,validate:validate,revert:revert,register:def,_applyEdit:applyEdit,_appendText:appendText};
+  global.UrbeAITools={list:list,get:get,schema:schema,validate:validate,revert:revert,register:def,unregister:function(name){var i=TOOLS.findIndex(function(t){return t.name===name});if(i>=0){TOOLS.splice(i,1);return true}return false},_applyEdit:applyEdit,_appendText:appendText};
 })(typeof window!=='undefined'?window:globalThis);

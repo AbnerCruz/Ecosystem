@@ -58,6 +58,24 @@
   }
   IDS.forEach(function(id){TEX[id]=[0,1,2,3].map(function(v){return makeTexture(id,v)})});
 
+  /* ---------- personalização: paleta e texturas próprias por bioma ----------
+     cfg.palette  {bioma:['#base','#sombra','#luz','#detalhe']}  (cores faltando mantêm as originais)
+     cfg.textures {bioma:[RGBA 16×16 (1024 valores), até 4 variações]}
+     Chamado igual na página e no worker, para os dois pintarem o mesmo chão. */
+  var PAL0={};IDS.forEach(function(id){PAL0[id]=PAL[id].slice()});
+  function isHex(c){return typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c)}
+  function configure(cfg){
+    cfg=cfg||{};var pal=cfg.palette||{},tex=cfg.textures||{};
+    IDS.forEach(function(id){
+      var p=pal[id],base=PAL0[id];
+      /* só a cor base? sombra, luz e detalhe saem dela nas mesmas proporções da paleta original */
+      PAL[id]=[0,1,2,3].map(function(i){if(p&&isHex(p[i]))return p[i];if(!(p&&isHex(p[0])))return base[i];
+        var b0=rgb(base[0]),bi=rgb(base[i]),c=rgb(p[0]);return'#'+c.map(function(v,k){var f=b0[k]?bi[k]/b0[k]:1;return('0'+Math.max(0,Math.min(255,Math.round(v*f))).toString(16)).slice(-2)}).join('')});
+      var t=Array.isArray(tex[id])?tex[id].filter(function(a){return a&&a.length===PX*PX*4}):[];
+      TEX[id]=[0,1,2,3].map(function(v){if(t.length){var d=new Uint8ClampedArray(t[v%t.length]);for(var o=3;o<d.length;o+=4)d[o]=255;return d}return makeTexture(id,v)});
+    });
+  }
+
   /* ---------- chão de um chunk ---------- */
   /* pixels RGBA do chunk; roda tanto na página quanto no worker */
   function chunkPixels(world,cx,cy){
@@ -361,5 +379,5 @@
     return(VIL[key]=c)}
   function villagerFlip(look,frame){var key='F'+JSON.stringify(look)+frame;if(VIL[key])return VIL[key];var src=villager(look,'side',frame),c=canvas(src.width,src.height),x=c.getContext('2d');x.translate(src.width,0);x.scale(-1,1);x.drawImage(src,0,0);return(VIL[key]=c)}
 
-  global.UrbeArt={villager:villager,villagerFlip:villagerFlip,animal:animal,ANIMALS:ANIMALS,chunkFarPixels:chunkFarPixels,PX:PX,PAL:PAL,IDS:IDS,renderChunk:renderChunk,chunkPixels:chunkPixels,canvasFromPixels:canvasFromPixels,tree:tree,building:building,styleFor:styleFor,bridge:bridge,texture:function(id,v){return TEX[id][v||0]}};
+  global.UrbeArt={configure:configure,DEFAULT_PAL:PAL0,villager:villager,villagerFlip:villagerFlip,animal:animal,ANIMALS:ANIMALS,chunkFarPixels:chunkFarPixels,PX:PX,PAL:PAL,IDS:IDS,renderChunk:renderChunk,chunkPixels:chunkPixels,canvasFromPixels:canvasFromPixels,tree:tree,building:building,styleFor:styleFor,bridge:bridge,texture:function(id,v){return TEX[id][v||0]}};
 })(typeof window!=='undefined'?window:self);

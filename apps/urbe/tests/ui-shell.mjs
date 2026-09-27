@@ -12,7 +12,7 @@ test('ícones e diálogos carregam antes do app; tema por último',()=>{
   if(!(at('./src/ui/icons.js')>0&&at('./src/ui/icons.js')<at('./src/ui/dialogs.js')&&at('./src/ui/dialogs.js')<at('./src/app.js')))throw new Error('ordem de scripts');
   const links=[...index.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(m=>m[1]);
   /* o tema vem depois de todo CSS legado; só folhas feitas sobre os tokens (agent.css) podem vir depois */
-  const ti=links.indexOf('./src/styles/theme.css');if(ti<0||links.slice(ti+1).some(l=>!['./src/styles/agent.css','./src/styles/pages.css','./src/styles/math.css'].includes(l)))throw new Error('theme.css precisa vir depois do CSS legado');
+  const ti=links.indexOf('./src/styles/theme.css');if(ti<0||links.slice(ti+1).some(l=>!['./src/styles/agent.css','./src/styles/pages.css','./src/styles/math.css','./src/styles/customize.css'].includes(l)))throw new Error('theme.css precisa vir depois do CSS legado');
 });
 test('cache offline inclui a nova casca',()=>{
   for(const f of ['./src/styles/theme.css','./src/ui/icons.js','./src/ui/dialogs.js','./src/editor/visual-tools.js','./src/ui/tips.js','./src/world/terrain.js','./src/world/pixel-art.js','./src/world/chunk-worker.js'])if(!sw.includes("'"+f+"'"))throw new Error('sw.js sem '+f);

@@ -9,7 +9,10 @@
   var cursor=0;
   function next(){var h=hits();if(!h.length)return;select(h[cursor%h.length]);cursor=(cursor+1)%h.length}
   function replace(all){var doc=workspace.replace(q.value,repl.value,null,{all:all});if(!doc)return;var ta=document.getElementById('bodyEditor');if(ta){ta.value=doc.content;ta.dispatchEvent(new Event('input',{bubbles:true}))}cursor=0;update()}
-  function open(){ensure();if(!root)return;root.hidden=false;cursor=0;q.focus();q.select();update()}
+  function open(){ensure();if(!root)return;
+    /* localizar trabalha no texto puro: no modo Visual, passa para Fonte */
+    var sc=document.getElementById('editorScroll'),fonte=document.querySelector('#editorFull [data-mode="source"]');if(sc&&sc.classList.contains('previewMode')&&fonte)fonte.click();
+    root.hidden=false;cursor=0;q.focus();q.select();update()}
   function close(){if(root)root.hidden=true}
   core.commands.register('ui.find.open',{title:'Localizar e substituir',category:'Editor',execute:open});
   core.provide('editor.findBar',{open:open,close:close});
