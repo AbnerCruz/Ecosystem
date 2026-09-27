@@ -35,3 +35,10 @@ test('celular: uma só barra de abas, × com área de toque, barra de seleção 
   const ex=read('src/explorer/mobile-ui.js');if(!ex.includes('data-move')||/ume-actions[^\n]*>Abrir</.test(ex))throw new Error('barra de seleção antiga');
   if(/addEventListener\('pointerup',function\(e\)\{[^}]*openId/.test(ex))throw new Error('ação no pointerup volta a disparar duas vezes');
 });
+test('atualização chega sozinha: sw assume na hora e busca na rede primeiro',()=>{
+  if(!/install[\s\S]*skipWaiting\(\)/.test(sw))throw new Error('sw.js não chama skipWaiting() na instalação');
+  const f=sw.slice(sw.indexOf("addEventListener('fetch'"));
+  if(!(f.indexOf('fetch(')>0&&f.indexOf('fetch(')<f.indexOf('cache.match(')))throw new Error('fetch não é rede-primeiro');
+  if(!/NETWORK_TIMEOUT/.test(f))throw new Error('sem limite de espera da rede (cache offline)');
+  const app=read('src/app.js');if(/controllerchange[^\n]*location\.reload\(\)/.test(app))throw new Error('troca de service worker recarrega a página no meio da edição');
+});

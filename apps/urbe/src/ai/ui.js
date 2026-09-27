@@ -165,6 +165,7 @@
     if(r.error)h+='<div class="ag-note err">'+esc(r.error)+'<button type="button" class="ag-link" data-retry>Tentar de novo</button></div>';
     else if(r.stopped==='aborted')h+='<div class="ag-note">Interrompido.<button type="button" class="ag-link" data-continue>Continuar</button></div>';
     else if(r.stopped==='max_steps')h+='<div class="ag-note">Parei no limite de '+(st.cfg.maxSteps||30)+' passos.<button type="button" class="ag-link" data-continue>Continuar</button></div>';
+    else if(r.stopped==='loop')h+='<div class="ag-note">Parei: o agente repetia uma ação que falhava.<button type="button" class="ag-link" data-continue>Continuar</button></div>';
     else if(r.stopped==='max_tokens')h+='<div class="ag-note">A resposta foi cortada pelo limite do modelo.<button type="button" class="ag-link" data-continue>Continuar</button></div>';
     var n=r.changes&&r.changes.length;
     if(n){var files=[];r.changes.forEach(function(c){var p=(c.after||c.before||{}).path;if(p&&files.indexOf(p)<0)files.push(p)});

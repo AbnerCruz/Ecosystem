@@ -89,6 +89,27 @@ await test('limite de passos e interrupção',async()=>{
   const ac=new AbortController();script=[{wait:2000}];setTimeout(()=>ac.abort(),30);const r2=await go({messages:[userMsg('x')],signal:ac.signal});eq(r2.stopped,'aborted');
 });
 
+await test('caminho com emoji estragado pelo modelo ainda acha a nota',async()=>{
+  docs.upsert({path:'Burgo/Teste/🇬🇧 Gue.md',content:'# Gue\n\nIdioma gaélico.\n'});
+  script=[[tu('read_note',{path:'Burgo/Teste/\uFFFD Gue.md'})],say('ok')];const msgs=[userMsg('fale sobre o gue')];await go({messages:msgs});
+  const r=msgs[2].content[0];ok(!r.is_error&&/gaélico/.test(r.content),'leu a nota: '+r.content);
+  script=[[tu('read_note',{path:'Gue'})],say('ok')];const m2=[userMsg('x')];await go({messages:m2});ok(!m2[2].content[0].is_error,'pelo título sem emoji');
+  docs.remove?docs.remove('Burgo/Teste/🇬🇧 Gue.md'):null;
+});
+
+await test('mesma chamada que falhou não roda de novo e a repetição encerra o loop',async()=>{
+  const bad=()=>[tu('read_note',{path:'Nada.md'})];script=[bad(),bad(),bad(),bad(),bad()];
+  const msgs=[userMsg('x')];const r=await go({messages:msgs});
+  eq(r.stopped,'loop');ok(/já falhou/.test(msgs[4].content[0].content),'aviso de repetição');ok(r.steps<=4,'parou cedo: '+r.steps);script=[];
+});
+
+await test('modelo que termina só com raciocínio depois das ferramentas é lembrado de responder',async()=>{
+  script=[[tu('search_notes',{query:'diario'})],[],say('Achei o [[Diário]].')];
+  const msgs=[userMsg('ache')];const r=await go({messages:msgs});
+  eq(r.stopped,'end');const last=msgs[msgs.length-1];ok(last.role==='assistant'&&/Achei/.test(last.content[0].text),'resposta final escrita');
+  ok(seen[seen.length-1].messages.some(m=>m.content.some(b=>b.type==='text'&&/não escreveu a resposta/.test(b.text))),'lembrete enviado');
+});
+
 await test('erro do provedor encerra com mensagem',async()=>{
   script=[{throw:new Error('Sem créditos')}];const msgs=[userMsg('x')];const r=await go({messages:msgs});eq(r.stopped,'error');eq(r.error,'Sem créditos');eq(msgs.length,1,'mensagem vazia removida');
 });

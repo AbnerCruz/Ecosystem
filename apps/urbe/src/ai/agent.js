@@ -107,6 +107,7 @@
     var system=systemPrompt({agent:agent,policy:policy,vaultName:o.vaultName,noteCount:docs.list().length,openNote:open&&open.path,instructions:o.instructions,memory:o.memory});
     var budget=Math.max(20000,Math.floor((o.contextTokens||128000)*3.2*0.7)),maxSteps=o.maxSteps||30;
     var result={changes:[],usage:{input:0,output:0,cost:null},steps:0,stopped:'end',error:null},runAllow=false;
+    var failed={},repeats=0,nudged=false;
 
     for(var step=0;step<maxSteps;step++){
       if(signal&&signal.aborted){result.stopped='aborted';break}
@@ -130,18 +131,30 @@
       addUsage(result.usage,res.usage);emit({type:'final',message:live,usage:result.usage});
       if(!live.content.length){messages.pop();emit({type:'removed',message:live})}
       var calls=res.content.filter(function(b){return b.type==='tool_use'});
-      if(!calls.length){if(res.stopReason==='max_tokens')result.stopped='max_tokens';break}
+      if(!calls.length){
+        if(res.stopReason==='max_tokens'){result.stopped='max_tokens';break}
+        /* alguns modelos (ex.: gpt-oss) encerram só com raciocínio depois das ferramentas: a resposta sumia. Pede uma vez o texto final. */
+        var said=res.content.some(function(b){return b.type==='text'&&String(b.text).trim()}),prev=messages[messages.length-1];
+        if(!said&&!nudged&&prev&&prev.meta&&prev.meta.toolResults){nudged=true;prev.content.push({type:'text',text:'[Contexto do sistema] Você não escreveu a resposta. Responda agora ao usuário, em texto, com base nos resultados acima.'});continue}
+        break;
+      }
 
       var answer={id:uid('m'),role:'user',content:[],meta:{toolResults:true}};messages.push(answer);emit({type:'message',message:answer});
       for(var k=0;k<calls.length;k++){
         var call=calls[k],tool=byName[call.name],out;
         if(signal&&signal.aborted){out={content:'Interrompido pelo usuário.',is_error:true,status:'aborted'}}
-        else out=await execute(call,tool);
+        else{
+          /* a mesma chamada que já falhou não é executada de novo: o modelo recebe o aviso para mudar de estratégia */
+          var sig=call.name+' '+JSON.stringify(call.input||{});
+          if(failed[sig]){repeats++;out={content:'Esta chamada idêntica já falhou: '+failed[sig]+' Não repita. Corrija os argumentos (use search_notes ou list_notes para achar o caminho exato) ou explique o problema ao usuário.',is_error:true}}
+          else{out=await execute(call,tool);if(out.is_error&&out.status!=='aborted'&&out.status!=='rejected')failed[sig]=String(out.content).slice(0,300)}
+        }
         var block={type:'tool_result',tool_use_id:call.id,content:String(out.content).slice(0,RESULT_LIMIT),is_error:!!out.is_error,_status:out.status||(out.is_error?'error':'done'),_changes:out.changes&&out.changes.length||0};
         answer.content.push(block);emit({type:'tool',call:call,result:block});
         if(out.changes)result.changes=result.changes.concat(out.changes);
       }
       if(signal&&signal.aborted){result.stopped='aborted';break}
+      if(repeats>=3){result.stopped='loop';break}
       if(step===maxSteps-1)result.stopped='max_steps';
     }
     return result;
