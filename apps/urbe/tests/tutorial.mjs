@@ -41,6 +41,11 @@ await test('apagado pela pessoa não volta sozinho; outra cidade com marca no va
   ok(cheia.docs.get('Tutorial/Comece aqui.md')&&!cheia.abertos.length,'cidade com notas: cria sem abrir');
 });
 
+await test('pasta nova com o mesmo nome: a marca antiga do aparelho não impede o Tutorial',async()=>{
+  const m=montar();m.storage.set('urbe.tutorial.v1::Teste','versao-antiga');m.core.events.emit('workspace:loaded',{});await wait(1400);
+  ok(m.docs.get('Tutorial/Comece aqui.md'),'cria na pasta nova, que não tem a marca dentro dela');ok(m.files.has('.urbe/tutorial.json'),'marca gravada na pasta');
+});
+
 await test('restaurar: recria o que falta e só substitui o que mudou se a pessoa aceitar',async()=>{
   const m=montar({respostas:[false,true]});m.core.events.emit('workspace:loaded',{});await wait(400);
   const g='Tutorial/Glossário.md',n='Tutorial/Notas/Links entre notas.md';

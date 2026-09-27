@@ -1,5 +1,13 @@
 # Urbe — Changelog
 
+## v1.3.3-beta — Primeiro acesso e pasta do aparelho mais confiáveis (2026-09-27)
+
+- **Tutorial numa pasta nova**: a marca de "Tutorial já criado" também ficava no aparelho, pelo nome da cidade ("Urbe"). Por isso, uma pasta nova e vazia escolhida depois de apagar a antiga ficava sem Tutorial. Agora vale a marca que fica **dentro da pasta** (`.urbe/tutorial.json`). A do aparelho só é usada quando não dá para gravar na pasta.
+- **Permissão da pasta expirada** (comum no Android): antes o app passava em silêncio a usar o armazenamento interno, e parecia que as notas tinham sumido. Agora ele pergunta: **Permitir acesso à pasta**, **Escolher outra pasta** ou **Usar o armazenamento do aplicativo**.
+- **Pasta apagada, movida ou renomeada**: antes a abertura falhava e mostrava um menu sem explicação. Agora o app diz que a pasta não foi encontrada e oferece escolher outra, que pode ser nova e vazia, ou usar o armazenamento do aplicativo.
+- **Qualquer outra falha ao abrir** mostra o erro com as opções **Tentar de novo**, **Escolher outra pasta** e **Usar o armazenamento do aplicativo**.
+- Tutorial ("Onde ficam seus arquivos") e testes atualizados.
+
 ## v1.3.2-beta — A migração leva a cidade para terra firme (2026-09-27)
 
 - Algumas cidades antigas ficaram inteiras **no meio do oceano** do mundo novo. A reorganização da 1.3.1 procurava espaço em volta do centro atual da cidade, que era o mar. Agora a migração leva a cidade para o **ponto de partida do mundo**, escolhido pelo gerador em terra boa, com rio por perto, e a câmera vai junto.
