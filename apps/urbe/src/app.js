@@ -578,7 +578,7 @@ function openHouseSummary(b){
 function closeHouseSummary(){housePanel.classList.remove("open");if(selected?.kind==="building")selected=null;pedirDesenho()}
 document.getElementById("closeHouse").onclick=closeHouseSummary;
 document.getElementById("openNoteBtn").onclick=()=>{if(selected?.kind==="building")openFullEditor(selected)};
-document.getElementById("deleteBtn").onclick=()=>{if(selected?.kind==="building"){for(const a of (selected.files||selected.anexos||[]))if(a.cacheId)DBK.bDel(a.cacheId).catch(()=>{});world.buildings=world.buildings.filter(b=>b!==selected);closeHouseSummary();counts();scheduleRoadRebuild();agendarSalvar();toast("Construção excluída.")}};
+document.getElementById("deleteBtn").onclick=()=>{if(selected?.kind==="building"&&selected.tipo==="nota"){const b=selected;closeHouseSummary();removerNota(b);return}if(selected?.kind==="building"){for(const a of (selected.files||selected.anexos||[]))if(a.cacheId)DBK.bDel(a.cacheId).catch(()=>{});world.buildings=world.buildings.filter(b=>b!==selected);closeHouseSummary();counts();scheduleRoadRebuild();agendarSalvar();toast("Construção excluída.")}};
 document.getElementById("moveBtn").onclick=()=>{if(selected?.kind!=="building")return;escolherDestinoEMover([selected.id]);closeHouseSummary()};
 document.getElementById("copyBtn").onclick=()=>{if(selected?.kind==="building"){const b=selected,r=b.regionId?world.regions.find(x=>x.id===b.regionId)||null:null,pos=r?vagaNaRegiao(r,semente("copia"+Date.now()),new Set()):vagaAleatoria(semente("copia"+Date.now()));if(!pos)return toast("Sem espaço livre para a cópia.");const nb={...b,id:id("b"),name:b.name+" cópia",x:pos.x,y:pos.y,created:nowDate(),modified:nowDate()};world.buildings.push(nb);marcarIndice();indexar();counts();scheduleRoadRebuild();agendarSalvar();toast("Construção copiada.")}};
 
@@ -700,7 +700,9 @@ function escapeHTML(s){
   return String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
 }
 function inlineMarkdown(s){
-  let x=escapeHTML(s);
+  /* trechos de código saem antes: dentro deles, [[...]], ** e _ são texto */
+  const codigos=[];
+  let x=escapeHTML(s).replace(/`([^`\n]+)`/g,(m,c)=>{codigos.push(c);return `\u0002${codigos.length-1}\u0003`});
 
   // Wiki links are rendered as internal-note pills.
   x=x.replace(/\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]/g,(m,target,label)=>{
@@ -712,13 +714,12 @@ function inlineMarkdown(s){
   x=x.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,'<img src="$2" alt="$1">');
   x=x.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
 
-  x=x.replace(/`([^`\n]+)`/g,'<code>$1</code>');
   x=x.replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
   x=x.replace(/__([^_\n]+)__/g,'<strong>$1</strong>');
   x=x.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g,'<em>$1</em>');
   x=x.replace(/(?<!_)_([^_\n]+)_(?!_)/g,'<em>$1</em>');
   x=x.replace(/~~([^~\n]+)~~/g,'<del>$1</del>');
-  return x;
+  return x.replace(/\u0002(\d+)\u0003/g,(m,i)=>`<code>${codigos[+i]}</code>`);
 }
 function splitFrontmatter(md){
   const src=String(md||"").replace(/\r\n?/g,"\n");
@@ -750,34 +751,50 @@ function renderFrontmatter(fields){
   };
   return `<section class="frontmatterCard" contenteditable="false" data-frontmatter-card="1">${fields.map(f=>`<div class="frontmatterRow"><span class="frontmatterKey">${escapeHTML(f.key)}</span><span class="frontmatterValue">${valueHTML(f)}</span></div>`).join("")}</section>`;
 }
+/* Markdown → HTML do editor Visual. Tudo o que é desenhado aqui volta igual em
+   markdownFromVisual: tabelas (com alinhamento), citações de várias linhas, callouts
+   (> [!tipo] Título), listas aninhadas, tarefas, código com linguagem e links com rótulo. */
+const MD_CALLOUTS={note:"Nota",info:"Informação",tip:"Dica",success:"Pronto",question:"Pergunta",warning:"Atenção",danger:"Perigo",bug:"Erro",example:"Exemplo",quote:"Citação",abstract:"Resumo",todo:"A fazer"};
+function mdTableCells(line){
+  let t=line.trim();if(t.startsWith("|"))t=t.slice(1);if(t.endsWith("|")&&!t.endsWith("\\|"))t=t.slice(0,-1);
+  const cells=[];let cur="";for(let i=0;i<t.length;i++){if(t[i]==="\\"&&t[i+1]==="|"){cur+="|";i++;continue}if(t[i]==="|"){cells.push(cur.trim());cur="";continue}cur+=t[i]}cells.push(cur.trim());return cells;
+}
+function mdIsTableSep(line){return /^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$/.test(line)&&line.includes("-")}
 function renderMarkdown(md){
   const fm=splitFrontmatter(md);
   const lines=fm.body.replace(/\r\n?/g,"\n").split("\n");
-  let out=renderFrontmatter(fm.fields), inCode=false, code=[], listType=null;
+  let out=renderFrontmatter(fm.fields), inCode=false, code=[], lang="", stack=[];
 
-  function closeList(){
-    if(listType){out+=`</${listType}>`;listType=null}
+  function closeLevel(){const t=stack.pop();out+=`</li></${t.type}>`}
+  function closeList(){while(stack.length)closeLevel()}
+  function item(type,indent,html){
+    while(stack.length&&indent<stack[stack.length-1].indent)closeLevel();
+    if(stack.length&&indent===stack[stack.length-1].indent&&stack[stack.length-1].type!==type)closeLevel();
+    if(!stack.length||indent>stack[stack.length-1].indent){out+=`<${type}>`;stack.push({type,indent})}
+    else out+="</li>";
+    out+=html;
   }
   function flushCode(){
     if(inCode){
-      out+=`<pre><code>${escapeHTML(code.join("\n"))}</code></pre>`;
-      code=[];inCode=false;
+      out+=`<pre${lang?` data-lang="${escapeHTML(lang)}"`:""}><code>${escapeHTML(code.join("\n"))}</code></pre>`;
+      code=[];inCode=false;lang="";
     }
   }
+  function indentOf(l){return l.match(/^[ \t]*/)[0].replace(/\t/g,"    ").length}
 
   for(let i=0;i<lines.length;i++){
     const line=lines[i];
+    let m;
 
-    if(/^```/.test(line)){
+    if((m=line.match(/^```\s*([\w+#.-]*)\s*$/))||/^```/.test(line)){
       if(inCode) flushCode();
-      else {closeList();inCode=true;code=[]}
+      else {closeList();inCode=true;code=[];lang=m?m[1]:""}
       continue;
     }
     if(inCode){code.push(line);continue}
 
     if(!line.trim()){closeList();continue}
 
-    let m;
     if((m=line.match(/^(#{1,6})\s+(.+)$/))){
       closeList();
       const n=m[1].length;
@@ -787,25 +804,39 @@ function renderMarkdown(md){
     if(/^ {0,3}([-*_])(?:\s*\1){2,}\s*$/.test(line)){
       closeList();out+="<hr>";continue;
     }
-    if((m=line.match(/^>\s?(.*)$/))){
+    /* tabela: linha com | seguida da linha separadora */
+    if(line.includes("|")&&i+1<lines.length&&mdIsTableSep(lines[i+1])){
       closeList();
-      out+=`<blockquote>${inlineMarkdown(m[1])}</blockquote>`;
+      const head=mdTableCells(line),aligns=mdTableCells(lines[i+1]).map(c=>/^:-+:$/.test(c)?"center":/-:$/.test(c)?"right":/^:-/.test(c)?"left":"");
+      const td=(tag,c,k)=>`<${tag}${aligns[k]?` style="text-align:${aligns[k]}"`:""}>${inlineMarkdown(c)||"<br>"}</${tag}>`;
+      let html=`<table data-md-table="1" data-align="${aligns.join(",")}"><thead><tr>${head.map((c,k)=>td("th",c,k)).join("")}</tr></thead><tbody>`;
+      i+=2;
+      while(i<lines.length&&lines[i].trim()&&lines[i].includes("|")){const cells=mdTableCells(lines[i]);html+=`<tr>${head.map((_,k)=>td("td",cells[k]||"",k)).join("")}</tr>`;i++}
+      i--;out+=html+"</tbody></table>";
       continue;
     }
-    if((m=line.match(/^\s*[-*+]\s+\[([ xX])\]\s+(.+)$/))){
-      if(listType!=="ul"){closeList();out+="<ul>";listType="ul"}
-      const checked=m[1].toLowerCase()==="x"?" checked":"";
-      out+=`<li class="task"><input type="checkbox"${checked}>${inlineMarkdown(m[2])}</li>`;
+    /* citação: linhas seguidas com > formam um bloco só; > [!tipo] Título vira um callout */
+    if(/^>\s?/.test(line)){
+      closeList();
+      const grupo=[];while(i<lines.length&&/^>\s?/.test(lines[i])){grupo.push(lines[i].replace(/^>\s?/,""));i++}i--;
+      const c=grupo[0].match(/^\[!(\w+)\][+-]?\s*(.*)$/);
+      if(c){
+        const tipo=c[1].toLowerCase(),titulo=c[2]||"";
+        out+=`<div class="callout callout-${escapeHTML(tipo)}" data-callout="${escapeHTML(tipo)}"><div class="callout-title" data-default="${escapeHTML(MD_CALLOUTS[tipo]||tipo)}">${inlineMarkdown(titulo)||"<br>"}</div><div class="callout-body">${grupo.slice(1).map(inlineMarkdown).join("<br>")||"<br>"}</div></div>`;
+      }else out+=`<blockquote>${grupo.map(inlineMarkdown).join("<br>")}</blockquote>`;
       continue;
     }
-    if((m=line.match(/^\s*[-*+]\s+(.+)$/))){
-      if(listType!=="ul"){closeList();out+="<ul>";listType="ul"}
-      out+=`<li>${inlineMarkdown(m[1])}</li>`;
+    if((m=line.match(/^([ \t]*)[-*+]\s+\[([ xX])\]\s+(.*)$/))){
+      const checked=m[2].toLowerCase()==="x"?" checked":"";
+      item("ul",indentOf(line),`<li class="task"><input type="checkbox"${checked}>${inlineMarkdown(m[3])}`);
       continue;
     }
-    if((m=line.match(/^\s*\d+[.)]\s+(.+)$/))){
-      if(listType!=="ol"){closeList();out+="<ol>";listType="ol"}
-      out+=`<li>${inlineMarkdown(m[1])}</li>`;
+    if((m=line.match(/^([ \t]*)[-*+]\s+(.+)$/))){
+      item("ul",indentOf(line),`<li>${inlineMarkdown(m[2])}`);
+      continue;
+    }
+    if((m=line.match(/^([ \t]*)(\d+)[.)]\s+(.+)$/))){
+      item("ol",indentOf(line),`<li>${inlineMarkdown(m[3])}`);
       continue;
     }
 
@@ -835,8 +866,10 @@ function markdownFromVisual(root){
     if(tag==="a")return `[${inner}](${el.getAttribute("href")||""})`;
     if(tag==="img")return `![${el.getAttribute("alt")||""}](${el.getAttribute("src")||""})`;
     if(el.classList.contains("wikilink")){
-      return `[[${el.dataset.noteName||inner}]]`;
+      const alvo=el.dataset.noteName||inner,rotulo=inner.trim();
+      return rotulo&&rotulo!==alvo?`[[${alvo}|${rotulo}]]`:`[[${alvo}]]`;
     }
+    if(tag==="ul"||tag==="ol"||tag==="input")return "";
     if(tag==="br")return "\n";
     return inner;
   }
@@ -850,6 +883,12 @@ function markdownFromVisual(root){
     if(el.nodeType!==Node.ELEMENT_NODE)return;
     const tag=el.tagName.toLowerCase();
     if(el.hasAttribute("data-frontmatter-card"))return;
+    if(el.dataset&&el.dataset.callout){
+      const titulo=el.querySelector(".callout-title"),corpo=el.querySelector(".callout-body");
+      const t=titulo?textInline(titulo).replace(/\n/g," ").trim():"",b=corpo?textInline(corpo).replace(/\n+$/,""):"";
+      out.push(["> [!"+el.dataset.callout+"]"+(t?" "+t:"")].concat(b.trim()?b.split("\n").map(x=>x?"> "+x:">"):[]).join("\n"));
+      return;
+    }
 
     if(/^h[1-6]$/.test(tag)){
       out.push("#".repeat(Number(tag[1]))+" "+textInline(el).trim());
@@ -866,11 +905,22 @@ function markdownFromVisual(root){
       return;
     }
     if(tag==="blockquote"){
-      out.push(textInline(el).split("\n").map(x=>"> "+x).join("\n"));
+      const linhas=[...el.childNodes].map(n=>/^(P|DIV)$/.test(n.nodeName)?textInline(n)+"\n":textInline(n)).join("").replace(/\n+$/,"").split("\n");
+      out.push(linhas.map(x=>x?"> "+x:">").join("\n"));
+      return;
+    }
+    if(tag==="table"){
+      const rows=[...el.querySelectorAll("tr")];if(!rows.length)return;
+      const cel=c=>textInline(c).replace(/\n/g," ").replace(/\|/g,"\\|").trim();
+      const head=[...rows[0].children].map(cel),al=(el.dataset.align||"").split(",");
+      const sep=head.map((_,k)=>{const a=al[k]||(rows[0].children[k]&&rows[0].children[k].style.textAlign)||"";return a==="center"?":---:":a==="right"?"---:":a==="left"?":---":"---"});
+      const linhas=["| "+head.join(" | ")+" |","| "+sep.join(" | ")+" |"];
+      rows.slice(1).forEach(r=>{const cs=[...r.children].map(cel);while(cs.length<head.length)cs.push("");linhas.push("| "+cs.join(" | ")+" |")});
+      out.push(linhas.join("\n"));
       return;
     }
     if(tag==="pre"){
-      out.push("```\n"+el.innerText.replace(/\n+$/,"")+"\n```");
+      out.push("```"+(el.dataset.lang||"")+"\n"+el.innerText.replace(/\n+$/,"")+"\n```");
       return;
     }
     if(tag==="hr"){
@@ -878,21 +928,20 @@ function markdownFromVisual(root){
       return;
     }
     if(tag==="ul"||tag==="ol"){
-      /* itens de uma lista ficam em linhas seguidas, sem linha em branco entre eles */
+      /* itens de uma lista ficam em linhas seguidas, sem linha em branco entre eles;
+         sublistas descem até o início do texto do item de cima */
       const itens=[];
-      [...el.children].forEach((li,idx)=>{
-        if(li.tagName.toLowerCase()!=="li")return;
-        const checkbox=li.querySelector('input[type="checkbox"]');
-        let content=textInline(li).trim();
-        if(checkbox){
-          content=content.replace(/^\s*/,"");
-          itens.push(`- [${checkbox.checked?"x":" "}] ${content}`);
-        } else if(tag==="ul"){
-          itens.push("- "+content);
-        } else {
-          itens.push((idx+1)+". "+content);
-        }
-      });
+      (function lista(ul,recuo){
+        const ord=ul.tagName.toLowerCase()==="ol";let n=0;
+        [...ul.children].forEach(li=>{
+          if(li.tagName.toLowerCase()!=="li")return;n++;
+          const checkbox=[...li.children].find(c=>c.tagName==="INPUT"&&c.type==="checkbox");
+          const content=textInline(li).replace(/\n+/g," ").trim();
+          const marca=checkbox?`- [${checkbox.checked?"x":" "}] `:ord?n+". ":"- ";
+          itens.push(recuo+marca+content);
+          [...li.children].filter(c=>/^(UL|OL)$/.test(c.tagName)).forEach(sub=>lista(sub,recuo+" ".repeat(ord?String(n).length+2:2)));
+        });
+      })(el,"");
       if(itens.length)out.push(itens.join("\n"));
       return;
     }
@@ -3815,6 +3864,21 @@ function v23MenuCriar(){
   ]);
 }
 
+/* versões anteriores de uma nota: o histórico guarda até 40 por nota, agrupando edições próximas */
+function urbeVersoes(b){
+  var core=window.UrbeCore,docs=core&&core.service('documents'),hist=core&&core.service('history');if(!b||!docs||!hist)return;
+  if(editorViewMode==='preview')syncVisualToMarkdown();
+  var d=docs.get(b.documentId||nomeCompletoNota(b));if(!d)return;var lista=hist.list(d.id);
+  if(!lista.length){UD.alert({title:'Versões anteriores',message:'Esta nota ainda não tem versões guardadas. A cada mudança o Urbe guarda a versão anterior (até 40 por nota).'});return}
+  function quando(t){var dt=new Date(t),hoje=new Date();return(dt.toDateString()===hoje.toDateString()?'Hoje':dt.toLocaleDateString('pt-BR'))+' às '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}
+  UD.choose({title:'Versões anteriores',message:'Escolha uma versão para ver e restaurar. A versão atual também fica guardada, então dá para voltar.',
+    options:lista.map(function(v,i){var txt=v.content.replace(/\s+/g,' ').trim();return{value:i,icon:'clock',label:quando(v.timestamp),detail:(txt.length>70?txt.slice(0,70)+'…':txt)||'(vazia)'}})})
+  .then(function(i){if(i===undefined)return;var v=lista[i];
+    UD.confirm({title:'Restaurar esta versão?',message:quando(v.timestamp)+'\n\n'+(v.content.length>600?v.content.slice(0,600)+'…':v.content),confirm:'Restaurar'}).then(function(ok){
+      if(!ok)return;hist.restore(d.id,i);var nd=docs.get(d.id);
+      if(nd&&currentFile&&v23Aberto(editorFull)){currentFile.content=nd.content;loadFile(currentFile);if(editorViewMode==='preview')renderCurrentPreview()}toast('Versão restaurada')})});
+}
+
 /* ---------- estado visível da casca ---------- */
 function v23Atualizar(){
   var editor=v23Aberto(editorFull),menu=v23Aberto(menuEl),ia=v23Aberto(aiPanel),
@@ -3898,6 +3962,7 @@ statusSinc=function(estado,extra){
       {ico:'Aa',label:'Renomear',run:function(){renomearNota(currentFile)}},
       {ico:'✦',label:'Assistente',run:function(){ia.click()}},
       {ico:'▣',label:'Mostrar nas notas',run:function(){var c=window.UrbeCore&&window.UrbeCore.commands;if(c&&c.has('ui.explorer.open'))c.execute('ui.explorer.open',{source:'editor'})}},
+      {ico:'↶',label:'Versões anteriores',run:function(){urbeVersoes(currentFile)}},
       {ico:'☷',label:'Estrutura e backlinks',run:function(){var c=window.UrbeCore&&window.UrbeCore.commands;if(c&&c.has('editor.contextPanel'))c.execute('editor.contextPanel',{source:'editor-menu'})}},
       {ico:'🗑',label:'Mover para a lixeira',danger:true,run:function(){removerNota(currentFile)}}
     ]);
@@ -4370,6 +4435,9 @@ rebuildRoadNetwork=function(){var r=v25BaseRebuild();v25Rotas.clear();v25Povo=[]
     aiSettings:function(){return v21OpenGlobalSettings()},
     version:function(){return V21_VERSION},
     vaultName:function(){return Disco.cidade||'Urbe'},
+    exportZip:function(){return exportarVault()},
+    ensureFolders:function(qtd){Object.keys(qtd||{}).sort(function(a,b){return a.split('/').length-b.split('/').length}).forEach(function(p){urbeGarantirPasta(p,qtd)});pedirDesenho()},
+    importFiles:function(folder){var cam=caminhosRegioes(),alvo=null;if(folder)world.regions.forEach(function(r){if(cam.get(r.id)===folder)alvo=r.id});return v21ImportPicker(alvo)},
     regions:function(){var cam=caminhosRegioes();return world.regions.map(function(r){return{id:r.id,name:r.name,path:cam.get(r.id)}})}
   });
 
@@ -4528,8 +4596,23 @@ urbeCore.events.on('document:created',function(evt){
     urbeCasaParaDocumento(d);
   });
 });
+/* Pasta sem bairro (nota criada pelo Assistente, por plugin, importação ou Tutorial):
+   cria a cadeia de bairros; se o filho não couber, o bairro pai cresce e tenta de novo.
+   qtd = {caminho: quantas casas o bairro deve comportar}, para já nascer do tamanho certo. */
+function urbeGarantirPasta(folder,qtd){
+  if(!folder)return null;var segs=folder.split('/').filter(Boolean),parent=null,path='';
+  for(var i=0;i<segs.length;i++){
+    path=path?path+'/'+segs[i]:segs[i];var r=regiaoPorCaminho(path);
+    if(!r){var q=Math.max(1,(qtd&&qtd[path])||1);
+      for(var t=0;t<4&&!r;t++){r=criarRegiaoOrganica(segs[i],q,semente('pasta:'+path)+t,parent?parent.id:null,null,'');if(!r&&parent)expandirRegiao(parent,Math.max(80,q*36))}
+      if(!r)return parent;marcarIndice();indexar();buildTree();marcarSinc();}
+    parent=r;
+  }
+  return parent;
+}
 function urbeCasaParaDocumento(d){
   var folder=dirDe(d.path),paths=caminhosRegioes(),region=world.regions.find(r=>paths.get(r.id)===folder);
+  if(!region&&folder)region=urbeGarantirPasta(folder);
   var pos=region?vagaNaRegiao(region,semente(d.path),new Set()):vagaAleatoria(semente(d.path),3,3);
   world.buildings.push({id:id('b'),documentId:d.id,kind:'building',tipo:'nota',regionId:region?region.id:null,x:pos?pos.x:0,y:pos?pos.y:0,w:3,h:3,name:urbeNomeDoc(d),ext:(d.path.match(/\.[^.]+$/)||['.md'])[0],content:d.content,sprite:['house1','house2','house3'][semente(d.path)%3],anexos:[],created:d.created||nowDate(),modified:d.modified||nowDate()});
   marcarIndice();indexar();buildTree();if(assinaturaLinks(d.content))scheduleRoadRebuild();pedirDesenho();marcarSinc();

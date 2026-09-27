@@ -25,9 +25,11 @@
     });
     return out;
   }
+  /* código (blocos ``` e trechos `...`) não conta: exemplos de [[link]] e #tag dentro de código são só texto */
+  function semCodigo(text){return String(text||'').replace(/^(```|~~~)[^\n]*\n[\s\S]*?^\1[ \t]*$/gm,' ').replace(/`[^`\n]*`/g,' ')}
   function parseLinks(content){
-    var out=[],seen=new Set(),re=/\[\[([^\]\n]+)\]\]/g,m;
-    while((m=re.exec(String(content||'')))){
+    var out=[],seen=new Set(),re=/\[\[([^\]\n]+)\]\]/g,m,text=semCodigo(content);
+    while((m=re.exec(text))){
       var raw=m[1],target=raw.split('|')[0].split('#')[0].trim();
       if(!target)continue;
       var key=target.toLowerCase(); if(seen.has(key))continue;
@@ -36,7 +38,7 @@
     return out;
   }
   function parseTags(content,properties){
-    var out=new Set(),re=/(^|\s)#([\p{L}\p{N}_/-]+)/gu,m,text=String(content||'');
+    var out=new Set(),re=/(^|\s)#([\p{L}\p{N}_/-]+)/gu,m,text=semCodigo(content);
     while((m=re.exec(text)))out.add(m[2]);
     var raw=properties.tags||properties.tag||'';
     String(raw).replace(/^\[|\]$/g,'').split(',').map(function(x){return x.trim().replace(/^#/,'')}).filter(Boolean).forEach(function(x){out.add(x)});

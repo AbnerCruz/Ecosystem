@@ -503,3 +503,27 @@ html body #mapao.um.open{display:flex;flex-direction:column;align-items:stretch;
 #mapao.um .um-pin-dot{width:14px;height:14px;border-radius:50%;background:var(--ui-accent);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);transform:translateY(7px)}
 #mapao.um .um-hint{position:static;text-align:center;color:var(--ui-text-3);font:500 12.5px var(--ui-font)}
 @media (min-width:900px){html body #mapao.um{padding:4vh 6vw}}
+
+/* lixeira: restaurar ou excluir de vez */
+html body .ume-trash-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 12px 10px;font:13px var(--ui-font);color:var(--ui-text-3)}
+html body .ume-trash-head .ui-btn{min-height:36px;padding:0 12px;font-size:13px;color:var(--ui-danger)}
+html body .ume-trash-head .ui-btn .ui-icon,html body .ume-trash-act .ui-icon{width:17px;height:17px}
+html body .ume-trash-act{grid-row:1/3;grid-column:3;display:flex;align-items:center;gap:4px}
+html body .ume-trash-act .ui-btn{min-height:36px;padding:0 12px;font-size:13px}
+html body .ume-purge{width:36px;height:36px;display:grid;place-items:center;border:0;border-radius:var(--ui-r-s);background:transparent;color:var(--ui-text-3)}
+html body .ume-purge:hover{background:var(--ui-danger-soft);color:var(--ui-danger)}
+
+/* editor visual: tabelas, callouts e listas aninhadas */
+html body #renderedPreview table{display:block;max-width:100%;overflow-x:auto;margin:1em 0;border-radius:var(--ui-r-s)}
+html body #renderedPreview th{background:var(--ui-surface-2);font-weight:650;text-align:left}
+html body #renderedPreview tr:nth-child(even) td{background:rgba(var(--ui-tint),.025)}
+html body #renderedPreview .callout{margin:1em 0;padding:10px 14px 12px;border-radius:var(--ui-r-m);border-left:4px solid var(--c,var(--ui-accent));background:rgba(var(--c-rgb,var(--ui-accent-rgb)),.1)}
+html body #renderedPreview .callout-title{font-weight:700;color:var(--c,var(--ui-accent));margin-bottom:4px}
+html body #renderedPreview .callout-title:has(>br:only-child)::before{content:attr(data-default)}
+html body #renderedPreview .callout-body{color:var(--ui-text)}
+html body #renderedPreview .callout-tip,html body #renderedPreview .callout-success{--c:var(--ui-ok);--c-rgb:var(--ui-ok-rgb)}
+html body #renderedPreview .callout-warning,html body #renderedPreview .callout-question,html body #renderedPreview .callout-todo{--c:var(--ui-warn);--c-rgb:var(--ui-warn-rgb)}
+html body #renderedPreview .callout-danger,html body #renderedPreview .callout-bug{--c:var(--ui-danger);--c-rgb:var(--ui-danger-rgb)}
+html body #renderedPreview li>ul,html body #renderedPreview li>ol{margin:.2em 0}
+html body #renderedPreview pre[data-lang]{position:relative}
+html body #renderedPreview pre[data-lang]::after{content:attr(data-lang);position:absolute;top:6px;right:10px;font:600 11px var(--ui-font);color:var(--ui-text-3);text-transform:uppercase;letter-spacing:.05em}

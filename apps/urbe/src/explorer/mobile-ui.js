@@ -68,8 +68,13 @@
   function renderCollection(nodes,title,text){list.innerHTML=nodes.map(function(n){return row(n,0,true)}).join('')||empty(title,text);bindRows();renderBar()}
   function renderTrash(){
     var items=trash?trash.list():[];
-    list.innerHTML=items.map(function(item){var d=item.document;return '<div class="ume-row" data-kind="trash" style="--depth:0"><span class="ume-icon">'+ic('file')+'</span><span class="ume-name">'+esc(d.title)+'</span><button type="button" class="ui-btn" style="grid-row:1/3;grid-column:3;min-height:36px;padding:0 12px;font-size:13px" data-restore="'+esc(d.id)+'">'+ic('restore')+'Restaurar</button><small>'+esc(item.originalPath)+'</small></div>'}).join('')||empty('A lixeira está vazia','Notas excluídas ficam aqui e podem ser restauradas.');
-    Array.prototype.forEach.call(list.querySelectorAll('[data-restore]'),function(el){el.onclick=function(){try{trash.restore(el.getAttribute('data-restore'));renderTrash()}catch(err){notify('Não foi possível restaurar',err.message)}}});bar.hidden=true;
+    list.innerHTML=(items.length?'<div class="ume-trash-head"><span>'+items.length+' item(ns) · restaure ou exclua de vez</span><button type="button" class="ui-btn" data-empty-trash>'+ic('trash')+'Esvaziar</button></div>':'')+
+      items.map(function(item){var d=item.document;return '<div class="ume-row" data-kind="trash" style="--depth:0"><span class="ume-icon">'+ic('file')+'</span><span class="ume-name">'+esc(d.title)+'</span><span class="ume-trash-act"><button type="button" class="ui-btn" data-restore="'+esc(d.id)+'">'+ic('restore')+'Restaurar</button><button type="button" class="ume-purge" data-purge="'+esc(d.id)+'" aria-label="Excluir de vez" title="Excluir de vez">'+ic('close')+'</button></span><small>'+esc(item.originalPath)+'</small></div>'}).join('')||empty('A lixeira está vazia','Notas excluídas ficam aqui e podem ser restauradas.');
+    Array.prototype.forEach.call(list.querySelectorAll('[data-restore]'),function(el){el.onclick=function(){try{trash.restore(el.getAttribute('data-restore'));renderTrash()}catch(err){notify('Não foi possível restaurar',err.message)}}});
+    Array.prototype.forEach.call(list.querySelectorAll('[data-purge]'),function(el){el.onclick=async function(){var id=el.getAttribute('data-purge'),it=trash.list().find(function(x){return x.document.id===id});
+      if(!(await D.confirm({title:'Excluir de vez?',message:'“'+(it?it.document.title:'')+'” será apagada para sempre. Não dá para desfazer.',confirm:'Excluir de vez',danger:true})))return;trash.purge(id);renderTrash()}});
+    var emp=list.querySelector('[data-empty-trash]');if(emp)emp.onclick=async function(){if(!(await D.confirm({title:'Esvaziar a lixeira?',message:'Todos os '+trash.list().length+' itens serão apagados para sempre. Não dá para desfazer.',confirm:'Esvaziar',danger:true})))return;trash.clear();renderTrash()};
+    bar.hidden=true;
   }
   function renderCompositions(){
     var store=core.service('compositions'),items=store?store.list():[];
@@ -90,7 +95,7 @@
     el.addEventListener('pointerup',function(){clearTimeout(hold);hold=null;origin=null});
     el.addEventListener('pointercancel',function(){clearTimeout(hold);hold=null;origin=null});
     el.addEventListener('contextmenu',function(e){e.preventDefault()});
-    el.addEventListener('click',function(e){if(quietNext){quietNext=false;e.preventDefault();return}activate(id,kind)});
+    el.addEventListener('click',function(e){if(quietNext){quietNext=false;e.preventDefault();return}if(e.ctrlKey||e.metaKey){e.preventDefault();model.select(id,'toggle');return}activate(id,kind)});
   })}
   var quietNext=false; /* o click que fecha o gesto de toque longo não abre nada */
   function activate(id,kind){
@@ -141,6 +146,8 @@
       {icon:'star',label:'Favoritos',run:function(){show('favorites')}},
       {icon:'page',label:'Páginas',detail:'Sites e páginas HTML do vault',run:function(){close();core.commands.execute('pages.home')}},
       {icon:'layers',label:'Composições',run:function(){show('compositions')}},
+      {icon:'upload',label:'Importar arquivos',detail:'Notas, pastas ou .zip do aparelho',run:function(){close();var r=core.service('legacy.runtime');if(r&&r.importFiles)r.importFiles(currentFolder())}},
+      {icon:'download',label:'Exportar tudo (.zip)',detail:'Cópia de segurança de todas as notas',run:function(){var r=core.service('legacy.runtime');if(r&&r.exportZip)r.exportZip()}},
       trash?{icon:'trash',label:'Lixeira',detail:(trash.list().length||'Nenhum')+' item(ns)',run:function(){show('trash')}}:null,
       storage?{icon:'storage',label:'Pasta do Urbe no dispositivo',detail:'Escolher onde os arquivos ficam salvos',run:function(){storage.chooseRoot()}}:null
     ];

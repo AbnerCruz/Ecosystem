@@ -54,6 +54,8 @@ jobs:
           node --check src/customize/plugins.js
           node --check src/customize/ai-tools.js
           node --check src/customize/panel.js
+          node --check src/tutorial/content.js
+          node --check src/tutorial/tutorial.js
           node --check src/editor/visual-tools.js
           node --check src/ui/tips.js
           node --check src/ai/providers.js
@@ -96,3 +98,5 @@ jobs:
           node tests/world-terrain.mjs
           node tests/ai-agent.mjs
           node tests/customize.mjs
+          node tools/build-tutorial.mjs --check
+          node tests/tutorial.mjs

@@ -17,6 +17,8 @@ const APP_SHELL = [
   './src/customize/plugins.js',
   './src/customize/ai-tools.js',
   './src/customize/panel.js',
+  './src/tutorial/content.js',
+  './src/tutorial/tutorial.js',
   './src/styles/customize.css',
   './src/world/terrain.js',
   './src/world/pixel-art.js',
