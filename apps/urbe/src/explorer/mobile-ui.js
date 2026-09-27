@@ -98,7 +98,10 @@
     if(kind==='folder'){var n=model.node(id);if(n)model.expand(n.path,!model.isExpanded(n.path));return}
     openId(id);
   }
-  function renderBar(){var n=model.selection.size;bar.hidden=!n;bar.querySelector('[data-count]').textContent=n+(n===1?' nota':' notas')}
+  function renderBar(){var sel=model.selected(),f=sel.filter(x=>x.kind==='folder').length,d=sel.length-f;bar.hidden=!sel.length;
+    bar.querySelector('[data-count]').textContent=[f?plural(f,'pasta','pastas'):'',d?plural(d,'nota','notas'):''].filter(Boolean).join(' · ');
+    /* ações que só valem para notas ficam desativadas quando só há pastas selecionadas */
+    ['open','favorite','move','compose','duplicate'].forEach(function(k){var b=bar.querySelector('[data-'+k+']');b.disabled=!d})}
   function openId(id){var n=model.node(id);if(!n||n.kind!=='document')return;model.touchRecent(id);core.commands.execute('document.open',{id:id,source:'mobile-explorer'});close()}
   function openSelected(){var n=model.selected().find(x=>x.kind==='document');if(n)openId(n.id)}
   function favoriteSelected(){model.selected().forEach(n=>model.favorite(n.id,true));model.clear()}
@@ -110,8 +113,21 @@
     if(dest===undefined)return;ids.forEach(function(id){core.commands.execute('explorer.move',{id:id,folder:dest})});model.clear();
   }
   function duplicateSelected(){model.selected().filter(n=>n.kind==='document').forEach(n=>core.commands.execute('explorer.duplicate',{id:n.id}));model.clear()}
-  function deleteSelected(){var ids=model.selected().filter(n=>n.kind==='document').map(n=>n.id);if(!ids.length)return;
-    confirmAction({title:'Mover para a lixeira?',message:ids.length===1?'A nota poderá ser restaurada pela Lixeira.':ids.length+' notas poderão ser restauradas pela Lixeira.',confirm:'Mover para a lixeira',danger:true}).then(function(ok){if(ok)core.commands.execute('explorer.delete',{ids:ids})})}
+  function docsIn(path){var d=core.service('documents');return d?d.list().filter(function(x){return x.path.indexOf(path+'/')===0}).length:0}
+  function plural(n,um,varios){return n+' '+(n===1?um:varios)}
+  /* Excluir vale para notas e pastas (antes pastas selecionadas eram ignoradas em silêncio). */
+  function deleteSelected(){
+    var sel=model.selected(),folders=sel.filter(n=>n.kind==='folder'&&n.path);
+    folders=folders.filter(f=>!folders.some(g=>g!==f&&f.path.indexOf(g.path+'/')===0));
+    var within=function(path){return folders.some(f=>path.indexOf(f.path+'/')===0)};
+    var ids=sel.filter(n=>n.kind==='document'&&!within(n.path)).map(n=>n.id);if(!ids.length&&!folders.length)return;
+    var inside=folders.reduce(function(n,f){return n+docsIn(f.path)},0),total=ids.length+inside,title,message;
+    if(folders.length){title=folders.length===1&&!ids.length?'Excluir a pasta “'+folders[0].name+'”?':'Excluir '+[folders.length?plural(folders.length,'pasta','pastas'):'',ids.length?plural(ids.length,'nota','notas'):''].filter(Boolean).join(' e ')+'?';
+      message=(total?plural(total,'nota vai','notas vão')+' para a Lixeira e '+(total===1?'pode':'podem')+' ser restaurada'+(total===1?'':'s')+'. ':'A pasta está vazia. ')+'A pasta também sai da cidade.'}
+    else{title='Mover para a lixeira?';message=ids.length===1?'A nota poderá ser restaurada pela Lixeira.':ids.length+' notas poderão ser restauradas pela Lixeira.'}
+    confirmAction({title:title,message:message,confirm:folders.length?'Excluir':'Mover para a lixeira',danger:true}).then(function(ok){if(!ok)return;
+      folders.forEach(function(f){core.commands.execute('explorer.deleteFolder',{path:f.path})});
+      if(ids.length)core.commands.execute('explorer.delete',{ids:ids});model.clear()})}
   function currentFolder(){var folder=model.selected().find(n=>n.kind==='folder');return folder?folder.path:''}
   function cleanName(s){return String(s||'').trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/^\.+|\.+$/g,'').slice(0,90)}
   function where(folder){return folder?'Em “'+folder+'”.':'Na raiz das notas.'}

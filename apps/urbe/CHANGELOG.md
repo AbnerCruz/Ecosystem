@@ -3,6 +3,7 @@
 ## v0.42.2 — Atualizações chegam sozinhas; Assistente não entra em loop (2026-09-27)
 
 - O celular continuava rodando a versão antiga depois de uma correção publicada: o service worker servia tudo do cache e a versão nova só entrava ao tocar em “Recarregar”. Por isso Excluir e os outros botões de Notas seguiam quebrados mesmo após a v0.42.1.
+- Notas: a lixeira não fazia nada com uma **pasta** selecionada (só notas eram consideradas, em silêncio) e o contador dizia “1 nota”. Agora excluir pasta funciona: tudo dentro dela, inclusive subpastas, vai para a Lixeira (restaurável) e a região sai da cidade. O contador mostra “1 pasta · 2 notas”, e as ações que só valem para notas ficam apagadas quando só há pastas selecionadas.
 - O service worker agora busca na rede primeiro (o cache fica para uso sem internet ou rede muito lenta, acima de 4 s) e assume assim que é instalado. Quem ainda está numa versão antiga recebe esta sozinho ao abrir o app (uma recarga automática, uma única vez).
 - A troca de service worker não recarrega mais a página no meio da edição; o aviso “Nova versão” só aparece se a página aberta estiver realmente desatualizada.
 - Assistente: o modelo às vezes estraga emoji no caminho (“Teste/� Gue.md”) e a leitura falhava. Agora a nota é encontrada comparando só letras e números (ou pelo título).
