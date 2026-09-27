@@ -1,5 +1,18 @@
 # Urbe — Changelog
 
+## v0.43.0 — Agente mais minucioso (2026-09-27)
+
+- Leitura sem cortes: `read_note` entrega a nota inteira sempre que ela cabe no orçamento, que acompanha o contexto do modelo. Antes o modelo pedia 200 linhas, recebia metade e respondia com o que tinha. Notas enormes vêm em partes, com um aviso claro de LEITURA PARCIAL.
+- Se o modelo responde sem terminar de ler, ele é lembrado uma vez de ler o restante e revisar. A primeira resposta fica recolhida como “Resposta preliminar”.
+- Novas ferramentas:
+  - `grep_notes`: acha as linhas exatas em todas as notas, com caminho e número da linha. Ignora acentos e maiúsculas, aceita regex e mostra contexto.
+  - `read_notes`: lê várias notas numa só chamada.
+  - `update_plan`: mostra o plano do agente como uma checklist ao vivo.
+- Leituras independentes pedidas no mesmo passo rodam em paralelo, e cada resultado aparece assim que fica pronto.
+- Instruções do agente reforçam o trabalho minucioso: ler por inteiro, seguir links e backlinks, planejar tarefas longas.
+- Os detalhes de cada ferramenta mostram o resultado inteiro, com rolagem.
+- Notas: a lixeira não fazia nada com uma **pasta** selecionada (só notas eram consideradas, em silêncio) e o contador dizia “1 nota”. Agora excluir pasta funciona: tudo dentro dela, inclusive subpastas, vai para a Lixeira (restaurável) e a região sai da cidade. O contador mostra “1 pasta · 2 notas”, e as ações que só valem para notas ficam apagadas quando só há pastas selecionadas.
+
 ## v0.42.2 — Atualizações chegam sozinhas; Assistente não entra em loop (2026-09-27)
 
 - O celular continuava rodando a versão antiga depois de uma correção publicada: o service worker servia tudo do cache e a versão nova só entrava ao tocar em “Recarregar”. Por isso Excluir e os outros botões de Notas seguiam quebrados mesmo após a v0.42.1.

@@ -476,3 +476,4 @@ html body .ume-actions button{width:38px;min-height:44px;padding:0;display:grid;
 html body .ume-actions button:active,html body .ume-actions button:hover{background:rgba(255,255,255,.08);color:var(--ui-text)}
 html body .ume-actions button .ui-icon{width:20px;height:20px}
 html body .ume-actions button[data-delete]{color:var(--ui-danger)}
+html body .ume-actions button:disabled{opacity:.3;pointer-events:none}

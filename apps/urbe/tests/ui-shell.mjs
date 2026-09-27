@@ -42,3 +42,8 @@ test('atualização chega sozinha: sw assume na hora e busca na rede primeiro',(
   if(!/NETWORK_TIMEOUT/.test(f))throw new Error('sem limite de espera da rede (cache offline)');
   const app=read('src/app.js');if(/controllerchange[^\n]*location\.reload\(\)/.test(app))throw new Error('troca de service worker recarrega a página no meio da edição');
 });
+test('Notas: lixeira funciona com pasta selecionada e contador distingue pastas',()=>{
+  const m=read('src/explorer/mobile-ui.js');
+  if(!/deleteFolder/.test(m))throw new Error('excluir ignora pastas');
+  if(/textContent=n\+\(n===1\?' nota'/.test(m))throw new Error('contador chama pasta de nota');
+});

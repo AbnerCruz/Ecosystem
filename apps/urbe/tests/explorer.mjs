@@ -14,3 +14,11 @@ d=core.commands.execute('explorer.move',{id:a.id,folder:'Pasta'});if(d.id!==a.id
 d=core.commands.execute('explorer.duplicate',{id:b.id});if(d.content!=='b'||d.id===b.id)throw new Error('duplicate identity');
 core.commands.execute('explorer.delete',{ids:[c.id]});if(docs.get(c.id))throw new Error('delete');
 console.log('OK   stable document identity');console.log('OK   explorer tree');console.log('OK   multi selection');console.log('OK   favorites and recent');console.log('OK   rename move duplicate delete');
+{ /* excluir pasta: conteúdo (inclusive subpastas) sai, a pasta some do modelo e o evento avisa a cidade */
+  ex.addFolder('Vazia/Dentro');let evt=null;core.events.on('explorer:folderRemoved',e=>{evt=e});
+  const r=core.commands.execute('explorer.deleteFolder',{path:'Pasta'});
+  if(docs.list().some(x=>x.path.startsWith('Pasta/'))||r.documents.length<2)throw new Error('deleteFolder conteúdo');
+  if(!evt||evt.path!=='Pasta'||ex.tree().children.some(n=>n.path==='Pasta'))throw new Error('deleteFolder evento/árvore');
+  core.commands.execute('explorer.deleteFolder',{path:'Vazia'});if([...ex.folders].some(f=>f.startsWith('Vazia')))throw new Error('deleteFolder subpastas');
+  console.log('OK   delete folder');
+}
