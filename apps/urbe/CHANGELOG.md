@@ -1,5 +1,21 @@
 # Urbe — Changelog
 
+## v1.7.1-beta — Cidade leve no celular e digitação sem travar (2026-09-27)
+
+### Cidade
+- Moradores e bichos andando não repintam mais a cidade inteira. Chão, bairros e ruas ficam guardados numa imagem enquanto a câmera está parada, e só a animação é redesenhada.
+  - Com a tela parada, os retângulos pintados por quadro caíram de ~1.570 para ~50.
+- Ruas: os vizinhos de cada trecho são calculados uma vez por rede, não a cada quadro.
+- Textura do chão: uma imagem pequena por bloco de 16×16 tiles, no lugar de centenas de retângulos e cálculos de ruído por quadro. O desenho é o mesmo.
+- A largura dos rótulos é medida uma vez por texto.
+- Num celular médio simulado (processador 6× mais lento), arrastar a cidade foi de 12 para ~30 quadros por segundo.
+
+### Salvamento
+- Digitar numa nota grava só aquela nota. Antes, cada pausa na digitação também gravava um diário com o vault inteiro (~100 KB). No Android isso passava pela ponte com o sistema e travava a digitação: era 1 MB a cada 5 segundos, agora são ~7 KB.
+  - O diário continua protegendo as operações que mexem em vários arquivos de uma vez.
+- O diário de recuperação é apagado depois de aplicado. Antes, podia ficar no disco e ser reaplicado por cima de edições mais novas.
+- Windows: duas gravações do mesmo arquivo ao mesmo tempo não se atropelam mais. Antes, podiam falhar com "no such file" por usar o mesmo arquivo temporário. Agora ficam numa fila e cada uma usa um nome temporário único.
+
 ## v1.7.0-beta — Urbe instalável: Windows e Android, com pasta real e atualização (2026-09-27)
 
 ### Instalar de verdade

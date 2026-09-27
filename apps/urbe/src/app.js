@@ -471,14 +471,30 @@ function drawOverlay(){
   }
   if(regionDraft){const x=Math.min(regionDraft.a.x,regionDraft.b.x),y=Math.min(regionDraft.a.y,regionDraft.b.y),w=Math.abs(regionDraft.a.x-regionDraft.b.x)+1,h=Math.abs(regionDraft.a.y-regionDraft.b.y)+1,p=w2s(x*TILE,y*TILE);ctx.fillStyle="#61c8ff22";ctx.fillRect(p.x,p.y,w*TILE*camera.z,h*TILE*camera.z);ctx.strokeStyle="#9fe4ff";ctx.setLineDash([6,4]);ctx.strokeRect(p.x,p.y,w*TILE*camera.z,h*TILE*camera.z);ctx.setLineDash([])}
 }
-let ultimoDesenho=-1e9,ultimoMini=-1e9;
+let ultimoDesenho=-1e9,ultimoMini=-1e9,ultimoBase=-1e9,pedidoAnim=false,baseCv=null,baseCtx=null,baseChave='',ultimaChave='';
+/* Moradores e bichos pedem só "animação": chão, bairros e ruas (as camadas de baixo, que
+   custam milhares de operações) são reaproveitados da última pintura enquanto a câmera não
+   se mexe. Antes cada passo de um morador repintava a cidade inteira (lag no celular). */
+function pedirAnimacao(){pedidoAnim=true}
 function frame(t){
   t=t||0;
-  if(!(precisaDesenhar||idxSujo||t-ultimoDesenho>500)){requestAnimationFrame(frame);return}
-  precisaDesenhar=false;ultimoDesenho=t;
+  if(!(precisaDesenhar||pedidoAnim||idxSujo||t-ultimoDesenho>500)){requestAnimationFrame(frame);return}
+  const chave=camera.x+'|'+camera.y+'|'+camera.z+'|'+cv.width+'|'+cv.height;
+  const soAnim=!precisaDesenhar&&!idxSujo&&baseCv&&baseChave===chave&&t-ultimoBase<1000;
+  precisaDesenhar=false;pedidoAnim=false;ultimoDesenho=t;
   if(idxSujo)indexar();
-  ctx.clearRect(0,0,cv.w,cv.h);
-  drawGround();drawRegions();drawRoads();drawTrees();drawBuildings();drawOverlay();
+  if(soAnim){ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,cv.width,cv.height);ctx.drawImage(baseCv,0,0);ctx.restore()}
+  else{
+    ctx.clearRect(0,0,cv.w,cv.h);
+    drawGround();drawRegions();drawRoads();
+    /* guarda a camada só com a câmera parada (arrastando, ela nunca seria reaproveitada) */
+    if(chave===ultimaChave)try{if(!baseCv){baseCv=document.createElement('canvas');baseCtx=baseCv.getContext('2d')}
+      if(baseCv.width!==cv.width||baseCv.height!==cv.height){baseCv.width=cv.width;baseCv.height=cv.height}
+      baseCtx.clearRect(0,0,baseCv.width,baseCv.height);baseCtx.drawImage(cv,0,0);baseChave=chave;ultimoBase=t}catch(_){baseChave=''}
+    else baseChave='';
+    ultimaChave=chave;
+  }
+  drawTrees();drawBuildings();drawOverlay();
   if(t-ultimoMini>300){ultimoMini=t;desenharMini()}
   requestAnimationFrame(frame);}
 requestAnimationFrame(frame);
@@ -3094,7 +3110,22 @@ var v21OldDrawBuildings=drawBuildings;drawBuildings=function(){var f=faixaVisive
 var v21OldDrawOverlay=drawOverlay;drawOverlay=function(){v21OldDrawOverlay();if(v21Placement&&v21PlacementCandidate){var p=v21PlacementCandidate,src=v21Placement.source,ok=src?validarPosicaoMovel(src,p.x,p.y).ok:canHouse(p),sp=w2s(p.x*TILE,p.y*TILE);ctx.save();ctx.globalAlpha=.62;if(src&&src.tipo==='nota')v21DrawEditableBuilding({...src,x:p.x,y:p.y});else drawSprite(A.house1,p.x,p.y,3,3,1.18);ctx.globalAlpha=1;ctx.strokeStyle=ok?'#7ef29a':'#ef766f';ctx.lineWidth=3;ctx.strokeRect(sp.x,sp.y,3*TILE*camera.z,3*TILE*camera.z);ctx.restore()}};
 
 /* improved terrain and map: coherent low-frequency biomes + water/coast detail */
-var v21OldDrawGround=drawGround;drawGround=function(){v21OldDrawGround();if(camera.z<.28)return;var f=faixaVisivel(),step=camera.z<.45?4:2;ctx.save();ctx.globalAlpha=.11;for(var y=Math.floor(f.y0/step)*step;y<=f.y1;y+=step)for(var x=Math.floor(f.x0/step)*step;x<=f.x1;x+=step){if(ehAgua(x,y))continue;var n=(suave(x*.42,y*.42,23)+suave(x*.18,y*.18,47)*.6)/1.6,p=w2s(x*TILE,y*TILE),s=TILE*camera.z*step;if(n<.34)ctx.fillStyle='#8a7a4b';else if(n>.69)ctx.fillStyle='#355b34';else continue;ctx.fillRect(p.x,p.y,s,s)}ctx.restore()};
+var v21OldDrawGround=drawGround,v21Ruido=new Map(),V21_RUIDO_CH=16;
+/* textura suave do chão: cada quadradinho (step×step tiles) é um pixel de uma imagem pequena
+   por bloco de 16×16 tiles, feita uma vez e ampliada sem suavizar (antes: centenas de
+   retângulos e cálculos de ruído a cada quadro) */
+function v21RuidoBloco(bx,by,step){
+  var k=bx+','+by+','+step,c=v21Ruido.get(k);if(c)return c;
+  var n=V21_RUIDO_CH/step;c=document.createElement('canvas');c.width=c.height=n;var g=c.getContext('2d'),im=g.createImageData(n,n),d=im.data;
+  for(var j=0;j<n;j++)for(var i=0;i<n;i++){var x=bx*V21_RUIDO_CH+i*step,y=by*V21_RUIDO_CH+j*step;if(ehAgua(x,y))continue;
+    var v=(suave(x*.42,y*.42,23)+suave(x*.18,y*.18,47)*.6)/1.6,o=(j*n+i)*4;
+    if(v<.34){d[o]=0x8a;d[o+1]=0x7a;d[o+2]=0x4b;d[o+3]=255}else if(v>.69){d[o]=0x35;d[o+1]=0x5b;d[o+2]=0x34;d[o+3]=255}}
+  g.putImageData(im,0,0);if(v21Ruido.size>3000)v21Ruido.clear();v21Ruido.set(k,c);return c;
+}
+drawGround=function(){v21OldDrawGround();if(camera.z<.28)return;var f=faixaVisivel(),step=camera.z<.45?4:2,L=V21_RUIDO_CH,lado=L*TILE*camera.z;
+  ctx.save();ctx.globalAlpha=.11;ctx.imageSmoothingEnabled=false;
+  for(var by=Math.floor(f.y0/L);by<=Math.floor(f.y1/L);by++)for(var bx=Math.floor(f.x0/L);bx<=Math.floor(f.x1/L);bx++){var p=w2s(bx*L*TILE,by*L*TILE);ctx.drawImage(v21RuidoBloco(bx,by,step),p.x,p.y,lado,lado)}
+  ctx.restore()};
 pintarMapa=function(c,L,W2,H2,detalhe){var esc=Math.min(W2/(L.x1-L.x0),H2/(L.y1-L.y0)),px=function(x){return(x-L.x0)*esc},py=function(y){return(y-L.y0)*esc};c.fillStyle='#263b26';c.fillRect(0,0,W2,H2);var step=Math.max(1,Math.ceil(2/Math.max(.001,esc)));for(var y=Math.floor(L.y0);y<L.y1;y+=step)for(var x=Math.floor(L.x0);x<L.x1;x+=step){var sx=px(x),sy=py(y),sz=Math.max(1,step*esc+.5);if(ehAgua(x,y))c.fillStyle='#234d5a';else{var n=suave(x*.35,y*.35,31);c.fillStyle=n<.35?'#776b43':n>.70?'#2f5130':'#385d34'}c.fillRect(sx,sy,sz,sz)}
   for(var ri=0;ri<world.regions.length;ri++){var r=world.regions[ri];c.globalAlpha=.28;c.fillStyle=r.color;if(r.cells)for(var ci=0;ci<r.cells.length;ci++){var a=r.cells[ci].split(',');c.fillRect(px(+a[0]),py(+a[1]),Math.max(1,esc),Math.max(1,esc))}else c.fillRect(px(r.x),py(r.y),r.w*esc,r.h*esc);c.globalAlpha=.9;c.strokeStyle=r.color;c.lineWidth=1;c.strokeRect(px(r.x),py(r.y),r.w*esc,r.h*esc);if(detalhe&&r.w*esc>45&&!r.parentId){c.fillStyle='#e0ece5';c.font='600 10px '+(typeof URBE_FONTE==='string'?URBE_FONTE:'sans-serif');c.fillText(r.name,px(r.x)+3,py(r.y)+10)}}c.globalAlpha=1;
   c.fillStyle='#a98a57';for(var road of world.roads){var q=road.split(',');c.fillRect(px(+q[0]),py(+q[1]),Math.max(1,esc),Math.max(1,esc))}for(var bi=0;bi<world.buildings.length;bi++){var b=world.buildings[bi],ex=b.tipo==='nota'?v21Kind(b):'asset';c.fillStyle=b.tipo==='nota'?v21FileAccent(ex):'#b8a16c';var z=Math.max(2,Math.min(5,3*esc));c.fillRect(px(b.x),py(b.y),z,z)}var a0=s2w(0,0),a1=s2w(cv.w,cv.h);c.strokeStyle='#ecf5f7';c.lineWidth=1.5;c.strokeRect(px(a0.x/TILE),py(a0.y/TILE),(a1.x-a0.x)/TILE*esc,(a1.y-a0.y)/TILE*esc);return{esc:esc,px:px,py:py}};
@@ -3927,7 +3958,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='1.7.0-beta';
+V21_VERSION='1.7.1-beta';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=22;              /* andarilhos vivos ao mesmo tempo */
@@ -4181,7 +4212,7 @@ function v25Ciclo(){
   if(agora-v25UltimoElenco>2500){v25UltimoElenco=agora;v25Repovoar()}
   if(!v25Povo.length)return;
   v25Passo(V25_FPS/1000);
-  pedirDesenho();
+  pedirAnimacao();
 }
 (function(){var scheduler=window.UrbeCore&&window.UrbeCore.service('scheduler');if(scheduler)scheduler.add('aquarium.pedestrians',v25Ciclo,{interval:V25_FPS,whenVisible:true});else v25Relogio=setInterval(v25Ciclo,V25_FPS)})();
 
@@ -4544,10 +4575,11 @@ var URBE_FONTE='-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Inter",sans-
 
 function urbeRetanguloArredondado(c,x,y,w,h,r){r=Math.min(r,h/2,w/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
 /* rótulo em pílula: mesma fonte, cor e raio da interface */
+var urbeLarguras=new Map();
 function urbeRotulo(texto,cx,topo,opts){
   opts=opts||{};var z=camera.z,tam=Math.round(Math.max(11,Math.min(15,12*z)));
   ctx.save();ctx.font=(opts.peso||600)+' '+tam+'px '+URBE_FONTE;ctx.textAlign='center';ctx.textBaseline='middle';
-  var larg=ctx.measureText(texto).width,padX=Math.round(tam*.65),alt=Math.round(tam*1.75),x=cx-larg/2-padX,w=larg+padX*2;
+  var mk=ctx.font+'|'+texto,larg=urbeLarguras.get(mk);if(larg==null){larg=ctx.measureText(texto).width;if(urbeLarguras.size>4000)urbeLarguras.clear();urbeLarguras.set(mk,larg)}var padX=Math.round(tam*.65),alt=Math.round(tam*1.75),x=cx-larg/2-padX,w=larg+padX*2;
   if(opts.esquerda){x=cx;ctx.textAlign='left'}
   if(opts.medir){ctx.restore();return{x:x,y:topo,w:w+(opts.ponto?padX*.7:0),h:alt}}
   urbeRetanguloArredondado(ctx,x,topo,w,alt,alt/2);ctx.fillStyle=opts.fundo||'rgba(14,15,17,.82)';ctx.fill();
@@ -4603,20 +4635,28 @@ drawRegions=function(){
 
 /* ruas: caminho de pedra contínuo, conectado aos vizinhos. O sprite antigo era
    vertical e tinha borda escura, então ruas horizontais viravam blocos soltos. */
+var urbeRuaViz=null,urbeRuaVizDe=null;
+/* vizinhos de cada trecho (1 leste, 2 oeste, 4 sul, 8 norte), refeitos só quando a rede muda */
+function urbeVizinhosRuas(a){
+  if(urbeRuaVizDe===a&&urbeRuaViz)return urbeRuaViz;
+  var m=new Uint8Array(a.length/2);for(var i=0,j=0;i<a.length;i+=2,j++){var x=a[i],y=a[i+1];
+    m[j]=(world.roads.has(K(x+1,y))?1:0)|(world.roads.has(K(x-1,y))?2:0)|(world.roads.has(K(x,y+1))?4:0)|(world.roads.has(K(x,y-1))?8:0)}
+  urbeRuaViz=m;urbeRuaVizDe=a;return m;
+}
 drawRoads=function(){
-  var f=faixaVisivel(),a=roadsParsed(),s=TILE*camera.z,lg=s*.56,mg=(s-lg)/2,borda=Math.max(1,s*.07);
-  function tem(x,y){return world.roads.has(K(x,y))}
-  function trecho(x,y,cor,extra){
+  var f=faixaVisivel(),a=roadsParsed(),viz=urbeVizinhosRuas(a),s=TILE*camera.z,lg=s*.56,mg=(s-lg)/2,borda=Math.max(1,s*.07);
+  function trecho(x,y,v,extra){
     var p=w2s(x*TILE,y*TILE),cx=p.x+mg-extra,cy=p.y+mg-extra,l=lg+extra*2;
-    ctx.fillStyle=cor;ctx.fillRect(cx,cy,l,l);
-    if(tem(x+1,y))ctx.fillRect(cx+l-extra*2,cy,s-mg-l+extra*3+mg,l);
-    if(tem(x-1,y))ctx.fillRect(p.x-.5,cy,mg+extra+.5,l);
-    if(tem(x,y+1))ctx.fillRect(cx,cy+l-extra*2,l,s-mg-l+extra*3+mg);
-    if(tem(x,y-1))ctx.fillRect(cx,p.y-.5,l,mg+extra+.5);
+    ctx.fillRect(cx,cy,l,l);
+    if(v&1)ctx.fillRect(cx+l-extra*2,cy,s-mg-l+extra*3+mg,l);
+    if(v&2)ctx.fillRect(p.x-.5,cy,mg+extra+.5,l);
+    if(v&4)ctx.fillRect(cx,cy+l-extra*2,l,s-mg-l+extra*3+mg);
+    if(v&8)ctx.fillRect(cx,p.y-.5,l,mg+extra+.5);
   }
   ctx.save();
-  for(var pass=0;pass<2;pass++)for(var i=0;i<a.length;i+=2){var x=a[i],y=a[i+1];if(x<f.x0-1||x>f.x1+1||y<f.y0-1||y>f.y1+1)continue;
-    if(pass===0)trecho(x,y,'#6f6250',borda);else trecho(x,y,'#b8a684',0)}
+  for(var pass=0;pass<2;pass++){ctx.fillStyle=pass===0?'#6f6250':'#b8a684';
+    for(var i=0,j=0;i<a.length;i+=2,j++){var x=a[i],y=a[i+1];if(x<f.x0-1||x>f.x1+1||y<f.y0-1||y>f.y1+1)continue;
+      trecho(x,y,viz[j],pass===0?borda:0)}}
   if(camera.z>=.7){ctx.fillStyle='rgba(111,98,80,.35)';for(var j=0;j<a.length;j+=2){var x2=a[j],y2=a[j+1];if(x2<f.x0||x2>f.x1||y2<f.y0||y2>f.y1)continue;var q=w2s(x2*TILE,y2*TILE),u=s/8;
     ctx.fillRect(q.x+s*.38,q.y+s*.34,u,u);ctx.fillRect(q.x+s*.56,q.y+s*.58,u,u)}}
   ctx.restore();
@@ -4803,7 +4843,7 @@ var urbeFauna=[],urbeFaunaT=0,urbeFaunaUlt=0,urbeFaunaAves=0;
     var f=faixaVisivel();
     if(agora-urbeFaunaT>900){urbeFaunaT=agora;var chao=0;for(var i=0;i<urbeFauna.length;i++)if(urbeFauna[i].kind!=='bird')chao++;if(chao<MAX)nascer(f);
       if(agora-urbeFaunaAves>14000&&Math.random()<.25){urbeFaunaAves=agora;aves(f)}}
-    if(!urbeFauna.length)return;passo(dt,f);pedirDesenho();
+    if(!urbeFauna.length)return;passo(dt,f);pedirAnimacao();
   }
   var sch=window.UrbeCore&&window.UrbeCore.service('scheduler');if(sch)sch.add('world.fauna',ciclo,{interval:83,whenVisible:true});else setInterval(ciclo,83);
 })();

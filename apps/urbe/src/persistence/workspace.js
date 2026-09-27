@@ -17,7 +17,7 @@
       var physical=new Map(items.map(function(d){return[d.path,d.content]}));for(const path of ['.urbe/mapa.json','.urbe/trash.json','.urbe/history.json','.urbe/compositions.json'])if(paths.includes(path))physical.set(path,await this.adapter.read(vault,path));
       if(journal&&journal.version===1&&Array.isArray(journal.documents)){items=journal.documents.filter(function(d){return d&&d.path});if(compositions&&journal.compositions)compositions.import(journal.compositions);if(journal.metadata)meta=journal.metadata;if(trash&&journal.trash)trash.import(journal.trash);if(history&&journal.history)history.import(journal.history);this.events.emit('workspace:recovered',{vault:vault,count:items.length,timestamp:journal.timestamp||null})}
       this.store.replaceAll(items,{source:'persistence.load',vault:vault});this.meta=meta||{};this.snapshot=physical;this.suspended=false;
-      if(journal){await this.flush(this.meta)}
+      if(journal){await this.flush(this.meta);try{await this.adapter.remove(vault,'.urbe/journal.json')}catch(_){}}
       this.events.emit('workspace:loaded',{vault:vault,documents:this.store.list(),metadata:meta,paths:paths});return{vault:vault,documents:this.store.list(),metadata:meta,paths:paths}
     }
     desired(metadata){var files=new Map();this.store.list().forEach(function(d){files.set(d.path,d.content)});if(metadata!==undefined)files.set('.urbe/mapa.json',JSON.stringify(metadata||{},null,1));if(trash)files.set('.urbe/trash.json',JSON.stringify(trash.export(),null,1));if(history)files.set('.urbe/history.json',JSON.stringify(history.export()));if(compositions)files.set('.urbe/compositions.json',JSON.stringify(compositions.export()));return files}
@@ -27,10 +27,13 @@
       try{while(this.pending){this.pending=false;var desired=this.desired(metadata===undefined?this.meta:metadata);this.state='saving';this.events.emit('workspace:saving',{vault:this.vault});
         var changed=[];for(const pair of desired)if(this.snapshot.get(pair[0])!==pair[1]&&!pair[0].startsWith('.urbe/journal'))changed.push(pair[0]);
         var removed=Array.from(this.snapshot.keys()).filter(path=>!desired.has(path)&&!path.startsWith('.urbe/'));
-        if(changed.length||removed.length){var journal={version:1,timestamp:Date.now(),documents:this.store.list().map(function(d){return{id:d.id,path:d.path,content:d.content,tags:d.tags,created:d.created,modified:d.modified}}),metadata:metadata===undefined?this.meta:metadata,trash:trash?trash.export():null,history:history?history.export():null,compositions:compositions?compositions.export():null};await this.adapter.write(this.vault,'.urbe/journal.json',JSON.stringify(journal))}
+        /* o diário (cópia de tudo) só protege operações que mexem em vários arquivos de uma vez;
+           editar uma nota grava só ela: antes cada pausa na digitação copiava o vault inteiro */
+        var multi=changed.filter(function(p){return !p.startsWith('.urbe/')}).length+removed.length>1;
+        if(multi){var journal={version:1,timestamp:Date.now(),documents:this.store.list().map(function(d){return{id:d.id,path:d.path,content:d.content,tags:d.tags,created:d.created,modified:d.modified}}),metadata:metadata===undefined?this.meta:metadata,trash:trash?trash.export():null,history:history?history.export():null,compositions:compositions?compositions.export():null};await this.adapter.write(this.vault,'.urbe/journal.json',JSON.stringify(journal))}
         for(const pair of desired){if(this.snapshot.get(pair[0])!==pair[1]){await this.adapter.write(this.vault,pair[0],pair[1]);this.snapshot.set(pair[0],pair[1])}}
         for(const path of Array.from(this.snapshot.keys()))if(!desired.has(path)&&path!=='.urbe/journal.json'){await this.adapter.remove(this.vault,path);this.snapshot.delete(path)}
-        if(changed.length||removed.length)await this.adapter.remove(this.vault,'.urbe/journal.json');
+        if(multi)await this.adapter.remove(this.vault,'.urbe/journal.json');
       }this.state='saved';this.lastSavedAt=Date.now();this.events.emit('workspace:saved',{vault:this.vault,savedAt:this.lastSavedAt});return true}catch(error){this.state='error';this.events.emit('workspace:saveError',{vault:this.vault,error:error});throw error}finally{this.busy=false}}
     suspend(value){this.suspended=value!==false}
     /* Relê o que mudou na pasta por fora do app (Explorer, Obsidian, OneDrive, outro aparelho).

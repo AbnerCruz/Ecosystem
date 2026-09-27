@@ -32,6 +32,13 @@ await test('disco: grava por troca atômica (sem arquivo temporário sobrando)',
   ok(fs.readFileSync(path.join(vaultDir,'Notas','a.md'),'utf8')==='dois','conteúdo');
   ok(fs.readdirSync(path.join(vaultDir,'Notas')).join()==='a.md','sem temporários: '+fs.readdirSync(path.join(vaultDir,'Notas')));
 });
+await test('disco: gravações simultâneas do mesmo arquivo não se atropelam (a última vence)',async()=>{
+  const jobs=[];for(let i=0;i<20;i++)jobs.push(vfs.writeBytes('Corrida/n.md',new TextEncoder().encode('versão '+i)));
+  await Promise.all(jobs);
+  ok(fs.readFileSync(path.join(vaultDir,'Corrida','n.md'),'utf8')==='versão 19','última gravação vence');
+  ok(fs.readdirSync(path.join(vaultDir,'Corrida')).join()==='n.md','sem temporários');
+  let e=null;try{await vfs.writeBytes('../fora.md',new Uint8Array(1))}catch(x){e=x}ok(e&&!fs.existsSync(path.join(tmp,'fora.md')),'fora da pasta: rejeita');
+});
 await test('ponte: raiz com um vault só ("Urbe") apontando para a pasta escolhida',async()=>{
   const W=bridgeContext(),root=await W.UrbeNativeFS.root();
   const names=[];for await(const [n] of root.entries())names.push(n);
@@ -84,6 +91,13 @@ await test('edição local ainda não gravada nunca é atropelada pelo disco',as
   await P.syncFromDisk();
   ok(content(D,'A.md')==='# A minha edição','local vence enquanto não grava');ok(content(D,'Pasta/B.md')==='# B mexida aqui','não apaga nota com edição local');
   await P.flush();ok(disk.get('A.md')==='# A minha edição','e depois grava a edição local');
+});
+await test('digitar numa nota grava só ela (sem copiar o vault inteiro no diário); várias de uma vez usam o diário',async()=>{
+  const {P,D,disk}=persistenceContext();await P.load('Urbe');const writes=[];const w0=P.adapter.write;P.adapter.write=async(v,p,t)=>{writes.push(p);return w0(v,p,t)};
+  const a=D.list().find(x=>x.path==='A.md');D.upsert({...a,content:'# A 1'},{source:'editor.input'});await P.flush();
+  ok(!writes.includes('.urbe/journal.json')&&writes.includes('A.md'),'uma nota: '+writes.join());
+  writes.length=0;const b=D.list().find(x=>x.path==='Pasta/B.md');D.upsert({...D.list().find(x=>x.path==='A.md'),content:'# A 2'});D.upsert({...b,content:'# B 2'});await P.flush();
+  ok(writes[0]==='.urbe/journal.json'&&!disk.has('.urbe/journal.json'),'várias: diário antes e apagado depois: '+writes.join());
 });
 fs.rmSync(tmp,{recursive:true,force:true});
 if(failed)console.error(failed+' falha(s)');
