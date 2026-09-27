@@ -56,4 +56,14 @@ await test('composições prontas e modelo Tela livre são válidos',()=>{
   const sp=TPL.build('canvas',{title:'T'});ok(sp.sections[0].type==='free'&&!P.normalize(sp).errors.length,'Tela livre');
   ok(P.schemaText().includes('free — Layout livre'),'o Assistente conhece o bloco');
 });
+await test('peças novas: tabela, código, fórmula, selo e incorporar (só https, isolado); tamanhos com clamp sem injeção',()=>{
+  const root={type:'box',children:[{type:'table'},{type:'code',content:{code:'<b>x</b>',lang:'js'}},{type:'formula',content:{tex:'a^2+b^2=c^2'}},{type:'badge',content:{text:'Novo'}},
+    {type:'embed',content:{url:'https://example.com/m'}},{id:'bad',type:'embed',content:{url:'javascript:alert(1)'}},{id:'c',type:'heading',style:{size:'clamp(1.5rem, 5vw, 3rem)'}},{id:'x',type:'heading',style:{size:'calc(1px);}body{x:1'}}]};
+  const n=P.normalize({sections:[{id:'s1',type:'free',props:{root}}]});const h=P.render({sections:[{id:'s1',type:'free',props:{root}}]});
+  ok(/<table/.test(h)&&/<pre class="[^"]* code"/.test(h)&&h.includes('&lt;b&gt;x&lt;/b&gt;')&&!h.includes('<b>x</b>'),'tabela e código escapado');
+  ok(/fx-badge/.test(h)&&/<iframe[^>]*sandbox[^>]*src="https:\/\/example\.com\/m"|<iframe[^>]*src="https:\/\/example\.com\/m"[^>]*sandbox/.test(h),'selo e iframe isolado');
+  ok(!h.includes('javascript:'),'incorporar recusa endereço que não é https');
+  ok(h.includes('clamp(1.5rem, 5vw, 3rem)')&&!css(h).includes('body{x:1'),'clamp passa, injeção não');
+  ok(n.spec.sections.length===1,'normaliza');
+});
 if(failed)console.error(failed+' falha(s)');

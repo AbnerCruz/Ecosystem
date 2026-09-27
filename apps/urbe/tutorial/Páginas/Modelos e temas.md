@@ -2,7 +2,7 @@
 
 ## Modelos prontos
 
-Comece uma página a partir de um modelo e depois troque os textos:
+Os modelos ficam **dentro do estúdio**: toque em **＋** → aba **Modelos**. Toda página nova já abre no estúdio; carregar um modelo é opcional e pode ser feito a qualquer momento.
 
 | Modelo | O que monta |
 |---|---|
@@ -22,9 +22,19 @@ Comece uma página a partir de um modelo e depois troque os textos:
 
 Para tudo sobre livros, veja [[Tutorial/Páginas/Livros|Livros]].
 
+## Substituir, adicionar ou só o visual
+
+Se a página já tem conteúdo, o Urbe pergunta o que fazer com o modelo:
+
+- **Substituir a página**: a página vira o modelo (tema, formato e seções).
+- **Adicionar as seções ao fim**: as seções do modelo entram depois das suas.
+- **Só o visual**: pega o tema e o formato (site ou livro) e mantém o seu conteúdo.
+
+Em qualquer caso, **Desfazer** volta como estava.
+
 ## Completo, simplificado ou só a estrutura
 
-Ao criar a partir de um modelo com várias partes (os prontos ou os seus), o Urbe pergunta **como começar**:
+Ao carregar um modelo com várias partes (os prontos ou os seus), o Urbe também pergunta **como começar**:
 
 - **Completo**: todas as partes, com textos de exemplo para você trocar.
 - **Simplificado**: só as partes principais, com listas curtas (dois itens) e um botão por grupo.
@@ -32,7 +42,7 @@ Ao criar a partir de um modelo com várias partes (os prontos ou os seus), o Urb
 
 ## Seus próprios modelos
 
-No menu da página, **Salvar como modelo** guarda a página atual como modelo, em `Páginas/Modelos`. Ele aparece junto com os outros na hora de criar uma página nova.
+No menu da página, **Salvar como modelo** guarda a página atual como modelo, em `Páginas/Modelos`. Ele aparece na aba **Modelos** do **＋**, junto com os outros.
 
 ## Temas das páginas
 

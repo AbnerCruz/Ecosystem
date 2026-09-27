@@ -4,8 +4,10 @@ O **layout livre** deixa você montar uma página (ou uma página de livro) **pe
 
 ## Como começar
 
-- Toque em **＋** e escolha **Layout livre** (fica no topo da lista).
-- Ou crie uma página com o modelo **Tela livre**, que já vem montado com peças soltas.
+- Toda **Nova página** já abre com uma seção em layout livre.
+- Toque em **＋** → **Blocos** → **Layout livre** (fica no topo da lista).
+- Ou **＋** → **Composições** e escolha um conjunto pronto: ele entra no layout livre selecionado (ou numa seção nova).
+- Ou carregue o modelo **Tela livre** (**＋** → **Modelos**), que já vem montado com peças soltas.
 - Ou transforme qualquer bloco pronto: no menu **⋯** da seção, toque em **Converter em layout livre**. Um capítulo, por exemplo, vira um título e um parágrafo solto para cada parágrafo do texto.
 - Em livros, **Capítulos de uma pasta** pode ser desmembrado: menu **⋯** → **Separar em capítulos**. Aí cada capítulo pode ser convertido e editado sozinho.
 
@@ -20,6 +22,11 @@ O **layout livre** deixa você montar uma página (ou uma página de livro) **pe
 | **Botão** | Principal, secundário ou discreto |
 | **Lista**, **Citação**, **Ícone**, **Divisor**, **Espaço** | Os detalhes de sempre |
 | **Vídeo**, **Nota do vault**, **HTML livre** | Conteúdo de fora ou do seu vault |
+| **Tabela** | Tabela em Markdown, com cabeçalho e linhas |
+| **Código** | Bloco de código com linguagem e botão de copiar |
+| **Fórmula** | Fórmula em LaTeX, em destaque |
+| **Selo** | Etiqueta curta (Novo, Grátis, Beta…) |
+| **Incorporar** | Mapa, formulário ou qualquer página `https://` numa moldura segura |
 | **Quebra de página** | Em livros, começa uma página nova naquele ponto |
 
 ## Containers: o segredo do celular
@@ -48,7 +55,7 @@ Cada peça pode ter: arranjo e alinhamento, tamanho (largura, altura, proporçã
 - **Camadas** mostra a árvore de peças. Toque numa camada para selecionar.
 - **Na prévia**, toque numa peça para selecioná-la. **Toque de novo num texto** para escrever direto nele.
 - **Adicionar dentro / depois**: com um container selecionado, a peça entra nele; com outra peça, entra logo depois dela.
-- **Composição pronta**: duas colunas, imagem + texto, grade de cartões, capa centralizada, cartão, caixa de destaque e página de livro.
+- **Composição pronta**: 24 conjuntos, como cabeçalho, rodapé, capa com imagem, capa dividida, números, depoimentos, planos e preços, perguntas, equipe, chamada, galeria, linha do tempo, citação grande, barra lateral, contato, abertura de capítulo, página de livro, página em duas colunas, capa centralizada, duas colunas, imagem + texto, grade de cartões, cartão e caixa de destaque.
 - **Subir / Descer** trocam a ordem. **Sair** tira a peça do container. **Entrar** coloca a peça no container logo acima. **Envolver** cria um container em volta. Há também **Duplicar** e **Apagar**.
 - Tudo pode ser desfeito.
 

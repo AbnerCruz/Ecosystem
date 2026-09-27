@@ -29,7 +29,7 @@
   var isMac=/Mac|iPhone|iPad/.test(global.navigator&&global.navigator.platform||'');
   var MOD=isMac?'⌘':'Ctrl';
 
-  var st={root:null,mode:'closed',docId:null,spec:null,sel:null,hist:[],fut:[],lastKey:'',lastAt:0,leftTab:'sections',sheet:null,device:'desktop',status:'saved',saveT:0,renderT:0,frames:[],front:0,y:0,savedText:'',filter:'',groups:{},nsel:null};
+  var st={root:null,mode:'closed',docId:null,spec:null,sel:null,hist:[],fut:[],lastKey:'',lastAt:0,leftTab:'sections',sheet:null,device:'desktop',status:'saved',saveT:0,renderT:0,frames:[],front:0,y:0,savedText:'',filter:'',groups:{},nsel:null,libTab:'blocos'};
   var wide=function(){return global.innerWidth>=1000};
 
   /* ---------------- utilidades ---------------- */
@@ -68,7 +68,11 @@
     r.addEventListener('click',onClick);
     /* grupos recolhíveis lembram se estão abertos (o painel é redesenhado a cada mudança) */
     r.addEventListener('toggle',function(e){var d=e.target;if(d&&d.dataset&&d.dataset.grp)st.groups[d.dataset.grp]=d.open},true);
-    r.querySelector('[data-name]').addEventListener('input',function(e){commit(function(s){s.meta.title=e.target.value},{key:'meta.title',panels:false})});
+    var nameInput=r.querySelector('[data-name]'),tituloAntes='';
+    nameInput.addEventListener('focus',function(){tituloAntes=st.spec?st.spec.meta.title:''});
+    nameInput.addEventListener('input',function(e){commit(function(s){s.meta.title=e.target.value},{key:'meta.title',panels:false})});
+    /* o nome do arquivo acompanha o título, se ele ainda era o nome automático ou o título anterior */
+    nameInput.addEventListener('change',function(){renameToTitle(tituloAntes)});
     r.addEventListener('input',onInput);r.addEventListener('change',onChange);
     global.addEventListener('message',onFrameMessage);
     doc.addEventListener('keydown',onKey,true);
@@ -106,6 +110,10 @@
   function save(){clearTimeout(st.saveT);var d=docs.get(st.docId);if(!d||!st.spec)return;var text=JSON.stringify(P.compact(st.spec),null,2)+'\n';
     if(text!==d.content){st.savedText=text;docs.upsert(Object.assign({},d,{id:d.id,content:text}),{source:'pages.studio'})}st.status='saved';renderStatus()}
   function flush(){if(st.status==='dirty')save()}
+  function renameToTitle(antes){var d=docs.get(st.docId);if(!d||!st.spec)return;var titulo=cleanName(st.spec.meta.title);if(!titulo)return;
+    var dir=d.path.replace(/[^/]*$/,''),base=d.path.slice(dir.length).replace(/\.(page|template)\.json$/i,''),ext=d.path.slice(dir.length+base.length);
+    if(base===titulo||!(/^Nova página( \(\d+\))?$/.test(base)||base===cleanName(antes)))return;
+    var alvo=dir+titulo+ext;if(docs.get(alvo))alvo=uniquePath(alvo);save();var cur=docs.get(st.docId);docs.upsert({id:cur.id,path:alvo,content:cur.content,created:cur.created,modified:cur.modified},{source:'pages.rename'});toast('Arquivo renomeado para '+alvo.split('/').pop()+'.')}
   function renderStatus(){var el=st.root&&st.root.querySelector('[data-status]');if(el)el.textContent=st.status==='dirty'?'Salvando…':'Salvo'}
 
   /* ---------------- prévia (dois iframes: troca sem piscar) ---------------- */
@@ -182,19 +190,70 @@
   function myBlocks(){return docs.list().filter(function(d){return MY_BLOCK.test(d.path)}).map(function(d){var r=parse(d)||{},sec=r.section;if(!sec||!P.BLOCKS[sec.type])return null;return{id:d.id,name:r.name||d.path.split('/').pop().replace(/\.block\.json$/i,''),description:r.description||P.BLOCKS[sec.type].label,section:sec}}).filter(Boolean)}
   async function saveBlock(id){var sec=section(id);if(!sec)return;var nome=cleanName(await D.prompt({title:'Salvar como bloco',label:'Nome do bloco',value:secTitle(sec).title||secTitle(sec).label,confirm:'Salvar',hint:'Ele aparece em “Meus blocos” ao tocar em +, em qualquer página.'}));if(!nome)return;
     var path=uniquePath('Páginas/Blocos/'+nome+'.block.json');docs.upsert({path:path,content:JSON.stringify({kind:'urbe-block',name:nome,description:secTitle(sec).label,section:{type:sec.type,props:sec.props,style:sec.style}},null,2)+'\n'},{source:'pages.block'});toast('Bloco “'+nome+'” salvo em Meus blocos.')}
-  function pickBlock(done){
-    var ov=doc.createElement('div');ov.className='ps-lib';var groups={},mine=myBlocks();Object.keys(P.BLOCKS).forEach(function(k){var b=P.BLOCKS[k];(groups[b.group]=groups[b.group]||[]).push(b)});
-    ov.innerHTML='<div class="ps-lib-card" role="dialog" aria-modal="true" aria-label="Adicionar bloco"><header><input type="search" placeholder="Buscar bloco…" aria-label="Buscar bloco"><button type="button" class="ps-ib" data-x aria-label="Fechar">'+ic('close')+'</button></header><div class="ps-lib-body">'+
-      (mine.length?'<h4>Meus blocos</h4><div class="ps-lib-grid">'+mine.map(function(m){var b=P.BLOCKS[m.section.type];return '<button type="button" data-type="'+esc(m.section.type)+'" data-mine="'+esc(m.id)+'" data-q="'+esc((m.name+' '+m.description).toLowerCase())+'"><span class="ps-bi">'+esc(b.icon)+'</span><strong>'+esc(m.name)+'</strong><small>'+esc(m.description)+' · seu bloco</small></button>'}).join('')+'</div>':'')+
-      Object.keys(groups).sort(function(a,b){return(b==='Livre')-(a==='Livre')}).map(function(g){return '<h4>'+esc(g)+'</h4><div class="ps-lib-grid">'+groups[g].map(function(b){return '<button type="button" data-type="'+b.type+'" data-q="'+esc((b.label+' '+b.description+' '+b.type).toLowerCase())+'"><span class="ps-bi">'+esc(b.icon)+'</span><strong>'+esc(b.label)+'</strong><small>'+esc(b.description)+'</small></button>'}).join('')+'</div>'}).join('')+'</div></div>';
-    st.root.appendChild(ov);var q=ov.querySelector('input');if(wide())q.focus();
+  /* ================= Inserir: todas as ferramentas num lugar =================
+     Blocos prontos, composições do layout livre, blocos da pessoa e modelos.
+     O mesmo painel serve para "Trocar tipo de bloco" (aí só blocos). */
+  var LIB_TABS=[['blocos','Blocos'],['comp','Composições'],['meus','Meus blocos'],['modelos','Modelos']];
+  function tplCards(){var mine=templateDocs();return TPL.list().map(function(t){var sp=TPL.build(t.id,{title:t.name,folder:'',note:{title:'Nota',path:''}});return{id:t.id,icon:t.icon,name:t.name,desc:t.description,spec:sp}}).concat(mine.map(function(d){var raw=parse(d)||{},sp=P.normalize(raw).spec,tp=raw.template||{};return{id:'doc:'+d.id,icon:sp.meta.icon||'★',name:tp.name||sp.meta.title,desc:tp.description||'Seu modelo',spec:sp}}))}
+  function libBody(tab,only){var X2=P.free,mine=myBlocks();
+    if(tab==='blocos'){var groups={};Object.keys(P.BLOCKS).forEach(function(k){var b=P.BLOCKS[k];(groups[b.group]=groups[b.group]||[]).push(b)});
+      return Object.keys(groups).sort(function(a,b){return(b==='Livre')-(a==='Livre')}).map(function(g){return '<h4>'+esc(g)+'</h4><div class="ps-lib-grid">'+groups[g].map(function(b){return '<button type="button" data-type="'+b.type+'" data-q="'+esc((b.label+' '+b.description+' '+b.type).toLowerCase())+'"><span class="ps-bi">'+esc(b.icon)+'</span><strong>'+esc(b.label)+'</strong><small>'+esc(b.description)+'</small></button>'}).join('')+'</div>'}).join('')}
+    if(tab==='comp'){var sec=st.sel&&section(st.sel);return '<p class="ps-hint">'+(sec&&sec.type==='free'?'Entra no layout livre selecionado, '+(st.nsel?'junto da peça escolhida':'no fim')+'.':'Entra numa seção nova de layout livre.')+'</p><div class="ps-lib-grid">'+Object.keys(X2.PRESETS).map(function(k){var pr=X2.PRESETS[k];return '<button type="button" data-comp="'+k+'" data-q="'+esc(pr.label.toLowerCase()+' '+k)+'"><span class="ps-bi">'+esc(pr.icon)+'</span><strong>'+esc(pr.label)+'</strong></button>'}).join('')+'</div>'}
+    if(tab==='meus')return mine.length?'<div class="ps-lib-grid">'+mine.map(function(m){var b=P.BLOCKS[m.section.type];return '<button type="button" data-type="'+esc(m.section.type)+'" data-mine="'+esc(m.id)+'" data-q="'+esc((m.name+' '+m.description).toLowerCase())+'"><span class="ps-bi">'+esc(b.icon)+'</span><strong>'+esc(m.name)+'</strong><small>'+esc(m.description)+'</small></button>'}).join('')+'</div>'
+      :'<div class="ps-empty"><strong>Nenhum bloco seu ainda</strong>No menu ⋯ de qualquer seção, toque em “Salvar como bloco reutilizável”.</div>';
+    if(tab==='modelos')return '<p class="ps-hint">Carregue um modelo nesta página: dá para substituir tudo, só adicionar as seções dele ao fim, ou pegar só o visual.</p><div class="ps-tpls">'+tplCards().map(function(t){return '<button type="button" class="ps-tpl" data-tpl="'+esc(t.id)+'" data-q="'+esc((t.name+' '+t.desc).toLowerCase())+'"><div class="ps-thumb sm" '+thumb(t.spec)+'><i></i><b>'+esc(t.icon)+'</b><em></em><em></em></div><strong>'+esc(t.name)+'</strong><small>'+esc(t.desc)+'</small></button>'}).join('')+'</div>';
+    return ''}
+  function openLibrary(done,opts){opts=opts||{};var tabs=opts.only?LIB_TABS.filter(function(t){return opts.only.indexOf(t[0])>=0}):LIB_TABS,tab=tabs.some(function(t){return t[0]===st.libTab})?st.libTab:tabs[0][0];
+    var ov=doc.createElement('div');ov.className='ps-lib';
+    ov.innerHTML='<div class="ps-lib-card" role="dialog" aria-modal="true" aria-label="Inserir"><header><input type="search" placeholder="Buscar…" aria-label="Buscar"><button type="button" class="ps-ib" data-x aria-label="Fechar">'+ic('close')+'</button></header>'+
+      (tabs.length>1?'<nav class="ps-lib-tabs" role="tablist">'+tabs.map(function(t){var n=t[0]==='meus'?myBlocks().length:0;return '<button type="button" role="tab" data-libtab="'+t[0]+'">'+t[1]+(n?' <small>'+n+'</small>':'')+'</button>'}).join('')+'</nav>':'')+'<div class="ps-lib-body"></div></div>';
+    st.root.appendChild(ov);var q=ov.querySelector('input'),body=ov.querySelector('.ps-lib-body');if(wide())q.focus();
+    function filtrar(){var v=q.value.trim().toLowerCase();body.querySelectorAll('[data-q]').forEach(function(b){b.hidden=!!v&&b.dataset.q.indexOf(v)<0});body.querySelectorAll('h4').forEach(function(h){h.hidden=!!v})}
+    function show(t){tab=t;st.libTab=t;body.innerHTML=libBody(t);ov.querySelectorAll('[data-libtab]').forEach(function(b){b.classList.toggle('on',b.dataset.libtab===t);b.setAttribute('aria-selected',b.dataset.libtab===t)});body.scrollTop=0;filtrar()}
     function shut(){ov.remove()}
-    ov.addEventListener('click',function(e){if(e.target===ov||e.target.closest('[data-x]'))return shut();var b=e.target.closest('[data-type]');if(b){shut();done(b.dataset.type,b.dataset.mine?(mine.find(function(m){return m.id===b.dataset.mine})||{}).section:null)}});
-    ov.addEventListener('keydown',function(e){if(e.key==='Escape'){e.stopPropagation();shut()}if(e.key==='Enter'){var f=ov.querySelector('[data-type]:not([hidden])');if(f){shut();done(f.dataset.type)}}});
-    q.addEventListener('input',function(){var v=q.value.trim().toLowerCase();ov.querySelectorAll('[data-type]').forEach(function(b){b.hidden=v&&b.dataset.q.indexOf(v)<0});ov.querySelectorAll('h4').forEach(function(h){h.hidden=!!v})});
-  }
-  function fromMine(pre){var s=P.normalize({sections:[{type:pre.type,props:pre.props,style:pre.style}]}).spec.sections[0];s.id=P.uid('s');return s}
-  function addBlock(){pickBlock(function(type,pre){var s=pre?fromMine(pre):P.newSection(type),i=st.sel?secIndex(st.sel)+1:st.spec.sections.length;commit(function(sp){sp.sections.splice(i,0,s)});select(s.id)})}
+    ov.addEventListener('click',function(e){if(e.target===ov||e.target.closest('[data-x]'))return shut();var b;
+      if((b=e.target.closest('[data-libtab]')))return show(b.dataset.libtab);
+      if((b=e.target.closest('[data-comp]'))){shut();return insertPreset(b.dataset.comp)}
+      if((b=e.target.closest('[data-tpl]'))){shut();return applyTemplate(b.dataset.tpl)}
+      if((b=e.target.closest('[data-type]'))){shut();done(b.dataset.type,b.dataset.mine?(myBlocks().find(function(m){return m.id===b.dataset.mine})||{}).section:null)}});
+    ov.addEventListener('keydown',function(e){if(e.key==='Escape'){e.stopPropagation();shut()}if(e.key==='Enter'){var f=body.querySelector('[data-type]:not([hidden]),[data-comp]:not([hidden]),[data-tpl]:not([hidden])');if(f){e.preventDefault();f.click()}}});
+    q.addEventListener('input',filtrar);show(tab)}
+  function pickBlock(done){openLibrary(done,{only:['blocos','meus']})}
+  /* composição pronta: dentro do layout livre selecionado, ou numa seção nova */
+  function insertPreset(key){var X2=P.free,pr=X2.PRESETS[key];if(!pr)return;var nn=pr.build(),sec=st.sel&&section(st.sel);
+    if(sec&&sec.type==='free'){var id=fxCurrent(sec.props.root).node.id;commit(function(s){var h=X2.find(fxRoot(s,sec.id),id);if(X2.TYPES[h.node.type].box)h.node.children.push(nn);else{var arr=h.parent.children;arr.splice(arr.indexOf(h.node)+1,0,nn)}});st.nsel=nn.id;renderPanels();fxPostSel();return}
+    var ns=P.newSection('free',{root:X2.make('box',{},{gap:'16px'},[nn])}),i=st.sel?secIndex(st.sel)+1:st.spec.sections.length;commit(function(s){s.sections.splice(i,0,ns)});st.nsel=nn.id;select(ns.id)}
+  /* perguntas que alguns modelos precisam (qual nota, qual pasta) */
+  async function tplContext(t){var ctx={};
+    if(t&&t.needs==='note'){var notes=docs.list().filter(function(d){return /\.(md|markdown)$/i.test(d.path)}).sort(function(a,b){return String(b.modified||'').localeCompare(String(a.modified||''))});if(!notes.length){D.alert({title:'Nenhuma nota',message:'Crie uma nota primeiro.'});return null}
+      var pick=await D.choose({title:'Qual nota publicar?',options:notes.slice(0,200).map(function(d){return{value:d.id,label:d.title,icon:'file',detail:d.path}})});if(!pick)return null;var nd=docs.get(pick);ctx.note={title:nd.title,path:nd.path};ctx.title=nd.title;ctx.excerpt=P.excerpt(nd.content,150)}
+    if(t&&t.needs==='folder'){var fs={};docs.list().forEach(function(d){var p=d.path.split('/');p.pop();while(p.length){fs[p.join('/')]=1;p.pop()}});var list=Object.keys(fs).filter(function(f){return !/^Páginas(\/|$)/.test(f)}).sort();
+      var fp=await D.choose({title:'Qual pasta?',options:[{value:'',label:'Vault inteiro',icon:'notes'}].concat(list.map(function(f){return{value:f,label:f.split('/').pop(),icon:'folder',detail:f}}))});if(fp===undefined||fp===null)return null;ctx.folder=fp;ctx.title=fp?fp.split('/').pop():'Minhas notas'}
+    return ctx}
+  function tplSpec(tplId,ctx,name){var spec;
+    if(tplId.indexOf('doc:')===0){var td=docs.get(tplId.slice(4));if(!td)return null;spec=P.normalize(parse(td)||{}).spec;spec.kind='urbe-page';delete spec.template;return spec}
+    var person=tplId==='portfolio'||tplId==='resume';if(!person&&!ctx.title)ctx.title=name;spec=TPL.build(tplId,ctx);
+    if(spec.layout.brand&&!person)spec.layout.brand=name;if(tplId==='blank'&&spec.sections[0])spec.sections[0].props.title=name;
+    if(spec.layout.format==='book'){spec.layout.runningHead=name;spec.sections.forEach(function(x){if(x.type==='bookcover'||x.type==='titlepage')x.props.title=name})}
+    return spec}
+  function reidSections(list){return list.map(function(x){var c=JSON.parse(JSON.stringify(x));c.id=P.uid('s');if(c.type==='free'&&c.props.root)c.props.root=P.free.clone(c.props.root);return c})}
+  /* carregar um modelo DENTRO do ambiente: substituir, adicionar ao fim ou só o visual */
+  async function applyTemplate(tplId){var t=tplId.indexOf('doc:')===0?null:TPL.get(tplId),vazia=!st.spec.sections.length||st.spec.sections.length===1&&st.spec.sections[0].type==='free'&&JSON.stringify(st.spec.sections[0].props.root).length<420;
+    var modo=vazia?'replace':await D.choose({title:'Carregar “'+(t?t.name:'modelo')+'”',options:[
+      {value:'replace',icon:'restore',label:'Substituir a página',detail:'Seções, tema e estrutura do modelo (dá para desfazer)'},
+      {value:'append',icon:'plus',label:'Adicionar as seções ao fim',detail:'Mantém o que você já fez e o seu tema'},
+      {value:'theme',icon:'brush',label:'Só o visual',detail:'Tema, cores e fontes do modelo; o conteúdo fica'}]});if(!modo)return;
+    var ctx=await tplContext(t);if(!ctx)return;var name=st.spec.meta.title||'Página',spec=tplSpec(tplId,ctx,name);if(!spec)return;
+    if(modo!=='theme'&&spec.sections.length>2){var v=await D.choose({title:'Como começar?',options:[
+      {value:'full',icon:'star',label:'Completo',detail:'Todas as partes, com textos de exemplo para trocar'},
+      {value:'simple',icon:'list',label:'Simplificado',detail:'Só as partes principais, listas curtas'},
+      {value:'skeleton',icon:'layers',label:'Só a estrutura',detail:'Os mesmos blocos e o mesmo visual, sem os textos de exemplo'}]});if(!v)return;spec=TPL.variant(spec,v)}
+    st.lastKey='';commit(function(s){
+      if(modo==='replace'){var keep={title:s.meta.title,icon:s.meta.icon};s.theme=spec.theme;s.layout=spec.layout;s.sections=reidSections(spec.sections);s.meta=Object.assign({},spec.meta,{title:keep.title});if(spec.meta.icon)s.meta.icon=spec.meta.icon}
+      else if(modo==='append')s.sections=s.sections.concat(reidSections(spec.sections));
+      else{s.theme=spec.theme}});
+    st.sel=null;st.nsel=null;renderAll();toast(modo==='replace'?'Modelo carregado. Toque em qualquer parte para editar.':modo==='append'?'Seções do modelo adicionadas ao fim.':'Visual do modelo aplicado.',{label:'Desfazer',run:undo})}
+  function addBlock(){openLibrary(function(type,pre){var s=pre?fromMine(pre):P.newSection(type),i=st.sel?secIndex(st.sel)+1:st.spec.sections.length;commit(function(sp){sp.sections.splice(i,0,s)});select(s.id)})}
 
   /* ---------------- formulários gerados dos campos ---------------- */
   function grp(k,title,inner,def){if(!inner)return '';var o=Object.prototype.hasOwnProperty.call(st.groups,k)?st.groups[k]:!!def;return '<details class="ps-group" data-grp="'+k+'"'+(o?' open':'')+'><summary>'+esc(title)+'</summary>'+inner+'</details>'}
@@ -262,6 +321,7 @@
       (T.text?'<p class="ps-hint">Dica: toque de novo neste texto na prévia para escrever direto nele.</p>':'')+content+groups+reset+'</div></div>'}
   function fxRoot(s,secId){var sec=fxSec(s,secId);return sec&&sec.props.root}
   function fxOp(o){var sec=section(st.sel);if(!sec||sec.type!=='free')return;var root=sec.props.root,cur=fxCurrent(root),id=cur.node.id;
+    if(o==='preset'){openLibrary(null,{only:['comp']});return}
     if(o==='add'||o==='preset'){var opts=o==='add'?Object.keys(X.TYPES).map(function(k){return{value:'el:'+k,label:X.TYPES[k].icon+'  '+X.TYPES[k].label}}):Object.keys(X.PRESETS).map(function(k){return{value:'pre:'+k,label:X.PRESETS[k].icon+'  '+X.PRESETS[k].label}});
       D.choose({title:o==='add'?'Adicionar elemento':'Composição pronta',options:opts}).then(function(v){if(!v)return;var nn=v.indexOf('el:')===0?X.make(v.slice(3)):X.PRESETS[v.slice(4)].build();
         commit(function(s){var r=fxRoot(s,sec.id),h=X.find(r,id);if(X.TYPES[h.node.type].box)h.node.children.push(nn);else{var arr=h.parent.children;arr.splice(arr.indexOf(h.node)+1,0,nn)}});st.nsel=nn.id;renderPanels();fxPostSel()});return}
@@ -471,14 +531,19 @@
   function renderHome(){var h=st.root.querySelector('.ps-home'),pages=pageDocs(),mine=templateDocs();
     h.innerHTML='<header class="ps-home-top"><button type="button" class="ps-ib" data-a="home-close" aria-label="Fechar">'+ic('back')+'</button><div><strong>Páginas</strong><small>Sites e páginas HTML feitos a partir do vault</small></div><button type="button" class="ps-btn" data-a="home-new">'+ic('plus')+'<span>Nova página</span></button></header>'+
       '<div class="ps-home-body">'+(pages.length?'<h3>Suas páginas <small>'+pages.length+'</small></h3><div class="ps-cards">'+pages.map(function(d){var raw=parse(d)||{},sp=P.normalize(raw).spec;return '<div class="ps-card"><button type="button" class="ps-card-open" data-open-page="'+esc(d.id)+'"><div class="ps-thumb" '+thumb(sp)+'><i></i><b>'+esc(sp.meta.icon||'✦')+'</b><span>'+esc(sp.meta.title)+'</span><em></em><em></em></div><strong>'+esc(sp.meta.title)+'</strong><small>'+esc(d.path)+' · '+sp.sections.length+' seções</small></button><button type="button" class="ps-ib sm" data-page-menu="'+esc(d.id)+'" aria-label="Opções">'+ic('more')+'</button></div>'}).join('')+'</div>':
-        '<div class="ps-hero-empty"><div class="ps-hero-art">✦</div><strong>Crie sua primeira página</strong><p>Landing pages, portfólios, currículos, sites de uma pasta de notas… Tudo com visual moderno, prévia ao vivo e exportação em um único arquivo HTML.</p><button type="button" class="ps-btn" data-a="home-new">'+ic('plus')+'Nova página</button></div>')+
-      '<h3>Começar de um modelo</h3><div class="ps-tpls">'+TPL.list().map(function(t){var sp=TPL.build(t.id,{title:t.name,folder:'',note:{title:'Nota',path:''}});return '<button type="button" class="ps-tpl" data-new="'+t.id+'"><div class="ps-thumb sm" '+thumb(sp)+'><i></i><b>'+esc(t.icon)+'</b><em></em><em></em></div><strong>'+esc(t.name)+'</strong><small>'+esc(t.description)+'</small></button>'}).join('')+
-        mine.map(function(d){var raw=parse(d)||{},sp=P.normalize(raw).spec,tp=raw.template||{};return '<button type="button" class="ps-tpl mine" data-new="doc:'+esc(d.id)+'"><div class="ps-thumb sm" '+thumb(sp)+'><i></i><b>'+esc(sp.meta.icon||'★')+'</b><em></em><em></em></div><strong>'+esc(tp.name||sp.meta.title)+'</strong><small>'+esc(tp.description||'Seu modelo')+'</small></button>'}).join('')+'</div>'+
-      '<p class="ps-foot-hint">Dica: peça ao Assistente “crie uma página sobre …” — ele monta o arquivo .page.json com os blocos certos.</p></div>'}
+        '<div class="ps-hero-empty"><div class="ps-hero-art">✦</div><strong>Crie sua primeira página</strong><p>Sites, portfólios, currículos, livros… A página abre direto no editor: escreva à vontade ou carregue um modelo lá dentro, em <b>＋ → Modelos</b>.</p><button type="button" class="ps-btn" data-a="home-new">'+ic('plus')+'Nova página</button></div>')+
+      '<p class="ps-foot-hint">Modelos, blocos e composições ficam dentro do editor: toque em <b>＋</b> depois de abrir uma página. Dica: peça ao Assistente “crie uma página sobre …” — ele monta o arquivo .page.json com os blocos certos.</p></div>'}
   function pageMenu(id){var d=docs.get(id);if(!d)return;D.menu(d.path.split('/').pop(),[{icon:'edit',label:'Abrir no estúdio',run:function(){open(id)}},{icon:'file',label:'Abrir como texto (JSON)',run:function(){close();core.commands.execute('document.open',{id:id,raw:true,source:'pages'})}},
     {icon:'trash',label:'Mover para a lixeira',danger:true,run:async function(){if(!(await D.confirm({title:'Mover para a lixeira?',message:d.path,confirm:'Mover',danger:true})))return;var tr=core.service('trash');if(tr)tr.trash(id,{source:'pages'});else docs.remove(id);renderHome()}}])}
+  /* Nova página: entra direto no ambiente, com um layout livre pronto para escrever.
+     Modelos, blocos e composições ficam dentro do ambiente (＋ → Inserir). */
+  function quickPage(){var X2=P.free,spec=P.normalize({meta:{title:'Nova página',icon:'✦'},theme:{preset:'aurora'},layout:{nav:false,footer:''},
+      sections:[{type:'free',props:{root:X2.make('box',{},{gap:'18px',padding:'32px 0'},[X2.make('heading',{text:'Nova página',level:1}),X2.make('text',{text:'Toque aqui para escrever. Use **＋** para inserir blocos, composições prontas ou carregar um modelo.'})])}}]}).spec;
+    var p=uniquePath('Páginas/Nova página.page.json'),d=docs.upsert({path:p,content:JSON.stringify(P.compact(spec),null,2)+'\n'},{source:'pages.new'});
+    var ex=core.service('explorer');if(ex&&ex.addFolder&&!ex.folders.has('Páginas'))try{ex.addFolder('Páginas')}catch(_){}
+    open(d.id);if(st.spec.sections[0])select(st.spec.sections[0].id,{from:'keys'});toast('Nova página. Dê um nome no topo e use ＋ para inserir o que quiser.');return d}
   async function newPage(tplId){
-    if(!tplId){var choice=await D.choose({title:'Nova página',options:TPL.list().map(function(t){return{value:t.id,label:t.icon+'  '+t.name,detail:t.description}}).concat(templateDocs().map(function(d){var r=parse(d)||{};return{value:'doc:'+d.id,label:'★  '+((r.template&&r.template.name)||d.path.split('/').pop()),detail:(r.template&&r.template.description)||'Seu modelo'}}))});if(!choice)return;tplId=choice}
+    if(!tplId)return quickPage();
     var ctx={},spec;
     if(tplId.indexOf('doc:')===0){var td=docs.get(tplId.slice(4));if(!td)return;spec=P.normalize(parse(td)||{}).spec;spec.kind='urbe-page';delete spec.template}
     else{var t=TPL.get(tplId);if(!t)return;
