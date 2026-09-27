@@ -1,5 +1,53 @@
 # Urbe — Changelog
 
+## v1.4.0-beta — Estúdio de páginas: toques no celular, personalização e modelos vazio/simplificado (2026-09-27)
+
+### Toques no celular
+- **Campos que "não funcionavam"**: ao tocar num campo, o teclado abria e encolhia a tela, e o estúdio redesenhava o painel nesse redimensionamento. Isso destruía o campo tocado: o teclado fechava e o texto se perdia. Agora o painel só é redesenhado quando o layout muda de verdade (celular ↔ computador) e nunca enquanto um campo está em uso.
+- Os grupos recolhíveis (Aparência da seção e outros) lembram se estão abertos. Antes eles se fechavam sozinhos a cada mudança.
+- O título da página no topo ganhou uma área de toque maior (tinha 21 px de altura).
+
+### Personalização
+- **Tema**:
+  - títulos: peso, MAIÚSCULAS ou versalete, espaço entre letras e tamanho;
+  - altura da linha do texto;
+  - botões: cheio, pílula, quadrado, contorno ou suave;
+  - cartões: elevado, contorno, liso ou vidro;
+  - links: sublinhados, sem sublinhado ou marca-texto;
+  - cor das bordas;
+  - **CSS próprio da página**.
+- **Seção**:
+  - cor de fundo e cor do texto próprias;
+  - seção em caixa (cartão);
+  - altura mínima: natural, meia tela ou tela cheia;
+  - animação: do tema, nenhuma, aparecer, subir, aproximar, da esquerda ou da direita;
+  - **classe CSS** e **CSS desta seção**, em que `&` é a própria seção.
+- **Página**: código livre no `<head>`, para estatísticas, fontes próprias e meta tags.
+- O CSS escrito pela pessoa não consegue fechar a tag `<style>`, e as classes são limpas.
+- **Painéis organizados em grupos** que abrem e fecham:
+  - Tema: Cores e fundo, Texto e títulos, Botões/cartões/links, Espaço e movimento, CSS próprio;
+  - Seção: Aparência e Avançado;
+  - Página: as opções de livro só aparecem no formato Livro.
+- **Meus blocos**: qualquer seção pode ser salva como bloco reutilizável (menu ⋯ → Salvar como bloco reutilizável).
+  - O bloco é gravado em `Páginas/Blocos/*.block.json`, com conteúdo e aparência.
+  - Ele aparece no topo da lista do ＋ em qualquer página e também serve para "Trocar tipo de bloco".
+
+### Modelos
+- **Vazio**: o mínimo do mínimo, sem seções, sem barra, sem rodapé e sem animações.
+- **Simples** (substitui "Em branco"): um título, um texto e um rodapé.
+- Ao criar a partir de qualquer modelo com várias partes, inclusive os da pessoa, dá para escolher:
+  - **Completo**: todas as partes, com textos de exemplo;
+  - **Simplificado**: só as partes principais, listas com dois itens e um botão por grupo; num livro, sem as páginas opcionais;
+  - **Só a estrutura**: os mesmos blocos e visual, sem os textos de exemplo.
+
+### Testes e Tutorial
+- Novos testes:
+  - personalização aplicada e CSS seguro;
+  - modelo Vazio;
+  - variações de todos os modelos válidas;
+  - "Só a estrutura" mantém os blocos e tira os textos.
+- Tutorial atualizado: Modelos e temas, Blocos das páginas (Aparência, Avançado, Meus blocos) e O que são páginas.
+
 ## v1.3.3-beta — Primeiro acesso e pasta do aparelho mais confiáveis (2026-09-27)
 
 - **Tutorial numa pasta nova**: a marca de "Tutorial já criado" também ficava no aparelho, pelo nome da cidade ("Urbe"). Por isso, uma pasta nova e vazia escolhida depois de apagar a antiga ficava sem Tutorial. Agora vale a marca que fica **dentro da pasta** (`.urbe/tutorial.json`). A do aparelho só é usada quando não dá para gravar na pasta.

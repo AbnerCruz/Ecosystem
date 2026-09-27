@@ -19,10 +19,13 @@
     sec('colophon',{})])}
 
   var LIST=[
-    {id:'blank',name:'Em branco',icon:'＋',description:'Só uma capa e um texto para começar do zero.',
-      build:function(c){return page({title:c.title||'Nova página',icon:'✦'},{preset:'aurora'},{nav:false,footer:''},[
-        sec('hero',{title:c.title||'Nova página',subtitle:'Toque em qualquer parte para editar. Adicione blocos com **+**.',buttons:[],height:'auto'},{padding:'l'}),
-        sec('text',{markdown:'Escreva aqui.'},{width:'narrow'})])}},
+    {id:'empty',name:'Vazio',icon:'○',description:'O mínimo do mínimo: nenhuma seção, sem barra, sem rodapé, sem animações. Você monta tudo.',
+      build:function(c){return page({title:c.title||'Nova página',icon:'✦'},{preset:'grafite',animations:false,shadow:'none'},{nav:false,footer:'',themeToggle:false,backToTop:false,progress:false},[])}},
+
+    {id:'blank',name:'Simples',icon:'＋',description:'O básico, genérico e resumido: um título, um texto e um rodapé.',
+      build:function(c){var t=c.title||'Nova página';return page({title:t,icon:'✦'},{preset:'papel',animations:false},{nav:false,footer:'© '+year+' '+t,themeToggle:false},[
+        sec('hero',{title:t,subtitle:'Uma frase curta sobre o que é esta página.',buttons:[],height:'auto',layout:'left'},{padding:'l'}),
+        sec('text',{markdown:'Escreva aqui. Toque em qualquer parte para editar e use **+** para adicionar blocos.'},{width:'narrow'})])}},
 
     {id:'landing',name:'Landing de produto',icon:'🚀',description:'Capa, números, recursos, depoimentos, planos, perguntas e chamada final.',
       build:function(c){var t=c.title||'Nome do produto';return page({title:t,description:'Uma frase que vende o produto.',icon:'🚀'},{preset:'aurora',background:'mesh'},{brand:t,navCta:'Começar',navCtaUrl:'#planos',footer:'© '+year+' '+t+' · Feito com Urbe'},[
@@ -92,6 +95,27 @@
   ];
 
   function get(id){return LIST.find(function(t){return t.id===id})||null}
+
+  /* variações de qualquer modelo (inclusive os da pessoa):
+     simple   = só as partes principais, listas curtas, um botão por grupo;
+     skeleton = os mesmos blocos e o mesmo visual, sem os textos de exemplo. */
+  var OPCIONAIS_LIVRO=['copyright','dedication','about','colophon','part'];
+  function limparCampos(fields,props){var o={};fields.forEach(function(f){var v=props[f.key];
+    if(f.type==='list'){var first=(v||[])[0];o[f.key]=first?[limparCampos(f.fields,first)]:[]}
+    else if(f.type==='text')o[f.key]=f.key==='title'?f.label:(f.key==='label'||f.key==='value'||f.key==='icon'?v:'');
+    else if(f.type==='markdown'||f.type==='textarea')o[f.key]=/^(markdown|subtitle|text)$/.test(f.key)?'Escreva aqui.':'';
+    else if(f.type==='image'||f.type==='url')o[f.key]='';
+    else o[f.key]=v});return o}
+  function encurtar(fields,props){var o={};fields.forEach(function(f){var v=props[f.key];
+    if(f.type==='list'&&Array.isArray(v))o[f.key]=v.slice(0,f.key==='buttons'?1:2).map(function(it){return encurtar(f.fields,it)});else o[f.key]=v});return o}
+  function variant(spec,mode){if(!mode||mode==='full')return spec;var s=JSON.parse(JSON.stringify(spec));
+    if(mode==='simple'){var livro=s.layout&&s.layout.format==='book';
+      if(livro)s.sections=s.sections.filter(function(x){return OPCIONAIS_LIVRO.indexOf(x.type)<0}).slice(0,6);
+      else s.sections=s.sections.slice(0,4);
+      s.sections.forEach(function(x){var b=P.BLOCKS[x.type];if(b)x.props=encurtar(b.fields,x.props)});
+      if(s.layout){s.layout.navCta='';s.layout.navCtaUrl='';s.layout.progress=false}}
+    else if(mode==='skeleton')s.sections.forEach(function(x){var b=P.BLOCKS[x.type];if(b)x.props=limparCampos(b.fields,x.props)});
+    return P.normalize(s).spec}
   function build(id,ctx){var t=get(id);if(!t)throw new Error('Modelo desconhecido: '+id);var spec=t.build(ctx||{});return P.normalize(spec).spec}
-  global.UrbePageTemplates={list:function(){return LIST.slice()},get:get,build:build};
+  global.UrbePageTemplates={list:function(){return LIST.slice()},get:get,build:build,variant:variant};
 })(typeof window!=='undefined'?window:globalThis);

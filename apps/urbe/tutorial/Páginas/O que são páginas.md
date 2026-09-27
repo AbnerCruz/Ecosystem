@@ -23,7 +23,7 @@ Ao abrir uma página, ela aparece no **estúdio**:
 - **Prévia**: toque em qualquer parte da página para editar aquela seção.
 - **Seções**: a lista de blocos. Arraste para reordenar e use **＋** para adicionar.
 - **Tema**: cores, fontes, espaçamento, fundo, cantos, sombras e modo claro/escuro.
-- **Ajustes**: título, descrição, ícone, barra de navegação, rodapé e botões extras.
+- **Página**: título, descrição, ícone, formato (site ou livro), barra de navegação, rodapé, botões extras e, em **Avançado**, um código livre para o `<head>` (estatísticas, fontes próprias, meta tags).
 - **Celular, tablet e computador**: veja como fica em cada tamanho de tela.
 
 Tudo é salvo sozinho, e dá para desfazer. Veja [[Tutorial/Páginas/Estúdio, atalhos e exportação|Estúdio, atalhos e exportação]].

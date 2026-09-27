@@ -58,7 +58,7 @@ await test('temas: todos os presets e modos geram CSS; fontes do Google só quan
 });
 
 await test('modelos embutidos: todos válidos e renderizáveis',()=>{
-  for(const t of TPL.list()){const spec=TPL.build(t.id,{title:'X',folder:'Guia',note:{title:'Uso',path:'Guia/Uso.md'}}),n=P.normalize(spec);eq(n.errors,[],t.id);ok(n.spec.sections.length>0,t.id);ok(P.render(spec,{documents:docs}).length>3000,t.id)}
+  for(const t of TPL.list()){const spec=TPL.build(t.id,{title:'X',folder:'Guia',note:{title:'Uso',path:'Guia/Uso.md'}}),n=P.normalize(spec);eq(n.errors,[],t.id);ok(n.spec.sections.length>0||t.id==='empty',t.id);ok(P.render(spec,{documents:docs}).length>3000,t.id)}
 });
 
 await test('livro: capítulos numerados (inclusive de uma pasta), sumário com links, páginas de impressão e injeção barrada',()=>{
@@ -78,6 +78,24 @@ await test('livro: capítulos numerados (inclusive de uma pasta), sumário com l
   ok(!/<img src=x/.test(evil)&&!/<script>alert/.test(evil),'sem HTML injetado');ok(evil.includes('content:"x\\"}body{display:none}"'),'cabeçalho escapado no CSS');
   for(const size of ['a5','6x9','pocket','a4','letter'])for(const m of ['narrow','normal','wide'])ok(/@page\{size:[\d.]+mm [\d.]+mm;margin:[\d.]+mm/.test(P.render({layout:{format:'book',pageSize:size,margins:m},sections:[]})),size+'/'+m);
   const web=P.render({sections:[{type:'chapter',props:{title:'Só'}}]});ok(!/@page\{size/.test(web)&&/class="bk-wrap"/.test(web),'no formato Site, o bloco aparece sem regras de impressão');
+});
+
+await test('personalização: tema, seção e página aceitam estilo próprio sem quebrar o HTML',()=>{
+  const h=P.render({meta:{title:'x',head:'<meta name="k" content="1">'},theme:{buttonStyle:'pill',cardStyle:'glass',headingCase:'upper',headingScale:1.2,lineHeight:1.8,border:'#abcdef',css:'body{x:1}</style><script>alert(1)</script>'},
+    sections:[{id:'s_a',type:'text',props:{markdown:'oi'},style:{bgColor:'#123456',textColor:'#ffffff',boxed:true,minHeight:'half',animation:'zoom',className:'minha "><x',css:'& h2{color:red}'}},{id:'s_b',type:'text',props:{markdown:'b'},style:{css:'padding:0'}}]});
+  ['border-radius:999px','backdrop-filter','text-transform:uppercase','line-height:1.8','--border:#abcdef','background:#123456','--text:#ffffff',' boxed',' mh-half','an-zoom','[data-s="s_a"] h2{color:red}','[data-s="s_b"]{padding:0}','<meta name="k"'].forEach(k=>ok(h.includes(k),'falta '+k));
+  ok(!/<\/style><script>alert/.test(h),'CSS não fecha o <style>');ok(!/minha "><x/.test(h)&&h.includes('minha x'),'classe limpa');
+  const n=P.normalize({theme:{buttonStyle:'balão'},sections:[{type:'text',style:{minHeight:'enorme'}}]});ok(n.errors.length===2,'valores inválidos apontados');
+});
+await test('modelos: Vazio é o mínimo; toda variação (completo, simplificado, só estrutura) é válida',()=>{
+  const e=TPL.build('empty',{});eq(e.sections.length,0);ok(!e.layout.nav&&!e.layout.footer&&!e.theme.animations,'sem barra, rodapé e animação');
+  for(const t of TPL.list()){const sp=TPL.build(t.id,{title:'X',folder:'Guia',note:{title:'Uso',path:'Guia/Uso.md'}});
+    const si=TPL.variant(sp,'simple'),sk=TPL.variant(sp,'skeleton');
+    for(const v of [si,sk])eq(P.normalize(v).errors,[],t.id);
+    ok(si.sections.length<=Math.max(4,sp.layout.format==='book'?6:4)&&si.sections.length<=sp.sections.length,t.id+' simplificado menor');
+    eq(sk.sections.map(x=>x.type),sp.sections.map(x=>x.type),t.id+' estrutura mantém os blocos');
+    si.sections.forEach(x=>Object.values(x.props).forEach(v=>{if(Array.isArray(v))ok(v.length<=2,t.id+' listas curtas')}));}
+  const land=TPL.variant(TPL.build('landing',{title:'P'}),'skeleton');ok(!JSON.stringify(land).includes('O jeito mais simples'),'sem os textos de exemplo');
 });
 
 await test('Assistente: page_schema descreve todos os blocos; write_page valida, cria, edita e desfaz',async()=>{

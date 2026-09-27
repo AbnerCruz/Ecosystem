@@ -29,7 +29,7 @@
   var isMac=/Mac|iPhone|iPad/.test(global.navigator&&global.navigator.platform||'');
   var MOD=isMac?'⌘':'Ctrl';
 
-  var st={root:null,mode:'closed',docId:null,spec:null,sel:null,hist:[],fut:[],lastKey:'',lastAt:0,leftTab:'sections',sheet:null,device:'desktop',status:'saved',saveT:0,renderT:0,frames:[],front:0,y:0,savedText:'',filter:''};
+  var st={root:null,mode:'closed',docId:null,spec:null,sel:null,hist:[],fut:[],lastKey:'',lastAt:0,leftTab:'sections',sheet:null,device:'desktop',status:'saved',saveT:0,renderT:0,frames:[],front:0,y:0,savedText:'',filter:'',groups:{}};
   var wide=function(){return global.innerWidth>=1000};
 
   /* ---------------- utilidades ---------------- */
@@ -43,7 +43,7 @@
   function templateDocs(){return docs.list().filter(function(d){return P.isTemplatePath(d.path)})}
   function parse(d){try{return JSON.parse(d.content||'{}')}catch(_){return null}}
   function cleanName(s){return String(s||'').trim().replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/^\.+|\.+$/g,'').slice(0,80)}
-  function uniquePath(base){var p=base,i=2;while(docs.get(p))p=base.replace(/(\.(page|template)\.json)$/i,' ('+(i++)+')$1');return p}
+  function uniquePath(base){var p=base,i=2;while(docs.get(p))p=base.replace(/(\.(page|template|block)\.json)$/i,' ('+(i++)+')$1');return p}
   function toast(msg,action){[].forEach.call((st.root||doc).querySelectorAll('.ps-toast'),function(x){x.remove()});var t=doc.createElement('div');t.className='ps-toast';t.innerHTML='<span>'+esc(msg)+'</span>'+(action?'<button type="button">'+esc(action.label)+'</button>':'');(st.root||doc.body).appendChild(t);
     if(action)t.querySelector('button').onclick=function(){action.run();t.remove()};requestAnimationFrame(function(){t.classList.add('on')});setTimeout(function(){t.classList.remove('on');setTimeout(function(){t.remove()},300)},action?5000:2200)}
   function typing(e){var t=e.target;return t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||t.isContentEditable)}
@@ -66,11 +66,16 @@
       '<div class="ps-home" hidden></div><div class="ps-json" hidden></div>';
     doc.body.appendChild(r);st.root=r;st.frames=[].slice.call(r.querySelectorAll('iframe'));
     r.addEventListener('click',onClick);
+    /* grupos recolhíveis lembram se estão abertos (o painel é redesenhado a cada mudança) */
+    r.addEventListener('toggle',function(e){var d=e.target;if(d&&d.dataset&&d.dataset.grp)st.groups[d.dataset.grp]=d.open},true);
     r.querySelector('[data-name]').addEventListener('input',function(e){commit(function(s){s.meta.title=e.target.value},{key:'meta.title',panels:false})});
     r.addEventListener('input',onInput);r.addEventListener('change',onChange);
     global.addEventListener('message',onFrameMessage);
     doc.addEventListener('keydown',onKey,true);
-    global.addEventListener('resize',function(){if(st.mode==='edit'){layout();renderPanels()}});
+    /* no celular o teclado encolhe a janela: redesenhar os painéis aí destruía o campo
+       tocado (o teclado fechava e o texto se perdia). Só redesenha quando o layout
+       muda de verdade (celular ↔ computador). */
+    var eraLargo=null;global.addEventListener('resize',function(){if(st.mode!=='edit')return;var w=wide();layout();if(w!==eraLargo){eraLargo=w;var a=doc.activeElement;if(!(a&&st.root.contains(a)&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))renderPanels()}});
     sheetGestures(r.querySelector('.ps-sheet'));
   }
 
@@ -140,7 +145,7 @@
   function renderPanels(){if(st.mode!=='edit')return;renderChrome();layout();var r=st.root;
     if(wide()){fill(r.querySelector('[data-panel="left"]'),st.leftTab);fill(r.querySelector('[data-panel="right"]'),'edit')}
     else if(st.sheet){var titles={sections:'Seções',edit:st.sel?secTitle(section(st.sel)).label:'Editar',theme:'Tema',page:'Página'};r.querySelector('.ps-sheet-head').innerHTML='<strong>'+esc(titles[st.sheet])+'</strong><button type="button" class="ps-ib" data-a="sheet-close" aria-label="Fechar">'+ic('close')+'</button>';fill(r.querySelector('[data-panel="sheet"]'),st.sheet)}}
-  function fill(el,name){var keep=el.dataset.name===name?el.scrollTop:0;el.dataset.name=name;el.innerHTML=name==='sections'?sectionsHtml():name==='theme'?presetHtml()+'<h4 class="ps-sub">Ajustes</h4>'+formHtml(P.THEME_FIELDS.filter(function(f){return f.key!=='preset'}),st.spec.theme,'theme'):name==='page'?pageHtml():editHtml();el.scrollTop=keep;
+  function fill(el,name){var keep=el.dataset.name===name?el.scrollTop:0;el.dataset.name=name;el.innerHTML=name==='sections'?sectionsHtml():name==='theme'?themeHtml():name==='page'?pageHtml():editHtml();el.scrollTop=keep;
     el.querySelectorAll('textarea').forEach(autosize);if(name==='sections')bindDrag(el)}
 
   /* ---------------- painel: seções ---------------- */
@@ -162,30 +167,54 @@
     i>0?{icon:'arrowUp',label:'Mover para cima',detail:'Alt+↑',run:function(){moveSection(id,-1)}}:null,
     i<n-1?{icon:'arrowUp',label:'Mover para baixo',detail:'Alt+↓',run:function(){moveSection(id,1)}}:null,
     {icon:'copy',label:'Duplicar',detail:MOD+'+D',run:function(){duplicateSection(id)}},
-    {icon:'layers',label:'Trocar tipo de bloco…',run:function(){pickBlock(function(type){var old=section(id),nb=P.newSection(type,old.props);commit(function(s){var k=secIndex(id);nb.id=id;nb.style=old.style;s.sections[k]=nb})})}},
+    {icon:'star',label:'Salvar como bloco reutilizável',detail:'Aparece em “Meus blocos” em qualquer página',run:function(){return saveBlock(id)}},
+    {icon:'layers',label:'Trocar tipo de bloco…',run:function(){pickBlock(function(type,pre){var old=section(id),nb=pre?fromMine(pre):P.newSection(type,old.props);commit(function(s){var k=secIndex(id);nb.id=id;nb.style=old.style;s.sections[k]=nb})})}},
     {icon:'trash',label:'Remover',detail:'Delete',danger:true,run:function(){removeSection(id)}}].filter(Boolean))}
 
   /* ---------------- biblioteca de blocos ---------------- */
+  /* blocos da pessoa: uma seção salva (conteúdo + aparência) em Páginas/Blocos/*.block.json */
+  var MY_BLOCK=/^Páginas\/Blocos\/.+\.block\.json$/i;
+  function myBlocks(){return docs.list().filter(function(d){return MY_BLOCK.test(d.path)}).map(function(d){var r=parse(d)||{},sec=r.section;if(!sec||!P.BLOCKS[sec.type])return null;return{id:d.id,name:r.name||d.path.split('/').pop().replace(/\.block\.json$/i,''),description:r.description||P.BLOCKS[sec.type].label,section:sec}}).filter(Boolean)}
+  async function saveBlock(id){var sec=section(id);if(!sec)return;var nome=cleanName(await D.prompt({title:'Salvar como bloco',label:'Nome do bloco',value:secTitle(sec).title||secTitle(sec).label,confirm:'Salvar',hint:'Ele aparece em “Meus blocos” ao tocar em +, em qualquer página.'}));if(!nome)return;
+    var path=uniquePath('Páginas/Blocos/'+nome+'.block.json');docs.upsert({path:path,content:JSON.stringify({kind:'urbe-block',name:nome,description:secTitle(sec).label,section:{type:sec.type,props:sec.props,style:sec.style}},null,2)+'\n'},{source:'pages.block'});toast('Bloco “'+nome+'” salvo em Meus blocos.')}
   function pickBlock(done){
-    var ov=doc.createElement('div');ov.className='ps-lib';var groups={};Object.keys(P.BLOCKS).forEach(function(k){var b=P.BLOCKS[k];(groups[b.group]=groups[b.group]||[]).push(b)});
+    var ov=doc.createElement('div');ov.className='ps-lib';var groups={},mine=myBlocks();Object.keys(P.BLOCKS).forEach(function(k){var b=P.BLOCKS[k];(groups[b.group]=groups[b.group]||[]).push(b)});
     ov.innerHTML='<div class="ps-lib-card" role="dialog" aria-modal="true" aria-label="Adicionar bloco"><header><input type="search" placeholder="Buscar bloco…" aria-label="Buscar bloco"><button type="button" class="ps-ib" data-x aria-label="Fechar">'+ic('close')+'</button></header><div class="ps-lib-body">'+
+      (mine.length?'<h4>Meus blocos</h4><div class="ps-lib-grid">'+mine.map(function(m){var b=P.BLOCKS[m.section.type];return '<button type="button" data-type="'+esc(m.section.type)+'" data-mine="'+esc(m.id)+'" data-q="'+esc((m.name+' '+m.description).toLowerCase())+'"><span class="ps-bi">'+esc(b.icon)+'</span><strong>'+esc(m.name)+'</strong><small>'+esc(m.description)+' · seu bloco</small></button>'}).join('')+'</div>':'')+
       Object.keys(groups).map(function(g){return '<h4>'+esc(g)+'</h4><div class="ps-lib-grid">'+groups[g].map(function(b){return '<button type="button" data-type="'+b.type+'" data-q="'+esc((b.label+' '+b.description+' '+b.type).toLowerCase())+'"><span class="ps-bi">'+esc(b.icon)+'</span><strong>'+esc(b.label)+'</strong><small>'+esc(b.description)+'</small></button>'}).join('')+'</div>'}).join('')+'</div></div>';
     st.root.appendChild(ov);var q=ov.querySelector('input');if(wide())q.focus();
     function shut(){ov.remove()}
-    ov.addEventListener('click',function(e){if(e.target===ov||e.target.closest('[data-x]'))return shut();var b=e.target.closest('[data-type]');if(b){shut();done(b.dataset.type)}});
+    ov.addEventListener('click',function(e){if(e.target===ov||e.target.closest('[data-x]'))return shut();var b=e.target.closest('[data-type]');if(b){shut();done(b.dataset.type,b.dataset.mine?(mine.find(function(m){return m.id===b.dataset.mine})||{}).section:null)}});
     ov.addEventListener('keydown',function(e){if(e.key==='Escape'){e.stopPropagation();shut()}if(e.key==='Enter'){var f=ov.querySelector('[data-type]:not([hidden])');if(f){shut();done(f.dataset.type)}}});
     q.addEventListener('input',function(){var v=q.value.trim().toLowerCase();ov.querySelectorAll('[data-type]').forEach(function(b){b.hidden=v&&b.dataset.q.indexOf(v)<0});ov.querySelectorAll('h4').forEach(function(h){h.hidden=!!v})});
   }
-  function addBlock(){pickBlock(function(type){var s=P.newSection(type),i=st.sel?secIndex(st.sel)+1:st.spec.sections.length;commit(function(sp){sp.sections.splice(i,0,s)});select(s.id)})}
+  function fromMine(pre){var s=P.normalize({sections:[{type:pre.type,props:pre.props,style:pre.style}]}).spec.sections[0];s.id=P.uid('s');return s}
+  function addBlock(){pickBlock(function(type,pre){var s=pre?fromMine(pre):P.newSection(type),i=st.sel?secIndex(st.sel)+1:st.spec.sections.length;commit(function(sp){sp.sections.splice(i,0,s)});select(s.id)})}
 
   /* ---------------- formulários gerados dos campos ---------------- */
+  function grp(k,title,inner,def){if(!inner)return '';var o=Object.prototype.hasOwnProperty.call(st.groups,k)?st.groups[k]:!!def;return '<details class="ps-group" data-grp="'+k+'"'+(o?' open':'')+'><summary>'+esc(title)+'</summary>'+inner+'</details>'}
+  function pick(list,keys){return keys.map(function(k){return list.find(function(f){return f.key===k})}).filter(Boolean)}
+  function rest(list,used){return list.filter(function(f){return used.indexOf(f.key)<0})}
+  var SEC_LOOK=['background','image','bgColor','textColor','padding','width','align','boxed','minHeight','animation'],SEC_ADV=['anchor','menu','className','css'];
+  var THEME_GROUPS=[['cores','Cores e fundo',['mode','primary','accent','bg','surface','text','muted','border','background'],true],['texto','Texto e títulos',['headingFont','bodyFont','scale','lineHeight','headingWeight','headingCase','headingSpacing','headingScale']],
+    ['formas','Botões, cartões e links',['buttonStyle','cardStyle','linkStyle','radius','shadow']],['espaco','Espaço e movimento',['spacing','width','animations']],['css','CSS próprio',['css']]];
+  var BOOK_KEYS=['pageSize','margins','pageNumbers','runningHead','chapterStyle','recto','justify','indent'];
+  function themeHtml(){var used=['preset'],out='';THEME_GROUPS.forEach(function(g){used=used.concat(g[2]);out+=grp('t-'+g[0],g[1],formHtml(pick(P.THEME_FIELDS,g[2]),st.spec.theme,'theme'),g[3])});
+    var sobra=rest(P.THEME_FIELDS,used);return presetHtml()+out+(sobra.length?grp('t-outros','Outros',formHtml(sobra,st.spec.theme,'theme')):'')}
   function editHtml(){var s=st.sel&&section(st.sel);
     if(!s)return '<div class="ps-empty"><strong>Nada selecionado</strong>'+(wide()?'Clique numa parte da prévia ou numa seção à esquerda.':'Toque numa parte da prévia para editar.')+'</div>';
     var b=P.BLOCKS[s.type],base='sections.'+secIndex(s.id);
     return '<div class="ps-edit-head"><span class="ps-bi">'+esc(b.icon)+'</span><div><strong>'+esc(b.label)+'</strong><small>'+esc(b.description)+'</small></div></div>'+formHtml(b.fields,s.props,base+'.props')+
-      '<details class="ps-group"><summary>Aparência da seção</summary>'+formHtml(P.SECTION_FIELDS,s.style,base+'.style')+'</details>'+
+      grp('s-look','Aparência da seção',formHtml(pick(P.SECTION_FIELDS,SEC_LOOK),s.style,base+'.style'))+
+      grp('s-adv','Avançado: âncora, menu, classe e CSS',formHtml(pick(P.SECTION_FIELDS,SEC_ADV),s.style,base+'.style')+'<p class="ps-hint">No CSS da seção, <code>&amp;</code> é a própria seção. Ex.: <code>&amp; h2{color:tomato}</code>. Só propriedades (sem chaves) valem para a seção inteira.</p>')+
+      formHtml(rest(P.SECTION_FIELDS,SEC_LOOK.concat(SEC_ADV)),s.style,base+'.style')+
       '<div class="ps-edit-foot"><button type="button" class="ps-btn ghost" data-dup="'+esc(s.id)+'">'+ic('copy')+'Duplicar</button><button type="button" class="ps-btn ghost danger" data-del="'+esc(s.id)+'">'+ic('trash')+'Remover</button></div>'}
-  function pageHtml(){return '<p class="ps-hint">Título, descrição e ícone aparecem na aba do navegador e ao compartilhar.</p>'+formHtml(P.META_FIELDS,st.spec.meta,'meta')+'<h4 class="ps-sub">Estrutura</h4>'+formHtml(P.LAYOUT_FIELDS,st.spec.layout,'layout')}
+  function pageHtml(){var L=P.LAYOUT_FIELDS,book=st.spec.layout.format==='book';
+    return '<p class="ps-hint">Título, descrição e ícone aparecem na aba do navegador e ao compartilhar.</p>'+formHtml(rest(P.META_FIELDS,['head']),st.spec.meta,'meta')+
+      '<h4 class="ps-sub">Estrutura</h4>'+formHtml(pick(L,['format']),st.spec.layout,'layout')+
+      (book?grp('p-livro','Livro: página, margens e numeração',formHtml(pick(L,BOOK_KEYS),st.spec.layout,'layout'),true):'')+
+      grp('p-site',book?'Opções de site (não aparecem no livro)':'Barra, rodapé e botões',formHtml(rest(L,BOOK_KEYS.concat(['format'])),st.spec.layout,'layout'),!book)+
+      grp('p-head','Avançado: código no <head>',formHtml(pick(P.META_FIELDS,['head']),st.spec.meta,'meta')+'<p class="ps-hint">Entra como está no HTML exportado: estatísticas, fontes próprias, meta tags.</p>')}
   function presetHtml(){var cur=st.spec.theme.preset;return '<h4 class="ps-sub" style="margin-top:4px">Temas prontos</h4><div class="ps-presets">'+Object.keys(P.THEMES).map(function(k){var t=P.THEMES[k],p=t[t.mode];return '<button type="button" data-preset="'+k+'" class="'+(k===cur?'on':'')+'" style="--a:'+p.bg+';--b:'+p.primary+';--c:'+p.accent+';--d:'+p.text+'"><span class="sw"><i></i><i></i><i></i></span><b>'+esc(t.label)+'</b></button>'}).join('')+'</div>'}
   function formHtml(fields,obj,base){return fields.map(function(f){return fieldHtml(f,obj[f.key],base+'.'+f.key)}).join('')}
   function fieldHtml(f,v,path){
@@ -385,6 +414,12 @@
     if(t2){var person=tplId==='portfolio'||tplId==='resume';if(!person)ctx.title=ctx.title||name;spec=TPL.build(tplId,ctx);spec.meta.title=name;if(spec.layout.brand&&!person)spec.layout.brand=name;if(tplId==='blank')spec.sections[0].props.title=name;
       if(spec.layout.format==='book'){spec.layout.runningHead=name;spec.sections.forEach(function(x){if(x.type==='bookcover'||x.type==='titlepage')x.props.title=name})}}
     else spec.meta.title=name;
+    /* de qualquer modelo com várias partes: completo, simplificado ou só a estrutura */
+    if(spec.sections.length>2){var modo=await D.choose({title:'Como começar?',options:[
+      {value:'full',icon:'star',label:'Completo',detail:'Todas as partes, com textos de exemplo para trocar'},
+      {value:'simple',icon:'list',label:'Simplificado',detail:'Só as partes principais, listas curtas'},
+      {value:'skeleton',icon:'layers',label:'Só a estrutura',detail:'Os mesmos blocos e o mesmo visual, sem os textos de exemplo'}]});
+      if(!modo)return;spec=TPL.variant(spec,modo);spec.meta.title=name}
     var p=uniquePath('Páginas/'+name+'.page.json'),d=docs.upsert({path:p,content:JSON.stringify(spec,null,2)+'\n'},{source:'pages.new'});
     var ex=core.service('explorer');if(ex&&ex.addFolder&&!ex.folders.has('Páginas'))try{ex.addFolder('Páginas')}catch(_){}
     open(d.id);toast('Página criada. Toque em qualquer parte para editar.');
