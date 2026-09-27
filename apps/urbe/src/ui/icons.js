@@ -40,6 +40,7 @@
     quote:'<path d="M5 8.5h5v5.5c0 2.5-1.5 4-4 4.5M14 8.5h5v5.5c0 2.5-1.5 4-4 4.5"/>',
     code:'<path d="M9 7.5L4.5 12 9 16.5M15 7.5l4.5 4.5-4.5 4.5"/>',
     rule:'<path d="M4 12h16"/>',
+    arrowUp:'<path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/>',
     enter:'<path d="M19 5.5V11a3 3 0 0 1-3 3H5"/><path d="M9 10l-4 4 4 4"/>'
   };
   function icon(name,cls){

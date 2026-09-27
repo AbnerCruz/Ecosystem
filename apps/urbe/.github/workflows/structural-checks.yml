@@ -50,6 +50,11 @@ jobs:
           node --check src/ui/dialogs.js
           node --check src/editor/visual-tools.js
           node --check src/ui/tips.js
+          node --check src/ai/providers.js
+          node --check src/ai/tools.js
+          node --check src/ai/store.js
+          node --check src/ai/agent.js
+          node --check src/ai/ui.js
           node --check src/app.js
           node --check sw.js
       - name: Structural invariants
@@ -75,3 +80,4 @@ jobs:
           node tests/search-editor.mjs
           node tests/city.mjs
           node tests/world-terrain.mjs
+          node tests/ai-agent.mjs

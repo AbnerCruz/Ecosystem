@@ -878,19 +878,22 @@ function markdownFromVisual(root){
       return;
     }
     if(tag==="ul"||tag==="ol"){
+      /* itens de uma lista ficam em linhas seguidas, sem linha em branco entre eles */
+      const itens=[];
       [...el.children].forEach((li,idx)=>{
         if(li.tagName.toLowerCase()!=="li")return;
         const checkbox=li.querySelector('input[type="checkbox"]');
         let content=textInline(li).trim();
         if(checkbox){
           content=content.replace(/^\s*/,"");
-          out.push(`- [${checkbox.checked?"x":" "}] ${content}`);
+          itens.push(`- [${checkbox.checked?"x":" "}] ${content}`);
         } else if(tag==="ul"){
-          out.push("- "+content);
+          itens.push("- "+content);
         } else {
-          out.push((idx+1)+". "+content);
+          itens.push((idx+1)+". "+content);
         }
       });
+      if(itens.length)out.push(itens.join("\n"));
       return;
     }
 
@@ -4056,7 +4059,7 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='0.41.0';
+V21_VERSION='0.42.0';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=18;              /* andarilhos vivos ao mesmo tempo */
@@ -4827,6 +4830,42 @@ v21PlacementStatus=function(){
   var ok=!document.getElementById('v21PlacementOk').disabled,motivo=urbeMotivoTerreno(c.x,c.y,3,3);
   txt.textContent=ok?('Construir aqui · '+(MUNDO?MUNDO.info(c.x+1,c.y+1).nome:'')):(motivo?'Não dá: '+motivo:'Não dá: lote ocupado ou sem acesso para rua');
 };
+
+/* Abrir uma nota e sair dela não pode reescrever o arquivo. O modo Visual
+   serializa o HTML de volta para Markdown; comparamos com a serialização do
+   conteúdo recém-renderizado e só gravamos quando o usuário mudou algo. */
+var urbeVisualBase=null,urbeRenderBase=renderCurrentPreview,urbeSyncBase=syncVisualToMarkdown;
+renderCurrentPreview=function(){var r=urbeRenderBase.apply(this,arguments);try{urbeVisualBase=editorViewMode==='preview'?markdownFromVisual(renderedPreview):null}catch(_){urbeVisualBase=null}return r};
+syncVisualToMarkdown=function(){
+  if(visualSyncLock||editorViewMode!=='preview'||!currentFile)return;
+  var next=null;try{next=markdownFromVisual(renderedPreview)}catch(_){}
+  if(urbeVisualBase!=null&&next===urbeVisualBase)return;
+  var r=urbeSyncBase.apply(this,arguments);urbeVisualBase=next;return r;
+};
+
+/* ============================================================
+   v0.42 — Assistente agêntico (src/ai/*)
+   O chat antigo dá lugar a agentes que usam ferramentas no vault,
+   com qualquer provedor de modelo. Aqui só ligamos a interface ao app.
+   ============================================================ */
+(function urbeAssistente(){
+  if(!window.UrbeAgentUI)return;
+  var core=window.UrbeCore,docsA=core&&core.service('documents');
+  UrbeAgentUI.configure({
+    vaultName:function(){return Disco.cidade||'Urbe'},
+    editor:function(){
+      if(!v23Aberto(editorFull)||!currentFile)return null;
+      var d=docsA&&currentFile.documentId&&docsA.get(currentFile.documentId);
+      return{id:d?d.id:null,path:d?d.path:nomeCompletoNota(currentFile)};
+    },
+    openNote:function(id){core.commands.execute('document.open',{id:id,source:'ai'})}
+  });
+  v21InitAiUi=function(){if(!aiPanel.classList.contains('ag-host'))UrbeAgentUI.mount(aiPanel)};
+  v21InitAiUi();
+  document.getElementById('openAI').onclick=function(){aiPanel.classList.toggle('v23SobreEditor',v23Aberto(editorFull));aiPanel.classList.add('open');UrbeAgentUI.opened()};
+  v21OpenGlobalSettings=function(){aiPanel.classList.toggle('v23SobreEditor',v23Aberto(editorFull));aiPanel.classList.add('open');UrbeAgentUI.showSettings()};
+  v21RefreshBalance=function(){return Promise.resolve()};
+})();
 
 /* ---------- boot ---------- */
 (async()=>{

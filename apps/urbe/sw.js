@@ -1,4 +1,4 @@
-const CACHE = 'urbe-shell-v0.41.0';
+const CACHE = 'urbe-shell-v0.42.0';
 const APP_SHELL = [
   './',
   './index.html',
@@ -44,6 +44,12 @@ const APP_SHELL = [
   './src/core/keymap.js',
   './src/ui/command-palette.js',
   './src/ui/quick-open.js',
+  './src/ai/providers.js',
+  './src/ai/tools.js',
+  './src/ai/store.js',
+  './src/ai/agent.js',
+  './src/ai/ui.js',
+  './src/styles/agent.css',
   './src/app.js',
   './src/editor/visual-tools.js',
   './src/ui/tips.js',
@@ -84,11 +90,9 @@ self.addEventListener('message', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
-  // Dados de IA são dinâmicos: nunca servir saldo/modelos/uso do cache.
-  if (url.hostname === 'openrouter.ai' || url.hostname.endsWith('.openrouter.ai')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
+  // Outras origens (APIs de modelos, servidores locais) nunca passam pelo cache:
+  // listas de modelos, saldos e respostas são dinâmicos. Só a PDF.js externa é guardada.
+  if (url.origin !== self.location.origin && !OPTIONAL_EXTERNAL.includes(url.href)) return;
   event.respondWith((async () => {
     const cached = await caches.match(event.request, {ignoreSearch: false});
     if (cached) return cached;
