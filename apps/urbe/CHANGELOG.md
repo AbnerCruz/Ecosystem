@@ -1,5 +1,11 @@
 # Urbe — Changelog
 
+## v0.42.1 — Correções no celular: Notas e abas (2026-09-27)
+
+- Notas: tocar numa pasta a abria e fechava na mesma hora (a ação rodava no `pointerup`, a lista era redesenhada e o `click` seguinte caía na linha nova). Agora a ação acontece só no toque confirmado; o toque longo seleciona sem abrir a nota.
+- Notas: a barra da seleção rolava para o lado e escondia Duplicar, Excluir e Limpar. Virou uma barra de ícones que cabe na tela, com a nova ação Mover para pasta.
+- Editor: havia duas barras de abas empilhadas (a antiga ficava atrás da nova), criando uma faixa vazia e dividindo os toques. Ficou só uma, e o × de fechar ganhou área de toque de 32 px.
+
 ## v0.42.0 — Assistente agêntico, independente de modelo (2026-09-26)
 
 - O chat antigo (um pedido ao OpenRouter com as notas coladas no prompt) deu lugar a agentes que trabalham no vault usando ferramentas.
