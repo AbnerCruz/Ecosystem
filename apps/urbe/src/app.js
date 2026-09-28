@@ -3958,12 +3958,13 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='1.7.2-beta';
+V21_VERSION='1.8.0-beta';
 document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=22;              /* andarilhos vivos ao mesmo tempo */
 var V25_VEL=1.35;            /* tiles por segundo (média; cada um tem o seu passo) */
-var V25_FPS=50;              /* intervalo do quadro, em ms */
+var V25_FPS=33;              /* intervalo do quadro, em ms (≈30 por segundo: passos fluidos) */
+var urbeVelPovo=1;           /* a chuva apressa o passo (src/world/life.js) */
 var V25_CACHE_MAX=180;
 var V25_OCIOSOS=8;           /* moradores à toa na frente de casa */
 
@@ -4128,12 +4129,12 @@ function v25Passo(dt){
     if(a.pausa>0){a.pausa-=dt;if(a.tipo==='andarilho')v25Posicionar(a);continue}
     if(a.tipo==='ocioso'){
       if(!a.alvo){var tx=a.ox+(Math.random()*1.6-.8),ty=a.oy+(Math.random()*.6-.1);if(v25Livre(tx,ty))a.alvo={x:tx,y:ty};else{a.pausa=1;continue}}
-      var ddx=a.alvo.x-a.x,ddy=a.alvo.y-a.y,d=Math.hypot(ddx,ddy),st=a.vel*dt;
+      var ddx=a.alvo.x-a.x,ddy=a.alvo.y-a.y,d=Math.hypot(ddx,ddy),st=a.vel*dt*urbeVelPovo;
       if(d<=st){a.x=a.alvo.x;a.y=a.alvo.y;a.alvo=null;a.pausa=1.5+Math.random()*4;a.dx=0;a.dy=Math.random()<.6?1:0;if(!a.dy)a.dx=Math.random()<.5?-1:1}
       else{a.x+=ddx/d*st;a.y+=ddy/d*st;a.passo+=st*4;if(Math.abs(ddx)>Math.abs(ddy)){a.dx=ddx>0?1:-1;a.dy=0}else{a.dx=0;a.dy=ddy>0?1:-1}}
       continue;
     }
-    var n=a.rota.length-1,av=a.vel*dt;
+    var n=a.rota.length-1,av=a.vel*dt*urbeVelPovo;
     a.s+=av*a.sentido;a.passo+=av*4;
     if(a.s>=n){a.s=n;a.sentido=-1;a.pausa=2+Math.random()*4;a.dx=0;a.dy=1}      /* chegou: entra, visita e sai de novo */
     else if(a.s<=0){a.s=0;a.sentido=1;a.pausa=2+Math.random()*4;a.dx=0;a.dy=1}
@@ -4804,7 +4805,7 @@ drawTrees=function(){
    Mesmo relógio dos moradores: ~12 quadros por segundo, e só pede quadro
    quando há bicho visível. */
 /* opções do mundo que a Personalização liga e desliga */
-var urbeOpcoes={moradores:true,fauna:true,nomes:true,bairros:true,ambiente:'dia',editor:'visual'};
+var urbeOpcoes={moradores:true,fauna:true,clima:true,eventos:true,nomes:true,bairros:true,ambiente:'ciclo',editor:'visual'};
 var urbeFauna=[],urbeFaunaT=0,urbeFaunaUlt=0,urbeFaunaAves=0;
 (function(){
   if(!MUNDO||!ARTE||!ARTE.animal)return;
@@ -4845,7 +4846,7 @@ var urbeFauna=[],urbeFaunaT=0,urbeFaunaUlt=0,urbeFaunaAves=0;
       if(agora-urbeFaunaAves>14000&&Math.random()<.25){urbeFaunaAves=agora;aves(f)}}
     if(!urbeFauna.length)return;passo(dt,f);pedirAnimacao();
   }
-  var sch=window.UrbeCore&&window.UrbeCore.service('scheduler');if(sch)sch.add('world.fauna',ciclo,{interval:83,whenVisible:true});else setInterval(ciclo,83);
+  var sch=window.UrbeCore&&window.UrbeCore.service('scheduler');if(sch)sch.add('world.fauna',ciclo,{interval:40,whenVisible:true});else setInterval(ciclo,40);
 })();
 function urbeDesenharFauna(){
   if(!urbeFauna.length||camera.z<.3)return;var sp=TILE*camera.z/16,f=faixaVisivel(),ord=urbeFauna.slice().sort(function(a,b){return a.y-b.y});
@@ -5062,11 +5063,27 @@ function urbeVista(){
     casas:function(){return world.buildings.filter(function(b){return b.x<=f.x1&&b.x+b.w>=f.x0&&b.y<=f.y1&&b.y+b.h>=f.y0}).map(function(b){return{nome:urbeNomeCasa(b),tipo:b.tipo,x:b.x,y:b.y,w:b.w,h:b.h,id:b.documentId||b.id}})},
     ambiente:urbeAmbienteAgora()};
 }
+function urbeJanelasAcesas(k){
+  ctx.save();ctx.globalCompositeOperation='lighter';var f=faixaVisivel(),z=camera.z;
+  for(var j=0;j<world.buildings.length;j++){var b=world.buildings[j];if(b.x>f.x1||b.x+b.w<f.x0||b.y>f.y1||b.y+b.h<f.y0)continue;
+    /* cada casa acende numa hora um pouco diferente e às vezes uma janela tremula */
+    var sem=(b.x*73856093^b.y*19349663)>>>0,liga=((sem%100)/100)*.35;if(k<liga)continue;var kk=Math.min(1,(k-liga)/.3)*(.9+.1*Math.sin(performance.now()/700+sem));
+    var p=w2s((b.x+b.w/2)*TILE,(b.y+b.h*.7)*TILE),r=TILE*z*1.7,g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r);
+    g.addColorStop(0,'rgba(255,186,92,'+(.42*kk).toFixed(3)+')');g.addColorStop(1,'rgba(255,186,92,0)');ctx.fillStyle=g;ctx.fillRect(p.x-r,p.y-r,r*2,r*2)}
+  ctx.restore();
+}
 function urbeAntesDosRotulos(){
   if(urbeCamadas.length){var vista=urbeVista();
     for(var i=urbeCamadas.length-1;i>=0;i--){var c=urbeCamadas[i];ctx.save();
       try{c.fn(ctx,vista)}catch(e){c.erros=(c.erros||0)+1;console.warn('camada '+c.id,e);if(c.erros>=3){urbeCamadas.splice(i,1);if(c.onError)c.onError(e)}}
       finally{ctx.restore()}}}
+  if(urbeVida&&urbeVida.ceu){try{urbeVida.ceu()}catch(e){console.warn('vida (céu)',e)}}
+  /* luz: a vida do mundo dá a cor contínua do dia (aurora, sol dourado, crepúsculo, noite) */
+  var L=urbeVida&&urbeVida.luz?urbeVida.luz():null;
+  if(L){var c=L.cor;if(c[0]+c[1]+c[2]<762){ctx.save();ctx.globalCompositeOperation='multiply';ctx.fillStyle='rgb('+c[0]+','+c[1]+','+c[2]+')';ctx.fillRect(0,0,cv.w,cv.h);ctx.restore()}
+    if(L.escuro>.25&&camera.z>=.3)urbeJanelasAcesas(Math.min(1,(L.escuro-.25)/.6));
+    if(urbeVida.brilho){try{urbeVida.brilho()}catch(e){console.warn('vida (brilho)',e)}}
+    return}
   var amb=urbeAmbienteAgora();if(amb!=='entardecer'&&amb!=='noite')return;
   ctx.save();ctx.globalCompositeOperation='multiply';ctx.fillStyle=amb==='noite'?'rgb(86,102,168)':'rgb(255,200,158)';ctx.fillRect(0,0,cv.w,cv.h);
   if(amb==='noite'&&camera.z>=.3){ /* janelas acesas */
@@ -5405,6 +5422,36 @@ function urbeLayoutNomesBairros(){
   return urbeLayoutNomes(ctx,vis,function(x,y){return w2s(x*TILE,y*TILE)},TILE*camera.z);
 }
 function urbeDesenharNomesBairros(boxes){boxes.forEach(function(b){urbePilulaBairro(ctx,b)})}
+
+/* ---------- vida do mundo (src/world/life.js) ----------
+   O aquário: clima, água, bichos, flores, luzes e eventos. Este bloco só entrega o que a vida
+   precisa enxergar do mundo e abre três camadas de desenho:
+   chão (antes das árvores e bichos), céu (por cima das casas) e brilho (depois do escurecer). */
+var urbeVida=null;
+(function(){
+  var core=window.UrbeCore;if(!core)return;
+  core.provide('world.life.host',{
+    ctx:ctx,TILE:TILE,
+    camera:function(){return camera},w2s:w2s,faixa:faixaVisivel,
+    largura:function(){return cv.w},altura:function(){return cv.h},
+    agua:function(x,y){return MUNDO?MUNDO.isWater(Math.floor(x),Math.floor(y)):ehAgua(Math.floor(x),Math.floor(y))},
+    bioma:function(x,y){x=Math.floor(x);y=Math.floor(y);if(!MUNDO||!MUNDO.has(Math.floor(x/MUNDO.CH),Math.floor(y/MUNDO.CH)))return -1;return MUNDO.biome(x,y)},
+    B:MUNDO?MUNDO.B:{},
+    mundo:function(){return world},
+    rua:function(x,y){return world.roads.has(K(Math.floor(x),Math.floor(y)))},
+    casaEm:function(x,y){return bAt({x:Math.floor(x),y:Math.floor(y)})},
+    povo:function(){return v25Povo},fauna:function(){return urbeFauna},
+    opcoes:function(){return urbeOpcoes},
+    animar:pedirAnimacao,redesenhar:pedirDesenho,
+    visivel:function(){return v25MapaVisivel()},
+    pressa:function(f){urbeVelPovo=f>0?f:1},
+    nomeBairro:function(r){return r&&r.name||''},
+    centroBairro:function(r){return urbeCentroide(r)},
+    registrar:function(v){urbeVida=v;pedirDesenho()}
+  });
+})();
+var urbeVidaArvores=drawTrees;
+drawTrees=function(){if(urbeVida&&urbeVida.chao){try{urbeVida.chao()}catch(e){console.warn('vida (chão)',e)}}urbeVidaArvores()};
 
 /* ---------- boot ----------
    Com uma pasta do aparelho escolhida, três casos pedem a pessoa em vez de seguir calado:

@@ -76,10 +76,12 @@
       return'<label class="uc-biome'+(own?' own':'')+'"><input type="color" value="'+v+'" data-bioma="'+id+'" aria-label="'+esc(B[id])+'"><span>'+esc(B[id])+'</span>'+(own?'<button type="button" class="uc-mini" data-bioma-reset="'+id+'" aria-label="Cor original">'+ic('restore')+'</button>':'')+'</label>'}).join('');
     return bloco('Vida na cidade',
       chave('cidade.moradores',c.cidade.moradores,'Moradores','Pessoas andando entre notas ligadas')+
-      chave('cidade.fauna',c.cidade.fauna,'Animais','Rebanhos, cervos, patos e pássaros')+
+      chave('cidade.fauna',c.cidade.fauna,'Animais','Rebanhos, cervos, patos, pássaros, peixes, borboletas, pombos e vaga-lumes')+
+      chave('cidade.clima',c.cidade.clima!==false,'Clima','Nuvens, vento, folhas, chuva, neve, neblina e arco-íris')+
+      chave('cidade.eventos',c.cidade.eventos!==false,'Eventos','Balão, festa e fogos, barcos, raposa, revoadas e estrelas cadentes')+
       chave('cidade.nomes',c.cidade.nomes,'Nomes das casas','Letreiro com o nome da nota')+
       chave('cidade.bairros',c.cidade.bairros,'Nomes dos bairros','Letreiro com o nome da pasta'))+
-      bloco('Luz','<div class="uc-row"><span class="uc-row-t"><strong>Hora do dia</strong><small>Automático segue o relógio do aparelho</small></span>'+seg('cidade.ambiente',c.cidade.ambiente,[['dia','Dia'],['entardecer','Tarde'],['noite','Noite'],['auto','Auto']])+'</div>')+
+      bloco('Luz','<div class="uc-row"><span class="uc-row-t"><strong>Hora do dia</strong><small>Ciclo: um dia inteiro a cada 24 minutos. Auto segue o relógio do aparelho</small></span>'+seg('cidade.ambiente',c.cidade.ambiente,[['ciclo','Ciclo'],['dia','Dia'],['entardecer','Tarde'],['noite','Noite'],['auto','Auto']])+'</div>')+
       bloco('Cores do chão','<p class="uc-help">Toque num bioma para trocar a cor. Para desenhar o chão pixel a pixel, use Texturas.</p><div class="uc-biomes">'+biomas+'</div>',Object.keys(pal).length?'<button type="button" class="uc-link" data-act="reset-paleta">'+ic('restore')+'Restaurar</button>':'');
   }
 
