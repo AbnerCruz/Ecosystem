@@ -7,6 +7,8 @@ function ok(v,m){if(!v)throw new Error(m||'falhou')}
 /* contexto 2D de mentira: aceita qualquer chamada e conta quantas houve */
 function fakeCtx(){let n=0;const grad={addColorStop(){}};
   return new Proxy({},{get(t,k){if(k==='__n')return n;if(k in t)return t[k];if(k==='createRadialGradient'||k==='createLinearGradient')return()=>grad;if(k==='createImageData')return(w,h)=>({data:new Uint8ClampedArray(w*h*4)});if(k==='measureText')return()=>({width:10});return(...a)=>{n++}},set(t,k,v){t[k]=v;return true}})}
+/* sorteios repetíveis: o mesmo teste dá sempre o mesmo resultado */
+function mathSemeado(a){const M=Object.create(Math);M.random=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};return M}
 function load(opts){
   opts=opts||{};const ctx=fakeCtx(),B={DEEP:0,SEA:1,RIVER:2,LAKE:3,BEACH:4,GRASS:5,MEADOW:6,FOREST:7,DENSE:8,SWAMP:9,TAIGA:10,TUNDRA:11,SNOW:12,HILLS:13,MOUNTAIN:14,PEAK:15,DESERT:16,SAVANNA:17,STEPPE:18};
   const roads=new Set();for(let x=0;x<40;x++)roads.add(x+',20');for(let y=0;y<40;y++)roads.add('20,'+y);
@@ -21,7 +23,7 @@ function load(opts){
   const services={'world.life.host':host};const cmds={};
   const canvas=()=>({width:0,height:0,getContext:()=>fakeCtx()});
   const doc={createElement:t=>t==='canvas'?canvas():{style:{},setAttribute(){},appendChild(){}},body:{appendChild(){}}};
-  const c={window:{UrbeCore:{service:k=>services[k],commands:{register:(id,d)=>{cmds[id]=d}}}},document:doc,console,performance:{now:()=>Date.now()},setInterval:()=>0,Date,Math,Map,Set,Object,Array,Symbol,String,Number,JSON,parseInt};
+  const c={window:{UrbeCore:{service:k=>services[k],commands:{register:(id,d)=>{cmds[id]=d}}}},document:doc,console,performance:{now:()=>Date.now()},setInterval:()=>0,Date,Math:mathSemeado(opts.semente||7),Map,Set,Object,Array,Symbol,String,Number,JSON,parseInt};
   vm.createContext(c);vm.runInContext(read('src/world/life.js'),c);
   return{V:c.window.UrbeVida,ctx,host,opc,povo,fauna,world,cmds,get pressa(){return pressa},get registrado(){return registrado},get anim(){return anim}};
 }

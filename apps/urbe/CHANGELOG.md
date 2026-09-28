@@ -1,5 +1,14 @@
 # Urbe — Changelog
 
+## v1.8.2-beta — Tocar na casa não abre mais buraco no bairro (2026-09-28)
+
+### Correções
+- **Buraco no bairro ao tocar na casa.** Tocar num bairro entra no modo de editar a forma, e o toque seguinte (na casa) aplicava a forma mesmo sem mudança. Nessa hora, a casa de um subbairro era tratada como se fosse de fora e o terreno em volta dela saía do bairro de cima.
+  - Casa e terreno de um subbairro, em qualquer nível, contam como parte do bairro.
+  - Tocar e sair sem arrastar as alças não altera a forma.
+- **Cidades que já estão com o buraco se consertam ao abrir.** Tudo que um subbairro ocupa passa a ser também do bairro de cima, e os dentes que sobram na borda são alisados.
+- Os pombos acham rua para pousar com mais facilidade, e o teste da vida da cidade passou a usar sorteios repetíveis.
+
 ## v1.8.1-beta — Cada casa dentro do seu bairro (2026-09-28)
 
 ### Correções

@@ -218,7 +218,7 @@
     /* pombos: bicam perto das ruas e voam quando alguém chega perto */
     var povo=H.povo();
     if(o.fauna!==false&&v.z>=.4&&L.escuro<.6&&chuva.k<.4&&T>proxPombos){proxPombos=T+rnd(5,11);var chao=pombos.filter(function(p){return p.st==='chao'}).length;
-      if(chao<Math.round(9*q)){var tr2=tileNaVista(f,function(x,y){return H.rua(x,y)&&(H.casaEm(x+1,y)||H.casaEm(x-1,y)||H.casaEm(x,y+1)||H.casaEm(x,y-1)||H.casaEm(x+2,y)||H.casaEm(x,y+2))},40)||tileNaVista(f,H.rua,40);
+      if(chao<Math.round(9*q)){var tr2=tileNaVista(f,function(x,y){return H.rua(x,y)&&(H.casaEm(x+1,y)||H.casaEm(x-1,y)||H.casaEm(x,y+1)||H.casaEm(x,y-1)||H.casaEm(x+2,y)||H.casaEm(x,y+2))},120)||tileNaVista(f,H.rua,120);
         if(tr2)for(var n=3+Math.floor(R()*3),k2=0;k2<n;k2++)pombos.push({x:tr2.x+.5+rnd(-.6,.6),y:tr2.y+.5+rnd(-.5,.5),st:'chao',t:rnd(0,1),fr:0,flip:R()<.5,alt:0,vx:0,vy:0})}}
     for(i=pombos.length-1;i>=0;i--){var po=pombos[i];po.t-=dt;
       if(po.st==='chao'){if(po.t<=0){po.t=rnd(.3,1.1);po.fr=po.fr?0:1;if(R()<.25){var nx=po.x+rnd(-.3,.3),ny=po.y+rnd(-.2,.2);if(!H.agua(nx,ny)){po.flip=nx<po.x;po.x=nx;po.y=ny}}}
