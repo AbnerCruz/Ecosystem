@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('UrbeNative',{
     readBytes:rel=>inv('fs:readBytes',rel),
     writeBytes:(rel,bytes)=>inv('fs:writeBytes',rel,bytes),
     mkdir:rel=>inv('fs:mkdir',rel),
+    tree:()=>inv('fs:tree'),
+    readTexts:paths=>inv('fs:readTexts',paths),
     remove:(rel,recursive)=>inv('fs:remove',rel,!!recursive)
   },
   onVaultChanged:fn=>{if(typeof fn==='function')vaultListeners.add(fn)},

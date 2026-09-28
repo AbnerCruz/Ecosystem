@@ -1,5 +1,18 @@
 # Urbe — Changelog
 
+## v1.7.2-beta — Abrir o app sem espera nem tela antiga (2026-09-28)
+
+- **Abrir o app ficou rápido.**
+  - Antes, o app lia a pasta arquivo por arquivo pela ponte com o Android: numa abertura comum eram ~560 chamadas, e tudo era lido duas vezes. Era o "Lendo 9 / 54" de toda vez.
+  - Agora o lado nativo, no Android e no Windows, lista a pasta e lê todos os textos em **2 chamadas**, e o app trabalha com um espelho em memória.
+  - Numa abertura comum, as chamadas caíram de ~560 para 5.
+- O espelho continua em dia:
+  - o que o app grava ou apaga vai ao disco e ao espelho juntos;
+  - no Android, ao voltar para o app, a pasta é relida, para enxergar o que mudou por fora;
+  - no computador, depois de abrir, o vigia da pasta assume.
+- Um app instalado sem a leitura em lote continua funcionando arquivo a arquivo.
+- A tela antiga "URBE / Suas cidades / Fundar uma cidade nova" não aparece mais na abertura. Ela vinha marcada como aberta no HTML e ficava visível enquanto o app carregava.
+
 ## v1.7.1-beta — Cidade leve no celular e digitação sem travar (2026-09-27)
 
 ### Cidade

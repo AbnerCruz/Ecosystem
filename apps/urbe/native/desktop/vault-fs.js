@@ -34,6 +34,14 @@ function createVaultFS(getRoot){
       /* gravações do mesmo arquivo em fila: duas ao mesmo tempo não se atropelam */
       const prev=queue.get(abs)||Promise.resolve(),job=prev.catch(()=>{}).then(()=>writeNow(abs,bytes));
       queue.set(abs,job);job.finally(()=>{if(queue.get(abs)===job)queue.delete(abs)}).catch(()=>{});return job},
+    /* a pasta inteira numa chamada (abrir o app sem ler arquivo por arquivo) */
+    async tree(){const root=path.resolve(getRoot()),out=[];
+      async function walk(dir,prefix,depth){if(depth>32)return;let es;try{es=await fs.readdir(dir,{withFileTypes:true})}catch(_){return}
+        for(const e of es){if(!e.isDirectory()&&!e.isFile())continue;const rel=prefix?prefix+'/'+e.name:e.name,abs=path.join(dir,e.name);
+          if(e.isDirectory()){out.push({path:rel,kind:'directory'});await walk(abs,rel,depth+1)}
+          else{let st=null;try{st=await fs.stat(abs)}catch(_){}out.push({path:rel,kind:'file',size:st?st.size:0,mtime:st?st.mtimeMs:0})}}}
+      await walk(root,'',0);return out},
+    async readTexts(paths){const files={};for(const p of paths||[]){try{const abs=await inside(resolve(p)),st=await fs.stat(abs);if(st.isFile()&&st.size<=4*1024*1024)files[p]=await fs.readFile(abs,'utf8')}catch(_){}}return files},
     async mkdir(rel){await fs.mkdir(resolve(rel),{recursive:true})},
     async remove(rel,recursive){const abs=await inside(resolve(rel));if(abs===path.resolve(getRoot()))throw new Error('A pasta do Urbe não é apagada pelo app.');
       const s=await fs.stat(abs).catch(()=>null);if(!s)return;if(s.isDirectory()){if(recursive)await fs.rm(abs,{recursive:true});else await fs.rmdir(abs)}else await fs.unlink(abs)}

@@ -21,15 +21,20 @@ import android.webkit.WebViewClient;
 
 import androidx.core.content.ContextCompat;
 
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * O que o Urbe precisa do Android além do Filesystem do Capacitor:
@@ -170,6 +175,75 @@ public class UrbeAndroidPlugin extends Plugin {
                 call.reject("Não consegui abrir a impressão: " + e.getMessage());
             }
         });
+    }
+
+    /* ---------- leitura em lote da pasta do Urbe (Documentos/Urbe) ----------
+       Abrir o app lia arquivo por arquivo pela ponte (centenas de chamadas: "Lendo 9 / 54").
+       Agora a pasta inteira é listada numa chamada e os textos lidos em outra. */
+    private File vaultDir() {
+        return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Urbe");
+    }
+
+    private void walk(File dir, String prefix, JSArray out, int depth) {
+        if (depth > 32) return;
+        File[] list = dir.listFiles();
+        if (list == null) return;
+        for (File f : list) {
+            String rel = prefix.isEmpty() ? f.getName() : prefix + "/" + f.getName();
+            JSObject e = new JSObject();
+            e.put("path", rel);
+            boolean isDir = f.isDirectory();
+            e.put("kind", isDir ? "directory" : "file");
+            e.put("size", isDir ? 0 : f.length());
+            e.put("mtime", f.lastModified());
+            out.put(e);
+            if (isDir) walk(f, rel, out, depth + 1);
+        }
+    }
+
+    @PluginMethod
+    public void listTree(PluginCall call) {
+        File root = vaultDir();
+        JSObject r = new JSObject();
+        if (!root.isDirectory()) {
+            r.put("exists", false);
+            r.put("entries", new JSArray());
+            call.resolve(r);
+            return;
+        }
+        JSArray out = new JSArray();
+        walk(root, "", out, 0);
+        r.put("exists", true);
+        r.put("entries", out);
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void readTexts(PluginCall call) {
+        JSArray paths = call.getArray("paths");
+        File root = vaultDir();
+        JSObject files = new JSObject();
+        try {
+            String base = root.getCanonicalPath() + File.separator;
+            for (int i = 0; paths != null && i < paths.length(); i++) {
+                String p = paths.getString(i);
+                if (p == null || p.contains("..")) continue;
+                File f = new File(root, p);
+                if (!f.getCanonicalPath().startsWith(base) || !f.isFile() || f.length() > 4 * 1024 * 1024) continue;
+                try (InputStream in = new FileInputStream(f); ByteArrayOutputStream buf = new ByteArrayOutputStream((int) f.length())) {
+                    byte[] chunk = new byte[65536];
+                    int n;
+                    while ((n = in.read(chunk)) > 0) buf.write(chunk, 0, n);
+                    files.put(p, new String(buf.toByteArray(), StandardCharsets.UTF_8));
+                } catch (Exception ignored) {
+                }
+            }
+            JSObject r = new JSObject();
+            r.put("files", files);
+            call.resolve(r);
+        } catch (Exception e) {
+            call.reject("Não consegui ler a pasta: " + e.getMessage());
+        }
     }
 
     @PluginMethod
