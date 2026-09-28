@@ -76,6 +76,8 @@ function ipc(){
   h('fs:readBytes',rel=>vault.readBytes(rel));
   h('fs:writeBytes',(rel,bytes)=>vault.writeBytes(rel,bytes));
   h('fs:mkdir',rel=>vault.mkdir(rel));
+  h('fs:tree',()=>vault.tree());
+  h('fs:readTexts',paths=>vault.readTexts(Array.isArray(paths)?paths.map(String):[]));
   h('fs:remove',(rel,rec)=>vault.remove(rel,rec));
   h('vault:get',()=>({label:config.vault,path:config.vault}));
   h('vault:pick',async()=>{

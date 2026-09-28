@@ -5,7 +5,7 @@ const read=f=>fs.readFileSync(new URL('../'+f,import.meta.url),'utf8');
 let failed=0;async function test(name,fn){try{await fn();console.log('OK  ',name)}catch(e){failed++;console.error('FAIL',name,e&&e.stack||e);process.exitCode=1}}
 function ok(v,m){if(!v)throw new Error(m||'falhou')}
 
-function fakeCapacitor(){
+function fakeCapacitor(opts){opts=opts||{};
   const files=new Map(),dirs=new Set(['Documents']),calls=[];
   const full=o=>{ok(o.directory==='DOCUMENTS','sempre na pasta Documentos: '+o.directory);return 'Documents/'+o.path};
   const parent=p=>p.split('/').slice(0,-1).join('/');
@@ -22,8 +22,14 @@ function fakeCapacitor(){
   };
   const UA={getInfo:()=>Promise.resolve({version:'1.7.0-beta',sdk:34}),openUrl:o=>{calls.push('open '+o.url);return Promise.resolve()},minimize:()=>{calls.push('min');return Promise.resolve()},
     saveFile:o=>{calls.push('save '+o.name+' '+Buffer.from(o.data,'base64').toString());return Promise.resolve({where:'Downloads/Urbe/'+o.name})},storageStatus:()=>Promise.resolve({sdk:34,needsAllFiles:true,allFiles:false})};
+  if(opts.lote){
+    UA.listTree=()=>{calls.push('listTree');const B='Documents/Urbe/',out=[];if(!dirs.has('Documents/Urbe'))return Promise.resolve({exists:false,entries:[]});
+      for(const d of dirs)if(d.startsWith(B))out.push({path:d.slice(B.length),kind:'directory'});for(const [f,v] of files)if(f.startsWith(B))out.push({path:f.slice(B.length),kind:'file',size:v.length});return Promise.resolve({exists:true,entries:out})};
+    UA.readTexts=o=>{calls.push('readTexts '+o.paths.length);const r={};for(const p of o.paths){const v=files.get('Documents/Urbe/'+p);if(v)r[p]=v.toString('utf8')}return Promise.resolve({files:r})};
+  }
+  const fsCalls=[];for(const k of Object.keys(FS)){const o=FS[k];FS[k]=a=>{fsCalls.push(k);return o(a)}}
   const cap={isNativePlatform:()=>true,nativePromise:(pl,m,o)=>{const P=pl==='Filesystem'?FS:pl==='UrbeAndroid'?UA:null;if(!P||!P[m])return Promise.reject(new Error('sem '+pl+'.'+m));return P[m](o)}};
-  return{cap,files,dirs,calls};
+  return{cap,files,dirs,calls,fsCalls};
 }
 function load(fake,fetchImpl){
   const listeners={};
@@ -68,5 +74,29 @@ await test('Android: atualização compara com o último lançamento e oferece o
   ({W}=load(fakeCapacitor(),async()=>({ok:false,status:403})));s=await W.UrbeNative.update.check();ok(s.state==='error','sem internet/limite: erro, sem travar');
   const n=W.UrbeNative.update._newer;
   ok(n('1.7.0','1.7.0-beta')&&n('1.7.0-beta.2','1.7.0-beta.1')&&n('1.10.0-beta','1.9.9')&&!n('1.6.9','1.7.0-beta')&&!n('1.7.0-beta','1.7.0-beta'),'ordem das versões');
+});
+await test('Android: abrir lê a pasta em 2 chamadas (espelho); gravar mantém o espelho; voltar ao app recarrega',async()=>{
+  const f=fakeCapacitor({lote:true});
+  f.dirs.add('Documents/Urbe');f.dirs.add('Documents/Urbe/Tutorial');
+  for(let i=0;i<30;i++)f.files.set('Documents/Urbe/Tutorial/Nota '+i+'.md',Buffer.from('# Nota '+i+' ção'));
+  f.files.set('Documents/Urbe/foto.png',Buffer.from([137,80,78,71]));
+  const {W}=load(f),v=await (await W.UrbeNativeFS.root()).getDirectoryHandle('Urbe');
+  ok(W.UrbeNativeFS.mirrored(),'espelho ativo');ok(f.calls.includes('listTree')&&f.calls.includes('readTexts 30'),'2 chamadas: '+f.calls.join());
+  f.fsCalls.length=0;
+  const t=await v.getDirectoryHandle('Tutorial'),names=[];for await(const [n] of t.entries())names.push(n);
+  let texto='';for(const n of names)texto+=await (await (await t.getFileHandle(n)).getFile()).text();
+  ok(names.length===30&&texto.includes('# Nota 29 ção'),'leu tudo');ok(f.fsCalls.length===0,'sem tocar o disco: '+f.fsCalls.join());
+  const w=await (await t.getFileHandle('Nova.md',{create:true})).createWritable();await w.write('# Nova');await w.close();
+  ok(f.files.get('Documents/Urbe/Tutorial/Nova.md').toString()==='# Nova','gravou no disco');
+  f.fsCalls.length=0;ok(await (await (await t.getFileHandle('Nova.md')).getFile()).text()==='# Nova'&&f.fsCalls.length===0,'espelho atualizado pela gravação');
+  await t.removeEntry('Nota 0.md');let e=null;try{await t.getFileHandle('Nota 0.md')}catch(x){e=x}ok(e&&e.name==='NotFoundError'&&!f.files.has('Documents/Urbe/Tutorial/Nota 0.md'),'apagar reflete no espelho');
+  f.files.set('Documents/Urbe/Tutorial/De fora.md',Buffer.from('# PC'));await W.UrbeNativeFS.prefetch();
+  ok(await (await (await t.getFileHandle('De fora.md')).getFile()).text()==='# PC','recarregar enxerga o que veio de fora');
+  const png=await (await v.getFileHandle('foto.png')).getFile();ok((await png.arrayBuffer()).byteLength===4,'binário lido do disco');
+});
+await test('Android: sem a leitura em lote (app antigo), continua funcionando arquivo a arquivo',async()=>{
+  const f=fakeCapacitor(),{W}=load(f);const v=await (await W.UrbeNativeFS.root()).getDirectoryHandle('Urbe');
+  ok(!W.UrbeNativeFS.mirrored(),'sem espelho');const w=await (await v.getFileHandle('a.md',{create:true})).createWritable();await w.write('oi');await w.close();
+  ok(await (await (await v.getFileHandle('a.md')).getFile()).text()==='oi','lê e grava');
 });
 if(failed)console.error(failed+' falha(s)');

@@ -33,8 +33,38 @@
   }
   function concat(parts){var n=0,i,o=0;for(i=0;i<parts.length;i++)n+=parts[i].length;var out=new Uint8Array(n);for(i=0;i<parts.length;i++){out.set(parts[i],o);o+=parts[i].length}return out}
 
+  /* ---------------- espelho da pasta em memória ----------------
+     Abrir o app lia arquivo por arquivo pela ponte: no Android eram ~560 chamadas (verificar
+     cada pasta, cada arquivo, ler, e tudo duas vezes), o "Lendo 9 / 54" de toda abertura.
+     Agora a pasta inteira vem em 2 chamadas (lista + textos) e fica num espelho: verificar,
+     listar e ler textos saem da memória; gravar e apagar vão ao disco e atualizam o espelho.
+     Mudanças feitas por fora: no Android o espelho é recarregado ao voltar para o app; no
+     computador ele é desligado depois de abrir (o vigia da pasta avisa arquivo a arquivo). */
+  var raw=N.fs,mir=null;
+  var TEXTO=/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv|canvas)$/i;
+  function pai(r){var i=r.lastIndexOf('/');return i<0?'':r.slice(0,i)}
+  function nome(r){return r.slice(r.lastIndexOf('/')+1)}
+  function mirAdd(r,kind){if(!mir||!r)return;var p=pai(r);if(p&&!mir.kinds.has(p))mirAdd(p,'directory');mir.kinds.set(r,kind);if(!mir.kids.has(p))mir.kids.set(p,new Set());mir.kids.get(p).add(nome(r));if(kind==='directory'&&!mir.kids.has(r))mir.kids.set(r,new Set())}
+  function mirDel(r){if(!mir)return;var k=mir.kids.get(r);if(k)Array.from(k).forEach(function(n){mirDel(r?r+'/'+n:n)});mir.kids.delete(r);mir.kinds.delete(r);mir.texts.delete(r);var s2=mir.kids.get(pai(r));if(s2)s2.delete(nome(r))}
+  async function prefetch(){
+    if(!raw.tree||!raw.readTexts)return false;
+    try{var list=await raw.tree(),m={kinds:new Map([['','directory']]),kids:new Map([['',new Set()]]),texts:new Map()},want=[];
+      mir=m;(list||[]).forEach(function(e){mirAdd(e.path,e.kind);if(e.kind==='file'&&TEXTO.test(e.path)&&(e.size||0)<=4194304)want.push(e.path)});
+      var got=want.length?await raw.readTexts(want):{};
+      want.forEach(function(p){if(Object.prototype.hasOwnProperty.call(got,p))m.texts.set(p,got[p])});
+      return true}catch(e){console.info('espelho da pasta indisponível; lendo arquivo a arquivo',e&&e.message);mir=null;return false}
+  }
+  var enc=new TextEncoder(),dec=new TextDecoder();
+  var fs={
+    stat:async function(r){if(mir){var k=mir.kinds.get(r);if(!k)return null;if(k==='directory')return{kind:k,size:0,mtime:0};if(mir.texts.has(r))return{kind:'file',size:mir.texts.get(r).length,mtime:0}}return raw.stat(r)},
+    list:async function(r){if(mir&&mir.kinds.get(r||'')==='directory'){var out=[];(mir.kids.get(r||'')||new Set()).forEach(function(n){var c=r?r+'/'+n:n;out.push({name:n,kind:mir.kinds.get(c)||'file'})});return out}return raw.list(r)},
+    readBytes:async function(r){if(mir&&mir.texts.has(r))return enc.encode(mir.texts.get(r));return raw.readBytes(r)},
+    writeBytes:async function(r,b){await raw.writeBytes(r,b);if(mir){mirAdd(r,'file');if(TEXTO.test(r)&&b.length<=4194304)mir.texts.set(r,dec.decode(b));else mir.texts.delete(r)}},
+    mkdir:async function(r){await raw.mkdir(r);mirAdd(r,'directory')},
+    remove:async function(r,rec){await raw.remove(r,rec);mirDel(r)}
+  };
+
   /* ---------------- handles compatíveis com File System Access ---------------- */
-  var fs=N.fs;
   function FileH(rel,name){this.kind='file';this.name=name;this._rel=rel}
   FileH.prototype.getFile=async function(){
     var st=await fs.stat(this._rel);if(!st||st.kind!=='file')throw err('NotFoundError','Arquivo não encontrado: '+this._rel);
@@ -98,11 +128,18 @@
   RootH.prototype.isSameEntry=async function(o){return o instanceof RootH};
   RootH.prototype.queryPermission=RootH.prototype.requestPermission=async function(){return 'granted'};
 
-  async function root(){var v=await N.vault();return new RootH(v&&v.label)}
+  var soltarNoLoad=false;
+  async function root(){var v=await N.vault();if(!mir)await prefetch();
+    /* no computador o espelho só serve para abrir rápido: depois o vigia da pasta cuida das mudanças */
+    if(N.onVaultChanged&&!soltarNoLoad){soltarNoLoad=true;try{global.UrbeCore.events.on('workspace:loaded',function(){setTimeout(function(){mir=null},0)})}catch(_){}}
+    return new RootH(v&&v.label)}
 
-  global.UrbeNativeFS={root:root,DirH:DirH,FileH:FileH,RootH:RootH,mimeOf:mimeOf,toBytes:toBytes};
+  global.UrbeNativeFS={root:root,DirH:DirH,FileH:FileH,RootH:RootH,mimeOf:mimeOf,toBytes:toBytes,
+    prefetch:prefetch,release:function(){mir=null},mirrored:function(){return !!mir}};
+  /* trocar de pasta: o espelho é da pasta antiga */
+  if(N.pickVault){var pick0=N.pickVault;global.showDirectoryPicker=async function(){var v=await pick0();if(!v)throw err('AbortError','Cancelado');mir=null;await prefetch();return new RootH(v.label)}}
   /* o seletor de pasta do app passa a abrir o do sistema (e lembra a escolha do lado nativo) */
-  if(N.pickVault)global.showDirectoryPicker=async function(){var v=await N.pickVault();if(!v)throw err('AbortError','Cancelado');return new RootH(v.label)};
+
   /* o app instalado se atualiza pelo instalador, não pelo service worker */
   try{if(global.navigator&&global.navigator.serviceWorker){var reg=global.navigator.serviceWorker.getRegistrations;if(reg)reg.call(global.navigator.serviceWorker).then(function(rs){rs.forEach(function(r){r.unregister()})}).catch(function(){})}}catch(_){}
   try{document.documentElement.classList.add('urbe-native','urbe-'+(N.platform||'app'))}catch(_){}
@@ -112,7 +149,8 @@
   function sync(paths){var p=persistence();if(!p||!p.syncFromDisk)return;p.syncFromDisk(paths).catch(function(e){console.warn('sincronizar com a pasta',e)})}
   /* pasta (sem extensão) mudou ou sumiu: relê tudo; senão só os arquivos avisados */
   if(N.onVaultChanged)N.onVaultChanged(function(paths){sync(paths&&paths.length&&paths.every(function(p){return /\.[^\/.]+$/.test(p)})?paths:null)});
-  else{var lastScan=0;document.addEventListener('visibilitychange',function(){if(document.visibilityState!=='visible')return;var t=Date.now();if(t-lastScan<3000)return;lastScan=t;setTimeout(function(){sync(null)},400)})}
+  else{var lastScan=0;document.addEventListener('visibilitychange',function(){if(document.visibilityState!=='visible')return;var t=Date.now();if(t-lastScan<3000)return;lastScan=t;
+    setTimeout(function(){(mir?prefetch():Promise.resolve()).then(function(){sync(null)})},400)})}
 
   /* ---------------- downloads, janelas e links (quando a casca não faz sozinha) ---------------- */
   function toast(m){var t=document.getElementById('toast');if(!t)return;t.textContent=m;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){t.classList.remove('show')},3200)}
@@ -196,6 +234,8 @@
       readBytes:async function(rel){var r=await call('Filesystem','readFile',{path:path(rel),directory:DIR});return typeof r.data==='string'?unb64(r.data):await toBytes(r.data)},
       writeBytes:async function(rel,bytes){await call('Filesystem','writeFile',{path:path(rel),directory:DIR,data:b64(bytes),recursive:true})},
       mkdir:async function(rel){try{await call('Filesystem','mkdir',{path:path(rel),directory:DIR,recursive:true})}catch(e){if(!/exist/i.test(String(e&&e.message)))throw e}},
+      tree:async function(){var r=await call('UrbeAndroid','listTree');if(!r||r.exists===false){await fsA.mkdir('');return[]}return r.entries||[]},
+      readTexts:async function(paths){var r=await call('UrbeAndroid','readTexts',{paths:paths});return (r&&r.files)||{}},
       remove:async function(rel,recursive){var s=await fsA.stat(rel);if(!s)return;if(s.kind==='directory')await call('Filesystem','rmdir',{path:path(rel),directory:DIR,recursive:!!recursive});else await call('Filesystem','deleteFile',{path:path(rel),directory:DIR})}
     };
     var info=null;
