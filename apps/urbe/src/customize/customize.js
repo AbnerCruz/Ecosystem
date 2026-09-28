@@ -37,7 +37,7 @@
   };
   var CANTOS={retos:[3,4,6,8],suaves:[8,12,16,22],redondos:[12,18,24,30]};
   var LARGURAS={estreita:'600px',media:'720px',larga:'920px',total:'100%'};
-  var AMBIENTES=['dia','entardecer','noite','auto'];
+  var AMBIENTES=['dia','entardecer','noite','auto','ciclo'];
 
   var DEFAULT={
     versao:1,tema:'escuro',cores:{},
@@ -45,7 +45,7 @@
     forma:{cantos:'suaves',densidade:'normal',vidro:true},
     animacoes:'sistema',
     editor:{largura:'media',modoInicial:'visual',ortografia:true},
-    cidade:{moradores:true,fauna:true,nomes:true,bairros:true,ambiente:'dia',texturas:'',paleta:{}},
+    cidade:{moradores:true,fauna:true,clima:true,eventos:true,nomes:true,bairros:true,ambiente:'ciclo',texturas:'',paleta:{}},
     estilos:{},css:''
   };
 
@@ -92,7 +92,7 @@
     sec('forma',function(o){known(o,'forma.',Object.keys(DEFAULT.forma));pick(o,'forma','cantos',Object.keys(CANTOS));pick(o,'forma','densidade',['compacta','normal','confortavel']);bool(o,'forma','vidro')});
     if(src.animacoes!=null){if(['sistema','ligadas','reduzidas'].indexOf(src.animacoes)>=0)c.animacoes=src.animacoes;else errors.push({path:'animacoes',message:'use sistema, ligadas ou reduzidas'})}
     sec('editor',function(o){known(o,'editor.',Object.keys(DEFAULT.editor));pick(o,'editor','largura',Object.keys(LARGURAS));pick(o,'editor','modoInicial',['visual','texto']);bool(o,'editor','ortografia')});
-    sec('cidade',function(o){known(o,'cidade.',Object.keys(DEFAULT.cidade));['moradores','fauna','nomes','bairros'].forEach(function(k){bool(o,'cidade',k)});pick(o,'cidade','ambiente',AMBIENTES);
+    sec('cidade',function(o){known(o,'cidade.',Object.keys(DEFAULT.cidade));['moradores','fauna','clima','eventos','nomes','bairros'].forEach(function(k){bool(o,'cidade',k)});pick(o,'cidade','ambiente',AMBIENTES);
       if(o.texturas!=null){if(typeof o.texturas==='string')c.cidade.texturas=o.texturas.trim();else errors.push({path:'cidade.texturas',message:'caminho do pacote de texturas (texto) ou "" para nenhum'})}
       if(o.paleta!=null){if(!isObj(o.paleta))errors.push({path:'cidade.paleta',message:'objeto {bioma: ["#base", "#sombra", "#luz", "#detalhe"]}'});else Object.keys(o.paleta).forEach(function(k){var ids=biomaId(k),v=o.paleta[k];
         if(!ids){errors.push({path:'cidade.paleta.'+k,message:'bioma desconhecido; use '+Object.keys(BIOMAS).concat(Object.keys(GRUPOS)).join(', ')});return}
@@ -154,7 +154,7 @@
   function mundo(){return core.service('world.custom')}
   function aplicarCidade(c){
     var w=mundo();if(!w)return;
-    w.options({moradores:c.cidade.moradores,fauna:c.cidade.fauna,nomes:c.cidade.nomes,bairros:c.cidade.bairros,ambiente:c.cidade.ambiente,editor:c.editor.modoInicial});
+    w.options({moradores:c.cidade.moradores,fauna:c.cidade.fauna,clima:c.cidade.clima,eventos:c.cidade.eventos,nomes:c.cidade.nomes,bairros:c.cidade.bairros,ambiente:c.cidade.ambiente,editor:c.editor.modoInicial});
     carregarTexturas(c).then(function(t){
       var chave=JSON.stringify([c.cidade.paleta,c.cidade.texturas,t.assinatura]);if(chave===ultimoTerreno)return;ultimoTerreno=chave;
       var pal={};Object.keys(c.cidade.paleta||{}).forEach(function(k){(biomaId(k)||[]).forEach(function(id){pal[id]=c.cidade.paleta[k]})});
@@ -238,7 +238,7 @@
       '  "forma": { "cantos": "retos" | "suaves" | "redondos", "densidade": "compacta" | "normal" | "confortavel", "vidro": true|false },',
       '  "animacoes": "sistema" | "ligadas" | "reduzidas",',
       '  "editor": { "largura": "estreita" | "media" | "larga" | "total", "modoInicial": "visual" | "texto", "ortografia": true|false },',
-      '  "cidade": { "moradores": bool, "fauna": bool, "nomes": bool, "bairros": bool, "ambiente": "dia" | "entardecer" | "noite" | "auto",',
+      '  "cidade": { "moradores": bool, "fauna": bool, "clima": bool, "eventos": bool, "nomes": bool, "bairros": bool, "ambiente": "dia" | "entardecer" | "noite" | "auto" | "ciclo",',
       '              "texturas": "Personalização/texturas/<pacote>.json" | "", "paleta": { "<bioma>": ["#base", "#sombra", "#luz", "#detalhe"] } },',
       '  "estilos": { "Personalização/estilos/<arquivo>.css": true|false },',
       '  "css": "regras CSS extras aplicadas por último"',

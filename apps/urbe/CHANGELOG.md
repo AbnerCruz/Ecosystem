@@ -1,5 +1,51 @@
 # Urbe — Changelog
 
+## v1.8.0-beta — A cidade como aquário: clima, luz, bichos e eventos (2026-09-28)
+
+A cidade agora é interessante de olhar mesmo sem ninguém mexendo em nada (novo `src/world/life.js`).
+
+### Luz
+- A luz muda aos poucos: aurora, dia claro, sol dourado, crepúsculo e noite.
+- As janelas acendem uma a uma, em horas um pouco diferentes para cada casa.
+- Novo modo **Ciclo** (padrão): um dia inteiro a cada 24 minutos. Continuam existindo Dia, Tarde, Noite e Auto.
+
+### Clima
+- Sombras de nuvens passando, vento que muda de direção, folhas caindo das matas e rajadas sobre os campos.
+- Chuva passageira (neve nas regiões frias), com marolas na água e respingos. Depois da chuva, de dia, pode vir um arco-íris.
+- Neblina, principalmente de manhã.
+
+### Água, fauna e flora
+- Brilhos do sol e da lua na água, peixes pulando e marolas dos patos.
+- Borboletas de dia e vaga-lumes à noite.
+- Pombos bicando perto das ruas.
+- Um cachorro acompanha um morador.
+
+### Cidade
+- Fumaça nas chaminés, que segue o vento e aparece mais de manhã, à noite e no frio.
+- Lampiões nas ruas, que acendem ao escurecer.
+- Moradores com guarda-chuva na chuva, lanterna à noite e balõezinhos (♪ ♥ ! …).
+
+### Eventos
+- Balão de ar quente, com a sombra passando pelo chão.
+- Festa no bairro: balões e confete de dia, fogos de artifício à noite (peônia, anel e salgueiro).
+- Barco à vela com esteira.
+- Chuva de estrelas cadentes.
+- Raposa ao anoitecer.
+- Revoada migratória.
+- Um aviso discreto no alto da tela conta o que está acontecendo, e dá para chamar qualquer evento pela paleta de comandos ("Cidade: …").
+
+### Interações
+- Pombos levantam voo quando alguém (ou o cachorro, ou a raposa) chega perto.
+- Cervos se afastam de quem passa.
+- Ovelhas e vacas fogem da raposa.
+- A chuva apressa o passo dos moradores.
+
+### Fluidez e opções
+- Moradores atualizam a ~30 quadros por segundo (antes, 20) e animais a 25 (antes, 12).
+- Os efeitos são desenhados sobre a imagem guardada da cidade, então não repintam chão e ruas.
+- A qualidade se adapta ao aparelho: menos partículas se ele não acompanha. Num celular médio simulado, a cidade parada com tudo ligado roda a ~34 quadros por segundo.
+- Novas chaves **Clima** e **Eventos** em Personalização → Cidade (e `cidade.clima`, `cidade.eventos` no tema.json).
+
 ## v1.7.2-beta — Abrir o app sem espera nem tela antiga (2026-09-28)
 
 - **Abrir o app ficou rápido.**
