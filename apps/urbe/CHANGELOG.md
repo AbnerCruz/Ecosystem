@@ -1,5 +1,16 @@
 # Urbe — Changelog
 
+## v1.8.1-beta — Cada casa dentro do seu bairro (2026-09-28)
+
+### Correções
+- **Bairro em forma de ferradura, com a casa num buraco cheio de árvores.** Quando o mapa salvo perdia o formato de um bairro mas guardava a posição da casa, o bairro era recriado em outro lugar e crescia em volta da casa, deixando um buraco. Agora:
+  - um bairro recriado nasce a partir das casas que já existem nele;
+  - buracos fechados dentro de um bairro são preenchidos;
+  - se a casa está perto da borda, o bairro cresce até cobrir ela;
+  - só em último caso a casa é levada para uma vaga dentro do bairro.
+- Cidades que já estavam assim se corrigem sozinhas ao abrir.
+- O nome de um subbairro não some mais quando esbarra no nome do bairro de cima: ele vai para logo abaixo.
+
 ## v1.8.0-beta — A cidade como aquário: clima, luz, bichos e eventos (2026-09-28)
 
 A cidade agora é interessante de olhar mesmo sem ninguém mexendo em nada (novo `src/world/life.js`).
