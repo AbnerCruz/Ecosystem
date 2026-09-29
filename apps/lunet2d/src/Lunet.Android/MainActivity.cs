@@ -61,6 +61,10 @@ public sealed class MainActivity : Activity, ISensorEventListener
     private TextView? _previewConsole;
     private bool _previewPaused;
     private SensorManager? _sensors;
+    private GamepadButtons _padButtons;
+    private System.Numerics.Vector2 _padLeft, _padRight;
+    private float _padLeftTrigger, _padRightTrigger;
+    private bool _padSeen;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -134,10 +138,13 @@ public sealed class MainActivity : Activity, ISensorEventListener
         var group = new RadioGroup(this);
         var blank = new RadioButton(this) { Text = "Em branco (bola que segue o toque)", Checked = true };
         var demo = new RadioButton(this) { Text = "Demo: Coletor de moedas (texto, gestos, som, salvamento)" };
+        var lab = new RadioButton(this) { Text = "Laboratório: testa música, sensores, controle, vibração e gestos" };
         blank.Click += (_, _) => template[0] = ProjectTemplate.Blank;
         demo.Click += (_, _) => template[0] = ProjectTemplate.CoinCatcher;
+        lab.Click += (_, _) => template[0] = ProjectTemplate.Lab;
         group.AddView(blank);
         group.AddView(demo);
+        group.AddView(lab);
         form.AddView(group);
         new AlertDialog.Builder(this)!
             .SetTitle("Novo projeto")!
@@ -804,7 +811,8 @@ public sealed class MainActivity : Activity, ISensorEventListener
         _renderer = new PreviewRenderer(result.Assembly!, result.Symbols,
             new DirectoryContentSource(System.IO.Path.Combine(_project!.Directory, "Content")),
             () => new AndroidAudioBackend(System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio")),
-            new DirectorySaveStore(System.IO.Path.Combine(_project!.Directory, ".lunet", "saves")), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
+            new DirectorySaveStore(System.IO.Path.Combine(_project!.Directory, ".lunet", "saves")),
+            new AndroidHaptics(this), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
         _glView = new GLSurfaceView(this);
         _glView.SetEGLContextClientVersion(3);
         _glView.SetRenderer(_renderer);
@@ -843,6 +851,8 @@ public sealed class MainActivity : Activity, ISensorEventListener
         _sensors = GetSystemService(SensorService) as SensorManager;
         var accelerometer = _sensors?.GetDefaultSensor(SensorType.Accelerometer);
         if (accelerometer is not null) _sensors!.RegisterListener(this, accelerometer, SensorDelay.Game);
+        var gyroscope = _sensors?.GetDefaultSensor(SensorType.Gyroscope);
+        if (gyroscope is not null) _sensors!.RegisterListener(this, gyroscope, SensorDelay.Game);
     }
 
     private void StopSensors()
@@ -855,16 +865,70 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
     public void OnSensorChanged(SensorEvent? e)
     {
-        if (e?.Values is { Count: >= 3 } v) _renderer?.SetAccelerometer(new System.Numerics.Vector3(v[0], v[1], v[2]));
+        if (e?.Values is not { Count: >= 3 } v) return;
+        var value = new System.Numerics.Vector3(v[0], v[1], v[2]);
+        if (e.Sensor?.Type == SensorType.Gyroscope) _renderer?.SetGyroscope(value);
+        else _renderer?.SetAccelerometer(value);
     }
 
-    public override bool OnKeyDown(Keycode keyCode, KeyEvent? e) => RouteKey(keyCode, true) || base.OnKeyDown(keyCode, e);
+    public override bool OnKeyDown(Keycode keyCode, KeyEvent? e) => RouteKey(keyCode, true, e) || base.OnKeyDown(keyCode, e);
 
-    public override bool OnKeyUp(Keycode keyCode, KeyEvent? e) => RouteKey(keyCode, false) || base.OnKeyUp(keyCode, e);
+    public override bool OnKeyUp(Keycode keyCode, KeyEvent? e) => RouteKey(keyCode, false, e) || base.OnKeyUp(keyCode, e);
 
-    private bool RouteKey(Keycode code, bool down)
+    public override bool OnGenericMotionEvent(MotionEvent? e)
+    {
+        if (e is null || _renderer is null || (e.Source & InputSourceType.Joystick) != InputSourceType.Joystick || e.Action != MotionEventActions.Move)
+            return base.OnGenericMotionEvent(e);
+        _padSeen = true;
+        _padLeft = new System.Numerics.Vector2(e.GetAxisValue(Axis.X), e.GetAxisValue(Axis.Y));
+        _padRight = new System.Numerics.Vector2(e.GetAxisValue(Axis.Z), e.GetAxisValue(Axis.Rz));
+        _padLeftTrigger = System.Math.Max(e.GetAxisValue(Axis.Ltrigger), e.GetAxisValue(Axis.Brake));
+        _padRightTrigger = System.Math.Max(e.GetAxisValue(Axis.Rtrigger), e.GetAxisValue(Axis.Gas));
+        var hatX = e.GetAxisValue(Axis.HatX);
+        var hatY = e.GetAxisValue(Axis.HatY);
+        SetPadButton(GamepadButtons.DPadLeft, hatX < -0.5f);
+        SetPadButton(GamepadButtons.DPadRight, hatX > 0.5f);
+        SetPadButton(GamepadButtons.DPadUp, hatY < -0.5f);
+        SetPadButton(GamepadButtons.DPadDown, hatY > 0.5f);
+        PushGamepad();
+        return true;
+    }
+
+    private void SetPadButton(GamepadButtons button, bool down) =>
+        _padButtons = down ? _padButtons | button : _padButtons & ~button;
+
+    private void PushGamepad() =>
+        _renderer?.SetGamepad(new GamepadState(_padSeen, _padButtons, _padLeft, _padRight, _padLeftTrigger, _padRightTrigger));
+
+    private bool RouteKey(Keycode code, bool down, KeyEvent? e)
     {
         if (_renderer is null) return false;
+        var fromGamepad = e is not null && (e.Source & InputSourceType.Gamepad) == InputSourceType.Gamepad;
+        var button = code switch
+        {
+            Keycode.ButtonA => GamepadButtons.A,
+            Keycode.ButtonB => GamepadButtons.B,
+            Keycode.ButtonX => GamepadButtons.X,
+            Keycode.ButtonY => GamepadButtons.Y,
+            Keycode.ButtonL1 => GamepadButtons.LeftShoulder,
+            Keycode.ButtonR1 => GamepadButtons.RightShoulder,
+            Keycode.ButtonStart => GamepadButtons.Start,
+            Keycode.ButtonSelect => GamepadButtons.Back,
+            Keycode.ButtonThumbl => GamepadButtons.LeftStick,
+            Keycode.ButtonThumbr => GamepadButtons.RightStick,
+            Keycode.DpadLeft when fromGamepad => GamepadButtons.DPadLeft,
+            Keycode.DpadRight when fromGamepad => GamepadButtons.DPadRight,
+            Keycode.DpadUp when fromGamepad => GamepadButtons.DPadUp,
+            Keycode.DpadDown when fromGamepad => GamepadButtons.DPadDown,
+            _ => GamepadButtons.None,
+        };
+        if (button != GamepadButtons.None)
+        {
+            _padSeen = true;
+            SetPadButton(button, down);
+            PushGamepad();
+            if (code is not (Keycode.DpadLeft or Keycode.DpadRight or Keycode.DpadUp or Keycode.DpadDown)) return true;
+        }
         var key = code switch
         {
             >= Keycode.A and <= Keycode.Z => (Keys)((int)Keys.A + (code - Keycode.A)),
@@ -1019,6 +1083,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
     protected override void OnPause()
     {
         SaveCurrent();
+        _renderer?.SetAppPaused(true);
         _glView?.OnPause();
         StopSensors();
         base.OnPause();
@@ -1028,6 +1093,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
     {
         base.OnResume();
         _glView?.OnResume();
+        _renderer?.SetAppPaused(false);
         if (_glView is not null) StartSensors();
     }
 

@@ -168,6 +168,15 @@ public class AudioTests : IDisposable
         public int Play(int soundId, float volume, float pan, float pitch, bool loop) { Calls.Add($"play:{soundId}:{volume}:{pan}:{pitch}:{loop}"); return 42; }
         public void SetStream(int streamId, float volume, float pan, float pitch) => Calls.Add($"set:{streamId}:{volume}:{pan}:{pitch}");
         public void Stop(int streamId) => Calls.Add($"stop:{streamId}");
+        public void PauseSounds() => Calls.Add("pauseSounds");
+        public void ResumeSounds() => Calls.Add("resumeSounds");
+        public int LoadMusic(byte[] data, string name) { Calls.Add($"loadMusic:{name}"); return 9; }
+        public void UnloadMusic(int musicId) => Calls.Add($"unloadMusic:{musicId}");
+        public void PlayMusic(int musicId, float volume, bool loop) => Calls.Add($"playMusic:{musicId}:{volume}:{loop}");
+        public void SetMusicVolume(float volume) => Calls.Add($"musicVolume:{volume:0.###}");
+        public void PauseMusic() => Calls.Add("pauseMusic");
+        public void ResumeMusic() => Calls.Add("resumeMusic");
+        public void StopMusic() => Calls.Add("stopMusic");
         public void Dispose() { }
     }
 
@@ -181,6 +190,7 @@ public class AudioTests : IDisposable
         Assert.Same(sound, content.LoadSound("jump.wav"));
         var instance = sound.Play(5f, -3f, 9f, true);
         instance.Volume = 0.5f;
+        content.Audio.Update(0.016f); // o volume é aplicado pelo mixer a cada passo
         instance.Stop();
         Assert.Equal(["load:jump.wav:3", "play:7:1:-1:2:True", "set:42:0.5:-1:2", "stop:42"], audio.Calls);
         content.Dispose();

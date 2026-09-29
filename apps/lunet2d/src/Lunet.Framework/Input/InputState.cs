@@ -19,6 +19,29 @@ public sealed class InputState
     /// <summary>Aceleração do aparelho em m/s² (eixos do aparelho; parado na mesa, Z ≈ 9,8). Zero sem sensor.</summary>
     public System.Numerics.Vector3 Accelerometer { get; private set; }
 
+    private GamepadButtons _padPressed;
+
+    /// <summary>Estado do controle conectado (com <see cref="GamepadState.IsConnected"/> falso se não houver).</summary>
+    public GamepadState Gamepad { get; private set; }
+
+    /// <summary>Velocidade angular do aparelho em rad/s. Zero sem sensor.</summary>
+    public System.Numerics.Vector3 Gyroscope { get; private set; }
+
+    public bool IsButtonDown(GamepadButtons button) => Gamepad.IsConnected && Gamepad.IsDown(button);
+
+    /// <summary>Verdadeiro no primeiro passo de <c>Update</c> após o botão ser pressionado.</summary>
+    public bool IsButtonPressed(GamepadButtons button) => (_padPressed & button) == button && button != GamepadButtons.None;
+
+    /// <summary>Usado pelo host: registra o estado do controle.</summary>
+    public void SetGamepad(GamepadState state)
+    {
+        var previous = Gamepad.IsConnected ? Gamepad.Buttons : GamepadButtons.None;
+        _padPressed |= state.Buttons & ~previous;
+        Gamepad = state;
+    }
+
+    public void SetGyroscope(System.Numerics.Vector3 value) => Gyroscope = value;
+
     public bool IsKeyDown(Keys key) => _keysDown[(int)key];
 
     /// <summary>Verdadeiro no primeiro passo de <c>Update</c> após a tecla ser pressionada.</summary>
@@ -35,7 +58,11 @@ public sealed class InputState
 
     public void SetAccelerometer(System.Numerics.Vector3 value) => Accelerometer = value;
 
-    internal void ClearPressed() => Array.Clear(_keysPressed);
+    internal void ClearPressed()
+    {
+        Array.Clear(_keysPressed);
+        _padPressed = GamepadButtons.None;
+    }
 
     /// <summary>Gestos reconhecidos e ainda não consumidos; entregues no primeiro passo de <c>Update</c> após ocorrerem.</summary>
     public IReadOnlyList<Gesture> Gestures => _gestures;

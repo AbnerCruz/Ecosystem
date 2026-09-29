@@ -4,10 +4,12 @@ namespace Lunet.Audio;
 public sealed class SoundEffect : IDisposable
 {
     private readonly IAudioBackend _backend;
+    private readonly AudioMixer _mixer;
 
-    internal SoundEffect(IAudioBackend backend, int id, string name)
+    internal SoundEffect(IAudioBackend backend, AudioMixer mixer, int id, string name)
     {
         _backend = backend;
+        _mixer = mixer;
         Id = id;
         Name = name;
     }
@@ -16,19 +18,17 @@ public sealed class SoundEffect : IDisposable
     public bool IsDisposed { get; private set; }
     internal int Id { get; }
 
-    /// <summary>Toca uma vez com volume 1.</summary>
+    /// <summary>Toca uma vez com volume 1 no barramento Sfx.</summary>
     public SoundInstance Play() => Play(1f, 0f, 1f, false);
 
     /// <param name="volume">0 a 1.</param>
     /// <param name="pan">−1 (esquerda) a 1 (direita).</param>
     /// <param name="pitch">Velocidade relativa: 0,5 a 2 (1 = normal).</param>
-    public SoundInstance Play(float volume, float pan, float pitch, bool loop)
+    /// <param name="bus">Barramento de volume; nulo = Sfx.</param>
+    public SoundInstance Play(float volume, float pan, float pitch, bool loop, AudioBus? bus = null)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
-        volume = Math.Clamp(volume, 0f, 1f);
-        pan = Math.Clamp(pan, -1f, 1f);
-        pitch = Math.Clamp(pitch, 0.5f, 2f);
-        return new SoundInstance(_backend, _backend.Play(Id, volume, pan, pitch, loop), volume, pan, pitch);
+        return _mixer.Play(_backend, Id, Math.Clamp(volume, 0f, 1f), Math.Clamp(pan, -1f, 1f), Math.Clamp(pitch, 0.5f, 2f), loop, bus ?? _mixer.Sfx);
     }
 
     public void Dispose()
@@ -43,31 +43,81 @@ public sealed class SoundEffect : IDisposable
 public sealed class SoundInstance
 {
     private readonly IAudioBackend _backend;
+    private readonly AudioMixer _mixer;
     private float _volume, _pan, _pitch;
+    private float _appliedVolume = -1f, _appliedPan = 2f, _appliedPitch = -1f;
+    private float _fadeStart, _fadeTarget, _fadeElapsed, _fadeDuration;
+    private bool _stopWhenFaded;
 
-    internal SoundInstance(IAudioBackend backend, int streamId, float volume, float pan, float pitch)
+    internal SoundInstance(IAudioBackend backend, AudioMixer mixer, AudioBus bus, int streamId, float volume, float pan, float pitch)
     {
         _backend = backend;
+        _mixer = mixer;
+        Bus = bus;
         StreamId = streamId;
         _volume = volume; _pan = pan; _pitch = pitch;
+        _appliedVolume = volume * mixer.EffectiveOf(bus);
+        _appliedPan = pan;
+        _appliedPitch = pitch;
     }
 
     internal int StreamId { get; }
+    public AudioBus Bus { get; }
 
     /// <summary>Falso se o som não pôde ser iniciado (ainda carregando ou sem canais livres).</summary>
     public bool Started => StreamId != 0;
 
-    public float Volume { get => _volume; set { _volume = Math.Clamp(value, 0f, 1f); Apply(); } }
-    public float Pan { get => _pan; set { _pan = Math.Clamp(value, -1f, 1f); Apply(); } }
-    public float Pitch { get => _pitch; set { _pitch = Math.Clamp(value, 0.5f, 2f); Apply(); } }
+    public bool IsStopped { get; private set; }
+
+    public float Volume { get => _volume; set { _volume = Math.Clamp(value, 0f, 1f); _fadeDuration = 0; } }
+    public float Pan { get => _pan; set => _pan = Math.Clamp(value, -1f, 1f); }
+    public float Pitch { get => _pitch; set => _pitch = Math.Clamp(value, 0.5f, 2f); }
+
+    /// <summary>Muda o volume gradualmente. Com <paramref name="stopWhenDone"/>, para o som ao terminar (fade-out).</summary>
+    public void FadeTo(float volume, float seconds, bool stopWhenDone = false)
+    {
+        volume = Math.Clamp(volume, 0f, 1f);
+        if (seconds <= 0)
+        {
+            Volume = volume;
+            if (stopWhenDone) Stop();
+            return;
+        }
+        _fadeStart = _volume;
+        _fadeTarget = volume;
+        _fadeElapsed = 0;
+        _fadeDuration = seconds;
+        _stopWhenFaded = stopWhenDone;
+    }
 
     public void Stop()
     {
+        if (IsStopped) return;
+        IsStopped = true;
         if (Started) _backend.Stop(StreamId);
     }
 
-    private void Apply()
+    internal void Update(float deltaSeconds)
     {
-        if (Started) _backend.SetStream(StreamId, _volume, _pan, _pitch);
+        if (IsStopped || !Started) return;
+        if (_fadeDuration > 0)
+        {
+            _fadeElapsed += deltaSeconds;
+            var t = Math.Min(1f, _fadeElapsed / _fadeDuration);
+            _volume = _fadeStart + (_fadeTarget - _fadeStart) * t;
+            if (t >= 1f)
+            {
+                _fadeDuration = 0;
+                if (_stopWhenFaded) { Stop(); return; }
+            }
+        }
+        var effective = _volume * _mixer.EffectiveOf(Bus);
+        if (MathF.Abs(effective - _appliedVolume) > 0.001f || _pan != _appliedPan || _pitch != _appliedPitch)
+        {
+            _backend.SetStream(StreamId, effective, _pan, _pitch);
+            _appliedVolume = effective;
+            _appliedPan = _pan;
+            _appliedPitch = _pitch;
+        }
     }
 }

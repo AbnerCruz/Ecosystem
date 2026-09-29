@@ -11,11 +11,16 @@ public sealed class ContentManager : IDisposable
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.Ordinal);
 
     private readonly IAudioBackend _audio;
+    private readonly Dictionary<string, Music> _music = new(StringComparer.Ordinal);
     private readonly Dictionary<string, SoundEffect> _sounds = new(StringComparer.Ordinal);
+
+    /// <summary>Mistura de áudio do jogo (barramentos, música, fades).</summary>
+    public AudioMixer Audio { get; }
 
     public ContentManager(IContentSource source, GraphicsDevice device, IAudioBackend? audio = null)
     {
         _audio = audio ?? new NullAudioBackend();
+        Audio = new AudioMixer(_audio);
         _source = source ?? throw new ArgumentNullException(nameof(source));
         _device = device ?? throw new ArgumentNullException(nameof(device));
     }
@@ -45,9 +50,21 @@ public sealed class ContentManager : IDisposable
         using var stream = _source.Open(path);
         using var memory = new MemoryStream();
         stream.CopyTo(memory);
-        var sound = new SoundEffect(_audio, _audio.LoadSound(memory.ToArray(), path), path);
+        var sound = new SoundEffect(_audio, Audio, _audio.LoadSound(memory.ToArray(), path), path);
         _sounds[path] = sound;
         return sound;
+    }
+
+    /// <summary>Carrega uma música longa (ex.: <c>"Audio/theme.ogg"</c>) para tocar com <c>Audio.PlayMusic</c>. Cacheada.</summary>
+    public Music LoadMusic(string path)
+    {
+        if (_music.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
+        using var stream = _source.Open(path);
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        var music = new Music(_audio, _audio.LoadMusic(memory.ToArray(), path), path);
+        _music[path] = music;
+        return music;
     }
 
     public string ReadText(string path)
@@ -62,6 +79,9 @@ public sealed class ContentManager : IDisposable
     {
         foreach (var texture in _textures.Values) texture.Dispose();
         _textures.Clear();
+        Audio.StopMusic();
+        foreach (var music in _music.Values) music.Dispose();
+        _music.Clear();
         foreach (var sound in _sounds.Values) sound.Dispose();
         _sounds.Clear();
     }

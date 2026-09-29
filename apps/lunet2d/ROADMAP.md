@@ -65,7 +65,7 @@ Core
 - [x] Loop de passo fixo, interpolação, proteção contra spiral-of-death, pause/resume.
 - [x] `GameServices` (registro de serviços do jogo; o host registra os padrão).
 - [x] `Dispatcher` (executar trabalho na thread do jogo).
-- [ ] Lifecycle completo do Android (onStop/onDestroy, perda de contexto GL sem reiniciar o jogo).
+- [ ] Lifecycle completo do Android: app em segundo plano pausa jogo e áudio **(feito, sem validação em aparelho)**; falta preservar o jogo quando o contexto GL é perdido (hoje reinicia).
 - [ ] Suporte a refresh rate superior a 60 Hz no desenho.
 - [x] Timers e object pools (§7 complementares).
 
@@ -88,15 +88,15 @@ Input
 - [ ] `TouchCollection` como tipo público, `Pointer`.
 - [x] DoubleTap, Pinch, Rotate (testados com toques sintéticos; multitoque real só valida em aparelho — **feito, sem validação em aparelho**).
 - [ ] `VirtualStick` e `VirtualButton` (lógica pronta e testada; falta desenhar/usar no Demo e validar em aparelho).
-- [ ] Gamepad.
-- [ ] Giroscópio.
-- [ ] Haptics.
+- [ ] Gamepad (botões, sticks, gatilhos, D-pad; `IsButtonDown/Pressed`) **(feito, sem validação em aparelho — precisa de um controle)**.
+- [ ] Giroscópio (`Input.Gyroscope`) **(feito, sem validação em aparelho)**.
+- [ ] Haptics (`Haptics.Vibrate`, permissão VIBRATE) **(feito, sem validação em aparelho)**.
 
 Áudio
 - [x] `SoundEffect`, `SoundInstance` (volume, pan, pitch, loop) com SoundPool.
-- [ ] `Music` em streaming.
-- [ ] `AudioBus` (volume por grupo).
-- [ ] Fade.
+- [ ] `Music` em streaming (`Content.LoadMusic`, `Audio.PlayMusic/StopMusic`, MediaPlayer no Android) **(feito, sem validação em aparelho)**.
+- [ ] `AudioBus` (Master/Sfx/Music e barramentos próprios, mute) **(feito, sem validação em aparelho)**.
+- [ ] Fade de efeitos (`FadeTo`) e de música **(feito, sem validação em aparelho)**.
 - [ ] Baixa latência com Oboe/AAudio se a medição exigir (§7).
 - [ ] Contador de audio underruns para o Profiler.
 

@@ -42,6 +42,15 @@ internal static class QuickReference
           new SpriteSheet(textura, larguraQuadro, alturaQuadro); sheet.Frame(i)
           batch.Draw(textura, posição, sheet.Frame(i), cor)
 
+        Áudio avançado
+          Audio.Master / Sfx / MusicBus (.Volume, .Muted); Audio.GetBus("Voz")
+          Audio.PlayMusic(Content.LoadMusic("Audio/tema.ogg"), loop, fadeInSeg); Audio.StopMusic(fadeOutSeg)
+          instância.FadeTo(volume, seg, pararNoFim)
+
+        Controle, giroscópio e vibração
+          Input.IsButtonDown/IsButtonPressed(GamepadButtons.A); Input.Gamepad.LeftStick/RightStick/LeftTrigger
+          Input.Gyroscope (rad/s)      Haptics.Vibrate(ms, intensidade)
+
         Salvamento
           Save.Save("chave", objeto);  Save.Load("chave", valorPadrão);  Save.Exists / Delete
 
