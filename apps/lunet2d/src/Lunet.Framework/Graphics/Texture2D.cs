@@ -17,9 +17,13 @@ public sealed class Texture2D : IDisposable
         Height = height;
     }
 
+    /// <summary>Largura, em pixels.</summary>
     public int Width { get; }
+    /// <summary>Altura, em pixels.</summary>
     public int Height { get; }
+    /// <summary>Filtro usado ao criar a textura.</summary>
     public TextureFilter Filter { get; }
+    /// <summary>Verdadeiro depois de liberada.</summary>
     public bool IsDisposed { get; private set; }
     internal int Handle { get; }
 
@@ -32,6 +36,12 @@ public sealed class Texture2D : IDisposable
         return new Texture2D(device, device.Backend.CreateTexture(width, height, rgba, filter), width, height, filter);
     }
 
+    /// <summary>Cria uma textura de uma cor só.</summary>
+    /// <param name="device">Dispositivo gráfico.</param>
+    /// <param name="width">Largura.</param>
+    /// <param name="height">Altura.</param>
+    /// <param name="color">Cor.</param>
+    /// <returns>A textura.</returns>
     public static Texture2D CreateSolid(GraphicsDevice device, int width, int height, Color color)
     {
         var pixels = new byte[checked(width * height * 4)];
@@ -61,6 +71,7 @@ public sealed class Texture2D : IDisposable
         return FromPixels(device, diameter, diameter, pixels);
     }
 
+    /// <summary>Libera a textura na GPU.</summary>
     public void Dispose()
     {
         if (IsDisposed) return;

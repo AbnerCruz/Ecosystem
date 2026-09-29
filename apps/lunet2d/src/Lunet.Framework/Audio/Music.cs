@@ -12,10 +12,13 @@ public sealed class Music : IDisposable
         Name = name;
     }
 
+    /// <summary>Caminho da música em Content.</summary>
     public string Name { get; }
+    /// <summary>Verdadeiro depois de liberada.</summary>
     public bool IsDisposed { get; private set; }
     internal int Id { get; }
 
+    /// <summary>Libera a música.</summary>
     public void Dispose()
     {
         if (IsDisposed) return;

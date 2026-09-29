@@ -16,8 +16,8 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 
 | Fase | Estado |
 | --- | --- |
-| 0 Foundation | 🟡 faltam as pastas do §26 (criadas quando houver conteúdo) |
-| 1 Vertical Slice | 🟡 gate validado; falta validar em aparelho Explorer, recuperação após crash e exportar ZIP |
+| 0 Foundation | ✅ concluída (auditoria em `docs/audits/fase-0.md`) |
+| 1 Vertical Slice | ✅ concluída (auditoria em `docs/audits/fase-1.md`) |
 | 2 Framework Core | ✅ concluída e aprovada (auditoria em `docs/audits/fase-2.md`) |
 | 3 IDE | 🟡 editor validado só em desktop; falta a maior parte (docs offline, painéis, busca, rename...) |
 | 4–15 | ⬜ |
@@ -37,7 +37,8 @@ Gate: GitHub Actions gera APK instalável. **Atingido** (validado em aparelho, v
 - [x] Arquivo de solução (`Lunet.slnx`) na raiz.
 - [x] `LICENSE.md` proprietária provisória (uso proprietário, sem redistribuição, modificação ou exploração comercial por terceiros sem autorização; código exibido no app é só para estudo). Revisável no futuro.
 - [x] `release-notes.json` publicado junto de cada release (§24, §25) (verificado na v0.0.1-dev.22).
-- [ ] Estrutura de pastas do §26 criada onde já há conteúdo: `samples/`, `templates/`, `runtime-template/`, `native/`, `site/` (criar cada uma quando a primeira entrega existir, não antes).
+- [x] Estrutura de pastas do §26 existente onde há conteúdo (`src/`, `tests/`, `docs/`, `tools/`, `.github/workflows/`). As pastas `samples/`, `templates/`, `runtime-template/`, `native/` e `site/` serão criadas junto da primeira entrega que as usa: `samples/` e `templates/` na Fase 11 (jogos oficiais e modelos como arquivos), `runtime-template/` na Fase 9, `native/` se a Fase 14 exigir Oboe, `site/` na Fase 12.
+- [x] Auditoria de fechamento da Fase 0 registrada em `docs/audits/fase-0.md`.
 
 ## Fase 1 — Vertical Slice (§27, §33)
 
@@ -52,9 +53,9 @@ Gate: no telefone é possível criar projeto, escrever C#, apertar Run e mover s
 - [x] Fluxo completo criar → editar → Run → mover sprite.
 - [x] Explorer (painel lateral com árvore, pastas recolhíveis, novo arquivo/pasta, renomear, excluir) — validado em aparelho (pastas).
 - [x] Recuperação após crash: working buffer a cada pausa na digitação, descarte ao salvar, oferta de recuperação ao abrir o projeto (§22). No aparelho, fechar o app pelos recentes já salva o texto (salvamento ao pausar); a recuperação de um encerramento sem pausa é coberta por testes automáticos. Snapshot do projeto inteiro: Fase 13.
-- [ ] Exportar ZIP: menu ⋯ do editor e toque longo na lista de projetos (a barra do editor cortava o ⋯ em telas estreitas; corrigido) — aguardando validação em aparelho.
-- [ ] Workspace mínimo do §33: Explorer, Editor, Preview, Problems/Console (Documentation: hoje só a referência rápida; painel de documentação completo na Fase 3, opção "Tutorial" na criação de projeto na Fase 11 — itens movidos para lá).
-- [ ] Auditoria de fechamento da Fase 1 registrada em `docs/audits/`.
+- [x] Exportar ZIP: menu ⋯ do editor e toque longo na lista de projetos — validado em aparelho na v0.0.1-dev.63 (a barra do editor cortava o ⋯; corrigido).
+- [x] Workspace mínimo do §33: Explorer, Editor, Preview, Problems/Console (Documentation: hoje só a referência rápida; painel de documentação completo na Fase 3, opção "Tutorial" na criação de projeto na Fase 11 — itens movidos para lá).
+- [x] Auditoria de fechamento da Fase 1 registrada em `docs/audits/fase-1.md`.
 
 ## Fase 2 — Framework Core (§7)
 
@@ -131,8 +132,8 @@ Roslyn (§9)
 - [ ] Inspeção de símbolos.
 
 IDE mobile (§11)
-- [ ] Explorer (ver Fase 1).
-- [ ] Painéis: Preview, Inspector, Console, Problems, Search, Assets, Documentation, Agent, Profiler.
+- [x] Explorer (ver Fase 1).
+- [ ] Painéis: Preview, Inspector, Console, Problems, Search, Assets, Documentation, Agent, Profiler (Preview, Console, Problems e Explorer já existem no workspace).
 - [ ] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes.
 - [ ] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles.
 - [ ] Busca no projeto inteiro.
@@ -145,9 +146,9 @@ Inspector (§12)
 - [ ] Inspecionar variáveis do jogo em execução (fluxo principal §29).
 
 Documentação (§15)
-- [ ] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33).
+- [x] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33). (feito, sem validação em aparelho; `Lunet.Docs`, `docs/api/lunet-framework.json` com teste de deriva, guias em `docs/guides`)
 - [ ] Cada API com descrição, assinatura, parâmetros, retorno, exemplos, remarks, relacionadas e versão de introdução.
-- [ ] Integração com o editor: "Explain in Documentation".
+- [x] Integração com o editor: "Explain in Documentation". (feito, sem validação em aparelho; botão na Dica do símbolo)
 - [ ] Documentação apontando para trechos dos jogos oficiais (depende da Fase 11).
 
 Preview e hot reload (§10)

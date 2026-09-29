@@ -548,7 +548,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
     private void ShowMenu()
     {
-        var items = new[] { "Salvar", "Referência rápida", "Exportar projeto (ZIP)", "Importar imagem PNG", "Localizar e substituir", "Ir para definição", "Dica do símbolo", "Referências do símbolo" };
+        var items = new[] { "Salvar", "Documentação", "Exportar projeto (ZIP)", "Importar imagem PNG", "Localizar e substituir", "Ir para definição", "Dica do símbolo", "Referências do símbolo" };
         new AlertDialog.Builder(this)!.SetItems(items, (_, args) =>
         {
             switch (args.Which)
@@ -584,6 +584,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
     private void ShowReference()
     {
+        if (DocumentationPanel.Open(this)) return;
         var text = new TextView(this) { Text = QuickReference.Text, TextSize = 12 };
         text.SetTypeface(Typeface.Monospace, TypefaceStyle.Normal);
         text.SetPadding(Dp(12), Dp(12), Dp(12), Dp(12));
@@ -731,10 +732,21 @@ public sealed class MainActivity : Activity, ISensorEventListener
         _assistant.RunAsync(a => a.GetHover(path, caret)).ContinueWith(task => RunOnUiThread(() =>
         {
             var hover = task.IsFaulted ? null : task.Result;
-            new AlertDialog.Builder(this)!
+            var dialog = new AlertDialog.Builder(this)!
                 .SetTitle(hover is null ? "Sem informação" : hover.Kind)!
                 .SetMessage(hover?.Signature ?? "Coloque o cursor sobre um nome.")!
-                .SetPositiveButton("Ok", (_, _) => { })!.Show();
+                .SetPositiveButton("Ok", (_, _) => { })!;
+            if (hover?.DocumentationId is { } id)
+            {
+                var source = _editor?.Text ?? "";
+                var name = hover.Start >= 0 && hover.Start + hover.Length <= source.Length ? source.Substring(hover.Start, hover.Length) : hover.Signature;
+                dialog.SetNeutralButton("Explicar na Documentação", (_, _) =>
+                {
+                    var target = DocumentationPanel.TargetFor(this, id, name);
+                    if (target is not null) DocumentationPanel.Open(this, target);
+                });
+            }
+            dialog.Show();
         }));
     }
 

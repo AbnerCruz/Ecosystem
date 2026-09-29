@@ -15,8 +15,10 @@ public sealed class TimerHandle
     internal double Interval { get; }
     internal bool Repeat { get; }
     internal Action Callback { get; }
+    /// <summary>Verdadeiro enquanto o timer não foi cancelado nem terminou.</summary>
     public bool IsActive { get; internal set; } = true;
 
+    /// <summary>Cancela o timer.</summary>
     public void Cancel() => IsActive = false;
 }
 
@@ -26,8 +28,16 @@ public sealed class Timers
     private readonly List<TimerHandle> _timers = new();
     private readonly List<TimerHandle> _pendingAdd = new();
 
+    /// <summary>Executa a ação uma vez depois do tempo dado (no tempo do jogo).</summary>
+    /// <param name="seconds">Espera em segundos, maior que zero.</param>
+    /// <param name="callback">Ação a executar.</param>
+    /// <returns>Referência para cancelar.</returns>
     public TimerHandle After(float seconds, Action callback) => Add(seconds, repeat: false, callback);
 
+    /// <summary>Executa a ação repetidamente a cada intervalo.</summary>
+    /// <param name="seconds">Intervalo em segundos, maior que zero.</param>
+    /// <param name="callback">Ação a executar.</param>
+    /// <returns>Referência para cancelar.</returns>
     public TimerHandle Every(float seconds, Action callback) => Add(seconds, repeat: true, callback);
 
     private TimerHandle Add(float seconds, bool repeat, Action callback)
@@ -39,6 +49,7 @@ public sealed class Timers
         return handle;
     }
 
+    /// <summary>Quantos timers ainda estão ativos.</summary>
     public int ActiveCount => _timers.Count(t => t.IsActive) + _pendingAdd.Count(t => t.IsActive);
 
     internal void Update(double deltaSeconds)

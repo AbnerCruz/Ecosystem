@@ -7,6 +7,7 @@ public sealed class AudioBus
 
     internal AudioBus(string name) => Name = name;
 
+    /// <summary>Nome do barramento.</summary>
     public string Name { get; }
 
     /// <summary>0 a 1.</summary>
@@ -16,6 +17,7 @@ public sealed class AudioBus
         set => _volume = Math.Clamp(value, 0f, 1f);
     }
 
+    /// <summary>Silencia o barramento sem perder o volume ajustado.</summary>
     public bool Muted { get; set; }
 
     internal float Effective => Muted ? 0f : _volume;

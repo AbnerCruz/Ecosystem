@@ -13,12 +13,16 @@ public sealed class Localization
     private Dictionary<string, string> _current = new();
     private Dictionary<string, string> _fallback = new();
 
+    /// <summary>Cria o localizador.</summary>
+    /// <param name="source">De onde ler os arquivos de idioma.</param>
     public Localization(IContentSource source) => _source = source ?? throw new ArgumentNullException(nameof(source));
 
     /// <summary>Pasta e prefixo dos arquivos. Padrão: <c>Data/strings</c> → <c>Data/strings.pt.json</c>.</summary>
     public string BasePath { get; set; } = "Data/strings";
 
+    /// <summary>Idioma atual (ex.: pt).</summary>
     public string Language { get; private set; } = "";
+    /// <summary>Idioma reserva, usado quando falta a chave no atual.</summary>
     public string FallbackLanguage { get; private set; } = "";
 
     /// <summary>Carrega <paramref name="language"/> (ex.: "pt"), com <paramref name="fallbackLanguage"/> como reserva. Idiomas ausentes são ignorados.</summary>
@@ -41,6 +45,9 @@ public sealed class Localization
         return Language;
     }
 
+    /// <summary>Devolve o texto da chave (ou a própria chave se não existir).</summary>
+    /// <param name="key">Chave do texto.</param>
+    /// <returns>O texto traduzido.</returns>
     public string Get(string key) =>
         _current.TryGetValue(key, out var text) ? text : _fallback.TryGetValue(key, out text) ? text : key;
 
@@ -52,6 +59,9 @@ public sealed class Localization
         catch (FormatException) { return format; }
     }
 
+    /// <summary>Diz se a chave existe no idioma atual ou no reserva.</summary>
+    /// <param name="key">Chave do texto.</param>
+    /// <returns>Verdadeiro se existe.</returns>
     public bool Contains(string key) => _current.ContainsKey(key) || _fallback.ContainsKey(key);
 
     private Dictionary<string, string>? Load(string language)

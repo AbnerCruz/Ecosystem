@@ -14,7 +14,9 @@ public abstract class Game
     private SaveData? _save;
     private IHaptics _haptics = new NullHaptics();
 
+    /// <summary>Configuração do jogo: resolução virtual, atualizações por segundo. Ajuste em Initialize.</summary>
     public GameConfiguration Configuration { get; } = new();
+    /// <summary>Registro do jogo; as mensagens aparecem no Console do Lunet.</summary>
     public GameLog Log { get; } = new();
 
     /// <summary>Serviços do jogo por tipo (o host registra <c>GraphicsDevice</c>, <c>InputState</c>, <c>ContentManager</c>, <c>SaveData</c>, <c>GameLog</c>, <c>Dispatcher</c> e <c>Timers</c>).</summary>
@@ -35,7 +37,9 @@ public abstract class Game
     /// <summary>Timers no tempo do jogo (param na pausa).</summary>
     public Timers Timers { get; } = new();
 
+    /// <summary>Dispositivo gráfico, disponível a partir de Initialize.</summary>
     public GraphicsDevice GraphicsDevice => _graphics ?? throw new InvalidOperationException("O jogo ainda não foi iniciado por um host.");
+    /// <summary>Estado da entrada: toque, gestos, teclado, controle e sensores.</summary>
     public InputState Input => _input ?? throw new InvalidOperationException("O jogo ainda não foi iniciado por um host.");
 
     /// <summary>Conteúdo do projeto (pasta <c>Content/</c>): texturas e textos.</summary>

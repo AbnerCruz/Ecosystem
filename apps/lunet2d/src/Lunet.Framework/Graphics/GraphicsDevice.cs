@@ -17,6 +17,10 @@ public sealed class GraphicsDevice
     private RectI _insets;
     private Texture2D? _white;
 
+    /// <summary>Cria o dispositivo gráfico.</summary>
+    /// <param name="backend">API gráfica.</param>
+    /// <param name="virtualWidth">Largura virtual.</param>
+    /// <param name="virtualHeight">Altura virtual.</param>
     public GraphicsDevice(IGraphicsBackend backend, int virtualWidth, int virtualHeight)
     {
         Backend = backend ?? throw new ArgumentNullException(nameof(backend));
@@ -25,9 +29,13 @@ public sealed class GraphicsDevice
 
     internal IGraphicsBackend Backend { get; }
 
+    /// <summary>Largura da resolução virtual.</summary>
     public int VirtualWidth { get; private set; }
+    /// <summary>Altura da resolução virtual.</summary>
     public int VirtualHeight { get; private set; }
+    /// <summary>Largura real da tela, em pixels.</summary>
     public int SurfaceWidth => _surfaceWidth;
+    /// <summary>Altura real da tela, em pixels.</summary>
     public int SurfaceHeight => _surfaceHeight;
 
     /// <summary>Alvo de desenho atual; nulo = a tela.</summary>
@@ -66,6 +74,9 @@ public sealed class GraphicsDevice
     /// <summary>Uma textura branca de 1×1, útil para retângulos e linhas.</summary>
     public Texture2D WhiteTexture => _white ??= Texture2D.CreateSolid(this, 1, 1, Color.White);
 
+    /// <summary>Troca a resolução virtual em que o jogo desenha.</summary>
+    /// <param name="width">Nova largura.</param>
+    /// <param name="height">Nova altura.</param>
     public void SetVirtualResolution(int width, int height)
     {
         if (width < 1 || height < 1) throw new ArgumentOutOfRangeException(nameof(width), "A resolução virtual deve ser positiva.");

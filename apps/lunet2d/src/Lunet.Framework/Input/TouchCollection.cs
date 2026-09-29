@@ -9,8 +9,12 @@ public readonly ref struct TouchCollection
 
     internal TouchCollection(ReadOnlySpan<TouchPoint> touches) => _touches = touches;
 
+    /// <summary>Quantidade de toques.</summary>
     public int Count => _touches.Length;
 
+    /// <summary>Toque pelo índice.</summary>
+    /// <param name="index">Posição na coleção.</param>
+    /// <returns>O toque.</returns>
     public TouchPoint this[int index] => _touches[index];
 
     /// <summary>Procura pelo id do dedo.</summary>
@@ -35,8 +39,14 @@ public readonly ref struct TouchCollection
         }
     }
 
+    /// <summary>Permite usar foreach sem alocar memória.</summary>
+    /// <returns>O enumerador.</returns>
     public ReadOnlySpan<TouchPoint>.Enumerator GetEnumerator() => _touches.GetEnumerator();
 }
 
 /// <summary>Ponteiro unificado: o primeiro dedo pressionado (toque) — uma abstração para jogos que só precisam de "um ponto".</summary>
+/// <param name="IsDown">Verdadeiro enquanto o primeiro dedo está pressionado.</param>
+/// <param name="WasPressed">Verdadeiro no primeiro passo de atualização depois de o dedo tocar a tela.</param>
+/// <param name="WasReleased">Verdadeiro no primeiro passo de atualização depois de o dedo sair da tela.</param>
+/// <param name="Position">Posição do dedo em coordenadas virtuais.</param>
 public readonly record struct Pointer(bool IsDown, bool WasPressed, bool WasReleased, Vector2 Position);

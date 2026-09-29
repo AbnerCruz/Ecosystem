@@ -5,8 +5,18 @@ namespace Lunet;
 /// <summary>Funções geométricas 2D: distâncias, interseções, polígonos e SAT.</summary>
 public static class Geometry
 {
+    /// <summary>Distância do ponto ao segmento de reta.</summary>
+    /// <param name="point">Ponto.</param>
+    /// <param name="a">Início do segmento.</param>
+    /// <param name="b">Fim do segmento.</param>
+    /// <returns>Menor distância entre o ponto e o segmento.</returns>
     public static float DistanceToSegment(Vector2 point, Vector2 a, Vector2 b) => Vector2.Distance(point, ClosestPointOnSegment(point, a, b));
 
+    /// <summary>Ponto do segmento mais próximo do ponto dado.</summary>
+    /// <param name="point">Ponto.</param>
+    /// <param name="a">Início do segmento.</param>
+    /// <param name="b">Fim do segmento.</param>
+    /// <returns>O ponto do segmento mais próximo.</returns>
     public static Vector2 ClosestPointOnSegment(Vector2 point, Vector2 a, Vector2 b)
     {
         var ab = b - a;
@@ -31,6 +41,10 @@ public static class Geometry
         return true;
     }
 
+    /// <summary>Produto vetorial 2D (componente Z): positivo se b está à esquerda de a.</summary>
+    /// <param name="a">Primeiro vetor.</param>
+    /// <param name="b">Segundo vetor.</param>
+    /// <returns>a.X * b.Y − a.Y * b.X.</returns>
     public static float Cross(Vector2 a, Vector2 b) => a.X * b.Y - a.Y * b.X;
 
     /// <summary>Ponto dentro de um polígono qualquer (regra par-ímpar).</summary>
