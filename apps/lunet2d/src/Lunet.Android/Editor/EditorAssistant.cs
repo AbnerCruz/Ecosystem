@@ -22,6 +22,11 @@ internal sealed class EditorAssistant
         lock (_gate) _analyzer.SetFile(path, text);
     }
 
+    public void RemoveFile(string path)
+    {
+        lock (_gate) _analyzer.RemoveFile(path);
+    }
+
     public Task<Analysis> AnalyzeAsync(string path, string text, int caret, int version) => Task.Run(() =>
     {
         lock (_gate)

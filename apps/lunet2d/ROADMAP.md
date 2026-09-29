@@ -49,8 +49,8 @@ Gate: no telefone é possível criar projeto, escrever C#, apertar Run e mover s
 - [x] Renderer OpenGL ES 3.x, sprite e toque.
 - [x] Preview com Run, Stop, Restart, Pause, Step (§10).
 - [x] Fluxo completo criar → editar → Run → mover sprite.
-- [ ] Explorer (árvore de arquivos do projeto como painel; hoje há apenas um diálogo de arquivos).
-- [ ] Recuperação após crash: working buffer, journal de autosave e snapshot de recuperação (§22).
+- [ ] Explorer (painel lateral com árvore, pastas recolhíveis, novo arquivo/pasta, renomear, excluir) **(feito, sem validação em aparelho)**.
+- [ ] Recuperação após crash: working buffer a cada pausa na digitação, descarte ao salvar, oferta de recuperação ao abrir o projeto (§22) **(feito, sem validação em aparelho)**; falta snapshot do projeto inteiro.
 - [ ] Exportar ZIP validado em aparelho (feito, sem validação em aparelho).
 - [ ] Criação de projeto: opção "Tutorial" além de "Em branco" e "Demo" (§33) — depende da Fase 11.
 - [ ] Workspace mínimo do §33 completo: Explorer, Editor, Preview, Problems/Console, Documentation.

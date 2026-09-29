@@ -72,6 +72,69 @@ public sealed class LunetProject
         return relative;
     }
 
+    /// <summary>Árvore de pastas e arquivos para o Explorer (pastas de cache/build ocultas), pastas primeiro.</summary>
+    public IReadOnlyList<ExplorerEntry> ListTree()
+    {
+        var result = new List<ExplorerEntry>();
+        WalkTree(Directory, "", 0, result);
+        return result;
+    }
+
+    private static void WalkTree(string absolute, string relative, int depth, List<ExplorerEntry> result)
+    {
+        foreach (var directory in System.IO.Directory.EnumerateDirectories(absolute).OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+        {
+            var name = Path.GetFileName(directory);
+            if (IgnoredDirectories.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
+            result.Add(new ExplorerEntry(relative + name, name, depth, true));
+            WalkTree(directory, relative + name + "/", depth + 1, result);
+        }
+        foreach (var file in System.IO.Directory.EnumerateFiles(absolute).OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+        {
+            var name = Path.GetFileName(file);
+            if (name.EndsWith(TemporarySuffix, StringComparison.Ordinal)) continue;
+            result.Add(new ExplorerEntry(relative + name, name, depth, false));
+        }
+    }
+
+    public void CreateDirectory(string relativePath)
+    {
+        var path = Resolve(relativePath);
+        if (System.IO.Directory.Exists(path) || File.Exists(path)) throw new ProjectException("Já existe algo com esse nome.");
+        System.IO.Directory.CreateDirectory(path);
+    }
+
+    /// <summary>Renomeia ou move um arquivo/pasta dentro do projeto.</summary>
+    public void Rename(string fromRelative, string toRelative)
+    {
+        if (IsProtected(fromRelative)) throw new ProjectException("Este item não pode ser renomeado.");
+        var from = Resolve(fromRelative);
+        var to = Resolve(toRelative);
+        if (File.Exists(to) || System.IO.Directory.Exists(to)) throw new ProjectException("Já existe algo com esse nome.");
+        System.IO.Directory.CreateDirectory(Path.GetDirectoryName(to)!);
+        if (System.IO.Directory.Exists(from)) System.IO.Directory.Move(from, to);
+        else if (File.Exists(from)) File.Move(from, to);
+        else throw new ProjectException("Item não encontrado.");
+    }
+
+    /// <summary>Apaga arquivo ou pasta (recursivamente). <c>lunet.json</c> e a entrada do projeto raiz não podem ser apagados.</summary>
+    public void Delete(string relativePath)
+    {
+        if (IsProtected(relativePath)) throw new ProjectException("Este item não pode ser apagado.");
+        var path = Resolve(relativePath);
+        if (System.IO.Directory.Exists(path)) System.IO.Directory.Delete(path, recursive: true);
+        else if (File.Exists(path)) File.Delete(path);
+        else throw new ProjectException("Item não encontrado.");
+    }
+
+    private bool IsProtected(string relativePath)
+    {
+        var normalized = relativePath.Replace('\\', '/').Trim('/');
+        return normalized.Equals(ProjectStore.ManifestFileName, StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals(Manifest.EntryPoint, StringComparison.OrdinalIgnoreCase)
+            || normalized.StartsWith(".lunet", StringComparison.OrdinalIgnoreCase);
+    }
+
     public void DeleteFile(string relativePath)
     {
         if (relativePath.Equals(ProjectStore.ManifestFileName, StringComparison.OrdinalIgnoreCase))
@@ -98,6 +161,9 @@ public sealed class LunetProject
         }
     }
 
+    /// <summary>Lança <see cref="ProjectException"/> se o caminho sair da pasta do projeto.</summary>
+    internal void EnsureInsideProject(string relativePath) => Resolve(relativePath);
+
     /// <summary>Resolve um caminho relativo garantindo que ele fique dentro da pasta do projeto.</summary>
     private string Resolve(string relativePath)
     {
@@ -112,3 +178,6 @@ public sealed class LunetProject
 
 /// <summary>Arquivo C# do projeto: caminho relativo e conteúdo.</summary>
 public sealed record ProjectSource(string Path, string Text);
+
+/// <summary>Item do Explorer: caminho relativo com '/', nome, profundidade na árvore e se é pasta.</summary>
+public sealed record ExplorerEntry(string Path, string Name, int Depth, bool IsDirectory);
