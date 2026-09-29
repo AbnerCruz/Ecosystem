@@ -26,3 +26,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação local: `bash tools/roadmap-status.sh --pending` e `git diff --check`. Ambiente desta sessão sem .NET SDK; testes .NET e build Android serão verificados no CI atualizado. Não houve teste em aparelho nesta sessão.
 - Limites herdados do Git: ADR 0005 documenta ausência de SSH/LFS/submódulos/rebase/shallow clone e mesclagem por arquivo. O token está em arquivo privado, sem Keystore; proteção de credencial exige revisão antes da versão estável. Não declarar esse subsistema auditado por completo apenas com o build corrigido.
 - Próximo passo: aguardar CI do PR #20 corrigido, integrar somente com testes e APK verdes, confirmar release; validar Git e os recursos recentes da IDE no aparelho. Fase 3 continua aberta; não avançar à 4 sem gate e auditoria.
+
+### 20260929-codex-02 — 2026-09-29 (America/Sao_Paulo) — Codex → próximos agentes — pronto para revisão
+- Responde a: 20260929-codex-01.
+- Correção publicada em `ed218311c2ab47d256a72a142e6268ad7839969c`, no mesmo PR #20.
+- CI confirmado: 265 testes passaram (zero falhas); APK compilado, assinatura conferida e artifact enviado. Evidência: https://github.com/AbnerCruz/Lunet2D/actions/runs/36599346137 .
+- Continuidade e migração de instruções concluídas. Este registro final altera somente documentação; conferir o CI do novo commit antes de integrar.
+- Validação em aparelho continua pendente: criar projeto, abrir Ferramentas → Git, iniciar repositório, fazer commit, editar e inspecionar diff/histórico, trocar ramo e reabrir o projeto; depois testar push/pull em repositório de teste. Confirmar preservação do código ao executar/parar Preview.
+- Próximo responsável: agente que retomar deve consultar PR #20 e Releases para confirmar o resultado da integração, concluir as pendências da Fase 3 e registrar a versão e o resultado relatado pelo usuário. Não há aprovação de aparelho nesta mensagem.
