@@ -115,8 +115,8 @@ public class AndroidSourceSyntaxTests
         var problems = new List<string>();
         foreach (var file in files)
         {
-            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(File.ReadAllText(file), path: file);
-            foreach (var d in tree.GetDiagnostics().Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error))
+            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(File.ReadAllText(file), path: file, cancellationToken: TestContext.Current.CancellationToken);
+            foreach (var d in tree.GetDiagnostics(TestContext.Current.CancellationToken).Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error))
                 problems.Add($"{Path.GetFileName(file)}({d.Location.GetLineSpan().StartLinePosition.Line + 1}): {d.GetMessage()}");
         }
         Assert.True(problems.Count == 0, string.Join("\n", problems));
