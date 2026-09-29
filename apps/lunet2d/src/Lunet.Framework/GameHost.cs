@@ -17,6 +17,7 @@ public sealed class GameHost
     private readonly IContentSource _contentSource;
     private readonly IAudioBackend? _audio;
     private readonly ISaveStore _saveStore;
+    private readonly IHaptics _haptics;
     private ContentManager? _content;
     private FixedTimestepLoop? _loop;
     private double _clock;
@@ -24,8 +25,9 @@ public sealed class GameHost
     private bool _started;
 
     /// <param name="contentSource">Origem dos arquivos de <c>Content/</c>; sem ela, o jogo não encontra arquivos.</param>
-    public GameHost(Game game, IGraphicsBackend backend, IContentSource? contentSource = null, IAudioBackend? audio = null, ISaveStore? saveStore = null)
+    public GameHost(Game game, IGraphicsBackend backend, IContentSource? contentSource = null, IAudioBackend? audio = null, ISaveStore? saveStore = null, IHaptics? haptics = null)
     {
+        _haptics = haptics ?? new NullHaptics();
         _saveStore = saveStore ?? new MemorySaveStore();
         _audio = audio;
         _contentSource = contentSource ?? new EmptyContentSource();
@@ -50,7 +52,7 @@ public sealed class GameHost
             var configuration = _game.Configuration;
             var device = new GraphicsDevice(_backend, configuration.VirtualWidth, configuration.VirtualHeight);
             _content = new ContentManager(_contentSource, device, _audio);
-            _game.Attach(device, Input, _content, new SaveData(_saveStore));
+            _game.Attach(device, Input, _content, new SaveData(_saveStore), _haptics);
             GraphicsDevice = device;
             GraphicsDevice.Resize(surfaceWidth, surfaceHeight);
             _game.RunInitialize();
@@ -82,6 +84,7 @@ public sealed class GameHost
     {
         if (_paused) return;
         _paused = true;
+        _content?.Audio.PauseAll();
         if (!IsFaulted && _started) Guard(_game.RunPause);
     }
 
@@ -89,6 +92,7 @@ public sealed class GameHost
     {
         if (!_paused) return;
         _paused = false;
+        _content?.Audio.ResumeAll();
         if (!IsFaulted && _started) Guard(_game.RunResume);
     }
 

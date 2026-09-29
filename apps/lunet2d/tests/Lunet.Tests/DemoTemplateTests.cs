@@ -26,6 +26,15 @@ public class DemoTemplateTests : IDisposable
         public int Play(int soundId, float volume, float pan, float pitch, bool loop) { Plays++; return 1; }
         public void SetStream(int streamId, float volume, float pan, float pitch) { }
         public void Stop(int streamId) { }
+        public void PauseSounds() { }
+        public void ResumeSounds() { }
+        public int LoadMusic(byte[] data, string name) => 1;
+        public void UnloadMusic(int musicId) { }
+        public void PlayMusic(int musicId, float volume, bool loop) { }
+        public void SetMusicVolume(float volume) { }
+        public void PauseMusic() { }
+        public void ResumeMusic() { }
+        public void StopMusic() { }
         public void Dispose() { }
     }
 
@@ -94,5 +103,109 @@ public class DemoTemplateTests : IDisposable
         var project = new ProjectStore(_root).Create("Vazio");
         Assert.DoesNotContain("SpriteFont", project.ReadText("Game.cs"));
         Assert.False(Directory.Exists(Path.Combine(_root, "Vazio", "Content", "Audio")));
+    }
+}
+
+public class LabTemplateTests : IDisposable
+{
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lunet-lab-" + Guid.NewGuid().ToString("N"));
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+    }
+
+    private sealed class Audio : Lunet.Audio.IAudioBackend
+    {
+        public List<string> Calls { get; } = [];
+        public int LoadSound(byte[] data, string name) => 1;
+        public void UnloadSound(int soundId) { }
+        public int Play(int soundId, float volume, float pan, float pitch, bool loop) { Calls.Add("play"); return 1; }
+        public void SetStream(int streamId, float volume, float pan, float pitch) { }
+        public void Stop(int streamId) { }
+        public void PauseSounds() { }
+        public void ResumeSounds() { }
+        public int LoadMusic(byte[] data, string name) { Calls.Add("loadMusic:" + data.Length); return 1; }
+        public void UnloadMusic(int musicId) { }
+        public void PlayMusic(int musicId, float volume, bool loop) => Calls.Add("playMusic");
+        public void SetMusicVolume(float volume) => Calls.Add($"musicVolume:{volume:0.0}");
+        public void PauseMusic() { }
+        public void ResumeMusic() { }
+        public void StopMusic() => Calls.Add("stopMusic");
+        public void Dispose() { }
+    }
+
+    private sealed class Haptics : Lunet.Input.IHaptics
+    {
+        public List<int> Calls { get; } = [];
+        public void Vibrate(int milliseconds, float intensity = 1f) => Calls.Add(milliseconds);
+        public void Cancel() { }
+    }
+
+    [Fact]
+    public void Lab_CompilesWithoutWarningsAndExercisesAudioSensorsGamepadAndControls()
+    {
+        var project = new ProjectStore(_root).Create("Lab", ProjectTemplate.Lab);
+        Assert.True(File.Exists(Path.Combine(_root, "Lab", "Content", "Audio", "loop.wav")));
+        Assert.True(new FileInfo(Path.Combine(_root, "Lab", "Content", "Audio", "loop.wav")).Length > 100_000);
+
+        var result = new GameCompiler(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly))
+            .Compile("lab_game", project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList());
+        Assert.True(result.Success, string.Join("\n", result.Diagnostics));
+        Assert.DoesNotContain(result.Diagnostics, d => d.Severity == DiagnosticSeverity.Warning);
+
+        using var loaded = GameLoader.Load(result.Assembly!, result.Symbols);
+        var audio = new Audio();
+        var haptics = new Haptics();
+        var backend = new RecordingBackend();
+        var host = new GameHost(loaded.Game, backend, new DirectoryContentSource(Path.Combine(project.Directory, "Content")), audio, null, haptics);
+        Assert.True(host.Start(360, 640), host.Fault?.ToString());
+
+        void Frame(int n = 1) { for (var i = 0; i < n; i++) host.Tick(1.0 / 60); }
+        void Tap(float x, float y)
+        {
+            host.SetSurfaceTouches([new TouchPoint(7, TouchPhase.Moved, new Vector2(x, y))]);
+            Frame();
+            host.SetSurfaceTouches([new TouchPoint(7, TouchPhase.Released, new Vector2(x, y))]);
+            Frame(2);
+            host.SetSurfaceTouches([]);
+            Frame(2);
+        }
+
+        Tap(100, 25); // música liga
+        Assert.Contains("playMusic", audio.Calls);
+        Tap(100, 65); // beep + vibrar
+        Assert.Contains(60, haptics.Calls);
+        Tap(100, 105); // volume música +
+        Tap(300, 105); // volume música -
+        Tap(100, 25); // música desliga com fade
+        Frame(120);
+        Assert.Contains("stopMusic", audio.Calls);
+
+        // Acelerômetro e controle
+        host.Input.SetAccelerometer(new Vector3(-2, 0, 9.8f));
+        host.Input.SetGamepad(new GamepadState(true, GamepadButtons.A, new Vector2(1, 0), Vector2.Zero, 0, 0));
+        Frame(3);
+        Assert.Contains(30, haptics.Calls);
+
+        // Pinça com dois dedos
+        host.SetSurfaceTouches([new TouchPoint(1, TouchPhase.Moved, new Vector2(100, 400)), new TouchPoint(2, TouchPhase.Moved, new Vector2(160, 400))]);
+        Frame();
+        host.SetSurfaceTouches([new TouchPoint(1, TouchPhase.Moved, new Vector2(80, 400)), new TouchPoint(2, TouchPhase.Moved, new Vector2(180, 400))]);
+        Frame();
+        host.SetSurfaceTouches([]);
+        Frame(3);
+
+        // Joystick e botão de tela
+        host.SetSurfaceTouches([new TouchPoint(3, TouchPhase.Moved, new Vector2(110, 560))]);
+        Frame(5);
+        host.SetSurfaceTouches([new TouchPoint(4, TouchPhase.Moved, new Vector2(290, 560))]);
+        Frame(2);
+        host.SetSurfaceTouches([]);
+        Frame(3);
+        Assert.Contains(15, haptics.Calls);
+
+        Assert.False(host.IsFaulted, host.Fault?.ToString());
+        Assert.NotEmpty(backend.Batches);
     }
 }

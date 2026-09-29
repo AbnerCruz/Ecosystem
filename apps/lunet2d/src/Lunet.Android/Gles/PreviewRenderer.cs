@@ -20,6 +20,10 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private readonly Func<IAudioBackend> _audioFactory;
     private IAudioBackend? _audio;
     private readonly ISaveStore _save;
+    private readonly IHaptics _haptics;
+    private GamepadState _gamepad;
+    private System.Numerics.Vector3 _gyroscope;
+    private volatile bool _appPaused;
     private readonly System.Collections.Concurrent.ConcurrentQueue<(Keys Key, bool Down)> _keys = new();
     private System.Numerics.Vector3 _accelerometer;
     private readonly object _inputLock = new();
@@ -36,9 +40,10 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private volatile bool _paused;
     private volatile bool _restartRequested;
 
-    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, Action<LogLevel, string> log)
+    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, IHaptics haptics, Action<LogLevel, string> log)
     {
         _save = save;
+        _haptics = haptics;
         _audioFactory = audioFactory;
         _content = content;
         _assembly = assembly;
@@ -56,6 +61,19 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     {
         lock (_inputLock) _accelerometer = value;
     }
+
+    public void SetGamepad(GamepadState state)
+    {
+        lock (_inputLock) _gamepad = state;
+    }
+
+    public void SetGyroscope(System.Numerics.Vector3 value)
+    {
+        lock (_inputLock) _gyroscope = value;
+    }
+
+    /// <summary>App em segundo plano: pausa o jogo (e o áudio) sem mexer no pause escolhido pelo usuário.</summary>
+    public void SetAppPaused(bool paused) => _appPaused = paused;
 
     public void SetPaused(bool paused) => _paused = paused;
     public void RequestStep() => _stepRequested = true;
@@ -103,10 +121,16 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         System.Numerics.Vector3 acceleration;
         lock (_inputLock) acceleration = _accelerometer;
         host.Input.SetAccelerometer(acceleration);
+        GamepadState pad;
+        System.Numerics.Vector3 gyro;
+        lock (_inputLock) { pad = _gamepad; gyro = _gyroscope; }
+        host.Input.SetGamepad(pad);
+        host.Input.SetGyroscope(gyro);
 
-        if (_paused != host.IsPaused)
+        var wantPaused = _paused || _appPaused;
+        if (wantPaused != host.IsPaused)
         {
-            if (_paused) host.Pause(); else host.Resume();
+            if (wantPaused) host.Pause(); else host.Resume();
         }
         if (_stepRequested)
         {
@@ -132,7 +156,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         {
             _loaded = GameLoader.Load(_assembly, _symbols);
             _loaded.Game.Log.Written += _log;
-            _host = new GameHost(_loaded.Game, _backend!, _content, _audio ??= _audioFactory(), _save);
+            _host = new GameHost(_loaded.Game, _backend!, _content, _audio ??= _audioFactory(), _save, _haptics);
             _host.Start(_width, _height);
             _clock.Restart();
             return true;

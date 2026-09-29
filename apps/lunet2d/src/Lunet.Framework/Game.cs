@@ -12,6 +12,7 @@ public abstract class Game
     private InputState? _input;
     private ContentManager? _content;
     private SaveData? _save;
+    private IHaptics _haptics = new NullHaptics();
 
     public GameConfiguration Configuration { get; } = new();
     public GameLog Log { get; } = new();
@@ -21,6 +22,12 @@ public abstract class Game
 
     /// <summary>Executa ações na thread do jogo; <c>Post</c> é seguro para qualquer thread.</summary>
     public Dispatcher Dispatcher { get; } = new();
+
+    /// <summary>Vibração do aparelho.</summary>
+    public IHaptics Haptics => _haptics;
+
+    /// <summary>Barramentos de volume, música, fades (atalho para <c>Content.Audio</c>).</summary>
+    public Audio.AudioMixer Audio => Content.Audio;
 
     /// <summary>Timers no tempo do jogo (param na pausa).</summary>
     public Timers Timers { get; } = new();
@@ -55,8 +62,10 @@ public abstract class Game
     /// <summary>Chamado quando o app volta ao primeiro plano.</summary>
     protected virtual void OnResume() { }
 
-    internal void Attach(GraphicsDevice graphics, InputState input, ContentManager content, SaveData save)
+    internal void Attach(GraphicsDevice graphics, InputState input, ContentManager content, SaveData save, IHaptics haptics)
     {
+        _haptics = haptics;
+        Services.Add(haptics);
         _save = save;
         Services.Add(graphics);
         Services.Add(input);
@@ -76,6 +85,7 @@ public abstract class Game
     internal void RunUpdate(GameTime time)
     {
         Timers.Update(time.DeltaSeconds);
+        Content.Audio.Update(time.DeltaSeconds);
         Update(time);
     }
     internal void RunDraw(GameTime time) => Draw(time);

@@ -37,15 +37,20 @@ public sealed class ProjectStore
             AtomicFile.WriteAllText(Path.Combine(directory, ManifestFileName), manifest.ToJson());
             var className = ClassName(name);
             AtomicFile.WriteAllText(Path.Combine(directory, manifest.EntryPoint),
-                template == ProjectTemplate.CoinCatcher
-                    ? ProjectTemplates.CoinCatcherSource(className)
-                    : ProjectTemplates.BlankGameSource(className));
+                template switch
+                {
+                    ProjectTemplate.CoinCatcher => ProjectTemplates.CoinCatcherSource(className),
+                    ProjectTemplate.Lab => ProjectTemplates.LabSource(className),
+                    _ => ProjectTemplates.BlankGameSource(className),
+                });
             Directory.CreateDirectory(Path.Combine(directory, "Content"));
-            if (template == ProjectTemplate.CoinCatcher)
+            if (template is ProjectTemplate.CoinCatcher or ProjectTemplate.Lab)
             {
                 Directory.CreateDirectory(Path.Combine(directory, "Content", "Audio"));
                 File.WriteAllBytes(Path.Combine(directory, "Content", "Audio", "beep.wav"), WavGenerator.Beep(880, 0.12));
             }
+            if (template == ProjectTemplate.Lab)
+                File.WriteAllBytes(Path.Combine(directory, "Content", "Audio", "loop.wav"), WavGenerator.ArpeggioLoop());
         }
         catch
         {

@@ -30,4 +30,37 @@ public static class WavGenerator
         }
         return stream.ToArray();
     }
+
+    /// <summary>Arpejo curto em laço (~3,2 s): serve de música de teste.</summary>
+    public static byte[] ArpeggioLoop()
+    {
+        double[] notes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 293.66, 349.23, 440.00, 587.33, 440.00, 349.23];
+        const double noteSeconds = 0.27;
+        var samplesPerNote = (int)(SampleRate * noteSeconds);
+        var total = samplesPerNote * notes.Length;
+        using var stream = new MemoryStream(44 + total * 2);
+        using var w = new BinaryWriter(stream);
+        w.Write("RIFF"u8);
+        w.Write(36 + total * 2);
+        w.Write("WAVEfmt "u8);
+        w.Write(16);
+        w.Write((short)1);
+        w.Write((short)1);
+        w.Write(SampleRate);
+        w.Write(SampleRate * 2);
+        w.Write((short)2);
+        w.Write((short)16);
+        w.Write("data"u8);
+        w.Write(total * 2);
+        foreach (var frequency in notes)
+        {
+            for (var i = 0; i < samplesPerNote; i++)
+            {
+                var attack = Math.Min(1.0, i / 200.0);
+                var release = Math.Min(1.0, (samplesPerNote - i) / 400.0); // sem estalo entre notas
+                w.Write((short)(Math.Sin(2 * Math.PI * frequency * i / SampleRate) * attack * release * 0.35 * short.MaxValue));
+            }
+        }
+        return stream.ToArray();
+    }
 }
