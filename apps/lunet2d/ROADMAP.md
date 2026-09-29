@@ -136,7 +136,7 @@ IDE mobile (§11)
 - [ ] Painéis: Preview, Inspector, Console, Problems, Search, Assets, Documentation, Agent, Profiler (Preview, Console, Problems e Explorer já existem no workspace).
 - [ ] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes.
 - [ ] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles.
-- [ ] Busca no projeto inteiro.
+- [x] Busca no projeto inteiro. (feito, sem validação em aparelho; menu ⋯ → Buscar no projeto)
 - [ ] Console e Problems com logs exportáveis (§23).
 - [ ] Settings.
 

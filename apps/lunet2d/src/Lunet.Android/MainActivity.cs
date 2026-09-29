@@ -548,7 +548,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
     private void ShowMenu()
     {
-        var items = new[] { "Salvar", "Documentação", "Exportar projeto (ZIP)", "Importar imagem PNG", "Localizar e substituir", "Ir para definição", "Dica do símbolo", "Referências do símbolo" };
+        var items = new[] { "Salvar", "Documentação", "Exportar projeto (ZIP)", "Importar imagem PNG", "Localizar e substituir", "Ir para definição", "Dica do símbolo", "Referências do símbolo", "Documentação do símbolo", "Buscar no projeto" };
         new AlertDialog.Builder(this)!.SetItems(items, (_, args) =>
         {
             switch (args.Which)
@@ -577,6 +577,12 @@ public sealed class MainActivity : Activity, ISensorEventListener
                     break;
                 case 7:
                     ShowReferences();
+                    break;
+                case 8:
+                    ExplainSymbol();
+                    break;
+                case 9:
+                    ShowProjectSearch();
                     break;
             }
         })!.Show();
@@ -748,6 +754,77 @@ public sealed class MainActivity : Activity, ISensorEventListener
             }
             dialog.Show();
         }));
+    }
+
+    /// <summary>Abre a documentação do nome sob o cursor de texto (toque numa palavra do código antes).</summary>
+    private void ExplainSymbol()
+    {
+        if (_editor is null || _openFile is null || _assistant is null) return;
+        var path = _openFile;
+        var caret = _editor.SelectionStart;
+        var source = _editor.Text ?? "";
+        _assistant.RunAsync(a => a.GetHover(path, caret)).ContinueWith(task => RunOnUiThread(() =>
+        {
+            var hover = task.IsFaulted ? null : task.Result;
+            string? name = null;
+            if (hover is not null && hover.Start >= 0 && hover.Start + hover.Length <= source.Length)
+                name = source.Substring(hover.Start, hover.Length);
+            else
+            {
+                int start = Math.Min(caret, source.Length), end = start;
+                while (start > 0 && (char.IsLetterOrDigit(source[start - 1]) || source[start - 1] == '_')) start--;
+                while (end < source.Length && (char.IsLetterOrDigit(source[end]) || source[end] == '_')) end++;
+                if (end > start) name = source.Substring(start, end - start);
+            }
+            if (string.IsNullOrEmpty(name))
+            {
+                Toast.MakeText(this, "Toque numa palavra do código (ex.: SpriteBatch) e abra este item de novo.", ToastLength.Long)?.Show();
+                return;
+            }
+            var target = DocumentationPanel.TargetFor(this, hover?.DocumentationId, name);
+            if (target is not null) DocumentationPanel.Open(this, target);
+        }));
+    }
+
+    private string _projectQuery = "";
+
+    private void ShowProjectSearch()
+    {
+        if (_project is null) return;
+        var form = Vertical();
+        form.SetPadding(Dp(16), Dp(8), Dp(16), 0);
+        var query = new EditText(this) { Hint = "Buscar em todos os arquivos", Text = _projectQuery };
+        query.SetSingleLine(true);
+        var matchCase = new CheckBox(this) { Text = "Diferenciar maiúsculas" };
+        var whole = new CheckBox(this) { Text = "Palavra inteira" };
+        var regex = new CheckBox(this) { Text = "Expressão regular" };
+        foreach (var view in new View[] { query, matchCase, whole, regex }) form.AddView(view);
+
+        new AlertDialog.Builder(this)!
+            .SetTitle("Buscar no projeto")!
+            .SetView(form)!
+            .SetNegativeButton("Fechar", (_, _) => { })!
+            .SetPositiveButton("Buscar", (_, _) =>
+            {
+                _projectQuery = query.Text ?? "";
+                SaveCurrent();
+                var project = _project;
+                var options = new ProjectSearchOptions(matchCase.Checked, whole.Checked, regex.Checked);
+                var text = _projectQuery;
+                Task.Run(() => ProjectSearch.Search(project, text, options)).ContinueWith(task => RunOnUiThread(() =>
+                {
+                    var found = task.IsFaulted ? [] : task.Result;
+                    if (found.Count == 0)
+                    {
+                        Toast.MakeText(this, "Nada encontrado.", ToastLength.Short)?.Show();
+                        return;
+                    }
+                    var labels = found.Select(m => $"{m.Path}:{m.Line}  {m.Preview}").ToArray();
+                    new AlertDialog.Builder(this)!
+                        .SetTitle($"{found.Count} resultado(s)")!
+                        .SetItems(labels, (_, args) => Jump(found[args.Which].Path, found[args.Which].Line, found[args.Which].Column))!.Show();
+                }));
+            })!.Show();
     }
 
     private void ShowReferences()
