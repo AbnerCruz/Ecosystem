@@ -19,6 +19,7 @@ internal static class QuickReference
           Configuration.UpdatesPerSecond             padrão 60
           GraphicsDevice.Clear(Color)
           Input.TryGetPointer(out Vector2)           posição do primeiro toque, em coordenadas virtuais
+          Input.Gestures                             Tap, LongPress, Drag (Delta), Swipe (Velocity)
           Input.Touches                              todos os toques (Id, Phase, Position)
           Log.Info / Warning / Error(string)         aparece no Console
 

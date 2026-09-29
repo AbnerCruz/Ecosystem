@@ -17,6 +17,7 @@ public sealed class GameHost
     private readonly IAudioBackend? _audio;
     private ContentManager? _content;
     private FixedTimestepLoop? _loop;
+    private double _clock;
     private bool _paused;
     private bool _started;
 
@@ -92,6 +93,8 @@ public sealed class GameHost
     public void Tick(double elapsedSeconds)
     {
         if (!_started || IsFaulted || _loop is null) return;
+        _clock += Math.Max(0, elapsedSeconds);
+        Input.RecognizeGestures(_clock);
         if (!_paused)
         {
             var steps = _loop.Advance(elapsedSeconds);
@@ -99,6 +102,7 @@ public sealed class GameHost
             {
                 var time = _loop.CompleteStep();
                 Guard(() => _game.RunUpdate(time));
+                Input.ClearGestures(); // cada gesto é entregue a um único passo
             }
         }
         if (IsFaulted) return;

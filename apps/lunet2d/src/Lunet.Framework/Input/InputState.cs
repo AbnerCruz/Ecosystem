@@ -8,7 +8,16 @@ public sealed class InputState
     public const int MaxTouches = 10;
     private readonly TouchPoint[] _touches = new TouchPoint[MaxTouches];
 
+    private readonly List<Gesture> _gestures = new(16);
+    private readonly GestureRecognizer _recognizer = new();
+
     public int TouchCount { get; private set; }
+
+    /// <summary>Gestos reconhecidos e ainda não consumidos; entregues no primeiro passo de <c>Update</c> após ocorrerem.</summary>
+    public IReadOnlyList<Gesture> Gestures => _gestures;
+
+    /// <summary>Ajustes de sensibilidade (limiares de arrasto, toque, pressão longa, deslize).</summary>
+    public GestureRecognizer GestureSettings => _recognizer;
 
     public ReadOnlySpan<TouchPoint> Touches => _touches.AsSpan(0, TouchCount);
 
@@ -30,6 +39,14 @@ public sealed class InputState
         position = default;
         return false;
     }
+
+    internal void RecognizeGestures(double now)
+    {
+        if (_gestures.Count > 64) _gestures.RemoveRange(0, _gestures.Count - 64);
+        _recognizer.Update(Touches, now, _gestures);
+    }
+
+    internal void ClearGestures() => _gestures.Clear();
 
     /// <summary>Substitui os toques atuais (usado pelo host).</summary>
     public void SetTouches(ReadOnlySpan<TouchPoint> touches)
