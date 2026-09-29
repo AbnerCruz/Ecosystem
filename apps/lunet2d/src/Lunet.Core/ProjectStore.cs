@@ -68,6 +68,14 @@ public sealed class ProjectStore
         return new LunetProject(directory, ProjectManifest.Parse(File.ReadAllText(manifestPath)));
     }
 
+    /// <summary>Apaga a pasta inteira do projeto. Só apaga pastas que são projetos Lunet (com lunet.json).</summary>
+    public void Delete(string name)
+    {
+        var directory = Path.Combine(RootDirectory, ValidateName(name));
+        if (!File.Exists(Path.Combine(directory, ManifestFileName))) throw new ProjectException($"Projeto \"{name}\" não encontrado.");
+        Directory.Delete(directory, recursive: true);
+    }
+
     public static string ValidateName(string rawName)
     {
         var name = (rawName ?? "").Trim();

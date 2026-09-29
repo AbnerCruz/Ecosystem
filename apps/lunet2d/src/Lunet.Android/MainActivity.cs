@@ -86,6 +86,17 @@ public sealed class MainActivity : Activity, ISensorEventListener
         return button;
     }
 
+    /// <summary>Botão compacto para barras: divide a largura com os vizinhos em vez de sair da tela.</summary>
+    private Button MakeBarButton(string label, Action action, float weight = 1f)
+    {
+        var button = MakeButton(label, action);
+        button.SetMinWidth(0);
+        button.SetMinimumWidth(0);
+        button.SetPadding(Dp(4), 0, Dp(4), 0);
+        button.LayoutParameters = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, weight);
+        return button;
+    }
+
     private LinearLayout Vertical() => new(this) { Orientation = Orientation.Vertical };
 
     private static LinearLayout.LayoutParams Fill(float weight = 0) =>
@@ -112,7 +123,13 @@ public sealed class MainActivity : Activity, ISensorEventListener
         foreach (var name in _store.List())
         {
             var captured = name;
-            list.AddView(MakeButton(captured, () => OpenProject(captured)));
+            var row = MakeButton(captured, () => OpenProject(captured));
+            row.LongClick += (_, e) =>
+            {
+                ShowProjectMenu(captured);
+                e.Handled = true;
+            };
+            list.AddView(row);
         }
         if (list.ChildCount == 0)
             list.AddView(new TextView(this) { Text = "Nenhum projeto ainda. Crie o primeiro." });
@@ -122,10 +139,40 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
         root.AddView(new TextView(this)
         {
-            Text = $"Versão {BuildInfo.Version} · Os projetos ficam no armazenamento do app; exporte em ZIP para guardar.",
+            Text = $"Versão {BuildInfo.Version} · Toque longo num projeto: exportar ZIP ou excluir. Os projetos ficam no armazenamento do app; exporte em ZIP para guardar.",
             TextSize = 12,
         });
         SetContentView(root);
+    }
+
+    private void ShowProjectMenu(string name)
+    {
+        var items = new[] { "Exportar ZIP", "Excluir projeto" };
+        new AlertDialog.Builder(this)!.SetTitle(name)!.SetItems(items, (_, args) =>
+        {
+            if (args.Which == 0) ExportProject(name);
+            else ConfirmDeleteProject(name);
+        })!.Show();
+    }
+
+    private void ConfirmDeleteProject(string name)
+    {
+        new AlertDialog.Builder(this)!
+            .SetTitle("Excluir projeto")!
+            .SetMessage($"Excluir \"{name}\" com todos os arquivos? Isso não pode ser desfeito. Exporte um ZIP antes se tiver dúvida.")!
+            .SetNegativeButton("Cancelar", (_, _) => { })!
+            .SetPositiveButton("Excluir", (_, _) =>
+            {
+                try
+                {
+                    _store.Delete(name);
+                    ShowProjects();
+                }
+                catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+                {
+                    Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
+                }
+            })!.Show();
     }
 
     private void AskForProjectName()
@@ -230,12 +277,12 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
         var bar = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         bar.SetPadding(Dp(4), Dp(4), Dp(4), Dp(4));
-        bar.AddView(MakeButton("←", () => ShowProjects()));
-        bar.AddView(MakeButton("☰", ToggleExplorer));
-        bar.AddView(MakeButton("▶ Run", Run));
-        bar.AddView(MakeButton("↶", () => _editor?.Undo()));
-        bar.AddView(MakeButton("↷", () => _editor?.Redo()));
-        bar.AddView(MakeButton("⋯", ShowMenu));
+        bar.AddView(MakeBarButton("←", () => ShowProjects()));
+        bar.AddView(MakeBarButton("☰", ToggleExplorer));
+        bar.AddView(MakeBarButton("▶ Run", Run, 2f));
+        bar.AddView(MakeBarButton("↶", () => _editor?.Undo()));
+        bar.AddView(MakeBarButton("↷", () => _editor?.Redo()));
+        bar.AddView(MakeBarButton("⋯", ShowMenu));
         root.AddView(bar);
 
         _status = new TextView(this) { TextSize = 12 };
@@ -252,9 +299,9 @@ public sealed class MainActivity : Activity, ISensorEventListener
         root.AddView(_chipScroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent));
 
         var tabs = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        _problemsTab = MakeButton("Problemas", () => SetPanel(false));
+        _problemsTab = MakeBarButton("Problemas", () => SetPanel(false));
         tabs.AddView(_problemsTab);
-        tabs.AddView(MakeButton("Console", () => SetPanel(true)));
+        tabs.AddView(MakeBarButton("Console", () => SetPanel(true)));
         root.AddView(tabs);
 
         _panelList = Vertical();
@@ -282,9 +329,9 @@ public sealed class MainActivity : Activity, ISensorEventListener
         var header = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         header.SetPadding(Dp(8), Dp(8), Dp(8), Dp(4));
         header.AddView(new TextView(this) { Text = "Explorer", TextSize = 16 }, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1));
-        header.AddView(MakeButton("+ arquivo", () => AskForNewEntry("", isDirectory: false)));
-        header.AddView(MakeButton("+ pasta", () => AskForNewEntry("", isDirectory: true)));
-        header.AddView(MakeButton("✕", ToggleExplorer));
+        header.AddView(MakeBarButton("+ arq.", () => AskForNewEntry("", isDirectory: false), 1.4f));
+        header.AddView(MakeBarButton("+ pasta", () => AskForNewEntry("", isDirectory: true), 1.4f));
+        header.AddView(MakeBarButton("✕", ToggleExplorer, 0.8f));
         _drawer.AddView(header);
 
         _drawerList = Vertical();
@@ -1069,15 +1116,17 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
     // ---------- Export ----------
 
-    private void ExportProject()
+    /// <summary>Exporta o projeto aberto (ou o de nome dado, na lista de projetos) como ZIP pelo seletor de documentos do Android.</summary>
+    private void ExportProject(string? name = null)
     {
-        if (_project is null) return;
-        SaveCurrent();
-        _pendingExport = _project.Name;
+        name ??= _project?.Name;
+        if (name is null) return;
+        if (_project is not null && _project.Name == name) SaveCurrent();
+        _pendingExport = name;
         var intent = new Intent(Intent.ActionCreateDocument);
         intent.AddCategory(Intent.CategoryOpenable);
         intent.SetType("application/zip");
-        intent.PutExtra(Intent.ExtraTitle, _project.Name + ".zip");
+        intent.PutExtra(Intent.ExtraTitle, name + ".zip");
         StartActivityForResult(intent, ExportRequestCode);
     }
 

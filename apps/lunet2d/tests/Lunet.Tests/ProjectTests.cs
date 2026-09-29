@@ -106,3 +106,36 @@ public class ProjectTests : IDisposable
         Assert.Contains("plugins", manifest.ToJson());
     }
 }
+
+public class ProjectDeletionTests : IDisposable
+{
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lunet-del-" + Guid.NewGuid().ToString("N"));
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+    }
+
+    [Fact]
+    public void Delete_RemovesOnlyTheNamedProject()
+    {
+        var store = new ProjectStore(_root);
+        store.Create("a");
+        store.Create("b");
+        store.Delete("a");
+        Assert.Equal(["b"], store.List());
+        Assert.Throws<ProjectException>(() => store.Delete("a"));
+    }
+
+    [Fact]
+    public void Delete_RefusesNamesThatEscapeAndFoldersThatAreNotProjects()
+    {
+        var store = new ProjectStore(_root);
+        Directory.CreateDirectory(Path.Combine(_root, "not-a-project"));
+        File.WriteAllText(Path.Combine(_root, "not-a-project", "keep.txt"), "x");
+        Assert.Throws<ProjectException>(() => store.Delete("not-a-project"));
+        Assert.Throws<ProjectException>(() => store.Delete("../"));
+        Assert.Throws<ProjectException>(() => store.Delete(".."));
+        Assert.True(File.Exists(Path.Combine(_root, "not-a-project", "keep.txt")));
+    }
+}

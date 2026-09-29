@@ -50,9 +50,9 @@ Gate: no telefone é possível criar projeto, escrever C#, apertar Run e mover s
 - [x] Renderer OpenGL ES 3.x, sprite e toque.
 - [x] Preview com Run, Stop, Restart, Pause, Step (§10).
 - [x] Fluxo completo criar → editar → Run → mover sprite.
-- [ ] Explorer (painel lateral com árvore, pastas recolhíveis, novo arquivo/pasta, renomear, excluir) **(feito, sem validação em aparelho)**.
-- [ ] Recuperação após crash: working buffer a cada pausa na digitação, descarte ao salvar, oferta de recuperação ao abrir o projeto (§22) **(feito, sem validação em aparelho)**; falta snapshot do projeto inteiro.
-- [ ] Exportar ZIP validado em aparelho (feito, sem validação em aparelho).
+- [x] Explorer (painel lateral com árvore, pastas recolhíveis, novo arquivo/pasta, renomear, excluir) — validado em aparelho (pastas).
+- [x] Recuperação após crash: working buffer a cada pausa na digitação, descarte ao salvar, oferta de recuperação ao abrir o projeto (§22). No aparelho, fechar o app pelos recentes já salva o texto (salvamento ao pausar); a recuperação de um encerramento sem pausa é coberta por testes automáticos. Snapshot do projeto inteiro: Fase 13.
+- [ ] Exportar ZIP: menu ⋯ do editor e toque longo na lista de projetos (a barra do editor cortava o ⋯ em telas estreitas; corrigido) — aguardando validação em aparelho.
 - [ ] Workspace mínimo do §33: Explorer, Editor, Preview, Problems/Console (Documentation: hoje só a referência rápida; painel de documentação completo na Fase 3, opção "Tutorial" na criação de projeto na Fase 11 — itens movidos para lá).
 - [ ] Auditoria de fechamento da Fase 1 registrada em `docs/audits/`.
 
@@ -286,6 +286,7 @@ Sem paywall real obrigatório.
 - [ ] Plugins que falham e plugins malformados; falhas do compilador.
 - [ ] Saídas ruins de LLM e agente descontrolado; erros de assinatura e de atualização; falhas de rede.
 - [ ] Testes de ciclo de vida do Android e smoke tests em CI onde possível.
+- [ ] Snapshot do projeto inteiro para recuperação (§22).
 - [ ] Recriar texturas, alvos de desenho e shaders quando o contexto GL é perdido, sem reiniciar o jogo.
 - [ ] `Localization.UseDeviceLanguage` conferido em aparelhos com idiomas diferentes.
 - [ ] Auditoria de fechamento da Fase 13 registrada em `docs/audits/`.
