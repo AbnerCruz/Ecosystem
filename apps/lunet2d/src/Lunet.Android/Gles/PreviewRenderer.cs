@@ -24,6 +24,8 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private GamepadState _gamepad;
     private System.Numerics.Vector3 _gyroscope;
     private volatile bool _appPaused;
+    private (float Density, int Left, int Top, int Right, int Bottom) _display = (1f, 0, 0, 0, 0);
+    private bool _displayDirty = true;
     private readonly System.Collections.Concurrent.ConcurrentQueue<(Keys Key, bool Down)> _keys = new();
     private System.Numerics.Vector3 _accelerometer;
     private readonly object _inputLock = new();
@@ -60,6 +62,16 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     public void SetAccelerometer(System.Numerics.Vector3 value)
     {
         lock (_inputLock) _accelerometer = value;
+    }
+
+    /// <summary>Densidade de pixels e recuos seguros (recortes de tela) em pixels da superfície.</summary>
+    public void SetDisplay(float density, int left, int top, int right, int bottom)
+    {
+        lock (_inputLock)
+        {
+            _display = (density, left, top, right, bottom);
+            _displayDirty = true;
+        }
     }
 
     public void SetGamepad(GamepadState state)
@@ -125,6 +137,12 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         System.Numerics.Vector3 gyro;
         lock (_inputLock) { pad = _gamepad; gyro = _gyroscope; }
         host.Input.SetGamepad(pad);
+        (float Density, int Left, int Top, int Right, int Bottom)? display = null;
+        lock (_inputLock)
+        {
+            if (_displayDirty) { display = _display; _displayDirty = false; }
+        }
+        if (display is { } d) host.SetDisplay(d.Density, d.Left, d.Top, d.Right, d.Bottom);
         host.Input.SetGyroscope(gyro);
 
         var wantPaused = _paused || _appPaused;
@@ -157,6 +175,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
             _loaded = GameLoader.Load(_assembly, _symbols);
             _loaded.Game.Log.Written += _log;
             _host = new GameHost(_loaded.Game, _backend!, _content, _audio ??= _audioFactory(), _save, _haptics);
+            lock (_inputLock) { _host.SetDisplay(_display.Density, _display.Left, _display.Top, _display.Right, _display.Bottom); _displayDirty = false; }
             _host.Start(_width, _height);
             _clock.Restart();
             return true;

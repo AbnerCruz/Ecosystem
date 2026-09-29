@@ -21,6 +21,7 @@ public sealed class GameHost
     private ContentManager? _content;
     private FixedTimestepLoop? _loop;
     private double _clock;
+    private (float Density, int Left, int Top, int Right, int Bottom) _display = (1f, 0, 0, 0, 0);
     private bool _paused;
     private bool _started;
 
@@ -54,6 +55,7 @@ public sealed class GameHost
             _content = new ContentManager(_contentSource, device, _audio);
             _game.Attach(device, Input, _content, new SaveData(_saveStore), _haptics);
             GraphicsDevice = device;
+            GraphicsDevice.SetDisplay(_display.Density, _display.Left, _display.Top, _display.Right, _display.Bottom);
             GraphicsDevice.Resize(surfaceWidth, surfaceHeight);
             _game.RunInitialize();
             configuration.Validate();
@@ -62,6 +64,13 @@ public sealed class GameHost
             _loop = new FixedTimestepLoop(configuration.UpdatesPerSecond, configuration.MaxFrameSeconds);
             _game.RunLoadContent();
         });
+    }
+
+    /// <summary>Densidade da tela e recuos seguros (recortes, cantos, barras) em pixels da superfície.</summary>
+    public void SetDisplay(float density, int insetLeft, int insetTop, int insetRight, int insetBottom)
+    {
+        _display = (density, insetLeft, insetTop, insetRight, insetBottom);
+        GraphicsDevice?.SetDisplay(density, insetLeft, insetTop, insetRight, insetBottom);
     }
 
     public void Resize(int surfaceWidth, int surfaceHeight) => GraphicsDevice?.Resize(surfaceWidth, surfaceHeight);
@@ -135,6 +144,7 @@ public sealed class GameHost
         Guard(_game.RunUnloadContent);
         _content?.Dispose();
         _content = null;
+        GraphicsDevice?.ReleaseResources();
     }
 
     private bool Guard(Action action)

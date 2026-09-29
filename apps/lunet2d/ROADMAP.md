@@ -75,12 +75,12 @@ Matemática
 
 Graphics
 - [x] `GraphicsDevice`, `Texture2D`, `SpriteBatch`, `SpriteSheet`, resolução virtual com letterbox, filtro Point/Linear, fonte bitmap embutida.
-- [ ] `RenderTarget2D`.
-- [ ] `Shader` e `Material` personalizados.
-- [ ] `BlendState`, `SamplerState`, `Viewport` como tipos públicos.
-- [ ] Clipping (scissor por SpriteBatch), pixel perfect, DPI scaling, safe areas.
+- [ ] `RenderTarget2D` (FBO no OpenGL ES; testado com backend em memória) **(feito, sem validação em aparelho)**.
+- [ ] `Shader` (fragmento GLSL ES com uniforms) e `Material` **(feito, sem validação em aparelho)**.
+- [ ] `BlendState` (Alpha, Additive, Opaque, Multiply, Premultiplied), `SamplerState` e `Viewport` como tipos públicos **(feito, sem validação em aparelho)**.
+- [ ] Clipping (`Begin(clip:)`), pixel perfect (`PixelPerfect`), densidade (`Density`) e área segura (`SafeArea`, recorte de câmera) **(feito, sem validação em aparelho)**.
 - [ ] Texture atlas em runtime (usa o formato do Atlas Studio).
-- [ ] Debug drawing.
+- [ ] Debug drawing (`Line`, `Rect`, `FillRect`, `Circle`, `Cross`) **(feito, sem validação em aparelho)**.
 - [ ] Medição de alocações por quadro (sem alocação no caminho quente).
 
 Input

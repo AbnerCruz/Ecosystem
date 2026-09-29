@@ -843,7 +843,27 @@ public sealed class MainActivity : Activity, ISensorEventListener
         root.AddView(_previewConsole, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Bottom));
 
         SetContentView(root);
+        _glView.LayoutChange += (_, _) => UpdateDisplayInfo();
+        _glView.Post(UpdateDisplayInfo);
         StartSensors();
+    }
+
+    /// <summary>Envia ao jogo a densidade da tela e os recuos seguros (recorte de câmera, cantos arredondados).</summary>
+    private void UpdateDisplayInfo()
+    {
+        if (_glView is null || _renderer is null) return;
+        int left = 0, top = 0, right = 0, bottom = 0;
+        var cutout = _glView.RootWindowInsets?.DisplayCutout;
+        if (cutout is not null)
+        {
+            var location = new int[2];
+            _glView.GetLocationInWindow(location);
+            left = Math.Max(0, cutout.SafeInsetLeft - location[0]);
+            top = Math.Max(0, cutout.SafeInsetTop - location[1]);
+            right = cutout.SafeInsetRight;
+            bottom = cutout.SafeInsetBottom;
+        }
+        _renderer.SetDisplay(Resources!.DisplayMetrics!.Density, left, top, right, bottom);
     }
 
     private void StartSensors()

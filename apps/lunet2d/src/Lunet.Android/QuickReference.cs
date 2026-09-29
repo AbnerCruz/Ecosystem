@@ -42,6 +42,13 @@ internal static class QuickReference
           new SpriteSheet(textura, larguraQuadro, alturaQuadro); sheet.Frame(i)
           batch.Draw(textura, posição, sheet.Frame(i), cor)
 
+        Gráficos avançados
+          batch.Begin(BlendState.Additive, SamplerState.PointClamp, shader, clip: retângulo)
+          new RenderTarget2D(GraphicsDevice, w, h); GraphicsDevice.SetRenderTarget(rt/null); rt.Texture
+          Shader.FromFragmentSource(GraphicsDevice, "uniform float uX; void main(){ outColor = texture(uTex,vUv)*vColor; }")
+            (disponíveis no shader: vUv, vColor, uTex, outColor); shader.SetFloat/SetVector2/SetColor
+          GraphicsDevice.PixelPerfect / Density / SafeArea / Viewport;  batch.Line/Rect/FillRect/Circle (DebugDraw)
+
         Áudio avançado
           Audio.Master / Sfx / MusicBus (.Volume, .Muted); Audio.GetBus("Voz")
           Audio.PlayMusic(Content.LoadMusic("Audio/tema.ogg"), loop, fadeInSeg); Audio.StopMusic(fadeOutSeg)
