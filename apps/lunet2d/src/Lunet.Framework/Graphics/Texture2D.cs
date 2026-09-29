@@ -1,0 +1,65 @@
+namespace Lunet.Graphics;
+
+/// <summary>Imagem na GPU. Cores RGBA de 8 bits, origem no canto superior esquerdo.</summary>
+public sealed class Texture2D : IDisposable
+{
+    private readonly GraphicsDevice _device;
+
+    internal Texture2D(GraphicsDevice device, int handle, int width, int height)
+    {
+        _device = device;
+        Handle = handle;
+        Width = width;
+        Height = height;
+    }
+
+    public int Width { get; }
+    public int Height { get; }
+    public bool IsDisposed { get; private set; }
+    internal int Handle { get; }
+
+    /// <summary>Cria uma textura a partir de pixels RGBA (largura × altura × 4 bytes).</summary>
+    public static Texture2D FromPixels(GraphicsDevice device, int width, int height, ReadOnlySpan<byte> rgba)
+    {
+        ArgumentNullException.ThrowIfNull(device);
+        if (width < 1 || height < 1) throw new ArgumentOutOfRangeException(nameof(width), "Dimensões devem ser positivas.");
+        if (rgba.Length != checked(width * height * 4)) throw new ArgumentException("Esperados largura×altura×4 bytes.", nameof(rgba));
+        return new Texture2D(device, device.Backend.CreateTexture(width, height, rgba), width, height);
+    }
+
+    public static Texture2D CreateSolid(GraphicsDevice device, int width, int height, Color color)
+    {
+        var pixels = new byte[checked(width * height * 4)];
+        for (var i = 0; i < pixels.Length; i += 4)
+        {
+            pixels[i] = color.R; pixels[i + 1] = color.G; pixels[i + 2] = color.B; pixels[i + 3] = color.A;
+        }
+        return FromPixels(device, width, height, pixels);
+    }
+
+    /// <summary>Disco preenchido (borda com meio pixel de suavização de alfa).</summary>
+    public static Texture2D CreateCircle(GraphicsDevice device, int diameter, Color color)
+    {
+        var pixels = new byte[checked(diameter * diameter * 4)];
+        var radius = diameter / 2f;
+        for (var y = 0; y < diameter; y++)
+        for (var x = 0; x < diameter; x++)
+        {
+            var dx = x + 0.5f - radius;
+            var dy = y + 0.5f - radius;
+            var distance = MathF.Sqrt(dx * dx + dy * dy);
+            var coverage = Math.Clamp(radius - distance + 0.5f, 0f, 1f);
+            var i = (y * diameter + x) * 4;
+            pixels[i] = color.R; pixels[i + 1] = color.G; pixels[i + 2] = color.B;
+            pixels[i + 3] = (byte)(color.A * coverage);
+        }
+        return FromPixels(device, diameter, diameter, pixels);
+    }
+
+    public void Dispose()
+    {
+        if (IsDisposed) return;
+        IsDisposed = true;
+        _device.Backend.DeleteTexture(Handle);
+    }
+}
