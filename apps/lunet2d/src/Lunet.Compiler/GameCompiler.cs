@@ -40,7 +40,7 @@ public sealed class GameCompiler
 
         var diagnostics = emit.Diagnostics
             .Where(d => d.Severity != Microsoft.CodeAnalysis.DiagnosticSeverity.Hidden)
-            .Select(Convert)
+            .Select(DiagnosticConverter.Convert)
             .OrderBy(d => d.Severity == DiagnosticSeverity.Error ? 0 : 1)
             .ThenBy(d => d.FilePath, StringComparer.Ordinal)
             .ThenBy(d => d.Line)
@@ -50,8 +50,12 @@ public sealed class GameCompiler
             ? new CompileResult(true, diagnostics, assembly.ToArray(), symbols.ToArray())
             : new CompileResult(false, diagnostics, null, null);
     }
+}
 
-    private static LunetDiagnostic Convert(Diagnostic diagnostic)
+/// <summary>Converte diagnósticos do Roslyn para <see cref="LunetDiagnostic"/>.</summary>
+public static class DiagnosticConverter
+{
+    public static LunetDiagnostic Convert(Diagnostic diagnostic)
     {
         var severity = diagnostic.Severity switch
         {

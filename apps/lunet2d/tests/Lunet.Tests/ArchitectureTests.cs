@@ -35,6 +35,9 @@ public class ArchitectureTests
         Assert.Equal(["Lunet.Framework"], Graph()["Lunet.Runtime"]);
 
     [Fact]
+    public void Editor_DependsOnlyOnCompiler() => Assert.Equal(["Lunet.Compiler"], Graph()["Lunet.Editor"]);
+
+    [Fact]
     public void FrameworkHasNoPackageReferences()
     {
         var doc = XDocument.Load(Path.Combine(Src, "Lunet.Framework", "Lunet.Framework.csproj"));

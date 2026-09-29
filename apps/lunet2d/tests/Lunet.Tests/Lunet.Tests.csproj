@@ -10,6 +10,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Lunet.Core\Lunet.Core.csproj" />
+    <ProjectReference Include="..\..\src\Lunet.Editor\Lunet.Editor.csproj" />
     <ProjectReference Include="..\..\src\Lunet.Compiler\Lunet.Compiler.csproj" />
     <ProjectReference Include="..\..\src\Lunet.Framework\Lunet.Framework.csproj" />
     <ProjectReference Include="..\..\src\Lunet.Runtime\Lunet.Runtime.csproj" />
