@@ -156,7 +156,7 @@ Preview e hot reload (§10)
 - [ ] Fast Preview × Isolated Preview.
 
 Git, autosave e recovery (§22)
-- [ ] Autosave com journal (ver Fase 1) e recuperação.
+- [ ] Autosave com journal (ver Fase 1) e recuperação. (histórico limitado a cinco versões por arquivo, escolha da versão na recuperação e acesso pelo menu Ferramentas implementados; testes no CI e validação no aparelho pendentes)
 - [ ] Git progressivo: status, diff, commit, history, branches, revert, push, pull. (feito, sem validação em aparelho; `Lunet.Git` em C# puro, ADR 0005; testado contra o `git` de verdade; falta validar push/pull no GitHub real)
 
 Auditoria

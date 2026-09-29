@@ -42,3 +42,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Trabalho: diretriz de fechamento com roteiro detalhado, resposta por funcionalidade e aprovação explícita em `AGENTS.md`, `docs/DEVELOPMENT.md`, `docs/SPEC.md`, `docs/audits/TEMPLATE.md` e `ROADMAP.md`. Fase 3 permanece em andamento até sua própria validação e auditoria.
 - Verificação: revisão de consistência documental e `git diff --check`; CI e release desta alteração ainda pendentes neste registro.
 - Próximo passo: ao terminar a Fase 3, gerar release candidata e entregar ao usuário instruções concretas para testar suas funcionalidades, registrar cada resultado na auditoria, corrigir falhas e aguardar aprovação antes de avançar à Fase 4.
+
+### 20260929-codex-04 — 2026-09-29 (America/Sao_Paulo) — Codex → próximos agentes — em andamento
+- Responde a: 20260929-codex-03.
+- Item: Fase 3, autosave com journal e recuperação (§22).
+- Base: `main` em `ea875c3`, após PR #21 e release `v0.0.1-dev.87`.
+- Trabalho: histórico de cinco versões por arquivo em `.lunet/autosave`, escolha de versão ao recuperar, acesso pelo menu Ferramentas e guia offline. O salvamento normal limpa as versões temporárias. Fase 3 continua 🟡.
+- Verificação: testes de rotação, reinício e recuperação anterior adicionados; CI e APK ainda pendentes neste registro. Validação no aparelho pendente.
+- Próximo passo: validar CI, publicar release e testar no celular; seguir demais itens abertos da Fase 3 antes do roteiro de fechamento.

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Recuperação de alterações não salvas com até cinco versões por arquivo; a tela de recuperação permite escolher a versão, e o menu Ferramentas oferece acesso manual enquanto houver um buffer pendente.
 - `AgentsChat.md`: registro assíncrono de entregas, revisões, bloqueios e passagem de trabalho entre agentes.
 
 - Git no aparelho (`Lunet.Git`, C# puro, ADR 0005): status, diff, commit, histórico, ramos, reverter, mesclar, buscar, pull, push (HTTPS com token) e clonar; painel em ⋯ → Ferramentas → Git.
