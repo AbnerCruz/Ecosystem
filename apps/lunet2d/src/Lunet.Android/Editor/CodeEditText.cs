@@ -14,7 +14,7 @@ namespace Lunet.Android.Editor;
 /// Editor de código: EditText com realce de sintaxe, números de linha, desfazer/refazer com junção de digitação,
 /// indentação automática e evento de "pausa na digitação" para análise.
 /// </summary>
-internal sealed class CodeEditText : EditText
+internal sealed partial class CodeEditText : EditText
 {
     private static readonly Dictionary<TokenKind, AndroidColor> Palette = new()
     {
@@ -43,6 +43,7 @@ internal sealed class CodeEditText : EditText
     private bool _typedSingle;
     private int _version;
     private int _gutterDigits = 2;
+    private bool _lineNumbers = true;
 
     public CodeEditText(Context context) : base(context)
     {
@@ -126,6 +127,9 @@ internal sealed class CodeEditText : EditText
         if (_applying || s is null) return;
         _removed = count == 0 ? "" : s.SubSequenceFormatted(start, start + count)!.ToString();
         _caretBefore = SelectionStart;
+        _inTextChange = true;
+        _selectionBeforeStart = SelectionStart;
+        _selectionBeforeEnd = SelectionEnd;
     }
 
     private void OnChange(Java.Lang.ICharSequence? s, int start, int count)
@@ -133,6 +137,8 @@ internal sealed class CodeEditText : EditText
         if (_applying || s is null) return;
         var inserted = count == 0 ? "" : s.SubSequenceFormatted(start, start + count)!.ToString();
         _typedSingle = count == 1;
+        _lastStart = start;
+        _lastInsertedLength = count;
         _history.Record(start, _removed, inserted, System.Math.Max(0, _caretBefore), Java.Lang.JavaSystem.CurrentTimeMillis());
         _version++;
     }
@@ -140,6 +146,9 @@ internal sealed class CodeEditText : EditText
     private void AfterChange(IEditable? s)
     {
         if (_applying || s is null) return;
+        if (_folded.Count > 0) UnfoldAll();
+        if (_extras.Count > 0) ReplicateToExtras(s);
+        _inTextChange = false;
         UpdateGutter();
         TryAutoIndent(s);
         _handler.RemoveCallbacks(_settle);
@@ -149,6 +158,7 @@ internal sealed class CodeEditText : EditText
     private void TryAutoIndent(IEditable s)
     {
         var caret = SelectionStart;
+        if (_extras.Count > 0) { _typedSingle = false; return; }
         if (!_typedSingle || caret < 1 || caret > s.Length()) return;
         _typedSingle = false;
         var typed = s.CharAt(caret - 1);
@@ -212,9 +222,14 @@ internal sealed class CodeEditText : EditText
         var digits = System.Math.Max(2, lines.ToString().Length);
         var textSizePx = TextSize;
         _gutterPaint.TextSize = textSizePx * 0.85f;
-        if (digits == _gutterDigits && PaddingLeft > 0) return;
+        if (!_lineNumbers)
+        {
+            if (PaddingLeft != (int)(6 * _density)) SetPadding((int)(6 * _density), PaddingTop, PaddingRight, PaddingBottom);
+            return;
+        }
+        if (digits == _gutterDigits && PaddingLeft > (int)(6 * _density)) return;
         _gutterDigits = digits;
-        var width = (int)(digits * _gutterPaint.MeasureText("0") + 12 * _density);
+        var width = (int)(digits * _gutterPaint.MeasureText("0") + 12 * _density + FoldMarkerWidth);
         SetPadding(width + (int)(6 * _density), PaddingTop, PaddingRight, PaddingBottom);
     }
 
@@ -223,12 +238,19 @@ internal sealed class CodeEditText : EditText
         base.OnDraw(canvas);
         var layout = Layout;
         if (layout is null) return;
+        DrawExtraSelections(canvas, layout);
+        DrawFoldPlaceholders(canvas, layout);
+        if (!_lineNumbers) return;
         var width = PaddingLeft - (int)(6 * _density);
         canvas.DrawRect(ScrollX, ScrollY, ScrollX + width, ScrollY + Height, _gutterBackground);
         var first = layout.GetLineForVertical(ScrollY);
         var last = layout.GetLineForVertical(ScrollY + Height);
         var top = ExtendedPaddingTop;
         for (var line = first; line <= last; line++)
-            canvas.DrawText((line + 1).ToString(), ScrollX + width - 6 * _density, top + layout.GetLineBaseline(line), _gutterPaint);
+        {
+            if (IsLineHidden(line)) continue;
+            canvas.DrawText((line + 1).ToString(), ScrollX + width - FoldMarkerWidth - 6 * _density, top + layout.GetLineBaseline(line), _gutterPaint);
+            DrawFoldMarker(canvas, layout, line, ScrollX + width - FoldMarkerWidth, top);
+        }
     }
 }

@@ -9,6 +9,10 @@ namespace Lunet.Compiler;
 public sealed class GameCompiler
 {
     private readonly IReferenceProvider _references;
+    private readonly object _gate = new();
+    private readonly Dictionary<string, (string Text, SyntaxTree Tree)> _treeCache = new(StringComparer.Ordinal);
+    private string? _lastFingerprint;
+    private CompileResult? _lastResult;
 
     public GameCompiler(IReferenceProvider references) => _references = references ?? throw new ArgumentNullException(nameof(references));
 
@@ -22,10 +26,37 @@ public sealed class GameCompiler
             return new CompileResult(false, [empty], null, null);
         }
 
+        lock (_gate) return CompileIncremental(assemblyName, sources);
+    }
+
+    /// <summary>
+    /// Compilação incremental entre Runs: se nada mudou devolve o resultado anterior; senão reaproveita as árvores de
+    /// sintaxe dos arquivos que não mudaram e as referências (metadados) já carregadas.
+    /// </summary>
+    private CompileResult CompileIncremental(string assemblyName, IReadOnlyList<SourceFile> sources)
+    {
+        var fingerprint = Fingerprint(sources);
+        if (_lastResult is { } previous && fingerprint == _lastFingerprint)
+            return new CompileResult(previous.Success, previous.Diagnostics, previous.Assembly, previous.Symbols) { FromCache = true, ReusedFiles = sources.Count };
+
         var parseOptions = new CSharpParseOptions(LanguageVersion.Latest);
         var trees = new List<SyntaxTree>(sources.Count);
+        var reused = 0;
+        var live = new HashSet<string>(StringComparer.Ordinal);
         foreach (var source in sources)
-            trees.Add(CSharpSyntaxTree.ParseText(source.Text, parseOptions, source.Path, System.Text.Encoding.UTF8));
+        {
+            live.Add(source.Path);
+            if (_treeCache.TryGetValue(source.Path, out var cached) && cached.Text == source.Text)
+            {
+                trees.Add(cached.Tree);
+                reused++;
+                continue;
+            }
+            var tree = CSharpSyntaxTree.ParseText(source.Text, parseOptions, source.Path, System.Text.Encoding.UTF8);
+            _treeCache[source.Path] = (source.Text, tree);
+            trees.Add(tree);
+        }
+        foreach (var gone in _treeCache.Keys.Where(k => !live.Contains(k)).ToList()) _treeCache.Remove(gone);
 
         var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
             .WithOptimizationLevel(OptimizationLevel.Debug)
@@ -46,9 +77,25 @@ public sealed class GameCompiler
             .ThenBy(d => d.Line)
             .ToImmutableArray();
 
-        return emit.Success
-            ? new CompileResult(true, diagnostics, assembly.ToArray(), symbols.ToArray())
-            : new CompileResult(false, diagnostics, null, null);
+        var result = emit.Success
+            ? new CompileResult(true, diagnostics, assembly.ToArray(), symbols.ToArray()) { ReusedFiles = reused }
+            : new CompileResult(false, diagnostics, null, null) { ReusedFiles = reused };
+        _lastFingerprint = fingerprint;
+        _lastResult = result;
+        return result;
+    }
+
+    private static string Fingerprint(IReadOnlyList<SourceFile> sources)
+    {
+        using var hash = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+        foreach (var source in sources.OrderBy(s => s.Path, StringComparer.Ordinal))
+        {
+            hash.AppendData(System.Text.Encoding.UTF8.GetBytes(source.Path));
+            hash.AppendData([0]);
+            hash.AppendData(System.Text.Encoding.UTF8.GetBytes(source.Text));
+            hash.AppendData([1]);
+        }
+        return System.Convert.ToHexString(hash.GetHashAndReset());
     }
 }
 
