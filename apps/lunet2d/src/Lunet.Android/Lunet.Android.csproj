@@ -18,6 +18,13 @@
     <!-- Roslyn e o Preview dependem de reflexão sobre assemblies; sem trimming. -->
     <PublishTrimmed>false</PublishTrimmed>
     <AndroidLinkMode>None</AndroidLinkMode>
+    <!-- Assinatura estável das builds de desenvolvimento: sem ela cada build usa uma chave nova e o Android
+         recusa atualizar uma versão sobre a outra (ADR 0004). Chave pública, só para desenvolvimento. -->
+    <AndroidKeyStore>true</AndroidKeyStore>
+    <AndroidSigningKeyStore>$(MSBuildThisFileDirectory)..\..\tools\lunet-dev.keystore</AndroidSigningKeyStore>
+    <AndroidSigningKeyAlias>lunetdev</AndroidSigningKeyAlias>
+    <AndroidSigningStorePass>pass:android</AndroidSigningStorePass>
+    <AndroidSigningKeyPass>pass:android</AndroidSigningKeyPass>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- Avisos de anotação de nulidade dos bindings Android não devem quebrar o build. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>

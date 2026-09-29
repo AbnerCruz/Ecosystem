@@ -42,7 +42,7 @@
 
 ### Fixed
 
-- Nenhuma correção anterior.
+- As releases de desenvolvimento agora usam sempre a mesma chave de assinatura; antes cada build tinha uma chave nova e o Android recusava atualizar uma sobre a outra. **Ao instalar esta versão, desinstale a anterior uma única vez (exporte os projetos em ZIP antes).**
 
 ### Performance
 
