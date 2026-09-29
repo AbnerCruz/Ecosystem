@@ -82,6 +82,41 @@ public class RecoveryAndExplorerTests : IDisposable
     }
 
     [Fact]
+    public void Journal_RetainsFiveDistinctVersions_AndCanRestoreAnEarlierOneAfterRestart()
+    {
+        var project = NewProject();
+        var journal = new AutosaveJournal(project);
+        for (var i = 1; i <= 7; i++) journal.WriteBuffer("Game.cs", $"versão {i}");
+        journal.WriteBuffer("Game.cs", "versão 7"); // mesma edição não cria uma versão extra
+
+        var reopened = new AutosaveJournal(project);
+        var recovery = Assert.Single(reopened.FindRecoveries());
+        var versions = reopened.FindHistory(recovery);
+        Assert.Equal(["versão 7", "versão 6", "versão 5", "versão 4", "versão 3"],
+            versions.Select(v => v.RecoveredText));
+
+        reopened.Restore(versions[3]);
+        Assert.Equal("versão 4", project.ReadText("Game.cs"));
+        Assert.Empty(reopened.FindRecoveries());
+        Assert.Empty(Directory.GetFiles(Path.Combine(project.Directory, ".lunet", "autosave")));
+    }
+
+    [Fact]
+    public void Journal_DiscardsOnlyTheSavedFilesHistory()
+    {
+        var project = NewProject();
+        var journal = new AutosaveJournal(project);
+        journal.WriteBuffer("Game.cs", "g1");
+        journal.WriteBuffer("Game.cs", "g2");
+        journal.WriteBuffer("A.cs", "a1");
+        journal.Discard("Game.cs");
+
+        var remaining = Assert.Single(journal.FindRecoveries());
+        Assert.Equal("A.cs", remaining.Path);
+        Assert.Equal("a1", Assert.Single(journal.FindHistory(remaining)).RecoveredText);
+    }
+
+    [Fact]
     public void Tree_ListsFoldersFirstWithDepth_AndHidesCache()
     {
         var project = NewProject();

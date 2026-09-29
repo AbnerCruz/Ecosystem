@@ -169,6 +169,7 @@ public sealed partial class MainActivity
     [
         ("Documentação", () => HandleCommand(EditorCommand.Documentation)),
         ("Exportar logs (Console e Problemas)", ExportLogs),
+        ("Recuperar alterações não salvas", OfferRecovery),
         ("Git", ShowGit),
         ("Layout do workspace", ShowLayoutDialog),
         ("Configurações", ShowSettings),

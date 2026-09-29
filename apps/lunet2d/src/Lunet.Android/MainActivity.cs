@@ -257,25 +257,54 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
         OfferRecovery();
     }
 
-    /// <summary>Após um encerramento inesperado, oferece as alterações que estavam só no buffer de trabalho.</summary>
+    /// <summary>Após um encerramento inesperado, permite recuperar a última edição ou uma versão anterior.</summary>
     private void OfferRecovery()
     {
         var recoveries = _journal?.FindRecoveries() ?? [];
-        if (recoveries.Count == 0) return;
-        var names = string.Join("\n", recoveries.Select(r => "• " + r.Path));
+        if (recoveries.Count == 0)
+        {
+            Toast.MakeText(this, "Nenhuma alteração não salva para recuperar.", ToastLength.Short)?.Show();
+            return;
+        }
+        OfferRecoveryAt(recoveries, 0);
+    }
+
+    private void OfferRecoveryAt(IReadOnlyList<Recovery> recoveries, int index)
+    {
+        if (index >= recoveries.Count) return;
+        var recovery = recoveries[index];
+        var versions = _journal!.FindHistory(recovery);
+        var labels = versions.Select((version, i) =>
+            i == 0 ? "Última edição não salva" : $"Versão anterior · {version.BufferTimeUtc:dd/MM HH:mm:ss} UTC").ToArray();
+        var selected = 0;
         new AlertDialog.Builder(this)!
-            .SetTitle("Alterações não salvas")!
-            .SetMessage("O Lunet foi encerrado antes de salvar:\n\n" + names + "\n\nRecuperar essas alterações?")!
+            .SetTitle($"Recuperar {recovery.Path} ({index + 1}/{recoveries.Count})")!
+            .SetSingleChoiceItems(labels, 0, (_, args) => selected = args.Which)!
             .SetCancelable(false)!
             .SetPositiveButton("Recuperar", (_, _) =>
             {
-                foreach (var recovery in recoveries) _journal!.Restore(recovery);
-                if (_openFile is not null) { _session.Unload(); var file = _openFile; _openFile = null; OpenFile(file); }
-                Toast.MakeText(this, "Alterações recuperadas", ToastLength.Short)?.Show();
+                try
+                {
+                    _journal!.Restore(versions[selected]);
+                    if (_openFile == recovery.Path)
+                    {
+                        _session.Unload();
+                        _openFile = null;
+                        OpenFile(recovery.Path);
+                    }
+                    Toast.MakeText(this, "Arquivo recuperado", ToastLength.Short)?.Show();
+                    OfferRecoveryAt(recoveries, index + 1);
+                }
+                catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
+                {
+                    Toast.MakeText(this, "Não foi possível recuperar: " + ex.Message, ToastLength.Long)?.Show();
+                    OfferRecoveryAt(recoveries, index);
+                }
             })!
             .SetNegativeButton("Descartar", (_, _) =>
             {
-                foreach (var recovery in recoveries) _journal!.Discard(recovery.Path);
+                _journal!.Discard(recovery.Path);
+                OfferRecoveryAt(recoveries, index + 1);
             })!.Show();
     }
 
