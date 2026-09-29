@@ -8,7 +8,7 @@ public readonly record struct Selection(int Start, int End)
 }
 
 /// <summary>Resultado de uma edição com vários cursores: o novo texto e as novas seleções (todas vazias após digitar).</summary>
-public sealed record MultiEditResult(string Text, IReadOnlyList<Selection> Selections);
+public sealed record MultiEditResult(string Text, IReadOnlyList<Selection> Selections, int PrimaryIndex = 0);
 
 /// <summary>Multi-seleção: edita vários pontos do texto ao mesmo tempo.</summary>
 public static class MultiCursor
@@ -157,8 +157,10 @@ public static class MultiCursor
         var builder = new System.Text.StringBuilder();
         var cursor = 0;
         var carets = new List<Selection>();
+        var primaryIndex = 0;
         foreach (var (sel, primary) in all)
         {
+            if (primary) primaryIndex = carets.Count;
             var start = Math.Max(cursor, sel.Start - Math.Max(0, leftExtra));
             var end = Math.Min(before.Length, sel.End + Math.Max(0, rightExtra));
             if (start < cursor) start = cursor;
@@ -168,7 +170,7 @@ public static class MultiCursor
             cursor = Math.Max(end, start);
         }
         builder.Append(before, cursor, before.Length - cursor);
-        return new MultiEditResult(builder.ToString(), carets);
+        return new MultiEditResult(builder.ToString(), carets, primaryIndex);
     }
 
     private static Selection? WordAt(string text, int position)

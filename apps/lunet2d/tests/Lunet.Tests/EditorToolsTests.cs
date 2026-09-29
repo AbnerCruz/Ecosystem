@@ -189,6 +189,7 @@ public class MultiCursorTests
         // Digitar "X" no primeiro cursor (posição 1).
         var typed = MultiCursor.Replicate("a b c", "aX b c", new Selection(1, 1), [new Selection(3, 3), new Selection(5, 5)])!;
         Assert.Equal("aX bX cX", typed.Text);
+        Assert.Equal(0, typed.PrimaryIndex);
 
         // Backspace no primeiro cursor (posição 3 → apaga o caractere 2).
         var backspace = MultiCursor.Replicate("abc abc", "ab abc", new Selection(3, 3), [new Selection(7, 7)])!;

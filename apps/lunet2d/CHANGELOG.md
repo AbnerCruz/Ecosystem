@@ -4,6 +4,9 @@
 
 ### Added
 
+- IDE: formatar documento, renomear símbolo (recusa conflitos), correções rápidas (using faltando/sobrando, ";", "você quis dizer", ordenar usings), estrutura do arquivo, informações do símbolo, dobrar código, multi-cursor, minimapa, atalhos de teclado físico, comandos de linha (duplicar, apagar, mover, comentar, indentar), configurações e exportar logs.
+- Compilação incremental: árvores de sintaxe reaproveitadas e resultado em cache quando nada mudou.
+- `PieceTable` (estrutura de texto para documentos grandes) e menu ⋯ reorganizado em categorias.
 - Busca no projeto inteiro (maiúsculas, palavra inteira, regex) e item "Documentação do símbolo" no menu; campo de busca da documentação legível.
 - Documentação offline no app: painel com guias, busca e navegação por namespaces, tipos e membros (gerado de XML docs por `Lunet.Docs`); "Explicar na Documentação" na dica do símbolo; API do framework documentada.
 - Lista de projetos: toque longo abre exportar ZIP e excluir projeto (com confirmação).

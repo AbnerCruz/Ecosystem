@@ -117,19 +117,19 @@ Gate: experiência de IDE real.
 
 Editor de código (§9)
 - [ ] Realce, números de linha, desfazer/refazer, indentação, autocompletar, definição, referências, dica, localizar/substituir, diagnósticos ao vivo **(feito, sem validação em aparelho)**.
-- [ ] Multi-cursor / multi-seleção.
-- [ ] Code folding.
-- [ ] Atalhos de teclado (teclado físico).
-- [ ] Minimap opcional.
+- [x] Multi-cursor / multi-seleção. (feito, sem validação em aparelho; `MultiCursor` testado; próxima ocorrência, todas, cursor acima/abaixo, digitação replicada)
+- [x] Code folding. (feito, sem validação em aparelho; marcador no número da linha e menu Edição; regiões vindas do Roslyn)
+- [x] Atalhos de teclado (teclado físico). (feito, sem validação em aparelho; mapa testado, ajuda em Ferramentas → Atalhos)
+- [x] Minimap opcional. (feito, sem validação em aparelho; liga/desliga em Configurações)
 - [ ] Documentos grandes e virtualização (medir; ADR 0003 prevê view própria se necessário).
-- [ ] Estrutura de texto eficiente (piece table/rope) se a medição justificar.
+- [ ] Estrutura de texto eficiente (piece table/rope) se a medição justificar. (`PieceTable` pronta e testada; medição no host: 500 edições em 200 mil linhas < 2 s; integração ao editor depende da medição em aparelho)
 
 Roslyn (§9)
-- [ ] Renomear símbolo.
-- [ ] Formatação de código.
-- [ ] Quick fixes e code actions.
-- [ ] Compilação incremental (reaproveitar compilação entre Runs).
-- [ ] Inspeção de símbolos.
+- [x] Renomear símbolo. (feito, sem validação em aparelho; recusa conflitos e símbolos do framework)
+- [x] Formatação de código. (feito, sem validação em aparelho; opção "formatar ao executar")
+- [x] Quick fixes e code actions. (feito, sem validação em aparelho; using faltando/sobrando, ";", "você quis dizer", ordenar usings)
+- [x] Compilação incremental (reaproveitar compilação entre Runs). (árvores reaproveitadas e resultado em cache quando nada mudou; testado)
+- [x] Inspeção de símbolos. (feito, sem validação em aparelho; Informações do símbolo e Estrutura do arquivo)
 
 IDE mobile (§11)
 - [x] Explorer (ver Fase 1).
@@ -137,8 +137,8 @@ IDE mobile (§11)
 - [ ] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes.
 - [ ] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles.
 - [x] Busca no projeto inteiro. (feito, sem validação em aparelho; menu ⋯ → Buscar no projeto)
-- [ ] Console e Problems com logs exportáveis (§23).
-- [ ] Settings.
+- [x] Console e Problems com logs exportáveis (§23). (feito, sem validação em aparelho; Ferramentas → Exportar logs)
+- [x] Settings. (feito, sem validação em aparelho; fonte, números de linha, minimapa, formatar ao executar, tela ligada, taxa de atualização)
 
 Inspector (§12)
 - [ ] Inspector padrão por reflexão; atributos Range, ReadOnly, Hidden, Multiline, Color, File, Asset, Group, Tooltip.

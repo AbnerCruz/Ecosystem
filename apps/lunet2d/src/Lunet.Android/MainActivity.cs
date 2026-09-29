@@ -24,7 +24,7 @@ namespace Lunet.Android;
     ConfigurationChanges = global::Android.Content.PM.ConfigChanges.Orientation | global::Android.Content.PM.ConfigChanges.ScreenSize |
                            global::Android.Content.PM.ConfigChanges.KeyboardHidden | global::Android.Content.PM.ConfigChanges.ScreenLayout,
     WindowSoftInputMode = SoftInput.AdjustResize)]
-public sealed class MainActivity : Activity, ISensorEventListener
+public sealed partial class MainActivity : Activity, ISensorEventListener
 {
     private const int ExportRequestCode = 4101;
     private const int ImportRequestCode = 4102;
@@ -71,6 +71,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
         base.OnCreate(savedInstanceState);
         _store = new ProjectStore(System.IO.Path.Combine(FilesDir!.AbsolutePath, "Projects"));
         _pendingExport = savedInstanceState?.GetString("pendingExport");
+        LoadSettings();
         ShowProjects();
     }
 
@@ -118,6 +119,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
         root.AddView(new TextView(this) { Text = "Lunet", TextSize = 28 });
         root.AddView(new TextView(this) { Text = "Projetos" , TextSize = 16 });
         root.AddView(MakeButton("Novo projeto", AskForProjectName));
+        root.AddView(MakeButton("Configurações", ShowSettings));
 
         var list = Vertical();
         foreach (var name in _store.List())
@@ -289,9 +291,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
         _status.SetPadding(Dp(8), 0, Dp(8), 0);
         root.AddView(_status);
 
-        _editor = new CodeEditText(this);
-        _editor.Settled += OnEditorSettled;
-        root.AddView(_editor, Fill(3));
+        root.AddView(BuildEditorHost(), Fill(3));
 
         _chips = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         _chipScroll = new HorizontalScrollView(this) { Visibility = ViewStates.Gone, HorizontalScrollBarEnabled = false };
@@ -546,48 +546,6 @@ public sealed class MainActivity : Activity, ISensorEventListener
         }
     }
 
-    private void ShowMenu()
-    {
-        var items = new[] { "Salvar", "Documentação", "Exportar projeto (ZIP)", "Importar imagem PNG", "Localizar e substituir", "Ir para definição", "Dica do símbolo", "Referências do símbolo", "Documentação do símbolo", "Buscar no projeto" };
-        new AlertDialog.Builder(this)!.SetItems(items, (_, args) =>
-        {
-            switch (args.Which)
-            {
-                case 0:
-                    SaveCurrent();
-                    Toast.MakeText(this, "Salvo", ToastLength.Short)?.Show();
-                    break;
-                case 1:
-                    ShowReference();
-                    break;
-                case 2:
-                    ExportProject();
-                    break;
-                case 3:
-                    ImportImage();
-                    break;
-                case 4:
-                    ShowFind();
-                    break;
-                case 5:
-                    GoToDefinition();
-                    break;
-                case 6:
-                    ShowHover();
-                    break;
-                case 7:
-                    ShowReferences();
-                    break;
-                case 8:
-                    ExplainSymbol();
-                    break;
-                case 9:
-                    ShowProjectSearch();
-                    break;
-            }
-        })!.Show();
-    }
-
     private void ShowReference()
     {
         if (DocumentationPanel.Open(this)) return;
@@ -655,6 +613,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
     private void OnEditorSettled(string text, int version, int caret)
     {
         var path = _openFile;
+        _minimap?.Refresh(text);
         if (path is not null && _session.IsDirty(text))
         {
             try { _journal?.WriteBuffer(path, text); }
@@ -671,6 +630,10 @@ public sealed class MainActivity : Activity, ISensorEventListener
             _problems = task.Result.Diagnostics;
             if (!_showConsole) SetPanel(false);
             ShowChips(task.Result.Completions);
+            _assistant?.RunAsync(a => a.GetFoldRegions(path)).ContinueWith(folds => RunOnUiThread(() =>
+            {
+                if (!folds.IsFaulted && _editor is not null && _openFile == path) _editor.FoldRegions = folds.Result;
+            }));
         }));
     }
 
@@ -917,6 +880,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
     private void Run()
     {
         if (_project is null) return;
+        if (_settings.FormatOnRun) FormatDocument(silent: true);
         SaveCurrent();
         _status!.Text = "Compilando… (a primeira compilação demora mais)";
         var sources = _project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
@@ -991,7 +955,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
         root.AddView(_previewConsole, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Bottom));
 
         SetContentView(root);
-        RequestHighRefreshRate(true);
+        RequestHighRefreshRate(_settings.HighRefreshRate);
         _glView.LayoutChange += (_, _) => UpdateDisplayInfo();
         _glView.Post(UpdateDisplayInfo);
         StartSensors();
