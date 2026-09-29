@@ -21,7 +21,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private IAudioBackend? _audio;
     private readonly ISaveStore _save;
     private readonly System.Collections.Concurrent.ConcurrentQueue<(Keys Key, bool Down)> _keys = new();
-    private volatile System.Numerics.Vector3 _accelerometer;
+    private System.Numerics.Vector3 _accelerometer;
     private readonly object _inputLock = new();
     private readonly Stopwatch _clock = new();
     private TouchPoint[] _touches = [];
@@ -52,7 +52,10 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     }
 
     public void SetKey(Keys key, bool down) => _keys.Enqueue((key, down));
-    public void SetAccelerometer(System.Numerics.Vector3 value) => _accelerometer = value;
+    public void SetAccelerometer(System.Numerics.Vector3 value)
+    {
+        lock (_inputLock) _accelerometer = value;
+    }
 
     public void SetPaused(bool paused) => _paused = paused;
     public void RequestStep() => _stepRequested = true;
@@ -97,7 +100,9 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         lock (_inputLock) touches = _touches;
         host.SetSurfaceTouches(touches);
         while (_keys.TryDequeue(out var key)) host.Input.SetKey(key.Key, key.Down);
-        host.Input.SetAccelerometer(_accelerometer);
+        System.Numerics.Vector3 acceleration;
+        lock (_inputLock) acceleration = _accelerometer;
+        host.Input.SetAccelerometer(acceleration);
 
         if (_paused != host.IsPaused)
         {
