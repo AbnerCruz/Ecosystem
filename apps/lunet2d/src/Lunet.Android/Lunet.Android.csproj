@@ -2,15 +2,30 @@
   <PropertyGroup>
     <TargetFramework>net10.0-android</TargetFramework>
     <OutputType>Exe</OutputType>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
+    <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
     <SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
     <AndroidApplication>true</AndroidApplication>
     <ApplicationId>io.lunet.studio</ApplicationId>
     <ApplicationTitle>Lunet</ApplicationTitle>
-    <ApplicationVersion>1</ApplicationVersion>
-    <ApplicationDisplayVersion>0.0.1</ApplicationDisplayVersion>
+    <ApplicationDisplayVersion>$(LunetVersion)</ApplicationDisplayVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' != ''">$(GITHUB_RUN_NUMBER)</ApplicationVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' == ''">1</ApplicationVersion>
     <AndroidPackageFormat>apk</AndroidPackageFormat>
     <AndroidUseAapt2>true</AndroidUseAapt2>
+    <!-- APK autônomo (sem fast deployment) para poder ser baixado do GitHub Releases e instalado. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <!-- Roslyn e o Preview dependem de reflexão sobre assemblies; sem trimming. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <AndroidLinkMode>None</AndroidLinkMode>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Avisos de anotação de nulidade dos bindings Android não devem quebrar o build. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Lunet.Core\Lunet.Core.csproj" />
+    <ProjectReference Include="..\Lunet.Compiler\Lunet.Compiler.csproj" />
+    <ProjectReference Include="..\Lunet.Framework\Lunet.Framework.csproj" />
+    <ProjectReference Include="..\Lunet.Runtime\Lunet.Runtime.csproj" />
+  </ItemGroup>
 </Project>

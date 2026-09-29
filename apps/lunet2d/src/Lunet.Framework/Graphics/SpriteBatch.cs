@@ -5,7 +5,8 @@ namespace Lunet.Graphics;
 /// <summary>Agrupa quads com a mesma textura e os envia ao backend. Sem alocações por quadro.</summary>
 public sealed class SpriteBatch
 {
-    private const int MaxQuads = 2048;
+    /// <summary>Máximo de quads por chamada de desenho ao backend.</summary>
+    public const int MaxQuads = 2048;
     private readonly GraphicsDevice _device;
     private readonly SpriteVertex[] _vertices = new SpriteVertex[MaxQuads * 4];
     private int _quads;
