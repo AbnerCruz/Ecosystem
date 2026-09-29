@@ -42,6 +42,12 @@ internal static class QuickReference
           new SpriteSheet(textura, larguraQuadro, alturaQuadro); sheet.Frame(i)
           batch.Draw(textura, posição, sheet.Frame(i), cor)
 
+        Dados, atlas e idiomas
+          Content.LoadJson<T>("Data/fase1.json")                      campos e propriedades públicos
+          Content.LoadAtlas("Data/atlas.json") → batch.Draw(atlas, "herói", posição, cor, escala)
+          Localization.SetLanguage("pt") / UseDeviceLanguage(); Localization.Get("chave", args)
+          Input.Pointer (IsDown/WasPressed/WasReleased/Position); Input.TouchCollection
+
         Gráficos avançados
           batch.Begin(BlendState.Additive, SamplerState.PointClamp, shader, clip: retângulo)
           new RenderTarget2D(GraphicsDevice, w, h); GraphicsDevice.SetRenderTarget(rt/null); rt.Texture

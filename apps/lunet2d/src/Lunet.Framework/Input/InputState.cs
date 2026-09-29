@@ -14,7 +14,18 @@ public sealed class InputState
     private readonly bool[] _keysDown = new bool[128];
     private readonly bool[] _keysPressed = new bool[128];
 
+    private bool _pointerDown;
+    private bool _pointerPressed;
+    private bool _pointerReleased;
+    private System.Numerics.Vector2 _pointerPosition;
+
     public int TouchCount { get; private set; }
+
+    /// <summary>Os toques do quadro como coleção (contagem, índice, busca por id, sem alocação).</summary>
+    public TouchCollection TouchCollection => new(Touches);
+
+    /// <summary>Ponteiro unificado (primeiro dedo). <c>WasPressed</c>/<c>WasReleased</c> valem no primeiro passo de <c>Update</c> após o evento.</summary>
+    public Pointer Pointer => new(_pointerDown, _pointerPressed, _pointerReleased, _pointerPosition);
 
     /// <summary>Aceleração do aparelho em m/s² (eixos do aparelho; parado na mesa, Z ≈ 9,8). Zero sem sensor.</summary>
     public System.Numerics.Vector3 Accelerometer { get; private set; }
@@ -61,6 +72,8 @@ public sealed class InputState
     internal void ClearPressed()
     {
         Array.Clear(_keysPressed);
+        _pointerPressed = false;
+        _pointerReleased = false;
         _padPressed = GamepadButtons.None;
     }
 
@@ -109,5 +122,11 @@ public sealed class InputState
         var count = Math.Min(touches.Length, MaxTouches);
         touches[..count].CopyTo(_touches);
         TouchCount = count;
+
+        var down = TryGetPointer(out var position);
+        if (down) _pointerPosition = position;
+        if (down && !_pointerDown) _pointerPressed = true;
+        if (!down && _pointerDown) _pointerReleased = true;
+        _pointerDown = down;
     }
 }

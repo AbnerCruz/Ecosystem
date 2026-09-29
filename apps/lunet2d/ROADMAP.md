@@ -79,13 +79,13 @@ Graphics
 - [ ] `Shader` (fragmento GLSL ES com uniforms) e `Material` **(feito, sem validação em aparelho)**.
 - [ ] `BlendState` (Alpha, Additive, Opaque, Multiply, Premultiplied), `SamplerState` e `Viewport` como tipos públicos **(feito, sem validação em aparelho)**.
 - [ ] Clipping (`Begin(clip:)`), pixel perfect (`PixelPerfect`), densidade (`Density`) e área segura (`SafeArea`, recorte de câmera) **(feito, sem validação em aparelho)**.
-- [ ] Texture atlas em runtime (usa o formato do Atlas Studio).
+- [x] Texture atlas em runtime (`Content.LoadAtlas`, regiões com pivô, `SpriteBatch.Draw(atlas, região, ...)`); o formato JSON fica como contrato para o Atlas Studio (Fase 5).
 - [ ] Debug drawing (`Line`, `Rect`, `FillRect`, `Circle`, `Cross`) **(feito, sem validação em aparelho)**.
 - [ ] Medição de alocações por quadro (sem alocação no caminho quente).
 
 Input
 - [x] Toque (`TouchPoint`), Tap, LongPress, Drag, Swipe, teclado, acelerômetro.
-- [ ] `TouchCollection` como tipo público, `Pointer`.
+- [x] `TouchCollection` e `Pointer` como tipos públicos.
 - [x] DoubleTap, Pinch, Rotate (testados com toques sintéticos; multitoque real só valida em aparelho — **feito, sem validação em aparelho**).
 - [ ] `VirtualStick` e `VirtualButton` (lógica pronta e testada; falta desenhar/usar no Demo e validar em aparelho).
 - [ ] Gamepad (botões, sticks, gatilhos, D-pad; `IsButtonDown/Pressed`) **(feito, sem validação em aparelho — precisa de um controle)**.
@@ -103,8 +103,8 @@ Input
 Conteúdo e armazenamento
 - [x] Decodificador PNG, `ContentManager` com cache, importação de PNG.
 - [x] Salvamento JSON com gravação atômica.
-- [ ] Carregar fontes, dados (JSON) e mapas via `ContentManager`.
-- [ ] Localization.
+- [ ] Carregar dados (JSON: `Content.LoadJson<T>`) via `ContentManager` (testado em desktop); fontes e mapas entram com Fonts/Tilemaps na Fase 4.
+- [ ] Localization (`Localization.SetLanguage/UseDeviceLanguage/Get`, reserva e formatação) — testado em desktop, sem validação em aparelho (idioma do aparelho).
 - [ ] Content pipeline com cache de assets processados e invalidação.
 
 Auditoria
