@@ -37,6 +37,11 @@ public sealed class MainActivity : Activity, ISensorEventListener
     private string? _openFile;
     private CodeEditText? _editor;
     private EditorAssistant? _assistant;
+    private AutosaveJournal? _journal;
+    private string _savedText = "";
+    private LinearLayout? _drawer;
+    private LinearLayout? _drawerList;
+    private readonly HashSet<string> _collapsed = new(StringComparer.Ordinal);
     private LinearLayout? _chips;
     private HorizontalScrollView? _chipScroll;
     private FindOptions _findOptions;
@@ -170,8 +175,32 @@ public sealed class MainActivity : Activity, ISensorEventListener
         _openFile = null;
         _assistant = new EditorAssistant();
         _ = _assistant.LoadProjectAsync(_project.LoadSources().Select(f => (f.Path, f.Text)).ToList());
+        _journal = new AutosaveJournal(_project);
         ShowWorkspace();
         OpenFile(_project.Manifest.EntryPoint);
+        OfferRecovery();
+    }
+
+    /// <summary>Após um encerramento inesperado, oferece as alterações que estavam só no buffer de trabalho.</summary>
+    private void OfferRecovery()
+    {
+        var recoveries = _journal?.FindRecoveries() ?? [];
+        if (recoveries.Count == 0) return;
+        var names = string.Join("\n", recoveries.Select(r => "• " + r.Path));
+        new AlertDialog.Builder(this)!
+            .SetTitle("Alterações não salvas")!
+            .SetMessage("O Lunet foi encerrado antes de salvar:\n\n" + names + "\n\nRecuperar essas alterações?")!
+            .SetCancelable(false)!
+            .SetPositiveButton("Recuperar", (_, _) =>
+            {
+                foreach (var recovery in recoveries) _journal!.Restore(recovery);
+                if (_openFile is not null) { _savedText = ""; var file = _openFile; _openFile = null; OpenFile(file); }
+                Toast.MakeText(this, "Alterações recuperadas", ToastLength.Short)?.Show();
+            })!
+            .SetNegativeButton("Descartar", (_, _) =>
+            {
+                foreach (var recovery in recoveries) _journal!.Discard(recovery.Path);
+            })!.Show();
     }
 
     private void ShowWorkspace()
@@ -183,9 +212,8 @@ public sealed class MainActivity : Activity, ISensorEventListener
         var bar = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         bar.SetPadding(Dp(4), Dp(4), Dp(4), Dp(4));
         bar.AddView(MakeButton("←", () => ShowProjects()));
+        bar.AddView(MakeButton("☰", ToggleExplorer));
         bar.AddView(MakeButton("▶ Run", Run));
-        var files = MakeButton("Arquivos", ChooseFile);
-        bar.AddView(files);
         bar.AddView(MakeButton("↶", () => _editor?.Undo()));
         bar.AddView(MakeButton("↷", () => _editor?.Redo()));
         bar.AddView(MakeButton("⋯", ShowMenu));
@@ -215,46 +243,208 @@ public sealed class MainActivity : Activity, ISensorEventListener
         panelScroll.AddView(_panelList);
         root.AddView(panelScroll, Fill(1));
 
-        SetContentView(root);
+        var frame = new FrameLayout(this);
+        frame.AddView(root, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
+        BuildDrawer(frame);
+        SetContentView(frame);
         SetPanel(_showConsole);
         _status.Text = $"{project.Name}";
     }
 
-    private void ChooseFile()
+    // ---------- Explorer ----------
+
+    private void BuildDrawer(FrameLayout frame)
     {
-        SaveCurrent();
-        var files = _project!.ListFiles().Where(IsTextFile).ToArray();
-        new AlertDialog.Builder(this)!
-            .SetTitle("Arquivos")!
-            .SetItems(files, (_, args) => OpenFile(files[args.Which]))!
-            .SetNeutralButton("Novo arquivo", (_, _) => AskForNewFile())!
-            .Show();
+        _drawer = Vertical();
+        _drawer.SetBackgroundColor(AndroidColor.Rgb(30, 33, 40));
+        _drawer.Visibility = ViewStates.Gone;
+        _drawer.Clickable = true; // não deixa toques passarem para o editor
+
+        var header = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        header.SetPadding(Dp(8), Dp(8), Dp(8), Dp(4));
+        header.AddView(new TextView(this) { Text = "Explorer", TextSize = 16 }, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1));
+        header.AddView(MakeButton("+ arquivo", () => AskForNewEntry("", isDirectory: false)));
+        header.AddView(MakeButton("+ pasta", () => AskForNewEntry("", isDirectory: true)));
+        header.AddView(MakeButton("✕", ToggleExplorer));
+        _drawer.AddView(header);
+
+        _drawerList = Vertical();
+        var scroll = new ScrollView(this);
+        scroll.AddView(_drawerList);
+        _drawer.AddView(scroll, Fill(1));
+        frame.AddView(_drawer, new FrameLayout.LayoutParams(Dp(300), ViewGroup.LayoutParams.MatchParent, GravityFlags.Left));
+    }
+
+    private void ToggleExplorer()
+    {
+        if (_drawer is null) return;
+        var show = _drawer.Visibility != ViewStates.Visible;
+        _drawer.Visibility = show ? ViewStates.Visible : ViewStates.Gone;
+        if (show) RefreshExplorer();
+    }
+
+    private void RefreshExplorer()
+    {
+        if (_drawerList is null || _project is null) return;
+        _drawerList.RemoveAllViews();
+        foreach (var entry in _project.ListTree())
+        {
+            if (HasCollapsedAncestor(entry.Path)) continue;
+            var captured = entry;
+            var label = (entry.IsDirectory ? (_collapsed.Contains(entry.Path) ? "▸ " : "▾ ") : "") + entry.Name;
+            var row = new TextView(this) { Text = label, TextSize = 15 };
+            row.SetPadding(Dp(12 + entry.Depth * 16), Dp(10), Dp(8), Dp(10));
+            if (entry.Path == _openFile) row.SetBackgroundColor(AndroidColor.Rgb(50, 56, 70));
+            row.SetTextColor(entry.IsDirectory ? AndroidColor.Rgb(170, 200, 255) : IsTextFile(entry.Path) ? AndroidColor.Rgb(230, 230, 230) : AndroidColor.Rgb(140, 140, 140));
+            row.Click += (_, _) => OnExplorerTap(captured);
+            row.LongClick += (_, _) => ShowEntryMenu(captured);
+            _drawerList.AddView(row);
+        }
+    }
+
+    private bool HasCollapsedAncestor(string path)
+    {
+        var parent = path;
+        while (true)
+        {
+            var slash = parent.LastIndexOf('/');
+            if (slash < 0) return false;
+            parent = parent[..slash];
+            if (_collapsed.Contains(parent)) return true;
+        }
+    }
+
+    private void OnExplorerTap(ExplorerEntry entry)
+    {
+        if (entry.IsDirectory)
+        {
+            if (!_collapsed.Remove(entry.Path)) _collapsed.Add(entry.Path);
+            RefreshExplorer();
+            return;
+        }
+        if (!IsTextFile(entry.Path))
+        {
+            Toast.MakeText(this, "Arquivo binário: use-o pelo código (ex.: Content.LoadTexture).", ToastLength.Short)?.Show();
+            return;
+        }
+        OpenFile(entry.Path);
+        ToggleExplorer();
+    }
+
+    private void ShowEntryMenu(ExplorerEntry entry)
+    {
+        var items = entry.IsDirectory
+            ? new[] { "Novo arquivo aqui", "Nova pasta aqui", "Renomear", "Excluir" }
+            : new[] { "Renomear", "Excluir" };
+        new AlertDialog.Builder(this)!.SetTitle(entry.Path)!.SetItems(items, (_, args) =>
+        {
+            switch (items[args.Which])
+            {
+                case "Novo arquivo aqui": AskForNewEntry(entry.Path + "/", isDirectory: false); break;
+                case "Nova pasta aqui": AskForNewEntry(entry.Path + "/", isDirectory: true); break;
+                case "Renomear": AskToRename(entry); break;
+                case "Excluir": AskToDelete(entry); break;
+            }
+        })!.Show();
     }
 
     private static bool IsTextFile(string path) =>
         new[] { ".cs", ".json", ".md", ".txt", ".xml" }.Any(e => path.EndsWith(e, StringComparison.OrdinalIgnoreCase));
 
-    private void AskForNewFile()
+    private void AskForNewEntry(string prefix, bool isDirectory)
     {
-        var input = new EditText(this) { Hint = "Code/Player.cs" };
+        var input = new EditText(this) { Hint = isDirectory ? "Nome da pasta" : "Player.cs" };
         input.SetSingleLine(true);
         new AlertDialog.Builder(this)!
-            .SetTitle("Novo arquivo")!
+            .SetTitle(isDirectory ? "Nova pasta" : "Novo arquivo")!
             .SetView(input)!
             .SetNegativeButton("Cancelar", (_, _) => { })!
             .SetPositiveButton("Criar", (_, _) =>
             {
                 try
                 {
-                    var path = (input.Text ?? "").Trim();
-                    _project!.CreateFile(path, path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ? "using Lunet;\n\n" : "");
-                    OpenFile(path);
+                    var path = prefix + (input.Text ?? "").Trim();
+                    if (isDirectory) _project!.CreateDirectory(path);
+                    else
+                    {
+                        _project!.CreateFile(path, path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) ? "using Lunet;\n\n" : "");
+                        if (path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)) _assistant?.SetFile(path, "using Lunet;\n\n");
+                        OpenFile(path);
+                    }
+                    RefreshExplorer();
                 }
                 catch (Exception ex) when (ex is ProjectException or IOException)
                 {
                     Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
                 }
             })!.Show();
+    }
+
+    private void AskToRename(ExplorerEntry entry)
+    {
+        var input = new EditText(this) { Text = entry.Name };
+        input.SetSingleLine(true);
+        new AlertDialog.Builder(this)!
+            .SetTitle("Renomear")!
+            .SetView(input)!
+            .SetNegativeButton("Cancelar", (_, _) => { })!
+            .SetPositiveButton("Renomear", (_, _) =>
+            {
+                try
+                {
+                    SaveCurrent();
+                    var slash = entry.Path.LastIndexOf('/');
+                    var target = (slash < 0 ? "" : entry.Path[..(slash + 1)]) + (input.Text ?? "").Trim();
+                    var before = _project!.ListFiles();
+                    _project.Rename(entry.Path, target);
+                    AfterPathChanged(entry.Path, target, before);
+                    RefreshExplorer();
+                }
+                catch (Exception ex) when (ex is ProjectException or IOException)
+                {
+                    Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
+                }
+            })!.Show();
+    }
+
+    private void AskToDelete(ExplorerEntry entry)
+    {
+        new AlertDialog.Builder(this)!
+            .SetTitle("Excluir")!
+            .SetMessage($"Excluir \"{entry.Path}\"{(entry.IsDirectory ? " e tudo dentro dela" : "")}? Isso não pode ser desfeito (exporte um ZIP antes se tiver dúvida).")!
+            .SetNegativeButton("Cancelar", (_, _) => { })!
+            .SetPositiveButton("Excluir", (_, _) =>
+            {
+                try
+                {
+                    SaveCurrent();
+                    var before = _project!.ListFiles();
+                    _project.Delete(entry.Path);
+                    AfterPathChanged(entry.Path, null, before);
+                    RefreshExplorer();
+                }
+                catch (Exception ex) when (ex is ProjectException or IOException)
+                {
+                    Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
+                }
+            })!.Show();
+    }
+
+    /// <summary>Mantém editor e análise coerentes depois de renomear (<paramref name="to"/>) ou apagar (nulo) um caminho.</summary>
+    private void AfterPathChanged(string from, string? to, IReadOnlyList<string> filesBefore)
+    {
+        foreach (var known in filesBefore.Where(f => f.StartsWith(from + "/") || f == from))
+            _assistant?.RemoveFile(known);
+        if (to is not null)
+            foreach (var file in _project.ListFiles().Where(f => (f == to || f.StartsWith(to + "/")) && f.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)))
+                _assistant?.SetFile(file, _project.ReadText(file));
+
+        var open = _openFile;
+        if (open is null || !(open == from || open.StartsWith(from + "/"))) return;
+        _journal?.Discard(open);
+        _openFile = null;
+        if (to is not null) OpenFile(to + open[from.Length..]);
+        else OpenFile(_project.Manifest.EntryPoint);
     }
 
     private void OpenFile(string path)
@@ -265,7 +455,8 @@ public sealed class MainActivity : Activity, ISensorEventListener
         {
             _openFile = path;
             HideChips();
-            _editor.LoadText(_project!.ReadText(path));
+            _savedText = _project!.ReadText(path);
+            _editor.LoadText(_savedText);
             _status!.Text = $"{_project.Name} / {path}";
         }
         catch (Exception ex) when (ex is ProjectException or IOException)
@@ -279,7 +470,10 @@ public sealed class MainActivity : Activity, ISensorEventListener
         if (_project is null || _openFile is null || _editor is null) return;
         try
         {
-            _project.WriteText(_openFile, _editor.Text ?? "");
+            var text = _editor.Text ?? "";
+            _project.WriteText(_openFile, text);
+            _savedText = text;
+            _journal?.Discard(_openFile);
         }
         catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
         {
@@ -389,6 +583,11 @@ public sealed class MainActivity : Activity, ISensorEventListener
     private void OnEditorSettled(string text, int version, int caret)
     {
         var path = _openFile;
+        if (path is not null && text != _savedText)
+        {
+            try { _journal?.WriteBuffer(path, text); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException) { }
+        }
         if (path is null || _assistant is null || !path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
         {
             HideChips();
