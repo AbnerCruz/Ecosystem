@@ -16,6 +16,15 @@ public abstract class Game
     public GameConfiguration Configuration { get; } = new();
     public GameLog Log { get; } = new();
 
+    /// <summary>Serviços do jogo por tipo (o host registra <c>GraphicsDevice</c>, <c>InputState</c>, <c>ContentManager</c>, <c>SaveData</c>, <c>GameLog</c>, <c>Dispatcher</c> e <c>Timers</c>).</summary>
+    public GameServices Services { get; } = new();
+
+    /// <summary>Executa ações na thread do jogo; <c>Post</c> é seguro para qualquer thread.</summary>
+    public Dispatcher Dispatcher { get; } = new();
+
+    /// <summary>Timers no tempo do jogo (param na pausa).</summary>
+    public Timers Timers { get; } = new();
+
     public GraphicsDevice GraphicsDevice => _graphics ?? throw new InvalidOperationException("O jogo ainda não foi iniciado por um host.");
     public InputState Input => _input ?? throw new InvalidOperationException("O jogo ainda não foi iniciado por um host.");
 
@@ -49,6 +58,13 @@ public abstract class Game
     internal void Attach(GraphicsDevice graphics, InputState input, ContentManager content, SaveData save)
     {
         _save = save;
+        Services.Add(graphics);
+        Services.Add(input);
+        Services.Add(content);
+        Services.Add(save);
+        Services.Add(Log);
+        Services.Add(Dispatcher);
+        Services.Add(Timers);
         _content = content;
         _graphics = graphics;
         _input = input;
@@ -56,7 +72,12 @@ public abstract class Game
 
     internal void RunInitialize() => Initialize();
     internal void RunLoadContent() => LoadContent();
-    internal void RunUpdate(GameTime time) => Update(time);
+    internal void RunDispatcher() => Dispatcher.RunPending();
+    internal void RunUpdate(GameTime time)
+    {
+        Timers.Update(time.DeltaSeconds);
+        Update(time);
+    }
     internal void RunDraw(GameTime time) => Draw(time);
     internal void RunUnloadContent() => UnloadContent();
     internal void RunPause() => OnPause();
