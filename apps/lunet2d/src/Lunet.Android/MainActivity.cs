@@ -127,6 +127,7 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
         root.AddView(new TextView(this) { Text = "Lunet", TextSize = 28 });
         root.AddView(new TextView(this) { Text = "Projetos" , TextSize = 16 });
         root.AddView(MakeButton("Novo projeto", AskForProjectName));
+        root.AddView(MakeButton("Clonar do Git", AskClone));
         root.AddView(MakeButton("Configurações", ShowSettings));
 
         var list = Vertical();

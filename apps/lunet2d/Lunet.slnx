@@ -4,6 +4,7 @@
     <Project Path="src/Lunet.Compiler/Lunet.Compiler.csproj" />
     <Project Path="src/Lunet.Core/Lunet.Core.csproj" />
     <Project Path="src/Lunet.Docs/Lunet.Docs.csproj" />
+    <Project Path="src/Lunet.Git/Lunet.Git.csproj" />
     <Project Path="src/Lunet.Editor/Lunet.Editor.csproj" />
     <Project Path="src/Lunet.Framework/Lunet.Framework.csproj" />
     <Project Path="src/Lunet.Runtime/Lunet.Runtime.csproj" />

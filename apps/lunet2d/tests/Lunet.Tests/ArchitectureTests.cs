@@ -38,6 +38,9 @@ public class ArchitectureTests
     public void Docs_DoesNotDependOnAnyLunetProject() => Assert.Empty(Graph()["Lunet.Docs"]);
 
     [Fact]
+    public void Git_DoesNotDependOnAnyLunetProject() => Assert.Empty(Graph()["Lunet.Git"]);
+
+    [Fact]
     public void Editor_DependsOnlyOnCompiler() => Assert.Equal(["Lunet.Compiler"], Graph()["Lunet.Editor"]);
 
     [Fact]
@@ -74,9 +77,9 @@ public class PlanningDocsTests
     }
 
     [Fact]
-    public void SpecRoutineAndClaudeInstructionsExist()
+    public void SpecRoutineAndAgentInstructionsExist()
     {
-        foreach (var file in new[] { "docs/SPEC.md", "docs/DEVELOPMENT.md", "docs/audits/TEMPLATE.md", "CLAUDE.md", "tools/roadmap-status.sh" })
+        foreach (var file in new[] { "docs/SPEC.md", "docs/DEVELOPMENT.md", "docs/audits/TEMPLATE.md", "AGENTS.md", "AgentsChat.md", "tools/roadmap-status.sh" })
             Assert.True(File.Exists(Path.Combine(Root(), file)), file);
     }
 
