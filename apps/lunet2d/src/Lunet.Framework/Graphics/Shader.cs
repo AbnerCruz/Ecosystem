@@ -13,6 +13,7 @@ public sealed class ShaderCompileException(string message) : Exception(message);
 /// </summary>
 public sealed partial class Shader : IDisposable
 {
+    /// <summary>Trecho que o framework coloca antes do seu código: versão, vUv, vColor, uTex e outColor.</summary>
     public const string Prelude = "#version 300 es\nprecision mediump float;\nin vec2 vUv;\nin vec4 vColor;\nuniform sampler2D uTex;\nout vec4 outColor;\n";
 
     private readonly GraphicsDevice _device;
@@ -26,6 +27,7 @@ public sealed partial class Shader : IDisposable
 
     internal int Handle { get; }
     internal IReadOnlyDictionary<string, float[]> Values => _values;
+    /// <summary>Verdadeiro depois de liberado.</summary>
     public bool IsDisposed { get; private set; }
 
     /// <exception cref="ShaderCompileException">O shader não compila.</exception>
@@ -36,10 +38,25 @@ public sealed partial class Shader : IDisposable
         return new Shader(device, device.Backend.CreateShader(Prelude + source));
     }
 
+    /// <summary>Define um uniform float.</summary>
+    /// <param name="name">Nome do uniform.</param>
+    /// <param name="value">Valor.</param>
     public void SetFloat(string name, float value) => Set(name, [value]);
+    /// <summary>Define um uniform vec2.</summary>
+    /// <param name="name">Nome do uniform.</param>
+    /// <param name="value">Valor.</param>
     public void SetVector2(string name, Vector2 value) => Set(name, [value.X, value.Y]);
+    /// <summary>Define um uniform vec3.</summary>
+    /// <param name="name">Nome do uniform.</param>
+    /// <param name="value">Valor.</param>
     public void SetVector3(string name, Vector3 value) => Set(name, [value.X, value.Y, value.Z]);
+    /// <summary>Define um uniform vec4.</summary>
+    /// <param name="name">Nome do uniform.</param>
+    /// <param name="value">Valor.</param>
     public void SetVector4(string name, Vector4 value) => Set(name, [value.X, value.Y, value.Z, value.W]);
+    /// <summary>Define um uniform vec4 com a cor (0 a 1 por canal).</summary>
+    /// <param name="name">Nome do uniform.</param>
+    /// <param name="color">Cor.</param>
     public void SetColor(string name, Color color) => Set(name, [color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f]);
 
     private void Set(string name, float[] value)
@@ -49,6 +66,7 @@ public sealed partial class Shader : IDisposable
         _values[name] = value; // substitui o array: o SpriteBatch guarda uma cópia do dicionário a cada Begin
     }
 
+    /// <summary>Libera o shader.</summary>
     public void Dispose()
     {
         if (IsDisposed) return;
@@ -63,7 +81,10 @@ public sealed partial class Shader : IDisposable
 /// <summary>Conjunto de estado de desenho reutilizável: shader, mistura e amostragem.</summary>
 public sealed class Material
 {
+    /// <summary>Shader de fragmento, ou nulo para o padrão.</summary>
     public Shader? Shader { get; set; }
+    /// <summary>Modo de mistura.</summary>
     public BlendState Blend { get; set; } = BlendState.Alpha;
+    /// <summary>Amostragem de textura, ou nulo para usar a da textura.</summary>
     public SamplerState? Sampler { get; set; }
 }

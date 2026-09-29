@@ -7,6 +7,8 @@ public sealed class Dispatcher
 {
     private readonly ConcurrentQueue<Action> _queue = new();
 
+    /// <summary>Agenda uma ação para rodar na thread do jogo, no início do próximo quadro. Pode ser chamado de qualquer thread.</summary>
+    /// <param name="action">Ação a executar.</param>
     public void Post(Action action)
     {
         ArgumentNullException.ThrowIfNull(action);

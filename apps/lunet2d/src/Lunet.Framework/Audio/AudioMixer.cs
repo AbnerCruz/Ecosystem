@@ -17,6 +17,8 @@ public sealed class AudioMixer
     private float _appliedMusicVolume = -1f;
     private bool _paused;
 
+    /// <summary>Cria a mistura de áudio sobre um backend.</summary>
+    /// <param name="backend">Motor de áudio da plataforma.</param>
     public AudioMixer(IAudioBackend backend)
     {
         _backend = backend ?? throw new ArgumentNullException(nameof(backend));
@@ -25,13 +27,17 @@ public sealed class AudioMixer
         MusicBus = GetBus("Music");
     }
 
+    /// <summary>Barramento geral: multiplica o volume de todos os outros.</summary>
     public AudioBus Master { get; }
+    /// <summary>Barramento dos efeitos sonoros (padrão de SoundEffect.Play).</summary>
     public AudioBus Sfx { get; }
+    /// <summary>Barramento da música.</summary>
     public AudioBus MusicBus { get; }
 
     /// <summary>Música atual (tocando ou pausada), ou nulo.</summary>
     public Music? CurrentMusic => _music;
 
+    /// <summary>Verdadeiro enquanto o áudio está pausado.</summary>
     public bool IsPaused => _paused;
 
     /// <summary>Devolve o barramento pelo nome, criando-o se não existir.</summary>
@@ -104,6 +110,7 @@ public sealed class AudioMixer
         if (_music is not null) _backend.PauseMusic();
     }
 
+    /// <summary>Retoma música e efeitos pausados.</summary>
     public void ResumeAll()
     {
         if (!_paused) return;

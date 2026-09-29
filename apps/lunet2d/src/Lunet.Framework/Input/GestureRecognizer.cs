@@ -29,7 +29,9 @@ public sealed class GestureRecognizer
     /// <summary>Distância (unidades virtuais) a partir da qual o toque vira arrasto.</summary>
     public float DragThreshold { get; set; } = 10f;
 
+    /// <summary>Duração máxima de um toque para contar como Tap.</summary>
     public double TapMaxSeconds { get; set; } = 0.3;
+    /// <summary>Tempo parado para virar LongPress.</summary>
     public double LongPressSeconds { get; set; } = 0.5;
 
     /// <summary>Tempo máximo entre dois toques para formar um DoubleTap.</summary>
@@ -41,6 +43,10 @@ public sealed class GestureRecognizer
     /// <summary>Velocidade mínima (unidades/s) na soltura para ser Swipe.</summary>
     public float SwipeMinSpeed { get; set; } = 600f;
 
+    /// <summary>Processa os toques do quadro e acrescenta os gestos reconhecidos.</summary>
+    /// <param name="touches">Toques do quadro.</param>
+    /// <param name="now">Tempo atual em segundos.</param>
+    /// <param name="output">Lista que recebe os gestos.</param>
     public void Update(ReadOnlySpan<TouchPoint> touches, double now, List<Gesture> output)
     {
         foreach (var track in _tracks) track.Seen = false;
@@ -188,6 +194,7 @@ public sealed class GestureRecognizer
         }
     }
 
+    /// <summary>Esquece os dedos e gestos em andamento.</summary>
     public void Reset()
     {
         _tracks.Clear();

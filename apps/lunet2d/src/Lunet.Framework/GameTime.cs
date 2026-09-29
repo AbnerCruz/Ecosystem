@@ -3,6 +3,10 @@ namespace Lunet;
 /// <summary>Tempo de uma atualização. <see cref="DeltaSeconds"/> é sempre o passo fixo configurado.</summary>
 public readonly struct GameTime
 {
+    /// <summary>Cria um valor de tempo.</summary>
+    /// <param name="totalSeconds">Tempo simulado total.</param>
+    /// <param name="deltaSeconds">Duração do passo ou quadro.</param>
+    /// <param name="interpolation">Fração entre a última atualização e a próxima.</param>
     public GameTime(double totalSeconds, float deltaSeconds, float interpolation)
     {
         TotalSeconds = totalSeconds;

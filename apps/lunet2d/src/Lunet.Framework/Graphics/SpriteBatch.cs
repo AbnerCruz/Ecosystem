@@ -15,6 +15,8 @@ public sealed class SpriteBatch
     private DrawState _state = DrawState.Default;
     private Shader? _shader;
 
+    /// <summary>Cria um lote de sprites.</summary>
+    /// <param name="device">Dispositivo gráfico.</param>
     public SpriteBatch(GraphicsDevice device) => _device = device ?? throw new ArgumentNullException(nameof(device));
 
     /// <summary>O dispositivo em que este lote desenha.</summary>
@@ -39,12 +41,18 @@ public sealed class SpriteBatch
             null);
     }
 
+    /// <summary>Começa um lote usando o estado do material.</summary>
+    /// <param name="material">Shader, mistura e amostragem.</param>
     public void Begin(Material material)
     {
         ArgumentNullException.ThrowIfNull(material);
         Begin(material.Blend, material.Sampler, material.Shader);
     }
 
+    /// <summary>Desenha a textura inteira com o canto superior esquerdo na posição.</summary>
+    /// <param name="texture">Textura.</param>
+    /// <param name="position">Onde desenhar.</param>
+    /// <param name="color">Cor de multiplicação.</param>
     public void Draw(Texture2D texture, Vector2 position, Color color) =>
         Draw(texture, new RectangleF(position.X, position.Y, texture.Width, texture.Height), null, color, 0f, Vector2.Zero);
 
@@ -123,6 +131,7 @@ public sealed class SpriteBatch
         font.Draw(this, text, position, color, scale);
     }
 
+    /// <summary>Envia o que falta ao dispositivo e encerra o lote.</summary>
     public void End()
     {
         if (!_begun) throw new InvalidOperationException("End() sem Begin().");

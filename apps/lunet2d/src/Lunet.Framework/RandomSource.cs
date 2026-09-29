@@ -7,6 +7,8 @@ public sealed class RandomSource
 {
     private ulong _state;
 
+    /// <summary>Cria um gerador determinístico.</summary>
+    /// <param name="seed">Semente: a mesma semente gera a mesma sequência.</param>
     public RandomSource(ulong seed)
     {
         // Mistura a semente (splitmix64) para que sementes pequenas e vizinhas divirjam.
@@ -17,6 +19,8 @@ public sealed class RandomSource
         if (_state == 0) _state = 1;
     }
 
+    /// <summary>Próximo número de 64 bits sem sinal.</summary>
+    /// <returns>Número pseudoaleatório.</returns>
     public ulong NextUInt64()
     {
         _state ^= _state >> 12;
@@ -28,6 +32,10 @@ public sealed class RandomSource
     /// <summary>Número em [0, 1).</summary>
     public float NextFloat() => (NextUInt64() >> 40) / (float)(1 << 24);
 
+    /// <summary>Número decimal no intervalo dado.</summary>
+    /// <param name="min">Menor valor (inclusive).</param>
+    /// <param name="max">Maior valor (exclusive).</param>
+    /// <returns>Número entre min e max.</returns>
     public float NextFloat(float min, float max) => min + NextFloat() * (max - min);
 
     /// <summary>Inteiro em [0, <paramref name="maxExclusive"/>).</summary>
@@ -40,8 +48,12 @@ public sealed class RandomSource
     /// <summary>Inteiro em [<paramref name="min"/>, <paramref name="maxExclusive"/>).</summary>
     public int NextInt(int min, int maxExclusive) => min + NextInt(maxExclusive - min);
 
+    /// <summary>Cara ou coroa.</summary>
+    /// <returns>Verdadeiro ou falso com igual chance.</returns>
     public bool NextBool() => (NextUInt64() & 1) == 1;
 
+    /// <summary>Direção aleatória de comprimento 1.</summary>
+    /// <returns>Vetor unitário.</returns>
     public Vector2 NextDirection()
     {
         var angle = NextFloat() * MathF.Tau;

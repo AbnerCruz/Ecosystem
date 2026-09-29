@@ -5,6 +5,7 @@ namespace Lunet.Input;
 /// <summary>Estado de entrada do quadro atual. Preenchido pelo host; leitura apenas para o jogo.</summary>
 public sealed class InputState
 {
+    /// <summary>Quantos dedos simultâneos são acompanhados.</summary>
     public const int MaxTouches = 10;
     private readonly TouchPoint[] _touches = new TouchPoint[MaxTouches];
 
@@ -19,6 +20,7 @@ public sealed class InputState
     private bool _pointerReleased;
     private System.Numerics.Vector2 _pointerPosition;
 
+    /// <summary>Quantos toques há no quadro.</summary>
     public int TouchCount { get; private set; }
 
     /// <summary>Os toques do quadro como coleção (contagem, índice, busca por id, sem alocação).</summary>
@@ -38,6 +40,9 @@ public sealed class InputState
     /// <summary>Velocidade angular do aparelho em rad/s. Zero sem sensor.</summary>
     public System.Numerics.Vector3 Gyroscope { get; private set; }
 
+    /// <summary>Diz se o botão do controle está pressionado.</summary>
+    /// <param name="button">Botão.</param>
+    /// <returns>Verdadeiro se pressionado.</returns>
     public bool IsButtonDown(GamepadButtons button) => Gamepad.IsConnected && Gamepad.IsDown(button);
 
     /// <summary>Verdadeiro no primeiro passo de <c>Update</c> após o botão ser pressionado.</summary>
@@ -51,8 +56,13 @@ public sealed class InputState
         Gamepad = state;
     }
 
+    /// <summary>Usado pelo host: registra a velocidade angular.</summary>
+    /// <param name="value">Velocidade angular em rad/s.</param>
     public void SetGyroscope(System.Numerics.Vector3 value) => Gyroscope = value;
 
+    /// <summary>Diz se a tecla está pressionada.</summary>
+    /// <param name="key">Tecla.</param>
+    /// <returns>Verdadeiro se pressionada.</returns>
     public bool IsKeyDown(Keys key) => _keysDown[(int)key];
 
     /// <summary>Verdadeiro no primeiro passo de <c>Update</c> após a tecla ser pressionada.</summary>
@@ -67,6 +77,8 @@ public sealed class InputState
         _keysDown[i] = down;
     }
 
+    /// <summary>Usado pelo host: registra a aceleração do aparelho.</summary>
+    /// <param name="value">Aceleração em m/s².</param>
     public void SetAccelerometer(System.Numerics.Vector3 value) => Accelerometer = value;
 
     internal void ClearPressed()
@@ -83,6 +95,7 @@ public sealed class InputState
     /// <summary>Ajustes de sensibilidade (limiares de arrasto, toque, pressão longa, deslize).</summary>
     public GestureRecognizer GestureSettings => _recognizer;
 
+    /// <summary>Os toques do quadro.</summary>
     public ReadOnlySpan<TouchPoint> Touches => _touches.AsSpan(0, TouchCount);
 
     /// <summary>Primeiro toque ativo, se houver.</summary>

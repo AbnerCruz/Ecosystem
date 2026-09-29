@@ -126,6 +126,9 @@ public sealed class SpriteFont
     /// <summary>Altura de uma linha, em pixels da fonte (multiplicada por <c>scale</c> ao desenhar).</summary>
     public int LineHeight => CellHeight + 1;
 
+    /// <summary>Cria a fonte bitmap embutida (5×7 pixels, com acentos do português).</summary>
+    /// <param name="device">Dispositivo gráfico.</param>
+    /// <returns>A fonte.</returns>
     public static SpriteFont CreateDefault(GraphicsDevice device)
     {
         ArgumentNullException.ThrowIfNull(device);

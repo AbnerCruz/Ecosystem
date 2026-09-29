@@ -36,11 +36,17 @@ public sealed class GameHost
         _backend = backend ?? throw new ArgumentNullException(nameof(backend));
     }
 
+    /// <summary>Dispositivo gráfico criado por Start, ou nulo antes disso.</summary>
     public GraphicsDevice? GraphicsDevice { get; private set; }
+    /// <summary>Estado de entrada que o host preenche a cada quadro.</summary>
     public InputState Input { get; } = new();
+    /// <summary>Verdadeiro se o código do jogo lançou uma exceção e o jogo parou.</summary>
     public bool IsFaulted => Fault is not null;
+    /// <summary>Exceção que parou o jogo, ou nulo.</summary>
     public Exception? Fault { get; private set; }
+    /// <summary>Verdadeiro enquanto o jogo está pausado.</summary>
     public bool IsPaused => _paused;
+    /// <summary>Registro do jogo em execução.</summary>
     public GameLog Log => _game.Log;
 
     /// <summary>Inicializa o jogo. Retorna falso se o código do jogo lançou exceção.</summary>
@@ -73,6 +79,9 @@ public sealed class GameHost
         GraphicsDevice?.SetDisplay(density, insetLeft, insetTop, insetRight, insetBottom);
     }
 
+    /// <summary>Informa o novo tamanho da superfície de desenho.</summary>
+    /// <param name="surfaceWidth">Largura em pixels.</param>
+    /// <param name="surfaceHeight">Altura em pixels.</param>
     public void Resize(int surfaceWidth, int surfaceHeight) => GraphicsDevice?.Resize(surfaceWidth, surfaceHeight);
 
     /// <summary>Define os toques do quadro em pixels da superfície; converte para coordenadas virtuais.</summary>
@@ -89,6 +98,7 @@ public sealed class GameHost
         Input.SetTouches(virtualTouches[..count]);
     }
 
+    /// <summary>Pausa a simulação e o áudio. O desenho continua.</summary>
     public void Pause()
     {
         if (_paused) return;
@@ -97,6 +107,7 @@ public sealed class GameHost
         if (!IsFaulted && _started) Guard(_game.RunPause);
     }
 
+    /// <summary>Retoma a simulação e o áudio.</summary>
     public void Resume()
     {
         if (!_paused) return;
@@ -146,6 +157,7 @@ public sealed class GameHost
         }
     }
 
+    /// <summary>Encerra o jogo e libera texturas e sons carregados por Content.</summary>
     public void Stop()
     {
         if (!_started) return;

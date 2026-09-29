@@ -10,7 +10,7 @@ public enum CompletionKind { Keyword, Namespace, Class, Struct, Interface, Enum,
 /// <summary>Sugestão de autocompletar: substitui <see cref="ReplaceLength"/> caracteres a partir de <see cref="ReplaceStart"/> por <see cref="InsertText"/>.</summary>
 public sealed record CompletionItem(string Label, CompletionKind Kind, string Detail, string InsertText, int ReplaceStart, int ReplaceLength, int Overloads);
 
-public sealed record HoverInfo(string Signature, string Kind, int Start, int Length);
+public sealed record HoverInfo(string Signature, string Kind, int Start, int Length, string? DocumentationId = null);
 
 public sealed record DefinitionLocation(string FilePath, int Line, int Column);
 
@@ -141,7 +141,7 @@ public sealed class CodeAnalyzer
         var symbol = model.GetSymbolInfo(node).Symbol ?? model.GetDeclaredSymbol(node);
         if (symbol is null) return null;
         var signature = symbol.ToMinimalDisplayString(model, token.SpanStart);
-        return new HoverInfo(signature, symbol.Kind.ToString(), token.SpanStart, token.Span.Length);
+        return new HoverInfo(signature, symbol.Kind.ToString(), token.SpanStart, token.Span.Length, symbol.OriginalDefinition.GetDocumentationCommentId());
     }
 
     /// <summary>Local da definição no código do projeto; nulo para símbolos do framework/BCL.</summary>

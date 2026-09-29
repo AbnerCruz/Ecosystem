@@ -5,6 +5,9 @@ namespace Lunet;
 /// <summary>Raio 2D: origem e direção (normalizada na criação).</summary>
 public readonly struct Ray2D
 {
+    /// <summary>Cria um raio.</summary>
+    /// <param name="origin">Ponto de partida.</param>
+    /// <param name="direction">Direção (é normalizada). Não pode ser zero.</param>
     public Ray2D(Vector2 origin, Vector2 direction)
     {
         if (direction == Vector2.Zero) throw new ArgumentException("A direção não pode ser zero.", nameof(direction));
@@ -12,9 +15,14 @@ public readonly struct Ray2D
         Direction = Vector2.Normalize(direction);
     }
 
+    /// <summary>Ponto de partida do raio.</summary>
     public Vector2 Origin { get; }
+    /// <summary>Direção do raio, com comprimento 1.</summary>
     public Vector2 Direction { get; }
 
+    /// <summary>Ponto do raio a uma distância da origem.</summary>
+    /// <param name="distance">Distância ao longo do raio.</param>
+    /// <returns>Origin + Direction × distance.</returns>
     public Vector2 PointAt(float distance) => Origin + Direction * distance;
 
     /// <summary>Distância até a primeira interseção com o círculo, ou falso.</summary>

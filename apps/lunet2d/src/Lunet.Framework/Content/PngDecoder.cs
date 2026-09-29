@@ -3,6 +3,9 @@ using System.IO.Compression;
 namespace Lunet.Content;
 
 /// <summary>Imagem decodificada: RGBA de 8 bits, linhas de cima para baixo.</summary>
+/// <param name="Width">Largura da imagem, em pixels.</param>
+/// <param name="Height">Altura da imagem, em pixels.</param>
+/// <param name="Rgba">Pixels em RGBA de 8 bits por canal, linha a linha de cima para baixo.</param>
 public sealed record DecodedImage(int Width, int Height, byte[] Rgba);
 
 /// <summary>Decodificador PNG mínimo e sem dependências: 8/16 bits, tons de cinza, RGB, paleta e alfa; sem entrelaçamento.</summary>
@@ -10,6 +13,9 @@ public static class PngDecoder
 {
     private static readonly byte[] Signature = [137, 80, 78, 71, 13, 10, 26, 10];
 
+    /// <summary>Decodifica um PNG (8 ou 16 bits, sem entrelaçamento).</summary>
+    /// <param name="data">Bytes do arquivo.</param>
+    /// <returns>A imagem em RGBA.</returns>
     public static DecodedImage Decode(ReadOnlySpan<byte> data)
     {
         if (data.Length < 8 || !data[..8].SequenceEqual(Signature)) throw new InvalidDataException("Não é um arquivo PNG.");

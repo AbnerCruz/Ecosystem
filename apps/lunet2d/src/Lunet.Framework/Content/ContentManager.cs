@@ -23,6 +23,10 @@ public sealed class ContentManager : IDisposable
     /// <summary>Mistura de áudio do jogo (barramentos, música, fades).</summary>
     public AudioMixer Audio { get; }
 
+    /// <summary>Cria o gerenciador de conteúdo.</summary>
+    /// <param name="source">De onde ler os arquivos.</param>
+    /// <param name="device">Dispositivo gráfico para criar texturas.</param>
+    /// <param name="audio">Motor de áudio</param>
     public ContentManager(IContentSource source, GraphicsDevice device, IAudioBackend? audio = null)
     {
         _audio = audio ?? new NullAudioBackend();
@@ -99,14 +103,21 @@ public sealed class ContentManager : IDisposable
         foreach (var key in _atlases.Where(a => a.Value.Texture == texture).Select(a => a.Key).ToList()) _atlases.Remove(key);
     }
 
+    /// <summary>Lê um arquivo de texto (UTF-8).</summary>
+    /// <param name="path">Caminho relativo a Content.</param>
+    /// <returns>O conteúdo do arquivo.</returns>
     public string ReadText(string path)
     {
         using var reader = new StreamReader(_source.Open(path));
         return reader.ReadToEnd();
     }
 
+    /// <summary>Diz se o arquivo existe em Content.</summary>
+    /// <param name="path">Caminho relativo a Content, com barras normais.</param>
+    /// <returns>Verdadeiro se existe.</returns>
     public bool Exists(string path) => _source.Exists(path);
 
+    /// <summary>Libera todas as texturas, sons e músicas carregadas.</summary>
     public void Dispose()
     {
         foreach (var texture in _textures.Values) texture.Dispose();
