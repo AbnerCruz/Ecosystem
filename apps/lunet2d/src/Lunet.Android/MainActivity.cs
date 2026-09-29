@@ -10,7 +10,9 @@ using Android.Widget;
 using Lunet.Android.Gles;
 using Lunet.Compiler;
 using Lunet.Content;
+using Lunet.Android.Editor;
 using Lunet.Core;
+using Lunet.Editor;
 using Lunet.Input;
 using Lunet.Storage;
 using AndroidColor = Android.Graphics.Color;
@@ -33,7 +35,13 @@ public sealed class MainActivity : Activity, ISensorEventListener
     private ProjectStore _store = null!;
     private LunetProject? _project;
     private string? _openFile;
-    private EditText? _editor;
+    private CodeEditText? _editor;
+    private EditorAssistant? _assistant;
+    private LinearLayout? _chips;
+    private HorizontalScrollView? _chipScroll;
+    private FindOptions _findOptions;
+    private string _findQuery = "";
+    private string _replaceText = "";
     private TextView? _status;
     private LinearLayout? _panelList;
     private Button? _problemsTab;
@@ -160,6 +168,8 @@ public sealed class MainActivity : Activity, ISensorEventListener
         _problems = [];
         _console.Clear();
         _openFile = null;
+        _assistant = new EditorAssistant();
+        _ = _assistant.LoadProjectAsync(_project.LoadSources().Select(f => (f.Path, f.Text)).ToList());
         ShowWorkspace();
         OpenFile(_project.Manifest.EntryPoint);
     }
@@ -176,6 +186,8 @@ public sealed class MainActivity : Activity, ISensorEventListener
         bar.AddView(MakeButton("▶ Run", Run));
         var files = MakeButton("Arquivos", ChooseFile);
         bar.AddView(files);
+        bar.AddView(MakeButton("↶", () => _editor?.Undo()));
+        bar.AddView(MakeButton("↷", () => _editor?.Redo()));
         bar.AddView(MakeButton("⋯", ShowMenu));
         root.AddView(bar);
 
@@ -183,13 +195,14 @@ public sealed class MainActivity : Activity, ISensorEventListener
         _status.SetPadding(Dp(8), 0, Dp(8), 0);
         root.AddView(_status);
 
-        _editor = new EditText(this) { TextSize = 14, Gravity = GravityFlags.Top | GravityFlags.Left };
-        _editor.SetTypeface(Typeface.Monospace, TypefaceStyle.Normal);
-        _editor.SetHorizontallyScrolling(true);
-        _editor.InputType = InputTypes.ClassText | InputTypes.TextFlagMultiLine | InputTypes.TextFlagNoSuggestions;
-        _editor.SetBackgroundColor(AndroidColor.Rgb(24, 26, 31));
-        _editor.SetTextColor(AndroidColor.Rgb(230, 230, 230));
+        _editor = new CodeEditText(this);
+        _editor.Settled += OnEditorSettled;
         root.AddView(_editor, Fill(3));
+
+        _chips = new LinearLayout(this) { Orientation = Orientation.Horizontal };
+        _chipScroll = new HorizontalScrollView(this) { Visibility = ViewStates.Gone, HorizontalScrollBarEnabled = false };
+        _chipScroll.AddView(_chips);
+        root.AddView(_chipScroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent));
 
         var tabs = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         _problemsTab = MakeButton("Problemas", () => SetPanel(false));
@@ -250,8 +263,9 @@ public sealed class MainActivity : Activity, ISensorEventListener
         SaveCurrent();
         try
         {
-            _editor.Text = _project!.ReadText(path);
             _openFile = path;
+            HideChips();
+            _editor.LoadText(_project!.ReadText(path));
             _status!.Text = $"{_project.Name} / {path}";
         }
         catch (Exception ex) when (ex is ProjectException or IOException)
@@ -275,7 +289,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
     private void ShowMenu()
     {
-        var items = new[] { "Salvar", "Referência rápida", "Exportar projeto (ZIP)", "Importar imagem PNG" };
+        var items = new[] { "Salvar", "Referência rápida", "Exportar projeto (ZIP)", "Importar imagem PNG", "Localizar e substituir", "Ir para definição", "Dica do símbolo", "Referências do símbolo" };
         new AlertDialog.Builder(this)!.SetItems(items, (_, args) =>
         {
             switch (args.Which)
@@ -292,6 +306,18 @@ public sealed class MainActivity : Activity, ISensorEventListener
                     break;
                 case 3:
                     ImportImage();
+                    break;
+                case 4:
+                    ShowFind();
+                    break;
+                case 5:
+                    GoToDefinition();
+                    break;
+                case 6:
+                    ShowHover();
+                    break;
+                case 7:
+                    ShowReferences();
                     break;
             }
         })!.Show();
@@ -337,19 +363,200 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
     private void GoTo(LunetDiagnostic diagnostic)
     {
-        if (diagnostic.FilePath is null || _editor is null) return;
-        if (diagnostic.FilePath != _openFile) OpenFile(diagnostic.FilePath);
+        if (diagnostic.FilePath is not null) Jump(diagnostic.FilePath, diagnostic.Line, diagnostic.Column);
+    }
+
+    private void Jump(string path, int line, int column)
+    {
+        if (_editor is null) return;
+        if (path != _openFile) OpenFile(path);
         var text = _editor.Text ?? "";
         var offset = 0;
-        for (var line = 1; line < diagnostic.Line && offset < text.Length; line++)
+        for (var current = 1; current < line && offset < text.Length; current++)
         {
             var next = text.IndexOf('\n', offset);
             if (next < 0) break;
             offset = next + 1;
         }
-        offset = Math.Min(text.Length, offset + Math.Max(0, diagnostic.Column - 1));
+        offset = Math.Min(text.Length, offset + Math.Max(0, column - 1));
         _editor.RequestFocus();
         _editor.SetSelection(offset);
+        _editor.BringPointIntoView(offset);
+    }
+
+    // ---------- Assistência do editor ----------
+
+    private void OnEditorSettled(string text, int version, int caret)
+    {
+        var path = _openFile;
+        if (path is null || _assistant is null || !path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+        {
+            HideChips();
+            return;
+        }
+        _assistant.AnalyzeAsync(path, text, caret, version).ContinueWith(task => RunOnUiThread(() =>
+        {
+            if (task.IsFaulted || _editor is null || _editor.Version != task.Result.Version || _openFile != path) return;
+            _problems = task.Result.Diagnostics;
+            if (!_showConsole) SetPanel(false);
+            ShowChips(task.Result.Completions);
+        }));
+    }
+
+    private void HideChips()
+    {
+        _chips?.RemoveAllViews();
+        if (_chipScroll is not null) _chipScroll.Visibility = ViewStates.Gone;
+    }
+
+    private void ShowChips(IReadOnlyList<CompletionItem> items)
+    {
+        if (_chips is null || _chipScroll is null) return;
+        _chips.RemoveAllViews();
+        foreach (var item in items.Take(30))
+        {
+            var captured = item;
+            var chip = new Button(this) { Text = $"{Symbol(item.Kind)} {item.Label}" };
+            chip.SetAllCaps(false);
+            chip.TextSize = 12;
+            chip.SetMinimumHeight(0);
+            chip.SetMinHeight(0);
+            chip.SetPadding(Dp(10), Dp(4), Dp(10), Dp(4));
+            chip.Click += (_, _) =>
+            {
+                _editor?.Replace(captured.ReplaceStart, captured.ReplaceLength, captured.InsertText);
+                _editor?.SetSelection(captured.ReplaceStart + captured.InsertText.Length);
+                HideChips();
+            };
+            _chips.AddView(chip);
+        }
+        _chipScroll.Visibility = items.Count == 0 ? ViewStates.Gone : ViewStates.Visible;
+    }
+
+    private static string Symbol(CompletionKind kind) => kind switch
+    {
+        CompletionKind.Keyword => "◇",
+        CompletionKind.Method => "ƒ",
+        CompletionKind.Property or CompletionKind.Field => "▪",
+        CompletionKind.Class or CompletionKind.Struct or CompletionKind.Interface or CompletionKind.Enum => "◉",
+        CompletionKind.Namespace => "▤",
+        CompletionKind.Local or CompletionKind.Parameter => "•",
+        _ => "·",
+    };
+
+    private void GoToDefinition()
+    {
+        if (_editor is null || _openFile is null || _assistant is null) return;
+        var path = _openFile;
+        var caret = _editor.SelectionStart;
+        SaveCurrent();
+        _assistant.RunAsync(a => a.GetDefinition(path, caret)).ContinueWith(task => RunOnUiThread(() =>
+        {
+            if (task.IsFaulted || task.Result is null)
+                Toast.MakeText(this, "Definição não encontrada (símbolos do framework não têm código-fonte aqui).", ToastLength.Short)?.Show();
+            else
+                Jump(task.Result.FilePath, task.Result.Line, task.Result.Column);
+        }));
+    }
+
+    private void ShowHover()
+    {
+        if (_editor is null || _openFile is null || _assistant is null) return;
+        var path = _openFile;
+        var caret = _editor.SelectionStart;
+        _assistant.RunAsync(a => a.GetHover(path, caret)).ContinueWith(task => RunOnUiThread(() =>
+        {
+            var hover = task.IsFaulted ? null : task.Result;
+            new AlertDialog.Builder(this)!
+                .SetTitle(hover is null ? "Sem informação" : hover.Kind)!
+                .SetMessage(hover?.Signature ?? "Coloque o cursor sobre um nome.")!
+                .SetPositiveButton("Ok", (_, _) => { })!.Show();
+        }));
+    }
+
+    private void ShowReferences()
+    {
+        if (_editor is null || _openFile is null || _assistant is null) return;
+        var path = _openFile;
+        var caret = _editor.SelectionStart;
+        _assistant.RunAsync(a => a.FindReferences(path, caret)).ContinueWith(task => RunOnUiThread(() =>
+        {
+            var refs = task.IsFaulted ? [] : task.Result;
+            if (refs.Count == 0)
+            {
+                Toast.MakeText(this, "Nenhuma referência encontrada.", ToastLength.Short)?.Show();
+                return;
+            }
+            var labels = refs.Select(r => $"{r.FilePath}:{r.Line}:{r.Column}").ToArray();
+            new AlertDialog.Builder(this)!
+                .SetTitle($"{refs.Count} referência(s)")!
+                .SetItems(labels, (_, args) => Jump(refs[args.Which].FilePath, refs[args.Which].Line, refs[args.Which].Column))!.Show();
+        }));
+    }
+
+    private void ShowFind()
+    {
+        if (_editor is null) return;
+        var form = Vertical();
+        form.SetPadding(Dp(16), Dp(8), Dp(16), 0);
+        var find = new EditText(this) { Hint = "Localizar", Text = _findQuery };
+        find.SetSingleLine(true);
+        var replace = new EditText(this) { Hint = "Substituir por", Text = _replaceText };
+        replace.SetSingleLine(true);
+        var matchCase = new CheckBox(this) { Text = "Diferenciar maiúsculas", Checked = _findOptions.MatchCase };
+        var whole = new CheckBox(this) { Text = "Palavra inteira", Checked = _findOptions.WholeWord };
+        var regex = new CheckBox(this) { Text = "Expressão regular", Checked = _findOptions.UseRegex };
+        foreach (var view in new View[] { find, replace, matchCase, whole, regex }) form.AddView(view);
+
+        var dialog = new AlertDialog.Builder(this)!
+            .SetTitle("Localizar e substituir")!
+            .SetView(form)!
+            .SetNegativeButton("Fechar", (_, _) => { })!
+            .SetNeutralButton("Próximo", (_, _) => { })!
+            .SetPositiveButton("Substituir tudo", (_, _) => { })!
+            .Create()!;
+        dialog.Show();
+
+        void Capture()
+        {
+            _findQuery = find.Text ?? "";
+            _replaceText = replace.Text ?? "";
+            _findOptions = new FindOptions(matchCase.Checked, whole.Checked, regex.Checked);
+        }
+
+        dialog.GetButton((int)DialogButtonType.Neutral)!.Click += (_, _) =>
+        {
+            Capture();
+            try
+            {
+                var text = _editor.Text ?? "";
+                var match = FindReplace.FindNext(text, _findQuery, _editor.SelectionEnd, _findOptions);
+                if (match is not { } m) { Toast.MakeText(this, "Não encontrado.", ToastLength.Short)?.Show(); return; }
+                _editor.SetSelection(m.Start, m.Start + m.Length);
+                _editor.BringPointIntoView(m.Start);
+                var total = FindReplace.FindAll(text, _findQuery, _findOptions).Count;
+                Toast.MakeText(this, $"{total} ocorrência(s).", ToastLength.Short)?.Show();
+            }
+            catch (FormatException ex)
+            {
+                Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
+            }
+        };
+        dialog.GetButton((int)DialogButtonType.Positive)!.Click += (_, _) =>
+        {
+            Capture();
+            try
+            {
+                var text = _editor.Text ?? "";
+                var result = FindReplace.ReplaceAll(text, _findQuery, _replaceText, _findOptions, out var count);
+                if (count > 0) _editor.Replace(0, text.Length, result);
+                Toast.MakeText(this, $"{count} substituição(ões).", ToastLength.Short)?.Show();
+            }
+            catch (FormatException ex)
+            {
+                Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
+            }
+        };
     }
 
     // ---------- Run / Preview ----------

@@ -63,6 +63,13 @@ public sealed class UndoHistory
         return new TextEdit(entry.Start, entry.Removed.Length, entry.Inserted, entry.Start + entry.Inserted.Length);
     }
 
+    /// <summary>Troca o último passo (usado quando uma regra do editor reescreve o que acabou de ser digitado).</summary>
+    public void ReplaceLast(int start, string removed, string inserted)
+    {
+        if (_undo.Count == 0) return;
+        _undo[^1] = _undo[^1] with { Start = start, Removed = removed, Inserted = inserted };
+    }
+
     public void Clear()
     {
         _undo.Clear();

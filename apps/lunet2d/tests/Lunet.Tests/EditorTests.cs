@@ -156,6 +156,17 @@ public class UndoTests
     }
 
     [Fact]
+    public void ReplaceLast_MakesTypedCharAndRuleOneStep()
+    {
+        var h = new UndoHistory();
+        h.Record(3, "", "\n", 3, 0);
+        h.ReplaceLast(3, "", "\n    ");
+        var text = "abc\n    def";
+        text = h.Undo()!.Value.Apply(text);
+        Assert.Equal("abcdef", text);
+    }
+
+    [Fact]
     public void RespectsCapacity()
     {
         var h = new UndoHistory(capacity: 3);
