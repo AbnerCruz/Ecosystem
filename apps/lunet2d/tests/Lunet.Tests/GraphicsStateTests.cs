@@ -241,3 +241,38 @@ internal static class MatrixExtensions
     /// <summary>Aplica só a parte 2D (X,Y) da projeção, para testar o mapeamento para o espaço do dispositivo.</summary>
     public static Matrix3x2 ToMatrix3x2(this Matrix4x4 m) => new(m.M11, m.M12, m.M21, m.M22, m.M41, m.M42);
 }
+
+public class SpriteTests
+{
+    [Fact]
+    public void Sprite_DrawsAroundItsOriginWithScaleAndKeepsRegion()
+    {
+        var backend = new RecordingBackend();
+        var device = new GraphicsDevice(backend, 100, 100);
+        using var texture = Texture2D.CreateSolid(device, 16, 16, Color.White);
+        var sprite = new Sprite(texture, new RectangleF(8, 0, 8, 8)) { Scale = new Vector2(2, 2), Color = Color.Red };
+        Assert.Equal(new Vector2(4, 4), sprite.Origin); // centro da região
+
+        var batch = new SpriteBatch(device);
+        batch.Begin();
+        batch.Draw(sprite, new Vector2(50, 50));
+        batch.End();
+        var v = backend.Batches[^1].Vertices;
+        Assert.Equal(new Vector2(42, 42), v[0].Position); // 50 - 4*2
+        Assert.Equal(new Vector2(58, 58), v[2].Position);
+        Assert.Equal(new Vector2(0.5f, 0), v[0].TexCoord);
+        Assert.Equal(Color.Red.PackedRgba, v[0].Color);
+    }
+
+    [Fact]
+    public void Sprite_FromAtlasUsesRegionPivot()
+    {
+        var backend = new RecordingBackend();
+        var device = new GraphicsDevice(backend, 100, 100);
+        using var texture = Texture2D.CreateSolid(device, 16, 16, Color.White);
+        var atlas = new TextureAtlas(texture, [new AtlasRegion("pé", new RectangleF(0, 0, 8, 16), 0.5f, 1f)]);
+        var sprite = Sprite.FromAtlas(atlas, "pé");
+        Assert.Equal(new Vector2(4, 16), sprite.Origin);
+        Assert.Throws<KeyNotFoundException>(() => Sprite.FromAtlas(atlas, "nada"));
+    }
+}

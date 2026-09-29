@@ -106,6 +106,16 @@ public sealed class SpriteBatch
         Draw(atlas.Texture, dest, r.Bounds, color, rotation, origin);
     }
 
+    /// <summary>Desenha o sprite com a origem em <paramref name="position"/>, usando a cor, escala e rotação do próprio sprite.</summary>
+    public void Draw(Sprite sprite, Vector2 position)
+    {
+        ArgumentNullException.ThrowIfNull(sprite);
+        var size = sprite.Source.Size * sprite.Scale;
+        var origin = sprite.Origin * sprite.Scale;
+        var dest = new RectangleF(position.X - origin.X, position.Y - origin.Y, size.X, size.Y);
+        Draw(sprite.Texture, dest, sprite.Source, sprite.Color, sprite.Rotation, sprite.Origin);
+    }
+
     /// <summary>Escreve texto. Uma quebra de linha (<c>\n</c>) desce uma linha.</summary>
     public void DrawString(SpriteFont font, string text, Vector2 position, Color color, float scale = 1f)
     {
