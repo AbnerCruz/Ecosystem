@@ -50,6 +50,7 @@
 
 ### Changed
 
+- A rotina de fechamento de cada fase agora exige roteiro detalhado de teste no aparelho e aprovação explícita do usuário, registrados na auditoria antes de avançar.
 - Instruções compartilhadas migradas de `CLAUDE.md` para `AGENTS.md`, com referências e teste de existência atualizados.
 - ROADMAP: itens sem validação em aparelho voltam a pendentes; resumo da Fase 3 e README alinhados ao estado registrado.
 

@@ -819,6 +819,14 @@ Depois expanda, sempre preservando uma versão utilizável.
 
 ## 28. FASES E GATES
 
+Cada gate de fase é validado pelo usuário na release candidata. Ao terminar
+a implementação da fase, entregue instruções detalhadas e reproduzíveis
+para testar no aparelho cada funcionalidade e o gate: link do APK,
+preparação, passos, resultados esperados, regressões relevantes e como
+relatar falhas. Registre a versão e o retorno na auditoria. Uma fase
+só passa à próxima após aprovação explícita do usuário; se falhar,
+corrija e envie nova versão com roteiro de reteste.
+
 ### Fase 0 --- Foundation
 
 Repo, solution, projects, architecture rules, README, ROADMAP,

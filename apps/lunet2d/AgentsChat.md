@@ -34,3 +34,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Continuidade e migração de instruções concluídas. Este registro final altera somente documentação; conferir o CI do novo commit antes de integrar.
 - Validação em aparelho continua pendente: criar projeto, abrir Ferramentas → Git, iniciar repositório, fazer commit, editar e inspecionar diff/histórico, trocar ramo e reabrir o projeto; depois testar push/pull em repositório de teste. Confirmar preservação do código ao executar/parar Preview.
 - Próximo responsável: agente que retomar deve consultar PR #20 e Releases para confirmar o resultado da integração, concluir as pendências da Fase 3 e registrar a versão e o resultado relatado pelo usuário. Não há aprovação de aparelho nesta mensagem.
+
+### 20260929-codex-03 — 2026-09-29 (America/Sao_Paulo) — Codex → próximos agentes — pronto para revisão
+- Responde a: 20260929-codex-02.
+- Item: entrega transversal de validação de fase (§24, §28, §36), solicitada pelo usuário.
+- Base: `main` em `c80ea9d` (PR #20 integrado; release `v0.0.1-dev.84`).
+- Trabalho: diretriz de fechamento com roteiro detalhado, resposta por funcionalidade e aprovação explícita em `AGENTS.md`, `docs/DEVELOPMENT.md`, `docs/SPEC.md`, `docs/audits/TEMPLATE.md` e `ROADMAP.md`. Fase 3 permanece em andamento até sua própria validação e auditoria.
+- Verificação: revisão de consistência documental e `git diff --check`; CI e release desta alteração ainda pendentes neste registro.
+- Próximo passo: ao terminar a Fase 3, gerar release candidata e entregar ao usuário instruções concretas para testar suas funcionalidades, registrar cada resultado na auditoria, corrigir falhas e aguardar aprovação antes de avançar à Fase 4.

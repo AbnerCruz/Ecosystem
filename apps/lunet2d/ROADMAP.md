@@ -329,6 +329,7 @@ Observabilidade (§23):
 - [ ] Erros de build, Roslyn, runtime, plugin e agente aparecem nos painéis certos; logs exportáveis.
 
 Entrega (§24, §25):
+- [x] Ao terminar cada fase, entregar roteiro detalhado de validação da release ao usuário, registrar resultados na auditoria e aguardar aceite explícito antes de marcá-la ✅ ou iniciar a próxima fase (§24, §28, §36; pedido do usuário em 2026-09-29). Diretriz documentada; aplica-se às próximas fases, sem alterar retroativamente as auditorias 0–2.
 - [x] Continuidade entre agentes: migrar `CLAUDE.md` para `AGENTS.md`, criar `AgentsChat.md` e retomar o PR #20 corrigindo o build Android (§24, §30, §36; pedido do usuário em 2026-09-29).
 - [x] CHANGELOG com Added/Changed/Fixed/Performance/Deprecated/Removed/Security.
 - [x] SemVer com `VERSION`.

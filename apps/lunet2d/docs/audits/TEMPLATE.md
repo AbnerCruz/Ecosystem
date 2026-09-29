@@ -3,6 +3,7 @@
 - Data:
 - Versão testada (release):
 - Responsável:
+- Release candidata (link do APK):
 
 ## 1. Gate (§28)
 
@@ -53,6 +54,15 @@ Resultado (aprovado / reprovado) e como foi verificado:
 
 ## 10. Pendências herdadas e próxima fase
 
+## 11. Roteiro e validação do usuário
+
+- Link ou texto do roteiro detalhado entregue (versão, preparo, passos, resultados esperados, regressão e como relatar falhas):
+- Data de envio:
+- Resultado por item (passou / falhou / não testado):
+- Modelo do aparelho e versão do Android, se informados:
+- Falhas, correções e versão de reteste:
+- Aprovação explícita do gate pelo usuário (data e referência), ou **aguardando validação**:
+
 ## Decisão
 
-Fase concluída? (sim / não — o que falta)
+Fase concluída? (sim somente após aprovação explícita do usuário / não — o que falta)
