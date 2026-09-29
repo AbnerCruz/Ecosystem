@@ -98,6 +98,7 @@ public sealed class GameHost
         if (!_started || IsFaulted || _loop is null) return;
         _clock += Math.Max(0, elapsedSeconds);
         Input.RecognizeGestures(_clock);
+        if (!Guard(_game.RunDispatcher)) return;
         if (!_paused)
         {
             var steps = _loop.Advance(elapsedSeconds);

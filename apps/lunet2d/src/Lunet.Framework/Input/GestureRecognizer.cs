@@ -3,28 +3,40 @@ using System.Numerics;
 namespace Lunet.Input;
 
 /// <summary>
-/// Reconhece gestos de um dedo a partir dos toques de cada quadro. Independe da fase informada:
+/// Reconhece gestos a partir dos toques de cada quadro. Independe da fase informada:
 /// um dedo aparece quando surge um id ativo e termina quando some ou é solto.
+/// Com dois dedos ativos emite Pinch e Rotate (e suprime os gestos de um dedo).
 /// </summary>
 public sealed class GestureRecognizer
 {
     private sealed class Track
     {
         public int Id;
-        public Vector2 Start, Last, Current;
+        public Vector2 Start, Last, Current, Prev;
         public double StartTime, LastTime;
         public Vector2 Velocity;
-        public bool Dragging, LongPressed, Seen;
+        public bool Dragging, LongPressed, Seen, MultiTouch, Released;
     }
 
     private readonly List<Track> _tracks = [];
     private readonly List<Track> _ended = [];
+    private float _lastPairDistance;
+    private float _lastPairAngle;
+    private bool _pairActive;
+    private double _lastTapTime = double.NegativeInfinity;
+    private Vector2 _lastTapPosition;
 
     /// <summary>Distância (unidades virtuais) a partir da qual o toque vira arrasto.</summary>
     public float DragThreshold { get; set; } = 10f;
 
     public double TapMaxSeconds { get; set; } = 0.3;
     public double LongPressSeconds { get; set; } = 0.5;
+
+    /// <summary>Tempo máximo entre dois toques para formar um DoubleTap.</summary>
+    public double DoubleTapSeconds { get; set; } = 0.3;
+
+    /// <summary>Distância máxima entre os dois toques de um DoubleTap.</summary>
+    public float DoubleTapDistance { get; set; } = 30f;
 
     /// <summary>Velocidade mínima (unidades/s) na soltura para ser Swipe.</summary>
     public float SwipeMinSpeed { get; set; } = 600f;
@@ -40,18 +52,17 @@ public sealed class GestureRecognizer
             {
                 if (track is null)
                 {
-                    track = new Track { Id = touch.Id, Start = touch.Position, Last = touch.Position, StartTime = now, LastTime = now };
+                    track = new Track { Id = touch.Id, Start = touch.Position, Last = touch.Position, Current = touch.Position, Prev = touch.Position, StartTime = now, LastTime = now };
                     _tracks.Add(track);
                 }
                 track.Seen = true;
-                Advance(track, touch.Position, now, output);
+                track.Current = touch.Position;
             }
             else if (track is not null && touch.Phase == TouchPhase.Released)
             {
                 track.Seen = true;
-                Advance(track, touch.Position, now, output);
-                Finish(track, now, output);
-                _ended.Add(track);
+                track.Current = touch.Position;
+                track.Released = true;
             }
             else if (track is not null)
             {
@@ -59,24 +70,71 @@ public sealed class GestureRecognizer
             }
         }
 
-        // Dedos que sumiram sem soltura explícita são tratados como soltos.
+        var active = _tracks.Where(t => t.Seen && !t.Released && !_ended.Contains(t)).ToList();
+        if (active.Count >= 2)
+        {
+            foreach (var t in active) t.MultiTouch = true;
+            UpdatePair(active[0], active[1], output);
+        }
+        else
+        {
+            _pairActive = false;
+        }
+
         foreach (var track in _tracks)
-            if (!track.Seen && !_ended.Contains(track)) { Finish(track, now, output); _ended.Add(track); }
+        {
+            if (_ended.Contains(track)) continue;
+            if (!track.Seen || track.Released)
+            {
+                if (!track.MultiTouch) { AdvanceSingle(track, track.Current, now, output); Finish(track, now, output); }
+                _ended.Add(track);
+            }
+            else if (!track.MultiTouch)
+            {
+                AdvanceSingle(track, track.Current, now, output);
+            }
+        }
 
         foreach (var track in _ended) _tracks.Remove(track);
         _ended.Clear();
     }
 
-    private void Advance(Track track, Vector2 position, double now, List<Gesture> output)
+    private void UpdatePair(Track a, Track b, List<Gesture> output)
+    {
+        var delta = b.Current - a.Current;
+        var distance = delta.Length();
+        var angle = MathF.Atan2(delta.Y, delta.X);
+        var center = (a.Current + b.Current) * 0.5f;
+        if (!_pairActive)
+        {
+            _pairActive = true;
+            _lastPairDistance = distance;
+            _lastPairAngle = angle;
+            return;
+        }
+        if (_lastPairDistance > 0 && MathF.Abs(distance - _lastPairDistance) > 0.5f)
+        {
+            output.Add(new Gesture(GestureType.Pinch, a.Id, center, Vector2.Zero, Vector2.Zero, scale: distance / _lastPairDistance));
+            _lastPairDistance = distance;
+        }
+        var rotation = MathEx.AngleDifference(_lastPairAngle, angle);
+        if (MathF.Abs(rotation) > 0.01f)
+        {
+            output.Add(new Gesture(GestureType.Rotate, a.Id, center, Vector2.Zero, Vector2.Zero, rotation: rotation));
+            _lastPairAngle = angle;
+        }
+    }
+
+    private void AdvanceSingle(Track track, Vector2 position, double now, List<Gesture> output)
     {
         var dt = now - track.LastTime;
         if (dt > 0)
         {
-            var instant = (position - track.Current) / (float)dt;
+            var instant = (position - track.Prev) / (float)dt;
             track.Velocity = track.Velocity == Vector2.Zero ? instant : Vector2.Lerp(track.Velocity, instant, 0.5f);
             track.LastTime = now;
         }
-        track.Current = position;
+        track.Prev = position;
 
         if (!track.Dragging && Vector2.Distance(track.Start, position) > DragThreshold) track.Dragging = true;
         if (track.Dragging)
@@ -102,6 +160,16 @@ public sealed class GestureRecognizer
         else if (!track.LongPressed && now - track.StartTime <= TapMaxSeconds)
         {
             output.Add(new Gesture(GestureType.Tap, track.Id, track.Current, Vector2.Zero, Vector2.Zero));
+            if (now - _lastTapTime <= DoubleTapSeconds && Vector2.Distance(_lastTapPosition, track.Current) <= DoubleTapDistance)
+            {
+                output.Add(new Gesture(GestureType.DoubleTap, track.Id, track.Current, Vector2.Zero, Vector2.Zero));
+                _lastTapTime = double.NegativeInfinity; // o terceiro toque não forma outro DoubleTap
+            }
+            else
+            {
+                _lastTapTime = now;
+                _lastTapPosition = track.Current;
+            }
         }
     }
 
@@ -109,5 +177,7 @@ public sealed class GestureRecognizer
     {
         _tracks.Clear();
         _ended.Clear();
+        _pairActive = false;
+        _lastTapTime = double.NegativeInfinity;
     }
 }

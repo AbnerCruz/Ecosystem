@@ -49,6 +49,17 @@ internal static class QuickReference
           Input.IsKeyDown(Keys.Space) / IsKeyPressed(...)          teclado físico
           Input.Accelerometer                                      Vector3 em m/s²
 
+        Serviços e tempo
+          Services.Get<T>() / Add / TryGet          serviços do jogo
+          Dispatcher.Post(ação)                     roda na thread do jogo (seguro de qualquer thread)
+          Timers.After(s, ação) / Every(s, ação)    devolve TimerHandle.Cancel()
+          new ObjectPool<T>(criar, reiniciar)       Get() / Return(item)
+
+        Gestos extras: GestureType.DoubleTap, Pinch (Scale), Rotate (Rotation)
+        VirtualStick(centro, raio).Update(Input) → Direction (0–1) · VirtualButton(círculo).IsDown/WasPressed
+
+        Geometria: Transform2D, Ray2D.Intersects(Circle/RectangleF), Geometry.SatOverlap/PolygonContains/DistanceToSegment
+
         Utilidades
           MathEx.Lerp / Remap / SmoothStep / MoveToward / AngleDifference
           new RandomSource(semente).NextFloat/NextInt/NextDirection   determinístico

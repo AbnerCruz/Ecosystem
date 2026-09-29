@@ -63,15 +63,15 @@ Gate: pequeno jogo 2D completo somente com código. **Atingido** pelo Demo "Cole
 Core
 - [x] `Game`, `GameTime`, `GameConfiguration`, `GameLog`.
 - [x] Loop de passo fixo, interpolação, proteção contra spiral-of-death, pause/resume.
-- [ ] `GameServices` (registro de serviços do jogo).
-- [ ] `Dispatcher` (executar trabalho na thread do jogo).
+- [x] `GameServices` (registro de serviços do jogo; o host registra os padrão).
+- [x] `Dispatcher` (executar trabalho na thread do jogo).
 - [ ] Lifecycle completo do Android (onStop/onDestroy, perda de contexto GL sem reiniciar o jogo).
 - [ ] Suporte a refresh rate superior a 60 Hz no desenho.
-- [ ] Timers e object pools (§7 complementares).
+- [x] Timers e object pools (§7 complementares).
 
 Matemática
 - [x] `RectangleF`, `Circle`, `Color`, `MathEx`, `RandomSource`.
-- [ ] `Transform2D`, `Ray2D`, `Geometry` (SAT, distância, interseções §7 Física/camada simples).
+- [x] `Transform2D`, `Ray2D`, `Geometry` (distância, interseções de segmentos, polígonos, SAT).
 
 Graphics
 - [x] `GraphicsDevice`, `Texture2D`, `SpriteBatch`, `SpriteSheet`, resolução virtual com letterbox, filtro Point/Linear, fonte bitmap embutida.
@@ -86,8 +86,8 @@ Graphics
 Input
 - [x] Toque (`TouchPoint`), Tap, LongPress, Drag, Swipe, teclado, acelerômetro.
 - [ ] `TouchCollection` como tipo público, `Pointer`.
-- [ ] DoubleTap, Pinch, Rotate.
-- [ ] `VirtualStick` e botões virtuais.
+- [x] DoubleTap, Pinch, Rotate (testados com toques sintéticos; multitoque real só valida em aparelho — **feito, sem validação em aparelho**).
+- [ ] `VirtualStick` e `VirtualButton` (lógica pronta e testada; falta desenhar/usar no Demo e validar em aparelho).
 - [ ] Gamepad.
 - [ ] Giroscópio.
 - [ ] Haptics.
