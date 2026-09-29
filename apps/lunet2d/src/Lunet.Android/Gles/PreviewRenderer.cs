@@ -53,6 +53,9 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         _log = log;
     }
 
+    /// <summary>Instância do jogo em execução (nula antes de iniciar ou após parar); o Inspector lê dela.</summary>
+    public Game? CurrentGame => _loaded?.Game;
+
     public void SetTouches(TouchPoint[] touches)
     {
         lock (_inputLock) _touches = touches;

@@ -1,0 +1,97 @@
+namespace Lunet;
+
+/// <summary>Limita um número a um intervalo no Inspector (vira um controle deslizante).</summary>
+/// <param name="min">Menor valor permitido.</param>
+/// <param name="max">Maior valor permitido.</param>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class RangeAttribute(float min, float max) : Attribute
+{
+    /// <summary>Menor valor permitido.</summary>
+    public float Min { get; } = min;
+    /// <summary>Maior valor permitido.</summary>
+    public float Max { get; } = max;
+}
+
+/// <summary>O Inspector mostra o valor, mas não deixa editar.</summary>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class ReadOnlyAttribute : Attribute
+{
+}
+
+/// <summary>Esconde o campo ou propriedade do Inspector.</summary>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class HiddenAttribute : Attribute
+{
+}
+
+/// <summary>Mostra um campo privado no Inspector (por padrão só os públicos aparecem).</summary>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class InspectAttribute : Attribute
+{
+}
+
+/// <summary>Texto de várias linhas no Inspector.</summary>
+/// <param name="lines">Quantidade de linhas visíveis.</param>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class MultilineAttribute(int lines = 4) : Attribute
+{
+    /// <summary>Quantidade de linhas visíveis.</summary>
+    public int Lines { get; } = lines;
+}
+
+/// <summary>Trata um texto como cor hexadecimal (<c>#RRGGBB</c> ou <c>#RRGGBBAA</c>) e mostra um seletor de cor.</summary>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class ColorAttribute : Attribute
+{
+}
+
+/// <summary>Trata um texto como caminho de arquivo do projeto e mostra um seletor de arquivo.</summary>
+/// <param name="filter">Extensões aceitas, por exemplo <c>.png;.jpg</c>. Vazio aceita qualquer arquivo.</param>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class FileAttribute(string filter = "") : Attribute
+{
+    /// <summary>Extensões aceitas.</summary>
+    public string Filter { get; } = filter;
+}
+
+/// <summary>Tipos de recurso do projeto, usados por <see cref="AssetAttribute"/>.</summary>
+public enum AssetKind
+{
+    /// <summary>Qualquer recurso.</summary>
+    Any,
+    /// <summary>Imagem.</summary>
+    Texture,
+    /// <summary>Efeito sonoro.</summary>
+    Sound,
+    /// <summary>Música.</summary>
+    Music,
+    /// <summary>Dados em JSON ou texto.</summary>
+    Data,
+}
+
+/// <summary>Trata um texto como o nome de um recurso do projeto (<c>Content/</c>) e mostra um seletor de recursos.</summary>
+/// <param name="kind">Tipo de recurso aceito.</param>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class AssetAttribute(AssetKind kind = AssetKind.Any) : Attribute
+{
+    /// <summary>Tipo de recurso aceito.</summary>
+    public AssetKind Kind { get; } = kind;
+}
+
+/// <summary>Agrupa campos sob um título no Inspector.</summary>
+/// <param name="name">Título do grupo.</param>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class GroupAttribute(string name) : Attribute
+{
+    /// <summary>Título do grupo.</summary>
+    public string Name { get; } = name;
+}
+
+/// <summary>Texto de ajuda mostrado junto ao campo no Inspector.</summary>
+/// <param name="text">Explicação curta.</param>
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
+public sealed class TooltipAttribute(string text) : Attribute
+{
+    /// <summary>Explicação curta.</summary>
+    public string Text { get; } = text;
+}
