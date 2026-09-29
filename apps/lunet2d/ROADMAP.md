@@ -19,7 +19,7 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 | 0 Foundation | ✅ concluída (auditoria em `docs/audits/fase-0.md`) |
 | 1 Vertical Slice | ✅ concluída (auditoria em `docs/audits/fase-1.md`) |
 | 2 Framework Core | ✅ concluída e aprovada (auditoria em `docs/audits/fase-2.md`) |
-| 3 IDE | 🟡 editor validado só em desktop; falta a maior parte (docs offline, painéis, busca, rename...) |
+| 3 IDE | 🟡 IDE, documentação, Inspector, layouts e Git implementados em parte; validação em aparelho e demais pendências abaixo |
 | 4–15 | ⬜ |
 
 ---
@@ -117,38 +117,38 @@ Gate: experiência de IDE real.
 
 Editor de código (§9)
 - [ ] Realce, números de linha, desfazer/refazer, indentação, autocompletar, definição, referências, dica, localizar/substituir, diagnósticos ao vivo **(feito, sem validação em aparelho)**.
-- [x] Multi-cursor / multi-seleção. (feito, sem validação em aparelho; `MultiCursor` testado; próxima ocorrência, todas, cursor acima/abaixo, digitação replicada)
-- [x] Code folding. (feito, sem validação em aparelho; marcador no número da linha e menu Edição; regiões vindas do Roslyn)
-- [x] Atalhos de teclado (teclado físico). (feito, sem validação em aparelho; mapa testado, ajuda em Ferramentas → Atalhos)
-- [x] Minimap opcional. (feito, sem validação em aparelho; liga/desliga em Configurações)
+- [ ] Multi-cursor / multi-seleção. (feito, sem validação em aparelho; `MultiCursor` testado; próxima ocorrência, todas, cursor acima/abaixo, digitação replicada)
+- [ ] Code folding. (feito, sem validação em aparelho; marcador no número da linha e menu Edição; regiões vindas do Roslyn)
+- [ ] Atalhos de teclado (teclado físico). (feito, sem validação em aparelho; mapa testado, ajuda em Ferramentas → Atalhos)
+- [ ] Minimap opcional. (feito, sem validação em aparelho; liga/desliga em Configurações)
 - [ ] Documentos grandes e virtualização (medir; ADR 0003 prevê view própria se necessário).
 - [ ] Estrutura de texto eficiente (piece table/rope) se a medição justificar. (`PieceTable` pronta e testada; medição no host: 500 edições em 200 mil linhas < 2 s; integração ao editor depende da medição em aparelho)
 
 Roslyn (§9)
-- [x] Renomear símbolo. (feito, sem validação em aparelho; recusa conflitos e símbolos do framework)
-- [x] Formatação de código. (feito, sem validação em aparelho; opção "formatar ao executar")
-- [x] Quick fixes e code actions. (feito, sem validação em aparelho; using faltando/sobrando, ";", "você quis dizer", ordenar usings)
+- [ ] Renomear símbolo. (feito, sem validação em aparelho; recusa conflitos e símbolos do framework)
+- [ ] Formatação de código. (feito, sem validação em aparelho; opção "formatar ao executar")
+- [ ] Quick fixes e code actions. (feito, sem validação em aparelho; using faltando/sobrando, ";", "você quis dizer", ordenar usings)
 - [x] Compilação incremental (reaproveitar compilação entre Runs). (árvores reaproveitadas e resultado em cache quando nada mudou; testado)
-- [x] Inspeção de símbolos. (feito, sem validação em aparelho; Informações do símbolo e Estrutura do arquivo)
+- [ ] Inspeção de símbolos. (feito, sem validação em aparelho; Informações do símbolo e Estrutura do arquivo)
 
 IDE mobile (§11)
 - [x] Explorer (ver Fase 1).
 - [ ] Painéis: Preview, Inspector, Console, Problems, Search, Assets, Documentation, Agent, Profiler (Preview, Console, Problems e Explorer já existem no workspace).
-- [x] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes. (feito, sem validação em aparelho; painel encaixa embaixo/à direita, divisória arrastável, layouts salvos e predefinidos)
-- [x] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles. (feito, sem validação em aparelho; em paisagem o painel vai para a direita; rótulos e botões não são selecionáveis)
-- [x] Busca no projeto inteiro. (feito, sem validação em aparelho; menu ⋯ → Buscar no projeto)
-- [x] Console e Problems com logs exportáveis (§23). (feito, sem validação em aparelho; Ferramentas → Exportar logs)
-- [x] Settings. (feito, sem validação em aparelho; fonte, números de linha, minimapa, formatar ao executar, tela ligada, taxa de atualização)
+- [ ] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes. (feito, sem validação em aparelho; painel encaixa embaixo/à direita, divisória arrastável, layouts salvos e predefinidos)
+- [ ] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles. (feito, sem validação em aparelho; em paisagem o painel vai para a direita; rótulos e botões não são selecionáveis)
+- [ ] Busca no projeto inteiro. (feito, sem validação em aparelho; menu ⋯ → Buscar no projeto)
+- [ ] Console e Problems com logs exportáveis (§23). (feito, sem validação em aparelho; Ferramentas → Exportar logs)
+- [ ] Settings. (feito, sem validação em aparelho; fonte, números de linha, minimapa, formatar ao executar, tela ligada, taxa de atualização)
 
 Inspector (§12)
-- [x] Inspector padrão por reflexão; atributos Range, ReadOnly, Hidden, Multiline, Color, File, Asset, Group, Tooltip. (feito, sem validação em aparelho; testado por reflexão, ainda falta a bateria no aparelho)
-- [x] `Inspector<T>` customizado. (feito, sem validação em aparelho)
-- [x] Inspecionar variáveis do jogo em execução (fluxo principal §29). (feito, sem validação em aparelho; botão 🔍 no Preview, edição ao vivo na thread do jogo)
+- [ ] Inspector padrão por reflexão; atributos Range, ReadOnly, Hidden, Multiline, Color, File, Asset, Group, Tooltip. (feito, sem validação em aparelho; testado por reflexão, ainda falta a bateria no aparelho)
+- [ ] `Inspector<T>` customizado. (feito, sem validação em aparelho)
+- [ ] Inspecionar variáveis do jogo em execução (fluxo principal §29). (feito, sem validação em aparelho; botão 🔍 no Preview, edição ao vivo na thread do jogo)
 
 Documentação (§15)
-- [x] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33). (feito, sem validação em aparelho; `Lunet.Docs`, `docs/api/lunet-framework.json` com teste de deriva, guias em `docs/guides`)
+- [ ] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33). (feito, sem validação em aparelho; `Lunet.Docs`, `docs/api/lunet-framework.json` com teste de deriva, guias em `docs/guides`)
 - [ ] Cada API com descrição, assinatura, parâmetros, retorno, exemplos, remarks, relacionadas e versão de introdução.
-- [x] Integração com o editor: "Explain in Documentation". (feito, sem validação em aparelho; botão na Dica do símbolo)
+- [ ] Integração com o editor: "Explain in Documentation". (feito, sem validação em aparelho; botão na Dica do símbolo)
 - [ ] Documentação apontando para trechos dos jogos oficiais (depende da Fase 11).
 
 Preview e hot reload (§10)
@@ -157,7 +157,7 @@ Preview e hot reload (§10)
 
 Git, autosave e recovery (§22)
 - [ ] Autosave com journal (ver Fase 1) e recuperação.
-- [x] Git progressivo: status, diff, commit, history, branches, revert, push, pull. (feito, sem validação em aparelho; `Lunet.Git` em C# puro, ADR 0005; testado contra o `git` de verdade; falta validar push/pull no GitHub real)
+- [ ] Git progressivo: status, diff, commit, history, branches, revert, push, pull. (feito, sem validação em aparelho; `Lunet.Git` em C# puro, ADR 0005; testado contra o `git` de verdade; falta validar push/pull no GitHub real)
 
 Auditoria
 - [ ] Auditoria de fechamento da Fase 3 registrada em `docs/audits/`.
@@ -329,6 +329,7 @@ Observabilidade (§23):
 - [ ] Erros de build, Roslyn, runtime, plugin e agente aparecem nos painéis certos; logs exportáveis.
 
 Entrega (§24, §25):
+- [ ] Continuidade entre agentes: migrar `CLAUDE.md` para `AGENTS.md`, criar `AgentsChat.md` e retomar o PR #20 corrigindo o build Android (§24, §30, §36; pedido do usuário em 2026-09-29).
 - [x] CHANGELOG com Added/Changed/Fixed/Performance/Deprecated/Removed/Security.
 - [x] SemVer com `VERSION`.
 - [x] Cada alteração na `main` com CI verde gera development release com APK, checksums e notas.

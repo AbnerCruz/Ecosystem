@@ -4,6 +4,7 @@ Esta rotina vale para todo trabalho no Lunet2D, feito por pessoa ou por agente. 
 
 ## 1. Antes de começar qualquer trabalho (sempre)
 
+0. Ler `AGENTS.md` e `AgentsChat.md`; conferir alterações locais, branches e PRs abertos antes de assumir trabalho.
 1. Ler `ROADMAP.md`, seção "Estado atual" e a fase em andamento.
 2. Rodar `bash tools/roadmap-status.sh --pending` para ver o que já foi feito e o que falta, por fase.
 3. Reler no `docs/SPEC.md` as seções citadas nos itens escolhidos (a fase inteira, quando a fase mudar).
@@ -51,3 +52,7 @@ Enquanto a auditoria não estiver registrada e aprovada, a fase continua 🟡 na
 - Não avançar para além da fase atual por conta própria; validar com o usuário (aparelho) antes de depender do que ainda não foi testado.
 - Ao receber um pedido novo, encaixá-lo no ROADMAP antes de implementar.
 - Manter `main` sempre utilizável.
+
+## 6. Passagem entre agentes
+
+Use `AgentsChat.md` para registrar entregas, perguntas, revisões e bloqueios, com autoria e evidências. Cada sessão deve deixar o próximo passo reproduzível; decisões de produto e progresso continuam no SPEC e ROADMAP. Leia as regras de colaboração em `AGENTS.md`.

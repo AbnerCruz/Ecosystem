@@ -228,10 +228,9 @@ internal sealed class GitPanel
 
     private void InitRepository() => Work("Iniciando Git", _ =>
     {
-        var repo = GitRepository.Init(_directory);
-        var ignore = Path.Combine(_directory, ".gitignore");
+        GitRepository.Init(_directory);
+        var ignore = System.IO.Path.Combine(_directory, ".gitignore");
         if (!File.Exists(ignore)) File.WriteAllText(ignore, DefaultIgnore);
-        _ = repo;
         return Task.FromResult<string?>("Repositório criado. Faça o primeiro commit na aba Alterações.");
     });
 
