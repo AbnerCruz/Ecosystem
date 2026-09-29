@@ -3,6 +3,7 @@ using System.Numerics;
 using Lunet.Compiler;
 using Lunet.Content;
 using Lunet.Core;
+using Lunet.Graphics;
 using Lunet.Input;
 using Lunet.Runtime;
 using Lunet.Storage;
@@ -172,13 +173,13 @@ public class LabTemplateTests : IDisposable
             Frame(2);
         }
 
-        Tap(100, 25); // música liga
+        Tap(100, 59); // música liga
         Assert.Contains("playMusic", audio.Calls);
-        Tap(100, 65); // beep + vibrar
+        Tap(100, 95); // beep + vibrar
         Assert.Contains(60, haptics.Calls);
-        Tap(100, 105); // volume música +
-        Tap(300, 105); // volume música -
-        Tap(100, 25); // música desliga com fade
+        Tap(100, 131); // volume música +
+        Tap(300, 131); // volume música -
+        Tap(100, 59); // música desliga com fade
         Frame(120);
         Assert.Contains("stopMusic", audio.Calls);
 
@@ -207,5 +208,27 @@ public class LabTemplateTests : IDisposable
 
         Assert.False(host.IsFaulted, host.Fault?.ToString());
         Assert.NotEmpty(backend.Batches);
+
+        // Página 2: gráficos (mistura, shader, amostragem, recorte, alvo de desenho, pixel perfect).
+        var statesBefore = backend.States.Count;
+        Tap(100, 23);
+        Frame(3);
+        var page2 = backend.States.Skip(statesBefore).ToList();
+        Assert.Contains(page2, s => s.Blend == BlendMode.Additive);
+        Assert.Contains(page2, s => s.Shader != 0 && s.Uniforms!.ContainsKey("uAmount"));
+        Assert.Contains(page2, s => s.Scissor is not null);
+        Assert.Contains(page2, s => s.Sampler == SamplerState.PointClamp);
+        Assert.Contains(page2, s => s.Sampler == SamplerState.LinearClamp);
+        Assert.Single(backend.RenderTargets);
+        Assert.Contains(backend.TargetSwitches, t => t.Handle == backend.RenderTargets[0].Handle);
+        Assert.False(host.GraphicsDevice!.PixelPerfect);
+        Tap(300, 300);
+        Tap(300, 300); // dois toques rápidos = DoubleTap
+        Assert.True(host.GraphicsDevice.PixelPerfect);
+
+        host.Stop();
+        Assert.Empty(backend.LiveTargets);
+        Assert.Empty(backend.LiveShaders);
+        Assert.False(host.IsFaulted, host.Fault?.ToString());
     }
 }

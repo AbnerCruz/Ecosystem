@@ -165,7 +165,7 @@ public static class ProjectTemplates
         }
         """.Replace("\r\n", "\n") + "\n";
 
-    /// <summary>Laboratório: painel de testes de aparelho (áudio, sensores, controle, gestos, controles virtuais).</summary>
+    /// <summary>Laboratório: painel de testes de aparelho em duas páginas (dispositivos e gráficos).</summary>
     public static string LabSource(string className) => $$"""
         using System.Numerics;
         using Lunet;
@@ -173,56 +173,110 @@ public static class ProjectTemplates
         using Lunet.Graphics;
         using Lunet.Input;
 
-        // Laboratório: cada bloco testa um recurso no aparelho. Toque nos botões; incline o aparelho;
-        // conecte um controle; faça pinça e giro com dois dedos.
+        // Laboratório: cada bloco testa um recurso no aparelho.
+        // Página 1: música, som, vibração, sensores, controle, gestos de dois dedos, joystick e botão de tela.
+        // Página 2: mistura (blend), shader, recorte, alvo de desenho, amostragem, pixel perfect e área segura.
         public sealed class {{className}} : Game
         {
+            readonly RectangleF pageButton = new(8, 8, 344, 30);
             readonly (string Label, RectangleF Area)[] buttons =
             {
-                ("Música liga/desliga (fade)", new RectangleF(8, 8, 344, 34)),
-                ("Beep + vibrar", new RectangleF(8, 48, 344, 34)),
-                ("Volume música +", new RectangleF(8, 88, 168, 34)),
-                ("Volume música -", new RectangleF(184, 88, 168, 34)),
+                ("Música liga/desliga (fade)", new RectangleF(8, 44, 344, 30)),
+                ("Beep + vibrar", new RectangleF(8, 80, 344, 30)),
+                ("Volume música +", new RectangleF(8, 116, 168, 30)),
+                ("Volume música -", new RectangleF(184, 116, 168, 30)),
             };
 
             SpriteBatch batch = null!;
             SpriteFont font = null!;
             Texture2D pixel = null!;
             Texture2D dot = null!;
+            Texture2D rainbow = null!;
+            Texture2D checker = null!;
             SoundEffect beep = null!;
             Music theme = null!;
             VirtualStick stick = null!;
             VirtualButton fire = null!;
-            Vector2 tilt = new(180, 300);
-            Vector2 padBall = new(90, 330);
-            Vector2 stickBall = new(80, 560);
+            RenderTarget2D minimap = null!;
+            Shader gray = null!;
+            Vector2 tilt = new(180, 250);
+            Vector2 padBall = new(90, 350);
+            Vector2 stickBall = new(80, 540);
             float boxSize = 60;
             float boxAngle;
+            float clock;
             string lastGesture = "-";
             int fires;
+            int page;
 
             protected override void LoadContent()
             {
                 batch = new SpriteBatch(GraphicsDevice);
                 font = SpriteFont.CreateDefault(GraphicsDevice);
-                pixel = Texture2D.CreateSolid(GraphicsDevice, 1, 1, Color.White);
-                dot = Texture2D.CreateCircle(GraphicsDevice, 32, Color.White);
+                pixel = GraphicsDevice.WhiteTexture;
+                dot = Texture2D.CreateCircle(GraphicsDevice, 64, Color.White);
+                rainbow = MakeRainbow(64);
+                checker = MakeChecker(8);
                 beep = Content.LoadSound("Audio/beep.wav");
                 theme = Content.LoadMusic("Audio/loop.wav");
                 stick = new VirtualStick(new Vector2(80, 560), 50);
                 fire = new VirtualButton(new Circle(new Vector2(290, 560), 36));
+                minimap = new RenderTarget2D(GraphicsDevice, 96, 96);
+                gray = Shader.FromFragmentSource(GraphicsDevice,
+                    "uniform float uAmount; void main() { vec4 c = texture(uTex, vUv) * vColor; float g = dot(c.rgb, vec3(0.3, 0.59, 0.11)); outColor = vec4(mix(c.rgb, vec3(g), uAmount), c.a); }");
+            }
+
+            protected override void UnloadContent()
+            {
+                minimap.Dispose();
+                gray.Dispose();
+            }
+
+            Texture2D MakeRainbow(int size)
+            {
+                var pixels = new byte[size * size * 4];
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    int i = (y * size + x) * 4;
+                    pixels[i] = (byte)(255 * x / size);
+                    pixels[i + 1] = (byte)(255 * y / size);
+                    pixels[i + 2] = (byte)(255 - 255 * x / size);
+                    pixels[i + 3] = 255;
+                }
+                return Texture2D.FromPixels(GraphicsDevice, size, size, pixels);
+            }
+
+            Texture2D MakeChecker(int size)
+            {
+                var pixels = new byte[size * size * 4];
+                for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    int i = (y * size + x) * 4;
+                    byte v = (byte)((x + y) % 2 == 0 ? 255 : 40);
+                    pixels[i] = pixels[i + 1] = pixels[i + 2] = v;
+                    pixels[i + 3] = 255;
+                }
+                return Texture2D.FromPixels(GraphicsDevice, size, size, pixels);
             }
 
             protected override void Update(GameTime time)
             {
+                clock += time.DeltaSeconds;
                 foreach (var gesture in Input.Gestures)
                 {
                     lastGesture = gesture.Type.ToString();
                     switch (gesture.Type)
                     {
                         case GestureType.Tap:
+                            if (pageButton.Contains(gesture.Position)) { page = 1 - page; break; }
+                            if (page != 0) break;
                             for (int i = 0; i < buttons.Length; i++)
                                 if (buttons[i].Area.Contains(gesture.Position)) Press(i);
+                            break;
+                        case GestureType.DoubleTap:
+                            if (page == 1) GraphicsDevice.PixelPerfect = !GraphicsDevice.PixelPerfect;
                             break;
                         case GestureType.Pinch:
                             boxSize = System.Math.Clamp(boxSize * gesture.Scale, 20, 160);
@@ -233,21 +287,19 @@ public static class ProjectTemplates
                     }
                 }
 
-                // Acelerômetro: inclinar move a bola azul.
                 var a = Input.Accelerometer;
                 tilt += new Vector2(-a.X, a.Y) * 2f;
-                tilt = Vector2.Clamp(tilt, new Vector2(10, 140), new Vector2(350, 300));
+                tilt = Vector2.Clamp(tilt, new Vector2(10, 200), new Vector2(350, 300));
 
-                // Controle: stick esquerdo move a bola verde; A vibra.
                 var pad = Input.Gamepad;
                 padBall += pad.LeftStick * 3f;
-                padBall = Vector2.Clamp(padBall, new Vector2(10, 310), new Vector2(350, 420));
+                padBall = Vector2.Clamp(padBall, new Vector2(10, 330), new Vector2(350, 400));
                 if (Input.IsButtonPressed(GamepadButtons.A)) { beep.Play(); Haptics.Vibrate(30); }
 
                 stick.Update(Input);
                 fire.Update(Input);
                 stickBall += stick.Direction * 3f;
-                stickBall = Vector2.Clamp(stickBall, new Vector2(10, 440), new Vector2(350, 630));
+                stickBall = Vector2.Clamp(stickBall, new Vector2(10, 470), new Vector2(350, 630));
                 if (fire.WasPressed) { fires++; beep.Play(1f, 0f, 1.5f, false); Haptics.Vibrate(15, 0.4f); }
             }
 
@@ -274,32 +326,107 @@ public static class ProjectTemplates
 
             protected override void Draw(GameTime time)
             {
+                // Alvo de desenho primeiro: um minimapa girando (página 2 mostra o resultado).
+                GraphicsDevice.SetRenderTarget(minimap);
+                GraphicsDevice.Clear(new Color(30, 60, 30));
+                batch.Begin();
+                batch.Draw(rainbow, new RectangleF(48, 48, 48, 48), null, Color.White, clock, new Vector2(32, 32));
+                batch.Cross(new Vector2(48, 48), 6, Color.White);
+                batch.End();
+                GraphicsDevice.SetRenderTarget(null);
+
                 GraphicsDevice.Clear(new Color(18, 22, 40));
+                batch.Begin();
+                batch.FillRect(pageButton, new Color(90, 60, 120));
+                batch.DrawString(font, $"Página {page + 1}/2 (toque para trocar)", pageButton.Position + new Vector2(6, 8), Color.White, 2);
+                batch.End();
+                if (page == 0) DrawDevices();
+                else DrawGraphics();
+            }
+
+            void DrawDevices()
+            {
                 batch.Begin();
                 foreach (var (label, area) in buttons)
                 {
-                    batch.Draw(pixel, area, null, new Color(52, 64, 110), 0f, Vector2.Zero);
+                    batch.FillRect(area, new Color(52, 64, 110));
                     batch.DrawString(font, label, area.Position + new Vector2(6, 8), Color.White, 2);
                 }
 
-                var pos = new Vector2(8, 130);
+                var pos = new Vector2(8, 154);
                 batch.DrawString(font, $"Música: {(Audio.CurrentMusic is null ? "parada" : "tocando")}  vol {Audio.MusicBus.Volume:0.0}", pos, Color.Yellow, 1.5f);
                 var g = Input.Gyroscope;
                 var acc = Input.Accelerometer;
                 batch.DrawString(font, $"Acel {acc.X:0.0} {acc.Y:0.0} {acc.Z:0.0}  Giro {g.X:0.0} {g.Y:0.0} {g.Z:0.0}", pos + new Vector2(0, 16), Color.White, 1.5f);
                 batch.DrawString(font, $"Último gesto: {lastGesture}   Toques: {Input.TouchCount}", pos + new Vector2(0, 32), Color.White, 1.5f);
-                batch.DrawString(font, Input.Gamepad.IsConnected ? $"Controle: {Input.Gamepad.Buttons}" : "Controle: desconectado", pos + new Vector2(0, 176), Color.Green, 1.5f);
+                batch.DrawString(font, Input.Gamepad.IsConnected ? $"Controle: {Input.Gamepad.Buttons}" : "Controle: desconectado", new Vector2(8, 312), Color.Green, 1.5f);
 
-                batch.Draw(dot, tilt - new Vector2(16, 16), Color.CornflowerBlue);
-                batch.Draw(dot, padBall - new Vector2(16, 16), Color.Green);
-                batch.Draw(pixel, new RectangleF(250, 200, boxSize, boxSize), null, Color.Yellow, boxAngle, new Vector2(0.5f, 0.5f));
+                batch.Draw(dot, new RectangleF(tilt.X - 16, tilt.Y - 16, 32, 32), null, Color.CornflowerBlue, 0, Vector2.Zero);
+                batch.Draw(dot, new RectangleF(padBall.X - 16, padBall.Y - 16, 32, 32), null, Color.Green, 0, Vector2.Zero);
+                batch.Draw(pixel, new RectangleF(250, 420, boxSize, boxSize), null, Color.Yellow, boxAngle, new Vector2(0.5f, 0.5f));
 
-                batch.DrawString(font, "Joystick e botão de tela", new Vector2(8, 430), Color.White, 1.5f);
+                batch.DrawString(font, "Joystick e botão de tela", new Vector2(8, 450), Color.White, 1.5f);
                 batch.Draw(dot, new RectangleF(stick.Center.X - 50, stick.Center.Y - 50, 100, 100), null, new Color(255, 255, 255, 40), 0, Vector2.Zero);
-                batch.Draw(dot, stickBall - new Vector2(16, 16), Color.Red);
-                batch.Draw(dot, stick.Knob - new Vector2(16, 16), new Color(255, 255, 255, 160));
-                batch.Draw(dot, new Vector2(290 - 36, 560 - 36), fire.IsDown ? Color.Yellow : new Color(120, 120, 120));
+                batch.Draw(dot, new RectangleF(stickBall.X - 16, stickBall.Y - 16, 32, 32), null, Color.Red, 0, Vector2.Zero);
+                batch.Draw(dot, new RectangleF(stick.Knob.X - 16, stick.Knob.Y - 16, 32, 32), null, new Color(255, 255, 255, 160), 0, Vector2.Zero);
+                batch.Draw(dot, new RectangleF(290 - 36, 560 - 36, 72, 72), null, fire.IsDown ? Color.Yellow : new Color(120, 120, 120), 0, Vector2.Zero);
                 batch.DrawString(font, $"x{fires}", new Vector2(278, 552), Color.Black, 2);
+                batch.End();
+            }
+
+            void DrawGraphics()
+            {
+                var white = Color.White;
+
+                // Mistura: aditivo (esquerda) x alfa (direita).
+                batch.Begin(BlendState.Additive);
+                batch.Draw(dot, new RectangleF(30, 70, 64, 64), null, new Color(255, 0, 0), 0, Vector2.Zero);
+                batch.Draw(dot, new RectangleF(60, 70, 64, 64), null, new Color(0, 255, 0), 0, Vector2.Zero);
+                batch.Draw(dot, new RectangleF(45, 100, 64, 64), null, new Color(0, 0, 255), 0, Vector2.Zero);
+                batch.End();
+                batch.Begin(BlendState.Alpha);
+                batch.Draw(dot, new RectangleF(230, 70, 64, 64), null, new Color(255, 0, 0, 160), 0, Vector2.Zero);
+                batch.Draw(dot, new RectangleF(260, 70, 64, 64), null, new Color(0, 255, 0, 160), 0, Vector2.Zero);
+                batch.Draw(dot, new RectangleF(245, 100, 64, 64), null, new Color(0, 0, 255, 160), 0, Vector2.Zero);
+                batch.DrawString(font, "Aditivo", new Vector2(50, 170), white, 1.5f);
+                batch.DrawString(font, "Alfa", new Vector2(250, 170), white, 1.5f);
+                batch.End();
+
+                // Shader: cinza que oscila.
+                gray.SetFloat("uAmount", 0.5f + 0.5f * System.MathF.Sin(clock * 2));
+                batch.Begin(shader: gray);
+                batch.Draw(rainbow, new RectangleF(20, 200, 96, 96), null, white, 0, Vector2.Zero);
+                batch.End();
+
+                // Amostragem: ponto x linear.
+                batch.Begin(sampler: SamplerState.PointClamp);
+                batch.Draw(checker, new RectangleF(140, 200, 64, 64), null, white, 0, Vector2.Zero);
+                batch.End();
+                batch.Begin(sampler: SamplerState.LinearClamp);
+                batch.Draw(checker, new RectangleF(220, 200, 64, 64), null, white, 0, Vector2.Zero);
+                batch.End();
+
+                // Recorte: só o que está dentro do retângulo aparece.
+                var clip = new RectangleF(20, 330, 150, 90);
+                batch.Begin(clip: clip);
+                float x = 20 + 75 + 90 * System.MathF.Sin(clock * 1.5f);
+                batch.Draw(dot, new RectangleF(x - 40, 340, 80, 80), null, Color.Yellow, 0, Vector2.Zero);
+                batch.End();
+                batch.Begin();
+                batch.Rect(clip, Color.Red, 2);
+                batch.DrawString(font, "Recorte", new Vector2(20, 424), white, 1.5f);
+
+                // Alvo de desenho (minimapa).
+                batch.Draw(minimap.Texture, new RectangleF(200, 330, 96, 96), null, white, 0, Vector2.Zero);
+                batch.Rect(new RectangleF(200, 330, 96, 96), white, 1);
+                batch.DrawString(font, "Alvo", new Vector2(200, 430), white, 1.5f);
+
+                // Área segura, escala e densidade.
+                batch.Rect(GraphicsDevice.SafeArea, new Color(255, 0, 255), 2);
+                batch.DrawString(font, $"Escala {GraphicsDevice.Scale:0.00}  Densidade {GraphicsDevice.Density:0.0}  Pixel perfect: {(GraphicsDevice.PixelPerfect ? "sim" : "não")}", new Vector2(8, 470), white, 1.5f);
+                batch.DrawString(font, "Toque duplo: liga/desliga pixel perfect", new Vector2(8, 486), white, 1.5f);
+                var safe = GraphicsDevice.SafeArea;
+                batch.DrawString(font, $"Área segura {safe.X:0} {safe.Y:0} {safe.Width:0} {safe.Height:0}", new Vector2(8, 502), Color.Yellow, 1.5f);
                 batch.End();
             }
         }

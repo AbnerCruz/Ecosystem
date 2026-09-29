@@ -5,8 +5,11 @@ public sealed class Texture2D : IDisposable
 {
     private readonly GraphicsDevice _device;
 
-    internal Texture2D(GraphicsDevice device, int handle, int width, int height, TextureFilter filter)
+    private readonly bool _ownsHandle;
+
+    internal Texture2D(GraphicsDevice device, int handle, int width, int height, TextureFilter filter, bool ownsHandle = true)
     {
+        _ownsHandle = ownsHandle;
         Filter = filter;
         _device = device;
         Handle = handle;
@@ -62,6 +65,8 @@ public sealed class Texture2D : IDisposable
     {
         if (IsDisposed) return;
         IsDisposed = true;
-        _device.Backend.DeleteTexture(Handle);
+        if (_ownsHandle) _device.Backend.DeleteTexture(Handle);
     }
+
+    internal void MarkDisposed() => IsDisposed = true;
 }

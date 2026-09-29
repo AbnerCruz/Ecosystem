@@ -12,13 +12,37 @@ public sealed class SpriteBatch
     private int _quads;
     private Texture2D? _texture;
     private bool _begun;
+    private DrawState _state = DrawState.Default;
+    private Shader? _shader;
 
     public SpriteBatch(GraphicsDevice device) => _device = device ?? throw new ArgumentNullException(nameof(device));
 
-    public void Begin()
+    /// <summary>O dispositivo em que este lote desenha.</summary>
+    public GraphicsDevice GraphicsDevice => _device;
+
+    /// <summary>Começa um lote.</summary>
+    /// <param name="blend">Mistura; nulo = <see cref="BlendState.Alpha"/>.</param>
+    /// <param name="sampler">Filtro e repetição de textura; nulo = os da própria textura.</param>
+    /// <param name="shader">Shader de fragmento; nulo = o padrão.</param>
+    /// <param name="clip">Área (no espaço de desenho atual) fora da qual nada é desenhado.</param>
+    public void Begin(BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, RectangleF? clip = null)
     {
         if (_begun) throw new InvalidOperationException("End() deve ser chamado antes de outro Begin().");
+        if (shader is { IsDisposed: true }) throw new ObjectDisposedException(nameof(Shader));
         _begun = true;
+        _shader = shader;
+        _state = new DrawState(
+            (blend ?? BlendState.Alpha).Mode,
+            sampler,
+            clip is { } area ? _device.ToScissor(area) : null,
+            shader?.Handle ?? 0,
+            null);
+    }
+
+    public void Begin(Material material)
+    {
+        ArgumentNullException.ThrowIfNull(material);
+        Begin(material.Blend, material.Sampler, material.Shader);
     }
 
     public void Draw(Texture2D texture, Vector2 position, Color color) =>
@@ -90,6 +114,8 @@ public sealed class SpriteBatch
     {
         if (_quads == 0 || _texture is null) return;
         var projection = _device.Projection;
+        // Os uniforms do shader são lidos no momento do desenho (o jogo pode mudá-los entre lotes).
+        _device.Backend.SetDrawState(_shader is null ? _state : _state with { Uniforms = _shader.Values });
         _device.Backend.DrawQuads(_texture.Handle, _vertices.AsSpan(0, _quads * 4), _quads, in projection);
         _quads = 0;
         _texture = null;
