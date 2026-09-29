@@ -880,12 +880,12 @@ public sealed class MainActivity : Activity, ISensorEventListener
         if (e is null || _renderer is null || (e.Source & InputSourceType.Joystick) != InputSourceType.Joystick || e.Action != MotionEventActions.Move)
             return base.OnGenericMotionEvent(e);
         _padSeen = true;
-        _padLeft = new System.Numerics.Vector2(e.GetAxisValue(Axis.X), e.GetAxisValue(Axis.Y));
-        _padRight = new System.Numerics.Vector2(e.GetAxisValue(Axis.Z), e.GetAxisValue(Axis.Rz));
-        _padLeftTrigger = System.Math.Max(e.GetAxisValue(Axis.Ltrigger), e.GetAxisValue(Axis.Brake));
-        _padRightTrigger = System.Math.Max(e.GetAxisValue(Axis.Rtrigger), e.GetAxisValue(Axis.Gas));
-        var hatX = e.GetAxisValue(Axis.HatX);
-        var hatY = e.GetAxisValue(Axis.HatY);
+        _padLeft = new System.Numerics.Vector2(e.GetAxisValue(global::Android.Views.Axis.X), e.GetAxisValue(global::Android.Views.Axis.Y));
+        _padRight = new System.Numerics.Vector2(e.GetAxisValue(global::Android.Views.Axis.Z), e.GetAxisValue(global::Android.Views.Axis.Rz));
+        _padLeftTrigger = System.Math.Max(e.GetAxisValue(global::Android.Views.Axis.Ltrigger), e.GetAxisValue(global::Android.Views.Axis.Brake));
+        _padRightTrigger = System.Math.Max(e.GetAxisValue(global::Android.Views.Axis.Rtrigger), e.GetAxisValue(global::Android.Views.Axis.Gas));
+        var hatX = e.GetAxisValue(global::Android.Views.Axis.HatX);
+        var hatY = e.GetAxisValue(global::Android.Views.Axis.HatY);
         SetPadButton(GamepadButtons.DPadLeft, hatX < -0.5f);
         SetPadButton(GamepadButtons.DPadRight, hatX > 0.5f);
         SetPadButton(GamepadButtons.DPadUp, hatY < -0.5f);
