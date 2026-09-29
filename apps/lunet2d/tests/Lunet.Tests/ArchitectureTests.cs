@@ -59,3 +59,42 @@ public class ArchitectureTests
         foreach (var node in graph.Keys) Visit(node);
     }
 }
+
+/// <summary>Garante que a documentação de planejamento existe e o ROADMAP cobre todas as fases do spec.</summary>
+public class PlanningDocsTests
+{
+    private static string Root()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "ROADMAP.md"))) dir = dir.Parent;
+        return dir!.FullName;
+    }
+
+    [Fact]
+    public void SpecRoutineAndClaudeInstructionsExist()
+    {
+        foreach (var file in new[] { "docs/SPEC.md", "docs/DEVELOPMENT.md", "docs/audits/TEMPLATE.md", "CLAUDE.md", "tools/roadmap-status.sh" })
+            Assert.True(File.Exists(Path.Combine(Root(), file)), file);
+    }
+
+    [Fact]
+    public void RoadmapHasEveryPhaseFrom0To15AndAnAuditItemPerPhase()
+    {
+        var roadmap = File.ReadAllText(Path.Combine(Root(), "ROADMAP.md"));
+        for (var phase = 0; phase <= 15; phase++)
+            Assert.Matches($@"(?m)^## Fase {phase} — ", roadmap);
+        for (var phase = 1; phase <= 14; phase++)
+            Assert.Contains($"Auditoria de fechamento da Fase {phase} registrada", roadmap);
+    }
+
+    [Fact]
+    public void SpecPhasesMatchRoadmapPhases()
+    {
+        var spec = File.ReadAllText(Path.Combine(Root(), "docs/SPEC.md"));
+        var roadmap = File.ReadAllText(Path.Combine(Root(), "ROADMAP.md"));
+        var specPhases = System.Text.RegularExpressions.Regex.Matches(spec, @"(?m)^### Fase (\d+) ").Select(m => m.Groups[1].Value).ToArray();
+        Assert.Equal(16, specPhases.Length);
+        foreach (var phase in specPhases)
+            Assert.Matches($@"(?m)^## Fase {phase} — ", roadmap);
+    }
+}

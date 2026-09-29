@@ -32,4 +32,10 @@ cat > "$out/release-manifest.json" <<JSON
   ]
 }
 JSON
-(cd "$out" && sha256sum "$name" release-manifest.json release-notes.md > SHA256SUMS.txt)
+python3 - "$out/release-notes.md" "$tag" "$channel" "$sha" "$built" > "$out/release-notes.json" <<'PY'
+import json, sys
+path, tag, channel, sha, built = sys.argv[1:6]
+print(json.dumps({"version": tag, "channel": channel, "commit": sha, "builtAt": built,
+                  "notes": open(path, encoding="utf-8").read()}, ensure_ascii=False, indent=2))
+PY
+(cd "$out" && sha256sum "$name" release-manifest.json release-notes.md release-notes.json > SHA256SUMS.txt)
