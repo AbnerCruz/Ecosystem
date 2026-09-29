@@ -119,7 +119,7 @@ internal sealed class DocumentationPanel
         var guides = new Dictionary<string, string>();
         foreach (var file in assets.List("docs/guides") ?? [])
             if (file.EndsWith(".md", StringComparison.Ordinal))
-                guides[Path.GetFileNameWithoutExtension(file)] = ReadAll("docs/guides/" + file);
+                guides[System.IO.Path.GetFileNameWithoutExtension(file)] = ReadAll("docs/guides/" + file);
         return new DocumentationBrowser(api, guides);
     }
 
