@@ -16,7 +16,7 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 
 | Fase | Estado |
 | --- | --- |
-| 0 Foundation | 🟡 falta LICENSE.md e release-notes.json |
+| 0 Foundation | 🟡 falta LICENSE.md (decisão do autor) e as pastas do §26 |
 | 1 Vertical Slice | 🟡 gate validado; faltam Explorer, recuperação após crash, "Tutorial" na criação de projeto |
 | 2 Framework Core | 🟡 Demo validado; faltam música, gamepad, haptics, atlas, Lifecycle/Dispatcher/GameServices, Transform2D/Ray2D/Geometry |
 | 3 IDE | 🟡 editor validado só em desktop; falta a maior parte (docs offline, painéis, busca, rename...) |
@@ -35,7 +35,7 @@ Gate: GitHub Actions gera APK instalável. **Atingido** (validado em aparelho, v
 - [x] Android shell e primeiro APK instalável (validado em aparelho).
 - [x] Arquivo de solução (`Lunet.slnx`) na raiz.
 - [ ] `LICENSE.md` (decisão de licença do autor; não presumir) — ver §26.
-- [ ] `release-notes.json` publicado junto de cada release (§24, §25) (feito no script de release; marcar quando a próxima release o trouxer).
+- [x] `release-notes.json` publicado junto de cada release (§24, §25) (verificado na v0.0.1-dev.22).
 - [ ] Estrutura de pastas do §26 criada onde já há conteúdo: `samples/`, `templates/`, `runtime-template/`, `native/`, `site/` (criar cada uma quando a primeira entrega existir, não antes).
 
 ## Fase 1 — Vertical Slice (§27, §33)
@@ -327,7 +327,7 @@ Entrega (§24, §25):
 - [x] CHANGELOG com Added/Changed/Fixed/Performance/Deprecated/Removed/Security.
 - [x] SemVer com `VERSION`.
 - [x] Cada alteração na `main` com CI verde gera development release com APK, checksums e notas.
-- [ ] `release-notes.json` (ver Fase 0).
+- [x] `release-notes.json` (ver Fase 0).
 - [ ] ADR para toda decisão arquitetural relevante (existentes: 0001–0003).
 
 ## Riscos técnicos (§32)
