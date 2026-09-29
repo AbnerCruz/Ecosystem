@@ -65,7 +65,7 @@ Core
 - [x] Loop de passo fixo, interpolação, proteção contra spiral-of-death, pause/resume.
 - [x] `GameServices` (registro de serviços do jogo; o host registra os padrão).
 - [x] `Dispatcher` (executar trabalho na thread do jogo).
-- [ ] Lifecycle completo do Android: app em segundo plano pausa jogo e áudio **(feito, sem validação em aparelho)**; falta preservar o jogo quando o contexto GL é perdido (hoje reinicia).
+- [ ] Lifecycle completo do Android: app em segundo plano pausa jogo e áudio; o contexto GL é preservado ao pausar (`PreserveEGLContextOnPause`) **(feito, sem validação em aparelho)**; se o driver perder o contexto, o jogo reinicia (recriar texturas sem reiniciar fica para a Fase 13).
 - [ ] Suporte a refresh rate superior a 60 Hz: atualização fixa independente da taxa (testada de 30 a 144 Hz) e pedido do modo de maior taxa no Preview **(feito, sem validação em aparelho)**.
 - [x] Timers e object pools (§7 complementares).
 
@@ -75,6 +75,7 @@ Matemática
 
 Graphics
 - [x] `GraphicsDevice`, `Texture2D`, `SpriteBatch`, `SpriteSheet`, resolução virtual com letterbox, filtro Point/Linear, fonte bitmap embutida.
+- [x] `Sprite` (textura/região, origem, cor, escala, rotação; `SpriteBatch.Draw(sprite, posição)`; `Sprite.FromAtlas`).
 - [ ] `RenderTarget2D` (FBO no OpenGL ES; testado com backend em memória) **(feito, sem validação em aparelho)**.
 - [ ] `Shader` (fragmento GLSL ES com uniforms) e `Material` **(feito, sem validação em aparelho)**.
 - [ ] `BlendState` (Alpha, Additive, Opaque, Multiply, Premultiplied), `SamplerState` e `Viewport` como tipos públicos **(feito, sem validação em aparelho)**.
@@ -105,7 +106,6 @@ Conteúdo e armazenamento
 - [x] Salvamento JSON com gravação atômica.
 - [ ] Carregar dados (JSON: `Content.LoadJson<T>`) via `ContentManager` (testado em desktop); fontes e mapas entram com Fonts/Tilemaps na Fase 4.
 - [ ] Localization (`Localization.SetLanguage/UseDeviceLanguage/Get`, reserva e formatação) — testado em desktop, sem validação em aparelho (idioma do aparelho).
-- [ ] Content pipeline com cache de assets processados e invalidação.
 
 Auditoria
 - [ ] Auditoria de fechamento da Fase 2 registrada em `docs/audits/`.
@@ -186,7 +186,7 @@ Gate: a maior parte dos assets/dados necessários pode ser produzida dentro do L
 - [ ] Sprite Studio: pixel art, layers, frames, timeline, onion skin, paletas, lápis, borracha, balde, conta-gotas, linhas, formas, seleção, laço, transformar, flip, rotate, simetria, grade, zoom, spritesheet, preview de animação, importar/exportar PNG, transparência, toque e stylus.
 - [ ] Tile Studio: tilesets, edição de mapas, layers, camada de colisão, propriedades, autotiling, brushes, preview.
 - [ ] Animation Studio: clips, timeline, frames, eventos, playback, animação de sprites, estados.
-- [ ] Atlas Studio: criação de atlas, packing, preview, metadata.
+- [ ] Atlas Studio: criação de atlas, packing, preview, metadata; inclui o pipeline de conteúdo com cache de assets processados em disco e invalidação (movido da Fase 2: só faz sentido com uma etapa de processamento real).
 - [ ] UI Studio: layouts, âncoras, margens, tamanhos, nine-slice, fontes, temas/skins, preview.
 - [ ] Physics Studio: colliders, polígonos, círculos, triggers, joints, camadas de colisão, debug view.
 - [ ] Particle Studio: emissor, preview, vida, velocidade, cores, tamanho, curvas, burst.

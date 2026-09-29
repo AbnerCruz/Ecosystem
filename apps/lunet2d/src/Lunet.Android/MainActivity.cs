@@ -815,6 +815,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
             new AndroidHaptics(this), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
         _glView = new GLSurfaceView(this);
         _glView.SetEGLContextClientVersion(3);
+        _glView.PreserveEGLContextOnPause = true; // ao voltar do segundo plano o jogo continua, se o driver mantiver o contexto
         _glView.SetRenderer(_renderer);
         _glView.RenderMode = Rendermode.Continuously;
         _glView.Touch += OnPreviewTouch;
