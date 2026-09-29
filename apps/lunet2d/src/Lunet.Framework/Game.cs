@@ -26,6 +26,9 @@ public abstract class Game
     /// <summary>Vibração do aparelho.</summary>
     public IHaptics Haptics => _haptics;
 
+    /// <summary>Textos traduzidos (atalho para <c>Content.Localization</c>).</summary>
+    public Lunet.Content.Localization Localization => Content.Localization;
+
     /// <summary>Barramentos de volume, música, fades (atalho para <c>Content.Audio</c>).</summary>
     public Audio.AudioMixer Audio => Content.Audio;
 

@@ -63,9 +63,9 @@ public readonly record struct Viewport(int X, int Y, int Width, int Height)
     public float AspectRatio => Height == 0 ? 0f : (float)Width / Height;
 }
 
-/// <summary>Estado aplicado pelo <see cref="SpriteBatch"/> antes de cada chamada de desenho.</summary>
+/// <summary>Estado aplicado pelo <see cref="SpriteBatch"/> antes de cada chamada de desenho (struct: sem alocação por Begin).</summary>
 /// <param name="Scissor">Recorte em pixels do alvo com origem no canto inferior esquerdo (convenção do GL); nulo = sem recorte extra.</param>
-public sealed record DrawState(
+public readonly record struct DrawState(
     BlendMode Blend,
     SamplerState? Sampler,
     RectI? Scissor,

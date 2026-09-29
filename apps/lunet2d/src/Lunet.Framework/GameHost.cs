@@ -105,36 +105,45 @@ public sealed class GameHost
         if (!IsFaulted && _started) Guard(_game.RunResume);
     }
 
-    /// <summary>Um quadro: executa os passos fixos devidos e desenha.</summary>
+    /// <summary>Um quadro: executa os passos fixos devidos e desenha. Sem alocações no caminho normal.</summary>
     public void Tick(double elapsedSeconds)
     {
         if (!_started || IsFaulted || _loop is null) return;
         _clock += Math.Max(0, elapsedSeconds);
         Input.RecognizeGestures(_clock);
-        if (!Guard(_game.RunDispatcher)) return;
-        if (!_paused)
+        try
         {
-            var steps = _loop.Advance(elapsedSeconds);
-            for (var i = 0; i < steps && !IsFaulted; i++)
+            _game.RunDispatcher();
+            if (!_paused)
             {
-                var time = _loop.CompleteStep();
-                Guard(() => _game.RunUpdate(time));
-                Input.ClearGestures(); // cada gesto é entregue a um único passo
+                var steps = _loop.Advance(elapsedSeconds);
+                for (var i = 0; i < steps; i++)
+                {
+                    _game.RunUpdate(_loop.CompleteStep());
+                    Input.ClearGestures(); // cada gesto é entregue a um único passo
+                }
             }
+            _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)elapsedSeconds, _loop.Interpolation));
         }
-        if (IsFaulted) return;
-        var frame = new GameTime(_loop.TotalSeconds, (float)elapsedSeconds, _loop.Interpolation);
-        Guard(() => _game.RunDraw(frame));
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
     }
 
     /// <summary>Executa um único passo de atualização com o jogo pausado (depuração).</summary>
     public void Step()
     {
         if (!_started || IsFaulted || _loop is null) return;
-        var time = _loop.CompleteStep();
-        Guard(() => _game.RunUpdate(time));
-        if (IsFaulted) return;
-        Guard(() => _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)_loop.StepSeconds, 0f)));
+        try
+        {
+            _game.RunUpdate(_loop.CompleteStep());
+            _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)_loop.StepSeconds, 0f));
+        }
+        catch (Exception ex)
+        {
+            Fail(ex);
+        }
     }
 
     public void Stop()
@@ -156,10 +165,15 @@ public sealed class GameHost
         }
         catch (Exception ex)
         {
-            Fault = ex;
-            _game.Log.Error($"{ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
+            Fail(ex);
             return false;
         }
+    }
+
+    private void Fail(Exception ex)
+    {
+        Fault = ex;
+        _game.Log.Error($"{ex.GetType().Name}: {ex.Message}\n{ex.StackTrace}");
     }
 }
 

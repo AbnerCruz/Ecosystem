@@ -1,0 +1,65 @@
+using System.Globalization;
+using System.Text.Json;
+
+namespace Lunet.Content;
+
+/// <summary>
+/// Textos traduzidos. Cada idioma é um JSON simples <c>{ "chave": "texto" }</c> em <c>Data/strings.&lt;idioma&gt;.json</c>.
+/// Se a chave não existir no idioma atual, usa o idioma reserva; se também não existir, devolve a própria chave.
+/// </summary>
+public sealed class Localization
+{
+    private readonly IContentSource _source;
+    private Dictionary<string, string> _current = new();
+    private Dictionary<string, string> _fallback = new();
+
+    public Localization(IContentSource source) => _source = source ?? throw new ArgumentNullException(nameof(source));
+
+    /// <summary>Pasta e prefixo dos arquivos. Padrão: <c>Data/strings</c> → <c>Data/strings.pt.json</c>.</summary>
+    public string BasePath { get; set; } = "Data/strings";
+
+    public string Language { get; private set; } = "";
+    public string FallbackLanguage { get; private set; } = "";
+
+    /// <summary>Carrega <paramref name="language"/> (ex.: "pt"), com <paramref name="fallbackLanguage"/> como reserva. Idiomas ausentes são ignorados.</summary>
+    /// <returns>Verdadeiro se o idioma pedido existia.</returns>
+    public bool SetLanguage(string language, string fallbackLanguage = "en")
+    {
+        Language = language;
+        FallbackLanguage = fallbackLanguage;
+        _fallback = language == fallbackLanguage ? new() : Load(fallbackLanguage) ?? new();
+        var loaded = Load(language);
+        _current = loaded ?? new();
+        return loaded is not null;
+    }
+
+    /// <summary>Usa o idioma do aparelho (duas letras) se houver tradução; senão o reserva.</summary>
+    public string UseDeviceLanguage(string fallbackLanguage = "en")
+    {
+        var device = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        if (!SetLanguage(device, fallbackLanguage)) SetLanguage(fallbackLanguage, fallbackLanguage);
+        return Language;
+    }
+
+    public string Get(string key) =>
+        _current.TryGetValue(key, out var text) ? text : _fallback.TryGetValue(key, out text) ? text : key;
+
+    /// <summary>Texto com <see cref="string.Format(string, object[])"/>: <c>"Olá, {0}!"</c>.</summary>
+    public string Get(string key, params object[] args)
+    {
+        var format = Get(key);
+        try { return string.Format(CultureInfo.CurrentCulture, format, args); }
+        catch (FormatException) { return format; }
+    }
+
+    public bool Contains(string key) => _current.ContainsKey(key) || _fallback.ContainsKey(key);
+
+    private Dictionary<string, string>? Load(string language)
+    {
+        var path = $"{BasePath}.{language}.json";
+        if (!_source.Exists(path)) return null;
+        using var stream = _source.Open(path);
+        try { return JsonSerializer.Deserialize<Dictionary<string, string>>(stream) ?? new(); }
+        catch (JsonException ex) { throw new InvalidDataException($"{path} inválido: {ex.Message}", ex); }
+    }
+}

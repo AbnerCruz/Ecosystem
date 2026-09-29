@@ -1,4 +1,5 @@
 using Lunet.Audio;
+using System.Text.Json;
 using Lunet.Graphics;
 
 namespace Lunet.Content;
@@ -12,7 +13,12 @@ public sealed class ContentManager : IDisposable
 
     private readonly IAudioBackend _audio;
     private readonly Dictionary<string, Music> _music = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, TextureAtlas> _atlases = new(StringComparer.Ordinal);
+    private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true, IncludeFields = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
     private readonly Dictionary<string, SoundEffect> _sounds = new(StringComparer.Ordinal);
+
+    /// <summary>Textos traduzidos (<c>Data/strings.&lt;idioma&gt;.json</c>).</summary>
+    public Localization Localization { get; }
 
     /// <summary>Mistura de áudio do jogo (barramentos, música, fades).</summary>
     public AudioMixer Audio { get; }
@@ -21,6 +27,7 @@ public sealed class ContentManager : IDisposable
     {
         _audio = audio ?? new NullAudioBackend();
         Audio = new AudioMixer(_audio);
+        Localization = new Localization(source);
         _source = source ?? throw new ArgumentNullException(nameof(source));
         _device = device ?? throw new ArgumentNullException(nameof(device));
     }
@@ -67,6 +74,31 @@ public sealed class ContentManager : IDisposable
         return music;
     }
 
+    /// <summary>Lê um JSON e o converte para <typeparamref name="T"/> (campos públicos e propriedades; comentários e vírgula final são aceitos).</summary>
+    public T LoadJson<T>(string path)
+    {
+        var text = ReadText(path);
+        try { return JsonSerializer.Deserialize<T>(text, JsonOptions) ?? throw new InvalidDataException($"\"{path}\" está vazio."); }
+        catch (JsonException ex) { throw new InvalidDataException($"Não foi possível ler \"{path}\": {ex.Message}", ex); }
+    }
+
+    /// <summary>Carrega um atlas de texturas (JSON com a textura e as regiões nomeadas). Cacheado.</summary>
+    public TextureAtlas LoadAtlas(string path, TextureFilter filter = TextureFilter.Point)
+    {
+        if (_atlases.TryGetValue(path, out var cached) && !cached.Texture.IsDisposed) return cached;
+        var (texturePath, regions) = TextureAtlas.Parse(ReadText(path));
+        var atlas = new TextureAtlas(LoadTexture(texturePath, filter), regions);
+        _atlases[path] = atlas;
+        return atlas;
+    }
+
+    /// <summary>Libera uma textura carregada; a próxima <see cref="LoadTexture"/> a lê de novo (útil após editar o arquivo).</summary>
+    public void UnloadTexture(string path)
+    {
+        if (_textures.Remove(path, out var texture)) texture.Dispose();
+        foreach (var key in _atlases.Where(a => a.Value.Texture == texture).Select(a => a.Key).ToList()) _atlases.Remove(key);
+    }
+
     public string ReadText(string path)
     {
         using var reader = new StreamReader(_source.Open(path));
@@ -79,6 +111,7 @@ public sealed class ContentManager : IDisposable
     {
         foreach (var texture in _textures.Values) texture.Dispose();
         _textures.Clear();
+        _atlases.Clear();
         Audio.StopMusic();
         foreach (var music in _music.Values) music.Dispose();
         _music.Clear();

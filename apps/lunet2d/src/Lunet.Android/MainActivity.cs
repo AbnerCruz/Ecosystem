@@ -843,9 +843,40 @@ public sealed class MainActivity : Activity, ISensorEventListener
         root.AddView(_previewConsole, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Bottom));
 
         SetContentView(root);
+        RequestHighRefreshRate(true);
         _glView.LayoutChange += (_, _) => UpdateDisplayInfo();
         _glView.Post(UpdateDisplayInfo);
         StartSensors();
+    }
+
+    /// <summary>Pede ao sistema o modo de tela de maior taxa de atualização (mesma resolução), para 90/120 Hz onde houver.</summary>
+    private void RequestHighRefreshRate(bool enable)
+    {
+        try
+        {
+            var attributes = Window?.Attributes;
+            var display = WindowManager?.DefaultDisplay;
+            if (attributes is null || display is null) return;
+            if (!enable)
+            {
+                attributes.PreferredDisplayModeId = 0;
+            }
+            else
+            {
+                var current = display.GetMode();
+                var best = display.GetSupportedModes()?
+                    .Where(m => m.PhysicalWidth == current.PhysicalWidth && m.PhysicalHeight == current.PhysicalHeight)
+                    .OrderByDescending(m => m.RefreshRate)
+                    .FirstOrDefault();
+                if (best is null) return;
+                attributes.PreferredDisplayModeId = best.ModeId;
+            }
+            Window!.Attributes = attributes;
+        }
+        catch (Exception ex) when (ex is Java.Lang.Exception or InvalidOperationException)
+        {
+            // Não é essencial: sem alta taxa, o jogo roda em 60 Hz.
+        }
     }
 
     /// <summary>Envia ao jogo a densidade da tela e os recuos seguros (recorte de câmera, cantos arredondados).</summary>
@@ -1012,6 +1043,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
     {
         if (_glView is null) return;
         StopSensors();
+        RequestHighRefreshRate(false);
         _glView.Touch -= OnPreviewTouch;
         var renderer = _renderer;
         _glView.QueueEvent(() => renderer?.Shutdown());

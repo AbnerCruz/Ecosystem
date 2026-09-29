@@ -96,6 +96,16 @@ public sealed class SpriteBatch
         }
     }
 
+    /// <summary>Desenha uma região de um atlas com o pivô da região em <paramref name="position"/>.</summary>
+    public void Draw(TextureAtlas atlas, string region, Vector2 position, Color color, float scale = 1f, float rotation = 0f)
+    {
+        ArgumentNullException.ThrowIfNull(atlas);
+        var r = atlas[region];
+        var origin = new Vector2(r.Bounds.Width * r.PivotX, r.Bounds.Height * r.PivotY);
+        var dest = new RectangleF(position.X - origin.X * scale, position.Y - origin.Y * scale, r.Bounds.Width * scale, r.Bounds.Height * scale);
+        Draw(atlas.Texture, dest, r.Bounds, color, rotation, origin);
+    }
+
     /// <summary>Escreve texto. Uma quebra de linha (<c>\n</c>) desce uma linha.</summary>
     public void DrawString(SpriteFont font, string text, Vector2 position, Color color, float scale = 1f)
     {

@@ -47,7 +47,7 @@ public sealed class GestureRecognizer
 
         foreach (var touch in touches)
         {
-            var track = _tracks.Find(t => t.Id == touch.Id);
+            var track = FindTrack(touch.Id);
             if (touch.IsDown)
             {
                 if (track is null)
@@ -70,11 +70,19 @@ public sealed class GestureRecognizer
             }
         }
 
-        var active = _tracks.Where(t => t.Seen && !t.Released && !_ended.Contains(t)).ToList();
-        if (active.Count >= 2)
+        Track? first = null, second = null;
+        foreach (var t in _tracks)
         {
-            foreach (var t in active) t.MultiTouch = true;
-            UpdatePair(active[0], active[1], output);
+            if (!t.Seen || t.Released || _ended.Contains(t)) continue;
+            if (first is null) first = t;
+            else second ??= t;
+        }
+        if (first is not null && second is not null)
+        {
+            // Com mais de dois dedos, todos são marcados como multitoque; o par usado é o dos dois primeiros.
+            foreach (var t in _tracks)
+                if (t.Seen && !t.Released && !_ended.Contains(t)) t.MultiTouch = true;
+            UpdatePair(first, second, output);
         }
         else
         {
@@ -97,6 +105,13 @@ public sealed class GestureRecognizer
 
         foreach (var track in _ended) _tracks.Remove(track);
         _ended.Clear();
+    }
+
+    private Track? FindTrack(int id)
+    {
+        foreach (var t in _tracks)
+            if (t.Id == id) return t;
+        return null;
     }
 
     private void UpdatePair(Track a, Track b, List<Gesture> output)
