@@ -30,8 +30,13 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <AndroidAsset Include="..\..\docs\api\lunet-framework.json" Link="Assets\docs\lunet-framework.json" />
+    <AndroidAsset Include="..\..\docs\guides\*.md" Link="Assets\docs\guides\%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Lunet.Core\Lunet.Core.csproj" />
     <ProjectReference Include="..\Lunet.Compiler\Lunet.Compiler.csproj" />
+    <ProjectReference Include="..\Lunet.Docs\Lunet.Docs.csproj" />
     <ProjectReference Include="..\Lunet.Editor\Lunet.Editor.csproj" />
     <ProjectReference Include="..\Lunet.Framework\Lunet.Framework.csproj" />
     <ProjectReference Include="..\Lunet.Runtime\Lunet.Runtime.csproj" />

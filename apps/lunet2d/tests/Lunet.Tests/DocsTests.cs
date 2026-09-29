@@ -143,3 +143,75 @@ public class DocsTests
             DocumentationId.For(typeof(Enumerable).GetMethods().First(m => m.Name == "Select" && m.GetParameters()[1].ParameterType.GetGenericArguments().Length == 2)));
     }
 }
+
+public class DocumentationBrowserTests
+{
+    private static string RepoRoot()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "docs", "guides"))) dir = dir.Parent;
+        return dir!.FullName;
+    }
+
+    private static Dictionary<string, string> Guides() =>
+        Directory.GetFiles(Path.Combine(RepoRoot(), "docs", "guides"), "*.md")
+            .ToDictionary(f => Path.GetFileNameWithoutExtension(f), File.ReadAllText);
+
+    [Fact]
+    public void CommittedApiJson_MatchesTheFramework_SetLUNET_UPDATE_DOCS_ToRegenerate()
+    {
+        var path = Path.Combine(RepoRoot(), "docs", "api", "lunet-framework.json");
+        var json = DocsTests.Generate().ToJson();
+        if (Environment.GetEnvironmentVariable("LUNET_UPDATE_DOCS") == "1") File.WriteAllText(path, json);
+        Assert.True(File.Exists(path), "Rode com LUNET_UPDATE_DOCS=1 para gerar docs/api/lunet-framework.json");
+        Assert.Equal(json.ReplaceLineEndings(), File.ReadAllText(path).ReplaceLineEndings());
+    }
+
+    [Fact]
+    public void MarkdownLite_ParsesBlocksAndInlineStyles()
+    {
+        var blocks = MarkdownLite.Parse("# Título\n\nUm **forte** e `code`.\n\n- item\n\n```\nx = 1;\n```");
+        Assert.Equal([MarkdownBlockKind.Heading, MarkdownBlockKind.Paragraph, MarkdownBlockKind.Bullet, MarkdownBlockKind.Code], blocks.Select(b => b.Kind));
+        Assert.Equal("x = 1;", blocks[3].Text);
+        var runs = MarkdownLite.ParseInline("a **b** *c* `d`");
+        Assert.Equal([InlineStyle.Normal, InlineStyle.Bold, InlineStyle.Normal, InlineStyle.Italic, InlineStyle.Normal, InlineStyle.Code], runs.Select(r => r.Style));
+    }
+
+    [Fact]
+    public void Browser_HomeListsGuidesAndNamespaces_AndNavigatesWithHistory()
+    {
+        var browser = new DocumentationBrowser(DocsTests.Generate(), Guides());
+        var home = browser.Navigate("home");
+        Assert.Contains(home.Blocks, b => b.Kind == DocBlockKind.Link && b.Target == "guide:primeiros-passos");
+        Assert.Contains(home.Blocks, b => b.Target == "ns:Lunet.Graphics");
+
+        var type = browser.Navigate(browser.TargetForSymbol("T:Lunet.Graphics.SpriteBatch", "SpriteBatch"));
+        Assert.Equal("SpriteBatch", type.Title);
+        Assert.Contains(type.Blocks, b => b.Kind == DocBlockKind.Link && b.Text.Contains("Begin"));
+
+        Assert.True(browser.CanGoBack);
+        Assert.Equal("home", browser.Back()!.Target);
+    }
+
+    [Fact]
+    public void Browser_UnknownSymbolFallsBackToSearch_AndEveryGuideRenders()
+    {
+        var browser = new DocumentationBrowser(DocsTests.Generate(), Guides());
+        Assert.StartsWith("search:", browser.TargetForSymbol("T:Nope", "SpriteBatch"));
+        Assert.Contains(browser.Navigate("search:SpriteBatch").Blocks, b => b.Target?.StartsWith("id:") == true);
+        foreach (var name in browser.GuideNames)
+            Assert.Contains(browser.Resolve("guide:" + name).Blocks, b => b.Kind == DocBlockKind.Title);
+    }
+
+    [Fact]
+    public void Browser_EveryTypeAndMemberPageResolves()
+    {
+        var api = DocsTests.Generate();
+        var browser = new DocumentationBrowser(api, Guides());
+        foreach (var type in api.Types)
+        {
+            Assert.NotEqual("Não encontrado", browser.Resolve("id:" + type.Id).Title);
+            foreach (var member in type.Members) Assert.NotEqual("Não encontrado", browser.Resolve("id:" + member.Id).Title);
+        }
+    }
+}

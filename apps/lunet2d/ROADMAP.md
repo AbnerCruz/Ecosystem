@@ -132,7 +132,7 @@ Roslyn (§9)
 - [ ] Inspeção de símbolos.
 
 IDE mobile (§11)
-- [ ] Explorer (ver Fase 1).
+- [x] Explorer (ver Fase 1).
 - [ ] Painéis: Preview, Inspector, Console, Problems, Search, Assets, Documentation, Agent, Profiler (Preview, Console, Problems e Explorer já existem no workspace).
 - [ ] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes.
 - [ ] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles.
@@ -146,9 +146,9 @@ Inspector (§12)
 - [ ] Inspecionar variáveis do jogo em execução (fluxo principal §29).
 
 Documentação (§15)
-- [ ] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33).
+- [x] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33). (feito, sem validação em aparelho; `Lunet.Docs`, `docs/api/lunet-framework.json` com teste de deriva, guias em `docs/guides`)
 - [ ] Cada API com descrição, assinatura, parâmetros, retorno, exemplos, remarks, relacionadas e versão de introdução.
-- [ ] Integração com o editor: "Explain in Documentation".
+- [x] Integração com o editor: "Explain in Documentation". (feito, sem validação em aparelho; botão na Dica do símbolo)
 - [ ] Documentação apontando para trechos dos jogos oficiais (depende da Fase 11).
 
 Preview e hot reload (§10)

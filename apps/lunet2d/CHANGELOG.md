@@ -4,6 +4,7 @@
 
 ### Added
 
+- Documentação offline no app: painel com guias, busca e navegação por namespaces, tipos e membros (gerado de XML docs por `Lunet.Docs`); "Explicar na Documentação" na dica do símbolo; API do framework documentada.
 - Lista de projetos: toque longo abre exportar ZIP e excluir projeto (com confirmação).
 - `Sprite` (região, origem, cor, escala, rotação) e o contexto OpenGL preservado ao ir para segundo plano.
 - Preview pede o modo de tela de maior taxa de atualização (90/120 Hz onde houver).
