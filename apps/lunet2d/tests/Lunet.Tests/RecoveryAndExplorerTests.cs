@@ -123,3 +123,66 @@ public class RecoveryAndExplorerTests : IDisposable
         Assert.Throws<ProjectException>(() => project.Rename("X.cs", "Content"));
     }
 }
+
+public class EditorSessionTests : IDisposable
+{
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lunet-session-" + Guid.NewGuid().ToString("N"));
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+    }
+
+    [Fact]
+    public void Save_IsRefusedWhenNothingWasLoaded_SoARecreatedEmptyEditorCannotWipeTheFile()
+    {
+        var project = new ProjectStore(_root).Create("p");
+        var original = project.ReadText("Game.cs");
+        var session = new EditorSession();
+
+        // Cenário do bug: o editor foi recriado (vazio) ao voltar do Preview e o app tentou salvar.
+        session.Load("Game.cs", original);
+        session.Unload();
+        Assert.False(session.TrySave(project, ""));
+        Assert.Equal(original, project.ReadText("Game.cs"));
+    }
+
+    [Fact]
+    public void Save_WritesLoadedFileAndClearsJournal()
+    {
+        var project = new ProjectStore(_root).Create("p");
+        var journal = new AutosaveJournal(project);
+        var session = new EditorSession();
+        session.Load("Game.cs", project.ReadText("Game.cs"));
+
+        Assert.True(session.IsDirty("// novo"));
+        journal.WriteBuffer("Game.cs", "// novo");
+        Assert.True(session.TrySave(project, "// novo", journal));
+        Assert.Equal("// novo", project.ReadText("Game.cs"));
+        Assert.False(session.IsDirty("// novo"));
+        Assert.Empty(journal.FindRecoveries());
+    }
+
+    [Fact]
+    public void Save_RecreatesFileThatWasDeletedOutsideTheEditor()
+    {
+        var project = new ProjectStore(_root).Create("p");
+        project.WriteText("A.cs", "class A {}");
+        var session = new EditorSession();
+        session.Load("A.cs", "class A {}");
+        project.Delete("A.cs");
+        Assert.True(session.TrySave(project, "class A {}")); // texto igual, mas o arquivo sumiu: regrava
+        Assert.True(File.Exists(Path.Combine(project.Directory, "A.cs")));
+    }
+
+    [Fact]
+    public void Unload_ForgetsPathAndSavedText()
+    {
+        var session = new EditorSession();
+        session.Load("A.cs", "x");
+        Assert.True(session.HasFile);
+        session.Unload();
+        Assert.False(session.HasFile);
+        Assert.False(session.IsDirty("qualquer"));
+    }
+}

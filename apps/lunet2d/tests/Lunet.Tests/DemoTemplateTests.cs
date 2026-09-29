@@ -222,9 +222,16 @@ public class LabTemplateTests : IDisposable
         Assert.Single(backend.RenderTargets);
         Assert.Contains(backend.TargetSwitches, t => t.Handle == backend.RenderTargets[0].Handle);
         Assert.False(host.GraphicsDevice!.PixelPerfect);
-        Tap(300, 300);
-        Tap(300, 300); // dois toques rápidos = DoubleTap
+        Tap(100, 455); // botão "Pixel perfect"
         Assert.True(host.GraphicsDevice.PixelPerfect);
+        Tap(100, 455);
+        Assert.False(host.GraphicsDevice.PixelPerfect);
+
+        // Resolução virtual alternativa: força escala fracionada; com pixel perfect a escala vira inteira.
+        Tap(100, 489);
+        Assert.Equal((350, 620), (host.GraphicsDevice.VirtualWidth, host.GraphicsDevice.VirtualHeight));
+        Tap(100, 489);
+        Assert.Equal((360, 640), (host.GraphicsDevice.VirtualWidth, host.GraphicsDevice.VirtualHeight));
 
         host.Stop();
         Assert.Empty(backend.LiveTargets);

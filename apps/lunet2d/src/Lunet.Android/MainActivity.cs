@@ -38,7 +38,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
     private CodeEditText? _editor;
     private EditorAssistant? _assistant;
     private AutosaveJournal? _journal;
-    private string _savedText = "";
+    private readonly EditorSession _session = new();
     private LinearLayout? _drawer;
     private LinearLayout? _drawerList;
     private readonly HashSet<string> _collapsed = new(StringComparer.Ordinal);
@@ -97,6 +97,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
     {
         SaveCurrent();
         DisposePreview();
+        _session.Unload();
         _project = null;
         _openFile = null;
         _editor = null;
@@ -135,16 +136,26 @@ public sealed class MainActivity : Activity, ISensorEventListener
         var form = Vertical();
         form.SetPadding(Dp(16), Dp(8), Dp(16), 0);
         form.AddView(input);
+        // RadioButtons criados por código precisam de id para o RadioGroup desmarcar o anterior.
         var group = new RadioGroup(this);
-        var blank = new RadioButton(this) { Text = "Em branco (bola que segue o toque)", Checked = true };
-        var demo = new RadioButton(this) { Text = "Demo: Coletor de moedas (texto, gestos, som, salvamento)" };
-        var lab = new RadioButton(this) { Text = "Laboratório: testa música, sensores, controle, vibração e gestos" };
-        blank.Click += (_, _) => template[0] = ProjectTemplate.Blank;
-        demo.Click += (_, _) => template[0] = ProjectTemplate.CoinCatcher;
-        lab.Click += (_, _) => template[0] = ProjectTemplate.Lab;
-        group.AddView(blank);
-        group.AddView(demo);
-        group.AddView(lab);
+        var options = new (string Text, ProjectTemplate Template)[]
+        {
+            ("Em branco (bola que segue o toque)", ProjectTemplate.Blank),
+            ("Demo: Coletor de moedas (texto, gestos, som, salvamento)", ProjectTemplate.CoinCatcher),
+            ("Laboratório: testa música, sensores, controle, vibração, gestos e gráficos", ProjectTemplate.Lab),
+        };
+        var byId = new Dictionary<int, ProjectTemplate>();
+        foreach (var (text, choice) in options)
+        {
+            var button = new RadioButton(this) { Id = View.GenerateViewId(), Text = text };
+            byId[button.Id] = choice;
+            group.AddView(button);
+            if (choice == ProjectTemplate.Blank) group.Check(button.Id);
+        }
+        group.CheckedChange += (_, e) =>
+        {
+            if (byId.TryGetValue(e.CheckedId, out var chosen)) template[0] = chosen;
+        };
         form.AddView(group);
         new AlertDialog.Builder(this)!
             .SetTitle("Novo projeto")!
@@ -201,7 +212,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
             .SetPositiveButton("Recuperar", (_, _) =>
             {
                 foreach (var recovery in recoveries) _journal!.Restore(recovery);
-                if (_openFile is not null) { _savedText = ""; var file = _openFile; _openFile = null; OpenFile(file); }
+                if (_openFile is not null) { _session.Unload(); var file = _openFile; _openFile = null; OpenFile(file); }
                 Toast.MakeText(this, "Alterações recuperadas", ToastLength.Short)?.Show();
             })!
             .SetNegativeButton("Descartar", (_, _) =>
@@ -213,6 +224,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
     private void ShowWorkspace()
     {
         DisposePreview();
+        _session.Unload(); // o editor abaixo é novo e vazio: nada pode ser gravado a partir dele até um arquivo ser carregado
         var project = _project!;
         var root = Vertical();
 
@@ -449,6 +461,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
         var open = _openFile;
         if (open is null || !(open == from || open.StartsWith(from + "/"))) return;
         _journal?.Discard(open);
+        _session.Unload(); // o arquivo antigo não existe mais: não pode ser regravado
         _openFile = null;
         if (to is not null) OpenFile(to + open[from.Length..]);
         else OpenFile(_project.Manifest.EntryPoint);
@@ -462,8 +475,9 @@ public sealed class MainActivity : Activity, ISensorEventListener
         {
             _openFile = path;
             HideChips();
-            _savedText = _project!.ReadText(path);
-            _editor.LoadText(_savedText);
+            var text = _project!.ReadText(path);
+            _editor.LoadText(text);
+            _session.Load(path, text);
             _status!.Text = $"{_project.Name} / {path}";
         }
         catch (Exception ex) when (ex is ProjectException or IOException)
@@ -474,13 +488,10 @@ public sealed class MainActivity : Activity, ISensorEventListener
 
     private void SaveCurrent()
     {
-        if (_project is null || _openFile is null || _editor is null) return;
+        if (_project is null || _editor is null) return;
         try
         {
-            var text = _editor.Text ?? "";
-            _project.WriteText(_openFile, text);
-            _savedText = text;
-            _journal?.Discard(_openFile);
+            _session.TrySave(_project, _editor.Text ?? "", _journal);
         }
         catch (Exception ex) when (ex is ProjectException or IOException or UnauthorizedAccessException)
         {
@@ -590,7 +601,7 @@ public sealed class MainActivity : Activity, ISensorEventListener
     private void OnEditorSettled(string text, int version, int caret)
     {
         var path = _openFile;
-        if (path is not null && text != _savedText)
+        if (path is not null && _session.IsDirty(text))
         {
             try { _journal?.WriteBuffer(path, text); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException) { }
@@ -1033,7 +1044,9 @@ public sealed class MainActivity : Activity, ISensorEventListener
     {
         DisposePreview();
         if (_project is null) return;
+        SaveCurrent(); // o editor antigo ainda guarda o texto; salva antes de a tela ser recriada
         var file = _openFile;
+        _openFile = null;
         ShowWorkspace();
         if (file is not null) OpenFile(file);
         _showConsole = true;
