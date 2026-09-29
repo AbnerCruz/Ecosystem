@@ -1,8 +1,10 @@
 using Android.App;
+using Android.Content;
 using Android.OS;
 using Android.Views;
 using Android.Views.InputMethods;
 using Android.Widget;
+using System.IO.Compression;
 using System.Text.Json;
 
 namespace Lunet.Android;
@@ -10,14 +12,17 @@ namespace Lunet.Android;
 [Activity(Label = "Lunet", MainLauncher = true, Exported = true)]
 public sealed class MainActivity : Activity
 {
+    private const int ExportRequestCode = 4101;
     private readonly ProjectStore _store = new();
     private EditText? _editor;
     private string? _currentProject;
+    private string? _pendingExport;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
         _store.Initialize(FilesDir!.AbsolutePath);
+        _pendingExport = savedInstanceState?.GetString("pendingExport");
         ShowProjects();
     }
 
@@ -108,6 +113,7 @@ public sealed class MainActivity : Activity
                            global::Android.Text.InputTypes.TextFlagNoSuggestions;
         root.AddView(editor, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1));
         _editor = editor;
+        Action(root, "Exportar projeto ZIP", () => ExportProject(name));
         Action(root, "Salvar", () =>
         {
             SaveCurrent();
@@ -127,6 +133,43 @@ public sealed class MainActivity : Activity
             try { _store.Save(_currentProject, _editor.Text ?? ""); }
             catch (IOException ex) { Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show(); }
         }
+    }
+
+    private void ExportProject(string name)
+    {
+        SaveCurrent();
+        _pendingExport = name;
+        var intent = new Intent(Intent.ActionCreateDocument);
+        intent.AddCategory(Intent.CategoryOpenable);
+        intent.SetType("application/zip");
+        intent.PutExtra(Intent.ExtraTitle, name + ".zip");
+        StartActivityForResult(intent, ExportRequestCode);
+    }
+
+    protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
+    {
+        base.OnActivityResult(requestCode, resultCode, data);
+        if (requestCode != ExportRequestCode) return;
+        var project = _pendingExport;
+        _pendingExport = null;
+        if (resultCode != Result.Ok || data?.Data is null || project is null) return;
+        try
+        {
+            using var stream = ContentResolver?.OpenOutputStream(data.Data)
+                ?? throw new IOException("Não foi possível abrir o destino.");
+            _store.Export(project, stream);
+            Toast.MakeText(this, "Projeto exportado", ToastLength.Short)?.Show();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Toast.MakeText(this, "Falha ao exportar: " + ex.Message, ToastLength.Long)?.Show();
+        }
+    }
+
+    protected override void OnSaveInstanceState(Bundle outState)
+    {
+        outState.PutString("pendingExport", _pendingExport);
+        base.OnSaveInstanceState(outState);
     }
 
     protected override void OnPause()
@@ -191,5 +234,20 @@ internal sealed class ProjectStore
         var temporary = path + ".tmp";
         File.WriteAllText(temporary, code);
         File.Move(temporary, path, overwrite: true);
+    }
+
+    public void Export(string name, Stream destination)
+    {
+        var directory = Path.Combine(_root, name);
+        using var archive = new ZipArchive(destination, ZipArchiveMode.Create, leaveOpen: true);
+        foreach (var path in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+        {
+            if (path.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)) continue;
+            var relative = Path.GetRelativePath(directory, path).Replace('\\', '/');
+            var entry = archive.CreateEntry(relative, CompressionLevel.Optimal);
+            using var input = File.OpenRead(path);
+            using var output = entry.Open();
+            input.CopyTo(output);
+        }
     }
 }

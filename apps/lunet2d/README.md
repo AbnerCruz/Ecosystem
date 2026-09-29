@@ -1,6 +1,6 @@
 # Lunet2D
 
-Lunet é um ambiente Android para criar jogos 2D em C#. Este repositório está no começo da implementação. O APK atual, quando compilado, é uma fundação: permite criar um projeto local e editar um arquivo C#. Ainda **não** compila nem executa o jogo no telefone.
+Lunet é um ambiente Android para criar jogos 2D em C#. Este repositório está no começo da implementação. O APK atual, quando compilado, é uma fundação: permite criar um projeto local, editar um arquivo C# e exportar a pasta do projeto em ZIP. Ainda **não** compila nem executa o jogo no telefone.
 
 ## Construir
 

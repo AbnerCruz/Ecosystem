@@ -11,7 +11,7 @@ Uma caixa só é marcada quando implementação, integração, documentação e 
 
 ## Fase 1 — Fatia vertical
 
-- [ ] Criar projeto e persistir arquivos em pasta comum (implementação inicial, sem teste em Android).
+- [ ] Criar projeto, persistir arquivos em pasta comum e exportar ZIP (implementação inicial, sem teste em Android).
 - [ ] Editar C# com salvamento e recuperação.
 - [ ] Compilar C# com Roslyn no Android usando referências offline.
 - [ ] Carregar e executar o jogo compilado no Preview.

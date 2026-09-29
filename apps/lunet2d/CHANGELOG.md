@@ -4,7 +4,7 @@
 
 ### Added
 
-- Estrutura Android inicial e armazenamento local de projetos C#.
+- Estrutura Android inicial, armazenamento local de projetos C# e exportação ZIP.
 - Workflow de build e publicação do APK como artifact de CI.
 
 ### Changed
