@@ -54,11 +54,14 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
     private IReadOnlyList<LunetDiagnostic> _problems = [];
     private readonly List<string> _console = [];
     private int _compileCounter;
+    private IReadOnlyList<SourceFile>? _previousRun;
+    private ChangeReport? _pendingChange;
     private string? _pendingExport;
 
     private GLSurfaceView? _glView;
     private PreviewRenderer? _renderer;
     private TextView? _previewConsole;
+    private InspectorPanel? _inspector;
     private bool _previewPaused;
     private SensorManager? _sensors;
     private GamepadButtons _padButtons;
@@ -113,6 +116,11 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
         _project = null;
         _openFile = null;
         _editor = null;
+        _body = null;
+        _editorColumn = null;
+        _panelColumn = null;
+        _splitter = null;
+        _minimap = null;
 
         var root = Vertical();
         root.SetPadding(Dp(16), Dp(16), Dp(16), Dp(16));
@@ -291,23 +299,21 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
         _status.SetPadding(Dp(8), 0, Dp(8), 0);
         root.AddView(_status);
 
-        root.AddView(BuildEditorHost(), Fill(3));
-
         _chips = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         _chipScroll = new HorizontalScrollView(this) { Visibility = ViewStates.Gone, HorizontalScrollBarEnabled = false };
         _chipScroll.AddView(_chips);
-        root.AddView(_chipScroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent));
 
         var tabs = new LinearLayout(this) { Orientation = Orientation.Horizontal };
         _problemsTab = MakeBarButton("Problemas", () => SetPanel(false));
         tabs.AddView(_problemsTab);
         tabs.AddView(MakeBarButton("Console", () => SetPanel(true)));
-        root.AddView(tabs);
 
         _panelList = Vertical();
         var panelScroll = new ScrollView(this);
         panelScroll.AddView(_panelList);
-        root.AddView(panelScroll, Fill(1));
+
+        _showConsole = _layoutStore.Current.PanelTab == "console";
+        root.AddView(BuildBody(BuildEditorHost(), _chipScroll, tabs, panelScroll), Fill(1));
 
         var frame = new FrameLayout(this);
         frame.AddView(root, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
@@ -338,7 +344,7 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
         var scroll = new ScrollView(this);
         scroll.AddView(_drawerList);
         _drawer.AddView(scroll, Fill(1));
-        frame.AddView(_drawer, new FrameLayout.LayoutParams(Dp(300), ViewGroup.LayoutParams.MatchParent, GravityFlags.Left));
+        frame.AddView(_drawer, new FrameLayout.LayoutParams(Dp(_layoutStore.Current.ExplorerWidthDp), ViewGroup.LayoutParams.MatchParent, GravityFlags.Left));
     }
 
     private void ToggleExplorer()
@@ -560,6 +566,11 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
     private void SetPanel(bool console)
     {
         _showConsole = console;
+        if (_layoutStore.Current.PanelTab != (console ? "console" : "problems"))
+        {
+            _layoutStore.Current.PanelTab = console ? "console" : "problems";
+            SaveLayouts();
+        }
         if (_panelList is null) return;
         _panelList.RemoveAllViews();
         if (console)
@@ -884,6 +895,8 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
         SaveCurrent();
         _status!.Text = "Compilando… (a primeira compilação demora mais)";
         var sources = _project.LoadSources().Select(s => new SourceFile(s.Path, s.Text)).ToList();
+        _pendingChange = _previousRun is null ? null : ChangeClassifier.Classify(_previousRun, sources);
+        _previousRun = sources;
         var assemblyName = $"LunetGame{++_compileCounter}";
         Task.Run(() => SharedCompiler.Value.Compile(assemblyName, sources)).ContinueWith(task =>
             RunOnUiThread(() => OnCompiled(task)));
@@ -908,7 +921,7 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
             SetPanel(false);
             return;
         }
-        _status!.Text = "Compilado";
+        _status!.Text = "Compilado" + DescribeChange(_pendingChange, result.FromCache);
         SetPanel(false);
         ShowPreview(result);
     }
@@ -947,7 +960,11 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
         });
         controls.AddView(pause);
         controls.AddView(MakeButton("⏭", () => _renderer?.RequestStep()));
+        controls.AddView(MakeButton("🔍", ToggleInspector));
         root.AddView(controls, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Top | GravityFlags.Left));
+
+        _inspector = new InspectorPanel(this, () => _renderer?.CurrentGame, () => _project?.ListFiles() ?? []) { Visibility = ViewStates.Gone };
+        root.AddView(_inspector, new FrameLayout.LayoutParams(Dp(320), ViewGroup.LayoutParams.MatchParent, GravityFlags.Right));
 
         _previewConsole = new TextView(this) { TextSize = 11, Clickable = false, Focusable = false };
         _previewConsole.SetTextColor(AndroidColor.White);
@@ -1165,6 +1182,7 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
         _glView = null;
         _renderer = null;
         _previewConsole = null;
+        _inspector = null;
     }
 
     // ---------- Export ----------

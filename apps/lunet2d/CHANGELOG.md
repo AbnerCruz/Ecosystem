@@ -4,6 +4,9 @@
 
 ### Added
 
+- Inspector do jogo em execução (botão 🔍 no Preview): campos por reflexão, atributos `Range`, `ReadOnly`, `Hidden`, `Multiline`, `Color`, `File`, `Asset`, `Group`, `Tooltip`, `Inspect` e `Inspector<T>` customizado; edição ao vivo.
+- Classificação de mudanças entre Runs (só corpos × reinício necessário) no status.
+- Layout do workspace: painel embaixo ou à direita (automático por orientação), divisória arrastável, largura do Explorer, layouts salvos.
 - IDE: formatar documento, renomear símbolo (recusa conflitos), correções rápidas (using faltando/sobrando, ";", "você quis dizer", ordenar usings), estrutura do arquivo, informações do símbolo, dobrar código, multi-cursor, minimapa, atalhos de teclado físico, comandos de linha (duplicar, apagar, mover, comentar, indentar), configurações e exportar logs.
 - Compilação incremental: árvores de sintaxe reaproveitadas e resultado em cache quando nada mudou.
 - `PieceTable` (estrutura de texto para documentos grandes) e menu ⋯ reorganizado em categorias.

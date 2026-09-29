@@ -3,6 +3,133 @@
   "version": "0.0.1",
   "types": [
     {
+      "id": "T:Lunet.AssetAttribute",
+      "name": "AssetAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class AssetAttribute : Attribute",
+      "summary": "Trata um texto como o nome de um recurso do projeto (\u0060Content/\u0060) e mostra um seletor de recursos.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.AssetAttribute.#ctor(Lunet.AssetKind)",
+          "name": "AssetAttribute",
+          "kind": "constructor",
+          "signature": "public AssetAttribute(AssetKind kind = AssetKind.Any)",
+          "summary": "Trata um texto como o nome de um recurso do projeto (\u0060Content/\u0060) e mostra um seletor de recursos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "kind",
+              "type": "AssetKind",
+              "description": "Tipo de recurso aceito."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.AssetAttribute.Kind",
+          "name": "Kind",
+          "kind": "property",
+          "signature": "public AssetKind Kind { get; }",
+          "summary": "Tipo de recurso aceito.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.AssetKind",
+      "name": "AssetKind",
+      "namespace": "Lunet",
+      "kind": "enum",
+      "signature": "public enum AssetKind",
+      "summary": "Tipos de recurso do projeto, usados por \u0060AssetAttribute\u0060.",
+      "remarks": "",
+      "examples": [],
+      "related": [
+        "T:Lunet.AssetAttribute"
+      ],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.AssetKind.Any",
+          "name": "Any",
+          "kind": "enum value",
+          "signature": "public const AssetKind Any = 0",
+          "summary": "Qualquer recurso.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.AssetKind.Data",
+          "name": "Data",
+          "kind": "enum value",
+          "signature": "public const AssetKind Data = 4",
+          "summary": "Dados em JSON ou texto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.AssetKind.Music",
+          "name": "Music",
+          "kind": "enum value",
+          "signature": "public const AssetKind Music = 3",
+          "summary": "M\u00FAsica.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.AssetKind.Sound",
+          "name": "Sound",
+          "kind": "enum value",
+          "signature": "public const AssetKind Sound = 2",
+          "summary": "Efeito sonoro.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.AssetKind.Texture",
+          "name": "Texture",
+          "kind": "enum value",
+          "signature": "public const AssetKind Texture = 1",
+          "summary": "Imagem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Circle",
       "name": "Circle",
       "namespace": "Lunet",
@@ -124,6 +251,19 @@
       ]
     },
     {
+      "id": "T:Lunet.ColorAttribute",
+      "name": "ColorAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class ColorAttribute : Attribute",
+      "summary": "Trata um texto como cor hexadecimal (\u0060#RRGGBB\u0060 ou \u0060#RRGGBBAA\u0060) e mostra um seletor de cor.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": []
+    },
+    {
       "id": "T:Lunet.Dispatcher",
       "name": "Dispatcher",
       "namespace": "Lunet",
@@ -151,6 +291,52 @@
               "description": "A\u00E7\u00E3o a executar."
             }
           ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.FileAttribute",
+      "name": "FileAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class FileAttribute : Attribute",
+      "summary": "Trata um texto como caminho de arquivo do projeto e mostra um seletor de arquivo.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.FileAttribute.#ctor(System.String)",
+          "name": "FileAttribute",
+          "kind": "constructor",
+          "signature": "public FileAttribute(string filter = \u0022\u0022)",
+          "summary": "Trata um texto como caminho de arquivo do projeto e mostra um seletor de arquivo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "filter",
+              "type": "string",
+              "description": "Extens\u00F5es aceitas, por exemplo \u0060.png;.jpg\u0060. Vazio aceita qualquer arquivo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.FileAttribute.Filter",
+          "name": "Filter",
+          "kind": "property",
+          "signature": "public string Filter { get; }",
+          "summary": "Extens\u00F5es aceitas.",
+          "remarks": "",
+          "parameters": [],
           "returns": "",
           "examples": [],
           "related": [],
@@ -1421,6 +1607,844 @@
       ]
     },
     {
+      "id": "T:Lunet.GroupAttribute",
+      "name": "GroupAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class GroupAttribute : Attribute",
+      "summary": "Agrupa campos sob um t\u00EDtulo no Inspector.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.GroupAttribute.#ctor(System.String)",
+          "name": "GroupAttribute",
+          "kind": "constructor",
+          "signature": "public GroupAttribute(string name)",
+          "summary": "Agrupa campos sob um t\u00EDtulo no Inspector.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string",
+              "description": "T\u00EDtulo do grupo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.GroupAttribute.Name",
+          "name": "Name",
+          "kind": "property",
+          "signature": "public string Name { get; }",
+          "summary": "T\u00EDtulo do grupo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.HiddenAttribute",
+      "name": "HiddenAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class HiddenAttribute : Attribute",
+      "summary": "Esconde o campo ou propriedade do Inspector.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": []
+    },
+    {
+      "id": "T:Lunet.IInspector",
+      "name": "IInspector",
+      "namespace": "Lunet",
+      "kind": "interface",
+      "signature": "public interface IInspector",
+      "summary": "Contrato interno dos inspectors customizados; use \u0060Inspector\u00601\u0060.",
+      "remarks": "",
+      "examples": [],
+      "related": [
+        "T:Lunet.Inspector\u00601"
+      ],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.IInspector.TargetType",
+          "name": "TargetType",
+          "kind": "property",
+          "signature": "public abstract Type TargetType { get; }",
+          "summary": "Tipo que este inspector sabe mostrar.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.IInspector.Inspect(Lunet.InspectorContext,System.Object)",
+          "name": "Inspect",
+          "kind": "method",
+          "signature": "public abstract void Inspect(InspectorContext ui, object target)",
+          "summary": "Adiciona as linhas do objeto.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "ui",
+              "type": "InspectorContext",
+              "description": "Onde adicionar linhas."
+            },
+            {
+              "name": "target",
+              "type": "object",
+              "description": "Objeto inspecionado."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.InspectAttribute",
+      "name": "InspectAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class InspectAttribute : Attribute",
+      "summary": "Mostra um campo privado no Inspector (por padr\u00E3o s\u00F3 os p\u00FAblicos aparecem).",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": []
+    },
+    {
+      "id": "T:Lunet.InspectorContext",
+      "name": "InspectorContext",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class InspectorContext",
+      "summary": "Onde um \u0060Inspector\u00601\u0060 descreve a interface do objeto. Cada chamada adiciona uma linha; o app desenha as linhas.",
+      "remarks": "",
+      "examples": [],
+      "related": [
+        "T:Lunet.Inspector\u00601"
+      ],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.InspectorContext.Depth",
+          "name": "Depth",
+          "kind": "property",
+          "signature": "public int Depth { get; }",
+          "summary": "Recuo atual; aumenta dentro de \u0060InspectorContext.Indent\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "M:Lunet.InspectorContext.Indent(System.Action)"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorContext.Items",
+          "name": "Items",
+          "kind": "property",
+          "signature": "public IReadOnlyList\u003CInspectorItem\u003E Items { get; }",
+          "summary": "Linhas adicionadas at\u00E9 agora.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.InspectorContext.Add(Lunet.InspectorItem)",
+          "name": "Add",
+          "kind": "method",
+          "signature": "public void Add(InspectorItem item)",
+          "summary": "Adiciona uma linha j\u00E1 montada (usado pelo Inspector autom\u00E1tico).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "item",
+              "type": "InspectorItem",
+              "description": "Linha a adicionar."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.InspectorContext.Button(System.String,System.Action)",
+          "name": "Button",
+          "kind": "method",
+          "signature": "public void Button(string label, Action action)",
+          "summary": "Adiciona um bot\u00E3o que executa \u0060action\u0060 na thread do jogo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "label",
+              "type": "string",
+              "description": "Texto do bot\u00E3o."
+            },
+            {
+              "name": "action",
+              "type": "Action",
+              "description": "O que fazer ao tocar."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.InspectorContext.Field\u0060\u00601(System.String,System.Func{\u0060\u00600},System.Action{\u0060\u00600},System.String)",
+          "name": "Field",
+          "kind": "method",
+          "signature": "public void Field\u003CTValue\u003E(string label, Func\u003CTValue\u003E get, Action\u003CTValue\u003E? set = null, string? tooltip = null)",
+          "summary": "Adiciona um campo edit\u00E1vel de qualquer tipo suportado (int, float, bool, string, enum, Vector2, Color).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "label",
+              "type": "string",
+              "description": "Nome do campo."
+            },
+            {
+              "name": "get",
+              "type": "Func\u003CTValue\u003E",
+              "description": "L\u00EA o valor atual."
+            },
+            {
+              "name": "set",
+              "type": "Action\u003CTValue\u003E",
+              "description": "Grava o valor; nulo deixa o campo somente leitura."
+            },
+            {
+              "name": "tooltip",
+              "type": "string",
+              "description": "Texto de ajuda opcional."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.InspectorContext.Header(System.String)",
+          "name": "Header",
+          "kind": "method",
+          "signature": "public void Header(string text)",
+          "summary": "Adiciona um t\u00EDtulo de se\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "description": "Texto do t\u00EDtulo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.InspectorContext.Indent(System.Action)",
+          "name": "Indent",
+          "kind": "method",
+          "signature": "public void Indent(Action content)",
+          "summary": "Aumenta o recuo das linhas adicionadas por \u0060content\u0060.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "content",
+              "type": "Action",
+              "description": "Adiciona as linhas recuadas."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.InspectorContext.InspectorFieldKindOf(System.Type)",
+          "name": "InspectorFieldKindOf",
+          "kind": "method",
+          "signature": "public static InspectorFieldKind InspectorFieldKindOf(Type type)",
+          "summary": "Forma de edi\u00E7\u00E3o usada para um tipo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "type",
+              "type": "Type",
+              "description": "Tipo do valor."
+            }
+          ],
+          "returns": "A forma de edi\u00E7\u00E3o, ou \u0060InspectorFieldKind.Other\u0060 se o tipo n\u00E3o tem editor.",
+          "examples": [],
+          "related": [
+            "F:Lunet.InspectorFieldKind.Other"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.InspectorContext.Label(System.String)",
+          "name": "Label",
+          "kind": "method",
+          "signature": "public void Label(string text)",
+          "summary": "Adiciona um texto informativo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "description": "Texto a mostrar."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.InspectorContext.Separator",
+          "name": "Separator",
+          "kind": "method",
+          "signature": "public void Separator()",
+          "summary": "Adiciona uma linha divis\u00F3ria.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.InspectorContext.Slider(System.String,System.Func{System.Single},System.Action{System.Single},System.Single,System.Single)",
+          "name": "Slider",
+          "kind": "method",
+          "signature": "public void Slider(string label, Func\u003Cfloat\u003E get, Action\u003Cfloat\u003E set, float min, float max)",
+          "summary": "Adiciona um controle deslizante para um n\u00FAmero decimal.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "label",
+              "type": "string",
+              "description": "Nome do campo."
+            },
+            {
+              "name": "get",
+              "type": "Func\u003Cfloat\u003E",
+              "description": "L\u00EA o valor atual."
+            },
+            {
+              "name": "set",
+              "type": "Action\u003Cfloat\u003E",
+              "description": "Grava o valor."
+            },
+            {
+              "name": "min",
+              "type": "float",
+              "description": "Menor valor."
+            },
+            {
+              "name": "max",
+              "type": "float",
+              "description": "Maior valor."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.InspectorFieldKind",
+      "name": "InspectorFieldKind",
+      "namespace": "Lunet",
+      "kind": "enum",
+      "signature": "public enum InspectorFieldKind",
+      "summary": "Forma de edi\u00E7\u00E3o de um campo.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.InspectorFieldKind.Bool",
+          "name": "Bool",
+          "kind": "enum value",
+          "signature": "public const InspectorFieldKind Bool = 2",
+          "summary": "Verdadeiro ou falso.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorFieldKind.Color",
+          "name": "Color",
+          "kind": "enum value",
+          "signature": "public const InspectorFieldKind Color = 6",
+          "summary": "Cor (\u0060Lunet.Graphics.Color\u0060 ou texto hexadecimal).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorFieldKind.Enum",
+          "name": "Enum",
+          "kind": "enum value",
+          "signature": "public const InspectorFieldKind Enum = 4",
+          "summary": "Valor de uma enumera\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorFieldKind.Float",
+          "name": "Float",
+          "kind": "enum value",
+          "signature": "public const InspectorFieldKind Float = 1",
+          "summary": "N\u00FAmero decimal.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorFieldKind.Int",
+          "name": "Int",
+          "kind": "enum value",
+          "signature": "public const InspectorFieldKind Int = 0",
+          "summary": "N\u00FAmero inteiro.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorFieldKind.Other",
+          "name": "Other",
+          "kind": "enum value",
+          "signature": "public const InspectorFieldKind Other = 7",
+          "summary": "Tipo sem editor: s\u00F3 mostra o valor como texto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorFieldKind.Text",
+          "name": "Text",
+          "kind": "enum value",
+          "signature": "public const InspectorFieldKind Text = 3",
+          "summary": "Texto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorFieldKind.Vector2",
+          "name": "Vector2",
+          "kind": "enum value",
+          "signature": "public const InspectorFieldKind Vector2 = 5",
+          "summary": "Ponto ou vetor de dois n\u00FAmeros.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.InspectorItem",
+      "name": "InspectorItem",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class InspectorItem",
+      "summary": "Uma linha do Inspector, independente de interface: quem desenha (o app) l\u00EA e grava por \u0060InspectorItem.Getter\u0060 e \u0060InspectorItem.Setter\u0060.",
+      "remarks": "",
+      "examples": [],
+      "related": [
+        "P:Lunet.InspectorItem.Getter",
+        "P:Lunet.InspectorItem.Setter"
+      ],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.InspectorItem.Action",
+          "name": "Action",
+          "kind": "property",
+          "signature": "public Action? Action { get; init; }",
+          "summary": "A\u00E7\u00E3o de um bot\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.Asset",
+          "name": "Asset",
+          "kind": "property",
+          "signature": "public AssetKind? Asset { get; init; }",
+          "summary": "Tipo de recurso, quando o campo \u00E9 um recurso do projeto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.Depth",
+          "name": "Depth",
+          "kind": "property",
+          "signature": "public int Depth { get; init; }",
+          "summary": "Profundidade de aninhamento (para recuo).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.EnumNames",
+          "name": "EnumNames",
+          "kind": "property",
+          "signature": "public IReadOnlyList\u003Cstring\u003E? EnumNames { get; init; }",
+          "summary": "Nomes dos valores, quando \u00E9 uma enumera\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.FieldKind",
+          "name": "FieldKind",
+          "kind": "property",
+          "signature": "public InspectorFieldKind FieldKind { get; init; }",
+          "summary": "Forma de edi\u00E7\u00E3o, para linhas do tipo \u0060InspectorItemKind.Field\u0060.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [
+            "F:Lunet.InspectorItemKind.Field"
+          ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.FileFilter",
+          "name": "FileFilter",
+          "kind": "property",
+          "signature": "public string? FileFilter { get; init; }",
+          "summary": "Filtro de extens\u00F5es, quando o campo \u00E9 um arquivo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.Getter",
+          "name": "Getter",
+          "kind": "property",
+          "signature": "public Func\u003Cobject?\u003E? Getter { get; init; }",
+          "summary": "L\u00EA o valor atual do jogo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.IsEditable",
+          "name": "IsEditable",
+          "kind": "property",
+          "signature": "public bool IsEditable { get; }",
+          "summary": "Verdadeiro se o campo pode ser editado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.Kind",
+          "name": "Kind",
+          "kind": "property",
+          "signature": "public InspectorItemKind Kind { get; init; }",
+          "summary": "Tipo da linha.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.Label",
+          "name": "Label",
+          "kind": "property",
+          "signature": "public string Label { get; init; }",
+          "summary": "R\u00F3tulo ou texto da linha.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.Max",
+          "name": "Max",
+          "kind": "property",
+          "signature": "public float? Max { get; init; }",
+          "summary": "Maior valor (controle deslizante).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.Min",
+          "name": "Min",
+          "kind": "property",
+          "signature": "public float? Min { get; init; }",
+          "summary": "Menor valor (controle deslizante).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.MultilineLines",
+          "name": "MultilineLines",
+          "kind": "property",
+          "signature": "public int MultilineLines { get; init; }",
+          "summary": "Linhas de um texto multilinha; zero quando \u00E9 uma linha s\u00F3.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.Setter",
+          "name": "Setter",
+          "kind": "property",
+          "signature": "public Action\u003Cobject?\u003E? Setter { get; init; }",
+          "summary": "Grava um valor; nulo quando o campo \u00E9 somente leitura. Chame na thread do jogo (\u0060Game.Dispatcher\u0060).",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.Tooltip",
+          "name": "Tooltip",
+          "kind": "property",
+          "signature": "public string? Tooltip { get; init; }",
+          "summary": "Texto de ajuda.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.InspectorItem.ValueType",
+          "name": "ValueType",
+          "kind": "property",
+          "signature": "public Type? ValueType { get; init; }",
+          "summary": "Tipo do valor.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.InspectorItemKind",
+      "name": "InspectorItemKind",
+      "namespace": "Lunet",
+      "kind": "enum",
+      "signature": "public enum InspectorItemKind",
+      "summary": "Tipo de linha do Inspector.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.InspectorItemKind.Button",
+          "name": "Button",
+          "kind": "enum value",
+          "signature": "public const InspectorItemKind Button = 3",
+          "summary": "Bot\u00E3o que executa uma a\u00E7\u00E3o no jogo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorItemKind.Field",
+          "name": "Field",
+          "kind": "enum value",
+          "signature": "public const InspectorItemKind Field = 4",
+          "summary": "Valor que pode ser lido e (se permitido) editado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorItemKind.Header",
+          "name": "Header",
+          "kind": "enum value",
+          "signature": "public const InspectorItemKind Header = 0",
+          "summary": "T\u00EDtulo de se\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorItemKind.Label",
+          "name": "Label",
+          "kind": "enum value",
+          "signature": "public const InspectorItemKind Label = 1",
+          "summary": "Texto informativo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.InspectorItemKind.Separator",
+          "name": "Separator",
+          "kind": "enum value",
+          "signature": "public const InspectorItemKind Separator = 2",
+          "summary": "Linha divis\u00F3ria.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Inspector\u00601",
+      "name": "Inspector",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public abstract class Inspector\u003CT\u003E : IInspector",
+      "summary": "Inspector customizado para um tipo do jogo. Crie uma classe que herda de \u0060Inspector\u003CMeuTipo\u003E\u0060 no projeto e o Inspector do app a usa no lugar da lista autom\u00E1tica de campos.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Inspector\u00601.OnInspect(Lunet.InspectorContext,\u00600)",
+          "name": "OnInspect",
+          "kind": "method",
+          "signature": "public abstract void OnInspect(InspectorContext ui, T target)",
+          "summary": "Descreve a interface do objeto adicionando linhas em \u0060ui\u0060.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "ui",
+              "type": "InspectorContext",
+              "description": "Onde adicionar linhas."
+            },
+            {
+              "name": "target",
+              "type": "T",
+              "description": "Objeto inspecionado."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.LogLevel",
       "name": "LogLevel",
       "namespace": "Lunet",
@@ -1716,6 +2740,52 @@
       ]
     },
     {
+      "id": "T:Lunet.MultilineAttribute",
+      "name": "MultilineAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class MultilineAttribute : Attribute",
+      "summary": "Texto de v\u00E1rias linhas no Inspector.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.MultilineAttribute.#ctor(System.Int32)",
+          "name": "MultilineAttribute",
+          "kind": "constructor",
+          "signature": "public MultilineAttribute(int lines = 4)",
+          "summary": "Texto de v\u00E1rias linhas no Inspector.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "lines",
+              "type": "int",
+              "description": "Quantidade de linhas vis\u00EDveis."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.MultilineAttribute.Lines",
+          "name": "Lines",
+          "kind": "property",
+          "signature": "public int Lines { get; }",
+          "summary": "Quantidade de linhas vis\u00EDveis.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.ObjectPool\u00601",
       "name": "ObjectPool",
       "namespace": "Lunet",
@@ -1969,6 +3039,70 @@
       ]
     },
     {
+      "id": "T:Lunet.RangeAttribute",
+      "name": "RangeAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class RangeAttribute : Attribute",
+      "summary": "Limita um n\u00FAmero a um intervalo no Inspector (vira um controle deslizante).",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.RangeAttribute.#ctor(System.Single,System.Single)",
+          "name": "RangeAttribute",
+          "kind": "constructor",
+          "signature": "public RangeAttribute(float min, float max)",
+          "summary": "Limita um n\u00FAmero a um intervalo no Inspector (vira um controle deslizante).",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "min",
+              "type": "float",
+              "description": "Menor valor permitido."
+            },
+            {
+              "name": "max",
+              "type": "float",
+              "description": "Maior valor permitido."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RangeAttribute.Max",
+          "name": "Max",
+          "kind": "property",
+          "signature": "public float Max { get; }",
+          "summary": "Maior valor permitido.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.RangeAttribute.Min",
+          "name": "Min",
+          "kind": "property",
+          "signature": "public float Min { get; }",
+          "summary": "Menor valor permitido.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Ray2D",
       "name": "Ray2D",
       "namespace": "Lunet",
@@ -2098,6 +3232,19 @@
           "since": "0.0.1"
         }
       ]
+    },
+    {
+      "id": "T:Lunet.ReadOnlyAttribute",
+      "name": "ReadOnlyAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class ReadOnlyAttribute : Attribute",
+      "summary": "O Inspector mostra o valor, mas n\u00E3o deixa editar.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": []
     },
     {
       "id": "T:Lunet.RectangleF",
@@ -2413,6 +3560,52 @@
             }
           ],
           "returns": "Refer\u00EAncia para cancelar.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.TooltipAttribute",
+      "name": "TooltipAttribute",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class TooltipAttribute : Attribute",
+      "summary": "Texto de ajuda mostrado junto ao campo no Inspector.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.TooltipAttribute.#ctor(System.String)",
+          "name": "TooltipAttribute",
+          "kind": "constructor",
+          "signature": "public TooltipAttribute(string text)",
+          "summary": "Texto de ajuda mostrado junto ao campo no Inspector.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "description": "Explica\u00E7\u00E3o curta."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.TooltipAttribute.Text",
+          "name": "Text",
+          "kind": "property",
+          "signature": "public string Text { get; }",
+          "summary": "Explica\u00E7\u00E3o curta.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
           "examples": [],
           "related": [],
           "since": "0.0.1"

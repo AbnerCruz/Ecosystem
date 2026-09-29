@@ -4,6 +4,7 @@ using Android.OS;
 using Android.Views;
 using Android.Widget;
 using Lunet.Android.Editor;
+using Lunet.Compiler;
 using Lunet.Core;
 using Lunet.Editor;
 
@@ -23,6 +24,7 @@ public sealed partial class MainActivity
         _settingsStore = new SettingsStore(System.IO.Path.Combine(FilesDir!.AbsolutePath, "settings.json"));
         _settings = _settingsStore.Load();
         ApplyWindowSettings();
+        LoadLayouts();
     }
 
     private void ApplyWindowSettings()
@@ -164,9 +166,31 @@ public sealed partial class MainActivity
     [
         ("Documentação", () => HandleCommand(EditorCommand.Documentation)),
         ("Exportar logs (Console e Problemas)", ExportLogs),
+        ("Layout do workspace", ShowLayoutDialog),
         ("Configurações", ShowSettings),
         ("Atalhos de teclado", ShowShortcutHelp),
     ]);
+
+    // ---------- Inspector e mudanças ----------
+
+    private void ToggleInspector()
+    {
+        if (_inspector is null) return;
+        _inspector.Visibility = _inspector.Visibility == ViewStates.Visible ? ViewStates.Gone : ViewStates.Visible;
+    }
+
+    /// <summary>Texto curto sobre o que mudou desde o Run anterior (hot reload possível × reinício necessário).</summary>
+    private static string DescribeChange(ChangeReport? report, bool fromCache)
+    {
+        if (report is null) return "";
+        var suffix = fromCache ? " (compilação reaproveitada)" : "";
+        return report.Kind switch
+        {
+            ChangeKind.None => " · sem mudanças de código" + suffix,
+            ChangeKind.HotReloadPossible => $" · só corpos mudaram ({report.Reasons.Count}): hot reload possível, jogo reiniciado",
+            _ => $" · reinício necessário: {report.Reasons[0]}" + (report.Reasons.Count > 1 ? $" (+{report.Reasons.Count - 1})" : ""),
+        };
+    }
 
     // ---------- Comandos ----------
 

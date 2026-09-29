@@ -134,16 +134,16 @@ Roslyn (§9)
 IDE mobile (§11)
 - [x] Explorer (ver Fase 1).
 - [ ] Painéis: Preview, Inspector, Console, Problems, Search, Assets, Documentation, Agent, Profiler (Preview, Console, Problems e Explorer já existem no workspace).
-- [ ] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes.
-- [ ] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles.
+- [x] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes. (feito, sem validação em aparelho; painel encaixa embaixo/à direita, divisória arrastável, layouts salvos e predefinidos)
+- [x] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles. (feito, sem validação em aparelho; em paisagem o painel vai para a direita; rótulos e botões não são selecionáveis)
 - [x] Busca no projeto inteiro. (feito, sem validação em aparelho; menu ⋯ → Buscar no projeto)
 - [x] Console e Problems com logs exportáveis (§23). (feito, sem validação em aparelho; Ferramentas → Exportar logs)
 - [x] Settings. (feito, sem validação em aparelho; fonte, números de linha, minimapa, formatar ao executar, tela ligada, taxa de atualização)
 
 Inspector (§12)
-- [ ] Inspector padrão por reflexão; atributos Range, ReadOnly, Hidden, Multiline, Color, File, Asset, Group, Tooltip.
-- [ ] `Inspector<T>` customizado.
-- [ ] Inspecionar variáveis do jogo em execução (fluxo principal §29).
+- [x] Inspector padrão por reflexão; atributos Range, ReadOnly, Hidden, Multiline, Color, File, Asset, Group, Tooltip. (feito, sem validação em aparelho; testado por reflexão, ainda falta a bateria no aparelho)
+- [x] `Inspector<T>` customizado. (feito, sem validação em aparelho)
+- [x] Inspecionar variáveis do jogo em execução (fluxo principal §29). (feito, sem validação em aparelho; botão 🔍 no Preview, edição ao vivo na thread do jogo)
 
 Documentação (§15)
 - [x] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33). (feito, sem validação em aparelho; `Lunet.Docs`, `docs/api/lunet-framework.json` com teste de deriva, guias em `docs/guides`)
@@ -152,7 +152,7 @@ Documentação (§15)
 - [ ] Documentação apontando para trechos dos jogos oficiais (depende da Fase 11).
 
 Preview e hot reload (§10)
-- [ ] Classificação de mudanças: hot reload possível × restart required.
+- [x] Classificação de mudanças: hot reload possível × restart required. (a cada Run o status diz o que mudou; o jogo sempre reinicia — sem hot reload mágico)
 - [ ] Fast Preview × Isolated Preview.
 
 Git, autosave e recovery (§22)
