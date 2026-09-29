@@ -21,7 +21,7 @@ Uma caixa só é marcada quando implementação, integração, documentação e 
 ## Fases posteriores
 
 - [ ] Framework Core (tempo, gráficos, matemática, input, conteúdo, armazenamento, áudio). Implementado e testado em desktop: passo fixo, sprites, spritesheet, fonte bitmap, PNG/`ContentManager`, gestos, teclado, acelerômetro, salvamento, áudio de efeitos, matemática/aleatório. Pendente de teste em aparelho: PNG importado, áudio, teclado, acelerômetro, salvamento (o modelo Demo cobre todos). Faltam: música em streaming, gamepad, haptics, atlas, fontes personalizadas. Gate da fase (jogo completo só com código) aguarda validação do Demo no aparelho.
-- [ ] IDE, Roslyn e documentação offline.
+- [ ] IDE, Roslyn e documentação offline. Feito e testado em desktop (falta validar em aparelho): realce, números de linha, desfazer/refazer, indentação, autocompletar, definição, referências, dica, localizar/substituir, diagnósticos ao vivo. Faltam: documentação offline gerada da API, painéis reorganizáveis/layouts salvos, busca no projeto, renomear, formatação, quick fixes, Explorer, Inspector, Profiler.
 - [ ] Framework avançado e ferramentas Studio.
 - [ ] Plugins em C#.
 - [ ] Multiplayer e simulador de rede.
