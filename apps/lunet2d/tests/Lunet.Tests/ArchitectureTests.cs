@@ -98,3 +98,27 @@ public class PlanningDocsTests
             Assert.Matches($@"(?m)^## Fase {phase} — ", roadmap);
     }
 }
+
+/// <summary>O projeto Android só compila no CI; este teste pega erros de sintaxe antes, em qualquer máquina.</summary>
+public class AndroidSourceSyntaxTests
+{
+    [Fact]
+    public void AllAndroidSourcesParseWithoutSyntaxErrors()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !Directory.Exists(Path.Combine(dir.FullName, "src", "Lunet.Android"))) dir = dir.Parent;
+        var files = Directory.GetFiles(Path.Combine(dir!.FullName, "src", "Lunet.Android"), "*.cs", SearchOption.AllDirectories)
+            .Where(f => !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+            .ToList();
+        Assert.NotEmpty(files);
+
+        var problems = new List<string>();
+        foreach (var file in files)
+        {
+            var tree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(File.ReadAllText(file), path: file);
+            foreach (var d in tree.GetDiagnostics().Where(d => d.Severity == Microsoft.CodeAnalysis.DiagnosticSeverity.Error))
+                problems.Add($"{Path.GetFileName(file)}({d.Location.GetLineSpan().StartLinePosition.Line + 1}): {d.GetMessage()}");
+        }
+        Assert.True(problems.Count == 0, string.Join("\n", problems));
+    }
+}

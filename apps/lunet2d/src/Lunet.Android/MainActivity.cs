@@ -498,7 +498,6 @@ public sealed class MainActivity : Activity, ISensorEventListener
             Toast.MakeText(this, "Não foi possível salvar: " + ex.Message, ToastLength.Long)?.Show();
         }
     }
-    }
 
     private void ShowMenu()
     {
