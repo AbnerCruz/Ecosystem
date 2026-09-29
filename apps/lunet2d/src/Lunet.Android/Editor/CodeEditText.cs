@@ -55,7 +55,7 @@ internal sealed class CodeEditText : EditText
         SetBackgroundColor(AndroidColor.Rgb(24, 26, 31));
         SetTextColor(AndroidColor.Rgb(230, 230, 230));
         _gutterPaint.Color = AndroidColor.Rgb(120, 126, 138);
-        _gutterPaint.TextAlign = Paint.Align.Right;
+        _gutterPaint.TextAlign = global::Android.Graphics.Paint.Align.Right;
         _gutterPaint.SetTypeface(Typeface.Monospace);
         _settle = OnSettled;
         UpdateGutter();
@@ -124,14 +124,14 @@ internal sealed class CodeEditText : EditText
     private void BeforeChange(Java.Lang.ICharSequence? s, int start, int count)
     {
         if (_applying || s is null) return;
-        _removed = count == 0 ? "" : s.SubSequence(start, start + count)!.ToString();
+        _removed = count == 0 ? "" : s.SubSequenceFormatted(start, start + count)!.ToString();
         _caretBefore = SelectionStart;
     }
 
     private void OnChange(Java.Lang.ICharSequence? s, int start, int count)
     {
         if (_applying || s is null) return;
-        var inserted = count == 0 ? "" : s.SubSequence(start, start + count)!.ToString();
+        var inserted = count == 0 ? "" : s.SubSequenceFormatted(start, start + count)!.ToString();
         _typedSingle = count == 1;
         _history.Record(start, _removed, inserted, System.Math.Max(0, _caretBefore), Java.Lang.JavaSystem.CurrentTimeMillis());
         _version++;
