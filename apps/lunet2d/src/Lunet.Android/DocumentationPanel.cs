@@ -38,6 +38,8 @@ internal sealed class DocumentationPanel
         bar.AddView(MakeButton("←", GoBack));
         bar.AddView(MakeButton("⌂", () => Show("home")));
         _search = new EditText(activity) { Hint = "Buscar na API", TextSize = 14 };
+        _search.SetTextColor(AndroidColor.White);
+        _search.SetHintTextColor(AndroidColor.Argb(255, 150, 155, 165));
         _search.SetSingleLine(true);
         _search.ImeOptions = global::Android.Views.InputMethods.ImeAction.Search;
         _search.EditorAction += (_, e) =>
