@@ -179,6 +179,9 @@ public static class ProjectTemplates
         public sealed class {{className}} : Game
         {
             readonly RectangleF pageButton = new(8, 8, 344, 30);
+            readonly RectangleF pixelButton = new(8, 440, 344, 30);
+            readonly RectangleF resolutionButton = new(8, 474, 344, 30);
+            bool altResolution;
             readonly (string Label, RectangleF Area)[] buttons =
             {
                 ("Música liga/desliga (fade)", new RectangleF(8, 44, 344, 30)),
@@ -271,12 +274,19 @@ public static class ProjectTemplates
                     {
                         case GestureType.Tap:
                             if (pageButton.Contains(gesture.Position)) { page = 1 - page; break; }
+                            if (page == 1 && pixelButton.Contains(gesture.Position)) { GraphicsDevice.PixelPerfect = !GraphicsDevice.PixelPerfect; break; }
+                            if (page == 1 && resolutionButton.Contains(gesture.Position))
+                            {
+                                altResolution = !altResolution;
+                                if (altResolution) GraphicsDevice.SetVirtualResolution(350, 620);
+                                else GraphicsDevice.SetVirtualResolution(360, 640);
+                                break;
+                            }
                             if (page != 0) break;
                             for (int i = 0; i < buttons.Length; i++)
                                 if (buttons[i].Area.Contains(gesture.Position)) Press(i);
                             break;
                         case GestureType.DoubleTap:
-                            if (page == 1) GraphicsDevice.PixelPerfect = !GraphicsDevice.PixelPerfect;
                             break;
                         case GestureType.Pinch:
                             boxSize = System.Math.Clamp(boxSize * gesture.Scale, 20, 160);
@@ -421,12 +431,21 @@ public static class ProjectTemplates
                 batch.Rect(new RectangleF(200, 330, 96, 96), white, 1);
                 batch.DrawString(font, "Alvo", new Vector2(200, 430), white, 1.5f);
 
-                // Área segura, escala e densidade.
+                // Pixel perfect: botão liga/desliga + grade de linhas de 1 pixel, que mostra a diferença.
+                bool pp = GraphicsDevice.PixelPerfect;
+                batch.FillRect(pixelButton, pp ? new Color(40, 120, 60) : new Color(120, 50, 50));
+                batch.DrawString(font, pp ? "Pixel perfect: LIGADO (toque para desligar)" : "Pixel perfect: DESLIGADO (toque para ligar)", pixelButton.Position + new Vector2(6, 8), Color.White, 1.5f);
+                batch.FillRect(resolutionButton, new Color(60, 60, 130));
+                batch.DrawString(font, altResolution ? "Resolução virtual: 350x620 (escala fracionada)" : "Resolução virtual: 360x640 (toque para testar 350x620)", resolutionButton.Position + new Vector2(6, 8), Color.White, 1.2f);
+                for (int i = 0; i < 40; i += 2) batch.FillRect(new RectangleF(20 + i, 512, 1, 24), Color.White); // linhas verticais de 1 px
+                for (int i = 0; i < 24; i += 2) batch.FillRect(new RectangleF(70, 512 + i, 40, 1), Color.White);   // linhas horizontais de 1 px
+                batch.DrawString(font, "Se a escala for inteira (ex.: 3,000) não há diferença; use o botão de resolução", new Vector2(8, 542), Color.Yellow, 1f);
+                batch.DrawString(font, "acima e alterne o pixel perfect: as linhas ficam uniformes só quando ligado.", new Vector2(8, 554), Color.Yellow, 1f);
+
                 batch.Rect(GraphicsDevice.SafeArea, new Color(255, 0, 255), 2);
-                batch.DrawString(font, $"Escala {GraphicsDevice.Scale:0.00}  Densidade {GraphicsDevice.Density:0.0}  Pixel perfect: {(GraphicsDevice.PixelPerfect ? "sim" : "não")}", new Vector2(8, 470), white, 1.5f);
-                batch.DrawString(font, "Toque duplo: liga/desliga pixel perfect", new Vector2(8, 486), white, 1.5f);
+                batch.DrawString(font, $"Escala {GraphicsDevice.Scale:0.000}  Densidade {GraphicsDevice.Density:0.0}", new Vector2(8, 570), white, 1.5f);
                 var safe = GraphicsDevice.SafeArea;
-                batch.DrawString(font, $"Área segura {safe.X:0} {safe.Y:0} {safe.Width:0} {safe.Height:0}", new Vector2(8, 502), Color.Yellow, 1.5f);
+                batch.DrawString(font, $"Área segura {safe.X:0} {safe.Y:0} {safe.Width:0} {safe.Height:0}", new Vector2(8, 586), Color.Yellow, 1.5f);
                 batch.End();
             }
         }

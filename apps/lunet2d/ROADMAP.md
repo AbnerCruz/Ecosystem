@@ -17,8 +17,8 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 | Fase | Estado |
 | --- | --- |
 | 0 Foundation | 🟡 faltam as pastas do §26 (criadas quando houver conteúdo) |
-| 1 Vertical Slice | 🟡 gate validado; faltam Explorer, recuperação após crash, "Tutorial" na criação de projeto |
-| 2 Framework Core | 🟡 Demo validado; faltam música, gamepad, haptics, atlas, Lifecycle/Dispatcher/GameServices, Transform2D/Ray2D/Geometry |
+| 1 Vertical Slice | 🟡 gate validado; falta validar em aparelho Explorer, recuperação após crash e exportar ZIP |
+| 2 Framework Core | ✅ concluída e aprovada (auditoria em `docs/audits/fase-2.md`) |
 | 3 IDE | 🟡 editor validado só em desktop; falta a maior parte (docs offline, painéis, busca, rename...) |
 | 4–15 | ⬜ |
 
@@ -53,8 +53,7 @@ Gate: no telefone é possível criar projeto, escrever C#, apertar Run e mover s
 - [ ] Explorer (painel lateral com árvore, pastas recolhíveis, novo arquivo/pasta, renomear, excluir) **(feito, sem validação em aparelho)**.
 - [ ] Recuperação após crash: working buffer a cada pausa na digitação, descarte ao salvar, oferta de recuperação ao abrir o projeto (§22) **(feito, sem validação em aparelho)**; falta snapshot do projeto inteiro.
 - [ ] Exportar ZIP validado em aparelho (feito, sem validação em aparelho).
-- [ ] Criação de projeto: opção "Tutorial" além de "Em branco" e "Demo" (§33) — depende da Fase 11.
-- [ ] Workspace mínimo do §33 completo: Explorer, Editor, Preview, Problems/Console, Documentation.
+- [ ] Workspace mínimo do §33: Explorer, Editor, Preview, Problems/Console (Documentation: hoje só a referência rápida; painel de documentação completo na Fase 3, opção "Tutorial" na criação de projeto na Fase 11 — itens movidos para lá).
 - [ ] Auditoria de fechamento da Fase 1 registrada em `docs/audits/`.
 
 ## Fase 2 — Framework Core (§7)
@@ -66,8 +65,8 @@ Core
 - [x] Loop de passo fixo, interpolação, proteção contra spiral-of-death, pause/resume.
 - [x] `GameServices` (registro de serviços do jogo; o host registra os padrão).
 - [x] `Dispatcher` (executar trabalho na thread do jogo).
-- [ ] Lifecycle completo do Android: app em segundo plano pausa jogo e áudio; o contexto GL é preservado ao pausar (`PreserveEGLContextOnPause`) **(feito, sem validação em aparelho)**; se o driver perder o contexto, o jogo reinicia (recriar texturas sem reiniciar fica para a Fase 13).
-- [ ] Suporte a refresh rate superior a 60 Hz: atualização fixa independente da taxa (testada de 30 a 144 Hz) e pedido do modo de maior taxa no Preview **(feito, sem validação em aparelho)**.
+- [x] Lifecycle completo do Android: app em segundo plano pausa jogo e áudio; o contexto GL é preservado ao pausar (`PreserveEGLContextOnPause`) (validado em aparelho na v0.0.1-dev.53); se o driver perder o contexto, o jogo reinicia (recriar texturas sem reiniciar fica para a Fase 13).
+- [x] Suporte a refresh rate superior a 60 Hz: atualização fixa independente da taxa (testada de 30 a 144 Hz) e pedido do modo de maior taxa no Preview (validado em aparelho na v0.0.1-dev.53).
 - [x] Timers e object pools (§7 complementares).
 
 Matemática
@@ -77,39 +76,39 @@ Matemática
 Graphics
 - [x] `GraphicsDevice`, `Texture2D`, `SpriteBatch`, `SpriteSheet`, resolução virtual com letterbox, filtro Point/Linear, fonte bitmap embutida.
 - [x] `Sprite` (textura/região, origem, cor, escala, rotação; `SpriteBatch.Draw(sprite, posição)`; `Sprite.FromAtlas`).
-- [ ] `RenderTarget2D` (FBO no OpenGL ES; testado com backend em memória) **(feito, sem validação em aparelho)**.
-- [ ] `Shader` (fragmento GLSL ES com uniforms) e `Material` **(feito, sem validação em aparelho)**.
-- [ ] `BlendState` (Alpha, Additive, Opaque, Multiply, Premultiplied), `SamplerState` e `Viewport` como tipos públicos **(feito, sem validação em aparelho)**.
-- [ ] Clipping (`Begin(clip:)`), pixel perfect (`PixelPerfect`), densidade (`Density`) e área segura (`SafeArea`, recorte de câmera) **(feito, sem validação em aparelho)**.
+- [x] `RenderTarget2D` (FBO no OpenGL ES; testado com backend em memória) (validado em aparelho na v0.0.1-dev.53).
+- [x] `Shader` (fragmento GLSL ES com uniforms) e `Material` (validado em aparelho na v0.0.1-dev.53).
+- [x] `BlendState` (Alpha, Additive, Opaque, Multiply, Premultiplied), `SamplerState` e `Viewport` como tipos públicos (validado em aparelho na v0.0.1-dev.53).
+- [x] Clipping (`Begin(clip:)`), pixel perfect (`PixelPerfect`), densidade (`Density`) e área segura (`SafeArea`, recorte de câmera) (validado em aparelho na v0.0.1-dev.53).
 - [x] Texture atlas em runtime (`Content.LoadAtlas`, regiões com pivô, `SpriteBatch.Draw(atlas, região, ...)`); o formato JSON fica como contrato para o Atlas Studio (Fase 5).
-- [ ] Debug drawing (`Line`, `Rect`, `FillRect`, `Circle`, `Cross`) **(feito, sem validação em aparelho)**.
+- [x] Debug drawing (`Line`, `Rect`, `FillRect`, `Circle`, `Cross`) (validado em aparelho na v0.0.1-dev.53).
 - [x] Sem alocação por quadro no caminho quente do framework (Tick, SpriteBatch, DrawString, gestos, timers, controles virtuais), verificado por teste de alocação; a medição em aparelho fica com o Profiler (Fase 4).
 
 Input
 - [x] Toque (`TouchPoint`), Tap, LongPress, Drag, Swipe, teclado, acelerômetro.
 - [x] `TouchCollection` e `Pointer` como tipos públicos.
-- [x] DoubleTap, Pinch, Rotate (testados com toques sintéticos; multitoque real só valida em aparelho — **feito, sem validação em aparelho**).
-- [ ] `VirtualStick` e `VirtualButton` (lógica pronta e testada; falta desenhar/usar no Demo e validar em aparelho).
-- [ ] Gamepad (botões, sticks, gatilhos, D-pad; `IsButtonDown/Pressed`) **(feito, sem validação em aparelho — precisa de um controle)**.
-- [ ] Giroscópio (`Input.Gyroscope`) **(feito, sem validação em aparelho)**.
-- [ ] Haptics (`Haptics.Vibrate`, permissão VIBRATE) **(feito, sem validação em aparelho)**.
+- [x] DoubleTap, Pinch, Rotate (testados com toques sintéticos; multitoque real só valida em aparelho — validado em aparelho na v0.0.1-dev.53).
+- [x] `VirtualStick` e `VirtualButton` (validados no Laboratório, v0.0.1-dev.53).
+- [x] Gamepad (botões, sticks, gatilhos, D-pad; `IsButtonDown/Pressed`) (validado em aparelho na v0.0.1-dev.53).
+- [x] Giroscópio (`Input.Gyroscope`) (validado em aparelho na v0.0.1-dev.53).
+- [x] Haptics (`Haptics.Vibrate`, permissão VIBRATE) (validado em aparelho na v0.0.1-dev.53).
 
 Áudio
 - [x] `SoundEffect`, `SoundInstance` (volume, pan, pitch, loop) com SoundPool.
-- [ ] `Music` em streaming (`Content.LoadMusic`, `Audio.PlayMusic/StopMusic`, MediaPlayer no Android) **(feito, sem validação em aparelho)**.
-- [ ] `AudioBus` (Master/Sfx/Music e barramentos próprios, mute) **(feito, sem validação em aparelho)**.
-- [ ] Fade de efeitos (`FadeTo`) e de música **(feito, sem validação em aparelho)**.
-- [ ] Baixa latência com Oboe/AAudio se a medição exigir (§7).
-- [ ] Contador de audio underruns para o Profiler.
+- [x] `Music` em streaming (`Content.LoadMusic`, `Audio.PlayMusic/StopMusic`, MediaPlayer no Android) (validado em aparelho na v0.0.1-dev.53).
+- [x] `AudioBus` (Master/Sfx/Music e barramentos próprios, mute) (validado em aparelho na v0.0.1-dev.53).
+- [x] Fade de efeitos (`FadeTo`) e de música (validado em aparelho na v0.0.1-dev.53).
 
 Conteúdo e armazenamento
 - [x] Decodificador PNG, `ContentManager` com cache, importação de PNG.
 - [x] Salvamento JSON com gravação atômica.
-- [ ] Carregar dados (JSON: `Content.LoadJson<T>`) via `ContentManager` (testado em desktop); fontes e mapas entram com Fonts/Tilemaps na Fase 4.
-- [ ] Localization (`Localization.SetLanguage/UseDeviceLanguage/Get`, reserva e formatação) — testado em desktop, sem validação em aparelho (idioma do aparelho).
+- [x] Carregar dados JSON (`Content.LoadJson<T>`) via `ContentManager` (lógica portátil, testada); fontes e mapas entram com Fonts/Tilemaps na Fase 4.
+- [x] Localization (`SetLanguage`, reserva, formatação; lógica portátil testada). Conferência do idioma do aparelho: Fase 13.
 
 Auditoria
-- [ ] Auditoria de fechamento da Fase 2 registrada em `docs/audits/`.
+- [x] Auditoria de fechamento da Fase 2 registrada em `docs/audits/fase-2.md` (aprovada pelo usuário com a v0.0.1-dev.53).
+
+Itens movidos para outras fases, com motivo: baixa latência com Oboe/AAudio → Fase 14 (só se a medição de desempenho exigir); contador de audio underruns → Fase 4 (Profiler); recriar texturas quando o contexto GL é perdido e conferir o idioma do aparelho na `Localization` → Fase 13.
 
 ## Fase 3 — IDE (§9, §11, §12, §15)
 
@@ -146,7 +145,7 @@ Inspector (§12)
 - [ ] Inspecionar variáveis do jogo em execução (fluxo principal §29).
 
 Documentação (§15)
-- [ ] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app.
+- [ ] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33).
 - [ ] Cada API com descrição, assinatura, parâmetros, retorno, exemplos, remarks, relacionadas e versão de introdução.
 - [ ] Integração com o editor: "Explain in Documentation".
 - [ ] Documentação apontando para trechos dos jogos oficiais (depende da Fase 11).
@@ -177,7 +176,7 @@ Gate: jogos 2D substanciais apenas com APIs oficiais.
 - [ ] Pathfinding A*.
 - [ ] Scene2D opcional e API entidade/componente opcional (sem obrigar ECS).
 - [ ] Debug APIs e helpers.
-- [ ] Profiler básico do framework (FPS, frame time, update/render time, draw calls, triângulos, memória, GC) (§23).
+- [ ] Profiler básico do framework (FPS, frame time, update/render time, draw calls, triângulos, memória, GC, audio underruns) (§23).
 - [ ] Auditoria de fechamento da Fase 4 registrada em `docs/audits/`.
 
 ## Fase 5 — Studio Tools (§13)
@@ -262,6 +261,7 @@ Gate: gerar AAB usando apenas telefone + GitHub.
 
 Gate: cada jogo compila, roda, está documentado e ensina efetivamente seu nível.
 
+- [ ] Opção "Tutorial" na criação de projeto (§33), abrindo os três jogos oficiais.
 - [ ] Tutorial 1 — Platformer (iniciante): estrutura, C# aplicado, Update/Draw, sprites, toque, movimento, colisão, câmera, animações, áudio, UI, checkpoints, save.
 - [ ] Tutorial 2 — Top-down Action Roguelite (intermediário): tilemap, inimigos, IA, A*, armas, projéteis, partículas, pools, geração de salas, inventário, upgrades, HUD, serialização, assets, profiling.
 - [ ] Tutorial 3 — Online Co-op Action RPG/Survival (avançado): cliente, servidor, shared code, lobby, conexão, replicação, snapshots, interpolação, predição, reconciliação, network variables, combate, inimigos, reconexão, diagnósticos, simulação de rede.
@@ -286,13 +286,15 @@ Sem paywall real obrigatório.
 - [ ] Plugins que falham e plugins malformados; falhas do compilador.
 - [ ] Saídas ruins de LLM e agente descontrolado; erros de assinatura e de atualização; falhas de rede.
 - [ ] Testes de ciclo de vida do Android e smoke tests em CI onde possível.
+- [ ] Recriar texturas, alvos de desenho e shaders quando o contexto GL é perdido, sem reiniciar o jogo.
+- [ ] `Localization.UseDeviceLanguage` conferido em aparelhos com idiomas diferentes.
 - [ ] Auditoria de fechamento da Fase 13 registrada em `docs/audits/`.
 
 ## Fase 14 — Beta
 
 - [ ] Documentação completa e tutoriais completos.
 - [ ] Revisão de API pública (nada vazando detalhes internos).
-- [ ] Revisão de desempenho (§23) e testes de migração de projetos.
+- [ ] Revisão de desempenho (§23), latência de áudio (avaliar Oboe/AAudio se a medição exigir) e testes de migração de projetos.
 - [ ] Releases beta no canal Beta.
 - [ ] Auditoria de fechamento da Fase 14 registrada em `docs/audits/`.
 
