@@ -101,11 +101,11 @@ public sealed class MainActivity : Activity
             TextSize = 14,
             Gravity = GravityFlags.Top | GravityFlags.Left
         };
-        editor.SetTypeface(Android.Graphics.Typeface.Monospace, Android.Graphics.TypefaceStyle.Normal);
+        editor.SetTypeface(global::Android.Graphics.Typeface.Monospace, global::Android.Graphics.TypefaceStyle.Normal);
         editor.SetHorizontallyScrolling(true);
-        editor.InputType = Android.Text.InputTypes.ClassText |
-                           Android.Text.InputTypes.TextFlagMultiLine |
-                           Android.Text.InputTypes.TextFlagNoSuggestions;
+        editor.InputType = global::Android.Text.InputTypes.ClassText |
+                           global::Android.Text.InputTypes.TextFlagMultiLine |
+                           global::Android.Text.InputTypes.TextFlagNoSuggestions;
         root.AddView(editor, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1));
         _editor = editor;
         Action(root, "Salvar", () =>
