@@ -78,7 +78,7 @@ public sealed class InputState
     }
 
     /// <summary>Gestos reconhecidos e ainda não consumidos; entregues no primeiro passo de <c>Update</c> após ocorrerem.</summary>
-    public IReadOnlyList<Gesture> Gestures => _gestures;
+    public ReadOnlySpan<Gesture> Gestures => System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_gestures);
 
     /// <summary>Ajustes de sensibilidade (limiares de arrasto, toque, pressão longa, deslize).</summary>
     public GestureRecognizer GestureSettings => _recognizer;

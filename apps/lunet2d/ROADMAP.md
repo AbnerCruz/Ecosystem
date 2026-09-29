@@ -66,7 +66,7 @@ Core
 - [x] `GameServices` (registro de serviços do jogo; o host registra os padrão).
 - [x] `Dispatcher` (executar trabalho na thread do jogo).
 - [ ] Lifecycle completo do Android: app em segundo plano pausa jogo e áudio **(feito, sem validação em aparelho)**; falta preservar o jogo quando o contexto GL é perdido (hoje reinicia).
-- [ ] Suporte a refresh rate superior a 60 Hz no desenho.
+- [ ] Suporte a refresh rate superior a 60 Hz: atualização fixa independente da taxa (testada de 30 a 144 Hz) e pedido do modo de maior taxa no Preview **(feito, sem validação em aparelho)**.
 - [x] Timers e object pools (§7 complementares).
 
 Matemática
@@ -81,7 +81,7 @@ Graphics
 - [ ] Clipping (`Begin(clip:)`), pixel perfect (`PixelPerfect`), densidade (`Density`) e área segura (`SafeArea`, recorte de câmera) **(feito, sem validação em aparelho)**.
 - [x] Texture atlas em runtime (`Content.LoadAtlas`, regiões com pivô, `SpriteBatch.Draw(atlas, região, ...)`); o formato JSON fica como contrato para o Atlas Studio (Fase 5).
 - [ ] Debug drawing (`Line`, `Rect`, `FillRect`, `Circle`, `Cross`) **(feito, sem validação em aparelho)**.
-- [ ] Medição de alocações por quadro (sem alocação no caminho quente).
+- [x] Sem alocação por quadro no caminho quente do framework (Tick, SpriteBatch, DrawString, gestos, timers, controles virtuais), verificado por teste de alocação; a medição em aparelho fica com o Profiler (Fase 4).
 
 Input
 - [x] Toque (`TouchPoint`), Tap, LongPress, Drag, Swipe, teclado, acelerômetro.
