@@ -1,6 +1,7 @@
 using Lunet.Content;
 using Lunet.Graphics;
 using Lunet.Input;
+using Lunet.Storage;
 
 namespace Lunet;
 
@@ -10,6 +11,7 @@ public abstract class Game
     private GraphicsDevice? _graphics;
     private InputState? _input;
     private ContentManager? _content;
+    private SaveData? _save;
 
     public GameConfiguration Configuration { get; } = new();
     public GameLog Log { get; } = new();
@@ -19,6 +21,9 @@ public abstract class Game
 
     /// <summary>Conteúdo do projeto (pasta <c>Content/</c>): texturas e textos.</summary>
     public ContentManager Content => _content ?? throw new InvalidOperationException("O jogo ainda não foi iniciado por um host.");
+
+    /// <summary>Dados salvos do jogo (JSON por chave).</summary>
+    public SaveData Save => _save ?? throw new InvalidOperationException("O jogo ainda não foi iniciado por um host.");
 
     /// <summary>Chamado uma vez, antes de <see cref="LoadContent"/>. Ajuste <see cref="Configuration"/> aqui.</summary>
     protected virtual void Initialize() { }
@@ -41,8 +46,9 @@ public abstract class Game
     /// <summary>Chamado quando o app volta ao primeiro plano.</summary>
     protected virtual void OnResume() { }
 
-    internal void Attach(GraphicsDevice graphics, InputState input, ContentManager content)
+    internal void Attach(GraphicsDevice graphics, InputState input, ContentManager content, SaveData save)
     {
+        _save = save;
         _content = content;
         _graphics = graphics;
         _input = input;

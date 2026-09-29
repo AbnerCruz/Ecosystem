@@ -5,8 +5,9 @@ public sealed class Texture2D : IDisposable
 {
     private readonly GraphicsDevice _device;
 
-    internal Texture2D(GraphicsDevice device, int handle, int width, int height)
+    internal Texture2D(GraphicsDevice device, int handle, int width, int height, TextureFilter filter)
     {
+        Filter = filter;
         _device = device;
         Handle = handle;
         Width = width;
@@ -15,16 +16,17 @@ public sealed class Texture2D : IDisposable
 
     public int Width { get; }
     public int Height { get; }
+    public TextureFilter Filter { get; }
     public bool IsDisposed { get; private set; }
     internal int Handle { get; }
 
     /// <summary>Cria uma textura a partir de pixels RGBA (largura × altura × 4 bytes).</summary>
-    public static Texture2D FromPixels(GraphicsDevice device, int width, int height, ReadOnlySpan<byte> rgba)
+    public static Texture2D FromPixels(GraphicsDevice device, int width, int height, ReadOnlySpan<byte> rgba, TextureFilter filter = TextureFilter.Linear)
     {
         ArgumentNullException.ThrowIfNull(device);
         if (width < 1 || height < 1) throw new ArgumentOutOfRangeException(nameof(width), "Dimensões devem ser positivas.");
         if (rgba.Length != checked(width * height * 4)) throw new ArgumentException("Esperados largura×altura×4 bytes.", nameof(rgba));
-        return new Texture2D(device, device.Backend.CreateTexture(width, height, rgba), width, height);
+        return new Texture2D(device, device.Backend.CreateTexture(width, height, rgba, filter), width, height, filter);
     }
 
     public static Texture2D CreateSolid(GraphicsDevice device, int width, int height, Color color)

@@ -11,7 +11,31 @@ public sealed class InputState
     private readonly List<Gesture> _gestures = new(16);
     private readonly GestureRecognizer _recognizer = new();
 
+    private readonly bool[] _keysDown = new bool[128];
+    private readonly bool[] _keysPressed = new bool[128];
+
     public int TouchCount { get; private set; }
+
+    /// <summary>Aceleração do aparelho em m/s² (eixos do aparelho; parado na mesa, Z ≈ 9,8). Zero sem sensor.</summary>
+    public System.Numerics.Vector3 Accelerometer { get; private set; }
+
+    public bool IsKeyDown(Keys key) => _keysDown[(int)key];
+
+    /// <summary>Verdadeiro no primeiro passo de <c>Update</c> após a tecla ser pressionada.</summary>
+    public bool IsKeyPressed(Keys key) => _keysPressed[(int)key];
+
+    /// <summary>Usado pelo host: registra o estado de uma tecla.</summary>
+    public void SetKey(Keys key, bool down)
+    {
+        var i = (int)key;
+        if (i <= 0 || i >= _keysDown.Length) return;
+        if (down && !_keysDown[i]) _keysPressed[i] = true;
+        _keysDown[i] = down;
+    }
+
+    public void SetAccelerometer(System.Numerics.Vector3 value) => Accelerometer = value;
+
+    internal void ClearPressed() => Array.Clear(_keysPressed);
 
     /// <summary>Gestos reconhecidos e ainda não consumidos; entregues no primeiro passo de <c>Update</c> após ocorrerem.</summary>
     public IReadOnlyList<Gesture> Gestures => _gestures;
@@ -46,7 +70,11 @@ public sealed class InputState
         _recognizer.Update(Touches, now, _gestures);
     }
 
-    internal void ClearGestures() => _gestures.Clear();
+    internal void ClearGestures()
+    {
+        _gestures.Clear();
+        ClearPressed();
+    }
 
     /// <summary>Substitui os toques atuais (usado pelo host).</summary>
     public void SetTouches(ReadOnlySpan<TouchPoint> touches)

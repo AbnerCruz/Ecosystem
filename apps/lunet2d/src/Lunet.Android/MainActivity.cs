@@ -1,6 +1,7 @@
 using Android.App;
 using Android.Content;
 using Android.Graphics;
+using Android.Hardware;
 using Android.Opengl;
 using Android.OS;
 using Android.Text;
@@ -11,6 +12,7 @@ using Lunet.Compiler;
 using Lunet.Content;
 using Lunet.Core;
 using Lunet.Input;
+using Lunet.Storage;
 using AndroidColor = Android.Graphics.Color;
 using AndroidUri = Android.Net.Uri;
 
@@ -20,7 +22,7 @@ namespace Lunet.Android;
     ConfigurationChanges = global::Android.Content.PM.ConfigChanges.Orientation | global::Android.Content.PM.ConfigChanges.ScreenSize |
                            global::Android.Content.PM.ConfigChanges.KeyboardHidden | global::Android.Content.PM.ConfigChanges.ScreenLayout,
     WindowSoftInputMode = SoftInput.AdjustResize)]
-public sealed class MainActivity : Activity
+public sealed class MainActivity : Activity, ISensorEventListener
 {
     private const int ExportRequestCode = 4101;
     private const int ImportRequestCode = 4102;
@@ -45,6 +47,7 @@ public sealed class MainActivity : Activity
     private PreviewRenderer? _renderer;
     private TextView? _previewConsole;
     private bool _previewPaused;
+    private SensorManager? _sensors;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -111,15 +114,27 @@ public sealed class MainActivity : Activity
     {
         var input = new EditText(this) { Hint = "Nome do projeto" };
         input.SetSingleLine(true);
+        var template = new[] { ProjectTemplate.Blank };
+        var form = Vertical();
+        form.SetPadding(Dp(16), Dp(8), Dp(16), 0);
+        form.AddView(input);
+        var group = new RadioGroup(this);
+        var blank = new RadioButton(this) { Text = "Em branco (bola que segue o toque)", Checked = true };
+        var demo = new RadioButton(this) { Text = "Demo: Coletor de moedas (texto, gestos, som, salvamento)" };
+        blank.Click += (_, _) => template[0] = ProjectTemplate.Blank;
+        demo.Click += (_, _) => template[0] = ProjectTemplate.CoinCatcher;
+        group.AddView(blank);
+        group.AddView(demo);
+        form.AddView(group);
         new AlertDialog.Builder(this)!
             .SetTitle("Novo projeto")!
-            .SetView(input)!
+            .SetView(form)!
             .SetNegativeButton("Cancelar", (_, _) => { })!
             .SetPositiveButton("Criar", (_, _) =>
             {
                 try
                 {
-                    var project = _store.Create(input.Text ?? "");
+                    var project = _store.Create(input.Text ?? "", template[0]);
                     OpenProject(project.Name);
                 }
                 catch (Exception ex) when (ex is ProjectException or IOException)
@@ -382,7 +397,8 @@ public sealed class MainActivity : Activity
 
         _renderer = new PreviewRenderer(result.Assembly!, result.Symbols,
             new DirectoryContentSource(System.IO.Path.Combine(_project!.Directory, "Content")),
-            () => new AndroidAudioBackend(System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio")), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
+            () => new AndroidAudioBackend(System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio")),
+            new DirectorySaveStore(System.IO.Path.Combine(_project!.Directory, ".lunet", "saves")), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
         _glView = new GLSurfaceView(this);
         _glView.SetEGLContextClientVersion(3);
         _glView.SetRenderer(_renderer);
@@ -413,6 +429,54 @@ public sealed class MainActivity : Activity
         root.AddView(_previewConsole, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Bottom));
 
         SetContentView(root);
+        StartSensors();
+    }
+
+    private void StartSensors()
+    {
+        _sensors = GetSystemService(SensorService) as SensorManager;
+        var accelerometer = _sensors?.GetDefaultSensor(SensorType.Accelerometer);
+        if (accelerometer is not null) _sensors!.RegisterListener(this, accelerometer, SensorDelay.Game);
+    }
+
+    private void StopSensors()
+    {
+        _sensors?.UnregisterListener(this);
+        _sensors = null;
+    }
+
+    public void OnAccuracyChanged(Sensor? sensor, SensorStatus accuracy) { }
+
+    public void OnSensorChanged(SensorEvent? e)
+    {
+        if (e?.Values is { Count: >= 3 } v) _renderer?.SetAccelerometer(new System.Numerics.Vector3(v[0], v[1], v[2]));
+    }
+
+    public override bool OnKeyDown(Keycode keyCode, KeyEvent? e) => RouteKey(keyCode, true) || base.OnKeyDown(keyCode, e);
+
+    public override bool OnKeyUp(Keycode keyCode, KeyEvent? e) => RouteKey(keyCode, false) || base.OnKeyUp(keyCode, e);
+
+    private bool RouteKey(Keycode code, bool down)
+    {
+        if (_renderer is null) return false;
+        var key = code switch
+        {
+            >= Keycode.A and <= Keycode.Z => (Keys)((int)Keys.A + (code - Keycode.A)),
+            >= Keycode.Num0 and <= Keycode.Num9 => (Keys)((int)Keys.D0 + (code - Keycode.Num0)),
+            Keycode.Space => Keys.Space,
+            Keycode.Enter => Keys.Enter,
+            Keycode.Escape => Keys.Escape,
+            Keycode.Tab => Keys.Tab,
+            Keycode.ShiftLeft or Keycode.ShiftRight => Keys.Shift,
+            Keycode.DpadLeft => Keys.Left,
+            Keycode.DpadRight => Keys.Right,
+            Keycode.DpadUp => Keys.Up,
+            Keycode.DpadDown => Keys.Down,
+            _ => Keys.None,
+        };
+        if (key == Keys.None) return false;
+        _renderer.SetKey(key, down);
+        return true;
     }
 
     private void OnPreviewTouch(object? sender, View.TouchEventArgs args)
@@ -457,6 +521,7 @@ public sealed class MainActivity : Activity
     private void DisposePreview()
     {
         if (_glView is null) return;
+        StopSensors();
         _glView.Touch -= OnPreviewTouch;
         var renderer = _renderer;
         _glView.QueueEvent(() => renderer?.Shutdown());
@@ -549,6 +614,7 @@ public sealed class MainActivity : Activity
     {
         SaveCurrent();
         _glView?.OnPause();
+        StopSensors();
         base.OnPause();
     }
 
@@ -556,6 +622,7 @@ public sealed class MainActivity : Activity
     {
         base.OnResume();
         _glView?.OnResume();
+        if (_glView is not null) StartSensors();
     }
 
     protected override void OnDestroy()

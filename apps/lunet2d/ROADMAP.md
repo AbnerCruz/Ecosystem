@@ -6,21 +6,21 @@ Uma caixa só é marcada quando implementação, integração, documentação e 
 
 - [x] Estrutura inicial, versão, documentação de decisão e CI de build.
 - [x] CI produz APK compilado sem erros (run 36506821599; artifact `lunet-foundation-apk`).
-- [ ] APK instala e abre em Android físico.
-- [ ] Publicar primeiro APK testado em GitHub Releases.
+- [x] APK instala e abre em Android físico (validado pelo usuário com v0.0.1-dev.8).
+- [x] Publicar primeiro APK testado em GitHub Releases (v0.0.1-dev.8).
 
 ## Fase 1 — Fatia vertical
 
 - [ ] Criar projeto, persistir arquivos em pasta comum e exportar ZIP (implementação inicial, sem teste em Android).
 - [ ] Editar C# com salvamento e recuperação (salvamento atômico e testado; recuperação após crash ainda não existe).
-- [ ] Compilar C# com Roslyn no Android usando referências offline (compilação testada no CI em desktop; **não validada em aparelho**, ver ADR 0002).
-- [ ] Carregar e executar o jogo compilado no Preview (carregamento e execução testados em desktop com backend em memória; Preview Android implementado, não validado em aparelho).
-- [ ] Renderizar sprite com OpenGL ES 3.x e ler touch (backend GLES escrito; sem teste em aparelho).
-- [ ] Fluxo completo criar → editar → Run → mover sprite no aparelho.
+- [x] Compilar C# com Roslyn no Android usando referências offline (validado em aparelho na v0.0.1-dev.8).
+- [x] Carregar e executar o jogo compilado no Preview (validado em aparelho na v0.0.1-dev.8).
+- [x] Renderizar sprite com OpenGL ES 3.x e ler touch (validado em aparelho na v0.0.1-dev.8).
+- [x] Fluxo completo criar → editar → Run → mover sprite no aparelho (validado em aparelho).
 
 ## Fases posteriores
 
-- [ ] Framework Core (tempo, gráficos, matemática, input, conteúdo, áudio). Feitos e testados em desktop: passo fixo, sprites, PNG/`ContentManager`, gestos, API de áudio. Faltam: fonte/texto, música em streaming, teclado/gamepad/sensores, save system, atlas; áudio e gráficos ainda sem teste em aparelho.
+- [ ] Framework Core (tempo, gráficos, matemática, input, conteúdo, armazenamento, áudio). Implementado e testado em desktop: passo fixo, sprites, spritesheet, fonte bitmap, PNG/`ContentManager`, gestos, teclado, acelerômetro, salvamento, áudio de efeitos, matemática/aleatório. Pendente de teste em aparelho: PNG importado, áudio, teclado, acelerômetro, salvamento (o modelo Demo cobre todos). Faltam: música em streaming, gamepad, haptics, atlas, fontes personalizadas. Gate da fase (jogo completo só com código) aguarda validação do Demo no aparelho.
 - [ ] IDE, Roslyn e documentação offline.
 - [ ] Framework avançado e ferramentas Studio.
 - [ ] Plugins em C#.

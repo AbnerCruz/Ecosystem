@@ -24,6 +24,10 @@ public sealed class SpriteBatch
     public void Draw(Texture2D texture, Vector2 position, Color color) =>
         Draw(texture, new RectangleF(position.X, position.Y, texture.Width, texture.Height), null, color, 0f, Vector2.Zero);
 
+    /// <summary>Desenha um recorte (<paramref name="source"/>, em pixels) na posição dada, sem escala.</summary>
+    public void Draw(Texture2D texture, Vector2 position, RectangleF source, Color color) =>
+        Draw(texture, new RectangleF(position.X, position.Y, source.Width, source.Height), source, color, 0f, Vector2.Zero);
+
     /// <summary>Desenha <paramref name="source"/> (em pixels; nulo = textura inteira) em <paramref name="destination"/>.</summary>
     /// <param name="rotation">Radianos, em torno de <paramref name="origin"/> (em pixels do retângulo de origem).</param>
     public void Draw(Texture2D texture, RectangleF destination, RectangleF? source, Color color, float rotation, Vector2 origin)
@@ -66,6 +70,13 @@ public sealed class SpriteBatch
             vertex.TexCoord = new Vector2(u, v);
             vertex.Color = packed;
         }
+    }
+
+    /// <summary>Escreve texto. Uma quebra de linha (<c>\n</c>) desce uma linha.</summary>
+    public void DrawString(SpriteFont font, string text, Vector2 position, Color color, float scale = 1f)
+    {
+        ArgumentNullException.ThrowIfNull(font);
+        font.Draw(this, text, position, color, scale);
     }
 
     public void End()

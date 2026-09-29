@@ -21,7 +21,7 @@ public sealed class ContentManager : IDisposable
     }
 
     /// <summary>Carrega um PNG (ex.: <c>"Textures/hero.png"</c>). Chamadas repetidas devolvem a mesma textura.</summary>
-    public Texture2D LoadTexture(string path)
+    public Texture2D LoadTexture(string path, TextureFilter filter = TextureFilter.Linear)
     {
         if (_textures.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
         using var stream = _source.Open(path);
@@ -33,7 +33,7 @@ public sealed class ContentManager : IDisposable
         {
             throw new InvalidDataException($"Não foi possível carregar \"{path}\": {ex.Message}", ex);
         }
-        var texture = Texture2D.FromPixels(_device, image.Width, image.Height, image.Rgba);
+        var texture = Texture2D.FromPixels(_device, image.Width, image.Height, image.Rgba, filter);
         _textures[path] = texture;
         return texture;
     }
