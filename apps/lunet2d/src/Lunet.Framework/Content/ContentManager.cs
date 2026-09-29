@@ -1,3 +1,4 @@
+using Lunet.Audio;
 using Lunet.Graphics;
 
 namespace Lunet.Content;
@@ -9,8 +10,12 @@ public sealed class ContentManager : IDisposable
     private readonly GraphicsDevice _device;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.Ordinal);
 
-    public ContentManager(IContentSource source, GraphicsDevice device)
+    private readonly IAudioBackend _audio;
+    private readonly Dictionary<string, SoundEffect> _sounds = new(StringComparer.Ordinal);
+
+    public ContentManager(IContentSource source, GraphicsDevice device, IAudioBackend? audio = null)
     {
+        _audio = audio ?? new NullAudioBackend();
         _source = source ?? throw new ArgumentNullException(nameof(source));
         _device = device ?? throw new ArgumentNullException(nameof(device));
     }
@@ -33,6 +38,18 @@ public sealed class ContentManager : IDisposable
         return texture;
     }
 
+    /// <summary>Carrega um efeito sonoro (ex.: <c>"Audio/jump.wav"</c>). Cacheado.</summary>
+    public SoundEffect LoadSound(string path)
+    {
+        if (_sounds.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
+        using var stream = _source.Open(path);
+        using var memory = new MemoryStream();
+        stream.CopyTo(memory);
+        var sound = new SoundEffect(_audio, _audio.LoadSound(memory.ToArray(), path), path);
+        _sounds[path] = sound;
+        return sound;
+    }
+
     public string ReadText(string path)
     {
         using var reader = new StreamReader(_source.Open(path));
@@ -45,5 +62,7 @@ public sealed class ContentManager : IDisposable
     {
         foreach (var texture in _textures.Values) texture.Dispose();
         _textures.Clear();
+        foreach (var sound in _sounds.Values) sound.Dispose();
+        _sounds.Clear();
     }
 }

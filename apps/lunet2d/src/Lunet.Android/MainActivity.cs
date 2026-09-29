@@ -381,7 +381,8 @@ public sealed class MainActivity : Activity
         _previewPaused = false;
 
         _renderer = new PreviewRenderer(result.Assembly!, result.Symbols,
-            new DirectoryContentSource(System.IO.Path.Combine(_project!.Directory, "Content")), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
+            new DirectoryContentSource(System.IO.Path.Combine(_project!.Directory, "Content")),
+            () => new AndroidAudioBackend(System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio")), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
         _glView = new GLSurfaceView(this);
         _glView.SetEGLContextClientVersion(3);
         _glView.SetRenderer(_renderer);

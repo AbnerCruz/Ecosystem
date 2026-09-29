@@ -29,6 +29,7 @@ internal static class QuickReference
 
         Content (menu ⋯ → Importar imagem PNG copia para Content/Textures)
           Content.LoadTexture("Textures/hero.png")   PNG 8/16 bits, sem entrelaçamento; cacheado
+          Content.LoadSound("Audio/jump.wav").Play(volume, pan, pitch, loop)   efeitos curtos
           Content.ReadText("Data/level.json")
 
         SpriteBatch

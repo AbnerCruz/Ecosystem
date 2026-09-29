@@ -1,3 +1,4 @@
+using Lunet.Audio;
 using Lunet.Content;
 using Lunet.Graphics;
 using Lunet.Input;
@@ -13,14 +14,16 @@ public sealed class GameHost
     private readonly Game _game;
     private readonly IGraphicsBackend _backend;
     private readonly IContentSource _contentSource;
+    private readonly IAudioBackend? _audio;
     private ContentManager? _content;
     private FixedTimestepLoop? _loop;
     private bool _paused;
     private bool _started;
 
     /// <param name="contentSource">Origem dos arquivos de <c>Content/</c>; sem ela, o jogo não encontra arquivos.</param>
-    public GameHost(Game game, IGraphicsBackend backend, IContentSource? contentSource = null)
+    public GameHost(Game game, IGraphicsBackend backend, IContentSource? contentSource = null, IAudioBackend? audio = null)
     {
+        _audio = audio;
         _contentSource = contentSource ?? new EmptyContentSource();
         _game = game ?? throw new ArgumentNullException(nameof(game));
         _backend = backend ?? throw new ArgumentNullException(nameof(backend));
@@ -42,7 +45,7 @@ public sealed class GameHost
         {
             var configuration = _game.Configuration;
             var device = new GraphicsDevice(_backend, configuration.VirtualWidth, configuration.VirtualHeight);
-            _content = new ContentManager(_contentSource, device);
+            _content = new ContentManager(_contentSource, device, _audio);
             _game.Attach(device, Input, _content);
             GraphicsDevice = device;
             GraphicsDevice.Resize(surfaceWidth, surfaceHeight);

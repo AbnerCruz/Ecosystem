@@ -147,3 +147,55 @@ public class ContentTests : IDisposable
         Assert.Contains("x.png", host.Fault!.Message);
     }
 }
+
+public class AudioTests : IDisposable
+{
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lunet-audio-" + Guid.NewGuid().ToString("N"));
+
+    public AudioTests()
+    {
+        Directory.CreateDirectory(_root);
+        File.WriteAllBytes(Path.Combine(_root, "jump.wav"), [1, 2, 3]);
+    }
+
+    public void Dispose() => Directory.Delete(_root, recursive: true);
+
+    private sealed class FakeAudio : Lunet.Audio.IAudioBackend
+    {
+        public List<string> Calls { get; } = [];
+        public int LoadSound(byte[] data, string name) { Calls.Add($"load:{name}:{data.Length}"); return 7; }
+        public void UnloadSound(int soundId) => Calls.Add($"unload:{soundId}");
+        public int Play(int soundId, float volume, float pan, float pitch, bool loop) { Calls.Add($"play:{soundId}:{volume}:{pan}:{pitch}:{loop}"); return 42; }
+        public void SetStream(int streamId, float volume, float pan, float pitch) => Calls.Add($"set:{streamId}:{volume}:{pan}:{pitch}");
+        public void Stop(int streamId) => Calls.Add($"stop:{streamId}");
+        public void Dispose() { }
+    }
+
+    [Fact]
+    public void Sound_ClampsParametersAndControlsInstance()
+    {
+        var audio = new FakeAudio();
+        var content = new Lunet.Content.ContentManager(new Lunet.Content.DirectoryContentSource(_root),
+            new Lunet.Graphics.GraphicsDevice(new RecordingBackend(), 10, 10), audio);
+        var sound = content.LoadSound("jump.wav");
+        Assert.Same(sound, content.LoadSound("jump.wav"));
+        var instance = sound.Play(5f, -3f, 9f, true);
+        instance.Volume = 0.5f;
+        instance.Stop();
+        Assert.Equal(["load:jump.wav:3", "play:7:1:-1:2:True", "set:42:0.5:-1:2", "stop:42"], audio.Calls);
+        content.Dispose();
+        Assert.Equal("unload:7", audio.Calls[^1]);
+        Assert.Throws<ObjectDisposedException>(() => sound.Play());
+    }
+
+    [Fact]
+    public void NullAudio_DoesNotBreakGames()
+    {
+        var content = new Lunet.Content.ContentManager(new Lunet.Content.DirectoryContentSource(_root),
+            new Lunet.Graphics.GraphicsDevice(new RecordingBackend(), 10, 10));
+        var instance = content.LoadSound("jump.wav").Play();
+        Assert.False(instance.Started);
+        instance.Volume = 0.2f;
+        instance.Stop();
+    }
+}

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Android.Opengl;
 using Javax.Microedition.Khronos.Opengles;
+using Lunet.Audio;
 using Lunet.Content;
 using Lunet.Input;
 using Lunet.Runtime;
@@ -15,6 +16,8 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private readonly byte[]? _symbols;
     private readonly Action<LogLevel, string> _log;
     private readonly IContentSource _content;
+    private readonly Func<IAudioBackend> _audioFactory;
+    private IAudioBackend? _audio;
     private readonly object _inputLock = new();
     private readonly Stopwatch _clock = new();
     private TouchPoint[] _touches = [];
@@ -29,8 +32,9 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private volatile bool _paused;
     private volatile bool _restartRequested;
 
-    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Action<LogLevel, string> log)
+    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, Action<LogLevel, string> log)
     {
+        _audioFactory = audioFactory;
         _content = content;
         _assembly = assembly;
         _symbols = symbols;
@@ -113,7 +117,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         {
             _loaded = GameLoader.Load(_assembly, _symbols);
             _loaded.Game.Log.Written += _log;
-            _host = new GameHost(_loaded.Game, _backend!, _content);
+            _host = new GameHost(_loaded.Game, _backend!, _content, _audio ??= _audioFactory());
             _host.Start(_width, _height);
             _clock.Restart();
             return true;
@@ -139,5 +143,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         _host = null;
         _loaded?.Dispose();
         _loaded = null;
+        _audio?.Dispose();
+        _audio = null;
     }
 }
