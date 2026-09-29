@@ -19,5 +19,11 @@ public sealed class CompileResult
     /// <summary>PDB portátil para stack traces com linha (somente quando <see cref="Success"/>).</summary>
     public byte[]? Symbols { get; }
 
+    /// <summary>Verdadeiro quando nenhum arquivo mudou desde a compilação anterior e o resultado foi reaproveitado.</summary>
+    public bool FromCache { get; init; }
+
+    /// <summary>Quantos arquivos tiveram a árvore de sintaxe reaproveitada (não precisaram ser lidos de novo).</summary>
+    public int ReusedFiles { get; init; }
+
     public int ErrorCount => Diagnostics.Count(d => d.Severity == DiagnosticSeverity.Error);
 }

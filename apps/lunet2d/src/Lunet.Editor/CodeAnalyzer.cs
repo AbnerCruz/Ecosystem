@@ -18,7 +18,7 @@ public sealed record DefinitionLocation(string FilePath, int Line, int Column);
 /// Análise de código do projeto para o editor (autocompletar, dicas, ir para definição, diagnósticos ao vivo).
 /// Mantém uma compilação e troca só a árvore do arquivo editado. Não é thread-safe: use de uma thread por vez.
 /// </summary>
-public sealed class CodeAnalyzer
+public sealed partial class CodeAnalyzer
 {
     private static readonly string[] Keywords =
     [
