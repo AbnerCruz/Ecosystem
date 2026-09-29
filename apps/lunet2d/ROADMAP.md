@@ -32,6 +32,7 @@ Gate: GitHub Actions gera APK instalável. **Atingido** (validado em aparelho, v
 - [x] Regras de dependência verificadas por teste (`ArchitectureTests`).
 - [x] README, ROADMAP, CHANGELOG, `docs/adr/`, `VERSION`.
 - [x] CI: restore, build, testes, validação de arquitetura, APK, checksums, release de desenvolvimento (§25).
+- [x] Assinatura estável das builds de desenvolvimento (ADR 0004), verificada no CI, para que uma release atualize a anterior.
 - [x] Android shell e primeiro APK instalável (validado em aparelho).
 - [x] Arquivo de solução (`Lunet.slnx`) na raiz.
 - [x] `LICENSE.md` proprietária provisória (uso proprietário, sem redistribuição, modificação ou exploração comercial por terceiros sem autorização; código exibido no app é só para estudo). Revisável no futuro.
