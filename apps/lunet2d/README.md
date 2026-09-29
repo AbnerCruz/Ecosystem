@@ -2,6 +2,10 @@
 
 Lunet é um ambiente Android para criar jogos 2D em C#. Este repositório está no começo da implementação. O app permite criar um projeto, editar C#, apertar Run (Roslyn + Preview OpenGL ES) e mover um sprite com toque. A cadeia compilar → carregar → executar é testada no CI; **a execução no Android físico ainda não foi validada**.
 
+## Planejamento
+
+A especificação completa está em [`docs/SPEC.md`](docs/SPEC.md), o estado e o que falta em [`ROADMAP.md`](ROADMAP.md) (`bash tools/roadmap-status.sh --pending` resume por fase) e a rotina de trabalho em [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+
 ## Construir
 
 Requer .NET 10 SDK, workload `android`, Android SDK (API 36) e JDK compatível.
