@@ -5,7 +5,7 @@ Uma caixa só é marcada quando implementação, integração, documentação e 
 ## Fase 0 — Fundação
 
 - [x] Estrutura inicial, versão, documentação de decisão e CI de build.
-- [ ] CI produz APK compilado sem erros.
+- [x] CI produz APK compilado sem erros (run 36506821599; artifact `lunet-foundation-apk`).
 - [ ] APK instala e abre em Android físico.
 - [ ] Publicar primeiro APK testado em GitHub Releases.
 
