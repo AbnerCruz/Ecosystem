@@ -4,6 +4,13 @@
 
 ### Added
 
+- Framework: `Game`, passo fixo, `SpriteBatch`, `Texture2D`, resolução virtual com letterbox e toque.
+- Compilador Roslyn com diagnósticos (arquivo/linha/coluna) e referências em memória.
+- Runtime: carregamento do jogo em contexto descartável; exceções do jogo não derrubam o app.
+- Projetos: `lunet.json`, template inicial, salvamento atômico, proteção contra caminhos fora do projeto, ZIP.
+- App: botão Run, Preview OpenGL ES com Stop/Restart/Pause/Step, painéis Problemas e Console, referência rápida.
+- CI: testes, APK e releases de desenvolvimento a partir da `main`; testes de regras de dependência.
+
 - Estrutura Android inicial, armazenamento local de projetos C# e exportação ZIP.
 - Workflow de build e publicação do APK como artifact de CI.
 
