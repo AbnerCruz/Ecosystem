@@ -28,11 +28,12 @@ implementar → build → testar → rodar/inspecionar → corrigir → document
 
 - PR com CI verde é **mergeado** (decisão do responsável do projeto). A `main` gera a release de desenvolvimento com APK, checksums e notas.
 - Depois do merge, confirmar que a release saiu e passar ao usuário o link e um roteiro curto de teste no aparelho para o que é novo.
+- O roteiro curto acima vale para entregas intermediárias. A entrega de fechamento de fase exige o protocolo detalhado da seção 4.
 - Falha de CI: corrigir a causa, não contornar; nunca desabilitar ou pular teste.
 
 ## 4. Checagem completa ao concluir uma fase
 
-Uma fase só é considerada concluída quando **todos** os itens dela estão `[x]` (ou foram explicitamente movidos/adiados com motivo e destino no ROADMAP) **e** existe um registro de auditoria em `docs/audits/fase-N.md` (modelo em [`docs/audits/TEMPLATE.md`](audits/TEMPLATE.md)). A auditoria cobre:
+Uma fase só é considerada concluída quando **todos** os itens dela estão `[x]` (ou foram explicitamente movidos/adiados com motivo e destino no ROADMAP), existe um registro de auditoria em `docs/audits/fase-N.md` (modelo em [`docs/audits/TEMPLATE.md`](audits/TEMPLATE.md)) **e o usuário validou a release candidata no aparelho**. O roteiro de testes deve ser entregue ao usuário assim que a implementação e a auditoria técnica estiverem prontas; enquanto se aguarda o retorno, a fase fica 🟡. A auditoria cobre:
 
 1. **Gate da fase** (§28): o critério de aceite descrito no spec, verificado no aparelho quando aplicável, com a versão testada.
 2. **Itens da fase**: cada caixa do ROADMAP revisada contra o código real (existe, está testada, está documentada, está integrada ao app).
@@ -44,8 +45,17 @@ Uma fase só é considerada concluída quando **todos** os itens dela estão `[x
 8. **Documentação**: README, CHANGELOG, ROADMAP e docs da API atualizados.
 9. **Riscos (§32)**: estado dos quatro riscos técnicos prioritários.
 10. **Próxima fase**: pendências herdadas e riscos conhecidos registrados.
+11. **Validação pelo usuário**: roteiro enviado, versão testada, respostas recebidas e decisão explícita de aprovação ou correção.
 
-Enquanto a auditoria não estiver registrada e aprovada, a fase continua 🟡 na tabela "Estado atual".
+O roteiro de fechamento deve ser reproduzível no celular, em linguagem acessível, e conter:
+
+1. Link direto para a release candidata e o APK exato, versão, pré-requisitos e instruções para instalar ou atualizar sem perder projetos (incluindo backup quando necessário).
+2. Preparação do teste: projeto ou dados necessários, permissões e conexão; testar offline quando for requisito da fase.
+3. Passos numerados por funcionalidade entregue e pelo **gate da fase** (§28): onde tocar, o que digitar ou criar, qual resultado observar e como voltar ao estado inicial.
+4. Casos de falha importantes, persistência após fechar/reabrir o app e uma regressão curta dos fluxos já aprovados que possam ser afetados.
+5. Uma forma simples de responder por item: passou/falhou/não testado; para falhas, pedir descrição, modelo/versão do Android e captura ou log se possível. Nunca exigir que o usuário conheça termos internos para realizar o teste.
+
+Registre o roteiro ou seu link e o retorno na auditoria. Se houver falha, corrija, publique nova release e repita os passos afetados e a regressão. Só marque ✅ no ROADMAP e avance à fase seguinte após a aprovação explícita do usuário para o gate da fase; silêncio ou CI verde não contam como aprovação. Itens que dependem de aparelho permanecem `[ ]` até essa validação.
 
 ## 5. Regras de escopo
 

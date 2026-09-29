@@ -7,7 +7,8 @@ Este repositório implementa o Lunet2D. Antes de qualquer trabalho, siga `docs/D
 3. Trabalhe na ordem das fases; não avance além da fase atual por conta própria.
 4. Todo trabalho corresponde a um item do ROADMAP (acrescente o item antes, se faltar).
 5. Ao concluir uma fase, faça a auditoria completa e registre em `docs/audits/fase-N.md`.
-6. PR com CI verde é mergeado; confirme a release e passe ao usuário um roteiro de teste no aparelho.
+6. PR com CI verde é mergeado; confirme a release e passe ao usuário um roteiro de teste no aparelho para cada entrega.
+7. Ao fechar uma fase, siga a entrega de validação detalhada em `docs/DEVELOPMENT.md`: publique a release candidata, entregue o roteiro completo ao usuário e registre o retorno dele antes de declarar a fase concluída ou começar a próxima.
 
 Ferramentas úteis: `dotnet test --project tests/Lunet.Tests` (só precisa do .NET 10 SDK). O APK só compila no CI (o SDK do Android não está disponível no ambiente de agente).
 
