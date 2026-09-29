@@ -38,6 +38,9 @@ public class ArchitectureTests
     public void Docs_DoesNotDependOnAnyLunetProject() => Assert.Empty(Graph()["Lunet.Docs"]);
 
     [Fact]
+    public void Git_DoesNotDependOnAnyLunetProject() => Assert.Empty(Graph()["Lunet.Git"]);
+
+    [Fact]
     public void Editor_DependsOnlyOnCompiler() => Assert.Equal(["Lunet.Compiler"], Graph()["Lunet.Editor"]);
 
     [Fact]

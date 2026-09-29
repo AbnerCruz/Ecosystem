@@ -46,3 +46,27 @@ public sealed class SettingsAndLogTests : IDisposable
         Assert.Contains("(vazio)", empty);
     }
 }
+
+public sealed class GitAccountTests : IDisposable
+{
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lunet-account-" + Guid.NewGuid().ToString("N"));
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+    }
+
+    [Fact]
+    public void Account_RoundTrips_ValidatesIdentity_AndSurvivesCorruption()
+    {
+        var store = new GitAccountStore(Path.Combine(_root, "git-account.json"));
+        Assert.False(store.Load().CanCommit);
+        store.Save(new GitAccount { Name = "Ana", Email = "ana@example.com", Token = "ghp_x" });
+        var loaded = store.Load();
+        Assert.True(loaded.CanCommit);
+        Assert.Equal("ghp_x", loaded.Token);
+        Assert.False(new GitAccount { Name = "Ana", Email = "sem-arroba" }.CanCommit);
+        File.WriteAllText(Path.Combine(_root, "git-account.json"), "não é json");
+        Assert.False(store.Load().CanCommit);
+    }
+}

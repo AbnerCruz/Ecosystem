@@ -22,3 +22,12 @@ O spec pede um editor com documentos grandes, undo/redo robusto, IME Android, re
 
 - View própria com piece table e `InputConnection` customizada: melhor para arquivos enormes e multi-cursor, muito mais risco com IME. Adiada até haver dados de desempenho.
 - `WebView` com Monaco/CodeMirror: bom editor, mas contradiz "não usar WebView como base" do ADR 0001 e traz dependência pesada offline.
+
+## Adendo (Fase 3)
+
+Multi-cursor, dobrar código e minimapa foram feitos **sobre o EditText**, sem trocar a view:
+
+- Multi-cursor: o EditText guarda só a seleção principal; as demais ficam em `CodeEditText` e são desenhadas em `OnDraw`. Uma digitação no cursor principal é replicada nos outros por `MultiCursor.Replicate`, num único passo de desfazer.
+- Dobrar código: o trecho escondido recebe `AbsoluteSizeSpan(1)` e cor transparente; o número da linha e o marcador `{ … }` são desenhados em `OnDraw`. Qualquer edição desdobra tudo.
+- Minimapa: `MinimapView` sobreposta à direita, desenhada a partir do texto.
+- `PieceTable` (estrutura de texto para documentos grandes) existe em `Lunet.Editor` com testes, mas **não está ligada** ao editor: a decisão de virtualizar continua dependendo de medir o EditText em aparelho.

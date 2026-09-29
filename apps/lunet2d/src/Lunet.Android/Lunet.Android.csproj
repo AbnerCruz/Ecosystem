@@ -37,6 +37,7 @@
     <ProjectReference Include="..\Lunet.Core\Lunet.Core.csproj" />
     <ProjectReference Include="..\Lunet.Compiler\Lunet.Compiler.csproj" />
     <ProjectReference Include="..\Lunet.Docs\Lunet.Docs.csproj" />
+    <ProjectReference Include="..\Lunet.Git\Lunet.Git.csproj" />
     <ProjectReference Include="..\Lunet.Editor\Lunet.Editor.csproj" />
     <ProjectReference Include="..\Lunet.Framework\Lunet.Framework.csproj" />
     <ProjectReference Include="..\Lunet.Runtime\Lunet.Runtime.csproj" />

@@ -157,7 +157,7 @@ Preview e hot reload (§10)
 
 Git, autosave e recovery (§22)
 - [ ] Autosave com journal (ver Fase 1) e recuperação.
-- [ ] Git progressivo: status, diff, commit, history, branches, revert, push, pull.
+- [x] Git progressivo: status, diff, commit, history, branches, revert, push, pull. (feito, sem validação em aparelho; `Lunet.Git` em C# puro, ADR 0005; testado contra o `git` de verdade; falta validar push/pull no GitHub real)
 
 Auditoria
 - [ ] Auditoria de fechamento da Fase 3 registrada em `docs/audits/`.

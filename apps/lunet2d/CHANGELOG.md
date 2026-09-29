@@ -4,6 +4,7 @@
 
 ### Added
 
+- Git no aparelho (`Lunet.Git`, C# puro, ADR 0005): status, diff, commit, histórico, ramos, reverter, mesclar, buscar, pull, push (HTTPS com token) e clonar; painel em ⋯ → Ferramentas → Git.
 - Inspector do jogo em execução (botão 🔍 no Preview): campos por reflexão, atributos `Range`, `ReadOnly`, `Hidden`, `Multiline`, `Color`, `File`, `Asset`, `Group`, `Tooltip`, `Inspect` e `Inspector<T>` customizado; edição ao vivo.
 - Classificação de mudanças entre Runs (só corpos × reinício necessário) no status.
 - Layout do workspace: painel embaixo ou à direita (automático por orientação), divisória arrastável, largura do Explorer, layouts salvos.

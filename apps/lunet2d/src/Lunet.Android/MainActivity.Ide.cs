@@ -6,6 +6,7 @@ using Android.Widget;
 using Lunet.Android.Editor;
 using Lunet.Compiler;
 using Lunet.Core;
+using Lunet.Git;
 using Lunet.Editor;
 
 namespace Lunet.Android;
@@ -16,6 +17,7 @@ public sealed partial class MainActivity
     private SettingsStore _settingsStore = null!;
     private EditorSettings _settings = new();
     private MinimapView? _minimap;
+    private GitAccountStore _gitAccounts = null!;
 
     // ---------- Configurações ----------
 
@@ -25,6 +27,7 @@ public sealed partial class MainActivity
         _settings = _settingsStore.Load();
         ApplyWindowSettings();
         LoadLayouts();
+        _gitAccounts = new GitAccountStore(System.IO.Path.Combine(FilesDir!.AbsolutePath, "git-account.json"));
     }
 
     private void ApplyWindowSettings()
@@ -166,10 +169,93 @@ public sealed partial class MainActivity
     [
         ("Documentação", () => HandleCommand(EditorCommand.Documentation)),
         ("Exportar logs (Console e Problemas)", ExportLogs),
+        ("Git", ShowGit),
         ("Layout do workspace", ShowLayoutDialog),
         ("Configurações", ShowSettings),
         ("Atalhos de teclado", ShowShortcutHelp),
     ]);
+
+    // ---------- Git ----------
+
+    private void ShowGit()
+    {
+        if (_project is null) return;
+        GitPanel.Show(this, _project.Directory, _gitAccounts, SaveCurrent, ReloadProjectFromDisk);
+    }
+
+    /// <summary>Baixa um projeto Lunet de um repositório Git (por exemplo, do GitHub) para a lista de projetos.</summary>
+    private void AskClone()
+    {
+        var form = Vertical();
+        form.SetPadding(Dp(16), Dp(8), Dp(16), 0);
+        var url = new EditText(this) { Hint = "https://github.com/usuario/projeto.git" };
+        url.SetSingleLine(true);
+        var name = new EditText(this) { Hint = "Nome do projeto (opcional)" };
+        name.SetSingleLine(true);
+        form.AddView(url);
+        form.AddView(name);
+        new AlertDialog.Builder(this)!.SetTitle("Clonar do Git")!.SetView(form)!
+            .SetNegativeButton("Cancelar", (_, _) => { })!
+            .SetPositiveButton("Clonar", (_, _) => DoClone((url.Text ?? "").Trim(), (name.Text ?? "").Trim()))!.Show();
+    }
+
+    private void DoClone(string url, string requestedName)
+    {
+        if (url.Length == 0) return;
+        var derived = System.IO.Path.GetFileNameWithoutExtension(url.TrimEnd('/'));
+        string name;
+        try { name = ProjectStore.ValidateName(requestedName.Length > 0 ? requestedName : derived); }
+        catch (ProjectException ex)
+        {
+            Toast.MakeText(this, ex.Message, ToastLength.Long)?.Show();
+            return;
+        }
+        var target = System.IO.Path.Combine(_store.RootDirectory, name);
+        if (Directory.Exists(target))
+        {
+            Toast.MakeText(this, $"Já existe um projeto chamado \"{name}\".", ToastLength.Long)?.Show();
+            return;
+        }
+        var dialog = new AlertDialog.Builder(this)!.SetTitle("Clonando " + name)!.SetMessage("Conectando…")!.SetCancelable(false)!.Show();
+        var progress = new Progress<string>(message => dialog?.SetMessage(message));
+        var account = _gitAccounts.Load();
+        Task.Run(async () =>
+        {
+            var transport = new HttpGitTransport(url, account.Username.Length > 0 ? account.Username : null, account.Token.Length > 0 ? account.Token : null);
+            await GitRepository.CloneAsync(url, target, transport, progress).ConfigureAwait(false);
+            if (!File.Exists(System.IO.Path.Combine(target, ProjectStore.ManifestFileName)))
+            {
+                Directory.Delete(target, recursive: true);
+                throw new GitException("Este repositório não é um projeto Lunet (falta o arquivo lunet.json na raiz).");
+            }
+        }).ContinueWith(task => RunOnUiThread(() =>
+        {
+            dialog?.Dismiss();
+            if (task.IsFaulted)
+            {
+                var error = task.Exception?.GetBaseException();
+                var message = error is GitException or IOException or UnauthorizedAccessException ? error.Message : "Falha ao clonar: " + error?.Message;
+                new AlertDialog.Builder(this)!.SetTitle("Não foi possível clonar")!.SetMessage(message)!.SetPositiveButton("Ok", (_, _) => { })!.Show();
+                return;
+            }
+            Toast.MakeText(this, $"Projeto \"{name}\" clonado", ToastLength.Long)?.Show();
+            ShowProjects();
+        }));
+    }
+
+    /// <summary>Recarrega o que o Git mudou em disco: editor, análise de código e Explorer.</summary>
+    private void ReloadProjectFromDisk()
+    {
+        if (_project is null) return;
+        _session.Unload();
+        var open = _openFile;
+        _openFile = null;
+        _assistant = new EditorAssistant();
+        _ = _assistant.LoadProjectAsync(_project.LoadSources().Select(s => (s.Path, s.Text)));
+        var target = open is not null && _project.ListFiles().Contains(open) ? open : _project.Manifest.EntryPoint;
+        OpenFile(target);
+        RefreshExplorer();
+    }
 
     // ---------- Inspector e mudanças ----------
 
