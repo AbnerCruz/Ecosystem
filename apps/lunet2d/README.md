@@ -23,4 +23,4 @@ O código dos jogos será C# com uma API própria, e os projetos serão pastas c
 
 ## Licença
 
-Ainda não definida. Nenhuma licença de terceiros é presumida para este código.
+Código-fonte **proprietário**: veja [LICENSE.md](LICENSE.md). O código pode ser lido (inclusive dentro do app) para estudo, mas não pode ser redistribuído, modificado ou explorado comercialmente sem autorização expressa. Os jogos criados com o Lunet pertencem a quem os cria. A licença é provisória e pode ser revisada.

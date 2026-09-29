@@ -16,7 +16,7 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 
 | Fase | Estado |
 | --- | --- |
-| 0 Foundation | 🟡 falta LICENSE.md (decisão do autor) e as pastas do §26 |
+| 0 Foundation | 🟡 faltam as pastas do §26 (criadas quando houver conteúdo) |
 | 1 Vertical Slice | 🟡 gate validado; faltam Explorer, recuperação após crash, "Tutorial" na criação de projeto |
 | 2 Framework Core | 🟡 Demo validado; faltam música, gamepad, haptics, atlas, Lifecycle/Dispatcher/GameServices, Transform2D/Ray2D/Geometry |
 | 3 IDE | 🟡 editor validado só em desktop; falta a maior parte (docs offline, painéis, busca, rename...) |
@@ -34,7 +34,7 @@ Gate: GitHub Actions gera APK instalável. **Atingido** (validado em aparelho, v
 - [x] CI: restore, build, testes, validação de arquitetura, APK, checksums, release de desenvolvimento (§25).
 - [x] Android shell e primeiro APK instalável (validado em aparelho).
 - [x] Arquivo de solução (`Lunet.slnx`) na raiz.
-- [ ] `LICENSE.md` (decisão de licença do autor; não presumir) — ver §26.
+- [x] `LICENSE.md` proprietária provisória (uso proprietário, sem redistribuição, modificação ou exploração comercial por terceiros sem autorização; código exibido no app é só para estudo). Revisável no futuro.
 - [x] `release-notes.json` publicado junto de cada release (§24, §25) (verificado na v0.0.1-dev.22).
 - [ ] Estrutura de pastas do §26 criada onde já há conteúdo: `samples/`, `templates/`, `runtime-template/`, `native/`, `site/` (criar cada uma quando a primeira entrega existir, não antes).
 
