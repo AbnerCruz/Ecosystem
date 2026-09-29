@@ -4,6 +4,7 @@
 
 ### Added
 
+- Pipeline de conteúdo: decodificador PNG próprio, `ContentManager` com cache, `IContentSource` e importação de PNG para `Content/Textures` pelo app.
 - Framework: `Game`, passo fixo, `SpriteBatch`, `Texture2D`, resolução virtual com letterbox e toque.
 - Compilador Roslyn com diagnósticos (arquivo/linha/coluna) e referências em memória.
 - Runtime: carregamento do jogo em contexto descartável; exceções do jogo não derrubam o app.

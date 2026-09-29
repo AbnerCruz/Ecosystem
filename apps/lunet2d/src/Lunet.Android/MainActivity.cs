@@ -8,6 +8,7 @@ using Android.Views;
 using Android.Widget;
 using Lunet.Android.Gles;
 using Lunet.Compiler;
+using Lunet.Content;
 using Lunet.Core;
 using Lunet.Input;
 using AndroidColor = Android.Graphics.Color;
@@ -22,6 +23,7 @@ namespace Lunet.Android;
 public sealed class MainActivity : Activity
 {
     private const int ExportRequestCode = 4101;
+    private const int ImportRequestCode = 4102;
     private const int MaxConsoleLines = 300;
     private static readonly Lazy<GameCompiler> SharedCompiler = new(() =>
         new GameCompiler(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly)));
@@ -258,7 +260,7 @@ public sealed class MainActivity : Activity
 
     private void ShowMenu()
     {
-        var items = new[] { "Salvar", "Referência rápida", "Exportar projeto (ZIP)" };
+        var items = new[] { "Salvar", "Referência rápida", "Exportar projeto (ZIP)", "Importar imagem PNG" };
         new AlertDialog.Builder(this)!.SetItems(items, (_, args) =>
         {
             switch (args.Which)
@@ -272,6 +274,9 @@ public sealed class MainActivity : Activity
                     break;
                 case 2:
                     ExportProject();
+                    break;
+                case 3:
+                    ImportImage();
                     break;
             }
         })!.Show();
@@ -375,7 +380,8 @@ public sealed class MainActivity : Activity
         _console.Clear();
         _previewPaused = false;
 
-        _renderer = new PreviewRenderer(result.Assembly!, result.Symbols, (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
+        _renderer = new PreviewRenderer(result.Assembly!, result.Symbols,
+            new DirectoryContentSource(System.IO.Path.Combine(_project!.Directory, "Content")), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
         _glView = new GLSurfaceView(this);
         _glView.SetEGLContextClientVersion(3);
         _glView.SetRenderer(_renderer);
@@ -473,9 +479,47 @@ public sealed class MainActivity : Activity
         StartActivityForResult(intent, ExportRequestCode);
     }
 
+    private void ImportImage()
+    {
+        if (_project is null) return;
+        var intent = new Intent(Intent.ActionOpenDocument);
+        intent.AddCategory(Intent.CategoryOpenable);
+        intent.SetType("image/png");
+        StartActivityForResult(intent, ImportRequestCode);
+    }
+
+    private void CompleteImport(AndroidUri uri)
+    {
+        if (_project is null) return;
+        try
+        {
+            string? name = null;
+            using (var cursor = ContentResolver?.Query(uri, null, null, null, null))
+            {
+                if (cursor is not null && cursor.MoveToFirst())
+                {
+                    var column = cursor.GetColumnIndex(global::Android.Provider.IOpenableColumns.DisplayName);
+                    if (column >= 0) name = cursor.GetString(column);
+                }
+            }
+            using var stream = ContentResolver?.OpenInputStream(uri) ?? throw new IOException("Não foi possível abrir o arquivo.");
+            var path = _project.Import("Content/Textures", name ?? "image.png", stream);
+            Toast.MakeText(this, $"Importado em {path}. Use Content.LoadTexture(\"Textures/{System.IO.Path.GetFileName(path)}\")", ToastLength.Long)?.Show();
+        }
+        catch (Exception ex) when (ex is IOException or ProjectException or UnauthorizedAccessException)
+        {
+            Toast.MakeText(this, "Falha ao importar: " + ex.Message, ToastLength.Long)?.Show();
+        }
+    }
+
     protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
     {
         base.OnActivityResult(requestCode, resultCode, data);
+        if (requestCode == ImportRequestCode)
+        {
+            if (resultCode == Result.Ok && data?.Data is AndroidUri picked) CompleteImport(picked);
+            return;
+        }
         if (requestCode != ExportRequestCode) return;
         var name = _pendingExport;
         _pendingExport = null;

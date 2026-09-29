@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Android.Opengl;
 using Javax.Microedition.Khronos.Opengles;
+using Lunet.Content;
 using Lunet.Input;
 using Lunet.Runtime;
 using EGLConfig = Javax.Microedition.Khronos.Egl.EGLConfig;
@@ -13,6 +14,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private readonly byte[] _assembly;
     private readonly byte[]? _symbols;
     private readonly Action<LogLevel, string> _log;
+    private readonly IContentSource _content;
     private readonly object _inputLock = new();
     private readonly Stopwatch _clock = new();
     private TouchPoint[] _touches = [];
@@ -27,8 +29,9 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private volatile bool _paused;
     private volatile bool _restartRequested;
 
-    public PreviewRenderer(byte[] assembly, byte[]? symbols, Action<LogLevel, string> log)
+    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Action<LogLevel, string> log)
     {
+        _content = content;
         _assembly = assembly;
         _symbols = symbols;
         _log = log;
@@ -110,7 +113,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         {
             _loaded = GameLoader.Load(_assembly, _symbols);
             _loaded.Game.Log.Written += _log;
-            _host = new GameHost(_loaded.Game, _backend!);
+            _host = new GameHost(_loaded.Game, _backend!, _content);
             _host.Start(_width, _height);
             _clock.Restart();
             return true;

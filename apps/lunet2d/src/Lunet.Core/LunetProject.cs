@@ -58,6 +58,20 @@ public sealed class LunetProject
         WriteText(relativePath, text);
     }
 
+    /// <summary>Copia um arquivo binário (imagem, áudio) para o projeto de forma atômica.</summary>
+    public string Import(string relativeDirectory, string fileName, Stream source)
+    {
+        var safeName = Path.GetFileName(fileName);
+        if (string.IsNullOrWhiteSpace(safeName) || safeName.StartsWith('.')) throw new ProjectException("Nome de arquivo inválido.");
+        var relative = relativeDirectory.TrimEnd('/') + "/" + safeName;
+        var path = Resolve(relative);
+        System.IO.Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var temporary = path + TemporarySuffix;
+        using (var output = File.Create(temporary)) source.CopyTo(output);
+        File.Move(temporary, path, overwrite: true);
+        return relative;
+    }
+
     public void DeleteFile(string relativePath)
     {
         if (relativePath.Equals(ProjectStore.ManifestFileName, StringComparison.OrdinalIgnoreCase))

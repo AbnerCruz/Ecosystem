@@ -72,6 +72,17 @@ public class ProjectTests : IDisposable
     }
 
     [Fact]
+    public void Import_CopiesBinaryFileIntoProjectAndSanitizesName()
+    {
+        var project = new ProjectStore(_root).Create("p");
+        var path = project.Import("Content/Textures", "../../evil/hero.png", new MemoryStream([1, 2, 3]));
+        Assert.Equal("Content/Textures/hero.png", path);
+        Assert.Equal([1, 2, 3], File.ReadAllBytes(Path.Combine(_root, "p", "Content", "Textures", "hero.png")));
+        Assert.Throws<ProjectException>(() => project.Import("Content", ".hidden", new MemoryStream()));
+        Assert.DoesNotContain(project.ListFiles(), f => f.EndsWith(".lunet-tmp"));
+    }
+
+    [Fact]
     public void ExportZip_ContainsProjectFilesButNotCache()
     {
         var project = new ProjectStore(_root).Create("p");

@@ -27,6 +27,10 @@ internal static class QuickReference
           Texture2D.CreateCircle(device, diâmetro, cor)
           Texture2D.FromPixels(device, w, h, bytes RGBA)
 
+        Content (menu ⋯ → Importar imagem PNG copia para Content/Textures)
+          Content.LoadTexture("Textures/hero.png")   PNG 8/16 bits, sem entrelaçamento; cacheado
+          Content.ReadText("Data/level.json")
+
         SpriteBatch
           Begin()
           Draw(textura, posição, cor)

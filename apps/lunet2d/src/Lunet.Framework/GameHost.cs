@@ -1,3 +1,4 @@
+using Lunet.Content;
 using Lunet.Graphics;
 using Lunet.Input;
 
@@ -11,12 +12,16 @@ public sealed class GameHost
 {
     private readonly Game _game;
     private readonly IGraphicsBackend _backend;
+    private readonly IContentSource _contentSource;
+    private ContentManager? _content;
     private FixedTimestepLoop? _loop;
     private bool _paused;
     private bool _started;
 
-    public GameHost(Game game, IGraphicsBackend backend)
+    /// <param name="contentSource">Origem dos arquivos de <c>Content/</c>; sem ela, o jogo não encontra arquivos.</param>
+    public GameHost(Game game, IGraphicsBackend backend, IContentSource? contentSource = null)
     {
+        _contentSource = contentSource ?? new EmptyContentSource();
         _game = game ?? throw new ArgumentNullException(nameof(game));
         _backend = backend ?? throw new ArgumentNullException(nameof(backend));
     }
@@ -36,8 +41,10 @@ public sealed class GameHost
         return Guard(() =>
         {
             var configuration = _game.Configuration;
-            _game.Attach(new GraphicsDevice(_backend, configuration.VirtualWidth, configuration.VirtualHeight), Input);
-            GraphicsDevice = _game.GraphicsDevice;
+            var device = new GraphicsDevice(_backend, configuration.VirtualWidth, configuration.VirtualHeight);
+            _content = new ContentManager(_contentSource, device);
+            _game.Attach(device, Input, _content);
+            GraphicsDevice = device;
             GraphicsDevice.Resize(surfaceWidth, surfaceHeight);
             _game.RunInitialize();
             configuration.Validate();
@@ -111,6 +118,8 @@ public sealed class GameHost
         if (!_started) return;
         _started = false;
         Guard(_game.RunUnloadContent);
+        _content?.Dispose();
+        _content = null;
     }
 
     private bool Guard(Action action)
@@ -127,4 +136,10 @@ public sealed class GameHost
             return false;
         }
     }
+}
+
+internal sealed class EmptyContentSource : IContentSource
+{
+    public bool Exists(string path) => false;
+    public Stream Open(string path) => throw new FileNotFoundException($"Arquivo de conteúdo não encontrado: {path}");
 }
