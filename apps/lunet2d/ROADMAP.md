@@ -20,7 +20,7 @@ Uma caixa só é marcada quando implementação, integração, documentação e 
 
 ## Fases posteriores
 
-- [ ] Framework Core (tempo, gráficos, matemática, input, conteúdo, áudio).
+- [ ] Framework Core (tempo, gráficos, matemática, input, conteúdo, áudio). Feitos e testados em desktop: passo fixo, sprites, PNG/`ContentManager`, gestos, API de áudio. Faltam: fonte/texto, música em streaming, teclado/gamepad/sensores, save system, atlas; áudio e gráficos ainda sem teste em aparelho.
 - [ ] IDE, Roslyn e documentação offline.
 - [ ] Framework avançado e ferramentas Studio.
 - [ ] Plugins em C#.
