@@ -8,7 +8,7 @@ namespace Lunet.Graphics;
 /// </summary>
 public interface IGraphicsBackend
 {
-    int CreateTexture(int width, int height, ReadOnlySpan<byte> rgba);
+    int CreateTexture(int width, int height, ReadOnlySpan<byte> rgba, TextureFilter filter);
     void DeleteTexture(int handle);
     void SetViewport(int x, int y, int width, int height);
     void Clear(Color color);

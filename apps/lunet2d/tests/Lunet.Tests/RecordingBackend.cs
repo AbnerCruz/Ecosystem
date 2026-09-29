@@ -10,14 +10,16 @@ public sealed class RecordingBackend : IGraphicsBackend
 
     private int _nextTexture = 1;
     public HashSet<int> LiveTextures { get; } = [];
+    public Dictionary<int, (int Width, int Height, byte[] Rgba, TextureFilter Filter)> Pixels { get; } = [];
     public List<Batch> Batches { get; } = [];
     public List<Color> Clears { get; } = [];
     public List<(int X, int Y, int W, int H)> Viewports { get; } = [];
 
-    public int CreateTexture(int width, int height, ReadOnlySpan<byte> rgba)
+    public int CreateTexture(int width, int height, ReadOnlySpan<byte> rgba, TextureFilter filter)
     {
         var handle = _nextTexture++;
         LiveTextures.Add(handle);
+        Pixels[handle] = (width, height, rgba.ToArray(), filter);
         return handle;
     }
 

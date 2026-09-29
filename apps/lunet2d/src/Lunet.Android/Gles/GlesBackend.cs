@@ -92,7 +92,7 @@ internal sealed class GlesBackend : IGraphicsBackend, IDisposable
         GLES30.GlEnable(GLES30.GlScissorTest);
     }
 
-    public int CreateTexture(int width, int height, ReadOnlySpan<byte> rgba)
+    public int CreateTexture(int width, int height, ReadOnlySpan<byte> rgba, TextureFilter filter)
     {
         var ids = new int[1];
         GLES30.GlGenTextures(1, ids, 0);
@@ -100,8 +100,9 @@ internal sealed class GlesBackend : IGraphicsBackend, IDisposable
         GLES30.GlPixelStorei(GLES30.GlUnpackAlignment, 1);
         using var pixels = ToDirect(rgba.ToArray(), rgba.Length);
         GLES30.GlTexImage2D(GLES30.GlTexture2d, 0, GLES30.GlRgba, width, height, 0, GLES30.GlRgba, GLES30.GlUnsignedByte, pixels);
-        GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMinFilter, GLES30.GlLinear);
-        GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMagFilter, GLES30.GlLinear);
+        var glFilter = filter == TextureFilter.Point ? GLES30.GlNearest : GLES30.GlLinear;
+        GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMinFilter, glFilter);
+        GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMagFilter, glFilter);
         GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapS, GLES30.GlClampToEdge);
         GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapT, GLES30.GlClampToEdge);
         return ids[0];

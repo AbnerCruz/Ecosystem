@@ -26,12 +26,33 @@ internal static class QuickReference
         Texture2D
           Texture2D.CreateSolid(device, w, h, cor)
           Texture2D.CreateCircle(device, diâmetro, cor)
-          Texture2D.FromPixels(device, w, h, bytes RGBA)
+          Texture2D.FromPixels(device, w, h, bytes RGBA, TextureFilter.Point/Linear)
 
         Content (menu ⋯ → Importar imagem PNG copia para Content/Textures)
           Content.LoadTexture("Textures/hero.png")   PNG 8/16 bits, sem entrelaçamento; cacheado
           Content.LoadSound("Audio/jump.wav").Play(volume, pan, pitch, loop)   efeitos curtos
           Content.ReadText("Data/level.json")
+
+        Texto
+          var font = SpriteFont.CreateDefault(GraphicsDevice);   fonte 5×7 com acentos do português
+          batch.DrawString(font, "Pontos: 10", posição, cor, escala)
+          font.Measure(texto, escala)                              tamanho, para centralizar
+
+        SpriteSheet
+          new SpriteSheet(textura, larguraQuadro, alturaQuadro); sheet.Frame(i)
+          batch.Draw(textura, posição, sheet.Frame(i), cor)
+
+        Salvamento
+          Save.Save("chave", objeto);  Save.Load("chave", valorPadrão);  Save.Exists / Delete
+
+        Teclado e sensores
+          Input.IsKeyDown(Keys.Space) / IsKeyPressed(...)          teclado físico
+          Input.Accelerometer                                      Vector3 em m/s²
+
+        Utilidades
+          MathEx.Lerp / Remap / SmoothStep / MoveToward / AngleDifference
+          new RandomSource(semente).NextFloat/NextInt/NextDirection   determinístico
+          new Circle(centro, raio).Contains/Intersects; RectangleF.Intersects
 
         SpriteBatch
           Begin()

@@ -5,6 +5,7 @@ using Lunet.Audio;
 using Lunet.Content;
 using Lunet.Input;
 using Lunet.Runtime;
+using Lunet.Storage;
 using EGLConfig = Javax.Microedition.Khronos.Egl.EGLConfig;
 
 namespace Lunet.Android.Gles;
@@ -18,6 +19,9 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private readonly IContentSource _content;
     private readonly Func<IAudioBackend> _audioFactory;
     private IAudioBackend? _audio;
+    private readonly ISaveStore _save;
+    private readonly System.Collections.Concurrent.ConcurrentQueue<(Keys Key, bool Down)> _keys = new();
+    private volatile System.Numerics.Vector3 _accelerometer;
     private readonly object _inputLock = new();
     private readonly Stopwatch _clock = new();
     private TouchPoint[] _touches = [];
@@ -32,8 +36,9 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private volatile bool _paused;
     private volatile bool _restartRequested;
 
-    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, Action<LogLevel, string> log)
+    public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, Action<LogLevel, string> log)
     {
+        _save = save;
         _audioFactory = audioFactory;
         _content = content;
         _assembly = assembly;
@@ -45,6 +50,9 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     {
         lock (_inputLock) _touches = touches;
     }
+
+    public void SetKey(Keys key, bool down) => _keys.Enqueue((key, down));
+    public void SetAccelerometer(System.Numerics.Vector3 value) => _accelerometer = value;
 
     public void SetPaused(bool paused) => _paused = paused;
     public void RequestStep() => _stepRequested = true;
@@ -88,6 +96,8 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         TouchPoint[] touches;
         lock (_inputLock) touches = _touches;
         host.SetSurfaceTouches(touches);
+        while (_keys.TryDequeue(out var key)) host.Input.SetKey(key.Key, key.Down);
+        host.Input.SetAccelerometer(_accelerometer);
 
         if (_paused != host.IsPaused)
         {
@@ -117,7 +127,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         {
             _loaded = GameLoader.Load(_assembly, _symbols);
             _loaded.Game.Log.Written += _log;
-            _host = new GameHost(_loaded.Game, _backend!, _content, _audio ??= _audioFactory());
+            _host = new GameHost(_loaded.Game, _backend!, _content, _audio ??= _audioFactory(), _save);
             _host.Start(_width, _height);
             _clock.Restart();
             return true;

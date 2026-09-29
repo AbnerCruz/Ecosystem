@@ -20,7 +20,7 @@ public sealed class ProjectStore
         .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
         .ToList();
 
-    public LunetProject Create(string rawName)
+    public LunetProject Create(string rawName, ProjectTemplate template = ProjectTemplate.Blank)
     {
         var name = ValidateName(rawName);
         var directory = Path.Combine(RootDirectory, name);
@@ -35,9 +35,17 @@ public sealed class ProjectStore
                 PackageId = "com.lunet.games." + PackageSegment(name),
             };
             AtomicFile.WriteAllText(Path.Combine(directory, ManifestFileName), manifest.ToJson());
+            var className = ClassName(name);
             AtomicFile.WriteAllText(Path.Combine(directory, manifest.EntryPoint),
-                ProjectTemplates.BlankGameSource(ClassName(name)));
+                template == ProjectTemplate.CoinCatcher
+                    ? ProjectTemplates.CoinCatcherSource(className)
+                    : ProjectTemplates.BlankGameSource(className));
             Directory.CreateDirectory(Path.Combine(directory, "Content"));
+            if (template == ProjectTemplate.CoinCatcher)
+            {
+                Directory.CreateDirectory(Path.Combine(directory, "Content", "Audio"));
+                File.WriteAllBytes(Path.Combine(directory, "Content", "Audio", "beep.wav"), WavGenerator.Beep(880, 0.12));
+            }
         }
         catch
         {
