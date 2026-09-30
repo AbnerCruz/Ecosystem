@@ -10,6 +10,7 @@
 | REQ-001 | §1.2 | F0 | RM-F0-04 — Alinhar ARCHITECTURE.md à realidade e ao alvo | [x] | Revisão manual + `tools/check-modules.mjs` valida referências a módulos citados. | G0 |
 | REQ-002 | §1.2 | F0 | RM-F0-02 — Verificador e gerador de rastreabilidade | [x] | Execução local: `node tools/check-traceability.mjs` retorna 0; teste negativo em `tests/traceability.mjs` (REQ removido → falha). | G0 |
 | REQ-002 | §1.2 | F6 | RM-F6-08 — Relatório final de rastreabilidade | [ ] | `gen-traceability --check`. | G6 |
+| REQ-002 | §1.2 | F7 | RM-F7-28 — Fechar G7: todo OBS com teste e documentação | [ ] | Verificador + revisão. | G7 |
 | REQ-003 | §3.1 | F2 | RM-F2-02 — Harness de teste de produção do monólito | [ ] | Cobre boot, abrir vault fixture, criar nota, mundo. | G2 |
 | REQ-003 | §3.1 | F2 | RM-F2-19 — `app.js` reduzido a composição/bootstrap | [ ] | Métrica: sem regra de domínio (revisão + lint de imports). | G2 |
 | REQ-004 | §1.2 | F0 | RM-F0-18 — Comando único `npm run check` (sincronização docs×código) | [?] | Falha em qualquer sub-check falha o comando. | G0 |
@@ -27,6 +28,7 @@
 | REQ-010 | §7.1 | F3 | RM-F3-18 — Teste de esquemas de links externos | [x] | `tests/security/links.mjs`. | G3 |
 | REQ-011 | §1.2 | F0 | RM-F0-17 — Definition of Done no PR template e issue templates | [x] | Revisão manual + `check-traceability` valida formato de RM-id citado (opcional). | G0 |
 | REQ-011 | §1.2 | F6 | RM-F6-10 — Auditoria de features novas versus ledger | [ ] | Relatório. | G6 |
+| REQ-011 | §1.2 | F7 | RM-F7-28 — Fechar G7: todo OBS com teste e documentação | [ ] | Verificador + revisão. | G7 |
 | REQ-012 | §1.2 | F0 | RM-F0-13 — Gate de dívida (`tools/check-debt.mjs`) | [x] | `tests/debt.mjs` (injeção de sobrescrita falha). | G0 |
 | REQ-012 | §1.2 | F6 | RM-F6-11 — Auditoria de dívida e legacy final | [ ] | `check-debt`. | G6 |
 | REQ-013 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [ ] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
@@ -140,6 +142,40 @@
 | REQ-086 | §11.1 | F6 | RM-F6-04 — Linha de base de acessibilidade | [ ] | Relatório axe versionado. | G6 |
 | REQ-086 | §11.1 | F6 | RM-F6-05 — Corrigir falhas de acessibilidade dos fluxos essenciais | [ ] | axe sem violações críticas nos fluxos essenciais. | G6 |
 | REQ-088 | §10.4 | F0 | RM-F0-01 — Publicar AGENTS.md e AGENTSCHAT.md | [x] | `tools/check-traceability.mjs` verifica existência dos dois arquivos. | G0 |
+| REQ-089 | §15.1 | F7 | RM-F7-12 — ADR-0008: armazenamento dos comentários (OD-12) | [ ] | Revisão. | G7 |
+| REQ-089 | §15.1 | F7 | RM-F7-13 — Comentários: criar/ver/editar e exportação | [ ] | E2E + testes de round-trip e exportação. | G7 |
+| REQ-090 | §15.1 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
+| REQ-090 | §15.1 | F7 | RM-F7-02 — Botão de código: sem texto de reserva e código em linha | [ ] | E2E: selecionar palavra → código em linha; sem seleção → sem 'código'; Markdown round-trip. | G7 |
+| REQ-091 | §15.1 | F7 | RM-F7-14 — Fixar em painel | [ ] | E2E celular: fixar, rolar editor, painel permanece. | G7 |
+| REQ-092 | §15.1 | F7 | RM-F7-15 — Estilos de tag personalizáveis (`tagStyles`) | [ ] | Testes de `normalize`/render; E2E. | G7 |
+| REQ-093 | §15.1 | F7 | RM-F7-16 — Templates de nota | [ ] | E2E: ficha de personagem. | G7 |
+| REQ-094 | §15.1 | F7 | RM-F7-17 — Timer/cronômetro/relógio no editor | [ ] | E2E: iniciar, pausar, zerar; sobrevive a navegar entre notas. | G7 |
+| REQ-095 | §15.1 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
+| REQ-095 | §15.1 | F7 | RM-F7-03 — Estado das ferramentas do editor derivado da seleção | [ ] | E2E: alternar cada ferramenta 3× — estado visível == formatação real; seleção mista. | G7 |
+| REQ-096 | §15.2 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
+| REQ-096 | §15.2 | F7 | RM-F7-04 — Explorer: nome, todos os tipos, extensão e ícone | [ ] | E2E: vault com .md/.png/.pdf/.json/.page.json mostra ícone e extensão. | G7 |
+| REQ-096 | §15.2 | F7 | RM-F7-05 — Explorer: selecionar pasta exibe ações | [ ] | E2E desktop e celular. | G7 |
+| REQ-096 | §15.2 | F7 | RM-F7-06 — Explorer: arrastar e soltar (mouse) e toque longo + arrastar | [ ] | E2E: mover nota para pasta por arrastar (mouse e toque emulado). | G7 |
+| REQ-097 | §15.3 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
+| REQ-097 | §15.3 | F7 | RM-F7-07 — Moradores não somem: invariante de população | [ ] | `tests/world-population.mjs`: ≥ 20.000 passos com semente fixa sem perda; E2E de observação. | G7 |
+| REQ-098 | §15.3 | F7 | RM-F7-18 — Atividades dos moradores (água, madeira, plantar) | [ ] | Testes de simulação (transições, custo); E2E de observação. | G7 |
+| REQ-099 | §15.3 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
+| REQ-099 | §15.3 | F7 | RM-F7-08 — Eventos: menos frequentes, configuráveis; arco-íris desligado | [ ] | `world-life.mjs` ampliado (intervalos, chaves, padrão). | G7 |
+| REQ-100 | §15.3 | F7 | RM-F7-19 — Nome da pasta-mãe no zoom máximo | [ ] | Teste de renderização (paridade) + E2E. | G7 |
+| REQ-101 | §15.3 | F7 | RM-F7-20 — Menu "+": ações distintas | [ ] | E2E: cada ação; sem duplicidade. | G7 |
+| REQ-102 | §15.3 | F7 | RM-F7-21 — Contornos: muralha na pasta raiz e opção de esconder | [ ] | Paridade visual + testes de `normalize`. | G7 |
+| REQ-103 | §15.3 | F7 | RM-F7-22 — Decoração posicionável | [ ] | Fixture com decoração; round-trip; E2E. | G7 |
+| REQ-104 | §15.3 | F7 | RM-F7-23 — Construções por extensão e edição do visual | [ ] | E2E + testes de lote. | G7 |
+| REQ-105 | §15.4 | F7 | RM-F7-24 — ADR-0009: composições → páginas (OD-14) e plano de migração | [ ] | Revisão. | G7 |
+| REQ-105 | §15.4 | F7 | RM-F7-25 — Migrar composições para páginas e remover a UI | [ ] | Fixture: composição vira página equivalente; sem perda; E2E. | G7 |
+| REQ-106 | §15.1 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
+| REQ-106 | §15.1 | F7 | RM-F7-09 — Voltar do editor retorna à origem | [ ] | E2E: abrir pelo Explorer → Voltar → Explorer na mesma pasta; pela cidade → cidade. | G7 |
+| REQ-107 | §15.1 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
+| REQ-107 | §15.1 | F7 | RM-F7-10 — Barra do editor móvel junto ao teclado | [ ] | E2E celular com teclado simulado (redução do viewport). | G7 |
+| REQ-108 | §15.4 | F7 | RM-F7-26 — Tutorial em painel dedicado | [ ] | E2E: abrir, buscar, navegar; nenhuma nota criada. | G7 |
+| REQ-108 | §15.4 | F7 | RM-F7-27 — Migração do `Tutorial/` existente e checagem do conteúdo | [ ] | Fixture com Tutorial; testes. | G7 |
+| REQ-109 | §15.1 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
+| REQ-109 | §15.1 | F7 | RM-F7-11 — Criar nota a partir de `[[nota inexistente]]` | [ ] | E2E: digitar `[[Nova]]`, clicar, nota criada e aberta. | G7 |
 
 ## Requisitos que não são IMPLEMENTAR
 
@@ -156,5 +192,5 @@
 
 ## Cobertura
 
-- REQ IMPLEMENTAR: 80; com item no ROADMAP: 80.
-- Itens no ROADMAP: 118; concluídos `[x]`: 18.
+- REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
+- Itens no ROADMAP: 146; concluídos `[x]`: 18.

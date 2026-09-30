@@ -1,7 +1,7 @@
 # Urbe 2.0 — Especificação canônica (SPEC)
 
 > Estado: **APROVADA pelo proprietário em 2026-09-30** (gate da descoberta liberado — `discovery/OPEN-DECISIONS.md` §5).
-> Base: `discovery/*`, `REQUIREMENTS.md` (REQ-001..088), `adr/0001..0007`, `AUDIT-1X.md`.
+> Base: `discovery/*`, `REQUIREMENTS.md` (REQ-001..109), `adr/0001..0007`, `AUDIT-1X.md`.
 > Esta SPEC é normativa: todo REQ em estado IMPLEMENTAR aparece aqui em uma cláusula `- **REQ-nnn**`. A rastreabilidade REQ → SPEC → ROADMAP → teste/gate está em `TRACEABILITY.md` (gerada por `tools/gen-traceability.mjs`).
 > Não inicia implementação: o runtime 1.8.2-beta permanece intocado até o ROADMAP ser aprovado.
 
@@ -174,6 +174,7 @@ Item concluído quando: implementado; integrado (sem código morto/duplicado); t
 | G3 | Segurança | CSP; plugins UX; hardening Electron/Android; HTML/embeds; ZIP; IA; testes de propriedade verdes |
 | G4 | Plataformas/release/distribuição | E2E web+Electron; smoke instalador/APK; contrato `UrbeNative`; release por tag; `LICENSE` publicado |
 | G5 | Performance | baseline publicado; budgets aprovados; `perf:check` verde; persistência incremental e busca indexada |
+| G7 | Feedback de uso da beta | bugs OBS reproduzidos em E2E e corrigidos com teste de regressão; itens de feature entregues conforme §15; decisões OD-12..15 registradas em ADR |
 | G6 | UX e release 2.0 | critérios S1–S10; acessibilidade; tutorial/migração; recuperação; auditoria final de cobertura; release candidato |
 
 ## 13. Adiados, fora de escopo e não objetivos
@@ -191,3 +192,35 @@ Não objetivos: reescrita geral; nuvem/sync próprio; telemetria; iOS; novas fea
 
 ## 14. Decisões e ADRs
 ADR-0001 (build), ADR-0002 (plugins), ADR-0003 (licença), ADR-0004 (compat/forward), ADR-0005 (release), ADR-0006 (identidade/artefatos), ADR-0007 (IA/CSP): todas Accepted em 2026-09-30.
+
+## 15. Feedback de uso da beta (F7 — `discovery/FEEDBACK-BETA.md`)
+Comportamentos observados pelo proprietário na beta 1.8.2. Cada cláusula é verificada por E2E (Chromium, viewport de desktop e de celular) e/ou teste de simulação; os que dependem de decisão citam o ADR.
+
+### 15.1 Editor
+- **REQ-090** — O botão/atalho de código NÃO DEVE inserir texto de reserva. Com seleção: envolve em código em linha (`` ` ``); sem seleção: insere o par de crases com o cursor dentro; o código em linha DEVE funcionar no meio do parágrafo (não ocupa a linha); o bloco de código (``` ) é outro comando. Vale para o modo Visual e o modo Fonte e para a bolha de formatação (`app.js:3965` hoje insere `'código'`).
+- **REQ-095** — O estado (ativo/inativo) de cada ferramenta da barra e da bolha DEVE ser derivado da formatação sob o cursor/seleção a cada mudança de seleção (`selectionchange`), nunca de um estado local independente; clicar alterna e o estado visível é sempre igual ao real.
+- **REQ-106** — DEVE existir uma pilha de origem da abertura do editor (Explorer, busca, link, cidade, IA); "Voltar" restaura a origem (aba Explorer com a mesma pasta/rolagem), e só volta à cidade quando a origem foi a cidade.
+- **REQ-107** — No celular a barra de ferramentas do editor DEVE acompanhar o teclado virtual usando `visualViewport` (posicionada imediatamente acima do teclado), sem cobrir o texto sob o cursor.
+- **REQ-109** — Clicar em `[[alvo]]` inexistente DEVE oferecer "Criar nota" (mesma pasta da nota atual, título = alvo) e abri-la; ao digitar `[[Nova]]` e fechar os colchetes o sugestor DEVE oferecer criar; a criação usa o serviço canônico de documentos e é desfeita pela lixeira/histórico.
+- **REQ-089** — Comentários: DEVE ser possível anotar um trecho da nota sem alterar o texto do usuário; o armazenamento é um **sidecar** `.urbe/comments.json` (`{version:1,comments:{<docId>:[{id,anchor:{start,end,quote,fingerprint},text,author,created,modified,resolved}]}}`, ADR-0008) que não altera o arquivo da nota; os comentários são preservados na edição externa; na exportação para páginas HTML aparecem como notas marginais ou são omitidos por opção explícita.
+- **REQ-091** — "Fixar em painel": selecionar um trecho (ou abrir uma nota) e fixá-lo em um painel fixo (topo no celular, lateral no desktop), com rolagem própria e botão de fechar; o editor continua editável e rolável; o painel pode ter vários trechos e persiste na sessão.
+- **REQ-092** — Estilos de tag: `tema.json` ganha `tagStyles` (`{"todo":{"estrutura":"callout","cor":"#…","icone":"…"}}`); linhas começando por `#Tag:` renderizam com o estilo da tag; padrões embutidos (`#Todo`, `#Ideia`, `#Aviso`); o texto continua sendo Markdown puro no arquivo.
+- **REQ-093** — Templates: pasta `Modelos/` reservada; "Salvar como template" e "Nova nota a partir de template" com campos `{{campo}}` preenchidos por formulário; o template é uma nota comum.
+- **REQ-094** — Timer/cronômetro/relógio no editor (rodapé): iniciar/pausar/zerar; **recurso nativo** (OD-13) no rodapé do editor; sem persistir dados fora do vault/aparelho.
+
+### 15.2 Explorer
+- **REQ-096** — A aba hoje chamada "Notas" passa a se chamar **Explorer**; lista todos os tipos de arquivo do vault com nome, extensão e ícone por tipo (SPEC §5.2); tocar/clicar em pasta seleciona e exibe as ações (novo, importar, renomear, excluir, mover); arrastar e soltar (mouse) e toque longo + arrastar (celular) movem arquivos e pastas; testes E2E em viewport de desktop e de celular.
+
+### 15.3 Cidade
+- **REQ-097** — A população de moradores só muda por regra explícita (nascimento/chegada/partida documentados); NENHUM morador desaparece por erro de rota/lote/estado; teste de simulação longa determinística (semente fixa, ≥ 20.000 passos) verifica a invariante.
+- **REQ-098** — Moradores executam atividades ligadas ao mundo — buscar água (rio/poço), cortar madeira (árvores), plantar/colher (canteiros) — além de ir de casa em casa; cada atividade tem estados observáveis e limites de custo por quadro; pode ser desativada na Personalização.
+- **REQ-099** — Eventos: frequência padrão reduzida (intervalo mínimo entre eventos), cada evento desativável na Personalização e o arco-íris desativado por padrão.
+- **REQ-100** — No zoom máximo, o nome da pasta de nível raiz é exibido como rótulo do bairro-mãe.
+- **REQ-101** — Menu "+": ações distintas e sem duplicidade — Posicionar construção, Desenhar região, Importar, Decorar; tipo/imagem opcionais em cada uma; nova nota é "posicionar construção" com tipo `.md` por padrão.
+- **REQ-102** — Contorno dos bairros: a pasta raiz usa muralha; subpastas usam contorno de baixa opacidade; `tema.json` ganha `cidade.contornos` (ativar/desativar) exposto na Personalização; opacidade reduzida por padrão.
+- **REQ-103** — Decoração: itens decorativos (árvores, bancos, lampiões, cercas…) posicionáveis e removíveis, persistidos no `mapa.json` (`decoracoes[]`, aditivo) e nunca tratados como nota; catálogo padrão e por textura personalizada.
+- **REQ-104** — A construção depende da extensão (sprite por tipo, agrupamento por tipo na distribuição do lote); tocar em uma construção abre a edição do visual (sprite/imagem).
+
+### 15.4 Escopo e dados
+- **REQ-105** — Composições: migração automática e reversível (backup, REQ-038) de `.urbe/compositions.json`/`compositions.v2.json` para páginas (`Páginas/…page.json`), preservando fontes, ordem e estilos; depois a UI e os módulos de composição são removidos (REQ-030/029). Aprovado pelo proprietário (OD-14, ADR-0009).
+- **REQ-108** — Tutorial: painel dedicado com navegação, busca e visualização de texto/imagens, aberto por Configurações → Tutorial; o conteúdo vem de `src/tutorial/content.js` (sem criar notas/casas); vaults com a pasta `Tutorial/` existente mantêm as notas do usuário (a pasta vira comum e a migração avisa); `tools/build-tutorial.mjs --check` continua validando o conteúdo.

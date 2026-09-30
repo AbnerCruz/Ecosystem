@@ -50,3 +50,5 @@ Use [0000-template.md](0000-template.md) como base.
 | [0005](0005-release-e-versao-unica.md) | Release por tag e fonte única de versão | Accepted |
 | [0006](0006-identidade-documental-e-modelo-de-artefatos.md) | Identidade em sidecar e modelo de artefatos | Accepted |
 | [0007](0007-credenciais-de-ia-e-csp.md) | Credenciais de IA e CSP | Accepted |
+| [0008](0008-comentarios-em-sidecar.md) | Comentários em sidecar fora do arquivo | Accepted |
+| [0009](0009-composicoes-para-paginas.md) | Composições migram para páginas | Accepted |

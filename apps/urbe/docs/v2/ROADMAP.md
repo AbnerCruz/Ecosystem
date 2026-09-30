@@ -14,6 +14,7 @@
 | F3 | Segurança | G3: CSP; plugins; Electron/Android; HTML/embeds; ZIP; IA; testes de segurança verdes |
 | F4 | Plataformas, release e distribuição | G4: E2E web+Electron; smoke instalador/APK; `UrbeNative.contract`; release por tag; `LICENSE` publicado |
 | F5 | Performance | G5: baseline, budgets aprovados, `perf:check` verde, flush incremental, busca indexada |
+| F7 | Feedback de uso da beta | G7: bugs OBS reproduzidos e corrigidos com regressão; features entregues; decisões OD-12..15 em ADR |
 | F6 | UX, auditoria e release 2.0 | G6: S1–S10; acessibilidade; tutorial/migração; recuperação; auditoria final; release |
 
 Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem dependência de F1/F2 (as dependências explícitas mandam); F4 exige F1–F3 para E2E/smoke; F5 exige F1/F2 para persistência/busca; F6 encerra.
@@ -1599,3 +1600,369 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CHANGELOG/RELEASE.
 - **Aceite:** Release publicado só com todos os gates.
 - **Gate:** G6
+
+## F7 — Feedback de uso da beta (G7)
+
+### RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados
+- **Estado:** [ ]
+- **REQ:** REQ-090, REQ-095, REQ-096, REQ-097, REQ-099, REQ-106, REQ-107, REQ-109
+- **SPEC:** §15.1, §15.2, §15.3
+- **Fase:** F7
+- **Depende:** RM-F4-04
+- **Implementação:** Cenários `tests/e2e/feedback-*.e2e.mjs` (Chromium desktop 1280×800 e celular 390×844 com toque) que reproduzem cada OBS de bug e falham na 1.8.2 (catraca `KNOWN_GAPS` como em `vault-migration`): botão de código, estado das ferramentas, Explorer (seleção/arrastar), sumiço de moradores, frequência de eventos, voltar, barra móvel, `[[nova nota]]`.
+- **Integração:** `tools/lib/browser.mjs` (viewport móvel + toque).
+- **Testes:** Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe.
+- **Documentação:** `FEEDBACK-BETA.md` (coluna Verificação).
+- **Aceite:** Cada OBS de bug tem reprodução automatizada.
+- **Gate:** G7
+
+### RM-F7-02 — Botão de código: sem texto de reserva e código em linha
+- **Estado:** [ ]
+- **REQ:** REQ-090
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** No modo Visual (`app.js:3965` e `editor/visual-tools.js`) e Fonte: com seleção envolve em `` ` ``; sem seleção insere crases com cursor dentro; código em linha no meio do parágrafo; comando separado para bloco (```).
+- **Integração:** Barra, bolha de formatação e menu `/`.
+- **Testes:** E2E: selecionar palavra → código em linha; sem seleção → sem 'código'; Markdown round-trip.
+- **Documentação:** tutorial (Editor).
+- **Aceite:** Nenhuma inserção de texto de reserva; código em linha no meio do texto.
+- **Gate:** G7
+
+### RM-F7-03 — Estado das ferramentas do editor derivado da seleção
+- **Estado:** [ ]
+- **REQ:** REQ-095
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Um único `syncToolbarState()` em `selectionchange`/`input` lê a formatação sob o cursor (negrito, itálico, código, listas, títulos…) e pinta os botões; remove estados locais independentes.
+- **Integração:** Barra do editor e bolha.
+- **Testes:** E2E: alternar cada ferramenta 3× — estado visível == formatação real; seleção mista.
+- **Documentação:** —
+- **Aceite:** Ferramentas nunca desincronizam.
+- **Gate:** G7
+
+### RM-F7-04 — Explorer: nome, todos os tipos, extensão e ícone
+- **Estado:** [ ]
+- **REQ:** REQ-096
+- **SPEC:** §15.2, §5.2
+- **Fase:** F7
+- **Depende:** RM-F7-01, RM-F1-08
+- **Implementação:** Renomear a aba "Notas" para "Explorer"; listar todos os artefatos (tipos de `UrbeArtifacts`) com extensão visível e ícone por tipo.
+- **Integração:** `explorer/mobile-ui.js` + navegação.
+- **Testes:** E2E: vault com .md/.png/.pdf/.json/.page.json mostra ícone e extensão.
+- **Documentação:** tutorial (Explorer).
+- **Aceite:** Todos os tipos visíveis e identificáveis.
+- **Gate:** G7
+
+### RM-F7-05 — Explorer: selecionar pasta exibe ações
+- **Estado:** [ ]
+- **REQ:** REQ-096
+- **SPEC:** §15.2
+- **Fase:** F7
+- **Depende:** RM-F7-04
+- **Implementação:** Seleção de pasta (toque/clique) mostra a barra de ações (novo, importar, renomear, mover, excluir); multisseleção coerente.
+- **Integração:** `explorer/mobile-ui.js`, `explorer.ui`.
+- **Testes:** E2E desktop e celular.
+- **Documentação:** tutorial.
+- **Aceite:** Pasta selecionada sempre mostra suas opções.
+- **Gate:** G7
+
+### RM-F7-06 — Explorer: arrastar e soltar (mouse) e toque longo + arrastar
+- **Estado:** [ ]
+- **REQ:** REQ-096
+- **SPEC:** §15.2
+- **Fase:** F7
+- **Depende:** RM-F7-05
+- **Implementação:** Arrastar arquivos/pastas para pastas (mouse, HTML5 DnD/pointer events) e toque longo + arrastar no celular; feedback visual de alvo; usa `explorer.move`.
+- **Integração:** Explorer.
+- **Testes:** E2E: mover nota para pasta por arrastar (mouse e toque emulado).
+- **Documentação:** tutorial.
+- **Aceite:** Mover por arrastar funciona nas duas entradas.
+- **Gate:** G7
+
+### RM-F7-07 — Moradores não somem: invariante de população
+- **Estado:** [ ]
+- **REQ:** REQ-097
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Diagnosticar a causa (rota/lote/estado em `app.js`/`world/life.js`), corrigir e adicionar invariante testável (`population>=N` salvo regra).
+- **Integração:** Simulação de moradores.
+- **Testes:** `tests/world-population.mjs`: ≥ 20.000 passos com semente fixa sem perda; E2E de observação.
+- **Documentação:** PRODUCT-UX.
+- **Aceite:** Nenhum morador some sem regra.
+- **Gate:** G7
+
+### RM-F7-08 — Eventos: menos frequentes, configuráveis; arco-íris desligado
+- **Estado:** [ ]
+- **REQ:** REQ-099
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Intervalo mínimo entre eventos maior; chaves por evento em `tema.json` (`cidade.eventos`) e na Personalização; arco-íris off por padrão.
+- **Integração:** `world/life.js`, `customize`.
+- **Testes:** `world-life.mjs` ampliado (intervalos, chaves, padrão).
+- **Documentação:** tutorial (Cidade).
+- **Aceite:** Menos eventos por padrão; cada um desativável.
+- **Gate:** G7
+
+### RM-F7-09 — Voltar do editor retorna à origem
+- **Estado:** [ ]
+- **REQ:** REQ-106
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Pilha de origem da abertura (`editor.origin`): Explorer (pasta/rolagem), busca, link, cidade, IA; `closeFullEditor` consulta a origem.
+- **Integração:** `app.js` (até extração F2), `editor/*`, Explorer.
+- **Testes:** E2E: abrir pelo Explorer → Voltar → Explorer na mesma pasta; pela cidade → cidade.
+- **Documentação:** tutorial.
+- **Aceite:** Voltar respeita a origem.
+- **Gate:** G7
+
+### RM-F7-10 — Barra do editor móvel junto ao teclado
+- **Estado:** [ ]
+- **REQ:** REQ-107
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Posicionar a barra com `visualViewport` (resize/scroll) acima do teclado virtual.
+- **Integração:** CSS + JS do editor.
+- **Testes:** E2E celular com teclado simulado (redução do viewport).
+- **Documentação:** —
+- **Aceite:** Barra sempre imediatamente acima do teclado.
+- **Gate:** G7
+
+### RM-F7-11 — Criar nota a partir de `[[nota inexistente]]`
+- **Estado:** [ ]
+- **REQ:** REQ-109
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Link inexistente oferece Criar (mesma pasta) e abre; sugestor de `[[` oferece "Criar 'X'".
+- **Integração:** `app.js` (wikilinks) → `editor/wikilinks` após F2.
+- **Testes:** E2E: digitar `[[Nova]]`, clicar, nota criada e aberta.
+- **Documentação:** tutorial.
+- **Aceite:** Criar por link funciona.
+- **Gate:** G7
+
+### RM-F7-12 — ADR-0008: armazenamento dos comentários (OD-12)
+- **Estado:** [ ]
+- **REQ:** REQ-089
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** —
+- **Implementação:** ADR-0008 aprovado: sidecar `.urbe/comments.json`.
+- **Integração:** Documentação.
+- **Testes:** Revisão.
+- **Documentação:** adr/0008.
+- **Aceite:** Formato decidido e aprovado.
+- **Gate:** G7
+
+### RM-F7-13 — Comentários: criar/ver/editar e exportação
+- **Estado:** [ ]
+- **REQ:** REQ-089
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-12, RM-F1-15
+- **Implementação:** UI de comentário sobre trecho; render no editor; tratamento nas páginas HTML/exportação (marginalia ou omitir).
+- **Integração:** Editor, `pages/engine`.
+- **Testes:** E2E + testes de round-trip e exportação.
+- **Documentação:** tutorial.
+- **Aceite:** Comentários funcionam e sobrevivem a edição externa.
+- **Gate:** G7
+
+### RM-F7-14 — Fixar em painel
+- **Estado:** [ ]
+- **REQ:** REQ-091
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Ação "Fixar em painel" na seleção/nota; painel fixo (topo no celular, lateral no desktop) com rolagem própria, múltiplos trechos e fechar.
+- **Integração:** Editor/UI.
+- **Testes:** E2E celular: fixar, rolar editor, painel permanece.
+- **Documentação:** tutorial.
+- **Aceite:** Consulta e escrita simultâneas.
+- **Gate:** G7
+
+### RM-F7-15 — Estilos de tag personalizáveis (`tagStyles`)
+- **Estado:** [ ]
+- **REQ:** REQ-092
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** `tema.json` `tagStyles` + renderização de `#Tag:`; padrões #Todo/#Ideia/#Aviso; painel de Personalização.
+- **Integração:** `customize`, render de Markdown.
+- **Testes:** Testes de `normalize`/render; E2E.
+- **Documentação:** tutorial (Personalização).
+- **Aceite:** `#Todo: x` renderiza como estrutura configurada.
+- **Gate:** G7
+
+### RM-F7-16 — Templates de nota
+- **Estado:** [ ]
+- **REQ:** REQ-093
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F1-08
+- **Implementação:** Pasta `Modelos/`; "Salvar como template"; "Nova nota de template" com campos `{{campo}}`.
+- **Integração:** Explorer/editor.
+- **Testes:** E2E: ficha de personagem.
+- **Documentação:** tutorial.
+- **Aceite:** Templates reutilizáveis.
+- **Gate:** G7
+
+### RM-F7-17 — Timer/cronômetro/relógio no editor
+- **Estado:** [ ]
+- **REQ:** REQ-094
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F3-04
+- **Implementação:** Recurso nativo (OD-13) no rodapé do editor: relógio, cronômetro e timer; iniciar/pausar/zerar.
+- **Integração:** Rodapé do editor.
+- **Testes:** E2E: iniciar, pausar, zerar; sobrevive a navegar entre notas.
+- **Documentação:** tutorial.
+- **Aceite:** Cronômetro utilizável no editor.
+- **Gate:** G7
+
+### RM-F7-18 — Atividades dos moradores (água, madeira, plantar)
+- **Estado:** [ ]
+- **REQ:** REQ-098
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-07
+- **Implementação:** Máquina de estados de atividades ligadas a rio/poço, árvores e canteiros; custo por quadro limitado; chave na Personalização.
+- **Integração:** `world/life.js`.
+- **Testes:** Testes de simulação (transições, custo); E2E de observação.
+- **Documentação:** PRODUCT-UX.
+- **Aceite:** Moradores vivem além de andar entre casas.
+- **Gate:** G7
+
+### RM-F7-19 — Nome da pasta-mãe no zoom máximo
+- **Estado:** [ ]
+- **REQ:** REQ-100
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F2-05
+- **Implementação:** Rótulo do bairro raiz visível ao zoom máximo.
+- **Integração:** Renderer canônico.
+- **Testes:** Teste de renderização (paridade) + E2E.
+- **Documentação:** —
+- **Aceite:** Usuário se localiza pelo nome da pasta-mãe.
+- **Gate:** G7
+
+### RM-F7-20 — Menu "+": ações distintas
+- **Estado:** [ ]
+- **REQ:** REQ-101
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F2-06
+- **Implementação:** Posicionar construção / Desenhar região / Importar / Decorar; tipo/imagem opcionais.
+- **Integração:** UI da cidade.
+- **Testes:** E2E: cada ação; sem duplicidade.
+- **Documentação:** tutorial.
+- **Aceite:** Sem duas rotas para a mesma ação.
+- **Gate:** G7
+
+### RM-F7-21 — Contornos: muralha na pasta raiz e opção de esconder
+- **Estado:** [ ]
+- **REQ:** REQ-102
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F2-05
+- **Implementação:** Muralha (raiz), contorno de baixa opacidade (subpastas); `tema.json` `cidade.contornos`; painel de Personalização.
+- **Integração:** Renderer + `customize`.
+- **Testes:** Paridade visual + testes de `normalize`.
+- **Documentação:** tutorial (Cidade).
+- **Aceite:** Contornos legíveis e configuráveis.
+- **Gate:** G7
+
+### RM-F7-22 — Decoração posicionável
+- **Estado:** [ ]
+- **REQ:** REQ-103
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-20, RM-F1-14
+- **Implementação:** `decoracoes[]` no mapa (aditivo); catálogo padrão; posicionar/remover; texturas personalizadas.
+- **Integração:** Mundo/persistência.
+- **Testes:** Fixture com decoração; round-trip; E2E.
+- **Documentação:** DATA-CATALOG.
+- **Aceite:** Decorações persistem sem virar nota.
+- **Gate:** G7
+
+### RM-F7-23 — Construções por extensão e edição do visual
+- **Estado:** [ ]
+- **REQ:** REQ-104
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-20
+- **Implementação:** Sprite por tipo/extensão; distribuição do lote por tipo; tocar na construção edita o visual.
+- **Integração:** Mundo/render.
+- **Testes:** E2E + testes de lote.
+- **Documentação:** tutorial.
+- **Aceite:** Visual por extensão e editável.
+- **Gate:** G7
+
+### RM-F7-24 — ADR-0009: composições → páginas (OD-14) e plano de migração
+- **Estado:** [ ]
+- **REQ:** REQ-105
+- **SPEC:** §15.4
+- **Fase:** F7
+- **Depende:** RM-F1-07
+- **Implementação:** ADR com alternativas, mapeamento composição→página, backup e reversão; aprovação do proprietário.
+- **Integração:** Documentação.
+- **Testes:** Revisão.
+- **Documentação:** adr/0009.
+- **Aceite:** Decisão aprovada antes de remover dados.
+- **Gate:** G7
+
+### RM-F7-25 — Migrar composições para páginas e remover a UI
+- **Estado:** [ ]
+- **REQ:** REQ-105
+- **SPEC:** §15.4
+- **Fase:** F7
+- **Depende:** RM-F7-24, RM-F1-07
+- **Implementação:** Migrador com backup; testes com fixture `v1-composicoes-historico`; remover `composition/*` do manifesto e do menu (L-legacy).
+- **Integração:** Persistência/Explorer/Páginas.
+- **Testes:** Fixture: composição vira página equivalente; sem perda; E2E.
+- **Documentação:** MIGRATION.md.
+- **Aceite:** Composições absorvidas sem perda de dados.
+- **Gate:** G7
+
+### RM-F7-26 — Tutorial em painel dedicado
+- **Estado:** [ ]
+- **REQ:** REQ-108
+- **SPEC:** §15.4
+- **Fase:** F7
+- **Depende:** RM-F2-16
+- **Implementação:** Painel com navegação, busca e imagens, aberto por Configurações → Tutorial; conteúdo de `content.js` (sem criar notas).
+- **Integração:** `tutorial/*`, `ui/settings`.
+- **Testes:** E2E: abrir, buscar, navegar; nenhuma nota criada.
+- **Documentação:** tutorial.
+- **Aceite:** Tutorial fora do mundo.
+- **Gate:** G7
+
+### RM-F7-27 — Migração do `Tutorial/` existente e checagem do conteúdo
+- **Estado:** [ ]
+- **REQ:** REQ-108
+- **SPEC:** §15.4
+- **Fase:** F7
+- **Depende:** RM-F7-26
+- **Implementação:** Vaults com `Tutorial/` mantêm as notas; aviso único; `build-tutorial --check` valida o novo formato.
+- **Integração:** Migração.
+- **Testes:** Fixture com Tutorial; testes.
+- **Documentação:** MIGRATION.md.
+- **Aceite:** Sem perda de notas de usuário.
+- **Gate:** G7
+
+### RM-F7-28 — Fechar G7: todo OBS com teste e documentação
+- **Estado:** [ ]
+- **REQ:** REQ-011, REQ-002
+- **SPEC:** §15
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Auditar `FEEDBACK-BETA.md`: cada OBS aponta REQ, item `[x]` e teste; CHANGELOG e tutorial atualizados.
+- **Integração:** Release.
+- **Testes:** Verificador + revisão.
+- **Documentação:** FEEDBACK-BETA.md; CHANGELOG.
+- **Aceite:** Nenhum OBS sem cobertura.
+- **Gate:** G7

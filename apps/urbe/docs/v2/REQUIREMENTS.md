@@ -1,6 +1,6 @@
 # Requirement Ledger — Urbe 2.0
 
-> Status: descoberta concluída (issue #33); ledger com REQ-001..REQ-088. SPEC e ROADMAP aprovados pelo proprietário em 2026-09-30.
+> Status: descoberta concluída (issue #33); ledger com REQ-001..REQ-109. SPEC e ROADMAP aprovados pelo proprietário em 2026-09-30.
 >
 > Este ledger mantém identidades estáveis para decisões e requisitos. Ele pode crescer. Itens não desaparecem silenciosamente.
 
@@ -154,6 +154,32 @@ Todos os REQ-001..024 acima permanecem intactos e IMPLEMENTAR. Os requisitos aba
 |---|---|---|---|---|
 | REQ-088 | QUALITY | IMPLEMENTAR | `AGENTS.md` (contrato de agentes) e `AGENTSCHAT.md` (log de coordenação/handoff) na raiz, referenciados por CONTRIBUTING e docs/v2, mantidos atualizados a cada sessão de trabalho. | Pedido do proprietário |
 
+### Feedback de uso da beta (2026-09-30) — ver `discovery/FEEDBACK-BETA.md`
+
+| ID | Classe | Estado | Requisito | Origem |
+|---|---|---|---|---|
+| REQ-089 | UX | IMPLEMENTAR | Comentários em notas: anotar um trecho/citação sem alterar o texto do usuário, com armazenamento em sidecar fora do arquivo (OD-12, ADR-0008) e tratamento definido na exportação para páginas HTML. | OBS-01 |
+| REQ-090 | UX | IMPLEMENTAR | O atalho/botão de código NÃO insere texto de reserva: com seleção vira código em linha; sem seleção insere o par de crases com o cursor dentro; código em linha funciona no meio do parágrafo; bloco de código é comando separado. | OBS-02 |
+| REQ-091 | UX | IMPLEMENTAR | "Fixar em painel": fixar o trecho selecionado (ou uma nota) em um painel fixo (topo no celular, lateral no desktop), rolável e dispensável, enquanto o editor continua editável. | OBS-03 |
+| REQ-092 | UX | IMPLEMENTAR | Estilos de tag personalizáveis: linhas `#Tag: texto` renderizam com a estrutura/estilo configurados (bloco, citação, callout, cor, ícone) em `tema.json`, com padrões (ex.: `#Todo`). | OBS-04 |
+| REQ-093 | UX | IMPLEMENTAR | Templates de nota: criar template a partir de uma nota e criar notas a partir de um template com campos preenchíveis. | OBS-05 |
+| REQ-094 | UX | IMPLEMENTAR | Relógio/cronômetro/timer nativo no rodapé do editor (decisão OD-13: recurso nativo, não plugin). | OBS-06 |
+| REQ-095 | UX | IMPLEMENTAR | O estado das ferramentas da barra do editor reflete sempre a formatação sob o cursor/seleção (alternar liga e desliga de forma consistente), coberto por E2E. | OBS-07 |
+| REQ-096 | UX | IMPLEMENTAR | O Explorer (aba hoje chamada "Notas") lista todos os tipos de arquivo com extensão e ícone; selecionar pasta exibe suas ações; arrastar e soltar (mouse e toque longo) move itens; funciona em toque e desktop, coberto por E2E. | OBS-08 |
+| REQ-097 | UX | IMPLEMENTAR | Moradores (NPCs) não desaparecem sem causa: a população só muda por regra explícita, com teste de simulação longa determinística. | OBS-09 |
+| REQ-098 | UX | IMPLEMENTAR | Moradores exercem atividades além de ir de casa em casa (buscar água, cortar madeira, plantar/colher) ligadas a elementos do mundo e observáveis pelo usuário. | OBS-09 |
+| REQ-099 | UX | IMPLEMENTAR | Eventos da cidade com frequência menor por padrão, configuráveis e desativáveis individualmente; o arco-íris vem desativado por padrão. | OBS-10 |
+| REQ-100 | UX | IMPLEMENTAR | No zoom máximo, exibir o nome da pasta de nível raiz (pasta-mãe) para orientação. | OBS-11 |
+| REQ-101 | UX | IMPLEMENTAR | O menu "+" da cidade oferece ações distintas — posicionar construção, desenhar região, importar, decorar — sem duplicidade; tipo/imagem opcional em cada ação. | OBS-12 |
+| REQ-102 | UX | IMPLEMENTAR | Contorno dos bairros legível: pasta raiz com muralha, subpastas com contorno de baixa opacidade, e opção na Personalização para ativar/desativar o contorno. | OBS-12 |
+| REQ-103 | UX | IMPLEMENTAR | Decoração: itens decorativos posicionáveis no mundo (catálogo padrão e personalizável), sem virar nota. | OBS-12 |
+| REQ-104 | UX | IMPLEMENTAR | Construções conforme a extensão do arquivo, com distribuição planejada, e visual editável ao tocar na construção. | OBS-12 |
+| REQ-105 | DATA | IMPLEMENTAR | Composições passam para o editor de páginas: migração de `.urbe/compositions*.json` para páginas, sem perda de dados (backup), e remoção da UI de composições. Aprovado pelo proprietário (OD-14, ADR-0009). | OBS-13 |
+| REQ-106 | UX | IMPLEMENTAR | "Voltar" no editor retorna à origem da abertura (Explorer, busca, link ou cidade) por pilha de navegação. | OBS-14 |
+| REQ-107 | UX | IMPLEMENTAR | No celular, a barra de ferramentas do editor fica junto ao teclado virtual (acompanha o `visualViewport`). | OBS-15 |
+| REQ-108 | UX | IMPLEMENTAR | Tutorial em painel dedicado (navegação, busca, texto e imagens), aberto por Configurações → Tutorial, sem criar casas no mundo; migração do `Tutorial/` existente sem perder notas do usuário. | OBS-16 |
+| REQ-109 | UX | IMPLEMENTAR | `[[nota inexistente]]` no editor oferece criar a nota (na pasta da nota atual) e abri-la; digitar um link novo dá o mesmo caminho. | OBS-17 |
+
 ## Decisões abertas — status após a descoberta
 
 | Decisão | Status | Onde |
@@ -178,3 +204,4 @@ Detalhes, alternativas e perguntas objetivas: `docs/v2/discovery/OPEN-DECISIONS.
 ## Regra de preservação
 
 Um requisito pode mudar de estado, mas nunca ser removido silenciosamente. Toda substituição, rejeição, adiamento ou saída de escopo deve registrar justificativa e requisito substituto quando aplicável.
+- Feedback de uso (2026-09-30): REQ-089..109 adicionados a partir de `discovery/FEEDBACK-BETA.md`; nenhum REQ removido.
