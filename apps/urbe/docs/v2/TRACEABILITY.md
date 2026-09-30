@@ -7,16 +7,16 @@
 
 | REQ | SPEC | Fase | Item | Estado do item | Teste (resumo) | Gate |
 |---|---|---|---|---|---|---|
-| REQ-001 | §1.2 | F0 | RM-F0-04 — Alinhar ARCHITECTURE.md à realidade e ao alvo | [ ] | Revisão manual + `tools/check-modules.mjs` valida referências a módulos citados. | G0 |
+| REQ-001 | §1.2 | F0 | RM-F0-04 — Alinhar ARCHITECTURE.md à realidade e ao alvo | [x] | Revisão manual + `tools/check-modules.mjs` valida referências a módulos citados. | G0 |
 | REQ-002 | §1.2 | F0 | RM-F0-02 — Verificador e gerador de rastreabilidade | [x] | Execução local: `node tools/check-traceability.mjs` retorna 0; teste negativo em `tests/traceability.mjs` (REQ removido → falha). | G0 |
 | REQ-002 | §1.2 | F6 | RM-F6-08 — Relatório final de rastreabilidade | [ ] | `gen-traceability --check`. | G6 |
 | REQ-003 | §3.1 | F2 | RM-F2-02 — Harness de teste de produção do monólito | [ ] | Cobre boot, abrir vault fixture, criar nota, mundo. | G2 |
 | REQ-003 | §3.1 | F2 | RM-F2-19 — `app.js` reduzido a composição/bootstrap | [ ] | Métrica: sem regra de domínio (revisão + lint de imports). | G2 |
-| REQ-004 | §1.2 | F0 | RM-F0-18 — Comando único `npm run check` (sincronização docs×código) | [ ] | Falha em qualquer sub-check falha o comando. | G0 |
+| REQ-004 | §1.2 | F0 | RM-F0-18 — Comando único `npm run check` (sincronização docs×código) | [?] | Falha em qualquer sub-check falha o comando. | G0 |
 | REQ-004 | §1.2 | F6 | RM-F6-09 — Sincronização final docs×código×release | [ ] | CI. | G6 |
-| REQ-005 | §1.2 | F0 | RM-F0-17 — Definition of Done no PR template e issue templates | [ ] | Revisão manual + `check-traceability` valida formato de RM-id citado (opcional). | G0 |
+| REQ-005 | §1.2 | F0 | RM-F0-17 — Definition of Done no PR template e issue templates | [x] | Revisão manual + `check-traceability` valida formato de RM-id citado (opcional). | G0 |
 | REQ-005 | §1.2 | F6 | RM-F6-07 — Auditoria de Definition of Done | [ ] | Relatório de auditoria. | G6 |
-| REQ-006 | §10.2 | F0 | RM-F0-14 — Separar integração e publicação (release por tag) | [ ] | Dry-run em branch de teste: push em `main` não publica; tag publica em repositório de teste. | G0 |
+| REQ-006 | §10.2 | F0 | RM-F0-14 — Separar integração e publicação (release por tag) | [?] | Dry-run em branch de teste: push em `main` não publica; tag publica em repositório de teste. | G0 |
 | REQ-006 | §10.2 | F6 | RM-F6-12 — Release candidato 2.0 | [ ] | CI + smoke instalador/APK. | G6 |
 | REQ-007 | §1.2 | F1 | RM-F1-25 — Testes de invariante local-first/offline e integridade de notas | [ ] | Falha se `fetch` for chamado no fluxo essencial. | G1 |
 | REQ-008 | §6.1 | F4 | RM-F4-02 — Suíte de conformidade `native-contract` por adapter | [ ] | Falha se capacidade declarada não funcionar. | G4 |
@@ -25,20 +25,20 @@
 | REQ-009 | §8 | F5 | RM-F5-08 — Validar orçamento pós-migração | [ ] | `perf:check` verde. | G5 |
 | REQ-010 | §7.1 | F3 | RM-F3-01 — Índice de testes de segurança e rastreio do threat model | [ ] | Teste negativo: ameaça sem teste falha. | G3 |
 | REQ-010 | §7.1 | F3 | RM-F3-18 — Teste de esquemas de links externos | [ ] | `tests/security/links.mjs`. | G3 |
-| REQ-011 | §1.2 | F0 | RM-F0-17 — Definition of Done no PR template e issue templates | [ ] | Revisão manual + `check-traceability` valida formato de RM-id citado (opcional). | G0 |
+| REQ-011 | §1.2 | F0 | RM-F0-17 — Definition of Done no PR template e issue templates | [x] | Revisão manual + `check-traceability` valida formato de RM-id citado (opcional). | G0 |
 | REQ-011 | §1.2 | F6 | RM-F6-10 — Auditoria de features novas versus ledger | [ ] | Relatório. | G6 |
-| REQ-012 | §1.2 | F0 | RM-F0-13 — Gate de dívida (`tools/check-debt.mjs`) | [ ] | `tests/debt.mjs` (injeção de sobrescrita falha). | G0 |
+| REQ-012 | §1.2 | F0 | RM-F0-13 — Gate de dívida (`tools/check-debt.mjs`) | [x] | `tests/debt.mjs` (injeção de sobrescrita falha). | G0 |
 | REQ-012 | §1.2 | F6 | RM-F6-11 — Auditoria de dívida e legacy final | [ ] | `check-debt`. | G6 |
 | REQ-013 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [ ] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
 | REQ-013 | §5.2 | F1 | RM-F1-24 — Regra: relações internas novas usam ID | [ ] | Teste negativo com relação por path. | G1 |
 | REQ-014 | §5.2 | F1 | RM-F1-09 — Modelo de artefatos aplicado (indexação e roteamento) | [ ] | Fixtures: plugin/tema/página não aparecem como nota; abrir cada tipo roteia corretamente. | G1 |
-| REQ-015 | §3.1 | F0 | RM-F0-09 — Validação automática de boundaries de camadas | [ ] | Teste negativo com dependência proibida injetada. | G0 |
+| REQ-015 | §3.1 | F0 | RM-F0-09 — Validação automática de boundaries de camadas | [x] | Teste negativo com dependência proibida injetada. | G0 |
 | REQ-016 | §9 | F4 | RM-F4-05 — Cenários E2E críticos (web) | [ ] | Cenários passam em Chromium (D1) e emulação D2. | G4 |
 | REQ-016 | §9 | F4 | RM-F4-08 — `GATES.md`: teste → gate | [ ] | `check-traceability` valida que testes citados existem. | G4 |
 | REQ-017 | §10.3 | F4 | RM-F4-12 — `LICENSE` de todos os direitos reservados | [ ] | `check-license` verde. | G4 |
 | REQ-017 | §10.3 | F4 | RM-F4-13 — Registro da decisão de distribuição | [ ] | Revisão. | G4 |
-| REQ-018 | §1.2 | F0 | RM-F0-16 — Ciclo de vida de branches e backlog de issues | [ ] | Lista de branches remotas após limpeza só contém `main`, `chore/*` e trabalho ativo. | G0 |
-| REQ-019 | §10.2 | F0 | RM-F0-06 — Fonte única de versão (`tools/version.mjs`) | [ ] | `tests/version.mjs` (drift injetado falha); `consistency.mjs` adaptado. | G0 |
+| REQ-018 | §1.2 | F0 | RM-F0-16 — Ciclo de vida de branches e backlog de issues | [!] | Lista de branches remotas após limpeza só contém `main`, `chore/*` e trabalho ativo. | G0 |
+| REQ-019 | §10.2 | F0 | RM-F0-06 — Fonte única de versão (`tools/version.mjs`) | [x] | `tests/version.mjs` (drift injetado falha); `consistency.mjs` adaptado. | G0 |
 | REQ-020 | §7.2 | F3 | RM-F3-06 — Coerência documental do modelo de plugins | [ ] | `build-tutorial --check` com tópicos obrigatórios. | G3 |
 | REQ-021 | §7.1 | F3 | RM-F3-08 — Política de credenciais por plataforma documentada | [ ] | Revisão. | G3 |
 | REQ-022 | §3.1 | F2 | RM-F2-01 — Avaliação de hotspots por responsabilidade e acoplamento | [ ] | Script `tools/hotspots.mjs` reproduz métricas. | G2 |
@@ -46,8 +46,8 @@
 | REQ-023 | §5.1 | F1 | RM-F1-26 — Política de migração por formato (contrato final) | [ ] | `check-catalog` valida presença de política por formato. | G1 |
 | REQ-024 | §2 | F0 | RM-F0-02 — Verificador e gerador de rastreabilidade | [x] | Execução local: `node tools/check-traceability.mjs` retorna 0; teste negativo em `tests/traceability.mjs` (REQ removido → falha). | G0 |
 | REQ-024 | §2 | F6 | RM-F6-06 — Auditoria final de cobertura | [ ] | Verificador verde; revisão manual. | G6 |
-| REQ-025 | §3.2 | F0 | RM-F0-07 — Gerar `src/modules.json` a partir do `index.html` atual | [ ] | `tests/modules-manifest.mjs`: manifesto reproduz a ordem e o conjunto de `index.html`/`sw.js`. | G0 |
-| REQ-025 | §3.2 | F0 | RM-F0-08 — `check-modules` e derivação de `index.html`/`sw.js`/`build-www` | [ ] | Testes negativos: ordem inválida, ciclo, arquivo fora do manifesto. | G0 |
+| REQ-025 | §3.2 | F0 | RM-F0-07 — Gerar `src/modules.json` a partir do `index.html` atual | [x] | `tests/modules-manifest.mjs`: manifesto reproduz a ordem e o conjunto de `index.html`/`sw.js`. | G0 |
+| REQ-025 | §3.2 | F0 | RM-F0-08 — `check-modules` e derivação de `index.html`/`sw.js`/`build-www` | [x] | Testes negativos: ordem inválida, ciclo, arquivo fora do manifesto. | G0 |
 | REQ-026 | §3.3 | F2 | RM-F2-05 — Ligar renderer canônico (paridade visual) | [ ] | Paridade de frame em fixture + `production-order` atualizado; perf não regride (baseline). | G2 |
 | REQ-026 | §3.3 | F2 | RM-F2-06 — Ligar controlador de toque canônico | [ ] | `runtime-adapters.mjs` + E2E de gesto (RM-F4-06). | G2 |
 | REQ-026 | §3.3 | F2 | RM-F2-07 — Ligar grafo de ruas canônico | [ ] | `world-system.mjs` + testes de rota com fixtures. | G2 |
@@ -108,17 +108,17 @@
 | REQ-061 | §9 | F4 | RM-F4-07 — Smoke E2E do Electron | [ ] | Passa no Windows CI. | G4 |
 | REQ-062 | §9 | F3 | RM-F3-19 — Testes de `main.js` e `preload.js` | [ ] | `tests/desktop-main.mjs`, `tests/desktop-preload.mjs`. | G3 |
 | REQ-062 | §9 | F3 | RM-F3-20 — Testes JUnit do plugin Android e SW real | [ ] | `app/src/test/...`, `tests/e2e/sw.spec`. | G3 |
-| REQ-063 | §9 | F0 | RM-F0-05 — Runner de testes multiplataforma | [ ] | Teste do runner com script falho/passando; roda em Windows (CI matrix) e Linux. | G0 |
+| REQ-063 | §9 | F0 | RM-F0-05 — Runner de testes multiplataforma | [?] | Teste do runner com script falho/passando; roda em Windows (CI matrix) e Linux. | G0 |
 | REQ-064 | §9 | F2 | RM-F2-02 — Harness de teste de produção do monólito | [ ] | Cobre boot, abrir vault fixture, criar nota, mundo. | G2 |
 | REQ-064 | §9 | F2 | RM-F2-18 — Eliminar testes dependentes de texto de `app.js` | [ ] | grep de `readFileSync('src/app.js')` em `tests/` = 0. | G2 |
-| REQ-065 | §10.2 | F0 | RM-F0-06 — Fonte única de versão (`tools/version.mjs`) | [ ] | `tests/version.mjs` (drift injetado falha); `consistency.mjs` adaptado. | G0 |
-| REQ-066 | §10.2 | F0 | RM-F0-14 — Separar integração e publicação (release por tag) | [ ] | Dry-run em branch de teste: push em `main` não publica; tag publica em repositório de teste. | G0 |
-| REQ-066 | §10.2 | F0 | RM-F0-15 — Endurecer CI: actions por SHA e Dependabot | [ ] | Verificador `tools/check-workflows.mjs` rejeita `uses:` sem SHA. | G0 |
-| REQ-067 | §10.4 | F0 | RM-F0-16 — Ciclo de vida de branches e backlog de issues | [ ] | Lista de branches remotas após limpeza só contém `main`, `chore/*` e trabalho ativo. | G0 |
-| REQ-068 | §9 | F0 | RM-F0-03 — Executar verificador de rastreabilidade no CI | [ ] | Passo falha em PR que remove REQ/item; PR de teste comprova. | G0 |
+| REQ-065 | §10.2 | F0 | RM-F0-06 — Fonte única de versão (`tools/version.mjs`) | [x] | `tests/version.mjs` (drift injetado falha); `consistency.mjs` adaptado. | G0 |
+| REQ-066 | §10.2 | F0 | RM-F0-14 — Separar integração e publicação (release por tag) | [?] | Dry-run em branch de teste: push em `main` não publica; tag publica em repositório de teste. | G0 |
+| REQ-066 | §10.2 | F0 | RM-F0-15 — Endurecer CI: actions por SHA e Dependabot | [~] | Verificador `tools/check-workflows.mjs` rejeita `uses:` sem SHA. | G0 |
+| REQ-067 | §10.4 | F0 | RM-F0-16 — Ciclo de vida de branches e backlog de issues | [!] | Lista de branches remotas após limpeza só contém `main`, `chore/*` e trabalho ativo. | G0 |
+| REQ-068 | §9 | F0 | RM-F0-03 — Executar verificador de rastreabilidade no CI | [?] | Passo falha em PR que remove REQ/item; PR de teste comprova. | G0 |
 | REQ-069 | §9 | F4 | RM-F4-09 — Smoke do instalador Windows e do APK no CI | [ ] | Job verde em PR e antes do release. | G4 |
-| REQ-070 | §8 | F0 | RM-F0-10 — Gerador de vaults sintéticos S/M/L | [ ] | `tests/perf-vault.mjs`: mesma semente → mesmos hashes. | G0 |
-| REQ-070 | §8 | F0 | RM-F0-11 — Harness dos cenários de performance | [ ] | Execução repetida: variação ≤ tolerância declarada; teste do parser de resultados. | G0 |
+| REQ-070 | §8 | F0 | RM-F0-10 — Gerador de vaults sintéticos S/M/L | [x] | `tests/perf-vault.mjs`: mesma semente → mesmos hashes. | G0 |
+| REQ-070 | §8 | F0 | RM-F0-11 — Harness dos cenários de performance | [x] | Execução repetida: variação ≤ tolerância declarada; teste do parser de resultados. | G0 |
 | REQ-070 | §8 | F0 | RM-F0-12 — Publicar baseline 1.8.2 | [ ] | Três execuções por cenário; mediana e p95 registradas. | G0 |
 | REQ-071 | §8 | F5 | RM-F5-02 — Derivar e aprovar budgets | [ ] | Validação do schema; aprovação registrada em AGENTSCHAT. | G5 |
 | REQ-072 | §8 | F5 | RM-F5-03 — Persistência incremental | [ ] | Medir bytes/tempo por flush em S/M/L; O(1) em bytes. | G5 |
@@ -157,4 +157,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 80; com item no ROADMAP: 80.
-- Itens no ROADMAP: 118; concluídos `[x]`: 2.
+- Itens no ROADMAP: 118; concluídos `[x]`: 11.

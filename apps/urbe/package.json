@@ -13,7 +13,8 @@
     "desktop:build": "electron-builder --win --x64 --publish never",
     "www": "node tools/build-www.mjs",
     "android:sync": "node tools/build-www.mjs && cap sync android",
-    "test": "for t in tests/*.mjs; do node \"$t\" || exit 1; done"
+    "test": "node tools/run-tests.mjs",
+    "check": "node tools/check-all.mjs"
   },
   "dependencies": {
     "chokidar": "^4.0.3",
@@ -25,7 +26,8 @@
     "@capacitor/core": "^8.0.0",
     "@capacitor/filesystem": "^8.0.0",
     "electron": "^38.2.0",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^26.0.12",
+    "playwright": "^1.56.1"
   },
   "build": {
     "appId": "app.urbe.desktop",

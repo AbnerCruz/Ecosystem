@@ -33,11 +33,12 @@ A Urbe 2.0 consolida o produto e a base de software da 1.x: arquitetura com auto
 
 ### 3.1 Camadas e dependências
 ```
-ui ─▶ features (editor, explorer, world, pages, ai, customize, composition, math, tutorial)
-        ─▶ core (Core, DocumentStore, History, Trash, Knowledge, Scheduler, Diagnostics, Keymap)
-              ─▶ persistence (WorkspacePersistence + adapters)
-                    ─▶ native (UrbeNative contract: web | electron | android)
+app ─▶ ui ─▶ features (editor, explorer, world, pages, ai, customize, composition, math, tutorial)
+                  ─▶ persistence (WorkspacePersistence + adapters) ─▶ native (contrato UrbeNative: web | electron | android)
+                  ─▶ core (Core, DocumentStore, History, Trash, Knowledge, Scheduler, Diagnostics, Keymap) · kit (icons, dialogs)
+                                                                                   ─▶ vendor
 ```
+As setas indicam **dependência** (quem aponta usa quem recebe). Uma dependência só pode apontar para a mesma camada ou inferior (`vendor < kit,core,native < persistence < feature < ui < app`); `world` e `pages` não dependem de `ai` (exceto adaptadores `*/ai-tools.js`). Exceções conhecidas: `docs/v2/discovery/BOUNDARY-EXCEPTIONS.md` (lista fechada e decrescente).
 - **REQ-003** — `app.js` e código legacy DEVEM perder autoridades funcionais por migração incremental: cada item do ROADMAP substitui **uma** autoridade, prova a substituta com teste de produção e **remove** a implementação anterior no mesmo item; reescrita cega é proibida.
 - **REQ-015** — Boundaries (camadas do §3.1, ciclos, dependência sem provedor anterior, arquivo fora do manifesto) DEVEM ser validados automaticamente por `tools/check-modules.mjs` no CI e por `tests/boundaries.mjs`; convenção não basta.
 - **REQ-022** — Hotspots fora de `app.js` (`pages/engine.js`, `pages/studio.js`, `world/life.js`, `ai/ui.js`, `pages/free.js`, `customize/panel.js`, `world/pixel-art.js`) DEVEM ser avaliados por responsabilidade e acoplamento (relatório em `docs/v2/discovery/HOTSPOTS.md` produzido pelo item) antes de qualquer extração; extração sem avaliação é proibida.

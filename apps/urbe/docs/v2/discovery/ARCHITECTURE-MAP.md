@@ -122,6 +122,6 @@
 
 ## 8. Arquitetura alvo [P → C onde marcado]
 - [C] Sem build obrigatório (ADR-0001): registro de módulos declarativo (`docs/v2` define o manifesto; formato exato na SPEC §3) alimenta `index.html`, `sw.js`, `build-www` e testes de boundary.
-- [P] Camadas permitidas: `ui → editor/explorer/world/pages/ai/customize → core → persistence adapters → native`; `world` e `pages` não dependem de `ai`; `native` só é acessado via `persistence adapters` e `UrbeNative`; nenhum módulo lê `window.Urbe*` de outro que não declare em `requires`.
+- [P] Camadas (dependências apontam para baixo): `app → ui → features → persistence → core/kit/native → vendor` (ver `src/modules.json` e BOUNDARY-EXCEPTIONS.md); `world` e `pages` não dependem de `ai`; `native` só é acessado via `persistence adapters` e `UrbeNative`; nenhum módulo lê `window.Urbe*` de outro que não declare em `requires`.
 - [P] `app.js` converge para composição/bootstrap + adapters legacy temporários (REQ-029/030); cada extração remove a implementação substituída.
 - [C] Nenhuma nova feature como camada de versão em `app.js` (REQ-012).

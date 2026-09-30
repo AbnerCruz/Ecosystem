@@ -3101,7 +3101,7 @@ buildTree();
 /* ============================================================
    Urbe v0.21 — unified files, mobile-first interactions & AI UX
    ============================================================ */
-var V21_VERSION='0.21.0';
+var V21_VERSION=window.UrbeCore.version;
 var V21_EDIT_EXT_RE=/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i;
 var V21_EXT_RE=/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i;
 var v21Placement=null,v21PlacementCandidate=null,v21FileDialogResolve=null,v21MultiMode=false,v21ExplorerQuery='',v21OpenTabs=[],v21MoveHold=null;
@@ -3320,8 +3320,6 @@ v21EnsureExplorer();v21BuildTree();
    Cada bloco abaixo substitui um comportamento da versão anterior
    sem reescrever o código original: o patch só reata os nomes.
    ============================================================ */
-V21_VERSION='0.22.0';
-document.title='Urbe v'+V21_VERSION;
 
 /* ---------- 1. abrir um arquivo fecha o Explorador ----------
    No celular o Explorador é uma folha em tela cheia (z-index 65) acima do
@@ -3687,8 +3685,6 @@ commitWikiSuggestion=function(b){
    destinos, uma ação primária (FAB) com menu por pressão longa,
    bottom sheets no lugar de modais, barra de modo com saída visível.
    ============================================================ */
-V21_VERSION='0.23.0';
-document.title='Urbe v'+V21_VERSION;
 
 var v23Dock=null,v23Fab=null,v23ModeBar=null,v23Seg=null,v23Destino='mundo';
 
@@ -4050,8 +4046,6 @@ v23Atualizar();
    Orçamento de CPU é a restrição de projeto aqui — teto de andarilhos,
    cache de rotas, uma rota nova por ciclo e animação a 12 quadros.
    ============================================================ */
-V21_VERSION='1.8.2-beta';
-document.title='Urbe v'+V21_VERSION;
 
 var V25_MAX=22;              /* andarilhos vivos ao mesmo tempo */
 var V25_VEL=1.35;            /* tiles por segundo (média; cada um tem o seu passo) */

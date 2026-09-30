@@ -48,7 +48,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G0
 
 ### RM-F0-03 — Executar verificador de rastreabilidade no CI
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-068
 - **SPEC:** §9
 - **Fase:** F0
@@ -59,9 +59,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Rastreabilidade.
 - **Aceite:** CI vermelho quando cobertura quebra; verde no estado atual.
 - **Gate:** G0
+- **Evidência:** npm run check (structural-checks.yml) inclui check-traceability e gen-traceability --check; aguardando CI verde no PR
 
 ### RM-F0-04 — Alinhar ARCHITECTURE.md à realidade e ao alvo
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-001
 - **SPEC:** §1.2, §3.1
 - **Fase:** F0
@@ -72,9 +73,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** `ARCHITECTURE.md`.
 - **Aceite:** Diagrama e texto não contradizem os fatos de ARCHITECTURE-MAP §4.
 - **Gate:** G0
+- **Evidência:** ARCHITECTURE.md reescrito (camadas, estado real, módulos/boundaries)
 
 ### RM-F0-05 — Runner de testes multiplataforma
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-063
 - **SPEC:** §9
 - **Fase:** F0
@@ -85,9 +87,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Testes.
 - **Aceite:** `npm test` roda todos, não para no primeiro erro, funciona em Windows e Linux.
 - **Gate:** G0
+- **Evidência:** tools/run-tests.mjs + tests/run-tests.mjs; npm test; CI usa npm run check; aguardando matriz Windows/Linux
 
 ### RM-F0-06 — Fonte única de versão (`tools/version.mjs`)
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-019, REQ-065
 - **SPEC:** §10.2
 - **Fase:** F0
@@ -98,9 +101,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Release.
 - **Aceite:** Bump de versão em um lugar propaga por `sync`; `check` falha em drift.
 - **Gate:** G0
+- **Evidência:** tools/version.mjs + tests/version.mjs; V21_VERSION atribuída 1×; static/consistency derivam de package.json; app.yml usa version.mjs
 
 ### RM-F0-07 — Gerar `src/modules.json` a partir do `index.html` atual
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-025
 - **SPEC:** §3.2
 - **Fase:** F0
@@ -111,9 +115,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** SPEC §3.2; ADR-0001.
 - **Aceite:** Manifesto cobre 100% dos JS de `src/` e reproduz a ordem atual.
 - **Gate:** G0
+- **Evidência:** src/modules.json (60 módulos) via tools/gen-modules.mjs; tests/modules.mjs
 
 ### RM-F0-08 — `check-modules` e derivação de `index.html`/`sw.js`/`build-www`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-025
 - **SPEC:** §3.2
 - **Fase:** F0
@@ -124,9 +129,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** ADR-0001 status confirmado; CONTRIBUTING §Módulos.
 - **Aceite:** Reordenar módulo inválido falha no CI; `index.html` e `sw.js` nunca divergem do manifesto.
 - **Gate:** G0
+- **Evidência:** tools/check-modules.mjs (--write) deriva index.html/sw.js; build-www valida manifesto; tests/modules.mjs (negativos)
 
 ### RM-F0-09 — Validação automática de boundaries de camadas
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-015
 - **SPEC:** §3.1
 - **Fase:** F0
@@ -137,9 +143,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** ARCHITECTURE.md.
 - **Aceite:** Nenhuma violação nova; exceções conhecidas explícitas e decrescentes.
 - **Gate:** G0
+- **Evidência:** boundaries por camada em check-modules + tests/boundaries.mjs; exceções em BOUNDARY-EXCEPTIONS.md (11, decrescentes)
 
 ### RM-F0-10 — Gerador de vaults sintéticos S/M/L
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-070
 - **SPEC:** §8
 - **Fase:** F0
@@ -150,9 +157,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** PERFORMANCE §4.
 - **Aceite:** Três vaults reproduzíveis byte a byte.
 - **Gate:** G0
+- **Evidência:** tools/perf/make-vault.mjs + tests/perf-vault.mjs
 
 ### RM-F0-11 — Harness dos cenários de performance
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-070
 - **SPEC:** §8
 - **Fase:** F0
@@ -163,6 +171,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** `docs/v2/perf/README.md`.
 - **Aceite:** Harness roda localmente e no CI e produz JSON com ambiente e commit.
 - **Gate:** G0
+- **Evidência:** tools/perf/run.mjs (Playwright/Chromium) — cenários open/edit/save/search/city/tutorial
 
 ### RM-F0-12 — Publicar baseline 1.8.2
 - **Estado:** [ ]
@@ -178,7 +187,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G0
 
 ### RM-F0-13 — Gate de dívida (`tools/check-debt.mjs`)
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-012
 - **SPEC:** §1.2
 - **Fase:** F0
@@ -189,9 +198,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** PR template + CONTRIBUTING.
 - **Aceite:** Nenhuma nova camada de versão possível sem quebrar o CI.
 - **Gate:** G0
+- **Evidência:** tools/check-debt.mjs + tools/debt-ceiling.json + tests/debt.mjs
 
 ### RM-F0-14 — Separar integração e publicação (release por tag)
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-006, REQ-066
 - **SPEC:** §10.2
 - **Fase:** F0
@@ -202,9 +212,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Release; ADR-0005 aprovado (OD-05).
 - **Aceite:** Merge em `main` nunca cria Release; tag com testes verdes cria.
 - **Gate:** G0
+- **Evidência:** release.yml (tag v*) + build-apps.yml reutilizável; app.yml só valida; tests/workflows.mjs + tools/check-workflows.mjs; dry-run real só possível no GitHub
 
 ### RM-F0-15 — Endurecer CI: actions por SHA e Dependabot
-- **Estado:** [ ]
+- **Estado:** [~]
 - **REQ:** REQ-066
 - **SPEC:** §10.2
 - **Fase:** F0
@@ -215,9 +226,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING.
 - **Aceite:** Nenhuma action por tag móvel; Dependabot abre PRs.
 - **Gate:** G0
+- **Evidência:** dependabot.yml criado; pinagem de actions por SHA pendente (exige consultar os repositórios das actions — fora do escopo de acesso desta sessão)
 
 ### RM-F0-16 — Ciclo de vida de branches e backlog de issues
-- **Estado:** [ ]
+- **Estado:** [!]
 - **REQ:** REQ-018, REQ-067
 - **SPEC:** §10.4
 - **Fase:** F0
@@ -228,9 +240,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Branches.
 - **Aceite:** Zero branches `claude/*` obsoletas; backlog com RM-ids.
 - **Gate:** G0
+- **Evidência:** Auditoria concluída (docs/v2/BRANCH-AUDIT.md: 31 branches incorporadas); REMOÇÃO bloqueada: exige autorização do proprietário
 
 ### RM-F0-17 — Definition of Done no PR template e issue templates
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-005, REQ-011
 - **SPEC:** §1.2, §10.1
 - **Fase:** F0
@@ -241,9 +254,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §DoD.
 - **Aceite:** PR sem RM-id/REQ não passa a revisão; template contém DoD completo.
 - **Gate:** G0
+- **Evidência:** PR template (RM-id, gate, dívida, DoD) e issue template change atualizados; CONTRIBUTING §14-15
 
 ### RM-F0-18 — Comando único `npm run check` (sincronização docs×código)
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-004
 - **SPEC:** §1.2
 - **Fase:** F0
@@ -254,7 +268,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING.
 - **Aceite:** Um comando valida todas as sincronizações; verde no CI.
 - **Gate:** G0
-
+- **Evidência:** tools/check-all.mjs (npm run check); aguardando CI verde
 
 ## F1 — Persistência, dados e migração (G1)
 

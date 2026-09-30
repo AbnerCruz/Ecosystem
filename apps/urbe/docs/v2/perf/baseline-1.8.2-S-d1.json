@@ -1,0 +1,97 @@
+{
+  "app": "1.8.2-beta",
+  "commit": "b80f722",
+  "date": "2026-09-30T11:42:14.850Z",
+  "env": {
+    "node": "v22.22.2",
+    "chromium": "141.0.7390.37",
+    "cpuThrottle": 1,
+    "platform": "linux"
+  },
+  "vault": {
+    "vault": "S",
+    "notes": 50,
+    "assets": 2,
+    "kb": 192,
+    "sha256": "092530b8294009ea"
+  },
+  "results": {
+    "open_ms": {
+      "runs": 3,
+      "median": 1266,
+      "p95": 1340,
+      "min": 1234,
+      "max": 1340
+    },
+    "heap_after_open_mb": {
+      "runs": 3,
+      "median": 20.46,
+      "p95": 22.05,
+      "min": 20.28,
+      "max": 22.05
+    },
+    "save_after_edit_ms": {
+      "runs": 3,
+      "median": 904.3,
+      "p95": 905.2,
+      "min": 202.5,
+      "max": 905.2
+    },
+    "save_bytes_written": {
+      "runs": 3,
+      "median": 19935,
+      "p95": 26331,
+      "min": 13321,
+      "max": 26331
+    },
+    "save_idb_puts": {
+      "runs": 3,
+      "median": 3,
+      "p95": 3,
+      "min": 3,
+      "max": 3
+    },
+    "search_ms": {
+      "runs": 20,
+      "median": 41.3,
+      "p95": 47.8,
+      "min": 39.3,
+      "max": 51.3
+    },
+    "typing_ms_per_char": {
+      "runs": 100,
+      "median": 49.7,
+      "p95": 71,
+      "min": 22.7,
+      "max": 76.9
+    },
+    "city_idle_fps": {
+      "runs": 1,
+      "median": 21,
+      "p95": 21,
+      "min": 21,
+      "max": 21
+    },
+    "city_drag_fps": {
+      "runs": 1,
+      "median": 19.93,
+      "p95": 19.93,
+      "min": 19.93,
+      "max": 19.93
+    },
+    "heap_after_city_mb": {
+      "runs": 1,
+      "median": 32.64,
+      "p95": 32.64,
+      "min": 32.64,
+      "max": 32.64
+    },
+    "first_open_with_tutorial_ms": {
+      "runs": 3,
+      "median": 2018,
+      "p95": 2037,
+      "min": 1979,
+      "max": 2037
+    }
+  }
+}

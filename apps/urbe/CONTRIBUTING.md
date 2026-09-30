@@ -171,3 +171,18 @@ O contrato completo para agentes está em [`AGENTS.md`](AGENTS.md); o log de coo
 ## 13. Rastreabilidade da 2.0
 
 `docs/v2/TRACEABILITY.md` é gerado (`node tools/gen-traceability.mjs`). Ao alterar REQ, SPEC ou ROADMAP, regenere e rode `node tools/check-traceability.mjs`. PRs da 2.0 citam o item `RM-Fn-nn` e o REQ correspondente.
+
+## 14. Comandos de verificação
+
+| Comando | O que faz |
+|---|---|
+| `npm run check` | Tudo do CI: versão única, módulos/boundaries, dívida de `app.js`, rastreabilidade, workflows, tutorial e testes. |
+| `npm test` | Só os testes (`tools/run-tests.mjs`, multiplataforma; `--jobs N`, filtros por nome). |
+| `node tools/version.mjs check\|sync` | Versão única (`package.json`) e superfícies derivadas. |
+| `node tools/check-modules.mjs [--write]` | `src/modules.json` × `index.html`/`sw.js`; `--write` regenera os blocos derivados. |
+| `node tools/check-debt.mjs [--ratchet]` | Teto de dívida de `src/app.js` (só desce). |
+| `node tools/perf/run.mjs --vault S\|M\|L` | Harness de performance (Chromium real). |
+
+## 15. Release
+
+Merge em `main` **não publica**. Para lançar: atualize `package.json` (+ `node tools/version.mjs sync`) e o `CHANGELOG.md`, integre em `main`, e crie a tag `v<versão>`; o workflow `release.yml` roda `npm run check`, constrói Windows e Android e publica. `app.yml` só valida o build em PRs.

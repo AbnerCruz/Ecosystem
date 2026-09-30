@@ -1,0 +1,15 @@
+# Atualizações de dependências e de actions (REQ-066). Os PRs passam pelo mesmo gate (npm run check).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+  - package-ecosystem: gradle
+    directory: /native/android
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 3
