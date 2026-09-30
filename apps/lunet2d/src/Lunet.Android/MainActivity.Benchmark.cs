@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using Android.App;
 using Android.Content;
+using Android.OS;
 using Android.Widget;
 using Lunet.Editor;
 
@@ -31,7 +32,7 @@ public sealed partial class MainActivity
         _openFile = null;
         var report = new StringBuilder();
         var runtime = Java.Lang.Runtime.GetRuntime();
-        report.Append($"Aparelho: {global::Android.OS.Build.Manufacturer} {global::Android.OS.Build.Model}, Android {global::Android.OS.Build.VERSION.Release}\n");
+        report.Append($"Aparelho: {Build.Manufacturer} {Build.Model}, Android {Build.VERSION.Release}\n");
         report.Append($"Memória do app antes: {(runtime!.TotalMemory() - runtime.FreeMemory()) / 1_048_576} MB de {runtime.MaxMemory() / 1_048_576} MB\n\n");
         Toast.MakeText(this, "Medindo… aguarde alguns segundos", ToastLength.Long)?.Show();
         RunBenchmarkStep(0, report, reopen);
