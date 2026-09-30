@@ -12,6 +12,9 @@ const steps = [
   ['rastreabilidade (REQ → SPEC → ROADMAP)', 'tools/check-traceability.mjs'],
   ['TRACEABILITY.md em dia', 'tools/gen-traceability.mjs', '--check'],
   ['workflows', 'tools/check-workflows.mjs'],
+  ['licença e avisos de terceiros', 'tools/check-license.mjs'],
+  ['catálogo de dados', 'tools/check-catalog.mjs'],
+  ['fixtures de vaults em dia', 'tools/make-fixtures.mjs', '--check'],
   ['tutorial em dia', 'tools/build-tutorial.mjs', '--check'],
   ['testes (tests/*.mjs)', 'tools/run-tests.mjs'],
 ];

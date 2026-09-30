@@ -1,6 +1,6 @@
 import fs from 'node:fs';import vm from 'node:vm';
 const context={window:{},Date};vm.createContext(context);
-for(const file of ['src/core/core.js','src/core/documents.js','src/core/trash.js'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
+for(const file of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/trash.js'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
 const core=context.window.UrbeCore,docs=core.service('documents'),trash=core.service('trash');
 const d=docs.upsert({path:'Livro/Capitulo.md',content:'texto'});
 trash.trash(d.id);if(docs.get(d.id)||trash.list().length!==1)throw new Error('trash');

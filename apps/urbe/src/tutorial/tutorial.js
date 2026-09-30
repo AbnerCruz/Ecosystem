@@ -54,6 +54,7 @@
 
   /* primeira vez nesta cidade: cria a pasta e, se a cidade estava vazia, abre o começo */
   async function semear(){
+    if(persist()&&persist().readOnly)return false; /* vault de formato futuro: não escrever nada (REQ-035) */
     if(tem())return false;
     if(temVault()){if(await marcaNoVault())return false}
     else{var s=store(),ja=false;try{ja=!!(s&&s.getItem(chave()))}catch(_){}if(ja)return false}

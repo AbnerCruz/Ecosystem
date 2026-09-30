@@ -45,6 +45,25 @@
   ],
   "modules": [
     {
+      "name": "core/artifacts",
+      "file": "src/core/artifacts.js",
+      "layer": "kit",
+      "phase": "boot",
+      "provides": {
+        "globals": [
+          "UrbeArtifacts"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
       "name": "ui/icons",
       "file": "src/ui/icons.js",
       "layer": "kit",
@@ -98,7 +117,9 @@
         ],
         "services": []
       },
-      "requires": [],
+      "requires": [
+        "src/core/artifacts.js"
+      ],
       "uses": [
         "src/core/core.js",
         "src/persistence/workspace.js"
@@ -219,6 +240,7 @@
         ]
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/core/core.js"
       ],
       "uses": [],
@@ -333,9 +355,48 @@
         ]
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/core/core.js",
         "src/core/documents.js"
       ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/vault-meta",
+      "file": "src/persistence/vault-meta.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeVaultMeta"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/backup",
+      "file": "src/persistence/backup.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeBackup"
+        ],
+        "services": []
+      },
+      "requires": [],
       "uses": [],
       "platforms": [
         "web",
@@ -357,6 +418,9 @@
         ]
       },
       "requires": [
+        "src/core/artifacts.js",
+        "src/persistence/vault-meta.js",
+        "src/persistence/backup.js",
         "src/core/core.js",
         "src/core/documents.js",
         "src/core/trash.js",
@@ -550,6 +614,7 @@
         ]
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/core/core.js",
         "src/core/documents.js",
         "src/core/trash.js",
@@ -574,6 +639,7 @@
         ]
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/ui/icons.js",
         "src/ui/dialogs.js",
         "src/core/core.js",
@@ -725,6 +791,7 @@
         ]
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/ui/dialogs.js",
         "src/core/core.js",
         "src/core/documents.js",
@@ -833,6 +900,7 @@
         "services": []
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/core/documents.js",
         "src/core/trash.js",
         "src/core/knowledge-index.js",
@@ -968,6 +1036,7 @@
         "services": []
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/math/core.js"
       ],
       "uses": [
@@ -1188,6 +1257,7 @@
         ]
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/ui/icons.js",
         "src/ui/dialogs.js",
         "src/native/bridge.js",
@@ -1254,6 +1324,7 @@
         ]
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/ui/icons.js",
         "src/ui/dialogs.js",
         "src/native/bridge.js",
@@ -1444,12 +1515,34 @@
         ]
       },
       "requires": [
+        "src/core/artifacts.js",
         "src/ui/icons.js",
         "src/core/core.js",
         "src/core/documents.js",
         "src/explorer/model.js"
       ],
       "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ui/vault-notices",
+      "file": "src/ui/vault-notices.js",
+      "layer": "ui",
+      "phase": "late",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [
+        "src/core/core.js"
+      ],
+      "uses": [
+        "src/ui/dialogs.js"
+      ],
       "platforms": [
         "web",
         "electron",

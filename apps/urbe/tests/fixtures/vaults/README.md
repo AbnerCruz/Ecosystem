@@ -13,4 +13,6 @@ Geradas por `node tools/make-fixtures.mjs` (REQ-037). Cada pasta é um vault; `e
 | v1-personalizacao | tema.json, temas, estilos, texturas, plugins |
 | v1-paginas | páginas, modelos e blocos v1 |
 | v1-mundo-antigo | mapa com `mundo` antigo (dispara reorganização na 1.8.2) |
-| futuro-desconhecido | versões maiores em todos os formatos (proteção forward, R-1/R-14) |
+| futuro-desconhecido | versões maiores nos nomes v1 (a 2.x nunca os toca) |
+| futuro-v2 | arquivos `*.v2.json` de versão maior + `vault.json` atual (preservar e desligar só o artefato) |
+| vault-futuro | `vault.json` com `formatVersion` maior (vault inteiro somente leitura) |

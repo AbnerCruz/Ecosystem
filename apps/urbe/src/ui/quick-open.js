@@ -67,7 +67,7 @@
   function paint(){Array.prototype.forEach.call(list.querySelectorAll('.uqo-item'),function(el,i){el.classList.toggle('active',i===active);el.setAttribute('aria-selected',i===active)});var el=list.querySelectorAll('.uqo-item')[active];if(el)el.scrollIntoView({block:'nearest'})}
   function pick(r){
     if(!r)return;
-    if(r.create){var name=r.create.replace(/\.(md|markdown)$/i,''),path=name+'.md',existing=docs.get(path);var d=existing||docs.upsert({path:path,content:''},{source:'quick-open.create'});openDoc(d);return}
+    if(r.create){var name=r.create.replace(window.UrbeArtifacts.RE.note,''),path=name+'.md',existing=docs.get(path);var d=existing||docs.upsert({path:path,content:''},{source:'quick-open.create'});openDoc(d);return}
     openDoc(r.doc);
   }
   function open(){ensure();lastFocus=document.activeElement;root.hidden=false;input.value='';active=0;render();input.focus()}

@@ -57,7 +57,7 @@ try {
   await waitSaved(page);
   vault = await readVault(page);
   assert.equal(vault['Projetos/Nota renomeada.md'], undefined, 'excluída do vault');
-  assert.ok(JSON.parse(vault['.urbe/trash.json']).items.some((i) => i.document.id === id), 'na lixeira');
+  assert.ok(JSON.parse(vault['.urbe/trash.v2.json']).items.some((i) => i.document.id === id), 'na lixeira');
   const restored = await page.evaluate((id) => { UrbeCore.commands.execute('trash.restore', { id }); const d = UrbeCore.service('documents').get(id); return d && d.path; }, id);
   assert.equal(restored, 'Projetos/Nota renomeada.md', 'restaurada no mesmo caminho e ID');
   await waitSaved(page);

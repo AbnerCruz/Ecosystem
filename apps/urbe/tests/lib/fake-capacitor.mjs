@@ -35,5 +35,5 @@ export function load(fake,fetchImpl){
   function A(){}A.prototype.click=function(){};A.prototype.hasAttribute=function(){return false};
   const win={Capacitor:fake.cap,navigator:{},document:doc,open:()=>null};
   const c={window:win,document:doc,console,URL,File,Blob,TextEncoder,TextDecoder,DOMException,Symbol,Promise,btoa,atob,fetch:fetchImpl||fetch,setTimeout,clearTimeout,HTMLAnchorElement:A,KeyboardEvent:class{},getComputedStyle:()=>({})};
-  vm.createContext(c);vm.runInContext(read('src/native/bridge.js'),c);return{W:win,listeners};
+  vm.createContext(c);vm.runInContext(read('src/core/artifacts.js'),c);vm.runInContext(read('src/native/bridge.js'),c);return{W:win,listeners};
 }

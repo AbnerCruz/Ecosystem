@@ -13,7 +13,7 @@ const document={documentElement:html,head,body:el('body'),createElement:el,getEl
 const storage=new Map(),localStorage={getItem:k=>storage.has(k)?storage.get(k):null,setItem:(k,v)=>storage.set(k,String(v)),removeItem:k=>storage.delete(k)};
 const W={document,localStorage,location:{search:''},console:{...console,warn(){}},setTimeout,clearTimeout,setInterval,clearInterval,crypto:globalThis.crypto,TextEncoder,Image:function(){}};
 W.window=W;const c=vm.createContext(W);
-for(const f of ['src/core/core.js','src/core/documents.js','src/ui/dialogs.js','src/ai/tools.js','src/world/pixel-art.js','src/customize/customize.js','src/customize/plugins.js','src/customize/ai-tools.js'])vm.runInContext(read(f),c,{filename:f});
+for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/ui/dialogs.js','src/ai/tools.js','src/world/pixel-art.js','src/customize/customize.js','src/customize/plugins.js','src/customize/ai-tools.js'])vm.runInContext(read(f),c,{filename:f});
 const core=W.UrbeCore,docs=core.service('documents'),C=core.service('customize'),P=core.service('plugins'),T=W.UrbeAITools;
 core.provide('persistence',{vault:'Teste'});
 const wait=ms=>new Promise(r=>setTimeout(r,ms));

@@ -96,7 +96,7 @@ function bridgeWin(N,extra){
   function A(){}A.prototype.click=function(){this.clicked=true};A.prototype.hasAttribute=function(n){return n in (this.attrs||{})};A.prototype.getAttribute=function(n){return (this.attrs||{})[n]};
   const win={navigator:{},document:doc,_toast:toast,_A:A,...(extra||{})};if(N)win.UrbeNative=N;
   const c={window:win,document:doc,console,URL,File,Blob,TextEncoder,TextDecoder,DOMException,ArrayBuffer,Uint8Array,Symbol,Promise,fetch,setTimeout,clearTimeout,HTMLAnchorElement:A};
-  vm.createContext(c);vm.runInContext(read('src/native/bridge.js'),c);return win;
+  vm.createContext(c);vm.runInContext(read('src/core/artifacts.js'),c);vm.runInContext(read('src/native/bridge.js'),c);return win;
 }
 
 /* ---------- adaptador: Electron ---------- */

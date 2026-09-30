@@ -109,3 +109,7 @@ urbe.plugin({
 ```
 
 Nenhum plugin roda sem o usuário ligar, e qualquer mudança no código pede nova aprovação. A referência completa da API está no Tutorial (`Tutorial/Personalização/Referência de plugins.md`).
+
+## Licença
+
+Urbe © 2026 Abner P. S. Cruz — **todos os direitos reservados** (ver [`LICENSE`](LICENSE)). O código é público para leitura; não há licença de uso, modificação ou redistribuição para terceiros sem autorização por escrito. Componentes de terceiros mantêm as suas licenças ([`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md)).

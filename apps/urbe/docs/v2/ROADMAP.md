@@ -316,7 +316,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Evidência:** tools/check-catalog.mjs + tests/catalog.mjs; DATA-CATALOG §9 (política por formato)
 
 ### RM-F1-04 — `vault.json` e detecção de versão do vault
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-036
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -327,9 +327,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG; SPEC §5.1.
 - **Aceite:** Vault 1.x é reconhecido e nenhuma escrita ocorre antes da leitura.
 - **Gate:** G1
+- **Evidência:** src/persistence/vault-meta.js (vault.json formatVersion/createdBy/lastWriter/migrations); lido antes de qualquer escrita; tests/vault-format.mjs + E2E fixtures
 
 ### RM-F1-05 — Proteção forward: journal, history, trash, compositions
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-035
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -340,9 +341,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** ADR-0004 (OD-11 aprovado).
 - **Aceite:** Nenhum arquivo `.urbe/*` de versão desconhecida é alterado ou apagado.
 - **Gate:** G1
+- **Evidência:** workspace.js: só escreve *.v2.json; v1 nunca reescrito; versão maior/ilegível preservada (sideReadonly); journal v2/v1; tests/vault-format.mjs (futuro-v2) + E2E no app real
 
 ### RM-F1-06 — Proteção forward: mapa, tema, páginas, blocos, modelos
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-035
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -353,9 +355,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** tutorial (Solução de problemas).
 - **Aceite:** Abrir vault futuro nunca perde dados.
 - **Gate:** G1
+- **Evidência:** mapa v>4 preservado (persistência + guarda em rodarSinc), vault.json futuro ⇒ somente leitura (persistência, rodarSinc, Tutorial); avisos em src/ui/vault-notices.js; E2E futuro-desconhecido/futuro-v2/vault-futuro
 
 ### RM-F1-07 — Motor de backup pré-migração e restauração
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-038
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -366,9 +369,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** MIGRATION.md.
 - **Aceite:** Toda migração é precedida de backup restaurável.
 - **Gate:** G1
+- **Evidência:** src/persistence/backup.js (backup do estado 1.x capturado no load, restaurar, listar), comandos workspace.backups/restoreBackup; migração idempotente; tests/vault-format.mjs + E2E
 
 ### RM-F1-08 — Fonte única de tipos de artefato
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-039
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -379,9 +383,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG §1.
 - **Aceite:** Uma só lista; comportamento das fixtures inalterado.
 - **Gate:** G1
+- **Evidência:** src/core/artifacts.js (UrbeArtifacts: RE + classify); 30 cópias das listas de extensões substituídas; .canvas passa a ser asset; tests/artifacts.mjs (nenhuma lista duplicada)
 
 ### RM-F1-09 — Modelo de artefatos aplicado (indexação e roteamento)
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-014
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -392,6 +397,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** tutorial; DATA-CATALOG §4.
 - **Aceite:** Arquivos não-nota não viram casas; propriedade de arquivos comuns mantida.
 - **Gate:** G1
+- **Evidência:** UrbeArtifacts.route/registerOpener/onBeforeOpen (wrapper L8 removido de studio.js), linkable() no KnowledgeIndex; tests/artifacts.mjs + tests/e2e/routing.e2e.mjs
 
 ### RM-F1-10 — Contrato de adapters de persistência e testes
 - **Estado:** [ ]
@@ -1193,7 +1199,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Evidência:** tools/run-e2e.mjs, tools/lib/browser.mjs, tests/e2e/{smoke,lifecycle,zip,fixtures}.e2e.mjs; npm run test:e2e; falta job de CI dedicado
 
 ### RM-F4-05 — Cenários E2E críticos (web)
-- **Estado:** [ ]
+- **Estado:** [~]
 - **REQ:** REQ-061, REQ-016
 - **SPEC:** §9
 - **Fase:** F4
@@ -1204,6 +1210,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** GATES.md.
 - **Aceite:** Fluxo crítico verificado (S4).
 - **Gate:** G4
+- **Evidência:** tests/e2e/{lifecycle,zip,fixtures}.e2e.mjs cobrem abrir→criar→salvar→renomear→recarregar→excluir/restaurar→histórico, export ZIP e vaults históricos; faltam plugin, import ZIP, recuperação e toque
 
 ### RM-F4-06 — E2E de gestos e cidade (paridade do toque)
 - **Estado:** [ ]
@@ -1258,7 +1265,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G4
 
 ### RM-F4-10 — Política de release, canais e rollback
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-081
 - **SPEC:** §10.2
 - **Fase:** F4
@@ -1269,9 +1276,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** RELEASE.md.
 - **Aceite:** Procedimento executado com sucesso em dry-run.
 - **Gate:** G4
+- **Evidência:** docs/v2/RELEASE.md (SemVer, checklist, rollback, dry-run); release.yml por tag; dry-run real só no GitHub
 
 ### RM-F4-11 — `THIRD-PARTY-NOTICES`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-080
 - **SPEC:** §10.3
 - **Fase:** F4
@@ -1282,9 +1290,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** THIRD-PARTY-NOTICES.
 - **Aceite:** Toda dependência embutida atribuída.
 - **Gate:** G4
+- **Evidência:** THIRD-PARTY-NOTICES.md + tools/check-license.mjs + tests/license.mjs
 
 ### RM-F4-12 — `LICENSE` de todos os direitos reservados
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-080, REQ-017
 - **SPEC:** §10.3
 - **Fase:** F4
@@ -1295,9 +1304,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** ADR-0003.
 - **Aceite:** `LICENSE` publicado (todos os direitos reservados, Abner P. S. Cruz), coerente com `package.json` e README.
 - **Gate:** G4
+- **Evidência:** LICENSE (todos os direitos reservados, Abner P. S. Cruz), package.json 'SEE LICENSE IN LICENSE', README; check-license valida
 
 ### RM-F4-13 — Registro da decisão de distribuição
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-017
 - **SPEC:** §10.3
 - **Fase:** F4
@@ -1308,9 +1318,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** README/RELEASE.
 - **Aceite:** Distribuição pública só após licença.
 - **Gate:** G4
+- **Evidência:** Política de distribuição: LICENSE (binários só para uso pessoal, sem redistribuição) + README; publicação por tag (RELEASE.md em RM-F4-10)
 
 ### RM-F4-14 — Guia de migração 1.x→2.x e aviso no app
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-082
 - **SPEC:** §10.5
 - **Fase:** F4
@@ -1321,6 +1332,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** MIGRATION.md; tutorial.
 - **Aceite:** Usuário informado e com rollback.
 - **Gate:** G4
+- **Evidência:** docs/v2/MIGRATION.md + avisos no app (vault-notices); falta a tela de migração no tutorial e E2E do aviso
 
 ### RM-F4-15 — Matriz de capacidades por plataforma verificada
 - **Estado:** [ ]
@@ -1747,7 +1759,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G7
 
 ### RM-F7-12 — ADR-0008: armazenamento dos comentários (OD-12)
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-089
 - **SPEC:** §15.1
 - **Fase:** F7
@@ -1758,6 +1770,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** adr/0008.
 - **Aceite:** Formato decidido e aprovado.
 - **Gate:** G7
+- **Evidência:** ADR-0008 aprovado (sidecar .urbe/comments.json)
 
 ### RM-F7-13 — Comentários: criar/ver/editar e exportação
 - **Estado:** [ ]
@@ -1903,7 +1916,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G7
 
 ### RM-F7-24 — ADR-0009: composições → páginas (OD-14) e plano de migração
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-105
 - **SPEC:** §15.4
 - **Fase:** F7
@@ -1914,6 +1927,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** adr/0009.
 - **Aceite:** Decisão aprovada antes de remover dados.
 - **Gate:** G7
+- **Evidência:** ADR-0009 aprovado (composições → páginas)
 
 ### RM-F7-25 — Migrar composições para páginas e remover a UI
 - **Estado:** [ ]

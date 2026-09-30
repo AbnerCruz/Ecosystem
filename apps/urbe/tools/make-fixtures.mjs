@@ -68,6 +68,20 @@ export const FIXTURES = {
     files: { 'Alfa.md': NOTA_A, 'Beta.md': NOTA_B, '.urbe/mapa.json': J(mapaV4({ mundo: 'placas-0', version: '1.5.0-beta' })) },
     expect: { notes: ['Alfa.md', 'Beta.md'], ids: { 'Alfa.md': id(1), 'Beta.md': id(2) }, mundo: 'placas-0' },
   },
+  'futuro-v2': {
+    files: { 'Alfa.md': NOTA_A, 'Beta.md': NOTA_B,
+      '.urbe/vault.json': J({ formatVersion: 2, createdBy: 'urbe@2.0.0-beta.1', lastWriter: 'urbe@2.0.0-beta.1', created: '2026-10-01T00:00:00.000Z', migrations: [] }),
+      '.urbe/mapa.json': J(mapaV4()),
+      '.urbe/history.v2.json': JSON.stringify({ version: 3, documents: {}, campoFuturo: true }),
+      '.urbe/trash.v2.json': J({ version: 3, items: [], campoFuturo: true }),
+      '.urbe/compositions.v2.json': JSON.stringify({ version: 3, items: [{ id: 'cmp_futuro' }] }),
+      '.urbe/journal.v2.json': JSON.stringify({ version: 3, timestamp: 1, documents: [{ id: id(1), path: 'Alfa.md', content: 'NÃO USAR', tags: [], created: '', modified: '' }] }) },
+    expect: { notes: ['Alfa.md', 'Beta.md'], ids: { 'Alfa.md': id(1) }, futureFiles: ['.urbe/history.v2.json', '.urbe/trash.v2.json', '.urbe/compositions.v2.json', '.urbe/journal.v2.json'], vaultCurrent: true },
+  },
+  'vault-futuro': {
+    files: { 'Alfa.md': NOTA_A, '.urbe/vault.json': J({ formatVersion: 3, createdBy: 'urbe@3.0.0', lastWriter: 'urbe@3.0.0', migrations: [], campoFuturo: 1 }), '.urbe/mapa.json': J(mapaV4()) },
+    expect: { notes: ['Alfa.md'], ids: { 'Alfa.md': id(1) }, futureFiles: ['.urbe/vault.json', '.urbe/mapa.json'], readOnly: true },
+  },
   'futuro-desconhecido': {
     files: { 'Alfa.md': NOTA_A,
       '.urbe/mapa.json': J({ ...mapaV4(), v: 99 }),
@@ -108,7 +122,7 @@ Geradas por \`node tools/make-fixtures.mjs\` (REQ-037). Cada pasta é um vault; 
 | v1-personalizacao | tema.json, temas, estilos, texturas, plugins |
 | v1-paginas | páginas, modelos e blocos v1 |
 | v1-mundo-antigo | mapa com \`mundo\` antigo (dispara reorganização na 1.8.2) |
-| futuro-desconhecido | versões maiores em todos os formatos (proteção forward, R-1/R-14) |
+| futuro-desconhecido | versões maiores nos nomes v1 (a 2.x nunca os toca) |\n| futuro-v2 | arquivos \`*.v2.json\` de versão maior + \`vault.json\` atual (preservar e desligar só o artefato) |\n| vault-futuro | \`vault.json\` com \`formatVersion\` maior (vault inteiro somente leitura) |
 `);
   return out;
 }

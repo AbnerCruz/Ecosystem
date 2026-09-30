@@ -1,6 +1,6 @@
 import fs from 'node:fs';import vm from 'node:vm';
 const context={window:{},Date};vm.createContext(context);
-for(const file of ['src/core/core.js','src/core/documents.js','src/explorer/model.js','src/explorer/operations.js'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
+for(const file of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/explorer/model.js','src/explorer/operations.js'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
 const core=context.window.UrbeCore,docs=core.service('documents'),ex=core.service('explorer');
 docs.replaceAll([{path:'A.md',content:'a'},{path:'Pasta/B.md',content:'b'},{path:'Pasta/Sub/C.md',content:'c'}]);
 const a=docs.get('A.md'),b=docs.get('Pasta/B.md'),c=docs.get('Pasta/Sub/C.md');

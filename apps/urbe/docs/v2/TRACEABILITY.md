@@ -33,12 +33,12 @@
 | REQ-012 | §1.2 | F6 | RM-F6-11 — Auditoria de dívida e legacy final | [ ] | `check-debt`. | G6 |
 | REQ-013 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [ ] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
 | REQ-013 | §5.2 | F1 | RM-F1-24 — Regra: relações internas novas usam ID | [ ] | Teste negativo com relação por path. | G1 |
-| REQ-014 | §5.2 | F1 | RM-F1-09 — Modelo de artefatos aplicado (indexação e roteamento) | [ ] | Fixtures: plugin/tema/página não aparecem como nota; abrir cada tipo roteia corretamente. | G1 |
+| REQ-014 | §5.2 | F1 | RM-F1-09 — Modelo de artefatos aplicado (indexação e roteamento) | [x] | Fixtures: plugin/tema/página não aparecem como nota; abrir cada tipo roteia corretamente. | G1 |
 | REQ-015 | §3.1 | F0 | RM-F0-09 — Validação automática de boundaries de camadas | [x] | Teste negativo com dependência proibida injetada. | G0 |
-| REQ-016 | §9 | F4 | RM-F4-05 — Cenários E2E críticos (web) | [ ] | Cenários passam em Chromium (D1) e emulação D2. | G4 |
+| REQ-016 | §9 | F4 | RM-F4-05 — Cenários E2E críticos (web) | [~] | Cenários passam em Chromium (D1) e emulação D2. | G4 |
 | REQ-016 | §9 | F4 | RM-F4-08 — `GATES.md`: teste → gate | [ ] | `check-traceability` valida que testes citados existem. | G4 |
-| REQ-017 | §10.3 | F4 | RM-F4-12 — `LICENSE` de todos os direitos reservados | [ ] | `check-license` verde. | G4 |
-| REQ-017 | §10.3 | F4 | RM-F4-13 — Registro da decisão de distribuição | [ ] | Revisão. | G4 |
+| REQ-017 | §10.3 | F4 | RM-F4-12 — `LICENSE` de todos os direitos reservados | [x] | `check-license` verde. | G4 |
+| REQ-017 | §10.3 | F4 | RM-F4-13 — Registro da decisão de distribuição | [x] | Revisão. | G4 |
 | REQ-018 | §1.2 | F0 | RM-F0-16 — Ciclo de vida de branches e backlog de issues | [!] | Lista de branches remotas após limpeza só contém `main`, `chore/*` e trabalho ativo. | G0 |
 | REQ-019 | §10.2 | F0 | RM-F0-06 — Fonte única de versão (`tools/version.mjs`) | [x] | `tests/version.mjs` (drift injetado falha); `consistency.mjs` adaptado. | G0 |
 | REQ-020 | §7.2 | F3 | RM-F3-06 — Coerência documental do modelo de plugins | [ ] | `build-tutorial --check` com tópicos obrigatórios. | G3 |
@@ -72,13 +72,13 @@
 | REQ-031 | §3.3 | F2 | RM-F2-03 — Mover JSZip para `vendor/jszip` | [ ] | `consistency.mjs` e `modules-manifest` verdes; import/export ZIP funciona. | G2 |
 | REQ-032 | §3.4 | F2 | RM-F2-16 — Extrair hosts `world.custom`, `city.layout`, `world.life.host`, `workspace.storage`; remover wrapper `document.open` | [ ] | Testes de contrato de `world.custom`; `world-life.mjs`, `customize.mjs`. | G2 |
 | REQ-032 | §3.4 | F2 | RM-F2-17 — Contratos públicos versionados | [ ] | `tests/contracts.mjs`. | G2 |
-| REQ-035 | §5.1 | F1 | RM-F1-05 — Proteção forward: journal, history, trash, compositions | [ ] | Fixture `futuro-desconhecido`: bytes inalterados após abrir/salvar; teste de coexistência v1/v2. | G1 |
-| REQ-035 | §5.1 | F1 | RM-F1-06 — Proteção forward: mapa, tema, páginas, blocos, modelos | [ ] | Fixture futuro: nada reescrito; UI mostra aviso. | G1 |
-| REQ-036 | §5.1 | F1 | RM-F1-04 — `vault.json` e detecção de versão do vault | [ ] | Fixtures: 1.x sem `vault.json`, 2.x, futuro maior. | G1 |
+| REQ-035 | §5.1 | F1 | RM-F1-05 — Proteção forward: journal, history, trash, compositions | [x] | Fixture `futuro-desconhecido`: bytes inalterados após abrir/salvar; teste de coexistência v1/v2. | G1 |
+| REQ-035 | §5.1 | F1 | RM-F1-06 — Proteção forward: mapa, tema, páginas, blocos, modelos | [x] | Fixture futuro: nada reescrito; UI mostra aviso. | G1 |
+| REQ-036 | §5.1 | F1 | RM-F1-04 — `vault.json` e detecção de versão do vault | [x] | Fixtures: 1.x sem `vault.json`, 2.x, futuro maior. | G1 |
 | REQ-037 | §5.1 | F1 | RM-F1-01 — Criar fixtures de vaults históricos | [x] | Cada fixture abre no código 1.8.2 sem erro (teste de caracterização). | G1 |
 | REQ-037 | §5.1 | F1 | RM-F1-02 — Harness de abertura/migração de fixtures | [x] | Rodar contra 1.8.2 (baseline) e depois a cada item. | G1 |
-| REQ-038 | §5.1 | F1 | RM-F1-07 — Motor de backup pré-migração e restauração | [ ] | Testes: backup íntegro, restauração byte a byte, migração repetida não duplica. | G1 |
-| REQ-039 | §5.2 | F1 | RM-F1-08 — Fonte única de tipos de artefato | [ ] | `tests/artifacts.mjs` (tabela de casos); `grep` de listas antigas retorna 0. | G1 |
+| REQ-038 | §5.1 | F1 | RM-F1-07 — Motor de backup pré-migração e restauração | [x] | Testes: backup íntegro, restauração byte a byte, migração repetida não duplica. | G1 |
+| REQ-039 | §5.2 | F1 | RM-F1-08 — Fonte única de tipos de artefato | [x] | `tests/artifacts.mjs` (tabela de casos); `grep` de listas antigas retorna 0. | G1 |
 | REQ-040 | §5.2 | F1 | RM-F1-13 — Escritor único do mapa e leitura de `mapa.v` | [ ] | Fixtures mapa v1/v2/v4; teste de dupla escrita (não há); assinatura de binários preservada. | G1 |
 | REQ-041 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [ ] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
 | REQ-042 | §5.2 | F1 | RM-F1-15 — Sidecar de identidade e reconciliação | [ ] | Fixtures: rename externo, cópia de vault sem `.urbe/`, cópias idênticas (ambiguidade tratada). | G1 |
@@ -105,7 +105,7 @@
 | REQ-058 | §7.3 | F3 | RM-F3-16 — Testes de zip-slip/bomb nas três plataformas | [ ] | Suíte por plataforma. | G3 |
 | REQ-060 | §7.4 | F3 | RM-F3-17 — Política de artefatos ativos criados por IA | [ ] | `ai-agent.mjs` ampliado. | G3 |
 | REQ-061 | §9 | F4 | RM-F4-04 — Scaffold Playwright e fixtures E2E | [?] | Smoke: abre app com fixture. | G4 |
-| REQ-061 | §9 | F4 | RM-F4-05 — Cenários E2E críticos (web) | [ ] | Cenários passam em Chromium (D1) e emulação D2. | G4 |
+| REQ-061 | §9 | F4 | RM-F4-05 — Cenários E2E críticos (web) | [~] | Cenários passam em Chromium (D1) e emulação D2. | G4 |
 | REQ-061 | §9 | F4 | RM-F4-06 — E2E de gestos e cidade (paridade do toque) | [ ] | Cenários E2E de toque emulado. | G4 |
 | REQ-061 | §9 | F4 | RM-F4-07 — Smoke E2E do Electron | [ ] | Passa no Windows CI. | G4 |
 | REQ-062 | §9 | F3 | RM-F3-19 — Testes de `main.js` e `preload.js` | [x] | `tests/desktop-main.mjs`, `tests/desktop-preload.mjs`. | G3 |
@@ -131,18 +131,18 @@
 | REQ-076 | §6.2 | F4 | RM-F4-01 — Definir e implementar `UrbeNative.contract` | [x] | Teste de shape por adapter. | G4 |
 | REQ-076 | §6.2 | F4 | RM-F4-02 — Suíte de conformidade `native-contract` por adapter | [x] | Falha se capacidade declarada não funcionar. | G4 |
 | REQ-079 | §6.2 | F4 | RM-F4-03 — Paridade de exportação no Electron (`saveFile`) | [?] | Teste de `saveFile` (caminho, cancelamento). | G4 |
-| REQ-080 | §10.3 | F4 | RM-F4-11 — `THIRD-PARTY-NOTICES` | [ ] | `tools/check-license.mjs` valida cobertura das dependências. | G4 |
-| REQ-080 | §10.3 | F4 | RM-F4-12 — `LICENSE` de todos os direitos reservados | [ ] | `check-license` verde. | G4 |
-| REQ-081 | §10.2 | F4 | RM-F4-10 — Política de release, canais e rollback | [ ] | Dry-run de release e de rollback em repositório de teste. | G4 |
+| REQ-080 | §10.3 | F4 | RM-F4-11 — `THIRD-PARTY-NOTICES` | [x] | `tools/check-license.mjs` valida cobertura das dependências. | G4 |
+| REQ-080 | §10.3 | F4 | RM-F4-12 — `LICENSE` de todos os direitos reservados | [x] | `check-license` verde. | G4 |
+| REQ-081 | §10.2 | F4 | RM-F4-10 — Política de release, canais e rollback | [?] | Dry-run de release e de rollback em repositório de teste. | G4 |
 | REQ-081 | §10.2 | F6 | RM-F6-12 — Release candidato 2.0 | [ ] | CI + smoke instalador/APK. | G6 |
-| REQ-082 | §10.5 | F4 | RM-F4-14 — Guia de migração 1.x→2.x e aviso no app | [ ] | E2E: abrir fixture 1.x mostra aviso e cria backup. | G4 |
+| REQ-082 | §10.5 | F4 | RM-F4-14 — Guia de migração 1.x→2.x e aviso no app | [?] | E2E: abrir fixture 1.x mostra aviso e cria backup. | G4 |
 | REQ-083 | §11.1 | F6 | RM-F6-01 — Publicar e verificar critérios de sucesso S1–S10 | [ ] | Cada S# aponta teste/gate executado. | G6 |
 | REQ-084 | §11.1 | F6 | RM-F6-02 — Tutorial e documentação de usuário sincronizados | [ ] | `tutorial.mjs` ampliado. | G6 |
 | REQ-085 | §11.1 | F6 | RM-F6-03 — Tela única de Recuperação | [ ] | E2E: restaurar backup e item da lixeira. | G6 |
 | REQ-086 | §11.1 | F6 | RM-F6-04 — Linha de base de acessibilidade | [ ] | Relatório axe versionado. | G6 |
 | REQ-086 | §11.1 | F6 | RM-F6-05 — Corrigir falhas de acessibilidade dos fluxos essenciais | [ ] | axe sem violações críticas nos fluxos essenciais. | G6 |
 | REQ-088 | §10.4 | F0 | RM-F0-01 — Publicar AGENTS.md e AGENTSCHAT.md | [x] | `tools/check-traceability.mjs` verifica existência dos dois arquivos. | G0 |
-| REQ-089 | §15.1 | F7 | RM-F7-12 — ADR-0008: armazenamento dos comentários (OD-12) | [ ] | Revisão. | G7 |
+| REQ-089 | §15.1 | F7 | RM-F7-12 — ADR-0008: armazenamento dos comentários (OD-12) | [x] | Revisão. | G7 |
 | REQ-089 | §15.1 | F7 | RM-F7-13 — Comentários: criar/ver/editar e exportação | [ ] | E2E + testes de round-trip e exportação. | G7 |
 | REQ-090 | §15.1 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
 | REQ-090 | §15.1 | F7 | RM-F7-02 — Botão de código: sem texto de reserva e código em linha | [ ] | E2E: selecionar palavra → código em linha; sem seleção → sem 'código'; Markdown round-trip. | G7 |
@@ -166,7 +166,7 @@
 | REQ-102 | §15.3 | F7 | RM-F7-21 — Contornos: muralha na pasta raiz e opção de esconder | [ ] | Paridade visual + testes de `normalize`. | G7 |
 | REQ-103 | §15.3 | F7 | RM-F7-22 — Decoração posicionável | [ ] | Fixture com decoração; round-trip; E2E. | G7 |
 | REQ-104 | §15.3 | F7 | RM-F7-23 — Construções por extensão e edição do visual | [ ] | E2E + testes de lote. | G7 |
-| REQ-105 | §15.4 | F7 | RM-F7-24 — ADR-0009: composições → páginas (OD-14) e plano de migração | [ ] | Revisão. | G7 |
+| REQ-105 | §15.4 | F7 | RM-F7-24 — ADR-0009: composições → páginas (OD-14) e plano de migração | [x] | Revisão. | G7 |
 | REQ-105 | §15.4 | F7 | RM-F7-25 — Migrar composições para páginas e remover a UI | [ ] | Fixture: composição vira página equivalente; sem perda; E2E. | G7 |
 | REQ-106 | §15.1 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
 | REQ-106 | §15.1 | F7 | RM-F7-09 — Voltar do editor retorna à origem | [ ] | E2E: abrir pelo Explorer → Voltar → Explorer na mesma pasta; pela cidade → cidade. | G7 |
@@ -193,4 +193,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 18.
+- Itens no ROADMAP: 146; concluídos `[x]`: 29.

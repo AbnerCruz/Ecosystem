@@ -53,7 +53,7 @@
      Mudanças feitas por fora: no Android o espelho é recarregado ao voltar para o app; no
      computador ele é desligado depois de abrir (o vigia da pasta avisa arquivo a arquivo). */
   var raw=N.fs,mir=null;
-  var TEXTO=/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv|canvas)$/i;
+  var TEXTO=window.UrbeArtifacts.RE.text;
   function pai(r){var i=r.lastIndexOf('/');return i<0?'':r.slice(0,i)}
   function nome(r){return r.slice(r.lastIndexOf('/')+1)}
   function mirAdd(r,kind){if(!mir||!r)return;var p=pai(r);if(p&&!mir.kinds.has(p))mirAdd(p,'directory');mir.kinds.set(r,kind);if(!mir.kids.has(p))mir.kids.set(p,new Set());mir.kids.get(p).add(nome(r));if(kind==='directory'&&!mir.kids.has(r))mir.kids.set(r,new Set())}

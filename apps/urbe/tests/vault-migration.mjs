@@ -10,7 +10,7 @@ const NAMES = ['v1-mapa-v2', 'v1-mapa-v4', 'v1-notas-sem-id', 'v1-journal-penden
 /* Lacunas conhecidas (comportamento 1.8.2) → item do ROADMAP que as fecha. Quando uma passa a ser satisfeita, o teste FALHA
    pedindo a remoção da linha (catraca: a lista só encolhe). */
 export const KNOWN_GAPS = new Map([
-  ['futuro-desconhecido: history/trash/compositions/journal de versão maior são preservados', 'RM-F1-05 (REQ-035)'],
+  // (vazia: todas as lacunas conhecidas da 1.8.2 foram fechadas — RM-F1-05 fechou a proteção forward de journal/history/trash/compositions)
 ]);
 const seenGaps = new Set();
 function gap(name, fn) {
@@ -64,9 +64,7 @@ for (const name of NAMES) {
     // uma edição obriga o flush a reescrever os arquivos .urbe
     docs.upsert({ ...docs.get('Alfa.md'), content: docs.get('Alfa.md').content + '\nedição' });
     await p.flush();
-    gap('futuro-desconhecido: history/trash/compositions/journal de versão maior são preservados', () => {
-      for (const rel of ['.urbe/history.json', '.urbe/trash.json', '.urbe/compositions.json', '.urbe/journal.json']) assert.equal(sha(env.get(rel) ?? ''), expect.futureHashes[rel], `${rel} alterado/apagado`);
-    });
+    for (const rel of ['.urbe/history.json', '.urbe/trash.json', '.urbe/compositions.json', '.urbe/journal.json']) assert.equal(sha(env.get(rel) ?? ''), expect.futureHashes[rel], `${rel}: arquivo de versão maior alterado/apagado`);
     // o mapa v99 sobrevive à camada de persistência; quem o reescreve é o serializador legado de app.js (E2E: futuro.e2e, RM-F1-06/13)
     assert.equal(JSON.parse(env.get('.urbe/mapa.json')).v, 99, 'mapa v99 preservado pela persistência');
     // tema e página futuros são documentos comuns: os bytes só mudariam se o app os normalizasse (RM-F1-06/23)

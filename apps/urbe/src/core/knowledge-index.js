@@ -9,7 +9,7 @@
     rebuild(){
       this.byTitle.clear();this.byTag.clear();this.outgoing.clear();this.incoming.clear();this.tokens.clear();
       var all=this.store.list(),aliases=new Map();
-      all.forEach(d=>{this.add(this.byTitle,d.title,d.id);aliases.set(norm(d.title),d.id);aliases.set(norm(d.path.replace(/\.(md|markdown)$/i,'')),d.id);aliases.set(norm(d.path),d.id);});
+      all.filter(d=>window.UrbeArtifacts.linkable(d.path)).forEach(d=>{this.add(this.byTitle,d.title,d.id);aliases.set(norm(d.title),d.id);aliases.set(norm(d.path.replace(window.UrbeArtifacts.RE.note,'')),d.id);aliases.set(norm(d.path),d.id);});
       all.forEach(d=>{
         d.tags.forEach(tag=>this.add(this.byTag,tag,d.id));
         var out=new Set();d.links.forEach(raw=>{var target=aliases.get(norm(raw))||null;if(target){out.add(target);this.add(this.incoming,target,d.id)}});

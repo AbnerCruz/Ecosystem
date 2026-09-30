@@ -9,7 +9,7 @@ function montar(opts){
   const W={console:{...console,warn(){}},setTimeout,clearTimeout,localStorage:{getItem:k=>storage.has(k)?storage.get(k):null,setItem:(k,v)=>storage.set(k,String(v)),removeItem:k=>storage.delete(k)},
     document:{getElementById(){return null}},UrbeDialogs:{confirm:async()=>respostas.shift()??false,menu:async()=>{},alert:async()=>{}}};
   W.window=W;const c=vm.createContext(W);
-  for(const f of ['src/core/core.js','src/core/documents.js','src/tutorial/content.js','src/tutorial/tutorial.js'])vm.runInContext(read(f),c,{filename:f});
+  for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/tutorial/content.js','src/tutorial/tutorial.js'])vm.runInContext(read(f),c,{filename:f});
   const core=W.UrbeCore,abertos=[];
   core.provide('persistence',{vault:'Teste',adapter:{read:async(v,p)=>files.get(p)||null,write:async(v,p,t)=>files.set(p,t)}});
   core.commands.register('document.open',{execute:ctx=>abertos.push(ctx.path||ctx.id)});

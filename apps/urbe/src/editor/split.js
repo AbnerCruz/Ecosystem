@@ -13,7 +13,7 @@
     if(ctx&&ctx.id)return openSecondary(ctx.id);
     /* sem nota indicada: pergunta qual abrir ao lado (as mais recentes primeiro) */
     var docs=core.service('documents'),D=global.UrbeDialogs;if(!docs||!D)return openSecondary(session.activeId);
-    var lista=docs.list().filter(function(d){return d.id!==session.activeId&&/\.(md|markdown|txt)$/i.test(d.path)}).sort(function(a,b){return String(b.modified||'').localeCompare(String(a.modified||''))}).slice(0,60);
+    var lista=docs.list().filter(function(d){return d.id!==session.activeId&&window.UrbeArtifacts.RE.noteText.test(d.path)}).sort(function(a,b){return String(b.modified||'').localeCompare(String(a.modified||''))}).slice(0,60);
     if(!lista.length)return null;
     return D.choose({title:'Abrir ao lado',message:'Escolha a nota para ver ao lado da que está aberta.',options:lista.map(function(d){return{value:d.id,icon:'file',label:d.title,detail:d.path}})}).then(function(id){return id?openSecondary(id):null});
   }});

@@ -1,5 +1,5 @@
 import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
-const c={window:{},Date,Math};vm.createContext(c);for(const f of ['src/core/core.js','src/core/documents.js','src/composition/store.js','src/composition/compiler.js'])vm.runInContext(fs.readFileSync(new URL('../'+f,import.meta.url),'utf8'),c);
+const c={window:{},Date,Math};vm.createContext(c);for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/composition/store.js','src/composition/compiler.js'])vm.runInContext(fs.readFileSync(new URL('../'+f,import.meta.url),'utf8'),c);
 const core=c.window.UrbeCore,docs=core.service('documents'),store=core.service('compositions'),compiler=core.service('composition.compiler');
 const doc=docs.upsert({path:'Livro/03.md',content:'---\ntitle: Invisível\n---\n\n# A\n\nPrimeiro\n\nSegundo\n\n1. Um\n2. Dois\n\n```js\nalert(1)\n```'});
 const composition=store.create({name:'Teste',sources:[doc.id],order:[doc.id],styles:{textAlign:'center',fontFamily:'Georgia, serif'},overrides:{[doc.id+'_2']:{color:'#ff0000'}}});

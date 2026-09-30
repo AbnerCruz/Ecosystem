@@ -2,7 +2,7 @@
 // Runner multiplataforma dos testes (REQ-063): executa todo tests/*.mjs em processos filhos, com
 // concorrência limitada, agrega falhas e retorna código != 0 se algum falhar. Não depende de shell POSIX.
 //   node tools/run-tests.mjs [--jobs N] [filtro...]   (filtro = trecho do nome do arquivo)
-import { readdirSync } from 'node:fs';
+import { readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { spawn } from 'node:child_process';
 import { cpus } from 'node:os';
@@ -16,7 +16,7 @@ for (let i = 0; i < args.length; i++) { if (args[i] === '--jobs') jobs = Math.ma
 
 // tests/*.mjs e tests/security/*.mjs (tests/e2e, helpers, lib e fixtures não são testes unitários)
 const DIRS = ['', 'security'];
-const files = DIRS.flatMap((d) => readdirSync(join(ROOT, 'tests', d), { withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.mjs')).map((e) => (d ? d + '/' : '') + e.name)).sort()
+const files = DIRS.filter((d) => existsSync(join(ROOT, 'tests', d))).flatMap((d) => readdirSync(join(ROOT, 'tests', d), { withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.mjs')).map((e) => (d ? d + '/' : '') + e.name)).sort()
   .filter((f) => !filters.length || filters.some((x) => f.includes(x)));
 if (!files.length) { console.error('nenhum teste encontrado'); process.exit(1); }
 

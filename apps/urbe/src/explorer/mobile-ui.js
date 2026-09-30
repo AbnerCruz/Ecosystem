@@ -163,9 +163,9 @@
   async function createNote(){
     var folder=currentFolder(),docs=core.service('documents');
     var raw=await ask({title:'Nova nota',label:'Nome',value:'',placeholder:'Ex.: Ideias',hint:where(folder)+' Sem extensão, será salva como .md.',confirm:'Criar nota',
-      validate:function(v){var n=cleanName(v);if(!n)return 'Use um nome válido.';if(!/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i.test(n))n+='.md';return docs.get((folder?folder+'/':'')+n)?'Já existe uma nota com esse nome aqui.':''}});
+      validate:function(v){var n=cleanName(v);if(!n)return 'Use um nome válido.';if(!window.UrbeArtifacts.RE.text.test(n))n+='.md';return docs.get((folder?folder+'/':'')+n)?'Já existe uma nota com esse nome aqui.':''}});
     var name=cleanName(raw);if(!name)return;
-    if(!/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i.test(name))name+='.md';
+    if(!window.UrbeArtifacts.RE.text.test(name))name+='.md';
     var path=(folder?folder+'/':'')+name;if(docs.get(path))return;
     var doc=docs.upsert({path:path,content:''},{source:'explorer.create'});model.clear();core.commands.execute('document.open',{id:doc.id,source:'mobile-explorer'});close();
   }

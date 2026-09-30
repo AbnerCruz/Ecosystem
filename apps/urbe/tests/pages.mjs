@@ -5,7 +5,7 @@ function ok(v,m){if(!v)throw new Error(m||'falhou')}
 function eq(a,b,m){if(JSON.stringify(a)!==JSON.stringify(b))throw new Error((m||'')+'\n esperado '+JSON.stringify(b)+'\n obtido  '+JSON.stringify(a))}
 
 const c={window:{},console,setTimeout,clearTimeout};vm.createContext(c);
-for(const f of ['src/core/core.js','src/core/documents.js','src/core/trash.js','src/ai/tools.js','src/pages/engine.js','src/pages/free.js','src/pages/templates.js','src/pages/ai-tools.js'])vm.runInContext(read(f),c);
+for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/trash.js','src/ai/tools.js','src/pages/engine.js','src/pages/free.js','src/pages/templates.js','src/pages/ai-tools.js'])vm.runInContext(read(f),c);
 const W=c.window,P=W.UrbePages,TPL=W.UrbePageTemplates,T=W.UrbeAITools,core=W.UrbeCore,docs=core.service('documents');
 docs.upsert({path:'Guia/Instalação.md',content:'# Instalação\n\nRode `npm i`.\n\nVeja [[Uso]].',tags:['guia']});
 docs.upsert({path:'Guia/Uso.md',content:'# Uso\n\nUse com calma. #guia'});
