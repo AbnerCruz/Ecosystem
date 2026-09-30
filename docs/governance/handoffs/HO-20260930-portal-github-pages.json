@@ -1,0 +1,157 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20260930-portal-github-pages",
+  "category": "HANDOFF",
+  "timestamp": "2026-09-30T17:40:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-12",
+  "component": "portal",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/pages.yml",
+    ".gitignore",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "README.md",
+    "ROADMAP.md",
+    "docs/adr/0005-portal-web-github-pages.md",
+    "docs/adr/README.md",
+    "docs/architecture/portal.md",
+    "docs/contracts/README.md",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/governance/README.md",
+    "docs/governance/addenda/ADD-0001-portal-github-pages.md",
+    "docs/governance/decisions.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/handoffs/HO-20260930-portal-github-pages.json",
+    "ecosystem.json",
+    "site/app.js",
+    "site/generator/GenerateStatus.cs",
+    "site/index.html",
+    "site/style.css",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md"
+  ],
+  "work_completed": [
+    "Adendo do proprietário persistido na íntegra em docs/governance/addenda/ADD-0001-portal-github-pages.md e registrado como DEC-0005 (decided). MANIFEST.md não alterado.",
+    "ADR-0005 (Proposto): tipo de componente 'portal', UI estática em HTML/CSS/JS, gerador em C#, projeção não versionada; DEC-0001 estendida para ratificar 0001–0005.",
+    "Componente 'portal' (site/) em ecosystem.json; ecosystem.repository adicionado como base única dos links derivados.",
+    "Contrato ecosystem-status/1 (docs/contracts/schemas/ecosystem-status.schema.json) com authority:false e proveniência por dado.",
+    "site/generator/GenerateStatus.cs gera site/data/ecosystem-status.json a partir de ecosystem.json, handoffs e documentos normativos.",
+    "site/index.html, app.js, style.css: página mobile-first que só renderiza a projeção; CI e validação humana em campos separados; seções Apps, Validações pendentes, Recuperação, Documentação.",
+    "CHK-PORTAL e regra de CHK-BOUNDARIES contra dependência do portal; 3 novos casos de self-test.",
+    "Workflow .github/workflows/pages.yml (checks → gera → valida → publica), separado do workflow de consistência.",
+    "definition-of-done.md §4 formaliza os estados UNKNOWN/IMPLEMENTED/AUTOMATED_VERIFIED/HUMAN_VALIDATION_PENDING/VALIDATED.",
+    "docs/architecture/portal.md, ARCHITECTURE.md §4/§5/§6.1/§8, AGENTS.md, README.md, ROADMAP.md (P0-12..P0-15, P1-9..P1-11, P3-1) e matriz de enforcement atualizados."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs (com projeção gerada presente)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local, .NET SDK 10.0.112: 'Todos os 15 checks passaram.'"
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: baseline passa; 20 casos de violação detectados, incluindo versão escrita à mão em app.js, projeção divergente e dependência do portal."
+    },
+    {
+      "check": "Renderização do portal em Chromium headless, viewport 390x844, temas claro e escuro",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sem erros de console, sem overflow horizontal, 3 cards de produto renderizados."
+    },
+    {
+      "check": "Primeira publicação no GitHub Pages",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Depende de o proprietário habilitar Settings → Pages → Source: GitHub Actions."
+    },
+    {
+      "check": "Validação humana do portal no celular (layout, toque, legibilidade)",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "P0-15; exige aparelho real (NN-017)."
+    }
+  ],
+  "known_issues": [
+    "Versão, release, APK e CI dos produtos aparecem como 'não disponível' até P1-9/P1-11: não há fonte canônica automática na Fase 0 e esta sessão não tem acesso à API do GitHub de Lunet2D/Urbe.",
+    "CHK-PORTAL reimplementa a regra 'último handoff por tarefa' do gerador para detectar divergência (registrado em ADR-0005)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: habilitar GitHub Pages com fonte 'GitHub Actions' e reexecutar o workflow 'pages' (ou fazer push na branch padrão).",
+    "Proprietário: abrir https://abnercruz.github.io/Ecosystem/ no celular e validar P0-15.",
+    "Proprietário: ratificar ADRs 0001–0005 (DEC-0001).",
+    "Próximo agente: P1-1/P1-2 (inventários), registrando no inventário do Urbe como o Urbe Web é publicado hoje (insumo de P1-10)."
+  ],
+  "decisions_required": [
+    "DEC-0001"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0001-portal-github-pages.md",
+    "docs/adr/0002-formato-dos-registros-canonicos.md",
+    "docs/adr/0003-checks-de-consistencia-em-csharp.md",
+    "docs/adr/0004-estrutura-inicial-do-repositorio.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Projeção com authority:false, não versionada, validada contra as fontes por CHK-PORTAL; nenhum dado canônico escrito à mão em site/."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Portal não é dependência de nenhum componente (CHK-BOUNDARIES); Hub não foi alterado."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Gerador em C#; UI em JavaScript é exceção justificada em ADR-0005 por decisão do proprietário."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Adendo persistido na íntegra (ADD-0001) e DEC-0005 aponta para ele."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST.md e ADD-0001 consultados diretamente; AGENTS.md passa a exigir leitura dos adendos."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Escolhas técnicas registradas em ADR-0005 com status Proposto e ratificação em DEC-0001."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Portal lê apenas arquivos do repositório no build; nenhum aplicativo usa GitHub ou o portal como canal de runtime."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e validação humana exibidos separadamente; VALIDATED exige evidência (CHK-PORTAL); P0-15 e publicação marcados [~]."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Handoff em 'review', não 'done': há verificações pendentes."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Sem framework, build de front-end ou dependência externa; assets/ não criado sem conteúdo."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Portal registrado em ecosystem.json; dados indisponíveis mostrados como tal, com motivo."
+    }
+  ],
+  "cost": null
+}

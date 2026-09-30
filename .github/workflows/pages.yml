@@ -1,0 +1,61 @@
+name: pages
+
+# Publica o portal web (site/) no GitHub Pages — ADR-0005, docs/architecture/portal.md.
+# Independente do workflow de consistência: uma falha aqui não bloqueia desenvolvimento nem produtos.
+# Pré-requisito: Settings → Pages → Source = "GitHub Actions".
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build portal
+    # Publica somente a partir da branch padrão do repositório.
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Consistency checks (fontes canônicas)
+        run: dotnet run tests/consistency/Check.cs
+      - name: Generate projection
+        run: >
+          dotnet run site/generator/GenerateStatus.cs --
+          --ref "${{ github.event.repository.default_branch }}"
+          --commit "${{ github.sha }}"
+          --checks passing
+          --checks-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      - name: Validate projection (CHK-PORTAL)
+        run: dotnet run tests/consistency/Check.cs
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          rsync -a --exclude generator/ site/ _site/
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

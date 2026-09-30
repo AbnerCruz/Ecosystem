@@ -49,6 +49,7 @@ static class Checks
         "CHK-HANDOFFS",
         "CHK-ROADMAP",
         "CHK-SECRETS",
+        "CHK-PORTAL",
     ];
 
     static readonly string[] FoundationFiles =
@@ -85,6 +86,7 @@ static class Checks
         Guard(r, "CHK-HANDOFFS", () => Handoffs(ctx));
         Guard(r, "CHK-ROADMAP", () => Roadmap(ctx));
         Guard(r, "CHK-SECRETS", () => Secrets(ctx));
+        Guard(r, "CHK-PORTAL", () => Portal(ctx));
         return r;
     }
 
@@ -265,6 +267,9 @@ static class Checks
 
                 if (to == "hub" && kind == "required")
                     c.R.Fail(id, $"'{cid}' declara o Hub como dependência obrigatória (NN-003)");
+
+                if (toType == "portal")
+                    c.R.Fail(id, $"'{cid}' depende do portal '{to}': o portal nunca é dependência de nenhum componente (ADD-0001, ADR-0005)");
 
                 if (fromType != "product" && toType == "product")
                     c.R.Fail(id, $"componente não-produto '{cid}' ({fromType}) depende do produto/Host concreto '{to}' (NN-007, MANIFEST §12)");
@@ -522,6 +527,98 @@ static class Checks
             foreach (var p in patterns)
                 if (p.IsMatch(text)) { c.R.Fail(id, $"{rel}: possível segredo commitado (padrão {p})"); break; }
         }
+    }
+
+    // --- CHK-PORTAL (ADD-0001, ADR-0005; NN-001, NN-017, NN-021) ---
+    // O portal é projeção: não pode conter dados canônicos escritos à mão, e a projeção gerada
+    // (quando presente) precisa bater com as fontes canônicas.
+    static readonly Regex CanonicalLiteral = new(@"[""'`]v?\d+\.\d+\.\d+|\b(DEC-\d{4}|HO-\d{8}|NN-\d{3})\b|phase-\d");
+
+    static void Portal(Context c)
+    {
+        const string id = "CHK-PORTAL";
+        c.R.Ran(id);
+        foreach (var (cid, comp) in c.Components().Where(x => x.El.Str("type") == "portal"))
+        {
+            var path = comp.Str("path");
+            if (path is null || comp.Str("status") != "active" || !Directory.Exists(c.P(path))) continue;
+            foreach (var f in new[] { "index.html", "app.js", "style.css" })
+                if (!File.Exists(c.P($"{path}/{f}"))) c.R.Fail(id, $"portal '{cid}': {path}/{f} ausente");
+
+            var published = Repo.WalkFiles(c.P(path))
+                .Select(c.Rel)
+                .Where(f => !f.StartsWith($"{path}/generator/") && !f.StartsWith($"{path}/data/"))
+                .Where(f => f.EndsWith(".html") || f.EndsWith(".js") || f.EndsWith(".css"))
+                .ToList();
+            var referencesProjection = false;
+            foreach (var f in published)
+            {
+                var text = File.ReadAllText(c.P(f));
+                referencesProjection |= text.Contains("data/ecosystem-status.json");
+                foreach (Match m in CanonicalLiteral.Matches(text))
+                    c.R.Fail(id, $"{f}: dado canônico escrito à mão no portal ('{m.Value}'); deve vir da projeção (NN-001)");
+            }
+            if (!referencesProjection)
+                c.R.Fail(id, $"portal '{cid}': nenhum arquivo consome data/ecosystem-status.json");
+
+            var proj = $"{path}/data/ecosystem-status.json";
+            if (File.Exists(c.P(proj))) Projection(c, id, proj);
+        }
+    }
+
+    static void Projection(Context c, string id, string rel)
+    {
+        JsonDocument doc;
+        try { doc = JsonDocument.Parse(File.ReadAllText(c.P(rel))); }
+        catch (JsonException e) { c.R.Fail(id, $"{rel}: JSON inválido — {e.Message}"); return; }
+        var schema = c.LoadSchema("docs/contracts/schemas/ecosystem-status.schema.json");
+        if (schema is null) { c.R.Fail(id, "schema ecosystem-status.schema.json ausente"); return; }
+        var errors = new List<string>();
+        new SchemaValidator(schema.RootElement).Validate(doc.RootElement, errors);
+        foreach (var e in errors) c.R.Fail(id, $"{rel}: {e}");
+        if (errors.Count > 0) return;
+
+        var p = doc.RootElement;
+        var eco = c.Ecosystem!.Value.GetProperty("ecosystem");
+        if (p.GetProperty("ecosystem").Str("phase") != eco.Str("phase"))
+            c.R.Fail(id, $"{rel}: fase diverge de ecosystem.json");
+        if (p.GetProperty("source").Str("repository") != eco.Str("repository"))
+            c.R.Fail(id, $"{rel}: repositório diverge de ecosystem.json");
+
+        var canonical = new Dictionary<string, JsonElement>();
+        foreach (var (k, v) in c.Components()) canonical.TryAdd(k, v); // duplicatas são reportadas por CHK-IDS-UNIQUE
+        var projected = p.Arr("components").ToList();
+        var projectedIds = projected.Select(x => x.Str("id")!).ToHashSet();
+        if (!projectedIds.SetEquals(canonical.Keys))
+            c.R.Fail(id, $"{rel}: componentes divergem de ecosystem.json (projeção: {string.Join(", ", projectedIds.Order())})");
+        foreach (var pc in projected)
+        {
+            var pid = pc.Str("id")!;
+            if (canonical.TryGetValue(pid, out var cc))
+                foreach (var f in new[] { "name", "type", "status", "description" })
+                    if (pc.Str(f) != cc.Str(f)) c.R.Fail(id, $"{rel}: '{pid}.{f}' diverge de ecosystem.json");
+            var v = pc.GetProperty("validation");
+            if (v.Str("state") == "VALIDATED" && string.IsNullOrWhiteSpace(v.Str("evidence")))
+                c.R.Fail(id, $"{rel}: '{pid}' apresentado como VALIDATED sem evidência (NN-017)");
+        }
+
+        // Validações humanas pendentes: último handoff de cada tarefa ainda não encerrado.
+        var expected = c.Handoffs()
+            .Select(h => h.Doc.RootElement)
+            .GroupBy(h => h.Str("task_id"))
+            .Select(g => g.OrderBy(h => h.Str("timestamp"), StringComparer.Ordinal).Last())
+            .Where(h => h.Str("state") is not ("done" or "cancelled" or "failed"))
+            .SelectMany(h => h.Arr("verification")
+                .Where(v => v.Str("kind") == "human" && v.Str("result") == "pending")
+                .Select(v => $"{h.Str("task_id")}|{v.Str("check")}"))
+            .ToHashSet();
+        var actual = p.Arr("pendingValidations").Select(v => $"{v.Str("taskId")}|{v.Str("check")}").ToHashSet();
+        if (!actual.SetEquals(expected))
+            c.R.Fail(id, $"{rel}: validações pendentes divergem dos handoffs");
+
+        foreach (var d in p.Arr("docs"))
+            if (d.Str("path") is { } dp && !File.Exists(c.P(dp)))
+                c.R.Fail(id, $"{rel}: documento inexistente {dp}");
     }
 }
 
@@ -837,6 +934,22 @@ static class SelfTest
                 }
                 """)),
         new("fase ausente do ROADMAP", "CHK-ROADMAP", r => Replace(r, "ROADMAP.md", "## Fase 7 — ", "## Fase sete — ")),
+        new("dependência de um componente no portal", "CHK-BOUNDARIES",
+            r => Replace(r, "ecosystem.json", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"dependencies\": []",
+                "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"dependencies\": [{ \"component\": \"portal\", \"kind\": \"optional\", \"reason\": \"x\" }]")),
+        new("versão escrita à mão no portal", "CHK-PORTAL",
+            r => File.AppendAllText(Path.Combine(r, "site", "app.js"), "\nconst lunetVersion = \"0.4.2\";\n")),
+        new("projeção divergente de ecosystem.json", "CHK-PORTAL",
+            r => File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(r, "site", "data")).FullName, "ecosystem-status.json"), """
+                {
+                  "schema": "ecosystem/contracts/ecosystem-status/1", "schemaVersion": 1, "kind": "projection", "authority": false,
+                  "generatedAt": "2026-01-01T00:00:00Z", "generator": "self-test",
+                  "source": { "repository": "https://github.com/AbnerCruz/Ecosystem", "ref": "HEAD", "commit": null, "files": ["ecosystem.json"] },
+                  "ecosystem": { "name": "Ecosystem", "phase": "phase-0",
+                    "checks": { "value": null, "availability": "not-available", "source": "x", "url": null } },
+                  "components": [], "pendingValidations": [], "docs": []
+                }
+                """)),
         new("segredo commitado", "CHK-SECRETS",
             r => File.WriteAllText(Path.Combine(r, "leak.txt"), "token=" + "gh" + "p_" + new string('a', 36))),
     ];

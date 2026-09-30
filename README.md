@@ -12,6 +12,10 @@ Produtos principais iniciais:
 
 A fonte de verdade desta tabela é [`ecosystem.json`](ecosystem.json); este README é apenas navegação.
 
+## Portal
+
+**https://abnercruz.github.io/Ecosystem/** — portal humano de desenvolvimento, distribuição, documentação, testes e recuperação (GitHub Pages). É uma projeção gerada das fontes canônicas, não fonte de verdade, e não é o Ecosystem Hub. Veja [`docs/architecture/portal.md`](docs/architecture/portal.md).
+
 ## Estado atual
 
 **Fase 0 — Constituição.** O repositório contém a fundação documental e os checks de consistência. Nenhum produto foi importado ainda. Veja [`ROADMAP.md`](ROADMAP.md) para a próxima tarefa e o motivo.
@@ -29,6 +33,8 @@ A fonte de verdade desta tabela é [`ecosystem.json`](ecosystem.json); este READ
 | [`docs/governance/`](docs/governance/) | Comunicação humano↔máquina e máquina↔máquina, Definition of Done, matriz de enforcement, decisões pendentes, handoffs. |
 | [`docs/contracts/`](docs/contracts/) | Contratos e schemas. |
 | [`docs/migration/`](docs/migration/) | Estratégia de migração de Lunet2D e Urbe. |
+| [`docs/architecture/portal.md`](docs/architecture/portal.md) | Portal web (GitHub Pages): papel, projeção, publicação. |
+| [`site/`](site/) | Código do portal web. |
 
 ## Verificação
 

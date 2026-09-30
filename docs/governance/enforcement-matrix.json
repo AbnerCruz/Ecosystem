@@ -9,7 +9,7 @@
         { "mechanism": "DOC", "status": "implemented", "how": "ARCHITECTURE.md §5 (tabela de autoridades) e campo version.authority em ecosystem.json." },
         { "mechanism": "SCHEMA", "status": "implemented", "how": "ecosystem.schema.json exige version.authority e source para componentes.", "check": "CHK-SCHEMA" },
         { "mechanism": "TEST", "status": "implemented", "how": "Um único manifest raiz; paths de componentes não sobrepostos; componente not-migrated não pode existir também no monorepo; version-file deve existir.", "check": "CHK-SINGLE-AUTHORITY" },
-        { "mechanism": "CI", "status": "implemented", "how": "Workflow consistency.yml falha quando o check falha.", "check": "CHK-SINGLE-AUTHORITY" }
+        { "mechanism": "CI", "status": "implemented", "how": "consistency.yml e pages.yml falham quando há autoridade duplicada (CHK-SINGLE-AUTHORITY) ou quando o portal contém dados canônicos escritos à mão ou uma projeção divergente das fontes.", "check": "CHK-PORTAL" }
       ]
     },
     {
@@ -137,6 +137,7 @@
       "mechanisms": [
         { "mechanism": "DOC", "status": "implemented", "how": "docs/governance/definition-of-done.md distingue 'automated verified' de 'human validated'." },
         { "mechanism": "SCHEMA", "status": "implemented", "how": "Handoff 'done' não pode ter verificação humana pendente.", "check": "CHK-HANDOFFS" },
+        { "mechanism": "TEST", "status": "implemented", "how": "Portal: CI e validação humana em campos separados; estado VALIDATED exige evidência (definition-of-done.md §4).", "check": "CHK-PORTAL" },
         { "mechanism": "DEVICE", "status": "manual", "how": "Validação em aparelho registrada como verificação kind=human." }
       ]
     },
@@ -170,6 +171,7 @@
       "mechanisms": [
         { "mechanism": "SCHEMA", "status": "implemented", "how": "ecosystem.json, decisions.json e handoffs são validados; paths normativos devem existir.", "check": "CHK-SCHEMA" },
         { "mechanism": "TEST", "status": "implemented", "how": "Componentes 'active' devem existir no path declarado; 'planned' e 'not-migrated' não.", "check": "CHK-SINGLE-AUTHORITY" },
+        { "mechanism": "CI", "status": "implemented", "how": "O portal consome uma projeção gerada das fontes canônicas, validada contra elas antes de publicar.", "check": "CHK-PORTAL" },
         { "mechanism": "RUNTIME", "status": "planned", "how": "Hub consome essas fontes (Past/Now/Next) em vez de inventar estado.", "phase": "phase-3" }
       ]
     },

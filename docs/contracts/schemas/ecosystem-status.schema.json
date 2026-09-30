@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ecosystem/contracts/ecosystem-status/1",
+  "title": "Projeção de estado do Ecosystem (site/data/ecosystem-status.json) — schemaVersion 1",
+  "description": "Contrato da projeção consumida pelo portal web (ADR-0005). O arquivo gerado é cache/projeção, NUNCA autoridade: cada dado declara de onde veio ou que não está disponível. Gerado por site/generator/GenerateStatus.cs; não versionado.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schemaVersion", "kind", "authority", "generatedAt", "generator", "source", "ecosystem", "components", "pendingValidations", "docs"],
+  "properties": {
+    "schema": { "const": "ecosystem/contracts/ecosystem-status/1" },
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "projection" },
+    "authority": {
+      "description": "Sempre false: a projeção nunca é fonte de verdade (NN-001).",
+      "const": false
+    },
+    "generatedAt": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$" },
+    "generator": { "type": "string", "minLength": 1 },
+    "source": {
+      "description": "Fontes canônicas a partir das quais a projeção foi derivada.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "ref", "commit", "files"],
+      "properties": {
+        "repository": { "type": "string", "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+        "ref": { "type": "string", "minLength": 1 },
+        "commit": { "type": ["string", "null"], "pattern": "^[0-9a-f]{7,40}$" },
+        "files": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "ecosystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "phase", "checks"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "phase": { "type": "string", "pattern": "^phase-[0-9]+$" },
+        "checks": {
+          "description": "Resultado dos checks de consistência do commit projetado. É verificação automática, nunca validação humana (NN-017).",
+          "$ref": "#/$defs/datum"
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "type", "status", "description", "links", "version", "release", "ci", "validation"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
+          "name": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "minLength": 1 },
+          "status": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "links": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["repository", "releases", "web"],
+            "properties": {
+              "repository": { "type": ["string", "null"] },
+              "releases": { "type": ["string", "null"] },
+              "web": { "type": ["string", "null"] }
+            }
+          },
+          "version": { "$ref": "#/$defs/datum" },
+          "release": { "$ref": "#/$defs/datum" },
+          "ci": { "$ref": "#/$defs/datum" },
+          "validation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "evidence", "source"],
+            "properties": {
+              "state": { "$ref": "#/$defs/validationState" },
+              "evidence": {
+                "description": "Obrigatório (não nulo) quando state = VALIDATED (verificado por CHK-PORTAL).",
+                "type": ["string", "null"]
+              },
+              "source": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "pendingValidations": {
+      "description": "Validações humanas pendentes derivadas dos registros canônicos (hoje: handoffs).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component", "taskId", "check", "state", "record"],
+        "properties": {
+          "component": { "type": "string", "minLength": 1 },
+          "taskId": { "type": "string", "minLength": 1 },
+          "check": { "type": "string", "minLength": 1 },
+          "state": { "const": "HUMAN_VALIDATION_PENDING" },
+          "record": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "docs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "path", "url"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "pattern": "^https://" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "validationState": {
+      "description": "Estados de validação de build (docs/governance/definition-of-done.md §4). UNKNOWN = não há registro canônico.",
+      "enum": ["UNKNOWN", "IMPLEMENTED", "AUTOMATED_VERIFIED", "HUMAN_VALIDATION_PENDING", "VALIDATED"]
+    },
+    "datum": {
+      "description": "Um dado projetado com proveniência explícita: 'derived' (lido de fonte canônica, citada em 'source') ou 'not-available' (sem fonte automática ainda; 'source' explica).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "availability", "source"],
+      "properties": {
+        "value": { "type": ["string", "null"] },
+        "availability": { "enum": ["derived", "not-available"] },
+        "source": { "type": "string", "minLength": 1 },
+        "url": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

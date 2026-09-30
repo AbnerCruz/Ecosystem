@@ -6,7 +6,7 @@
 
 Ainda **não existe** nenhum contrato de capability ou de runtime. O formato de `ComponentManifest`, `Capability`, versionamento e permission model é trabalho da **Fase 2** e exigirá ADR.
 
-Existem apenas os contratos dos registros da fundação (ADR-0002), em [`schemas/`](schemas/):
+Existem apenas os contratos dos registros da fundação (ADR-0002) e da projeção do portal (ADR-0005), em [`schemas/`](schemas/):
 
 | Schema | Autoridade de | ID |
 |--------|---------------|----|
@@ -14,6 +14,7 @@ Existem apenas os contratos dos registros da fundação (ADR-0002), em [`schemas
 | [`handoff.schema.json`](schemas/handoff.schema.json) | handoffs de agentes | `ecosystem/contracts/handoff/1` |
 | [`decisions.schema.json`](schemas/decisions.schema.json) | decisões do proprietário | `ecosystem/contracts/decisions/1` |
 | [`enforcement-matrix.schema.json`](schemas/enforcement-matrix.schema.json) | matriz NN → fiscalização | `ecosystem/contracts/enforcement-matrix/1` |
+| [`ecosystem-status.schema.json`](schemas/ecosystem-status.schema.json) | projeção do portal web (`authority: false`; ADR-0005) | `ecosystem/contracts/ecosystem-status/1` |
 
 Os schemas usam o subconjunto de JSON Schema 2020-12 suportado por `tests/consistency/Check.cs` (ADR-0003); o check falha se um schema usar keyword não suportada.
 

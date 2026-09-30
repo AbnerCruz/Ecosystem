@@ -15,7 +15,7 @@ Todo agente que trabalhe neste repositório deve, nesta ordem:
 4. identificar o componente afetado pela tarefa;
 5. ler os documentos normativos daquele componente (SPEC, ROADMAP, `AGENTS.md` local, ADRs e contracts relacionados);
 6. verificar o estado atual do Git (`git status`, `git log`, branch atual);
-7. verificar branches, PRs, tarefas e handoffs relevantes (`docs/governance/handoffs/`, [`docs/governance/decisions.json`](docs/governance/decisions.json));
+7. verificar branches, PRs, tarefas e handoffs relevantes (`docs/governance/handoffs/`, [`docs/governance/decisions.json`](docs/governance/decisions.json)), incluindo decisões já tomadas e adendos do proprietário em [`docs/governance/addenda/`](docs/governance/addenda/) — eles estão no topo da hierarquia de autoridade;
 8. declarar o escopo da tarefa;
 9. identificar quais `NN-XXX` são relevantes para a tarefa;
 10. respeitar boundaries ([`ARCHITECTURE.md`](ARCHITECTURE.md) §4);
@@ -131,6 +131,7 @@ Antes de extrair algo para `platform/`, `workspaces/` ou `tools/`, deve ser resp
 - **Pode decidir sozinho** (MANIFEST §22.4): detalhes de implementação dentro de contratos aprovados que não mudem produto, boundary, compatibilidade, dados, decisão consolidada nem adicionem tecnologia estrutural sem necessidade.
 - **Não pode decidir sozinho:** tudo listado em NN-011. Registre um ADR com status `Proposto` e uma entrada `pending` em [`docs/governance/decisions.json`](docs/governance/decisions.json), no formato de MANIFEST §22.3.
 - **Nunca** transforme preferência própria em decisão do proprietário, nem inferência em requisito (MANIFEST §53). Separe `FATO OBSERVADO`, `INFERÊNCIA`, `PROPOSTA` e `DECISÃO`.
+- **Portal web (`site/`)** é projeção, nunca fonte de verdade: não escreva nele dados que tenham autoridade em outro lugar (ADD-0001, [`docs/architecture/portal.md`](docs/architecture/portal.md)).
 - **Hierarquia de autoridade** (MANIFEST §24): decisão registrada do proprietário > `MANIFEST.md` > ADRs aprovados > `ARCHITECTURE.md` e contracts > SPEC > ROADMAP > tarefa/Issue > handoffs > comentários informais > inferências.
 
 ## 4. Comunicação e handoff

@@ -50,6 +50,7 @@ Lunet2D → Urbe             (NN-002)
 Product → Product          (integração só por contract/capability/adapter)
 *       → Hub (obrigatório) (NN-003)
 Tool / componente compartilhado → Product/Host concreto (NN-007, MANIFEST §12)
+*       → Portal (qualquer)   (ADD-0001: o portal nunca é dependência)
 ```
 
 **Estado da fiscalização:** as regras acima são verificadas hoje sobre o **grafo declarado** em `ecosystem.json` (`CHK-BOUNDARIES`). A verificação sobre **referências reais de código** (csproj, package.json, imports) é planejada para a Fase 1, quando houver código importado (ver [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json)).
@@ -69,10 +70,24 @@ Exceções exigem ADR e alteração explícita do check.
 | Decisões arquiteturais | `docs/adr/` | |
 | Fases e tarefas | `ROADMAP.md` | Autoridade do estado *vivo* de tarefas: pendente (DEC-0003). |
 | Registros de trabalho de agentes | `docs/governance/handoffs/` | |
+| Decisões/adendos do proprietário (texto integral) | `docs/governance/addenda/` | Nível 1 da hierarquia (MANIFEST §24); referenciados por `decisions.json`. |
+| Estado exibido no portal web | **nenhuma** — `site/data/ecosystem-status.json` é projeção (`authority: false`) | Gerada no CI a partir das fontes acima; não versionada; validada por `CHK-PORTAL`. |
 
 ## 6. Runtime e GitHub (MANIFEST §14, §17, NN-015)
 
 GitHub é registro de desenvolvimento e distribuição, **não** barramento de runtime. O protocolo de comunicação runtime (envelope versionado, command/event/request/response, discovery, permissões, erros, cancelamento, progresso, transporte desacoplado) será especificado por ADR **antes** da primeira dependência séria entre processos (Fase 5).
+
+## 6.1 Superfícies humanas: GitHub, Portal e Hub (ADD-0001, ADR-0005)
+
+| Superfície | Papel |
+|------------|-------|
+| GitHub | fonte técnica |
+| Portal web (GitHub Pages, `site/`) | portal humano de desenvolvimento, distribuição, documentação, testes e recuperação |
+| Ecosystem Hub | control plane completo |
+
+"Estou com o celular e quero saber o estado do Ecosystem, baixar/testar um aplicativo ou recuperar o próprio Hub" → **Portal**. "Quero controlar profundamente o ecossistema, workspaces, capabilities, agentes, instalações, atualizações e integrações" → **Hub**.
+
+O portal é projeção do estado canônico, nunca fonte de verdade; não é dependência de runtime de nenhum componente; não implementa nem duplica o Hub; e continua existindo depois do Hub como mecanismo de recuperação independente. Detalhes: [`docs/architecture/portal.md`](docs/architecture/portal.md).
 
 ## 7. Permissões (MANIFEST §30, NN-016)
 
@@ -88,4 +103,6 @@ Os itens abaixo são deliberadamente abertos. Nenhum agente deve tratá-los como
 - técnica de importação do histórico Git (DEC-0002);
 - autoridade do estado vivo de tarefas (DEC-0003);
 - confirmação dos repositórios de origem (DEC-0004);
+- estratégia de publicação do Urbe Web no ecossistema (decidida na auditoria/migração do Urbe, P1-10 — não presumir);
+- formato dos registros canônicos de validação por build e das páginas `/testing/<componente>/<build>/` (P1-11);
 - estrutura interna de `apps/`, `platform/`, `workspaces/` e `tools/` — os diretórios só serão criados quando tiverem conteúdo com função (ADR-0004).

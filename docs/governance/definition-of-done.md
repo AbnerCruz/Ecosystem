@@ -52,3 +52,17 @@ Quando aplicável, "done" exige:
 - [ ] validação humana quando o comportamento depende de dispositivo ou experiência visual.
 
 `CHK-HANDOFFS` recusa handoff `done` sem verificação, com verificação pendente/falha, sem evidência ou com bloqueios abertos.
+
+## 4. Estados de validação de build
+
+Aplicam-se a builds/artefatos candidatos (ex.: um APK do Lunet2D) e são o que o portal e, no futuro, o Hub apresentam (ADD-0001, ADR-0005):
+
+| Estado | Significado | Pode vir só de CI? |
+|--------|-------------|--------------------|
+| `UNKNOWN` | não há registro canônico de validação | — |
+| `IMPLEMENTED` | a mudança existe no build | sim |
+| `AUTOMATED_VERIFIED` | verificações automáticas passaram para este build | sim |
+| `HUMAN_VALIDATION_PENDING` | o requisito exige validação humana (§2) e ela ainda não aconteceu | — |
+| `VALIDATED` | um humano validou, com evidência registrada | **nunca** |
+
+CI verde leva no máximo a `AUTOMATED_VERIFIED`. Nenhuma superfície pode apresentar CI verde como "validado no aparelho" (NN-017). Os registros canônicos de validação por build ainda não existem (ROADMAP P1-11); até lá, produtos aparecem como `UNKNOWN`.

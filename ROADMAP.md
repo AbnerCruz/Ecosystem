@@ -34,6 +34,13 @@ Objetivo: monorepo com documentos normativos, `ecosystem.json`, processo de ADR,
 - [x] P0-10 — Estratégia de migração documentada antes de qualquer importação.
 - [~] P0-11 — Ratificação dos ADRs de fundação pelo proprietário (DEC-0001).
 
+Portal web (ADD-0001, ADR-0005, [`docs/architecture/portal.md`](docs/architecture/portal.md)):
+
+- [x] P0-12 — `site/` com página simples, mobile-first, mostrando Ecosystem, Lunet2D, Urbe e Hub e links para a documentação canônica; dados não automatizados marcados como "não disponível".
+- [x] P0-13 — Contrato da projeção `ecosystem-status/1`, gerador em C# e `CHK-PORTAL` contra divergência e dados canônicos escritos à mão.
+- [~] P0-14 — Workflow `pages.yml` criado; primeira publicação depende de o proprietário habilitar *Settings → Pages → Source: GitHub Actions*.
+- [~] P0-15 — Validação humana do portal no celular (layout, toque, legibilidade) — NN-017.
+
 **Gate:** um agente novo consegue entrar no repositório e compreender corretamente o produto, a autoridade documental e o processo de trabalho sem depender de uma conversa anterior.
 *Estado do gate:* aguardando revisão humana ou de agente independente (não pode ser autodeclarado pelo agente fundador).
 
@@ -49,6 +56,9 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 - [ ] P1-6 — Restaurar build/testes/workflows/releases de cada produto; pipelines seletivos por path (NN-014).
 - [ ] P1-7 — Architecture tests sobre referências reais de código (NN-002, NN-003).
 - [ ] P1-8 — Auditoria pós-migração: commits/tags da origem presentes (NN-012).
+- [ ] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados).
+- [ ] P1-10 — Urbe Web: decidir, com base no inventário P1-2, como o Urbe Web é publicado no monorepo sem quebrar a publicação atual, e expor rota previsível no portal.
+- [ ] P1-11 — Registros canônicos de validação por build (contrato + estados de `definition-of-done.md` §4) e páginas `/testing/<componente>/<build>/` geradas deles.
 
 **Gate:** Lunet2D e Urbe vivem no monorepo sem regressão conhecida e continuam possuindo lifecycles próprios.
 
@@ -61,6 +71,8 @@ Objetivo: formalizar `ComponentManifest`, `Capability`, provider/consumer, versi
 ## Fase 3 — Hub read-only
 
 Objetivo: Hub inicial em C#; lê `ecosystem.json`; mostra Lunet2D e Urbe; integra leitura do GitHub; Past / Now / Next; CI, releases, branches, PRs e tarefas.
+
+- [ ] P3-1 — Portal lista as releases do Hub para instalação e recuperação (o portal continua existindo como mecanismo independente).
 
 **Gate:** no celular, o proprietário abre o Hub e compreende o estado atual dos dois produtos sem abrir GitHub manualmente. *(requer validação humana em aparelho)*
 

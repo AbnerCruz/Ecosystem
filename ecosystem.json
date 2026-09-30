@@ -4,6 +4,7 @@
   "ecosystem": {
     "id": "ecosystem",
     "name": "Ecosystem",
+    "repository": "https://github.com/AbnerCruz/Ecosystem",
     "phase": "phase-0",
     "normative": {
       "manifest": "MANIFEST.md",
@@ -48,6 +49,19 @@
       "description": "Control Plane, Host geral, Registry e Launcher do ecossistema (MANIFEST §5.3). Nunca dependência essencial dos produtos (NN-003).",
       "owners": ["AbnerCruz"],
       "version": { "authority": "undecided" },
+      "dependencies": []
+    },
+    "portal": {
+      "name": "Portal web (GitHub Pages)",
+      "type": "portal",
+      "language": "javascript",
+      "path": "site",
+      "status": "active",
+      "description": "Portal humano de desenvolvimento, distribuição, documentação, testes e recuperação. Projeção do estado canônico — nunca fonte de verdade; não é o Hub nem dependência de runtime de nenhum componente (ADD-0001, ADR-0005).",
+      "publicUrl": "https://abnercruz.github.io/Ecosystem/",
+      "owners": ["AbnerCruz"],
+      "docs": { "readme": "docs/architecture/portal.md" },
+      "commands": { "build": "dotnet run site/generator/GenerateStatus.cs" },
       "dependencies": []
     },
     "consistency-checks": {

@@ -12,10 +12,14 @@
     "ecosystem": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "phase", "normative"],
+      "required": ["id", "name", "repository", "phase", "normative"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "name": { "type": "string", "minLength": 1 },
+        "repository": {
+          "description": "Repositório canônico do monorepo. Base dos links derivados (ex.: portal).",
+          "type": "string", "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
         "phase": { "type": "string", "pattern": "^phase-[0-9]+$" },
         "normative": {
           "description": "Documentos normativos da raiz. Cada caminho deve existir.",
@@ -50,8 +54,8 @@
       "properties": {
         "name": { "type": "string", "minLength": 1 },
         "type": {
-          "description": "Tipos de MANIFEST §6, mais 'check' (verificação interna do repositório; ver ADR-0002).",
-          "enum": ["product", "tool", "service", "library", "workspace", "adapter", "contract", "check"]
+          "description": "Tipos de MANIFEST §6, mais 'check' (verificação interna do repositório; ADR-0002) e 'portal' (superfície web humana publicada; ADR-0005). Nenhum componente pode depender de um 'portal'.",
+          "enum": ["product", "tool", "service", "library", "workspace", "adapter", "contract", "check", "portal"]
         },
         "language": { "enum": ["csharp", "javascript", "typescript", "none"] },
         "path": { "$ref": "#/$defs/path" },
@@ -60,6 +64,10 @@
           "enum": ["planned", "not-migrated", "migrating", "active", "deprecated", "archived"]
         },
         "description": { "type": "string", "minLength": 1 },
+        "publicUrl": {
+          "description": "URL pública onde o componente é publicado (ex.: portal no GitHub Pages).",
+          "type": "string", "pattern": "^https://"
+        },
         "owners": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
         "source": {
           "description": "Repositório de origem antes da migração. Enquanto o componente não estiver migrado, ele é a autoridade do código, da versão e do histórico.",

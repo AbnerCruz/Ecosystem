@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ecosystem — Portal</title>
+  <meta name="description" content="Portal humano de desenvolvimento, distribuição, documentação, testes e recuperação do Ecosystem.">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="top">
+    <h1>Ecosystem</h1>
+    <p class="meta" id="meta">Carregando projeção…</p>
+  </header>
+
+  <main>
+    <aside class="notice" role="note">
+      <strong>Portal, não Hub.</strong>
+      Esta página é uma <em>projeção</em> gerada a partir das fontes canônicas do repositório — nunca é fonte de verdade.
+      Campos marcados <span class="na">não disponível</span> ainda não possuem fonte automática.
+      CI verde é verificação automática; não significa validação no aparelho.
+    </aside>
+
+    <section aria-labelledby="h-apps">
+      <h2 id="h-apps">Apps</h2>
+      <div id="apps" class="cards"></div>
+    </section>
+
+    <section aria-labelledby="h-validations">
+      <h2 id="h-validations">Validações pendentes</h2>
+      <ul id="validations" class="list"></ul>
+    </section>
+
+    <section aria-labelledby="h-recovery">
+      <h2 id="h-recovery">Recuperação</h2>
+      <p class="hint">Se o Hub estiver ausente ou quebrado, os produtos e seus artefatos continuam acessíveis por aqui.</p>
+      <ul id="recovery" class="list"></ul>
+    </section>
+
+    <section aria-labelledby="h-docs">
+      <h2 id="h-docs">Documentação</h2>
+      <ul id="docs" class="list links"></ul>
+    </section>
+  </main>
+
+  <footer id="footer" class="meta"></footer>
+</body>
+</html>
