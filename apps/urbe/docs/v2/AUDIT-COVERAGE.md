@@ -8,15 +8,15 @@
 |---|---|---|---|---|
 | OD-01 sem build; launcher futuro | CONSOLIDADA | REQ-025 (impl.), REQ-033/034 (ADIADOS) | 0001 | RM-F0-07/08/09, RM-F5-05 |
 | OD-02 plugins full-trust | CONSOLIDADA | REQ-020, REQ-051, REQ-032; REQ-052 ADIADO | 0002 | RM-F3-04/05/06, RM-F2-17 |
-| OD-03 licença fonte-disponível | CONSOLIDADA (texto pendente) | REQ-017, REQ-080 | 0003 | RM-F4-11/12`[!]`/13 |
+| OD-03 licença: todos os direitos reservados | CONSOLIDADA | REQ-017, REQ-080 | 0003 | RM-F4-11/12/13 |
 | OD-04 compat 1.x, escrita 2.x + forward | CONSOLIDADA | REQ-007, 023, 035–038, 082 | 0004 | RM-F1-01…07, RM-F4-14 |
-| OD-05 release por tag | PROPOSTA | REQ-006, 019, 065, 066, 081 | 0005 | RM-F0-06/14/15, RM-F4-10 |
+| OD-05 release por tag | CONSOLIDADA | REQ-006, 019, 065, 066, 081 | 0005 | RM-F0-06/14/15, RM-F4-10 |
 | OD-06 vault único / Android | ADIADA | REQ-045; REQ-077 ADIADO | — | RM-F1-19 |
-| OD-07 estrutura de pastas | PROPOSTA | SPEC §4 (sem REQ próprio; regida por REQ-003/012) | — | RM-F0-13 |
-| OD-08 chaves de IA | PROPOSTA | REQ-021, 053, 060; REQ-054 ADIADO | 0007 | RM-F3-07/08/17 |
+| OD-07 estrutura de pastas | CONSOLIDADA (aprovada) | SPEC §4 (sem REQ próprio; regida por REQ-003/012) | — | RM-F0-13 |
+| OD-08 chaves de IA | CONSOLIDADA | REQ-021, 053, 060; REQ-054 ADIADO | 0007 | RM-F3-07/08/17 |
 | OD-09 budgets | ADIADA com gate | REQ-009, 070, 071 | — | RM-F0-10/11/12, RM-F5-02 |
-| OD-10 identidade em sidecar | PROPOSTA | REQ-013, 014, 039, 041, 042 | 0006 | RM-F1-08/09/14/15/16 |
-| OD-11 arquivos `*.v2.json` | PROPOSTA | REQ-035 | 0004 | RM-F1-05 |
+| OD-10 identidade em sidecar | CONSOLIDADA | REQ-013, 014, 039, 041, 042 | 0006 | RM-F1-08/09/14/15/16 |
+| OD-11 arquivos `*.v2.json` | CONSOLIDADA | REQ-035 | 0004 | RM-F1-05 |
 Resultado: nenhuma decisão sem REQ; nenhuma decisão consolidada contradita por REQ.
 
 ## 2. Achados do AUDIT-1X × requisitos
@@ -100,14 +100,14 @@ Estado alvo final: `app.js` só composição (RM-F2-19).
 | Sem smoke de instalador/APK | 069 | RM-F4-09 |
 
 ## 7. ROADMAP × gates
-Cada item tem exatamente um gate G0–G6 (validado por `check-traceability`). Ordem de dependências validada (nenhuma dependência inexistente). Itens bloqueados: `RM-F4-12` `[!]` (texto de `LICENSE`, OD-03). Itens concluídos nesta missão: `RM-F0-01`, `RM-F0-02` (`[x]`, com verificador executado). Todos os demais: `[ ]`.
+Cada item tem exatamente um gate G0–G6 (validado por `check-traceability`). Ordem de dependências validada (nenhuma dependência inexistente). Nenhum item bloqueado (a licença foi decidida). Itens concluídos nesta missão: `RM-F0-01`, `RM-F0-02` (`[x]`, com verificador executado). Todos os demais: `[ ]`.
 
 ## 8. Lacunas encontradas na auditoria e correções
 1. A verificação mecânica inicial acusou ausência de `AGENTS.md`/`AGENTSCHAT.md` (REQ-088) → criados e referenciados em CONTRIBUTING e `docs/v2/README.md`.
 2. SPEC §12 listava adapters de persistência em G2 enquanto o ROADMAP os põe em F1/G1 (dependência de `REQ-040`) → G1 e G2 da SPEC alinhados ao ROADMAP.
 3. `REQ-007` aparecia em duas cláusulas → mantida uma cláusula primária (§1.2) e a outra reduzida a referência.
 4. Itens de extração de hotspots (REQ-022) não foram criados: o REQ exige apenas **avaliação**; extrações resultantes entram como novos REQ (o ledger só cresce).
-5. Pontos ainda dependentes do proprietário (não são lacunas de cobertura): OD-03 (texto da licença), OD-05/10/11 (propostas), aprovação dos budgets (RM-F5-02).
+5. Aprovações do proprietário (2026-09-30): licença, OD-05/08/10/11, SPEC e ROADMAP. Resta apenas a fixação dos budgets absolutos após o baseline (RM-F5-02).
 
 ## 9. Conclusão
-Cobertura mecânica: todo REQ IMPLEMENTAR possui cláusula na SPEC, ao menos um item no ROADMAP e linha na TRACEABILITY. Cobertura semântica: nenhuma decisão, achado de auditoria, risco de dados, adapter legacy ou lacuna de teste conhecida ficou sem REQ e item. O planejamento está **pronto para aprovação do proprietário**; a implementação da 2.0 **não foi iniciada**.
+Cobertura mecânica: todo REQ IMPLEMENTAR possui cláusula na SPEC, ao menos um item no ROADMAP e linha na TRACEABILITY. Cobertura semântica: nenhuma decisão, achado de auditoria, risco de dados, adapter legacy ou lacuna de teste conhecida ficou sem REQ e item. O planejamento está **aprovado pelo proprietário (2026-09-30)**; a implementação da 2.0 **não foi iniciada**.

@@ -38,7 +38,7 @@ Na execução, cada item segue: `IMPLEMENTAR → TESTAR → VERIFICAR → CORRIG
 6. Acrescente entrada em `AGENTSCHAT.md` (formato abaixo) e pare no limite do item.
 
 ## 5. O que sempre confirmar com o proprietário
-Licença e distribuição pública; mecanismo de release/tags; budgets absolutos de performance; qualquer quebra de compatibilidade de dados; remoção de funcionalidade da 1.x; aprovação de propostas pendentes (OD-05, OD-10, OD-11) e do texto da `LICENSE` (OD-03).
+Budgets absolutos de performance (após o baseline); qualquer quebra de compatibilidade de dados; remoção de funcionalidade da 1.x; mudança de qualquer decisão consolidada (ADR-0001..0007); merge/publicação que não estejam autorizados.
 
 ## 6. Limites
 - Fora do escopo da 2.0: reescrita geral, bundler/ES modules (ADR-0001), launcher multi-app, isolamento de plugins, i18n, macOS/Linux, sync/nuvem próprios (`docs/v2/SPEC.md` §13).

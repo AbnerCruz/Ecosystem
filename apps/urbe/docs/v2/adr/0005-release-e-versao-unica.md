@@ -1,6 +1,6 @@
 # ADR-0005 — Release por tag e fonte única de versão
 
-- Status: Proposed (pendente de confirmação do proprietário — OD-05)
+- Status: Accepted (aprovado pelo proprietário em 2026-09-30)
 - Data: 2026-09-30
 - Requisitos: REQ-006, REQ-019, REQ-065, REQ-066, REQ-081
 - Decisores: Abner P. S. Cruz (proprietário)

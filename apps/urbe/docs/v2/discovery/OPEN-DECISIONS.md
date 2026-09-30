@@ -1,7 +1,7 @@
 # Decisões da descoberta e gate da SPEC
 
 > Descoberta da issue #33. Estados: **CONSOLIDADA** (decidida pelo proprietário nesta descoberta), **PROPOSTA** (recomendação técnica adotada na SPEC como padrão, pendente de confirmação/veto do proprietário), **ADIADA** (com gate explícito e justificativa).
-> Decisões consolidadas em 2026-09-30 pelo proprietário (respostas registradas em `AGENTSCHAT.md`).
+> Decisões consolidadas em 2026-09-30 pelo proprietário (respostas registradas em `AGENTSCHAT.md`). Na mesma data o proprietário aprovou as propostas OD-05, OD-08, OD-10 e OD-11, a SPEC e o ROADMAP, e definiu a licença (OD-03).
 
 ## 1. Decisões consolidadas
 
@@ -16,17 +16,16 @@
 - **Decisão (proprietário):** A.
 - Consequências: REQ-051 e REQ-032 implementar; REQ-052 ADIADO.
 
-### OD-03 — Licença/distribuição — CONSOLIDADA (direção) → ADR-0003
+### OD-03 — Licença/distribuição — CONSOLIDADA → ADR-0003
 - Alternativas: adiar com bloqueio; MIT; fonte-disponível/proprietária; GPL/AGPL.
-- **Decisão (proprietário):** fonte-disponível/proprietária.
-- **Pendência residual (bloqueia distribuição pública, não o desenvolvimento):** texto final de `LICENSE` (permissões de uso, redistribuição, contribuições/CLA). Pergunta: *"Quais permissões o `LICENSE` deve conceder (uso pessoal, modificação privada, redistribuição, contribuições) e em nome de quem?"* → REQ-080, gate G4.
+- **Decisão (proprietário, 2026-09-30):** **todos os direitos reservados; tudo do proprietário** (Abner P. S. Cruz). O `LICENSE` é o de direitos reservados, sem concessão de uso, modificação ou redistribuição a terceiros. Sem pendência residual; REQ-080 segue para execução (RM-F4-11/12).
 
 ### OD-04 — Compatibilidade de escrita 1.x — CONSOLIDADA → ADR-0004
 - Alternativas: ler tudo + escrever 2.x com proteção forward; escrever compatível com 1.x durante toda a 2.0; adiar.
 - **Decisão (proprietário):** ler tudo da 1.x; escrever 2.x com proteção forward.
 - Detalhe [P]: OD-11.
 
-## 2. Propostas recomendadas (adotadas na SPEC; sujeitas a veto)
+## 2. Propostas recomendadas — **APROVADAS pelo proprietário em 2026-09-30** (OD-05, OD-08, OD-10, OD-11) ou adiadas com gate (OD-06, OD-09)
 
 ### OD-05 — Mecanismo de release → ADR-0005
 - Contexto: push em `main` com bump publica Release (AUD-006).
@@ -76,7 +75,7 @@ Nenhum REQ conflita. Tensões resolvidas:
 | 1.8.2 já em campo continua vulnerável a R-1 | comunicação (REQ-082); release 1.8.x de aviso opcional [P, fora desta missão] |
 | Escrita dupla do mapa sem guarda de concorrência | REQ-040 antes de REQ-041/042 |
 | Falta de E2E antes de refatorar | G0/G1 bloqueiam extrações até haver testes de produção |
-| Licença sem texto final | gate G4 bloqueado até OD-03 |
+| Licença | resolvida (OD-03): todos os direitos reservados |
 | Volume do ROADMAP (várias fases) | dependências explícitas e gates por fase |
 
 ## 5. Gate da descoberta (checklist para liberar a SPEC)
@@ -88,11 +87,11 @@ Nenhum REQ conflita. Tensões resolvidas:
 | Matriz de testes | ✅ | `TEST-MATRIX.md` |
 | Performance (baseline definida, budgets adiados com gate) | ✅ | `PERFORMANCE.md` |
 | Threat model | ✅ | `THREAT-MODEL.md` |
-| Plataformas, distribuição, licença | ✅ (texto de licença pendente → gate G4) | `PLATFORMS.md` |
+| Plataformas, distribuição, licença | ✅ (licença: todos os direitos reservados) | `PLATFORMS.md` |
 | Produto/UX e critérios de sucesso | ✅ (propostos; aprovados na aprovação da SPEC) | `PRODUCT-UX.md` |
-| Decisões abertas resolvidas ou adiadas | ✅ OD-01..04 consolidadas; OD-05,10,11 propostas; OD-06,09 adiadas com gate | este documento |
+| Decisões abertas resolvidas ou adiadas | ✅ OD-01..05, 08, 10, 11 consolidadas/aprovadas; OD-06, 09 adiadas com gate | este documento |
 | Requirement Ledger atualizado | ✅ REQ-025..088, nenhum removido | `REQUIREMENTS.md` |
 | Conflitos resolvidos/adiados | ✅ §3 | este documento |
 | Riscos conhecidos | ✅ §4 | este documento |
 
-**Resultado:** gate liberado para produzir `SPEC.md`, com três propostas (OD-05, OD-10, OD-11) e um texto (OD-03) sujeitos à confirmação do proprietário na aprovação da SPEC. Nenhuma delas impede escrever a SPEC; três tornam-se gates de itens específicos do ROADMAP.
+**Resultado:** gate liberado; SPEC e ROADMAP **aprovados pelo proprietário em 2026-09-30**. Sem pendências bloqueantes. Permanecem adiadas com gate: OD-06 (SAF/vaults múltiplos) e OD-09 (budgets absolutos, derivados do baseline em RM-F5-02).

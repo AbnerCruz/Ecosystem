@@ -1,6 +1,6 @@
 # ADR-0004 — Compatibilidade 1.x → 2.x e proteção forward
 
-- Status: Accepted (direção); detalhes por arquivo Proposed (OD-11)
+- Status: Accepted (aprovado pelo proprietário em 2026-09-30)
 - Data: 2026-09-30
 - Requisitos: REQ-007, REQ-023, REQ-035, REQ-036, REQ-037, REQ-038, REQ-082
 - Decisores: Abner P. S. Cruz (proprietário)

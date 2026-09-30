@@ -35,7 +35,7 @@
 | REQ-015 | §3.1 | F0 | RM-F0-09 — Validação automática de boundaries de camadas | [ ] | Teste negativo com dependência proibida injetada. | G0 |
 | REQ-016 | §9 | F4 | RM-F4-05 — Cenários E2E críticos (web) | [ ] | Cenários passam em Chromium (D1) e emulação D2. | G4 |
 | REQ-016 | §9 | F4 | RM-F4-08 — `GATES.md`: teste → gate | [ ] | `check-traceability` valida que testes citados existem. | G4 |
-| REQ-017 | §10.3 | F4 | RM-F4-12 — `LICENSE` fonte-disponível/proprietária | [!] | `check-license` verde. | G4 |
+| REQ-017 | §10.3 | F4 | RM-F4-12 — `LICENSE` de todos os direitos reservados | [ ] | `check-license` verde. | G4 |
 | REQ-017 | §10.3 | F4 | RM-F4-13 — Registro da decisão de distribuição | [ ] | Revisão. | G4 |
 | REQ-018 | §1.2 | F0 | RM-F0-16 — Ciclo de vida de branches e backlog de issues | [ ] | Lista de branches remotas após limpeza só contém `main`, `chore/*` e trabalho ativo. | G0 |
 | REQ-019 | §10.2 | F0 | RM-F0-06 — Fonte única de versão (`tools/version.mjs`) | [ ] | `tests/version.mjs` (drift injetado falha); `consistency.mjs` adaptado. | G0 |
@@ -130,7 +130,7 @@
 | REQ-076 | §6.2 | F4 | RM-F4-02 — Suíte de conformidade `native-contract` por adapter | [ ] | Falha se capacidade declarada não funcionar. | G4 |
 | REQ-079 | §6.2 | F4 | RM-F4-03 — Paridade de exportação no Electron (`saveFile`) | [ ] | Teste de `saveFile` (caminho, cancelamento). | G4 |
 | REQ-080 | §10.3 | F4 | RM-F4-11 — `THIRD-PARTY-NOTICES` | [ ] | `tools/check-license.mjs` valida cobertura das dependências. | G4 |
-| REQ-080 | §10.3 | F4 | RM-F4-12 — `LICENSE` fonte-disponível/proprietária | [!] | `check-license` verde. | G4 |
+| REQ-080 | §10.3 | F4 | RM-F4-12 — `LICENSE` de todos os direitos reservados | [ ] | `check-license` verde. | G4 |
 | REQ-081 | §10.2 | F4 | RM-F4-10 — Política de release, canais e rollback | [ ] | Dry-run de release e de rollback em repositório de teste. | G4 |
 | REQ-081 | §10.2 | F6 | RM-F6-12 — Release candidato 2.0 | [ ] | CI + smoke instalador/APK. | G6 |
 | REQ-082 | §10.5 | F4 | RM-F4-14 — Guia de migração 1.x→2.x e aviso no app | [ ] | E2E: abrir fixture 1.x mostra aviso e cria backup. | G4 |

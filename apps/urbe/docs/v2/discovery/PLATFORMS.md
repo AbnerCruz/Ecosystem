@@ -34,7 +34,7 @@
 ## 4. Licença e distribuição [F→C]
 - [F] `package.json` `license:"UNLICENSED"`; **não há `LICENSE` na raiz**; repositório público (AUD-016).
 - [F] Dependências embutidas: KaTeX 0.16.x MIT (`vendor/katex/LICENSE`, 20 fontes), JSZip 3.10.1 (dual MIT/GPLv3) e pako (MIT) em `src/legacy/bootstrap.js` com cabeçalhos preservados; PDF.js (Apache-2.0) por CDN em runtime; Electron/Chromium, Capacitor, chokidar, electron-updater em node_modules (avisos no instalador [I]). **Não há `THIRD-PARTY`.**
-- **[C]** (decisão do proprietário, ADR-0003): licença **fonte-disponível/proprietária**. Consequências: `LICENSE` explícito de direitos reservados com permissões declaradas (leitura/uso pessoal), `THIRD-PARTY-NOTICES` (JSZip sob MIT), cabeçalho no README e `package.json` coerente (`SEE LICENSE IN LICENSE`). **[bloqueio residual]** o texto final da licença (permissões de uso/redistribuição/contribuição, CLA) depende do proprietário; até lá o gate G4 de distribuição pública fica **BLOQUEADO** (REQ-080), sem impedir o desenvolvimento.
+- **[C]** (decisão do proprietário, ADR-0003): licença de **todos os direitos reservados**. Consequências: `LICENSE` explícito de direitos reservados com permissões declaradas (leitura/uso pessoal), `THIRD-PARTY-NOTICES` (JSZip sob MIT), cabeçalho no README e `package.json` coerente (`SEE LICENSE IN LICENSE`). **Decisão final (2026-09-30):** todos os direitos reservados, tudo do proprietário; sem bloqueio residual (REQ-080).
 
 ## 5. Política de release e versionamento [P recomendada → ADR-0005]
 - SemVer com sufixo de canal (`2.0.0-beta.N`, `2.0.0`).

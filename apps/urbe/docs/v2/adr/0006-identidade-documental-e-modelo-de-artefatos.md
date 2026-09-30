@@ -1,6 +1,6 @@
 # ADR-0006 — Identidade documental em sidecar e modelo de artefatos
 
-- Status: Proposed (pendente de confirmação do proprietário — OD-10)
+- Status: Accepted (aprovado pelo proprietário em 2026-09-30)
 - Data: 2026-09-30
 - Requisitos: REQ-013, REQ-014, REQ-039, REQ-041, REQ-042
 - Decisores: Abner P. S. Cruz (proprietário)

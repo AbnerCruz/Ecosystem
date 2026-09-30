@@ -1,6 +1,6 @@
 # Requirement Ledger — Urbe 2.0
 
-> Status: descoberta concluída (issue #33); ledger atualizado com REQ-025..REQ-088. Aguardando aprovação da SPEC.
+> Status: descoberta concluída (issue #33); ledger com REQ-001..REQ-088. SPEC e ROADMAP aprovados pelo proprietário em 2026-09-30.
 >
 > Este ledger mantém identidades estáveis para decisões e requisitos. Ele pode crescer. Itens não desaparecem silenciosamente.
 
@@ -134,7 +134,7 @@ Todos os REQ-001..024 acima permanecem intactos e IMPLEMENTAR. Os requisitos aba
 
 | ID | Classe | Estado | Requisito | Origem |
 |---|---|---|---|---|
-| REQ-080 | DISTRIBUTION | IMPLEMENTAR | Licença fonte-disponível/proprietária explícita (`LICENSE`), `THIRD-PARTY-NOTICES` (KaTeX, JSZip, pako, PDF.js, Electron/Chromium, Capacitor) e `package.json` coerente. Gate: texto final aprovado pelo proprietário. | concretiza REQ-017; ADR-0003 |
+| REQ-080 | DISTRIBUTION | IMPLEMENTAR | Licença de todos os direitos reservados (`LICENSE`), `THIRD-PARTY-NOTICES` (KaTeX, JSZip, pako, PDF.js, Electron/Chromium, Capacitor) e `package.json` coerente (`UNLICENSED`/`SEE LICENSE IN LICENSE`). | concretiza REQ-017; ADR-0003 |
 | REQ-081 | DISTRIBUTION | IMPLEMENTAR | Política de versionamento e canais (SemVer, beta/stable), release notes derivadas do CHANGELOG e procedimento de rollback documentados e testados. | ADR-0005 |
 | REQ-082 | DISTRIBUTION | IMPLEMENTAR | Caminho de migração 1.x → 2.x documentado (leitura total da 1.x, escrita 2.x com proteção forward, rollback via backup) e comunicado no app/tutorial, incluindo aviso SmartScreen/APK. | ADR-0004 |
 
@@ -160,13 +160,13 @@ Todos os REQ-001..024 acima permanecem intactos e IMPLEMENTAR. Os requisitos aba
 |---|---|---|
 | Runtime sem build vs ES modules/bundler | **CONSOLIDADA**: sem build na 2.0-beta; launcher futuro ADIADO (REQ-033, REQ-034) | ADR-0001 |
 | Modelo final de plugins | **CONSOLIDADA**: full-trust aprovado com UX honesta; isolamento ADIADO (REQ-051, REQ-052) | ADR-0002 |
-| Política de licença | **CONSOLIDADA (direção)**: fonte-disponível/proprietária; texto final pendente do proprietário (REQ-080) | ADR-0003 |
-| Mecanismo exato de release | **PROPOSTA recomendada**, a confirmar pelo proprietário: tag/workflow manual com `needs` de testes (REQ-066, REQ-081) | ADR-0005 |
+| Política de licença | **CONSOLIDADA**: todos os direitos reservados, tudo do proprietário (REQ-080) | ADR-0003 |
+| Mecanismo exato de release | **CONSOLIDADA (aprovada 2026-09-30)**: tag/workflow manual com `needs` de testes (REQ-066, REQ-081) | ADR-0005 |
 | Estrutura física de pastas | **CONSOLIDADA (direção)**: convergência por subsistema, sem mover em massa; movimentos só junto com o REQ que os exige | SPEC §2 |
 | Compatibilidade de escrita com 1.x | **CONSOLIDADA**: ler tudo; escrever 2.x com proteção forward e backup (REQ-035, REQ-038, REQ-082) | ADR-0004 |
-| Criptografia/armazenamento de chaves | **CONSOLIDADA (direção)**: mitigações agora (REQ-053); cripto nativa ADIADA (REQ-054) | ADR-0007 |
+| Criptografia/armazenamento de chaves | **CONSOLIDADA (aprovada 2026-09-30)**: mitigações agora (REQ-053); cripto nativa ADIADA (REQ-054) | ADR-0007 |
 | Metas numéricas de performance | **ADIADA com gate**: medir baseline primeiro (REQ-070) e fixar budgets (REQ-071) | PERFORMANCE |
-| Identidade em sidecar vs frontmatter | **PROPOSTA recomendada**: sidecar `.urbe/` (REQ-042) | ADR-0006 |
+| Identidade em sidecar vs frontmatter | **CONSOLIDADA (aprovada 2026-09-30)**: sidecar `.urbe/` (REQ-042) | ADR-0006 |
 
 Detalhes, alternativas e perguntas objetivas: `docs/v2/discovery/OPEN-DECISIONS.md`.
 

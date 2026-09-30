@@ -1,6 +1,6 @@
 # ADR-0007 — Credenciais de IA e Content-Security-Policy
 
-- Status: Proposed (pendente de confirmação do proprietário — OD-08)
+- Status: Accepted (aprovado pelo proprietário em 2026-09-30)
 - Data: 2026-09-30
 - Requisitos: REQ-021, REQ-050, REQ-053, REQ-054, REQ-060
 - Decisores: Abner P. S. Cruz (proprietário)

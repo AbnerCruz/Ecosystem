@@ -1,6 +1,6 @@
-# ADR-0003 — Licença: fonte-disponível/proprietária
+# ADR-0003 — Licença: todos os direitos reservados
 
-- Status: Accepted (direção); texto final pendente
+- Status: Accepted (aprovado pelo proprietário em 2026-09-30)
 - Data: 2026-09-30
 - Requisitos: REQ-017, REQ-080
 - Decisores: Abner P. S. Cruz (proprietário)
@@ -35,7 +35,7 @@ Mantém ambiguidade.
 
 ## Decisão
 
-Adotar **B**. Criar `LICENSE` de direitos reservados com as permissões que o proprietário definir, `THIRD-PARTY-NOTICES` (JSZip sob MIT, KaTeX MIT, pako MIT, PDF.js Apache-2.0, Electron/Chromium e Capacitor) e `package.json` com `"license": "SEE LICENSE IN LICENSE"`. **O texto final depende do proprietário** (OD-03); enquanto ausente, o gate G4 (distribuição pública) permanece BLOQUEADO, sem impedir desenvolvimento.
+Adotar **B**, na forma de **todos os direitos reservados** (decisão do proprietário, 2026-09-30: "tudo meu"). Criar `LICENSE` de direitos reservados em nome de Abner P. S. Cruz, sem concessão a terceiros; `THIRD-PARTY-NOTICES` (JSZip sob MIT, KaTeX MIT, pako MIT, PDF.js Apache-2.0, Electron/Chromium e Capacitor) e `package.json` coerente. Sem pendência residual.
 
 ## Consequências positivas
 

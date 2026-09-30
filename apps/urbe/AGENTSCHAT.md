@@ -5,6 +5,13 @@
 
 ---
 
+### 2026-09-30 — Claude (Sonnet 5.5) — aprovação do proprietário e integração na `main`
+- **Estado:** SPEC e ROADMAP **aprovados**; OD-05, OD-08, OD-10, OD-11 **aprovadas**; licença **definida**. Implementação da 2.0 continua NÃO iniciada.
+- **Decisões do proprietário (mensagem de 2026-09-30):** "Todos os direitos reservados, tudo meu" (OD-03 → ADR-0003); "Se estiver validado e funcionando é pra entrar na main sim" (autoriza a integração desta branch na `main` após validação: CI verde e sem alteração de runtime); "De resto aprova tudo" (SPEC, ROADMAP, ADR-0005/0006/0007, OD-05/08/10/11).
+- **Feito:** ADRs 0003–0007 → Accepted; `RM-F4-12` desbloqueado (`[ ]`); documentos atualizados; TRACEABILITY regenerada.
+- **Pendências:** budgets absolutos de performance (RM-F5-02, após o baseline); OD-06 e OD-09 seguem adiadas com gate.
+- **Próximos passos:** iniciar F0 (RM-F0-03…18) em sessão própria; RM-F0-16 trata as branches `claude/*`.
+
 ### 2026-09-30 — Claude (Sonnet 5.5) — descoberta da issue #33 e planejamento integral da 2.0
 - **Estado:** descoberta concluída; SPEC, ROADMAP, TRACEABILITY e ADRs 0001–0007 produzidos. **Implementação da 2.0 NÃO iniciada.** Runtime 1.8.2-beta intocado.
 - **Feito:** merge fast-forward de `origin/chore/urbe-2-foundation` (PR #34 não mergeado; fundação preservada) na branch `claude/new-session-eh5rwa`; `docs/v2/discovery/*` (9 documentos), `REQUIREMENTS.md` (REQ-025..088 acrescentados, nenhum removido), `adr/0001..0007`, `SPEC.md`, `ROADMAP.md` (118 itens, F0–F6), `TRACEABILITY.md` (gerado), `AUDIT-COVERAGE.md`, `tools/check-traceability.mjs`, `tools/gen-traceability.mjs`, `tests/traceability.mjs`, `AGENTS.md`, este arquivo.

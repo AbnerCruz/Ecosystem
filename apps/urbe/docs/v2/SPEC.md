@@ -1,6 +1,6 @@
 # Urbe 2.0 — Especificação canônica (SPEC)
 
-> Estado: **RASCUNHO NORMATIVO PARA APROVAÇÃO** (gate da descoberta liberado — `discovery/OPEN-DECISIONS.md` §5).
+> Estado: **APROVADA pelo proprietário em 2026-09-30** (gate da descoberta liberado — `discovery/OPEN-DECISIONS.md` §5).
 > Base: `discovery/*`, `REQUIREMENTS.md` (REQ-001..088), `adr/0001..0007`, `AUDIT-1X.md`.
 > Esta SPEC é normativa: todo REQ em estado IMPLEMENTAR aparece aqui em uma cláusula `- **REQ-nnn**`. A rastreabilidade REQ → SPEC → ROADMAP → teste/gate está em `TRACEABILITY.md` (gerada por `tools/gen-traceability.mjs`).
 > Não inicia implementação: o runtime 1.8.2-beta permanece intocado até o ROADMAP ser aprovado.
@@ -149,7 +149,7 @@ Item concluído quando: implementado; integrado (sem código morto/duplicado); t
 - **REQ-081** — DEVE haver política documentada (`docs/v2/RELEASE.md`): SemVer com canais `beta`/`stable`, release notes do CHANGELOG, checklist de release, rollback (remoção/pre-release do Release e `latest.yml` anterior; dados via backup REQ-038) e teste de dry-run.
 ### 10.3 Distribuição e licença
 - **REQ-017** — A política de licença e distribuição DEVE ser decidida explicitamente antes da ampliação pública da 2.0 (ADR-0003).
-- **REQ-080** — DEVEM existir `LICENSE` (fonte-disponível/proprietária), `THIRD-PARTY-NOTICES` (KaTeX, JSZip, pako, PDF.js, Electron/Chromium, Capacitor, chokidar, electron-updater) e `package.json` `"license":"SEE LICENSE IN LICENSE"`; `tools/check-license.mjs` valida coerência. O texto final depende do proprietário (OD-03) e bloqueia G4.
+- **REQ-080** — DEVEM existir `LICENSE` (todos os direitos reservados), `THIRD-PARTY-NOTICES` (KaTeX, JSZip, pako, PDF.js, Electron/Chromium, Capacitor, chokidar, electron-updater) e `package.json` `"license":"SEE LICENSE IN LICENSE"`; `tools/check-license.mjs` valida coerência. Licença decidida pelo proprietário (OD-03): todos os direitos reservados.
 ### 10.4 Governança do repositório
 - **REQ-067** — As branches `claude/*` DEVEM ser verificadas (incorporada ou descartada conscientemente, registrado em `AGENTSCHAT.md`) e removidas; trabalho novo nasce de issue/REQ; branches são temporárias (CONTRIBUTING §3).
 - **REQ-088** — `AGENTS.md` e `AGENTSCHAT.md` (raiz) DEVEM existir, ser referenciados por CONTRIBUTING e `docs/v2/README.md` e ser atualizados a cada sessão de trabalho.
@@ -171,7 +171,7 @@ Item concluído quando: implementado; integrado (sem código morto/duplicado); t
 | G1 | Persistência, dados e migração | fixtures de vaults históricos verdes; proteção forward; `vault.json`; backup; adapters de persistência e mapa com escritor único; identidade; modelo de artefatos |
 | G2 | Arquitetura | renderer canônico em produção; editor extraído, cadeias e adapters legacy removidos; legacy zerado ou justificado; sem teste dependente de marcadores de `app.js` |
 | G3 | Segurança | CSP; plugins UX; hardening Electron/Android; HTML/embeds; ZIP; IA; testes de propriedade verdes |
-| G4 | Plataformas/release/distribuição | E2E web+Electron; smoke instalador/APK; contrato `UrbeNative`; release por tag; **LICENSE final aprovada** |
+| G4 | Plataformas/release/distribuição | E2E web+Electron; smoke instalador/APK; contrato `UrbeNative`; release por tag; `LICENSE` publicado |
 | G5 | Performance | baseline publicado; budgets aprovados; `perf:check` verde; persistência incremental e busca indexada |
 | G6 | UX e release 2.0 | critérios S1–S10; acessibilidade; tutorial/migração; recuperação; auditoria final de cobertura; release candidato |
 
@@ -189,4 +189,4 @@ Item concluído quando: implementado; integrado (sem código morto/duplicado); t
 Não objetivos: reescrita geral; nuvem/sync próprio; telemetria; iOS; novas features fora do ledger.
 
 ## 14. Decisões e ADRs
-ADR-0001 (build), ADR-0002 (plugins), ADR-0003 (licença), ADR-0004 (compat/forward), ADR-0005 (release; proposta), ADR-0006 (identidade/artefatos; proposta), ADR-0007 (IA/CSP; proposta). Propostas sujeitas a confirmação do proprietário na aprovação da SPEC.
+ADR-0001 (build), ADR-0002 (plugins), ADR-0003 (licença), ADR-0004 (compat/forward), ADR-0005 (release), ADR-0006 (identidade/artefatos), ADR-0007 (IA/CSP): todas Accepted em 2026-09-30.

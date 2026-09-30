@@ -1,6 +1,6 @@
 # Urbe 2.0 — ROADMAP
 
-> Derivado integralmente de `SPEC.md`. Cada REQ em estado IMPLEMENTAR chega a itens concretos e verificáveis; a matriz completa REQ → SPEC → fase → item → teste/gate está em `TRACEABILITY.md` (gerada por `tools/gen-traceability.mjs` a partir deste arquivo e da SPEC).
+> **Aprovado pelo proprietário em 2026-09-30.** Derivado integralmente de `SPEC.md`. Cada REQ em estado IMPLEMENTAR chega a itens concretos e verificáveis; a matriz completa REQ → SPEC → fase → item → teste/gate está em `TRACEABILITY.md` (gerada por `tools/gen-traceability.mjs` a partir deste arquivo e da SPEC).
 > **Estados:** `[ ]` não iniciado · `[~]` em andamento · `[?]` implementado, aguardando validação · `[x]` concluído (DoD atendido, SPEC §10.1) · `[!]` bloqueado.
 > Só `[x]` é concluído. Este roadmap **não autoriza** a execução até ser aprovado pelo proprietário; a execução segue: IMPLEMENTAR → TESTAR → VERIFICAR → CORRIGIR → DOCUMENTAR → AUDITAR → VALIDAR GATE → AVANÇAR.
 > Formato de item (lido por ferramentas): título `### RM-Fn-nn — …`; linhas `- **Estado/REQ/SPEC/Fase/Depende/Implementação/Integração/Testes/Documentação/Aceite/Gate:**`.
@@ -12,7 +12,7 @@
 | F1 | Persistência, dados e migração | G1: fixtures históricos verdes; proteção forward; `vault.json`; backup; adapters e escritor único do mapa; identidade; artefatos |
 | F2 | Arquitetura do monólito e legacy | G2: renderer canônico em produção; editor extraído; cadeias e adapters legacy removidos; sem teste dependente de `app.js` |
 | F3 | Segurança | G3: CSP; plugins; Electron/Android; HTML/embeds; ZIP; IA; testes de segurança verdes |
-| F4 | Plataformas, release e distribuição | G4: E2E web+Electron; smoke instalador/APK; `UrbeNative.contract`; release por tag; LICENSE final (bloqueado por OD-03) |
+| F4 | Plataformas, release e distribuição | G4: E2E web+Electron; smoke instalador/APK; `UrbeNative.contract`; release por tag; `LICENSE` publicado |
 | F5 | Performance | G5: baseline, budgets aprovados, `perf:check` verde, flush incremental, busca indexada |
 | F6 | UX, auditoria e release 2.0 | G6: S1–S10; acessibilidade; tutorial/migração; recuperação; auditoria final; release |
 
@@ -199,7 +199,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Implementação:** Novo workflow `release.yml` (tag `v*` ou `workflow_dispatch`, `needs` de estrutura+testes), remover publicação do push em `main` em `app.yml`; PRs mantêm build de validação.
 - **Integração:** `app.yml` passa a ser só build/validação; `permissions` mínimas por job.
 - **Testes:** Dry-run em branch de teste: push em `main` não publica; tag publica em repositório de teste.
-- **Documentação:** CONTRIBUTING §Release; ADR-0005 confirmado (OD-05).
+- **Documentação:** CONTRIBUTING §Release; ADR-0005 aprovado (OD-05).
 - **Aceite:** Merge em `main` nunca cria Release; tag com testes verdes cria.
 - **Gate:** G0
 
@@ -319,7 +319,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Implementação:** Leitores 2.x preservam arquivos de versão desconhecida; gravam `journal.v2.json`, `history.v2.json`, `trash.v2.json`, `compositions.v2.json` sem tocar nos v1; avisam e operam em somente leitura para o artefato futuro.
 - **Integração:** `WorkspacePersistence`, `history.js`, `trash.js`, `composition/store.js`.
 - **Testes:** Fixture `futuro-desconhecido`: bytes inalterados após abrir/salvar; teste de coexistência v1/v2.
-- **Documentação:** ADR-0004 (OD-11 confirmado).
+- **Documentação:** ADR-0004 (OD-11 aprovado).
 - **Aceite:** Nenhum arquivo `.urbe/*` de versão desconhecida é alterado ou apagado.
 - **Gate:** G1
 
@@ -449,7 +449,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Implementação:** `src/persistence/identity.js`: `.urbe/identity.json`; `syncFromDisk` reconcilia por path e por fingerprint; nenhuma escrita em notas.
 - **Integração:** `workspace.js:42-60`.
 - **Testes:** Fixtures: rename externo, cópia de vault sem `.urbe/`, cópias idênticas (ambiguidade tratada).
-- **Documentação:** ADR-0006 confirmado (OD-10).
+- **Documentação:** ADR-0006 aprovado (OD-10).
 - **Aceite:** Rename/move externo preserva ID e relações.
 - **Gate:** G1
 
@@ -1255,17 +1255,17 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Aceite:** Toda dependência embutida atribuída.
 - **Gate:** G4
 
-### RM-F4-12 — `LICENSE` fonte-disponível/proprietária
-- **Estado:** [!]
+### RM-F4-12 — `LICENSE` de todos os direitos reservados
+- **Estado:** [ ]
 - **REQ:** REQ-080, REQ-017
 - **SPEC:** §10.3
 - **Fase:** F4
 - **Depende:** RM-F4-11
-- **Implementação:** Texto final de `LICENSE`, `package.json` `license` coerente, README.
+- **Implementação:** `LICENSE` de todos os direitos reservados em nome de Abner P. S. Cruz, `package.json` `license` coerente, README.
 - **Integração:** `check-license`.
 - **Testes:** `check-license` verde.
 - **Documentação:** ADR-0003.
-- **Aceite:** BLOQUEADO: texto/permissões dependem do proprietário (OD-03). Gate G4 não fecha sem ele.
+- **Aceite:** `LICENSE` publicado (todos os direitos reservados, Abner P. S. Cruz), coerente com `package.json` e README.
 - **Gate:** G4
 
 ### RM-F4-13 — Registro da decisão de distribuição
