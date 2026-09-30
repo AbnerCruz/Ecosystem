@@ -11,12 +11,24 @@
   var N=global.UrbeNative||null;
   var cap=global.Capacitor;
   if(!N&&cap&&typeof cap.isNativePlatform==='function'&&cap.isNativePlatform())N=global.UrbeNative=capacitorNative(cap);
+  /* contrato de capacidades (docs/v2/contracts/native.md): a página consulta em vez de adivinhar pela plataforma.
+     Sem casca nativa (navegador/PWA) nada é oferecido: o arquivo vem do File System Access ou do armazenamento do navegador. */
+  var CAPS=['fs','vault','openExternal','saveFile','print','update','back','storageStatus'];
+  function contractOf(n){
+    if(n&&n.contract&&n.contract.version)return n.contract;
+    var has={fs:!!(n&&n.fs),vault:!!(n&&n.vault),openExternal:!!(n&&n.openExternal),saveFile:!!(n&&n.saveFile),print:!!(n&&n.printHtml),
+      update:!!(n&&n.update&&n.update.check),back:!!(n&&n.minimize),storageStatus:!!(n&&n.storage&&n.storage.status)};
+    return{version:1,capabilities:CAPS.filter(function(c){return has[c]}),unsupported:CAPS.filter(function(c){return !has[c]})};
+  }
+  global.UrbeNativeContract=contractOf(N);
   if(!N||!N.fs)return;
 
   /* ---------------- utilidades ---------------- */
   function err(name,msg){try{return new DOMException(msg||name,name)}catch(_){var e=new Error(msg||name);e.name=name;return e}}
   function join(a,b){return a?a+'/'+b:b}
   function checkName(n){n=String(n==null?'':n);if(!n||n==='.'||n==='..'||/[\/\\\u0000]/.test(n))throw new TypeError('Nome inválido: '+n);return n}
+  /* links que o sistema pode abrir: http(s) com endereço, mailto e tel (mesma lista do Electron e do Android) */
+  function extOk(u){u=String(u==null?'':u);return u.length<=8192&&!/[\u0000-\u001f\u007f]/.test(u)&&/^(https?:\/\/[^\s\/?#]+|mailto:|tel:)/i.test(u)}
   var MIME={md:'text/markdown',markdown:'text/markdown',txt:'text/plain',json:'application/json',html:'text/html',htm:'text/html',css:'text/css',js:'text/javascript',mjs:'text/javascript',csv:'text/csv',svg:'image/svg+xml',
     png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',avif:'image/avif',bmp:'image/bmp',ico:'image/x-icon',pdf:'application/pdf',mp3:'audio/mpeg',wav:'audio/wav',ogg:'audio/ogg',m4a:'audio/mp4',
     mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime',zip:'application/zip',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation'};
@@ -134,7 +146,7 @@
     if(N.onVaultChanged&&!soltarNoLoad){soltarNoLoad=true;try{global.UrbeCore.events.on('workspace:loaded',function(){setTimeout(function(){mir=null},0)})}catch(_){}}
     return new RootH(v&&v.label)}
 
-  global.UrbeNativeFS={root:root,DirH:DirH,FileH:FileH,RootH:RootH,mimeOf:mimeOf,toBytes:toBytes,
+  global.UrbeNativeFS={root:root,isExternalAllowed:extOk,DirH:DirH,FileH:FileH,RootH:RootH,mimeOf:mimeOf,toBytes:toBytes,
     prefetch:prefetch,release:function(){mir=null},mirrored:function(){return !!mir}};
   /* trocar de pasta: o espelho é da pasta antiga */
   if(N.pickVault){var pick0=N.pickVault;global.showDirectoryPicker=async function(){var v=await pick0();if(!v)throw err('AbortError','Cancelado');mir=null;await prefetch();return new RootH(v.label)}}
@@ -158,7 +170,7 @@
   if(N.saveFile){
     var saveFrom=function(href,name){
       var p=fetch(href).then(function(r){return r.blob()});
-      return p.then(async function(b){var bytes=await toBytes(b);var r=await N.saveFile(name||'arquivo',bytes,b.type||mimeOf(name));toast(r&&r.where?'Salvo em '+r.where:'Arquivo salvo.')})
+      return p.then(async function(b){var bytes=await toBytes(b);var r=await N.saveFile(name||'arquivo',bytes,b.type||mimeOf(name));toast(r&&r.canceled?'Cancelado.':r&&r.where?'Salvo em '+r.where:'Arquivo salvo.')})
         .catch(function(e){toast('Não consegui salvar: '+(e&&e.message||e))});
     };
     var click=HTMLAnchorElement.prototype.click;
@@ -174,7 +186,7 @@
   if(N.openExternal){
     document.addEventListener('click',function(e){
       if(e.defaultPrevented)return;var a=e.target&&e.target.closest&&e.target.closest('a[href]');if(!a)return;
-      var h=a.getAttribute('href')||'';if(/^(https?:|mailto:|tel:)/i.test(h)&&(a.target==='_blank'||!/^https?:\/\/(localhost|urbe)\b/i.test(h))){e.preventDefault();N.openExternal(a.href)}
+      var h=a.getAttribute('href')||'';if(extOk(h)&&(a.target==='_blank'||!/^https?:\/\/(localhost|urbe)\b/i.test(h))){e.preventDefault();N.openExternal(a.href)}
     },false);
   }
   if(N.shell==='capacitor'){
@@ -183,7 +195,7 @@
     var open0=global.open;
     global.open=function(url){
       url=String(url||'');
-      if(/^(https?:|mailto:|tel:)/i.test(url)){N.openExternal(url);return fakeWin()}
+      if(extOk(url)){N.openExternal(url);return fakeWin()}
       if(/^blob:/i.test(url))return overlay(url);
       try{return open0.apply(global,arguments)}catch(_){return null}
     };
@@ -211,7 +223,7 @@
     o.innerHTML='<div style="display:flex;justify-content:flex-end;gap:8px;padding:8px"><button type="button" data-save style="padding:10px 14px;border-radius:10px;border:1px solid #334;background:#161b26;color:#e6e9f2;font:600 14px system-ui">Salvar</button><button type="button" data-x style="padding:10px 14px;border-radius:10px;border:0;background:#7c9bff;color:#0b0e14;font:700 14px system-ui">Fechar</button></div>';
     var f=document.createElement('iframe');f.src=url;f.setAttribute('sandbox','allow-scripts allow-popups allow-forms');f.style.cssText='flex:1;border:0;background:#fff;width:100%';o.appendChild(f);
     o.querySelector('[data-x]').onclick=function(){o.remove()};
-    o.querySelector('[data-save]').onclick=function(){fetch(url).then(function(r){return r.blob()}).then(async function(b){var ext=(b.type.split('/')[1]||'bin').replace(/\W.*/,'');var r=await N.saveFile('urbe.'+ext,await toBytes(b),b.type);toast(r&&r.where?'Salvo em '+r.where:'Arquivo salvo.')}).catch(function(){toast('Não consegui salvar.')})};
+    o.querySelector('[data-save]').onclick=function(){fetch(url).then(function(r){return r.blob()}).then(async function(b){var ext=(b.type.split('/')[1]||'bin').replace(/\W.*/,'');var r=await N.saveFile('urbe.'+ext,await toBytes(b),b.type);toast(r&&r.canceled?'Cancelado.':r&&r.where?'Salvo em '+r.where:'Arquivo salvo.')}).catch(function(){toast('Não consegui salvar.')})};
     document.body.appendChild(o);var w=fakeWin();w.close=function(){o.remove()};return w;
   }
 
@@ -224,7 +236,15 @@
       return Promise.reject(new Error('Plugin indisponível: '+plugin));
     }
     var DIR='DOCUMENTS',BASE='Urbe';
-    function path(rel){return rel?BASE+'/'+rel:BASE}
+    /* Caminho relativo à pasta do Urbe. O plugin Filesystem do Capacitor não valida ".." nem atalhos por conta
+       própria (só o Java do UrbeAndroid usa PathGuard), então aqui nada sai da pasta: sem "..", ".", "\", "/" inicial ou NUL. */
+    function safeRel(rel){
+      rel=String(rel==null?'':rel);
+      if(rel.length>1024||/[\u0000\\]/.test(rel)||rel.charAt(0)==='/')throw new TypeError('Caminho inválido: '+rel);
+      var p=rel.split('/');for(var i=0;i<p.length;i++)if(p[i]==='..'||p[i]==='.')throw new TypeError('Caminho inválido: '+rel);
+      return rel;
+    }
+    function path(rel){rel=safeRel(rel);return rel?BASE+'/'+rel:BASE}
     function b64(bytes){var s='',i,ch=0x8000;for(i=0;i<bytes.length;i+=ch)s+=String.fromCharCode.apply(null,bytes.subarray(i,i+ch));return btoa(s)}
     function unb64(s){var bin=atob(s||''),out=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
     function missing(e){var m=String(e&&(e.message||e.errorMessage)||e);return /does not exist|not exist|no such|ENOENT|not found|FileNotFound/i.test(m)}
@@ -235,7 +255,7 @@
       writeBytes:async function(rel,bytes){await call('Filesystem','writeFile',{path:path(rel),directory:DIR,data:b64(bytes),recursive:true})},
       mkdir:async function(rel){try{await call('Filesystem','mkdir',{path:path(rel),directory:DIR,recursive:true})}catch(e){if(!/exist/i.test(String(e&&e.message)))throw e}},
       tree:async function(){var r=await call('UrbeAndroid','listTree');if(!r||r.exists===false){await fsA.mkdir('');return[]}return r.entries||[]},
-      readTexts:async function(paths){var r=await call('UrbeAndroid','readTexts',{paths:paths});return (r&&r.files)||{}},
+      readTexts:async function(paths){var ok=(paths||[]).filter(function(p){try{safeRel(p);return true}catch(_){return false}});var r=await call('UrbeAndroid','readTexts',{paths:ok});return (r&&r.files)||{}},
       remove:async function(rel,recursive){var s=await fsA.stat(rel);if(!s)return;if(s.kind==='directory')await call('Filesystem','rmdir',{path:path(rel),directory:DIR,recursive:!!recursive});else await call('Filesystem','deleteFile',{path:path(rel),directory:DIR})}
     };
     var info=null;
@@ -257,7 +277,7 @@
         }catch(e){emit({state:'error',message:String(e&&e.message||e)})}
         return last;
       },
-      install:function(){if(last.url)return call('UrbeAndroid','openUrl',{url:last.url})},
+      install:function(){if(last.url&&extOk(last.url))return call('UrbeAndroid','openUrl',{url:last.url})},
       onStatus:function(fn){if(typeof fn==='function'){subs.push(fn);if(last.state!=='none')fn(last)}},
       _newer:newer
     };
@@ -271,7 +291,8 @@
         requestAllFiles:function(){return call('UrbeAndroid','requestAllFiles')},
         requestLegacy:function(){return call('Filesystem','requestPermissions',{permissions:['publicStorage']}).catch(function(){})}
       },
-      openExternal:function(url){return call('UrbeAndroid','openUrl',{url:String(url)})},
+      contract:{version:1,capabilities:['fs','vault','openExternal','saveFile','print','update','back','storageStatus'],unsupported:[]},
+      openExternal:function(url){if(!extOk(url))return Promise.reject(new Error('Endereço não permitido'));return call('UrbeAndroid','openUrl',{url:String(url)})},
       saveFile:function(name,bytes,mime){return call('UrbeAndroid','saveFile',{name:String(name),data:b64(bytes),mime:mime||''})},
       printHtml:function(html,name){return call('UrbeAndroid','printHtml',{html:String(html),name:String(name||'Urbe')})},
       minimize:function(){return call('UrbeAndroid','minimize')},
