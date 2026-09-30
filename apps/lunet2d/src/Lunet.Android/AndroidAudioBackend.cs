@@ -123,7 +123,11 @@ internal sealed class AndroidAudioBackend : IAudioBackend
     public void StopMusic()
     {
         if (_player is null) return;
-        try { _player.Stop(); } catch (Java.Lang.IllegalStateException) { }
+        try { _player.Stop(); }
+        catch (Java.Lang.IllegalStateException)
+        {
+            // Já parado ou nunca iniciado: liberar logo abaixo resolve.
+        }
         _player.Release();
         _player = null;
         _currentMusic = 0;

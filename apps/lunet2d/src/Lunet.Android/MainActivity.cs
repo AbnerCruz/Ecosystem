@@ -24,7 +24,7 @@ namespace Lunet.Android;
     ConfigurationChanges = global::Android.Content.PM.ConfigChanges.Orientation | global::Android.Content.PM.ConfigChanges.ScreenSize |
                            global::Android.Content.PM.ConfigChanges.KeyboardHidden | global::Android.Content.PM.ConfigChanges.ScreenLayout,
     WindowSoftInputMode = SoftInput.AdjustResize)]
-public sealed partial class MainActivity : Activity, ISensorEventListener
+public sealed partial class MainActivity : Activity
 {
     private const int ExportRequestCode = 4101;
     private const int ImportRequestCode = 4102;
@@ -58,16 +58,8 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
     private ChangeReport? _pendingChange;
     private string? _pendingExport;
 
-    private GLSurfaceView? _glView;
-    private PreviewRenderer? _renderer;
-    private TextView? _previewConsole;
-    private InspectorPanel? _inspector;
-    private bool _previewPaused;
-    private SensorManager? _sensors;
-    private GamepadButtons _padButtons;
-    private System.Numerics.Vector2 _padLeft, _padRight;
-    private float _padLeftTrigger, _padRightTrigger;
-    private bool _padSeen;
+    private PreviewHost? _preview;
+    private bool _isolatedRunning;
 
     protected override void OnCreate(Bundle? savedInstanceState)
     {
@@ -658,7 +650,10 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
         if (path is not null && _session.IsDirty(text))
         {
             try { _journal?.WriteBuffer(path, text); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException) { }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException)
+            {
+                // O diário é uma rede de segurança extra; o salvamento normal e o botão Salvar seguem funcionando.
+            }
         }
         if (path is null || _assistant is null || !path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
         {
@@ -960,231 +955,33 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
     {
         DisposePreview();
         _console.Clear();
-        _previewPaused = false;
+        if (_settings.IsolatedPreview)
+        {
+            LaunchIsolatedPreview(result);
+            return;
+        }
 
-        _renderer = new PreviewRenderer(result.Assembly!, result.Symbols,
+        var renderer = new PreviewRenderer(result.Assembly!, result.Symbols,
             new DirectoryContentSource(System.IO.Path.Combine(_project!.Directory, "Content")),
             () => new AndroidAudioBackend(System.IO.Path.Combine(CacheDir!.AbsolutePath, "audio")),
             new DirectorySaveStore(System.IO.Path.Combine(_project!.Directory, ".lunet", "saves")),
             new AndroidHaptics(this), (level, message) => RunOnUiThread(() => AppendConsole(level, message)));
-        _glView = new GLSurfaceView(this);
-        _glView.SetEGLContextClientVersion(3);
-        _glView.PreserveEGLContextOnPause = true; // ao voltar do segundo plano o jogo continua, se o driver mantiver o contexto
-        _glView.SetRenderer(_renderer);
-        _glView.RenderMode = Rendermode.Continuously;
-        _glView.Touch += OnPreviewTouch;
-
-        var root = new FrameLayout(this);
-        root.AddView(_glView, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
-
-        var controls = new LinearLayout(this) { Orientation = Orientation.Horizontal };
-        controls.SetBackgroundColor(AndroidColor.Argb(140, 0, 0, 0));
-        controls.AddView(MakeButton("■ Stop", StopPreview));
-        controls.AddView(MakeButton("↻", () => _renderer?.RequestRestart()));
-        Button? pause = null;
-        pause = MakeButton("⏸", () =>
-        {
-            _previewPaused = !_previewPaused;
-            _renderer?.SetPaused(_previewPaused);
-            pause!.Text = _previewPaused ? "▶" : "⏸";
-        });
-        controls.AddView(pause);
-        controls.AddView(MakeButton("⏭", () => _renderer?.RequestStep()));
-        controls.AddView(MakeButton("🔍", ToggleInspector));
-        root.AddView(controls, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Top | GravityFlags.Left));
-
-        _inspector = new InspectorPanel(this, () => _renderer?.CurrentGame, () => _project?.ListFiles() ?? []) { Visibility = ViewStates.Gone };
-        root.AddView(_inspector, new FrameLayout.LayoutParams(Dp(320), ViewGroup.LayoutParams.MatchParent, GravityFlags.Right));
-
-        _previewConsole = new TextView(this) { TextSize = 11, Clickable = false, Focusable = false };
-        _previewConsole.SetTextColor(AndroidColor.White);
-        _previewConsole.SetBackgroundColor(AndroidColor.Argb(110, 0, 0, 0));
-        root.AddView(_previewConsole, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.WrapContent, GravityFlags.Bottom));
-
-        SetContentView(root);
-        RequestHighRefreshRate(_settings.HighRefreshRate);
-        _glView.LayoutChange += (_, _) => UpdateDisplayInfo();
-        _glView.Post(UpdateDisplayInfo);
-        StartSensors();
+        _preview = new PreviewHost(this, renderer, () => _project?.ListFiles() ?? [], StopPreview, _settings.HighRefreshRate);
+        SetContentView(_preview);
     }
 
-    /// <summary>Pede ao sistema o modo de tela de maior taxa de atualização (mesma resolução), para 90/120 Hz onde houver.</summary>
-    private void RequestHighRefreshRate(bool enable)
-    {
-        try
-        {
-            var attributes = Window?.Attributes;
-            var display = WindowManager?.DefaultDisplay;
-            if (attributes is null || display is null) return;
-            if (!enable)
-            {
-                attributes.PreferredDisplayModeId = 0;
-            }
-            else
-            {
-                var current = display.GetMode();
-                var best = display.GetSupportedModes()?
-                    .Where(m => m.PhysicalWidth == current.PhysicalWidth && m.PhysicalHeight == current.PhysicalHeight)
-                    .OrderByDescending(m => m.RefreshRate)
-                    .FirstOrDefault();
-                if (best is null) return;
-                attributes.PreferredDisplayModeId = best.ModeId;
-            }
-            Window!.Attributes = attributes;
-        }
-        catch (Exception ex) when (ex is Java.Lang.Exception or InvalidOperationException)
-        {
-            // Não é essencial: sem alta taxa, o jogo roda em 60 Hz.
-        }
-    }
+    public override bool OnKeyDown(Keycode keyCode, KeyEvent? e) => _preview?.OnKey(keyCode, true, e) == true || base.OnKeyDown(keyCode, e);
 
-    /// <summary>Envia ao jogo a densidade da tela e os recuos seguros (recorte de câmera, cantos arredondados).</summary>
-    private void UpdateDisplayInfo()
-    {
-        if (_glView is null || _renderer is null) return;
-        int left = 0, top = 0, right = 0, bottom = 0;
-        var cutout = _glView.RootWindowInsets?.DisplayCutout;
-        if (cutout is not null)
-        {
-            var location = new int[2];
-            _glView.GetLocationInWindow(location);
-            left = Math.Max(0, cutout.SafeInsetLeft - location[0]);
-            top = Math.Max(0, cutout.SafeInsetTop - location[1]);
-            right = cutout.SafeInsetRight;
-            bottom = cutout.SafeInsetBottom;
-        }
-        _renderer.SetDisplay(Resources!.DisplayMetrics!.Density, left, top, right, bottom);
-    }
+    public override bool OnKeyUp(Keycode keyCode, KeyEvent? e) => _preview?.OnKey(keyCode, false, e) == true || base.OnKeyUp(keyCode, e);
 
-    private void StartSensors()
-    {
-        _sensors = GetSystemService(SensorService) as SensorManager;
-        var accelerometer = _sensors?.GetDefaultSensor(SensorType.Accelerometer);
-        if (accelerometer is not null) _sensors!.RegisterListener(this, accelerometer, SensorDelay.Game);
-        var gyroscope = _sensors?.GetDefaultSensor(SensorType.Gyroscope);
-        if (gyroscope is not null) _sensors!.RegisterListener(this, gyroscope, SensorDelay.Game);
-    }
-
-    private void StopSensors()
-    {
-        _sensors?.UnregisterListener(this);
-        _sensors = null;
-    }
-
-    public void OnAccuracyChanged(Sensor? sensor, SensorStatus accuracy) { }
-
-    public void OnSensorChanged(SensorEvent? e)
-    {
-        if (e?.Values is not { Count: >= 3 } v) return;
-        var value = new System.Numerics.Vector3(v[0], v[1], v[2]);
-        if (e.Sensor?.Type == SensorType.Gyroscope) _renderer?.SetGyroscope(value);
-        else _renderer?.SetAccelerometer(value);
-    }
-
-    public override bool OnKeyDown(Keycode keyCode, KeyEvent? e) => RouteKey(keyCode, true, e) || base.OnKeyDown(keyCode, e);
-
-    public override bool OnKeyUp(Keycode keyCode, KeyEvent? e) => RouteKey(keyCode, false, e) || base.OnKeyUp(keyCode, e);
-
-    public override bool OnGenericMotionEvent(MotionEvent? e)
-    {
-        if (e is null || _renderer is null || (e.Source & InputSourceType.Joystick) != InputSourceType.Joystick || e.Action != MotionEventActions.Move)
-            return base.OnGenericMotionEvent(e);
-        _padSeen = true;
-        _padLeft = new System.Numerics.Vector2(e.GetAxisValue(global::Android.Views.Axis.X), e.GetAxisValue(global::Android.Views.Axis.Y));
-        _padRight = new System.Numerics.Vector2(e.GetAxisValue(global::Android.Views.Axis.Z), e.GetAxisValue(global::Android.Views.Axis.Rz));
-        _padLeftTrigger = System.Math.Max(e.GetAxisValue(global::Android.Views.Axis.Ltrigger), e.GetAxisValue(global::Android.Views.Axis.Brake));
-        _padRightTrigger = System.Math.Max(e.GetAxisValue(global::Android.Views.Axis.Rtrigger), e.GetAxisValue(global::Android.Views.Axis.Gas));
-        var hatX = e.GetAxisValue(global::Android.Views.Axis.HatX);
-        var hatY = e.GetAxisValue(global::Android.Views.Axis.HatY);
-        SetPadButton(GamepadButtons.DPadLeft, hatX < -0.5f);
-        SetPadButton(GamepadButtons.DPadRight, hatX > 0.5f);
-        SetPadButton(GamepadButtons.DPadUp, hatY < -0.5f);
-        SetPadButton(GamepadButtons.DPadDown, hatY > 0.5f);
-        PushGamepad();
-        return true;
-    }
-
-    private void SetPadButton(GamepadButtons button, bool down) =>
-        _padButtons = down ? _padButtons | button : _padButtons & ~button;
-
-    private void PushGamepad() =>
-        _renderer?.SetGamepad(new GamepadState(_padSeen, _padButtons, _padLeft, _padRight, _padLeftTrigger, _padRightTrigger));
-
-    private bool RouteKey(Keycode code, bool down, KeyEvent? e)
-    {
-        if (_renderer is null) return false;
-        var fromGamepad = e is not null && (e.Source & InputSourceType.Gamepad) == InputSourceType.Gamepad;
-        var button = code switch
-        {
-            Keycode.ButtonA => GamepadButtons.A,
-            Keycode.ButtonB => GamepadButtons.B,
-            Keycode.ButtonX => GamepadButtons.X,
-            Keycode.ButtonY => GamepadButtons.Y,
-            Keycode.ButtonL1 => GamepadButtons.LeftShoulder,
-            Keycode.ButtonR1 => GamepadButtons.RightShoulder,
-            Keycode.ButtonStart => GamepadButtons.Start,
-            Keycode.ButtonSelect => GamepadButtons.Back,
-            Keycode.ButtonThumbl => GamepadButtons.LeftStick,
-            Keycode.ButtonThumbr => GamepadButtons.RightStick,
-            Keycode.DpadLeft when fromGamepad => GamepadButtons.DPadLeft,
-            Keycode.DpadRight when fromGamepad => GamepadButtons.DPadRight,
-            Keycode.DpadUp when fromGamepad => GamepadButtons.DPadUp,
-            Keycode.DpadDown when fromGamepad => GamepadButtons.DPadDown,
-            _ => GamepadButtons.None,
-        };
-        if (button != GamepadButtons.None)
-        {
-            _padSeen = true;
-            SetPadButton(button, down);
-            PushGamepad();
-            if (code is not (Keycode.DpadLeft or Keycode.DpadRight or Keycode.DpadUp or Keycode.DpadDown)) return true;
-        }
-        var key = code switch
-        {
-            >= Keycode.A and <= Keycode.Z => (Keys)((int)Keys.A + (code - Keycode.A)),
-            >= Keycode.Num0 and <= Keycode.Num9 => (Keys)((int)Keys.D0 + (code - Keycode.Num0)),
-            Keycode.Space => Keys.Space,
-            Keycode.Enter => Keys.Enter,
-            Keycode.Escape => Keys.Escape,
-            Keycode.Tab => Keys.Tab,
-            Keycode.ShiftLeft or Keycode.ShiftRight => Keys.Shift,
-            Keycode.DpadLeft => Keys.Left,
-            Keycode.DpadRight => Keys.Right,
-            Keycode.DpadUp => Keys.Up,
-            Keycode.DpadDown => Keys.Down,
-            _ => Keys.None,
-        };
-        if (key == Keys.None) return false;
-        _renderer.SetKey(key, down);
-        return true;
-    }
-
-    private void OnPreviewTouch(object? sender, View.TouchEventArgs args)
-    {
-        var e = args.Event;
-        if (e is null || _renderer is null) return;
-        var touches = new List<TouchPoint>(e.PointerCount);
-        var action = e.ActionMasked;
-        var index = e.ActionIndex;
-        for (var i = 0; i < e.PointerCount; i++)
-        {
-            var phase = TouchPhase.Moved;
-            if (action is MotionEventActions.Down or MotionEventActions.PointerDown && i == index) phase = TouchPhase.Pressed;
-            else if (action is MotionEventActions.Up or MotionEventActions.PointerUp && i == index) phase = TouchPhase.Released;
-            else if (action == MotionEventActions.Cancel) phase = TouchPhase.Cancelled;
-            touches.Add(new TouchPoint(e.GetPointerId(i), phase, new System.Numerics.Vector2(e.GetX(i), e.GetY(i))));
-        }
-        _renderer.SetTouches(touches.ToArray());
-        args.Handled = true;
-    }
+    public override bool OnGenericMotionEvent(MotionEvent? e) => _preview?.OnGenericMotion(e) == true || base.OnGenericMotionEvent(e);
 
     private void AppendConsole(LogLevel level, string message)
     {
         var prefix = level switch { LogLevel.Error => "[erro] ", LogLevel.Warning => "[aviso] ", _ => "" };
         _console.Add(prefix + message);
         if (_console.Count > MaxConsoleLines) _console.RemoveRange(0, _console.Count - MaxConsoleLines);
-        if (_previewConsole is not null)
-            _previewConsole.Text = string.Join('\n', _console.Skip(Math.Max(0, _console.Count - 6)));
+        _preview?.SetConsole(string.Join('\n', _console.Skip(Math.Max(0, _console.Count - 6))));
     }
 
     private void StopPreview()
@@ -1202,17 +999,9 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
 
     private void DisposePreview()
     {
-        if (_glView is null) return;
-        StopSensors();
-        RequestHighRefreshRate(false);
-        _glView.Touch -= OnPreviewTouch;
-        var renderer = _renderer;
-        _glView.QueueEvent(() => renderer?.Shutdown());
-        _glView.OnPause();
-        _glView = null;
-        _renderer = null;
-        _previewConsole = null;
-        _inspector = null;
+        if (_preview is null) return;
+        _preview.Shutdown();
+        _preview = null;
     }
 
     // ---------- Export ----------
@@ -1299,18 +1088,15 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
     protected override void OnPause()
     {
         SaveCurrent();
-        _renderer?.SetAppPaused(true);
-        _glView?.OnPause();
-        StopSensors();
+        _preview?.Pause();
         base.OnPause();
     }
 
     protected override void OnResume()
     {
         base.OnResume();
-        _glView?.OnResume();
-        _renderer?.SetAppPaused(false);
-        if (_glView is not null) StartSensors();
+        _preview?.Resume();
+        CollectIsolatedPreviewResult();
     }
 
     protected override void OnDestroy()
@@ -1321,7 +1107,7 @@ public sealed partial class MainActivity : Activity, ISensorEventListener
 
     public override void OnBackPressed()
     {
-        if (_glView is not null) StopPreview();
+        if (_preview is not null) StopPreview();
         else if (_project is not null) ShowProjects();
         else base.OnBackPressed();
     }

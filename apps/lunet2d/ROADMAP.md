@@ -153,14 +153,14 @@ Documentação (§15)
 
 Preview e hot reload (§10)
 - [x] Classificação de mudanças: hot reload possível × restart required. (a cada Run o status diz o que mudou; o jogo sempre reinicia — sem hot reload mágico)
-- [ ] Fast Preview × Isolated Preview.
+- [ ] Fast Preview × Isolated Preview. (feito, sem validação em aparelho; ADR 0006; opção "Preview isolado" em Configurações roda o jogo em outro processo)
 
 Git, autosave e recovery (§22)
 - [ ] Autosave com journal (ver Fase 1) e recuperação. (histórico limitado a cinco versões por arquivo, escolha da versão na recuperação e acesso pelo menu Ferramentas implementados; testes no CI e validação no aparelho pendentes)
 - [ ] Git progressivo: status, diff, commit, history, branches, revert, push, pull. (feito, sem validação em aparelho; `Lunet.Git` em C# puro, ADR 0005; testado contra o `git` de verdade; falta validar push/pull no GitHub real)
 
 Auditoria
-- [ ] Auditoria de fechamento da Fase 3 registrada em `docs/audits/`.
+- [ ] Auditoria de fechamento da Fase 3 registrada em `docs/audits/`. (auditoria técnica em `docs/audits/fase-3.md` e roteiro do usuário em `docs/audits/fase-3-roteiro.md` prontos; falta o retorno e a aprovação do usuário)
 
 ## Fase 4 — Framework Advanced (§7)
 

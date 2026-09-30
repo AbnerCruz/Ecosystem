@@ -86,6 +86,7 @@ public sealed partial class MainActivity
         Toggle("Formatar o código ao executar", draft.FormatOnRun, v => draft.FormatOnRun = v);
         Toggle("Manter a tela ligada", draft.KeepScreenOn, v => draft.KeepScreenOn = v);
         Toggle("Taxa de atualização alta no Preview (90/120 Hz)", draft.HighRefreshRate, v => draft.HighRefreshRate = v);
+        Toggle("Preview isolado (processo separado; protege o IDE de travas do jogo)", draft.IsolatedPreview, v => draft.IsolatedPreview = v);
 
         var scroll = new ScrollView(this);
         scroll.AddView(form);
@@ -171,6 +172,7 @@ public sealed partial class MainActivity
         ("Exportar logs (Console e Problemas)", ExportLogs),
         ("Recuperar alterações não salvas", OfferRecovery),
         ("Git", ShowGit),
+        ("Medir o editor com arquivos grandes", MeasureEditor),
         ("Layout do workspace", ShowLayoutDialog),
         ("Configurações", ShowSettings),
         ("Atalhos de teclado", ShowShortcutHelp),
@@ -259,12 +261,6 @@ public sealed partial class MainActivity
     }
 
     // ---------- Inspector e mudanças ----------
-
-    private void ToggleInspector()
-    {
-        if (_inspector is null) return;
-        _inspector.Visibility = _inspector.Visibility == ViewStates.Visible ? ViewStates.Gone : ViewStates.Visible;
-    }
 
     /// <summary>Texto curto sobre o que mudou desde o Run anterior (hot reload possível × reinício necessário).</summary>
     private static string DescribeChange(ChangeReport? report, bool fromCache)
@@ -573,7 +569,10 @@ public sealed partial class MainActivity
     {
         var version = "dev";
         try { version = PackageManager?.GetPackageInfo(PackageName!, 0)?.VersionName ?? "dev"; }
-        catch (Exception ex) when (ex is not OutOfMemoryException) { }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // A versão só enfeita o relatório; sem ela fica "dev".
+        }
         var device = $"{Build.Manufacturer} {Build.Model}, Android {Build.VERSION.Release} (API {(int)Build.VERSION.SdkInt})";
         var problems = _problems.Select(p => new LogProblem(p.Severity.ToString().ToLowerInvariant(), p.Id, p.Message, p.FilePath, p.Line, p.Column));
         var text = LogExport.Build(_project?.Name ?? "(sem projeto)", version, device, DateTimeOffset.Now, _console, problems);
