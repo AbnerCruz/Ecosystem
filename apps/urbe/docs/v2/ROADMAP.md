@@ -456,7 +456,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Evidência:** mapa.json só gravado pelo WorkspacePersistence (metadataProvider); mapa.v validado; 2 estadoDesejado mortos apagados; tests/e2e/map-writer.e2e.mjs (falha no código anterior) + vault-format §6b/6c; exceção de migração repassada a RM-F1-19
 
 ### RM-F1-14 — IDs estáveis de regiões, construções e vínculos
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-041, REQ-013
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -467,19 +467,21 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG §4.
 - **Aceite:** Relações novas por ID; leitura 1.x preservada.
 - **Gate:** G1
+- **Evidência:** src/world/stable-ids.js: reg_/ast_ determinísticos para mapas 1.x, parentId de região e asset, parentNoteName mantido; tests/stable-ids.mjs + tests/e2e/stable-ids.e2e.mjs (recarregar e renomear pasta no app mantêm IDs); rename externo repassado a RM-F1-15
 
 ### RM-F1-15 — Sidecar de identidade e reconciliação
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-042
 - **SPEC:** §5.2
 - **Fase:** F1
 - **Depende:** RM-F1-13
 - **Implementação:** `src/persistence/identity.js`: `.urbe/identity.json`; `syncFromDisk` reconcilia por path e por fingerprint; nenhuma escrita em notas.
 - **Integração:** `workspace.js:42-60`.
-- **Testes:** Fixtures: rename externo, cópia de vault sem `.urbe/`, cópias idênticas (ambiguidade tratada).
+- **Testes:** Fixtures: rename externo (de nota **e de pasta/asset**: região e asset mantêm `reg_`/`ast_`, repassado de RM-F1-14), cópia de vault sem `.urbe/`, cópias idênticas (ambiguidade tratada).
 - **Documentação:** ADR-0006 aprovado (OD-10).
 - **Aceite:** Rename/move externo preserva ID e relações.
 - **Gate:** G1
+- **Evidência:** src/persistence/identity.js + reconciliação no load e em syncFromDisk; tests/identity.mjs (rename, move, pasta com região/asset, cópias idênticas, vault sem .urbe, sidecar futuro/ilegível) + tests/e2e/identity.e2e.mjs (app fechado e aberto)
 
 ### RM-F1-16 — GC de órfãos em history/trash/compositions
 - **Estado:** [ ]

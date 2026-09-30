@@ -68,7 +68,7 @@ await test('ponte: handles iguais aos do File System Access (criar, ler, gravar,
 /* persistência: a mesma do app, com um adaptador em memória no lugar do disco */
 function persistenceContext(){
   const c={window:{},console,setTimeout,clearTimeout};vm.createContext(c);
-  for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/persistence/vault-meta.js','src/persistence/backup.js','src/persistence/workspace.js'])vm.runInContext(read(f),c);
+  for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/persistence/vault-meta.js','src/persistence/backup.js','src/persistence/identity.js','src/persistence/workspace.js'])vm.runInContext(read(f),c);
   const W=c.window,disk=new Map([['A.md','# A'],['Pasta/B.md','# B']]);
   const adapter={list:async()=>[...disk.keys()],read:async(_v,p)=>disk.has(p)?disk.get(p):null,write:async(_v,p,t)=>{disk.set(p,t)},remove:async(_v,p)=>{disk.delete(p)},createFolder:async()=>{},removeFolder:async()=>{}};
   const P=W.UrbeCore.service('persistence').configure(adapter),D=W.UrbeCore.service('documents');return{P,D,disk};

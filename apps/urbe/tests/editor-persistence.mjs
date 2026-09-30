@@ -8,7 +8,7 @@ await test('pagehide grava operação pendente sem esperar o debounce',async()=>
   const document={hidden:false,addEventListener(t,f){(docListeners[t]||=[]).push(f)}};
   const window={document,addEventListener(t,f){(listeners[t]||=[]).push(f)}};
   const context={window,setTimeout,clearTimeout};vm.createContext(context);
-  for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/trash.js','src/persistence/vault-meta.js','src/persistence/backup.js','src/persistence/workspace.js'])vm.runInContext(read(f),context);
+  for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/trash.js','src/persistence/vault-meta.js','src/persistence/backup.js','src/persistence/identity.js','src/persistence/workspace.js'])vm.runInContext(read(f),context);
   const core=window.UrbeCore,p=core.service('persistence'),docs=core.service('documents');
   p.configure(adapter);await p.load('V');
   docs.upsert({path:'A.md',content:'alpha'});

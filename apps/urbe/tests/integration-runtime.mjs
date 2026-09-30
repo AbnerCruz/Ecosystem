@@ -9,7 +9,7 @@ for(const file of ['src/composition/store.js','src/composition/compiler.js','src
   assert.equal(scripts.filter(x=>x===file).length,1,`${file} carregado mais de uma vez`);
 
 const ctx={window:{},Date,Math,setTimeout,clearTimeout,console};vm.createContext(ctx);
-for(const file of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/trash.js','src/core/history.js','src/core/knowledge-index.js','src/composition/store.js','src/composition/compiler.js','src/persistence/vault-meta.js','src/persistence/backup.js','src/persistence/workspace.js'])vm.runInContext(source(file),ctx,{filename:file});
+for(const file of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/trash.js','src/core/history.js','src/core/knowledge-index.js','src/composition/store.js','src/composition/compiler.js','src/persistence/vault-meta.js','src/persistence/backup.js','src/persistence/identity.js','src/persistence/workspace.js'])vm.runInContext(source(file),ctx,{filename:file});
 const core=ctx.window.UrbeCore,docs=core.service('documents'),p=core.service('persistence'),indexer=core.service('knowledge');
 const vaults=new Map([['A',new Map([['Nota.md','[[Outra]] #antiga'],['Outra.md','Destino']])],['B',new Map([['Nota.md','Outro vault']])]]);
 const adapter={async list(v){return [...vaults.get(v).keys()]},async read(v,f){return vaults.get(v).get(f)??null},async write(v,f,x){vaults.get(v).set(f,x)},async remove(v,f){vaults.get(v).delete(f)}};

@@ -53,7 +53,7 @@ export async function openApp(h, { docs = 1, timeout = 60000, path = '/index.htm
 export async function readVault(page, cidade = 'Urbe') {
   return await page.evaluate(async (cidade) => {
     const db = await new Promise((ok, err) => { const r = indexedDB.open('knowledge-city', 3); r.onsuccess = () => ok(r.result); r.onerror = () => err(r.error); });
-    const out = await new Promise((ok, err) => { const t = db.transaction('fs', 'readonly'), s = t.objectStore('fs'), res = {}; const req = s.openCursor(); req.onsuccess = () => { const c = req.result; if (!c) return ok(res); if (String(c.key).startsWith(cidade + '/')) res[String(c.key).slice(cidade.length + 1)] = typeof c.value === 'string' ? c.value : { blob: true, size: c.value.size }; c.continue(); }; req.onerror = () => err(req.error); });
+    const out = await new Promise((ok, err) => { const t = db.transaction('fs', 'readonly'), s = t.objectStore('fs'), res = {}; const req = s.openCursor(); req.onsuccess = () => { const c = req.result; if (!c) return ok(res); if (String(c.key).startsWith(cidade + '/')) res[String(c.key).slice(cidade.length + 1)] = typeof c.value === 'string' ? c.value : c.value == null ? null : { blob: true, size: c.value.size }; c.continue(); }; req.onerror = () => err(req.error); });
     db.close(); return out;
   }, cidade);
 }

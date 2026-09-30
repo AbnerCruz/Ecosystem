@@ -405,6 +405,25 @@
       ]
     },
     {
+      "name": "persistence/identity",
+      "file": "src/persistence/identity.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeIdentity"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
       "name": "persistence/workspace",
       "file": "src/persistence/workspace.js",
       "layer": "persistence",
@@ -425,7 +444,8 @@
         "src/core/documents.js",
         "src/core/trash.js",
         "src/core/history.js",
-        "src/composition/store.js"
+        "src/composition/store.js",
+        "src/persistence/identity.js"
       ],
       "uses": [],
       "platforms": [
@@ -508,6 +528,25 @@
         "src/core/core.js",
         "src/core/documents.js"
       ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/stable-ids",
+      "file": "src/world/stable-ids.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeStableIds"
+        ],
+        "services": []
+      },
+      "requires": [],
       "uses": [],
       "platforms": [
         "web",
@@ -1335,7 +1374,8 @@
         "src/math/core.js",
         "src/persistence/adapters/idb.js",
         "src/persistence/adapters/fsa.js",
-        "src/persistence/adapters/router.js"
+        "src/persistence/adapters/router.js",
+        "src/world/stable-ids.js"
       ],
       "uses": [
         "src/pages/studio.js",
