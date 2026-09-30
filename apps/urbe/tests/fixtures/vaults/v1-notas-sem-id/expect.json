@@ -1,0 +1,20 @@
+{
+  "notes": [
+    "Alfa.md",
+    "Beta.md"
+  ],
+  "ids": {},
+  "generatedIds": true,
+  "positions": {
+    "Alfa.md": [
+      32,
+      32
+    ]
+  },
+  "noteHashes": {
+    "Alfa.md": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef",
+    "Beta.md": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+  },
+  "futureHashes": {},
+  "keepHashes": {}
+}

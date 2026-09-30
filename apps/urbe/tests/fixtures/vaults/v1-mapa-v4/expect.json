@@ -1,0 +1,33 @@
+{
+  "notes": [
+    "Alfa.md",
+    "Beta.md",
+    "Pasta/Gama.md"
+  ],
+  "ids": {
+    "Alfa.md": "doc_00000001-0000-4000-8000-000000000000",
+    "Beta.md": "doc_00000002-0000-4000-8000-000000000000",
+    "Pasta/Gama.md": "doc_00000003-0000-4000-8000-000000000000"
+  },
+  "positions": {
+    "Alfa.md": [
+      32,
+      32
+    ],
+    "Pasta/Gama.md": [
+      34,
+      36
+    ]
+  },
+  "trash": 1,
+  "history": 1,
+  "compositions": 1,
+  "noteHashes": {
+    "Alfa.md": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef",
+    "Beta.md": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9",
+    "Pasta/Gama.md": "2e2c23aa8895912aa37ea9bc86b26504c2b6245b69d657ca3e6c23daec5554cd",
+    "Pasta/logo.png": "19ebbebd7eaf12d4fb59e09368b966517c1f3bc5f29a2fc054157eb02a3f3b91"
+  },
+  "futureHashes": {},
+  "keepHashes": {}
+}

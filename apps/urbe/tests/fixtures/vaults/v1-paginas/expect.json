@@ -1,0 +1,14 @@
+{
+  "notes": [
+    "Páginas/Inicio.page.json",
+    "Páginas/Modelos/Blog.template.json",
+    "Páginas/Blocos/Rodape.block.json"
+  ],
+  "noteHashes": {
+    "Páginas/Inicio.page.json": "9c4b30ecc670aff8833e6ecb76e9f71514a438d10aa6c3d9b3bd549f01fafd51",
+    "Páginas/Modelos/Blog.template.json": "705fe4de912a02a71cf004120d3060abb2152e3a95b22322d551db6ea07fb12b",
+    "Páginas/Blocos/Rodape.block.json": "e5f57707a354050bcab44d069672400848e3b3bfc42e08ae17794a06c2b1e1cd"
+  },
+  "futureHashes": {},
+  "keepHashes": {}
+}

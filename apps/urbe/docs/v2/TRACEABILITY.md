@@ -42,7 +42,7 @@
 | REQ-020 | §7.2 | F3 | RM-F3-06 — Coerência documental do modelo de plugins | [ ] | `build-tutorial --check` com tópicos obrigatórios. | G3 |
 | REQ-021 | §7.1 | F3 | RM-F3-08 — Política de credenciais por plataforma documentada | [ ] | Revisão. | G3 |
 | REQ-022 | §3.1 | F2 | RM-F2-01 — Avaliação de hotspots por responsabilidade e acoplamento | [ ] | Script `tools/hotspots.mjs` reproduz métricas. | G2 |
-| REQ-023 | §5.1 | F1 | RM-F1-03 — Catálogo de formatos verificado por código | [ ] | Teste negativo: novo arquivo sem linha no catálogo falha. | G1 |
+| REQ-023 | §5.1 | F1 | RM-F1-03 — Catálogo de formatos verificado por código | [x] | Teste negativo: novo arquivo sem linha no catálogo falha. | G1 |
 | REQ-023 | §5.1 | F1 | RM-F1-26 — Política de migração por formato (contrato final) | [ ] | `check-catalog` valida presença de política por formato. | G1 |
 | REQ-024 | §2 | F0 | RM-F0-02 — Verificador e gerador de rastreabilidade | [x] | Execução local: `node tools/check-traceability.mjs` retorna 0; teste negativo em `tests/traceability.mjs` (REQ removido → falha). | G0 |
 | REQ-024 | §2 | F6 | RM-F6-06 — Auditoria final de cobertura | [ ] | Verificador verde; revisão manual. | G6 |
@@ -73,8 +73,8 @@
 | REQ-035 | §5.1 | F1 | RM-F1-05 — Proteção forward: journal, history, trash, compositions | [ ] | Fixture `futuro-desconhecido`: bytes inalterados após abrir/salvar; teste de coexistência v1/v2. | G1 |
 | REQ-035 | §5.1 | F1 | RM-F1-06 — Proteção forward: mapa, tema, páginas, blocos, modelos | [ ] | Fixture futuro: nada reescrito; UI mostra aviso. | G1 |
 | REQ-036 | §5.1 | F1 | RM-F1-04 — `vault.json` e detecção de versão do vault | [ ] | Fixtures: 1.x sem `vault.json`, 2.x, futuro maior. | G1 |
-| REQ-037 | §5.1 | F1 | RM-F1-01 — Criar fixtures de vaults históricos | [ ] | Cada fixture abre no código 1.8.2 sem erro (teste de caracterização). | G1 |
-| REQ-037 | §5.1 | F1 | RM-F1-02 — Harness de abertura/migração de fixtures | [ ] | Rodar contra 1.8.2 (baseline) e depois a cada item. | G1 |
+| REQ-037 | §5.1 | F1 | RM-F1-01 — Criar fixtures de vaults históricos | [x] | Cada fixture abre no código 1.8.2 sem erro (teste de caracterização). | G1 |
+| REQ-037 | §5.1 | F1 | RM-F1-02 — Harness de abertura/migração de fixtures | [x] | Rodar contra 1.8.2 (baseline) e depois a cada item. | G1 |
 | REQ-038 | §5.1 | F1 | RM-F1-07 — Motor de backup pré-migração e restauração | [ ] | Testes: backup íntegro, restauração byte a byte, migração repetida não duplica. | G1 |
 | REQ-039 | §5.2 | F1 | RM-F1-08 — Fonte única de tipos de artefato | [ ] | `tests/artifacts.mjs` (tabela de casos); `grep` de listas antigas retorna 0. | G1 |
 | REQ-040 | §5.2 | F1 | RM-F1-13 — Escritor único do mapa e leitura de `mapa.v` | [ ] | Fixtures mapa v1/v2/v4; teste de dupla escrita (não há); assinatura de binários preservada. | G1 |
@@ -102,7 +102,7 @@
 | REQ-058 | §7.3 | F3 | RM-F3-15 — Limites de importação de ZIP | [ ] | Testes zip-slip e zip-bomb. | G3 |
 | REQ-058 | §7.3 | F3 | RM-F3-16 — Testes de zip-slip/bomb nas três plataformas | [ ] | Suíte por plataforma. | G3 |
 | REQ-060 | §7.4 | F3 | RM-F3-17 — Política de artefatos ativos criados por IA | [ ] | `ai-agent.mjs` ampliado. | G3 |
-| REQ-061 | §9 | F4 | RM-F4-04 — Scaffold Playwright e fixtures E2E | [ ] | Smoke: abre app com fixture. | G4 |
+| REQ-061 | §9 | F4 | RM-F4-04 — Scaffold Playwright e fixtures E2E | [?] | Smoke: abre app com fixture. | G4 |
 | REQ-061 | §9 | F4 | RM-F4-05 — Cenários E2E críticos (web) | [ ] | Cenários passam em Chromium (D1) e emulação D2. | G4 |
 | REQ-061 | §9 | F4 | RM-F4-06 — E2E de gestos e cidade (paridade do toque) | [ ] | Cenários E2E de toque emulado. | G4 |
 | REQ-061 | §9 | F4 | RM-F4-07 — Smoke E2E do Electron | [ ] | Passa no Windows CI. | G4 |
@@ -157,4 +157,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 80; com item no ROADMAP: 80.
-- Itens no ROADMAP: 118; concluídos `[x]`: 11.
+- Itens no ROADMAP: 118; concluídos `[x]`: 14.

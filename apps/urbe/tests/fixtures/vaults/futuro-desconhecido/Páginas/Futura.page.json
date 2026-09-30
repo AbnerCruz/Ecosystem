@@ -1,0 +1,27 @@
+{
+  "version": 99,
+  "kind": "urbe-page",
+  "meta": {
+    "title": "Futura",
+    "lang": "pt-BR"
+  },
+  "theme": {
+    "id": "claro"
+  },
+  "layout": {
+    "format": "page"
+  },
+  "sections": [
+    {
+      "id": "s1",
+      "type": "hero",
+      "props": {
+        "title": "Futura"
+      },
+      "style": {}
+    }
+  ],
+  "campoFuturo": {
+    "a": 1
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "urbe-tema-1",
+  "versao": 1,
+  "tema": "escuro",
+  "cores": {
+    "fundo": "#101418"
+  },
+  "estilos": {
+    "Personalização/estilos/meu.css": true
+  },
+  "css": ""
+}

@@ -1,0 +1,21 @@
+{
+  "notes": [
+    "Alfa.md",
+    "Personalização/estilos/meu.css",
+    "Personalização/plugins/ola.js",
+    "Personalização/temas/noite.json",
+    "Personalização/texturas/grama.json",
+    "Personalização/tema.json"
+  ],
+  "keepFiles": [],
+  "noteHashes": {
+    "Alfa.md": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef",
+    "Personalização/tema.json": "6e01cc934d3801448cf01cb284c085ec5d484d4277a9b4f3f9e43fd31aaaeac5",
+    "Personalização/temas/noite.json": "c602e095b9a1eb838177d6a0603d2d4c66e62e55e4239430199ca0b2355cc2fb",
+    "Personalização/estilos/meu.css": "0f98632f4e25c4b97fd6eabde57b03a55009351e1ef7a88ba143b1d62671076c",
+    "Personalização/texturas/grama.json": "b230b443fc14dedfe68ad4f42bd8d71c24c08b85bc458bb25daf63b8e17476fd",
+    "Personalização/plugins/ola.js": "5d9ce684dc6ebe3ce5608c2a66a61959f1f89ace13db86eddfc3bf0664f72ece"
+  },
+  "futureHashes": {},
+  "keepHashes": {}
+}

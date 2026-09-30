@@ -1,0 +1,10 @@
+{
+ "Norte": {
+  "folder": "Cidades/Norte",
+  "importedAt": "2026-09-10T00:00:00.000Z"
+ },
+ "Sul": {
+  "folder": "Cidades/Sul",
+  "importedAt": "2026-09-10T00:00:00.000Z"
+ }
+}

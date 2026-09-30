@@ -14,7 +14,9 @@
     "www": "node tools/build-www.mjs",
     "android:sync": "node tools/build-www.mjs && cap sync android",
     "test": "node tools/run-tests.mjs",
-    "check": "node tools/check-all.mjs"
+    "check": "node tools/check-all.mjs",
+    "test:e2e": "node tools/run-e2e.mjs",
+    "perf": "node tools/perf/run.mjs"
   },
   "dependencies": {
     "chokidar": "^4.0.3",

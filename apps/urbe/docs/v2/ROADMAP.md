@@ -273,7 +273,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 ## F1 — Persistência, dados e migração (G1)
 
 ### RM-F1-01 — Criar fixtures de vaults históricos
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-037
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -284,9 +284,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** `tests/fixtures/vaults/README.md`.
 - **Aceite:** Todas as fixtures existem, versionadas e abrem em 1.8.2.
 - **Gate:** G1
+- **Evidência:** tests/fixtures/vaults (9 vaults + IDB legado) gerados por tools/make-fixtures.mjs (--check); abrem na 1.8.2 sem erro (tests/e2e/fixtures.e2e.mjs)
 
 ### RM-F1-02 — Harness de abertura/migração de fixtures
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-037
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -297,9 +298,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG §5.
 - **Aceite:** Harness verde na 1.8.2; vermelho quando nota é alterada.
 - **Gate:** G1
+- **Evidência:** tests/vault-migration.mjs (persistência, com catraca KNOWN_GAPS) + tests/e2e/fixtures.e2e.mjs (app real: bytes das notas preservados, migrarAntiga)
 
 ### RM-F1-03 — Catálogo de formatos verificado por código
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-023
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -310,6 +312,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG.md.
 - **Aceite:** Nenhum formato persistido fora do catálogo.
 - **Gate:** G1
+- **Evidência:** tools/check-catalog.mjs + tests/catalog.mjs; DATA-CATALOG §9 (política por formato)
 
 ### RM-F1-04 — `vault.json` e detecção de versão do vault
 - **Estado:** [ ]
@@ -1166,7 +1169,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G4
 
 ### RM-F4-04 — Scaffold Playwright e fixtures E2E
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-061
 - **SPEC:** §9
 - **Fase:** F4
@@ -1177,6 +1180,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §E2E.
 - **Aceite:** E2E executa localmente e no CI.
 - **Gate:** G4
+- **Evidência:** tools/run-e2e.mjs, tools/lib/browser.mjs, tests/e2e/{smoke,lifecycle,zip,fixtures}.e2e.mjs; npm run test:e2e; falta job de CI dedicado
 
 ### RM-F4-05 — Cenários E2E críticos (web)
 - **Estado:** [ ]
