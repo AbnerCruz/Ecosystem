@@ -1,0 +1,173 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20260930-fundacao-fase-0",
+  "category": "HANDOFF",
+  "timestamp": "2026-09-30T17:12:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-1",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/pull_request_template.md",
+    ".github/workflows/consistency.yml",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "MANIFEST.md",
+    "README.md",
+    "ROADMAP.md",
+    "docs/adr/0001-registro-de-decisoes-arquiteturais.md",
+    "docs/adr/0002-formato-dos-registros-canonicos.md",
+    "docs/adr/0003-checks-de-consistencia-em-csharp.md",
+    "docs/adr/0004-estrutura-inicial-do-repositorio.md",
+    "docs/adr/README.md",
+    "docs/adr/TEMPLATE.md",
+    "docs/contracts/README.md",
+    "docs/contracts/schemas/decisions.schema.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/contracts/schemas/enforcement-matrix.schema.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/README.md",
+    "docs/governance/communication.md",
+    "docs/governance/decisions.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/handoffs/HO-20260930-fundacao-fase-0.json",
+    "docs/migration/README.md",
+    "docs/migration/inventory-template.md",
+    "ecosystem.json",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md"
+  ],
+  "work_completed": [
+    "P0-1: MANIFEST.md incluído byte a byte a partir do documento fornecido pelo proprietário.",
+    "P0-2: AGENTS.md com protocolo de 16 passos (MANIFEST §25) e reprodução operacional de NN-001..NN-022 com cláusulas de enforcement.",
+    "P0-3: ARCHITECTURE.md com conceitos, boundaries, tabela de autoridades e lista explícita do que não foi decidido.",
+    "P0-4: ecosystem.json (lunet2d e urbe not-migrated, hub planned, consistency-checks active) + ecosystem.schema.json.",
+    "P0-5: processo de ADR (ADR-0001) e ADRs 0002–0004, todos Proposto.",
+    "P0-6: communication.md, definition-of-done.md, handoff.schema.json, decisions.json com DEC-0001..DEC-0004.",
+    "P0-7: enforcement-matrix.json cobrindo as 22 invariantes, validada contra o MANIFEST por CHK-ENFORCEMENT-MATRIX.",
+    "P0-8: tests/consistency/Check.cs com 14 checks e self-test com 17 casos de violação.",
+    "P0-9: workflow .github/workflows/consistency.yml (checks + self-test).",
+    "P0-10: estratégia de migração e template de inventário em docs/migration/."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local, .NET SDK 10.0.112: 'Todos os 14 checks passaram.'"
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: baseline passa e os 17 casos de violação são detectados pelo check esperado; nenhum check sem caso."
+    },
+    {
+      "check": "Workflow consistency no GitHub Actions",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Primeira execução ocorre no push deste commit."
+    },
+    {
+      "check": "Gate da Fase 0: agente novo entende produto, autoridade documental e processo sem conversa anterior",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Requer revisão do proprietário ou de agente independente; não pode ser autodeclarado."
+    }
+  ],
+  "known_issues": [
+    "Boundaries (NN-002/003/007) são verificadas apenas sobre o grafo declarado em ecosystem.json; verificação sobre código real está planejada para P1-7.",
+    "Origem dos produtos é INFERÊNCIA a partir dos nomes dos repositórios (source.confirmed = false) até DEC-0004."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: responder DEC-0001..DEC-0004 em docs/governance/decisions.json.",
+    "Próximo agente: P1-1 e P1-2 — inventários somente leitura de Lunet2D e Urbe usando docs/migration/inventory-template.md.",
+    "Após DEC-0002 e DEC-0004: P1-3 plano de importação."
+  ],
+  "decisions_required": [
+    "DEC-0001",
+    "DEC-0002",
+    "DEC-0003",
+    "DEC-0004"
+  ],
+  "normative_sources": [
+    "MANIFEST.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Tabela de autoridades em ARCHITECTURE.md §5; source/version.authority em ecosystem.json; CHK-SINGLE-AUTHORITY."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência declarada entre produtos; CHK-BOUNDARIES."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Hub não é dependência de nenhum componente; CHK-BOUNDARIES."
+    },
+    {
+      "id": "NN-004",
+      "evidence": "Nenhum diretório compartilhado criado; CHK-GENERIC-DIRS e CHK-SHARED-DECLARATION."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Infraestrutura nova (checks) em C#; nenhum código do Urbe tocado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Este handoff, validado por CHK-HANDOFFS."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Decisões da fundação persistidas em ADRs 0001–0004 e DEC-0001..0004."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST.md lido integralmente; AGENTS.md verificado contra ele por CHK-AGENTS-NN."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADRs com status Proposto e ratificação pedida em DEC-0001; nenhuma decisão marcada como Aceita."
+    },
+    {
+      "id": "NN-012",
+      "evidence": "Nenhuma importação feita; estratégia documentada antes (docs/migration/README.md)."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Nenhum código de produto migrado ou alterado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Gate da Fase 0 e CI no GitHub registrados como pendentes; ROADMAP usa [~] para eles."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado 'review', não 'done': há verificações pendentes."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs estáveis com formato validado por schema; unicidade por CHK-IDS-UNIQUE."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhum projeto C# vazio, diretório placeholder ou dependência externa (ADR-0003, ADR-0004)."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Estado real declarado: produtos not-migrated/planned, decisões pendentes visíveis em decisions.json."
+    }
+  ],
+  "cost": null
+}

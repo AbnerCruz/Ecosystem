@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ecosystem/contracts/ecosystem-manifest/1",
+  "title": "Ecosystem manifest (ecosystem.json) — schemaVersion 1",
+  "description": "Autoridade canônica do formato de ecosystem.json. Ver ADR-0002.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "ecosystem", "components"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "ecosystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "phase", "normative"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "name": { "type": "string", "minLength": 1 },
+        "phase": { "type": "string", "pattern": "^phase-[0-9]+$" },
+        "normative": {
+          "description": "Documentos normativos da raiz. Cada caminho deve existir.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["manifest", "agents", "architecture", "roadmap", "enforcementMatrix", "decisions"],
+          "properties": {
+            "manifest": { "$ref": "#/$defs/path" },
+            "agents": { "$ref": "#/$defs/path" },
+            "architecture": { "$ref": "#/$defs/path" },
+            "roadmap": { "$ref": "#/$defs/path" },
+            "enforcementMatrix": { "$ref": "#/$defs/path" },
+            "decisions": { "$ref": "#/$defs/path" }
+          }
+        }
+      }
+    },
+    "components": {
+      "description": "Mapa ID estável → componente. A chave é a identidade (NN-019); 'name' é apenas exibição.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/id" },
+      "additionalProperties": { "$ref": "#/$defs/component" }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
+    "path": { "type": "string", "pattern": "^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$" },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "language", "path", "status", "owners", "description", "dependencies"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "type": {
+          "description": "Tipos de MANIFEST §6, mais 'check' (verificação interna do repositório; ver ADR-0002).",
+          "enum": ["product", "tool", "service", "library", "workspace", "adapter", "contract", "check"]
+        },
+        "language": { "enum": ["csharp", "javascript", "typescript", "none"] },
+        "path": { "$ref": "#/$defs/path" },
+        "status": {
+          "description": "planned: ainda não existe no repositório. not-migrated: existe fora do monorepo (ver 'source'). active: existe no path declarado.",
+          "enum": ["planned", "not-migrated", "migrating", "active", "deprecated", "archived"]
+        },
+        "description": { "type": "string", "minLength": 1 },
+        "owners": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "source": {
+          "description": "Repositório de origem antes da migração. Enquanto o componente não estiver migrado, ele é a autoridade do código, da versão e do histórico.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["repository", "confirmed"],
+          "properties": {
+            "repository": { "type": "string", "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+            "confirmed": { "type": "boolean" }
+          }
+        },
+        "version": {
+          "description": "Onde vive a autoridade única da versão (NN-001, NN-014).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["authority"],
+          "properties": {
+            "authority": { "enum": ["source-repository", "version-file", "undecided"] },
+            "file": { "$ref": "#/$defs/path" }
+          }
+        },
+        "docs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "readme": { "$ref": "#/$defs/path" },
+            "spec": { "$ref": "#/$defs/path" },
+            "roadmap": { "$ref": "#/$defs/path" },
+            "agents": { "$ref": "#/$defs/path" }
+          }
+        },
+        "commands": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "build": { "type": "string", "minLength": 1 },
+            "test": { "type": "string", "minLength": 1 }
+          }
+        },
+        "responsibility": {
+          "description": "Obrigatório (verificado pelo check) para componentes compartilhados — NN-004.",
+          "type": "string", "minLength": 1
+        },
+        "contract": {
+          "description": "Obrigatório (verificado pelo check) para componentes compartilhados — NN-004/NN-006.",
+          "$ref": "#/$defs/path"
+        },
+        "consumers": {
+          "description": "Obrigatório (verificado pelo check) para componentes compartilhados — NN-004/NN-022.",
+          "type": "array", "items": { "$ref": "#/$defs/id" }
+        },
+        "extractionReason": {
+          "description": "Obrigatório (verificado pelo check) para componentes compartilhados — NN-004/NN-022.",
+          "type": "string", "minLength": 1
+        },
+        "compatibility": {
+          "description": "Obrigatório (verificado pelo check) para componentes compartilhados — NN-004.",
+          "type": "string", "minLength": 1
+        },
+        "dependencies": {
+          "description": "Dependências declaradas entre componentes. Verificadas contra as regras de boundary (ARCHITECTURE.md §4).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["component", "kind", "reason"],
+            "properties": {
+              "component": { "$ref": "#/$defs/id" },
+              "kind": { "enum": ["required", "optional"] },
+              "reason": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

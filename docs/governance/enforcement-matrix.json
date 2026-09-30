@@ -1,0 +1,186 @@
+{
+  "$schema": "../contracts/schemas/enforcement-matrix.schema.json",
+  "schemaVersion": 1,
+  "source": "MANIFEST.md#01-non-negotiables",
+  "invariants": [
+    {
+      "id": "NN-001", "title": "Uma única autoridade por conceito",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "ARCHITECTURE.md §5 (tabela de autoridades) e campo version.authority em ecosystem.json." },
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "ecosystem.schema.json exige version.authority e source para componentes.", "check": "CHK-SCHEMA" },
+        { "mechanism": "TEST", "status": "implemented", "how": "Um único manifest raiz; paths de componentes não sobrepostos; componente not-migrated não pode existir também no monorepo; version-file deve existir.", "check": "CHK-SINGLE-AUTHORITY" },
+        { "mechanism": "CI", "status": "implemented", "how": "Workflow consistency.yml falha quando o check falha.", "check": "CHK-SINGLE-AUTHORITY" }
+      ]
+    },
+    {
+      "id": "NN-002", "title": "Monorepo não significa monólito",
+      "mechanisms": [
+        { "mechanism": "ARCH", "status": "implemented", "how": "Grafo de dependências declarado em ecosystem.json: Urbe ↔ Lunet2D e Product → Product proibidos.", "check": "CHK-BOUNDARIES" },
+        { "mechanism": "CI", "status": "implemented", "how": "Workflow consistency.yml.", "check": "CHK-BOUNDARIES" },
+        { "mechanism": "TEST", "status": "planned", "how": "Architecture tests sobre referências reais de código (csproj/package.json/imports) após a importação dos produtos.", "phase": "phase-1" }
+      ]
+    },
+    {
+      "id": "NN-003", "title": "O Hub jamais é dependência essencial dos produtos",
+      "mechanisms": [
+        { "mechanism": "ARCH", "status": "implemented", "how": "Nenhum componente pode declarar dependência 'required' do hub.", "check": "CHK-BOUNDARIES" },
+        { "mechanism": "TEST", "status": "planned", "how": "Testes de execução standalone de cada produto sem o Hub.", "phase": "phase-1" },
+        { "mechanism": "CI", "status": "planned", "how": "Gate de release dos produtos executado sem Hub.", "phase": "phase-4" },
+        { "mechanism": "DEVICE", "status": "planned", "how": "Validação em aparelho de que Lunet2D e Urbe abrem e funcionam sem Hub instalado.", "phase": "phase-4" }
+      ]
+    },
+    {
+      "id": "NN-004", "title": "Não existe `shared` sem responsabilidade",
+      "mechanisms": [
+        { "mechanism": "TEST", "status": "implemented", "how": "Proíbe diretórios genéricos (shared, common, misc, utils, helpers...) na raiz e em platform/, workspaces/, tools/.", "check": "CHK-GENERIC-DIRS" },
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "Componentes compartilhados devem declarar responsibility, contract, consumers, owners, compatibility e extractionReason.", "check": "CHK-SHARED-DECLARATION" },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Revisão arquitetural de toda extração (MANIFEST §48)." }
+      ]
+    },
+    {
+      "id": "NN-005", "title": "C# é padrão, não justificativa para reescrita",
+      "mechanisms": [
+        { "mechanism": "ADR", "status": "manual", "how": "Qualquer reescrita estrutural exige ADR aprovado pelo proprietário (docs/adr/README.md)." },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Revisão de PR verifica ausência de reescrita não autorizada; roadmap específico e testes de compatibilidade quando houver migração." },
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "ecosystem.json declara a linguagem de cada componente.", "check": "CHK-SCHEMA" }
+      ]
+    },
+    {
+      "id": "NN-006", "title": "Capability é contrato, não integração improvisada",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "docs/contracts/README.md define os campos mínimos de um contrato de capability." },
+        { "mechanism": "SCHEMA", "status": "planned", "how": "Schema de Capability (ID, versão, provider, inputs, outputs, erros, permissões, lifecycle, compatibilidade).", "phase": "phase-2" },
+        { "mechanism": "TEST", "status": "planned", "how": "Contract tests e compatibility checks por capability.", "phase": "phase-2" }
+      ]
+    },
+    {
+      "id": "NN-007", "title": "Uma Tool não conhece o Host concreto",
+      "mechanisms": [
+        { "mechanism": "ARCH", "status": "implemented", "how": "Componentes não-produto não podem declarar dependência de produtos (Hosts concretos).", "check": "CHK-BOUNDARIES" },
+        { "mechanism": "TEST", "status": "planned", "how": "Dependency tests sobre código real e contract tests em pelo menos dois Hosts para Tools multi-host.", "phase": "phase-5" },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Revisão de imports/references em PRs de Tools." }
+      ]
+    },
+    {
+      "id": "NN-008", "title": "Nenhum agente realiza trabalho invisível",
+      "mechanisms": [
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "handoff.schema.json (MANIFEST §23.1).", "check": "CHK-HANDOFFS" },
+        { "mechanism": "CI", "status": "implemented", "how": "Todo handoff é validado no CI; handoff 'done' exige verificação com evidência.", "check": "CHK-HANDOFFS" },
+        { "mechanism": "RUNTIME", "status": "planned", "how": "Observabilidade de agentes em execução no Hub/Agent Workspace.", "phase": "phase-6" }
+      ]
+    },
+    {
+      "id": "NN-009", "title": "Conversa não é fonte de verdade permanente",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "docs/governance/communication.md §1 (regra de persistência)." },
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "Decisão com status 'decided' deve apontar para registro persistido existente.", "check": "CHK-DECISIONS" },
+        { "mechanism": "ADR", "status": "manual", "how": "Decisão estrutural → ADR; decisão de produto → SPEC/ROADMAP." }
+      ]
+    },
+    {
+      "id": "NN-010", "title": "Resumo nunca substitui documento normativo",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "AGENTS.md §1 exige leitura direta das fontes normativas." },
+        { "mechanism": "TEST", "status": "implemented", "how": "AGENTS.md deve referenciar MANIFEST.md e reproduzir todas as NN com o mesmo título e cláusula de enforcement.", "check": "CHK-AGENTS-NN" },
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "Handoff exige normative_sources, com caminhos existentes.", "check": "CHK-HANDOFFS" }
+      ]
+    },
+    {
+      "id": "NN-011", "title": "Mudança arquitetural exige decisão explícita",
+      "mechanisms": [
+        { "mechanism": "ADR", "status": "implemented", "how": "Processo de ADR com seções e status obrigatórios.", "check": "CHK-ADR" },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Review gate: PR template exige citar ADR/decisão para mudanças de boundary, protocolo, ownership, dados ou compatibilidade." },
+        { "mechanism": "CI", "status": "planned", "how": "ADR check automático: mudanças em ecosystem.json/boundaries/contracts exigem ADR referenciado no PR.", "phase": "phase-2" }
+      ]
+    },
+    {
+      "id": "NN-012", "title": "Histórico Git deve ser preservado nas migrações",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "docs/migration/README.md (estratégia de preservação do histórico)." },
+        { "mechanism": "TEST", "status": "planned", "how": "Auditoria pós-migração: contagem de commits/tags da origem presentes no monorepo.", "phase": "phase-1" },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Auditoria do plano de migração antes da execução." }
+      ]
+    },
+    {
+      "id": "NN-013", "title": "Migração e refatoração não são a mesma tarefa",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "docs/migration/README.md §4 (escopo restrito)." },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Auditoria de diff dos PRs de migração." },
+        { "mechanism": "TEST", "status": "planned", "how": "Testes antes/depois da migração de cada produto.", "phase": "phase-1" }
+      ]
+    },
+    {
+      "id": "NN-014", "title": "Produtos possuem lifecycles e versões independentes",
+      "mechanisms": [
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "Cada componente declara sua própria autoridade de versão.", "check": "CHK-SCHEMA" },
+        { "mechanism": "CI", "status": "planned", "how": "Pipelines seletivos por componente, derivados de ecosystem.json.", "phase": "phase-1" }
+      ]
+    },
+    {
+      "id": "NN-015", "title": "GitHub não é IPC",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "ARCHITECTURE.md §6." },
+        { "mechanism": "ADR", "status": "manual", "how": "Qualquer exceção exige ADR." },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Revisão de integrações runtime." }
+      ]
+    },
+    {
+      "id": "NN-016", "title": "Permissões precedem autonomia forte",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "ARCHITECTURE.md §7 registra o princípio; modelo ainda não decidido." },
+        { "mechanism": "SCHEMA", "status": "planned", "how": "Permission model e declaração de permissões nos manifests (deny-by-default).", "phase": "phase-2" },
+        { "mechanism": "RUNTIME", "status": "planned", "how": "Verificação de permissões em execução no Capability Runtime.", "phase": "phase-5" }
+      ]
+    },
+    {
+      "id": "NN-017", "title": "CI verde não equivale a validação completa",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "docs/governance/definition-of-done.md distingue 'automated verified' de 'human validated'." },
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "Handoff 'done' não pode ter verificação humana pendente.", "check": "CHK-HANDOFFS" },
+        { "mechanism": "DEVICE", "status": "manual", "how": "Validação em aparelho registrada como verificação kind=human." }
+      ]
+    },
+    {
+      "id": "NN-018", "title": "“Done” exige evidência",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "docs/governance/definition-of-done.md (Definition of Done e status machine)." },
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "Handoff 'done' exige ao menos uma verificação, todas 'passed'/'not-applicable', com evidência.", "check": "CHK-HANDOFFS" },
+        { "mechanism": "CI", "status": "implemented", "how": "Workflow consistency.yml.", "check": "CHK-HANDOFFS" },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Revisão das evidências no PR." },
+        { "mechanism": "DEVICE", "status": "manual", "how": "Validação humana quando o requisito depende de aparelho." }
+      ]
+    },
+    {
+      "id": "NN-019", "title": "Identidade importante deve ser estável",
+      "mechanisms": [
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "IDs com formato definido em todos os schemas.", "check": "CHK-SCHEMA" },
+        { "mechanism": "TEST", "status": "implemented", "how": "Unicidade de IDs de componentes, ADRs, decisões, handoffs e invariantes.", "check": "CHK-IDS-UNIQUE" }
+      ]
+    },
+    {
+      "id": "NN-020", "title": "A plataforma deve reduzir, não aumentar, a complexidade total",
+      "mechanisms": [
+        { "mechanism": "DOC", "status": "implemented", "how": "Critério de criação de componente (MANIFEST §48) referenciado em ARCHITECTURE.md §3." },
+        { "mechanism": "ADR", "status": "manual", "how": "ADR para toda abstração estrutural." },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Revisão periódica de dívida e custo de integração (ROADMAP)." }
+      ]
+    },
+    {
+      "id": "NN-021", "title": "O estado real do ecossistema nunca pode ficar implícito",
+      "mechanisms": [
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "ecosystem.json, decisions.json e handoffs são validados; paths normativos devem existir.", "check": "CHK-SCHEMA" },
+        { "mechanism": "TEST", "status": "implemented", "how": "Componentes 'active' devem existir no path declarado; 'planned' e 'not-migrated' não.", "check": "CHK-SINGLE-AUTHORITY" },
+        { "mechanism": "RUNTIME", "status": "planned", "how": "Hub consome essas fontes (Past/Now/Next) em vez de inventar estado.", "phase": "phase-3" }
+      ]
+    },
+    {
+      "id": "NN-022", "title": "Nenhuma abstração compartilhada sem redução de complexidade total",
+      "mechanisms": [
+        { "mechanism": "SCHEMA", "status": "implemented", "how": "Componentes compartilhados exigem extractionReason e ao menos um consumidor real declarado.", "check": "CHK-SHARED-DECLARATION" },
+        { "mechanism": "ADR", "status": "manual", "how": "ADR ou registro arquitetural para extrações relevantes, respondendo às 5 perguntas de NN-022." },
+        { "mechanism": "TEST", "status": "planned", "how": "Pelo menos um teste de consumidor real por componente compartilhado.", "phase": "phase-2" },
+        { "mechanism": "REVIEW", "status": "manual", "how": "Revisão de boundary." }
+      ]
+    }
+  ]
+}

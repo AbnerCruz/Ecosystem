@@ -1,0 +1,91 @@
+# ARCHITECTURE.md — Arquitetura inicial
+
+> **Autoridade:** abaixo de `MANIFEST.md` e dos ADRs aprovados (MANIFEST §24).
+> Este documento registra apenas o que o manifesto já estabelece e o que foi decidido em ADR. Tudo o que ainda não foi decidido está listado explicitamente em §8 — **não** deve ser inferido.
+
+## 1. Conceitos (MANIFEST §6)
+
+| Conceito | Definição resumida | Exemplos |
+|----------|--------------------|----------|
+| **Product** | Aplicativo com domínio próprio e valor independente. | Lunet2D, Urbe, Hub |
+| **Host** | Ambiente capaz de hospedar uma interface ou capability; oferece contexto e serviços sem exigir que a ferramenta o conheça. | Hub, Lunet2D |
+| **Capability** | Contrato versionado que representa uma capacidade fornecida por um componente. | `sprite.edit`, `git.status`, `document.search` |
+| **Tool** | Capability com operação de usuário independente e interface própria; abrível standalone quando o domínio permite. | Sprite Studio, Editor |
+| **Service** | Capability operacional sem interface própria. | Agent Runtime, Git, Build |
+| **Library** | Código interno sem lifecycle de usuário. | serialização, contracts |
+| **Workspace** | Superfície de trabalho que organiza contexto, ferramentas e estado. | Agent Workspace, GitHub Workspace |
+| **Adapter** | Traduz contratos ou conecta um sistema legado; se temporário, declara condição de remoção. | — |
+| **Contract** | Descrição explícita, estável, versionada e testável de uma interação. | — |
+
+As definições normativas completas estão no `MANIFEST.md` §6.
+
+## 2. Linguagem (MANIFEST §4, NN-005)
+
+- **C#** é o padrão para toda nova infraestrutura compartilhada (Hub, contracts, registry, IPC, SDKs, tools, workspaces, checks do repositório).
+- O **Urbe** permanece em JavaScript; não há reescrita. Integração por adapters.
+- Contratos que atravessam processos devem ser semanticamente independentes de linguagem (MANIFEST §4.3). Por isso os schemas da fundação são JSON Schema (ADR-0002).
+
+## 3. Componentes e extração
+
+O mapa canônico dos componentes é [`ecosystem.json`](ecosystem.json) (formato: [`docs/contracts/schemas/ecosystem.schema.json`](docs/contracts/schemas/ecosystem.schema.json)).
+
+Nenhum componente compartilhado existe ainda. Para criar um, é obrigatório responder ao critério de MANIFEST §48 e às cinco perguntas de NN-022, registrar ADR e declarar em `ecosystem.json` `responsibility`, `contract`, `consumers`, `owners`, `compatibility` e `extractionReason` (verificado por `CHK-SHARED-DECLARATION`).
+
+## 4. Boundaries (MANIFEST §12)
+
+Permitido:
+
+```text
+Product → Contract
+Host    → Contract
+Tool    → Contract
+Adapter → Contract
+```
+
+Proibido:
+
+```text
+Urbe    → Lunet2D          (NN-002)
+Lunet2D → Urbe             (NN-002)
+Product → Product          (integração só por contract/capability/adapter)
+*       → Hub (obrigatório) (NN-003)
+Tool / componente compartilhado → Product/Host concreto (NN-007, MANIFEST §12)
+```
+
+**Estado da fiscalização:** as regras acima são verificadas hoje sobre o **grafo declarado** em `ecosystem.json` (`CHK-BOUNDARIES`). A verificação sobre **referências reais de código** (csproj, package.json, imports) é planejada para a Fase 1, quando houver código importado (ver [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json)).
+
+Exceções exigem ADR e alteração explícita do check.
+
+## 5. Autoridades (NN-001)
+
+| Conceito | Autoridade canônica | Observações |
+|----------|--------------------|-------------|
+| Princípios e invariantes | `MANIFEST.md` | `AGENTS.md` reproduz; não substitui. |
+| Componentes do ecossistema | `ecosystem.json` | Único manifest raiz (`CHK-SINGLE-AUTHORITY`). |
+| Formato dos registros | `docs/contracts/schemas/*.schema.json` | O check valida contra eles; não duplica o formato. |
+| Código, versão e histórico de Lunet2D/Urbe | repositórios de origem, enquanto `status = not-migrated` | Ver `source` e `version.authority` em `ecosystem.json`. |
+| Mapeamento NN → fiscalização | `docs/governance/enforcement-matrix.json` | |
+| Decisões pendentes/tomadas do proprietário | `docs/governance/decisions.json` | Decisão tomada aponta para ADR/SPEC/ROADMAP. |
+| Decisões arquiteturais | `docs/adr/` | |
+| Fases e tarefas | `ROADMAP.md` | Autoridade do estado *vivo* de tarefas: pendente (DEC-0003). |
+| Registros de trabalho de agentes | `docs/governance/handoffs/` | |
+
+## 6. Runtime e GitHub (MANIFEST §14, §17, NN-015)
+
+GitHub é registro de desenvolvimento e distribuição, **não** barramento de runtime. O protocolo de comunicação runtime (envelope versionado, command/event/request/response, discovery, permissões, erros, cancelamento, progresso, transporte desacoplado) será especificado por ADR **antes** da primeira dependência séria entre processos (Fase 5).
+
+## 7. Permissões (MANIFEST §30, NN-016)
+
+Princípio: menor privilégio, deny-by-default quando aplicável, agentes não herdam todas as permissões do usuário. O permission model concreto ainda não existe (Fase 2).
+
+## 8. Ainda NÃO decidido
+
+Os itens abaixo são deliberadamente abertos. Nenhum agente deve tratá-los como decididos:
+
+- tecnologia de UI e plataformas-alvo do Hub (Fase 3);
+- protocolo e transporte de IPC (Fase 5);
+- formato do `ComponentManifest` e do contrato de `Capability`, versionamento e permission model (Fase 2);
+- técnica de importação do histórico Git (DEC-0002);
+- autoridade do estado vivo de tarefas (DEC-0003);
+- confirmação dos repositórios de origem (DEC-0004);
+- estrutura interna de `apps/`, `platform/`, `workspaces/` e `tools/` — os diretórios só serão criados quando tiverem conteúdo com função (ADR-0004).

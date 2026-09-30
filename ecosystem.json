@@ -1,0 +1,66 @@
+{
+  "$schema": "docs/contracts/schemas/ecosystem.schema.json",
+  "schemaVersion": 1,
+  "ecosystem": {
+    "id": "ecosystem",
+    "name": "Ecosystem",
+    "phase": "phase-0",
+    "normative": {
+      "manifest": "MANIFEST.md",
+      "agents": "AGENTS.md",
+      "architecture": "ARCHITECTURE.md",
+      "roadmap": "ROADMAP.md",
+      "enforcementMatrix": "docs/governance/enforcement-matrix.json",
+      "decisions": "docs/governance/decisions.json"
+    }
+  },
+  "components": {
+    "lunet2d": {
+      "name": "Lunet2D",
+      "type": "product",
+      "language": "csharp",
+      "path": "apps/lunet2d",
+      "status": "not-migrated",
+      "description": "Ambiente de desenvolvimento de jogos 2D: framework, runtime e tooling (MANIFEST §5.1).",
+      "owners": ["AbnerCruz"],
+      "source": { "repository": "https://github.com/AbnerCruz/Lunet2D", "confirmed": false },
+      "version": { "authority": "source-repository" },
+      "dependencies": []
+    },
+    "urbe": {
+      "name": "Urbe",
+      "type": "product",
+      "language": "javascript",
+      "path": "apps/urbe",
+      "status": "not-migrated",
+      "description": "Workspace de conhecimento, documentos, vault, páginas, mundo e organização (MANIFEST §5.2).",
+      "owners": ["AbnerCruz"],
+      "source": { "repository": "https://github.com/AbnerCruz/Urbe", "confirmed": false },
+      "version": { "authority": "source-repository" },
+      "dependencies": []
+    },
+    "hub": {
+      "name": "Ecosystem Hub",
+      "type": "product",
+      "language": "csharp",
+      "path": "apps/hub",
+      "status": "planned",
+      "description": "Control Plane, Host geral, Registry e Launcher do ecossistema (MANIFEST §5.3). Nunca dependência essencial dos produtos (NN-003).",
+      "owners": ["AbnerCruz"],
+      "version": { "authority": "undecided" },
+      "dependencies": []
+    },
+    "consistency-checks": {
+      "name": "Consistency checks",
+      "type": "check",
+      "language": "csharp",
+      "path": "tests/consistency",
+      "status": "active",
+      "description": "Verificações de consistência da fundação: manifest, schemas, boundaries declarados, matriz de enforcement, ADRs, decisões e handoffs (ADR-0003).",
+      "owners": ["AbnerCruz"],
+      "docs": { "readme": "tests/consistency/README.md" },
+      "commands": { "test": "dotnet run tests/consistency/Check.cs" },
+      "dependencies": []
+    }
+  }
+}

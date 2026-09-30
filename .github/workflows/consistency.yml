@@ -1,0 +1,23 @@
+name: consistency
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  consistency:
+    name: Foundation consistency checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Consistency checks
+        run: dotnet run tests/consistency/Check.cs
+      - name: Self-test (each check detects its violation)
+        run: dotnet run tests/consistency/Check.cs -- --self-test

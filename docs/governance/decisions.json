@@ -1,0 +1,82 @@
+{
+  "$schema": "../contracts/schemas/decisions.schema.json",
+  "schemaVersion": 1,
+  "decisions": [
+    {
+      "id": "DEC-0001",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Ratificar os ADRs de fundação 0001–0004",
+      "context": "O agente fundador criou, sob MANIFEST §57, os ADRs 0001 (processo de ADR), 0002 (formato de ecosystem.json e registros de governança em JSON Schema), 0003 (checks em C# .NET 10 sem dependências) e 0004 (estrutura inicial sem diretórios vazios). Todos estão 'Proposto' e vigoram provisoriamente.",
+      "question": "Os ADRs 0001–0004 devem ser aceitos como estão, aceitos com alterações ou rejeitados?",
+      "alternatives": [
+        { "option": "Aceitar todos", "consequences": "ADRs passam a 'Aceito'; a Fase 0 fica ratificada e mudanças futuras exigem novo ADR." },
+        { "option": "Aceitar com alterações indicadas", "consequences": "Agente aplica as alterações, atualiza schemas/checks e documentos derivados no mesmo PR." },
+        { "option": "Rejeitar um ou mais", "consequences": "Fundação correspondente é refeita; dependendo do ADR, schemas e checks mudam." }
+      ],
+      "consequences": "Enquanto pendente, a fundação vale provisoriamente e o gate da Fase 0 não pode ser declarado concluído.",
+      "manifestCompatibility": "Compatível: MANIFEST §11.1 e §57 autorizam o agente fundador a refinar e registrar; NN-011 exige que decisões estruturais sejam explícitas, o que esta entrada torna visível.",
+      "recommendation": "Aceitar todos; são refinamentos diretos de MANIFEST §10, §29, §45 e §57.",
+      "related": ["docs/adr/0001-registro-de-decisoes-arquiteturais.md", "docs/adr/0002-formato-dos-registros-canonicos.md", "docs/adr/0003-checks-de-consistencia-em-csharp.md", "docs/adr/0004-estrutura-inicial-do-repositorio.md"],
+      "raisedBy": "claude-code (agente fundador)",
+      "raisedAt": "2026-09-30"
+    },
+    {
+      "id": "DEC-0002",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Técnica de importação do histórico Git de Lunet2D e Urbe",
+      "context": "NN-012 exige preservar histórico relevante; NN-013 exige que a importação não misture refatoração. As duas técnicas viáveis têm trade-offs diferentes de rastreabilidade (ver docs/migration/README.md §3).",
+      "question": "Qual técnica usar para importar cada repositório em apps/<id>/?",
+      "alternatives": [
+        { "option": "A — git filter-repo --to-subdirectory-filter apps/<id> + merge --allow-unrelated-histories", "consequences": "Histórico completo navegável por path (git log/blame em apps/<id>/ funcionam sem truques). SHAs mudam; o mapa SHA antigo→novo (commit-map) é versionado em docs/migration/. Tags importadas com prefixo <id>/." },
+        { "option": "B — git subtree add --prefix apps/<id> (sem --squash)", "consequences": "SHAs originais preservados. git log/blame por path não atravessam a fusão sem ferramentas extras; histórico fica menos legível para o Hub e para agentes. Tags precisam de importação manual com prefixo." }
+      ],
+      "consequences": "Bloqueia P1-4 e P1-5 (importações). Não bloqueia os inventários P1-1 e P1-2.",
+      "manifestCompatibility": "Ambas preservam histórico (NN-012) e mantêm a importação como tarefa isolada (NN-013).",
+      "recommendation": "A, com commit-map versionado para rastreabilidade entre SHAs antigos e novos; os repositórios de origem permanecem intactos até decisão de arquivamento (MANIFEST §44.3).",
+      "related": ["docs/migration/README.md"],
+      "raisedBy": "claude-code (agente fundador)",
+      "raisedAt": "2026-09-30"
+    },
+    {
+      "id": "DEC-0003",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Autoridade canônica do estado vivo de tarefas",
+      "context": "NN-001 exige uma única autoridade para estado de tarefa. Hoje o ROADMAP.md define tarefas e seus IDs; handoffs registram resultados. O Hub (Fase 3) precisará de 'Now' confiável (MANIFEST §18).",
+      "question": "Onde vive o estado vivo (claimed/working/blocked/...) das tarefas?",
+      "alternatives": [
+        { "option": "A — GitHub Issues (uma Issue por tarefa, ID do ROADMAP no título, estado por labels/assignee)", "consequences": "Visível no celular e na API do GitHub que o Hub já vai ler; menos churn de commits. Requer disciplina de labels; validação por schema mais fraca." },
+        { "option": "B — Arquivos no repositório (handoffs com state, último vence)", "consequences": "Versionado, offline, validado pelo CI. Cada mudança de estado é um commit; concorrência entre agentes gera conflitos." },
+        { "option": "C — Adiar até a Fase 3 e usar só ROADMAP + handoffs", "consequences": "Sem custo agora; 'Now' permanece aproximado até lá." }
+      ],
+      "consequences": "Define o que o Hub lerá como 'Now' e como agentes declaram 'claimed'.",
+      "manifestCompatibility": "Todas compatíveis com NN-001 desde que apenas uma seja declarada autoridade; GitHub como registro de desenvolvimento é permitido (MANIFEST §17, NN-015 trata só de runtime).",
+      "recommendation": "A: ROADMAP.md continua autoridade do escopo e dos IDs; Issues passam a ser a autoridade do estado vivo; handoffs registram resultados e evidências.",
+      "related": ["ROADMAP.md", "docs/governance/definition-of-done.md"],
+      "raisedBy": "claude-code (agente fundador)",
+      "raisedAt": "2026-09-30"
+    },
+    {
+      "id": "DEC-0004",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Confirmar repositórios de origem de Lunet2D e Urbe",
+      "context": "FATO OBSERVADO em 2026-09-30: a conta AbnerCruz possui os repositórios públicos AbnerCruz/Lunet2D e AbnerCruz/Urbe. INFERÊNCIA: são as origens dos produtos. Em ecosystem.json, source.confirmed = false.",
+      "question": "AbnerCruz/Lunet2D e AbnerCruz/Urbe são as origens canônicas a importar? Existem outros repositórios, forks ou branches de longa duração que também precisam ser preservados?",
+      "alternatives": [
+        { "option": "Confirmar os dois repositórios como únicas origens", "consequences": "source.confirmed passa a true; inventários P1-1/P1-2 prosseguem só sobre eles." },
+        { "option": "Indicar origens adicionais/diferentes", "consequences": "ecosystem.json e inventários são atualizados antes da importação." }
+      ],
+      "consequences": "Bloqueia o plano de importação (P1-3).",
+      "manifestCompatibility": "Necessário para MANIFEST §44.1 (documentar repositórios de origem).",
+      "raisedBy": "claude-code (agente fundador)",
+      "raisedAt": "2026-09-30"
+    }
+  ]
+}
