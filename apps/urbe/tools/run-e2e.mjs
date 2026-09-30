@@ -13,7 +13,7 @@ let failed = 0;
 for (const f of files) {
   const t0 = Date.now();
   console.log(`\n▶ ${f}`);
-  const r = spawnSync(process.execPath, [join('tests/e2e', f)], { cwd: ROOT, stdio: 'inherit', timeout: 10 * 60 * 1000 });
+  const r = spawnSync(process.execPath, [join('tests/e2e', f)], { cwd: ROOT, env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' }, stdio: 'inherit', timeout: 10 * 60 * 1000 });
   const ok = r.status === 0;
   if (!ok) failed++;
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${f} (${((Date.now() - t0) / 1000).toFixed(1)}s)`);

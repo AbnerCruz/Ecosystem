@@ -400,7 +400,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Evidência:** UrbeArtifacts.route/registerOpener/onBeforeOpen (wrapper L8 removido de studio.js), linkable() no KnowledgeIndex; tests/artifacts.mjs + tests/e2e/routing.e2e.mjs
 
 ### RM-F1-10 — Contrato de adapters de persistência e testes
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-028
 - **SPEC:** §3.3
 - **Fase:** F1
@@ -411,9 +411,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** SPEC §3.3; contracts/persistence-adapter.md.
 - **Aceite:** Contrato e suíte publicados; `vault-fs` passa.
 - **Gate:** G1
+- **Evidência:** adaptadores idb/fsa/router extraídos de app.js (−133 linhas); suíte de contrato: tests/adapter-contract.mjs + tests/e2e/adapters.e2e.mjs (IDB e OPFS reais)
 
 ### RM-F1-11 — Adapters IDB e FSA extraídos de `FS/Disco/DBK`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-028
 - **SPEC:** §3.3
 - **Fase:** F1
@@ -424,9 +425,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG §3.
 - **Aceite:** Modos interno e pasta operam via adapters; código antigo removido.
 - **Gate:** G1
+- **Evidência:** adaptadores idb/fsa/router extraídos de app.js (−133 linhas); suíte de contrato: tests/adapter-contract.mjs + tests/e2e/adapters.e2e.mjs (IDB e OPFS reais)
 
 ### RM-F1-12 — Adapters Electron/Android e autoridade única de escrita
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-028
 - **SPEC:** §3.3
 - **Fase:** F1
@@ -437,6 +439,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** LEGACY-MAP L5.
 - **Aceite:** `grep 'FS\.' app.js` sem escrita direta; L5 removido.
 - **Gate:** G1
+- **Evidência:** adaptadores idb/fsa/router extraídos de app.js (−133 linhas); suíte de contrato: tests/adapter-contract.mjs + tests/e2e/adapters.e2e.mjs (IDB e OPFS reais)
 
 ### RM-F1-13 — Escritor único do mapa e leitura de `mapa.v`
 - **Estado:** [ ]

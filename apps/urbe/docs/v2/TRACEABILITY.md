@@ -57,9 +57,9 @@
 | REQ-027 | §3.3 | F2 | RM-F2-09 — Extrair renderMarkdown para o editor | [ ] | Testes de renderização (tabelas, callouts, math, links, sanitização) + regressão `composition`. | G2 |
 | REQ-027 | §3.3 | F2 | RM-F2-10 — Extrair editor Visual e conversão | [ ] | Round-trip Markdown↔Visual em fixtures; sem ressuscitar nota apagada. | G2 |
 | REQ-027 | §3.3 | F2 | RM-F2-11 — Extrair autocompletar de wikilinks e barra de formatação | [ ] | Testes de sugestão/inserção; E2E. | G2 |
-| REQ-028 | §3.3 | F1 | RM-F1-10 — Contrato de adapters de persistência e testes | [ ] | Suíte roda contra mock e contra `vault-fs.js`. | G1 |
-| REQ-028 | §3.3 | F1 | RM-F1-11 — Adapters IDB e FSA extraídos de `FS/Disco/DBK` | [ ] | Suíte de contrato + fixtures + `integration-runtime`. | G1 |
-| REQ-028 | §3.3 | F1 | RM-F1-12 — Adapters Electron/Android e autoridade única de escrita | [ ] | `native-bridge.mjs`, `native-android.mjs` + suíte de contrato. | G1 |
+| REQ-028 | §3.3 | F1 | RM-F1-10 — Contrato de adapters de persistência e testes | [x] | Suíte roda contra mock e contra `vault-fs.js`. | G1 |
+| REQ-028 | §3.3 | F1 | RM-F1-11 — Adapters IDB e FSA extraídos de `FS/Disco/DBK` | [x] | Suíte de contrato + fixtures + `integration-runtime`. | G1 |
+| REQ-028 | §3.3 | F1 | RM-F1-12 — Adapters Electron/Android e autoridade única de escrita | [x] | `native-bridge.mjs`, `native-android.mjs` + suíte de contrato. | G1 |
 | REQ-029 | §3.3 | F2 | RM-F2-08 — Remover desenho e laço duplicados de `app.js` | [ ] | Paridade visual; `check-debt` cai; testes verdes. | G2 |
 | REQ-029 | §3.3 | F2 | RM-F2-12 — Mundo derivado só da projeção (L3, L4) | [ ] | Fixtures abrem com mesmo resultado; sem marcador de texto. | G2 |
 | REQ-029 | §3.3 | F2 | RM-F2-13 — Eliminar cadeia `estadoDesejado` e `abrirCidade` | [ ] | Fixtures; `check-debt` cai. | G2 |
@@ -193,4 +193,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 29.
+- Itens no ROADMAP: 146; concluídos `[x]`: 32.

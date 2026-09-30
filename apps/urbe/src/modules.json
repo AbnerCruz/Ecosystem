@@ -435,6 +435,63 @@
       ]
     },
     {
+      "name": "persistence/adapters/idb",
+      "file": "src/persistence/adapters/idb.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeAdapters"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/adapters/fsa",
+      "file": "src/persistence/adapters/fsa.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeAdapters"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/adapters/router",
+      "file": "src/persistence/adapters/router.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeAdapters"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
       "name": "world/projection",
       "file": "src/world/projection.js",
       "layer": "feature",
@@ -1275,7 +1332,10 @@
         "src/editor/session.js",
         "src/editor/workspace.js",
         "src/ai/ui.js",
-        "src/math/core.js"
+        "src/math/core.js",
+        "src/persistence/adapters/idb.js",
+        "src/persistence/adapters/fsa.js",
+        "src/persistence/adapters/router.js"
       ],
       "uses": [
         "src/pages/studio.js",

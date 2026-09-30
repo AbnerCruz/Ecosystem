@@ -39,7 +39,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Checagens e testes (mesmo gate do CI)
         run: |
-          for f in $(git ls-files '*.js'); do node --check "$f"; done
+          git ls-files -z '*.js' | xargs -0 -n1 node --check
           npm run check
 
   construir:

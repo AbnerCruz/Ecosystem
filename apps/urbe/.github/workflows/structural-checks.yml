@@ -19,7 +19,7 @@ jobs:
       - name: JavaScript syntax (todos os arquivos)
         run: |
           set -e
-          for f in $(git ls-files '*.js'); do node --check "$f"; done
+          git ls-files -z '*.js' | xargs -0 -n1 node --check
       - name: Checagens estruturais e testes (npm run check)
         # versão única, módulos/boundaries, dívida, rastreabilidade, workflows, tutorial e todos os tests/*.mjs
         run: npm run check
