@@ -181,7 +181,7 @@ public final class GuardChecks {
         String[] bad = {"javascript:alert(1)", "JaVaScRiPt:alert(1)", "file:///etc/passwd", "data:text/html,<script>alert(1)</script>", "vbscript:msgbox(1)",
                 "intent://scan/#Intent;scheme=zxing;end", "intent:#Intent;action=android.intent.action.VIEW;end", "content://media/x", "android-app://com.x", "ftp://x/y",
                 "blob:https://x/y", "about:blank", "app://urbe/index.html", " https://x.com", "\thttps://x.com", "https://x.com\n", "https:x.com", "https:///x", "http://",
-                "https://", "mailto:", "tel:", "", "urbe", "://x", "javascript://https://x.com/%0aalert(1)", "java\u0000script:alert(1)"};
+                "https://", "mailto:", "tel:", "https://a b.com", "https://a\\b", "https:\\\\x.com", "", "urbe", "://x", "javascript://https://x.com/%0aalert(1)", "java\u0000script:alert(1)"};
         for (String b : bad) check(!UrlGuard.isAllowed(b), "deveria bloquear: " + b.replace("\u0000", "<NUL>").replace("\n", "<LF>").replace("\t", "<TAB>"));
         check(!UrlGuard.isAllowed(null), "null");
         StringBuilder longo = new StringBuilder("https://x.com/");

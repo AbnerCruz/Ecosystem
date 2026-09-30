@@ -51,10 +51,11 @@ function isPermissionAllowed(permission,requestingUrl,isMainFrame){
 /* Link externo: devolve a URL normalizada ou null. */
 function externalUrl(url){
   const s=String(url==null?'':url);
-  if(!s||s.length>MAX_URL||/[\u0000-\u001f\u007f]/.test(s))return null;
+  if(!s||s.length>MAX_URL||/[\u0000-\u001f\u007f\\]/.test(s)||/^\s|\s$/.test(s))return null;
+  /* forma exata (igual ao UrlGuard.java): http(s):// com host, ou mailto:/tel: com algo depois */
+  if(!/^(https?:\/\/[^\s\/?#]+|(mailto|tel):.)/i.test(s))return null;
   const u=parse(s);
   if(!u||!EXTERNAL_SCHEMES.includes(u.protocol))return null;
-  if((u.protocol==='http:'||u.protocol==='https:')&&!u.hostname)return null;
   return u.toString();
 }
 

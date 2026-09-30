@@ -28,7 +28,7 @@
   function join(a,b){return a?a+'/'+b:b}
   function checkName(n){n=String(n==null?'':n);if(!n||n==='.'||n==='..'||/[\/\\\u0000]/.test(n))throw new TypeError('Nome inválido: '+n);return n}
   /* links que o sistema pode abrir: http(s) com endereço, mailto e tel (mesma lista do Electron e do Android) */
-  function extOk(u){u=String(u==null?'':u);return u.length<=8192&&!/[\u0000-\u001f\u007f]/.test(u)&&/^(https?:\/\/[^\s\/?#]+|mailto:|tel:)/i.test(u)}
+  function extOk(u){u=String(u==null?'':u);if(u.length>8192||/^\s|\s$|[\u0000-\u001f\u007f\\]/.test(u)||!/^(https?:\/\/[^\s\/?#]+|(mailto|tel):.)/i.test(u))return false;try{if(typeof URL==='function')new URL(u);return true}catch(_){return false}}
   var MIME={md:'text/markdown',markdown:'text/markdown',txt:'text/plain',json:'application/json',html:'text/html',htm:'text/html',css:'text/css',js:'text/javascript',mjs:'text/javascript',csv:'text/csv',svg:'image/svg+xml',
     png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',avif:'image/avif',bmp:'image/bmp',ico:'image/x-icon',pdf:'application/pdf',mp3:'audio/mpeg',wav:'audio/wav',ogg:'audio/ogg',m4a:'audio/mp4',
     mp4:'video/mp4',webm:'video/webm',mov:'video/quicktime',zip:'application/zip',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation'};

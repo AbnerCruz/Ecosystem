@@ -15,9 +15,10 @@ public final class UrlGuard {
 
     public static boolean isAllowed(String url) {
         if (url == null || url.isEmpty() || url.length() > MAX_URL_CHARS) return false;
+        if (Character.isWhitespace(url.charAt(0)) || Character.isWhitespace(url.charAt(url.length() - 1))) return false;
         for (int i = 0; i < url.length(); i++) {
             char c = url.charAt(i);
-            if (c < 0x20 || c == 0x7f) return false; // controles (e espaço/tab iniciais) não passam
+            if (c < 0x20 || c == 0x7f || c == '\\') return false; // controles e barra invertida não passam
         }
         int colon = url.indexOf(':');
         if (colon <= 0) return false;
@@ -37,7 +38,11 @@ public final class UrlGuard {
                     }
                 }
                 String host = auth.substring(0, end);
-                return !host.isEmpty() && !Character.isWhitespace(host.charAt(0));
+                if (host.isEmpty()) return false;
+                for (int i = 0; i < host.length(); i++) {
+                    if (Character.isWhitespace(host.charAt(i))) return false;
+                }
+                return true;
             }
             case "mailto":
             case "tel":
