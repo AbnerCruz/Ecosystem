@@ -512,7 +512,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Evidência:** src/world/layout-guard.js (foto + backup do mapa + vault.json.maintenance antes de qualquer reorganização); diálogo Desfazer/Manter na abertura; city.undoReorganize; regra do mapa sem mundo; abrirCidade original morto apagado (-118 linhas); tests/layout-guard.mjs + tests/e2e/layout.e2e.mjs
 
 ### RM-F1-18 — Export ZIP com manifesto e estado local
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-044
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -523,6 +523,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** tutorial (Exportar).
 - **Aceite:** Export/import round-trip verificado por hash.
 - **Gate:** G1
+- **Evidência:** src/persistence/export-manifest.js (urbe-export.json com sha256 por arquivo + estado local de lista permitida, nunca chaves de IA); import pelo Explorer descompacta o .zip (bug 1.8.2), confere hashes, recusa formato futuro; tests/export-manifest.mjs + tests/e2e/zip.e2e.mjs (round-trip por hash, adulteração, formato futuro, ausência de chaves)
 
 ### RM-F1-19 — Migração multi-cidade idempotente
 - **Estado:** [ ]

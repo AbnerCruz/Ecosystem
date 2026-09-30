@@ -35,6 +35,7 @@ const APP_SHELL = [
   './src/persistence/identity.js',
   './src/persistence/workspace.js',
   './src/persistence/gc.js',
+  './src/persistence/export-manifest.js',
   './src/persistence/adapters/idb.js',
   './src/persistence/adapters/fsa.js',
   './src/persistence/adapters/router.js',

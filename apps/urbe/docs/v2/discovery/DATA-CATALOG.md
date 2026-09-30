@@ -40,6 +40,7 @@ Acesso: `FS` (`app.js:1943-2015`) sobre 3 backends; `WorkspacePersistence` receb
 | HTML exportado | download (`studio.js:493`, `composition/ui.js:23`) | embute JS que grava `localStorage["urbe-page-theme"]` (`engine.js:578-579`) | — | — |
 | `Tutorial/**` | vault | notas geradas de `src/tutorial/content.js` | `tutorial.js` | versionada por hash (`C.version`) |
 | `Urbe-vault.zip` | download | todo o vault físico exceto `.urbe/journal.json` (`app.js:1735-1752`) | JSZip | sem manifesto nem versão de formato |
+| ↳ [C] RM-F1-18 | | + `urbe-export.json` na raiz: `{format:'urbe-export',formatVersion:1,appVersion,exportedAt,vault:{name,formatVersion},files:[{path,size,sha256}],state:{localStorage,plugins}}`; journals v1/v2 fora | `src/persistence/export-manifest.js` | import pelo Explorer descompacta o `.zip` (bug 1.8.2 corrigido), confere cada hash (alterado/faltando/a mais → aviso com opção de cancelar), ignora `.urbe/` e pastas ocultas, oferece aplicar o estado; `formatVersion` maior → recusa; arquivo `urbe-export.json` que não é manifesto → importado como arquivo comum |
 
 **Extensões textuais divergentes** [F]: `workspace.js:9,45` (sem `.canvas`), `app.js:3105-3106`, `app.js:4472`, `ai/tools.js:39`, `native/bridge.js:44` (único com `.canvas`, só no espelho). [I] `.canvas` do Obsidian vira asset binário no app e texto no espelho nativo. → REQ-039.
 
@@ -116,6 +117,7 @@ Storage isolado por origem: web (host), Electron `app://urbe` (`main.js:14`), An
 - **R-7 [F]** Plugins são código com poder total aprovados por hash no aparelho; API `urbe.*` em PT (`nota:criada`, `notas.escrever`); `urbe.plugins.v1` usa `vault::path` com vault `'Urbe'` (`plugins.js:21`). → REQ-032, REQ-051.
 - **R-8 [F]** Chaves de IA em texto puro no IDB; conversas guardam `vault`; sem export nem backup entre plataformas; fora do ZIP. → REQ-044, REQ-053.
 - **R-9 [F]** Estado local fora de qualquer backup (aprovações, `editor.workspace` com docIds, explorer, IA, `modoSeguro`); ZIP só arquivos, sem manifesto. → REQ-044, REQ-047.
+  - [C] **Mitigado em RM-F1-18:** o export leva o estado de uma lista permitida (`urbe.plugins.v1` filtrado pelo vault e remapeado no destino, `urbe.explorer.v2`, `urbe.editor.workspace.v1`, `urbe.tip.*`). Qualquer chave com cara de segredo (`ai`, `key`, `token`, `secret`, `senha`…) é recusada ao exportar e ao aplicar. As chaves de IA ficam no IndexedDB do Assistente e nunca entram. Continuam fora do export: `modoSeguro` e cache de tema (são do aparelho) e prefs de plugins `urbe.plugin.*` (podem guardar segredo). `aiLocal` é tratado em RM-F1-22.
 - **R-10 [F]** Modo IDB `fs` é dado só do navegador, sem integridade/export garantido. → REQ-046.
 - **R-11 [F]** Extensões textuais divergentes (§1). → REQ-039.
 - **R-12 [F]** `aiLocal` persistido sem consumidor (grep em `src/ai`). → REQ-048.

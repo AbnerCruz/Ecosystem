@@ -482,6 +482,25 @@
       ]
     },
     {
+      "name": "persistence/export-manifest",
+      "file": "src/persistence/export-manifest.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeExportManifest"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
       "name": "persistence/adapters/idb",
       "file": "src/persistence/adapters/idb.js",
       "layer": "persistence",
@@ -1424,7 +1443,8 @@
         "src/persistence/adapters/fsa.js",
         "src/persistence/adapters/router.js",
         "src/world/stable-ids.js",
-        "src/world/layout-guard.js"
+        "src/world/layout-guard.js",
+        "src/persistence/export-manifest.js"
       ],
       "uses": [
         "src/pages/studio.js",

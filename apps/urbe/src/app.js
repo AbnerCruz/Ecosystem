@@ -527,33 +527,6 @@ function limparPreviewObjectUrl(){if(previewObjectUrl){URL.revokeObjectURL(previ
 function arquivosDoPredio(b){const a=b?.files||b?.anexos||[];return a.length?a:[{nome:b?.fileName||b?.name||"arquivo",tipo:b?.fileClass||"other"}]}
 /* (blobDoArquivo: definição antiga removida na 1.0 — a versão em uso está mais abaixo) */
 function closeFilePreview(){limparPreviewObjectUrl();filePreview.classList.remove("open");filePreview.setAttribute("aria-hidden","true");previewBuilding=null;filePreviewBody.innerHTML=""}
-async function renderFilePreview(){
-  if(!previewBuilding)return;limparPreviewObjectUrl();
-  const files=arquivosDoPredio(previewBuilding),a=files[Math.max(0,Math.min(previewIndex,files.length-1))],classe=previewBuilding.fileClass||classificarArquivo(a.nome||"");
-  document.getElementById("filePreviewTitle").textContent=a.nome||previewBuilding.name;
-  document.getElementById("filePreviewMeta").textContent=rotuloClasse(classe)+(a.tamanho?" · "+formatBytes(a.tamanho):"")+(previewBuilding.regionId?" · "+(caminhoRegiao(world.regions.find(r=>r.id===previewBuilding.regionId)||{}).map(x=>x.name).join(" / ")||"raiz"):" · raiz");
-  const srcBtn=document.getElementById("htmlSourceBtn"),renderBtn=document.getElementById("htmlRenderBtn"),extBtn=document.getElementById("openExternalBtn"),downBtn=document.getElementById("downloadPreviewBtn");
-  srcBtn.hidden=renderBtn.hidden=classe!=="html";extBtn.hidden=classe!=="pdf";downBtn.hidden=true;
-  filePreviewBody.innerHTML='<div class="previewEmpty">Carregando…</div>';
-  const blob=await blobDoArquivo(a);
-  if(!blob){filePreviewBody.innerHTML='<div class="previewEmpty"><b>Preview não disponível</b>O arquivo está catalogado, mas os bytes não estão neste dispositivo. Reimporte o arquivo para recriar o cache offline.</div>';return}
-  previewObjectUrl=URL.createObjectURL(blob);downBtn.hidden=false;downBtn.onclick=()=>baixarBlob(blob,a.nome||previewBuilding.name);
-  extBtn.onclick=()=>{const u=URL.createObjectURL(blob);window.open(u,"_blank","noopener");setTimeout(()=>URL.revokeObjectURL(u),60000)};
-  if(classe==="image")filePreviewBody.innerHTML='<img alt="">',filePreviewBody.querySelector("img").src=previewObjectUrl;
-  else if(classe==="audio")filePreviewBody.innerHTML='<audio controls preload="metadata"></audio>',filePreviewBody.querySelector("audio").src=previewObjectUrl;
-  else if(classe==="video")filePreviewBody.innerHTML='<video controls playsinline preload="metadata"></video>',filePreviewBody.querySelector("video").src=previewObjectUrl;
-  else if(classe==="pdf")filePreviewBody.innerHTML='<div class="previewEmpty"><b>PDF pronto</b>Use “Abrir” para visualizar em uma nova aba ou “Baixar arquivo” para salvar uma cópia.</div>';
-  else if(classe==="html"){
-    const txt=await blob.text();
-    if(previewHtmlMode==="source"){const pre=document.createElement("pre");pre.textContent=txt;filePreviewBody.replaceChildren(pre)}
-    else{const fr=document.createElement("iframe");fr.setAttribute("sandbox","");fr.setAttribute("referrerpolicy","no-referrer");fr.srcdoc=txt;filePreviewBody.replaceChildren(fr)}
-  }else filePreviewBody.innerHTML='<div class="previewEmpty"><b>'+escapeHTML(a.nome||"Arquivo")+'</b>Este formato não possui visualização nativa, mas pode ser baixado.</div>';
-}
-function openFilePreview(b){
-  if(!b||b.tipo==="nota")return;closeHouseSummary();previewBuilding=b;previewIndex=0;previewHtmlMode="render";
-  const files=arquivosDoPredio(b);filePreviewSelect.innerHTML=files.map((a,i)=>'<option value="'+i+'">'+escapeHTML(a.nome||("Arquivo "+(i+1)))+'</option>').join("");filePreviewSelect.hidden=files.length<2;
-  filePreview.classList.add("open");filePreview.setAttribute("aria-hidden","false");renderFilePreview();
-}
 filePreviewSelect.onchange=()=>{previewIndex=+filePreviewSelect.value||0;previewHtmlMode="render";renderFilePreview()};
 document.getElementById("closeFilePreview").onclick=closeFilePreview;
 document.getElementById("htmlSourceBtn").onclick=()=>{previewHtmlMode="source";renderFilePreview()};
@@ -1351,46 +1324,6 @@ function nomeExibidoArquivo(b){
   if(b.tipo==="anexo")return b.name;
   return b.fileName||b.name;
 }
-function buildTree(){
-  const alvoAtual=explorerRegionTarget?world.regions.find(r=>r.id===explorerRegionTarget):null;
-  const pathEl=document.getElementById("explorerPath");if(pathEl)pathEl.textContent=alvoAtual?caminhoRegiao(alvoAtual).map(x=>x.name).join(" / "):"raiz";
-  const filhos=id=>world.regions.filter(r=>(r.parentId||null)===id);
-  const arqs=id=>world.buildings.filter(b=>(b.regionId||null)===id);
-  const linha=b=>`<button class="treeFile ${currentFile===b?"active":""} ${explorerSelection.has(b.id)?"selected":""}" data-file="${b.id}"><span class="fileKind">${iconeArquivo(b)}</span><span class="fileLabel">${escapeHTML(nomeExibidoArquivo(b))}</span></button>`;
-  const ramo=(r,n)=>`<div class="treeRegion" style="margin-left:${n*10}px"><div class="treeRegionTitle ${explorerRegionTarget===r.id?"target":""}" data-region="${r.id}">📁 ${escapeHTML(r.name)}</div>${arqs(r.id).map(linha).join("")}${filhos(r.id).map(x=>ramo(x,n+1)).join("")}</div>`;
-  const raiz=arqs(null);
-  tree.innerHTML=`<div class="treeRegion"><div class="treeRegionTitle ${explorerRegionTarget===null?"target":""}" data-region="">⌂ raiz</div>${raiz.map(linha).join("")}</div>`+filhos(null).map(x=>ramo(x,0)).join("");
-  updateExplorerActions();
-  tree.querySelectorAll(".treeRegionTitle").forEach(el=>{
-    el.onclick=e=>{if(dragState)return; e.stopPropagation();selecionarRegiaoExplorer(el.dataset.region||null)};
-  });
-  tree.querySelectorAll("[data-file]").forEach(el=>{
-    let touchState=null,lastTouchHandled=0;
-    const activate=()=>{
-      const idd=el.dataset.file,b=world.buildings.find(x=>x.id===idd);if(!b)return;
-      if(explorerSelection.size){toggleExplorerSelection(idd);return}
-      explorerRegionTarget=b.regionId||null;
-      if(b.tipo==="nota"){openFullEditor(b);fileSidebar.classList.remove("open")}else{selected=b;openFilePreview(b);pedirDesenho();buildTree()}
-    };
-    const startHold=(x,y,kind,id)=>{
-      explorerHoldFired=false;clearTimeout(explorerHoldTimer);explorerHoldPointer={id,kind,x,y};
-      explorerHoldTimer=setTimeout(()=>{
-        explorerHoldFired=true;explorerHoldPointer=null;if(touchState)touchState.held=true;
-        toggleExplorerSelection(el.dataset.file,true);if(navigator.vibrate)navigator.vibrate(18);
-        iniciarArrasto([...explorerSelection],x,y);
-      },EXPLORER_HOLD_MS);
-    };
-    const cancelHold=()=>{clearTimeout(explorerHoldTimer);explorerHoldPointer=null};
-    el.addEventListener("touchstart",e=>{if(e.touches.length!==1){cancelHold();return}const t=e.touches[0];touchState={x:t.clientX,y:t.clientY,moved:false,held:false};startHold(t.clientX,t.clientY,"touch",0)},{passive:true});
-    el.addEventListener("touchmove",e=>{if(dragState){const t=e.touches[0];if(!t)return;e.preventDefault();atualizarArrasto(t.clientX,t.clientY);return}if(!touchState||!e.touches.length)return;const t=e.touches[0];if(Math.hypot(t.clientX-touchState.x,t.clientY-touchState.y)>EXPLORER_HOLD_MOVE){touchState.moved=true;cancelHold()}},{passive:false});
-    el.addEventListener("touchend",()=>{cancelHold();const st=touchState;touchState=null;if(dragState){soltarArrasto();explorerHoldFired=false;lastTouchHandled=Date.now();return}if(!st||st.moved)return;lastTouchHandled=Date.now();if(st.held||explorerHoldFired){explorerHoldFired=false;return}activate()},{passive:true});
-    el.addEventListener("touchcancel",()=>{cancelHold();cancelarArrasto();touchState=null},{passive:true});
-    el.onclick=()=>{if(Date.now()-lastTouchHandled<700)return;if(explorerHoldFired){explorerHoldFired=false;return}activate()};
-    el.addEventListener("pointerdown",e=>{if(e.pointerType==="touch")return;if(e.pointerType==="mouse"&&e.button!==0)return;try{el.setPointerCapture(e.pointerId)}catch(_){}startHold(e.clientX,e.clientY,e.pointerType,e.pointerId)});
-    el.addEventListener("pointermove",e=>{if(e.pointerType==="touch")return;if(dragState){atualizarArrasto(e.clientX,e.clientY);return}if(!explorerHoldPointer||explorerHoldPointer.id!==e.pointerId)return;if(Math.hypot(e.clientX-explorerHoldPointer.x,e.clientY-explorerHoldPointer.y)>EXPLORER_HOLD_MOVE)cancelHold()});
-    ["pointerup","pointercancel","pointerleave"].forEach(ev=>el.addEventListener(ev,e=>{if(e.pointerType==="touch")return;cancelHold();if(dragState&&ev==="pointerup")soltarArrasto()}));
-  });
-}
 function loadFile(b){wikiState={open:false,start:-1,query:"",items:[],index:0};renderWikiSuggestions();currentFile=b;selected=b;try{var _p=window.UrbeCore&&window.UrbeCore.service("legacy.documents");if(_p){var _d=_p.syncBuilding(b,"editor.open");window.UrbeCore.service("editor.session")?.open(_d&&_d.id)}}catch(_){}document.getElementById("fileNameDisplay").textContent=nomeCompletoNota(b);document.getElementById("documentWatermark").textContent=nomeCompletoNota(b);bodyEditor.value=b.content;renderProps(b);buildTree();updateStats();setEditorViewMode(editorViewMode)}
 function openFullEditor(b){closeHouseSummary();editorFull.classList.add("open");setEditorViewMode("preview");loadFile(b)}
 function closeFullEditor(){wikiState={open:false,start:-1,query:"",items:[],index:0};renderWikiSuggestions();editorFull.classList.remove("open");fileSidebar.classList.remove("open");currentFile=null}
@@ -1492,7 +1425,6 @@ const aiPanel=document.getElementById("aiPanel");
 
 /* Region dialog */
 let pendingRegion=null,dlg=document.getElementById("dialog");
-function openRegionDialog(bounds){pendingRegion=bounds;dlg.classList.add("open");document.getElementById("regionName").focus()}
 document.getElementById("cancelRegion").onclick=()=>{dlg.classList.remove("open");pendingRegion=null};
 /* (mascaraRetanguloRegiao: definição antiga removida na 1.0 — a versão em uso está mais abaixo) */
 document.getElementById("confirmRegion").onclick=()=>{
@@ -1695,15 +1627,20 @@ async function lerEntrada(files,{expandZip=false}={}){
     const f=entrada&&entrada.file?entrada.file:entrada,relEntrada=(entrada&&entrada.rel)||f.webkitRelativePath||f.name;
     if(expandZip&&/\.zip$/i.test(f.name)){
       const JSZipLib=await exigirJSZip(),zip=await JSZipLib.loadAsync(f);
-      const nomes=Object.keys(zip.files).filter(n=>!zip.files[n].dir&&!n.includes("__MACOSX")&&!/^\./.test(baseNome(n)));
+      const todos=Object.keys(zip.files).filter(n=>!zip.files[n].dir&&!n.includes("__MACOSX")),nomes=todos.filter(n=>!/^\./.test(baseNome(n)));
       let prefixo="";if(nomes.length){const partes=nomes.map(n=>n.split("/"));if(partes.every(p=>p.length>1&&p[0]===partes[0][0]))prefixo=partes[0][0]+"/"}
-      for(const n of nomes){const ent=zip.files[n];await registrar(n.slice(prefixo.length),t=>t==="string"?ent.async("string"):t==="blob"?ent.async("blob"):t==="tamanho"?ent.async("uint8array").then(u=>u.length):ent.async(t))}
+      /* ZIP exportado pelo Urbe: confere o manifesto; .urbe/ e demais pastas ocultas não viram notas (REQ-044) */
+      const M=window.UrbeExportManifest;let mEnt=todos.find(n=>n===prefixo+M.NAME);const info=mEnt?M.parse(await zip.files[mEnt].async("string")):null;if(info&&info.state==='corrupt')mEnt=null; /* não é o nosso manifesto: é arquivo do usuário */
+      if(mEnt){const bytes=new Map();for(const n of todos)if(n!==mEnt)bytes.set(n.slice(prefixo.length),await zip.files[n].async("uint8array"));info.check=info.manifest&&info.state==='current'?await M.verify(info.manifest,bytes):null;itens.exportInfo=info}
+      for(const n of nomes){if(n===mEnt||n.slice(prefixo.length).split("/").some(p=>p.startsWith(".")))continue;const ent=zip.files[n];await registrar(n.slice(prefixo.length),t=>t==="string"?ent.async("string"):t==="blob"?ent.async("blob"):t==="tamanho"?ent.async("uint8array").then(u=>u.length):ent.async(t))}
     }else{
       await registrar(relEntrada,t=>t==="string"?f.text():t==="blob"?Promise.resolve(f):t==="tamanho"?Promise.resolve(f.size):f.arrayBuffer().then(ab=>{let out="",u=new Uint8Array(ab);for(let i=0;i<u.length;i++)out+=String.fromCharCode(u[i]);return btoa(out)}));
     }
   }
   return itens;
 }
+/* ZIP exportado pelo Urbe: avisa se os arquivos não batem com o manifesto e oferece aplicar as preferências (REQ-044). false = cancelar. */
+async function urbeConferirExport(x){if(!x)return true;if(x.state==='future'){await UD.alert({title:'Export de versão mais nova',message:'Este ZIP foi exportado por uma versão mais nova do Urbe (formato '+x.manifest.formatVersion+'). Atualize o Urbe para importá-lo com segurança.'});return false}const c=x.check,n=c.mismatched.length+c.missing.length+c.extra.length;if(n&&!(await UD.confirm({title:'Arquivos não conferem',message:n+' arquivo(s) deste ZIP não batem com o manifesto do export (alterados, faltando ou a mais): '+c.mismatched.concat(c.missing,c.extra).slice(0,5).join(', ')+(n>5?'…':'')+'. Importar mesmo assim?',confirm:'Importar',cancel:'Cancelar'})))return false;const st=x.manifest.state||{};if((Object.keys(st.localStorage||{}).length||Object.keys(st.plugins||{}).length)&&await UD.confirm({title:'Preferências do export',message:'Este ZIP traz preferências e aprovações de plugins do aparelho de origem. Aplicar neste aparelho?',confirm:'Aplicar',cancel:'Não aplicar'})){try{window.UrbeExportManifest.applyState(window.localStorage,st,Disco.cidade)}catch(_){}}return true}
 /* ---------- JSZip embutido: importação/exportação ZIP 100% offline ---------- */
 function carregarJSZip(){
   return window.JSZip ? Promise.resolve(window.JSZip) : Promise.reject(new Error("JSZip local indisponível"));
@@ -1720,12 +1657,16 @@ async function exportarVault(){
     const JSZipLib=await exigirJSZip(),zip=new JSZipLib(),paths=await FS.listar(Disco.cidade);
     const physical=new Set(paths);
     for(const path of estadoDesejado().binarios.keys())if(!physical.has(path))throw Error('Anexo não gravado: '+path);
+    /* manifesto com hash de cada arquivo e o estado local permitido (REQ-044): src/persistence/export-manifest.js */
+    const M=window.UrbeExportManifest,entries=[];if(physical.has(M.NAME))throw Error('o nome '+M.NAME+' é reservado para o manifesto do export; renomeie esse arquivo');
     for(const path of paths){
-      if(path==='.urbe/journal.json')continue;
+      if(path==='.urbe/journal.json'||path==='.urbe/journal.v2.json')continue;
       const blob=await FS.lerBlob(Disco.cidade,path);
       if(!blob)throw Error('Arquivo indisponível: '+path);
-      zip.file(path,blob);
+      const bytes=new Uint8Array(await blob.arrayBuffer());zip.file(path,bytes);entries.push({path,bytes});
     }
+    let ls=null;try{ls=window.localStorage}catch(_){}
+    zip.file(M.NAME,JSON.stringify(await M.build(entries,{appVersion:V21_VERSION,vault:Disco.cidade,vaultFormat:persistence&&persistence.vaultInfo&&persistence.vaultInfo.data?persistence.vaultInfo.data.formatVersion:null,state:M.collectState(ls,Disco.cidade)}),null,1));
     baixarBlob(await zip.generateAsync({type:'blob'}),'Urbe-vault.zip');
     toast('Vault completo exportado.');
   }catch(error){toast('Falhou ao exportar: '+error.message);throw error}
@@ -2321,7 +2262,7 @@ document.getElementById('explorerRootBtn').onclick=()=>{explorerRegionTarget=nul
 
 /* um único botão de importação; a escolha pasta/arquivo acontece no sheet */
 let pendingImportTarget=null;
-async function importarEntradasDestino(entradas,ehPasta,nomePasta,target){if(!entradas?.length)return;toast('Lendo arquivos…');try{const itens=await lerEntrada(entradas);if(!itens.length)return toast('Nenhum arquivo aproveitável.');const opts={destinoRegionId:target||null};if(ehPasta)opts.wrapRootName=nomePasta;const r=importarItens(itens,opts);agendarSalvar();marcarSinc();toast(r.notas+' nota(s) · '+r.orfaos+' arquivo(s) · '+r.citados+' citado(s)')}catch(err){console.error(err);toast('Falhou ao importar: '+err.message)}}
+async function importarEntradasDestino(entradas,ehPasta,nomePasta,target){if(!entradas?.length)return;toast('Lendo arquivos…');try{const itens=await lerEntrada(entradas,{expandZip:true});if(!itens.length)return toast('Nenhum arquivo aproveitável.');if(!(await urbeConferirExport(itens.exportInfo)))return toast('Importação cancelada.');const opts={destinoRegionId:target||null};if(ehPasta)opts.wrapRootName=nomePasta;const r=importarItens(itens,opts);agendarSalvar();marcarSinc();toast(r.notas+' nota(s) · '+r.orfaos+' arquivo(s) · '+r.citados+' citado(s)')}catch(err){console.error(err);toast('Falhou ao importar: '+err.message)}}
 async function escolherPastaImportacao(target){pendingImportTarget=target||null;if(typeof window.showDirectoryPicker==='function'){try{const h=await window.showDirectoryPicker({mode:'read'}),itens=await listarHandlePasta(h);await importarEntradasDestino(itens,true,h.name,pendingImportTarget)}catch(e){if(e?.name!=='AbortError'){console.warn(e);toast('Não consegui abrir a pasta.')}}}else document.getElementById('vaultFolderIn').click()}
 async function escolherArquivosImportacao(target){pendingImportTarget=target||null;if(typeof window.showOpenFilePicker==='function'){try{const hs=await window.showOpenFilePicker({multiple:true}),entradas=[];for(const h of hs)entradas.push({file:await h.getFile(),rel:h.name});await importarEntradasDestino(entradas,false,'Arquivos',pendingImportTarget)}catch(e){if(e?.name!=='AbortError'){console.warn(e);toast('Não consegui abrir os arquivos.')}}}else document.getElementById('vaultFilesIn').click()}
 function abrirImportadorUnificado(target){abrirMenuExplorer(target?(world.regions.find(r=>r.id===target)?.name||'Pasta'):'Adicionar à Raiz',[{ico:'📁',label:'Selecionar uma pasta inteira',run:()=>escolherPastaImportacao(target)},{ico:'📄',label:'Selecionar arquivo(s)',run:()=>escolherArquivosImportacao(target)}])}
