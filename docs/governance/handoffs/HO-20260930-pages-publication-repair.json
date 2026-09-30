@@ -2,7 +2,7 @@
   "$schema": "../../contracts/schemas/handoff.schema.json",
   "schemaVersion": 1,
   "message_id": "HO-20260930-pages-publication-repair",
-  "category": "INCIDENT",
+  "category": "RESULT",
   "timestamp": "2026-09-30T18:23:00Z",
   "agent": {
     "id": "chatgpt-gpt-5.6-sol",
@@ -10,12 +10,13 @@
   },
   "task_id": "P0-14",
   "component": "portal",
-  "state": "verifying",
+  "state": "done",
   "branch": "main",
   "commit": null,
   "pr": null,
   "files_changed": [
     ".github/workflows/pages.yml",
+    "ROADMAP.md",
     "docs/architecture/portal.md",
     "docs/governance/handoffs/HO-20260930-pages-publication-repair.json",
     "site/index.html"
@@ -26,35 +27,46 @@
     "pages.yml passa a disparar explicitamente em push para main, sem depender de condição de job que havia produzido execução skipped em main.",
     "Workflow agora consulta a API do Pages e falha se o estado efetivo não for build_type=workflow, evitando sucesso enganoso.",
     "Artefato é validado antes do upload: entrypoint e arquivos essenciais obrigatórios, README.md proibido e .nojekyll incluído.",
-    "site/index.html recebeu apenas marcador HTML não-canônico para produzir um novo conteúdo/SHA sem duplicar estado do Ecosystem."
+    "site/index.html recebeu apenas marcador HTML não-canônico para produzir um novo conteúdo/SHA sem duplicar estado do Ecosystem.",
+    "Foi adicionado smoke test pós-deploy que acessa a URL pública do GitHub Pages e exige o título do portal, eliminando a possibilidade de considerar publicação concluída apenas pelo status do deploy."
   ],
   "verification": [
     {
-      "check": "Inspeção do workflow e artefato da execução 36753988274",
+      "check": "GitHub Pages publishing source",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Logs mostram _site/index.html, data/ecosystem-status.json, app.js e style.css no artifact; deploy-pages reportou success."
+      "evidence": "Run 36758554559, job Build portal: 'Verify Pages publishing source' passou; API reportou build_type=workflow."
     },
     {
-      "check": "Novo workflow pages no commit desta correção",
+      "check": "Consistency checks e CHK-PORTAL",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando execução disparada pelo novo push em main."
+      "result": "passed",
+      "evidence": "Run 36758554559, Build portal concluído com success; checks, geração e validação da projeção passaram."
     },
     {
-      "check": "Portal público deixa de renderizar README.md e mostra site/index.html",
-      "kind": "human",
-      "result": "pending",
-      "evidence": "Exige validação do endereço público após o novo deployment (NN-017)."
+      "check": "Conteúdo do artefato Pages",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Run 36758554559: artefato validado antes do upload com index.html, app.js, style.css e data/ecosystem-status.json; README.md ausente."
+    },
+    {
+      "check": "Deploy GitHub Pages",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Run 36758554559, job 'Deploy to GitHub Pages' concluído com success."
+    },
+    {
+      "check": "URL pública serve o portal correto",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Run 36758554559, job 'Verify live portal': https://abnercruz.github.io/Ecosystem/ respondeu com '<title>Ecosystem — Portal</title>' na primeira tentativa."
     }
   ],
-  "known_issues": [
-    "O conector GitHub disponível nesta sessão não expõe mutação direta das configurações do GitHub Pages; se a API reportar build_type=legacy, o workflow agora falhará com causa explícita em vez de publicar um falso sucesso."
-  ],
+  "known_issues": [],
   "blockers": [],
   "next_actions": [
-    "Observar o workflow pages disparado por este commit e confirmar o valor de build_type informado pela API.",
-    "Se o deploy concluir, validar https://abnercruz.github.io/Ecosystem/ em navegador real e então atualizar P0-14/P0-15 conforme a evidência."
+    "Proprietário: validar P0-15 no celular (layout, toque e legibilidade).",
+    "Proprietário: ratificar ADRs 0001–0005 quando decidir DEC-0001."
   ],
   "decisions_required": [
     "DEC-0001"

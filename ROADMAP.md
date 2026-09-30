@@ -38,7 +38,7 @@ Portal web (ADD-0001, ADR-0005, [`docs/architecture/portal.md`](docs/architectur
 
 - [x] P0-12 — `site/` com página simples, mobile-first, mostrando Ecosystem, Lunet2D, Urbe e Hub e links para a documentação canônica; dados não automatizados marcados como "não disponível".
 - [x] P0-13 — Contrato da projeção `ecosystem-status/1`, gerador em C# e `CHK-PORTAL` contra divergência e dados canônicos escritos à mão.
-- [~] P0-14 — Workflow `pages.yml` criado; primeira publicação depende de o proprietário habilitar *Settings → Pages → Source: GitHub Actions*.
+- [x] P0-14 — Portal publicado por `pages.yml`; API confirmou `build_type=workflow`, artefato foi validado e smoke test confirmou o `site/index.html` na URL pública (run 36758554559).
 - [~] P0-15 — Validação humana do portal no celular (layout, toque, legibilidade) — NN-017.
 
 **Gate:** um agente novo consegue entrar no repositório e compreender corretamente o produto, a autoridade documental e o processo de trabalho sem depender de uma conversa anterior.
