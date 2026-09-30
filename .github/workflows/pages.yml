@@ -93,6 +93,31 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  smoke:
+    name: Verify live portal
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch public Pages URL and verify portal entrypoint
+        env:
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: |
+          echo "Checking ${PAGE_URL}"
+          for attempt in {1..12}; do
+            body="$(curl -fsSL --max-time 20 "${PAGE_URL}?commit=${GITHUB_SHA}" || true)"
+            if printf '%s' "${body}" | grep -Fq '<title>Ecosystem — Portal</title>'; then
+              echo "Live portal verified on attempt ${attempt}."
+              exit 0
+            fi
+            echo "Attempt ${attempt}: expected portal entrypoint not visible yet."
+            sleep 5
+          done
+
+          echo "::error title=GitHub Pages serving unexpected content::The public URL did not serve site/index.html after deployment."
+          exit 1
