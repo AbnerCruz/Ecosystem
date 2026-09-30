@@ -81,7 +81,8 @@
       "check": "Gate da Fase 0: agente novo entende produto, autoridade documental e processo sem conversa anterior",
       "kind": "human",
       "result": "pending",
-      "evidence": "Requer revisão do proprietário ou de agente independente; não pode ser autodeclarado."
+      "evidence": "Requer revisão do proprietário ou de agente independente; não pode ser autodeclarado.",
+      "object": "README.md"
     }
   ],
   "known_issues": [

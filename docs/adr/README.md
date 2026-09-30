@@ -16,15 +16,15 @@ Protocolo IPC, formato de manifest, modelo de capability, linguagem/runtime exce
 
 Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XXXX`). Agentes nunca marcam `Aceito` uma decisão que exige o proprietário sem registro da decisão dele (MANIFEST §23.2).
 
-**ADRs de fundação (0001–0006):** criados pelo agente fundador sob MANIFEST §57, com status `Proposto`. Vigoram provisoriamente como a fundação da Fase 0 até que o proprietário os ratifique ou rejeite (DEC-0001).
+**ADRs de fundação (0001–0006):** criados pelo agente fundador sob MANIFEST §57 e **ratificados pelo proprietário em DEC-0001** (ADD-0003, 2026-09-30). Mudar qualquer um exige novo ADR que o substitua.
 
 ## Índice
 
 | ADR | Título | Status |
 |-----|--------|--------|
-| [0001](0001-registro-de-decisoes-arquiteturais.md) | Registro de decisões arquiteturais | Proposto |
-| [0002](0002-formato-dos-registros-canonicos.md) | Formato de `ecosystem.json` e dos registros de governança | Proposto |
-| [0003](0003-checks-de-consistencia-em-csharp.md) | Checks de consistência em C# sem dependências | Proposto |
-| [0004](0004-estrutura-inicial-do-repositorio.md) | Estrutura inicial do repositório | Proposto |
-| [0005](0005-portal-web-github-pages.md) | Portal web via GitHub Pages como projeção | Proposto (papel do portal decidido em DEC-0005) |
-| [0006](0006-product-shell-context-distribuicao-independente.md) | Product Shell, Context e distribuição independente | Proposto (conceitos e NN-023 decididos em DEC-0006) |
+| [0001](0001-registro-de-decisoes-arquiteturais.md) | Registro de decisões arquiteturais | Aceito |
+| [0002](0002-formato-dos-registros-canonicos.md) | Formato de `ecosystem.json` e dos registros de governança | Aceito |
+| [0003](0003-checks-de-consistencia-em-csharp.md) | Checks de consistência em C# sem dependências | Aceito |
+| [0004](0004-estrutura-inicial-do-repositorio.md) | Estrutura inicial do repositório | Aceito |
+| [0005](0005-portal-web-github-pages.md) | Portal web via GitHub Pages como projeção | Aceito |
+| [0006](0006-product-shell-context-distribuicao-independente.md) | Product Shell, Context e distribuição independente | Aceito |

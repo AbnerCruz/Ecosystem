@@ -78,6 +78,27 @@ function appCard(c) {
     actions.childElementCount ? actions : el("p", { class: "hint" }, "Nenhum artefato ou link disponível ainda."));
 }
 
+function objectLinks(objs) {
+  return el("div", { class: "actions" },
+    ...objs.map((o, i) => link(o.url, o.title, i === 0 ? "btn primary" : "btn")));
+}
+
+function decisionCard(d) {
+  return el("article", { class: "card decision" },
+    el("header", {},
+      el("h3", {}, d.title),
+      el("span", { class: `badge ${d.blocking ? "v-HUMAN_VALIDATION_PENDING" : ""}` }, d.blocking ? "bloqueia trabalho" : "não bloqueia")),
+    el("p", { class: "meta" }, `${d.id} · ${d.component} · aberta em ${d.raisedAt}`),
+    el("p", { class: "question" }, el("strong", {}, "Decisão a tomar: "), d.question),
+    el("details", {},
+      el("summary", {}, `Alternativas (${d.alternatives.length})`),
+      el("ol", { class: "alts" }, ...d.alternatives.map((a) => el("li", {}, el("strong", {}, a.option), el("br"), a.consequences)))),
+    d.recommendation ? el("p", { class: "rec" }, el("strong", {}, "Recomendação do agente: "), d.recommendation) : null,
+    el("p", { class: "label" }, "Objeto a revisar"),
+    objectLinks(d.objects),
+    el("p", { class: "hint" }, link(d.record, "Registro da decisão")));
+}
+
 function render(s) {
   const phase = s.ecosystem.phase.replace(/^phase-/, "Fase ");
   const checks = s.ecosystem.checks;
@@ -91,12 +112,19 @@ function render(s) {
   const products = s.components.filter((c) => c.type === "product");
   document.getElementById("apps").replaceChildren(...products.map(appCard));
 
+  const dec = document.getElementById("decisions");
+  dec.replaceChildren(...(s.pendingDecisions.length
+    ? s.pendingDecisions.map(decisionCard)
+    : [el("p", { class: "hint" }, "Nenhuma decisão pendente registrada.")]));
+
   const val = document.getElementById("validations");
   val.replaceChildren(...(s.pendingValidations.length
     ? s.pendingValidations.map((p) => el("li", {},
         el("span", { class: "badge v-HUMAN_VALIDATION_PENDING" }, VALIDATION_LABELS[p.state]),
         " ", el("strong", {}, `${p.component} · ${p.taskId}`), el("br"),
-        p.check, " — ", link(p.record, "registro")))
+        p.check, el("p", { class: "label" }, "Objeto a validar"),
+        objectLinks([p.object]),
+        el("p", { class: "hint" }, link(p.record, "registro"))))
     : [el("li", { class: "hint" }, "Nenhuma validação humana pendente registrada.")]));
 
   const rec = document.getElementById("recovery");

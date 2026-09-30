@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — a existência, o papel e as restrições do portal foram decididos pelo proprietário (DEC-0005, [ADD-0001](../governance/addenda/ADD-0001-portal-github-pages.md)); as escolhas técnicas abaixo aguardam ratificação em DEC-0001.
+Aceito — ratificado pelo proprietário em DEC-0001 ([ADD-0003](../governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md), 2026-09-30). O papel do portal já fora decidido em DEC-0005.
 
 ## Contexto
 
@@ -51,3 +51,7 @@ O proprietário decidiu (ADD-0001) que o Ecosystem terá desde o início um port
 ## Referências
 
 ADD-0001; DEC-0005; MANIFEST §4.1, §6, §10, §29, §49; NN-001, NN-003, NN-017, NN-021; ADR-0002, ADR-0003, ADR-0004; `docs/architecture/portal.md`.
+
+## Atualizações posteriores
+
+- **2026-09-30 — DEC-0007 ([ADD-0003](../governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)):** o proprietário decidiu que o portal mostra sempre as decisões pendentes e as validações humanas pendentes, cada uma com o objeto a decidir/validar. Isso estende o escopo do portal definido em ADD-0001 (que evitava duplicar o que é do Hub) sem alterar o papel do Hub: o portal continua projeção somente leitura e as respostas são registradas pelo agente em `decisions.json`. O contrato `ecosystem-status/1` ganhou `pendingDecisions` e `pendingValidations[].object` (aditivo); `CHK-DECISIONS`, `CHK-HANDOFFS` e `CHK-PORTAL` fiscalizam.

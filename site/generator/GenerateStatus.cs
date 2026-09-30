@@ -105,6 +105,37 @@ foreach (var (id, c) in eco["components"]!.AsObject())
     });
 }
 
+JsonObject Link(string target) => new()
+{
+    ["title"] = target,
+    ["url"] = target.StartsWith("https://") ? target : Blob(target.Split('#')[0]),
+};
+
+// --- decisões pendentes do proprietário (DEC-0007): sempre com o objeto a revisar ---
+var pendingDecisions = new JsonArray();
+var decisionsDoc = Load("docs/governance/decisions.json");
+foreach (var dn in decisionsDoc["decisions"]!.AsArray())
+{
+    if (S(dn!["status"]) != "pending") continue;
+    var related = dn["related"]?.AsArray().Select(x => S(x)!).ToList() ?? [];
+    if (related.Count == 0)
+        throw new InvalidOperationException($"{S(dn["id"])}: decisão pendente sem objeto ('related'); o portal não pode apresentá-la (DEC-0007).");
+    pendingDecisions.Add(new JsonObject
+    {
+        ["id"] = S(dn["id"]),
+        ["component"] = S(dn["component"]),
+        ["title"] = S(dn["title"]),
+        ["blocking"] = dn["blocking"]?.GetValue<bool>() ?? false,
+        ["question"] = S(dn["question"]),
+        ["alternatives"] = new JsonArray(dn["alternatives"]!.AsArray().Select(a => (JsonNode?)new JsonObject
+            { ["option"] = S(a!["option"]), ["consequences"] = S(a["consequences"]) }).ToArray()),
+        ["recommendation"] = S(dn["recommendation"]),
+        ["objects"] = new JsonArray(related.Select(r => (JsonNode?)Link(r)).ToArray()),
+        ["record"] = Blob("docs/governance/decisions.json"),
+        ["raisedAt"] = S(dn["raisedAt"]),
+    });
+}
+
 // --- validações humanas pendentes: último handoff de cada tarefa ---
 var pending = new JsonArray();
 var hdir = P("docs/governance/handoffs");
@@ -119,6 +150,8 @@ if (Directory.Exists(hdir))
         if (S(h["state"]) is "done" or "cancelled" or "failed") continue;
         foreach (var v in h["verification"]!.AsArray())
             if (S(v!["kind"]) == "human" && S(v["result"]) == "pending")
+            {
+                var obj = S(v["object"]) ?? throw new InvalidOperationException($"{rel}: validação humana pendente '{S(v["check"])}' sem 'object'; o portal não pode apresentá-la (DEC-0007).");
                 pending.Add(new JsonObject
                 {
                     ["component"] = S(h["component"]),
@@ -126,7 +159,9 @@ if (Directory.Exists(hdir))
                     ["check"] = S(v["check"]),
                     ["state"] = "HUMAN_VALIDATION_PENDING",
                     ["record"] = Blob(rel),
+                    ["object"] = Link(obj),
                 });
+            }
     }
 }
 
@@ -170,6 +205,7 @@ var result = new JsonObject
         ["checks"] = checksDatum,
     },
     ["components"] = components,
+    ["pendingDecisions"] = pendingDecisions,
     ["pendingValidations"] = pending,
     ["docs"] = docs,
 };
@@ -177,5 +213,5 @@ var result = new JsonObject
 var outPath = Path.GetFullPath(opt.GetValueOrDefault("out", P("site/data/ecosystem-status.json")));
 Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
 File.WriteAllText(outPath, result.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
-Console.WriteLine($"Projeção escrita em {Path.GetRelativePath(root, outPath)} ({components.Count} componentes, {pending.Count} validação(ões) pendente(s)).");
+Console.WriteLine($"Projeção escrita em {Path.GetRelativePath(root, outPath)} ({components.Count} componentes, {pendingDecisions.Count} decisão(ões) e {pending.Count} validação(ões) pendente(s)).");
 return 0;

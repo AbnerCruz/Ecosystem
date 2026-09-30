@@ -1,0 +1,54 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20260930-alinhamento-aprovado",
+  "category": "RESULT",
+  "timestamp": "2026-09-30T23:05:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-16",
+  "component": "ecosystem",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md",
+    "docs/governance/decisions.json"
+  ],
+  "work_completed": [
+    "Revisão do alinhamento arquitetural do ADD-0002 e ratificação do ADR-0006 pelo proprietário (P0-30)."
+  ],
+  "verification": [
+    {
+      "check": "Revisão do alinhamento arquitetural e ratificação do ADR-0006",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "Aprovação do proprietário em 2026-09-30, transcrita em docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md (mensagem 'Aprova tudo')."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
+    "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md",
+    "docs/adr/0006-product-shell-context-distribuicao-independente.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "A aprovação foi persistida em ADD-0003; o registro não depende da conversa."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Conclusão com evidência humana registrada; nenhuma aprovação inventada: a interpretação de 'Aprova tudo' está explicitada no ADD-0003."
+    }
+  ],
+  "cost": null
+}

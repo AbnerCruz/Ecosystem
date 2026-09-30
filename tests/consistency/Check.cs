@@ -434,6 +434,16 @@ static class Checks
             var did = d.Str("id") ?? "?";
             if (d.Str("component") is { } comp && !comps.Contains(comp))
                 c.R.Fail(id, $"{did}: componente inexistente '{comp}'");
+            if (d.Str("status") == "pending")
+            {
+                // DEC-0007: decisão pendente sempre acompanhada do objeto a revisar, para o portal apresentá-lo.
+                var related = d.Arr("related").Select(x => x.GetString()).Where(x => x is not null).ToList();
+                if (related.Count == 0)
+                    c.R.Fail(id, $"{did}: decisão pendente sem objeto ('related'); o portal precisa apresentar o que decidir (DEC-0007)");
+                foreach (var r in related)
+                    if (!r!.StartsWith("https://") && !File.Exists(c.P(r.Split('#')[0])))
+                        c.R.Fail(id, $"{did}: objeto inexistente: {r}");
+            }
             if (d.Str("status") == "decided")
             {
                 foreach (var f in new[] { "decision", "decidedAt", "record" })
@@ -465,6 +475,15 @@ static class Checks
 
             var state = h.Str("state");
             var ver = h.Arr("verification").ToList();
+            foreach (var v in ver.Where(v => v.Str("kind") == "human" && v.Str("result") == "pending"))
+            {
+                // DEC-0007: validação humana pendente sempre acompanhada do objeto a validar.
+                var obj = v.Str("object");
+                if (string.IsNullOrWhiteSpace(obj))
+                    c.R.Fail(id, $"{file}: validação humana pendente '{v.Str("check")}' sem 'object'; o portal precisa apresentar o que validar (DEC-0007)");
+                else if (!obj.StartsWith("https://") && !File.Exists(c.P(obj.Split('#')[0])))
+                    c.R.Fail(id, $"{file}: objeto da validação '{v.Str("check")}' inexistente: {obj}");
+            }
             if (state == "done")
             {
                 if (ver.Count == 0) c.R.Fail(id, $"{file}: estado 'done' sem verificação (NN-018)");
@@ -615,6 +634,12 @@ static class Checks
         var actual = p.Arr("pendingValidations").Select(v => $"{v.Str("taskId")}|{v.Str("check")}").ToHashSet();
         if (!actual.SetEquals(expected))
             c.R.Fail(id, $"{rel}: validações pendentes divergem dos handoffs");
+
+        // Decisões pendentes (DEC-0007): o portal não pode omitir nenhuma, nem inventar outra.
+        var expectedDecisions = c.DecisionList().Where(d => d.Str("status") == "pending").Select(d => d.Str("id")!).ToHashSet();
+        var projectedDecisions = p.Arr("pendingDecisions").Select(d => d.Str("id")!).ToHashSet();
+        if (!projectedDecisions.SetEquals(expectedDecisions))
+            c.R.Fail(id, $"{rel}: decisões pendentes divergem de decisions.json (esperadas: {string.Join(", ", expectedDecisions.Order())}; projetadas: {string.Join(", ", projectedDecisions.Order())})");
 
         foreach (var d in p.Arr("docs"))
             if (d.Str("path") is { } dp && !File.Exists(c.P(dp)))
@@ -887,6 +912,24 @@ static class SelfTest
         File.WriteAllText(p, t.Replace(from, to));
     }
 
+    static string PendingDecision(bool withObject) => """
+        "decisions": [ { "id": "DEC-9999", "status": "pending", "component": "ecosystem", "title": "t", "context": "c", "question": "q",
+          "alternatives": [ { "option": "a", "consequences": "x" }, { "option": "b", "consequences": "y" } ],
+          "consequences": "c", "manifestCompatibility": "m",
+        """ + (withObject ? " \"related\": [\"MANIFEST.md\"]," : "") + """
+          "raisedBy": "self-test", "raisedAt": "2026-01-01" },
+        """;
+
+    static void RunGenerator(string root)
+    {
+        var psi = new ProcessStartInfo("dotnet") { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var a in new[] { "run", "site/generator/GenerateStatus.cs" }) psi.ArgumentList.Add(a);
+        using var proc = Process.Start(psi)!;
+        proc.StandardOutput.ReadToEnd(); proc.StandardError.ReadToEnd();
+        proc.WaitForExit();
+        if (proc.ExitCode != 0) throw new InvalidOperationException("self-test: o gerador da projeção falhou na cópia do repositório");
+    }
+
     static readonly Case[] Cases =
     [
         new("arquivo de fundação removido", "CHK-FOUNDATION-FILES", r => File.Delete(Path.Combine(r, "ROADMAP.md"))),
@@ -899,11 +942,11 @@ static class SelfTest
         new("segundo ecosystem.json", "CHK-SINGLE-AUTHORITY",
             r => { Directory.CreateDirectory(Path.Combine(r, "platform")); File.WriteAllText(Path.Combine(r, "platform", "ecosystem.json"), "{}"); }),
         new("Urbe → Lunet2D", "CHK-BOUNDARIES",
-            r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Urbe\", \"confirmed\": false },\n      \"version\": { \"authority\": \"source-repository\" },\n      \"dependencies\": []",
-                "\"https://github.com/AbnerCruz/Urbe\", \"confirmed\": false },\n      \"version\": { \"authority\": \"source-repository\" },\n      \"dependencies\": [{ \"component\": \"lunet2d\", \"kind\": \"optional\", \"reason\": \"x\" }]")),
+            r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Urbe\", \"confirmed\": true },\n      \"version\": { \"authority\": \"source-repository\" },\n      \"dependencies\": []",
+                "\"https://github.com/AbnerCruz/Urbe\", \"confirmed\": true },\n      \"version\": { \"authority\": \"source-repository\" },\n      \"dependencies\": [{ \"component\": \"lunet2d\", \"kind\": \"optional\", \"reason\": \"x\" }]")),
         new("Hub como dependência obrigatória", "CHK-BOUNDARIES",
-            r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": false },\n      \"version\": { \"authority\": \"source-repository\" },\n      \"dependencies\": []",
-                "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": false },\n      \"version\": { \"authority\": \"source-repository\" },\n      \"dependencies\": [{ \"component\": \"hub\", \"kind\": \"required\", \"reason\": \"x\" }]")),
+            r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"source-repository\" },\n      \"dependencies\": []",
+                "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"source-repository\" },\n      \"dependencies\": [{ \"component\": \"hub\", \"kind\": \"required\", \"reason\": \"x\" }]")),
         new("diretório shared genérico", "CHK-GENERIC-DIRS",
             r => Directory.CreateDirectory(Path.Combine(r, "platform", "shared"))),
         new("componente compartilhado sem declaração", "CHK-SHARED-DECLARATION",
@@ -918,8 +961,8 @@ static class SelfTest
         new("ADR sem seção obrigatória", "CHK-ADR",
             r => Replace(r, "docs/adr/0001-registro-de-decisoes-arquiteturais.md", "## Alternativas rejeitadas", "## Outras")),
         new("decisão tomada sem registro persistido", "CHK-DECISIONS",
-            r => Replace(r, "docs/governance/decisions.json", "\"status\": \"pending\"",
-                "\"status\": \"decided\", \"decision\": \"x\", \"decidedAt\": \"2026-01-01\", \"record\": \"docs/adr/9999-nao-existe.md\"")),
+            r => Replace(r, "docs/governance/decisions.json",
+                "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md", "docs/adr/9999-nao-existe.md")),
         new("handoff 'done' com validação humana pendente", "CHK-HANDOFFS",
             r => File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(r, "docs/governance/handoffs")).FullName, "HO-20260101-self-test.json"), """
                 {
@@ -947,9 +990,31 @@ static class SelfTest
                   "source": { "repository": "https://github.com/AbnerCruz/Ecosystem", "ref": "HEAD", "commit": null, "files": ["ecosystem.json"] },
                   "ecosystem": { "name": "Ecosystem", "phase": "phase-0",
                     "checks": { "value": null, "availability": "not-available", "source": "x", "url": null } },
-                  "components": [], "pendingValidations": [], "docs": []
+                  "components": [], "pendingDecisions": [], "pendingValidations": [], "docs": []
                 }
                 """)),
+        new("decisão pendente sem objeto", "CHK-DECISIONS",
+            r => Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: false))),
+        new("validação humana pendente sem objeto", "CHK-HANDOFFS",
+            r => File.WriteAllText(Path.Combine(Directory.CreateDirectory(Path.Combine(r, "docs/governance/handoffs")).FullName, "HO-20260101-self-test-obj.json"), """
+                {
+                  "$schema": "../../contracts/schemas/handoff.schema.json",
+                  "schemaVersion": 1, "message_id": "HO-20260101-self-test-obj", "category": "HANDOFF",
+                  "timestamp": "2026-01-01T00:00:00Z", "agent": { "id": "self-test", "kind": "ai-agent" },
+                  "task_id": "P0-1", "component": "ecosystem", "state": "review", "branch": "x", "commit": null, "pr": null,
+                  "files_changed": [], "work_completed": ["x"],
+                  "verification": [{ "check": "aparelho", "kind": "human", "result": "pending" }],
+                  "known_issues": [], "blockers": [], "next_actions": [], "decisions_required": [],
+                  "normative_sources": ["MANIFEST.md"], "invariants": []
+                }
+                """)),
+        new("decisão pendente ausente do portal", "CHK-PORTAL",
+            r =>
+            {
+                // Projeção real e coerente, gerada ANTES de a decisão pendente existir: só a decisão diverge.
+                RunGenerator(r);
+                Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true));
+            }),
         new("segredo commitado", "CHK-SECRETS",
             r => File.WriteAllText(Path.Combine(r, "leak.txt"), "token=" + "gh" + "p_" + new string('a', 36))),
     ];

@@ -11,7 +11,7 @@
 | **Portal (GitHub Pages)** | portal humano de desenvolvimento, distribuição, documentação, testes e **recuperação** | "Estou com o celular e quero saber o estado do Ecosystem, baixar/testar um app ou recuperar o próprio Hub. Para onde vou?" |
 | **Ecosystem Hub** (C#, Fase 3+) | control plane completo | "Quero controlar profundamente o ecossistema, workspaces, capabilities, agentes, instalações, atualizações e integrações." |
 
-O portal **não** é o Hub, não o substitui, não implementa o Hub em HTML e não duplica funções que pertencem ao Hub (Control Plane, decisões pendentes, Past/Now/Next, workspaces, capabilities). Ele continua existindo depois que o Hub existir, como mecanismo de recuperação independente: com o Hub ausente ou quebrado, deve continuar sendo possível acessar a documentação, baixar Hub e Lunet2D, acessar o Urbe Web, localizar releases e localizar instruções de recuperação e teste.
+O portal **não** é o Hub, não o substitui, não implementa o Hub em HTML e não duplica funções que pertencem ao Hub (Control Plane, Past/Now/Next, workspaces, capabilities). **Exceção decidida pelo proprietário (DEC-0007):** o portal apresenta, como projeção somente leitura, as decisões pendentes e as validações humanas pendentes, sempre com o objeto a decidir/validar (§3.1); o Hub mantém a superfície completa de decisões (MANIFEST §35). Ele continua existindo depois que o Hub existir, como mecanismo de recuperação independente: com o Hub ausente ou quebrado, deve continuar sendo possível acessar a documentação, baixar Hub e Lunet2D, acessar o Urbe Web, localizar releases e localizar instruções de recuperação e teste.
 
 ## 2. Nunca fonte de verdade, nunca dependência
 
@@ -46,6 +46,13 @@ Autoridade do formato: [`docs/contracts/schemas/ecosystem-status.schema.json`](.
 | `docs[]` | documentação canônica com link |
 
 O formato de exemplo do adendo (`products.lunet2d.version` etc.) foi analisado e substituído por este contrato porque (a) cada dado precisa carregar proveniência para que "não disponível" nunca vire um valor inventado; (b) todos os componentes do `ecosystem.json` são projetados, não só produtos, para que a verificação de divergência seja total; (c) validação humana tem estados próprios, separados de CI.
+
+### 3.1 Decisões e validações pendentes, com objeto (DEC-0007)
+
+- **Decisão a tomar:** `decisions.json` com `status: pending` e `related` apontando para o(s) documento(s)/artefato(s) a revisar. O portal mostra título, pergunta, alternativas com consequências, recomendação do agente e o objeto como botões.
+- **Validação humana pendente:** verificação `kind: human`, `result: pending` em um handoff, com `object` (caminho do repositório ou URL).
+- Sem objeto, a pendência não é registrável: `CHK-DECISIONS` e `CHK-HANDOFFS` falham, o gerador aborta e `CHK-PORTAL` recusa uma projeção que omita qualquer pendência.
+- O portal **não** recebe respostas: o proprietário responde ao agente, que registra a decisão e a fonte persistida.
 
 Evolução incompatível incrementa `schemaVersion` e exige ADR.
 

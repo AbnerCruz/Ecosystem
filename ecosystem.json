@@ -24,7 +24,7 @@
       "status": "not-migrated",
       "description": "Ambiente de desenvolvimento de jogos 2D: framework, runtime e tooling (MANIFEST §5.1).",
       "owners": ["AbnerCruz"],
-      "source": { "repository": "https://github.com/AbnerCruz/Lunet2D", "confirmed": false },
+      "source": { "repository": "https://github.com/AbnerCruz/Lunet2D", "confirmed": true },
       "version": { "authority": "source-repository" },
       "dependencies": []
     },
@@ -36,7 +36,7 @@
       "status": "not-migrated",
       "description": "Workspace de conhecimento, documentos, vault, páginas, mundo e organização (MANIFEST §5.2).",
       "owners": ["AbnerCruz"],
-      "source": { "repository": "https://github.com/AbnerCruz/Urbe", "confirmed": false },
+      "source": { "repository": "https://github.com/AbnerCruz/Urbe", "confirmed": true },
       "version": { "authority": "source-repository" },
       "dependencies": []
     },

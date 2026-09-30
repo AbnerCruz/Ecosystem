@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — ratificação pendente em DEC-0001. Vigora provisoriamente como fundação (MANIFEST §57).
+Aceito — ratificado pelo proprietário em DEC-0001 ([ADD-0003](../governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md), 2026-09-30).
 
 ## Contexto
 

@@ -95,7 +95,8 @@
       "check": "Revisão do proprietário do alinhamento arquitetural e ratificação do ADR-0006",
       "kind": "human",
       "result": "pending",
-      "evidence": "P0-30; requer o proprietário (não pode ser autodeclarado)."
+      "evidence": "P0-30; requer o proprietário (não pode ser autodeclarado).",
+      "object": "docs/adr/0006-product-shell-context-distribuicao-independente.md"
     }
   ],
   "known_issues": [

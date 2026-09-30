@@ -4,7 +4,7 @@
   "decisions": [
     {
       "id": "DEC-0001",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": false,
       "title": "Ratificar os ADRs de fundação 0001–0006",
@@ -36,11 +36,14 @@
         "docs/adr/0006-product-shell-context-distribuicao-independente.md"
       ],
       "raisedBy": "claude-code (agente fundador)",
-      "raisedAt": "2026-09-30"
+      "raisedAt": "2026-09-30",
+      "decision": "Aceitar os ADRs 0001–0006 como estão (recomendação do agente, aprovada pelo proprietário). Todos passam a 'Aceito'.",
+      "decidedAt": "2026-09-30",
+      "record": "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md"
     },
     {
       "id": "DEC-0002",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": true,
       "title": "Técnica de importação do histórico Git de Lunet2D e Urbe",
@@ -63,11 +66,14 @@
         "docs/migration/README.md"
       ],
       "raisedBy": "claude-code (agente fundador)",
-      "raisedAt": "2026-09-30"
+      "raisedAt": "2026-09-30",
+      "decision": "Técnica A: git filter-repo --to-subdirectory-filter apps/<id> + merge --allow-unrelated-histories, com commit-map versionado em docs/migration/, tags importadas com prefixo <id>/ e repositórios de origem intactos (recomendação do agente, aprovada pelo proprietário).",
+      "decidedAt": "2026-09-30",
+      "record": "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md"
     },
     {
       "id": "DEC-0003",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": false,
       "title": "Autoridade canônica do estado vivo de tarefas",
@@ -92,14 +98,19 @@
       "recommendation": "A: ROADMAP.md continua autoridade do escopo e dos IDs; Issues passam a ser a autoridade do estado vivo; handoffs registram resultados e evidências.",
       "related": [
         "ROADMAP.md",
-        "docs/governance/definition-of-done.md"
+        "docs/governance/definition-of-done.md",
+        "docs/governance/communication.md",
+        "ARCHITECTURE.md"
       ],
       "raisedBy": "claude-code (agente fundador)",
-      "raisedAt": "2026-09-30"
+      "raisedAt": "2026-09-30",
+      "decision": "Issues do GitHub são a autoridade do estado vivo das tarefas; o ROADMAP.md segue como autoridade de escopo e IDs; handoffs registram resultados e evidências (recomendação do agente, aprovada pelo proprietário).",
+      "decidedAt": "2026-09-30",
+      "record": "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md"
     },
     {
       "id": "DEC-0004",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": true,
       "title": "Confirmar repositórios de origem de Lunet2D e Urbe",
@@ -118,7 +129,13 @@
       "consequences": "Bloqueia o plano de importação (P1-3).",
       "manifestCompatibility": "Necessário para MANIFEST §44.1 (documentar repositórios de origem).",
       "raisedBy": "claude-code (agente fundador)",
-      "raisedAt": "2026-09-30"
+      "raisedAt": "2026-09-30",
+      "decision": "AbnerCruz/Lunet2D e AbnerCruz/Urbe são as origens canônicas a importar (aprovada pelo proprietário). Nenhum outro repositório, fork ou branch de longa duração foi indicado; os inventários P1-1/P1-2 enumeram branches e qualquer candidato adicional vira nova decisão pendente.",
+      "decidedAt": "2026-09-30",
+      "record": "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md",
+      "related": [
+        "ecosystem.json"
+      ]
     },
     {
       "id": "DEC-0005",
@@ -183,6 +200,36 @@
       "decision": "Adotar o ADD-0002: (1) níveis Hub → Product Shell → Workspace/Tool; (2) Product Shell como Host especializado de um Product, distinto do Hub; (3) Hub privado/interno como cenário suportado; (4) arquitetura ≠ distribuição, com Distribution Profile como conceito; (5) Context hierárquico como conceito, sem contrato definido; (6) Connections é UX sobre Capabilities; (7) visão do Lunet2D como plataforma completa, sem implementar; (8) Store ≠ Library e Assets como categoria do catálogo; (9) estratégia first-party by default, external distribution by choice; (10) Services compartilhados só por NN-020/NN-022; (11) Urbe como Product completo com Product Shell próprio; (12) nova invariante de independência de distribuição (NN-023); (13) sequência de migração e novo gate da Fase 1. Não resolve DEC-0001, DEC-0002, DEC-0003 nem DEC-0004.",
       "decidedAt": "2026-09-30",
       "record": "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md"
+    },
+    {
+      "id": "DEC-0007",
+      "status": "decided",
+      "component": "portal",
+      "blocking": false,
+      "title": "O portal mostra sempre a decisão a tomar e o objeto",
+      "context": "O proprietário usa o portal no celular como ponto de acesso. Hoje uma decisão pendente ou validação humana só aparece se ele lembrar de perguntar ao agente.",
+      "question": "Decisões pendentes e validações humanas devem ser apresentadas no portal, sempre acompanhadas do objeto a decidir ou validar?",
+      "alternatives": [
+        {
+          "option": "Sim: toda decisão pendente e toda validação humana aparece no portal com seu objeto, como regra permanente",
+          "consequences": "Exige que cada pendência seja registrada em fonte canônica com o objeto apontado, e que checks impeçam pendências sem objeto ou fora do portal; o portal segue somente leitura."
+        },
+        {
+          "option": "Não: manter decisões e validações só no chat e nos arquivos do repositório",
+          "consequences": "Menor custo, mas o proprietário depende de lembrar de perguntar ao agente."
+        }
+      ],
+      "consequences": "O gerador projeta as decisões pendentes e as validações pendentes com objeto; CHK-DECISIONS, CHK-HANDOFFS e CHK-PORTAL fiscalizam; AGENTS.md e communication.md tornam isso obrigatório para agentes. O Hub continua sendo o control plane completo (MANIFEST §35); o portal é projeção somente leitura e não recebe respostas.",
+      "manifestCompatibility": "Compatível: projeção de fontes canônicas (NN-001, NN-021), sem nova autoridade; complementa MANIFEST §35 sem substituir o Hub; estende o escopo do portal definido em ADD-0001 por decisão posterior do proprietário.",
+      "related": [
+        "docs/architecture/portal.md",
+        "docs/adr/0005-portal-web-github-pages.md"
+      ],
+      "raisedBy": "AbnerCruz (proprietário)",
+      "raisedAt": "2026-09-30",
+      "decision": "Sim, como regra permanente: todas as decisões pendentes e validações humanas pendentes aparecem no portal, com o objeto a decidir ou validar.",
+      "decidedAt": "2026-09-30",
+      "record": "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md"
     }
   ]
 }

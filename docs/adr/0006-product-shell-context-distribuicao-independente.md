@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — os conceitos e a nova invariante NN-023 foram decididos pelo proprietário (DEC-0006, [ADD-0002](../governance/addenda/ADD-0002-product-shells-distribuicao-independente.md)); a formulação documental e de fiscalização feita pelo agente aguarda ratificação junto de DEC-0001.
+Aceito — ratificado pelo proprietário em DEC-0001 ([ADD-0003](../governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md), 2026-09-30). Os conceitos e NN-023 já haviam sido decididos em DEC-0006.
 
 ## Contexto
 

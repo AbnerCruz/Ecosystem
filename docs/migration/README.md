@@ -1,14 +1,14 @@
 # Estratégia de migração para o monorepo
 
 > **Autoridade:** normativa para a Fase 1, subordinada a MANIFEST §11.2, §44 e às invariantes NN-012, NN-013 e NN-014.
-> Nenhuma importação pode ocorrer antes de: inventário completo do produto (§2), DEC-0002 e DEC-0004 decididas, e plano de importação revisado.
+> Nenhuma importação pode ocorrer antes de: inventário completo do produto (§2) e plano de importação revisado (P1-3). DEC-0002 e DEC-0004 já estão decididas.
 
 ## 1. Origens
 
 | Componente | Repositório de origem | Confirmado | Destino |
 |------------|----------------------|------------|---------|
-| `lunet2d` | https://github.com/AbnerCruz/Lunet2D | não (DEC-0004) | `apps/lunet2d/` |
-| `urbe` | https://github.com/AbnerCruz/Urbe | não (DEC-0004) | `apps/urbe/` |
+| `lunet2d` | https://github.com/AbnerCruz/Lunet2D | sim (DEC-0004) | `apps/lunet2d/` |
+| `urbe` | https://github.com/AbnerCruz/Urbe | sim (DEC-0004) | `apps/urbe/` |
 
 Fonte de verdade: campo `source` em [`ecosystem.json`](../../ecosystem.json). Enquanto `status = not-migrated`, o repositório de origem é a autoridade de código, versão e histórico (NN-001).
 
@@ -20,7 +20,7 @@ Para cada produto, criar `docs/migration/inventory-<id>.md` a partir de [`invent
 
 ## 3. Preservação do histórico (NN-012)
 
-Técnica a decidir em **DEC-0002**. Opções avaliadas:
+**Decidido em DEC-0002: técnica A** (`git filter-repo --to-subdirectory-filter apps/<id>` + `merge --allow-unrelated-histories`, com `commit-map` versionado). Opções avaliadas:
 
 | | A — `git filter-repo --to-subdirectory-filter` + merge | B — `git subtree add` sem `--squash` |
 |--|--|--|
@@ -29,7 +29,7 @@ Técnica a decidir em **DEC-0002**. Opções avaliadas:
 | `git log`/`blame` por path em `apps/<id>/` | funcionam direto | não atravessam a fusão |
 | Tags | reimportadas com prefixo `<id>/` | importação manual com prefixo |
 
-Recomendação registrada em DEC-0002: **A**, com o `commit-map` gerado pelo filter-repo versionado em `docs/migration/` para rastrear SHAs antigos.
+Decisão: **A**, com o `commit-map` gerado pelo filter-repo versionado em `docs/migration/` para rastrear SHAs antigos.
 
 Em qualquer opção:
 

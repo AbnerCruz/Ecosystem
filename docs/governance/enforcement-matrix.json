@@ -494,7 +494,7 @@
         {
           "mechanism": "CI",
           "status": "implemented",
-          "how": "O portal consome uma projeção gerada das fontes canônicas, validada contra elas antes de publicar.",
+          "how": "O portal consome uma projeção gerada das fontes canônicas, validada contra elas antes de publicar; toda decisão pendente e toda validação humana pendente é projetada com seu objeto (DEC-0007), e CHK-DECISIONS/CHK-HANDOFFS recusam pendência sem objeto.",
           "check": "CHK-PORTAL"
         },
         {

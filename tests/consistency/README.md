@@ -21,11 +21,11 @@ Requer .NET SDK 10+. Execute a partir de qualquer diretório dentro do repositó
 | `CHK-ENFORCEMENT-MATRIX` | matriz cobre exatamente as NN do MANIFEST, com os mesmos títulos; mecanismos coerentes; checks referenciados existem | MANIFEST §0.2 |
 | `CHK-AGENTS-NN` | `AGENTS.md` reproduz todas as NN com o mesmo título e cláusula de enforcement; referencia o MANIFEST | NN-010 |
 | `CHK-ADR` | nome, título, seções obrigatórias, status válido e índice dos ADRs | NN-011 |
-| `CHK-DECISIONS` | decisão tomada aponta para registro persistido existente | NN-009 |
-| `CHK-HANDOFFS` | referências válidas; `done` exige verificação passada com evidência e sem bloqueios | NN-008, NN-010, NN-017, NN-018 |
+| `CHK-DECISIONS` | decisão tomada aponta para registro persistido existente; decisão pendente exige objeto (`related`) existente | NN-009, NN-021 |
+| `CHK-HANDOFFS` | referências válidas; `done` exige verificação passada com evidência e sem bloqueios; validação humana pendente exige objeto | NN-008, NN-010, NN-017, NN-018, NN-021 |
 | `CHK-ROADMAP` | fases 0–7 presentes; item `[x]` sem validação humana pendente | NN-017 |
 | `CHK-SECRETS` | padrões comuns de tokens e chaves privadas | MANIFEST §30.2 |
-| `CHK-PORTAL` | portal sem dados canônicos escritos à mão; projeção gerada válida e coerente com as fontes; `VALIDATED` exige evidência | NN-001, NN-017, NN-021 |
+| `CHK-PORTAL` | portal sem dados canônicos escritos à mão; projeção gerada válida e coerente com as fontes (inclui decisões e validações pendentes); `VALIDATED` exige evidência | NN-001, NN-017, NN-021 |
 
 A lista de NN por check é informativa; a autoridade é [`docs/governance/enforcement-matrix.json`](../../docs/governance/enforcement-matrix.json).
 

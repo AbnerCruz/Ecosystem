@@ -72,7 +72,8 @@ Exceções exigem ADR e alteração explícita do check.
 | Mapeamento NN → fiscalização | `docs/governance/enforcement-matrix.json` | |
 | Decisões pendentes/tomadas do proprietário | `docs/governance/decisions.json` | Decisão tomada aponta para ADR/SPEC/ROADMAP. |
 | Decisões arquiteturais | `docs/adr/` | |
-| Fases e tarefas | `ROADMAP.md` | Autoridade do estado *vivo* de tarefas: pendente (DEC-0003). |
+| Fases e escopo/IDs das tarefas | `ROADMAP.md` | Decidido em DEC-0003. |
+| Estado vivo das tarefas (claimed, working, blocked…) | Issues do GitHub | DEC-0003; convenção em `docs/governance/communication.md` §8. |
 | Registros de trabalho de agentes | `docs/governance/handoffs/` | |
 | Alterações do `MANIFEST.md` | `docs/governance/manifest-changelog.md` | Registro exigido por MANIFEST §0; o texto do manifesto continua sendo o próprio `MANIFEST.md`. |
 | Decisões/adendos do proprietário (texto integral) | `docs/governance/addenda/` | Nível 1 da hierarquia (MANIFEST §24); referenciados por `decisions.json`. |
@@ -124,9 +125,6 @@ Os itens abaixo são deliberadamente abertos. Nenhum agente deve tratá-los como
 - tecnologia de UI e plataformas-alvo do Hub (Fase 3);
 - protocolo e transporte de IPC (Fase 5);
 - formato do `ComponentManifest` e do contrato de `Capability`, versionamento e permission model (Fase 2);
-- técnica de importação do histórico Git (DEC-0002);
-- autoridade do estado vivo de tarefas (DEC-0003);
-- confirmação dos repositórios de origem (DEC-0004);
 - estratégia de publicação do Urbe Web no ecossistema (decidida na auditoria/migração do Urbe, P1-10 — não presumir);
 - formato dos registros canônicos de validação por build e das páginas `/testing/<componente>/<build>/` (P1-11);
 - contrato de **Context** (Fases 2 e 5) e Host API do Product Shell (Fase 5);

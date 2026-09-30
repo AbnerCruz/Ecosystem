@@ -59,3 +59,22 @@ Campos: `message_id`, `category`, `timestamp`, `agent`, `task_id`, `component`, 
 - **Sem impersonação:** um agente nunca escreve como outro agente nem inventa revisão, aprovação ou decisão.
 - **Concorrência:** coordenar por escopo, branch e arquivos. Antes de começar, verificar handoffs e branches abertos; declarar a tarefa (`claimed`). Nunca sobrescrever trabalho de outro agente para resolver divergência — registrar `BLOCKER` e pedir coordenação.
 - **Canonicalidade:** mensagens entre agentes comunicam estado; não substituem MANIFEST, SPEC, ADR, contratos, ROADMAP ou testes.
+
+## 8. Estado vivo das tarefas (DEC-0003)
+
+| Conceito | Autoridade |
+|----------|-----------|
+| Escopo e IDs das tarefas (`P<fase>-<n>`) | `ROADMAP.md` |
+| **Estado vivo** (claimed, working, waiting, blocked, verifying, review) | **Issues do GitHub** |
+| Resultado e evidência | handoff em `docs/governance/handoffs/` |
+
+Convenção: uma Issue por tarefa em andamento, com o ID da tarefa no início do título e uma label `state:<estado>` da status machine de [`definition-of-done.md`](definition-of-done.md). Issue aberta = tarefa não encerrada; ao encerrar (`done`, `cancelled` ou `failed`) a Issue é fechada com link para o handoff. A caixa de seleção do ROADMAP (`[x]`/`[~]`/`[ ]`) registra **conclusão com evidência**, nunca o estado vivo. Nenhum dos dois pode contradizer o handoff.
+
+## 9. Toda pendência do proprietário aparece no portal, com o objeto (DEC-0007)
+
+O agente **nunca** pede uma decisão ou validação só no chat. Antes de pedir:
+
+- **Decisão pendente:** entrada `status: pending` em [`decisions.json`](decisions.json) com `related` apontando para o(s) documento(s), ADR(s) ou artefato(s) — o **objeto** — que o proprietário precisa olhar. `CHK-DECISIONS` recusa pendência sem objeto.
+- **Validação humana pendente:** verificação `kind: human`, `result: pending` em um handoff, com `object` (caminho do repositório ou URL do artefato/página a validar). `CHK-HANDOFFS` recusa validação pendente sem objeto.
+
+O gerador do portal projeta ambas em seções próprias, com link para o objeto, e `CHK-PORTAL` recusa uma projeção que omita alguma pendência. O portal é somente leitura: o proprietário responde ao agente, que registra a decisão em `decisions.json` e a fonte persistida (NN-009).

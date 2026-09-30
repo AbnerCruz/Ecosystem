@@ -6,61 +6,203 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schemaVersion", "message_id", "category", "timestamp", "agent", "task_id", "component", "state",
-    "branch", "commit", "pr", "files_changed", "work_completed", "verification", "known_issues",
-    "blockers", "next_actions", "decisions_required", "normative_sources", "invariants"
+    "schemaVersion",
+    "message_id",
+    "category",
+    "timestamp",
+    "agent",
+    "task_id",
+    "component",
+    "state",
+    "branch",
+    "commit",
+    "pr",
+    "files_changed",
+    "work_completed",
+    "verification",
+    "known_issues",
+    "blockers",
+    "next_actions",
+    "decisions_required",
+    "normative_sources",
+    "invariants"
   ],
   "properties": {
-    "$schema": { "type": "string" },
-    "schemaVersion": { "const": 1 },
-    "message_id": { "type": "string", "pattern": "^HO-[0-9]{8}-[a-z0-9]+(-[a-z0-9]+)*$" },
-    "category": { "enum": ["HANDOFF", "RESULT", "BLOCKER", "INCIDENT"] },
-    "timestamp": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$" },
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "message_id": {
+      "type": "string",
+      "pattern": "^HO-[0-9]{8}-[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "category": {
+      "enum": [
+        "HANDOFF",
+        "RESULT",
+        "BLOCKER",
+        "INCIDENT"
+      ]
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2})?(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
     "agent": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "kind"],
+      "required": [
+        "id",
+        "kind"
+      ],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "kind": { "enum": ["ai-agent", "human"] },
-        "session": { "type": "string" }
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "ai-agent",
+            "human"
+          ]
+        },
+        "session": {
+          "type": "string"
+        }
       }
     },
-    "task_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*-[0-9]+(\\.[0-9]+)*$" },
-    "component": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
-    "state": { "enum": ["planned", "claimed", "working", "waiting", "blocked", "verifying", "review", "done", "failed", "cancelled"] },
-    "branch": { "type": "string", "minLength": 1 },
+    "task_id": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*-[0-9]+(\\.[0-9]+)*$"
+    },
+    "component": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+    },
+    "state": {
+      "enum": [
+        "planned",
+        "claimed",
+        "working",
+        "waiting",
+        "blocked",
+        "verifying",
+        "review",
+        "done",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "branch": {
+      "type": "string",
+      "minLength": 1
+    },
     "commit": {
       "description": "SHA do commit, ou null quando o handoff é gravado no próprio commit que descreve (o SHA é o do commit que introduz este arquivo).",
-      "type": ["string", "null"], "pattern": "^[0-9a-f]{7,40}$"
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{7,40}$"
     },
-    "pr": { "type": ["string", "null"] },
-    "files_changed": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "work_completed": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "pr": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "files_changed": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "work_completed": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
     "verification": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["check", "kind", "result"],
+        "required": [
+          "check",
+          "kind",
+          "result"
+        ],
         "properties": {
-          "check": { "type": "string", "minLength": 1 },
-          "kind": { "enum": ["automated", "human"] },
-          "result": { "enum": ["passed", "failed", "pending", "not-applicable"] },
-          "evidence": { "type": "string" }
+          "check": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "automated",
+              "human"
+            ]
+          },
+          "result": {
+            "enum": [
+              "passed",
+              "failed",
+              "pending",
+              "not-applicable"
+            ]
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "object": {
+            "description": "O que deve ser validado/decidido: caminho no repositório ou URL do artefato/página. Obrigatório (verificado por CHK-HANDOFFS) quando kind = human e result = pending, para que o portal apresente o objeto (DEC-0007).",
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
-    "known_issues": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "blockers": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "next_actions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "known_issues": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
     "decisions_required": {
       "description": "IDs de decisões pendentes em docs/governance/decisions.json.",
-      "type": "array", "items": { "type": "string", "pattern": "^DEC-[0-9]{4}$" }
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^DEC-[0-9]{4}$"
+      }
     },
     "normative_sources": {
       "description": "Documentos normativos consultados diretamente (NN-010).",
-      "type": "array", "items": { "type": "string", "minLength": 1 }
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     },
     "invariants": {
       "description": "Invariantes NN-XXX consideradas e evidência de respeito (MANIFEST §25).",
@@ -68,13 +210,27 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "evidence"],
+        "required": [
+          "id",
+          "evidence"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^NN-[0-9]{3}$" },
-          "evidence": { "type": "string", "minLength": 1 }
+          "id": {
+            "type": "string",
+            "pattern": "^NN-[0-9]{3}$"
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
-    "cost": { "type": ["string", "null"] }
+    "cost": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
   }
 }

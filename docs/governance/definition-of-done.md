@@ -17,7 +17,7 @@ qualquer estado ─► cancelled
 | Estado | Significado |
 |--------|-------------|
 | `planned` | existe no ROADMAP/Issue; ninguém assumiu |
-| `claimed` | um agente/humano declarou que vai executar (handoff ou Issue) |
+| `claimed` | um agente/humano declarou que vai executar (Issue do GitHub — DEC-0003) |
 | `working` | em execução |
 | `waiting` | aguardando algo externo não bloqueante (CI, outra tarefa) |
 | `blocked` | impedido; `blockers` obrigatório |

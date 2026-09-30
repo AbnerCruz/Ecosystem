@@ -14,7 +14,7 @@
 
 **P1-1 e P1-2 — inventário de Lunet2D e Urbe** (`docs/migration/inventory-<id>.md`, a partir do [template](docs/migration/inventory-template.md)), agora **incluindo o mapa funcional e arquitetural** com classificação futura proposta (ADD-0002 §16). As tarefas de alinhamento P0-16…P0-29 precedem P1-1/P1-2 e estão concluídas; a migração **não** foi iniciada.
 
-*Por quê:* MANIFEST §44.1 e NN-012 exigem documentar origem, branches, tags, releases, workflows, Pages, configuração e estratégia de histórico **antes** de qualquer importação. O inventário é somente leitura, não depende de decisão pendente e produz os fatos que DEC-0002 e DEC-0004 precisam. Em paralelo, o proprietário deve responder às decisões pendentes em [`docs/governance/decisions.json`](docs/governance/decisions.json).
+*Por quê:* MANIFEST §44.1 e NN-012 exigem documentar origem, branches, tags, releases, workflows, Pages, configuração e estratégia de histórico **antes** de qualquer importação. O inventário é somente leitura e produz os fatos de que o plano de importação (P1-3) precisa. DEC-0001…DEC-0004 foram aprovadas em 2026-09-30 ([ADD-0003](docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)); qualquer pendência nova do proprietário aparece no portal com seu objeto (DEC-0007).
 
 ---
 
@@ -32,14 +32,14 @@ Objetivo: monorepo com documentos normativos, `ecosystem.json`, processo de ADR,
 - [x] P0-8 — Checks de consistência em C# com self-test (ADR-0003).
 - [x] P0-9 — CI mínimo de consistência no GitHub Actions (primeira execução verde: run #1, commit 912366d).
 - [x] P0-10 — Estratégia de migração documentada antes de qualquer importação.
-- [~] P0-11 — Ratificação dos ADRs de fundação pelo proprietário (DEC-0001).
+- [x] P0-11 — Ratificação dos ADRs de fundação pelo proprietário (DEC-0001, aprovada em 2026-09-30 — ADD-0003).
 
 Portal web (ADD-0001, ADR-0005, [`docs/architecture/portal.md`](docs/architecture/portal.md)):
 
 - [x] P0-12 — `site/` com página simples, mobile-first, mostrando Ecosystem, Lunet2D, Urbe e Hub e links para a documentação canônica; dados não automatizados marcados como "não disponível".
 - [x] P0-13 — Contrato da projeção `ecosystem-status/1`, gerador em C# e `CHK-PORTAL` contra divergência e dados canônicos escritos à mão.
 - [x] P0-14 — Portal publicado por `pages.yml`; API confirmou `build_type=workflow`, artefato foi validado e smoke test confirmou o `site/index.html` na URL pública (run 36758554559).
-- [~] P0-15 — Validação humana do portal no celular (layout, toque, legibilidade) — NN-017.
+- [~] P0-15 — Validação humana do portal no celular (layout, toque, legibilidade) — NN-017. **Objeto:** https://abnercruz.github.io/Ecosystem/
 
 Alinhamento arquitetural pré-migração — Product Shells, distribuição independente e plataforma própria (ADD-0002, DEC-0006, ADR-0006). Somente conceito, documentação, governança e fiscalização; nenhum código, diretório ou Service criado; nenhum dado de Lunet2D/Urbe importado:
 
@@ -57,10 +57,12 @@ Alinhamento arquitetural pré-migração — Product Shells, distribuição inde
 - [x] P0-27 — Registrar a independência entre Store e Library e Assets como categoria do catálogo ([`distribution.md`](docs/architecture/distribution.md) §5–§6).
 - [x] P0-28 — Registrar a estratégia de distribuição first-party e Services compartilhados ([`distribution.md`](docs/architecture/distribution.md) §7–§8).
 - [x] P0-29 — Atualizar o gate e a sequência obrigatória da migração ([`docs/migration/README.md`](docs/migration/README.md) §6–§8).
-- [~] P0-30 — Ratificação do ADR-0006 e revisão do alinhamento pelo proprietário (junto de DEC-0001; DEC-0001…0004 continuam pendentes).
+- [x] P0-30 — Ratificação do ADR-0006 e revisão do alinhamento pelo proprietário (aprovada em 2026-09-30 — ADD-0003).
+- [x] P0-31 — Portal mostra decisões pendentes e validações humanas pendentes, sempre com o objeto (DEC-0007); `CHK-DECISIONS`, `CHK-HANDOFFS` e `CHK-PORTAL` fiscalizam.
+- [x] P0-32 — Aplicar DEC-0001…DEC-0004: ADRs 0001–0006 `Aceito`, origens confirmadas em `ecosystem.json`, técnica de importação e convenção de Issues documentadas.
 
 **Gate:** um agente novo consegue entrar no repositório e compreender corretamente o produto, a autoridade documental e o processo de trabalho sem depender de uma conversa anterior.
-*Estado do gate:* aguardando revisão humana ou de agente independente (não pode ser autodeclarado pelo agente fundador).
+*Estado do gate:* **aprovado pelo proprietário em 2026-09-30** ([ADD-0003](docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)); a validação do portal no celular (P0-15) segue à parte e continua pendente.
 
 ## Fase 1 — Inventário e migração
 
@@ -68,7 +70,7 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 
 - [ ] P1-1 — Inventário do Lunet2D (`docs/migration/inventory-lunet2d.md`), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16).
 - [ ] P1-2 — Inventário do Urbe (`docs/migration/inventory-urbe.md`), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16).
-- [ ] P1-3 — Plano de importação por produto, após DEC-0002 e DEC-0004.
+- [ ] P1-3 — Plano de importação por produto, a partir dos inventários P1-1/P1-2 (DEC-0002: técnica A; DEC-0004: origens confirmadas).
 - [ ] P1-4 — Importação do Lunet2D preservando histórico (PR de escopo restrito, NN-013).
 - [ ] P1-5 — Importação do Urbe preservando histórico (PR de escopo restrito, NN-013).
 - [ ] P1-6 — Restaurar build/testes/workflows/releases de cada produto; pipelines seletivos por path (NN-014).

@@ -83,7 +83,8 @@
       "check": "Validação humana do portal no celular (layout, toque, legibilidade)",
       "kind": "human",
       "result": "pending",
-      "evidence": "P0-15; exige aparelho real (NN-017)."
+      "evidence": "P0-15; exige aparelho real (NN-017).",
+      "object": "https://abnercruz.github.io/Ecosystem/"
     }
   ],
   "known_issues": [
