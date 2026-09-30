@@ -271,8 +271,14 @@ public sealed partial class GitRepository
         catch
         {
             try { Directory.Delete(directory, recursive: true); }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
+            catch (IOException)
+            {
+                // Limpeza da pasta parcial é melhor esforço; o erro original do clone é o que importa.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Idem.
+            }
             throw;
         }
     }

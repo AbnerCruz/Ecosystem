@@ -34,7 +34,10 @@ public sealed unsafe class LoadedAssembliesReferenceProvider : IReferenceProvide
         foreach (var name in RequiredAssemblies)
         {
             try { byName[name] = Assembly.Load(new AssemblyName(name)); }
-            catch (Exception ex) when (ex is FileNotFoundException or FileLoadException) { }
+            catch (Exception ex) when (ex is FileNotFoundException or FileLoadException)
+            {
+                // Referência opcional que esta plataforma não tem: o jogo só não pode usá-la.
+            }
         }
         foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
         {

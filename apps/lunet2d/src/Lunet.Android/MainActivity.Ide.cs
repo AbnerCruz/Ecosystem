@@ -172,6 +172,7 @@ public sealed partial class MainActivity
         ("Exportar logs (Console e Problemas)", ExportLogs),
         ("Recuperar alterações não salvas", OfferRecovery),
         ("Git", ShowGit),
+        ("Medir o editor com arquivos grandes", MeasureEditor),
         ("Layout do workspace", ShowLayoutDialog),
         ("Configurações", ShowSettings),
         ("Atalhos de teclado", ShowShortcutHelp),
@@ -568,7 +569,10 @@ public sealed partial class MainActivity
     {
         var version = "dev";
         try { version = PackageManager?.GetPackageInfo(PackageName!, 0)?.VersionName ?? "dev"; }
-        catch (Exception ex) when (ex is not OutOfMemoryException) { }
+        catch (Exception ex) when (ex is not OutOfMemoryException)
+        {
+            // A versão só enfeita o relatório; sem ela fica "dev".
+        }
         var device = $"{Build.Manufacturer} {Build.Model}, Android {Build.VERSION.Release} (API {(int)Build.VERSION.SdkInt})";
         var problems = _problems.Select(p => new LogProblem(p.Severity.ToString().ToLowerInvariant(), p.Id, p.Message, p.FilePath, p.Line, p.Column));
         var text = LogExport.Build(_project?.Name ?? "(sem projeto)", version, device, DateTimeOffset.Now, _console, problems);

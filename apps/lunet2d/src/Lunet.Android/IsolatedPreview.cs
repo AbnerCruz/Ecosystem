@@ -72,7 +72,10 @@ public sealed class IsolatedPreviewActivity : Activity
         {
             lock (_logLock) File.AppendAllText(IsolatedPreviewFiles.Log(this), $"{(int)level}|{message.Replace("\r", "").Replace("\n", "\\n")}\n");
         }
-        catch (IOException) { }
+        catch (IOException)
+        {
+            // O console em arquivo é auxiliar: perder uma linha não pode derrubar o jogo.
+        }
     }
 
     protected override void OnPause()
@@ -94,7 +97,10 @@ public sealed class IsolatedPreviewActivity : Activity
         if (IsFinishing)
         {
             try { File.Delete(IsolatedPreviewFiles.Marker(this)); }
-            catch (IOException) { }
+            catch (IOException)
+            {
+                // Sem apagar a marca, o IDE apenas avisa "encerrado inesperadamente" na próxima volta.
+            }
         }
         base.OnDestroy();
     }

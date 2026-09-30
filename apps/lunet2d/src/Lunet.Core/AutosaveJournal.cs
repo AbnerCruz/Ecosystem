@@ -86,7 +86,10 @@ public sealed class AutosaveJournal
 
             string? disk = null;
             try { disk = _project.ReadText(relative); }
-            catch (Exception ex) when (ex is IOException or ProjectException) { }
+            catch (Exception ex) when (ex is IOException or ProjectException)
+            {
+                // Sem ler o arquivo no disco, a versão do diário é oferecida para recuperação.
+            }
 
             if (disk == text) { Discard(relative); continue; }
             result.Add(new Recovery(relative, text, disk, File.GetLastWriteTimeUtc(file)));
@@ -127,6 +130,10 @@ public sealed class AutosaveJournal
 
     private static void TryDelete(string path)
     {
-        try { File.Delete(path); } catch (IOException) { }
+        try { File.Delete(path); }
+        catch (IOException)
+        {
+            // Arquivo de recuperação preso: será apagado na próxima limpeza.
+        }
     }
 }

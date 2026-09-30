@@ -650,7 +650,10 @@ public sealed partial class MainActivity : Activity
         if (path is not null && _session.IsDirty(text))
         {
             try { _journal?.WriteBuffer(path, text); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException) { }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ProjectException)
+            {
+                // O diário é uma rede de segurança extra; o salvamento normal e o botão Salvar seguem funcionando.
+            }
         }
         if (path is null || _assistant is null || !path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
         {
