@@ -133,7 +133,7 @@ Roslyn (§9)
 
 IDE mobile (§11)
 - [x] Explorer (ver Fase 1).
-- [ ] Painéis: Preview, Inspector, Console, Problems, Search, Assets, Documentation, Agent, Profiler (Preview, Console, Problems e Explorer já existem no workspace).
+- [ ] Painéis: Preview, Inspector, Console, Problems, Search, Documentation e Explorer (feito, sem validação em aparelho). Movidos com motivo: Assets → Fase 5 (nasce com os Studios), Profiler → Fase 4 (depende das métricas do framework), Agent → Fase 8.
 - [ ] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes. (feito, sem validação em aparelho; painel encaixa embaixo/à direita, divisória arrastável, layouts salvos e predefinidos)
 - [ ] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles. (feito, sem validação em aparelho; em paisagem o painel vai para a direita; rótulos e botões não são selecionáveis)
 - [ ] Busca no projeto inteiro. (feito, sem validação em aparelho; menu ⋯ → Buscar no projeto)
@@ -147,7 +147,7 @@ Inspector (§12)
 
 Documentação (§15)
 - [ ] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33). (feito, sem validação em aparelho; `Lunet.Docs`, `docs/api/lunet-framework.json` com teste de deriva, guias em `docs/guides`)
-- [ ] Cada API com descrição, assinatura, parâmetros, retorno, exemplos, remarks, relacionadas e versão de introdução.
+- [x] Cada API com descrição, assinatura, parâmetros, retorno, exemplos, remarks, relacionadas e versão de introdução. (teste `DocumentationCoverageTests` exige resumo, assinatura, versão, cada parâmetro e retorno descritos; `DocumentedExamplesTests` exige um exemplo por tipo e o compila; remarks e relacionadas onde fazem sentido)
 - [ ] Integração com o editor: "Explain in Documentation". (feito, sem validação em aparelho; botão na Dica do símbolo)
 - [ ] Documentação apontando para trechos dos jogos oficiais (depende da Fase 11).
 
@@ -177,13 +177,14 @@ Gate: jogos 2D substanciais apenas com APIs oficiais.
 - [ ] Pathfinding A*.
 - [ ] Scene2D opcional e API entidade/componente opcional (sem obrigar ECS).
 - [ ] Debug APIs e helpers.
-- [ ] Profiler básico do framework (FPS, frame time, update/render time, draw calls, triângulos, memória, GC, audio underruns) (§23).
+- [ ] Profiler básico do framework (FPS, frame time, update/render time, draw calls, triângulos, memória, GC, audio underruns) (§23), com o painel Profiler no workspace (movido da Fase 3).
 - [ ] Auditoria de fechamento da Fase 4 registrada em `docs/audits/`.
 
 ## Fase 5 — Studio Tools (§13)
 
 Gate: a maior parte dos assets/dados necessários pode ser produzida dentro do Lunet. As ferramentas usam o `Lunet.Editor.SDK` (criado na Fase 6 ou antes, ver ADR).
 
+- [ ] Painel Assets no workspace: lista os arquivos de `Content/` com prévia e uso (movido da Fase 3).
 - [ ] Sprite Studio: pixel art, layers, frames, timeline, onion skin, paletas, lápis, borracha, balde, conta-gotas, linhas, formas, seleção, laço, transformar, flip, rotate, simetria, grade, zoom, spritesheet, preview de animação, importar/exportar PNG, transparência, toque e stylus.
 - [ ] Tile Studio: tilesets, edição de mapas, layers, camada de colisão, propriedades, autotiling, brushes, preview.
 - [ ] Animation Studio: clips, timeline, frames, eventos, playback, animação de sprites, estados.
@@ -227,6 +228,7 @@ Gate: dois clientes jogam demonstração realtime com latência simulada.
 
 Gate: modelo configurado altera código, compila, detecta erro, corrige e executa. IA é opcional; nada depende dela.
 
+- [ ] Painel Agent no workspace (movido da Fase 3).
 - [ ] Model Gateway, Provider Adapters (OpenAI, Anthropic, Gemini, OpenRouter, OpenAI-compatible, custom), Capability Discovery.
 - [ ] Tool API interna própria (mesmas operações usadas por humano e plugin) e depois bridge MCP.
 - [ ] Ferramentas tipadas: Project, Code, Compiler, Runtime, Testing, Assets, Documentation, Build, Versioning/checkpoints.

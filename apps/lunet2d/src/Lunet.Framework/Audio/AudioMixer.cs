@@ -4,6 +4,13 @@ namespace Lunet.Audio;
 /// Mistura de áudio do jogo (<c>Audio</c>): barramentos de volume, música com fade, fades de efeitos e pausa geral.
 /// É atualizada pelo host a cada passo fixo.
 /// </summary>
+/// <example>
+/// <code>
+/// audio.PlayMusic(music, loop: true, fadeInSeconds: 1.5f);
+/// audio.Master.Volume = 0.8f;
+/// audio.StopMusic(fadeOutSeconds: 1f);
+/// </code>
+/// </example>
 public sealed class AudioMixer
 {
     private const int MaxTrackedInstances = 64;
@@ -41,6 +48,8 @@ public sealed class AudioMixer
     public bool IsPaused => _paused;
 
     /// <summary>Devolve o barramento pelo nome, criando-o se não existir.</summary>
+    /// <param name="name">Nome do barramento (por exemplo `Voz`); é criado se não existir.</param>
+    /// <returns>O barramento com esse nome.</returns>
     public AudioBus GetBus(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -63,6 +72,9 @@ public sealed class AudioMixer
     }
 
     /// <summary>Toca a música, substituindo a atual. Com <paramref name="fadeInSeconds"/> &gt; 0 o volume sobe gradualmente.</summary>
+    /// <param name="music">Música a tocar.</param>
+    /// <param name="loop">Se verdadeiro, repete até ser parado.</param>
+    /// <param name="fadeInSeconds">Duração do aumento gradual de volume, em segundos.</param>
     public void PlayMusic(Music music, bool loop = true, float fadeInSeconds = 0f)
     {
         ArgumentNullException.ThrowIfNull(music);
@@ -78,6 +90,7 @@ public sealed class AudioMixer
     }
 
     /// <summary>Para a música; com <paramref name="fadeOutSeconds"/> &gt; 0 ela some gradualmente antes de parar.</summary>
+    /// <param name="fadeOutSeconds">Duração da redução gradual de volume, em segundos.</param>
     public void StopMusic(float fadeOutSeconds = 0f)
     {
         if (_music is null) return;
@@ -93,6 +106,8 @@ public sealed class AudioMixer
     }
 
     /// <summary>Muda o volume da música gradualmente (0 a 1, relativo ao barramento Music).</summary>
+    /// <param name="volume">Volume de 0 (mudo) a 1 (máximo).</param>
+    /// <param name="seconds">Duração, em segundos.</param>
     public void FadeMusicTo(float volume, float seconds)
     {
         _musicTarget = Math.Clamp(volume, 0f, 1f);

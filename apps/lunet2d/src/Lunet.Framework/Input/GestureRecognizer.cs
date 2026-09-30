@@ -7,6 +7,12 @@ namespace Lunet.Input;
 /// um dedo aparece quando surge um id ativo e termina quando some ou é solto.
 /// Com dois dedos ativos emite Pinch e Rotate (e suprime os gestos de um dedo).
 /// </summary>
+/// <example>
+/// <code>
+/// input.GestureSettings.LongPressSeconds = 0.6;
+/// input.GestureSettings.DragThreshold = 12;
+/// </code>
+/// </example>
 public sealed class GestureRecognizer
 {
     private sealed class Track

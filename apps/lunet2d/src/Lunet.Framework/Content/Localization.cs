@@ -7,6 +7,13 @@ namespace Lunet.Content;
 /// Textos traduzidos. Cada idioma é um JSON simples <c>{ "chave": "texto" }</c> em <c>Data/strings.&lt;idioma&gt;.json</c>.
 /// Se a chave não existir no idioma atual, usa o idioma reserva; se também não existir, devolve a própria chave.
 /// </summary>
+/// <example>
+/// <code>
+/// localization.SetLanguage("pt");
+/// string title = localization.Get("menu.title");
+/// string score = localization.Get("hud.score", 42);
+/// </code>
+/// </example>
 public sealed class Localization
 {
     private readonly IContentSource _source;
@@ -26,6 +33,8 @@ public sealed class Localization
     public string FallbackLanguage { get; private set; } = "";
 
     /// <summary>Carrega <paramref name="language"/> (ex.: "pt"), com <paramref name="fallbackLanguage"/> como reserva. Idiomas ausentes são ignorados.</summary>
+    /// <param name="language">Código do idioma, por exemplo `pt` ou `en`.</param>
+    /// <param name="fallbackLanguage">Idioma usado quando falta a tradução (padrão `en`).</param>
     /// <returns>Verdadeiro se o idioma pedido existia.</returns>
     public bool SetLanguage(string language, string fallbackLanguage = "en")
     {
@@ -38,6 +47,8 @@ public sealed class Localization
     }
 
     /// <summary>Usa o idioma do aparelho (duas letras) se houver tradução; senão o reserva.</summary>
+    /// <param name="fallbackLanguage">Idioma usado quando falta a tradução (padrão `en`).</param>
+    /// <returns>O idioma escolhido.</returns>
     public string UseDeviceLanguage(string fallbackLanguage = "en")
     {
         var device = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
@@ -52,6 +63,9 @@ public sealed class Localization
         _current.TryGetValue(key, out var text) ? text : _fallback.TryGetValue(key, out text) ? text : key;
 
     /// <summary>Texto com <see cref="string.Format(string, object[])"/>: <c>"Olá, {0}!"</c>.</summary>
+    /// <param name="key">Chave do texto ou do dado.</param>
+    /// <param name="args">Valores que substituem `{0}`, `{1}`… no texto.</param>
+    /// <returns>O texto traduzido, ou a própria chave se não houver tradução.</returns>
     public string Get(string key, params object[] args)
     {
         var format = Get(key);

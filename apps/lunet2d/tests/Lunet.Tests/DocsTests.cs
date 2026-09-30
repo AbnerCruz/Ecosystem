@@ -215,3 +215,71 @@ public class DocumentationBrowserTests
         }
     }
 }
+
+public class DocumentedExamplesTests
+{
+    private const string Usings = """
+        using System; using System.IO; using System.Linq; using System.Collections.Generic; using System.Numerics; using System.Threading.Tasks;
+        using Lunet; using Lunet.Audio; using Lunet.Content; using Lunet.Graphics; using Lunet.Input; using Lunet.Storage;
+        """;
+
+    private const string HostFields = """
+        GraphicsDevice device = null!; SpriteBatch batch = null!; Texture2D texture = null!; SpriteFont font = null!; ContentManager content = null!;
+        InputState input = null!; AudioMixer audio = null!; SoundEffect sound = null!; Music music = null!; TextureAtlas atlas = null!; SaveData save = null!;
+        GameLog log = null!; Timers timers = null!; Dispatcher dispatcher = null!; RandomSource random = null!; Localization localization = null!;
+        ISaveStore store = null!; IContentSource source = null!; IGraphicsBackend backend = null!; IAudioBackend audioBackend = null!; IHaptics haptics = null!;
+        Game game = null!; InspectorContext ui = null!; Vector2 position; Vector2 velocity;
+        """;
+
+    private static string Wrap(string code)
+    {
+        var typeLevel = code.Split('\n').Any(l => l.StartsWith("public ", StringComparison.Ordinal) || l.StartsWith('['));
+        return $"{Usings}\n#pragma warning disable\npublic sealed class ExampleHost : Game\n{{\n{HostFields}\nvoid Example(GameTime time)\n{{\n{(typeLevel ? "" : code)}\n}}\n}}\n{(typeLevel ? code : "")}\n";
+    }
+
+    [Fact]
+    public void EveryPublicTypeExceptEnumsHasAnExample_AndEveryExampleCompiles()
+    {
+        var docs = DocsTests.Generate();
+        var compiler = new Lunet.Compiler.GameCompiler(new Lunet.Compiler.LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
+        var failures = new List<string>();
+        var missing = new List<string>();
+        foreach (var type in docs.Types.Where(t => t.Kind != "enum"))
+        {
+            if (type.Examples.Count == 0) { missing.Add(type.Name); continue; }
+            foreach (var example in type.Examples)
+            {
+                var result = compiler.Compile("Example" + type.Name + Guid.NewGuid().ToString("N"), [new Lunet.Compiler.SourceFile("Example.cs", Wrap(string.Join('\n', example.Split('\n').Where(l => !l.StartsWith("```", StringComparison.Ordinal)))))]);
+                if (!result.Success)
+                    failures.Add($"{type.Name}: {string.Join("; ", result.Diagnostics.Where(d => d.Severity == Lunet.Compiler.DiagnosticSeverity.Error).Take(2).Select(d => d.ToString()))}");
+            }
+        }
+        Assert.Empty(missing);
+        Assert.Empty(failures);
+    }
+}
+
+public class DocumentationCoverageTests
+{
+    [Fact]
+    public void EveryPublicApiHasSummarySignatureSince_EveryParameterAndReturnIsDescribed()
+    {
+        var docs = DocsTests.Generate();
+        var problems = new List<string>();
+        foreach (var type in docs.Types)
+        {
+            if (string.IsNullOrWhiteSpace(type.Summary)) problems.Add($"{type.Name}: sem resumo");
+            if (string.IsNullOrWhiteSpace(type.Since)) problems.Add($"{type.Name}: sem versão");
+            foreach (var member in type.Members)
+            {
+                if (string.IsNullOrWhiteSpace(member.Summary) && member.Kind != "constructor") problems.Add($"{type.Name}.{member.Name}: sem resumo");
+                if (string.IsNullOrWhiteSpace(member.Signature)) problems.Add($"{type.Name}.{member.Name}: sem assinatura");
+                foreach (var parameter in member.Parameters.Where(p => string.IsNullOrWhiteSpace(p.Description)))
+                    problems.Add($"{type.Name}.{member.Name}: parâmetro {parameter.Name} sem descrição");
+                var returnsValue = member.Kind == "method" && !member.Signature.Split('(')[0].Split(' ').Contains("void");
+                if (returnsValue && string.IsNullOrWhiteSpace(member.Returns)) problems.Add($"{type.Name}.{member.Name}: sem descrição do retorno");
+            }
+        }
+        Assert.Empty(problems);
+    }
+}

@@ -6,6 +6,13 @@ namespace Lunet.Graphics;
 /// Fonte bitmap embutida (5×7 pixels, com acentos do português). Serve para HUD e depuração;
 /// fontes TrueType/bitmap personalizadas virão depois.
 /// </summary>
+/// <example>
+/// <code>
+/// var title = SpriteFont.CreateDefault(device);
+/// Vector2 size = title.Measure("Olá", 2f);
+/// batch.DrawString(title, "Olá", (device.ViewSize - size) / 2, Color.White, 2f);
+/// </code>
+/// </example>
 public sealed class SpriteFont
 {
     private const int CellWidth = 6;
@@ -158,6 +165,9 @@ public sealed class SpriteFont
     }
 
     /// <summary>Tamanho do texto em pixels virtuais para a escala dada.</summary>
+    /// <param name="text">Texto a desenhar.</param>
+    /// <param name="scale">Fator de escala (1 = tamanho original).</param>
+    /// <returns>Largura e altura do texto, em coordenadas virtuais.</returns>
     public Vector2 Measure(string text, float scale = 1f)
     {
         ArgumentNullException.ThrowIfNull(text);

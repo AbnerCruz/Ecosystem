@@ -10,6 +10,12 @@ namespace Lunet;
 /// Executa um <see cref="Game"/> sobre um <see cref="IGraphicsBackend"/>: ciclo de vida, passo fixo e desenho.
 /// Falhas no código do jogo são capturadas: o host passa a <see cref="IsFaulted"/> e para de rodar o jogo.
 /// </summary>
+/// <example>
+/// <code>
+/// var host = new GameHost(game, backend, source, audioBackend, store, haptics);
+/// if (host.Start(1080, 1920)) host.Tick(1.0 / 60);
+/// </code>
+/// </example>
 public sealed class GameHost
 {
     private readonly Game _game;
@@ -26,6 +32,11 @@ public sealed class GameHost
     private bool _started;
 
     /// <param name="contentSource">Origem dos arquivos de <c>Content/</c>; sem ela, o jogo não encontra arquivos.</param>
+    /// <param name="game">Jogo a executar.</param>
+    /// <param name="backend">Backend gráfico (OpenGL ES no Android).</param>
+    /// <param name="audio">Backend de áudio; nulo deixa o jogo sem som.</param>
+    /// <param name="saveStore">Onde os saves são gravados; nulo usa memória.</param>
+    /// <param name="haptics">Vibração do aparelho; nulo desliga.</param>
     public GameHost(Game game, IGraphicsBackend backend, IContentSource? contentSource = null, IAudioBackend? audio = null, ISaveStore? saveStore = null, IHaptics? haptics = null)
     {
         _haptics = haptics ?? new NullHaptics();
@@ -50,6 +61,9 @@ public sealed class GameHost
     public GameLog Log => _game.Log;
 
     /// <summary>Inicializa o jogo. Retorna falso se o código do jogo lançou exceção.</summary>
+    /// <param name="surfaceWidth">Largura da superfície de desenho, em pixels.</param>
+    /// <param name="surfaceHeight">Altura da superfície de desenho, em pixels.</param>
+    /// <returns>Verdadeiro se o jogo iniciou sem exceção.</returns>
     public bool Start(int surfaceWidth, int surfaceHeight)
     {
         if (_started) throw new InvalidOperationException("O host já foi iniciado.");
@@ -73,6 +87,11 @@ public sealed class GameHost
     }
 
     /// <summary>Densidade da tela e recuos seguros (recortes, cantos, barras) em pixels da superfície.</summary>
+    /// <param name="density">Densidade da tela (1 = 160 dpi).</param>
+    /// <param name="insetLeft">Recuo seguro à esquerda, em pixels da superfície.</param>
+    /// <param name="insetTop">Recuo seguro no topo, em pixels da superfície.</param>
+    /// <param name="insetRight">Recuo seguro à direita, em pixels da superfície.</param>
+    /// <param name="insetBottom">Recuo seguro embaixo, em pixels da superfície.</param>
     public void SetDisplay(float density, int insetLeft, int insetTop, int insetRight, int insetBottom)
     {
         _display = (density, insetLeft, insetTop, insetRight, insetBottom);
@@ -85,6 +104,7 @@ public sealed class GameHost
     public void Resize(int surfaceWidth, int surfaceHeight) => GraphicsDevice?.Resize(surfaceWidth, surfaceHeight);
 
     /// <summary>Define os toques do quadro em pixels da superfície; converte para coordenadas virtuais.</summary>
+    /// <param name="surfaceTouches">Toques atuais, em pixels da superfície de desenho.</param>
     public void SetSurfaceTouches(ReadOnlySpan<TouchPoint> surfaceTouches)
     {
         if (GraphicsDevice is null) return;
@@ -117,6 +137,7 @@ public sealed class GameHost
     }
 
     /// <summary>Um quadro: executa os passos fixos devidos e desenha. Sem alocações no caminho normal.</summary>
+    /// <param name="elapsedSeconds">Tempo real passado desde a chamada anterior, em segundos.</param>
     public void Tick(double elapsedSeconds)
     {
         if (!_started || IsFaulted || _loop is null) return;

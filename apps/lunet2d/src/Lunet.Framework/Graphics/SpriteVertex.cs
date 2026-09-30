@@ -4,6 +4,11 @@ using System.Runtime.InteropServices;
 namespace Lunet.Graphics;
 
 /// <summary>Vértice de sprite: 20 bytes (posição, UV, cor RGBA empacotada).</summary>
+/// <example>
+/// <code>
+/// var vertex = new SpriteVertex { Position = new Vector2(1, 2), TexCoord = new Vector2(0, 0), Color = Color.White.PackedRgba };
+/// </code>
+/// </example>
 [StructLayout(LayoutKind.Sequential)]
 public struct SpriteVertex
 {

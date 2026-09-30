@@ -4,6 +4,17 @@ namespace Lunet.Graphics;
 /// Textura em que se pode desenhar (minimapa, efeitos, iluminação). Dentro do alvo o espaço de desenho
 /// é em pixels do próprio alvo, com (0,0) no canto superior esquerdo.
 /// </summary>
+/// <example>
+/// <code>
+/// var target = new RenderTarget2D(device, 180, 320);
+/// device.SetRenderTarget(target);
+/// device.Clear(Color.Black);
+/// device.SetRenderTarget(null);
+/// batch.Begin();
+/// batch.Draw(target.Texture, position, Color.White);
+/// batch.End();
+/// </code>
+/// </example>
 public sealed class RenderTarget2D : IDisposable
 {
     private readonly GraphicsDevice _device;

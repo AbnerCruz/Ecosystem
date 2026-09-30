@@ -20,6 +20,12 @@ public enum TouchPhase
 }
 
 /// <summary>Um dedo na tela. <see cref="Position"/> está em coordenadas virtuais do jogo.</summary>
+/// <example>
+/// <code>
+/// if (input.TryGetPrimaryTouch(out TouchPoint touch) &amp;&amp; touch.Phase == TouchPhase.Moved)
+///     position = touch.Position;
+/// </code>
+/// </example>
 public readonly struct TouchPoint
 {
     /// <summary>Cria um toque.</summary>

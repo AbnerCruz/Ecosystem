@@ -3,6 +3,12 @@ using System.Collections.Concurrent;
 namespace Lunet;
 
 /// <summary>Executa trabalho na thread do jogo. <see cref="Post"/> pode ser chamado de qualquer thread.</summary>
+/// <example>
+/// <code>
+/// // De outra thread, peça ao jogo para rodar algo no início do próximo quadro.
+/// Task.Run(() =&gt; dispatcher.Post(() =&gt; log.Info("carregou")));
+/// </code>
+/// </example>
 public sealed class Dispatcher
 {
     private readonly ConcurrentQueue<Action> _queue = new();

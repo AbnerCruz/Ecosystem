@@ -3,6 +3,14 @@ using System.Numerics;
 namespace Lunet.Graphics;
 
 /// <summary>Agrupa quads com a mesma textura e os envia ao backend. Sem alocações por quadro.</summary>
+/// <example>
+/// <code>
+/// batch.Begin();
+/// batch.Draw(texture, position, Color.White);
+/// batch.DrawString(font, "Pontos: 10", new Vector2(8, 8), Color.White);
+/// batch.End();
+/// </code>
+/// </example>
 public sealed class SpriteBatch
 {
     /// <summary>Máximo de quads por chamada de desenho ao backend.</summary>
@@ -57,11 +65,20 @@ public sealed class SpriteBatch
         Draw(texture, new RectangleF(position.X, position.Y, texture.Width, texture.Height), null, color, 0f, Vector2.Zero);
 
     /// <summary>Desenha um recorte (<paramref name="source"/>, em pixels) na posição dada, sem escala.</summary>
+    /// <param name="texture">Textura a desenhar.</param>
+    /// <param name="position">Posição, em coordenadas virtuais.</param>
+    /// <param name="source">Trecho da textura a desenhar, em pixels; nulo desenha a textura toda.</param>
+    /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
     public void Draw(Texture2D texture, Vector2 position, RectangleF source, Color color) =>
         Draw(texture, new RectangleF(position.X, position.Y, source.Width, source.Height), source, color, 0f, Vector2.Zero);
 
     /// <summary>Desenha <paramref name="source"/> (em pixels; nulo = textura inteira) em <paramref name="destination"/>.</summary>
     /// <param name="rotation">Radianos, em torno de <paramref name="origin"/> (em pixels do retângulo de origem).</param>
+    /// <param name="texture">Textura a desenhar.</param>
+    /// <param name="destination">Retângulo de destino, em coordenadas virtuais.</param>
+    /// <param name="source">Trecho da textura a desenhar, em pixels; nulo desenha a textura toda.</param>
+    /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
+    /// <param name="origin">Ponto de rotação, em pixels da textura.</param>
     public void Draw(Texture2D texture, RectangleF destination, RectangleF? source, Color color, float rotation, Vector2 origin)
     {
         if (!_begun) throw new InvalidOperationException("Chame Begin() antes de Draw().");
@@ -105,6 +122,12 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Desenha uma região de um atlas com o pivô da região em <paramref name="position"/>.</summary>
+    /// <param name="atlas">Atlas que contém a região.</param>
+    /// <param name="region">Nome da região dentro do atlas.</param>
+    /// <param name="position">Posição, em coordenadas virtuais.</param>
+    /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
+    /// <param name="scale">Fator de escala (1 = tamanho original).</param>
+    /// <param name="rotation">Rotação, em radianos.</param>
     public void Draw(TextureAtlas atlas, string region, Vector2 position, Color color, float scale = 1f, float rotation = 0f)
     {
         ArgumentNullException.ThrowIfNull(atlas);
@@ -115,6 +138,8 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Desenha o sprite com a origem em <paramref name="position"/>, usando a cor, escala e rotação do próprio sprite.</summary>
+    /// <param name="sprite">Sprite a desenhar.</param>
+    /// <param name="position">Posição, em coordenadas virtuais.</param>
     public void Draw(Sprite sprite, Vector2 position)
     {
         ArgumentNullException.ThrowIfNull(sprite);
@@ -125,6 +150,11 @@ public sealed class SpriteBatch
     }
 
     /// <summary>Escreve texto. Uma quebra de linha (<c>\n</c>) desce uma linha.</summary>
+    /// <param name="font">Fonte do texto.</param>
+    /// <param name="text">Texto a desenhar.</param>
+    /// <param name="position">Posição, em coordenadas virtuais.</param>
+    /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
+    /// <param name="scale">Fator de escala (1 = tamanho original).</param>
     public void DrawString(SpriteFont font, string text, Vector2 position, Color color, float scale = 1f)
     {
         ArgumentNullException.ThrowIfNull(font);

@@ -15,6 +15,13 @@ public enum LogLevel
 }
 
 /// <summary>Registro do jogo. A IDE (ou qualquer host) assina <see cref="Written"/>.</summary>
+/// <example>
+/// <code>
+/// Log.Info("Fase carregada");
+/// Log.Warning("Pouca memória");
+/// Log.Written += (level, message) =&gt; Console.WriteLine($"[{level}] {message}");
+/// </code>
+/// </example>
 public sealed class GameLog
 {
     /// <summary>Ocorre a cada mensagem registrada. O Lunet assina este evento para preencher o Console.</summary>

@@ -3,6 +3,13 @@ using System.Numerics;
 namespace Lunet.Graphics;
 
 /// <summary>Desenho de depuração: linhas, contornos e preenchimentos com a textura branca do dispositivo.</summary>
+/// <example>
+/// <code>
+/// DebugDraw.Rect(batch, new RectangleF(10, 10, 50, 50), Color.Red);
+/// DebugDraw.Circle(batch, position, 20, Color.Green);
+/// DebugDraw.Line(batch, position, position + velocity, Color.Yellow);
+/// </code>
+/// </example>
 public static class DebugDraw
 {
     /// <summary>Desenha uma linha.</summary>

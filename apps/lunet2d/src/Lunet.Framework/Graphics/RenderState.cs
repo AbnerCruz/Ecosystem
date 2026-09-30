@@ -21,6 +21,13 @@ public enum BlendMode
 }
 
 /// <summary>Como o desenho se mistura com o que já está na tela.</summary>
+/// <example>
+/// <code>
+/// batch.Begin(BlendState.Additive);
+/// batch.Draw(texture, position, Color.White);
+/// batch.End();
+/// </code>
+/// </example>
 public sealed class BlendState
 {
     private BlendState(BlendMode mode, string name)
@@ -62,6 +69,12 @@ public enum TextureWrap
 }
 
 /// <summary>Como a textura é amostrada: filtro e comportamento fora de [0,1].</summary>
+/// <example>
+/// <code>
+/// batch.Begin(sampler: SamplerState.PointClamp);
+/// batch.End();
+/// </code>
+/// </example>
 public sealed class SamplerState
 {
     /// <summary>Cria um estado de amostragem.</summary>
@@ -93,6 +106,12 @@ public sealed class SamplerState
 /// <param name="Y">Coordenada Y do canto de origem, em pixels.</param>
 /// <param name="Width">Largura, em pixels.</param>
 /// <param name="Height">Altura, em pixels.</param>
+/// <example>
+/// <code>
+/// var clip = new RectI(0, 0, 200, 100);
+/// int area = clip.Width * clip.Height;
+/// </code>
+/// </example>
 public readonly record struct RectI(int X, int Y, int Width, int Height)
 {
     /// <summary>Coordenada X logo após o lado direito (X + Width).</summary>
@@ -106,6 +125,12 @@ public readonly record struct RectI(int X, int Y, int Width, int Height)
 /// <param name="Y">Distância da borda superior da superfície até a área do jogo, em pixels.</param>
 /// <param name="Width">Largura da área do jogo, em pixels.</param>
 /// <param name="Height">Altura da área do jogo, em pixels.</param>
+/// <example>
+/// <code>
+/// Viewport view = device.Viewport;
+/// float aspect = view.AspectRatio;
+/// </code>
+/// </example>
 public readonly record struct Viewport(int X, int Y, int Width, int Height)
 {
     /// <summary>Proporção largura por altura da área do jogo.</summary>
@@ -118,6 +143,11 @@ public readonly record struct Viewport(int X, int Y, int Width, int Height)
 /// <param name="Sampler">Filtro e repetição de textura; nulo usa os da própria textura.</param>
 /// <param name="Shader">Handle do shader do backend; 0 usa o shader padrão.</param>
 /// <param name="Uniforms">Valores dos uniforms do shader, por nome; nulo se não houver.</param>
+/// <example>
+/// <code>
+/// var additive = DrawState.Default with { Blend = BlendMode.Additive };
+/// </code>
+/// </example>
 public readonly record struct DrawState(
     BlendMode Blend,
     SamplerState? Sampler,

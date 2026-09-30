@@ -1,6 +1,13 @@
 namespace Lunet.Graphics;
 
 /// <summary>Divide uma textura em quadros de tamanho igual, numerados da esquerda para a direita, de cima para baixo.</summary>
+/// <example>
+/// <code>
+/// var walk = new SpriteSheet(texture, 32, 32);
+/// RectangleF frame = walk.Frame((int)(time.TotalSeconds * 8) % walk.FrameCount);
+/// batch.Draw(texture, position, frame, Color.White);
+/// </code>
+/// </example>
 public sealed class SpriteSheet
 {
     /// <summary>Divide uma textura em quadros de tamanho igual.</summary>

@@ -5,6 +5,13 @@ using Lunet.Graphics;
 namespace Lunet.Content;
 
 /// <summary>Carrega e guarda em cache o conteúdo do jogo. Texturas são liberadas em <see cref="Dispose"/>.</summary>
+/// <example>
+/// <code>
+/// var hero = content.LoadTexture("Textures/hero.png");
+/// string level = content.ReadText("Data/level.json");
+/// bool hasJump = content.Exists("Audio/jump.wav");
+/// </code>
+/// </example>
 public sealed class ContentManager : IDisposable
 {
     private readonly IContentSource _source;
@@ -37,6 +44,9 @@ public sealed class ContentManager : IDisposable
     }
 
     /// <summary>Carrega um PNG (ex.: <c>"Textures/hero.png"</c>). Chamadas repetidas devolvem a mesma textura.</summary>
+    /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
+    /// <param name="filter">Filtro de amostragem: `Point` (pixels nítidos) ou `Linear` (suave).</param>
+    /// <returns>A textura carregada (a mesma instância nas próximas chamadas).</returns>
     public Texture2D LoadTexture(string path, TextureFilter filter = TextureFilter.Linear)
     {
         if (_textures.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
@@ -55,6 +65,8 @@ public sealed class ContentManager : IDisposable
     }
 
     /// <summary>Carrega um efeito sonoro (ex.: <c>"Audio/jump.wav"</c>). Cacheado.</summary>
+    /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
+    /// <returns>O som carregado.</returns>
     public SoundEffect LoadSound(string path)
     {
         if (_sounds.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
@@ -67,6 +79,8 @@ public sealed class ContentManager : IDisposable
     }
 
     /// <summary>Carrega uma música longa (ex.: <c>"Audio/theme.ogg"</c>) para tocar com <c>Audio.PlayMusic</c>. Cacheada.</summary>
+    /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
+    /// <returns>A música carregada.</returns>
     public Music LoadMusic(string path)
     {
         if (_music.TryGetValue(path, out var cached) && !cached.IsDisposed) return cached;
@@ -79,6 +93,8 @@ public sealed class ContentManager : IDisposable
     }
 
     /// <summary>Lê um JSON e o converte para <typeparamref name="T"/> (campos públicos e propriedades; comentários e vírgula final são aceitos).</summary>
+    /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
+    /// <returns>O objeto lido do JSON.</returns>
     public T LoadJson<T>(string path)
     {
         var text = ReadText(path);
@@ -87,6 +103,9 @@ public sealed class ContentManager : IDisposable
     }
 
     /// <summary>Carrega um atlas de texturas (JSON com a textura e as regiões nomeadas). Cacheado.</summary>
+    /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
+    /// <param name="filter">Filtro de amostragem: `Point` (pixels nítidos) ou `Linear` (suave).</param>
+    /// <returns>O atlas carregado.</returns>
     public TextureAtlas LoadAtlas(string path, TextureFilter filter = TextureFilter.Point)
     {
         if (_atlases.TryGetValue(path, out var cached) && !cached.Texture.IsDisposed) return cached;
@@ -97,6 +116,7 @@ public sealed class ContentManager : IDisposable
     }
 
     /// <summary>Libera uma textura carregada; a próxima <see cref="LoadTexture"/> a lê de novo (útil após editar o arquivo).</summary>
+    /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
     public void UnloadTexture(string path)
     {
         if (_textures.Remove(path, out var texture)) texture.Dispose();

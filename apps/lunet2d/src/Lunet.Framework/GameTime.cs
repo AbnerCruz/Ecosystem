@@ -1,6 +1,12 @@
 namespace Lunet;
 
 /// <summary>Tempo de uma atualização. <see cref="DeltaSeconds"/> é sempre o passo fixo configurado.</summary>
+/// <example>
+/// <code>
+/// position += velocity * time.DeltaSeconds;
+/// double seconds = time.TotalSeconds;
+/// </code>
+/// </example>
 public readonly struct GameTime
 {
     /// <summary>Cria um valor de tempo.</summary>

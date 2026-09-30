@@ -3,6 +3,12 @@ using System.Numerics;
 namespace Lunet;
 
 /// <summary>Retângulo com coordenadas de ponto flutuante: posição do canto superior esquerdo e tamanho.</summary>
+/// <example>
+/// <code>
+/// var button = new RectangleF(20, 500, 320, 80);
+/// bool pressed = input.TryGetPointer(out var touch) &amp;&amp; button.Contains(touch);
+/// </code>
+/// </example>
 public readonly struct RectangleF : IEquatable<RectangleF>
 {
     /// <summary>Cria um retângulo.</summary>

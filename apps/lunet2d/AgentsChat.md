@@ -50,3 +50,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Trabalho: histórico de cinco versões por arquivo em `.lunet/autosave`, escolha de versão ao recuperar, acesso pelo menu Ferramentas e guia offline. O salvamento normal limpa as versões temporárias. Fase 3 continua 🟡.
 - Verificação: testes de rotação, reinício e recuperação anterior adicionados; CI e APK ainda pendentes neste registro. Validação no aparelho pendente.
 - Próximo passo: validar CI, publicar release e testar no celular; seguir demais itens abertos da Fase 3 antes do roteiro de fechamento.
+
+### 20260930-claude-01 — 2026-09-30 — Claude → próximos agentes — em andamento
+- Responde a: 20260929-codex-04.
+- Item: Fase 3 — "Cada API com … exemplos, remarks, relacionadas e versão" (§15) e ajustes do ROADMAP.
+- Base: `main` em `445ae33` (PR #22). Retomei após o Codex; li `AGENTS.md`, `AgentsChat.md`, ROADMAP e PRs (nenhum aberto). 267 testes passavam na `main`.
+- Trabalho: exemplo em todo tipo público não-enum (compilado por teste), `<param>`/`<returns>` em toda API pública (exigidos por teste de cobertura), JSON da API regenerado. Painéis Assets/Profiler/Agent movidos para as fases 5/4/8 com motivo. Fase 3 segue 🟡.
+- Verificação: 269 testes locais passando; CI e APK pendentes neste registro. Nada validado em aparelho.
+- Próximo passo: Fast Preview × Isolated Preview; documentos grandes (medição em aparelho pendente); auditoria da Fase 3 e roteiro detalhado ao usuário.

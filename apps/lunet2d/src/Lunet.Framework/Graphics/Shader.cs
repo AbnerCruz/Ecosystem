@@ -4,6 +4,19 @@ using System.Text.RegularExpressions;
 namespace Lunet.Graphics;
 
 /// <summary>O shader não compilou; a mensagem traz o log do driver.</summary>
+/// <example>
+/// <code>
+/// try
+/// {
+///     Shader.FromFragmentSource(device, "isto não compila");
+/// }
+/// catch (ShaderCompileException error)
+/// {
+///     log.Error(error.Message);
+/// }
+/// </code>
+/// </example>
+/// <param name="message">Mensagem de erro do compilador de shaders.</param>
 public sealed class ShaderCompileException(string message) : Exception(message);
 
 /// <summary>
@@ -11,6 +24,14 @@ public sealed class ShaderCompileException(string message) : Exception(message);
 /// <c>vUv</c>, <c>vColor</c>, <c>uTex</c> e <c>outColor</c> (veja <see cref="Prelude"/>). Exemplo:
 /// <code>uniform float uAmount; void main() { vec4 c = texture(uTex, vUv) * vColor; float g = dot(c.rgb, vec3(0.3, 0.59, 0.11)); outColor = vec4(mix(c.rgb, vec3(g), uAmount), c.a); }</code>
 /// </summary>
+/// <example>
+/// <code>
+/// var glow = Shader.FromFragmentSource(device, "uniform float uAmount; void main() { outColor = texture(uTex, vUv) * vColor * uAmount; }");
+/// glow.SetFloat("uAmount", 1.5f);
+/// batch.Begin(shader: glow);
+/// batch.End();
+/// </code>
+/// </example>
 public sealed partial class Shader : IDisposable
 {
     /// <summary>Trecho que o framework coloca antes do seu código: versão, vUv, vColor, uTex e outColor.</summary>
@@ -30,7 +51,11 @@ public sealed partial class Shader : IDisposable
     /// <summary>Verdadeiro depois de liberado.</summary>
     public bool IsDisposed { get; private set; }
 
+    /// <summary>Compila um fragment shader a partir do código GLSL.</summary>
     /// <exception cref="ShaderCompileException">O shader não compila.</exception>
+    /// <param name="device">Dispositivo gráfico do jogo.</param>
+    /// <param name="source">Código GLSL do fragment shader (sem o prelúdio).</param>
+    /// <returns>O shader compilado.</returns>
     public static Shader FromFragmentSource(GraphicsDevice device, string source)
     {
         ArgumentNullException.ThrowIfNull(device);
@@ -79,6 +104,12 @@ public sealed partial class Shader : IDisposable
 }
 
 /// <summary>Conjunto de estado de desenho reutilizável: shader, mistura e amostragem.</summary>
+/// <example>
+/// <code>
+/// batch.Begin(new Material { Blend = BlendState.Alpha, Sampler = SamplerState.PointClamp });
+/// batch.End();
+/// </code>
+/// </example>
 public sealed class Material
 {
     /// <summary>Shader de fragmento, ou nulo para o padrão.</summary>

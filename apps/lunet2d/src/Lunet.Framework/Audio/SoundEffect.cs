@@ -1,6 +1,12 @@
 namespace Lunet.Audio;
 
 /// <summary>Efeito sonoro curto carregado na memória. Crie via <c>Content.LoadSound</c>.</summary>
+/// <example>
+/// <code>
+/// var jump = content.LoadSound("Audio/jump.wav");
+/// jump.Play(volume: 0.8f, pan: 0f, pitch: 1.2f, loop: false);
+/// </code>
+/// </example>
 public sealed class SoundEffect : IDisposable
 {
     private readonly IAudioBackend _backend;
@@ -21,12 +27,16 @@ public sealed class SoundEffect : IDisposable
     internal int Id { get; }
 
     /// <summary>Toca uma vez com volume 1 no barramento Sfx.</summary>
+    /// <returns>A reprodução iniciada, para ajustar ou parar.</returns>
     public SoundInstance Play() => Play(1f, 0f, 1f, false);
 
+    /// <summary>Toca com volume, balanço, altura e repetição à escolha.</summary>
     /// <param name="volume">0 a 1.</param>
     /// <param name="pan">−1 (esquerda) a 1 (direita).</param>
     /// <param name="pitch">Velocidade relativa: 0,5 a 2 (1 = normal).</param>
     /// <param name="bus">Barramento de volume; nulo = Sfx.</param>
+    /// <param name="loop">Se verdadeiro, repete até ser parado.</param>
+    /// <returns>A reprodução iniciada, para ajustar ou parar.</returns>
     public SoundInstance Play(float volume, float pan, float pitch, bool loop, AudioBus? bus = null)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
@@ -43,6 +53,13 @@ public sealed class SoundEffect : IDisposable
 }
 
 /// <summary>Uma reprodução em andamento de um <see cref="SoundEffect"/>.</summary>
+/// <example>
+/// <code>
+/// var engine = sound.Play(0.6f, 0f, 1f, true);
+/// engine.Pitch = 1.5f;
+/// engine.FadeTo(0f, 1f, stopWhenDone: true);
+/// </code>
+/// </example>
 public sealed class SoundInstance
 {
     private readonly IAudioBackend _backend;
@@ -82,6 +99,9 @@ public sealed class SoundInstance
     public float Pitch { get => _pitch; set => _pitch = Math.Clamp(value, 0.5f, 2f); }
 
     /// <summary>Muda o volume gradualmente. Com <paramref name="stopWhenDone"/>, para o som ao terminar (fade-out).</summary>
+    /// <param name="volume">Volume de 0 (mudo) a 1 (máximo).</param>
+    /// <param name="seconds">Duração, em segundos.</param>
+    /// <param name="stopWhenDone">Se verdadeiro, para o som quando o volume chegar ao valor final.</param>
     public void FadeTo(float volume, float seconds, bool stopWhenDone = false)
     {
         volume = Math.Clamp(volume, 0f, 1f);

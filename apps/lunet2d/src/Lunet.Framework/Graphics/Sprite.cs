@@ -3,6 +3,12 @@ using System.Numerics;
 namespace Lunet.Graphics;
 
 /// <summary>Desenhável reutilizável: textura (ou região dela), cor, origem e escala. Facilita desenhar o mesmo sprite muitas vezes.</summary>
+/// <example>
+/// <code>
+/// var sprite = new Sprite(texture) { Color = Color.White, Scale = new Vector2(2, 2) };
+/// batch.Draw(sprite, position);
+/// </code>
+/// </example>
 public sealed class Sprite
 {
     /// <summary>Cria um sprite.</summary>

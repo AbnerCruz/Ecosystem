@@ -1,6 +1,13 @@
 namespace Lunet.Graphics;
 
 /// <summary>Cor RGBA de 8 bits por canal, não pré-multiplicada.</summary>
+/// <example>
+/// <code>
+/// var orange = Color.FromHex(0xFF8800);
+/// var faded = orange.WithAlpha(128);
+/// device.Clear(Color.CornflowerBlue);
+/// </code>
+/// </example>
 public readonly struct Color : IEquatable<Color>
 {
     /// <summary>Cria uma cor a partir dos canais de 0 a 255.</summary>

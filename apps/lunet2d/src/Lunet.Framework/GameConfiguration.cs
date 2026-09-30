@@ -1,6 +1,13 @@
 namespace Lunet;
 
 /// <summary>Configuração de um jogo: passo de atualização e resolução virtual.</summary>
+/// <example>
+/// <code>
+/// Configuration.VirtualWidth = 720;
+/// Configuration.VirtualHeight = 1280;
+/// Configuration.UpdatesPerSecond = 60;
+/// </code>
+/// </example>
 public sealed class GameConfiguration
 {
     /// <summary>Atualizações por segundo. Padrão: 60.</summary>
