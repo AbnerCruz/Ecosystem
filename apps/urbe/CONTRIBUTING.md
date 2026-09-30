@@ -163,3 +163,11 @@ Eles não podem:
 - usar o PR como única fonte de decisão.
 
 Novas necessidades descobertas devem aumentar o ledger/roadmap, nunca encolhê-los silenciosamente.
+
+## 12. AGENTS.md e AGENTSCHAT.md
+
+O contrato completo para agentes está em [`AGENTS.md`](AGENTS.md); o log de coordenação e handoff entre agentes e proprietário está em [`AGENTSCHAT.md`](AGENTSCHAT.md). Toda sessão de trabalho lê a última entrada antes de começar e registra uma nova ao terminar (REQ-088).
+
+## 13. Rastreabilidade da 2.0
+
+`docs/v2/TRACEABILITY.md` é gerado (`node tools/gen-traceability.mjs`). Ao alterar REQ, SPEC ou ROADMAP, regenere e rode `node tools/check-traceability.mjs`. PRs da 2.0 citam o item `RM-Fn-nn` e o REQ correspondente.

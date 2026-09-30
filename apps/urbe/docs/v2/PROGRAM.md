@@ -1,6 +1,6 @@
 # Programa Urbe 2.0
 
-> Estado atual: **DESCOBERTA / AUDITORIA**.
+> Estado atual: **DESCOBERTA CONCLUÍDA; SPEC/ROADMAP/TRACEABILITY redigidos, aguardando aprovação do proprietário**. Execução da 2.0 não iniciada.
 >
 > Este documento define o programa de trabalho. Ele ainda não é o ROADMAP normativo final.
 
