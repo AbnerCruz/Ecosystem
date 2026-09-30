@@ -16,6 +16,8 @@ import android.print.PrintManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Base64;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -43,6 +45,9 @@ import java.nio.charset.StandardCharsets;
  */
 @CapacitorPlugin(name = "UrbeAndroid")
 public class UrbeAndroidPlugin extends Plugin {
+
+    /* origem própria e inexistente: não é a do app (https://localhost), então não compartilha dados com ele */
+    private static final String PRINT_BASE_URL = "https://print.urbe.invalid/";
 
     private WebView printView; // mantém a página viva enquanto o Android imprime
 
@@ -89,7 +94,7 @@ public class UrbeAndroidPlugin extends Plugin {
     @PluginMethod
     public void openUrl(PluginCall call) {
         String url = call.getString("url", "");
-        if (url == null || !(url.startsWith("https://") || url.startsWith("http://") || url.startsWith("mailto:") || url.startsWith("tel:"))) {
+        if (!UrlGuard.isAllowed(url)) {
             call.reject("Endereço não permitido");
             return;
         }
@@ -108,8 +113,7 @@ public class UrbeAndroidPlugin extends Plugin {
         String name = call.getString("name", "arquivo");
         String mime = call.getString("mime", "");
         String data = call.getString("data", "");
-        if (name == null || name.isEmpty()) name = "arquivo";
-        name = name.replaceAll("[\\\\/:*?\"<>|]", "-");
+        name = PathGuard.safeFileName(name, "arquivo");
         if (mime == null || mime.isEmpty()) mime = "application/octet-stream";
         try {
             byte[] bytes = Base64.decode(data, Base64.DEFAULT);
@@ -128,7 +132,8 @@ public class UrbeAndroidPlugin extends Plugin {
             } else {
                 File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), "Urbe");
                 if (!dir.exists() && !dir.mkdirs()) throw new Exception("Não consegui criar Downloads/Urbe");
-                try (FileOutputStream os = new FileOutputStream(new File(dir, name))) {
+                File target = new PathGuard(dir).resolveForWrite(name); // nome já saneado; confere de novo (atalhos)
+                try (FileOutputStream os = new FileOutputStream(target)) {
                     os.write(bytes);
                 }
             }
@@ -147,9 +152,21 @@ public class UrbeAndroidPlugin extends Plugin {
         getActivity().runOnUiThread(() -> {
             try {
                 WebView wv = new WebView(getActivity());
-                wv.getSettings().setJavaScriptEnabled(true);
+                /* o HTML é conteúdo do usuário: sem JavaScript, sem acesso a arquivos e com origem própria */
+                WebSettings st = wv.getSettings();
+                st.setJavaScriptEnabled(false);
+                st.setAllowFileAccess(false);
+                st.setAllowContentAccess(false);
+                st.setAllowFileAccessFromFileURLs(false);
+                st.setAllowUniversalAccessFromFileURLs(false);
+                st.setDomStorageEnabled(false);
                 wv.setWebViewClient(new WebViewClient() {
                     private boolean done = false;
+
+                    @Override
+                    public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                        return true; // a impressão nunca navega para outro lugar
+                    }
 
                     @Override
                     public void onPageFinished(WebView view, String url) {
@@ -170,7 +187,7 @@ public class UrbeAndroidPlugin extends Plugin {
                     }
                 });
                 printView = wv;
-                wv.loadDataWithBaseURL("https://localhost/", html, "text/html", "UTF-8", null);
+                wv.loadDataWithBaseURL(PRINT_BASE_URL, html, "text/html", "UTF-8", null);
             } catch (Exception e) {
                 call.reject("Não consegui abrir a impressão: " + e.getMessage());
             }
@@ -184,11 +201,13 @@ public class UrbeAndroidPlugin extends Plugin {
         return new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Urbe");
     }
 
+    /* Percorre a pasta sem seguir atalhos (symlink): um atalho para fora não entra na lista nem é descido. */
     private void walk(File dir, String prefix, JSArray out, int depth) {
-        if (depth > 32) return;
+        if (depth > PathGuard.MAX_DEPTH) return;
         File[] list = dir.listFiles();
         if (list == null) return;
         for (File f : list) {
+            if (PathGuard.isSymlink(f)) continue;
             String rel = prefix.isEmpty() ? f.getName() : prefix + "/" + f.getName();
             JSObject e = new JSObject();
             e.put("path", rel);
@@ -221,21 +240,21 @@ public class UrbeAndroidPlugin extends Plugin {
     @PluginMethod
     public void readTexts(PluginCall call) {
         JSArray paths = call.getArray("paths");
-        File root = vaultDir();
         JSObject files = new JSObject();
         try {
-            String base = root.getCanonicalPath() + File.separator;
+            PathGuard guard = new PathGuard(vaultDir());
             for (int i = 0; paths != null && i < paths.length(); i++) {
                 String p = paths.getString(i);
-                if (p == null || p.contains("..")) continue;
-                File f = new File(root, p);
-                if (!f.getCanonicalPath().startsWith(base) || !f.isFile() || f.length() > 4 * 1024 * 1024) continue;
-                try (InputStream in = new FileInputStream(f); ByteArrayOutputStream buf = new ByteArrayOutputStream((int) f.length())) {
-                    byte[] chunk = new byte[65536];
-                    int n;
-                    while ((n = in.read(chunk)) > 0) buf.write(chunk, 0, n);
-                    files.put(p, new String(buf.toByteArray(), StandardCharsets.UTF_8));
+                try {
+                    File f = guard.resolveReadable(p, PathGuard.MAX_TEXT_BYTES);
+                    try (InputStream in = new FileInputStream(f); ByteArrayOutputStream buf = new ByteArrayOutputStream((int) f.length())) {
+                        byte[] chunk = new byte[65536];
+                        int n;
+                        while ((n = in.read(chunk)) > 0) buf.write(chunk, 0, n);
+                        files.put(p, new String(buf.toByteArray(), StandardCharsets.UTF_8));
+                    }
                 } catch (Exception ignored) {
+                    // caminho recusado pelo PathGuard ou ilegível: fica de fora do resultado
                 }
             }
             JSObject r = new JSObject();

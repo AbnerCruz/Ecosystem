@@ -5,15 +5,17 @@
    - "Imprimir ou salvar PDF" gera o PDF direto, respeitando o tamanho de página do livro. */
 const {app,BrowserWindow,ipcMain,dialog,shell,protocol,net,session,Menu}=require('electron');
 const path=require('path');
-const os=require('os');
 const fsp=require('fs/promises');
 const {pathToFileURL}=require('url');
 const {createVaultFS}=require('./vault-fs');
+const G=require('./guards');
 
 const APP_DIR=path.resolve(__dirname,'..','..');
-const ORIGIN='app://urbe';
-const isTest=!!process.env.URBE_TEST_USERDATA;
-if(isTest)app.setPath('userData',process.env.URBE_TEST_USERDATA);
+const ORIGIN=G.ORIGIN;
+/* URBE_TEST_* só valem com URBE_TEST_MODE=1 e app não empacotado; em produção são ignorados (RM-F3-10) */
+const T=G.testConfig(process.env,app.isPackaged);
+const isTest=T.enabled;
+if(isTest&&T.userData)app.setPath('userData',T.userData);
 
 protocol.registerSchemesAsPrivileged([{scheme:'app',privileges:{standard:true,secure:true,supportFetchAPI:true,corsEnabled:true,stream:true,codeCache:true}}]);
 
@@ -21,7 +23,7 @@ protocol.registerSchemesAsPrivileged([{scheme:'app',privileges:{standard:true,se
 const CONFIG=()=>path.join(app.getPath('userData'),'config.json');
 let config={};
 async function loadConfig(){try{config=JSON.parse(await fsp.readFile(CONFIG(),'utf8'))||{}}catch(_){config={}}
-  if(!config.vault)config.vault=process.env.URBE_TEST_VAULT||path.join(app.getPath('documents'),'Urbe');
+  if(!config.vault)config.vault=T.vault||path.join(app.getPath('documents'),'Urbe');
   await fsp.mkdir(config.vault,{recursive:true})}
 async function saveConfig(){await fsp.mkdir(path.dirname(CONFIG()),{recursive:true});await fsp.writeFile(CONFIG(),JSON.stringify(config,null,2))}
 const vault=createVaultFS(()=>config.vault);
@@ -42,35 +44,36 @@ function watchVault(){
 
 /* ---------------- janela ---------------- */
 let win=null;
-function external(url){try{const u=new URL(url);if(['http:','https:','mailto:'].includes(u.protocol)){shell.openExternal(u.toString());return true}}catch(_){}return false}
+function external(url){const u=G.externalUrl(url);if(u){shell.openExternal(u);return true}return false}
 function createWindow(){
   win=new BrowserWindow({width:1320,height:860,minWidth:360,minHeight:480,show:false,backgroundColor:'#0b0e14',autoHideMenuBar:true,title:'Urbe',
     icon:path.join(APP_DIR,'icon-512.png'),
     webPreferences:{preload:path.join(__dirname,'preload.js'),contextIsolation:true,sandbox:true,nodeIntegration:false,spellcheck:true}});
   win.once('ready-to-show',()=>win.show());
   win.webContents.setWindowOpenHandler(({url})=>{
-    if(external(url))return{action:'deny'};
+    const d=G.decideWindowOpen(url);
+    if(d.action==='external'){external(d.url);return{action:'deny'}}
     /* conteúdo do próprio app (anexos, prévia de página): janela simples, sem acesso ao sistema */
-    if(/^(blob:app:\/\/urbe|app:\/\/urbe)/.test(url))return{action:'allow',overrideBrowserWindowOptions:{autoHideMenuBar:true,backgroundColor:'#ffffff',webPreferences:{sandbox:true,contextIsolation:true}}};
+    if(d.action==='allow')return{action:'allow',overrideBrowserWindowOptions:d.options};
     return{action:'deny'};
   });
-  win.webContents.on('will-navigate',(e,url)=>{if(!url.startsWith(ORIGIN)){e.preventDefault();external(url)}});
+  win.webContents.on('will-navigate',(e,url)=>{const d=G.decideNavigation(url);if(d.action==='allow')return;e.preventDefault();if(d.action==='external')external(d.url)});
   win.loadURL(ORIGIN+'/index.html');
 }
 
 /* ---------------- arquivos do app (app://urbe/…) ---------------- */
 function serveApp(){
   protocol.handle('app',async req=>{
-    const u=new URL(req.url);let p=decodeURIComponent(u.pathname||'/');if(p==='/'||!p)p='/index.html';
-    const file=path.resolve(APP_DIR,'.'+p),rel=path.relative(APP_DIR,file);
-    if(rel.startsWith('..')||path.isAbsolute(rel))return new Response('Não encontrado',{status:404});
-    try{return await net.fetch(pathToFileURL(file).toString())}catch(_){return new Response('Não encontrado',{status:404})}
+    /* host exato "urbe" e só a allowlist (index, manifest, ícones, src/**, vendor/**): nada de package.json nem native/** */
+    const r=G.resolveAppRequest(req.url,APP_DIR);
+    if(!r.ok)return new Response('Não encontrado',{status:r.status});
+    try{return await net.fetch(pathToFileURL(r.file).toString())}catch(_){return new Response('Não encontrado',{status:404})}
   });
 }
 
 /* ---------------- ponte com a página ---------------- */
 function ipc(){
-  const h=(name,fn)=>ipcMain.handle(name,(e,...a)=>{if(!e.senderFrame||!String(e.senderFrame.url).startsWith(ORIGIN))throw new Error('Origem não autorizada');return fn(...a)});
+  const h=(name,fn)=>ipcMain.handle(name,(e,...a)=>{if(!G.isTrustedSender(e))throw new Error('Origem não autorizada');return fn(...a)});
   h('fs:stat',rel=>vault.stat(rel));
   h('fs:list',rel=>vault.list(rel));
   h('fs:readBytes',rel=>vault.readBytes(rel));
@@ -88,26 +91,49 @@ function ipc(){
   h('vault:reveal',()=>shell.openPath(config.vault));
   h('shell:open',url=>{external(String(url))});
   h('app:info',()=>({version:app.getVersion(),platform:process.platform,vault:config.vault}));
+  h('fs:saveFile',(name,bytes)=>saveFile(String(name||'arquivo'),bytes));
   h('print:html',(html,name)=>printToPdf(String(html),String(name||'Urbe')));
   h('update:check',()=>checkUpdates(true));
   h('update:install',()=>installUpdate());
   h('update:last',()=>lastStatus);
 }
 
-/* ---------------- PDF ---------------- */
+/* ---------------- salvar arquivo (exportações HTML/ZIP…) ---------------- */
+async function saveFile(name,bytes){
+  const buf=G.saveBuffer(bytes);
+  if(!buf)throw new Error('Conteúdo inválido ou grande demais');
+  const safe=G.safeFileName(name,'arquivo');
+  const r=await dialog.showSaveDialog(win,{title:'Salvar arquivo',defaultPath:path.join(app.getPath('documents'),safe),filters:G.saveFilters(safe)});
+  if(r.canceled||!r.filePath)return{canceled:true};
+  await fsp.writeFile(r.filePath,buf);
+  return{where:r.filePath};
+}
+
+/* ---------------- PDF ----------------
+   O HTML da exportação vem de conteúdo do usuário: é aberto em app://print/doc.html (origem própria),
+   numa sessão isolada e descartável, sem preload, com toda navegação bloqueada. Nunca file://. */
+let printSeq=0;
 async function printToPdf(html,name){
-  const tmp=path.join(os.tmpdir(),'urbe-print-'+Date.now()+'.html');
-  await fsp.writeFile(tmp,html,'utf8');
-  const w=new BrowserWindow({show:false,webPreferences:{sandbox:true,contextIsolation:true,javascript:true}});
+  const ses=session.fromPartition('urbe-print-'+Date.now()+'-'+(++printSeq));
+  ses.protocol.handle('app',req=>G.resolvePrintRequest(req.url)
+    ?new Response(html,{headers:{'content-type':'text/html; charset=utf-8'}})
+    :new Response('Não encontrado',{status:404}));
+  ses.setPermissionRequestHandler((_wc,_perm,cb)=>cb(false));
+  if(ses.setPermissionCheckHandler)ses.setPermissionCheckHandler(()=>false);
+  ses.webRequest.onBeforeRequest((d,cb)=>cb({cancel:!G.isPrintRequestAllowed(d.url)}));
+  const w=new BrowserWindow({show:false,webPreferences:{session:ses,sandbox:true,contextIsolation:true,nodeIntegration:false,javascript:true,webSecurity:true}});
+  const wc=w.webContents,stop=e=>e.preventDefault();
+  wc.setWindowOpenHandler(()=>({action:'deny'}));
+  wc.on('will-navigate',stop);wc.on('will-redirect',stop);wc.on('will-frame-navigate',stop);
   try{
-    await w.loadFile(tmp);
-    await w.webContents.executeJavaScript('(document.fonts&&document.fonts.ready||Promise.resolve()).then(()=>new Promise(r=>setTimeout(r,300)))');
-    const pdf=await w.webContents.printToPDF({printBackground:true,preferCSSPageSize:true});
-    const safe=name.replace(/[\\/:*?"<>|]+/g,'-').slice(0,90)||'Urbe';
+    await w.loadURL(G.PRINT_ORIGIN+G.PRINT_DOC);
+    await wc.executeJavaScript('(document.fonts&&document.fonts.ready||Promise.resolve()).then(()=>new Promise(r=>setTimeout(r,300)))');
+    const pdf=await wc.printToPDF({printBackground:true,preferCSSPageSize:true});
+    const safe=G.safeFileName(name,'Urbe');
     const r=await dialog.showSaveDialog(win,{title:'Salvar PDF',defaultPath:path.join(app.getPath('documents'),safe+'.pdf'),filters:[{name:'PDF',extensions:['pdf']}]});
     if(r.canceled||!r.filePath)return{canceled:true};
     await fsp.writeFile(r.filePath,pdf);shell.openPath(r.filePath);return{saved:r.filePath};
-  }finally{w.destroy();fsp.rm(tmp,{force:true}).catch(()=>{})}
+  }finally{w.destroy();try{ses.protocol.unhandle('app')}catch(_){}}
 }
 
 /* ---------------- atualização automática ---------------- */
@@ -142,8 +168,11 @@ else{
   app.on('second-instance',()=>{if(win){if(win.isMinimized())win.restore();win.focus()}});
   app.whenReady().then(async()=>{
     Menu.setApplicationMenu(null);
+    /* permissões só para a página do Urbe e só as mínimas (sem media/notificações: o app não usa) */
+    const ds=session.defaultSession;
+    ds.setPermissionRequestHandler((_wc,perm,cb,d)=>cb(G.isPermissionAllowed(perm,d&&d.requestingUrl,d&&d.isMainFrame)));
+    if(ds.setPermissionCheckHandler)ds.setPermissionCheckHandler((_wc,perm,origin,d)=>G.isPermissionAllowed(perm,(d&&d.requestingUrl)||origin,d&&d.isMainFrame));
     await loadConfig();serveApp();ipc();createWindow();setupUpdater();watchVault();
-    session.defaultSession.setPermissionRequestHandler((wc,perm,cb)=>cb(['clipboard-read','clipboard-sanitized-write','media','fullscreen','notifications'].includes(perm)));
   });
   app.on('window-all-closed',()=>app.quit());
 }
