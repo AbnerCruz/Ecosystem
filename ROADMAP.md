@@ -30,7 +30,7 @@ Objetivo: monorepo com documentos normativos, `ecosystem.json`, processo de ADR,
 - [x] P0-6 — Comunicação humano↔máquina e máquina↔máquina, handoff schema, registro de decisões.
 - [x] P0-7 — Matriz de enforcement legível por máquina, validada contra o manifesto.
 - [x] P0-8 — Checks de consistência em C# com self-test (ADR-0003).
-- [~] P0-9 — CI mínimo de consistência no GitHub Actions — workflow criado; primeira execução verde no GitHub a confirmar.
+- [x] P0-9 — CI mínimo de consistência no GitHub Actions (primeira execução verde: run #1, commit 912366d).
 - [x] P0-10 — Estratégia de migração documentada antes de qualquer importação.
 - [~] P0-11 — Ratificação dos ADRs de fundação pelo proprietário (DEC-0001).
 

@@ -13,7 +13,7 @@
   "component": "ecosystem",
   "state": "review",
   "branch": "claude/new-session-vfwhkv",
-  "commit": null,
+  "commit": "912366dc2fc3d8dd332033eaa7b4ca306561469c",
   "pr": null,
   "files_changed": [
     ".github/pull_request_template.md",
@@ -74,8 +74,8 @@
     {
       "check": "Workflow consistency no GitHub Actions",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Primeira execução ocorre no push deste commit."
+      "result": "passed",
+      "evidence": "Run #1 success no commit 912366d: https://github.com/AbnerCruz/Ecosystem/actions/runs/36749684582"
     },
     {
       "check": "Gate da Fase 0: agente novo entende produto, autoridade documental e processo sem conversa anterior",
