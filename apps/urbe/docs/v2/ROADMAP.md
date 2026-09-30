@@ -498,7 +498,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Evidência:** src/persistence/gc.js (workspace.gc, simulação por padrão, retenção orphanDays/trashDays, registro em vault.json.maintenance) + workspace.cleanOrphans com confirmação; fixture v1-orfaos; tests/gc.mjs + tests/e2e/gc.e2e.mjs; tutorial Salvamento e recuperação
 
 ### RM-F1-17 — Versão de mundo e reorganização com backup/desfazer
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-043
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -509,6 +509,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG R-4.
 - **Aceite:** Nenhuma reorganização sem backup e desfazer.
 - **Gate:** G1
+- **Evidência:** src/world/layout-guard.js (foto + backup do mapa + vault.json.maintenance antes de qualquer reorganização); diálogo Desfazer/Manter na abertura; city.undoReorganize; regra do mapa sem mundo; abrirCidade original morto apagado (-118 linhas); tests/layout-guard.mjs + tests/e2e/layout.e2e.mjs
 
 ### RM-F1-18 — Export ZIP com manifesto e estado local
 - **Estado:** [ ]

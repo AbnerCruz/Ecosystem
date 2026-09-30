@@ -83,7 +83,7 @@
 | REQ-041 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [x] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
 | REQ-042 | §5.2 | F1 | RM-F1-15 — Sidecar de identidade e reconciliação | [x] | Fixtures: rename externo (de nota **e de pasta/asset**: região e asset mantêm `reg_`/`ast_`, repassado de RM-F1-14), cópia de vault sem `.urbe/`, cópias idênticas (ambiguidade tratada). | G1 |
 | REQ-042 | §5.2 | F1 | RM-F1-16 — GC de órfãos em history/trash/compositions | [x] | Fixture com órfãos; dry-run e execução. | G1 |
-| REQ-043 | §5.2 | F1 | RM-F1-17 — Versão de mundo e reorganização com backup/desfazer | [ ] | Fixture `v1-mundo-antigo`, `v1-cidades-mescladas`: backup criado, posições restauráveis. | G1 |
+| REQ-043 | §5.2 | F1 | RM-F1-17 — Versão de mundo e reorganização com backup/desfazer | [x] | Fixture `v1-mundo-antigo`, `v1-cidades-mescladas`: backup criado, posições restauráveis. | G1 |
 | REQ-044 | §5.2 | F1 | RM-F1-18 — Export ZIP com manifesto e estado local | [ ] | Testes: hash íntegro, adulteração detectada, ausência de chaves. | G1 |
 | REQ-045 | §5.2 | F1 | RM-F1-19 — Migração multi-cidade idempotente | [ ] | Fixture `v1-cidades-mescladas`: 3 boots consecutivos, mesmo resultado. | G1 |
 | REQ-046 | §5.2 | F1 | RM-F1-20 — Escrita recuperável na web e integridade do modo IDB | [ ] | Simulação de falha no meio da escrita; export do IDB reproduz vault. | G1 |
@@ -193,4 +193,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 36.
+- Itens no ROADMAP: 146; concluídos `[x]`: 37.

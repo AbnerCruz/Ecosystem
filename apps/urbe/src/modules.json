@@ -582,6 +582,27 @@
       ]
     },
     {
+      "name": "world/layout-guard",
+      "file": "src/world/layout-guard.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeLayoutGuard"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/persistence/backup.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
       "name": "world/system",
       "file": "src/world/system.js",
       "layer": "feature",
@@ -1402,7 +1423,8 @@
         "src/persistence/adapters/idb.js",
         "src/persistence/adapters/fsa.js",
         "src/persistence/adapters/router.js",
-        "src/world/stable-ids.js"
+        "src/world/stable-ids.js",
+        "src/world/layout-guard.js"
       ],
       "uses": [
         "src/pages/studio.js",

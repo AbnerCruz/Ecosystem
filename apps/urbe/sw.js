@@ -40,6 +40,7 @@ const APP_SHELL = [
   './src/persistence/adapters/router.js',
   './src/world/projection.js',
   './src/world/stable-ids.js',
+  './src/world/layout-guard.js',
   './src/world/system.js',
   './src/world/roads.js',
   './src/core/scheduler.js',

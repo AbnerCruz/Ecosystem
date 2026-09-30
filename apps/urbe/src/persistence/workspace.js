@@ -120,6 +120,13 @@
       this.vaultInfo={state:'current',data:Meta.create({appVersion:core.version,migration:migration})};
     }
 
+    /** Registro de manutenção em vault.json (`maintenance`, últimos 20): GC, reorganização de layout. Vault 1.x passa pela migração com backup antes. */
+    async recordMaintenance(entry){
+      if(this.readOnly||!this.adapter||!this.vault)return false;
+      await this.ensureVaultFormat();var data=this.vaultInfo&&this.vaultInfo.data;if(!data)return false;
+      var log=Array.isArray(data.maintenance)?data.maintenance:[];log.push(Object.assign({at:new Date().toISOString()},entry));data.maintenance=log.slice(-20);
+      this.schedule();return true;
+    }
     async flush(metadata){
       if(this.suspended||!this.vault||!this.adapter)return false;
       if(this.readOnly){this.pending=false;this.state='readonly';return false}

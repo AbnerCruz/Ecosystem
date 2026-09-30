@@ -8,7 +8,7 @@
        - composições não são apagadas: só perdem as fontes que não existem mais.
      `workspace.gc` é simulação por padrão (`dryRun:true`); com `dryRun:false` aplica e registra em `vault.json` (`maintenance`). */
   var core=global.UrbeCore;if(!core)return;
-  var DAY=86400000,LOG_MAX=20;
+  var DAY=86400000;
 
   function plan(state,opts){
     opts=opts||{};var now=opts.now||Date.now(),orphanDays=opts.orphanDays==null?30:Number(opts.orphanDays),trashDays=opts.trashDays==null?null:Number(opts.trashDays);
@@ -36,9 +36,7 @@
     p.history.forEach(function(h){history.forget(h.id)});
     p.trash.forEach(function(t){trash.purge(t.id)});
     p.compositions.forEach(function(c){var cur=comps.get(c.id);if(!cur)return;var drop=new Set(c.sources);comps.update(c.id,{sources:(cur.sources||[]).filter(function(s){return !drop.has(String(s))})})});
-    await P.ensureVaultFormat();
-    var data=P.vaultInfo&&P.vaultInfo.data;
-    if(data){var log=Array.isArray(data.maintenance)?data.maintenance:[];log.push({kind:'gc',at:new Date(ctx.now||Date.now()).toISOString(),removed:report.counts,orphanDays:ctx.orphanDays==null?30:ctx.orphanDays,trashDays:ctx.trashDays==null?null:ctx.trashDays});data.maintenance=log.slice(-LOG_MAX)}
+    await P.recordMaintenance({kind:'gc',at:new Date(ctx.now||Date.now()).toISOString(),removed:report.counts,orphanDays:ctx.orphanDays==null?30:ctx.orphanDays,trashDays:ctx.trashDays==null?null:ctx.trashDays});
     core.events.emit('workspace:gc',{vault:P.vault,counts:report.counts});
     await P.flush();return report;
   }});
