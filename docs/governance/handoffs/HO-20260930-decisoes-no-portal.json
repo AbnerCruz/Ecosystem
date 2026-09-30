@@ -1,0 +1,139 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20260930-decisoes-no-portal",
+  "category": "RESULT",
+  "timestamp": "2026-09-30T23:08:18Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-31",
+  "component": "portal",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": "e875e48a5749fcd37d99580416663a837205d869",
+  "pr": null,
+  "files_changed": [
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "MANIFEST.md",
+    "README.md",
+    "ROADMAP.md",
+    "docs/adr/0001-registro-de-decisoes-arquiteturais.md",
+    "docs/adr/0002-formato-dos-registros-canonicos.md",
+    "docs/adr/0003-checks-de-consistencia-em-csharp.md",
+    "docs/adr/0004-estrutura-inicial-do-repositorio.md",
+    "docs/adr/0005-portal-web-github-pages.md",
+    "docs/adr/0006-product-shell-context-distribuicao-independente.md",
+    "docs/adr/README.md",
+    "docs/architecture/distribution.md",
+    "docs/architecture/faq.md",
+    "docs/architecture/portal.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/product-vision.md",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/README.md",
+    "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
+    "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md",
+    "docs/governance/communication.md",
+    "docs/governance/decisions.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/handoffs/HO-20260930-alinhamento-aprovado.json",
+    "docs/governance/handoffs/HO-20260930-alinhamento-product-shell.json",
+    "docs/governance/handoffs/HO-20260930-decisoes-no-portal.json",
+    "docs/governance/handoffs/HO-20260930-fundacao-fase-0.json",
+    "docs/governance/handoffs/HO-20260930-gate-fase-0-aprovado.json",
+    "docs/governance/handoffs/HO-20260930-portal-github-pages.json",
+    "docs/governance/manifest-changelog.md",
+    "docs/migration/README.md",
+    "docs/migration/inventory-template.md",
+    "ecosystem.json",
+    "site/app.js",
+    "site/generator/GenerateStatus.cs",
+    "site/index.html",
+    "site/style.css",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md"
+  ],
+  "work_completed": [
+    "P0-32: DEC-0001..DEC-0004 decididas por aprovação do proprietário (ADD-0003); ADRs 0001–0006 Aceito; origens confirmadas em ecosystem.json; técnica de importação A e convenção de Issues documentadas; gate da Fase 0 e alinhamento aprovados por handoffs de fechamento.",
+    "P0-31: DEC-0007. Contrato ecosystem-status ganhou pendingDecisions e pendingValidations[].object; gerador projeta decisões pendentes e validações humanas com objeto e aborta sem objeto; página ganhou 'Decisões a tomar' e 'Validações pendentes' no topo, com o objeto como botão.",
+    "CHK-DECISIONS, CHK-HANDOFFS e CHK-PORTAL fiscalizam pendência sem objeto e projeção que omita pendências; 3 novos casos de self-test; 3 casos antigos de self-test atualizados para o novo estado dos dados.",
+    "AGENTS.md e communication.md §8–§9: Issues como estado vivo das tarefas e regra permanente de que toda pendência do proprietário aparece no portal com objeto."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: 'Todos os 15 checks passaram.'"
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: todos os checks provaram detectar suas violações, incluindo os 3 novos casos de pendência sem objeto / ausente do portal."
+    },
+    {
+      "check": "Renderização do portal com uma decisão pendente fictícia (cópia temporária), 390x844, temas claro e escuro",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sem erros de console e sem overflow horizontal; cartão de decisão, alternativas, recomendação e botões de objeto visíveis."
+    },
+    {
+      "check": "Workflow consistency no GitHub Actions",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Concluído com success no commit e875e48."
+    }
+  ],
+  "known_issues": [
+    "Nenhuma decisão está pendente agora; a seção 'Decisões a tomar' mostra o estado vazio e só foi exercitada com uma decisão fictícia em cópia temporária.",
+    "Interpretação de 'Aprova tudo' (incluindo o que não cobre: P0-15) está explicitada em ADD-0003 e pode ser corrigida pelo proprietário."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: validar o portal no celular (P0-15); o objeto aparece no próprio portal.",
+    "Próximo agente: P1-1 e P1-2 (inventários somente leitura)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md",
+    "docs/governance/decisions.json",
+    "docs/governance/communication.md",
+    "docs/adr/0005-portal-web-github-pages.md",
+    "docs/architecture/portal.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O portal segue projeção (authority:false); decisões e pendências têm uma só fonte (decisions.json, handoffs); Issues são autoridade do estado vivo, ROADMAP de escopo/IDs (DEC-0003)."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Mensagem do proprietário persistida em ADD-0003; cada DEC aponta para ele."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADRs aceitos só após decisão registrada do proprietário; ADR-0005 recebeu atualização posterior em vez de reescrita."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "P0-15 (validação em aparelho) não foi marcada como concluída pela aprovação geral; permanece pendente com objeto."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado 'done' com verificações passadas e CI verde."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Toda pendência do proprietário é descobrível no portal com seu objeto, fiscalizada por checks."
+    }
+  ],
+  "cost": null
+}
