@@ -1,8 +1,8 @@
 (function(global){
   'use strict';
   var core=global.UrbeCore,docs=core&&core.service('documents'),trash=core&&core.service('trash'),history=core&&core.service('history'),compositions=core&&core.service('compositions');if(!core||!docs)return;
-  var Meta=global.UrbeVaultMeta,Backup=global.UrbeBackup;
-  if(!Meta||!Backup)throw new Error('persistence: src/persistence/vault-meta.js e backup.js precisam carregar antes de workspace.js (src/modules.json)');
+  var Meta=global.UrbeVaultMeta,Backup=global.UrbeBackup,Identity=global.UrbeIdentity;
+  if(!Meta||!Backup||!Identity)throw new Error('persistence: src/persistence/vault-meta.js, backup.js e identity.js precisam carregar antes de workspace.js (src/modules.json)');
 
   /* Arquivos do vault que esta camada possui (contrato em docs/v2/discovery/DATA-CATALOG.md §9).
      2.x só ESCREVE os arquivos v2; os v1 da 1.x são lidos uma vez (migração) e nunca mais tocados (REQ-035, ADR-0004). */
@@ -19,7 +19,7 @@
   class WorkspacePersistence{
     constructor(events,store){
       this.events=events;this.store=store;this.adapter=null;this.vault=null;this.meta=null;this.snapshot=new Map();this.busy=false;this.pending=false;this.timer=null;this.delay=900;this.suspended=true;this.state='idle';this.lastSavedAt=null;
-      this.paths=[];this.originals=new Map();this.vaultInfo={state:'absent',data:null};this.readOnly=false;this.mapaReadonly=false;this.sideReadonly={};this.foreign=[];
+      this.paths=[];this.originals=new Map();this.identity=null;this.fpCache=new Map();this.lastReconcile={renames:[],ambiguous:[]};this.loadHooks=[];this.vaultInfo={state:'absent',data:null};this.readOnly=false;this.mapaReadonly=false;this.sideReadonly={};this.foreign=[];
     }
     configure(adapter){this.adapter=adapter;return this}
     /* Situação de formato do vault (para a UI de recuperação/diagnóstico). */
@@ -63,6 +63,8 @@
       if(meta&&typeof meta==='object'){var mv=meta.v;
         if(typeof mv==='number'&&mv>4){this.mapaReadonly=true;this.foreign.push({path:MAPA,version:mv,reason:'future'})}
         else if(mv!==undefined&&!(Number.isInteger(mv)&&mv>=1)){this.mapaReadonly=true;this.foreign.push({path:MAPA,version:mv,reason:'unknown'})}}
+      /* ganchos que ajustam o mapa ANTES de montar os documentos (ex.: fusão multi-cidade, REQ-045); não gravam nada aqui */
+      if(!this.mapaReadonly)for(const hook of this.loadHooks){var hm=await hook({vault:vault,meta:meta,paths:paths,adapter:this.adapter});if(hm&&typeof hm==='object')meta=hm}
       // journal de uma operação interrompida: v2 (2.x) ou v1 (1.x); qualquer outra versão é preservada
       var journal=null,journalPath=null;
       for(const cand of [[JOURNAL_V2,2],[JOURNAL_V1,1]]){
@@ -73,10 +75,16 @@
         if(cand[0]===JOURNAL_V2)this.sideReadonly.journal=true; // journal v2 de versão maior: preservado, sem diário nesta sessão
       }
       for(const side of SIDES)await this.readSide(vault,side,paths);
+      // sidecar de identidade (REQ-042): versão maior é preservada; ilegível é recriado (é derivado das notas)
+      var idInfo=Identity.parse(paths.includes(Identity.PATH)?await this.adapter.read(vault,Identity.PATH):null);
+      if(idInfo.state==='future'){this.sideReadonly.identity=true;this.foreign.push({path:Identity.PATH,version:idInfo.data.version,reason:'future'})}
+      this.identity=idInfo.state==='current'?idInfo.data:null;this.fpCache=new Map();
       var notesMeta=(meta&&meta.notas)||{},items=[];
       for(var i=0;i<md.length;i++){var path=md[i],m=notesMeta[path]||{};items.push({id:m.id||null,path:path,content:(await this.adapter.read(vault,path))||'',tags:m.tags||null,created:m.criado||null,modified:m.modificado||null})}
+      /* rename/move feito fora do app enquanto ele estava fechado: a nota mantém ID, casa, região e assets */
+      this.lastReconcile=journal?{renames:[],ambiguous:[]}:Identity.reconcile(items,meta,this.identity,new Set(paths));
       var physical=new Map(items.map(function(d){return[d.path,d.content]}));
-      var owned=[Meta.PATH].concat(this.mapaReadonly?[]:[MAPA]).concat(SIDES.filter(function(s){return !this.sideReadonly[s.key]},this).map(function(s){return s.v2}));
+      var owned=[Meta.PATH,Identity.PATH].filter(function(p){return p!==Identity.PATH||!this.sideReadonly.identity},this).concat(this.mapaReadonly?[]:[MAPA]).concat(SIDES.filter(function(s){return !this.sideReadonly[s.key]},this).map(function(s){return s.v2}));
       for(const path of owned)if(paths.includes(path))physical.set(path,await this.adapter.read(vault,path));
       if(journal){
         items=journal.documents.filter(function(d){return d&&d.path});
@@ -87,6 +95,7 @@
         this.events.emit('workspace:recovered',{vault:vault,count:items.length,timestamp:journal.timestamp||null});
       }
       this.store.replaceAll(items,{source:'persistence.load',vault:vault});this.meta=meta||{};this.snapshot=physical;this.suspended=false;
+      if(this.lastReconcile.renames.length||this.lastReconcile.ambiguous.length)this.events.emit('workspace:reconciled',{vault:vault,renames:this.lastReconcile.renames.slice(),ambiguous:this.lastReconcile.ambiguous.slice()});
       if(this.foreign.length)this.events.emit('workspace:foreign',{vault:vault,items:this.foreign.slice()});
       if(this.readOnly)this.events.emit('workspace:readonly',{vault:vault,reason:'vault-format-future',formatVersion:this.vaultInfo.data.formatVersion});
       if(journal){await this.flush(this.meta);try{await this.adapter.remove(vault,journalPath)}catch(_){}}
@@ -98,6 +107,7 @@
       if(metadata!==undefined&&!this.mapaReadonly)files.set(MAPA,JSON.stringify(metadata||{},null,1));
       for(const side of SIDES){if(this.sideReadonly[side.key])continue;var exp=Object.assign({},side.service.export(),{version:2});files.set(side.v2,side.indent?JSON.stringify(exp,null,side.indent):JSON.stringify(exp))}
       if(this.vaultInfo.state==='current'&&this.vaultInfo.data)files.set(Meta.PATH,Meta.serialize(this.vaultInfo.data));
+      if(!this.sideReadonly.identity){this.identity=Identity.build(this.store.list(),this.identity,new Date().toISOString(),this.fpCache);files.set(Identity.PATH,Identity.serialize(this.identity))}
       return files
     }
     /* O mapa vem de quem desenha o mundo (metadataProvider); null = mundo ainda carregando, fica o último mapa conhecido. */
@@ -112,6 +122,22 @@
       this.vaultInfo={state:'current',data:Meta.create({appVersion:core.version,migration:migration})};
     }
 
+    /** fn({vault,meta,paths,adapter}) → mapa ajustado (ou nada). Roda a cada load, antes dos documentos. */
+    addLoadHook(fn){this.loadHooks.push(fn)}
+    /** Registro de migração em vault.json (`migrations`), além da 1→2 feita em ensureVaultFormat. extra: campos adicionais (ex.: sources). */
+    async recordMigration(entry){
+      if(this.readOnly||!this.adapter||!this.vault)return false;
+      await this.ensureVaultFormat();var data=this.vaultInfo&&this.vaultInfo.data;if(!data)return false;
+      data.migrations=Array.isArray(data.migrations)?data.migrations:[];
+      var e=Object.assign(Meta.migrationEntry(entry),entry);delete e.now;data.migrations.push(e);this.schedule();return true;
+    }
+    /** Registro de manutenção em vault.json (`maintenance`, últimos 20): GC, reorganização de layout. Vault 1.x passa pela migração com backup antes. */
+    async recordMaintenance(entry){
+      if(this.readOnly||!this.adapter||!this.vault)return false;
+      await this.ensureVaultFormat();var data=this.vaultInfo&&this.vaultInfo.data;if(!data)return false;
+      var log=Array.isArray(data.maintenance)?data.maintenance:[];log.push(Object.assign({at:new Date().toISOString()},entry));data.maintenance=log.slice(-20);
+      this.schedule();return true;
+    }
     async flush(metadata){
       if(this.suspended||!this.vault||!this.adapter)return false;
       if(this.readOnly){this.pending=false;this.state='readonly';return false}
@@ -143,15 +169,21 @@
       var all=!paths,onDisk;
       if(all){onDisk=new Set((await this.adapter.list(this.vault)).filter(editable));paths=Array.from(onDisk)}
       else paths=paths.map(function(p){return String(p).replace(/\\/g,'/')}).filter(editable);
-      var byPath=new Map(this.store.list().map(function(d){return[d.path,d]})),changed=0;
+      var byPath=new Map(this.store.list().map(function(d){return[d.path,d]})),changed=0,appeared=[],vanished=[],self=this;
       for(var i=0;i<paths.length;i++){var path=paths[i],disk=await this.adapter.read(this.vault,path),snap=this.snapshot.get(path),d=byPath.get(path);
-        if(disk==null){if(!all&&d&&d.content===snap){this.snapshot.delete(path);this.store.remove(d.id,{source:'disk'});changed++}continue}
+        if(disk==null){if(!all&&d&&d.content===snap)vanished.push(d);continue}
         if(disk===snap)continue;
         if(d&&snap!==undefined&&d.content!==snap)continue;
-        this.snapshot.set(path,disk);
-        if(d){if(d.content!==disk){this.store.upsert(Object.assign({},d,{content:disk}),{source:'disk'});changed++}}
-        else{this.store.upsert({path:path,content:disk},{source:'disk'});changed++}}
-      if(all)for(const pair of Array.from(this.snapshot)){var pth=pair[0];if(!editable(pth)||onDisk.has(pth))continue;var doc=byPath.get(pth);if(doc&&doc.content===pair[1]){this.snapshot.delete(pth);this.store.remove(doc.id,{source:'disk'});changed++}}
+        if(d){this.snapshot.set(path,disk);if(d.content!==disk){this.store.upsert(Object.assign({},d,{content:disk}),{source:'disk'});changed++}}
+        else appeared.push({path:path,content:disk})}
+      if(all)for(const pair of Array.from(this.snapshot)){var pth=pair[0];if(!editable(pth)||onDisk.has(pth))continue;var doc=byPath.get(pth);if(doc&&doc.content===pair[1])vanished.push(doc)}
+      /* sumiu de um caminho + apareceu em outro com o mesmo conteúdo = rename/move externo: mesmo documento (REQ-042) */
+      var r=Identity.pair(vanished.map(function(d){return{id:d.id,path:d.path,fingerprint:Identity.fingerprint(d.content)}}),appeared),moved=new Set(),arrived=new Set();
+      r.pairs.forEach(function(p){var d=self.store.get(p.id),a=appeared.find(function(x){return x.path===p.to});if(!d||!a)return;
+        self.snapshot.delete(p.from);self.snapshot.set(p.to,a.content);self.store.upsert(Object.assign({},d,{path:p.to,title:null,content:a.content}),{source:'disk.rename',from:p.from});moved.add(p.id);arrived.add(p.to);changed++});
+      appeared.forEach(function(a){if(arrived.has(a.path))return;self.snapshot.set(a.path,a.content);self.store.upsert({path:a.path,content:a.content},{source:'disk'});changed++});
+      vanished.forEach(function(d){if(moved.has(d.id))return;self.snapshot.delete(d.path);self.store.remove(d.id,{source:'disk'});changed++});
+      if(r.pairs.length||r.ambiguous.length)this.events.emit('workspace:reconciled',{vault:this.vault,renames:r.pairs,ambiguous:r.ambiguous});
       if(changed)this.events.emit('workspace:external',{vault:this.vault,changed:changed});
       return changed;
     }

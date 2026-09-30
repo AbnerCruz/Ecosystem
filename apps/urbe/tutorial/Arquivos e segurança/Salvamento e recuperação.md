@@ -33,3 +33,18 @@ Tudo explicado em [[Tutorial/Notas/Lixeira, versões e desfazer|Lixeira, versõe
 ## Diagnóstico
 
 O comando **Diagnóstico do workspace** (Ctrl+K) confere se as notas, os links e o mapa estão coerentes e mostra o que encontrou.
+
+## Renomear e mover por fora do app
+
+Pode renomear ou mover notas e pastas pelo gerenciador de arquivos, pelo Obsidian ou pelo sincronizador. O Urbe reconhece a nota pelo conteúdo e ela continua sendo **a mesma**: mantém as versões anteriores, a casa na Cidade e os anexos. Nada é escrito dentro das suas notas para isso; o Urbe guarda essa identificação em `.urbe/identity.json`.
+
+Se duas notas idênticas aparecerem ao mesmo tempo, o Urbe não tenta adivinhar qual é a original: as duas entram como notas novas.
+
+## Limpar referências órfãs
+
+Com o tempo, o histórico e as composições podem guardar referências a notas que não existem mais (apagadas da lixeira ou removidas por fora). O comando **Limpar referências órfãs** (Ctrl+K) mostra primeiro o que encontrou e só apaga quando você confirma:
+
+- as versões de uma nota que não existe mais, depois de 30 dias;
+- nas composições, só as fontes que sumiram (a composição continua).
+
+Nada que ainda existe é tocado: notas, notas na lixeira e o histórico delas ficam como estão. Cada limpeza fica registrada em `.urbe/vault.json`.

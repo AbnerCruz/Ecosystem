@@ -44,6 +44,13 @@ export const FIXTURES = {
     files: { 'Alfa.md': NOTA_A, 'Beta.md': NOTA_B, 'Pasta/Gama.md': NOTA_C, 'Pasta/logo.png': PNG, '.urbe/mapa.json': J(mapaV4()), '.urbe/history.json': JSON.stringify(historyV1), '.urbe/trash.json': J(trashV1), '.urbe/compositions.json': JSON.stringify(compositionsV1) },
     expect: { notes: ['Alfa.md', 'Beta.md', 'Pasta/Gama.md'], ids: { 'Alfa.md': id(1), 'Beta.md': id(2), 'Pasta/Gama.md': id(3) }, positions: { 'Alfa.md': [32, 32], 'Pasta/Gama.md': [34, 36] }, trash: 1, history: 1, compositions: 1 },
   },
+  'v1-orfaos': {
+    files: { 'Alfa.md': NOTA_A, 'Beta.md': NOTA_B, '.urbe/mapa.json': J({ ...mapaV4(), regioes: [], construcoes: [], notas: { 'Alfa.md': { id: id(1), x: 32, y: 32 }, 'Beta.md': { id: id(2), x: 36, y: 32 } } }),
+      '.urbe/history.json': JSON.stringify({ version: 1, documents: { [id(1)]: [{ timestamp: 1790000000000, path: 'Alfa.md', content: 'v0' }], [id(7)]: [{ timestamp: 1780000000000, path: 'Sumida.md', content: 'x' }], [id(8)]: [{ timestamp: 1790500000000, path: 'Recente.md', content: 'y' }], [id(9)]: [{ timestamp: 1788000000000, path: 'Velha.md', content: 'z' }] } }),
+      '.urbe/trash.json': J(trashV1),
+      '.urbe/compositions.json': JSON.stringify({ version: 1, items: [{ ...compositionsV1.items[0], sources: [id(1), id(7), id(9)], order: [id(1), id(7), id(9)] }] }) },
+    expect: { notes: ['Alfa.md', 'Beta.md'], ids: { 'Alfa.md': id(1), 'Beta.md': id(2) }, orphans: { historyOld: [id(7)], historyRecent: [id(8)], trashed: [id(9)], compositionDangling: [id(7)] }, trash: 1, history: 4, compositions: 1 },
+  },
   'v1-notas-sem-id': {
     files: { 'Alfa.md': NOTA_A, 'Beta.md': NOTA_B, '.urbe/mapa.json': J(mapaV4({ withIds: false })) },
     expect: { notes: ['Alfa.md', 'Beta.md'], ids: {}, generatedIds: true, positions: { 'Alfa.md': [32, 32] } },
@@ -116,7 +123,7 @@ Geradas por \`node tools/make-fixtures.mjs\` (REQ-037). Cada pasta é um vault; 
 |---|---|
 | v1-mapa-v2 | mapa v:2 (sem id, sem mundo/version), leitura defensiva |
 | v1-mapa-v4 | mapa v4 completo (ids, regiões, construções/assets), history/trash/compositions v1 |
-| v1-notas-sem-id | notas sem \`id\` no mapa (R-2: ID novo a cada carga) |
+| v1-orfaos | history/compositions com referências a documentos que não existem mais (GC, RM-F1-16) |\n| v1-notas-sem-id | notas sem \`id\` no mapa (R-2: ID novo a cada carga) |
 | v1-journal-pendente | journal.json v1 de uma operação interrompida (recuperação) |
 | v1-cidades-mescladas | migração multi-cidade (\`Cidades/\`, \`.urbe/origens/\`, \`merged-v1.json\`) |
 | v1-personalizacao | tema.json, temas, estilos, texturas, plugins |

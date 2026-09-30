@@ -7,6 +7,7 @@ Geradas por `node tools/make-fixtures.mjs` (REQ-037). Cada pasta é um vault; `e
 |---|---|
 | v1-mapa-v2 | mapa v:2 (sem id, sem mundo/version), leitura defensiva |
 | v1-mapa-v4 | mapa v4 completo (ids, regiões, construções/assets), history/trash/compositions v1 |
+| v1-orfaos | history/compositions com referências a documentos que não existem mais (GC, RM-F1-16) |
 | v1-notas-sem-id | notas sem `id` no mapa (R-2: ID novo a cada carga) |
 | v1-journal-pendente | journal.json v1 de uma operação interrompida (recuperação) |
 | v1-cidades-mescladas | migração multi-cidade (`Cidades/`, `.urbe/origens/`, `merged-v1.json`) |

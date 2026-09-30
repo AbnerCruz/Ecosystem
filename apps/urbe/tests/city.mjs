@@ -24,7 +24,7 @@ test('toda nota vira casa, não só as restauradas da lixeira',()=>{
   if(!h.includes('urbeBuildingPath(x,regioes)===d.path'))throw new Error('sem proteção contra casa duplicada');
 });
 test('ruas: refeitas ao abrir e quando links mudam fora do editor; desenho contínuo',()=>{
-  if(!trecho('abrirCidade=async function(name){','/* An existing installation').includes('rebuildRoadNetwork();'))throw new Error('abrir não refaz ruas');
+  if(!trecho('abrirCidade=async function(name){','/* Instalações antigas tinham várias cidades').includes('rebuildRoadNetwork();'))throw new Error('abrir não refaz ruas');
   if(!trecho("urbeCore.events.on('document:updated'",'marcarSinc();').includes('scheduleRoadRebuild()'))throw new Error('link alterado fora do editor não refaz ruas');
   const r=trecho('drawRoads=function(){','/* abre mostrando as notas');if(r.includes('A.road'))throw new Error('ruas voltaram ao sprite em blocos');
 });

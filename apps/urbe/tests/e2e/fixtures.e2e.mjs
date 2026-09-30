@@ -13,7 +13,7 @@ function raw(name) {
   (function walk(d, pre) { for (const e of readdirSync(d, { withFileTypes: true })) { if (e.isDirectory()) walk(join(d, e.name), pre + e.name + '/'); else if (e.name !== 'expect.json') { const rel = pre + e.name, buf = readFileSync(join(d, e.name)); out.set(rel, TEXT.test(rel) ? buf.toString('utf8') : new Uint8Array(buf)); } } })(join(DIR, name), '');
   return out;
 }
-const NAMES = ['v1-mapa-v2', 'v1-mapa-v4', 'v1-notas-sem-id', 'v1-cidades-mescladas', 'v1-personalizacao', 'v1-paginas', 'v1-mundo-antigo'];
+const NAMES = ['v1-mapa-v2', 'v1-mapa-v4', 'v1-orfaos', 'v1-notas-sem-id', 'v1-cidades-mescladas', 'v1-personalizacao', 'v1-paginas', 'v1-mundo-antigo'];
 
 const app = await launchApp();
 try {

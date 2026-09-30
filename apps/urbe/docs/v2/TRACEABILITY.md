@@ -31,7 +31,7 @@
 | REQ-011 | §1.2 | F7 | RM-F7-28 — Fechar G7: todo OBS com teste e documentação | [ ] | Verificador + revisão. | G7 |
 | REQ-012 | §1.2 | F0 | RM-F0-13 — Gate de dívida (`tools/check-debt.mjs`) | [x] | `tests/debt.mjs` (injeção de sobrescrita falha). | G0 |
 | REQ-012 | §1.2 | F6 | RM-F6-11 — Auditoria de dívida e legacy final | [ ] | `check-debt`. | G6 |
-| REQ-013 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [ ] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
+| REQ-013 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [x] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
 | REQ-013 | §5.2 | F1 | RM-F1-24 — Regra: relações internas novas usam ID | [ ] | Teste negativo com relação por path. | G1 |
 | REQ-014 | §5.2 | F1 | RM-F1-09 — Modelo de artefatos aplicado (indexação e roteamento) | [x] | Fixtures: plugin/tema/página não aparecem como nota; abrir cada tipo roteia corretamente. | G1 |
 | REQ-015 | §3.1 | F0 | RM-F0-09 — Validação automática de boundaries de camadas | [x] | Teste negativo com dependência proibida injetada. | G0 |
@@ -80,12 +80,12 @@
 | REQ-038 | §5.1 | F1 | RM-F1-07 — Motor de backup pré-migração e restauração | [x] | Testes: backup íntegro, restauração byte a byte, migração repetida não duplica. | G1 |
 | REQ-039 | §5.2 | F1 | RM-F1-08 — Fonte única de tipos de artefato | [x] | `tests/artifacts.mjs` (tabela de casos); `grep` de listas antigas retorna 0. | G1 |
 | REQ-040 | §5.2 | F1 | RM-F1-13 — Escritor único do mapa e leitura de `mapa.v` | [x] | Fixtures mapa v1/v2/v4; teste de dupla escrita (não há); assinatura de binários preservada. | G1 |
-| REQ-041 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [ ] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
-| REQ-042 | §5.2 | F1 | RM-F1-15 — Sidecar de identidade e reconciliação | [ ] | Fixtures: rename externo, cópia de vault sem `.urbe/`, cópias idênticas (ambiguidade tratada). | G1 |
-| REQ-042 | §5.2 | F1 | RM-F1-16 — GC de órfãos em history/trash/compositions | [ ] | Fixture com órfãos; dry-run e execução. | G1 |
-| REQ-043 | §5.2 | F1 | RM-F1-17 — Versão de mundo e reorganização com backup/desfazer | [ ] | Fixture `v1-mundo-antigo`, `v1-cidades-mescladas`: backup criado, posições restauráveis. | G1 |
-| REQ-044 | §5.2 | F1 | RM-F1-18 — Export ZIP com manifesto e estado local | [ ] | Testes: hash íntegro, adulteração detectada, ausência de chaves. | G1 |
-| REQ-045 | §5.2 | F1 | RM-F1-19 — Migração multi-cidade idempotente | [ ] | Fixture `v1-cidades-mescladas`: 3 boots consecutivos, mesmo resultado. | G1 |
+| REQ-041 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [x] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
+| REQ-042 | §5.2 | F1 | RM-F1-15 — Sidecar de identidade e reconciliação | [x] | Fixtures: rename externo (de nota **e de pasta/asset**: região e asset mantêm `reg_`/`ast_`, repassado de RM-F1-14), cópia de vault sem `.urbe/`, cópias idênticas (ambiguidade tratada). | G1 |
+| REQ-042 | §5.2 | F1 | RM-F1-16 — GC de órfãos em history/trash/compositions | [x] | Fixture com órfãos; dry-run e execução. | G1 |
+| REQ-043 | §5.2 | F1 | RM-F1-17 — Versão de mundo e reorganização com backup/desfazer | [x] | Fixture `v1-mundo-antigo`, `v1-cidades-mescladas`: backup criado, posições restauráveis. | G1 |
+| REQ-044 | §5.2 | F1 | RM-F1-18 — Export ZIP com manifesto e estado local | [x] | Testes: hash íntegro, adulteração detectada, ausência de chaves. | G1 |
+| REQ-045 | §5.2 | F1 | RM-F1-19 — Migração multi-cidade idempotente | [x] | Fixture `v1-cidades-mescladas`: 3 boots consecutivos, mesmo resultado. | G1 |
 | REQ-046 | §5.2 | F1 | RM-F1-20 — Escrita recuperável na web e integridade do modo IDB | [ ] | Simulação de falha no meio da escrita; export do IDB reproduz vault. | G1 |
 | REQ-047 | §5.2 | F1 | RM-F1-21 — Estado local por vault e tolerância a órfãos | [ ] | Trocar de vault não reabre abas alheias; orphan não lança. | G1 |
 | REQ-048 | §5.2 | F1 | RM-F1-22 — Auditoria e destino de `aiLocal` e campos sem consumidor | [ ] | Fixtures com `aiLocal` preservados ou migrados sem perda. | G1 |
@@ -193,4 +193,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 33.
+- Itens no ROADMAP: 146; concluídos `[x]`: 39.

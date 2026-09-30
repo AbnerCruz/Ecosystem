@@ -57,6 +57,9 @@
     return{handled:false};
   }
 
-  global.UrbeArtifacts={linkable:linkable,registerOpener:registerOpener,onBeforeOpen:onBeforeOpen,route:route,RE:RE,TEXT_ALT:TEXT_ALT,classify:classify,isNote:isNote,isText:isText,isSystem:isSystem,ext:ext,
+  /** Nome seguro para arquivo/pasta em qualquer plataforma (Windows, Android/SAF, FSA): sem \\ / : * ? " < > | nem controle,
+      sem ponto no início (oculto) ou no fim (Windows), no máximo 90 caracteres. Fonte única (antes `nomeSeguro` em app.js). */
+  function safeName(s){return String(s==null?'':s).replace(/[\\/:*?"<>|\u0000-\u001f]/g,'-').replace(/\s+/g,' ').trim().replace(/^\.+/,'').replace(/\.+$/,'').slice(0,90)||'sem-nome'}
+  global.UrbeArtifacts={safeName:safeName,linkable:linkable,registerOpener:registerOpener,onBeforeOpen:onBeforeOpen,route:route,RE:RE,TEXT_ALT:TEXT_ALT,classify:classify,isNote:isNote,isText:isText,isSystem:isSystem,ext:ext,
     TYPES:['system','plugin','theme','style','texture','personalization','page','page-template','page-block','note','text','asset']};
 })(window);

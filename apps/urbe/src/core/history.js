@@ -6,6 +6,7 @@ class RevisionHistory{
  captureRemoved(e){var d=e&&e.document;if(!d)return;var arr=this.byDoc.get(d.id)||[];arr.push({timestamp:Date.now(),path:d.path,content:d.content,removed:true});this.byDoc.set(d.id,arr.slice(-this.limit))}
  list(id){return(this.byDoc.get(String(id))||[]).map(x=>({...x})).reverse()}
  restore(id,index){var d=docs.get(id),arr=this.list(id),rev=arr[index||0];if(!d||!rev)return null;return docs.upsert({...d,content:rev.content,path:d.path},{source:'history.restore'})}
+ forget(id){var k=String(id),ok=this.byDoc.delete(k);this.last.delete(k);if(ok)this.events.emit('history:changed',{type:'forget',id:k});return ok}
  export(){var o={};this.byDoc.forEach((v,k)=>o[k]=v);return{version:1,documents:o}}
  import(data){this.byDoc.clear();if(data&&data.version===1&&data.documents)Object.keys(data.documents).forEach(k=>this.byDoc.set(k,(data.documents[k]||[]).slice(-this.limit)));return this}
 }
