@@ -7,9 +7,9 @@
       "status": "pending",
       "component": "ecosystem",
       "blocking": false,
-      "title": "Ratificar os ADRs de fundação 0001–0005",
-      "context": "O agente fundador criou, sob MANIFEST §57, os ADRs 0001 (processo de ADR), 0002 (formato de ecosystem.json e registros de governança em JSON Schema), 0003 (checks em C# .NET 10 sem dependências) 0004 (estrutura inicial sem diretórios vazios) e 0005 (escolhas técnicas do portal web: tipo 'portal', UI estática em JavaScript, gerador em C#, projeção não versionada). Todos estão 'Proposto' e vigoram provisoriamente.",
-      "question": "Os ADRs 0001–0005 devem ser aceitos como estão, aceitos com alterações ou rejeitados?",
+      "title": "Ratificar os ADRs de fundação 0001–0006",
+      "context": "O agente fundador criou, sob MANIFEST §57, os ADRs 0001 (processo de ADR), 0002 (formato de ecosystem.json e registros de governança em JSON Schema), 0003 (checks em C# .NET 10 sem dependências) 0004 (estrutura inicial sem diretórios vazios) e 0005 (escolhas técnicas do portal web: tipo 'portal', UI estática em JavaScript, gerador em C#, projeção não versionada). Todos estão 'Proposto' e vigoram provisoriamente. O ADR-0006 formaliza Product Shell, Context, distribuição independente e a invariante NN-023, decididos pelo proprietário em DEC-0006; a formulação do agente (texto de NN-023, documentos de arquitetura, plano de fiscalização) aguarda ratificação. O ADD-0002 não resolve esta decisão.",
+      "question": "Os ADRs 0001–0006 devem ser aceitos como estão, aceitos com alterações ou rejeitados?",
       "alternatives": [
         {
           "option": "Aceitar todos",
@@ -32,7 +32,8 @@
         "docs/adr/0002-formato-dos-registros-canonicos.md",
         "docs/adr/0003-checks-de-consistencia-em-csharp.md",
         "docs/adr/0004-estrutura-inicial-do-repositorio.md",
-        "docs/adr/0005-portal-web-github-pages.md"
+        "docs/adr/0005-portal-web-github-pages.md",
+        "docs/adr/0006-product-shell-context-distribuicao-independente.md"
       ],
       "raisedBy": "claude-code (agente fundador)",
       "raisedAt": "2026-09-30"
@@ -148,6 +149,40 @@
       "decision": "Adotar o portal conforme o adendo ADD-0001, integralmente.",
       "decidedAt": "2026-09-30",
       "record": "docs/governance/addenda/ADD-0001-portal-github-pages.md"
+    },
+    {
+      "id": "DEC-0006",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Product Shells, distribuição independente e plataforma própria",
+      "context": "Antes de iniciar a migração de Lunet2D e Urbe, o proprietário enviou uma decisão posterior (ADD-0002) que evolui a visão do produto: níveis de experiência, Product Shell, independência de distribuição, plataforma first-party e visão ampliada do Lunet2D.",
+      "question": "Quais conceitos e regras arquiteturais devem ser formalizados antes da migração, e o que continua proibido de implementar agora?",
+      "alternatives": [
+        {
+          "option": "Formalizar agora conceitos, invariante NN-023, documentação, roadmap e inventário ampliado; implementar nada",
+          "consequences": "Migração parte de um alinhamento escrito e de inventários que capturam o mapa funcional; nenhum scaffolding, Service ou schema é criado."
+        },
+        {
+          "option": "Adiar a formalização para depois da migração",
+          "consequences": "Risco de importar e reorganizar sem o mapa funcional nem o gate de não-extração; arquitetura futura fica só na conversa (NN-009)."
+        }
+      ],
+      "consequences": "Nova invariante NN-023 no MANIFEST; conceitos Product Shell, Context, Distribution Profile, Connections, Store × Library e estratégia first-party documentados; Fase 1 ganha mapa funcional, sequência obrigatória e gate de migração sem extração estrutural. Contratos e formatos concretos continuam sujeitos a ADR nas fases indicadas.",
+      "manifestCompatibility": "Aditamento sem contradição: NN-023 complementa NN-003; nenhuma invariante existente foi alterada ou renumerada; tensões com §2, §5.1, §47, §40 e §41 analisadas em ADR-0006 e em docs/governance/manifest-changelog.md.",
+      "related": [
+        "docs/adr/0006-product-shell-context-distribuicao-independente.md",
+        "docs/architecture/product-model.md",
+        "docs/architecture/distribution.md",
+        "docs/architecture/product-vision.md",
+        "docs/architecture/faq.md",
+        "docs/governance/manifest-changelog.md"
+      ],
+      "raisedBy": "AbnerCruz (proprietário)",
+      "raisedAt": "2026-09-30",
+      "decision": "Adotar o ADD-0002: (1) níveis Hub → Product Shell → Workspace/Tool; (2) Product Shell como Host especializado de um Product, distinto do Hub; (3) Hub privado/interno como cenário suportado; (4) arquitetura ≠ distribuição, com Distribution Profile como conceito; (5) Context hierárquico como conceito, sem contrato definido; (6) Connections é UX sobre Capabilities; (7) visão do Lunet2D como plataforma completa, sem implementar; (8) Store ≠ Library e Assets como categoria do catálogo; (9) estratégia first-party by default, external distribution by choice; (10) Services compartilhados só por NN-020/NN-022; (11) Urbe como Product completo com Product Shell próprio; (12) nova invariante de independência de distribuição (NN-023); (13) sequência de migração e novo gate da Fase 1. Não resolve DEC-0001, DEC-0002, DEC-0003 nem DEC-0004.",
+      "decidedAt": "2026-09-30",
+      "record": "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md"
     }
   ]
 }

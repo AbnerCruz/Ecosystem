@@ -143,6 +143,9 @@ foreach (var (key, v) in eco["ecosystem"]!["normative"]!.AsObject())
 Doc("ADRs", "docs/adr/README.md");
 Doc("Definition of Done e estados de validação", "docs/governance/definition-of-done.md");
 Doc("Estratégia de migração", "docs/migration/README.md");
+Doc("Modelo de produto (Product Shell, Context)", "docs/architecture/product-model.md");
+Doc("Distribuição e plataforma própria", "docs/architecture/distribution.md");
+Doc("Perguntas-chave", "docs/architecture/faq.md");
 Doc("Portal (arquitetura)", "docs/architecture/portal.md");
 
 var result = new JsonObject

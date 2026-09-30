@@ -124,6 +124,10 @@ Se algo existe, deve ser descobrível. Se depende de outro componente, deve ser 
 Antes de extrair algo para `platform/`, `workspaces/` ou `tools/`, deve ser respondido: (1) qual complexidade é removida; (2) quais consumidores reais existem; (3) qual contrato estabiliza a relação; (4) qual custo novo de versionamento/integração surge; (5) por que o saldo final é positivo. Se isso não puder ser demonstrado, o componente permanece onde está.
 **Enforcement obrigatório:** ADR ou registro arquitetural para extrações relevantes; pelo menos um teste de consumidor real; revisão de boundary.
 
+### NN-023 — Produtos distribuíveis não dependem da distribuição do Hub
+Um Product declarado distribuível deve poder ser empacotado, publicado, instalado, atualizado e utilizado em seu domínio essencial **sem exigir que o Ecosystem Hub seja distribuído ao usuário final**. Complementa NN-003 e não a substitui: NN-003 trata do *funcionamento*, NN-023 da *distribuição*. O Hub pode permanecer privado/interno e nunca ser publicado; isso não pode impedir a distribuição completa de nenhum Product.
+**Enforcement obrigatório:** dependency graph; packaging; release pipeline; testes standalone; validação de Distribution Profile; CI; DEVICE, quando aplicável.
+
 ---
 
 ## 3. Autonomia e decisões
@@ -131,6 +135,7 @@ Antes de extrair algo para `platform/`, `workspaces/` ou `tools/`, deve ser resp
 - **Pode decidir sozinho** (MANIFEST §22.4): detalhes de implementação dentro de contratos aprovados que não mudem produto, boundary, compatibilidade, dados, decisão consolidada nem adicionem tecnologia estrutural sem necessidade.
 - **Não pode decidir sozinho:** tudo listado em NN-011. Registre um ADR com status `Proposto` e uma entrada `pending` em [`docs/governance/decisions.json`](docs/governance/decisions.json), no formato de MANIFEST §22.3.
 - **Nunca** transforme preferência própria em decisão do proprietário, nem inferência em requisito (MANIFEST §53). Separe `FATO OBSERVADO`, `INFERÊNCIA`, `PROPOSTA` e `DECISÃO`.
+- **Arquitetura não é distribuição; Product Shell não é Hub; Connections é UX, não arquitetura paralela.** Conceitos de Product Shell, Context, Distribution Profile, Store × Library e estratégia first-party: [`docs/architecture/product-model.md`](docs/architecture/product-model.md) e [`docs/architecture/distribution.md`](docs/architecture/distribution.md) (ADD-0002). São conceitos registrados, **não** autorização para criar código, diretórios, Services ou abstrações (NN-020, NN-022).
 - **Portal web (`site/`)** é projeção, nunca fonte de verdade: não escreva nele dados que tenham autoridade em outro lugar (ADD-0001, [`docs/architecture/portal.md`](docs/architecture/portal.md)).
 - **Hierarquia de autoridade** (MANIFEST §24): decisão registrada do proprietário > `MANIFEST.md` > ADRs aprovados > `ARCHITECTURE.md` e contracts > SPEC > ROADMAP > tarefa/Issue > handoffs > comentários informais > inferências.
 

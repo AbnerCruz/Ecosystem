@@ -444,6 +444,25 @@ Se isso não puder ser demonstrado, o componente permanece onde está.
 
 ---
 
+## NN-023 — Produtos distribuíveis não dependem da distribuição do Hub
+
+Um Product declarado distribuível deve poder ser empacotado, publicado, instalado, atualizado e utilizado em seu domínio essencial sem exigir que o Ecosystem Hub seja distribuído ao usuário final.
+
+Esta invariante complementa NN-003 e não a substitui: NN-003 garante que o Hub não é dependência essencial do *funcionamento* dos produtos; NN-023 garante que o Hub não é dependência essencial da sua *distribuição*.
+
+O Hub pode permanecer privado/interno e nunca ser publicado. Isso não pode impedir a distribuição completa de nenhum Product.
+
+**Enforcement obrigatório:**
+- dependency graph;
+- packaging;
+- release pipeline;
+- testes standalone;
+- validação de Distribution Profile;
+- CI;
+- DEVICE, quando aplicável.
+
+---
+
 ## 0.2 Matriz de enforcement
 
 Toda regra crítica deve ser classificada por uma ou mais formas de fiscalização:

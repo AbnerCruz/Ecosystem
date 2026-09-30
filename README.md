@@ -34,6 +34,7 @@ A fonte de verdade desta tabela é [`ecosystem.json`](ecosystem.json); este READ
 | [`docs/contracts/`](docs/contracts/) | Contratos e schemas. |
 | [`docs/migration/`](docs/migration/) | Estratégia de migração de Lunet2D e Urbe. |
 | [`docs/architecture/portal.md`](docs/architecture/portal.md) | Portal web (GitHub Pages): papel, projeção, publicação. |
+| [`docs/architecture/product-model.md`](docs/architecture/product-model.md) · [`distribution.md`](docs/architecture/distribution.md) · [`product-vision.md`](docs/architecture/product-vision.md) · [`faq.md`](docs/architecture/faq.md) | Product Shell, Context, distribuição independente, plataforma first-party, visão de Lunet2D/Urbe e perguntas-chave (ADD-0002). |
 | [`site/`](site/) | Código do portal web. |
 
 ## Verificação

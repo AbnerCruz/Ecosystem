@@ -266,7 +266,7 @@ static class Checks
                     c.R.Fail(id, $"dependência direta Product → Product proibida: {cid} → {to}; use contract/capability/adapter (NN-002, MANIFEST §12)");
 
                 if (to == "hub" && kind == "required")
-                    c.R.Fail(id, $"'{cid}' declara o Hub como dependência obrigatória (NN-003)");
+                    c.R.Fail(id, $"'{cid}' declara o Hub como dependência obrigatória (NN-003, NN-023)");
 
                 if (toType == "portal")
                     c.R.Fail(id, $"'{cid}' depende do portal '{to}': o portal nunca é dependência de nenhum componente (ADD-0001, ADR-0005)");

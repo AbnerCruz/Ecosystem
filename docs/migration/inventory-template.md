@@ -42,8 +42,39 @@
 | build | | |
 | testes | | |
 
-## 12. Riscos e ajustes técnicos inevitáveis previstos
+## 12. Mapa funcional e arquitetural (ADD-0002 §16)
+
+> **Escopo:** descrever o que **existe hoje**, com evidência (FATO OBSERVADO). A classificação futura é **PROPOSTA / INVENTÁRIO**; não autoriza extrair, mover nem refatorar nada (NN-013, `docs/migration/README.md` §7). Não presumir que existem módulos da visão de produto (`docs/architecture/product-vision.md`).
+
+Repita o bloco abaixo para cada subsistema importante:
+
+```text
+Nome:
+Responsabilidade atual:
+Arquivos/diretórios:
+Dependências:
+Dados que possui:
+UI:
+Pode funcionar standalone hoje?
+É específico do Product?
+Dependências externas:
+Riscos:
+
+Candidato futuro (PROPOSTA — não autoriza extração):
+[ ] Product Core
+[ ] Product Shell
+[ ] Tool
+[ ] Workspace
+[ ] Service
+[ ] Library
+[ ] Adapter
+[ ] Ainda indeterminado
+```
+
+Resumo ao final do mapa: subsistemas inventariados, quantos por classificação proposta, dependências entre subsistemas que tornariam uma extração cara, e dependência de qualquer subsistema em relação ao Hub ou a outro Product (deve ser nenhuma — NN-002, NN-003, NN-023).
+
+## 13. Riscos e ajustes técnicos inevitáveis previstos
 - Cada ajuste necessário para funcionar em `apps/<id>/`, com justificativa (NN-013).
 
-## 13. Decisões necessárias
+## 14. Decisões necessárias
 - Referências a `DEC-XXXX`.

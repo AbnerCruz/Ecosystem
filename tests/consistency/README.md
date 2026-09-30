@@ -15,7 +15,7 @@ Requer .NET SDK 10+. Execute a partir de qualquer diretório dentro do repositó
 | `CHK-SCHEMA` | `ecosystem.json`, `decisions.json`, matriz e handoffs contra seus schemas; paths normativos existem | NN-001, NN-005, NN-014, NN-019, NN-021 |
 | `CHK-IDS-UNIQUE` | chaves JSON duplicadas; unicidade de IDs de componentes, ADRs, decisões, handoffs, invariantes | NN-019 |
 | `CHK-SINGLE-AUTHORITY` | único manifest raiz; paths sem sobreposição; `not-migrated`/`planned` não existem no repo; `active` existe; autoridade de versão coerente | NN-001, NN-021 |
-| `CHK-BOUNDARIES` | grafo declarado: Urbe↔Lunet2D, Product→Product, Hub obrigatório, não-produto→produto, qualquer dependência do portal | NN-002, NN-003, NN-007 |
+| `CHK-BOUNDARIES` | grafo declarado: Urbe↔Lunet2D, Product→Product, Hub obrigatório, não-produto→produto, qualquer dependência do portal | NN-002, NN-003, NN-007, NN-023 |
 | `CHK-GENERIC-DIRS` | diretórios genéricos (`shared`, `common`, `utils`…) na raiz e em `platform/`, `workspaces/`, `tools/` | NN-004 |
 | `CHK-SHARED-DECLARATION` | componentes compartilhados declaram responsabilidade, contrato, consumidores, compatibilidade, motivo | NN-004, NN-022 |
 | `CHK-ENFORCEMENT-MATRIX` | matriz cobre exatamente as NN do MANIFEST, com os mesmos títulos; mecanismos coerentes; checks referenciados existem | MANIFEST §0.2 |

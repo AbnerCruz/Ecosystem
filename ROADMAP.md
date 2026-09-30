@@ -12,7 +12,7 @@
 
 ## Próxima tarefa
 
-**P1-1 e P1-2 — inventário de Lunet2D e Urbe** (`docs/migration/inventory-<id>.md`, a partir do [template](docs/migration/inventory-template.md)).
+**P1-1 e P1-2 — inventário de Lunet2D e Urbe** (`docs/migration/inventory-<id>.md`, a partir do [template](docs/migration/inventory-template.md)), agora **incluindo o mapa funcional e arquitetural** com classificação futura proposta (ADD-0002 §16). As tarefas de alinhamento P0-16…P0-29 precedem P1-1/P1-2 e estão concluídas; a migração **não** foi iniciada.
 
 *Por quê:* MANIFEST §44.1 e NN-012 exigem documentar origem, branches, tags, releases, workflows, Pages, configuração e estratégia de histórico **antes** de qualquer importação. O inventário é somente leitura, não depende de decisão pendente e produz os fatos que DEC-0002 e DEC-0004 precisam. Em paralelo, o proprietário deve responder às decisões pendentes em [`docs/governance/decisions.json`](docs/governance/decisions.json).
 
@@ -41,6 +41,24 @@ Portal web (ADD-0001, ADR-0005, [`docs/architecture/portal.md`](docs/architectur
 - [x] P0-14 — Portal publicado por `pages.yml`; API confirmou `build_type=workflow`, artefato foi validado e smoke test confirmou o `site/index.html` na URL pública (run 36758554559).
 - [~] P0-15 — Validação humana do portal no celular (layout, toque, legibilidade) — NN-017.
 
+Alinhamento arquitetural pré-migração — Product Shells, distribuição independente e plataforma própria (ADD-0002, DEC-0006, ADR-0006). Somente conceito, documentação, governança e fiscalização; nenhum código, diretório ou Service criado; nenhum dado de Lunet2D/Urbe importado:
+
+- [x] P0-16 — Persistir a decisão do proprietário: `docs/governance/addenda/ADD-0002-…` (texto integral) e DEC-0006.
+- [x] P0-17 — Atualizar `MANIFEST.md`: NN-023 (aditamento; nenhuma invariante alterada ou renumerada) e [`manifest-changelog.md`](docs/governance/manifest-changelog.md).
+- [x] P0-18 — Atualizar `AGENTS.md` (NN-023 e ponteiro para os conceitos; `CHK-AGENTS-NN`).
+- [x] P0-19 — Atualizar `ARCHITECTURE.md` (conceitos, §6.2, itens em aberto).
+- [x] P0-20 — Enforcement de NN-023: matriz (mecanismos implementados e planejados por fase) e `CHK-BOUNDARIES`.
+- [x] P0-21 — Atualizar este ROADMAP sem renumerar IDs.
+- [x] P0-22 — Atualizar `docs/migration/inventory-template.md` com o mapa funcional e arquitetural.
+- [x] P0-23 — Documentar Product Shell e os três níveis de experiência ([`product-model.md`](docs/architecture/product-model.md)).
+- [x] P0-24 — Documentar Context como conceito, com requisitos e sem contrato ([`product-model.md`](docs/architecture/product-model.md) §4).
+- [x] P0-25 — Documentar Distribution Profile e os três eixos de disponibilidade como conceito futuro ([`distribution.md`](docs/architecture/distribution.md) §2–§3).
+- [x] P0-26 — Registrar a visão futura de Lunet2D e Urbe como Products completos ([`product-vision.md`](docs/architecture/product-vision.md)).
+- [x] P0-27 — Registrar a independência entre Store e Library e Assets como categoria do catálogo ([`distribution.md`](docs/architecture/distribution.md) §5–§6).
+- [x] P0-28 — Registrar a estratégia de distribuição first-party e Services compartilhados ([`distribution.md`](docs/architecture/distribution.md) §7–§8).
+- [x] P0-29 — Atualizar o gate e a sequência obrigatória da migração ([`docs/migration/README.md`](docs/migration/README.md) §6–§8).
+- [~] P0-30 — Ratificação do ADR-0006 e revisão do alinhamento pelo proprietário (junto de DEC-0001; DEC-0001…0004 continuam pendentes).
+
 **Gate:** um agente novo consegue entrar no repositório e compreender corretamente o produto, a autoridade documental e o processo de trabalho sem depender de uma conversa anterior.
 *Estado do gate:* aguardando revisão humana ou de agente independente (não pode ser autodeclarado pelo agente fundador).
 
@@ -48,8 +66,8 @@ Portal web (ADD-0001, ADR-0005, [`docs/architecture/portal.md`](docs/architectur
 
 Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar preservando histórico, restaurar builds/testes/releases.
 
-- [ ] P1-1 — Inventário do Lunet2D (`docs/migration/inventory-lunet2d.md`).
-- [ ] P1-2 — Inventário do Urbe (`docs/migration/inventory-urbe.md`).
+- [ ] P1-1 — Inventário do Lunet2D (`docs/migration/inventory-lunet2d.md`), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16).
+- [ ] P1-2 — Inventário do Urbe (`docs/migration/inventory-urbe.md`), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16).
 - [ ] P1-3 — Plano de importação por produto, após DEC-0002 e DEC-0004.
 - [ ] P1-4 — Importação do Lunet2D preservando histórico (PR de escopo restrito, NN-013).
 - [ ] P1-5 — Importação do Urbe preservando histórico (PR de escopo restrito, NN-013).
@@ -59,12 +77,18 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 - [ ] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados).
 - [ ] P1-10 — Urbe Web: decidir, com base no inventário P1-2, como o Urbe Web é publicado no monorepo sem quebrar a publicação atual, e expor rota previsível no portal.
 - [ ] P1-11 — Registros canônicos de validação por build (contrato + estados de `definition-of-done.md` §4) e páginas `/testing/<componente>/<build>/` geradas deles.
+- [ ] P1-12 — Classificar candidatos (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter) a partir dos mapas funcionais **já validados pós-migração**: apenas proposta; nenhuma extração (passo 9 de [`docs/migration/README.md`](docs/migration/README.md) §7). Extração/modernização (passo 10) está fora da Fase 1 e exige ADR por extração.
 
-**Gate:** Lunet2D e Urbe vivem no monorepo sem regressão conhecida e continuam possuindo lifecycles próprios.
+Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → preservar histórico → restaurar build → restaurar testes → restaurar releases → validar produto → provar ausência de regressão conhecida → classificar candidatos → extrair/modernizar gradualmente. **Proibido** durante a importação: separar o Editor, extrair o Sprite Studio, reescrever o Agent Workspace, criar Store, criar Product Shell novo, transformar código em capabilities, reorganizar tudo em packages, reescrever o Urbe em C#, mudar a arquitetura interna porque a arquitetura futura é conhecida.
+
+**Gate:**
+1. Lunet2D e Urbe vivem no monorepo sem regressão conhecida e continuam possuindo lifecycles próprios.
+2. A importação preservou intencionalmente a arquitetura funcional existente. Candidatos a Product Core, Product Shell, Tool, Workspace, Service, Library e Adapter foram inventariados, porém nenhuma extração estrutural foi realizada como efeito colateral da migração. *(Não pode ser marcado concluído antes da auditoria pós-migração, P1-8.)*
+3. Cada Product foi empacotado, publicado e testado sem o Hub (NN-023).
 
 ## Fase 2 — Contracts e Registry
 
-Objetivo: formalizar `ComponentManifest`, `Capability`, provider/consumer, versionamento e permission model; registry inicial; testes de boundary.
+Objetivo: formalizar `ComponentManifest`, `Capability`, provider/consumer, versionamento e permission model; registry inicial; testes de boundary. Por ADR (ADD-0002): contrato de **Context**; nomes e formato dos eixos de disponibilidade (visibilidade, distribuição, modelo comercial); formato e validação do **Distribution Profile** (inclusive: nenhum perfil distribuível de um Product inclui o Hub — NN-023).
 
 **Gate:** um componente pode declarar uma capability, outro pode descobri-la e a compatibilidade pode ser validada sem dependência direta entre produtos.
 
@@ -78,13 +102,13 @@ Objetivo: Hub inicial em C#; lê `ecosystem.json`; mostra Lunet2D e Urbe; integr
 
 ## Fase 4 — Launcher e Updates
 
-Objetivo: detectar versões, listar releases, baixar artefatos, validar integridade, conduzir instalação/atualização respeitando o modelo de segurança da plataforma, abrir produto instalado.
+Objetivo: detectar versões, listar releases, baixar artefatos, validar integridade, conduzir instalação/atualização respeitando o modelo de segurança da plataforma, abrir produto instalado. Packaging e distribuição de cada Product **sem** o Hub (NN-023): o Hub é conveniência do proprietário, não requisito de distribuição; o Hub pode permanecer privado.
 
-**Gate:** o usuário utiliza o Hub como entrada para instalar/atualizar/abrir Lunet2D e Urbe dentro dos limites da plataforma. *(requer validação humana em aparelho)*
+**Gate:** o usuário utiliza o Hub como entrada para instalar/atualizar/abrir Lunet2D e Urbe dentro dos limites da plataforma, **e** cada Product é instalado, atualizado e usado em seu domínio essencial sem o Hub presente (NN-023). *(requer validação humana em aparelho — DEVICE)*
 
 ## Fase 5 — Capability Runtime
 
-Objetivo: IPC; command/event/request; capability discovery local; lifecycle; permissions; Host API; Tool hosting.
+Objetivo: IPC; command/event/request; capability discovery local; lifecycle; permissions; Host API; Tool hosting. Por ADR (ADD-0002): Host API de Product Shell; Context em discovery e permissões; Connections implementada sobre o Capability Registry (UX, sem registro paralelo).
 
 **Gate:** uma Tool simples funciona standalone no Hub e embutida em outro Host sem código específico para aquele Host.
 

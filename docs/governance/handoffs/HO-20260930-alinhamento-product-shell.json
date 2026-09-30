@@ -1,0 +1,200 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20260930-alinhamento-product-shell",
+  "category": "HANDOFF",
+  "timestamp": "2026-09-30T18:10:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-16",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "MANIFEST.md",
+    "README.md",
+    "ROADMAP.md",
+    "docs/adr/0006-product-shell-context-distribuicao-independente.md",
+    "docs/adr/README.md",
+    "docs/architecture/distribution.md",
+    "docs/architecture/faq.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/product-vision.md",
+    "docs/governance/README.md",
+    "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
+    "docs/governance/decisions.json",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/handoffs/HO-20260930-alinhamento-product-shell.json",
+    "docs/governance/manifest-changelog.md",
+    "docs/migration/README.md",
+    "docs/migration/inventory-template.md",
+    "site/generator/GenerateStatus.cs",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md"
+  ],
+  "work_completed": [
+    "P0-16: ADD-0002 persistido na íntegra (verificado por diff contra o anexo) e DEC-0006 registrada como decided. DEC-0001..0004 permanecem pending; DEC-0001 só teve o escopo estendido ao ADR-0006.",
+    "P0-17: MANIFEST.md recebeu NN-023 (aditamento; nenhuma linha existente removida, nenhuma invariante renumerada) e docs/governance/manifest-changelog.md registra a alteração com as cinco exigências de MANIFEST §0.",
+    "P0-18/P0-20: AGENTS.md reproduz NN-023; matriz de enforcement cobre NN-023 (DOC e ARCH implementados; TEST, CI, SCHEMA, DEVICE planejados por fase; REVIEW manual); CHK-BOUNDARIES cita NN-023.",
+    "P0-19/P0-23..P0-28: ARCHITECTURE.md §1, §5, §6.2, §8 e novos docs/architecture/{product-model,distribution,product-vision,faq}.md cobrem Product Shell, níveis, Hub×Shell, Context, Connections×Capabilities, arquitetura×distribuição, Distribution Profile, três eixos, Hub privado, Store×Library, catálogo único, first-party, Services compartilhados e visão de Lunet2D/Urbe, com marcações Decisão/Requisito/Derivado/Aberto.",
+    "ADR-0006 (Proposto) formaliza as decisões e analisa tensões com MANIFEST §2, §5.1, §40, §41, §47.",
+    "P0-21/P0-29: ROADMAP com P0-16..P0-30 e P1-12 sem renumerar IDs; P1-1/P1-2 ampliadas; sequência obrigatória e gates da Fase 1; Fases 2, 4 e 5 receberam os itens correspondentes. docs/migration/README.md §6-§8 e inventory-template.md §12 (mapa funcional + classificação futura PROPOSTA) atualizados.",
+    "Portal: generator lista os novos documentos; projeção regenerada e validada."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local, .NET SDK 10.0.112: 'Todos os 15 checks passaram.' (base antes das alterações também verde)."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: baseline e os 20 casos de violação detectados."
+    },
+    {
+      "check": "NN-023 é fiscalizada pelos checks existentes",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Mutação em cópia do repositório: remover NN-023 de AGENTS.md e da matriz faz CHK-AGENTS-NN e CHK-ENFORCEMENT-MATRIX falharem."
+    },
+    {
+      "check": "Nenhuma invariante anterior enfraquecida",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Comparação: NN-001..NN-022 do MANIFEST byte-idênticas ao original; NN-001..NN-022 do AGENTS idênticas ao HEAD anterior; única nova é NN-023."
+    },
+    {
+      "check": "Nada de Lunet2D/Urbe importado; nenhum diretório criado",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/, platform/, workspaces/ e tools/ inexistentes; find -type d -empty vazio; git status só lista documentos, matriz, check e gerador do portal."
+    },
+    {
+      "check": "P1-1/P1-2 capturam o mapa funcional",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "inventory-template.md §12 contém o bloco de subsistema e a classificação proposta; ROADMAP P1-1 e P1-2 o exigem."
+    },
+    {
+      "check": "Workflow consistency no GitHub Actions neste commit",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Executa no push deste commit."
+    },
+    {
+      "check": "Revisão do proprietário do alinhamento arquitetural e ratificação do ADR-0006",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "P0-30; requer o proprietário (não pode ser autodeclarado)."
+    }
+  ],
+  "known_issues": [
+    "NN-023 só é fiscalizada hoje sobre o grafo declarado em ecosystem.json (CHK-BOUNDARIES); testes standalone, release pipeline, validação de Distribution Profile e DEVICE estão planejados por fase.",
+    "Requisitos marcados [Derivado] em docs/architecture/distribution.md §7 são dedução do agente e exigem ADR antes de virarem decisão.",
+    "MANIFEST §6 não foi alterado: Product Shell e Context estão definidos no nível de arquitetura. Promovê-los ao manifesto exigiria nova decisão registrada em manifest-changelog.md.",
+    "Nesta sessão não há acesso de leitura ao conteúdo de Lunet2D/Urbe; o mapa funcional será preenchido em P1-1/P1-2."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: revisar o alinhamento (ADR-0006 e docs/architecture/) e decidir DEC-0001..0004.",
+    "Próximo agente: P1-1 e P1-2 — inventários somente leitura de Lunet2D e Urbe com o mapa funcional e arquitetural; sem importar nem refatorar nada.",
+    "Após DEC-0002 e DEC-0004: P1-3 plano de importação."
+  ],
+  "decisions_required": [
+    "DEC-0001",
+    "DEC-0002",
+    "DEC-0003",
+    "DEC-0004"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/governance/decisions.json",
+    "docs/migration/README.md",
+    "docs/migration/inventory-template.md",
+    "docs/adr/0001-registro-de-decisoes-arquiteturais.md",
+    "docs/adr/0002-formato-dos-registros-canonicos.md",
+    "docs/adr/0003-checks-de-consistencia-em-csharp.md",
+    "docs/adr/0004-estrutura-inicial-do-repositorio.md",
+    "docs/adr/0005-portal-web-github-pages.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Conceitos novos têm uma única fonte (product-model.md, distribution.md); FAQ e README apenas apontam; NN-023 tem uma só fonte (MANIFEST)."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Não alterada; NN-023 a complementa. CHK-BOUNDARIES continua recusando dependência obrigatória do Hub."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Nenhuma reescrita; Urbe permanece em JavaScript."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Decisão do proprietário persistida na íntegra (ADD-0002) e DEC-0006 aponta para ela."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST, ADD-0002, ARCHITECTURE, ROADMAP, migração e ADRs consultados diretamente; FAQ declarado como navegação."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR-0006 com status Proposto; ratificação pedida junto de DEC-0001; nada marcado como Aceito."
+    },
+    {
+      "id": "NN-012",
+      "evidence": "Nenhuma importação; histórico e sequência obrigatória reforçados na migração."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Migração, refatoração, extração e redesenho separados (migration/README.md §6); nenhum código de produto tocado."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Lifecycles independentes preservados; nenhum release ou versão criado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana do alinhamento e gate da Fase 0 marcados [~]; estado do handoff 'review'."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado 'review', não 'done': há verificações pendentes."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs novos estáveis: NN-023, DEC-0006, ADD-0002, ADR-0006, P0-16..P0-30, P1-12; nenhum ID existente alterado."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhum Service, Shell, Store, schema, diretório ou abstração criado; conceitos apenas."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Itens em aberto e decisões pendentes listados explicitamente; visão separada de estado."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "platform/*, tools/* e workspaces/* citados no texto do proprietário registrados como não criados."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Inserida no MANIFEST, reproduzida no AGENTS, mapeada na matriz, fiscalizada por CHK-BOUNDARIES no grafo declarado e com mecanismos planejados por fase."
+    }
+  ],
+  "cost": null
+}
