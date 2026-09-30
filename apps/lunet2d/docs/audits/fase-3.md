@@ -70,7 +70,8 @@ Legenda: código (projeto), testes automáticos (T), docs (D), integração no a
 
 ## 7. Regressão
 
-- [x] Suíte completa verde: 269 testes.
+- [x] Suíte completa verde: 286 testes, incluindo `Fase3RoteiroTests` (17), a versão automatizada dos passos do roteiro que não dependem de tela: A1, A4–A5, B1–B8, C1–C5, D1–D4 (lógica), E1–E6, F1–F5, G1–G2, G4, H1–H6 e I1, executados sobre um projeto real do modelo Coletor.
+- Achado da automação: o Inspector ficava **vazio** no modelo Coletor de moedas (todos os campos eram privados). Corrigido marcando `score`, `best` e `lives` com `[Inspect]` (e `Range`/`Tooltip`).
 - [ ] APK do CI instala e abre: aguardando a release candidata.
 - [ ] Roteiro manual dos fluxos anteriores no aparelho: blocos A do roteiro.
 

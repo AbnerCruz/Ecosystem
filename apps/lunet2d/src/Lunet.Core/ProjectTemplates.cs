@@ -64,7 +64,9 @@ public static class ProjectTemplates
             SpriteFont font = null!;
             Texture2D coinTexture = null!;
             SoundEffect beep = null!;
-            int score, best, lives = 3;
+            [Inspect, Tooltip("Pontos desta partida")] int score;
+            [Inspect, Tooltip("Recorde salvo")] int best;
+            [Inspect, Range(0, 5), Tooltip("Vidas restantes")] int lives = 3;
             float spawnTimer;
 
             protected override void LoadContent()
