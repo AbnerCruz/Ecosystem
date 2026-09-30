@@ -12,9 +12,11 @@
 
 ## Próxima tarefa
 
-**P1-1 e P1-2 — inventário de Lunet2D e Urbe** (`docs/migration/inventory-<id>.md`, a partir do [template](docs/migration/inventory-template.md)), agora **incluindo o mapa funcional e arquitetural** com classificação futura proposta (ADD-0002 §16). As tarefas de alinhamento P0-16…P0-29 precedem P1-1/P1-2 e estão concluídas; a migração **não** foi iniciada.
+**P1-3 — Plano de importação de Lunet2D e Urbe** (um plano por produto, em `docs/migration/`), a partir dos inventários P1-1 e P1-2, já concluídos: [`inventory-lunet2d.md`](docs/migration/inventory-lunet2d.md) e [`inventory-urbe.md`](docs/migration/inventory-urbe.md).
 
-*Por quê:* MANIFEST §44.1 e NN-012 exigem documentar origem, branches, tags, releases, workflows, Pages, configuração e estratégia de histórico **antes** de qualquer importação. O inventário é somente leitura e produz os fatos de que o plano de importação (P1-3) precisa. DEC-0001…DEC-0004 foram aprovadas em 2026-09-30 ([ADD-0003](docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)); qualquer pendência nova do proprietário aparece no portal com seu objeto (DEC-0007).
+*Por quê:* a importação (P1-4/P1-5) só pode começar depois de um plano revisado (NN-012, MANIFEST §44). Os inventários mostraram que o plano precisa tratar riscos concretos (R-LUN-1…11, R-URB-1…12): `versionCode` do Android do Lunet2D, atualizadores do Urbe que leem `releases/latest` de `AbnerCruz/Urbe`, Pages por branch do Urbe Web, workflows e checks que dependem da raiz do repositório, secrets de assinatura.
+
+*Bloqueio:* a parte do plano sobre **releases e pipelines** depende de **DEC-0008** (canal de releases; pendente e visível no portal). A parte sobre código, histórico e tags (DEC-0002, técnica A) pode ser redigida já. **DEC-0009** (publicação do Urbe Web) não bloqueia o plano; define o item P1-10.
 
 ---
 
@@ -68,16 +70,16 @@ Alinhamento arquitetural pré-migração — Product Shells, distribuição inde
 
 Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar preservando histórico, restaurar builds/testes/releases.
 
-- [ ] P1-1 — Inventário do Lunet2D (`docs/migration/inventory-lunet2d.md`), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16).
-- [ ] P1-2 — Inventário do Urbe (`docs/migration/inventory-urbe.md`), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16).
-- [ ] P1-3 — Plano de importação por produto, a partir dos inventários P1-1/P1-2 (DEC-0002: técnica A; DEC-0004: origens confirmadas).
+- [x] P1-1 — Inventário do Lunet2D ([`inventory-lunet2d.md`](docs/migration/inventory-lunet2d.md)), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16). Evidência: handoff `HO-20260930-inventario-lunet2d`. Linha de base: 286 testes aprovados; CI da `main` verde.
+- [x] P1-2 — Inventário do Urbe ([`inventory-urbe.md`](docs/migration/inventory-urbe.md)), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16). Evidência: handoff `HO-20260930-inventario-urbe`. Linha de base: `npm run check` com 56/56 arquivos de teste; CI da `main` verde.
+- [ ] P1-3 — Plano de importação por produto, a partir dos inventários P1-1/P1-2 (DEC-0002: técnica A; DEC-0004: origens confirmadas). Seção de releases e pipelines depende de **DEC-0008**. Deve tratar cada risco dos inventários e listar, um a um, os ajustes técnicos inevitáveis (NN-013).
 - [ ] P1-4 — Importação do Lunet2D preservando histórico (PR de escopo restrito, NN-013).
 - [ ] P1-5 — Importação do Urbe preservando histórico (PR de escopo restrito, NN-013).
-- [ ] P1-6 — Restaurar build/testes/workflows/releases de cada produto; pipelines seletivos por path (NN-014).
+- [ ] P1-6 — Restaurar build/testes/workflows/releases de cada produto; pipelines seletivos por path (NN-014). Atenção herdada dos inventários: `versionCode` do Android do Lunet2D (R-LUN-1), checks do Urbe que leem `.github/workflows` na raiz do produto (R-URB-3), secrets de assinatura do Urbe a recriar pelo proprietário (R-URB-5).
 - [ ] P1-7 — Architecture tests sobre referências reais de código (NN-002, NN-003).
 - [ ] P1-8 — Auditoria pós-migração: commits/tags da origem presentes (NN-012).
-- [ ] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados).
-- [ ] P1-10 — Urbe Web: decidir, com base no inventário P1-2, como o Urbe Web é publicado no monorepo sem quebrar a publicação atual, e expor rota previsível no portal.
+- [ ] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados). Fontes hoje: Lunet2D publica `release-manifest.json`, `SHA256SUMS.txt` e notas em cada release; o Urbe publica APK, instalador Windows e `latest.yml` (checksum só pelo digest do GitHub). Depende de DEC-0008 para saber de quais repositórios ler.
+- [ ] P1-10 — Urbe Web: decidir (**DEC-0009**, pendente), com base no inventário P1-2 (§6: hoje publicado por Pages a partir da `main` de `AbnerCruz/Urbe`), como o Urbe Web é publicado no monorepo sem quebrar a publicação atual, e expor rota previsível no portal.
 - [ ] P1-11 — Registros canônicos de validação por build (contrato + estados de `definition-of-done.md` §4) e páginas `/testing/<componente>/<build>/` geradas deles.
 - [ ] P1-12 — Classificar candidatos (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter) a partir dos mapas funcionais **já validados pós-migração**: apenas proposta; nenhuma extração (passo 9 de [`docs/migration/README.md`](docs/migration/README.md) §7). Extração/modernização (passo 10) está fora da Fase 1 e exige ADR por extração.
 

@@ -230,6 +230,67 @@
       "decision": "Sim, como regra permanente: todas as decisões pendentes e validações humanas pendentes aparecem no portal, com o objeto a decidir ou validar.",
       "decidedAt": "2026-09-30",
       "record": "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md"
+    },
+    {
+      "id": "DEC-0008",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Onde ficam as releases e o canal de atualização dos produtos após a migração",
+      "context": "FATO (inventários P1-1/P1-2): os apps instalados do Urbe se atualizam lendo releases/latest do repositório AbnerCruz/Urbe (Android: src/native/bridge.js; Windows: electron-updater com owner/repo no package.json). As releases do Lunet2D (25, todas pre-release de desenvolvimento) são criadas pelo CI no repositório onde ele roda, sem atualizador instalado hoje. Em um monorepo, releases/latest é um só para todos os produtos. O APK do Urbe só se atualiza se for assinado com a mesma chave, guardada em secrets do repositório.",
+      "question": "Depois da migração, onde o pipeline publica as releases de Lunet2D e Urbe e de onde os apps instalados buscam atualizações?",
+      "alternatives": [
+        {
+          "option": "A — Canal por produto nos repositórios de origem: o pipeline do monorepo constrói e publica as releases em AbnerCruz/Urbe e AbnerCruz/Lunet2D",
+          "consequences": "Os apps já instalados continuam atualizando sem nenhuma mudança de código; releases/latest continua por produto (coerente com NN-014 e com o portal/Hub lendo releases por produto). Os repositórios de origem ficam vivos como canal de distribuição (não arquivados) e o proprietário cria um token limitado a releases daqueles repositórios como secret do monorepo, além das chaves de assinatura do Android."
+        },
+        {
+          "option": "B — Releases no repositório do Ecosystem, com tags prefixadas (urbe/v…, lunet2d/v…)",
+          "consequences": "Um só lugar, mas releases/latest passa a ser único para todos os produtos: os atualizadores atuais do Urbe quebrariam ou poderiam ler a release de outro produto. Exigiria mudar o código dos atualizadores (mudança de produto, fora da migração — NN-013) e publicar antes uma versão-ponte no canal antigo; quem não atualizar antes perde a atualização automática."
+        },
+        {
+          "option": "C — Híbrido: Urbe em A (obrigatório por causa dos apps instalados) e Lunet2D em B (sem atualizador instalado hoje)",
+          "consequences": "Preserva os usuários do Urbe e simplifica o Lunet2D, ao custo de dois modelos de distribuição. O atualizador do Lunet2D (Fase 12 do roadmap dele) nasceria já apontando para o monorepo."
+        }
+      ],
+      "consequences": "Bloqueia o plano de importação (P1-3) e a restauração de releases (P1-6). Independente da opção, o versionCode do Android do Lunet2D (hoje igual ao número de execução do CI) precisa continuar crescendo em um workflow novo (risco R-LUN-1).",
+      "manifestCompatibility": "A e C preservam o lifecycle independente de cada produto (NN-014) e a distribuição sem o Hub (NN-023). B é compatível, mas exige alterar o código dos produtos, que a migração não pode fazer (NN-013).",
+      "recommendation": "A, para os dois produtos: preserva os apps instalados sem alterar código, mantém um único modelo e o latest por produto. A escolha de B pode ser revista depois, como item próprio, com versão-ponte planejada.",
+      "related": [
+        "docs/migration/inventory-urbe.md",
+        "docs/migration/inventory-lunet2d.md",
+        "docs/migration/README.md"
+      ],
+      "raisedBy": "claude-code (inventários P1-1/P1-2)",
+      "raisedAt": "2026-09-30"
+    },
+    {
+      "id": "DEC-0009",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Publicação do Urbe Web após a migração",
+      "context": "FATO: o Urbe Web é publicado hoje pelo GitHub Pages em modo 'deploy from a branch' a partir da main de AbnerCruz/Urbe (workflow dinâmico com 314 execuções; a última em 2026-09-30). INFERÊNCIA: a URL é https://abnercruz.github.io/Urbe/ (não verificável daqui). O site e o PWA usam caminhos relativos e service worker por escopo. Depois da importação o Urbe ficará em apps/urbe/, e o Pages do Ecosystem já usa o modo GitHub Actions.",
+      "question": "Onde e como o Urbe Web é publicado depois da migração?",
+      "alternatives": [
+        {
+          "option": "A — Continuar em AbnerCruz/Urbe: o pipeline do monorepo publica o site estático no Pages desse repositório",
+          "consequences": "Nenhuma mudança visível: mesma URL, mesmo escopo de service worker, PWAs instalados preservados. Coerente com a opção A de DEC-0008. O repositório de origem precisa continuar vivo."
+        },
+        {
+          "option": "B — Publicar em uma rota do Pages do Ecosystem (por exemplo /Ecosystem/urbe/), com o portal oferecendo 'Abrir Urbe Web'",
+          "consequences": "Rota previsível no portal, um só lugar de publicação. A URL antiga deixa de ser a fonte (pode ficar um redirecionamento no repositório de origem); o escopo do service worker e PWAs já instalados mudam. O armazenamento do navegador é por origem (abnercruz.github.io), o que deve preservar os dados, mas isso precisa ser provado antes (P1-10)."
+        }
+      ],
+      "consequences": "Não bloqueia os inventários nem o plano de importação do código; define o item P1-10 do roadmap e o botão 'Abrir Urbe Web' do portal.",
+      "manifestCompatibility": "Ambas respeitam NN-013 se a mudança de hospedagem for feita como item próprio e não durante a importação; ADD-0001 pede que a migração não quebre a capacidade atual do Urbe de publicar sua versão web.",
+      "recommendation": "A durante a migração (comportamento preservado, NN-013). B pode ser adotada depois, como item próprio, se você quiser a rota no portal.",
+      "related": [
+        "docs/migration/inventory-urbe.md",
+        "docs/adr/0005-portal-web-github-pages.md"
+      ],
+      "raisedBy": "claude-code (inventário P1-2)",
+      "raisedAt": "2026-09-30"
     }
   ]
 }
