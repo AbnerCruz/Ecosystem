@@ -67,7 +67,7 @@ Ative o **modo avião** para este bloco.
 
 ## G. Inspector e Preview
 
-- **G1** Rode o jogo e toque em **🔍** no Preview. Aparecem os campos do seu jogo; os valores mudam sozinhos enquanto o jogo roda.
+- **G1** Rode o jogo e toque em **🔍** no Preview. No Coletor de moedas aparecem `score`, `best` e `lives` (com barra de 0 a 5); os valores mudam sozinhos enquanto o jogo roda. (O Inspector mostra campos públicos ou marcados com `[Inspect]`; campos privados comuns não aparecem.)
 - **G2** Altere um número (por exemplo a pontuação ou velocidade) no Inspector: o jogo reage na hora. Um `bool` vira caixa de marcar; um enum, uma lista para escolher.
 - **G3** Cole este código num jogo em branco (cabeçalho `using Lunet;` no topo) para testar os atributos:
   ```csharp

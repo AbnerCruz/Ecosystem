@@ -60,6 +60,7 @@
 
 ### Fixed
 
+- Inspector vazio no modelo Coletor de moedas: `score`, `best` e `lives` agora aparecem (`[Inspect]`).
 - Build Android do painel Git: `System.IO.Path` explícito e remoção da atribuição indevida ao parâmetro de progresso `_` na inicialização do repositório.
 
 - Barra do editor: com 6 botões o ⋯ (menu, onde fica "Exportar projeto (ZIP)") saía da tela em aparelhos estreitos; os botões agora dividem a largura.

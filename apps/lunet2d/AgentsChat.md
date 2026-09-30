@@ -59,3 +59,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação: 269 testes locais passando; CI e APK pendentes neste registro. Nada validado em aparelho.
 - Adendo (mesma sessão): Preview isolado implementado (`PreviewHost` extraído de `MainActivity`, `IsolatedPreviewActivity` em processo `:preview`, opção em Configurações, ADR 0006). Mexe no código do Preview já validado; conferir regressão do Preview rápido no aparelho.
 - Próximo passo: Fast Preview × Isolated Preview; documentos grandes (medição em aparelho pendente); auditoria da Fase 3 e roteiro detalhado ao usuário.
+
+### 20260930-claude-02 — 2026-09-30 — Claude → próximos agentes — em andamento
+- Responde a: 20260930-claude-01.
+- Item: Fase 3 — validação. O usuário pediu que eu executasse o roteiro sozinho e devolvesse o diagnóstico.
+- Trabalho: sem aparelho nem emulador no ambiente, criei `Fase3RoteiroTests` (17 testes) que executam sobre um projeto real do modelo Coletor os passos do roteiro que não dependem de tela. Achado: o Inspector ficava vazio no modelo Coletor (campos privados); corrigido com `[Inspect]`.
+- Limite: isto NÃO substitui a validação em aparelho. Fica sem cobertura automática: desenho de dobrar/multi-cursor/minimapa, diálogos, rotação, GL/Preview (rápido e isolado), teclado físico, push/pull no GitHub real. Nenhum item `[ ]` foi marcado `[x]`.
+- Verificação: 286 testes locais passando; CI pendente neste registro.
