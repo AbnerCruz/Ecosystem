@@ -19,12 +19,12 @@
 | REQ-006 | §10.2 | F0 | RM-F0-14 — Separar integração e publicação (release por tag) | [?] | Dry-run em branch de teste: push em `main` não publica; tag publica em repositório de teste. | G0 |
 | REQ-006 | §10.2 | F6 | RM-F6-12 — Release candidato 2.0 | [ ] | CI + smoke instalador/APK. | G6 |
 | REQ-007 | §1.2 | F1 | RM-F1-25 — Testes de invariante local-first/offline e integridade de notas | [ ] | Falha se `fetch` for chamado no fluxo essencial. | G1 |
-| REQ-008 | §6.1 | F4 | RM-F4-02 — Suíte de conformidade `native-contract` por adapter | [ ] | Falha se capacidade declarada não funcionar. | G4 |
+| REQ-008 | §6.1 | F4 | RM-F4-02 — Suíte de conformidade `native-contract` por adapter | [x] | Falha se capacidade declarada não funcionar. | G4 |
 | REQ-008 | §6.1 | F4 | RM-F4-15 — Matriz de capacidades por plataforma verificada | [ ] | `check` compara tabela e contrato. | G4 |
 | REQ-009 | §8 | F5 | RM-F5-01 — Gate de regressão de performance no CI | [ ] | Teste com regressão injetada. | G5 |
 | REQ-009 | §8 | F5 | RM-F5-08 — Validar orçamento pós-migração | [ ] | `perf:check` verde. | G5 |
 | REQ-010 | §7.1 | F3 | RM-F3-01 — Índice de testes de segurança e rastreio do threat model | [ ] | Teste negativo: ameaça sem teste falha. | G3 |
-| REQ-010 | §7.1 | F3 | RM-F3-18 — Teste de esquemas de links externos | [ ] | `tests/security/links.mjs`. | G3 |
+| REQ-010 | §7.1 | F3 | RM-F3-18 — Teste de esquemas de links externos | [x] | `tests/security/links.mjs`. | G3 |
 | REQ-011 | §1.2 | F0 | RM-F0-17 — Definition of Done no PR template e issue templates | [x] | Revisão manual + `check-traceability` valida formato de RM-id citado (opcional). | G0 |
 | REQ-011 | §1.2 | F6 | RM-F6-10 — Auditoria de features novas versus ledger | [ ] | Relatório. | G6 |
 | REQ-012 | §1.2 | F0 | RM-F0-13 — Gate de dívida (`tools/check-debt.mjs`) | [x] | `tests/debt.mjs` (injeção de sobrescrita falha). | G0 |
@@ -93,10 +93,10 @@
 | REQ-051 | §7.2 | F3 | RM-F3-04 — UI de aprovação mostra código, hash e alcance | [ ] | Teste de UI e de diff em mudança de código. | G3 |
 | REQ-051 | §7.2 | F3 | RM-F3-05 — SHA-256 obrigatório e reaprovação; ferramentas de IA com escrita | [ ] | `customize.mjs` ampliado. | G3 |
 | REQ-053 | §7.4 | F3 | RM-F3-07 — Mitigações de credenciais de IA | [ ] | Testes de manifest, de export sem chaves e de UI. | G3 |
-| REQ-055 | §7.3 | F3 | RM-F3-09 — Endurecer permissões, protocolo e IPC do Electron | [ ] | Testes de `main.js` (RM-F3-19): permissão negada a iframe, host inválido negado. | G3 |
-| REQ-055 | §7.3 | F3 | RM-F3-10 — `printToPDF` isolado e hooks de teste inertes | [ ] | Teste: hooks ignorados em build normal. | G3 |
-| REQ-056 | §7.3 | F3 | RM-F3-11 — Android: `printHtml`, FileProvider e backup | [ ] | JUnit/instrumentado + teste do manifest. | G3 |
-| REQ-056 | §7.3 | F3 | RM-F3-12 — Android: validação canônica em todas as operações e symlinks | [ ] | JUnit com `..`, symlink e absoluto. | G3 |
+| REQ-055 | §7.3 | F3 | RM-F3-09 — Endurecer permissões, protocolo e IPC do Electron | [?] | Testes de `main.js` (RM-F3-19): permissão negada a iframe, host inválido negado. | G3 |
+| REQ-055 | §7.3 | F3 | RM-F3-10 — `printToPDF` isolado e hooks de teste inertes | [?] | Teste: hooks ignorados em build normal. | G3 |
+| REQ-056 | §7.3 | F3 | RM-F3-11 — Android: `printHtml`, FileProvider e backup | [?] | JUnit/instrumentado + teste do manifest. | G3 |
+| REQ-056 | §7.3 | F3 | RM-F3-12 — Android: validação canônica em todas as operações e symlinks | [?] | JUnit com `..`, symlink e absoluto. | G3 |
 | REQ-057 | §7.3 | F3 | RM-F3-13 — Sandbox de embeds sem `allow-same-origin` com scripts | [ ] | `pages-free.mjs`: embed da própria origem não obtém acesso. | G3 |
 | REQ-057 | §7.3 | F3 | RM-F3-14 — CDN com versão fixa e SRI ou vendorização | [ ] | Teste de `integrity=`; export abre offline. | G3 |
 | REQ-058 | §7.3 | F3 | RM-F3-15 — Limites de importação de ZIP | [ ] | Testes zip-slip e zip-bomb. | G3 |
@@ -106,8 +106,8 @@
 | REQ-061 | §9 | F4 | RM-F4-05 — Cenários E2E críticos (web) | [ ] | Cenários passam em Chromium (D1) e emulação D2. | G4 |
 | REQ-061 | §9 | F4 | RM-F4-06 — E2E de gestos e cidade (paridade do toque) | [ ] | Cenários E2E de toque emulado. | G4 |
 | REQ-061 | §9 | F4 | RM-F4-07 — Smoke E2E do Electron | [ ] | Passa no Windows CI. | G4 |
-| REQ-062 | §9 | F3 | RM-F3-19 — Testes de `main.js` e `preload.js` | [ ] | `tests/desktop-main.mjs`, `tests/desktop-preload.mjs`. | G3 |
-| REQ-062 | §9 | F3 | RM-F3-20 — Testes JUnit do plugin Android e SW real | [ ] | `app/src/test/...`, `tests/e2e/sw.spec`. | G3 |
+| REQ-062 | §9 | F3 | RM-F3-19 — Testes de `main.js` e `preload.js` | [x] | `tests/desktop-main.mjs`, `tests/desktop-preload.mjs`. | G3 |
+| REQ-062 | §9 | F3 | RM-F3-20 — Testes JUnit do plugin Android e SW real | [~] | `app/src/test/...`, `tests/e2e/sw.spec`. | G3 |
 | REQ-063 | §9 | F0 | RM-F0-05 — Runner de testes multiplataforma | [?] | Teste do runner com script falho/passando; roda em Windows (CI matrix) e Linux. | G0 |
 | REQ-064 | §9 | F2 | RM-F2-02 — Harness de teste de produção do monólito | [ ] | Cobre boot, abrir vault fixture, criar nota, mundo. | G2 |
 | REQ-064 | §9 | F2 | RM-F2-18 — Eliminar testes dependentes de texto de `app.js` | [ ] | grep de `readFileSync('src/app.js')` em `tests/` = 0. | G2 |
@@ -126,9 +126,9 @@
 | REQ-074 | §8 | F5 | RM-F5-05 — Carregamento sob demanda de módulos pesados | [ ] | TTI melhora vs baseline; E2E funcional. | G5 |
 | REQ-074 | §8 | F5 | RM-F5-06 — Load do vault com concorrência limitada | [ ] | Medir abertura em M/L (web IDB, Electron). | G5 |
 | REQ-075 | §8 | F5 | RM-F5-07 — Teto e compactação de histórico | [ ] | Teste de teto; migração de history v1. | G5 |
-| REQ-076 | §6.2 | F4 | RM-F4-01 — Definir e implementar `UrbeNative.contract` | [ ] | Teste de shape por adapter. | G4 |
-| REQ-076 | §6.2 | F4 | RM-F4-02 — Suíte de conformidade `native-contract` por adapter | [ ] | Falha se capacidade declarada não funcionar. | G4 |
-| REQ-079 | §6.2 | F4 | RM-F4-03 — Paridade de exportação no Electron (`saveFile`) | [ ] | Teste de `saveFile` (caminho, cancelamento). | G4 |
+| REQ-076 | §6.2 | F4 | RM-F4-01 — Definir e implementar `UrbeNative.contract` | [x] | Teste de shape por adapter. | G4 |
+| REQ-076 | §6.2 | F4 | RM-F4-02 — Suíte de conformidade `native-contract` por adapter | [x] | Falha se capacidade declarada não funcionar. | G4 |
+| REQ-079 | §6.2 | F4 | RM-F4-03 — Paridade de exportação no Electron (`saveFile`) | [?] | Teste de `saveFile` (caminho, cancelamento). | G4 |
 | REQ-080 | §10.3 | F4 | RM-F4-11 — `THIRD-PARTY-NOTICES` | [ ] | `tools/check-license.mjs` valida cobertura das dependências. | G4 |
 | REQ-080 | §10.3 | F4 | RM-F4-12 — `LICENSE` de todos os direitos reservados | [ ] | `check-license` verde. | G4 |
 | REQ-081 | §10.2 | F4 | RM-F4-10 — Política de release, canais e rollback | [ ] | Dry-run de release e de rollback em repositório de teste. | G4 |
@@ -157,4 +157,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 80; com item no ROADMAP: 80.
-- Itens no ROADMAP: 118; concluídos `[x]`: 14.
+- Itens no ROADMAP: 118; concluídos `[x]`: 18.

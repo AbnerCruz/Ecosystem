@@ -971,7 +971,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G3
 
 ### RM-F3-09 — Endurecer permissões, protocolo e IPC do Electron
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-055
 - **SPEC:** §7.3
 - **Fase:** F3
@@ -982,9 +982,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** THREAT-MODEL T-Electron.
 - **Aceite:** Sem permissões/arquivos além do necessário.
 - **Gate:** G3
+- **Evidência:** native/desktop/guards.js + main.js (permissões só app://urbe, protocolo com allowlist e host exato, IPC por igualdade); testes com Electron simulado; NÃO verificado no Electron real
 
 ### RM-F3-10 — `printToPDF` isolado e hooks de teste inertes
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-055
 - **SPEC:** §7.3
 - **Fase:** F3
@@ -995,9 +996,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** —
 - **Aceite:** Sem superfície residual de teste em produção.
 - **Gate:** G3
+- **Evidência:** printToPDF via app://print (sessão isolada, sem preload, navegação bloqueada); URBE_TEST_* só com URBE_TEST_MODE=1 e app não empacotado; teste simulado
 
 ### RM-F3-11 — Android: `printHtml`, FileProvider e backup
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-056
 - **SPEC:** §7.3
 - **Fase:** F3
@@ -1008,9 +1010,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** THREAT-MODEL T-Android.
 - **Aceite:** Sem exposição da origem do app na impressão.
 - **Gate:** G3
+- **Evidência:** allowBackup=false + data_extraction_rules/backup_rules; FileProvider mínimo; printHtml sem JS e base https://print.urbe.invalid/; NÃO compilado (sem Android SDK)
 
 ### RM-F3-12 — Android: validação canônica em todas as operações e symlinks
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-056
 - **SPEC:** §7.3
 - **Fase:** F3
@@ -1021,6 +1024,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** —
 - **Aceite:** Nenhuma operação sem validação no Java.
 - **Gate:** G3
+- **Evidência:** PathGuard.java/UrlGuard.java em readTexts/listTree/saveFile (GuardChecks + JUnit4 passam em javac 21); Filesystem do Capacitor não passa pelo Guard — mitigado no JS (safeRel), ver contracts/native.md §5
 
 ### RM-F3-13 — Sandbox de embeds sem `allow-same-origin` com scripts
 - **Estado:** [ ]
@@ -1088,7 +1092,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G3
 
 ### RM-F3-18 — Teste de esquemas de links externos
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-010
 - **SPEC:** §7.1
 - **Fase:** F3
@@ -1099,9 +1103,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** THREAT-MODEL T-Links.
 - **Aceite:** Allowlist verificada nas três plataformas.
 - **Gate:** G3
+- **Evidência:** tests/security/links.mjs (~70 vetores) em Electron, ponte e UrlGuard.java
 
 ### RM-F3-19 — Testes de `main.js` e `preload.js`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-062
 - **SPEC:** §9
 - **Fase:** F3
@@ -1112,9 +1117,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** TEST-MATRIX §3.
 - **Aceite:** Guard de IPC, permissões, protocolo, `external()` cobertos.
 - **Gate:** G3
+- **Evidência:** tests/desktop-main.mjs, tests/desktop-preload.mjs (Electron simulado); smoke real em RM-F4-07
 
 ### RM-F3-20 — Testes JUnit do plugin Android e SW real
-- **Estado:** [ ]
+- **Estado:** [~]
 - **REQ:** REQ-062
 - **SPEC:** §9
 - **Fase:** F3
@@ -1125,12 +1131,12 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** TEST-MATRIX §3.
 - **Aceite:** Plugin e SW cobertos por execução real.
 - **Gate:** G3
-
+- **Evidência:** JUnit4 + GuardChecks (javac) prontos; falta teste do Service Worker real (RM-F4-04/05)
 
 ## F4 — Plataformas, release e distribuição (G4)
 
 ### RM-F4-01 — Definir e implementar `UrbeNative.contract`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-076
 - **SPEC:** §6.2
 - **Fase:** F4
@@ -1141,9 +1147,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** contracts/native.md.
 - **Aceite:** Contrato exposto nas três plataformas.
 - **Gate:** G4
+- **Evidência:** UrbeNative.contract em preload.js, bridge.js e web; docs/v2/contracts/native.md
 
 ### RM-F4-02 — Suíte de conformidade `native-contract` por adapter
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-076, REQ-008
 - **SPEC:** §6.1, §6.2
 - **Fase:** F4
@@ -1154,9 +1161,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** PLATFORMS §2.
 - **Aceite:** Paridade comprovada; diferenças declaradas.
 - **Gate:** G4
+- **Evidência:** tests/native-contract.mjs: mesmas asserções em Electron, Android (simulado) e web
 
 ### RM-F4-03 — Paridade de exportação no Electron (`saveFile`)
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-079
 - **SPEC:** §6.2
 - **Fase:** F4
@@ -1167,6 +1175,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** tutorial.
 - **Aceite:** Exportar salva no Windows como no Android/web.
 - **Gate:** G4
+- **Evidência:** fs:saveFile (dialog.showSaveDialog) com testes simulados; NÃO verificado no Electron real
 
 ### RM-F4-04 — Scaffold Playwright e fixtures E2E
 - **Estado:** [?]

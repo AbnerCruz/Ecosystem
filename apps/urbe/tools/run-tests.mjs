@@ -14,13 +14,15 @@ let jobs = Math.max(1, Math.min(4, cpus().length));
 const filters = [];
 for (let i = 0; i < args.length; i++) { if (args[i] === '--jobs') jobs = Math.max(1, +args[++i] || 1); else filters.push(args[i]); }
 
-const files = readdirSync(join(ROOT, 'tests')).filter((f) => f.endsWith('.mjs')).sort()
+// tests/*.mjs e tests/security/*.mjs (tests/e2e, helpers, lib e fixtures não são testes unitários)
+const DIRS = ['', 'security'];
+const files = DIRS.flatMap((d) => readdirSync(join(ROOT, 'tests', d), { withFileTypes: true }).filter((e) => e.isFile() && e.name.endsWith('.mjs')).map((e) => (d ? d + '/' : '') + e.name)).sort()
   .filter((f) => !filters.length || filters.some((x) => f.includes(x)));
 if (!files.length) { console.error('nenhum teste encontrado'); process.exit(1); }
 
 const run = (file) => new Promise((resolve) => {
   const t0 = Date.now();
-  const child = spawn(process.execPath, [join('tests', file)], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, [join('tests', ...file.split('/'))], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
   let out = '';
   child.stdout.on('data', (d) => { out += d; });
   child.stderr.on('data', (d) => { out += d; });
