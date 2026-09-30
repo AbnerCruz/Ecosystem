@@ -13,7 +13,7 @@
   "component": "ecosystem",
   "state": "review",
   "branch": "claude/new-session-vfwhkv",
-  "commit": null,
+  "commit": "f54c9f6b68f18d154c3d8922f219c55b0e5aa21d",
   "pr": null,
   "files_changed": [
     "AGENTS.md",
@@ -88,8 +88,8 @@
     {
       "check": "Workflow consistency no GitHub Actions neste commit",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Executa no push deste commit."
+      "result": "passed",
+      "evidence": "Workflow 'consistency' concluído com success no commit f54c9f6 (branch claude/new-session-vfwhkv)."
     },
     {
       "check": "Revisão do proprietário do alinhamento arquitetural e ratificação do ADR-0006",
