@@ -58,7 +58,11 @@
       for(const p of V1_FILES.concat(paths.filter(function(x){return x.indexOf('.urbe/origens/')===0})))if(paths.includes(p))this.originals.set(p,await this.adapter.read(vault,p));
       if(this.vaultInfo.state==='corrupt'&&vraw!=null)this.originals.set(Meta.PATH,vraw);
       var meta=null;try{meta=JSON.parse(this.originals.get(MAPA)||'null')}catch(_){}
-      if(meta&&typeof meta.v==='number'&&meta.v>4){this.mapaReadonly=true;this.foreign.push({path:MAPA,version:meta.v,reason:'future'})}
+      /* mapa.v é lido e validado (REQ-040): ausente = mapa legado (tratado como v1); 1..4 = formatos da 1.x; maior = futuro;
+         qualquer outro valor = desconhecido. Futuro e desconhecido são preservados (a persistência não reescreve o mapa). */
+      if(meta&&typeof meta==='object'){var mv=meta.v;
+        if(typeof mv==='number'&&mv>4){this.mapaReadonly=true;this.foreign.push({path:MAPA,version:mv,reason:'future'})}
+        else if(mv!==undefined&&!(Number.isInteger(mv)&&mv>=1)){this.mapaReadonly=true;this.foreign.push({path:MAPA,version:mv,reason:'unknown'})}}
       // journal de uma operação interrompida: v2 (2.x) ou v1 (1.x); qualquer outra versão é preservada
       var journal=null,journalPath=null;
       for(const cand of [[JOURNAL_V2,2],[JOURNAL_V1,1]]){
@@ -96,6 +100,8 @@
       if(this.vaultInfo.state==='current'&&this.vaultInfo.data)files.set(Meta.PATH,Meta.serialize(this.vaultInfo.data));
       return files
     }
+    /* O mapa vem de quem desenha o mundo (metadataProvider); null = mundo ainda carregando, fica o último mapa conhecido. */
+    refreshMeta(){if(typeof this.metadataProvider!=='function')return;var m=null;try{m=this.metadataProvider()}catch(e){console.warn('persistence: mapa indisponível',e)}if(m&&typeof m==='object')this.meta=m}
     schedule(){if(this.suspended||!this.vault||!this.adapter)return;this.pending=true;this.state='dirty';this.events.emit('workspace:dirty',{vault:this.vault});if(this.timer)return;var self=this;this.timer=setTimeout(function(){self.timer=null;self.flush()},this.delay)}
 
     /* Primeira gravação de um vault sem `vault.json`: backup restaurável dos arquivos 1.x existentes (REQ-038) e registro da migração. */
@@ -112,7 +118,7 @@
       if(this.busy){this.pending=true;return false}this.busy=true;this.pending=true;
       try{
         await this.ensureVaultFormat();
-        while(this.pending){this.pending=false;var desired=this.desired(metadata===undefined?this.meta:metadata);this.state='saving';this.events.emit('workspace:saving',{vault:this.vault});
+        while(this.pending){this.pending=false;if(metadata===undefined)this.refreshMeta();var desired=this.desired(metadata===undefined?this.meta:metadata);this.state='saving';this.events.emit('workspace:saving',{vault:this.vault});
           var changed=[];for(const pair of desired)if(this.snapshot.get(pair[0])!==pair[1]&&pair[0]!==JOURNAL_V2)changed.push(pair[0]);
           var removed=Array.from(this.snapshot.keys()).filter(path=>!desired.has(path)&&!path.startsWith('.urbe/'));
           /* o diário (cópia de tudo) só protege operações que mexem em vários arquivos de uma vez;

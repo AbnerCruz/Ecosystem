@@ -442,7 +442,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Evidência:** adaptadores idb/fsa/router extraídos de app.js (−133 linhas); suíte de contrato: tests/adapter-contract.mjs + tests/e2e/adapters.e2e.mjs (IDB e OPFS reais)
 
 ### RM-F1-13 — Escritor único do mapa e leitura de `mapa.v`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-040
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -453,6 +453,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG §0.
 - **Aceite:** Só `WorkspacePersistence` escreve `mapa.json`.
 - **Gate:** G1
+- **Evidência:** mapa.json só gravado pelo WorkspacePersistence (metadataProvider); mapa.v validado; 2 estadoDesejado mortos apagados; tests/e2e/map-writer.e2e.mjs (falha no código anterior) + vault-format §6b/6c; exceção de migração repassada a RM-F1-19
 
 ### RM-F1-14 — IDs estáveis de regiões, construções e vínculos
 - **Estado:** [ ]
@@ -525,7 +526,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **SPEC:** §5.2
 - **Fase:** F1
 - **Depende:** RM-F1-07
-- **Implementação:** Marcador em `vault.json`; sem recopiar `Cidades/` a cada boot; opção de arquivar.
+- **Implementação:** Marcador em `vault.json`; sem recopiar `Cidades/` a cada boot; opção de arquivar. A gravação do mapa de `Urbe` feita por `urbeEnsureSingleVault` antes do `load` passa a ter backup ou a ser feita pelo `WorkspacePersistence` (último escritor do mapa fora dele, deixado por RM-F1-13).
 - **Integração:** `urbeEnsureSingleVault`.
 - **Testes:** Fixture `v1-cidades-mescladas`: 3 boots consecutivos, mesmo resultado.
 - **Documentação:** MIGRATION.md.

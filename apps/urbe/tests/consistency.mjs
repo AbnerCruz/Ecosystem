@@ -15,7 +15,7 @@ for(const f of js){
   check(sw.includes("'./"+f+"'"),f+' não está no service worker');
 }
 for(const f of css){check(index.includes('"./'+f+'"'),f+' não está no index.html');check(sw.includes("'./"+f+"'"),f+' não está no service worker')}
-check(/git ls-files '\*\.js'/.test(ci)&&/node --check/.test(ci),'o CI precisa conferir a sintaxe de todos os .js');
+check(/git ls-files (-z )?'\*\.js'/.test(ci)&&/node --check/.test(ci),'o CI precisa conferir a sintaxe de todos os .js');
 check(/npm run check/.test(ci)&&/tools\/run-tests\.mjs/.test(read('tools/check-all.mjs')),'o CI precisa rodar todos os testes de tests/ (npm run check → run-tests)');
 /* nada no index/sw aponta para arquivo que não existe */
 for(const m of index.matchAll(/(?:src|href)="\.\/([^"]+)"/g))check(fs.existsSync(path.join(root,m[1])),'index.html aponta para '+m[1]+', que não existe');

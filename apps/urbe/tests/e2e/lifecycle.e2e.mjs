@@ -18,8 +18,7 @@ try {
     return d.id;
   });
   assert.ok(id, 'nota criada');
-  // 1.8.2: criar nota pela API do core não dispara a camada de sincronização legada; salvar explicitamente
-  // (workspace.save) garante que o mapa (posição + ID) seja gravado. A unificação dos escritores é REQ-040 (RM-F1-13).
+  // o mapa chega sozinho pelo escritor único (tests/e2e/map-writer.e2e.mjs); aqui salvar explicitamente só encurta a espera
   await page.evaluate(() => UrbeCore.commands.execute('workspace.save'));
   await waitSaved(page);
   let vault = await readVault(page);

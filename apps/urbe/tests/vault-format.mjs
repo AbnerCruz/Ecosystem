@@ -100,6 +100,35 @@ const snapshot = (env) => new Map([...env.disk()].map(([k, v]) => [k, sha(v)]));
   assert.equal(JSON.parse(env.get('.urbe/mapa.json')).v, 99);
 }
 
+// 6b) mapa.v inválido (não é inteiro ≥ 1) é preservado; mapa sem `v` é legado e continua gravável (REQ-040)
+{
+  for (const [v, readonly] of [['quatro', true], [0, true], [2.5, true], [undefined, false], [2, false]]) {
+    const files = readFixture('v1-mapa-v4'), m = JSON.parse(files.get('.urbe/mapa.json'));
+    if (v === undefined) delete m.v; else m.v = v;
+    files.set('.urbe/mapa.json', JSON.stringify(m));
+    const env = createEnv(files); await env.p.load('V');
+    assert.equal(env.p.info().mapaReadonly, readonly, 'mapa.v=' + String(v));
+    env.docs.upsert({ ...env.docs.get('Alfa.md'), content: 'w\n' }); await env.p.flush({ v: 4, notas: {} });
+    if (readonly) assert.equal(env.get('.urbe/mapa.json'), files.get('.urbe/mapa.json'), 'mapa preservado (v=' + String(v) + ')');
+    else assert.equal(JSON.parse(env.get('.urbe/mapa.json')).v, 4);
+  }
+}
+
+// 6c) escritor único: o mapa vem do metadataProvider a cada gravação; null (mundo carregando) mantém o último mapa
+{
+  const env = createEnv(readFixture('v1-mapa-v4')); await env.p.load('V');
+  let mapa = null; env.p.metadataProvider = () => mapa;
+  env.docs.upsert({ ...env.docs.get('Alfa.md'), content: 'p\n' }); await env.p.flush();
+  assert.equal(JSON.parse(env.get('.urbe/mapa.json')).v, 4, 'sem provider pronto, grava o mapa conhecido');
+  mapa = { v: 4, notas: { 'Alfa.md': { x: 77, y: 1 } }, regioes: [], construcoes: [] };
+  env.docs.upsert({ ...env.docs.get('Alfa.md'), content: 'q\n' }); await env.p.flush();
+  assert.equal(JSON.parse(env.get('.urbe/mapa.json')).notas['Alfa.md'].x, 77, 'mapa atual do provider');
+  env.p.metadataProvider = () => { throw new Error('quebrado'); };
+  const warn = console.warn; console.warn = () => {};
+  env.docs.upsert({ ...env.docs.get('Alfa.md'), content: 'r\n' }); await env.p.flush(); console.warn = warn;
+  assert.equal(JSON.parse(env.get('.urbe/mapa.json')).notas['Alfa.md'].x, 77, 'provider com erro não apaga o mapa');
+}
+
 // 7) journal v2 é recuperado e removido
 {
   const files = new Map([['A.md', 'disco\n']]);

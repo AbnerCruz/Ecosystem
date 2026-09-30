@@ -10,6 +10,7 @@
 - [F] **`mapa.v` nunca é lido** (escrito 1, 2 ou 4). O único gatilho real é `mapa.mundo !== 'placas-1'` (`app.js:3230`; `URBE_MUNDO` `app.js:5226`).
 - [F] **Dois escritores de `.urbe/mapa.json`:** `rodarSinc` (`app.js:2536-2543`) e `WorkspacePersistence.flush` (`workspace.js:23,34`); conciliação via `estadoDesejado` (`app.js:4469-4487`). O journal só protege o caminho do `WorkspacePersistence`. [I] risco de corrida/dupla escrita.
 - [F] Quatro camadas de `estadoDesejado`: `app.js:2041` (v:2), `2517` (v:4), `3226` (final: `version`, `mundo`, `binarios`), `3395` (estabiliza `salvo`), `4469` (reescreve `notas` do DocumentStore).
+- [C] **Atualização RM-F1-13 (REQ-040):** `WorkspacePersistence` é o único escritor de `.urbe/mapa.json` no uso normal. `rodarSinc` grava só pastas e binários e agenda/força o `flush`; o mapa vem de `persistence.metadataProvider` (a cadeia `estadoDesejado`), que devolve `null` enquanto a cidade carrega (fica o mapa lido do disco). `mapa.v` é validado no load: ausente = legado (v1); 1..4 = 1.x; `>4` = futuro; qualquer outro valor = desconhecido. Futuro e desconhecido são preservados (`mapaReadonly`). As duas declarações mortas de `estadoDesejado` (v:2 e v:4) foram apagadas. Exceção remanescente: a migração multi-cidade `urbeEnsureSingleVault` grava o mapa do vault `Urbe` antes do `load`; ela entra em RM-F1-19. Testes: `tests/e2e/map-writer.e2e.mjs` (pilha de toda gravação do mapa passa por `workspace.js`) e `tests/vault-format.mjs` §6b/6c.
 
 ## 1. Formatos do vault (todas as plataformas)
 

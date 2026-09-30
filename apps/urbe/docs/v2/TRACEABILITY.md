@@ -79,7 +79,7 @@
 | REQ-037 | §5.1 | F1 | RM-F1-02 — Harness de abertura/migração de fixtures | [x] | Rodar contra 1.8.2 (baseline) e depois a cada item. | G1 |
 | REQ-038 | §5.1 | F1 | RM-F1-07 — Motor de backup pré-migração e restauração | [x] | Testes: backup íntegro, restauração byte a byte, migração repetida não duplica. | G1 |
 | REQ-039 | §5.2 | F1 | RM-F1-08 — Fonte única de tipos de artefato | [x] | `tests/artifacts.mjs` (tabela de casos); `grep` de listas antigas retorna 0. | G1 |
-| REQ-040 | §5.2 | F1 | RM-F1-13 — Escritor único do mapa e leitura de `mapa.v` | [ ] | Fixtures mapa v1/v2/v4; teste de dupla escrita (não há); assinatura de binários preservada. | G1 |
+| REQ-040 | §5.2 | F1 | RM-F1-13 — Escritor único do mapa e leitura de `mapa.v` | [x] | Fixtures mapa v1/v2/v4; teste de dupla escrita (não há); assinatura de binários preservada. | G1 |
 | REQ-041 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [ ] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
 | REQ-042 | §5.2 | F1 | RM-F1-15 — Sidecar de identidade e reconciliação | [ ] | Fixtures: rename externo, cópia de vault sem `.urbe/`, cópias idênticas (ambiguidade tratada). | G1 |
 | REQ-042 | §5.2 | F1 | RM-F1-16 — GC de órfãos em history/trash/compositions | [ ] | Fixture com órfãos; dry-run e execução. | G1 |
@@ -193,4 +193,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 32.
+- Itens no ROADMAP: 146; concluídos `[x]`: 33.
