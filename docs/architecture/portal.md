@@ -70,6 +70,8 @@ Uma falha de publicação não bloqueia desenvolvimento: o workflow não é pré
 
 **Pré-requisito do proprietário:** em *Settings → Pages*, definir *Source* = **GitHub Actions**.
 
+O workflow valida também o estado efetivo do Pages via API antes de publicar: `build_type` precisa ser `workflow`. Isso evita um falso positivo em que o workflow customizado termina verde, mas a publicação legada da branch continua servindo `README.md`. Antes do upload, o artefato é recusado se não contiver `index.html`, `app.js`, `style.css` e a projeção gerada na raiz esperada, ou se contiver `README.md`.
+
 ## 6. Estrutura
 
 ```text

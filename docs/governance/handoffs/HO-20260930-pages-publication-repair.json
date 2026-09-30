@@ -1,0 +1,95 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20260930-pages-publication-repair",
+  "category": "INCIDENT",
+  "timestamp": "2026-09-30T18:23:00Z",
+  "agent": {
+    "id": "chatgpt-gpt-5.6-sol",
+    "kind": "ai-agent"
+  },
+  "task_id": "P0-14",
+  "component": "portal",
+  "state": "verifying",
+  "branch": "main",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/pages.yml",
+    "docs/architecture/portal.md",
+    "docs/governance/handoffs/HO-20260930-pages-publication-repair.json",
+    "site/index.html"
+  ],
+  "work_completed": [
+    "Investigado incidente em que https://abnercruz.github.io/Ecosystem/ servia README.md apesar de duas execuções manuais do workflow pages concluírem com sucesso.",
+    "Confirmado nos logs anteriores que o artefato customizado continha index.html, app.js, style.css e data/ecosystem-status.json, enquanto também existiram execuções do workflow dinâmico legado 'pages build and deployment'.",
+    "pages.yml passa a disparar explicitamente em push para main, sem depender de condição de job que havia produzido execução skipped em main.",
+    "Workflow agora consulta a API do Pages e falha se o estado efetivo não for build_type=workflow, evitando sucesso enganoso.",
+    "Artefato é validado antes do upload: entrypoint e arquivos essenciais obrigatórios, README.md proibido e .nojekyll incluído.",
+    "site/index.html recebeu apenas marcador HTML não-canônico para produzir um novo conteúdo/SHA sem duplicar estado do Ecosystem."
+  ],
+  "verification": [
+    {
+      "check": "Inspeção do workflow e artefato da execução 36753988274",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Logs mostram _site/index.html, data/ecosystem-status.json, app.js e style.css no artifact; deploy-pages reportou success."
+    },
+    {
+      "check": "Novo workflow pages no commit desta correção",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando execução disparada pelo novo push em main."
+    },
+    {
+      "check": "Portal público deixa de renderizar README.md e mostra site/index.html",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Exige validação do endereço público após o novo deployment (NN-017)."
+    }
+  ],
+  "known_issues": [
+    "O conector GitHub disponível nesta sessão não expõe mutação direta das configurações do GitHub Pages; se a API reportar build_type=legacy, o workflow agora falhará com causa explícita em vez de publicar um falso sucesso."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Observar o workflow pages disparado por este commit e confirmar o valor de build_type informado pela API.",
+    "Se o deploy concluir, validar https://abnercruz.github.io/Ecosystem/ em navegador real e então atualizar P0-14/P0-15 conforme a evidência."
+  ],
+  "decisions_required": [
+    "DEC-0001"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0001-portal-github-pages.md",
+    "docs/adr/0005-portal-web-github-pages.md",
+    "docs/architecture/portal.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Nenhum dado canônico foi duplicado no portal; a alteração de index.html é somente um comentário técnico."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "O incidente e a correção são persistidos neste handoff."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST, ADD-0001, ADR-0005 e arquitetura do portal foram consultados diretamente."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A publicação automatizada permanece distinta da validação humana do endereço público."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Handoff permanece em verifying enquanto CI e validação pública ainda não concluíram."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "O workflow passa a tornar observável o build_type efetivo do GitHub Pages e o conteúdo do artefato publicado."
+    }
+  ],
+  "cost": null
+}
