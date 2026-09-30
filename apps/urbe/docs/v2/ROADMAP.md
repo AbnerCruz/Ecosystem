@@ -526,7 +526,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Evidência:** src/persistence/export-manifest.js (urbe-export.json com sha256 por arquivo + estado local de lista permitida, nunca chaves de IA); import pelo Explorer descompacta o .zip (bug 1.8.2), confere hashes, recusa formato futuro; tests/export-manifest.mjs + tests/e2e/zip.e2e.mjs (round-trip por hash, adulteração, formato futuro, ausência de chaves)
 
 ### RM-F1-19 — Migração multi-cidade idempotente
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-045
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -537,6 +537,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** MIGRATION.md.
 - **Aceite:** Migração roda uma vez; sem duplicação.
 - **Gate:** G1
+- **Evidência:** src/persistence/multi-city.js: cópia antes do load sem gravar mapa; fusão por addLoadHook (IDs da origem) e gravação pelo WorkspacePersistence; vault.json.migrations multi-city; arquivar só esconde; nomeSeguro → UrbeArtifacts.safeName (fonte única); tests/multi-city.mjs (3 boots, marcador apagado, fusão interrompida) + tests/e2e/multi-city.e2e.mjs
 
 ### RM-F1-20 — Escrita recuperável na web e integridade do modo IDB
 - **Estado:** [ ]

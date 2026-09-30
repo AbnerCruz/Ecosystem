@@ -5,7 +5,7 @@ const files=new Map([['Urbe',new Map([['A.md','A'],['B.md','B'],['.urbe/mapa.jso
 p.configure({async list(v){return [...files.get(v).keys()]},async read(v,k){return files.get(v).get(k)??null},async write(v,k,x){files.get(v).set(k,x)},async remove(v,k){files.get(v).delete(k)}});
 c.Disco={cidade:null};c.world={buildings:[]};c.v21StopSync=async()=>{};c.urbePersistence=p;c.urbeDocs=docs;c.urbeCore=core;c.caminhosRegioes=()=>new Map();c.urbeBuildingPath=b=>b.path;c.estadoDesejado=()=>{};c.marcarSinc=()=>{};c.rebuildRoadNetwork=()=>{c.ruas={conteudo:c.world.buildings.map(b=>b.content)}};
 c.abrirCidade=async v=>{assert.equal(docs.list().length,2,'documentos devem estar carregados antes do mundo');c.world.buildings=docs.list().map(d=>({tipo:'nota',path:d.path,documentId:null,content:'stale'}));c.Disco.cidade=v};
-const start=app.indexOf('var urbeOpenLegacy=abrirCidade;'),end=app.indexOf('/* An existing installation',start);assert(start>0&&end>start);vm.runInContext(app.slice(start,end),c);await vm.runInContext("abrirCidade('Urbe')",c);
+const start=app.indexOf('var urbeOpenLegacy=abrirCidade;'),end=app.indexOf('/* Instalações antigas tinham várias cidades',start);assert(start>0&&end>start);vm.runInContext(app.slice(start,end),c);await vm.runInContext("abrirCidade('Urbe')",c);
 assert.equal(docs.list().length,2);assert.equal(c.world.buildings[0].documentId,'a');assert.equal(c.world.buildings[0].content,'A');assert.equal(p.vault,'Urbe');assert.equal(p.suspended,false);
 assert.equal(JSON.stringify(c.ruas&&c.ruas.conteudo),'["A","B"]','ruas devem ser refeitas com o conteúdo canônico, não o antigo');
 console.log('OK   entrada real liga vault, documentos, IDs e mundo');

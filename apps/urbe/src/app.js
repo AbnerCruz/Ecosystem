@@ -1834,10 +1834,7 @@ document.getElementById("menuTitulo").textContent=APP_NOME.toUpperCase();
 document.title=APP_NOME;
 
 /* ---------- nomes de arquivo seguros ---------- */
-function nomeSeguro(s){
-  return String(s==null?"":s).replace(/[\\/:*?"<>|\u0000-\u001f]/g,"-")
-    .replace(/\s+/g," ").trim().replace(/^\.+/,"").replace(/\.+$/,"").slice(0,90)||"sem-nome";
-}
+const nomeSeguro=window.UrbeArtifacts.safeName;
 
 /* ---------- camada de disco: adaptadores de persistência (pasta real × IndexedDB), REQ-028 ---------- */
 const _fsa=window.UrbeAdapters.fsa.create({root:()=>Disco.raiz}),FS=window.UrbeAdapters.router({mode:()=>Disco.modo,idb:_idb,fsa:_fsa});
@@ -2924,7 +2921,7 @@ function v21UpdateStorageName(){var e=document.getElementById('v21StorageName');
 async function v21PickRoot(){if(window.UrbeNative&&!window.UrbeNative.pickVault)return UD.alert({title:'Pasta do Urbe',message:'No Android, suas notas ficam em Documentos/Urbe (no armazenamento interno do aparelho). Dá para abrir essa pasta no gerenciador de arquivos e copiar para o computador.'});if(!TEM_FSA)return toast('Este navegador usa o armazenamento do aplicativo.');try{var h=await window.showDirectoryPicker({mode:'readwrite',id:'urbe-vaults',startIn:'documents'});if(h.requestPermission&&await h.requestPermission({mode:'readwrite'})!=='granted')return;while(sincRodando)await new Promise(r=>setTimeout(r,20));await rodarSinc(true);var p=window.UrbeCore&&window.UrbeCore.service('persistence');if(p){await p.flush();while(p.busy)await new Promise(r=>setTimeout(r,20));p.suspend(true)}await v21StopSync();Disco.raiz=h;Disco.modo='pasta';Disco.cidade=null;Disco.hCidade=null;_fsa.resetCache();if(!window.UrbeNative)await DBK.set('pastaRaiz',h);await urbeEnsureSingleVault();await abrirCidade('Urbe');v21UpdateStorageName();toast('Pasta do Urbe definida.')}catch(e){if(e&&e.name!=='AbortError')toast('Não consegui abrir a pasta: '+e.message)}}
 async function v21CreateCity(){var input=document.getElementById('v21CityName'),nome=(input&&input.value||'').trim();if(!nome)nome='Cidade';var existing=await FS.cidades(),base=nome,n=2;while(existing.some(function(x){return x.toLowerCase()===nome.toLowerCase()}))nome=base+' ('+(n++)+')';try{await FS.criarCidade(nome);await abrirCidade(nome)}catch(e){toast('Não consegui criar o vault.')}}
 async function v21StopSync(){sincSuspenso=true;clearTimeout(sincTimer);sincTimer=null;sincPend=false;var guard=0;while(sincRodando&&guard++<100)await new Promise(function(r){setTimeout(r,20)})}
-listarCidadesUI=async function(){var el=document.getElementById('v21CityList')||document.getElementById('listaCidades');if(!el)return;el.innerHTML='<div class="v21MenuEmpty">...</div>';var nomes=[];try{nomes=await FS.cidades()}catch(_){el.innerHTML='<div class="v21MenuEmpty">Falha ao listar</div>';return}if(!nomes.length){el.innerHTML='<div class="v21MenuEmpty">Nenhum vault</div>';return}el.innerHTML='';nomes.forEach(function(nome){var div=document.createElement('div');div.className='v21City';div.innerHTML='<button class="v21CityOpen"><span></span><small></small></button><button class="v21CityDelete" title="Excluir">×</button>';div.querySelector('span').textContent=nome;div.querySelector('small').textContent=nome===Disco.cidade?'aberto':'';div.querySelector('.v21CityOpen').onclick=function(){abrirCidade(nome)};div.querySelector('.v21CityDelete').onclick=async function(){if(!(await UD.confirm({title:'Excluir o vault “'+nome+'”?',message:'Todos os arquivos dele serão apagados.',confirm:'Excluir',danger:true})))return;try{if(Disco.cidade===nome){await v21StopSync();Disco.cidade=null;Disco.hCidade=null;statusSinc('ok')}await FS.excluirCidade(nome);await listarCidadesUI();toast('Vault excluído.')}catch(e){console.warn(e);toast('Não consegui excluir o vault.')}};el.appendChild(div)})};
+listarCidadesUI=async function(){var el=document.getElementById('v21CityList')||document.getElementById('listaCidades');if(!el)return;el.innerHTML='<div class="v21MenuEmpty">...</div>';var nomes=[];try{nomes=await FS.cidades()}catch(_){el.innerHTML='<div class="v21MenuEmpty">Falha ao listar</div>';return}var arq=window.UrbeMultiCity.archived(urbePersistence);nomes=nomes.filter(function(n){return !arq.has(n)});if(!nomes.length){el.innerHTML='<div class="v21MenuEmpty">Nenhum vault</div>';return}el.innerHTML='';nomes.forEach(function(nome){var div=document.createElement('div');div.className='v21City';div.innerHTML='<button class="v21CityOpen"><span></span><small></small></button><button class="v21CityDelete" title="Excluir">×</button>';div.querySelector('span').textContent=nome;div.querySelector('small').textContent=nome===Disco.cidade?'aberto':'';div.querySelector('.v21CityOpen').onclick=function(){abrirCidade(nome)};div.querySelector('.v21CityDelete').onclick=async function(){if(!(await UD.confirm({title:'Excluir o vault “'+nome+'”?',message:'Todos os arquivos dele serão apagados.',confirm:'Excluir',danger:true})))return;try{if(Disco.cidade===nome){await v21StopSync();Disco.cidade=null;Disco.hCidade=null;statusSinc('ok')}await FS.excluirCidade(nome);await listarCidadesUI();toast('Vault excluído.')}catch(e){console.warn(e);toast('Não consegui excluir o vault.')}};el.appendChild(div)})};
 document.getElementById('cidadesBtn').onclick=async function(){try{await rodarSinc(true)}catch(_){ }abrirMenu()};
 
 /* AI: minimal assistant, model ordering/prices, scope picker, history, local settings */
@@ -4215,19 +4212,16 @@ abrirCidade=async function(name){
   marcarSinc();
 };
 
-/* An existing installation may have several independent cities. Copy each
-   source into a named folder inside Urbe; leave every source intact. */
+/* Instalações antigas tinham várias cidades: cada uma é copiada para Cidades/<nome>/ dentro de Urbe, a original fica intacta.
+   Aqui só se copiam arquivos; o mapa é fundido depois do load pelo WorkspacePersistence (REQ-045, src/persistence/multi-city.js). */
 async function urbeEnsureSingleVault(){
-  const target='Urbe',names=await FS.cidades();
+  const MC=window.UrbeMultiCity,target='Urbe',names=await FS.cidades();
   if(!names.includes(target))await FS.criarCidade(target);
-  const markerPath='.urbe/merged-v1.json',done=JSON.parse(await FS.ler(target,markerPath)||'{}');
-  const existing=new Set(await FS.listar(target));
-  let targetMap;try{targetMap=JSON.parse(await FS.ler(target,'.urbe/mapa.json')||'null')}catch(_){}
-  if(!targetMap)targetMap={v:4,regioes:[],notas:{},construcoes:[]};
-  targetMap.regioes=targetMap.regioes||[];targetMap.notas=targetMap.notas||{};targetMap.construcoes=targetMap.construcoes||[];
+  const marker=MC.parseMarker(await FS.ler(target,MC.MARKER));let vj=null;try{vj=JSON.parse(await FS.ler(target,'.urbe/vault.json')||'null')}catch(_){}
+  const done=MC.doneSet(marker,vj),existing=new Set(await FS.listar(target));
   for(const source of names){
-    if(source===target||done[source])continue;
-    const folder='Cidades/'+nomeSeguro(source),paths=await FS.listar(source);
+    if(source===target||done.has(source))continue;
+    const folder=MC.folderFor(source),paths=await FS.listar(source);
     for(const path of paths){
       if(path.startsWith('.urbe/'))continue;
       const dest=folder+'/'+path;
@@ -4245,22 +4239,9 @@ async function urbeEnsureSingleVault(){
       existing.add(dest);
     }
     const oldMap=await FS.ler(source,'.urbe/mapa.json');
-    if(oldMap!=null){
-      await FS.escrever(target,'.urbe/origens/'+nomeSeguro(source)+'.json',oldMap);
-      const original=JSON.parse(oldMap),prefix=folder+'/',regions=original.regioes||[],notes=original.notas||{};
-      const positions=[...targetMap.regioes.map(r=>({x:r.x||0,w:r.w||0})),...targetMap.construcoes.map(b=>({x:b.x||0,w:b.w||0})),...Object.values(targetMap.notas).map(n=>({x:n.x||0,w:3}))];
-      const minX=Math.min(0,...regions.map(r=>r.x||0),...Object.values(notes).map(n=>n.x||0),...(original.construcoes||[]).map(b=>b.x||0));
-      const dx=positions.length?Math.max(...positions.map(p=>p.x+p.w))+40-minX:0;
-      const withPrefix=path=>path?prefix+path:folder;
-      const asset=a=>({...a,relPath:a.relPath?withPrefix(a.relPath):a.relPath,folderPath:a.folderPath?withPrefix(a.folderPath):folder});
-      const note=n=>({...n,x:(n.x||0)+dx,anexos:(n.anexos||[]).map(asset)});
-      for(const r of regions){const caminho=withPrefix(r.caminho);if(!targetMap.regioes.some(x=>x.caminho===caminho))targetMap.regioes.push({...r,caminho,x:(r.x||0)+dx})}
-      for(const [path,n] of Object.entries(notes))targetMap.notas[withPrefix(path)]=note(n);
-      for(const b of original.construcoes||[]){const caminho=withPrefix(b.caminho),files=(b.files||b.anexos||[]).map(asset);if(!targetMap.construcoes.some(x=>x.caminho===caminho&&x.name===b.name&&x.x===(b.x||0)+dx))targetMap.construcoes.push({...b,caminho,x:(b.x||0)+dx,files,anexos:files})}
-      await FS.escrever(target,'.urbe/mapa.json',JSON.stringify(targetMap));
-    }
-    done[source]={folder:folder,importedAt:Date.now()};
-    await FS.escrever(target,markerPath,JSON.stringify(done));
+    if(oldMap!=null)await FS.escrever(target,MC.ORIGENS+MC.safeName(source)+'.json',oldMap);
+    marker[source]={folder:folder,importedAt:Date.now(),pendente:oldMap!=null};
+    await FS.escrever(target,MC.MARKER,JSON.stringify(marker));
   }
   return target;
 }

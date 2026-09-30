@@ -501,6 +501,30 @@
       ]
     },
     {
+      "name": "persistence/multi-city",
+      "file": "src/persistence/multi-city.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeMultiCity"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/core/core.js"
+      ],
+      "uses": [
+        "src/persistence/workspace.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
       "name": "persistence/adapters/idb",
       "file": "src/persistence/adapters/idb.js",
       "layer": "persistence",
@@ -1444,7 +1468,8 @@
         "src/persistence/adapters/router.js",
         "src/world/stable-ids.js",
         "src/world/layout-guard.js",
-        "src/persistence/export-manifest.js"
+        "src/persistence/export-manifest.js",
+        "src/persistence/multi-city.js"
       ],
       "uses": [
         "src/pages/studio.js",

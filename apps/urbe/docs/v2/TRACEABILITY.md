@@ -85,7 +85,7 @@
 | REQ-042 | §5.2 | F1 | RM-F1-16 — GC de órfãos em history/trash/compositions | [x] | Fixture com órfãos; dry-run e execução. | G1 |
 | REQ-043 | §5.2 | F1 | RM-F1-17 — Versão de mundo e reorganização com backup/desfazer | [x] | Fixture `v1-mundo-antigo`, `v1-cidades-mescladas`: backup criado, posições restauráveis. | G1 |
 | REQ-044 | §5.2 | F1 | RM-F1-18 — Export ZIP com manifesto e estado local | [x] | Testes: hash íntegro, adulteração detectada, ausência de chaves. | G1 |
-| REQ-045 | §5.2 | F1 | RM-F1-19 — Migração multi-cidade idempotente | [ ] | Fixture `v1-cidades-mescladas`: 3 boots consecutivos, mesmo resultado. | G1 |
+| REQ-045 | §5.2 | F1 | RM-F1-19 — Migração multi-cidade idempotente | [x] | Fixture `v1-cidades-mescladas`: 3 boots consecutivos, mesmo resultado. | G1 |
 | REQ-046 | §5.2 | F1 | RM-F1-20 — Escrita recuperável na web e integridade do modo IDB | [ ] | Simulação de falha no meio da escrita; export do IDB reproduz vault. | G1 |
 | REQ-047 | §5.2 | F1 | RM-F1-21 — Estado local por vault e tolerância a órfãos | [ ] | Trocar de vault não reabre abas alheias; orphan não lança. | G1 |
 | REQ-048 | §5.2 | F1 | RM-F1-22 — Auditoria e destino de `aiLocal` e campos sem consumidor | [ ] | Fixtures com `aiLocal` preservados ou migrados sem perda. | G1 |
@@ -193,4 +193,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 38.
+- Itens no ROADMAP: 146; concluídos `[x]`: 39.

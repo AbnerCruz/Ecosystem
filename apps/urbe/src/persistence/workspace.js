@@ -19,7 +19,7 @@
   class WorkspacePersistence{
     constructor(events,store){
       this.events=events;this.store=store;this.adapter=null;this.vault=null;this.meta=null;this.snapshot=new Map();this.busy=false;this.pending=false;this.timer=null;this.delay=900;this.suspended=true;this.state='idle';this.lastSavedAt=null;
-      this.paths=[];this.originals=new Map();this.identity=null;this.fpCache=new Map();this.lastReconcile={renames:[],ambiguous:[]};this.vaultInfo={state:'absent',data:null};this.readOnly=false;this.mapaReadonly=false;this.sideReadonly={};this.foreign=[];
+      this.paths=[];this.originals=new Map();this.identity=null;this.fpCache=new Map();this.lastReconcile={renames:[],ambiguous:[]};this.loadHooks=[];this.vaultInfo={state:'absent',data:null};this.readOnly=false;this.mapaReadonly=false;this.sideReadonly={};this.foreign=[];
     }
     configure(adapter){this.adapter=adapter;return this}
     /* Situação de formato do vault (para a UI de recuperação/diagnóstico). */
@@ -63,6 +63,8 @@
       if(meta&&typeof meta==='object'){var mv=meta.v;
         if(typeof mv==='number'&&mv>4){this.mapaReadonly=true;this.foreign.push({path:MAPA,version:mv,reason:'future'})}
         else if(mv!==undefined&&!(Number.isInteger(mv)&&mv>=1)){this.mapaReadonly=true;this.foreign.push({path:MAPA,version:mv,reason:'unknown'})}}
+      /* ganchos que ajustam o mapa ANTES de montar os documentos (ex.: fusão multi-cidade, REQ-045); não gravam nada aqui */
+      if(!this.mapaReadonly)for(const hook of this.loadHooks){var hm=await hook({vault:vault,meta:meta,paths:paths,adapter:this.adapter});if(hm&&typeof hm==='object')meta=hm}
       // journal de uma operação interrompida: v2 (2.x) ou v1 (1.x); qualquer outra versão é preservada
       var journal=null,journalPath=null;
       for(const cand of [[JOURNAL_V2,2],[JOURNAL_V1,1]]){
@@ -120,6 +122,15 @@
       this.vaultInfo={state:'current',data:Meta.create({appVersion:core.version,migration:migration})};
     }
 
+    /** fn({vault,meta,paths,adapter}) → mapa ajustado (ou nada). Roda a cada load, antes dos documentos. */
+    addLoadHook(fn){this.loadHooks.push(fn)}
+    /** Registro de migração em vault.json (`migrations`), além da 1→2 feita em ensureVaultFormat. extra: campos adicionais (ex.: sources). */
+    async recordMigration(entry){
+      if(this.readOnly||!this.adapter||!this.vault)return false;
+      await this.ensureVaultFormat();var data=this.vaultInfo&&this.vaultInfo.data;if(!data)return false;
+      data.migrations=Array.isArray(data.migrations)?data.migrations:[];
+      var e=Object.assign(Meta.migrationEntry(entry),entry);delete e.now;data.migrations.push(e);this.schedule();return true;
+    }
     /** Registro de manutenção em vault.json (`maintenance`, últimos 20): GC, reorganização de layout. Vault 1.x passa pela migração com backup antes. */
     async recordMaintenance(entry){
       if(this.readOnly||!this.adapter||!this.vault)return false;

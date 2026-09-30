@@ -146,8 +146,8 @@ Regras comuns: (1) a 2.x **lê** o formato 1.x; (2) só **escreve** o formato 2.
 | `.urbe/trash.json` | `version:1` | `.urbe/trash.v2.json` (`version:2`) | v1 e v2 | só v2; v1 intacto | preservar | `v1-mapa-v4`, `futuro-desconhecido` |
 | `.urbe/compositions.json` | `version:1` | `.urbe/compositions.v2.json` (`version:2`) | v1 e v2 | só v2; v1 intacto | preservar | `v1-mapa-v4`, `futuro-desconhecido` |
 | `.urbe/tutorial.json` | `{versao,em}` | mesmo nome (aditivo) | sim | sim | preservar | `tests/tutorial.mjs` |
-| `.urbe/merged-v1.json`, `.urbe/origens/*` | marcador da migração multi-cidade | mesmo nome; `vault.json.migrations` registra conclusão | sim | nunca apaga origem | preservar | `v1-cidades-mescladas` |
-| `.urbe/vault.json` | — | novo: `{formatVersion,createdBy,lastWriter,migrations[],maintenance[]}` (`maintenance`: últimas 20 limpezas `{kind:'gc',at,removed,orphanDays,trashDays}`, RM-F1-16) | sim | sim | `formatVersion` maior: modo seguro | `vault.mjs` (RM-F1-04) |
+| `.urbe/merged-v1.json`, `.urbe/origens/*` | marcador da migração multi-cidade | mesmo nome e formato (`{<cidade>:{folder,importedAt}}`), + campo aditivo `pendente` enquanto o mapa não foi fundido; `vault.json.migrations` registra `{id:'multi-city',sources}`; `vault.json.archivedCities` esconde da lista (RM-F1-19) | sim | nunca apaga origem | preservar | `v1-cidades-mescladas`, `tests/multi-city.mjs` |
+| `.urbe/vault.json` | — | novo: `{formatVersion,createdBy,lastWriter,migrations[],maintenance[],archivedCities?}` (`maintenance`: últimas 20 limpezas `{kind:'gc',at,removed,orphanDays,trashDays}`, RM-F1-16) | sim | sim | `formatVersion` maior: modo seguro | `vault.mjs` (RM-F1-04) |
 | `.urbe/identity.json` | — | novo: `{version:1,docs:{<docId>:{path,fingerprint,seen}}}` | sim | sim | preservar | RM-F1-15 |
 | `.urbe/backup/<data>-<de>-<para>/` | — | novo: cópias restauráveis pré-migração | sim | sim | — | RM-F1-07 |
 | `urbe-export.json` (dentro do ZIP) | — | novo: manifesto do export | sim | sim | recusar import de `format` desconhecido | RM-F1-18 |
