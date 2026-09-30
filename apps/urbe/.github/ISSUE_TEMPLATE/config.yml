@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Planejamento Urbe 2.0
+    url: https://github.com/AbnerCruz/Urbe/tree/main/docs/v2
+    about: Consulte requisitos, auditoria e processo antes de abrir trabalho da 2.0.

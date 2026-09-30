@@ -4,7 +4,7 @@
 
 Cada nota vira uma casa, cada pasta um bairro e cada `[[link]]` uma rua. Moradores andam entre as notas ligadas, o mundo é um continente formado por placas tectônicas, com serras, clima e rios que descem até o mar, e tudo continua sendo arquivo `.md` comum, que abre em qualquer outro programa.
 
-> **Versão 1.7 beta.** App de verdade para **Windows** e **Android**, que guarda as notas numa pasta real e se atualiza sozinho. Também abre no navegador.
+> **Versão 1.8.2 beta.** App de verdade para **Windows** e **Android**, que guarda as notas numa pasta real e se atualiza sozinho. Também abre no navegador.
 
 ## Instalar
 
@@ -14,6 +14,10 @@ Baixe em **[Lançamentos](https://github.com/AbnerCruz/Urbe/releases/latest)**:
 - **Android**: `Urbe-(versão).apk`. As notas ficam em `Documentos/Urbe`. O app avisa quando sai versão nova.
 
 Editar as notas por fora (Explorer, Obsidian, OneDrive…) funciona: o Urbe percebe as mudanças.
+
+## Urbe 2.0
+
+A próxima geração do projeto está em fase de **descoberta e auditoria**, antes de novas grandes implementações. A documentação de planejamento fica em [docs/v2/](docs/v2/README.md), com auditoria da 1.x, Requirement Ledger e processo de decisões arquiteturais.
 
 ## O que o Urbe faz
 
