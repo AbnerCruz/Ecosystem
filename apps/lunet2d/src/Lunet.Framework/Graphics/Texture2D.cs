@@ -1,6 +1,12 @@
 namespace Lunet.Graphics;
 
 /// <summary>Imagem na GPU. Cores RGBA de 8 bits, origem no canto superior esquerdo.</summary>
+/// <example>
+/// <code>
+/// var square = Texture2D.CreateSolid(device, 16, 16, Color.Red);
+/// var ball = Texture2D.CreateCircle(device, 24, Color.Yellow);
+/// </code>
+/// </example>
 public sealed class Texture2D : IDisposable
 {
     private readonly GraphicsDevice _device;
@@ -28,6 +34,12 @@ public sealed class Texture2D : IDisposable
     internal int Handle { get; }
 
     /// <summary>Cria uma textura a partir de pixels RGBA (largura × altura × 4 bytes).</summary>
+    /// <param name="device">Dispositivo gráfico do jogo.</param>
+    /// <param name="width">Largura, em pixels.</param>
+    /// <param name="height">Altura, em pixels.</param>
+    /// <param name="rgba">Pixels em RGBA de 8 bits por canal, linha a linha de cima para baixo.</param>
+    /// <param name="filter">Filtro de amostragem: `Point` (pixels nítidos) ou `Linear` (suave).</param>
+    /// <returns>A textura criada.</returns>
     public static Texture2D FromPixels(GraphicsDevice device, int width, int height, ReadOnlySpan<byte> rgba, TextureFilter filter = TextureFilter.Linear)
     {
         ArgumentNullException.ThrowIfNull(device);
@@ -53,6 +65,10 @@ public sealed class Texture2D : IDisposable
     }
 
     /// <summary>Disco preenchido (borda com meio pixel de suavização de alfa).</summary>
+    /// <param name="device">Dispositivo gráfico do jogo.</param>
+    /// <param name="diameter">Diâmetro do círculo, em pixels.</param>
+    /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
+    /// <returns>Uma textura quadrada com um círculo preenchido.</returns>
     public static Texture2D CreateCircle(GraphicsDevice device, int diameter, Color color)
     {
         var pixels = new byte[checked(diameter * diameter * 4)];

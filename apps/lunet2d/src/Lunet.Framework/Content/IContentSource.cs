@@ -1,6 +1,15 @@
 namespace Lunet.Content;
 
 /// <summary>Origem dos arquivos de conteúdo do jogo (pasta do projeto, assets do APK exportado...).</summary>
+/// <example>
+/// <code>
+/// if (source.Exists("Data/level.json"))
+/// {
+///     using Stream stream = source.Open("Data/level.json");
+///     log.Info("level.json tem " + stream.Length + " bytes");
+/// }
+/// </code>
+/// </example>
 public interface IContentSource
 {
     /// <summary>Diz se o arquivo existe.</summary>
@@ -9,10 +18,18 @@ public interface IContentSource
     bool Exists(string path);
 
     /// <summary>Abre o arquivo para leitura; caminhos usam '/' e são relativos a <c>Content/</c>.</summary>
+    /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
+    /// <returns>Um fluxo de leitura; quem chama deve fechá-lo.</returns>
     Stream Open(string path);
 }
 
 /// <summary>Conteúdo lido de uma pasta. Recusa caminhos que saiam dela.</summary>
+/// <example>
+/// <code>
+/// IContentSource files = new DirectoryContentSource("/data/user/0/app/Content");
+/// using Stream stream = files.Open("Textures/hero.png");
+/// </code>
+/// </example>
 public sealed class DirectoryContentSource : IContentSource
 {
     private readonly string _root;

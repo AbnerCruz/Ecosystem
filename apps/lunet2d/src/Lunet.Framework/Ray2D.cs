@@ -3,6 +3,13 @@ using System.Numerics;
 namespace Lunet;
 
 /// <summary>Raio 2D: origem e direção (normalizada na criação).</summary>
+/// <example>
+/// <code>
+/// var ray = new Ray2D(new Vector2(0, 0), new Vector2(1, 0));
+/// if (ray.Intersects(new Circle(new Vector2(50, 0), 10), out float distance))
+///     position = ray.PointAt(distance);
+/// </code>
+/// </example>
 public readonly struct Ray2D
 {
     /// <summary>Cria um raio.</summary>
@@ -26,6 +33,9 @@ public readonly struct Ray2D
     public Vector2 PointAt(float distance) => Origin + Direction * distance;
 
     /// <summary>Distância até a primeira interseção com o círculo, ou falso.</summary>
+    /// <param name="circle">Círculo a testar.</param>
+    /// <param name="distance">Distância do início do raio até o primeiro ponto atingido.</param>
+    /// <returns>Verdadeiro se o raio atinge a forma.</returns>
     public bool Intersects(Circle circle, out float distance)
     {
         var toCenter = circle.Center - Origin;
@@ -43,6 +53,9 @@ public readonly struct Ray2D
     }
 
     /// <summary>Distância até a primeira interseção com o retângulo (método das lâminas), ou falso.</summary>
+    /// <param name="rect">Retângulo a testar.</param>
+    /// <param name="distance">Distância do início do raio até o primeiro ponto atingido.</param>
+    /// <returns>Verdadeiro se o raio atinge a forma.</returns>
     public bool Intersects(RectangleF rect, out float distance)
     {
         var tMin = 0f;

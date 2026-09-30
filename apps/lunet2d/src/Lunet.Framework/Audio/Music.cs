@@ -1,6 +1,12 @@
 namespace Lunet.Audio;
 
 /// <summary>Música longa tocada em streaming (uma por vez). Crie via <c>Content.LoadMusic</c> e toque com <c>Audio.PlayMusic</c>.</summary>
+/// <example>
+/// <code>
+/// var theme = content.LoadMusic("Audio/theme.ogg");
+/// audio.PlayMusic(theme);
+/// </code>
+/// </example>
 public sealed class Music : IDisposable
 {
     private readonly IAudioBackend _backend;

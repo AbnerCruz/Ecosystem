@@ -3,6 +3,13 @@ using System.Numerics;
 namespace Lunet;
 
 /// <summary>Gerador pseudoaleatório determinístico (xorshift64*): mesma semente, mesma sequência, em qualquer aparelho.</summary>
+/// <example>
+/// <code>
+/// var dice = new RandomSource(42);
+/// int roll = dice.NextInt(1, 7);
+/// Vector2 direction = dice.NextDirection();
+/// </code>
+/// </example>
 public sealed class RandomSource
 {
     private ulong _state;
@@ -30,6 +37,7 @@ public sealed class RandomSource
     }
 
     /// <summary>Número em [0, 1).</summary>
+    /// <returns>Número de 0 (incluído) a 1 (não incluído), ou dentro do intervalo pedido.</returns>
     public float NextFloat() => (NextUInt64() >> 40) / (float)(1 << 24);
 
     /// <summary>Número decimal no intervalo dado.</summary>
@@ -39,6 +47,8 @@ public sealed class RandomSource
     public float NextFloat(float min, float max) => min + NextFloat() * (max - min);
 
     /// <summary>Inteiro em [0, <paramref name="maxExclusive"/>).</summary>
+    /// <param name="maxExclusive">Limite superior, não incluído.</param>
+    /// <returns>Número inteiro dentro do intervalo pedido.</returns>
     public int NextInt(int maxExclusive)
     {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(maxExclusive, 0);
@@ -46,6 +56,9 @@ public sealed class RandomSource
     }
 
     /// <summary>Inteiro em [<paramref name="min"/>, <paramref name="maxExclusive"/>).</summary>
+    /// <param name="min">Menor valor possível (incluído).</param>
+    /// <param name="maxExclusive">Limite superior, não incluído.</param>
+    /// <returns>Número inteiro dentro do intervalo pedido.</returns>
     public int NextInt(int min, int maxExclusive) => min + NextInt(maxExclusive - min);
 
     /// <summary>Cara ou coroa.</summary>

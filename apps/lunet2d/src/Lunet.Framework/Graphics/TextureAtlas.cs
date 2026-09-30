@@ -8,9 +8,21 @@ namespace Lunet.Graphics;
 /// <param name="Bounds">Retângulo da região na textura, em pixels.</param>
 /// <param name="PivotX">Pivô horizontal da região (0 = esquerda, 1 = direita).</param>
 /// <param name="PivotY">Pivô vertical da região (0 = topo, 1 = base).</param>
+/// <example>
+/// <code>
+/// var region = new AtlasRegion("hero", new RectangleF(0, 0, 32, 32));
+/// var heroes = new TextureAtlas(texture, new[] { region });
+/// </code>
+/// </example>
 public readonly record struct AtlasRegion(string Name, RectangleF Bounds, float PivotX = 0.5f, float PivotY = 0.5f);
 
 /// <summary>Uma textura com várias regiões nomeadas. Formato JSON: veja <see cref="Parse"/>.</summary>
+/// <example>
+/// <code>
+/// var sheet = content.LoadAtlas("Data/atlas.json");
+/// batch.Draw(sheet, "hero", position, Color.White);
+/// </code>
+/// </example>
 public sealed class TextureAtlas
 {
     private readonly Dictionary<string, AtlasRegion> _regions;
@@ -50,6 +62,8 @@ public sealed class TextureAtlas
     /// Lê <c>{ "texture": "Textures/atlas.png", "regions": { "hero": { "x":0, "y":0, "width":16, "height":16, "pivotX":0.5, "pivotY":1 } } }</c>.
     /// Devolve o caminho da textura e as regiões.
     /// </summary>
+    /// <param name="json">Conteúdo do arquivo JSON do atlas.</param>
+    /// <returns>O caminho da textura e a lista de regiões.</returns>
     public static (string TexturePath, IReadOnlyList<AtlasRegion> Regions) Parse(string json)
     {
         AtlasFile? file;

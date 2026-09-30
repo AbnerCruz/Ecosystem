@@ -29,6 +29,14 @@ public enum GestureType
 }
 
 /// <summary>Gesto reconhecido. Posições e velocidades em coordenadas virtuais.</summary>
+/// <example>
+/// <code>
+/// foreach (var gesture in input.Gestures)
+/// {
+///     if (gesture.Type == GestureType.Tap) position = gesture.Position;
+/// }
+/// </code>
+/// </example>
 public readonly struct Gesture
 {
     /// <summary>Cria um gesto.</summary>

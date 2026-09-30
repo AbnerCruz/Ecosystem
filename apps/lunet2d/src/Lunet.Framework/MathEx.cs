@@ -3,6 +3,13 @@ using System.Numerics;
 namespace Lunet;
 
 /// <summary>Funções matemáticas de uso comum em jogos.</summary>
+/// <example>
+/// <code>
+/// float t = MathEx.Clamp01(time.DeltaSeconds * 4);
+/// float x = MathEx.Lerp(0, 100, t);
+/// Vector2 next = MathEx.MoveToward(position, new Vector2(200, 200), 120 * time.DeltaSeconds);
+/// </code>
+/// </example>
 public static class MathEx
 {
     /// <summary>Interpolação linear entre dois valores.</summary>
@@ -18,6 +25,12 @@ public static class MathEx
     public static float Clamp01(float v) => Math.Clamp(v, 0f, 1f);
 
     /// <summary>Converte <paramref name="v"/> do intervalo [a0,a1] para [b0,b1] (sem limitar).</summary>
+    /// <param name="v">Valor a converter.</param>
+    /// <param name="a0">Início do intervalo de origem.</param>
+    /// <param name="a1">Fim do intervalo de origem.</param>
+    /// <param name="b0">Início do intervalo de destino.</param>
+    /// <param name="b1">Fim do intervalo de destino.</param>
+    /// <returns>O valor convertido para o intervalo de destino.</returns>
     public static float Remap(float v, float a0, float a1, float b0, float b1) =>
         a1 == a0 ? b0 : b0 + (v - a0) / (a1 - a0) * (b1 - b0);
 
@@ -31,6 +44,10 @@ public static class MathEx
     }
 
     /// <summary>Aproxima <paramref name="current"/> de <paramref name="target"/> sem ultrapassar.</summary>
+    /// <param name="current">Valor atual.</param>
+    /// <param name="target">Valor desejado.</param>
+    /// <param name="maxDelta">Maior passo permitido nesta chamada.</param>
+    /// <returns>O valor após andar até `maxDelta` em direção ao alvo, sem passar dele.</returns>
     public static float MoveToward(float current, float target, float maxDelta) =>
         MathF.Abs(target - current) <= maxDelta ? target : current + MathF.Sign(target - current) * maxDelta;
 
@@ -56,6 +73,9 @@ public static class MathEx
     public static float ToDegrees(float radians) => radians * (180f / MathF.PI);
 
     /// <summary>Menor diferença angular (radianos) de <paramref name="from"/> para <paramref name="to"/>, em [−π, π].</summary>
+    /// <param name="from">Ângulo de partida, em radianos.</param>
+    /// <param name="to">Ângulo de chegada, em radianos.</param>
+    /// <returns>Diferença mais curta de `from` até `to`, em radianos, entre -π e π.</returns>
     public static float AngleDifference(float from, float to)
     {
         var d = (to - from) % MathF.Tau;

@@ -1,6 +1,13 @@
 namespace Lunet;
 
 /// <summary>Pool de objetos reutilizáveis para evitar alocações no loop do jogo.</summary>
+/// <example>
+/// <code>
+/// var bullets = new ObjectPool&lt;Vector2[]&gt;(() =&gt; new Vector2[2], reset: b =&gt; b[0] = default);
+/// var bullet = bullets.Get();
+/// bullets.Return(bullet);
+/// </code>
+/// </example>
 public sealed class ObjectPool<T> where T : class
 {
     private readonly Stack<T> _free = new();

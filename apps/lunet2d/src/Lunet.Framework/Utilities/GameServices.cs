@@ -1,6 +1,13 @@
 namespace Lunet;
 
 /// <summary>Registro simples de serviços do jogo, por tipo. O host registra os serviços padrão; o jogo pode adicionar os seus.</summary>
+/// <example>
+/// <code>
+/// Services.Add(random);
+/// var again = Services.Get&lt;RandomSource&gt;();
+/// if (Services.TryGet&lt;GameLog&gt;(out var gameLog)) gameLog.Info("serviço encontrado");
+/// </code>
+/// </example>
 public sealed class GameServices
 {
     private readonly Dictionary<Type, object> _services = new();

@@ -10,7 +10,9 @@
       "signature": "public sealed class AssetAttribute : Attribute",
       "summary": "Trata um texto como o nome de um recurso do projeto (\u0060Content/\u0060) e mostra um seletor de recursos.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Enemy\n{\n    [Asset(AssetKind.Sound)] public string HitSound = \u0022hit.wav\u0022;\n    [Asset(AssetKind.Texture)] public string Sprite = \u0022enemy.png\u0022;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -29,7 +31,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\npublic sealed class Enemy\n{\n    [Asset(AssetKind.Sound)] public string HitSound = \u0022hit.wav\u0022;\n    [Asset(AssetKind.Texture)] public string Sprite = \u0022enemy.png\u0022;\n}\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -137,7 +141,9 @@
       "signature": "public readonly struct Circle",
       "summary": "C\u00EDrculo definido por centro e raio, com testes de conten\u00E7\u00E3o e interse\u00E7\u00E3o.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar hitbox = new Circle(new Vector2(100, 100), 24);\nbool touching = hitbox.Contains(position);\nbool hit = hitbox.Intersects(new Circle(new Vector2(120, 100), 10));\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -258,7 +264,9 @@
       "signature": "public sealed class ColorAttribute : Attribute",
       "summary": "Trata um texto como cor hexadecimal (\u0060#RRGGBB\u0060 ou \u0060#RRGGBBAA\u0060) e mostra um seletor de cor.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Theme\n{\n    [Color] public string Background = \u0022#1E2230\u0022;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": []
@@ -271,7 +279,9 @@
       "signature": "public sealed class Dispatcher",
       "summary": "Executa trabalho na thread do jogo. \u0060Dispatcher.Post\u0060 pode ser chamado de qualquer thread.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\n// De outra thread, pe\u00E7a ao jogo para rodar algo no in\u00EDcio do pr\u00F3ximo quadro.\nTask.Run(() =\u003E dispatcher.Post(() =\u003E log.Info(\u0022carregou\u0022)));\n\u0060\u0060\u0060"
+      ],
       "related": [
         "M:Lunet.Dispatcher.Post(System.Action)"
       ],
@@ -306,7 +316,9 @@
       "signature": "public sealed class FileAttribute : Attribute",
       "summary": "Trata um texto como caminho de arquivo do projeto e mostra um seletor de arquivo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Level\n{\n    [File(\u0022.json\u0022)] public string DataFile = \u0022Data/level1.json\u0022;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -325,7 +337,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\npublic sealed class Level\n{\n    [File(\u0022.json\u0022)] public string DataFile = \u0022Data/level1.json\u0022;\n}\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -352,7 +366,9 @@
       "signature": "public sealed class FixedTimestepLoop",
       "summary": "Acumulador de passo fixo com limite de quadro. N\u00E3o aloca.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar loop = new FixedTimestepLoop(60, 0.25);\nint steps = loop.Advance(0.033);\nfor (int i = 0; i \u003C steps; i\u002B\u002B)\n{\n    GameTime step = loop.CompleteStep();\n}\nfloat blend = loop.Interpolation;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -430,10 +446,10 @@
             {
               "name": "elapsedSeconds",
               "type": "double",
-              "description": ""
+              "description": "Tempo real passado desde a chamada anterior, em segundos."
             }
           ],
-          "returns": "",
+          "returns": "Quantos passos de atualiza\u00E7\u00E3o devem rodar agora.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -446,7 +462,7 @@
           "summary": "Marca a execu\u00E7\u00E3o de um passo, avan\u00E7ando o tempo simulado.",
           "remarks": "",
           "parameters": [],
-          "returns": "",
+          "returns": "O tempo do passo que acabou de rodar.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -474,7 +490,9 @@
       "signature": "public abstract class Game",
       "summary": "Classe base dos jogos Lunet. Sobrescreva os m\u00E9todos de ciclo de vida.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class MeuJogo : Game\n{\n    Texture2D _player = null!;\n    Vector2 _position = new(180, 320);\n\n    protected override void LoadContent() =\u003E _player = Texture2D.CreateCircle(GraphicsDevice, 32, Color.Yellow);\n\n    protected override void Update(GameTime time)\n    {\n        if (Input.TryGetPointer(out var touch)) _position = touch;\n    }\n\n    protected override void Draw(GameTime time)\n    {\n        GraphicsDevice.Clear(Color.CornflowerBlue);\n    }\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -645,7 +663,7 @@
             {
               "name": "time",
               "type": "GameTime",
-              "description": ""
+              "description": "Tempo do quadro."
             }
           ],
           "returns": "",
@@ -734,7 +752,7 @@
             {
               "name": "time",
               "type": "GameTime",
-              "description": ""
+              "description": "Tempo do quadro."
             }
           ],
           "returns": "",
@@ -752,7 +770,9 @@
       "signature": "public sealed class GameConfiguration",
       "summary": "Configura\u00E7\u00E3o de um jogo: passo de atualiza\u00E7\u00E3o e resolu\u00E7\u00E3o virtual.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nConfiguration.VirtualWidth = 720;\nConfiguration.VirtualHeight = 1280;\nConfiguration.UpdatesPerSecond = 60;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -818,7 +838,9 @@
       "signature": "public sealed class GameHost",
       "summary": "Executa um \u0060Game\u0060 sobre um \u0060IGraphicsBackend\u0060: ciclo de vida, passo fixo e desenho. Falhas no c\u00F3digo do jogo s\u00E3o capturadas: o host passa a \u0060GameHost.IsFaulted\u0060 e para de rodar o jogo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar host = new GameHost(game, backend, source, audioBackend, store, haptics);\nif (host.Start(1080, 1920)) host.Tick(1.0 / 60);\n\u0060\u0060\u0060"
+      ],
       "related": [
         "T:Lunet.Game",
         "T:Lunet.Graphics.IGraphicsBackend",
@@ -837,12 +859,12 @@
             {
               "name": "game",
               "type": "Game",
-              "description": ""
+              "description": "Jogo a executar."
             },
             {
               "name": "backend",
               "type": "IGraphicsBackend",
-              "description": ""
+              "description": "Backend gr\u00E1fico (OpenGL ES no Android)."
             },
             {
               "name": "contentSource",
@@ -852,17 +874,17 @@
             {
               "name": "audio",
               "type": "IAudioBackend",
-              "description": ""
+              "description": "Backend de \u00E1udio; nulo deixa o jogo sem som."
             },
             {
               "name": "saveStore",
               "type": "ISaveStore",
-              "description": ""
+              "description": "Onde os saves s\u00E3o gravados; nulo usa mem\u00F3ria."
             },
             {
               "name": "haptics",
               "type": "IHaptics",
-              "description": ""
+              "description": "Vibra\u00E7\u00E3o do aparelho; nulo desliga."
             }
           ],
           "returns": "",
@@ -1009,27 +1031,27 @@
             {
               "name": "density",
               "type": "float",
-              "description": ""
+              "description": "Densidade da tela (1 = 160 dpi)."
             },
             {
               "name": "insetLeft",
               "type": "int",
-              "description": ""
+              "description": "Recuo seguro \u00E0 esquerda, em pixels da superf\u00EDcie."
             },
             {
               "name": "insetTop",
               "type": "int",
-              "description": ""
+              "description": "Recuo seguro no topo, em pixels da superf\u00EDcie."
             },
             {
               "name": "insetRight",
               "type": "int",
-              "description": ""
+              "description": "Recuo seguro \u00E0 direita, em pixels da superf\u00EDcie."
             },
             {
               "name": "insetBottom",
               "type": "int",
-              "description": ""
+              "description": "Recuo seguro embaixo, em pixels da superf\u00EDcie."
             }
           ],
           "returns": "",
@@ -1048,7 +1070,7 @@
             {
               "name": "surfaceTouches",
               "type": "ReadOnlySpan\u003CTouchPoint\u003E",
-              "description": ""
+              "description": "Toques atuais, em pixels da superf\u00EDcie de desenho."
             }
           ],
           "returns": "",
@@ -1067,15 +1089,15 @@
             {
               "name": "surfaceWidth",
               "type": "int",
-              "description": ""
+              "description": "Largura da superf\u00EDcie de desenho, em pixels."
             },
             {
               "name": "surfaceHeight",
               "type": "int",
-              "description": ""
+              "description": "Altura da superf\u00EDcie de desenho, em pixels."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro se o jogo iniciou sem exce\u00E7\u00E3o.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -1117,7 +1139,7 @@
             {
               "name": "elapsedSeconds",
               "type": "double",
-              "description": ""
+              "description": "Tempo real passado desde a chamada anterior, em segundos."
             }
           ],
           "returns": "",
@@ -1135,7 +1157,9 @@
       "signature": "public sealed class GameLog",
       "summary": "Registro do jogo. A IDE (ou qualquer host) assina \u0060GameLog.Written\u0060.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nLog.Info(\u0022Fase carregada\u0022);\nLog.Warning(\u0022Pouca mem\u00F3ria\u0022);\nLog.Written \u002B= (level, message) =\u003E Console.WriteLine($\u0022[{level}] {message}\u0022);\n\u0060\u0060\u0060"
+      ],
       "related": [
         "E:Lunet.GameLog.Written"
       ],
@@ -1245,7 +1269,9 @@
       "signature": "public sealed class GameServices",
       "summary": "Registro simples de servi\u00E7os do jogo, por tipo. O host registra os servi\u00E7os padr\u00E3o; o jogo pode adicionar os seus.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nServices.Add(random);\nvar again = Services.Get\u003CRandomSource\u003E();\nif (Services.TryGet\u003CGameLog\u003E(out var gameLog)) gameLog.Info(\u0022servi\u00E7o encontrado\u0022);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -1323,7 +1349,9 @@
       "signature": "public readonly struct GameTime",
       "summary": "Tempo de uma atualiza\u00E7\u00E3o. \u0060GameTime.DeltaSeconds\u0060 \u00E9 sempre o passo fixo configurado.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nposition \u002B= velocity * time.DeltaSeconds;\ndouble seconds = time.TotalSeconds;\n\u0060\u0060\u0060"
+      ],
       "related": [
         "P:Lunet.GameTime.DeltaSeconds"
       ],
@@ -1407,7 +1435,9 @@
       "signature": "public static class Geometry",
       "summary": "Fun\u00E7\u00F5es geom\u00E9tricas 2D: dist\u00E2ncias, interse\u00E7\u00F5es, pol\u00EDgonos e SAT.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar polygon = new[] { new Vector2(0, 0), new Vector2(100, 0), new Vector2(50, 80) };\nbool inside = Geometry.PolygonContains(polygon, new Vector2(50, 30));\nfloat distance = Geometry.DistanceToSegment(position, new Vector2(0, 0), new Vector2(100, 0));\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -1504,15 +1534,15 @@
             {
               "name": "polygon",
               "type": "ReadOnlySpan\u003CVector2\u003E",
-              "description": ""
+              "description": "V\u00E9rtices do pol\u00EDgono, em ordem."
             },
             {
               "name": "point",
               "type": "Vector2",
-              "description": ""
+              "description": "Ponto a testar."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro se o ponto est\u00E1 dentro do pol\u00EDgono.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -1528,20 +1558,20 @@
             {
               "name": "a",
               "type": "ReadOnlySpan\u003CVector2\u003E",
-              "description": ""
+              "description": "V\u00E9rtices do primeiro pol\u00EDgono (convexo)."
             },
             {
               "name": "b",
               "type": "ReadOnlySpan\u003CVector2\u003E",
-              "description": ""
+              "description": "V\u00E9rtices do segundo pol\u00EDgono (convexo)."
             },
             {
               "name": "push",
               "type": "Vector2",
-              "description": ""
+              "description": "Vetor m\u00EDnimo que separa os pol\u00EDgonos quando se sobrep\u00F5em."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro se os pol\u00EDgonos se sobrep\u00F5em.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -1557,30 +1587,30 @@
             {
               "name": "a1",
               "type": "Vector2",
-              "description": ""
+              "description": "In\u00EDcio do primeiro segmento."
             },
             {
               "name": "a2",
               "type": "Vector2",
-              "description": ""
+              "description": "Fim do primeiro segmento."
             },
             {
               "name": "b1",
               "type": "Vector2",
-              "description": ""
+              "description": "In\u00EDcio do segundo segmento."
             },
             {
               "name": "b2",
               "type": "Vector2",
-              "description": ""
+              "description": "Fim do segundo segmento."
             },
             {
               "name": "point",
               "type": "Vector2",
-              "description": ""
+              "description": "Ponto a testar."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro se os segmentos se cruzam.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -1596,10 +1626,10 @@
             {
               "name": "polygon",
               "type": "ReadOnlySpan\u003CVector2\u003E",
-              "description": ""
+              "description": "V\u00E9rtices do pol\u00EDgono, em ordem."
             }
           ],
-          "returns": "",
+          "returns": "\u00C1rea com sinal: positiva em sentido anti-hor\u00E1rio no plano de coordenadas.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -1614,7 +1644,9 @@
       "signature": "public sealed class GroupAttribute : Attribute",
       "summary": "Agrupa campos sob um t\u00EDtulo no Inspector.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Weapon\n{\n    [Group(\u0022Combate\u0022)] public int Damage = 4;\n    [Group(\u0022Combate\u0022)] public float Cooldown = 0.5f;\n    [Group(\u0022Visual\u0022)] public string Sprite = \u0022sword.png\u0022;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -1633,7 +1665,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\npublic sealed class Weapon\n{\n    [Group(\u0022Combate\u0022)] public int Damage = 4;\n    [Group(\u0022Combate\u0022)] public float Cooldown = 0.5f;\n    [Group(\u0022Visual\u0022)] public string Sprite = \u0022sword.png\u0022;\n}\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -1660,7 +1694,9 @@
       "signature": "public sealed class HiddenAttribute : Attribute",
       "summary": "Esconde o campo ou propriedade do Inspector.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Player\n{\n    public int Lives = 3;\n    [Hidden] public int InternalCounter;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": []
@@ -1673,7 +1709,9 @@
       "signature": "public interface IInspector",
       "summary": "Contrato interno dos inspectors customizados; use \u0060Inspector\u00601\u0060.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Turret { public float Angle; }\n\npublic sealed class TurretInspector : Inspector\u003CTurret\u003E\n{\n    public override void OnInspect(InspectorContext ui, Turret target) =\u003E\n        ui.Slider(\u0022\u00C2ngulo\u0022, () =\u003E target.Angle, v =\u003E target.Angle = v, 0, 360);\n}\n\u0060\u0060\u0060"
+      ],
       "related": [
         "T:Lunet.Inspector\u00601"
       ],
@@ -1726,7 +1764,9 @@
       "signature": "public sealed class InspectAttribute : Attribute",
       "summary": "Mostra um campo privado no Inspector (por padr\u00E3o s\u00F3 os p\u00FAblicos aparecem).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Boss\n{\n    [Inspect] private int _phase = 1;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": []
@@ -1739,7 +1779,9 @@
       "signature": "public sealed class InspectorContext",
       "summary": "Onde um \u0060Inspector\u00601\u0060 descreve a interface do objeto. Cada chamada adiciona uma linha; o app desenha as linhas.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Door { public bool Open; public string Label = \u0022Porta\u0022; }\n\npublic sealed class DoorInspector : Inspector\u003CDoor\u003E\n{\n    public override void OnInspect(InspectorContext ui, Door target)\n    {\n        ui.Header(target.Label);\n        ui.Field(\u0022Aberta\u0022, () =\u003E target.Open, v =\u003E target.Open = v);\n        ui.Separator();\n        ui.Label(\u0022Toque em Alternar para abrir ou fechar\u0022);\n        ui.Button(\u0022Alternar\u0022, () =\u003E target.Open = !target.Open);\n    }\n}\n\u0060\u0060\u0060"
+      ],
       "related": [
         "T:Lunet.Inspector\u00601"
       ],
@@ -2108,7 +2150,9 @@
       "signature": "public sealed class InspectorItem",
       "summary": "Uma linha do Inspector, independente de interface: quem desenha (o app) l\u00EA e grava por \u0060InspectorItem.Getter\u0060 e \u0060InspectorItem.Setter\u0060.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nforeach (var item in ui.Items)\n{\n    if (item.Kind == InspectorItemKind.Field \u0026\u0026 item.IsEditable)\n        log.Info($\u0022{item.Label} = {item.Getter!()}\u0022);\n}\n\u0060\u0060\u0060"
+      ],
       "related": [
         "P:Lunet.InspectorItem.Getter",
         "P:Lunet.InspectorItem.Setter"
@@ -2414,7 +2458,9 @@
       "signature": "public abstract class Inspector\u003CT\u003E : IInspector",
       "summary": "Inspector customizado para um tipo do jogo. Crie uma classe que herda de \u0060Inspector\u003CMeuTipo\u003E\u0060 no projeto e o Inspector do app a usa no lugar da lista autom\u00E1tica de campos.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Turret { public float Angle; public int Shots; }\n\npublic sealed class TurretInspector : Inspector\u003CTurret\u003E\n{\n    public override void OnInspect(InspectorContext ui, Turret target)\n    {\n        ui.Header(\u0022Torre\u0022);\n        ui.Slider(\u0022\u00C2ngulo\u0022, () =\u003E target.Angle, v =\u003E target.Angle = v, 0, 360);\n        ui.Field(\u0022Disparos\u0022, () =\u003E target.Shots);\n        ui.Button(\u0022Atirar\u0022, () =\u003E target.Shots\u002B\u002B);\n    }\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -2507,7 +2553,9 @@
       "signature": "public static class MathEx",
       "summary": "Fun\u00E7\u00F5es matem\u00E1ticas de uso comum em jogos.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nfloat t = MathEx.Clamp01(time.DeltaSeconds * 4);\nfloat x = MathEx.Lerp(0, 100, t);\nVector2 next = MathEx.MoveToward(position, new Vector2(200, 200), 120 * time.DeltaSeconds);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -2522,15 +2570,15 @@
             {
               "name": "from",
               "type": "float",
-              "description": ""
+              "description": "\u00C2ngulo de partida, em radianos."
             },
             {
               "name": "to",
               "type": "float",
-              "description": ""
+              "description": "\u00C2ngulo de chegada, em radianos."
             }
           ],
-          "returns": "",
+          "returns": "Diferen\u00E7a mais curta de \u0060from\u0060 at\u00E9 \u0060to\u0060, em radianos, entre -\u03C0 e \u03C0.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -2594,20 +2642,20 @@
             {
               "name": "current",
               "type": "float",
-              "description": ""
+              "description": "Valor atual."
             },
             {
               "name": "target",
               "type": "float",
-              "description": ""
+              "description": "Valor desejado."
             },
             {
               "name": "maxDelta",
               "type": "float",
-              "description": ""
+              "description": "Maior passo permitido nesta chamada."
             }
           ],
-          "returns": "",
+          "returns": "O valor ap\u00F3s andar at\u00E9 \u0060maxDelta\u0060 em dire\u00E7\u00E3o ao alvo, sem passar dele.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -2652,30 +2700,30 @@
             {
               "name": "v",
               "type": "float",
-              "description": ""
+              "description": "Valor a converter."
             },
             {
               "name": "a0",
               "type": "float",
-              "description": ""
+              "description": "In\u00EDcio do intervalo de origem."
             },
             {
               "name": "a1",
               "type": "float",
-              "description": ""
+              "description": "Fim do intervalo de origem."
             },
             {
               "name": "b0",
               "type": "float",
-              "description": ""
+              "description": "In\u00EDcio do intervalo de destino."
             },
             {
               "name": "b1",
               "type": "float",
-              "description": ""
+              "description": "Fim do intervalo de destino."
             }
           ],
-          "returns": "",
+          "returns": "O valor convertido para o intervalo de destino.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -2747,7 +2795,9 @@
       "signature": "public sealed class MultilineAttribute : Attribute",
       "summary": "Texto de v\u00E1rias linhas no Inspector.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Dialogue\n{\n    [Multiline(4)] public string Text = \u0022Ol\u00E1!\\nBem-vindo.\u0022;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -2766,7 +2816,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\npublic sealed class Dialogue\n{\n    [Multiline(4)] public string Text = \u0022Ol\u00E1!\\nBem-vindo.\u0022;\n}\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -2793,7 +2845,9 @@
       "signature": "public sealed class ObjectPool\u003CT\u003E",
       "summary": "Pool de objetos reutiliz\u00E1veis para evitar aloca\u00E7\u00F5es no loop do jogo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar bullets = new ObjectPool\u003CVector2[]\u003E(() =\u003E new Vector2[2], reset: b =\u003E b[0] = default);\nvar bullet = bullets.Get();\nbullets.Return(bullet);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -2894,7 +2948,9 @@
       "signature": "public sealed class RandomSource",
       "summary": "Gerador pseudoaleat\u00F3rio determin\u00EDstico (xorshift64*): mesma semente, mesma sequ\u00EAncia, em qualquer aparelho.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar dice = new RandomSource(42);\nint roll = dice.NextInt(1, 7);\nVector2 direction = dice.NextDirection();\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -2951,7 +3007,7 @@
           "summary": "N\u00FAmero em [0, 1).",
           "remarks": "",
           "parameters": [],
-          "returns": "",
+          "returns": "N\u00FAmero de 0 (inclu\u00EDdo) a 1 (n\u00E3o inclu\u00EDdo), ou dentro do intervalo pedido.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -2991,10 +3047,10 @@
             {
               "name": "maxExclusive",
               "type": "int",
-              "description": ""
+              "description": "Limite superior, n\u00E3o inclu\u00EDdo."
             }
           ],
-          "returns": "",
+          "returns": "N\u00FAmero inteiro dentro do intervalo pedido.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3010,15 +3066,15 @@
             {
               "name": "min",
               "type": "int",
-              "description": ""
+              "description": "Menor valor poss\u00EDvel (inclu\u00EDdo)."
             },
             {
               "name": "maxExclusive",
               "type": "int",
-              "description": ""
+              "description": "Limite superior, n\u00E3o inclu\u00EDdo."
             }
           ],
-          "returns": "",
+          "returns": "N\u00FAmero inteiro dentro do intervalo pedido.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3046,7 +3102,9 @@
       "signature": "public sealed class RangeAttribute : Attribute",
       "summary": "Limita um n\u00FAmero a um intervalo no Inspector (vira um controle deslizante).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Options\n{\n    [Range(0, 1)] public float Volume = 0.8f;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -3070,7 +3128,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\npublic sealed class Options\n{\n    [Range(0, 1)] public float Volume = 0.8f;\n}\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -3110,7 +3170,9 @@
       "signature": "public readonly struct Ray2D",
       "summary": "Raio 2D: origem e dire\u00E7\u00E3o (normalizada na cria\u00E7\u00E3o).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar ray = new Ray2D(new Vector2(0, 0), new Vector2(1, 0));\nif (ray.Intersects(new Circle(new Vector2(50, 0), 10), out float distance))\n    position = ray.PointAt(distance);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -3175,15 +3237,15 @@
             {
               "name": "circle",
               "type": "Circle",
-              "description": ""
+              "description": "C\u00EDrculo a testar."
             },
             {
               "name": "distance",
               "type": "float",
-              "description": ""
+              "description": "Dist\u00E2ncia do in\u00EDcio do raio at\u00E9 o primeiro ponto atingido."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro se o raio atinge a forma.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3199,15 +3261,15 @@
             {
               "name": "rect",
               "type": "RectangleF",
-              "description": ""
+              "description": "Ret\u00E2ngulo a testar."
             },
             {
               "name": "distance",
               "type": "float",
-              "description": ""
+              "description": "Dist\u00E2ncia do in\u00EDcio do raio at\u00E9 o primeiro ponto atingido."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro se o raio atinge a forma.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3241,7 +3303,9 @@
       "signature": "public sealed class ReadOnlyAttribute : Attribute",
       "summary": "O Inspector mostra o valor, mas n\u00E3o deixa editar.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Stats\n{\n    [ReadOnly] public int Frame;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": []
@@ -3254,7 +3318,9 @@
       "signature": "public readonly struct RectangleF",
       "summary": "Ret\u00E2ngulo com coordenadas de ponto flutuante: posi\u00E7\u00E3o do canto superior esquerdo e tamanho.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar button = new RectangleF(20, 500, 320, 80);\nbool pressed = input.TryGetPointer(out var touch) \u0026\u0026 button.Contains(touch);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -3457,7 +3523,9 @@
       "signature": "public sealed class TimerHandle",
       "summary": "Refer\u00EAncia a um timer criado por \u0060Timers\u0060; use para cancelar.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar handle = timers.After(5f, () =\u003E log.Info(\u0022nunca acontece\u0022));\nhandle.Cancel();\n\u0060\u0060\u0060"
+      ],
       "related": [
         "T:Lunet.Timers"
       ],
@@ -3499,7 +3567,9 @@
       "signature": "public sealed class Timers",
       "summary": "Timers no tempo do jogo (param quando o jogo est\u00E1 pausado). Avan\u00E7ados pelo host a cada passo fixo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\ntimers.After(2f, () =\u003E log.Info(\u0022Fim do efeito\u0022));\ntimers.Every(0.5f, () =\u003E log.Info(\u0022tique\u0022));\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -3574,7 +3644,9 @@
       "signature": "public sealed class TooltipAttribute : Attribute",
       "summary": "Texto de ajuda mostrado junto ao campo no Inspector.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Ship\n{\n    [Tooltip(\u0022Pixels por segundo\u0022)] public float Speed = 220;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -3593,7 +3665,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\npublic sealed class Ship\n{\n    [Tooltip(\u0022Pixels por segundo\u0022)] public float Speed = 220;\n}\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -3620,7 +3694,9 @@
       "signature": "public struct Transform2D",
       "summary": "Posi\u00E7\u00E3o, rota\u00E7\u00E3o (radianos), escala e origem (ponto de piv\u00F4, em coordenadas locais).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar transform = new Transform2D(new Vector2(100, 100), rotation: MathEx.ToRadians(45));\nVector2 world = transform.TransformPoint(new Vector2(10, 0));\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -3744,7 +3820,7 @@
           "summary": "Matriz local\u2192mundo: mover a origem para (0,0), escalar, girar, posicionar.",
           "remarks": "",
           "parameters": [],
-          "returns": "",
+          "returns": "Matriz que leva pontos locais ao mundo.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3779,15 +3855,15 @@
             {
               "name": "world",
               "type": "Vector2",
-              "description": ""
+              "description": "Ponto no mundo."
             },
             {
               "name": "local",
               "type": "Vector2",
-              "description": ""
+              "description": "Recebe o ponto no espa\u00E7o local."
             }
           ],
-          "returns": "",
+          "returns": "Falso se a transforma\u00E7\u00E3o n\u00E3o pode ser invertida (escala zero).",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -3802,7 +3878,9 @@
       "signature": "public sealed class AudioBus",
       "summary": "Grupo de volume (ex.: \u0022Sfx\u0022, \u0022Music\u0022). O volume final de um som \u00E9 inst\u00E2ncia \u00D7 barramento \u00D7 Master.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\naudio.Sfx.Volume = 0.5f;\naudio.MusicBus.Muted = true;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -3855,7 +3933,9 @@
       "signature": "public sealed class AudioMixer",
       "summary": "Mistura de \u00E1udio do jogo (\u0060Audio\u0060): barramentos de volume, m\u00FAsica com fade, fades de efeitos e pausa geral. \u00C9 atualizada pelo host a cada passo fixo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\naudio.PlayMusic(music, loop: true, fadeInSeconds: 1.5f);\naudio.Master.Volume = 0.8f;\naudio.StopMusic(fadeOutSeconds: 1f);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -3954,12 +4034,12 @@
             {
               "name": "volume",
               "type": "float",
-              "description": ""
+              "description": "Volume de 0 (mudo) a 1 (m\u00E1ximo)."
             },
             {
               "name": "seconds",
               "type": "float",
-              "description": ""
+              "description": "Dura\u00E7\u00E3o, em segundos."
             }
           ],
           "returns": "",
@@ -3978,10 +4058,10 @@
             {
               "name": "name",
               "type": "string",
-              "description": ""
+              "description": "Nome do barramento (por exemplo \u0060Voz\u0060); \u00E9 criado se n\u00E3o existir."
             }
           ],
-          "returns": "",
+          "returns": "O barramento com esse nome.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -4010,17 +4090,17 @@
             {
               "name": "music",
               "type": "Music",
-              "description": ""
+              "description": "M\u00FAsica a tocar."
             },
             {
               "name": "loop",
               "type": "bool",
-              "description": ""
+              "description": "Se verdadeiro, repete at\u00E9 ser parado."
             },
             {
               "name": "fadeInSeconds",
               "type": "float",
-              "description": ""
+              "description": "Dura\u00E7\u00E3o do aumento gradual de volume, em segundos."
             }
           ],
           "returns": "",
@@ -4052,7 +4132,7 @@
             {
               "name": "fadeOutSeconds",
               "type": "float",
-              "description": ""
+              "description": "Dura\u00E7\u00E3o da redu\u00E7\u00E3o gradual de volume, em segundos."
             }
           ],
           "returns": "",
@@ -4070,7 +4150,9 @@
       "signature": "public interface IAudioBackend",
       "summary": "Contrato entre o framework e o motor de \u00E1udio da plataforma (SoundPool e MediaPlayer no Android).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nint id = audioBackend.LoadSound(File.ReadAllBytes(\u0022jump.wav\u0022), \u0022jump\u0022);\nint stream = audioBackend.Play(id, 1f, 0f, 1f, false);\naudioBackend.Stop(stream);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -4085,15 +4167,15 @@
             {
               "name": "data",
               "type": "byte[]",
-              "description": ""
+              "description": "Bytes do arquivo de \u00E1udio (WAV, OGG ou MP3)."
             },
             {
               "name": "name",
               "type": "string",
-              "description": ""
+              "description": "Nome do recurso, usado em mensagens de erro."
             }
           ],
-          "returns": "",
+          "returns": "Identificador da m\u00FAsica carregada.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -4109,15 +4191,15 @@
             {
               "name": "data",
               "type": "byte[]",
-              "description": ""
+              "description": "Bytes do arquivo de \u00E1udio (WAV, OGG ou MP3)."
             },
             {
               "name": "name",
               "type": "string",
-              "description": ""
+              "description": "Nome do recurso, usado em mensagens de erro."
             }
           ],
-          "returns": "",
+          "returns": "Identificador do som carregado.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -4159,30 +4241,30 @@
             {
               "name": "soundId",
               "type": "int",
-              "description": ""
+              "description": "Identificador do som carregado."
             },
             {
               "name": "volume",
               "type": "float",
-              "description": ""
+              "description": "Volume de 0 (mudo) a 1 (m\u00E1ximo)."
             },
             {
               "name": "pan",
               "type": "float",
-              "description": ""
+              "description": "Balan\u00E7o est\u00E9reo de -1 (esquerda) a 1 (direita)."
             },
             {
               "name": "pitch",
               "type": "float",
-              "description": ""
+              "description": "Altura do som: 1 \u00E9 o normal, 2 \u00E9 uma oitava acima."
             },
             {
               "name": "loop",
               "type": "bool",
-              "description": ""
+              "description": "Se verdadeiro, repete at\u00E9 ser parado."
             }
           ],
-          "returns": "",
+          "returns": "Identificador do som em reprodu\u00E7\u00E3o.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -4198,17 +4280,17 @@
             {
               "name": "musicId",
               "type": "int",
-              "description": ""
+              "description": "Identificador da m\u00FAsica carregada."
             },
             {
               "name": "volume",
               "type": "float",
-              "description": ""
+              "description": "Volume de 0 (mudo) a 1 (m\u00E1ximo)."
             },
             {
               "name": "loop",
               "type": "bool",
-              "description": ""
+              "description": "Se verdadeiro, repete at\u00E9 ser parado."
             }
           ],
           "returns": "",
@@ -4375,7 +4457,9 @@
       "signature": "public sealed class Music : IDisposable",
       "summary": "M\u00FAsica longa tocada em streaming (uma por vez). Crie via \u0060Content.LoadMusic\u0060 e toque com \u0060Audio.PlayMusic\u0060.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar theme = content.LoadMusic(\u0022Audio/theme.ogg\u0022);\naudio.PlayMusic(theme);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -4428,7 +4512,9 @@
       "signature": "public sealed class NullAudioBackend : IAudioBackend, IDisposable",
       "summary": "\u00C1udio desligado: aceita chamadas e n\u00E3o toca nada.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\n// Sem som (testes, servidores): o mixer funciona normalmente.\nvar mixer = new AudioMixer(new NullAudioBackend());\nmixer.Sfx.Volume = 0.5f;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -4456,15 +4542,15 @@
             {
               "name": "data",
               "type": "byte[]",
-              "description": ""
+              "description": "Bytes do arquivo de \u00E1udio (ignorados)."
             },
             {
               "name": "name",
               "type": "string",
-              "description": ""
+              "description": "Nome do recurso."
             }
           ],
-          "returns": "",
+          "returns": "Identificador da m\u00FAsica (sempre v\u00E1lido, sem efeito).",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -4480,15 +4566,15 @@
             {
               "name": "data",
               "type": "byte[]",
-              "description": ""
+              "description": "Bytes do arquivo de \u00E1udio (ignorados)."
             },
             {
               "name": "name",
               "type": "string",
-              "description": ""
+              "description": "Nome do recurso."
             }
           ],
-          "returns": "",
+          "returns": "Identificador do som (sempre v\u00E1lido, sem efeito).",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -4530,30 +4616,30 @@
             {
               "name": "soundId",
               "type": "int",
-              "description": ""
+              "description": "Identificador do som carregado."
             },
             {
               "name": "volume",
               "type": "float",
-              "description": ""
+              "description": "Volume de 0 (mudo) a 1 (m\u00E1ximo)."
             },
             {
               "name": "pan",
               "type": "float",
-              "description": ""
+              "description": "Balan\u00E7o est\u00E9reo de -1 (esquerda) a 1 (direita)."
             },
             {
               "name": "pitch",
               "type": "float",
-              "description": ""
+              "description": "Altura do som: 1 \u00E9 o normal, 2 \u00E9 uma oitava acima."
             },
             {
               "name": "loop",
               "type": "bool",
-              "description": ""
+              "description": "Se verdadeiro, repete at\u00E9 ser parado."
             }
           ],
-          "returns": "",
+          "returns": "Identificador de reprodu\u00E7\u00E3o (sempre v\u00E1lido, sem efeito).",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -4569,17 +4655,17 @@
             {
               "name": "musicId",
               "type": "int",
-              "description": ""
+              "description": "Identificador da m\u00FAsica carregada."
             },
             {
               "name": "volume",
               "type": "float",
-              "description": ""
+              "description": "Volume de 0 (mudo) a 1 (m\u00E1ximo)."
             },
             {
               "name": "loop",
               "type": "bool",
-              "description": ""
+              "description": "Se verdadeiro, repete at\u00E9 ser parado."
             }
           ],
           "returns": "",
@@ -4624,7 +4710,7 @@
             {
               "name": "volume",
               "type": "float",
-              "description": ""
+              "description": "Volume de 0 (mudo) a 1 (m\u00E1ximo)."
             }
           ],
           "returns": "",
@@ -4643,22 +4729,22 @@
             {
               "name": "streamId",
               "type": "int",
-              "description": ""
+              "description": "Identificador do som em reprodu\u00E7\u00E3o."
             },
             {
               "name": "volume",
               "type": "float",
-              "description": ""
+              "description": "Volume de 0 (mudo) a 1 (m\u00E1ximo)."
             },
             {
               "name": "pan",
               "type": "float",
-              "description": ""
+              "description": "Balan\u00E7o est\u00E9reo de -1 (esquerda) a 1 (direita)."
             },
             {
               "name": "pitch",
               "type": "float",
-              "description": ""
+              "description": "Altura do som: 1 \u00E9 o normal, 2 \u00E9 uma oitava acima."
             }
           ],
           "returns": "",
@@ -4677,7 +4763,7 @@
             {
               "name": "streamId",
               "type": "int",
-              "description": ""
+              "description": "Identificador do som em reprodu\u00E7\u00E3o."
             }
           ],
           "returns": "",
@@ -4709,7 +4795,7 @@
             {
               "name": "musicId",
               "type": "int",
-              "description": ""
+              "description": "Identificador da m\u00FAsica carregada."
             }
           ],
           "returns": "",
@@ -4728,7 +4814,7 @@
             {
               "name": "soundId",
               "type": "int",
-              "description": ""
+              "description": "Identificador do som carregado."
             }
           ],
           "returns": "",
@@ -4746,7 +4832,9 @@
       "signature": "public sealed class SoundEffect : IDisposable",
       "summary": "Efeito sonoro curto carregado na mem\u00F3ria. Crie via \u0060Content.LoadSound\u0060.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar jump = content.LoadSound(\u0022Audio/jump.wav\u0022);\njump.Play(volume: 0.8f, pan: 0f, pitch: 1.2f, loop: false);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -4797,7 +4885,7 @@
           "summary": "Toca uma vez com volume 1 no barramento Sfx.",
           "remarks": "",
           "parameters": [],
-          "returns": "",
+          "returns": "A reprodu\u00E7\u00E3o iniciada, para ajustar ou parar.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -4807,7 +4895,7 @@
           "name": "Play",
           "kind": "method",
           "signature": "public SoundInstance Play(float volume, float pan, float pitch, bool loop, AudioBus? bus = null)",
-          "summary": "",
+          "summary": "Toca com volume, balan\u00E7o, altura e repeti\u00E7\u00E3o \u00E0 escolha.",
           "remarks": "",
           "parameters": [
             {
@@ -4828,7 +4916,7 @@
             {
               "name": "loop",
               "type": "bool",
-              "description": ""
+              "description": "Se verdadeiro, repete at\u00E9 ser parado."
             },
             {
               "name": "bus",
@@ -4836,7 +4924,7 @@
               "description": "Barramento de volume; nulo = Sfx."
             }
           ],
-          "returns": "",
+          "returns": "A reprodu\u00E7\u00E3o iniciada, para ajustar ou parar.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -4851,7 +4939,9 @@
       "signature": "public sealed class SoundInstance",
       "summary": "Uma reprodu\u00E7\u00E3o em andamento de um \u0060SoundEffect\u0060.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar engine = sound.Play(0.6f, 0f, 1f, true);\nengine.Pitch = 1.5f;\nengine.FadeTo(0f, 1f, stopWhenDone: true);\n\u0060\u0060\u0060"
+      ],
       "related": [
         "T:Lunet.Audio.SoundEffect"
       ],
@@ -4946,17 +5036,17 @@
             {
               "name": "volume",
               "type": "float",
-              "description": ""
+              "description": "Volume de 0 (mudo) a 1 (m\u00E1ximo)."
             },
             {
               "name": "seconds",
               "type": "float",
-              "description": ""
+              "description": "Dura\u00E7\u00E3o, em segundos."
             },
             {
               "name": "stopWhenDone",
               "type": "bool",
-              "description": ""
+              "description": "Se verdadeiro, para o som quando o volume chegar ao valor final."
             }
           ],
           "returns": "",
@@ -4987,7 +5077,9 @@
       "signature": "public sealed class ContentManager : IDisposable",
       "summary": "Carrega e guarda em cache o conte\u00FAdo do jogo. Texturas s\u00E3o liberadas em \u0060ContentManager.Dispose\u0060.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar hero = content.LoadTexture(\u0022Textures/hero.png\u0022);\nstring level = content.ReadText(\u0022Data/level.json\u0022);\nbool hasJump = content.Exists(\u0022Audio/jump.wav\u0022);\n\u0060\u0060\u0060"
+      ],
       "related": [
         "M:Lunet.Content.ContentManager.Dispose"
       ],
@@ -5091,15 +5183,15 @@
             {
               "name": "path",
               "type": "string",
-              "description": ""
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Textures/hero.png\u0060."
             },
             {
               "name": "filter",
               "type": "TextureFilter",
-              "description": ""
+              "description": "Filtro de amostragem: \u0060Point\u0060 (pixels n\u00EDtidos) ou \u0060Linear\u0060 (suave)."
             }
           ],
-          "returns": "",
+          "returns": "O atlas carregado.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -5115,10 +5207,10 @@
             {
               "name": "path",
               "type": "string",
-              "description": ""
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Textures/hero.png\u0060."
             }
           ],
-          "returns": "",
+          "returns": "O objeto lido do JSON.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -5134,10 +5226,10 @@
             {
               "name": "path",
               "type": "string",
-              "description": ""
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Textures/hero.png\u0060."
             }
           ],
-          "returns": "",
+          "returns": "A m\u00FAsica carregada.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -5153,10 +5245,10 @@
             {
               "name": "path",
               "type": "string",
-              "description": ""
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Textures/hero.png\u0060."
             }
           ],
-          "returns": "",
+          "returns": "O som carregado.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -5172,15 +5264,15 @@
             {
               "name": "path",
               "type": "string",
-              "description": ""
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Textures/hero.png\u0060."
             },
             {
               "name": "filter",
               "type": "TextureFilter",
-              "description": ""
+              "description": "Filtro de amostragem: \u0060Point\u0060 (pixels n\u00EDtidos) ou \u0060Linear\u0060 (suave)."
             }
           ],
-          "returns": "",
+          "returns": "A textura carregada (a mesma inst\u00E2ncia nas pr\u00F3ximas chamadas).",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -5215,7 +5307,7 @@
             {
               "name": "path",
               "type": "string",
-              "description": ""
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Textures/hero.png\u0060."
             }
           ],
           "returns": "",
@@ -5235,7 +5327,9 @@
       "signature": "public sealed class DecodedImage : IEquatable\u003CDecodedImage\u003E",
       "summary": "Imagem decodificada: RGBA de 8 bits, linhas de cima para baixo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nDecodedImage image = PngDecoder.Decode(File.ReadAllBytes(\u0022hero.png\u0022));\nvar created = Texture2D.FromPixels(device, image.Width, image.Height, image.Rgba);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -5264,7 +5358,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\nDecodedImage image = PngDecoder.Decode(File.ReadAllBytes(\u0022hero.png\u0022));\nvar created = Texture2D.FromPixels(device, image.Width, image.Height, image.Rgba);\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -5317,7 +5413,9 @@
       "signature": "public sealed class DirectoryContentSource : IContentSource",
       "summary": "Conte\u00FAdo lido de uma pasta. Recusa caminhos que saiam dela.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nIContentSource files = new DirectoryContentSource(\u0022/data/user/0/app/Content\u0022);\nusing Stream stream = files.Open(\u0022Textures/hero.png\u0022);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -5388,7 +5486,9 @@
       "signature": "public interface IContentSource",
       "summary": "Origem dos arquivos de conte\u00FAdo do jogo (pasta do projeto, assets do APK exportado...).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nif (source.Exists(\u0022Data/level.json\u0022))\n{\n    using Stream stream = source.Open(\u0022Data/level.json\u0022);\n    log.Info(\u0022level.json tem \u0022 \u002B stream.Length \u002B \u0022 bytes\u0022);\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -5422,10 +5522,10 @@
             {
               "name": "path",
               "type": "string",
-              "description": ""
+              "description": "Caminho do arquivo dentro de \u0060Content/\u0060, por exemplo \u0060Textures/hero.png\u0060."
             }
           ],
-          "returns": "",
+          "returns": "Um fluxo de leitura; quem chama deve fech\u00E1-lo.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -5440,7 +5540,9 @@
       "signature": "public sealed class Localization",
       "summary": "Textos traduzidos. Cada idioma \u00E9 um JSON simples \u0060{ \u0022chave\u0022: \u0022texto\u0022 }\u0060 em \u0060Data/strings.\u003Cidioma\u003E.json\u0060. Se a chave n\u00E3o existir no idioma atual, usa o idioma reserva; se tamb\u00E9m n\u00E3o existir, devolve a pr\u00F3pria chave.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nlocalization.SetLanguage(\u0022pt\u0022);\nstring title = localization.Get(\u0022menu.title\u0022);\nstring score = localization.Get(\u0022hud.score\u0022, 42);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -5551,15 +5653,15 @@
             {
               "name": "key",
               "type": "string",
-              "description": ""
+              "description": "Chave do texto ou do dado."
             },
             {
               "name": "args",
               "type": "object[]",
-              "description": ""
+              "description": "Valores que substituem \u0060{0}\u0060, \u0060{1}\u0060\u2026 no texto."
             }
           ],
-          "returns": "",
+          "returns": "O texto traduzido, ou a pr\u00F3pria chave se n\u00E3o houver tradu\u00E7\u00E3o.",
           "examples": [],
           "related": [
             "M:System.String.Format(System.String,System.Object[])"
@@ -5577,12 +5679,12 @@
             {
               "name": "language",
               "type": "string",
-              "description": ""
+              "description": "C\u00F3digo do idioma, por exemplo \u0060pt\u0060 ou \u0060en\u0060."
             },
             {
               "name": "fallbackLanguage",
               "type": "string",
-              "description": ""
+              "description": "Idioma usado quando falta a tradu\u00E7\u00E3o (padr\u00E3o \u0060en\u0060)."
             }
           ],
           "returns": "Verdadeiro se o idioma pedido existia.",
@@ -5601,10 +5703,10 @@
             {
               "name": "fallbackLanguage",
               "type": "string",
-              "description": ""
+              "description": "Idioma usado quando falta a tradu\u00E7\u00E3o (padr\u00E3o \u0060en\u0060)."
             }
           ],
-          "returns": "",
+          "returns": "O idioma escolhido.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -5619,7 +5721,9 @@
       "signature": "public static class PngDecoder",
       "summary": "Decodificador PNG m\u00EDnimo e sem depend\u00EAncias: 8/16 bits, tons de cinza, RGB, paleta e alfa; sem entrela\u00E7amento.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nDecodedImage image = PngDecoder.Decode(File.ReadAllBytes(\u0022hero.png\u0022));\nlog.Info($\u0022{image.Width}x{image.Height}\u0022);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -5652,7 +5756,9 @@
       "signature": "public readonly struct AtlasRegion",
       "summary": "Regi\u00E3o nomeada de um atlas, em pixels, com piv\u00F4 opcional (0\u20131, padr\u00E3o no centro).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar region = new AtlasRegion(\u0022hero\u0022, new RectangleF(0, 0, 32, 32));\nvar heroes = new TextureAtlas(texture, new[] { region });\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -5686,7 +5792,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\nvar region = new AtlasRegion(\u0022hero\u0022, new RectangleF(0, 0, 32, 32));\nvar heroes = new TextureAtlas(texture, new[] { region });\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -5833,7 +5941,9 @@
       "signature": "public sealed class BlendState",
       "summary": "Como o desenho se mistura com o que j\u00E1 est\u00E1 na tela.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nbatch.Begin(BlendState.Additive);\nbatch.Draw(texture, position, Color.White);\nbatch.End();\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -5938,7 +6048,9 @@
       "signature": "public readonly struct Color",
       "summary": "Cor RGBA de 8 bits por canal, n\u00E3o pr\u00E9-multiplicada.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar orange = Color.FromHex(0xFF8800);\nvar faded = orange.WithAlpha(128);\ndevice.Clear(Color.CornflowerBlue);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -6193,7 +6305,9 @@
       "signature": "public static class DebugDraw",
       "summary": "Desenho de depura\u00E7\u00E3o: linhas, contornos e preenchimentos com a textura branca do dispositivo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nDebugDraw.Rect(batch, new RectangleF(10, 10, 50, 50), Color.Red);\nDebugDraw.Circle(batch, position, 20, Color.Green);\nDebugDraw.Line(batch, position, position \u002B velocity, Color.Yellow);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -6392,7 +6506,9 @@
       "signature": "public readonly struct DrawState",
       "summary": "Estado aplicado pelo \u0060SpriteBatch\u0060 antes de cada chamada de desenho (struct: sem aloca\u00E7\u00E3o por Begin).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar additive = DrawState.Default with { Blend = BlendMode.Additive };\n\u0060\u0060\u0060"
+      ],
       "related": [
         "T:Lunet.Graphics.SpriteBatch"
       ],
@@ -6433,7 +6549,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\nvar additive = DrawState.Default with { Blend = BlendMode.Additive };\n\u0060\u0060\u0060"
+          ],
           "related": [
             "T:Lunet.Graphics.SpriteBatch"
           ],
@@ -6527,7 +6645,9 @@
       "signature": "public sealed class GraphicsDevice",
       "summary": "Dispositivo gr\u00E1fico do jogo. Desenha numa resolu\u00E7\u00E3o virtual fixa, centralizada na tela com barras (letterbox), ou num \u0060RenderTarget2D\u0060 (espa\u00E7o em pixels do alvo).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\ndevice.Clear(Color.Black);\ndevice.PixelPerfect = true;\nVector2 virtualPoint = device.SurfaceToVirtual(new Vector2(540, 960));\n\u0060\u0060\u0060"
+      ],
       "related": [
         "T:Lunet.Graphics.RenderTarget2D"
       ],
@@ -6744,7 +6864,7 @@
             {
               "name": "color",
               "type": "Color",
-              "description": ""
+              "description": "Cor de tinta (multiplica as cores da imagem)."
             }
           ],
           "returns": "",
@@ -6763,12 +6883,12 @@
             {
               "name": "surfaceWidth",
               "type": "int",
-              "description": ""
+              "description": "Largura da superf\u00EDcie de desenho, em pixels."
             },
             {
               "name": "surfaceHeight",
               "type": "int",
-              "description": ""
+              "description": "Altura da superf\u00EDcie de desenho, em pixels."
             }
           ],
           "returns": "",
@@ -6787,27 +6907,27 @@
             {
               "name": "density",
               "type": "float",
-              "description": ""
+              "description": "Densidade da tela (1 = 160 dpi)."
             },
             {
               "name": "insetLeft",
               "type": "int",
-              "description": ""
+              "description": "Recuo seguro \u00E0 esquerda, em pixels da superf\u00EDcie."
             },
             {
               "name": "insetTop",
               "type": "int",
-              "description": ""
+              "description": "Recuo seguro no topo, em pixels da superf\u00EDcie."
             },
             {
               "name": "insetRight",
               "type": "int",
-              "description": ""
+              "description": "Recuo seguro \u00E0 direita, em pixels da superf\u00EDcie."
             },
             {
               "name": "insetBottom",
               "type": "int",
-              "description": ""
+              "description": "Recuo seguro embaixo, em pixels da superf\u00EDcie."
             }
           ],
           "returns": "",
@@ -6826,7 +6946,7 @@
             {
               "name": "target",
               "type": "RenderTarget2D",
-              "description": ""
+              "description": "Alvo de desenho, ou nulo para voltar \u00E0 tela."
             }
           ],
           "returns": "",
@@ -6869,10 +6989,10 @@
             {
               "name": "surfacePoint",
               "type": "Vector2",
-              "description": ""
+              "description": "Ponto em pixels da superf\u00EDcie de desenho."
             }
           ],
-          "returns": "",
+          "returns": "O mesmo ponto em coordenadas virtuais.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -6888,10 +7008,10 @@
             {
               "name": "virtualPoint",
               "type": "Vector2",
-              "description": ""
+              "description": "Ponto em coordenadas virtuais."
             }
           ],
-          "returns": "",
+          "returns": "O mesmo ponto em pixels da superf\u00EDcie.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -6906,7 +7026,9 @@
       "signature": "public interface IGraphicsBackend",
       "summary": "Contrato entre o framework e a API gr\u00E1fica (OpenGL ES no Android, um coletor em mem\u00F3ria nos testes). Cada quad ocupa 4 v\u00E9rtices consecutivos (topo-esq, topo-dir, base-dir, base-esq).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nint handle = backend.CreateTexture(1, 1, new byte[] { 255, 255, 255, 255 }, TextureFilter.Point);\nbackend.DeleteTexture(handle);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -6940,25 +7062,25 @@
             {
               "name": "width",
               "type": "int",
-              "description": ""
+              "description": "Largura, em pixels."
             },
             {
               "name": "height",
               "type": "int",
-              "description": ""
+              "description": "Altura, em pixels."
             },
             {
               "name": "filter",
               "type": "TextureFilter",
-              "description": ""
+              "description": "Filtro de amostragem: \u0060Point\u0060 (pixels n\u00EDtidos) ou \u0060Linear\u0060 (suave)."
             },
             {
               "name": "textureHandle",
               "type": "int",
-              "description": ""
+              "description": "Recebe o identificador da textura do alvo."
             }
           ],
-          "returns": "",
+          "returns": "Identificador do alvo de desenho.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -6974,10 +7096,10 @@
             {
               "name": "fragmentSource",
               "type": "string",
-              "description": ""
+              "description": "C\u00F3digo GLSL do fragment shader."
             }
           ],
-          "returns": "",
+          "returns": "Identificador do shader.",
           "examples": [],
           "related": [
             "T:Lunet.Graphics.ShaderCompileException"
@@ -7120,7 +7242,7 @@
             {
               "name": "state",
               "type": "DrawState",
-              "description": ""
+              "description": "Estado de mistura, amostragem, recorte e shader para os pr\u00F3ximos desenhos."
             }
           ],
           "returns": "",
@@ -7141,17 +7263,17 @@
             {
               "name": "handle",
               "type": "int",
-              "description": ""
+              "description": "Identificador do alvo (0 \u00E9 a tela)."
             },
             {
               "name": "width",
               "type": "int",
-              "description": ""
+              "description": "Largura, em pixels."
             },
             {
               "name": "height",
               "type": "int",
-              "description": ""
+              "description": "Altura, em pixels."
             }
           ],
           "returns": "",
@@ -7205,7 +7327,9 @@
       "signature": "public sealed class Material",
       "summary": "Conjunto de estado de desenho reutiliz\u00E1vel: shader, mistura e amostragem.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nbatch.Begin(new Material { Blend = BlendState.Alpha, Sampler = SamplerState.PointClamp });\nbatch.End();\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -7258,7 +7382,9 @@
       "signature": "public readonly struct RectI",
       "summary": "Ret\u00E2ngulo em pixels inteiros.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar clip = new RectI(0, 0, 200, 100);\nint area = clip.Width * clip.Height;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -7292,7 +7418,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\nvar clip = new RectI(0, 0, 200, 100);\nint area = clip.Width * clip.Height;\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -7384,7 +7512,9 @@
       "signature": "public sealed class RenderTarget2D : IDisposable",
       "summary": "Textura em que se pode desenhar (minimapa, efeitos, ilumina\u00E7\u00E3o). Dentro do alvo o espa\u00E7o de desenho \u00E9 em pixels do pr\u00F3prio alvo, com (0,0) no canto superior esquerdo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar target = new RenderTarget2D(device, 180, 320);\ndevice.SetRenderTarget(target);\ndevice.Clear(Color.Black);\ndevice.SetRenderTarget(null);\nbatch.Begin();\nbatch.Draw(target.Texture, position, Color.White);\nbatch.End();\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -7499,7 +7629,9 @@
       "signature": "public sealed class SamplerState",
       "summary": "Como a textura \u00E9 amostrada: filtro e comportamento fora de [0,1].",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nbatch.Begin(sampler: SamplerState.PointClamp);\nbatch.End();\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -7615,7 +7747,9 @@
       "signature": "public sealed class Shader : IDisposable",
       "summary": "Shader de fragmento personalizado. Voc\u00EA escreve s\u00F3 o corpo; o framework acrescenta a declara\u00E7\u00E3o de \u0060vUv\u0060, \u0060vColor\u0060, \u0060uTex\u0060 e \u0060outColor\u0060 (veja \u0060Shader.Prelude\u0060). Exemplo:\n\n\u0060\u0060\u0060\nuniform float uAmount; void main() { vec4 c = texture(uTex, vUv) * vColor; float g = dot(c.rgb, vec3(0.3, 0.59, 0.11)); outColor = vec4(mix(c.rgb, vec3(g), uAmount), c.a); }\n\u0060\u0060\u0060",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar glow = Shader.FromFragmentSource(device, \u0022uniform float uAmount; void main() { outColor = texture(uTex, vUv) * vColor * uAmount; }\u0022);\nglow.SetFloat(\u0022uAmount\u0022, 1.5f);\nbatch.Begin(shader: glow);\nbatch.End();\n\u0060\u0060\u0060"
+      ],
       "related": [
         "F:Lunet.Graphics.Shader.Prelude"
       ],
@@ -7665,21 +7799,21 @@
           "name": "FromFragmentSource",
           "kind": "method",
           "signature": "public static Shader FromFragmentSource(GraphicsDevice device, string source)",
-          "summary": "",
+          "summary": "Compila um fragment shader a partir do c\u00F3digo GLSL.",
           "remarks": "",
           "parameters": [
             {
               "name": "device",
               "type": "GraphicsDevice",
-              "description": ""
+              "description": "Dispositivo gr\u00E1fico do jogo."
             },
             {
               "name": "source",
               "type": "string",
-              "description": ""
+              "description": "C\u00F3digo GLSL do fragment shader (sem o prel\u00FAdio)."
             }
           ],
-          "returns": "",
+          "returns": "O shader compilado.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -7814,7 +7948,9 @@
       "signature": "public sealed class ShaderCompileException : Exception, ISerializable",
       "summary": "O shader n\u00E3o compilou; a mensagem traz o log do driver.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\ntry\n{\n    Shader.FromFragmentSource(device, \u0022isto n\u00E3o compila\u0022);\n}\ncatch (ShaderCompileException error)\n{\n    log.Error(error.Message);\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -7829,11 +7965,13 @@
             {
               "name": "message",
               "type": "string",
-              "description": ""
+              "description": "Mensagem de erro do compilador de shaders."
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\ntry\n{\n    Shader.FromFragmentSource(device, \u0022isto n\u00E3o compila\u0022);\n}\ncatch (ShaderCompileException error)\n{\n    log.Error(error.Message);\n}\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         }
@@ -7847,7 +7985,9 @@
       "signature": "public sealed class Sprite",
       "summary": "Desenh\u00E1vel reutiliz\u00E1vel: textura (ou regi\u00E3o dela), cor, origem e escala. Facilita desenhar o mesmo sprite muitas vezes.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar sprite = new Sprite(texture) { Color = Color.White, Scale = new Vector2(2, 2) };\nbatch.Draw(sprite, position);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -7992,7 +8132,9 @@
       "signature": "public sealed class SpriteBatch",
       "summary": "Agrupa quads com a mesma textura e os envia ao backend. Sem aloca\u00E7\u00F5es por quadro.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nbatch.Begin();\nbatch.Draw(texture, position, Color.White);\nbatch.DrawString(font, \u0022Pontos: 10\u0022, new Vector2(8, 8), Color.White);\nbatch.End();\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -8136,22 +8278,22 @@
             {
               "name": "texture",
               "type": "Texture2D",
-              "description": ""
+              "description": "Textura a desenhar."
             },
             {
               "name": "position",
               "type": "Vector2",
-              "description": ""
+              "description": "Posi\u00E7\u00E3o, em coordenadas virtuais."
             },
             {
               "name": "source",
               "type": "RectangleF",
-              "description": ""
+              "description": "Trecho da textura a desenhar, em pixels; nulo desenha a textura toda."
             },
             {
               "name": "color",
               "type": "Color",
-              "description": ""
+              "description": "Cor de tinta (multiplica as cores da imagem)."
             }
           ],
           "returns": "",
@@ -8170,22 +8312,22 @@
             {
               "name": "texture",
               "type": "Texture2D",
-              "description": ""
+              "description": "Textura a desenhar."
             },
             {
               "name": "destination",
               "type": "RectangleF",
-              "description": ""
+              "description": "Ret\u00E2ngulo de destino, em coordenadas virtuais."
             },
             {
               "name": "source",
               "type": "RectangleF?",
-              "description": ""
+              "description": "Trecho da textura a desenhar, em pixels; nulo desenha a textura toda."
             },
             {
               "name": "color",
               "type": "Color",
-              "description": ""
+              "description": "Cor de tinta (multiplica as cores da imagem)."
             },
             {
               "name": "rotation",
@@ -8195,7 +8337,7 @@
             {
               "name": "origin",
               "type": "Vector2",
-              "description": ""
+              "description": "Ponto de rota\u00E7\u00E3o, em pixels da textura."
             }
           ],
           "returns": "",
@@ -8214,32 +8356,32 @@
             {
               "name": "atlas",
               "type": "TextureAtlas",
-              "description": ""
+              "description": "Atlas que cont\u00E9m a regi\u00E3o."
             },
             {
               "name": "region",
               "type": "string",
-              "description": ""
+              "description": "Nome da regi\u00E3o dentro do atlas."
             },
             {
               "name": "position",
               "type": "Vector2",
-              "description": ""
+              "description": "Posi\u00E7\u00E3o, em coordenadas virtuais."
             },
             {
               "name": "color",
               "type": "Color",
-              "description": ""
+              "description": "Cor de tinta (multiplica as cores da imagem)."
             },
             {
               "name": "scale",
               "type": "float",
-              "description": ""
+              "description": "Fator de escala (1 = tamanho original)."
             },
             {
               "name": "rotation",
               "type": "float",
-              "description": ""
+              "description": "Rota\u00E7\u00E3o, em radianos."
             }
           ],
           "returns": "",
@@ -8258,12 +8400,12 @@
             {
               "name": "sprite",
               "type": "Sprite",
-              "description": ""
+              "description": "Sprite a desenhar."
             },
             {
               "name": "position",
               "type": "Vector2",
-              "description": ""
+              "description": "Posi\u00E7\u00E3o, em coordenadas virtuais."
             }
           ],
           "returns": "",
@@ -8282,27 +8424,27 @@
             {
               "name": "font",
               "type": "SpriteFont",
-              "description": ""
+              "description": "Fonte do texto."
             },
             {
               "name": "text",
               "type": "string",
-              "description": ""
+              "description": "Texto a desenhar."
             },
             {
               "name": "position",
               "type": "Vector2",
-              "description": ""
+              "description": "Posi\u00E7\u00E3o, em coordenadas virtuais."
             },
             {
               "name": "color",
               "type": "Color",
-              "description": ""
+              "description": "Cor de tinta (multiplica as cores da imagem)."
             },
             {
               "name": "scale",
               "type": "float",
-              "description": ""
+              "description": "Fator de escala (1 = tamanho original)."
             }
           ],
           "returns": "",
@@ -8333,7 +8475,9 @@
       "signature": "public sealed class SpriteFont",
       "summary": "Fonte bitmap embutida (5\u00D77 pixels, com acentos do portugu\u00EAs). Serve para HUD e depura\u00E7\u00E3o; fontes TrueType/bitmap personalizadas vir\u00E3o depois.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar title = SpriteFont.CreateDefault(device);\nVector2 size = title.Measure(\u0022Ol\u00E1\u0022, 2f);\nbatch.DrawString(title, \u0022Ol\u00E1\u0022, (device.ViewSize - size) / 2, Color.White, 2f);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -8380,15 +8524,15 @@
             {
               "name": "text",
               "type": "string",
-              "description": ""
+              "description": "Texto a desenhar."
             },
             {
               "name": "scale",
               "type": "float",
-              "description": ""
+              "description": "Fator de escala (1 = tamanho original)."
             }
           ],
-          "returns": "",
+          "returns": "Largura e altura do texto, em coordenadas virtuais.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -8403,7 +8547,9 @@
       "signature": "public sealed class SpriteSheet",
       "summary": "Divide uma textura em quadros de tamanho igual, numerados da esquerda para a direita, de cima para baixo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar walk = new SpriteSheet(texture, 32, 32);\nRectangleF frame = walk.Frame((int)(time.TotalSeconds * 8) % walk.FrameCount);\nbatch.Draw(texture, position, frame, Color.White);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -8543,7 +8689,9 @@
       "signature": "public struct SpriteVertex",
       "summary": "V\u00E9rtice de sprite: 20 bytes (posi\u00E7\u00E3o, UV, cor RGBA empacotada).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar vertex = new SpriteVertex { Position = new Vector2(1, 2), TexCoord = new Vector2(0, 0), Color = Color.White.PackedRgba };\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -8609,7 +8757,9 @@
       "signature": "public sealed class Texture2D : IDisposable",
       "summary": "Imagem na GPU. Cores RGBA de 8 bits, origem no canto superior esquerdo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar square = Texture2D.CreateSolid(device, 16, 16, Color.Red);\nvar ball = Texture2D.CreateCircle(device, 24, Color.Yellow);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -8676,20 +8826,20 @@
             {
               "name": "device",
               "type": "GraphicsDevice",
-              "description": ""
+              "description": "Dispositivo gr\u00E1fico do jogo."
             },
             {
               "name": "diameter",
               "type": "int",
-              "description": ""
+              "description": "Di\u00E2metro do c\u00EDrculo, em pixels."
             },
             {
               "name": "color",
               "type": "Color",
-              "description": ""
+              "description": "Cor de tinta (multiplica as cores da imagem)."
             }
           ],
-          "returns": "",
+          "returns": "Uma textura quadrada com um c\u00EDrculo preenchido.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -8752,30 +8902,30 @@
             {
               "name": "device",
               "type": "GraphicsDevice",
-              "description": ""
+              "description": "Dispositivo gr\u00E1fico do jogo."
             },
             {
               "name": "width",
               "type": "int",
-              "description": ""
+              "description": "Largura, em pixels."
             },
             {
               "name": "height",
               "type": "int",
-              "description": ""
+              "description": "Altura, em pixels."
             },
             {
               "name": "rgba",
               "type": "ReadOnlySpan\u003Cbyte\u003E",
-              "description": ""
+              "description": "Pixels em RGBA de 8 bits por canal, linha a linha de cima para baixo."
             },
             {
               "name": "filter",
               "type": "TextureFilter",
-              "description": ""
+              "description": "Filtro de amostragem: \u0060Point\u0060 (pixels n\u00EDtidos) ou \u0060Linear\u0060 (suave)."
             }
           ],
-          "returns": "",
+          "returns": "A textura criada.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -8790,7 +8940,9 @@
       "signature": "public sealed class TextureAtlas",
       "summary": "Uma textura com v\u00E1rias regi\u00F5es nomeadas. Formato JSON: veja \u0060TextureAtlas.Parse\u0060.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar sheet = content.LoadAtlas(\u0022Data/atlas.json\u0022);\nbatch.Draw(sheet, \u0022hero\u0022, position, Color.White);\n\u0060\u0060\u0060"
+      ],
       "related": [
         "M:Lunet.Graphics.TextureAtlas.Parse(System.String)"
       ],
@@ -8889,10 +9041,10 @@
             {
               "name": "json",
               "type": "string",
-              "description": ""
+              "description": "Conte\u00FAdo do arquivo JSON do atlas."
             }
           ],
-          "returns": "",
+          "returns": "O caminho da textura e a lista de regi\u00F5es.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -9011,7 +9163,9 @@
       "signature": "public readonly struct Viewport",
       "summary": "\u00C1rea da superf\u00EDcie onde o jogo desenha (a resolu\u00E7\u00E3o virtual com barras), em pixels da superf\u00EDcie.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nViewport view = device.Viewport;\nfloat aspect = view.AspectRatio;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -9045,7 +9199,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\nViewport view = device.Viewport;\nfloat aspect = view.AspectRatio;\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -9333,7 +9489,9 @@
       "signature": "public readonly struct GamepadState",
       "summary": "Estado de um controle. Sticks em [\u22121, 1] (Y positivo = para baixo, como na tela); gatilhos em [0, 1].",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar pad = input.Gamepad;\nif (pad.IsConnected \u0026\u0026 pad.IsDown(GamepadButtons.A))\n    position \u002B= pad.LeftStick * 200 * time.DeltaSeconds;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -9377,7 +9535,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\nvar pad = input.Gamepad;\nif (pad.IsConnected \u0026\u0026 pad.IsDown(GamepadButtons.A))\n    position \u002B= pad.LeftStick * 200 * time.DeltaSeconds;\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -9489,10 +9649,10 @@
             {
               "name": "deadZone",
               "type": "float",
-              "description": ""
+              "description": "Zona morta: hastes abaixo desse valor viram zero."
             }
           ],
-          "returns": "",
+          "returns": "Uma c\u00F3pia com as hastes filtradas.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -9507,7 +9667,9 @@
       "signature": "public readonly struct Gesture",
       "summary": "Gesto reconhecido. Posi\u00E7\u00F5es e velocidades em coordenadas virtuais.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nforeach (var gesture in input.Gestures)\n{\n    if (gesture.Type == GestureType.Tap) position = gesture.Position;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -9661,7 +9823,9 @@
       "signature": "public sealed class GestureRecognizer",
       "summary": "Reconhece gestos a partir dos toques de cada quadro. Independe da fase informada: um dedo aparece quando surge um id ativo e termina quando some ou \u00E9 solto. Com dois dedos ativos emite Pinch e Rotate (e suprime os gestos de um dedo).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\ninput.GestureSettings.LongPressSeconds = 0.6;\ninput.GestureSettings.DragThreshold = 12;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -9902,7 +10066,9 @@
       "signature": "public interface IHaptics",
       "summary": "Vibra\u00E7\u00E3o do aparelho.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nhaptics.Vibrate(30, 0.5f);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -9930,12 +10096,12 @@
             {
               "name": "milliseconds",
               "type": "int",
-              "description": ""
+              "description": "Dura\u00E7\u00E3o da vibra\u00E7\u00E3o, em milissegundos."
             },
             {
               "name": "intensity",
               "type": "float",
-              "description": ""
+              "description": "Intensidade de 0 a 1 (quando o aparelho suporta)."
             }
           ],
           "returns": "",
@@ -9953,7 +10119,9 @@
       "signature": "public sealed class InputState",
       "summary": "Estado de entrada do quadro atual. Preenchido pelo host; leitura apenas para o jogo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nif (input.TryGetPointer(out var touch)) position = touch;\nif (input.IsKeyDown(Keys.Space)) log.Info(\u0022pulo\u0022);\nvar tilt = input.Accelerometer;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -10119,10 +10287,10 @@
             {
               "name": "button",
               "type": "GamepadButtons",
-              "description": ""
+              "description": "Bot\u00E3o a consultar."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro s\u00F3 no quadro em que o bot\u00E3o foi apertado.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -10157,10 +10325,10 @@
             {
               "name": "key",
               "type": "Keys",
-              "description": ""
+              "description": "Tecla a consultar."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro s\u00F3 no quadro em que a tecla foi apertada.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -10195,7 +10363,7 @@
             {
               "name": "state",
               "type": "GamepadState",
-              "description": ""
+              "description": "Estado do controle."
             }
           ],
           "returns": "",
@@ -10233,12 +10401,12 @@
             {
               "name": "key",
               "type": "Keys",
-              "description": ""
+              "description": "Tecla a consultar."
             },
             {
               "name": "down",
               "type": "bool",
-              "description": ""
+              "description": "Verdadeiro se a tecla est\u00E1 pressionada."
             }
           ],
           "returns": "",
@@ -10257,7 +10425,7 @@
             {
               "name": "touches",
               "type": "ReadOnlySpan\u003CTouchPoint\u003E",
-              "description": ""
+              "description": "Toques atuais."
             }
           ],
           "returns": "",
@@ -10276,10 +10444,10 @@
             {
               "name": "position",
               "type": "Vector2",
-              "description": ""
+              "description": "Posi\u00E7\u00E3o, em coordenadas virtuais."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro se h\u00E1 um toque na tela.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -10295,10 +10463,10 @@
             {
               "name": "touch",
               "type": "TouchPoint",
-              "description": ""
+              "description": "Recebe o toque encontrado."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro se h\u00E1 um toque.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -10938,7 +11106,9 @@
       "signature": "public sealed class NullHaptics : IHaptics",
       "summary": "Sem vibra\u00E7\u00E3o (padr\u00E3o em testes e em aparelhos sem motor).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nIHaptics none = new NullHaptics();\nnone.Vibrate(50);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -10989,7 +11159,9 @@
       "signature": "public readonly struct Pointer",
       "summary": "Ponteiro unificado: o primeiro dedo pressionado (toque) \u2014 uma abstra\u00E7\u00E3o para jogos que s\u00F3 precisam de \u0022um ponto\u0022.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nPointer pointer = input.Pointer;\nif (pointer.WasPressed) log.Info(\u0022toque em \u0022 \u002B pointer.Position);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -11023,7 +11195,9 @@
             }
           ],
           "returns": "",
-          "examples": [],
+          "examples": [
+            "\u0060\u0060\u0060\nPointer pointer = input.Pointer;\nif (pointer.WasPressed) log.Info(\u0022toque em \u0022 \u002B pointer.Position);\n\u0060\u0060\u0060"
+          ],
           "related": [],
           "since": "0.0.1"
         },
@@ -11089,7 +11263,9 @@
       "signature": "public readonly ref struct TouchCollection",
       "summary": "Os toques do quadro atual. Valor leve, sem aloca\u00E7\u00E3o; use em \u0060foreach\u0060 ou por \u00EDndice.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nforeach (var touch in input.TouchCollection)\n{\n    if (touch.IsDown) position = touch.Position;\n}\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -11162,15 +11338,15 @@
             {
               "name": "id",
               "type": "int",
-              "description": ""
+              "description": "Identificador do dedo."
             },
             {
               "name": "touch",
               "type": "TouchPoint",
-              "description": ""
+              "description": "Recebe o toque encontrado."
             }
           ],
-          "returns": "",
+          "returns": "Verdadeiro se o dedo est\u00E1 na lista.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11251,7 +11427,9 @@
       "signature": "public readonly struct TouchPoint",
       "summary": "Um dedo na tela. \u0060TouchPoint.Position\u0060 est\u00E1 em coordenadas virtuais do jogo.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nif (input.TryGetPrimaryTouch(out TouchPoint touch) \u0026\u0026 touch.Phase == TouchPhase.Moved)\n    position = touch.Position;\n\u0060\u0060\u0060"
+      ],
       "related": [
         "P:Lunet.Input.TouchPoint.Position"
       ],
@@ -11348,7 +11526,9 @@
       "signature": "public sealed class VirtualButton",
       "summary": "Bot\u00E3o circular de tela.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar jump = new VirtualButton(new Circle(new Vector2(300, 560), 40));\njump.Update(input);\nif (jump.WasPressed) velocity.Y = -300;\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -11441,7 +11621,9 @@
       "signature": "public sealed class VirtualStick",
       "summary": "Joystick virtual de tela. Fica ativo enquanto um dedo que come\u00E7ou dentro de \u0060VirtualStick.Area\u0060 continua pressionado. Em modo flutuante, o centro passa a ser onde o dedo tocou primeiro.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar stick = new VirtualStick(new Vector2(70, 560), 50);\nstick.Update(input);\nposition \u002B= stick.Direction * 120 * time.DeltaSeconds;\n\u0060\u0060\u0060"
+      ],
       "related": [
         "P:Lunet.Input.VirtualStick.Area"
       ],
@@ -11629,7 +11811,9 @@
       "signature": "public sealed class DirectorySaveStore : ISaveStore",
       "summary": "Salvamento em arquivos de uma pasta. Grava\u00E7\u00E3o at\u00F4mica (arquivo tempor\u00E1rio \u002B rename).",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nISaveStore disk = new DirectorySaveStore(\u0022/data/user/0/app/saves\u0022);\ndisk.WriteText(\u0022slot1\u0022, \u0022{}\u0022);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -11743,7 +11927,9 @@
       "signature": "public interface ISaveStore",
       "summary": "Armazenamento de dados salvos do jogo, por chave.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nstore.WriteText(\u0022options\u0022, \u0022{\\\u0022volume\\\u0022:0.5}\u0022);\nstring? json = store.ReadText(\u0022options\u0022);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -11838,7 +12024,9 @@
       "signature": "public sealed class MemorySaveStore : ISaveStore",
       "summary": "Salvamento em mem\u00F3ria (n\u00E3o persiste). Usado quando o host n\u00E3o fornece armazenamento.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nvar memory = new MemorySaveStore();\nmemory.WriteText(\u0022a\u0022, \u00221\u0022);\nbool exists = memory.Exists(\u0022a\u0022);\n\u0060\u0060\u0060"
+      ],
       "related": [],
       "since": "0.0.1",
       "members": [
@@ -11933,7 +12121,9 @@
       "signature": "public sealed class SaveData",
       "summary": "API de salvamento exposta ao jogo (\u0060Save\u0060): JSON tipado sobre um \u0060ISaveStore\u0060.",
       "remarks": "",
-      "examples": [],
+      "examples": [
+        "\u0060\u0060\u0060\nsave.Save(\u0022best\u0022, 120);\nint best = save.Load(\u0022best\u0022, 0);\n\u0060\u0060\u0060"
+      ],
       "related": [
         "T:Lunet.Storage.ISaveStore"
       ],
@@ -12007,15 +12197,15 @@
             {
               "name": "key",
               "type": "string",
-              "description": ""
+              "description": "Chave do texto ou do dado."
             },
             {
               "name": "fallback",
               "type": "T",
-              "description": ""
+              "description": "Valor devolvido quando n\u00E3o h\u00E1 save ou ele n\u00E3o pode ser lido."
             }
           ],
-          "returns": "",
+          "returns": "O valor salvo ou \u0060fallback\u0060.",
           "examples": [],
           "related": [],
           "since": "0.0.1"

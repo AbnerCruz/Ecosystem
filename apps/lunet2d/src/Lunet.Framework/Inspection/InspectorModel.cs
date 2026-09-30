@@ -37,6 +37,15 @@ public enum InspectorFieldKind
 }
 
 /// <summary>Uma linha do Inspector, independente de interface: quem desenha (o app) lê e grava por <see cref="Getter"/> e <see cref="Setter"/>.</summary>
+/// <example>
+/// <code>
+/// foreach (var item in ui.Items)
+/// {
+///     if (item.Kind == InspectorItemKind.Field &amp;&amp; item.IsEditable)
+///         log.Info($"{item.Label} = {item.Getter!()}");
+/// }
+/// </code>
+/// </example>
 public sealed class InspectorItem
 {
     /// <summary>Tipo da linha.</summary>
@@ -77,6 +86,23 @@ public sealed class InspectorItem
 /// <summary>
 /// Onde um <see cref="Inspector{T}"/> descreve a interface do objeto. Cada chamada adiciona uma linha; o app desenha as linhas.
 /// </summary>
+/// <example>
+/// <code>
+/// public sealed class Door { public bool Open; public string Label = "Porta"; }
+///
+/// public sealed class DoorInspector : Inspector&lt;Door&gt;
+/// {
+///     public override void OnInspect(InspectorContext ui, Door target)
+///     {
+///         ui.Header(target.Label);
+///         ui.Field("Aberta", () =&gt; target.Open, v =&gt; target.Open = v);
+///         ui.Separator();
+///         ui.Label("Toque em Alternar para abrir ou fechar");
+///         ui.Button("Alternar", () =&gt; target.Open = !target.Open);
+///     }
+/// }
+/// </code>
+/// </example>
 public sealed class InspectorContext
 {
     private readonly List<InspectorItem> _items = [];
@@ -180,6 +206,22 @@ public sealed class InspectorContext
 /// Inspector do app a usa no lugar da lista automática de campos.
 /// </summary>
 /// <typeparam name="T">Tipo inspecionado.</typeparam>
+/// <example>
+/// <code>
+/// public sealed class Turret { public float Angle; public int Shots; }
+///
+/// public sealed class TurretInspector : Inspector&lt;Turret&gt;
+/// {
+///     public override void OnInspect(InspectorContext ui, Turret target)
+///     {
+///         ui.Header("Torre");
+///         ui.Slider("Ângulo", () =&gt; target.Angle, v =&gt; target.Angle = v, 0, 360);
+///         ui.Field("Disparos", () =&gt; target.Shots);
+///         ui.Button("Atirar", () =&gt; target.Shots++);
+///     }
+/// }
+/// </code>
+/// </example>
 public abstract class Inspector<T> : IInspector where T : class
 {
     /// <summary>Descreve a interface do objeto adicionando linhas em <paramref name="ui"/>.</summary>
@@ -193,6 +235,17 @@ public abstract class Inspector<T> : IInspector where T : class
 }
 
 /// <summary>Contrato interno dos inspectors customizados; use <see cref="Inspector{T}"/>.</summary>
+/// <example>
+/// <code>
+/// public sealed class Turret { public float Angle; }
+///
+/// public sealed class TurretInspector : Inspector&lt;Turret&gt;
+/// {
+///     public override void OnInspect(InspectorContext ui, Turret target) =&gt;
+///         ui.Slider("Ângulo", () =&gt; target.Angle, v =&gt; target.Angle = v, 0, 360);
+/// }
+/// </code>
+/// </example>
 public interface IInspector
 {
     /// <summary>Tipo que este inspector sabe mostrar.</summary>

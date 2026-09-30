@@ -1,6 +1,12 @@
 namespace Lunet;
 
 /// <summary>Referência a um timer criado por <see cref="Timers"/>; use para cancelar.</summary>
+/// <example>
+/// <code>
+/// var handle = timers.After(5f, () =&gt; log.Info("nunca acontece"));
+/// handle.Cancel();
+/// </code>
+/// </example>
 public sealed class TimerHandle
 {
     internal TimerHandle(double interval, bool repeat, Action callback)
@@ -23,6 +29,12 @@ public sealed class TimerHandle
 }
 
 /// <summary>Timers no tempo do jogo (param quando o jogo está pausado). Avançados pelo host a cada passo fixo.</summary>
+/// <example>
+/// <code>
+/// timers.After(2f, () =&gt; log.Info("Fim do efeito"));
+/// timers.Every(0.5f, () =&gt; log.Info("tique"));
+/// </code>
+/// </example>
 public sealed class Timers
 {
     private readonly List<TimerHandle> _timers = new();

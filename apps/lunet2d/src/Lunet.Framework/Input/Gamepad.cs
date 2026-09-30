@@ -45,6 +45,13 @@ public enum GamepadButtons
 /// <param name="RightStick">Direção do stick direito, de −1 a 1 em cada eixo.</param>
 /// <param name="LeftTrigger">Pressão do gatilho esquerdo, de 0 a 1.</param>
 /// <param name="RightTrigger">Pressão do gatilho direito, de 0 a 1.</param>
+/// <example>
+/// <code>
+/// var pad = input.Gamepad;
+/// if (pad.IsConnected &amp;&amp; pad.IsDown(GamepadButtons.A))
+///     position += pad.LeftStick * 200 * time.DeltaSeconds;
+/// </code>
+/// </example>
 public readonly record struct GamepadState(
     bool IsConnected,
     GamepadButtons Buttons,
@@ -59,6 +66,8 @@ public readonly record struct GamepadState(
     public bool IsDown(GamepadButtons button) => (Buttons & button) == button && button != GamepadButtons.None;
 
     /// <summary>Aplica zona morta radial aos sticks (padrão do Android tem ruído perto de zero).</summary>
+    /// <param name="deadZone">Zona morta: hastes abaixo desse valor viram zero.</param>
+    /// <returns>Uma cópia com as hastes filtradas.</returns>
     public GamepadState WithDeadZone(float deadZone = 0.15f) =>
         this with { LeftStick = Dead(LeftStick, deadZone), RightStick = Dead(RightStick, deadZone) };
 

@@ -3,6 +3,13 @@ using System.Numerics;
 namespace Lunet;
 
 /// <summary>Círculo definido por centro e raio, com testes de contenção e interseção.</summary>
+/// <example>
+/// <code>
+/// var hitbox = new Circle(new Vector2(100, 100), 24);
+/// bool touching = hitbox.Contains(position);
+/// bool hit = hitbox.Intersects(new Circle(new Vector2(120, 100), 10));
+/// </code>
+/// </example>
 public readonly struct Circle : IEquatable<Circle>
 {
     /// <summary>Cria um círculo.</summary>

@@ -6,6 +6,13 @@ namespace Lunet.Graphics;
 /// Dispositivo gráfico do jogo. Desenha numa resolução virtual fixa, centralizada na tela com barras (letterbox),
 /// ou num <see cref="RenderTarget2D"/> (espaço em pixels do alvo).
 /// </summary>
+/// <example>
+/// <code>
+/// device.Clear(Color.Black);
+/// device.PixelPerfect = true;
+/// Vector2 virtualPoint = device.SurfaceToVirtual(new Vector2(540, 960));
+/// </code>
+/// </example>
 public sealed class GraphicsDevice
 {
     private int _surfaceWidth = 1;
@@ -86,6 +93,8 @@ public sealed class GraphicsDevice
     }
 
     /// <summary>Informa o tamanho real da superfície em pixels e ajusta o viewport.</summary>
+    /// <param name="surfaceWidth">Largura da superfície de desenho, em pixels.</param>
+    /// <param name="surfaceHeight">Altura da superfície de desenho, em pixels.</param>
     public void Resize(int surfaceWidth, int surfaceHeight)
     {
         _surfaceWidth = Math.Max(1, surfaceWidth);
@@ -94,6 +103,11 @@ public sealed class GraphicsDevice
     }
 
     /// <summary>Informa densidade e recuos seguros (em pixels da superfície: esquerda, topo, direita, base).</summary>
+    /// <param name="density">Densidade da tela (1 = 160 dpi).</param>
+    /// <param name="insetLeft">Recuo seguro à esquerda, em pixels da superfície.</param>
+    /// <param name="insetTop">Recuo seguro no topo, em pixels da superfície.</param>
+    /// <param name="insetRight">Recuo seguro à direita, em pixels da superfície.</param>
+    /// <param name="insetBottom">Recuo seguro embaixo, em pixels da superfície.</param>
     public void SetDisplay(float density, int insetLeft, int insetTop, int insetRight, int insetBottom)
     {
         Density = density > 0 ? density : 1f;
@@ -135,6 +149,7 @@ public sealed class GraphicsDevice
     }
 
     /// <summary>Passa a desenhar no alvo (ou volta à tela com <c>null</c>).</summary>
+    /// <param name="target">Alvo de desenho, ou nulo para voltar à tela.</param>
     public void SetRenderTarget(RenderTarget2D? target)
     {
         if (target is { IsDisposed: true }) throw new ObjectDisposedException(nameof(RenderTarget2D));
@@ -146,6 +161,7 @@ public sealed class GraphicsDevice
     }
 
     /// <summary>Limpa o alvo atual com <paramref name="color"/>. Na tela, as barras laterais ficam pretas.</summary>
+    /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
     public void Clear(Color color)
     {
         if (RenderTarget is { } rt)
@@ -162,10 +178,14 @@ public sealed class GraphicsDevice
     }
 
     /// <summary>Converte pixels da superfície (ex.: toque) para coordenadas virtuais.</summary>
+    /// <param name="surfacePoint">Ponto em pixels da superfície de desenho.</param>
+    /// <returns>O mesmo ponto em coordenadas virtuais.</returns>
     public Vector2 SurfaceToVirtual(Vector2 surfacePoint) =>
         new((surfacePoint.X - _offsetX) / _scale, (surfacePoint.Y - _offsetY) / _scale);
 
     /// <summary>Converte coordenadas virtuais para pixels da superfície.</summary>
+    /// <param name="virtualPoint">Ponto em coordenadas virtuais.</param>
+    /// <returns>O mesmo ponto em pixels da superfície.</returns>
     public Vector2 VirtualToSurface(Vector2 virtualPoint) =>
         new(virtualPoint.X * _scale + _offsetX, virtualPoint.Y * _scale + _offsetY);
 

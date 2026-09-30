@@ -6,6 +6,27 @@ using Lunet.Storage;
 namespace Lunet;
 
 /// <summary>Classe base dos jogos Lunet. Sobrescreva os métodos de ciclo de vida.</summary>
+/// <example>
+/// <code>
+/// public sealed class MeuJogo : Game
+/// {
+///     Texture2D _player = null!;
+///     Vector2 _position = new(180, 320);
+///
+///     protected override void LoadContent() =&gt; _player = Texture2D.CreateCircle(GraphicsDevice, 32, Color.Yellow);
+///
+///     protected override void Update(GameTime time)
+///     {
+///         if (Input.TryGetPointer(out var touch)) _position = touch;
+///     }
+///
+///     protected override void Draw(GameTime time)
+///     {
+///         GraphicsDevice.Clear(Color.CornflowerBlue);
+///     }
+/// }
+/// </code>
+/// </example>
 public abstract class Game
 {
     private GraphicsDevice? _graphics;
@@ -55,9 +76,11 @@ public abstract class Game
     protected virtual void LoadContent() { }
 
     /// <summary>Passo fixo de simulação.</summary>
+    /// <param name="time">Tempo do quadro.</param>
     protected virtual void Update(GameTime time) { }
 
     /// <summary>Desenho; pode rodar mais ou menos vezes que <see cref="Update"/>.</summary>
+    /// <param name="time">Tempo do quadro.</param>
     protected virtual void Draw(GameTime time) { }
 
     /// <summary>Liberação de recursos ao encerrar.</summary>

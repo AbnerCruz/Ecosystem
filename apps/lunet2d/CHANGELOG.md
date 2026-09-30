@@ -4,6 +4,7 @@
 
 ### Added
 
+- API do framework com exemplo em cada tipo, parâmetros e retornos descritos; testes garantem a cobertura e que os exemplos compilam.
 - Recuperação de alterações não salvas com até cinco versões por arquivo; a tela de recuperação permite escolher a versão, e o menu Ferramentas oferece acesso manual enquanto houver um buffer pendente.
 - `AgentsChat.md`: registro assíncrono de entregas, revisões, bloqueios e passagem de trabalho entre agentes.
 

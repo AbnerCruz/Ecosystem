@@ -6,9 +6,21 @@ namespace Lunet.Content;
 /// <param name="Width">Largura da imagem, em pixels.</param>
 /// <param name="Height">Altura da imagem, em pixels.</param>
 /// <param name="Rgba">Pixels em RGBA de 8 bits por canal, linha a linha de cima para baixo.</param>
+/// <example>
+/// <code>
+/// DecodedImage image = PngDecoder.Decode(File.ReadAllBytes("hero.png"));
+/// var created = Texture2D.FromPixels(device, image.Width, image.Height, image.Rgba);
+/// </code>
+/// </example>
 public sealed record DecodedImage(int Width, int Height, byte[] Rgba);
 
 /// <summary>Decodificador PNG mínimo e sem dependências: 8/16 bits, tons de cinza, RGB, paleta e alfa; sem entrelaçamento.</summary>
+/// <example>
+/// <code>
+/// DecodedImage image = PngDecoder.Decode(File.ReadAllBytes("hero.png"));
+/// log.Info($"{image.Width}x{image.Height}");
+/// </code>
+/// </example>
 public static class PngDecoder
 {
     private static readonly byte[] Signature = [137, 80, 78, 71, 13, 10, 26, 10];

@@ -6,6 +6,13 @@ namespace Lunet.Input;
 /// Joystick virtual de tela. Fica ativo enquanto um dedo que começou dentro de <see cref="Area"/> continua pressionado.
 /// Em modo flutuante, o centro passa a ser onde o dedo tocou primeiro.
 /// </summary>
+/// <example>
+/// <code>
+/// var stick = new VirtualStick(new Vector2(70, 560), 50);
+/// stick.Update(input);
+/// position += stick.Direction * 120 * time.DeltaSeconds;
+/// </code>
+/// </example>
 public sealed class VirtualStick
 {
     private int _touchId = -1;
@@ -88,6 +95,13 @@ public sealed class VirtualStick
 }
 
 /// <summary>Botão circular de tela.</summary>
+/// <example>
+/// <code>
+/// var jump = new VirtualButton(new Circle(new Vector2(300, 560), 40));
+/// jump.Update(input);
+/// if (jump.WasPressed) velocity.Y = -300;
+/// </code>
+/// </example>
 public sealed class VirtualButton
 {
     private int _touchId = -1;

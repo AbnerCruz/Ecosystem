@@ -1,6 +1,12 @@
 namespace Lunet.Audio;
 
 /// <summary>Grupo de volume (ex.: "Sfx", "Music"). O volume final de um som é instância × barramento × Master.</summary>
+/// <example>
+/// <code>
+/// audio.Sfx.Volume = 0.5f;
+/// audio.MusicBus.Muted = true;
+/// </code>
+/// </example>
 public sealed class AudioBus
 {
     private float _volume = 1f;

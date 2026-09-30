@@ -1,6 +1,17 @@
 namespace Lunet;
 
 /// <summary>Acumulador de passo fixo com limite de quadro. Não aloca.</summary>
+/// <example>
+/// <code>
+/// var loop = new FixedTimestepLoop(60, 0.25);
+/// int steps = loop.Advance(0.033);
+/// for (int i = 0; i &lt; steps; i++)
+/// {
+///     GameTime step = loop.CompleteStep();
+/// }
+/// float blend = loop.Interpolation;
+/// </code>
+/// </example>
 public sealed class FixedTimestepLoop
 {
     private readonly double _step;
@@ -26,6 +37,8 @@ public sealed class FixedTimestepLoop
     public float Interpolation => (float)(_accumulator / _step);
 
     /// <summary>Avança o tempo real e devolve quantos passos fixos devem rodar.</summary>
+    /// <param name="elapsedSeconds">Tempo real passado desde a chamada anterior, em segundos.</param>
+    /// <returns>Quantos passos de atualização devem rodar agora.</returns>
     public int Advance(double elapsedSeconds)
     {
         if (elapsedSeconds < 0) elapsedSeconds = 0;
@@ -41,6 +54,7 @@ public sealed class FixedTimestepLoop
     }
 
     /// <summary>Marca a execução de um passo, avançando o tempo simulado.</summary>
+    /// <returns>O tempo do passo que acabou de rodar.</returns>
     public GameTime CompleteStep()
     {
         TotalSeconds += _step;

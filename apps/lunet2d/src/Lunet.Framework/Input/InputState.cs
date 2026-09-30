@@ -3,6 +3,13 @@ using System.Numerics;
 namespace Lunet.Input;
 
 /// <summary>Estado de entrada do quadro atual. Preenchido pelo host; leitura apenas para o jogo.</summary>
+/// <example>
+/// <code>
+/// if (input.TryGetPointer(out var touch)) position = touch;
+/// if (input.IsKeyDown(Keys.Space)) log.Info("pulo");
+/// var tilt = input.Accelerometer;
+/// </code>
+/// </example>
 public sealed class InputState
 {
     /// <summary>Quantos dedos simultâneos são acompanhados.</summary>
@@ -46,9 +53,12 @@ public sealed class InputState
     public bool IsButtonDown(GamepadButtons button) => Gamepad.IsConnected && Gamepad.IsDown(button);
 
     /// <summary>Verdadeiro no primeiro passo de <c>Update</c> após o botão ser pressionado.</summary>
+    /// <param name="button">Botão a consultar.</param>
+    /// <returns>Verdadeiro só no quadro em que o botão foi apertado.</returns>
     public bool IsButtonPressed(GamepadButtons button) => (_padPressed & button) == button && button != GamepadButtons.None;
 
     /// <summary>Usado pelo host: registra o estado do controle.</summary>
+    /// <param name="state">Estado do controle.</param>
     public void SetGamepad(GamepadState state)
     {
         var previous = Gamepad.IsConnected ? Gamepad.Buttons : GamepadButtons.None;
@@ -66,9 +76,13 @@ public sealed class InputState
     public bool IsKeyDown(Keys key) => _keysDown[(int)key];
 
     /// <summary>Verdadeiro no primeiro passo de <c>Update</c> após a tecla ser pressionada.</summary>
+    /// <param name="key">Tecla a consultar.</param>
+    /// <returns>Verdadeiro só no quadro em que a tecla foi apertada.</returns>
     public bool IsKeyPressed(Keys key) => _keysPressed[(int)key];
 
     /// <summary>Usado pelo host: registra o estado de uma tecla.</summary>
+    /// <param name="key">Tecla a consultar.</param>
+    /// <param name="down">Verdadeiro se a tecla está pressionada.</param>
     public void SetKey(Keys key, bool down)
     {
         var i = (int)key;
@@ -99,6 +113,8 @@ public sealed class InputState
     public ReadOnlySpan<TouchPoint> Touches => _touches.AsSpan(0, TouchCount);
 
     /// <summary>Primeiro toque ativo, se houver.</summary>
+    /// <param name="touch">Recebe o toque encontrado.</param>
+    /// <returns>Verdadeiro se há um toque.</returns>
     public bool TryGetPrimaryTouch(out TouchPoint touch)
     {
         for (var i = 0; i < TouchCount; i++)
@@ -110,6 +126,8 @@ public sealed class InputState
     }
 
     /// <summary>Posição do primeiro toque ativo, se houver.</summary>
+    /// <param name="position">Posição, em coordenadas virtuais.</param>
+    /// <returns>Verdadeiro se há um toque na tela.</returns>
     public bool TryGetPointer(out Vector2 position)
     {
         if (TryGetPrimaryTouch(out var touch)) { position = touch.Position; return true; }
@@ -130,6 +148,7 @@ public sealed class InputState
     }
 
     /// <summary>Substitui os toques atuais (usado pelo host).</summary>
+    /// <param name="touches">Toques atuais.</param>
     public void SetTouches(ReadOnlySpan<TouchPoint> touches)
     {
         var count = Math.Min(touches.Length, MaxTouches);

@@ -3,6 +3,13 @@ using System.Numerics;
 namespace Lunet;
 
 /// <summary>Funções geométricas 2D: distâncias, interseções, polígonos e SAT.</summary>
+/// <example>
+/// <code>
+/// var polygon = new[] { new Vector2(0, 0), new Vector2(100, 0), new Vector2(50, 80) };
+/// bool inside = Geometry.PolygonContains(polygon, new Vector2(50, 30));
+/// float distance = Geometry.DistanceToSegment(position, new Vector2(0, 0), new Vector2(100, 0));
+/// </code>
+/// </example>
 public static class Geometry
 {
     /// <summary>Distância do ponto ao segmento de reta.</summary>
@@ -27,6 +34,12 @@ public static class Geometry
     }
 
     /// <summary>Interseção de dois segmentos; falso se forem paralelos ou não se cruzarem.</summary>
+    /// <param name="a1">Início do primeiro segmento.</param>
+    /// <param name="a2">Fim do primeiro segmento.</param>
+    /// <param name="b1">Início do segundo segmento.</param>
+    /// <param name="b2">Fim do segundo segmento.</param>
+    /// <param name="point">Ponto a testar.</param>
+    /// <returns>Verdadeiro se os segmentos se cruzam.</returns>
     public static bool SegmentsIntersect(Vector2 a1, Vector2 a2, Vector2 b1, Vector2 b2, out Vector2 point)
     {
         var r = a2 - a1;
@@ -48,6 +61,9 @@ public static class Geometry
     public static float Cross(Vector2 a, Vector2 b) => a.X * b.Y - a.Y * b.X;
 
     /// <summary>Ponto dentro de um polígono qualquer (regra par-ímpar).</summary>
+    /// <param name="polygon">Vértices do polígono, em ordem.</param>
+    /// <param name="point">Ponto a testar.</param>
+    /// <returns>Verdadeiro se o ponto está dentro do polígono.</returns>
     public static bool PolygonContains(ReadOnlySpan<Vector2> polygon, Vector2 point)
     {
         var inside = false;
@@ -62,6 +78,8 @@ public static class Geometry
     }
 
     /// <summary>Área com sinal (positiva = anti-horário no plano matemático).</summary>
+    /// <param name="polygon">Vértices do polígono, em ordem.</param>
+    /// <returns>Área com sinal: positiva em sentido anti-horário no plano de coordenadas.</returns>
     public static float SignedArea(ReadOnlySpan<Vector2> polygon)
     {
         var sum = 0f;
@@ -73,6 +91,10 @@ public static class Geometry
     /// Teste SAT entre dois polígonos convexos. Se houver sobreposição, <paramref name="push"/> é o menor vetor que,
     /// somado à posição de <paramref name="a"/>, o separa de <paramref name="b"/>.
     /// </summary>
+    /// <param name="a">Vértices do primeiro polígono (convexo).</param>
+    /// <param name="b">Vértices do segundo polígono (convexo).</param>
+    /// <param name="push">Vetor mínimo que separa os polígonos quando se sobrepõem.</param>
+    /// <returns>Verdadeiro se os polígonos se sobrepõem.</returns>
     public static bool SatOverlap(ReadOnlySpan<Vector2> a, ReadOnlySpan<Vector2> b, out Vector2 push)
     {
         push = default;
