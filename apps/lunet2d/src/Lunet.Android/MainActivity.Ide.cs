@@ -86,6 +86,7 @@ public sealed partial class MainActivity
         Toggle("Formatar o código ao executar", draft.FormatOnRun, v => draft.FormatOnRun = v);
         Toggle("Manter a tela ligada", draft.KeepScreenOn, v => draft.KeepScreenOn = v);
         Toggle("Taxa de atualização alta no Preview (90/120 Hz)", draft.HighRefreshRate, v => draft.HighRefreshRate = v);
+        Toggle("Preview isolado (processo separado; protege o IDE de travas do jogo)", draft.IsolatedPreview, v => draft.IsolatedPreview = v);
 
         var scroll = new ScrollView(this);
         scroll.AddView(form);
@@ -259,12 +260,6 @@ public sealed partial class MainActivity
     }
 
     // ---------- Inspector e mudanças ----------
-
-    private void ToggleInspector()
-    {
-        if (_inspector is null) return;
-        _inspector.Visibility = _inspector.Visibility == ViewStates.Visible ? ViewStates.Gone : ViewStates.Visible;
-    }
 
     /// <summary>Texto curto sobre o que mudou desde o Run anterior (hot reload possível × reinício necessário).</summary>
     private static string DescribeChange(ChangeReport? report, bool fromCache)

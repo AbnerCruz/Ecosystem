@@ -153,7 +153,7 @@ Documentação (§15)
 
 Preview e hot reload (§10)
 - [x] Classificação de mudanças: hot reload possível × restart required. (a cada Run o status diz o que mudou; o jogo sempre reinicia — sem hot reload mágico)
-- [ ] Fast Preview × Isolated Preview.
+- [ ] Fast Preview × Isolated Preview. (feito, sem validação em aparelho; ADR 0006; opção "Preview isolado" em Configurações roda o jogo em outro processo)
 
 Git, autosave e recovery (§22)
 - [ ] Autosave com journal (ver Fase 1) e recuperação. (histórico limitado a cinco versões por arquivo, escolha da versão na recuperação e acesso pelo menu Ferramentas implementados; testes no CI e validação no aparelho pendentes)

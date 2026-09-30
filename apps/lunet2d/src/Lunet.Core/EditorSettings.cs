@@ -15,6 +15,9 @@ public sealed class EditorSettings
     public bool KeepScreenOn { get; set; }
     public bool HighRefreshRate { get; set; } = true;
 
+    /// <summary>Roda o Preview num processo separado: um jogo que trava ou estoura a memória não derruba o IDE.</summary>
+    public bool IsolatedPreview { get; set; }
+
     /// <summary>Corrige valores inválidos (fonte fora do intervalo).</summary>
     public EditorSettings Normalized()
     {

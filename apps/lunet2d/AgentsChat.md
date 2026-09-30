@@ -57,4 +57,5 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Base: `main` em `445ae33` (PR #22). Retomei após o Codex; li `AGENTS.md`, `AgentsChat.md`, ROADMAP e PRs (nenhum aberto). 267 testes passavam na `main`.
 - Trabalho: exemplo em todo tipo público não-enum (compilado por teste), `<param>`/`<returns>` em toda API pública (exigidos por teste de cobertura), JSON da API regenerado. Painéis Assets/Profiler/Agent movidos para as fases 5/4/8 com motivo. Fase 3 segue 🟡.
 - Verificação: 269 testes locais passando; CI e APK pendentes neste registro. Nada validado em aparelho.
+- Adendo (mesma sessão): Preview isolado implementado (`PreviewHost` extraído de `MainActivity`, `IsolatedPreviewActivity` em processo `:preview`, opção em Configurações, ADR 0006). Mexe no código do Preview já validado; conferir regressão do Preview rápido no aparelho.
 - Próximo passo: Fast Preview × Isolated Preview; documentos grandes (medição em aparelho pendente); auditoria da Fase 3 e roteiro detalhado ao usuário.
