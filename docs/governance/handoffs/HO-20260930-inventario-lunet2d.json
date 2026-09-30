@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20260930-inventario-lunet2d",
+  "category": "RESULT",
+  "timestamp": "2026-09-30T23:25:37Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-1",
+  "component": "lunet2d",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": "e6ece0827338872dc1ec249ed0875fb4c36c234c",
+  "pr": null,
+  "files_changed": [
+    "docs/migration/inventory-lunet2d.md",
+    "docs/governance/decisions.json",
+    "docs/migration/README.md",
+    "ROADMAP.md"
+  ],
+  "work_completed": [
+    "Inventário do Lunet2D no commit be30e62: branches (3 além da main, todas incorporadas), 84 commits, 25 tags leves com 25 releases de desenvolvimento, workflow CI, secrets, dependências, documentos normativos, autoridade de versão (arquivo VERSION).",
+    "Mapa funcional e arquitetural com 11 subsistemas (S-01…S-11), classificação futura apenas proposta e dependências entre projetos.",
+    "Riscos R-LUN-1…11; destaque: versionCode do Android igual ao run_number do CI e criação de tags/releases no repositório onde o workflow roda."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Lunet.Tests (commit be30e62, .NET SDK 10.0.112)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "286 testes, 286 aprovados, 0 falhas, 0 ignorados."
+    },
+    {
+      "check": "Fatos do inventário conferidos na fonte (git, API do GitHub, leitura de csproj e workflows)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Comandos e fontes citados em cada seção; afirmações de ausência verificadas por grep (sem referências a Ecosystem/Hub/Urbe; sem layouts XML no projeto Android)."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: 15 checks e self-test verdes com os inventários e DEC-0008/DEC-0009."
+    },
+    {
+      "check": "Workflow consistency no GitHub Actions",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Concluído com success no commit e6ece08."
+    }
+  ],
+  "known_issues": [
+    "NÃO VERIFICADO: configurações de administração do repositório (proteções de branch, secrets existentes, configuração de Pages, forks) — sem permissão/endpoint nesta sessão.",
+    "O APK não foi construído localmente (sem workload/SDK Android); só o CI o constrói (run #103 verde).",
+    "A listagem de PRs não expõe o campo 'merged': não foi afirmado quantos dos 25 PRs fechados foram mergeados."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: decidir DEC-0008 (bloqueante para o plano de importação) e, quando quiser, DEC-0009 — ambas aparecem no portal com o objeto.",
+    "Próximo agente: P1-3 — plano de importação por produto; a parte de releases/pipelines depende de DEC-0008."
+  ],
+  "decisions_required": [
+    "DEC-0008",
+    "DEC-0009"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
+    "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md",
+    "docs/migration/README.md",
+    "docs/migration/inventory-template.md",
+    "docs/governance/decisions.json",
+    "ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-012",
+      "evidence": "Nenhuma importação feita; clone completo apenas para leitura; repositório de origem não foi alterado."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Nenhum código, diretório ou arquivo de produto foi movido ou alterado; ajustes técnicos previstos listados como riscos, não executados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana pendente dos produtos registrada como estado herdado; nenhum item marcado como validado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Conclusão com evidência: fatos com comando/fonte, itens não verificáveis marcados NÃO VERIFICADO."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Decisões derivadas dos achados (DEC-0008, DEC-0009) registradas como pendentes e visíveis no portal com o inventário como objeto."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Verificado que nenhum subsistema depende do Hub ou de outro Product."
+    }
+  ],
+  "cost": null
+}

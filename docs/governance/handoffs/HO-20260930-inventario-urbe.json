@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20260930-inventario-urbe",
+  "category": "RESULT",
+  "timestamp": "2026-09-30T23:25:37Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-2",
+  "component": "urbe",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": "e6ece0827338872dc1ec249ed0875fb4c36c234c",
+  "pr": null,
+  "files_changed": [
+    "docs/migration/inventory-urbe.md",
+    "docs/governance/decisions.json",
+    "docs/migration/README.md",
+    "ROADMAP.md"
+  ],
+  "work_completed": [
+    "Inventário do Urbe no commit 662ca5b: 43 branches remotas (classificadas), 382 commits, 6 tags leves e 6 releases, 4 workflows + Pages dinâmico, secrets declarados (somente nomes), dependências, documentos normativos (REQ-001..109, RM-*, ADR 0001..0009), autoridade de versão (package.json).",
+    "Mapa funcional e arquitetural com 14 subsistemas (U-01…U-14) sobre o registro de 73 módulos do próprio Urbe; classificação futura apenas proposta.",
+    "Como o Urbe Web é publicado hoje (Pages por branch a partir da main) e riscos R-URB-1…12; destaque: apps instalados se atualizam por releases/latest de AbnerCruz/Urbe."
+  ],
+  "verification": [
+    {
+      "check": "npm run check (commit 662ca5b, Node 22.22.2, sem npm ci)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "56/56 arquivos de teste passaram; 'todas as checagens passaram'; node tools/version.mjs check OK."
+    },
+    {
+      "check": "Fatos do inventário conferidos na fonte (git, API do GitHub, leitura de workflows, package.json e bridge.js)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Comandos e fontes citados em cada seção; ausência de referências a Lunet/Hub/Ecosystem verificada por grep."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: 15 checks e self-test verdes com os inventários e DEC-0008/DEC-0009."
+    },
+    {
+      "check": "Workflow consistency no GitHub Actions",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Concluído com success no commit e6ece08."
+    }
+  ],
+  "known_issues": [
+    "NÃO VERIFICADO: URL pública e modo exato do Pages (API de configuração indisponível; github.io bloqueado pelo proxy) — o modo 'deploy from a branch' é INFERÊNCIA de alta confiança a partir do workflow dinâmico e da estrutura do repositório.",
+    "NÃO VERIFICADO: existência dos secrets ANDROID_KEYSTORE_* e demais configurações de administração do repositório.",
+    "Testes end-to-end (Playwright), instalador Windows e APK não foram executados nesta sessão; só o CI os constrói."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: decidir DEC-0008 (bloqueante para o plano de importação) e, quando quiser, DEC-0009 — ambas aparecem no portal com o objeto.",
+    "Próximo agente: P1-3 — plano de importação por produto; a parte de releases/pipelines depende de DEC-0008."
+  ],
+  "decisions_required": [
+    "DEC-0008",
+    "DEC-0009"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
+    "docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md",
+    "docs/migration/README.md",
+    "docs/migration/inventory-template.md",
+    "docs/governance/decisions.json",
+    "ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-012",
+      "evidence": "Nenhuma importação feita; clone completo apenas para leitura; repositório de origem não foi alterado."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Nenhum código, diretório ou arquivo de produto foi movido ou alterado; ajustes técnicos previstos listados como riscos, não executados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana pendente dos produtos registrada como estado herdado; nenhum item marcado como validado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Conclusão com evidência: fatos com comando/fonte, itens não verificáveis marcados NÃO VERIFICADO."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Decisões derivadas dos achados (DEC-0008, DEC-0009) registradas como pendentes e visíveis no portal com o inventário como objeto."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Verificado que nenhum subsistema depende do Hub ou de outro Product."
+    }
+  ],
+  "cost": null
+}
