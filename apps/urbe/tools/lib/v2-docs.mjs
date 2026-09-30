@@ -7,7 +7,7 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const V2 = join(ROOT, 'docs', 'v2');
 export const STATES = ['IMPLEMENTAR', 'ADIADO', 'REJEITADO', 'SUBSTITUÍDO', 'FORA DE ESCOPO'];
 export const ITEM_STATES = ['[ ]', '[~]', '[?]', '[x]', '[!]'];
-export const GATES = ['G0', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6'];
+export const GATES = ['G0', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'];
 export const FIELDS = ['Estado', 'REQ', 'SPEC', 'Fase', 'Depende', 'Implementação', 'Integração', 'Testes', 'Documentação', 'Aceite', 'Gate'];
 
 export const read = (rel) => readFileSync(join(V2, rel), 'utf8');

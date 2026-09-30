@@ -19,9 +19,10 @@ Descreva comportamento observável, não a implementação preferida.
 
 ## Requisito
 
-REQ existente:
+**Obrigatório** — nenhuma feature entra sem requisito (REQ-011):
+REQ existente / item do ROADMAP (`RM-Fn-nn`):
 ou
-Novo REQ proposto:
+Novo REQ proposto (será acrescentado ao `docs/v2/REQUIREMENTS.md`):
 
 ## Fora de escopo
 

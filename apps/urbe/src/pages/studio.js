@@ -225,7 +225,7 @@
     var ns=P.newSection('free',{root:X2.make('box',{},{gap:'16px'},[nn])}),i=st.sel?secIndex(st.sel)+1:st.spec.sections.length;commit(function(s){s.sections.splice(i,0,ns)});st.nsel=nn.id;select(ns.id)}
   /* perguntas que alguns modelos precisam (qual nota, qual pasta) */
   async function tplContext(t){var ctx={};
-    if(t&&t.needs==='note'){var notes=docs.list().filter(function(d){return /\.(md|markdown)$/i.test(d.path)}).sort(function(a,b){return String(b.modified||'').localeCompare(String(a.modified||''))});if(!notes.length){D.alert({title:'Nenhuma nota',message:'Crie uma nota primeiro.'});return null}
+    if(t&&t.needs==='note'){var notes=docs.list().filter(function(d){return window.UrbeArtifacts.RE.note.test(d.path)}).sort(function(a,b){return String(b.modified||'').localeCompare(String(a.modified||''))});if(!notes.length){D.alert({title:'Nenhuma nota',message:'Crie uma nota primeiro.'});return null}
       var pick=await D.choose({title:'Qual nota publicar?',options:notes.slice(0,200).map(function(d){return{value:d.id,label:d.title,icon:'file',detail:d.path}})});if(!pick)return null;var nd=docs.get(pick);ctx.note={title:nd.title,path:nd.path};ctx.title=nd.title;ctx.excerpt=P.excerpt(nd.content,150)}
     if(t&&t.needs==='folder'){var fs={};docs.list().forEach(function(d){var p=d.path.split('/');p.pop();while(p.length){fs[p.join('/')]=1;p.pop()}});var list=Object.keys(fs).filter(function(f){return !/^Páginas(\/|$)/.test(f)}).sort();
       var fp=await D.choose({title:'Qual pasta?',options:[{value:'',label:'Vault inteiro',icon:'notes'}].concat(list.map(function(f){return{value:f,label:f.split('/').pop(),icon:'folder',detail:f}}))});if(fp===undefined||fp===null)return null;ctx.folder=fp;ctx.title=fp?fp.split('/').pop():'Minhas notas'}
@@ -343,7 +343,7 @@
     commit(function(s){var i=s.sections.findIndex(function(x){return x.id===id});var nsec=P.newSection('free',{root:root,sheet:s.layout.format==='book'&&/^(bookcover)$/.test(sec.type)?'full':'page'});nsec.id=id;nsec.style=sec.style;s.sections[i]=nsec});
     st.nsel=null;select(id);toast('Convertido: agora cada título e parágrafo é uma peça solta.')}
   function splitChapters(id){var sec=section(id);if(!sec||sec.type!=='chapters')return;var f=String(sec.props.folder||'').replace(/^\/+|\/+$/g,'').toLowerCase();
-    var list=docs.list().filter(function(d){return /\.(md|markdown|txt)$/i.test(d.path)&&(!f||d.path.toLowerCase().indexOf(f+'/')===0)});
+    var list=docs.list().filter(function(d){return window.UrbeArtifacts.RE.noteText.test(d.path)&&(!f||d.path.toLowerCase().indexOf(f+'/')===0)});
     list.sort(sec.props.sort==='modified'?function(a,b){return String(b.modified||'').localeCompare(String(a.modified||''))}:sec.props.sort==='title'?function(a,b){return a.title.localeCompare(b.title)}:function(a,b){return a.path.localeCompare(b.path)});
     if(!list.length)return toast('A pasta não tem notas.');
     commit(function(s){var i=s.sections.findIndex(function(x){return x.id===id});var novos=list.slice(0,200).map(function(d){return P.newSection('chapter',{title:d.title,source:'note',path:d.path,dropCap:sec.props.dropCap})});s.sections.splice.apply(s.sections,[i,1].concat(novos))});
@@ -398,7 +398,7 @@
     st.root.querySelectorAll('.ps-item').forEach(function(d){var inp=d.querySelector('.ps-item-body [data-path]');if(!inp)return;var path=inp.dataset.path.replace(/\.[^.]+$/,''),listPath=path.replace(/\.\d+$/,''),f=fieldAt(listPath+'.0.x')&&null;var lf=fieldAt(listPath);if(!lf)return;var it=pathGet(st.spec,path);if(it)d.querySelector('summary span').textContent=String(it[lf.itemLabel]||'').replace(/\*\*/g,'')||'Item'})}
   function autosize(t){t.style.height='auto';t.style.height=Math.min(420,t.scrollHeight+2)+'px'}
   function ensureLists(){var host=st.root.querySelector('.ps-datalists');if(!host){host=doc.createElement('div');host.className='ps-datalists';host.hidden=true;st.root.appendChild(host)}
-    var all=docs.list(),notes=all.filter(function(d){return /\.(md|markdown|txt)$/i.test(d.path)}),folders={},tags={};all.forEach(function(d){var p=d.path.split('/');p.pop();while(p.length){folders[p.join('/')]=1;p.pop()}(d.tags||[]).forEach(function(t){tags[t]=1})});
+    var all=docs.list(),notes=all.filter(function(d){return window.UrbeArtifacts.RE.noteText.test(d.path)}),folders={},tags={};all.forEach(function(d){var p=d.path.split('/');p.pop();while(p.length){folders[p.join('/')]=1;p.pop()}(d.tags||[]).forEach(function(t){tags[t]=1})});
     host.innerHTML='<datalist id="ps-dl-notes">'+notes.slice(0,800).map(function(d){return '<option value="'+esc(d.path)+'">'+esc(d.title)+'</option>'}).join('')+'</datalist><datalist id="ps-dl-folders">'+Object.keys(folders).sort().map(function(f){return '<option value="'+esc(f)+'">'}).join('')+'</datalist><datalist id="ps-dl-tags">'+Object.keys(tags).sort().map(function(t){return '<option value="'+esc(t)+'">'}).join('')+'</datalist>'}
 
   /* imagens: reduz no próprio aparelho e guarda na página (funciona offline e no HTML exportado) */
@@ -549,7 +549,7 @@
     var ctx={},spec;
     if(tplId.indexOf('doc:')===0){var td=docs.get(tplId.slice(4));if(!td)return;spec=P.normalize(parse(td)||{}).spec;spec.kind='urbe-page';delete spec.template}
     else{var t=TPL.get(tplId);if(!t)return;
-      if(t.needs==='note'){var notes=docs.list().filter(function(d){return /\.(md|markdown)$/i.test(d.path)}).sort(function(a,b){return String(b.modified||'').localeCompare(String(a.modified||''))});if(!notes.length)return D.alert({title:'Nenhuma nota',message:'Crie uma nota primeiro.'});
+      if(t.needs==='note'){var notes=docs.list().filter(function(d){return window.UrbeArtifacts.RE.note.test(d.path)}).sort(function(a,b){return String(b.modified||'').localeCompare(String(a.modified||''))});if(!notes.length)return D.alert({title:'Nenhuma nota',message:'Crie uma nota primeiro.'});
         var pick=await D.choose({title:'Qual nota publicar?',options:notes.slice(0,200).map(function(d){return{value:d.id,label:d.title,icon:'file',detail:d.path}})});if(!pick)return;var nd=docs.get(pick);ctx.note={title:nd.title,path:nd.path};ctx.title=nd.title;ctx.excerpt=P.excerpt(nd.content,150)}
       if(t.needs==='folder'){var fs={};docs.list().forEach(function(d){var p=d.path.split('/');p.pop();while(p.length){fs[p.join('/')]=1;p.pop()}});var list=Object.keys(fs).filter(function(f){return !/^Páginas(\/|$)/.test(f)}).sort();
         var fp=await D.choose({title:'Qual pasta?',options:[{value:'',label:'Vault inteiro',icon:'notes'}].concat(list.map(function(f){return{value:f,label:f.split('/').pop(),icon:'folder',detail:f}}))});if(fp===undefined||fp===null)return;ctx.folder=fp;ctx.title=fp?fp.split('/').pop():'Minhas notas'}
@@ -583,11 +583,9 @@
   core.commands.register('pages.home',{title:'Páginas',category:'Páginas',execute:home});
   core.commands.register('pages.new',{title:'Nova página',category:'Páginas',execute:function(c){return newPage(c&&c.template)}});
   core.commands.register('pages.open',{title:'Abrir página no estúdio',category:'Páginas',execute:function(c){return open(c&&c.id)}});
-  /* abrir um .page.json por qualquer caminho (explorador, busca, link, Assistente) leva ao estúdio */
-  var hooked=false;
-  function hookOpen(){var cmd=core.commands.get('document.open');if(!cmd||hooked)return !!cmd;var orig=cmd.execute;hooked=true;
-    core.commands.unregister('document.open');core.commands.register('document.open',{title:cmd.title,category:cmd.category,execute:function(ctx){var d=docs.get(ctx&&(ctx.id||ctx.path));
-      if(d&&P.isPagePath(d.path)&&!(ctx&&ctx.raw))return open(d.id);if(st.root&&!st.root.hidden)close();return orig(ctx)}});return true}
-  if(!hookOpen())core.events.on('command:registered',function(c){if(c&&c.id==='document.open'&&!hooked)setTimeout(hookOpen,0)});
+  /* abrir um .page.json por qualquer caminho (explorador, busca, link, Assistente) leva ao estúdio: roteamento por tipo de artefato (REQ-039) */
+  var A=global.UrbeArtifacts;
+  A.registerOpener('page',function(d){return open(d.id)});A.registerOpener('page-template',function(d){return open(d.id)});
+  A.onBeforeOpen(function(d,ctx){if((!P.isPagePath(d.path)||ctx.raw)&&st.root&&!st.root.hidden)close()});
   global.UrbePageStudio=api;
 })(window);

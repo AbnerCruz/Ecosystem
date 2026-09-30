@@ -11,7 +11,7 @@
   }
   function titleFromPath(path){
     var file=normalizePath(path).split('/').pop()||'';
-    return file.replace(/\.(md|markdown)$/i,'');
+    return file.replace(window.UrbeArtifacts.RE.note,'');
   }
   function parseFrontmatter(content){
     var text=String(content||'');

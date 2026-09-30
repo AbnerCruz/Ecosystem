@@ -15,13 +15,13 @@ for(const f of js){
   check(sw.includes("'./"+f+"'"),f+' não está no service worker');
 }
 for(const f of css){check(index.includes('"./'+f+'"'),f+' não está no index.html');check(sw.includes("'./"+f+"'"),f+' não está no service worker')}
-check(/git ls-files '\*\.js'/.test(ci)&&/node --check/.test(ci),'o CI precisa conferir a sintaxe de todos os .js');
-check(/for t in tests\/\*\.mjs/.test(ci),'o CI precisa rodar todos os testes de tests/');
+check(/git ls-files (-z )?'\*\.js'/.test(ci)&&/node --check/.test(ci),'o CI precisa conferir a sintaxe de todos os .js');
+check(/npm run check/.test(ci)&&/tools\/run-tests\.mjs/.test(read('tools/check-all.mjs')),'o CI precisa rodar todos os testes de tests/ (npm run check → run-tests)');
 /* nada no index/sw aponta para arquivo que não existe */
 for(const m of index.matchAll(/(?:src|href)="\.\/([^"]+)"/g))check(fs.existsSync(path.join(root,m[1])),'index.html aponta para '+m[1]+', que não existe');
 for(const m of sw.matchAll(/'\.\/([^']+)'/g))check(fs.existsSync(path.join(root,m[1])),'sw.js guarda '+m[1]+', que não existe');
 /* uma versão só em todo lugar */
-const v=(read('src/app.js').match(/V21_VERSION='([^']+)'/g)||[]).pop().slice(13,-1);
+const v=JSON.parse(read('package.json')).version; // fonte única (tools/version.mjs valida as demais superfícies)
 check(index.includes('<title>Urbe v'+v+'</title>'),'título do index.html não é a versão '+v);
 check(sw.includes("urbe-shell-v"+v+"'"),'cache do service worker não é da versão '+v);
 check(read('CHANGELOG.md').includes('## v'+v),'CHANGELOG sem a versão '+v);

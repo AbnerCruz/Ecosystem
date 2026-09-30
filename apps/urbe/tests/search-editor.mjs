@@ -2,7 +2,7 @@ import fs from 'node:fs';import vm from 'node:vm';
 const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
 function test(name,fn){try{fn();console.log('OK  ',name)}catch(e){console.error('FAIL',name,e.message);process.exitCode=1}}
 const context={window:{},setTimeout,clearTimeout,console};vm.createContext(context);
-for(const f of ['src/core/core.js','src/core/documents.js','src/ui/quick-open.js'])vm.runInContext(read(f),context);
+for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/ui/quick-open.js'])vm.runInContext(read(f),context);
 const core=context.window.UrbeCore,docs=core.service('documents'),rank=core.service('quickOpen').rank;
 docs.upsert({path:'Receitas/Pão de queijo.md',content:'# Pão de queijo\n\nPolvilho azedo e queijo minas.'});
 docs.upsert({path:'Viagem.md',content:'Comprar queijo na feira.'});

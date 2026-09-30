@@ -21,10 +21,10 @@
   function resolveDoc(ctx,ref,must){
     var s=services(ctx),p=norm(ref);if(!p)throw ToolError('Informe o caminho da nota.');
     var d=s.docs.get(p)||s.docs.get(p+'.md');
-    if(!d){var t=fold(p.replace(/\.(md|markdown)$/i,'').split('/').pop()),hits=s.docs.list().filter(function(x){return fold(x.title)===t});if(hits.length===1)d=hits[0];
+    if(!d){var t=fold(p.replace(window.UrbeArtifacts.RE.note,'').split('/').pop()),hits=s.docs.list().filter(function(x){return fold(x.title)===t});if(hits.length===1)d=hits[0];
       else if(hits.length>1&&must!==false)throw ToolError('Há '+hits.length+' notas chamadas "'+p+'": '+hits.map(function(x){return x.path}).join(', ')+'. Use o caminho completo.')}
     /* modelos às vezes estragam emoji/símbolos no caminho (“Teste/� Gue.md”): compara só letras e números */
-    if(!d){var base=function(x){return x.replace(/\.(md|markdown)$/i,'')},lk=loose(base(p)),lt=loose(base(p).split('/').pop());
+    if(!d){var base=function(x){return x.replace(window.UrbeArtifacts.RE.note,'')},lk=loose(base(p)),lt=loose(base(p).split('/').pop());
       if(lk){var lh=s.docs.list().filter(function(x){return loose(base(x.path))===lk});if(!lh.length&&lt)lh=s.docs.list().filter(function(x){return loose(x.title)===lt||loose(base(x.path).split('/').pop())===lt});if(lh.length===1)d=lh[0]}}
     if(!d&&must!==false){
       var near=s.docs.list().map(function(x){return{x:x,s:score(fold(x.path),fold(p))}}).filter(function(o){return o.s>0}).sort(function(a,b){return b.s-a.s}).slice(0,5).map(function(o){return o.x.path});
@@ -34,7 +34,7 @@
   }
   function score(a,b){if(a===b)return 100;if(a.indexOf(b)>=0||b.indexOf(a)>=0)return 50;var n=0;b.split(/[\s\/._-]+/).forEach(function(w){if(w.length>2&&a.indexOf(w)>=0)n+=10});return n}
   function validPath(p){p=norm(p);if(!p)throw ToolError('Caminho vazio.');if(/(^|\/)\.\.?(\/|$)/.test(p)||/^\./.test(p.split('/').pop()))throw ToolError('Caminho inválido: '+p);if(/[:*?"<>|\u0000-\u001f]/.test(p))throw ToolError('Caminho com caracteres não permitidos: '+p);
-    if(!/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i.test(p))p+='.md';return p}
+    if(!window.UrbeArtifacts.RE.text.test(p))p+='.md';return p}
   function snap(d){return d?{path:d.path,content:d.content}:null}
   function numbered(content,start,max){var lines=String(content).split('\n'),s=Math.max(1,start||1),e=Math.min(lines.length,s-1+(max||400)),w=String(e).length,out=[];for(var i=s;i<=e;i++)out.push(String(i).padStart(w,' ')+'| '+lines[i-1]);return{text:out.join('\n'),total:lines.length,end:e}}
   function upsert(ctx,data){var s=services(ctx);return s.docs.upsert(data,{source:'ai.agent',agent:ctx.agentId||null})}
@@ -197,7 +197,7 @@
     preview:function(i,ctx){var d=resolveDoc(ctx,i.path);return{path:d.path+' → '+validPath(i.new_path),before:null,after:null,note:'Renomear/mover'+(i.update_links===false?'':' e atualizar links nas outras notas')}},
     run:function(i,ctx){var s=services(ctx),d=resolveDoc(ctx,i.path),np=validPath(i.new_path);
       if(np.toLowerCase()!==d.path.toLowerCase()&&s.docs.get(np))throw ToolError('Já existe '+np+'.');
-      var title=np.split('/').pop().replace(/\.(md|markdown)$/i,''),changes=[],u=upsert(ctx,{...d,id:d.id,path:np,title:title,modified:today()});
+      var title=np.split('/').pop().replace(window.UrbeArtifacts.RE.note,''),changes=[],u=upsert(ctx,{...d,id:d.id,path:np,title:title,modified:today()});
       changes.push({id:d.id,before:snap(d),after:snap(u)});
       if(i.update_links!==false&&fold(title)!==fold(d.title)){
         var re=new RegExp('\\[\\[('+d.title.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')(\\|[^\\]]*)?(#[^\\]]*)?\\]\\]','gi');
@@ -270,7 +270,7 @@
       if(c.after&&cur&&cur.content!==c.after.content){report.skipped.push((cur&&cur.path)||c.after.path);return} /* o usuário mexeu depois */
       if(c.trashed){try{s.trash.restore(c.id);report.restored++}catch(e){report.skipped.push(c.before.path)}return}
       if(!c.before){if(cur){s.trash.trash(cur.id,{source:'ai.undo'});report.restored++}return}
-      if(cur){s.docs.upsert({...cur,id:cur.id,path:c.before.path,title:c.before.path.split('/').pop().replace(/\.(md|markdown)$/i,''),content:c.before.content},{source:'ai.undo'});report.restored++}
+      if(cur){s.docs.upsert({...cur,id:cur.id,path:c.before.path,title:c.before.path.split('/').pop().replace(window.UrbeArtifacts.RE.note,''),content:c.before.content},{source:'ai.undo'});report.restored++}
     });
     return report;
   }

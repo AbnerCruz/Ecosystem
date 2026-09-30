@@ -1,7 +1,7 @@
 import fs from 'node:fs';import vm from 'node:vm';
 const storage=new Map(),localStorage={getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)};
 const context={window:{},localStorage};context.window.localStorage=localStorage;vm.createContext(context);
-for(const file of ['src/core/core.js','src/core/documents.js','src/core/knowledge-index.js','src/editor/session.js','src/editor/workspace.js','src/editor/split.js'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
+for(const file of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/knowledge-index.js','src/editor/session.js','src/editor/workspace.js','src/editor/split.js'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
 const core=context.window.UrbeCore,docs=core.service('documents'),session=core.service('editor.session'),ws=core.service('editor.workspace'),split=core.service('editor.split');
 docs.replaceAll([{path:'A.md',content:'alpha beta alpha'},{path:'B.md',content:'bravo'},{path:'C.md',content:'charlie'}]);
 const A=docs.get('A.md').id,B=docs.get('B.md').id,C=docs.get('C.md').id;session.open(A);ws.visit(B);ws.visit(C);if(session.activeId!==C)throw new Error('visit');

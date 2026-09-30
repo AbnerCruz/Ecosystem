@@ -605,7 +605,7 @@
     var included={};s.sections.forEach(function(sec){if(sec.style.hidden)return;if(sec.type==='notes'&&sec.props.expand)notesFor(sec.props).forEach(function(d){included[d.title.toLowerCase()]=noteAnchor(d)});
       if(sec.type==='chapters'&&sec.props.folder)notesFor({source:'folder',folder:sec.props.folder,sort:sec.props.sort,limit:200}).forEach(function(d){included[d.title.toLowerCase()]=noteAnchor(d)})});
     function wikilink(target,label){var key=String(target).replace(/\.md$/i,'').split('/').pop().toLowerCase(),a=included[key];return a?'<a class="wikilink" href="#'+esc(a)+'">'+esc(label||target)+'</a>':'<span class="wikilink">'+esc(label||String(target).split('/').pop())+'</span>'}
-    function notesFor(p){if(!docs)return[];var all=docs.list().filter(function(d){return /\.(md|markdown|txt)$/i.test(d.path)}),out;
+    function notesFor(p){if(!docs)return[];var all=docs.list().filter(function(d){return window.UrbeArtifacts.RE.noteText.test(d.path)}),out;
       if(p.source==='folder'){var f=String(p.folder||'').replace(/^\/+|\/+$/g,'').toLowerCase();out=all.filter(function(d){return !f||d.path.toLowerCase().indexOf(f+'/')===0})}
       else if(p.source==='tag'){var tg=String(p.tag||'').replace(/^#/,'').toLowerCase();out=all.filter(function(d){return (d.tags||[]).some(function(t){return t.toLowerCase()===tg})})}
       else if(p.source==='list'){out=String(p.paths||'').split('\n').map(function(x){return note(x)}).filter(Boolean)}

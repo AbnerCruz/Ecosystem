@@ -4,7 +4,7 @@ const read=f=>fs.readFileSync(new URL('../'+f,import.meta.url),'utf8');
 let failed=0;async function test(name,fn){try{await fn();console.log('OK  ',name)}catch(e){failed++;console.error('FAIL',name,e&&e.stack||e);process.exitCode=1}}
 function ok(v,m){if(!v)throw new Error(m||'falhou')}
 const c={window:{},console};vm.createContext(c);
-for(const f of ['src/core/core.js','src/core/documents.js','src/pages/engine.js','src/pages/free.js','src/pages/templates.js'])vm.runInContext(read(f),c);
+for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/pages/engine.js','src/pages/free.js','src/pages/templates.js'])vm.runInContext(read(f),c);
 const W=c.window,P=W.UrbePages,X=P.free,TPL=W.UrbePageTemplates,docs=W.UrbeCore.service('documents');
 docs.upsert({path:'Cap/01 A.md',content:'# 01 A\n\nPrimeiro parágrafo.\n\n## Seção\n\nSegundo.\n\n***\n\n> Uma citação'});
 const css=h=>h.match(/<style>([\s\S]*?)<\/style>/)[1];

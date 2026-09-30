@@ -1,0 +1,19 @@
+{
+  "recovered": true,
+  "notes": [
+    "Alfa.md",
+    "Delta.md"
+  ],
+  "contents": {
+    "Alfa.md": "# Alfa\n\nrecuperada do journal\n"
+  },
+  "ids": {
+    "Alfa.md": "doc_00000001-0000-4000-8000-000000000000"
+  },
+  "journalRemoved": true,
+  "noteHashes": {
+    "Alfa.md": "b9df429a28b352a9061131bbec35318b9c70205d811a81df0720f26ca888a0dc"
+  },
+  "futureHashes": {},
+  "keepHashes": {}
+}

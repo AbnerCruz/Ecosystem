@@ -95,3 +95,17 @@ Nenhum REQ conflita. Tensões resolvidas:
 | Riscos conhecidos | ✅ §4 | este documento |
 
 **Resultado:** gate liberado; SPEC e ROADMAP **aprovados pelo proprietário em 2026-09-30**. Sem pendências bloqueantes. Permanecem adiadas com gate: OD-06 (SAF/vaults múltiplos) e OD-09 (budgets absolutos, derivados do baseline em RM-F5-02).
+
+## 6. Decisões abertas do feedback de uso (2026-09-30)
+
+### OD-12 — Armazenamento dos comentários (OBS-01, REQ-089) — **CONSOLIDADA (2026-09-30): sidecar fora do arquivo → ADR-0008**
+Alternativas: (A) sintaxe inline no Markdown (`%%comentário%%`/comentário HTML) — portável e visível em qualquer editor, mas altera o texto; (B) sidecar `.urbe/comments.json` ancorado por ID + trecho — não toca o arquivo, exige reancorar em edição externa; (C) frontmatter. **Recomendação:** B com âncora por ID e fingerprint do trecho (coerente com ADR-0006); A como formato de exportação. **Pergunta:** os comentários podem ficar fora do arquivo da nota (sidecar) ou devem estar no próprio texto?
+
+### OD-13 — Cronômetro nativo × plugin (OBS-06, REQ-094) — **CONSOLIDADA (2026-09-30): recurso nativo no rodapé do editor**
+As capturas mostram o Assistente gerando o plugin `cronometro.js`. (A) plugin oficial embutido/modelo pronto (usa a API `urbe.*`, mantém o core enxuto); (B) recurso nativo no rodapé. **Recomendação:** A (modelo de plugin "Cronômetro" na Personalização, ligado com a aprovação normal) — nativo só se o plugin não atender. **Pergunta:** aceita cronômetro como plugin oficial?
+
+### OD-14 — Remover as Composições (OBS-13, REQ-105) — **CONSOLIDADA (2026-09-30): migrar para páginas e remover → ADR-0009**
+Composições têm dados de usuário (`.urbe/compositions.json`). (A) migrar para páginas (`.page.json`) e remover a UI; (B) manter só leitura de dados antigos; (C) manter como está. **Recomendação:** A com backup e reversão (ADR-0009). **Pergunta:** confirma a remoção das Composições e a migração automática para páginas?
+
+### OD-15 — Ordem e escopo dos itens de design (OBS-08…12, 16) — **CONSOLIDADA (2026-09-30): todos na 2.0**
+Muitos itens mexem em renderer/Explorer/Tutorial e dependem da extração de `app.js` (F2). **Recomendação:** corrigir os bugs (RM-F7-01…11) já; entregar os itens de design depois de F2, na ordem: Explorer → cidade (contornos/menu +/decoração) → tutorial em painel. **Pergunta:** todos entram na 2.0 ou algum vai para depois?

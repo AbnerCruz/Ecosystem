@@ -1,0 +1,33 @@
+{
+  "notes": [
+    "Alfa.md",
+    "Personalização/tema.json",
+    "Páginas/Futura.page.json"
+  ],
+  "futureFiles": [
+    ".urbe/history.json",
+    ".urbe/trash.json",
+    ".urbe/compositions.json",
+    ".urbe/journal.json",
+    "Personalização/tema.json",
+    "Páginas/Futura.page.json"
+  ],
+  "futureMapa": true,
+  "ids": {
+    "Alfa.md": "doc_00000001-0000-4000-8000-000000000000"
+  },
+  "noteHashes": {
+    "Alfa.md": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef",
+    "Personalização/tema.json": "18f3afcb56544bee9db7ec61879b5fc91014f777602441a2be8c95ecea38dfc3",
+    "Páginas/Futura.page.json": "7eb995d242ebbd9fb62656b5a4a6dfd108a4783ac1006202ff5e6f3f7c8f18f2"
+  },
+  "futureHashes": {
+    ".urbe/history.json": "83ccdf6db6de0fab3eeabc06c9c33e8adde7451b52c02ab80c194500be6195e7",
+    ".urbe/trash.json": "d261cd9596380af8b1d99077132978adce334321f85d8388696fa302c8f2b432",
+    ".urbe/compositions.json": "8ca2500e4a6501d0a2d2f3b2f63b2aaf782f91dd36a36703b6d69479cbd54b10",
+    ".urbe/journal.json": "9b2e799e6fd8c2840574a493463085398afeeefaf89f690562448c8e94e8ee04",
+    "Personalização/tema.json": "18f3afcb56544bee9db7ec61879b5fc91014f777602441a2be8c95ecea38dfc3",
+    "Páginas/Futura.page.json": "7eb995d242ebbd9fb62656b5a4a6dfd108a4783ac1006202ff5e6f3f7c8f18f2"
+  },
+  "keepHashes": {}
+}

@@ -8,7 +8,7 @@ function ok(v,m){if(!v)throw new Error(m||'falhou')}
 let fetchImpl=null;
 const c={window:{},console,setTimeout,clearTimeout,TextDecoder,TextEncoder,Response,ReadableStream,AbortController,Headers,fetch:(...a)=>fetchImpl(...a)};
 c.window.fetch=c.fetch;vm.createContext(c);
-for(const f of ['src/core/core.js','src/core/documents.js','src/core/trash.js','src/core/knowledge-index.js','src/ui/quick-open.js','src/ai/providers.js','src/ai/tools.js','src/ai/agent.js'])vm.runInContext(read(f),c);
+for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/trash.js','src/core/knowledge-index.js','src/ui/quick-open.js','src/ai/providers.js','src/ai/tools.js','src/ai/agent.js'])vm.runInContext(read(f),c);
 const W=c.window,core=W.UrbeCore,docs=core.service('documents'),P=W.UrbeAIProviders,A=W.UrbeAgent,T=W.UrbeAITools;
 const J=x=>JSON.parse(JSON.stringify(x));
 

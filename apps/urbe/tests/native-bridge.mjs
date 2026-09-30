@@ -17,7 +17,7 @@ function bridgeContext(){
   const doc={documentElement:{classList:{add(){}}},addEventListener(){},getElementById(){return null},querySelectorAll(){return[]}};
   const win={UrbeNative:{shell:'electron',platform:'linux',vault:async()=>({label:vaultDir,path:vaultDir}),fs:vfs},navigator:{},document:doc};
   const c={window:win,document:doc,console,File,Blob,TextEncoder,TextDecoder,DOMException,ArrayBuffer,Uint8Array,Symbol,Promise,fetch,setTimeout,clearTimeout};
-  vm.createContext(c);vm.runInContext(read('src/native/bridge.js'),c);return win;
+  vm.createContext(c);vm.runInContext(read('src/core/artifacts.js'),c);vm.runInContext(read('src/native/bridge.js'),c);return win;
 }
 
 await test('disco: nada sai da pasta do Urbe (.., absoluto, atalho)',async()=>{
@@ -68,7 +68,7 @@ await test('ponte: handles iguais aos do File System Access (criar, ler, gravar,
 /* persistência: a mesma do app, com um adaptador em memória no lugar do disco */
 function persistenceContext(){
   const c={window:{},console,setTimeout,clearTimeout};vm.createContext(c);
-  for(const f of ['src/core/core.js','src/core/documents.js','src/persistence/workspace.js'])vm.runInContext(read(f),c);
+  for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/persistence/vault-meta.js','src/persistence/backup.js','src/persistence/workspace.js'])vm.runInContext(read(f),c);
   const W=c.window,disk=new Map([['A.md','# A'],['Pasta/B.md','# B']]);
   const adapter={list:async()=>[...disk.keys()],read:async(_v,p)=>disk.has(p)?disk.get(p):null,write:async(_v,p,t)=>{disk.set(p,t)},remove:async(_v,p)=>{disk.delete(p)},createFolder:async()=>{},removeFolder:async()=>{}};
   const P=W.UrbeCore.service('persistence').configure(adapter),D=W.UrbeCore.service('documents');return{P,D,disk};
@@ -95,9 +95,9 @@ await test('edição local ainda não gravada nunca é atropelada pelo disco',as
 await test('digitar numa nota grava só ela (sem copiar o vault inteiro no diário); várias de uma vez usam o diário',async()=>{
   const {P,D,disk}=persistenceContext();await P.load('Urbe');const writes=[];const w0=P.adapter.write;P.adapter.write=async(v,p,t)=>{writes.push(p);return w0(v,p,t)};
   const a=D.list().find(x=>x.path==='A.md');D.upsert({...a,content:'# A 1'},{source:'editor.input'});await P.flush();
-  ok(!writes.includes('.urbe/journal.json')&&writes.includes('A.md'),'uma nota: '+writes.join());
+  ok(!writes.includes('.urbe/journal.v2.json')&&writes.includes('A.md'),'uma nota: '+writes.join());
   writes.length=0;const b=D.list().find(x=>x.path==='Pasta/B.md');D.upsert({...D.list().find(x=>x.path==='A.md'),content:'# A 2'});D.upsert({...b,content:'# B 2'});await P.flush();
-  ok(writes[0]==='.urbe/journal.json'&&!disk.has('.urbe/journal.json'),'várias: diário antes e apagado depois: '+writes.join());
+  ok(writes[0]==='.urbe/journal.v2.json'&&!disk.has('.urbe/journal.v2.json'),'várias: diário antes e apagado depois: '+writes.join());
 });
 fs.rmSync(tmp,{recursive:true,force:true});
 if(failed)console.error(failed+' falha(s)');

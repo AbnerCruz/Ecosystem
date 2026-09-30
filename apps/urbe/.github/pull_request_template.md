@@ -1,7 +1,9 @@
 ## Origem
 
 - Issue:
+- Item do ROADMAP (`RM-Fn-nn`):
 - Requisito(s) `REQ-...`:
+- Gate (`G0`–`G6`):
 - ADR, se aplicável:
 
 ## Problema
@@ -19,7 +21,8 @@ O que deliberadamente não foi alterado?
 ## Arquitetura / legacy
 
 - [ ] Não cria nova autoridade concorrente.
-- [ ] Não adiciona nova camada histórica em `app.js`.
+- [ ] Não adiciona nova camada histórica em `app.js` (`node tools/check-debt.mjs`).
+- **Dívida criada:** (nenhuma / descrever) · **Dívida removida:** (descrever; tetos em `tools/debt-ceiling.json` só descem)
 - [ ] Se toca legacy, identifica substituto/consumidores/condição de remoção.
 - [ ] ADR criado/atualizado quando necessário.
 
@@ -53,7 +56,7 @@ Cenário/medição afetado:
 ## Testes executados
 
 ```
-npm test
+npm run check      # versão única, módulos/boundaries, dívida, rastreabilidade, workflows, tutorial e testes
 ```
 
 Outros testes reproduzíveis:
@@ -71,9 +74,11 @@ Pré-condições, passos e resultados esperados, quando necessária.
 
 ## Definition of Done
 
-- [ ] Implementação real e integrada.
-- [ ] Testes relevantes passam.
-- [ ] Critérios de aceite atendidos.
+- [ ] Implementação real e integrada (código antigo substituído removido no mesmo PR).
+- [ ] Testes relevantes passam (`npm run check` verde) e cobrem o comportamento (não só strings de código).
+- [ ] Critérios de aceite do item do ROADMAP atendidos; estado do item atualizado (`[x]` só com DoD completo).
+- [ ] `TRACEABILITY.md` regenerada se REQ/SPEC/ROADMAP mudaram (`node tools/gen-traceability.mjs`).
+- [ ] Sem mudança de formato persistido sem catálogo, migração, fixture e teste.
 - [ ] Sem placeholder relevante.
 - [ ] Sem regressão conhecida.
 - [ ] Documentação coerente.

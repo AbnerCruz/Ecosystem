@@ -10,7 +10,7 @@ const files={};for(const f of walk(src).sort()){const rel='Tutorial/'+path.relat
 
 /* conferências */
 const ctx={window:{},console};vm.createContext(ctx);
-for(const f of ['src/core/core.js','src/core/documents.js','src/pages/engine.js'])vm.runInContext(fs.readFileSync(path.join(root,f),'utf8'),ctx);
+for(const f of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/pages/engine.js'])vm.runInContext(fs.readFileSync(path.join(root,f),'utf8'),ctx);
 const M=ctx.window.UrbeDocumentModel,P=ctx.window.UrbePages,problems=[];
 const paths=new Set(Object.keys(files).map(p=>p.toLowerCase()));
 for(const [p,c] of Object.entries(files)){

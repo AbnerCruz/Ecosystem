@@ -10,6 +10,7 @@
 - [F] **`mapa.v` nunca é lido** (escrito 1, 2 ou 4). O único gatilho real é `mapa.mundo !== 'placas-1'` (`app.js:3230`; `URBE_MUNDO` `app.js:5226`).
 - [F] **Dois escritores de `.urbe/mapa.json`:** `rodarSinc` (`app.js:2536-2543`) e `WorkspacePersistence.flush` (`workspace.js:23,34`); conciliação via `estadoDesejado` (`app.js:4469-4487`). O journal só protege o caminho do `WorkspacePersistence`. [I] risco de corrida/dupla escrita.
 - [F] Quatro camadas de `estadoDesejado`: `app.js:2041` (v:2), `2517` (v:4), `3226` (final: `version`, `mundo`, `binarios`), `3395` (estabiliza `salvo`), `4469` (reescreve `notas` do DocumentStore).
+- [C] **Atualização RM-F1-13 (REQ-040):** `WorkspacePersistence` é o único escritor de `.urbe/mapa.json` no uso normal. `rodarSinc` grava só pastas e binários e agenda/força o `flush`; o mapa vem de `persistence.metadataProvider` (a cadeia `estadoDesejado`), que devolve `null` enquanto a cidade carrega (fica o mapa lido do disco). `mapa.v` é validado no load: ausente = legado (v1); 1..4 = 1.x; `>4` = futuro; qualquer outro valor = desconhecido. Futuro e desconhecido são preservados (`mapaReadonly`). As duas declarações mortas de `estadoDesejado` (v:2 e v:4) foram apagadas. Exceção remanescente: a migração multi-cidade `urbeEnsureSingleVault` grava o mapa do vault `Urbe` antes do `load`; ela entra em RM-F1-19. Testes: `tests/e2e/map-writer.e2e.mjs` (pilha de toda gravação do mapa passa por `workspace.js`) e `tests/vault-format.mjs` §6b/6c.
 
 ## 1. Formatos do vault (todas as plataformas)
 
@@ -126,3 +127,25 @@ Storage isolado por origem: web (host), Electron `app://urbe` (`main.js:14`), An
 
 ## 8. Lacunas para SPEC
 Política forward/backward exata por arquivo (§7.4); estrutura de `vault.json`; fixtures (REQ-037); manifesto do export (REQ-044); GC de órfãos; identidade de assets/plugins/temas; formato do sidecar de identidade (REQ-042).
+
+## 9. Política de migração por formato (contrato 2.x — REQ-023, REQ-035, ADR-0004)
+
+Regras comuns: (1) a 2.x **lê** o formato 1.x; (2) só **escreve** o formato 2.x; (3) versão desconhecida/maior ⇒ **preservar o arquivo intacto, avisar e operar em modo seguro (somente leitura) para aquele artefato**; (4) toda migração faz backup em `.urbe/backup/` antes de escrever e é idempotente; (5) `tools/check-catalog.mjs` exige que todo caminho persistido pelo código apareça nesta tabela.
+
+| Caminho | Versão 1.x | Versão/arquivo na 2.x | Leitura 2.x | Escrita 2.x | Versão desconhecida | Fixture / teste |
+|---|---|---|---|---|---|---|
+| `.urbe/mapa.json` | `v:4` (lê v1/v2/v4) | mesmo nome, `v:4` aditivo (`id` de região/asset em `regioes[]`/`construcoes[]`, `mundo`, `version`) | v1, v2, v4 | v4 aditivo (legível pela 1.x) | `v>4`: preservar, abrir sem gravar mapa (layout derivado dos caminhos) | `v1-mapa-v2`, `v1-mapa-v4`, `futuro-desconhecido` |
+| `.urbe/journal.json` | `version:1` | `.urbe/journal.v2.json` (`version:2`) | v1 (recupera e remove só se `version===1`) e v2 | só v2 | preservar (não apagar) | `v1-journal-pendente`, `futuro-desconhecido` |
+| `.urbe/history.json` | `version:1` | `.urbe/history.v2.json` (`version:2`) | v1 (importa na 1ª carga) e v2 | só v2; v1 permanece intacto | preservar | `v1-mapa-v4`, `futuro-desconhecido` |
+| `.urbe/trash.json` | `version:1` | `.urbe/trash.v2.json` (`version:2`) | v1 e v2 | só v2; v1 intacto | preservar | `v1-mapa-v4`, `futuro-desconhecido` |
+| `.urbe/compositions.json` | `version:1` | `.urbe/compositions.v2.json` (`version:2`) | v1 e v2 | só v2; v1 intacto | preservar | `v1-mapa-v4`, `futuro-desconhecido` |
+| `.urbe/tutorial.json` | `{versao,em}` | mesmo nome (aditivo) | sim | sim | preservar | `tests/tutorial.mjs` |
+| `.urbe/merged-v1.json`, `.urbe/origens/*` | marcador da migração multi-cidade | mesmo nome; `vault.json.migrations` registra conclusão | sim | nunca apaga origem | preservar | `v1-cidades-mescladas` |
+| `.urbe/vault.json` | — | novo: `{formatVersion,createdBy,lastWriter,migrations[]}` | sim | sim | `formatVersion` maior: modo seguro | `vault.mjs` (RM-F1-04) |
+| `.urbe/identity.json` | — | novo: `{version:1,docs:{<docId>:{path,fingerprint,seen}}}` | sim | sim | preservar | RM-F1-15 |
+| `.urbe/backup/<data>-<de>-<para>/` | — | novo: cópias restauráveis pré-migração | sim | sim | — | RM-F1-07 |
+| `urbe-export.json` (dentro do ZIP) | — | novo: manifesto do export | sim | sim | recusar import de `format` desconhecido | RM-F1-18 |
+| `Personalização/tema.json` | `versao:1` | mesmo | v1 | v1 (preserva chaves desconhecidas) | preservar; modo seguro de tema | `v1-personalizacao`, `futuro-desconhecido` |
+| `Personalização/{temas,estilos,texturas,plugins}/*` | sem versão | mesmo | sim | sim | preservar | `v1-personalizacao` |
+| `Páginas/**/*.page.json` (+ Modelos/Blocos) | `version:1` | mesmo; preserva chaves desconhecidas e `version` | v1 | v1 sem reescrever `version` | preservar (somente leitura no Studio) | `v1-paginas`, `futuro-desconhecido` |
+| Notas e demais textos | — | sem mudança (nenhum ID no arquivo) | sim | bytes preservados | — | todas as fixtures |

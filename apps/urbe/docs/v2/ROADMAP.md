@@ -14,6 +14,7 @@
 | F3 | Segurança | G3: CSP; plugins; Electron/Android; HTML/embeds; ZIP; IA; testes de segurança verdes |
 | F4 | Plataformas, release e distribuição | G4: E2E web+Electron; smoke instalador/APK; `UrbeNative.contract`; release por tag; `LICENSE` publicado |
 | F5 | Performance | G5: baseline, budgets aprovados, `perf:check` verde, flush incremental, busca indexada |
+| F7 | Feedback de uso da beta | G7: bugs OBS reproduzidos e corrigidos com regressão; features entregues; decisões OD-12..15 em ADR |
 | F6 | UX, auditoria e release 2.0 | G6: S1–S10; acessibilidade; tutorial/migração; recuperação; auditoria final; release |
 
 Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem dependência de F1/F2 (as dependências explícitas mandam); F4 exige F1–F3 para E2E/smoke; F5 exige F1/F2 para persistência/busca; F6 encerra.
@@ -48,7 +49,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G0
 
 ### RM-F0-03 — Executar verificador de rastreabilidade no CI
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-068
 - **SPEC:** §9
 - **Fase:** F0
@@ -59,9 +60,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Rastreabilidade.
 - **Aceite:** CI vermelho quando cobertura quebra; verde no estado atual.
 - **Gate:** G0
+- **Evidência:** npm run check (structural-checks.yml) inclui check-traceability e gen-traceability --check; aguardando CI verde no PR
 
 ### RM-F0-04 — Alinhar ARCHITECTURE.md à realidade e ao alvo
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-001
 - **SPEC:** §1.2, §3.1
 - **Fase:** F0
@@ -72,9 +74,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** `ARCHITECTURE.md`.
 - **Aceite:** Diagrama e texto não contradizem os fatos de ARCHITECTURE-MAP §4.
 - **Gate:** G0
+- **Evidência:** ARCHITECTURE.md reescrito (camadas, estado real, módulos/boundaries)
 
 ### RM-F0-05 — Runner de testes multiplataforma
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-063
 - **SPEC:** §9
 - **Fase:** F0
@@ -85,9 +88,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Testes.
 - **Aceite:** `npm test` roda todos, não para no primeiro erro, funciona em Windows e Linux.
 - **Gate:** G0
+- **Evidência:** tools/run-tests.mjs + tests/run-tests.mjs; npm test; CI usa npm run check; aguardando matriz Windows/Linux
 
 ### RM-F0-06 — Fonte única de versão (`tools/version.mjs`)
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-019, REQ-065
 - **SPEC:** §10.2
 - **Fase:** F0
@@ -98,9 +102,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Release.
 - **Aceite:** Bump de versão em um lugar propaga por `sync`; `check` falha em drift.
 - **Gate:** G0
+- **Evidência:** tools/version.mjs + tests/version.mjs; V21_VERSION atribuída 1×; static/consistency derivam de package.json; app.yml usa version.mjs
 
 ### RM-F0-07 — Gerar `src/modules.json` a partir do `index.html` atual
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-025
 - **SPEC:** §3.2
 - **Fase:** F0
@@ -111,9 +116,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** SPEC §3.2; ADR-0001.
 - **Aceite:** Manifesto cobre 100% dos JS de `src/` e reproduz a ordem atual.
 - **Gate:** G0
+- **Evidência:** src/modules.json (60 módulos) via tools/gen-modules.mjs; tests/modules.mjs
 
 ### RM-F0-08 — `check-modules` e derivação de `index.html`/`sw.js`/`build-www`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-025
 - **SPEC:** §3.2
 - **Fase:** F0
@@ -124,9 +130,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** ADR-0001 status confirmado; CONTRIBUTING §Módulos.
 - **Aceite:** Reordenar módulo inválido falha no CI; `index.html` e `sw.js` nunca divergem do manifesto.
 - **Gate:** G0
+- **Evidência:** tools/check-modules.mjs (--write) deriva index.html/sw.js; build-www valida manifesto; tests/modules.mjs (negativos)
 
 ### RM-F0-09 — Validação automática de boundaries de camadas
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-015
 - **SPEC:** §3.1
 - **Fase:** F0
@@ -137,9 +144,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** ARCHITECTURE.md.
 - **Aceite:** Nenhuma violação nova; exceções conhecidas explícitas e decrescentes.
 - **Gate:** G0
+- **Evidência:** boundaries por camada em check-modules + tests/boundaries.mjs; exceções em BOUNDARY-EXCEPTIONS.md (11, decrescentes)
 
 ### RM-F0-10 — Gerador de vaults sintéticos S/M/L
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-070
 - **SPEC:** §8
 - **Fase:** F0
@@ -150,9 +158,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** PERFORMANCE §4.
 - **Aceite:** Três vaults reproduzíveis byte a byte.
 - **Gate:** G0
+- **Evidência:** tools/perf/make-vault.mjs + tests/perf-vault.mjs
 
 ### RM-F0-11 — Harness dos cenários de performance
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-070
 - **SPEC:** §8
 - **Fase:** F0
@@ -163,6 +172,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** `docs/v2/perf/README.md`.
 - **Aceite:** Harness roda localmente e no CI e produz JSON com ambiente e commit.
 - **Gate:** G0
+- **Evidência:** tools/perf/run.mjs (Playwright/Chromium) — cenários open/edit/save/search/city/tutorial
 
 ### RM-F0-12 — Publicar baseline 1.8.2
 - **Estado:** [ ]
@@ -178,7 +188,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G0
 
 ### RM-F0-13 — Gate de dívida (`tools/check-debt.mjs`)
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-012
 - **SPEC:** §1.2
 - **Fase:** F0
@@ -189,9 +199,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** PR template + CONTRIBUTING.
 - **Aceite:** Nenhuma nova camada de versão possível sem quebrar o CI.
 - **Gate:** G0
+- **Evidência:** tools/check-debt.mjs + tools/debt-ceiling.json + tests/debt.mjs
 
 ### RM-F0-14 — Separar integração e publicação (release por tag)
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-006, REQ-066
 - **SPEC:** §10.2
 - **Fase:** F0
@@ -202,9 +213,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Release; ADR-0005 aprovado (OD-05).
 - **Aceite:** Merge em `main` nunca cria Release; tag com testes verdes cria.
 - **Gate:** G0
+- **Evidência:** release.yml (tag v*) + build-apps.yml reutilizável; app.yml só valida; tests/workflows.mjs + tools/check-workflows.mjs; dry-run real só possível no GitHub
 
 ### RM-F0-15 — Endurecer CI: actions por SHA e Dependabot
-- **Estado:** [ ]
+- **Estado:** [~]
 - **REQ:** REQ-066
 - **SPEC:** §10.2
 - **Fase:** F0
@@ -215,9 +227,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING.
 - **Aceite:** Nenhuma action por tag móvel; Dependabot abre PRs.
 - **Gate:** G0
+- **Evidência:** dependabot.yml criado; pinagem de actions por SHA pendente (exige consultar os repositórios das actions — fora do escopo de acesso desta sessão)
 
 ### RM-F0-16 — Ciclo de vida de branches e backlog de issues
-- **Estado:** [ ]
+- **Estado:** [!]
 - **REQ:** REQ-018, REQ-067
 - **SPEC:** §10.4
 - **Fase:** F0
@@ -228,9 +241,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §Branches.
 - **Aceite:** Zero branches `claude/*` obsoletas; backlog com RM-ids.
 - **Gate:** G0
+- **Evidência:** Auditoria concluída (docs/v2/BRANCH-AUDIT.md: 31 branches incorporadas); REMOÇÃO bloqueada: exige autorização do proprietário
 
 ### RM-F0-17 — Definition of Done no PR template e issue templates
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-005, REQ-011
 - **SPEC:** §1.2, §10.1
 - **Fase:** F0
@@ -241,9 +255,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §DoD.
 - **Aceite:** PR sem RM-id/REQ não passa a revisão; template contém DoD completo.
 - **Gate:** G0
+- **Evidência:** PR template (RM-id, gate, dívida, DoD) e issue template change atualizados; CONTRIBUTING §14-15
 
 ### RM-F0-18 — Comando único `npm run check` (sincronização docs×código)
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-004
 - **SPEC:** §1.2
 - **Fase:** F0
@@ -254,12 +269,12 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING.
 - **Aceite:** Um comando valida todas as sincronizações; verde no CI.
 - **Gate:** G0
-
+- **Evidência:** tools/check-all.mjs (npm run check); aguardando CI verde
 
 ## F1 — Persistência, dados e migração (G1)
 
 ### RM-F1-01 — Criar fixtures de vaults históricos
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-037
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -270,9 +285,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** `tests/fixtures/vaults/README.md`.
 - **Aceite:** Todas as fixtures existem, versionadas e abrem em 1.8.2.
 - **Gate:** G1
+- **Evidência:** tests/fixtures/vaults (9 vaults + IDB legado) gerados por tools/make-fixtures.mjs (--check); abrem na 1.8.2 sem erro (tests/e2e/fixtures.e2e.mjs)
 
 ### RM-F1-02 — Harness de abertura/migração de fixtures
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-037
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -283,9 +299,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG §5.
 - **Aceite:** Harness verde na 1.8.2; vermelho quando nota é alterada.
 - **Gate:** G1
+- **Evidência:** tests/vault-migration.mjs (persistência, com catraca KNOWN_GAPS) + tests/e2e/fixtures.e2e.mjs (app real: bytes das notas preservados, migrarAntiga)
 
 ### RM-F1-03 — Catálogo de formatos verificado por código
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-023
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -296,9 +313,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG.md.
 - **Aceite:** Nenhum formato persistido fora do catálogo.
 - **Gate:** G1
+- **Evidência:** tools/check-catalog.mjs + tests/catalog.mjs; DATA-CATALOG §9 (política por formato)
 
 ### RM-F1-04 — `vault.json` e detecção de versão do vault
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-036
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -309,9 +327,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG; SPEC §5.1.
 - **Aceite:** Vault 1.x é reconhecido e nenhuma escrita ocorre antes da leitura.
 - **Gate:** G1
+- **Evidência:** src/persistence/vault-meta.js (vault.json formatVersion/createdBy/lastWriter/migrations); lido antes de qualquer escrita; tests/vault-format.mjs + E2E fixtures
 
 ### RM-F1-05 — Proteção forward: journal, history, trash, compositions
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-035
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -322,9 +341,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** ADR-0004 (OD-11 aprovado).
 - **Aceite:** Nenhum arquivo `.urbe/*` de versão desconhecida é alterado ou apagado.
 - **Gate:** G1
+- **Evidência:** workspace.js: só escreve *.v2.json; v1 nunca reescrito; versão maior/ilegível preservada (sideReadonly); journal v2/v1; tests/vault-format.mjs (futuro-v2) + E2E no app real
 
 ### RM-F1-06 — Proteção forward: mapa, tema, páginas, blocos, modelos
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-035
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -335,9 +355,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** tutorial (Solução de problemas).
 - **Aceite:** Abrir vault futuro nunca perde dados.
 - **Gate:** G1
+- **Evidência:** mapa v>4 preservado (persistência + guarda em rodarSinc), vault.json futuro ⇒ somente leitura (persistência, rodarSinc, Tutorial); avisos em src/ui/vault-notices.js; E2E futuro-desconhecido/futuro-v2/vault-futuro
 
 ### RM-F1-07 — Motor de backup pré-migração e restauração
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-038
 - **SPEC:** §5.1
 - **Fase:** F1
@@ -348,9 +369,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** MIGRATION.md.
 - **Aceite:** Toda migração é precedida de backup restaurável.
 - **Gate:** G1
+- **Evidência:** src/persistence/backup.js (backup do estado 1.x capturado no load, restaurar, listar), comandos workspace.backups/restoreBackup; migração idempotente; tests/vault-format.mjs + E2E
 
 ### RM-F1-08 — Fonte única de tipos de artefato
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-039
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -361,9 +383,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG §1.
 - **Aceite:** Uma só lista; comportamento das fixtures inalterado.
 - **Gate:** G1
+- **Evidência:** src/core/artifacts.js (UrbeArtifacts: RE + classify); 30 cópias das listas de extensões substituídas; .canvas passa a ser asset; tests/artifacts.mjs (nenhuma lista duplicada)
 
 ### RM-F1-09 — Modelo de artefatos aplicado (indexação e roteamento)
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-014
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -374,9 +397,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** tutorial; DATA-CATALOG §4.
 - **Aceite:** Arquivos não-nota não viram casas; propriedade de arquivos comuns mantida.
 - **Gate:** G1
+- **Evidência:** UrbeArtifacts.route/registerOpener/onBeforeOpen (wrapper L8 removido de studio.js), linkable() no KnowledgeIndex; tests/artifacts.mjs + tests/e2e/routing.e2e.mjs
 
 ### RM-F1-10 — Contrato de adapters de persistência e testes
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-028
 - **SPEC:** §3.3
 - **Fase:** F1
@@ -387,9 +411,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** SPEC §3.3; contracts/persistence-adapter.md.
 - **Aceite:** Contrato e suíte publicados; `vault-fs` passa.
 - **Gate:** G1
+- **Evidência:** adaptadores idb/fsa/router extraídos de app.js (−133 linhas); suíte de contrato: tests/adapter-contract.mjs + tests/e2e/adapters.e2e.mjs (IDB e OPFS reais)
 
 ### RM-F1-11 — Adapters IDB e FSA extraídos de `FS/Disco/DBK`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-028
 - **SPEC:** §3.3
 - **Fase:** F1
@@ -400,9 +425,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG §3.
 - **Aceite:** Modos interno e pasta operam via adapters; código antigo removido.
 - **Gate:** G1
+- **Evidência:** adaptadores idb/fsa/router extraídos de app.js (−133 linhas); suíte de contrato: tests/adapter-contract.mjs + tests/e2e/adapters.e2e.mjs (IDB e OPFS reais)
 
 ### RM-F1-12 — Adapters Electron/Android e autoridade única de escrita
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-028
 - **SPEC:** §3.3
 - **Fase:** F1
@@ -413,9 +439,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** LEGACY-MAP L5.
 - **Aceite:** `grep 'FS\.' app.js` sem escrita direta; L5 removido.
 - **Gate:** G1
+- **Evidência:** adaptadores idb/fsa/router extraídos de app.js (−133 linhas); suíte de contrato: tests/adapter-contract.mjs + tests/e2e/adapters.e2e.mjs (IDB e OPFS reais)
 
 ### RM-F1-13 — Escritor único do mapa e leitura de `mapa.v`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-040
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -426,6 +453,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** DATA-CATALOG §0.
 - **Aceite:** Só `WorkspacePersistence` escreve `mapa.json`.
 - **Gate:** G1
+- **Evidência:** mapa.json só gravado pelo WorkspacePersistence (metadataProvider); mapa.v validado; 2 estadoDesejado mortos apagados; tests/e2e/map-writer.e2e.mjs (falha no código anterior) + vault-format §6b/6c; exceção de migração repassada a RM-F1-19
 
 ### RM-F1-14 — IDs estáveis de regiões, construções e vínculos
 - **Estado:** [ ]
@@ -498,7 +526,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **SPEC:** §5.2
 - **Fase:** F1
 - **Depende:** RM-F1-07
-- **Implementação:** Marcador em `vault.json`; sem recopiar `Cidades/` a cada boot; opção de arquivar.
+- **Implementação:** Marcador em `vault.json`; sem recopiar `Cidades/` a cada boot; opção de arquivar. A gravação do mapa de `Urbe` feita por `urbeEnsureSingleVault` antes do `load` passa a ter backup ou a ser feita pelo `WorkspacePersistence` (último escritor do mapa fora dele, deixado por RM-F1-13).
 - **Integração:** `urbeEnsureSingleVault`.
 - **Testes:** Fixture `v1-cidades-mescladas`: 3 boots consecutivos, mesmo resultado.
 - **Documentação:** MIGRATION.md.
@@ -954,7 +982,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G3
 
 ### RM-F3-09 — Endurecer permissões, protocolo e IPC do Electron
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-055
 - **SPEC:** §7.3
 - **Fase:** F3
@@ -965,9 +993,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** THREAT-MODEL T-Electron.
 - **Aceite:** Sem permissões/arquivos além do necessário.
 - **Gate:** G3
+- **Evidência:** native/desktop/guards.js + main.js (permissões só app://urbe, protocolo com allowlist e host exato, IPC por igualdade); testes com Electron simulado; NÃO verificado no Electron real
 
 ### RM-F3-10 — `printToPDF` isolado e hooks de teste inertes
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-055
 - **SPEC:** §7.3
 - **Fase:** F3
@@ -978,9 +1007,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** —
 - **Aceite:** Sem superfície residual de teste em produção.
 - **Gate:** G3
+- **Evidência:** printToPDF via app://print (sessão isolada, sem preload, navegação bloqueada); URBE_TEST_* só com URBE_TEST_MODE=1 e app não empacotado; teste simulado
 
 ### RM-F3-11 — Android: `printHtml`, FileProvider e backup
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-056
 - **SPEC:** §7.3
 - **Fase:** F3
@@ -991,9 +1021,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** THREAT-MODEL T-Android.
 - **Aceite:** Sem exposição da origem do app na impressão.
 - **Gate:** G3
+- **Evidência:** allowBackup=false + data_extraction_rules/backup_rules; FileProvider mínimo; printHtml sem JS e base https://print.urbe.invalid/; NÃO compilado (sem Android SDK)
 
 ### RM-F3-12 — Android: validação canônica em todas as operações e symlinks
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-056
 - **SPEC:** §7.3
 - **Fase:** F3
@@ -1004,6 +1035,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** —
 - **Aceite:** Nenhuma operação sem validação no Java.
 - **Gate:** G3
+- **Evidência:** PathGuard.java/UrlGuard.java em readTexts/listTree/saveFile (GuardChecks + JUnit4 passam em javac 21); Filesystem do Capacitor não passa pelo Guard — mitigado no JS (safeRel), ver contracts/native.md §5
 
 ### RM-F3-13 — Sandbox de embeds sem `allow-same-origin` com scripts
 - **Estado:** [ ]
@@ -1071,7 +1103,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G3
 
 ### RM-F3-18 — Teste de esquemas de links externos
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-010
 - **SPEC:** §7.1
 - **Fase:** F3
@@ -1082,9 +1114,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** THREAT-MODEL T-Links.
 - **Aceite:** Allowlist verificada nas três plataformas.
 - **Gate:** G3
+- **Evidência:** tests/security/links.mjs (~70 vetores) em Electron, ponte e UrlGuard.java
 
 ### RM-F3-19 — Testes de `main.js` e `preload.js`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-062
 - **SPEC:** §9
 - **Fase:** F3
@@ -1095,9 +1128,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** TEST-MATRIX §3.
 - **Aceite:** Guard de IPC, permissões, protocolo, `external()` cobertos.
 - **Gate:** G3
+- **Evidência:** tests/desktop-main.mjs, tests/desktop-preload.mjs (Electron simulado); smoke real em RM-F4-07
 
 ### RM-F3-20 — Testes JUnit do plugin Android e SW real
-- **Estado:** [ ]
+- **Estado:** [~]
 - **REQ:** REQ-062
 - **SPEC:** §9
 - **Fase:** F3
@@ -1108,12 +1142,12 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** TEST-MATRIX §3.
 - **Aceite:** Plugin e SW cobertos por execução real.
 - **Gate:** G3
-
+- **Evidência:** JUnit4 + GuardChecks (javac) prontos; falta teste do Service Worker real (RM-F4-04/05)
 
 ## F4 — Plataformas, release e distribuição (G4)
 
 ### RM-F4-01 — Definir e implementar `UrbeNative.contract`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-076
 - **SPEC:** §6.2
 - **Fase:** F4
@@ -1124,9 +1158,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** contracts/native.md.
 - **Aceite:** Contrato exposto nas três plataformas.
 - **Gate:** G4
+- **Evidência:** UrbeNative.contract em preload.js, bridge.js e web; docs/v2/contracts/native.md
 
 ### RM-F4-02 — Suíte de conformidade `native-contract` por adapter
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-076, REQ-008
 - **SPEC:** §6.1, §6.2
 - **Fase:** F4
@@ -1137,9 +1172,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** PLATFORMS §2.
 - **Aceite:** Paridade comprovada; diferenças declaradas.
 - **Gate:** G4
+- **Evidência:** tests/native-contract.mjs: mesmas asserções em Electron, Android (simulado) e web
 
 ### RM-F4-03 — Paridade de exportação no Electron (`saveFile`)
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-079
 - **SPEC:** §6.2
 - **Fase:** F4
@@ -1150,9 +1186,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** tutorial.
 - **Aceite:** Exportar salva no Windows como no Android/web.
 - **Gate:** G4
+- **Evidência:** fs:saveFile (dialog.showSaveDialog) com testes simulados; NÃO verificado no Electron real
 
 ### RM-F4-04 — Scaffold Playwright e fixtures E2E
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-061
 - **SPEC:** §9
 - **Fase:** F4
@@ -1163,9 +1200,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CONTRIBUTING §E2E.
 - **Aceite:** E2E executa localmente e no CI.
 - **Gate:** G4
+- **Evidência:** tools/run-e2e.mjs, tools/lib/browser.mjs, tests/e2e/{smoke,lifecycle,zip,fixtures}.e2e.mjs; npm run test:e2e; falta job de CI dedicado
 
 ### RM-F4-05 — Cenários E2E críticos (web)
-- **Estado:** [ ]
+- **Estado:** [~]
 - **REQ:** REQ-061, REQ-016
 - **SPEC:** §9
 - **Fase:** F4
@@ -1176,6 +1214,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** GATES.md.
 - **Aceite:** Fluxo crítico verificado (S4).
 - **Gate:** G4
+- **Evidência:** tests/e2e/{lifecycle,zip,fixtures}.e2e.mjs cobrem abrir→criar→salvar→renomear→recarregar→excluir/restaurar→histórico, export ZIP e vaults históricos; faltam plugin, import ZIP, recuperação e toque
 
 ### RM-F4-06 — E2E de gestos e cidade (paridade do toque)
 - **Estado:** [ ]
@@ -1230,7 +1269,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G4
 
 ### RM-F4-10 — Política de release, canais e rollback
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-081
 - **SPEC:** §10.2
 - **Fase:** F4
@@ -1241,9 +1280,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** RELEASE.md.
 - **Aceite:** Procedimento executado com sucesso em dry-run.
 - **Gate:** G4
+- **Evidência:** docs/v2/RELEASE.md (SemVer, checklist, rollback, dry-run); release.yml por tag; dry-run real só no GitHub
 
 ### RM-F4-11 — `THIRD-PARTY-NOTICES`
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-080
 - **SPEC:** §10.3
 - **Fase:** F4
@@ -1254,9 +1294,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** THIRD-PARTY-NOTICES.
 - **Aceite:** Toda dependência embutida atribuída.
 - **Gate:** G4
+- **Evidência:** THIRD-PARTY-NOTICES.md + tools/check-license.mjs + tests/license.mjs
 
 ### RM-F4-12 — `LICENSE` de todos os direitos reservados
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-080, REQ-017
 - **SPEC:** §10.3
 - **Fase:** F4
@@ -1267,9 +1308,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** ADR-0003.
 - **Aceite:** `LICENSE` publicado (todos os direitos reservados, Abner P. S. Cruz), coerente com `package.json` e README.
 - **Gate:** G4
+- **Evidência:** LICENSE (todos os direitos reservados, Abner P. S. Cruz), package.json 'SEE LICENSE IN LICENSE', README; check-license valida
 
 ### RM-F4-13 — Registro da decisão de distribuição
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-017
 - **SPEC:** §10.3
 - **Fase:** F4
@@ -1280,9 +1322,10 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** README/RELEASE.
 - **Aceite:** Distribuição pública só após licença.
 - **Gate:** G4
+- **Evidência:** Política de distribuição: LICENSE (binários só para uso pessoal, sem redistribuição) + README; publicação por tag (RELEASE.md em RM-F4-10)
 
 ### RM-F4-14 — Guia de migração 1.x→2.x e aviso no app
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-082
 - **SPEC:** §10.5
 - **Fase:** F4
@@ -1293,6 +1336,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** MIGRATION.md; tutorial.
 - **Aceite:** Usuário informado e com rollback.
 - **Gate:** G4
+- **Evidência:** docs/v2/MIGRATION.md + avisos no app (vault-notices); falta a tela de migração no tutorial e E2E do aviso
 
 ### RM-F4-15 — Matriz de capacidades por plataforma verificada
 - **Estado:** [ ]
@@ -1572,3 +1616,371 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** CHANGELOG/RELEASE.
 - **Aceite:** Release publicado só com todos os gates.
 - **Gate:** G6
+
+## F7 — Feedback de uso da beta (G7)
+
+### RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados
+- **Estado:** [ ]
+- **REQ:** REQ-090, REQ-095, REQ-096, REQ-097, REQ-099, REQ-106, REQ-107, REQ-109
+- **SPEC:** §15.1, §15.2, §15.3
+- **Fase:** F7
+- **Depende:** RM-F4-04
+- **Implementação:** Cenários `tests/e2e/feedback-*.e2e.mjs` (Chromium desktop 1280×800 e celular 390×844 com toque) que reproduzem cada OBS de bug e falham na 1.8.2 (catraca `KNOWN_GAPS` como em `vault-migration`): botão de código, estado das ferramentas, Explorer (seleção/arrastar), sumiço de moradores, frequência de eventos, voltar, barra móvel, `[[nova nota]]`.
+- **Integração:** `tools/lib/browser.mjs` (viewport móvel + toque).
+- **Testes:** Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe.
+- **Documentação:** `FEEDBACK-BETA.md` (coluna Verificação).
+- **Aceite:** Cada OBS de bug tem reprodução automatizada.
+- **Gate:** G7
+
+### RM-F7-02 — Botão de código: sem texto de reserva e código em linha
+- **Estado:** [ ]
+- **REQ:** REQ-090
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** No modo Visual (`app.js:3965` e `editor/visual-tools.js`) e Fonte: com seleção envolve em `` ` ``; sem seleção insere crases com cursor dentro; código em linha no meio do parágrafo; comando separado para bloco (```).
+- **Integração:** Barra, bolha de formatação e menu `/`.
+- **Testes:** E2E: selecionar palavra → código em linha; sem seleção → sem 'código'; Markdown round-trip.
+- **Documentação:** tutorial (Editor).
+- **Aceite:** Nenhuma inserção de texto de reserva; código em linha no meio do texto.
+- **Gate:** G7
+
+### RM-F7-03 — Estado das ferramentas do editor derivado da seleção
+- **Estado:** [ ]
+- **REQ:** REQ-095
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Um único `syncToolbarState()` em `selectionchange`/`input` lê a formatação sob o cursor (negrito, itálico, código, listas, títulos…) e pinta os botões; remove estados locais independentes.
+- **Integração:** Barra do editor e bolha.
+- **Testes:** E2E: alternar cada ferramenta 3× — estado visível == formatação real; seleção mista.
+- **Documentação:** —
+- **Aceite:** Ferramentas nunca desincronizam.
+- **Gate:** G7
+
+### RM-F7-04 — Explorer: nome, todos os tipos, extensão e ícone
+- **Estado:** [ ]
+- **REQ:** REQ-096
+- **SPEC:** §15.2, §5.2
+- **Fase:** F7
+- **Depende:** RM-F7-01, RM-F1-08
+- **Implementação:** Renomear a aba "Notas" para "Explorer"; listar todos os artefatos (tipos de `UrbeArtifacts`) com extensão visível e ícone por tipo.
+- **Integração:** `explorer/mobile-ui.js` + navegação.
+- **Testes:** E2E: vault com .md/.png/.pdf/.json/.page.json mostra ícone e extensão.
+- **Documentação:** tutorial (Explorer).
+- **Aceite:** Todos os tipos visíveis e identificáveis.
+- **Gate:** G7
+
+### RM-F7-05 — Explorer: selecionar pasta exibe ações
+- **Estado:** [ ]
+- **REQ:** REQ-096
+- **SPEC:** §15.2
+- **Fase:** F7
+- **Depende:** RM-F7-04
+- **Implementação:** Seleção de pasta (toque/clique) mostra a barra de ações (novo, importar, renomear, mover, excluir); multisseleção coerente.
+- **Integração:** `explorer/mobile-ui.js`, `explorer.ui`.
+- **Testes:** E2E desktop e celular.
+- **Documentação:** tutorial.
+- **Aceite:** Pasta selecionada sempre mostra suas opções.
+- **Gate:** G7
+
+### RM-F7-06 — Explorer: arrastar e soltar (mouse) e toque longo + arrastar
+- **Estado:** [ ]
+- **REQ:** REQ-096
+- **SPEC:** §15.2
+- **Fase:** F7
+- **Depende:** RM-F7-05
+- **Implementação:** Arrastar arquivos/pastas para pastas (mouse, HTML5 DnD/pointer events) e toque longo + arrastar no celular; feedback visual de alvo; usa `explorer.move`.
+- **Integração:** Explorer.
+- **Testes:** E2E: mover nota para pasta por arrastar (mouse e toque emulado).
+- **Documentação:** tutorial.
+- **Aceite:** Mover por arrastar funciona nas duas entradas.
+- **Gate:** G7
+
+### RM-F7-07 — Moradores não somem: invariante de população
+- **Estado:** [ ]
+- **REQ:** REQ-097
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Diagnosticar a causa (rota/lote/estado em `app.js`/`world/life.js`), corrigir e adicionar invariante testável (`population>=N` salvo regra).
+- **Integração:** Simulação de moradores.
+- **Testes:** `tests/world-population.mjs`: ≥ 20.000 passos com semente fixa sem perda; E2E de observação.
+- **Documentação:** PRODUCT-UX.
+- **Aceite:** Nenhum morador some sem regra.
+- **Gate:** G7
+
+### RM-F7-08 — Eventos: menos frequentes, configuráveis; arco-íris desligado
+- **Estado:** [ ]
+- **REQ:** REQ-099
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Intervalo mínimo entre eventos maior; chaves por evento em `tema.json` (`cidade.eventos`) e na Personalização; arco-íris off por padrão.
+- **Integração:** `world/life.js`, `customize`.
+- **Testes:** `world-life.mjs` ampliado (intervalos, chaves, padrão).
+- **Documentação:** tutorial (Cidade).
+- **Aceite:** Menos eventos por padrão; cada um desativável.
+- **Gate:** G7
+
+### RM-F7-09 — Voltar do editor retorna à origem
+- **Estado:** [ ]
+- **REQ:** REQ-106
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Pilha de origem da abertura (`editor.origin`): Explorer (pasta/rolagem), busca, link, cidade, IA; `closeFullEditor` consulta a origem.
+- **Integração:** `app.js` (até extração F2), `editor/*`, Explorer.
+- **Testes:** E2E: abrir pelo Explorer → Voltar → Explorer na mesma pasta; pela cidade → cidade.
+- **Documentação:** tutorial.
+- **Aceite:** Voltar respeita a origem.
+- **Gate:** G7
+
+### RM-F7-10 — Barra do editor móvel junto ao teclado
+- **Estado:** [ ]
+- **REQ:** REQ-107
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Posicionar a barra com `visualViewport` (resize/scroll) acima do teclado virtual.
+- **Integração:** CSS + JS do editor.
+- **Testes:** E2E celular com teclado simulado (redução do viewport).
+- **Documentação:** —
+- **Aceite:** Barra sempre imediatamente acima do teclado.
+- **Gate:** G7
+
+### RM-F7-11 — Criar nota a partir de `[[nota inexistente]]`
+- **Estado:** [ ]
+- **REQ:** REQ-109
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Link inexistente oferece Criar (mesma pasta) e abre; sugestor de `[[` oferece "Criar 'X'".
+- **Integração:** `app.js` (wikilinks) → `editor/wikilinks` após F2.
+- **Testes:** E2E: digitar `[[Nova]]`, clicar, nota criada e aberta.
+- **Documentação:** tutorial.
+- **Aceite:** Criar por link funciona.
+- **Gate:** G7
+
+### RM-F7-12 — ADR-0008: armazenamento dos comentários (OD-12)
+- **Estado:** [x]
+- **REQ:** REQ-089
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** —
+- **Implementação:** ADR-0008 aprovado: sidecar `.urbe/comments.json`.
+- **Integração:** Documentação.
+- **Testes:** Revisão.
+- **Documentação:** adr/0008.
+- **Aceite:** Formato decidido e aprovado.
+- **Gate:** G7
+- **Evidência:** ADR-0008 aprovado (sidecar .urbe/comments.json)
+
+### RM-F7-13 — Comentários: criar/ver/editar e exportação
+- **Estado:** [ ]
+- **REQ:** REQ-089
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-12, RM-F1-15
+- **Implementação:** UI de comentário sobre trecho; render no editor; tratamento nas páginas HTML/exportação (marginalia ou omitir).
+- **Integração:** Editor, `pages/engine`.
+- **Testes:** E2E + testes de round-trip e exportação.
+- **Documentação:** tutorial.
+- **Aceite:** Comentários funcionam e sobrevivem a edição externa.
+- **Gate:** G7
+
+### RM-F7-14 — Fixar em painel
+- **Estado:** [ ]
+- **REQ:** REQ-091
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Ação "Fixar em painel" na seleção/nota; painel fixo (topo no celular, lateral no desktop) com rolagem própria, múltiplos trechos e fechar.
+- **Integração:** Editor/UI.
+- **Testes:** E2E celular: fixar, rolar editor, painel permanece.
+- **Documentação:** tutorial.
+- **Aceite:** Consulta e escrita simultâneas.
+- **Gate:** G7
+
+### RM-F7-15 — Estilos de tag personalizáveis (`tagStyles`)
+- **Estado:** [ ]
+- **REQ:** REQ-092
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** `tema.json` `tagStyles` + renderização de `#Tag:`; padrões #Todo/#Ideia/#Aviso; painel de Personalização.
+- **Integração:** `customize`, render de Markdown.
+- **Testes:** Testes de `normalize`/render; E2E.
+- **Documentação:** tutorial (Personalização).
+- **Aceite:** `#Todo: x` renderiza como estrutura configurada.
+- **Gate:** G7
+
+### RM-F7-16 — Templates de nota
+- **Estado:** [ ]
+- **REQ:** REQ-093
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F1-08
+- **Implementação:** Pasta `Modelos/`; "Salvar como template"; "Nova nota de template" com campos `{{campo}}`.
+- **Integração:** Explorer/editor.
+- **Testes:** E2E: ficha de personagem.
+- **Documentação:** tutorial.
+- **Aceite:** Templates reutilizáveis.
+- **Gate:** G7
+
+### RM-F7-17 — Timer/cronômetro/relógio no editor
+- **Estado:** [ ]
+- **REQ:** REQ-094
+- **SPEC:** §15.1
+- **Fase:** F7
+- **Depende:** RM-F3-04
+- **Implementação:** Recurso nativo (OD-13) no rodapé do editor: relógio, cronômetro e timer; iniciar/pausar/zerar.
+- **Integração:** Rodapé do editor.
+- **Testes:** E2E: iniciar, pausar, zerar; sobrevive a navegar entre notas.
+- **Documentação:** tutorial.
+- **Aceite:** Cronômetro utilizável no editor.
+- **Gate:** G7
+
+### RM-F7-18 — Atividades dos moradores (água, madeira, plantar)
+- **Estado:** [ ]
+- **REQ:** REQ-098
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-07
+- **Implementação:** Máquina de estados de atividades ligadas a rio/poço, árvores e canteiros; custo por quadro limitado; chave na Personalização.
+- **Integração:** `world/life.js`.
+- **Testes:** Testes de simulação (transições, custo); E2E de observação.
+- **Documentação:** PRODUCT-UX.
+- **Aceite:** Moradores vivem além de andar entre casas.
+- **Gate:** G7
+
+### RM-F7-19 — Nome da pasta-mãe no zoom máximo
+- **Estado:** [ ]
+- **REQ:** REQ-100
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F2-05
+- **Implementação:** Rótulo do bairro raiz visível ao zoom máximo.
+- **Integração:** Renderer canônico.
+- **Testes:** Teste de renderização (paridade) + E2E.
+- **Documentação:** —
+- **Aceite:** Usuário se localiza pelo nome da pasta-mãe.
+- **Gate:** G7
+
+### RM-F7-20 — Menu "+": ações distintas
+- **Estado:** [ ]
+- **REQ:** REQ-101
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F2-06
+- **Implementação:** Posicionar construção / Desenhar região / Importar / Decorar; tipo/imagem opcionais.
+- **Integração:** UI da cidade.
+- **Testes:** E2E: cada ação; sem duplicidade.
+- **Documentação:** tutorial.
+- **Aceite:** Sem duas rotas para a mesma ação.
+- **Gate:** G7
+
+### RM-F7-21 — Contornos: muralha na pasta raiz e opção de esconder
+- **Estado:** [ ]
+- **REQ:** REQ-102
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F2-05
+- **Implementação:** Muralha (raiz), contorno de baixa opacidade (subpastas); `tema.json` `cidade.contornos`; painel de Personalização.
+- **Integração:** Renderer + `customize`.
+- **Testes:** Paridade visual + testes de `normalize`.
+- **Documentação:** tutorial (Cidade).
+- **Aceite:** Contornos legíveis e configuráveis.
+- **Gate:** G7
+
+### RM-F7-22 — Decoração posicionável
+- **Estado:** [ ]
+- **REQ:** REQ-103
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-20, RM-F1-14
+- **Implementação:** `decoracoes[]` no mapa (aditivo); catálogo padrão; posicionar/remover; texturas personalizadas.
+- **Integração:** Mundo/persistência.
+- **Testes:** Fixture com decoração; round-trip; E2E.
+- **Documentação:** DATA-CATALOG.
+- **Aceite:** Decorações persistem sem virar nota.
+- **Gate:** G7
+
+### RM-F7-23 — Construções por extensão e edição do visual
+- **Estado:** [ ]
+- **REQ:** REQ-104
+- **SPEC:** §15.3
+- **Fase:** F7
+- **Depende:** RM-F7-20
+- **Implementação:** Sprite por tipo/extensão; distribuição do lote por tipo; tocar na construção edita o visual.
+- **Integração:** Mundo/render.
+- **Testes:** E2E + testes de lote.
+- **Documentação:** tutorial.
+- **Aceite:** Visual por extensão e editável.
+- **Gate:** G7
+
+### RM-F7-24 — ADR-0009: composições → páginas (OD-14) e plano de migração
+- **Estado:** [x]
+- **REQ:** REQ-105
+- **SPEC:** §15.4
+- **Fase:** F7
+- **Depende:** RM-F1-07
+- **Implementação:** ADR com alternativas, mapeamento composição→página, backup e reversão; aprovação do proprietário.
+- **Integração:** Documentação.
+- **Testes:** Revisão.
+- **Documentação:** adr/0009.
+- **Aceite:** Decisão aprovada antes de remover dados.
+- **Gate:** G7
+- **Evidência:** ADR-0009 aprovado (composições → páginas)
+
+### RM-F7-25 — Migrar composições para páginas e remover a UI
+- **Estado:** [ ]
+- **REQ:** REQ-105
+- **SPEC:** §15.4
+- **Fase:** F7
+- **Depende:** RM-F7-24, RM-F1-07
+- **Implementação:** Migrador com backup; testes com fixture `v1-composicoes-historico`; remover `composition/*` do manifesto e do menu (L-legacy).
+- **Integração:** Persistência/Explorer/Páginas.
+- **Testes:** Fixture: composição vira página equivalente; sem perda; E2E.
+- **Documentação:** MIGRATION.md.
+- **Aceite:** Composições absorvidas sem perda de dados.
+- **Gate:** G7
+
+### RM-F7-26 — Tutorial em painel dedicado
+- **Estado:** [ ]
+- **REQ:** REQ-108
+- **SPEC:** §15.4
+- **Fase:** F7
+- **Depende:** RM-F2-16
+- **Implementação:** Painel com navegação, busca e imagens, aberto por Configurações → Tutorial; conteúdo de `content.js` (sem criar notas).
+- **Integração:** `tutorial/*`, `ui/settings`.
+- **Testes:** E2E: abrir, buscar, navegar; nenhuma nota criada.
+- **Documentação:** tutorial.
+- **Aceite:** Tutorial fora do mundo.
+- **Gate:** G7
+
+### RM-F7-27 — Migração do `Tutorial/` existente e checagem do conteúdo
+- **Estado:** [ ]
+- **REQ:** REQ-108
+- **SPEC:** §15.4
+- **Fase:** F7
+- **Depende:** RM-F7-26
+- **Implementação:** Vaults com `Tutorial/` mantêm as notas; aviso único; `build-tutorial --check` valida o novo formato.
+- **Integração:** Migração.
+- **Testes:** Fixture com Tutorial; testes.
+- **Documentação:** MIGRATION.md.
+- **Aceite:** Sem perda de notas de usuário.
+- **Gate:** G7
+
+### RM-F7-28 — Fechar G7: todo OBS com teste e documentação
+- **Estado:** [ ]
+- **REQ:** REQ-011, REQ-002
+- **SPEC:** §15
+- **Fase:** F7
+- **Depende:** RM-F7-01
+- **Implementação:** Auditar `FEEDBACK-BETA.md`: cada OBS aponta REQ, item `[x]` e teste; CHANGELOG e tutorial atualizados.
+- **Integração:** Release.
+- **Testes:** Verificador + revisão.
+- **Documentação:** FEEDBACK-BETA.md; CHANGELOG.
+- **Aceite:** Nenhum OBS sem cobertura.
+- **Gate:** G7

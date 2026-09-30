@@ -1,0 +1,21 @@
+{
+  "notes": [
+    "Alfa.md"
+  ],
+  "ids": {
+    "Alfa.md": "doc_00000001-0000-4000-8000-000000000000"
+  },
+  "futureFiles": [
+    ".urbe/vault.json",
+    ".urbe/mapa.json"
+  ],
+  "readOnly": true,
+  "noteHashes": {
+    "Alfa.md": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+  },
+  "futureHashes": {
+    ".urbe/vault.json": "022fe707e4ae2402ddccb82371d1b05342fb6d4abebe0a155c810c18fd82b790",
+    ".urbe/mapa.json": "8ae72756740470af3b1a7f48f6eedd12eb84c869a1942a10ed8f0158ebf0141d"
+  },
+  "keepHashes": {}
+}

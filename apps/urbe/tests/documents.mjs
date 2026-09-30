@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 const context={window:{}};vm.createContext(context);
-for(const file of ['src/core/core.js','src/core/documents.js','src/core/knowledge-index.js']){
+for(const file of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/knowledge-index.js']){
   vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
 }
 const core=context.window.UrbeCore,docs=core.service('documents'),knowledge=core.service('knowledge');
