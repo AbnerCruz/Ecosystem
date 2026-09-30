@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const FIXTURES_DIR = path.join(ROOT, 'tests/fixtures/vaults');
-const MODULES = ['src/core/artifacts.js','src/core/core.js', 'src/core/documents.js', 'src/core/trash.js', 'src/core/history.js', 'src/composition/store.js', 'src/persistence/vault-meta.js','src/persistence/backup.js','src/persistence/identity.js','src/persistence/workspace.js', 'src/world/projection.js'];
+const MODULES = ['src/core/artifacts.js','src/core/core.js', 'src/core/documents.js', 'src/core/trash.js', 'src/core/history.js', 'src/composition/store.js', 'src/persistence/vault-meta.js','src/persistence/backup.js','src/persistence/identity.js','src/persistence/workspace.js', 'src/persistence/gc.js', 'src/world/projection.js'];
 
 /** Lê uma fixture do disco → Map(path relativo → string). */
 export function readFixture(name) {

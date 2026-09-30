@@ -484,7 +484,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Evidência:** src/persistence/identity.js + reconciliação no load e em syncFromDisk; tests/identity.mjs (rename, move, pasta com região/asset, cópias idênticas, vault sem .urbe, sidecar futuro/ilegível) + tests/e2e/identity.e2e.mjs (app fechado e aberto)
 
 ### RM-F1-16 — GC de órfãos em history/trash/compositions
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-042
 - **SPEC:** §5.2
 - **Fase:** F1
@@ -495,6 +495,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** tutorial (Recuperação).
 - **Aceite:** Órfãos identificados e coletados sem perda de dados ativos.
 - **Gate:** G1
+- **Evidência:** src/persistence/gc.js (workspace.gc, simulação por padrão, retenção orphanDays/trashDays, registro em vault.json.maintenance) + workspace.cleanOrphans com confirmação; fixture v1-orfaos; tests/gc.mjs + tests/e2e/gc.e2e.mjs; tutorial Salvamento e recuperação
 
 ### RM-F1-17 — Versão de mundo e reorganização com backup/desfazer
 - **Estado:** [ ]

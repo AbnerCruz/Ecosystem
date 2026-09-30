@@ -455,6 +455,33 @@
       ]
     },
     {
+      "name": "persistence/gc",
+      "file": "src/persistence/gc.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeGC"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/persistence/workspace.js"
+      ],
+      "uses": [
+        "src/core/history.js",
+        "src/core/trash.js",
+        "src/composition/store.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
       "name": "persistence/adapters/idb",
       "file": "src/persistence/adapters/idb.js",
       "layer": "persistence",
