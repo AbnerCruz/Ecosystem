@@ -1,0 +1,81 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "message_id": "HO-20261001-gate-da-fase-1",
+  "timestamp": "2026-10-01T12:05:00Z",
+  "task_id": "P1-13",
+  "component": "ecosystem",
+  "state": "review",
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-gate-da-fase-1.json"
+  ],
+  "work_completed": [
+    "Evidências do gate da Fase 1 reunidas no ROADMAP (seção 'Estado do gate' da Fase 1)."
+  ],
+  "verification": [
+    {
+      "check": "Gate 1: Lunet2D e Urbe no monorepo sem regressão conhecida e com lifecycles próprios",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "286/286 e 56/56 testes; CI por produto com filtro de caminho; versões e releases por produto (Lunet 0.0.1-dev.107; Urbe 1.8.2-beta); auditoria P1-8."
+    },
+    {
+      "check": "Gate 2: arquitetura funcional preservada; candidatos inventariados sem extração",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/<id> idêntico às origens fora de .github, salvo dois ajustes documentados (plano §8 itens 8 e 9); candidates.md; nenhuma extração."
+    },
+    {
+      "check": "Gate 3: cada Product empacotado, publicado e testado sem o Hub (NN-023)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet2D v0.0.1-dev.107 publicado pelo espelho e validado em aparelho; Urbe publicado (1.8.2-beta, Urbe Web validado); CHK-ARCH-REFS: nenhuma referência ao Hub."
+    },
+    {
+      "check": "Aprovação do gate da Fase 1 pelo proprietário",
+      "kind": "human",
+      "result": "pending",
+      "object": "ROADMAP.md",
+      "evidence": "Pendente: aprovar no portal libera o passo 10 (com as regras de DEC-0018)."
+    }
+  ],
+  "known_issues": [
+    "Risco residual aceito: release.yml do Urbe será exercitado na primeira release do Urbe pelo novo caminho."
+  ],
+  "next_actions": [
+    "Proprietário: aprovar ou reprovar o gate no portal."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "ROADMAP.md",
+    "docs/migration/README.md",
+    "docs/migration/audit-post-migration.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-012",
+      "evidence": "Auditoria P1-8."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Gate depende de aprovação humana; não marcado concluído."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Produtos publicados sem o Hub."
+    }
+  ]
+}

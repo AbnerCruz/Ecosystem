@@ -30,3 +30,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0006](0006-product-shell-context-distribuicao-independente.md) | Product Shell, Context e distribuição independente | Aceito |
 | [0007](0007-resposta-a-decisoes-pelo-portal.md) | Resposta a decisões pelo portal | Aceito |
 | [0008](0008-aprovacao-de-validacoes-pelo-portal.md) | Aprovação de validações humanas pelo portal | Aceito |
+| [0009](0009-refatoracao-dos-produtos-pos-migracao.md) | Refatoração dos produtos depois da migração | Proposto |

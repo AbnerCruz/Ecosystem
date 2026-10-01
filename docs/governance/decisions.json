@@ -577,6 +577,39 @@
       "decision": "Alternativa A — Manter o agendamento (pode passar a rodar depois) e adotar o disparo explícito: o agente dispara a sincronização após cada mudança em apps/<id>, e você pode disparar pelo botão 'Run workflow' do GitHub (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/25).",
       "decidedAt": "2026-10-01",
       "record": "docs/governance/responses/DEC-0017.md"
+    },
+    {
+      "id": "DEC-0018",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Regras para refatorar os aplicativos (ADR-0009)",
+      "context": "Você pediu para chegar ao ponto de refatorar os aplicativos para a nova estrutura (ADD-0008). A Fase 1 está pronta para o gate (P1-1 a P1-11 concluídos; P1-12 aguardando sua revisão). O passo 10 (extrair/modernizar) só diz 'cada extração com ADR'. O ADR-0009 propõe as regras: refatoração INTERNA de um produto segue o processo do próprio produto (os dois já têm ADRs, ROADMAP e testes de arquitetura) mais uma lista de verificação do Ecosystem; EXTRAÇÃO para o Ecosystem exige ADR do Ecosystem, NN-022 e a fase de contratos. Guia: docs/architecture/refactoring.md.",
+      "question": "Como as refatorações dos aplicativos devem ser governadas daqui em diante?",
+      "alternatives": [
+        {
+          "option": "Aceitar o ADR-0009: dois trilhos — refatoração interna pelo processo do próprio produto (+ lista do Ecosystem); extração para o Ecosystem com ADR do Ecosystem, NN-022 e contratos da fase",
+          "consequences": "Você pode refatorar Lunet2D e Urbe logo após o gate, sem esperar as Fases 2-7, usando o processo que cada um já tem. O Ecosystem só entra quando a mudança sai do produto ou toca dados do usuário (aí ela vem ao portal)."
+        },
+        {
+          "option": "Toda refatoração estrutural, mesmo interna, passa por ADR e decisão no Ecosystem",
+          "consequences": "Mais controle central, mas duplica a governança que cada produto já tem e torna lentas refatorações pequenas (NN-020)."
+        },
+        {
+          "option": "Não aprovar ainda; pedir mudanças nas regras",
+          "consequences": "O passo 10 continua sem regra operacional; refatorações ficam paradas até a revisão."
+        }
+      ],
+      "consequences": "Bloqueia o início das refatorações (passo 10). Se A, o ADR-0009 passa a Aceito.",
+      "manifestCompatibility": "A respeita MANIFEST §26 (regra local complementa), NN-011 (ADR do produto para mudança de arquitetura do produto; Ecosystem para boundary), NN-020 e NN-022.",
+      "recommendation": "A: libera a refatoração com o menor processo que ainda protege boundaries, dados e extrações.",
+      "related": [
+        "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+        "docs/architecture/refactoring.md",
+        "docs/architecture/candidates.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }

@@ -12,9 +12,9 @@
 
 ## Próxima tarefa
 
-**Fechar o P1-6** (primeira release do Urbe pelo novo caminho e o agendamento do espelho; **DEC-0017** pendente no portal). Depois, **P1-10** (publicação definitiva do Urbe Web) e **P1-12** (classificação de candidatos a partir dos mapas já validados), que dependem da sua ordem/decisão.
+**Suas três respostas no portal** liberam a refatoração dos aplicativos: revisar a classificação de candidatos (P1-12), decidir **DEC-0018** (regras de refatoração, ADR-0009) e aprovar o **gate da Fase 1**. Em seguida: refatorações internas pelo [guia](docs/architecture/refactoring.md) (sugestão: U-R1 e L-R2) e, em paralelo, a **Fase 2** (contratos), que habilita as extrações para o Ecosystem.
 
-*Por quê:* P1-1 a P1-5, P1-7, P1-8, P1-9 e P1-11 estão concluídos. O gate da Fase 1 ainda exige P1-6 completo (release real do Urbe), P1-10 e P1-12.
+*Por quê:* P1-1 a P1-11 estão concluídos; a Fase 1 só fecha com a sua aprovação (NN-017).
 
 ---
 
@@ -84,7 +84,8 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 - [x] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados). Fontes hoje: Lunet2D publica `release-manifest.json`, `SHA256SUMS.txt` e notas em cada release; o Urbe publica APK, instalador Windows e `latest.yml` (checksum só pelo digest do GitHub). Por DEC-0008-A, lê as releases dos repositórios de origem de cada produto (transitório). **Concluído** (handoff `HO-20261001-portal-releases-e-artefatos`; conferência humana aprovada pelo proprietário, [ADD-0007](docs/governance/addenda/ADD-0007-validacoes-aprovadas.md)).
 - [x] P1-10 — Urbe Web: publicado pelo espelho na mesma URL (`https://abnercruz.github.io/Urbe/`, DEC-0009-A), sem quebrar a publicação atual (validado pelo proprietário, ADD-0007) e com rota previsível no portal (`publicUrl` do componente `urbe` → "Abrir versão Web"). O modelo **definitivo** de publicação é declarado pelo próprio Ecosystem na Fase 2 (Distribution Profile), quando DEC-0009 é reavaliada.
 - [x] P1-11 — Registros canônicos de validação por build (contrato + estados de `definition-of-done.md` §4) e páginas `/testing/<componente>/<build>/` geradas deles. Evidência: handoff `HO-20261001-registros-de-validacao-por-build`; `CHK-VALIDATION`.
-- [ ] P1-12 — Classificar candidatos (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter) a partir dos mapas funcionais **já validados pós-migração**: apenas proposta; nenhuma extração (passo 9 de [`docs/migration/README.md`](docs/migration/README.md) §7). Extração/modernização (passo 10) está fora da Fase 1 e exige ADR por extração.
+- [~] P1-12 — Classificar candidatos (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter) a partir dos mapas funcionais **já validados pós-migração**: apenas proposta; nenhuma extração (passo 9 de [`docs/migration/README.md`](docs/migration/README.md) §7). Extração/modernização (passo 10) está fora da Fase 1 e exige ADR por extração. **Proposta entregue:** [`candidates.md`](docs/architecture/candidates.md); aguardando revisão do proprietário no portal.
+- [~] P1-13 — Gate da Fase 1: evidências reunidas (handoff `HO-20261001-gate-da-fase-1`); aguardando aprovação do proprietário no portal (NN-017).
 
 Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → preservar histórico → restaurar build → restaurar testes → restaurar releases → validar produto → provar ausência de regressão conhecida → classificar candidatos → extrair/modernizar gradualmente. **Proibido** durante a importação: separar o Editor, extrair o Sprite Studio, reescrever o Agent Workspace, criar Store, criar Product Shell novo, transformar código em capabilities, reorganizar tudo em packages, reescrever o Urbe em C#, mudar a arquitetura interna porque a arquitetura futura é conhecida.
 
@@ -92,6 +93,8 @@ Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → 
 1. Lunet2D e Urbe vivem no monorepo sem regressão conhecida e continuam possuindo lifecycles próprios.
 2. A importação preservou intencionalmente a arquitetura funcional existente. Candidatos a Product Core, Product Shell, Tool, Workspace, Service, Library e Adapter foram inventariados, porém nenhuma extração estrutural foi realizada como efeito colateral da migração. *(Não pode ser marcado concluído antes da auditoria pós-migração, P1-8.)*
 3. Cada Product foi empacotado, publicado e testado sem o Hub (NN-023).
+
+*Estado do gate:* evidências reunidas (handoff `HO-20261001-gate-da-fase-1`): 1) 286/286 e 56/56 testes, CI e release por produto, auditoria P1-8; 2) `apps/<id>` idêntico às origens salvo dois ajustes documentados, candidatos classificados sem extração ([`candidates.md`](docs/architecture/candidates.md)); 3) Lunet2D publicado e validado em aparelho, Urbe Web validado, nenhuma referência ao Hub. **Aguardando a aprovação do proprietário no portal.** Depois dela, começa o passo 10 (refatorar/extrair) pelas regras do ADR-0009 ([`refactoring.md`](docs/architecture/refactoring.md)), sujeito a DEC-0018.
 
 ## Fase 2 — Contracts e Registry
 

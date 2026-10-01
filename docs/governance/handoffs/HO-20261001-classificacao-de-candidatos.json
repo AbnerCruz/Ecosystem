@@ -1,0 +1,93 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "message_id": "HO-20261001-classificacao-de-candidatos",
+  "timestamp": "2026-10-01T12:00:00Z",
+  "task_id": "P1-12",
+  "component": "ecosystem",
+  "state": "review",
+  "files_changed": [
+    "docs/architecture/candidates.md",
+    "docs/architecture/refactoring.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-classificacao-de-candidatos.json"
+  ],
+  "work_completed": [
+    "P1-12: classificação consolidada dos candidatos (docs/architecture/candidates.md), a partir dos mapas dos inventários reconferidos no monorepo; distingue refatoração interna (R) de extração para o Ecosystem (X) e sugere a ordem (U-R1, L-R2, L-R1, L-R4/L-R3; extrações só após a Fase 2).",
+    "ADR-0009 (Proposto) e guia docs/architecture/refactoring.md com as regras do passo 10; DEC-0018 no portal para ratificar.",
+    "Nada foi extraído, movido nem refatorado."
+  ],
+  "verification": [
+    {
+      "check": "Mapas válidos depois da migração",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Árvores idênticas às origens fora de .github (auditoria P1-8); grafo de ProjectReference do Lunet2D igual ao inventário; Urbe com 73 módulos (core 10, persistence 10, feature 40, ui 6, kit 3, vendor 2, native 1, app 1) e app.js com 5 259 linhas."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "18/18 checks."
+    },
+    {
+      "check": "Revisão da classificação de candidatos e da ordem sugerida de refatoração",
+      "kind": "human",
+      "result": "pending",
+      "object": "docs/architecture/candidates.md",
+      "evidence": "Pendente (proposta; aprovar ou reprovar no portal)."
+    }
+  ],
+  "known_issues": [
+    "Classificação é proposta; os papéis com confiança 'média' podem mudar quando a refatoração começar."
+  ],
+  "next_actions": [
+    "Proprietário: revisar candidates.md, decidir DEC-0018 e aprovar o gate da Fase 1 no portal.",
+    "Depois: refatorações R pelo guia; Fase 2 (contratos) em paralelo para habilitar extrações X."
+  ],
+  "decisions_required": [
+    "DEC-0018"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/architecture/product-model.md",
+    "docs/migration/README.md",
+    "docs/migration/inventory-lunet2d.md",
+    "docs/migration/inventory-urbe.md",
+    "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
+    "docs/governance/addenda/ADD-0008-delegacao-ate-a-refatoracao.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-013",
+      "evidence": "Nenhuma extração ou refatoração feita; apenas proposta."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Regras do passo 10 em ADR-0009 Proposto, com DEC-0018 pendente."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Dois trilhos evitam governança duplicada para mudanças internas."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Extrações exigem as cinco respostas, consumidor real e contrato."
+    }
+  ]
+}
