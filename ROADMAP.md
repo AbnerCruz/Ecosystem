@@ -14,7 +14,7 @@
 
 ## Próxima tarefa
 
-**Fase 2 em andamento** (aguardando o gate): todas as tarefas técnicas concluídas; falta **a aprovação do gate pelo proprietário** no portal (P2-14). DEC-0020 (B) e DEC-0021 (C) registradas.
+**Fase 2 concluída** (gate aprovado em 2026-10-01). Próxima: **Fase 3 — Hub read-only** (tarefas P3-x a abrir no ROADMAP antes de implementar).
 
 Em paralelo, como trabalho **interno dos próprios Products** e **fora do escopo da Fase 2** (infraestrutura compartilhada): refatorações em `apps/urbe/` e `apps/lunet2d/` — que **fazem parte deste repositório** e são o único lugar de desenvolvimento deles; `AbnerCruz/Urbe` e `AbnerCruz/Lunet2D` não são lugares de desenvolvimento (são espelhos de distribuição transitórios, DEC-0008/DEC-0009) — governadas pelo ADR-0009 e [`refactoring.md`](docs/architecture/refactoring.md) — sugestão: **U-R1** no Urbe (continuar a decomposição de `app.js` / Product Shell) e **L-R2** no Lunet2D (decompor `MainActivity` em Shell + painéis), conforme [`candidates.md`](docs/architecture/candidates.md), cada uma delegada em tarefa própria e conduzida pelos processos locais de cada Product. Nenhum subsistema é extraído sem evidência de segundo consumidor ([`local-first.md`](docs/architecture/local-first.md)).
 
@@ -135,11 +135,11 @@ Cada tarefa traz: *saída verificável* · *depende de* · *evidência* · *gate
   - Saída: `docs/distribution/current.profile.json` (perfil `current`, validado por `CHK-REGISTRY`), [`distribution.md`](docs/architecture/distribution.md) §10 e **DEC-0021** pendente no portal (não bloqueante). Depende de: P2-8, DEC-0020 (registrada). Evidência: `CHK-REGISTRY` + 4 casos de self-test do perfil; handoff `HO-20261001-p2-12-distribuicao-atual-e-dec-0021`. Gate: —.
 - [x] P2-13 — **Portal projeta components/capabilities/providers/consumers/profiles** (somente leitura, derivado), quando houver capability real ou perfil real; sem grande UI antes disso. Condição atendida pelo **perfil real** (P2-12): o portal mostra a seção "Distribuição atual dos Products" (fonte = `path` do Ecosystem; canal; localização derivada de `ecosystem.json`). Nenhuma capability real existe: `capabilities` é derivada de `provides`/`requires`, está vazia e o portal não exibe seção para ela (nada é inventado nem mostrado como operacional).
   - Saída: campos `distribution` e `capabilities` da projeção + seção do portal + comparações em `CHK-PORTAL` (2 casos de self-test). Depende de: P2-7, P2-12. Evidência: handoff `HO-20261001-p2-12-distribuicao-atual-e-dec-0021`. Gate: —.
-- [ ] P2-14 — **Gate da Fase 2**: evidência objetiva (slice executável + checks) e aprovação do proprietário.
+- [x] P2-14 — **Gate da Fase 2** — **aprovado pelo proprietário** em 2026-10-01 (Issue #32, `VAL-HO-20261001-gate-da-fase-2-388a8354a4eb`): evidência objetiva (slice executável + checks) e aprovação do proprietário.
   - Saída: handoff do gate. Depende de: P2-1..P2-13, DEC-0020 (B), DEC-0021 (C). Evidência: handoff `HO-20261001-gate-da-fase-2` (evidência pronta; validação humana pendente no portal). **Não** é autoaprovável: exige a validação humana do proprietário. Gate: G-a, G-b, G-c.
 
 **Gate:** um componente pode declarar uma capability, outro pode descobri-la e a compatibilidade pode ser validada sem dependência direta entre produtos. *(Evidência executável: `dotnet run tests/consistency/Check.cs` — `CHK-REGISTRY` — e `-- --registry --file docs/contracts/examples/registry-slice/positive.json`.)*
-*Estado do gate:* **aguardando** — P2-1..P2-13 concluídas; evidência do gate pronta no handoff `HO-20261001-gate-da-fase-2`; **aprovação do proprietário pendente no portal** (P2-14).
+*Estado do gate:* **aprovado** — pelo proprietário em 2026-10-01 (P2-14, Issue #32; evidências no handoff `HO-20261001-gate-da-fase-2`): capability declarada, descoberta pelo Registry e compatibilidade validada (positivo e negativos) sem dependência entre Products; contratos do ADR-0012 aceitos; distribuição atual e direção (DEC-0021-C) descritas como dados.
 
 ## Fase 3 — Hub read-only
 

@@ -272,8 +272,8 @@
         {
           "mechanism": "CI",
           "status": "planned",
-          "how": "ADR check automático: mudanças em ecosystem.json/boundaries/contracts exigem ADR referenciado no PR.",
-          "phase": "phase-2"
+          "how": "ADR check automático: mudanças em ecosystem.json/boundaries/contracts exigem ADR referenciado no PR. Re-faseado ao fechar a Fase 2: na Fase 2 as mudanças de contrato foram cobertas por ADR-0012 e revisão; a automação no PR fica para a Fase 3.",
+          "phase": "phase-3"
         }
       ]
     },
@@ -316,8 +316,8 @@
         {
           "mechanism": "TEST",
           "status": "planned",
-          "how": "Passo 10 (refatoração): testes do produto antes/depois exigidos no PR (CI por produto já os executa; ADR-0009) e verificação automática de escopo restrito (diff fora de apps/<id>). Para a importação, a evidência está nos handoffs de P1-4 e P1-5 (árvore idêntica; 286/286 e 56/56).",
-          "phase": "phase-2"
+          "how": "Passo 10 (refatoração): testes do produto antes/depois exigidos no PR (CI por produto já os executa; ADR-0009) e verificação automática de escopo restrito (diff fora de apps/<id>). Para a importação, a evidência está nos handoffs de P1-4 e P1-5 (árvore idêntica; 286/286 e 56/56). Re-faseado ao fechar a Fase 2: só tem objeto quando começar a primeira refatoração (U-R1/L-R2), que não ocorreu na Fase 2; implementar antes do primeiro PR delas.",
+          "phase": "phase-3"
         }
       ]
     },
@@ -538,8 +538,8 @@
         {
           "mechanism": "TEST",
           "status": "planned",
-          "how": "Pelo menos um teste de consumidor real por componente compartilhado.",
-          "phase": "phase-2"
+          "how": "Pelo menos um teste de consumidor real por componente compartilhado. Re-faseado ao fechar a Fase 2 (2026-10-01): nenhum componente compartilhado existe (local-first, ADR-0011); o primeiro nasce por promoção com evidência, no máximo na Fase 7.",
+          "phase": "phase-7"
         },
         {
           "mechanism": "REVIEW",

@@ -8,12 +8,12 @@
     "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
   },
   "branch": "claude/new-session-vfwhkv",
-  "commit": null,
+  "commit": "c249f7f",
   "pr": null,
   "blockers": [],
   "cost": null,
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261001-gate-da-fase-2",
   "timestamp": "2026-10-01T15:30:00Z",
   "task_id": "P2-14",
@@ -30,7 +30,8 @@
     "AGENTS.md",
     "ROADMAP.md",
     "tests/consistency/Check.cs",
-    "docs/governance/handoffs/HO-20261001-gate-da-fase-2.json"
+    "docs/governance/handoffs/HO-20261001-gate-da-fase-2.json",
+    "docs/governance/enforcement-matrix.json"
   ],
   "work_completed": [
     "FATO: HEAD inicial 69cffb0 + commit do bot 660b753 'Registrar DEC-0021: alternativa C' (Issue #31). O workflow decision dessa resposta (run 36878517818) foi o primeiro com o novo veredito e terminou verde porque a decisão foi de fato registrada.",
@@ -38,7 +39,8 @@
     "ALTERAÇÃO (consequências de DEC-0021-C): perfil 'target' em docs/distribution/target.profile.json (direção, não operacional; cita DEC-0021); o formato ganhou status 'target' e locationFrom opcional só para o canal first-party-platform de um perfil target; CHK-REGISTRY exige que um target cite a decisão e que canais existentes tenham localização derivada (2 casos de self-test). current.profile.json passa a citar DEC-0021. ARCHITECTURE §8.1 (planejado: plataforma progressiva) e §8.2 (não decidido: quando/como construí-la), distribution.md §9/§10, AGENTS.md e ROADMAP (nota de direção na Fase 4, sem criar itens) atualizados; consequencesApplied=true. Nenhum canal, release, atualizador, Pages ou repositório foi alterado; nenhum Service criado.",
     "ALTERAÇÃO (P2-9): nomes e valores dos eixos do Distribution Profile congelados como estão no schema (com external-channel e status target); ADR-0012 passa a 'Aceito' integral (DEC-0020-B + congelamento depois de DEC-0021-C, como B previa). Mudar um nome exige ADR e migração dos perfis.",
     "EVIDÊNCIA DO GATE (P2-14), critério 'um componente pode declarar uma capability, outro pode descobri-la e a compatibilidade pode ser validada sem dependência direta entre produtos': (G-a) provider-a declara capability.test 1.0.0 em manifest; (G-b) o Registry descobre: `dotnet run tests/consistency/Check.cs -- --registry --file docs/contracts/examples/registry-slice/positive.json --discover capability.test \"^1.0.0\"` → provider-a@1.0.0; (G-c) compatibilidade validada: consumer-b ^1.0.0 aceito e consumer-c ^2.0.0 recusado com CAP_INCOMPATIBLE, mais os negativos de permissão, capability desconhecida, sem provider, Tool que conhece Host e Product→Product; nenhum Product depende de outro (CHK-ARCH-REFS, PRODUCT_DEPENDS_ON_PRODUCT).",
-    "Todas as tarefas P2-1..P2-13 concluídas; nenhuma capability real registrada (local-first, ADR-0011); nenhum Product refatorado; nenhuma Tool/Service/Workspace extraída. O gate NÃO foi marcado aprovado: depende da validação humana abaixo."
+    "Todas as tarefas P2-1..P2-13 concluídas; nenhuma capability real registrada (local-first, ADR-0011); nenhum Product refatorado; nenhuma Tool/Service/Workspace extraída. O gate NÃO foi marcado aprovado: depende da validação humana abaixo.",
+    "FATO: o proprietário aprovou o gate pelo portal (Issue #32, registro VAL-HO-20261001-gate-da-fase-2-388a8354a4eb). ALTERAÇÃO: P2-14 [x], gate 'aprovado', handoff done. Ao fechar a fase, CHK-STATE-CONSISTENCY apontou 3 mecanismos 'planned' para phase-2 na matriz; re-faseados com justificativa (nenhum implementado na Fase 2): NN-011 CI (ADR check no PR) e NN-013 TEST (antes/depois e escopo das refatorações) → phase-3; NN-022 TEST (consumidor real de componente compartilhado) → phase-7, pois nenhum componente compartilhado existe."
   ],
   "verification": [
     {
@@ -65,9 +67,8 @@
     "O slice usa fixtures (capability.test): por desenho, nenhuma capability real existe ainda (ADR-0011). A primeira real virá por promoção com evidência."
   ],
   "next_actions": [
-    "Proprietário: aprovar ou reprovar o gate da Fase 2 no portal.",
-    "Agente, após aprovação: marcar P2-14 [x], gate 'aprovado' e handoff done; em seguida, Fase 3 (Hub read-only).",
-    "Em paralelo e em tarefas separadas dentro de apps/: Urbe U-R1 e Lunet2D L-R2 (ADR-0009). Não executados aqui."
+    "Fase 3 (Hub read-only): abrir as tarefas P3-x no ROADMAP.",
+    "Em paralelo e em tarefas separadas dentro de apps/: Urbe U-R1 e Lunet2D L-R2 (ADR-0009)."
   ],
   "decisions_required": [],
   "normative_sources": [
