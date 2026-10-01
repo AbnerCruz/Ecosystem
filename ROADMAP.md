@@ -12,9 +12,9 @@
 
 ## Próxima tarefa
 
-**P1-5 — importação do Urbe** (PR A), mesmo procedimento do P1-4 (autorizada por DEC-0014-A), seguida de P1-6 (distribuição automatizada, plano §7).
+**P1-6 — distribuição automatizada** ([`import-plan.md`](docs/migration/import-plan.md) §7, DEC-0014-A): CI por produto na raiz, `sync-from-ecosystem` nas origens e passo de corte.
 
-*Por quê:* o Lunet2D já vive em `apps/lunet2d` (PR #9, 84 commits e 25 tags preservados, árvore idêntica à da origem, 286/286 testes). As origens ainda publicam as releases (DEC-0008-A) até P1-6.
+*Por quê:* Lunet2D e Urbe já vivem no monorepo com histórico e tags preservados e testes iguais à linha de base. As origens ainda publicam as releases (DEC-0008-A) e ainda são a cópia ativa até o corte. Os pontos do GitHub não verificados (plano §7.7) serão provados na primeira execução; se algum falhar, a decisão vai ao portal.
 
 ---
 
@@ -76,7 +76,7 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 - [x] P1-2 — Inventário do Urbe ([`inventory-urbe.md`](docs/migration/inventory-urbe.md)), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16). Evidência: handoff `HO-20260930-inventario-urbe`. Linha de base: `npm run check` com 56/56 arquivos de teste; CI da `main` verde.
 - [x] P1-3 — Plano de importação por produto ([`import-plan.md`](docs/migration/import-plan.md); ensaio executado; **aprovado pelo proprietário em DEC-0014-A**; sem ações manuais do proprietário, §1 do plano), a partir dos inventários P1-1/P1-2 (DEC-0002: técnica A; DEC-0004: origens confirmadas). DEC-0008/DEC-0009 decididas (A, transitórias; `docs/migration/README.md` §9). Deve tratar cada risco dos inventários e listar, um a um, os ajustes técnicos inevitáveis (NN-013).
 - [x] P1-4 — Importação do Lunet2D preservando histórico (PR de escopo restrito, NN-013). Evidência: PR #9 (merge commit dd8d4b4), handoff `HO-20261001-importacao-lunet2d`: 84 commits, 25 tags, árvore idêntica, 286/286 testes.
-- [ ] P1-5 — Importação do Urbe preservando histórico (PR de escopo restrito, NN-013).
+- [x] P1-5 — Importação do Urbe preservando histórico (PR de escopo restrito, NN-013). Evidência: PR #10 (merge commit 2085270), handoff `HO-20261001-importacao-urbe`: 382 commits, 6 tags, árvore idêntica, 56/56 testes.
 - [ ] P1-6 — Restaurar build/testes/workflows/releases de cada produto; pipelines seletivos por path (NN-014). Atenção herdada dos inventários: `versionCode` do Android do Lunet2D (R-LUN-1), checks do Urbe que leem `.github/workflows` na raiz do produto (R-URB-3), secrets de assinatura do Urbe a recriar pelo proprietário (R-URB-5).
 - [ ] P1-7 — Architecture tests sobre referências reais de código (NN-002, NN-003).
 - [ ] P1-8 — Auditoria pós-migração: commits/tags da origem presentes (NN-012).

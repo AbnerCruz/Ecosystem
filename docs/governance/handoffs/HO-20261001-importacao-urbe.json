@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261001-importacao-urbe",
   "category": "HANDOFF",
-  "timestamp": "2026-10-01T02:10:00Z",
+  "timestamp": "2026-10-01T02:30:00Z",
   "agent": {
     "id": "claude-code",
     "kind": "ai-agent",
@@ -11,10 +11,10 @@
   },
   "task_id": "P1-5",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "claude/new-session-vfwhkv",
-  "commit": null,
-  "pr": null,
+  "commit": "20852702ffe2351e961ba46fc27ccb6330ce2f06",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/10",
   "files_changed": [
     "apps/urbe/** (importado, sem alterações)",
     "ecosystem.json",
@@ -60,17 +60,27 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "Local: 16/16 checks e todos os checks provaram detectar suas violações."
+    },
+    {
+      "check": "CI do PR e fusão por merge commit",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Workflow consistency verde no head do PR #10; fundido com 'Create a merge commit' (2085270)."
+    },
+    {
+      "check": "Tags restauradas no Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "restore-tags.yml (urbe) criou 6 tags urbe/*; git ls-remote coincide com docs/migration/tags-urbe.txt."
     }
   ],
   "known_issues": [
-    "As 6 tags só existem no Ecosystem depois de executar restore-tags.yml (componente urbe) na main.",
     "Pipelines e releases do Urbe seguem na origem (DEC-0008-A) e os workflows importados ficam inertes em apps/urbe/.github até P1-6.",
     "Branches não incorporadas da origem (claude/beta-v1, claude/mundo-real, claude/fix-explorer-celular) não foram importadas; seu conteúdo já está na main (plano §9)."
   ],
   "blockers": [],
   "next_actions": [
-    "Mergear com merge commit depois do CI verde e executar restore-tags.yml (urbe).",
-    "P1-6 — distribuição automatizada (plano §7)."
+    "P1-6 — distribuição automatizada (plano §7): sync-from-ecosystem nas origens, CI por produto na raiz, passo de corte."
   ],
   "decisions_required": [],
   "normative_sources": [
