@@ -49,7 +49,7 @@ Campos: `message_id`, `category`, `timestamp`, `agent`, `task_id`, `component`, 
 
 - `message_id`: `HO-AAAAMMDD-slug`, igual ao nome do arquivo; nunca reutilizado.
 - `task_id`: ID do ROADMAP (`P1-1`) ou de Issue.
-- `commit`: SHA, ou `null` quando o handoff está no próprio commit que descreve.
+- `base_commit`: SHA de onde o agente partiu (BASE; obrigatório a partir de 2026-10-02). `commit`: resultado já conhecido ou `null` (derivado do commit que introduz o handoff); nunca o `base_commit`. A integração é o merge do `pr`; `verification[].tested_commit` registra o estado testado. Ver [`multi-agent.md`](multi-agent.md) e ADR-0014.
 - `state`: status machine de [`definition-of-done.md`](definition-of-done.md).
 - `verification[].kind`: `automated` ou `human` — nunca misturar (NN-017).
 - Proibido: segredos, tokens, raciocínio interno privado.
@@ -57,7 +57,7 @@ Campos: `message_id`, `category`, `timestamp`, `agent`, `task_id`, `component`, 
 ## 7. Regras entre agentes (MANIFEST §23)
 
 - **Sem impersonação:** um agente nunca escreve como outro agente nem inventa revisão, aprovação ou decisão.
-- **Concorrência:** coordenar por escopo, branch e arquivos. Antes de começar, verificar handoffs e branches abertos; declarar a tarefa (`claimed`). Nunca sobrescrever trabalho de outro agente para resolver divergência — registrar `BLOCKER` e pedir coordenação.
+- **Concorrência:** paralelizar o independente, coordenar o que se sobrepõe, revalidar tudo na integração ([`multi-agent.md`](multi-agent.md), ADR-0014): antes de integrar, `Check.cs -- --integration <branch>`; base obsoleta ⇒ reconciliar e rerodar os checks no estado combinado. Coordenar por escopo, branch e arquivos. Antes de começar, verificar handoffs e branches abertos; declarar a tarefa (`claimed`). Nunca sobrescrever trabalho de outro agente para resolver divergência — registrar `BLOCKER` e pedir coordenação.
 - **Canonicalidade:** mensagens entre agentes comunicam estado; não substituem MANIFEST, SPEC, ADR, contratos, ROADMAP ou testes.
 
 ## 8. Estado vivo das tarefas (DEC-0003)

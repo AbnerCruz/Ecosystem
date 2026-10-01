@@ -40,3 +40,11 @@ A lista de NN por check é informativa; a autoridade é [`docs/governance/enforc
 1. Implementar em `Check.cs` com novo ID `CHK-...` e adicioná-lo a `Checks.Ids`.
 2. Adicionar ao menos um caso em `SelfTest.Cases` (o self-test falha se algum check não tiver caso).
 3. Referenciar o ID na matriz de enforcement e nesta tabela.
+
+## Pré-integração (ADR-0014)
+
+```bash
+dotnet run tests/consistency/Check.cs -- --integration <branch> [--base origin/main]
+```
+
+Compara a branch com a base atual usando só o git: `FRESH` (0) quando a base é ancestral da branch; `STALE` (3) quando a base andou desde que o trabalho começou; `STALE` com sobreposição (4) quando os dois lados mudaram os mesmos arquivos (arquivos de alto risco destacados). Com `STALE`, reconcilie (merge da `main` na branch) e rerode os checks no estado combinado antes de integrar. O self-test reproduz o cenário de dois agentes (`IntegrationTests`). `CHK-HANDOFFS` também verifica `base_commit`/`commit`/`tested_commit` contra o histórico (exige `fetch-depth: 0`).

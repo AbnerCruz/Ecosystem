@@ -8,8 +8,9 @@
     "session": "https://claude.ai/code/session_01Cqs24pT9sHieyegVt62nFc"
   },
   "branch": "ccr-31501aad-6bwq7y",
-  "commit": null,
-  "pr": null,
+  "base_commit": "a4ad875",
+  "commit": "7274f38",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/34",
   "blockers": [
     "DEC-0022 pendente no portal: tecnologia de UI e plataforma-alvo do Hub"
   ],
