@@ -50,9 +50,9 @@
         },
         {
           "mechanism": "TEST",
-          "status": "planned",
-          "how": "Architecture tests sobre referências reais de código (csproj/package.json/imports) após a importação dos produtos.",
-          "phase": "phase-1"
+          "status": "implemented",
+          "how": "CHK-ARCH-REFS varre o código real de cada produto ativo: referências a outro Product ou ao Hub, e ProjectReference/file:/link: para fora do produto, falham.",
+          "check": "CHK-ARCH-REFS"
         }
       ]
     },
@@ -63,7 +63,7 @@
         {
           "mechanism": "ARCH",
           "status": "implemented",
-          "how": "Nenhum componente pode declarar dependência 'required' do hub.",
+          "how": "Nenhum componente pode declarar dependência 'required' do hub (CHK-BOUNDARIES); e nenhum produto ativo referencia o Hub no código, nos manifestos ou nos projetos (CHK-ARCH-REFS, P1-7).",
           "check": "CHK-BOUNDARIES"
         },
         {

@@ -12,9 +12,9 @@
 
 ## Próxima tarefa
 
-**P1-6 — distribuição automatizada** ([`import-plan.md`](docs/migration/import-plan.md) §7, DEC-0014-A): CI por produto na raiz, `sync-from-ecosystem` nas origens e passo de corte.
+**Fechar o P1-6** (validação do Urbe Web pelo proprietário, agendamento do espelho e a primeira release do Urbe pelo novo caminho) e seguir para **P1-9/P1-10** (portal com dados de release e Urbe Web) e **P1-11**.
 
-*Por quê:* Lunet2D e Urbe já vivem no monorepo com histórico e tags preservados e testes iguais à linha de base. As origens ainda publicam as releases (DEC-0008-A) e ainda são a cópia ativa até o corte. Os pontos do GitHub não verificados (plano §7.7) serão provados na primeira execução; se algum falhar, a decisão vai ao portal.
+*Por quê:* P1-1 a P1-5, P1-7 e P1-8 estão concluídos; P1-6 está implementado e provado para o Lunet2D (release dev.107 a partir do espelho, validada em aparelho) e cortado para o Urbe (espelho ativo, Pages construído), faltando o que só o tempo e uma release real do Urbe provam.
 
 ---
 
@@ -79,8 +79,8 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 - [x] P1-4 — Importação do Lunet2D preservando histórico (PR de escopo restrito, NN-013). Evidência: PR #9 (merge commit dd8d4b4), handoff `HO-20261001-importacao-lunet2d`: 84 commits, 25 tags, árvore idêntica, 286/286 testes.
 - [x] P1-5 — Importação do Urbe preservando histórico (PR de escopo restrito, NN-013). Evidência: PR #10 (merge commit 2085270), handoff `HO-20261001-importacao-urbe`: 382 commits, 6 tags, árvore idêntica, 56/56 testes.
 - [~] P1-6 — Restaurar build/testes/workflows/releases de cada produto; pipelines seletivos por path (NN-014). Atenção herdada dos inventários: `versionCode` do Android do Lunet2D (R-LUN-1), checks do Urbe que leem `.github/workflows` na raiz do produto (R-URB-3), secrets de assinatura do Urbe a recriar pelo proprietário (R-URB-5).
-- [ ] P1-7 — Architecture tests sobre referências reais de código (NN-002, NN-003).
-- [ ] P1-8 — Auditoria pós-migração: commits/tags da origem presentes (NN-012).
+- [x] P1-7 — Architecture tests sobre referências reais de código (NN-002, NN-003): `CHK-ARCH-REFS` (handoff `HO-20261001-arch-refs-e-auditoria-pos-migracao`).
+- [x] P1-8 — Auditoria pós-migração: commits/tags da origem presentes (NN-012). Evidência: [`audit-post-migration.md`](docs/migration/audit-post-migration.md) (84/84 e 382/382 commits, 25/25 e 6/6 tags, conteúdo idêntico).
 - [ ] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados). Fontes hoje: Lunet2D publica `release-manifest.json`, `SHA256SUMS.txt` e notas em cada release; o Urbe publica APK, instalador Windows e `latest.yml` (checksum só pelo digest do GitHub). Por DEC-0008-A, lê as releases dos repositórios de origem de cada produto (transitório).
 - [ ] P1-10 — Urbe Web: por **DEC-0009-A** (transitória), o Urbe Web continua em `AbnerCruz/Urbe` durante a migração; este item trata a publicação definitiva, com base no inventário P1-2 (§6: hoje publicado por Pages a partir da `main` de `AbnerCruz/Urbe`), como o Urbe Web é publicado no monorepo sem quebrar a publicação atual, e expor rota previsível no portal.
 - [ ] P1-11 — Registros canônicos de validação por build (contrato + estados de `definition-of-done.md` §4) e páginas `/testing/<componente>/<build>/` geradas deles.

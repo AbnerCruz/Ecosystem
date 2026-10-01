@@ -1,0 +1,89 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-arch-refs-e-auditoria-pos-migracao",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T07:10:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-7",
+  "component": "ecosystem",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "tests/consistency/Check.cs",
+    "docs/governance/enforcement-matrix.json",
+    "docs/migration/audit-post-migration.md",
+    "ROADMAP.md",
+    "tests/consistency/README.md",
+    "docs/governance/handoffs/HO-20261001-arch-refs-e-auditoria-pos-migracao.json"
+  ],
+  "work_completed": [
+    "P1-7: CHK-ARCH-REFS varre o código real dos produtos ativos (referências a outro Product ou ao Hub; ProjectReference/Import/Compile/file:/link: para fora do produto). Estado real: zero referências em Lunet2D e Urbe. Self-test: 3 casos novos.",
+    "P1-8: auditoria pós-migração com evidência (docs/migration/audit-post-migration.md): 84/84 e 382/382 commits no commit-map e ancestrais; 25/25 e 6/6 tags; apps/<id> igual à origem fora de .github (diff -r)."
+  ],
+  "verification": [
+    {
+      "check": "CHK-ARCH-REFS no repositório real",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "17/17 checks passam com Lunet2D e Urbe importados; nenhuma referência cruzada ou ao Hub."
+    },
+    {
+      "check": "Self-test: CHK-ARCH-REFS detecta Urbe->Lunet2D, Lunet2D->Hub e ProjectReference para fora",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs -- --self-test: todos os checks provaram detectar suas violações."
+    },
+    {
+      "check": "Auditoria de commits, tags e conteúdo contra clones novos das origens",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet2D 84/84 commits, 25/25 tags, 0 diferenças; Urbe 382/382, 6/6, 0 diferenças (docs/migration/audit-post-migration.md)."
+    }
+  ],
+  "known_issues": [
+    "O check varre texto: um acoplamento por outro meio (por exemplo, URL de rede) não seria visto; é cobertura de referências estáticas, não prova de ausência de dependência em execução (NN-003 continua tendo DEVICE planejado para a Fase 4)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "P1-9 e P1-10 (portal: dados de release e Urbe Web); P1-11; P1-12."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/migration/README.md",
+    "docs/migration/import-plan.md",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/responses/DEC-0014.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "CHK-ARCH-REFS e CHK-BOUNDARIES: nenhuma referência Urbe<->Lunet2D."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhuma referência ao Hub nos produtos; produtos testados standalone nos CIs por produto."
+    },
+    {
+      "id": "NN-012",
+      "evidence": "Auditoria: 466 commits e 31 tags verificados."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "apps/<id> idêntico à origem fora de .github; ajustes posteriores listados no plano §8."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidências no handoff e em audit-post-migration.md."
+    }
+  ],
+  "cost": null
+}

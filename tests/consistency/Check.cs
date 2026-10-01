@@ -40,6 +40,7 @@ static class Checks
         "CHK-IDS-UNIQUE",
         "CHK-SINGLE-AUTHORITY",
         "CHK-BOUNDARIES",
+        "CHK-ARCH-REFS",
         "CHK-GENERIC-DIRS",
         "CHK-SHARED-DECLARATION",
         "CHK-ENFORCEMENT-MATRIX",
@@ -78,6 +79,7 @@ static class Checks
         Guard(r, "CHK-IDS-UNIQUE", () => IdsUnique(ctx));
         Guard(r, "CHK-SINGLE-AUTHORITY", () => SingleAuthority(ctx));
         Guard(r, "CHK-BOUNDARIES", () => Boundaries(ctx));
+        Guard(r, "CHK-ARCH-REFS", () => ArchRefs(ctx));
         Guard(r, "CHK-GENERIC-DIRS", () => GenericDirs(ctx));
         Guard(r, "CHK-SHARED-DECLARATION", () => SharedDeclaration(ctx));
         Guard(r, "CHK-ENFORCEMENT-MATRIX", () => EnforcementMatrix(ctx));
@@ -275,6 +277,64 @@ static class Checks
 
                 if (fromType != "product" && toType == "product")
                     c.R.Fail(id, $"componente não-produto '{cid}' ({fromType}) depende do produto/Host concreto '{to}' (NN-007, MANIFEST §12)");
+            }
+        }
+    }
+
+    // --- CHK-ARCH-REFS (NN-002, NN-003, NN-023; P1-7) ---
+    // O grafo de ecosystem.json declara as dependências; este check olha o CÓDIGO REAL dos produtos importados: nenhum Product
+    // pode referenciar outro Product nem o Hub (a menos que a dependência esteja declarada e permitida), nem apontar por
+    // ProjectReference / file: / link: para fora do próprio diretório.
+    static readonly string[] BinaryExt = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".apk", ".aab", ".jar", ".zip", ".gz", ".7z", ".woff", ".woff2", ".ttf", ".otf", ".mp3", ".ogg", ".wav", ".mp4", ".pdf", ".dll", ".exe", ".so", ".keystore", ".jks", ".bin", ".wasm", ".node", ".sqlite", ".db"];
+    static readonly Regex ProjectRef = new(@"<(?:ProjectReference|Import|Compile|None|Content)\s[^>]*?(?:Include|Project)\s*=\s*""([^""]+)""", RegexOptions.IgnoreCase);
+    static readonly Regex LocalDep = new(@"""(?:file|link):([^""]+)""");
+
+    static void ArchRefs(Context c)
+    {
+        const string id = "CHK-ARCH-REFS";
+        c.R.Ran(id);
+        var products = c.Components().Where(x => x.El.Str("type") == "product" && x.El.Str("status") == "active" && x.El.Str("path") is { } pth && Directory.Exists(c.P(pth))).ToList();
+        foreach (var (cid, comp) in products)
+        {
+            var path = comp.Str("path")!;
+            var declared = comp.Arr("dependencies").Select(d => d.Str("component")).Where(x => x is not null).ToHashSet();
+            // termos que identificam OUTROS componentes (produtos ativos e o Hub)
+            var terms = new List<(string Target, Regex Rx)>();
+            foreach (var (oid, other) in c.Components().Where(x => x.Id != cid && x.El.Str("type") == "product"))
+            {
+                if (declared.Contains(oid)) continue;
+                var words = new HashSet<string> { oid, Regex.Replace(oid, @"\d+$", ""), other.Str("name") ?? oid };
+                var alt = string.Join("|", words.Where(w => w.Length >= 3).Select(Regex.Escape));
+                terms.Add((oid, new Regex($@"\b(?:{alt})\b|apps/{Regex.Escape(oid)}\b", RegexOptions.IgnoreCase)));
+            }
+            if (!declared.Contains("hub"))
+                terms.Add(("hub", new Regex(@"ecosystem[ _.-]?hub|apps/hub\b", RegexOptions.IgnoreCase)));
+
+            var root = c.P(path);
+            foreach (var f in Repo.WalkFiles(root))
+            {
+                if (BinaryExt.Contains(Path.GetExtension(f).ToLowerInvariant())) continue;
+                var info = new FileInfo(f);
+                if (info.Length > 2_000_000) continue;
+                string text;
+                try { text = File.ReadAllText(f); } catch { continue; }
+                if (text.Contains('\0')) continue;
+                var rel = c.Rel(f);
+                foreach (var (target, rx) in terms)
+                    if (rx.Match(text) is { Success: true } m)
+                        c.R.Fail(id, $"{rel}: o produto '{cid}' referencia '{target}' ('{m.Value}'): Product → Product/Hub só por contract/capability declarada (NN-002, NN-003)");
+
+                var ext = Path.GetExtension(f).ToLowerInvariant();
+                IEnumerable<string> refs = ext is ".csproj" or ".props" or ".targets" or ".slnx"
+                    ? ProjectRef.Matches(text).Select(m => m.Groups[1].Value)
+                    : Path.GetFileName(f) == "package.json" ? LocalDep.Matches(text).Select(m => m.Groups[1].Value) : [];
+                foreach (var r in refs)
+                {
+                    if (r.Contains("$(")) continue;
+                    var full = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(f)!, r.Replace('\\', '/')));
+                    if (!full.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar))
+                        c.R.Fail(id, $"{rel}: referência '{r}' aponta para fora de {path}/ (o produto precisa ser autocontido, NN-002, NN-023)");
+                }
             }
         }
     }
@@ -982,6 +1042,12 @@ static class SelfTest
         new("Urbe → Lunet2D", "CHK-BOUNDARIES",
             r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Urbe\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/urbe/package.json\" },\n      \"dependencies\": []",
                 "\"https://github.com/AbnerCruz/Urbe\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/urbe/package.json\" },\n      \"dependencies\": [{ \"component\": \"lunet2d\", \"kind\": \"optional\", \"reason\": \"x\" }]")),
+        new("Urbe referencia o Lunet2D no código", "CHK-ARCH-REFS",
+            r => File.AppendAllText(Path.Combine(r, "apps", "urbe", "package.json"), "\n// usa lunet2d\n")),
+        new("Lunet2D referencia o Hub no código", "CHK-ARCH-REFS",
+            r => File.AppendAllText(Path.Combine(r, "apps", "lunet2d", "VERSION"), "\nEcosystem Hub\n")),
+        new("ProjectReference para fora do produto", "CHK-ARCH-REFS",
+            r => File.WriteAllText(Path.Combine(r, "apps", "lunet2d", "src", "Fora.csproj"), "<Project><ItemGroup><ProjectReference Include=\"../../../../platform/X/X.csproj\" /></ItemGroup></Project>")),
         new("Hub como dependência obrigatória", "CHK-BOUNDARIES",
             r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/lunet2d/VERSION\" },\n      \"dependencies\": []",
                 "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/lunet2d/VERSION\" },\n      \"dependencies\": [{ \"component\": \"hub\", \"kind\": \"required\", \"reason\": \"x\" }]")),
