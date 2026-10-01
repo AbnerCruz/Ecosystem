@@ -1,0 +1,91 @@
+{
+ "v": 4,
+ "app": "Urbe",
+ "version": "1.5.0-beta",
+ "mundo": "placas-0",
+ "salvo": "2026-09-02T10:00:00.000Z",
+ "camera": {
+  "x": 120,
+  "y": 90,
+  "z": 1
+ },
+ "regioes": [
+  {
+   "caminho": "Pasta",
+   "nome": "Pasta",
+   "cor": "#4aa3ff",
+   "x": 30,
+   "y": 30,
+   "w": 12,
+   "h": 10,
+   "cells": null,
+   "descricao": ""
+  }
+ ],
+ "notas": {
+  "Alfa.md": {
+   "id": "doc_00000001-0000-4000-8000-000000000000",
+   "x": 32,
+   "y": 32,
+   "sprite": "house1",
+   "tags": [],
+   "anexos": [],
+   "criado": "2026-09-01",
+   "modificado": "2026-09-02",
+   "aiLocal": null
+  },
+  "Beta.md": {
+   "id": "doc_00000002-0000-4000-8000-000000000000",
+   "x": 36,
+   "y": 33,
+   "sprite": "house1",
+   "tags": [],
+   "anexos": [],
+   "criado": "2026-09-01",
+   "modificado": "2026-09-02",
+   "aiLocal": null
+  },
+  "Pasta/Gama.md": {
+   "id": "doc_00000003-0000-4000-8000-000000000000",
+   "x": 34,
+   "y": 36,
+   "sprite": "house1",
+   "tags": [
+    "pasta"
+   ],
+   "anexos": [],
+   "criado": "2026-09-01",
+   "modificado": "2026-09-02",
+   "aiLocal": null
+  }
+ },
+ "construcoes": [
+  {
+   "tipo": "arquivo",
+   "fileClass": "image",
+   "name": "logo.png",
+   "fileName": "logo.png",
+   "caminho": "Pasta",
+   "x": 38,
+   "y": 32,
+   "w": 3,
+   "h": 3,
+   "description": "",
+   "sprite": "file-image",
+   "parentNoteName": "Alfa",
+   "files": [
+    {
+     "nome": "logo.png",
+     "tipo": "png",
+     "mime": "image/png",
+     "relPath": "Pasta/logo.png",
+     "folderPath": "Pasta",
+     "tamanho": 8
+    }
+   ],
+   "anexos": [],
+   "created": "2026-09-01",
+   "modified": "2026-09-01"
+  }
+ ]
+}

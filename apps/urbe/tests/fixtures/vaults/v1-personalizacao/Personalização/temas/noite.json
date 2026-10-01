@@ -1,0 +1,8 @@
+{
+  "nome": "Noite",
+  "claro": false,
+  "base": "escuro",
+  "cores": {
+    "fundo": "#000"
+  }
+}

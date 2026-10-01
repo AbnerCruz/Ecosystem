@@ -1,0 +1,79 @@
+name: Publicar lançamento
+
+# Publicação = tag "v<versão do package.json>" (ou execução manual sobre uma tag). Merge em main NÃO publica (REQ-006, REQ-066).
+# Depende de testes e checagens verdes; sem a chave Android o build falha (o APK não pode ser atualizado sem ela).
+#
+# Como lançar:  git tag v2.0.0-beta.1 && git push origin v2.0.0-beta.1
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          if [ "${{ github.ref_type }}" != "tag" ]; then echo "::error::Execute este workflow sobre uma tag v<versão>, não sobre um branch."; exit 1; fi
+          VERSION=$(node -p "require('./package.json').version")
+          [ "${{ github.ref_name }}" = "v$VERSION" ] || { echo "::error::A tag ${{ github.ref_name }} não corresponde ao package.json (v$VERSION)"; exit 1; }
+          if gh release view "v$VERSION" --repo "${{ github.repository }}" >/dev/null 2>&1; then echo "::error::Já existe o lançamento v$VERSION"; exit 1; fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: Checagens e testes (mesmo gate do CI)
+        run: |
+          git ls-files -z '*.js' | xargs -0 -n1 node --check
+          npm run check
+
+  construir:
+    needs: verificar
+    uses: ./.github/workflows/build-apps.yml
+    with:
+      version: ${{ needs.verificar.outputs.version }}
+      release: true
+    secrets: inherit
+
+  publicar:
+    needs: [verificar, construir]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artefatos
+      - name: Notas do lançamento (do CHANGELOG)
+        run: |
+          V="${{ needs.verificar.outputs.version }}"
+          awk -v v="## v$V" 'index($0,v)==1{p=1;next} /^## v/{if(p)exit} p' CHANGELOG.md > notas.md
+          [ -s notas.md ] || { echo "::error::CHANGELOG.md sem notas para v$V"; exit 1; }
+          printf '\n---\n**Instalar:** Windows → `Urbe-Setup-%s.exe` · Android → `Urbe-%s.apk`\n' "$V" "$V" >> notas.md
+          cat notas.md
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.verificar.outputs.version }}
+          name: Urbe ${{ needs.verificar.outputs.version }}
+          body_path: notas.md
+          # Os apps instalados se atualizam por /releases/latest: betas também são "latest" (como na 1.x).
+          make_latest: true
+          files: |
+            artefatos/windows/*
+            artefatos/android/*

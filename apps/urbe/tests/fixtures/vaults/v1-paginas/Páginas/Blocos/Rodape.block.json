@@ -1,0 +1,10 @@
+{
+  "kind": "urbe-block",
+  "name": "Rodapé",
+  "description": "",
+  "section": {
+    "type": "text",
+    "props": {},
+    "style": {}
+  }
+}

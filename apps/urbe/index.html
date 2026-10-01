@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b1116">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Urbe">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<title>Urbe v1.8.2-beta</title>
+<!-- urbe:styles:begin -->
+<link rel="stylesheet" href="./vendor/katex/katex.min.css">
+<link rel="stylesheet" href="./src/styles/base.css">
+<link rel="stylesheet" href="./src/styles/shell.css">
+<link rel="stylesheet" href="./src/styles/command-palette.css">
+<link rel="stylesheet" href="./src/styles/editor-chrome.css">
+<link rel="stylesheet" href="./src/styles/explorer-mobile.css">
+<link rel="stylesheet" href="./src/styles/composition.css">
+<link rel="stylesheet" href="./src/styles/theme.css">
+<link rel="stylesheet" href="./src/styles/agent.css">
+<link rel="stylesheet" href="./src/styles/pages.css">
+<link rel="stylesheet" href="./src/styles/math.css">
+<link rel="stylesheet" href="./src/styles/customize.css">
+<!-- urbe:styles:end -->
+<script>/* aparência guardada neste aparelho: aplica antes do primeiro desenho */try{var a=JSON.parse(localStorage.getItem("urbe.aparencia.v1")||"null");if(a){var r=document.documentElement;for(var k in a.vars)r.style.setProperty(k,a.vars[k]);for(var d in a.attrs)r.setAttribute(d,a.attrs[d]);r.style.colorScheme=a.scheme||"dark"}}catch(e){}</script>
+</head>
+<body>
+<div id="app">
+<div id="wrap"><canvas id="game"></canvas></div>
+<nav id="tools">
+  <div class="brand">KNOWLEDGE<br>CITY</div>
+  <button class="tool active" data-tool="select">Selecionar</button>
+  <button class="tool" data-tool="region">Região</button>
+  <button class="tool" data-tool="house">Construir</button>
+  <button class="tool" id="archiveBtn">Explorador</button>
+  <button class="tool bottom" id="cidadesBtn" style="height:44px"><span style="font-size:17px;line-height:1">⌆</span>Cidades</button>
+</nav>
+<div id="busca"><input id="buscaIn" type="search" placeholder="Buscar nota..." autocomplete="off"><div id="buscaLista"></div></div>
+<div id="mini" title="Abrir mapa"><canvas id="miniCv" width="100" height="100"></canvas></div>
+<div id="mapao"><canvas id="mapaoCv" width="620" height="620"></canvas><div class="dica">Toque no mapa para ir até lá</div></div>
+<div id="hud">
+  <div class="hudbox" id="hint">Arraste para mover. Toque para selecionar. Links entre notas viram estradas automaticamente.</div>
+  <div class="hudbox">Notas <b id="noteCount">0</b> · Arquivos <b id="fileCount">0</b> · Regiões <b id="regionCount">0</b> · Conexões <b id="linkCount">0</b> · Zoom <b id="zoomPct">100%</b></div>
+</div>
+
+<!-- House summary -->
+<section id="housePanel">
+  <div class="panelHead"><strong>Casa selecionada</strong><button class="btn" id="closeHouse">×</button></div>
+  <div class="panelBody">
+    <div class="noteCard">
+      <div class="previewHouse"><img id="housePreviewImg" alt=""></div>
+      <div>
+        <strong id="houseTitle" style="font-size:13px">Minha nota</strong>
+        <div class="metaList" id="houseMeta"></div>
+      </div>
+    </div>
+    <button class="openNote" id="openNoteBtn"><b>📖 Abrir nota</b><span>Entrar no editor em tela cheia</span></button>
+    <div class="row"><button class="btn" id="moveBtn">Mover</button><button class="btn" id="copyBtn">Copiar</button><button class="btn danger" id="deleteBtn">Excluir</button></div>
+  </div>
+</section>
+
+<!-- Explorador independente — v0.18 árvore real/mobile-first -->
+  <aside id="fileSidebar">
+    <div class="sidebarTop">
+      <strong style="flex:1">Explorador</strong>
+      <button class="iconBtn importBtn" id="explorerImportFolderBtn" title="Importar do dispositivo" aria-label="Importar do dispositivo">⇩</button>
+      <button class="iconBtn" id="explorerImportFilesBtn" hidden aria-hidden="true">⇩</button>
+      <button class="btn" id="closeSidebar">×</button>
+    </div>
+    <div id="explorerContext"><button id="explorerRootBtn" class="explorerCrumb">Raiz</button><span>›</span><strong id="explorerPath">/</strong></div>
+    <div id="explorerActions" hidden><span class="selectionCount" id="selectionCount">0 selecionados</span><button class="btn selectionOnly" id="moveFilesBtn">Mover</button><button class="btn selectionOnly" id="groupFilesBtn">Agrupar</button><button class="btn danger selectionOnly" id="deleteFilesBtn">Excluir</button><button class="btn selectionOnly" id="clearSelectionBtn">Limpar</button></div>
+    <div id="tree" role="tree" aria-label="Arquivos do vault"></div>
+    <div class="explorerHoldHint">Toque abre · arraste move · segure para opções · duplo toque renomeia.</div>
+    <!-- controles legados ficam invisíveis; o fluxo visível usa um único botão contextual -->
+    <div class="explorerFoot" hidden><button class="iconBtn" id="newFileBtn">Nota</button><button class="iconBtn" id="newFolderBtn">Pasta</button><button class="btn" id="explorerExportBtn">Exportar</button></div>
+    <input id="vaultFolderIn" type="file" webkitdirectory directory multiple hidden>
+    <input id="vaultFilesIn" type="file" multiple hidden>
+  </aside>
+
+<!-- Preview nativo de arquivos -->
+<section id="filePreview" aria-hidden="true">
+  <div class="filePreviewCard" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">
+    <header class="filePreviewHead">
+      <div class="titleWrap"><strong id="filePreviewTitle">Arquivo</strong><small id="filePreviewMeta"></small></div>
+      <button class="iconBtn" id="closeFilePreview" title="Fechar preview" aria-label="Fechar preview">×</button>
+    </header>
+    <div class="filePreviewTools">
+      <select id="filePreviewSelect" aria-label="Arquivo do grupo"></select>
+      <button class="btn" id="htmlSourceBtn" hidden>Fonte</button>
+      <button class="btn" id="htmlRenderBtn" hidden>Preview</button>
+      <button class="btn" id="openExternalBtn" hidden>Abrir</button>
+    </div>
+    <main id="filePreviewBody"></main>
+    <footer class="filePreviewFoot"><button class="btn" id="downloadPreviewBtn" hidden>Baixar arquivo</button></footer>
+  </div>
+</section>
+
+<!-- Fullscreen editor -->
+<section id="editorFull">
+
+
+  <header id="editorTop">
+    <button class="iconBtn" id="sidebarToggleMobile">☰</button>
+    <div id="fileNameDisplay" role="button" tabindex="0" title="Renomear arquivo">arquivo.md</div>
+    <button class="iconBtn" id="viewModeBtn" data-mode="source" title="Editar visualmente" aria-label="Editar visualmente"></button>
+    <span class="saveState" id="saveState">Salvo</span>
+    <button class="iconBtn" id="closeFullEditor" title="Fechar editor" aria-label="Fechar editor">✕</button>
+  </header>
+
+  <main id="editorMain">
+    <div id="mdToolbar" role="toolbar" aria-label="Formatação">
+      <button class="mdBtn" data-md="# " title="Título 1" aria-label="Título 1">H1</button>
+      <button class="mdBtn" data-md="## " title="Título 2" aria-label="Título 2">H2</button>
+      <button class="mdBtn" data-md="### " title="Título 3" aria-label="Título 3">H3</button>
+      <span class="mdSep" aria-hidden="true"></span>
+      <button class="mdBtn" data-wrap="**" title="Negrito" aria-label="Negrito"><b style="font-weight:800">B</b></button>
+      <button class="mdBtn" data-wrap="_" title="Itálico" aria-label="Itálico"><i style="font-family:Georgia,serif;font-weight:600">I</i></button>
+      <button class="mdBtn" data-wrap="`" title="Código" aria-label="Código" data-icon="code"></button>
+      <span class="mdSep" aria-hidden="true"></span>
+      <button class="mdBtn" data-md="- " title="Lista" aria-label="Lista" data-icon="list"></button>
+      <button class="mdBtn" data-md="- [ ] " title="Tarefa" aria-label="Tarefa" data-icon="task"></button>
+      <button class="mdBtn" data-md="> " title="Citação" aria-label="Citação" data-icon="quote"></button>
+      <span class="mdSep" aria-hidden="true"></span>
+      <button class="mdBtn" data-special="noteLink" title="Vincular nota" aria-label="Vincular nota" data-icon="wikilink"></button>
+      <button class="mdBtn" data-wrap="[]()" data-special="link" title="Link externo" aria-label="Link externo" data-icon="link"></button>
+      <button class="mdBtn" data-md="
+---
+" title="Linha horizontal" aria-label="Linha horizontal" data-icon="rule"></button>
+    </div>
+    <div id="editorScroll">
+      <div id="documentWatermark" aria-hidden="true">arquivo.md</div>
+      <div id="propertiesBox"></div>
+      <textarea id="bodyEditor" spellcheck="true"></textarea>
+      <article id="renderedPreview" contenteditable="true" spellcheck="true" aria-label="Editor visual formatado"></article>
+    </div>
+  </main>
+
+  <footer id="editorBottom">
+    <div class="statusText" id="editorStats">Markdown · 0 palavras</div>
+    <button class="iconBtn" id="openAI" title="Assistente de IA" aria-label="Assistente de IA">💬</button>
+  </footer>
+</section>
+
+<!-- AI panel -->
+<!-- Assistente: montado por src/ai/ui.js -->
+<aside id="aiPanel"></aside>
+
+<!-- Region dialog — criação e edição -->
+<div id="dialog"><div class="dialogBox">
+  <h3 id="regionDialogTitle">Nova região</h3>
+  <label>Nome<input id="regionName" value="Nova região"></label>
+  <label>Cor<input id="regionColor" type="color" value="#4db7ff"></label>
+  <label>Descrição<textarea id="regionDesc">Área temática do workspace.</textarea></label>
+  <div class="row"><button class="btn" id="cancelRegion">Cancelar</button><button class="btn" id="confirmRegion">Criar região</button></div>
+</div></div>
+<div id="wikiSuggest" role="listbox" aria-label="Sugestões de notas"></div>
+<!-- Vault dialog -->
+<div id="vaultDlg" style="position:absolute;inset:0;z-index:31;background:#0009;display:none;place-items:center;padding:16px">
+  <div class="dialogBox">
+    <h3>Vault</h3>
+    <p style="font-size:11px;color:#9db1bf;margin:0 0 10px">Cada pasta vira uma região, cada <code>.md</code> vira uma casa. Os <code>[[wiki-links]]</code> viram estradas.</p>
+    <label style="display:block">Importar .zip ou arquivos .md<input id="vaultIn" type="file" multiple accept=".md,.markdown,.txt,.zip"></label>
+    <div id="vaultMsg" style="font-size:11px;color:#9db1bf;margin:8px 0"></div>
+    <div class="row">
+      <button class="btn" id="vaultExport">Exportar vault .zip</button>
+      <button class="btn" id="vaultClose">Fechar</button>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="btn" id="cityExport">Salvar cidade .json</button>
+      <label class="btn" style="text-align:center">Abrir cidade .json<input id="cityIn" type="file" accept=".json" hidden></label>
+    </div>
+  </div>
+</div>
+<div id="menuCidades"><div class="caixa">
+  <h1 id="menuTitulo">URBE</h1>
+  <div class="sub">Suas notas em Markdown, desenhadas como cidade.<br>
+    Cada cidade é um vault: uma pasta de verdade, com arquivos <b>.md</b> de verdade.</div>
+
+  <div class="bloco" id="blocoPasta">
+    <div style="margin-bottom:9px"><span class="selo" id="seloModo">verificando...</span></div>
+    <p id="textoPasta"></p>
+    <button class="larga" id="btnEscolherPasta">📂 Escolher a pasta do aplicativo</button>
+  </div>
+
+  <div class="bloco">
+    <div style="font-size:12px;color:#b7c9d4;margin-bottom:9px">Suas cidades</div>
+    <div id="listaCidades"><div class="vazio">Carregando...</div></div>
+  </div>
+
+  <div class="bloco">
+    <div style="font-size:12px;color:#b7c9d4;margin-bottom:9px">Fundar uma cidade nova</div>
+    <input type="text" id="novaCidadeNome" placeholder="Nome da cidade (vira o nome da pasta)"
+      autocomplete="off" spellcheck="false">
+    <button class="larga primaria" id="btnNovaCidade">✦ Criar cidade</button>
+  </div>
+</div></div>
+<div id="syncSelo" style="display:none"></div>
+<div id="toast"></div>
+<div id="updateBanner" role="status"><span>Nova versão do Urbe disponível.</span><button class="btn" id="reloadUpdateBtn">Recarregar</button></div>
+</div>
+
+
+</div>
+
+
+
+<!-- urbe:scripts:begin -->
+<script src="./src/core/artifacts.js"></script>
+<script src="./src/ui/icons.js"></script>
+<script src="./src/ui/dialogs.js"></script>
+<script src="./src/native/bridge.js"></script>
+<script src="./src/ui/touch-debug.js"></script>
+<script src="./src/world/terrain.js"></script>
+<script src="./src/world/pixel-art.js"></script>
+<script src="./src/legacy/bootstrap.js"></script>
+<script src="./src/core/core.js"></script>
+<script src="./src/core/documents.js"></script>
+<script src="./src/core/trash.js"></script>
+<script src="./src/core/history.js"></script>
+<script src="./src/composition/store.js"></script>
+<script src="./src/composition/compiler.js"></script>
+<script src="./src/core/knowledge-index.js"></script>
+<script src="./src/persistence/vault-meta.js"></script>
+<script src="./src/persistence/backup.js"></script>
+<script src="./src/persistence/identity.js"></script>
+<script src="./src/persistence/workspace.js"></script>
+<script src="./src/persistence/gc.js"></script>
+<script src="./src/persistence/export-manifest.js"></script>
+<script src="./src/persistence/multi-city.js"></script>
+<script src="./src/persistence/adapters/idb.js"></script>
+<script src="./src/persistence/adapters/fsa.js"></script>
+<script src="./src/persistence/adapters/router.js"></script>
+<script src="./src/world/projection.js"></script>
+<script src="./src/world/stable-ids.js"></script>
+<script src="./src/world/layout-guard.js"></script>
+<script src="./src/world/system.js"></script>
+<script src="./src/world/roads.js"></script>
+<script src="./src/core/scheduler.js"></script>
+<script src="./src/world/renderer.js"></script>
+<script src="./src/world/touch.js"></script>
+<script src="./src/explorer/model.js"></script>
+<script src="./src/explorer/operations.js"></script>
+<script src="./src/explorer/mobile-ui.js"></script>
+<script src="./src/composition/ui.js"></script>
+<script src="./src/core/diagnostics.js"></script>
+<script src="./src/editor/session.js"></script>
+<script src="./src/editor/context.js"></script>
+<script src="./src/editor/workspace.js"></script>
+<script src="./src/editor/split.js"></script>
+<script src="./src/editor/split-ui.js"></script>
+<script src="./src/editor/find-ui.js"></script>
+<script src="./src/editor/chrome.js"></script>
+<script src="./src/ai/providers.js"></script>
+<script src="./src/ai/tools.js"></script>
+<script src="./src/ai/store.js"></script>
+<script src="./src/ai/agent.js"></script>
+<script src="./src/ai/ui.js"></script>
+<script src="./vendor/katex/katex.min.js"></script>
+<script src="./src/math/core.js"></script>
+<script src="./src/pages/engine.js"></script>
+<script src="./src/pages/free.js"></script>
+<script src="./src/pages/templates.js"></script>
+<script src="./src/pages/ai-tools.js"></script>
+<script src="./src/customize/customize.js"></script>
+<script src="./src/customize/plugins.js"></script>
+<script src="./src/customize/ai-tools.js"></script>
+<script src="./src/tutorial/content.js"></script>
+<script src="./src/tutorial/tutorial.js"></script>
+<script src="./src/app.js"></script>
+<script src="./src/world/life.js"></script>
+<script src="./src/pages/studio.js"></script>
+<script src="./src/editor/visual-tools.js"></script>
+<script src="./src/math/editor.js"></script>
+<script src="./src/ui/settings.js"></script>
+<script src="./src/customize/panel.js"></script>
+<script src="./src/ui/tips.js"></script>
+<script src="./src/core/keymap.js"></script>
+<script src="./src/ui/command-palette.js"></script>
+<script src="./src/ui/quick-open.js"></script>
+<script src="./src/ui/vault-notices.js"></script>
+<!-- urbe:scripts:end -->
+
+</body>
+</html>

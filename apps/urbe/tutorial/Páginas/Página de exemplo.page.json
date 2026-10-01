@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "kind": "urbe-page",
+  "meta": {
+    "title": "Minha cidade de ideias",
+    "description": "Uma página de exemplo feita no estúdio do Urbe.",
+    "lang": "pt-BR",
+    "icon": "🏙️"
+  },
+  "theme": {
+    "preset": "aurora",
+    "background": "mesh"
+  },
+  "layout": {
+    "nav": true,
+    "brand": "Minha cidade",
+    "footer": "Feito com o **Urbe** · esta é a página de exemplo do Tutorial"
+  },
+  "sections": [
+    {
+      "type": "hero",
+      "props": {
+        "eyebrow": "Página de exemplo",
+        "title": "Minha cidade de ideias",
+        "subtitle": "Esta página foi montada no **estúdio** do Urbe. Toque em qualquer parte para editar, troque o tema ou exporte como HTML.",
+        "buttons": [
+          { "label": "Ver o que dá para fazer", "url": "#recursos", "variant": "primary" },
+          { "label": "Perguntas", "url": "#perguntas", "variant": "secondary" }
+        ],
+        "layout": "center",
+        "height": "tall"
+      }
+    },
+    {
+      "type": "features",
+      "props": {
+        "title": "O que uma página pode ter",
+        "subtitle": "Alguns dos 23 blocos disponíveis.",
+        "columns": 3,
+        "items": [
+          { "icon": "📝", "title": "Suas notas", "text": "Blocos de nota puxam o texto direto do vault e se atualizam sozinhos." },
+          { "icon": "🎨", "title": "Temas", "text": "Oito temas prontos, com cores, fontes e fundo ajustáveis." },
+          { "icon": "📱", "title": "Qualquer tela", "text": "A prévia mostra como fica no celular, no tablet e no computador." },
+          { "icon": "∑", "title": "Fórmulas", "text": "Textos aceitam LaTeX, igual às notas." },
+          { "icon": "⏳", "title": "Contagem regressiva", "text": "Para eventos e lançamentos." },
+          { "icon": "📦", "title": "Um arquivo só", "text": "Exporte um HTML que funciona em qualquer hospedagem." }
+        ]
+      },
+      "style": { "anchor": "recursos", "menu": true }
+    },
+    {
+      "type": "text",
+      "props": {
+        "title": "Texto com Markdown e fórmulas",
+        "markdown": "Blocos de texto aceitam **negrito**, _itálico_, listas, tabelas, citações e fórmulas:\n\n$$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$\n\n| Bloco | Uso |\n|---|---|\n| Capa | Abertura |\n| Cartões | Projetos |\n| Perguntas | Dúvidas |"
+      },
+      "style": { "width": "narrow" }
+    },
+    {
+      "type": "notes",
+      "props": {
+        "title": "Notas do Tutorial sobre páginas",
+        "subtitle": "Este bloco lista as notas de uma pasta do vault.",
+        "source": "folder",
+        "folder": "Tutorial/Páginas",
+        "layout": "cards",
+        "columns": 3,
+        "excerpt": true
+      },
+      "style": { "background": "surface" }
+    },
+    {
+      "type": "faq",
+      "props": {
+        "title": "Perguntas",
+        "items": [
+          { "q": "Preciso saber programar?", "a": "Não. Tudo se faz tocando na prévia e escolhendo opções. Quem quiser pode editar o JSON ou usar HTML livre." },
+          { "q": "Como publico?", "a": "Exportar → Baixar HTML, e envie o arquivo para qualquer hospedagem de sites." },
+          { "q": "O Assistente ajuda?", "a": "Sim: peça, por exemplo, \"crie uma página de portfólio com minhas notas da pasta Projetos\"." }
+        ]
+      },
+      "style": { "anchor": "perguntas", "menu": true }
+    },
+    {
+      "type": "cta",
+      "props": {
+        "title": "Agora é a sua vez",
+        "text": "Duplique esta página ou comece uma nova a partir de um modelo.",
+        "buttons": [ { "label": "Voltar ao topo", "url": "#", "variant": "primary" } ]
+      },
+      "style": { "background": "gradient", "align": "center" }
+    }
+  ]
+}
