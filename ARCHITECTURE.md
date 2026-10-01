@@ -152,6 +152,7 @@ Este documento descreve a arquitetura **atual** nas seções anteriores. Aqui fi
 
 ### 8.2 Não decidido (nenhum agente deve tratar como decidido)
 
+- tecnologia de UI e plataforma-alvo do Hub: proposta no [ADR-0013](docs/adr/0013-hub-read-only-fase-3.md) (`Proposto`); a escolha é do proprietário (DEC-0022);
 - quando e como a plataforma first-party será construída (fase, Services, identidade e catálogo) — a direção está decidida (perfil `target`), o plano não;
 - quais Services compartilhados (Identity, Catalog, Commerce, Entitlements, Downloads, Updates, Reviews, Creator Profiles, Notifications) existirão, se algum — só com consumidores reais, contrato e ADR (NN-020, NN-022);
 - fonte canônica de catálogo, entitlements e identidade; política de edições e canais externos;

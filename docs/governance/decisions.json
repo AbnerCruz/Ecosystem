@@ -725,6 +725,40 @@
       "decidedAt": "2026-10-01",
       "record": "docs/governance/responses/DEC-0021.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0022",
+      "status": "pending",
+      "component": "hub",
+      "blocking": true,
+      "title": "Tecnologia de UI e plataforma-alvo do Hub (Fase 3)",
+      "context": "A Fase 3 cria o Hub inicial em C#, somente leitura: mostra Lunet2D e Urbe, lê ecosystem.json e o GitHub (CI, releases, branches, PRs, tarefas) e apresenta Past / Now / Next. O gate é humano: no celular, o proprietário abre o Hub e entende o estado dos dois produtos sem abrir o GitHub. A tecnologia de UI e as plataformas-alvo estão registradas como não decididas. Fato: o Lunet2D já compila para Android em C# (net10.0-android) com CI próprio. O ADR-0013 (Proposto) fixa como proposta do agente a leitura de dados (somente leitura, not-available quando faltar fonte, Past/Now/Next derivado) em biblioteca independente de UI; só falta escolher a UI.",
+      "question": "Qual tecnologia de UI e plataforma-alvo o Hub inicial deve usar?",
+      "alternatives": [
+        {
+          "option": "Android nativo em C# (net10.0-android), a mesma pilha do Lunet2D",
+          "consequences": "Reaproveita SDK, build e CI já usados; cumpre o gate no celular; só Android — desktop/iOS exigiriam outra UI depois (a leitura de dados ficaria numa biblioteca independente de UI, então só a camada de UI seria refeita). Recomendação."
+        },
+        {
+          "option": "UI C# multiplataforma (.NET MAUI ou Avalonia), Android primeiro",
+          "consequences": "Abre caminho para desktop (e talvez iOS) com uma base de UI; introduz uma pilha e uma CI novas, e o custo de manter plataformas que o gate não exige."
+        },
+        {
+          "option": "Web/PWA em C# (Blazor WebAssembly) servida como site estático",
+          "consequences": "Abre no celular sem instalar; sobrepõe-se ao portal (que já é a superfície web) e não serve às fases 4–5 (instalar/abrir apps, IPC) sem outra camada nativa."
+        }
+      ],
+      "consequences": "Bloqueia a criação de apps/hub e as tarefas P3-3 a P3-8; a documentação da fase e o contrato de dados (ADR-0013 A) já avançam sem ela. Nenhum código é escrito antes da decisão.",
+      "manifestCompatibility": "Respeita NN-001 (o Hub consome as fontes, não cria estado), NN-003/NN-023 (Hub fora do caminho dos produtos), NN-015 (leitura de registro, não IPC), NN-016 (network.access declarado), NN-020/NN-022 (nenhum componente compartilhado novo) e ADR-0011.",
+      "recommendation": "A primeira alternativa: menor custo de pilha e CI, atende ao gate; a camada de dados independente de UI mantém a troca futura barata.",
+      "related": [
+        "docs/adr/0013-hub-read-only-fase-3.md",
+        "ROADMAP.md",
+        "ARCHITECTURE.md",
+        "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }
