@@ -9,12 +9,16 @@
 - `[x]` concluído com evidência · `[~]` verificado automaticamente, **aguardando validação humana/revisão** · `[ ]` aberto.
 - Um item nunca é marcado `[x]` enquanto depender de validação humana (NN-017); `CHK-ROADMAP` fiscaliza parte disso.
 - Evidência de cada item concluído: handoff em `docs/governance/handoffs/`.
+- **Estado de um gate** (autoridade: este arquivo): uma linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` (padrão quando a linha não existe) logo depois de cada `**Gate:**`. `CHK-STATE-CONSISTENCY` exige que um gate `aprovado` não tenha itens da fase abertos (`[ ]` ou `[~]`) e que o campo `ecosystem.phase` de `ecosystem.json` seja coerente com os gates e com as tarefas iniciadas.
+- **Estado vivo × caixa:** `[x]` exige que a Issue da tarefa (título começando pelo ID) esteja fechada e sem `state:` incompatível; `[~]` exige uma Issue aberta com `state:` ≠ `done` (DEC-0003; verificado quando há instantâneo das Issues).
 
 ## Próxima tarefa
 
-**Suas três respostas no portal** liberam a refatoração dos aplicativos: revisar a classificação de candidatos (P1-12), decidir **DEC-0018** (regras de refatoração, ADR-0009) e aprovar o **gate da Fase 1**. Em seguida: refatorações internas pelo [guia](docs/architecture/refactoring.md) (sugestão: U-R1 e L-R2) e, em paralelo, a **Fase 2** (contratos), que habilita as extrações para o Ecosystem.
+**Fase 2 — Contracts e Registry: abrir o plano da fase** (tarefas `P2-x`, ainda não iniciada). Antes dela e em paralelo a ela, o proprietário pode **refatorar os aplicativos** (passo 10) pelas regras do ADR-0009 `Aceito` e do guia [`refactoring.md`](docs/architecture/refactoring.md); a ordem sugerida está em [`candidates.md`](docs/architecture/candidates.md).
 
-*Por quê:* P1-1 a P1-11 estão concluídos; a Fase 1 só fecha com a sua aprovação (NN-017).
+*Por quê:* a Fase 1 está encerrada (gate aprovado em 2026-10-01); a Fase 2 é o que habilita extrações para o Ecosystem (contratos de Capability e Context, Distribution Profile, registry). Decisão pendente sobre o contrato do próprio ROADMAP/`ecosystem.phase`: **DEC-0019**.
+
+*Como ler o estado:* fase e gates = este arquivo (linha `*Estado do gate:*` de cada fase); tarefas em andamento = Issues (`state:<estado>`); resultado e evidência = handoffs; decisões e validações pendentes = portal.
 
 ---
 
@@ -67,7 +71,7 @@ Alinhamento arquitetural pré-migração — Product Shells, distribuição inde
 - [x] P0-37 — Aprovar ou reprovar validações humanas pelo portal (ADD-0005, ADR-0008 `Aceito`, DEC-0015): projeção, botões, aplicador/workflow estendidos, `CHK-DECISION-FLOW` e self-test. Ratificado e validado de ponta a ponta com cliques reais do proprietário (DEC-0015, Issue #21; validação do P0-37, Issue #23; commits do bot `5c6a318` e `e2501e3`).
 
 **Gate:** um agente novo consegue entrar no repositório e compreender corretamente o produto, a autoridade documental e o processo de trabalho sem depender de uma conversa anterior.
-*Estado do gate:* **aprovado pelo proprietário em 2026-09-30** ([ADD-0003](docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)); a validação do portal no celular (P0-15) foi aprovada em 2026-10-01 ([ADD-0005](docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md)).
+*Estado do gate:* **aprovado** — pelo proprietário em 2026-09-30 ([ADD-0003](docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)); a validação do portal no celular (P0-15) foi aprovada em 2026-10-01 ([ADD-0005](docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md)).
 
 ## Fase 1 — Inventário e migração
 
@@ -84,8 +88,9 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 - [x] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados). Fontes hoje: Lunet2D publica `release-manifest.json`, `SHA256SUMS.txt` e notas em cada release; o Urbe publica APK, instalador Windows e `latest.yml` (checksum só pelo digest do GitHub). Por DEC-0008-A, lê as releases dos repositórios de origem de cada produto (transitório). **Concluído** (handoff `HO-20261001-portal-releases-e-artefatos`; conferência humana aprovada pelo proprietário, [ADD-0007](docs/governance/addenda/ADD-0007-validacoes-aprovadas.md)).
 - [x] P1-10 — Urbe Web: publicado pelo espelho na mesma URL (`https://abnercruz.github.io/Urbe/`, DEC-0009-A), sem quebrar a publicação atual (validado pelo proprietário, ADD-0007) e com rota previsível no portal (`publicUrl` do componente `urbe` → "Abrir versão Web"). O modelo **definitivo** de publicação é declarado pelo próprio Ecosystem na Fase 2 (Distribution Profile), quando DEC-0009 é reavaliada.
 - [x] P1-11 — Registros canônicos de validação por build (contrato + estados de `definition-of-done.md` §4) e páginas `/testing/<componente>/<build>/` geradas deles. Evidência: handoff `HO-20261001-registros-de-validacao-por-build`; `CHK-VALIDATION`.
-- [~] P1-12 — Classificar candidatos (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter) a partir dos mapas funcionais **já validados pós-migração**: apenas proposta; nenhuma extração (passo 9 de [`docs/migration/README.md`](docs/migration/README.md) §7). Extração/modernização (passo 10) está fora da Fase 1 e exige ADR por extração. **Proposta entregue:** [`candidates.md`](docs/architecture/candidates.md); aguardando revisão do proprietário no portal.
-- [~] P1-13 — Gate da Fase 1: evidências reunidas (handoff `HO-20261001-gate-da-fase-1`); aguardando aprovação do proprietário no portal (NN-017).
+- [x] P1-12 — Classificar candidatos (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter) a partir dos mapas funcionais **já validados pós-migração**: apenas proposta; nenhuma extração (passo 9 de [`docs/migration/README.md`](docs/migration/README.md) §7). Extração/modernização (passo 10) está fora da Fase 1 e exige ADR por extração. **Concluído:** [`candidates.md`](docs/architecture/candidates.md), revisão aprovada pelo proprietário (Issue #27, `VAL-HO-20261001-classificacao-de-candidatos-f2cc354957c9`); regras do passo 10 em ADR-0009 `Aceito` (DEC-0018-A).
+- [x] P1-13 — Gate da Fase 1 **aprovado pelo proprietário** em 2026-10-01 (Issue #28, `VAL-HO-20261001-gate-da-fase-1-247456bb21aa`); evidências no handoff `HO-20261001-gate-da-fase-1`.
+- [x] P1-14 — Reconciliação de deriva de estado (auditoria externa pós-gate, sem tocar nos produtos): README sem estado, ARCHITECTURE atual × planejado × não decidido, Issue #6, matriz de enforcement, gates no portal; `CHK-STATE-CONSISTENCY` e `CHK-MIGRATION-HISTORY`; ADR-0010 `Proposto` e **DEC-0019** pendente. Evidência: handoff `HO-20261001-reconciliacao-de-deriva-de-estado`; mapa em [`state-drift.md`](docs/governance/state-drift.md).
 
 Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → preservar histórico → restaurar build → restaurar testes → restaurar releases → validar produto → provar ausência de regressão conhecida → classificar candidatos → extrair/modernizar gradualmente. **Proibido** durante a importação: separar o Editor, extrair o Sprite Studio, reescrever o Agent Workspace, criar Store, criar Product Shell novo, transformar código em capabilities, reorganizar tudo em packages, reescrever o Urbe em C#, mudar a arquitetura interna porque a arquitetura futura é conhecida.
 
@@ -94,7 +99,7 @@ Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → 
 2. A importação preservou intencionalmente a arquitetura funcional existente. Candidatos a Product Core, Product Shell, Tool, Workspace, Service, Library e Adapter foram inventariados, porém nenhuma extração estrutural foi realizada como efeito colateral da migração. *(Não pode ser marcado concluído antes da auditoria pós-migração, P1-8.)*
 3. Cada Product foi empacotado, publicado e testado sem o Hub (NN-023).
 
-*Estado do gate:* evidências reunidas (handoff `HO-20261001-gate-da-fase-1`): 1) 286/286 e 56/56 testes, CI e release por produto, auditoria P1-8; 2) `apps/<id>` idêntico às origens salvo dois ajustes documentados, candidatos classificados sem extração ([`candidates.md`](docs/architecture/candidates.md)); 3) Lunet2D publicado e validado em aparelho, Urbe Web validado, nenhuma referência ao Hub. **Aguardando a aprovação do proprietário no portal.** Depois dela, começa o passo 10 (refatorar/extrair) pelas regras do ADR-0009 ([`refactoring.md`](docs/architecture/refactoring.md)), sujeito a DEC-0018.
+*Estado do gate:* **aprovado** — pelo proprietário em 2026-10-01 (P1-13; evidências no handoff `HO-20261001-gate-da-fase-1`): 1) 286/286 e 56/56 testes, CI e release por produto, auditoria P1-8; 2) `apps/<id>` idêntico às origens salvo dois ajustes documentados, candidatos classificados sem extração ([`candidates.md`](docs/architecture/candidates.md)); 3) Lunet2D publicado e validado em aparelho, Urbe Web validado, nenhuma referência ao Hub. O passo 10 (refatorar/extrair) segue as regras do ADR-0009 `Aceito` ([`refactoring.md`](docs/architecture/refactoring.md)).
 
 ## Fase 2 — Contracts e Registry
 

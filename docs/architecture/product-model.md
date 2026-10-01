@@ -44,7 +44,7 @@ O Product Shell:
 
 Exemplos iniciais: *Lunet Product Shell* e *Urbe Product Shell*.
 
-**Relação com as definições do MANIFEST.** Um Product Shell é o **Host** do seu Product (MANIFEST §6.2: hoje "Lunet2D" aparece como exemplo de Host). Não é um tipo novo de componente no `ecosystem.json`: é um papel arquitetural do Product. Nenhum Shell foi criado nem declarado; isso é trabalho de fases posteriores e depende do que os inventários (P1-1/P1-2) revelarem sobre o código real.
+**Relação com as definições do MANIFEST.** Um Product Shell é o **Host** do seu Product (MANIFEST §6.2: hoje "Lunet2D" aparece como exemplo de Host). Não é um tipo novo de componente no `ecosystem.json`: é um papel arquitetural do Product. Nenhum Shell foi criado nem declarado como componente. Os inventários (P1-1/P1-2) já revelaram o código real e [`candidates.md`](candidates.md) propõe quais partes dos produtos exercem esse papel; estruturar Shells é refatoração (ADR-0009), decidida caso a caso.
 
 **Product Shell é estrutura arquitetural comum, não UX igual.** Lunet e Urbe preservam domínio, identidade, navegação, modelo mental, dados e experiência. Nenhum dos dois vira "skin" do Ecosystem.
 

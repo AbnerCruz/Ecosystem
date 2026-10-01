@@ -1,0 +1,129 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-reconciliacao-de-deriva-de-estado",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T14:00:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-14",
+  "component": "ecosystem",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "README.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/decisions.json",
+    "docs/governance/state-drift.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/adr/0010-semantica-de-ecosystem-phase-e-estado-derivado.md",
+    "docs/adr/README.md",
+    "docs/architecture/candidates.md",
+    "docs/architecture/refactoring.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/portal.md",
+    "docs/migration/README.md",
+    "docs/migration/import-plan.md",
+    "docs/migration/inventory-lunet2d.md",
+    "docs/migration/inventory-urbe.md",
+    "docs/migration/import-lunet2d.json",
+    "docs/migration/import-urbe.json",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md",
+    "site/generator/GenerateStatus.cs",
+    "site/app.js",
+    ".github/workflows/consistency.yml",
+    ".gitignore",
+    "docs/governance/handoffs/HO-20261001-classificacao-de-candidatos.json",
+    "docs/governance/handoffs/HO-20261001-gate-da-fase-1.json",
+    "docs/governance/handoffs/HO-20261001-reconciliacao-de-deriva-de-estado.json",
+    "Issue #6 (fechada, state:done)"
+  ],
+  "work_completed": [
+    "HEAD inicial: e1c5096 (main). FATO OBSERVADO: o proprietário já havia respondido P1-12 (aprovada, Issue #27), DEC-0018 (A, Issue #26) e P1-13 (gate da Fase 1 aprovado, Issue #28); o prompt de auditoria partia de 1e67521, anterior a essas respostas. DECISÃO EXISTENTE respeitada: nada foi reaberto nem respondido por ele.",
+    "ALTERAÇÃO — consequências das respostas do proprietário aplicadas: ADR-0009 Aceito; ROADMAP P1-12 e P1-13 [x], gate da Fase 1 'aprovado' (linha estruturada), próxima tarefa; handoffs de P1-12 e do gate em 'done'; candidates.md/refactoring.md sem 'pendente'.",
+    "INCONSISTÊNCIAS CONFIRMADAS (HEAD e1c5096) e causa raiz: (1) README: 'não migrado' e 'Fase 0 — Nenhum produto foi importado' — estado volátil copiado em prosa sem nenhum check; corrigido: README não declara estado, aponta para a autoridade de cada pergunta. (2) ecosystem.phase = phase-0 — campo sem semântica definida e sem relação com o ROADMAP; corrigido para phase-1 (valor coerente com qualquer leitura plausível que não seja 'próxima fase') e semântica levada a ADR-0010 (Proposto) + DEC-0019 (pendente no portal; recomendação: remover o campo). (3) Issue #6 aberta/state:review com P1-3 [x] — nenhum check ligava ROADMAP a Issues e as Issues das tarefas P1-4 em diante nunca foram abertas; Issue #6 fechada com state:done e comentário; CHK-STATE-CONSISTENCY passa a fiscalizar. (4) ARCHITECTURE.md: 'verificação de referências reais planejada para a Fase 1' (P1-7 concluído), 'Ainda NÃO decidido' com itens resolvidos (publicação do Urbe Web P1-10, formato de validação P1-11, inventários), autoridade do código ainda 'repositórios de origem enquanto not-migrated': reescrito (§3, §4, §5; §8 separado em Planejado × Não decidido; sem histórico).",
+    "OUTRAS DIVERGÊNCIAS ENCONTRADAS na busca estendida: matriz de enforcement com 6 mecanismos 'planned' para a Fase 1 já concluída (NN-003, NN-012, NN-013, NN-014, NN-023 ×2) — reclassificados com checks reais (CHK-ARCH-REFS agora também exige workflow com filtro de caminho por produto; novo CHK-MIGRATION-HISTORY para NN-012) ou re-faseados (NN-013 TEST → phase-2); docs/migration/README.md dizia 'PROPOSTA em DEC-0014, ainda não decidida' e 'nenhuma importação pode ocorrer antes…'; import-plan.md dizia 'Nada foi importado… depende de DEC-0014 (pendente)'; inventários sem marca de registro histórico; product-model.md dizia que Shells dependiam dos inventários.",
+    "FALSOS POSITIVOS da auditoria: nenhum. Observação (INFERÊNCIA, não é deriva): 31 itens [x] não têm handoff próprio porque são cobertos por handoffs de grupo (ex.: fundação P0-1; P1-8 por HO-…arch-refs-e-auditoria); NN-018 aceita, mas a regra de Issues vale só para itens [~]/[x] que tenham Issue.",
+    "ALTERAÇÃO — proteção: CHK-STATE-CONSISTENCY (gate aprovado × itens abertos; ecosystem.phase × gates e tarefas iniciadas; ROADMAP × Issues com instantâneo gerado no CI; 'Não decidido' de ARCHITECTURE × decisions.json; matriz planned × gates aprovados), CHK-MIGRATION-HISTORY (ponta importada, contagem e tags), gates projetados no portal derivados do ROADMAP e conferidos por CHK-PORTAL; consistency.yml com fetch-depth 0, instantâneo das Issues e issues:read. Mapa de causas e lista de revisão obrigatória: docs/governance/state-drift.md.",
+    "Self-test: casos A (ROADMAP [x] × Issue state:review), B (produto active × projeção not-migrated), C (decisão decided × projeção pendente), D (VALIDATED × projeção HUMAN_VALIDATION_PENDING) e mais 9 (gate aprovado com item aberto, phase atrás do ROADMAP, [~] sem Issue, ARCHITECTURE × decisão decidida, matriz vencida, gate projetado errado, registro de importação ausente) + 4 testes com repositório git sintético para CHK-MIGRATION-HISTORY.",
+    "Nenhum código funcional de Lunet2D/Urbe foi tocado (apps/ inalterado); Dependabot não foi misturado (PRs #11–#20 intactos); nenhuma Fase 2, extração ou refatoração foi iniciada."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs (20 checks) e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: 20/20 e 'todos os checks provaram detectar suas violações'. Antes da correção, CHK-STATE-CONSISTENCY reproduziu o bug real: 'P1-3 está [x] no ROADMAP, mas a Issue #6 continua aberta'."
+    },
+    {
+      "check": "Reconciliação das Issues e das respostas do proprietário no HEAD atual",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Issues #1, #2, #6 fechadas com state:done; #3–#5, #7, #8, #21–#28 fechadas; nenhuma Issue aberta. decisions.json: única pendente DEC-0019 (criada por esta tarefa)."
+    }
+  ],
+  "known_issues": [
+    "DEC-0019 (semântica de ecosystem.phase) pendente: até lá o campo vale phase-1 e é protegido pela regra de coerência neutra.",
+    "Issues de tarefas P1-4…P1-14 não foram abertas retroativamente (o estado vivo delas passou só por handoffs); a regra passa a exigir Issue aberta para toda tarefa [~].",
+    "CHK-MIGRATION-HISTORY e a parte ROADMAP×Issues são 'não verificados' (nota explícita) sem histórico completo/instantâneo; o CI do consistency.yml fornece ambos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: decidir DEC-0019 no portal.",
+    "Próxima tarefa legítima: Fase 2 — abrir o plano da fase (tarefas P2-x); refatorações dos aplicativos pelo ADR-0009 quando o proprietário quiser."
+  ],
+  "decisions_required": [
+    "DEC-0019"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/governance/decisions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/adr/0002-formato-dos-registros-canonicos.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/adr/0010-semantica-de-ecosystem-phase-e-estado-derivado.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Cópias de estado volátil removidas (README) ou verificadas contra a autoridade (phase, gates projetados, validação, Issues)."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Semântica de phase vai para ADR-0010/DEC-0019, não para interpretação silenciosa."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma decisão do proprietário reaberta ou respondida; mudança de contrato com ADR Proposto."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "apps/ inalterado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma aprovação humana inventada; gates só pelo registro do proprietário."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Estado real descobrível em uma fonte por pergunta (README/state-drift.md) e fiscalizado."
+    }
+  ],
+  "cost": null
+}

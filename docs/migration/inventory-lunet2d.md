@@ -1,6 +1,8 @@
 # Inventário de migração — Lunet2D (`lunet2d`)
 
 > Tarefa: **P1-1** · Agente: `claude-code` · Data: 2026-09-30 · Commit de origem inventariado: `be30e62c35714b48e7c0be4139efa58d02644ee7` (`main`, "Merge pull request #25 from AbnerCruz/ccr-8e262421-r4rdz0")
+> **Registro histórico (2026-09-30), anterior à importação; não é o estado atual.** O estado atual está em `ecosystem.json`, no ROADMAP e em [`audit-post-migration.md`](audit-post-migration.md).
+>
 > **Somente leitura.** Nada foi importado, refatorado, movido ou alterado no repositório de origem (NN-012, NN-013). O acesso ao repositório foi feito por clone completo (`git clone`, sem `--depth`) e, para o que não existe no git (releases, PRs, execuções de workflow), pela API do GitHub em modo de leitura.
 > Convenção (MANIFEST §53): **FATO** = verificado nesta sessão, com comando ou fonte; **INFERÊNCIA** = dedução do agente; **PROPOSTA** = sugestão sujeita a decisão; **NÃO VERIFICADO** = não foi possível verificar, com o motivo.
 

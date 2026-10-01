@@ -1,7 +1,7 @@
 # Estratégia de migração para o monorepo
 
 > **Autoridade:** normativa para a Fase 1, subordinada a MANIFEST §11.2, §44 e às invariantes NN-012, NN-013 e NN-014.
-> Nenhuma importação pode ocorrer antes de: inventário completo do produto (§2) e plano de importação revisado (P1-3). DEC-0002 e DEC-0004 já estão decididas.
+> Esta é a **estratégia**. Ela vale para qualquer importação futura (nenhuma importação pode ocorrer antes de: inventário completo do produto, §2, e plano de importação revisado). O estado de cada produto (`status`) é o de [`ecosystem.json`](../../ecosystem.json); o resultado da migração de Lunet2D e Urbe está em [`audit-post-migration.md`](audit-post-migration.md) e no [plano](import-plan.md).
 
 ## 1. Origens
 
@@ -10,7 +10,7 @@
 | `lunet2d` | https://github.com/AbnerCruz/Lunet2D | sim (DEC-0004) | `apps/lunet2d/` |
 | `urbe` | https://github.com/AbnerCruz/Urbe | sim (DEC-0004) | `apps/urbe/` |
 
-Fonte de verdade: campo `source` em [`ecosystem.json`](../../ecosystem.json). Enquanto `status = not-migrated`, o repositório de origem é a autoridade de código, versão e histórico (NN-001).
+Fonte de verdade: campo `source` em [`ecosystem.json`](../../ecosystem.json). Enquanto `status = not-migrated`, o repositório de origem é a autoridade de código, versão e histórico (NN-001); com `status = active`, a autoridade é `apps/<id>/` e a origem é espelho de distribuição (DEC-0014-A).
 
 ## 2. Antes da migração — inventário obrigatório (MANIFEST §44.1)
 
@@ -102,7 +102,7 @@ O gate adicional **não pode ser marcado como concluído antes da auditoria pós
 - `releases/latest`, tags e releases continuam **por produto**, no formato atual (`v0.0.1-dev.N`, `v1.8.2-beta`…), em cada repositório de origem. Os apps instalados do Urbe continuam atualizando **sem nenhuma mudança de código** (R-URB-1 deixa de ser bloqueio); a mudança de updater é proibida na migração (NN-013).
 - As tags **importadas** para o monorepo seguem DEC-0002 (prefixo `<id>/`); isso não afeta as tags publicadas nos repositórios de origem.
 - Os repositórios de origem **permanecem vivos** como canal de distribuição: **não arquivar** (um repositório arquivado não recebe releases) e **sem desenvolvimento novo**: depois da importação, o código só evolui no monorepo (NN-001).
-- **Mecanismo (PROPOSTA em DEC-0014, ainda não decidida):** o plano [`import-plan.md`](import-plan.md) §7 evita qualquer ação manual do proprietário: em vez de o monorepo publicar nas origens (o que exigiria token cross-repo e recriar os secrets de assinatura), cada origem **puxa** `apps/<id>` e continua construindo e publicando com seus próprios pipelines e secrets. O resultado para o usuário é o descrito acima (releases por produto, na origem). Se DEC-0014 escolher a variante com pipeline no monorepo, valem as ações do proprietário do plano (token, secrets, Pages).
+- **Mecanismo (decidido em DEC-0014-A):** o monorepo **não** publica nas origens (isso exigiria token cross-repo e recriar os secrets de assinatura). Cada origem **puxa** `apps/<id>` (`.github/origin-sync/`, [`import-plan.md`](import-plan.md) §7) e continua construindo e publicando com seus próprios pipelines e secrets; o resultado para o usuário é o descrito acima (releases por produto, na origem). Disparo da sincronização: DEC-0017-A.
 - O `versionCode` do Android do Lunet2D hoje é o `run_number` do CI do repositório de origem (R-LUN-1): no desenho proposto a origem continua gerando o número, então **a sequência continua sozinha** (sem offset).
 
 **Urbe Web (DEC-0009-A).** O Urbe Web **continua sendo servido por `AbnerCruz/Urbe`** (Pages): o pipeline do monorepo publica o **site estático** gerado de `apps/urbe/` no Pages desse repositório. URL, escopo do service worker e PWAs instalados **não mudam**. O mecanismo exato é detalhado em [`import-plan.md`](import-plan.md) §7.4 (proposta: a `main` da origem passa a ser um espelho de `apps/urbe`, sem trocar a fonte do Pages); o conteúdo publicado é artefato **gerado** e declara sua fonte no commit (NN-001).

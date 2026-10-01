@@ -2,23 +2,28 @@
 
 Plataforma modular para desenvolver, executar, observar, combinar e evoluir aplicativos, ferramentas, workspaces, agentes e serviços sob uma arquitetura comum — preservando a independência de cada produto.
 
-Produtos principais iniciais:
+Produtos principais: **Lunet2D** (desenvolvimento de jogos 2D: framework, runtime e tooling), **Urbe** (workspace de conhecimento, documentos e organização) e o **Ecosystem Hub** (Control Plane, Host geral, Registry e Launcher). Cada um mantém lifecycle e versão próprios.
 
-| ID | Produto | Estado no monorepo |
-|----|---------|--------------------|
-| `lunet2d` | **Lunet2D** — desenvolvimento de jogos 2D (framework, runtime, tooling) | não migrado |
-| `urbe` | **Urbe** — workspace de conhecimento, documentos e organização | não migrado |
-| `hub` | **Ecosystem Hub** — Control Plane, Host geral, Registry e Launcher | planejado |
-
-A fonte de verdade desta tabela é [`ecosystem.json`](ecosystem.json); este README é apenas navegação.
+> **Estado vivo não mora aqui.** Este README é navegação e explicação estável: ele **não** declara fase, status de componente nem andamento. Fontes (uma por pergunta):
+>
+> | Pergunta | Autoridade |
+> |----------|-----------|
+> | Quais componentes existem, onde vivem e em que estado (`status`) | [`ecosystem.json`](ecosystem.json) |
+> | Qual fase, qual gate está aprovado, qual é a próxima tarefa | [`ROADMAP.md`](ROADMAP.md) |
+> | Qual tarefa está em andamento | Issues do GitHub (`state:<estado>`) |
+> | O que terminou e com que evidência | [`docs/governance/handoffs/`](docs/governance/handoffs/) |
+> | O que depende do proprietário (decisões e validações pendentes) | o portal, derivado de `decisions.json` e dos handoffs |
+> | Versão, releases e validação de cada build | o portal, derivado das releases e de [`docs/validation/`](docs/validation/) |
+>
+> Para ver tudo isso de uma vez: o portal (abaixo).
 
 ## Portal
 
 **https://abnercruz.github.io/Ecosystem/** — portal humano de desenvolvimento, distribuição, documentação, testes e recuperação (GitHub Pages). É uma projeção gerada das fontes canônicas, não fonte de verdade, e não é o Ecosystem Hub. Veja [`docs/architecture/portal.md`](docs/architecture/portal.md).
 
-## Estado atual
+## Onde estão os produtos
 
-**Fase 0 — Constituição.** O repositório contém a fundação documental e os checks de consistência. Nenhum produto foi importado ainda. Veja [`ROADMAP.md`](ROADMAP.md) para a próxima tarefa e o motivo.
+O código de Lunet2D e Urbe vive em `apps/lunet2d/` e `apps/urbe/` deste repositório, com o histórico preservado (`ecosystem.json` é a fonte do `status` de cada um). Os repositórios `AbnerCruz/Lunet2D` e `AbnerCruz/Urbe` são **espelhos de distribuição** (releases e Urbe Web; arranjo transitório, DEC-0008/DEC-0009): o código só muda aqui. Detalhes: [`docs/migration/README.md`](docs/migration/README.md).
 
 ## Por onde começar
 

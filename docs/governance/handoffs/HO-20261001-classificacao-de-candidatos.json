@@ -13,10 +13,10 @@
   "blockers": [],
   "cost": null,
   "message_id": "HO-20261001-classificacao-de-candidatos",
-  "timestamp": "2026-10-01T12:00:00Z",
+  "timestamp": "2026-10-01T13:00:00Z",
   "task_id": "P1-12",
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "files_changed": [
     "docs/architecture/candidates.md",
     "docs/architecture/refactoring.md",
@@ -29,7 +29,8 @@
   "work_completed": [
     "P1-12: classificação consolidada dos candidatos (docs/architecture/candidates.md), a partir dos mapas dos inventários reconferidos no monorepo; distingue refatoração interna (R) de extração para o Ecosystem (X) e sugere a ordem (U-R1, L-R2, L-R1, L-R4/L-R3; extrações só após a Fase 2).",
     "ADR-0009 (Proposto) e guia docs/architecture/refactoring.md com as regras do passo 10; DEC-0018 no portal para ratificar.",
-    "Nada foi extraído, movido nem refatorado."
+    "Nada foi extraído, movido nem refatorado.",
+    "DEC-0018 decidida (A) e ADR-0009 aceito."
   ],
   "verification": [
     {
@@ -56,12 +57,9 @@
     "Classificação é proposta; os papéis com confiança 'média' podem mudar quando a refatoração começar."
   ],
   "next_actions": [
-    "Proprietário: revisar candidates.md, decidir DEC-0018 e aprovar o gate da Fase 1 no portal.",
-    "Depois: refatorações R pelo guia; Fase 2 (contratos) em paralelo para habilitar extrações X."
+    "Fase 2 (plano) e refatorações dos aplicativos pelo ADR-0009; ver ROADMAP 'Próxima tarefa'."
   ],
-  "decisions_required": [
-    "DEC-0018"
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",

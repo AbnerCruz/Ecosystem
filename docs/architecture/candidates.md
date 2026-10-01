@@ -1,7 +1,7 @@
 # Classificação de candidatos (P1-12)
 
 > **PROPOSTA**, não autorização. Classifica o que existe hoje em Lunet2D e Urbe nos papéis do modelo de produto (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter; [`product-model.md`](product-model.md), ADD-0002). **Nada foi extraído, movido nem refatorado** por este documento (passo 9 de [`docs/migration/README.md`](../migration/README.md) §7). Refatorar e extrair é o passo 10, governado por [`refactoring.md`](refactoring.md) e pelo ADR-0009.
-> **Revisão:** pendente do proprietário no portal (objeto: este documento).
+> **Revisão:** aprovada pelo proprietário em 2026-10-01 (P1-12, Issue #27). A classificação continua sendo proposta de trabalho: papéis com confiança "média" podem mudar durante a refatoração.
 
 ## 1. Base: os mapas continuam válidos depois da migração (FATO, 2026-10-01)
 

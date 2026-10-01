@@ -399,6 +399,23 @@ if (records.Count > 0)
     File.WriteAllText(P("site/testing/index.html"), "<!doctype html>\n<html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Validações por build</title><link rel=\"stylesheet\" href=\"../style.css\"></head><body><header class=\"top\"><h1>Validações por build</h1><p class=\"meta\"><a href=\"../\">portal</a></p></header><main><section><ul>" + rows + "</ul></section></main></body></html>\n");
 }
 
+// --- fases e gates: derivados do ROADMAP (a autoridade), nunca digitados ---
+var roadmapGates = new JsonArray();
+if (File.Exists(P("ROADMAP.md")))
+{
+    sources.Add("ROADMAP.md");
+    var rtext = File.ReadAllText(P("ROADMAP.md"));
+    var heads = System.Text.RegularExpressions.Regex.Matches(rtext, @"^## (.*)$", System.Text.RegularExpressions.RegexOptions.Multiline).ToList();
+    for (var hi = 0; hi < heads.Count; hi++)
+    {
+        var hm = System.Text.RegularExpressions.Regex.Match(heads[hi].Groups[1].Value, @"^Fase (\d+) — ");
+        if (!hm.Success) continue;
+        var body = rtext[heads[hi].Index..(hi + 1 < heads.Count ? heads[hi + 1].Index : rtext.Length)];
+        var gm = System.Text.RegularExpressions.Regex.Match(body, @"^\*Estado do gate:\* \*\*(aprovado|aguardando|não iniciado)\*\*", System.Text.RegularExpressions.RegexOptions.Multiline);
+        roadmapGates.Add(new JsonObject { ["phase"] = int.Parse(hm.Groups[1].Value), ["state"] = gm.Success ? gm.Groups[1].Value : "não iniciado" });
+    }
+}
+
 var result = new JsonObject
 {
     ["schema"] = "ecosystem/contracts/ecosystem-status/1",
@@ -418,6 +435,8 @@ var result = new JsonObject
     {
         ["name"] = S(eco["ecosystem"]!["name"]),
         ["phase"] = S(eco["ecosystem"]!["phase"]),
+        ["gates"] = roadmapGates,
+        ["gatesSource"] = "ROADMAP.md (linha 'Estado do gate' de cada fase)",
         ["checks"] = checksDatum,
     },
     ["components"] = components,

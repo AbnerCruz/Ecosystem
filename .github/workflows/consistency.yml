@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  issues: read
 
 jobs:
   consistency:
@@ -14,9 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Instantâneo das Issues (ROADMAP × Issues, DEC-0003)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p site/data
+          gh issue list --state all --limit 500 --json number,title,state,labels > site/data/issues-snapshot.json
       - name: Consistency checks
         run: dotnet run tests/consistency/Check.cs
       - name: Self-test (each check detects its violation)

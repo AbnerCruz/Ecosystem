@@ -156,8 +156,9 @@ function render(s) {
   const phase = s.ecosystem.phase.replace(/^phase-/, "Fase ");
   const checks = s.ecosystem.checks;
   const meta = document.getElementById("meta");
+  const approved = (s.ecosystem.gates || []).filter((g) => g.state === "aprovado").map((g) => g.phase);
   meta.replaceChildren(
-    `${phase} · checks de consistência: `,
+    `${phase} · gates aprovados: ${approved.length ? approved.join(", ") : "nenhum"} · checks de consistência: `,
     checks.availability === "derived"
       ? (checks.url ? link(checks.url, CHECK_LABELS[checks.value] || checks.value) : CHECK_LABELS[checks.value] || checks.value)
       : el("span", { class: "na" }, "não disponível"));

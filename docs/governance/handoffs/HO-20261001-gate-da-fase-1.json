@@ -13,16 +13,17 @@
   "blockers": [],
   "cost": null,
   "message_id": "HO-20261001-gate-da-fase-1",
-  "timestamp": "2026-10-01T12:05:00Z",
+  "timestamp": "2026-10-01T13:00:00Z",
   "task_id": "P1-13",
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "files_changed": [
     "ROADMAP.md",
     "docs/governance/handoffs/HO-20261001-gate-da-fase-1.json"
   ],
   "work_completed": [
-    "Evidências do gate da Fase 1 reunidas no ROADMAP (seção 'Estado do gate' da Fase 1)."
+    "Evidências do gate da Fase 1 reunidas no ROADMAP (seção 'Estado do gate' da Fase 1).",
+    "Gate aprovado pelo proprietário (Issue #28)."
   ],
   "verification": [
     {
@@ -55,7 +56,7 @@
     "Risco residual aceito: release.yml do Urbe será exercitado na primeira release do Urbe pelo novo caminho."
   ],
   "next_actions": [
-    "Proprietário: aprovar ou reprovar o gate no portal."
+    "Fase 2 (plano) e refatorações dos aplicativos pelo ADR-0009; ver ROADMAP 'Próxima tarefa'."
   ],
   "decisions_required": [],
   "normative_sources": [

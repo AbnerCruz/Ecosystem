@@ -1,0 +1,10 @@
+{
+  "component": "urbe",
+  "origin": "https://github.com/AbnerCruz/Urbe",
+  "origin_main": "662ca5b19b2e63bc8ca5ce17911a8a061521774c",
+  "imported_tip": "f14c28f2bc8f1b44009c21102d53dd9c9b9ec163",
+  "commits": 382,
+  "tags": 6,
+  "imported_tree": "8f4f53dbbfd1c46dfb8a3c44ab29bd6d7ec43c89",
+  "note": "Registro da importação (P1-4/P1-5). imported_tip é a ponta da main original após git filter-repo; CHK-MIGRATION-HISTORY exige que seja ancestral do HEAD com exatamente 'commits' commits e que as tags de tags-<id>.txt existam. imported_tree é o hash da árvore apps/<id> na importação (idêntica à da origem)."
+}

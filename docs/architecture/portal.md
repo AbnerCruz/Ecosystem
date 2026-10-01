@@ -41,6 +41,7 @@ Autoridade do formato: [`docs/contracts/schemas/ecosystem-status.schema.json`](.
 | `kind`, `authority` | sempre `projection` / `false` |
 | `source` | repositório, ref, commit e lista de arquivos canônicos lidos |
 | `ecosystem` | nome, fase e resultado dos checks de consistência do commit projetado |
+| `ecosystem.gates[]` | estado do gate de cada fase, derivado do ROADMAP (`*Estado do gate:*`); `CHK-PORTAL` recusa divergência |
 | `components[]` | ID, nome, tipo, status, descrição, links (repositório, releases, web) e os dados `version`, `release`, `ci` com proveniência; `artifacts[]` (APK, instalador Windows, AppImage da última release, com tamanho e SHA-256; P1-9); `validation.state` |
 | `pendingValidations[]` | validações humanas pendentes derivadas dos registros canônicos (hoje, handoffs) |
 | `docs[]` | documentação canônica com link |

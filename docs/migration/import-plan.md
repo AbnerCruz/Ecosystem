@@ -1,7 +1,7 @@
 # Plano de importação de Lunet2D e Urbe (P1-3)
 
 > **Autoridade:** normativa para as tarefas P1-4 a P1-8, subordinada a MANIFEST §11.2 e §44, NN-012, NN-013, NN-014, NN-023, ao [`README.md`](README.md) desta pasta e às decisões DEC-0002, DEC-0004, DEC-0008 e DEC-0009.
-> **Estado:** **plano. Nada foi importado.** A execução depende da decisão de aprovação **DEC-0014** (pendente, visível no portal).
+> **Estado:** plano **aprovado (DEC-0014-A) e executado**: P1-4, P1-5, P1-6 e P1-8 concluídos (§7.6.1 e [`audit-post-migration.md`](audit-post-migration.md)). O texto abaixo preserva o plano e as evidências **no momento em que foi escrito** (as frases no futuro e "nada foi importado" são históricas); o estado atual está em `ecosystem.json`, no ROADMAP e nos handoffs.
 > Derivado dos inventários [`inventory-lunet2d.md`](inventory-lunet2d.md) e [`inventory-urbe.md`](inventory-urbe.md). Legenda: **FATO** verificado em ensaio (2026-10-01, diretório temporário); **PROPOSTA** do agente; **NÃO VERIFICADO** depende de comportamento do GitHub que só a primeira execução real confirma (§7.7).
 
 ## 1. Princípio: só decisões para o proprietário
@@ -165,7 +165,7 @@ Comportamentos do GitHub **NÃO VERIFICADOS** nesta sessão (sem acesso a config
 
 ## 10. Decisão de aprovação e critérios de aceite
 
-**DEC-0014** (no portal): aprovar o plano automatizado (recomendado), aprová-lo na variante com pipeline no monorepo (exige que você crie token e secrets e troque o Pages) ou pedir mudanças.
+**DEC-0014** (**decidida: A**): aprovar o plano automatizado (a origem puxa e publica; sem token, secrets nem troca do Pages). As alternativas eram a variante com pipeline no monorepo e pedir mudanças.
 
 **Aceite do PR A de cada produto (evidência no handoff):** commits e tags presentes (contagens do §5 e `commit-map`); hash da árvore `apps/<id>` idêntico ao da `main` de origem; testes do produto no novo caminho iguais à linha de base (286 / 56); `ecosystem.json` atualizado e os checks do Ecosystem verdes; **nenhum** arquivo dentro de `apps/<id>/` editado; fusão por *merge commit*; origem sem commits novos depois do corte.
 **Aceite do PR B e do corte:** primeira sincronização sem alterações; CI por produto só dispara pelos caminhos do produto; uma release de ensaio construída pela origem a partir do espelho **sem afetar `releases/latest` real** (ou com a próxima release real); instalação e atualização em aparelho (NN-017, DEVICE) — essa validação, que só uma pessoa faz, entra no portal com o objeto.

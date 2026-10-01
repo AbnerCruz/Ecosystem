@@ -1,0 +1,10 @@
+{
+  "component": "lunet2d",
+  "origin": "https://github.com/AbnerCruz/Lunet2D",
+  "origin_main": "be30e62c35714b48e7c0be4139efa58d02644ee7",
+  "imported_tip": "1fe8e82f0816d263952b86926609c976f373f3cc",
+  "commits": 84,
+  "tags": 25,
+  "imported_tree": "db9f6cd51ec796fe4d8b57692fda708c51a4d90c",
+  "note": "Registro da importação (P1-4/P1-5). imported_tip é a ponta da main original após git filter-repo; CHK-MIGRATION-HISTORY exige que seja ancestral do HEAD com exatamente 'commits' commits e que as tags de tags-<id>.txt existam. imported_tree é o hash da árvore apps/<id> na importação (idêntica à da origem)."
+}

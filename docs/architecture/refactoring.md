@@ -1,6 +1,6 @@
 # Guia de refatoração dos produtos (passo 10)
 
-> **Autoridade:** operacional, subordinada ao ADR-0009 (Proposto até DEC-0018) e ao MANIFEST. Vale **depois do gate da Fase 1**. Candidatos e ordem sugerida: [`candidates.md`](candidates.md).
+> **Autoridade:** operacional, subordinada ao ADR-0009 (`Aceito`, DEC-0018-A) e ao MANIFEST. Vale **depois do gate da Fase 1**. Candidatos e ordem sugerida: [`candidates.md`](candidates.md).
 
 ## 1. Qual trilho?
 

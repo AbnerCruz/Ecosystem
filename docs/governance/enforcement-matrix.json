@@ -27,7 +27,7 @@
         {
           "mechanism": "CI",
           "status": "implemented",
-          "how": "consistency.yml e pages.yml falham quando há autoridade duplicada (CHK-SINGLE-AUTHORITY) ou quando o portal contém dados canônicos escritos à mão ou uma projeção divergente das fontes.",
+          "how": "consistency.yml e pages.yml falham quando há autoridade duplicada (CHK-SINGLE-AUTHORITY) ou quando o portal contém dados canônicos escritos à mão ou uma projeção divergente das fontes. Cópias de estado volátil são verificadas contra a autoridade por CHK-STATE-CONSISTENCY e CHK-VALIDATION.",
           "check": "CHK-PORTAL"
         }
       ]
@@ -68,9 +68,9 @@
         },
         {
           "mechanism": "TEST",
-          "status": "planned",
-          "how": "Testes de execução standalone de cada produto sem o Hub.",
-          "phase": "phase-1"
+          "status": "implemented",
+          "how": "CI por produto executa só o diretório do produto, sem Hub (lunet2d-ci, urbe-checks); CHK-ARCH-REFS prova que nenhum produto referencia o Hub (P1-6, P1-7).",
+          "check": "CHK-ARCH-REFS"
         },
         {
           "mechanism": "CI",
@@ -286,9 +286,9 @@
         },
         {
           "mechanism": "TEST",
-          "status": "planned",
-          "how": "Auditoria pós-migração: contagem de commits/tags da origem presentes no monorepo.",
-          "phase": "phase-1"
+          "status": "implemented",
+          "how": "Todo commit do commit-map é ancestral do HEAD e toda tag registrada existe no commit registrado (requer histórico completo); auditoria com evidência em docs/migration/audit-post-migration.md (P1-8).",
+          "check": "CHK-MIGRATION-HISTORY"
         },
         {
           "mechanism": "REVIEW",
@@ -314,8 +314,8 @@
         {
           "mechanism": "TEST",
           "status": "planned",
-          "how": "Testes antes/depois da migração de cada produto.",
-          "phase": "phase-1"
+          "how": "Passo 10 (refatoração): testes do produto antes/depois exigidos no PR (CI por produto já os executa; ADR-0009) e verificação automática de escopo restrito (diff fora de apps/<id>). Para a importação, a evidência está nos handoffs de P1-4 e P1-5 (árvore idêntica; 286/286 e 56/56).",
+          "phase": "phase-2"
         }
       ]
     },
@@ -331,9 +331,9 @@
         },
         {
           "mechanism": "CI",
-          "status": "planned",
-          "how": "Pipelines seletivos por componente, derivados de ecosystem.json.",
-          "phase": "phase-1"
+          "status": "implemented",
+          "how": "Todo produto ativo tem workflow com filtro de caminho apps/<id>/** (lunet2d-ci.yml, urbe-checks.yml); releases por produto na origem (P1-6).",
+          "check": "CHK-ARCH-REFS"
         }
       ]
     },
@@ -500,7 +500,7 @@
         {
           "mechanism": "TEST",
           "status": "implemented",
-          "how": "Componentes 'active' devem existir no path declarado; 'planned' e 'not-migrated' não.",
+          "how": "Componentes 'active' devem existir no path declarado; 'planned' e 'not-migrated' não. CHK-STATE-CONSISTENCY: duas fontes estruturadas não podem afirmar estados incompatíveis (ROADMAP × Issues × gates × ecosystem.phase × matriz; ADR-0010).",
           "check": "CHK-SINGLE-AUTHORITY"
         },
         {
@@ -562,15 +562,15 @@
         },
         {
           "mechanism": "TEST",
-          "status": "planned",
-          "how": "Testes standalone: cada Product instala e executa seu domínio essencial sem o Hub presente no pacote nem no ambiente.",
-          "phase": "phase-1"
+          "status": "implemented",
+          "how": "CI por produto sem Hub (lunet2d-ci, urbe-checks) e nenhuma referência ao Hub nos produtos; produtos publicados e validados sem Hub (docs/validation/).",
+          "check": "CHK-ARCH-REFS"
         },
         {
           "mechanism": "CI",
-          "status": "planned",
-          "how": "Release pipeline de cada Product produz e publica o artefato sem incluir nem executar o Hub (junto da restauração de releases, P1-6).",
-          "phase": "phase-1"
+          "status": "implemented",
+          "how": "Release de cada Product pelo espelho de distribuição (.github/origin-sync, DEC-0014-A) sem incluir nem executar o Hub; CHK-ARCH-REFS varre inclusive os pipelines do produto (P1-6).",
+          "check": "CHK-ARCH-REFS"
         },
         {
           "mechanism": "SCHEMA",

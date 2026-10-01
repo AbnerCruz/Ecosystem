@@ -41,6 +41,7 @@ static class Checks
         "CHK-SINGLE-AUTHORITY",
         "CHK-BOUNDARIES",
         "CHK-ARCH-REFS",
+        "CHK-MIGRATION-HISTORY",
         "CHK-GENERIC-DIRS",
         "CHK-SHARED-DECLARATION",
         "CHK-ENFORCEMENT-MATRIX",
@@ -50,6 +51,7 @@ static class Checks
         "CHK-HANDOFFS",
         "CHK-VALIDATION",
         "CHK-ROADMAP",
+        "CHK-STATE-CONSISTENCY",
         "CHK-SECRETS",
         "CHK-PORTAL",
         "CHK-DECISION-FLOW",
@@ -81,6 +83,7 @@ static class Checks
         Guard(r, "CHK-SINGLE-AUTHORITY", () => SingleAuthority(ctx));
         Guard(r, "CHK-BOUNDARIES", () => Boundaries(ctx));
         Guard(r, "CHK-ARCH-REFS", () => ArchRefs(ctx));
+        Guard(r, "CHK-MIGRATION-HISTORY", () => MigrationHistory(ctx));
         Guard(r, "CHK-GENERIC-DIRS", () => GenericDirs(ctx));
         Guard(r, "CHK-SHARED-DECLARATION", () => SharedDeclaration(ctx));
         Guard(r, "CHK-ENFORCEMENT-MATRIX", () => EnforcementMatrix(ctx));
@@ -90,6 +93,7 @@ static class Checks
         Guard(r, "CHK-HANDOFFS", () => Handoffs(ctx));
         Guard(r, "CHK-VALIDATION", () => ValidationRecords(ctx));
         Guard(r, "CHK-ROADMAP", () => Roadmap(ctx));
+        Guard(r, "CHK-STATE-CONSISTENCY", () => StateConsistency(ctx));
         Guard(r, "CHK-SECRETS", () => Secrets(ctx));
         Guard(r, "CHK-PORTAL", () => Portal(ctx));
         Guard(r, "CHK-DECISION-FLOW", () => DecisionFlow(ctx));
@@ -312,6 +316,15 @@ static class Checks
             }
             if (!declared.Contains("hub"))
                 terms.Add(("hub", new Regex(@"ecosystem[ _.-]?hub|apps/hub\b", RegexOptions.IgnoreCase)));
+
+            // NN-014: pipelines seletivos — todo produto ativo tem um workflow na raiz com filtro de caminho para o próprio diretório.
+            var wfDir = c.P(".github/workflows");
+            var selective = Directory.Exists(wfDir) && Directory.EnumerateFiles(wfDir, "*.yml").Any(wf =>
+            {
+                var t = File.ReadAllText(wf);
+                return Regex.IsMatch(t, @"(?m)^\s*paths:") && t.Contains($"'{path}/**'");
+            });
+            if (!selective) c.R.Fail(id, $"produto '{cid}': nenhum workflow em .github/workflows com filtro de caminho '{path}/**' (pipelines seletivos, NN-014)");
 
             var root = c.P(path);
             foreach (var f in Repo.WalkFiles(root))
@@ -636,6 +649,158 @@ static class Checks
                 c.R.Fail(id, $"ROADMAP.md: item marcado como concluído com validação humana pendente: {m.Value.Trim()}");
     }
 
+    // --- CHK-MIGRATION-HISTORY (NN-012; P1-8) ---
+    // O histórico importado continua presente: todo commit do commit-map é ancestral do HEAD e toda tag registrada existe no commit
+    // registrado. Precisa de histórico completo (CI usa fetch-depth: 0); sem git ou com clone raso é "não verificado", nunca aprovado.
+    static (int Code, string Out) Git(string dir, params string[] args)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("git") { WorkingDirectory = dir, RedirectStandardOutput = true, RedirectStandardError = true };
+            foreach (var a in args) psi.ArgumentList.Add(a);
+            using var proc = Process.Start(psi)!;
+            var o = proc.StandardOutput.ReadToEnd(); proc.StandardError.ReadToEnd(); proc.WaitForExit();
+            return (proc.ExitCode, o.Trim());
+        }
+        catch { return (-1, ""); }
+    }
+
+    static void MigrationHistory(Context c)
+    {
+        const string id = "CHK-MIGRATION-HISTORY";
+        c.R.Ran(id);
+        var products = c.Components().Where(x => x.El.Str("type") == "product" && x.El.Str("status") == "active" && x.El.TryGetProperty("source", out _)).ToList();
+        var records = new List<(string Id, JsonElement Rec)>();
+        foreach (var (cid, _) in products)
+        {
+            var f = c.P($"docs/migration/import-{cid}.json");
+            if (!File.Exists(f)) { c.R.Fail(id, $"produto importado '{cid}' sem docs/migration/import-{cid}.json (NN-012)"); continue; }
+            try { records.Add((cid, JsonDocument.Parse(File.ReadAllText(f)).RootElement)); }
+            catch (JsonException e) { c.R.Fail(id, $"import-{cid}.json inválido — {e.Message}"); }
+        }
+        if (records.Count == 0) return;
+        if (Git(c.Root, "rev-parse", "--is-inside-work-tree").Out != "true") { c.R.Note(id, "histórico (não é um repositório git)"); return; }
+        if (Git(c.Root, "rev-parse", "--is-shallow-repository").Out != "false") { c.R.Note(id, "histórico (clone raso; use fetch-depth: 0)"); return; }
+        var tags = Git(c.Root, "for-each-ref", "--format=%(refname:short) %(*objectname) %(objectname)", "refs/tags").Out
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries).Select(l => l.Split(' ')).Where(p => p.Length >= 2)
+            .ToDictionary(p => p[0], p => p.Length > 2 && p[1].Length == 40 ? p[1] : p[^1]);
+        foreach (var (cid, rec) in records)
+        {
+            var tip = rec.Str("imported_tip") ?? "";
+            if (!Regex.IsMatch(tip, "^[0-9a-f]{40}$")) { c.R.Fail(id, $"{cid}: imported_tip inválido"); continue; }
+            if (Git(c.Root, "merge-base", "--is-ancestor", tip, "HEAD").Code != 0) { c.R.Fail(id, $"{cid}: a ponta importada {tip[..8]} não é ancestral do HEAD (NN-012)"); continue; }
+            var count = Git(c.Root, "rev-list", "--count", tip).Out;
+            if (count != rec.GetProperty("commits").GetInt32().ToString()) c.R.Fail(id, $"{cid}: o histórico importado tem {count} commits, esperado {rec.GetProperty("commits").GetInt32()} (NN-012)");
+            var tagFile = c.P($"docs/migration/tags-{cid}.txt");
+            if (!File.Exists(tagFile)) { c.R.Fail(id, $"{cid}: docs/migration/tags-{cid}.txt ausente"); continue; }
+            var lines = File.ReadAllLines(tagFile).Select(l => l.Split(' ', StringSplitOptions.RemoveEmptyEntries)).Where(p => p.Length == 2).ToList();
+            if (lines.Count != rec.GetProperty("tags").GetInt32()) c.R.Fail(id, $"{cid}: tags-{cid}.txt lista {lines.Count} tags, esperado {rec.GetProperty("tags").GetInt32()}");
+            foreach (var l in lines)
+                if (!tags.TryGetValue(l[0], out var sha)) c.R.Fail(id, $"{cid}: tag {l[0]} ausente (NN-012)");
+                else if (sha != l[1]) c.R.Fail(id, $"{cid}: tag {l[0]} aponta para {sha[..8]}, esperado {l[1][..8]} (NN-012)");
+        }
+    }
+
+    // --- CHK-STATE-CONSISTENCY (ADR-0010; NN-001, NN-017, NN-021) ---
+    // Deriva semântica: duas fontes ESTRUTURADAS afirmando estados incompatíveis. Nunca procura palavras em prosa.
+    // Fontes: linhas de formato fixo do ROADMAP (itens `- [x] P1-3 —` e `*Estado do gate:* **aprovado**`), ecosystem.json,
+    // decisions.json, matriz de enforcement e (quando existe) o instantâneo das Issues em site/data/issues-snapshot.json
+    // (gerado pelo CI com `gh issue list --json number,title,state,labels`; ausente = "não verificado", nunca aprovado em silêncio).
+    sealed record RoadmapPhase(int Number, string Gate, List<(string Id, char Mark)> Items);
+
+    static List<RoadmapPhase> ParseRoadmap(string text)
+    {
+        var phases = new List<RoadmapPhase>();
+        var heads = Regex.Matches(text, @"^## (.*)$", RegexOptions.Multiline).ToList();
+        for (var i = 0; i < heads.Count; i++)
+        {
+            var m = Regex.Match(heads[i].Groups[1].Value, @"^Fase (\d+) — ");
+            if (!m.Success) continue;
+            var end = i + 1 < heads.Count ? heads[i + 1].Index : text.Length;
+            var body = text[heads[i].Index..end];
+            var gate = Regex.Match(body, @"^\*Estado do gate:\* \*\*(aprovado|aguardando|não iniciado)\*\*", RegexOptions.Multiline) is { Success: true } g ? g.Groups[1].Value : "não iniciado";
+            var items = Regex.Matches(body, @"^- \[( |~|x)\] (P\d+-\d+) ", RegexOptions.Multiline).Select(x => (x.Groups[2].Value, x.Groups[1].Value[0])).ToList();
+            phases.Add(new RoadmapPhase(int.Parse(m.Groups[1].Value), gate, items));
+        }
+        return phases;
+    }
+
+    static void StateConsistency(Context c)
+    {
+        const string id = "CHK-STATE-CONSISTENCY";
+        c.R.Ran(id);
+        if (!File.Exists(c.P("ROADMAP.md"))) return;
+        var phases = ParseRoadmap(File.ReadAllText(c.P("ROADMAP.md")));
+        var approved = phases.Where(p => p.Gate == "aprovado").Select(p => p.Number).ToHashSet();
+
+        // 1. Gate aprovado não tem itens da fase abertos.
+        foreach (var p in phases.Where(p => p.Gate == "aprovado"))
+            foreach (var (tid, mark) in p.Items.Where(i => i.Mark != 'x'))
+                c.R.Fail(id, $"ROADMAP: o gate da Fase {p.Number} está 'aprovado', mas {tid} continua {(mark == '~' ? "[~]" : "[ ]")}");
+
+        // 2. ecosystem.phase coerente com os gates e com as tarefas iniciadas.
+        if (c.Ecosystem is { } eco && eco.TryGetProperty("ecosystem", out var e) && e.Str("phase") is { } ph && Regex.Match(ph, @"^phase-(\d+)$") is { Success: true } pm)
+        {
+            var n = int.Parse(pm.Groups[1].Value);
+            foreach (var k in phases.Where(p => p.Number < n && p.Gate != "aprovado"))
+                c.R.Fail(id, $"ecosystem.phase = {ph}, mas o gate da Fase {k.Number} não está aprovado no ROADMAP");
+            foreach (var k in phases.Where(p => p.Number > n && p.Items.Any(i => i.Mark != ' ')))
+                c.R.Fail(id, $"ecosystem.phase = {ph}, mas a Fase {k.Number} já tem tarefas iniciadas no ROADMAP");
+        }
+
+        // 3. ROADMAP × Issues (DEC-0003).
+        var snap = c.P("site/data/issues-snapshot.json");
+        if (!File.Exists(snap)) c.R.Note(id, "ROADMAP × Issues (instantâneo das Issues ausente: gere site/data/issues-snapshot.json com `gh issue list --state all --json number,title,state,labels`)");
+        else
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(snap));
+            var issues = doc.RootElement.EnumerateArray().Select(i => (
+                Number: i.GetProperty("number").GetInt32(),
+                Title: i.Str("title") ?? "",
+                Open: string.Equals(i.Str("state"), "OPEN", StringComparison.OrdinalIgnoreCase),
+                State: i.Arr("labels").Select(l => l.ValueKind == JsonValueKind.String ? l.GetString()! : l.Str("name")!).FirstOrDefault(l => l?.StartsWith("state:") == true)?.Substring(6))).ToList();
+            foreach (var (tid, mark) in phases.SelectMany(p => p.Items))
+            {
+                var mine = issues.Where(i => Regex.IsMatch(i.Title, $@"^{Regex.Escape(tid)}(\s|$)")).ToList();
+                if (mark == 'x')
+                    foreach (var i in mine)
+                    {
+                        if (i.Open) c.R.Fail(id, $"{tid} está [x] no ROADMAP, mas a Issue #{i.Number} continua aberta (DEC-0003)");
+                        else if (i.State is not (null or "done")) c.R.Fail(id, $"{tid} está [x] no ROADMAP, mas a Issue #{i.Number} tem state:{i.State}");
+                    }
+                else if (mark == '~')
+                {
+                    if (!mine.Any(i => i.Open && i.State != "done")) c.R.Fail(id, $"{tid} está [~] (em andamento/aguardando), mas não há Issue aberta com state:<estado> da tarefa (DEC-0003)");
+                }
+            }
+        }
+
+        // 4. "Não decidido" de ARCHITECTURE.md só cita decisões pendentes (ou transitórias).
+        if (File.Exists(c.P("ARCHITECTURE.md")))
+        {
+            var arch = File.ReadAllText(c.P("ARCHITECTURE.md"));
+            var sec = Regex.Match(arch, @"^### 8\.2 Não decidido.*?(?=^## |^### |\z)", RegexOptions.Multiline | RegexOptions.Singleline);
+            if (sec.Success)
+            {
+                var decisions = c.DecisionList().ToDictionary(d => d.Str("id")!, d => d);
+                foreach (Match m in Regex.Matches(sec.Value, @"DEC-\d{4}"))
+                    if (!decisions.TryGetValue(m.Value, out var d)) c.R.Fail(id, $"ARCHITECTURE.md §8.2 cita {m.Value}, que não existe em decisions.json");
+                    else if (d.Str("status") != "pending" && !d.TryGetProperty("transitional", out _))
+                        c.R.Fail(id, $"ARCHITECTURE.md §8.2 apresenta {m.Value} como não decidido, mas ela está '{d.Str("status")}'");
+            }
+        }
+
+        // 5. Matriz de enforcement: mecanismo planejado para uma fase cujo gate já foi aprovado é plano vencido.
+        if (File.Exists(c.P("docs/governance/enforcement-matrix.json")))
+        {
+            using var mx = JsonDocument.Parse(File.ReadAllText(c.P("docs/governance/enforcement-matrix.json")));
+            foreach (var inv in mx.RootElement.Arr("invariants"))
+                foreach (var mech in inv.Arr("mechanisms").Where(x => x.Str("status") == "planned"))
+                    if (mech.Str("phase") is { } mp && Regex.Match(mp, @"^phase-(\d+)$") is { Success: true } mm && approved.Contains(int.Parse(mm.Groups[1].Value)))
+                        c.R.Fail(id, $"enforcement-matrix: {inv.Str("id")} {mech.Str("mechanism")} ainda 'planned' para {mp}, cujo gate já foi aprovado (implementar, reclassificar ou re-faseá-lo)");
+        }
+    }
+
     // --- CHK-SECRETS (MANIFEST §30.2) ---
     static void Secrets(Context c)
     {
@@ -756,6 +921,14 @@ static class Checks
             c.R.Fail(id, $"{rel}: fase diverge de ecosystem.json");
         if (p.GetProperty("source").Str("repository") != eco.Str("repository"))
             c.R.Fail(id, $"{rel}: repositório diverge de ecosystem.json");
+
+        if (File.Exists(c.P("ROADMAP.md")))
+        {
+            var expectedGates = ParseRoadmap(File.ReadAllText(c.P("ROADMAP.md"))).Select(x => $"{x.Number}:{x.Gate}").Order().ToList();
+            var projectedGates = p.GetProperty("ecosystem").Arr("gates").Select(x => $"{x.GetProperty("phase").GetInt32()}:{x.Str("state")}").Order().ToList();
+            if (!expectedGates.SequenceEqual(projectedGates))
+                c.R.Fail(id, $"{rel}: os gates projetados divergem do ROADMAP (ROADMAP: {string.Join(" ", expectedGates)}; projeção: {string.Join(" ", projectedGates)})");
+        }
 
         var canonical = new Dictionary<string, JsonElement>();
         foreach (var (k, v) in c.Components()) canonical.TryAdd(k, v); // duplicatas são reportadas por CHK-IDS-UNIQUE
@@ -888,6 +1061,8 @@ sealed class Report
     public bool Failed => failures.Count > 0;
     public void Ran(string id) { if (!ran.Contains(id)) ran.Add(id); }
     public void Fail(string id, string msg) { Ran(id); failures.Add((id, msg, false)); }
+    readonly List<(string Check, string Message)> notes = [];
+    public void Note(string id, string msg) { Ran(id); notes.Add((id, msg)); }
     public void Crash(string id, string msg) { Ran(id); failures.Add((id, "erro interno do check — " + msg, true)); }
     public bool FailedCheck(string id) => failures.Any(f => f.Check == id && !f.Crash);
     public bool Crashed => failures.Any(f => f.Crash);
@@ -899,6 +1074,7 @@ sealed class Report
             var mine = failures.Where(f => f.Check == id).ToList();
             w.WriteLine($"{(mine.Count == 0 ? "PASS" : "FAIL")}  {id}");
             foreach (var f in mine) w.WriteLine($"      - {f.Message}");
+            foreach (var n in notes.Where(n => n.Check == id)) w.WriteLine($"      ~ não verificado: {n.Message}");
         }
         w.WriteLine();
         w.WriteLine(Failed
@@ -1190,6 +1366,29 @@ static class SelfTest
                 RunGenerator(r);
                 Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true));
             }),
+        // --- deriva semântica (ADR-0010): duas fontes estruturadas com estados incompatíveis ---
+        new("Caso A: ROADMAP [x] com Issue em state:review", "CHK-STATE-CONSISTENCY",
+            r => { Directory.CreateDirectory(Path.Combine(r, "site", "data")); File.WriteAllText(Path.Combine(r, "site", "data", "issues-snapshot.json"), "[{\"number\":6,\"title\":\"P1-3 — Plano\",\"state\":\"OPEN\",\"labels\":[{\"name\":\"state:review\"}]}]"); }),
+        new("tarefa [~] sem Issue aberta", "CHK-STATE-CONSISTENCY",
+            r => { Directory.CreateDirectory(Path.Combine(r, "site", "data")); File.WriteAllText(Path.Combine(r, "site", "data", "issues-snapshot.json"), "[]"); Replace(r, "ROADMAP.md", "- [x] P1-12 —", "- [~] P1-12 —"); }),
+        new("gate aprovado com item da fase aberto", "CHK-STATE-CONSISTENCY",
+            r => Replace(r, "ROADMAP.md", "- [x] P0-1 —", "- [ ] P0-1 —")),
+        new("ecosystem.phase atrás do ROADMAP", "CHK-STATE-CONSISTENCY",
+            r => Replace(r, "ecosystem.json", "\"phase\": \"phase-1\"", "\"phase\": \"phase-0\"")),
+        new("ARCHITECTURE apresenta decisão já decidida como não decidida", "CHK-STATE-CONSISTENCY",
+            r => Replace(r, "ARCHITECTURE.md", "(DEC-0019)", "(DEC-0018)")),
+        new("matriz com mecanismo planned de fase já aprovada", "CHK-STATE-CONSISTENCY",
+            r => Replace(r, "docs/governance/enforcement-matrix.json", "\"phase\": \"phase-2\"\n        }\n      ]", "\"phase\": \"phase-1\"\n        }\n      ]")),
+        new("produto importado sem registro de importação", "CHK-MIGRATION-HISTORY",
+            r => File.Delete(Path.Combine(r, "docs", "migration", "import-urbe.json"))),
+        new("portal mostra gate não aprovado como aprovado", "CHK-PORTAL",
+            r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"phase\": 2,\n        \"state\": \"não iniciado\"", "\"phase\": 2,\n        \"state\": \"aprovado\"")); }),
+        new("Caso B: produto active no ecosystem.json, projeção diz not-migrated", "CHK-PORTAL",
+            r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"active\"", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"not-migrated\""); }),
+        new("Caso C: decisão decided, projeção ainda a mostra pendente", "CHK-PORTAL",
+            r => { RunGenerator(r); Replace(r, "docs/governance/decisions.json", "\"id\": \"DEC-0019\",\n      \"status\": \"pending\"", "\"id\": \"DEC-0019\",\n      \"status\": \"decided\""); }),
+        new("Caso D: build VALIDATED no registro, projeção diz HUMAN_VALIDATION_PENDING", "CHK-PORTAL",
+            r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"state\": \"VALIDATED\"", "\"state\": \"HUMAN_VALIDATION_PENDING\"")); }),
         new("workflow de decisão sem a guarda do dono", "CHK-DECISION-FLOW",
             r => Replace(r, ".github/workflows/decision.yml", "github.event.issue.user.login == github.repository_owner && ", "")),
         new("texto da Issue interpolado em script", "CHK-DECISION-FLOW",
@@ -1232,6 +1431,7 @@ static class SelfTest
         failures += ApplierTests(repoRoot);
         failures += ValidationApplierTests(repoRoot);
         failures += OriginSyncTests(repoRoot);
+        failures += MigrationHistoryTests(repoRoot);
 
         foreach (var id in Checks.Ids.Where(i => !covered.Contains(i)))
         {
@@ -1432,12 +1632,51 @@ static class SelfTest
         return failures;
     }
 
+    /// <summary>Prova CHK-MIGRATION-HISTORY num repositório git sintético: ponta fora do histórico, contagem errada, tag ausente/errada e o caso íntegro.</summary>
+    static int MigrationHistoryTests(string repoRoot)
+    {
+        var failures = 0;
+        void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  histórico migrado: {name}"); if (!ok) failures++; }
+        var tmp = Path.Combine(Path.GetTempPath(), "ecosystem-history-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Copy(repoRoot, tmp);
+            var g = new Dictionary<string, string> { ["GIT_AUTHOR_NAME"] = "t", ["GIT_AUTHOR_EMAIL"] = "t@t", ["GIT_COMMITTER_NAME"] = "t", ["GIT_COMMITTER_EMAIL"] = "t@t" };
+            void G(params string[] a) => Sh(tmp, "git", a, g);
+            G("init", "-q", "-b", "main"); G("add", "-A"); G("commit", "-qm", "base");
+            var head = Sh(tmp, "git", ["rev-parse", "HEAD"], g).Output;
+            bool Fails() => Checks.RunAll(tmp).FailedCheck("CHK-MIGRATION-HISTORY");
+            Report(Fails(), "ponta importada que não está no histórico é detectada");
+
+            foreach (var cid in new[] { "lunet2d", "urbe" })
+            {
+                var f = Path.Combine(tmp, "docs", "migration", $"import-{cid}.json");
+                var text = File.ReadAllText(f);
+                text = Regex.Replace(text, "\"imported_tip\": \"[0-9a-f]{40}\"", $"\"imported_tip\": \"{head}\"");
+                text = Regex.Replace(text, "\"commits\": \\d+", "\"commits\": 1");
+                File.WriteAllText(f, text);
+                foreach (var l in File.ReadAllLines(Path.Combine(tmp, "docs", "migration", $"tags-{cid}.txt")).Select(x => x.Split(' ')).Where(p => p.Length == 2))
+                    G("tag", l[0], head);
+                File.WriteAllText(Path.Combine(tmp, "docs", "migration", $"tags-{cid}.txt"), string.Join("\n", File.ReadAllLines(Path.Combine(tmp, "docs", "migration", $"tags-{cid}.txt")).Select(x => x.Split(' ')[0] + " " + head)) + "\n");
+            }
+            Report(!Fails(), "histórico, contagem e tags íntegros passam");
+            G("tag", "-d", "urbe/v1.8.2-beta");
+            Report(Fails(), "tag ausente é detectada");
+            G("tag", "urbe/v1.8.2-beta", Sh(tmp, "git", ["commit-tree", "HEAD^{tree}", "-m", "x"], g).Output);
+            Report(Fails(), "tag apontando para outro commit é detectada");
+        }
+        catch (Exception e) { Report(false, "execução: " + e.Message); }
+        finally { try { if (Directory.Exists(tmp)) { foreach (var f in Directory.EnumerateFiles(tmp, "*", SearchOption.AllDirectories)) File.SetAttributes(f, FileAttributes.Normal); Directory.Delete(tmp, true); } } catch { } }
+        return failures;
+    }
+
     static void Copy(string from, string to)
     {
         Directory.CreateDirectory(to);
         foreach (var f in Repo.WalkFiles(from))
         {
             var rel = Path.GetRelativePath(from, f);
+            if (rel.Replace('\\', '/') == "site/data/issues-snapshot.json") continue; // o instantâneo é de ambiente; as fixtures criam o seu
             var dest = Path.Combine(to, rel);
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             File.Copy(f, dest);

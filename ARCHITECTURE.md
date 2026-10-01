@@ -33,7 +33,7 @@ As definições normativas de Product … Contract estão no `MANIFEST.md` §6. 
 
 O mapa canônico dos componentes é [`ecosystem.json`](ecosystem.json) (formato: [`docs/contracts/schemas/ecosystem.schema.json`](docs/contracts/schemas/ecosystem.schema.json)).
 
-Nenhum componente compartilhado existe ainda. Para criar um, é obrigatório responder ao critério de MANIFEST §48 e às cinco perguntas de NN-022, registrar ADR e declarar em `ecosystem.json` `responsibility`, `contract`, `consumers`, `owners`, `compatibility` e `extractionReason` (verificado por `CHK-SHARED-DECLARATION`).
+Para criar um componente compartilhado (`platform/`, `workspaces/`, `tools/`, Service), é obrigatório responder ao critério de MANIFEST §48 e às cinco perguntas de NN-022, registrar ADR e declarar em `ecosystem.json` `responsibility`, `contract`, `consumers`, `owners`, `compatibility` e `extractionReason` (verificado por `CHK-SHARED-DECLARATION`). Quais componentes existem hoje, e em que `status`, é o que `ecosystem.json` diz — este documento não o replica.
 
 ## 4. Boundaries (MANIFEST §12)
 
@@ -57,7 +57,7 @@ Tool / componente compartilhado → Product/Host concreto (NN-007, MANIFEST §12
 *       → Portal (qualquer)   (ADD-0001: o portal nunca é dependência)
 ```
 
-**Estado da fiscalização:** as regras acima são verificadas hoje sobre o **grafo declarado** em `ecosystem.json` (`CHK-BOUNDARIES`). A verificação sobre **referências reais de código** (csproj, package.json, imports) é planejada para a Fase 1, quando houver código importado (ver [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json)).
+**Fiscalização:** o grafo **declarado** em `ecosystem.json` é verificado por `CHK-BOUNDARIES`; as **referências reais de código** dos produtos ativos (referência a outro Product ou ao Hub, `ProjectReference`/`file:`/`link:` para fora do produto) por `CHK-ARCH-REFS`. O mapeamento invariante → mecanismo e seu estado é [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json) (a autoridade; não copiado aqui).
 
 Exceções exigem ADR e alteração explícita do check.
 
@@ -68,12 +68,14 @@ Exceções exigem ADR e alteração explícita do check.
 | Princípios e invariantes | `MANIFEST.md` | `AGENTS.md` reproduz; não substitui. |
 | Componentes do ecossistema | `ecosystem.json` | Único manifest raiz (`CHK-SINGLE-AUTHORITY`). |
 | Formato dos registros | `docs/contracts/schemas/*.schema.json` | O check valida contra eles; não duplica o formato. |
-| Código, versão e histórico de Lunet2D/Urbe | repositórios de origem, enquanto `status = not-migrated` | Ver `source` e `version.authority` em `ecosystem.json`. |
+| Código, versão e histórico de Lunet2D/Urbe | `apps/<id>/` deste repositório quando `status = active`; o repositório de origem enquanto `status = not-migrated` | Ver `source`, `path` e `version.authority` em `ecosystem.json`. Com o produto `active`, o repositório de origem é **espelho de distribuição** (releases e Urbe Web; DEC-0008/DEC-0009 transitórias, DEC-0014): nunca autoridade de código. |
 | Mapeamento NN → fiscalização | `docs/governance/enforcement-matrix.json` | |
 | Decisões pendentes/tomadas do proprietário | `docs/governance/decisions.json` | Decisão tomada aponta para ADR/SPEC/ROADMAP. |
 | Decisões arquiteturais | `docs/adr/` | |
 | Fases e escopo/IDs das tarefas | `ROADMAP.md` | Decidido em DEC-0003. |
 | Estado vivo das tarefas (claimed, working, blocked…) | Issues do GitHub | DEC-0003; convenção em `docs/governance/communication.md` §8. |
+| Fase atual e estado de cada gate | `ROADMAP.md` (linha `*Estado do gate:*` de cada fase) | O campo `ecosystem.phase` de `ecosystem.json` é cópia declarada e verificada contra o ROADMAP (`CHK-STATE-CONSISTENCY`); semântica: ADR-0010 / DEC-0019. |
+| Estado de validação de um build (`IMPLEMENTED` … `VALIDATED`) | `docs/validation/<componente>/<build>.json` | Contrato `validation-record.schema.json`; `CHK-VALIDATION`. Evidência humana vem dos handoffs e não é duplicada (NN-001). |
 | Registros de trabalho de agentes | `docs/governance/handoffs/` | |
 | Alterações do `MANIFEST.md` | `docs/governance/manifest-changelog.md` | Registro exigido por MANIFEST §0; o texto do manifesto continua sendo o próprio `MANIFEST.md`. |
 | Decisões/adendos do proprietário (texto integral) | `docs/governance/addenda/` | Nível 1 da hierarquia (MANIFEST §24); referenciados por `decisions.json`. |
@@ -116,21 +118,25 @@ Nada disso autoriza criar código, diretórios, Services, Shells, Store ou schem
 
 ## 7. Permissões (MANIFEST §30, NN-016)
 
-Princípio: menor privilégio, deny-by-default quando aplicável, agentes não herdam todas as permissões do usuário. O permission model concreto ainda não existe (Fase 2).
+Princípio: menor privilégio, deny-by-default quando aplicável, agentes não herdam todas as permissões do usuário. O permission model concreto é trabalho da Fase 2 (ver §8).
 
-## 8. Ainda NÃO decidido
+## 8. Planejado e em aberto
 
-Os itens abaixo são deliberadamente abertos. Nenhum agente deve tratá-los como decididos:
+Este documento descreve a arquitetura **atual** nas seções anteriores. Aqui ficam só duas coisas, separadas. Nada de histórico: o que já foi decidido ou entregue está nos ADRs, em `decisions.json` e nos handoffs.
 
-- tecnologia de UI e plataformas-alvo do Hub (Fase 3);
-- protocolo e transporte de IPC (Fase 5);
-- formato do `ComponentManifest` e do contrato de `Capability`, versionamento e permission model (Fase 2);
-- estratégia de publicação do Urbe Web no ecossistema (decidida na auditoria/migração do Urbe, P1-10 — não presumir);
-- formato dos registros canônicos de validação por build e das páginas `/testing/<componente>/<build>/` (P1-11);
+### 8.1 Planejado (a fase em que vira concreto está no ROADMAP)
+
+- formato do `ComponentManifest`, do contrato de `Capability`, versionamento e permission model (Fase 2);
 - contrato de **Context** (Fases 2 e 5) e Host API do Product Shell (Fase 5);
-- nome e formato do **Distribution Profile** e dos três eixos de disponibilidade: visibilidade, distribuição, modelo comercial (Fase 2; packaging na Fase 4);
+- nome e formato do **Distribution Profile** e dos três eixos de disponibilidade — visibilidade, distribuição e modelo comercial (Fase 2; packaging na Fase 4);
+- distribuição e publicação **definitivas** de cada produto (canal de releases, publicação web): declaradas pelo próprio Ecosystem nas Fases 2 e 4. Até lá valem DEC-0008 e DEC-0009 (alternativa A, **transitórias**; `docs/migration/README.md` §9);
+- protocolo e transporte de IPC (Fase 5), por ADR **antes** da primeira dependência séria entre processos;
+- tecnologia de UI e plataformas-alvo do Hub (Fase 3);
+- estrutura de `platform/`, `workspaces/` e `tools/`: os diretórios só serão criados quando tiverem conteúdo com função (ADR-0004); `apps/` existe e contém Lunet2D e Urbe.
+
+### 8.2 Não decidido (nenhum agente deve tratar como decidido)
+
+- semântica do campo `ecosystem.phase` de `ecosystem.json` (DEC-0019);
 - quais Services compartilhados (Identity, Catalog, Commerce, Entitlements, Downloads, Updates, Reviews, Creator Profiles, Notifications) existirão, se algum — só com consumidores reais, contrato e ADR (NN-020, NN-022);
 - fonte canônica de catálogo, entitlements e identidade; política de edições e canais externos;
-- como Product Shells serão estruturados no código de cada produto — depende dos inventários P1-1/P1-2 e não deve ser presumido;
-- distribuição e publicação **definitivas** de cada produto (canal de releases, publicação web): serão declaradas pelo próprio Ecosystem nas Fases 2 e 4; durante a migração valem DEC-0008 e DEC-0009 (alternativa A, **transitórias** — `docs/migration/README.md` §9);
-- estrutura interna de `apps/`, `platform/`, `workspaces/` e `tools/` — os diretórios só serão criados quando tiverem conteúdo com função (ADR-0004).
+- estrutura **final** de cada Product Shell no código: há classificação proposta e aprovada como proposta ([`docs/architecture/candidates.md`](docs/architecture/candidates.md)) e regras de refatoração aceitas (ADR-0009), mas cada mudança estrutural é decidida na própria refatoração.

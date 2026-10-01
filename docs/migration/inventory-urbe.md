@@ -1,6 +1,8 @@
 # Inventário de migração — Urbe (`urbe`)
 
 > Tarefa: **P1-2** · Agente: `claude-code` · Data: 2026-09-30 · Commit de origem inventariado: `662ca5b19b2e63bc8ca5ce17911a8a061521774c` (`main`, "Merge pull request #47 from AbnerCruz/claude/new-session-eh5rwa")
+> **Registro histórico (2026-09-30), anterior à importação; não é o estado atual.** O estado atual está em `ecosystem.json`, no ROADMAP e em [`audit-post-migration.md`](audit-post-migration.md).
+>
 > **Somente leitura.** Nada foi importado, refatorado, movido, reescrito em C# ou alterado no repositório de origem (NN-005, NN-012, NN-013). Acesso por clone completo e, para o que não existe no git (releases, PRs, execuções de workflow), pela API do GitHub em modo de leitura.
 > Convenção (MANIFEST §53): **FATO** = verificado nesta sessão, com comando ou fonte; **INFERÊNCIA** = dedução do agente; **PROPOSTA** = sugestão sujeita a decisão; **NÃO VERIFICADO** = não foi possível verificar, com o motivo.
 

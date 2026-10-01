@@ -94,6 +94,34 @@
           "type": "string",
           "pattern": "^phase-[0-9]+$"
         },
+        "gates": {
+          "description": "Estado do gate de cada fase, derivado do ROADMAP (a autoridade); CHK-PORTAL recusa divergência.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "phase",
+              "state"
+            ],
+            "properties": {
+              "phase": {
+                "type": "integer"
+              },
+              "state": {
+                "enum": [
+                  "aprovado",
+                  "aguardando",
+                  "não iniciado"
+                ]
+              }
+            }
+          }
+        },
+        "gatesSource": {
+          "type": "string",
+          "minLength": 1
+        },
         "checks": {
           "description": "Resultado dos checks de consistência do commit projetado. É verificação automática, nunca validação humana (NN-017).",
           "$ref": "#/$defs/datum"

@@ -613,6 +613,38 @@
       "decision": "Alternativa A — Aceitar o ADR-0009: dois trilhos — refatoração interna pelo processo do próprio produto (+ lista do Ecosystem); extração para o Ecosystem com ADR do Ecosystem, NN-022 e contratos da fase (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/26).",
       "decidedAt": "2026-10-01",
       "record": "docs/governance/responses/DEC-0018.md"
+    },
+    {
+      "id": "DEC-0019",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "O que significa ecosystem.phase (e se ele deve continuar existindo)",
+      "context": "FATO: o campo ecosystem.phase de ecosystem.json ficou em phase-0 enquanto o ROADMAP já tinha o gate da Fase 0 aprovado e toda a Fase 1 executada, e nenhum check percebeu. FATO: nenhum documento define o significado do campo (o schema só valida o formato). Três leituras dão valores diferentes hoje: fase com trabalho iniciado = phase-1; primeira fase com gate não aprovado = phase-2; e o campo pode simplesmente não existir. Enquanto você não decide, o repositório usa phase-1 e uma regra de coerência neutra (CHK-STATE-CONSISTENCY, ADR-0010): todos os gates das fases anteriores aprovados e nenhuma fase posterior com tarefa iniciada.",
+      "question": "Qual é a semântica de ecosystem.phase?",
+      "alternatives": [
+        {
+          "option": "Remover o campo: a fase existe só no ROADMAP (linha 'Estado do gate'); o portal a deriva de lá",
+          "consequences": "Uma só autoridade (NN-001), sem cópia para envelhecer. Mudança pequena: schema, gerador do portal e check deixam de ler o campo; ADR de substituição. É a recomendação."
+        },
+        {
+          "option": "Fase com trabalho iniciado: a mais alta fase com alguma tarefa iniciada no ROADMAP",
+          "consequences": "Hoje phase-1; vira phase-2 quando a primeira tarefa da Fase 2 for iniciada; aprovar um gate não muda o valor. Continua sendo uma cópia, verificada automaticamente contra o ROADMAP."
+        },
+        {
+          "option": "Fase corrente: a mais baixa fase cujo gate ainda não foi aprovado",
+          "consequences": "Hoje phase-2 (o gate da Fase 1 foi aprovado), mesmo sem tarefa da Fase 2 iniciada; avança no instante da aprovação do gate. Também é uma cópia verificada contra o ROADMAP."
+        }
+      ],
+      "consequences": "Não bloqueia nada: o check de coerência já protege o valor atual. A escolha define o contrato; se A (remover), o ADR-0010 é complementado com a mudança de schema.",
+      "manifestCompatibility": "Todas respeitam NN-001 desde que a cópia (se existir) seja verificada contra o ROADMAP, o que CHK-STATE-CONSISTENCY faz. A remove a cópia.",
+      "recommendation": "A (remover o campo): é o que melhor segue 'quanto mais volátil a informação, menos lugares devem copiá-la'.",
+      "related": [
+        "docs/adr/0010-semantica-de-ecosystem-phase-e-estado-derivado.md",
+        "ROADMAP.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }

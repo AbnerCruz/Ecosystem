@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — a ser ratificado pelo proprietário em DEC-0018. Pedido de origem: ADD-0008 ("até finalmente eu poder refatorar os aplicativos para a nova estrutura").
+Aceito — ratificado pelo proprietário em DEC-0018 (alternativa A, escolhida no portal em 2026-10-01; [registro](../governance/responses/DEC-0018.md)). Pedido de origem: ADD-0008 ("até finalmente eu poder refatorar os aplicativos para a nova estrutura").
 
 ## Contexto
 
@@ -22,7 +22,7 @@ Como permitir que o proprietário refatore os aplicativos para a nova estrutura 
 
 ## Decisão
 
-Opção 1 (a ser ratificada em DEC-0018).
+Opção 1 (ratificada em DEC-0018).
 
 - **Refatoração interna (R)** — permitida depois do gate da Fase 1. Regras: (a) fica dentro de `apps/<id>`; (b) nenhuma referência a outro produto ou ao Hub (`CHK-ARCH-REFS`); (c) testes do produto antes e depois, iguais ou melhores; (d) **ADR do produto** quando muda a arquitetura dele, no processo do próprio produto (Lunet: `apps/lunet2d/docs/adr/`; Urbe: `apps/urbe/docs/v2/adr/`), citado no PR com referência qualificada (`Lunet ADR 0007`, `Urbe ADR-0010`, nunca só `ADR-0010`); (e) **mudança de formato de dados do usuário** ou de comportamento relevante do produto exige aprovação do proprietário no portal antes (NN-005, NN-011); (f) o produto continua com versão e release próprios (NN-014); (g) depois do merge, disparar a sincronização da origem (DEC-0017-A).
 - **Extração (X)** para `platform/`, `tools/`, `workspaces/` ou Service compartilhado: ADR **do Ecosystem** com as cinco respostas de NN-022, pelo menos um consumidor real com teste, contrato explícito (NN-006) e a fase que fornece esse contrato (Capability/Context: Fase 2; Host API: Fase 5; Agent Runtime: Fase 6; primeira Tool: Fase 7).
