@@ -70,6 +70,10 @@ Campos: `message_id`, `category`, `timestamp`, `agent`, `task_id`, `component`, 
 
 Convenção: uma Issue por tarefa em andamento, com o ID da tarefa no início do título e uma label `state:<estado>` da status machine de [`definition-of-done.md`](definition-of-done.md). Issue aberta = tarefa não encerrada; ao encerrar (`done`, `cancelled` ou `failed`) a Issue é fechada com link para o handoff. A caixa de seleção do ROADMAP (`[x]`/`[~]`/`[ ]`) registra **conclusão com evidência**, nunca o estado vivo. Nenhum dos dois pode contradizer o handoff.
 
+## 8.1 Potencial de reutilização (ADR-0011)
+
+Handoff de trabalho que **cria ou reestrutura** uma funcionalidade relevante pode (e, para funcionalidade nova, deve) trazer `reuse_assessment[]` com `subject`, `status` (`product-specific`, `possible-candidate`, `external-consumer-exists`), `rationale` e, no último caso, `consumers` e `extraction_review` (`pending`, `ADR-NNNN` ou `declined`). É o registro persistente (não a conversa) de que uma feature local foi considerada candidata; o portal o projeta e `CHK-HANDOFFS` o valida. Guia: [`docs/architecture/local-first.md`](../architecture/local-first.md).
+
 ## 9. Toda pendência do proprietário aparece no portal, com o objeto (DEC-0007)
 
 O agente **nunca** pede uma decisão ou validação só no chat. Antes de pedir:

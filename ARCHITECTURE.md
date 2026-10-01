@@ -35,6 +35,10 @@ O mapa canônico dos componentes é [`ecosystem.json`](ecosystem.json) (formato:
 
 Para criar um componente compartilhado (`platform/`, `workspaces/`, `tools/`, Service), é obrigatório responder ao critério de MANIFEST §48 e às cinco perguntas de NN-022, registrar ADR e declarar em `ecosystem.json` `responsibility`, `contract`, `consumers`, `owners`, `compatibility` e `extractionReason` (verificado por `CHK-SHARED-DECLARATION`). Quais componentes existem hoje, e em que `status`, é o que `ecosystem.json` diz — este documento não o replica.
 
+## 3.1 Local-first e promoção por evidência (ADR-0011)
+
+Uma funcionalidade nova nasce **no Product que tem a necessidade**; vira componente compartilhado só por **promoção baseada em evidência** (segundo consumidor real → Extraction Review → NN-022 → ADR → contrato). Duplicação temporária é preferível a uma abstração compartilhada errada. O potencial de reutilização é registrado nos handoffs (`reuse_assessment`). Guia: [`docs/architecture/local-first.md`](docs/architecture/local-first.md); refatoração e extração: [`docs/architecture/refactoring.md`](docs/architecture/refactoring.md).
+
 ## 4. Boundaries (MANIFEST §12)
 
 Permitido:
@@ -74,7 +78,7 @@ Exceções exigem ADR e alteração explícita do check.
 | Decisões arquiteturais | `docs/adr/` | |
 | Fases e escopo/IDs das tarefas | `ROADMAP.md` | Decidido em DEC-0003. |
 | Estado vivo das tarefas (claimed, working, blocked…) | Issues do GitHub | DEC-0003; convenção em `docs/governance/communication.md` §8. |
-| Fase atual e estado de cada gate | `ROADMAP.md` (linha `*Estado do gate:*` de cada fase) | O campo `ecosystem.phase` de `ecosystem.json` é cópia declarada e verificada contra o ROADMAP (`CHK-STATE-CONSISTENCY`); semântica: ADR-0010 / DEC-0019. |
+| Fase e estado de cada gate | `ROADMAP.md` (linha `*Estado do gate:*` de cada fase) | Não há campo de fase em `ecosystem.json` (DEC-0019-A, ADR-0010); o portal projeta os gates derivados do ROADMAP (`CHK-PORTAL`, `CHK-STATE-CONSISTENCY`). |
 | Estado de validação de um build (`IMPLEMENTED` … `VALIDATED`) | `docs/validation/<componente>/<build>.json` | Contrato `validation-record.schema.json`; `CHK-VALIDATION`. Evidência humana vem dos handoffs e não é duplicada (NN-001). |
 | Registros de trabalho de agentes | `docs/governance/handoffs/` | |
 | Alterações do `MANIFEST.md` | `docs/governance/manifest-changelog.md` | Registro exigido por MANIFEST §0; o texto do manifesto continua sendo o próprio `MANIFEST.md`. |
@@ -136,7 +140,6 @@ Este documento descreve a arquitetura **atual** nas seções anteriores. Aqui fi
 
 ### 8.2 Não decidido (nenhum agente deve tratar como decidido)
 
-- semântica do campo `ecosystem.phase` de `ecosystem.json` (DEC-0019);
 - quais Services compartilhados (Identity, Catalog, Commerce, Entitlements, Downloads, Updates, Reviews, Creator Profiles, Notifications) existirão, se algum — só com consumidores reais, contrato e ADR (NN-020, NN-022);
 - fonte canônica de catálogo, entitlements e identidade; política de edições e canais externos;
 - estrutura **final** de cada Product Shell no código: há classificação proposta e aprovada como proposta ([`docs/architecture/candidates.md`](docs/architecture/candidates.md)) e regras de refatoração aceitas (ADR-0009), mas cada mudança estrutural é decidida na própria refatoração.

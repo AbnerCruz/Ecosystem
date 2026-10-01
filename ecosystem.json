@@ -5,7 +5,6 @@
     "id": "ecosystem",
     "name": "Ecosystem",
     "repository": "https://github.com/AbnerCruz/Ecosystem",
-    "phase": "phase-1",
     "normative": {
       "manifest": "MANIFEST.md",
       "agents": "AGENTS.md",

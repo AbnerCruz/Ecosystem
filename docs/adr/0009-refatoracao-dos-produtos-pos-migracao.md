@@ -41,6 +41,10 @@ Opção 1 (ratificada em DEC-0018).
 - **Tudo por ADR do Ecosystem (opção 2):** duplicaria a governança que cada produto já tem e travaria refatorações pequenas (NN-020).
 - **Sem regra adicional (opção 3):** permitiria extração compartilhada sem NN-022 nem contrato (NN-006, NN-022).
 
+## Complemento (ADR-0011)
+
+O [ADR-0011](0011-local-first-e-promocao-por-evidencia.md) complementa os dois trilhos sem criar um terceiro: **nova feature nasce no Product**; **R** reorganiza internamente; o potencial de reuso é registrado (`reuse_assessment`); a **promoção X** só acontece depois de uma Extraction Review com evidência de segundo consumidor (NN-022).
+
 ## Referências
 
 ADD-0002 §17, ADD-0008; DEC-0018; MANIFEST §26, §37, §39; NN-002, NN-005, NN-006, NN-011, NN-013, NN-014, NN-017, NN-020, NN-022; [`docs/migration/README.md`](../migration/README.md) §7; P1-12.

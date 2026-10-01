@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — a ser decidido pelo proprietário em DEC-0019. Até lá vale a **regra de coerência neutra** descrita abaixo, que não depende da escolha.
+Aceito — o proprietário decidiu em DEC-0019 (alternativa A, escolhida no portal em 2026-10-01; [registro](../governance/responses/DEC-0019.md)): **`phase` deixa de existir em `ecosystem.json`**; a fase existe só no ROADMAP.
 
 ## Contexto
 
@@ -23,14 +23,14 @@ O mesmo padrão apareceu em outras superfícies: README (`não migrado`), `ARCHI
 
 ## Decisão
 
-Pendente (DEC-0019). **Recomendação: A (remover).** Mantém uma só autoridade (NN-001) em vez de uma cópia verificada e é coerente com a regra "quanto mais volátil a informação, menos lugares devem copiá-la". B e C são verificáveis (o check abaixo já calcula ambos), mas continuam sendo uma cópia.
+**Decidido em DEC-0019: A (remover).** `ecosystem.json`, `ecosystem.schema.json` e a projeção do portal não têm mais `phase`; o portal mostra os **gates** derivados do ROADMAP (`ecosystem.gates`). A regra de coerência neutra do item 2 abaixo vigorou só até esta decisão e foi substituída pelo schema (que recusa o campo). Mantém uma só autoridade (NN-001) em vez de uma cópia verificada e é coerente com a regra "quanto mais volátil a informação, menos lugares devem copiá-la". B e C são verificáveis (o check abaixo já calcula ambos), mas continuam sendo uma cópia.
 
 ### Decidido já, independente da escolha (detalhe local de implementação + regra de coerência neutra)
 
 - **Gate no ROADMAP é dado estruturado:** a linha `*Estado do gate:* **aprovado|aguardando|não iniciado**` depois de cada `**Gate:**` (padrão: `não iniciado`). É a autoridade do estado de gate.
 - **`CHK-STATE-CONSISTENCY`** (novo, em `tests/consistency/Check.cs`) fiscaliza **relações entre fontes estruturadas**, sem procurar palavras em prosa:
   1. *ROADMAP × gate:* um gate `aprovado` não pode ter itens da fase abertos (`[ ]` ou `[~]`).
-  2. *ROADMAP × `ecosystem.phase` (coerência neutra):* `phase-N` só é coerente se **todos os gates das fases < N estão aprovados** e **nenhuma fase > N tem tarefa iniciada**. Vale para B e C (enquanto o campo existir) e já teria acusado `phase-0`.
+  2. *(vigente até DEC-0019; substituída — o campo foi removido)* *ROADMAP × `ecosystem.phase` (coerência neutra):* `phase-N` só é coerente se **todos os gates das fases < N estão aprovados** e **nenhuma fase > N tem tarefa iniciada**. Vale para B e C (enquanto o campo existir) e já teria acusado `phase-0`.
   3. *ROADMAP × Issues (DEC-0003):* `[x]` exige a Issue da tarefa (título começando pelo ID) fechada e sem `state:` ≠ `done`; `[~]` exige uma Issue aberta com `state:` ≠ `done`. Verificado quando existe um instantâneo das Issues (`ECOSYSTEM_ISSUES_SNAPSHOT`, gerado pelo CI); sem instantâneo, é **não verificado**, nunca aprovado em silêncio.
   4. *`ecosystem.json` × existência:* componente `active`/`migrating` tem o `path` com conteúdo; `planned`/`not-migrated` não existem no repositório (já em `CHK-SINGLE-AUTHORITY`; mantido lá por ownership).
   5. *Decisões × documentos de estado atual:* a seção "Não decidido" de `ARCHITECTURE.md` só pode citar (`DEC-NNNN`) decisões `pending` ou `transitional`; uma decisão `decided` não pode aparecer ali como aberta.
@@ -41,7 +41,7 @@ Pendente (DEC-0019). **Recomendação: A (remover).** Mantém uma só autoridade
 ## Consequências
 
 - O campo `phase` deixa de poder envelhecer em silêncio, qualquer que seja a semântica escolhida.
-- Se A (remover) for escolhida: schema, gerador, `CHK-PORTAL` e `app.js` deixam de ler `phase` de `ecosystem.json` e passam a derivá-la do ROADMAP (mudança pequena, com ADR de substituição desta).
+- Aplicado (DEC-0019-A): schema, gerador, `CHK-PORTAL` e `app.js` deixaram de usar `phase`; o portal projeta `ecosystem.gates` (derivado do ROADMAP, conferido por `CHK-PORTAL`).
 - O ROADMAP ganha uma convenção parseável (uma linha por gate), mas continua markdown legível por humanos.
 - `[~]` passa a exigir Issue aberta: tarefas em andamento precisam ter Issue (DEC-0003 já dizia "uma Issue por tarefa em andamento"; agora é fiscalizado).
 

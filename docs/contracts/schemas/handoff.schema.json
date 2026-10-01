@@ -231,6 +231,50 @@
         "string",
         "null"
       ]
+    },
+    "reuse_assessment": {
+      "description": "OPCIONAL (ADR-0011): potencial de reutilização de uma feature ou refatoração estrutural relevante, registrado onde o trabalho foi feito. Ausente em handoffs que não criam nem reestruturam funcionalidade. Quando presente, o check CHK-REUSE valida a semântica.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject",
+          "status",
+          "rationale"
+        ],
+        "properties": {
+          "subject": {
+            "description": "Slug estável da capacidade avaliada (por exemplo 'account-login'). O mesmo slug em handoffs de componentes diferentes significa a mesma necessidade.",
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+          },
+          "status": {
+            "enum": [
+              "product-specific",
+              "possible-candidate",
+              "external-consumer-exists"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "consumers": {
+            "description": "Componentes (ids de ecosystem.json) que usam ou precisam concretamente da capacidade além do dono. Obrigatório (>= 1) em external-consumer-exists.",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+            }
+          },
+          "extraction_review": {
+            "description": "Só em external-consumer-exists: 'pending' (a Extraction Review ainda não terminou), um ADR do Ecosystem (ADR-NNNN) que a concluiu, ou 'declined' (a review concluiu que continua local; a justificativa vai em rationale).",
+            "type": "string",
+            "pattern": "^(pending|declined|ADR-[0-9]{4})$"
+          }
+        }
+      }
     }
   }
 }

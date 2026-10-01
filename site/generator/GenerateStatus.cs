@@ -333,6 +333,35 @@ if (Directory.Exists(hdir))
     }
 }
 
+// --- candidatos a reutilização (ADR-0011): derivados dos reuse_assessment dos handoffs, nunca digitados ---
+var reuseLatest = new Dictionary<(string Subject, string Component), (string Ts, JsonNode Node, string Handoff, string Component)>();
+if (Directory.Exists(hdir))
+    foreach (var f in Directory.EnumerateFiles(hdir, "*.json").Order())
+    {
+        var hn = JsonNode.Parse(File.ReadAllText(f))!;
+        if (hn["reuse_assessment"] is not JsonArray ra) continue;
+        foreach (var a in ra)
+        {
+            var key = (S(a!["subject"])!, S(hn["component"])!);
+            var ts = S(hn["timestamp"]) ?? "";
+            if (!reuseLatest.TryGetValue(key, out var prev) || string.CompareOrdinal(prev.Ts, ts) < 0)
+                reuseLatest[key] = (ts, a, S(hn["message_id"])!, key.Item2);
+        }
+    }
+var reuseCandidates = new JsonArray(reuseLatest.Values.Where(v => S(v.Node["status"]) != "product-specific")
+    .OrderBy(v => S(v.Node["subject"]), StringComparer.Ordinal).ThenBy(v => v.Component, StringComparer.Ordinal)
+    .Select(v => (JsonNode?)new JsonObject
+    {
+        ["subject"] = S(v.Node["subject"]),
+        ["component"] = v.Component,
+        ["status"] = S(v.Node["status"]),
+        ["rationale"] = S(v.Node["rationale"]),
+        ["consumers"] = new JsonArray((v.Node["consumers"]?.AsArray() ?? []).Select(x => (JsonNode?)JsonValue.Create(S(x))).ToArray()),
+        ["extractionReview"] = S(v.Node["extraction_review"]),
+        ["handoff"] = v.Handoff,
+        ["record"] = Blob("docs/governance/handoffs/" + v.Handoff + ".json"),
+    }).ToArray());
+
 // --- documentação canônica ---
 var titles = new Dictionary<string, string>
 {
@@ -434,7 +463,6 @@ var result = new JsonObject
     ["ecosystem"] = new JsonObject
     {
         ["name"] = S(eco["ecosystem"]!["name"]),
-        ["phase"] = S(eco["ecosystem"]!["phase"]),
         ["gates"] = roadmapGates,
         ["gatesSource"] = "ROADMAP.md (linha 'Estado do gate' de cada fase)",
         ["checks"] = checksDatum,
@@ -442,6 +470,7 @@ var result = new JsonObject
     ["components"] = components,
     ["pendingDecisions"] = pendingDecisions,
     ["pendingValidations"] = pending,
+    ["reuseCandidates"] = reuseCandidates,
     ["docs"] = docs,
 };
 

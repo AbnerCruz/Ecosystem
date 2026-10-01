@@ -2,6 +2,8 @@
 
 > **Autoridade:** operacional, subordinada ao ADR-0009 (`Aceito`, DEC-0018-A) e ao MANIFEST. Vale **depois do gate da Fase 1**. Candidatos e ordem sugerida: [`candidates.md`](candidates.md).
 
+> **Antes do trilho:** uma funcionalidade **nova** nasce no Product que precisa dela (ADR-0011, [`local-first.md`](local-first.md)); estes trilhos valem para reorganizar o que já existe (R) e para promover ao Ecosystem com evidência (X).
+
 ## 1. Qual trilho?
 
 ```text
@@ -22,11 +24,11 @@ O `AGENTS.md` do produto (`apps/lunet2d/AGENTS.md`, `apps/urbe/AGENTS.md`) conti
 5. **Testes:** os do produto passam antes e depois (Lunet: `dotnet test --project tests/Lunet.Tests`; Urbe: `npm run check`), com os testes de arquitetura do produto atualizados; checks do Ecosystem verdes (`dotnet run tests/consistency/Check.cs`, inclusive `CHK-ARCH-REFS`).
 6. **UI tocada?** Validação em aparelho/navegador pelo proprietário, com registro de validação do build (NN-017; `docs/validation/`).
 7. **Merge e distribuição:** PR no Ecosystem; depois do merge, **disparar `sync-from-ecosystem.yml`** na origem (DEC-0017-A). Release: Lunet sai a cada sincronização da `main`; Urbe sai quando se cria a tag `urbe/v<versão>` (com `package.json` e `CHANGELOG.md` atualizados) e se dispara a sincronização.
-8. **Handoff** com evidência.
+8. **Handoff** com evidência e, se criou ou reestruturou funcionalidade relevante, `reuse_assessment` (`product-specific`, `possible-candidate` ou `external-consumer-exists`).
 
 ## 3. Extração para o Ecosystem (X)
 
-Exige, nesta ordem: as cinco respostas de NN-022 (complexidade removida, consumidores reais, contrato, custo novo, saldo positivo); **ADR do Ecosystem**; contrato explícito (NN-006) e a fase que o fornece — Capability/Context e Distribution Profile (Fase 2), Host API de Product Shell (Fase 5), Agent Runtime (Fase 6), primeira Tool compartilhada (Fase 7); pelo menos um consumidor real com teste; nenhum `if host == …` (NN-007).
+Só depois de uma **Extraction Review** disparada por um segundo consumidor real (`reuse_assessment: external-consumer-exists`; ADR-0011). Exige, nesta ordem: as cinco respostas de NN-022 (complexidade removida, consumidores reais, contrato, custo novo, saldo positivo); **ADR do Ecosystem**; contrato explícito (NN-006) e a fase que o fornece — Capability/Context e Distribution Profile (Fase 2), Host API de Product Shell (Fase 5), Agent Runtime (Fase 6), primeira Tool compartilhada (Fase 7); pelo menos um consumidor real com teste; nenhum `if host == …` (NN-007).
 
 ## 4. O que continua proibido
 

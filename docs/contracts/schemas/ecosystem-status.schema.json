@@ -17,6 +17,7 @@
     "components",
     "pendingDecisions",
     "pendingValidations",
+    "reuseCandidates",
     "docs"
   ],
   "properties": {
@@ -82,17 +83,13 @@
       "additionalProperties": false,
       "required": [
         "name",
-        "phase",
+        "gates",
         "checks"
       ],
       "properties": {
         "name": {
           "type": "string",
           "minLength": 1
-        },
-        "phase": {
-          "type": "string",
-          "pattern": "^phase-[0-9]+$"
         },
         "gates": {
           "description": "Estado do gate de cada fase, derivado do ROADMAP (a autoridade); CHK-PORTAL recusa divergência.",
@@ -375,6 +372,34 @@
           "reject": {
             "$ref": "#/$defs/validationAnswer"
           }
+        }
+      }
+    },
+    "reuseCandidates": {
+      "description": "Candidatos a reutilização (ADR-0011): avaliações possible-candidate e external-consumer-exists, derivadas dos handoffs. Nunca digitado.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject",
+          "component",
+          "status",
+          "rationale",
+          "consumers",
+          "extractionReview",
+          "handoff",
+          "record"
+        ],
+        "properties": {
+          "subject": { "type": "string", "minLength": 1 },
+          "component": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["possible-candidate", "external-consumer-exists"] },
+          "rationale": { "type": "string", "minLength": 1 },
+          "consumers": { "type": "array", "items": { "type": "string" } },
+          "extractionReview": { "type": ["string", "null"] },
+          "handoff": { "type": "string", "minLength": 1 },
+          "record": { "type": "string", "pattern": "^https://" }
         }
       }
     },

@@ -153,12 +153,11 @@ function decisionCard(d, repo) {
 }
 
 function render(s) {
-  const phase = s.ecosystem.phase.replace(/^phase-/, "Fase ");
   const checks = s.ecosystem.checks;
   const meta = document.getElementById("meta");
   const approved = (s.ecosystem.gates || []).filter((g) => g.state === "aprovado").map((g) => g.phase);
   meta.replaceChildren(
-    `${phase} · gates aprovados: ${approved.length ? approved.join(", ") : "nenhum"} · checks de consistência: `,
+    `Gates aprovados (ROADMAP): ${approved.length ? approved.map((n) => `Fase ${n}`).join(", ") : "nenhum"} · checks de consistência: `,
     checks.availability === "derived"
       ? (checks.url ? link(checks.url, CHECK_LABELS[checks.value] || checks.value) : CHECK_LABELS[checks.value] || checks.value)
       : el("span", { class: "na" }, "não disponível"));
@@ -185,6 +184,15 @@ function render(s) {
           " para confirmar. Na reprovação, escreva o motivo depois de ", el("code", {}, "comment:"), "."),
         el("p", { class: "hint" }, link(p.record, "registro"))))
     : [el("li", { class: "hint" }, "Nenhuma validação humana pendente registrada.")]));
+
+  const reuse = document.getElementById("reuse");
+  reuse.replaceChildren(...((s.reuseCandidates || []).length
+    ? s.reuseCandidates.map((r) => el("li", {},
+        el("strong", {}, r.subject), ` · ${r.component} · `,
+        el("span", { class: "badge" }, r.status === "external-consumer-exists" ? "consumidor externo existe" : "possível candidato"),
+        r.status === "external-consumer-exists" ? ` · consumidores: ${r.consumers.join(", ")} · Extraction Review: ${r.extractionReview}` : "",
+        el("br"), r.rationale, " ", link(r.record, "handoff")))
+    : [el("li", { class: "hint" }, "Nenhum candidato registrado ainda.")]));
 
   const rec = document.getElementById("recovery");
   rec.replaceChildren(...s.components.filter((c) => c.type === "product").map((c) => el("li", {},

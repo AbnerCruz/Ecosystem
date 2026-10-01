@@ -8,7 +8,7 @@
 
 | Pergunta | Autoridade | Superfícies derivadas / cópias |
 |----------|-----------|--------------------------------|
-| Fase e estado de cada gate | `ROADMAP.md` (`*Estado do gate:*`) | `ecosystem.phase` (cópia verificada; DEC-0019), portal |
+| Fase e estado de cada gate | `ROADMAP.md` (`*Estado do gate:*`) | portal (gates derivados; não há campo de fase em `ecosystem.json`, DEC-0019-A) |
 | Quais Products existem, onde vivem, `status` | `ecosystem.json` | portal (projeção), `CHK-SINGLE-AUTHORITY` |
 | Tarefa em andamento | Issues (`state:<estado>`) | — |
 | Tarefa concluída e evidência | `[x]` no ROADMAP + handoff | `CHK-ROADMAP`, `CHK-STATE-CONSISTENCY` |
@@ -22,7 +22,7 @@
 Somente relações entre **fontes estruturadas** (JSON, linhas de formato fixo, IDs). Nunca grep de palavras em prosa.
 
 1. Gate `aprovado` sem itens da fase abertos.
-2. `ecosystem.phase` coerente com os gates e as tarefas iniciadas do ROADMAP.
+2. Gates projetados no portal iguais aos do ROADMAP (`CHK-PORTAL`); `ecosystem.json` não copia a fase (schema).
 3. `[x]`/`[~]` do ROADMAP × Issue da tarefa (quando há instantâneo das Issues; sem ele, "não verificado").
 4. Seção "Não decidido" de `ARCHITECTURE.md` × `decisions.json` (por ID citado).
 5. Mecanismo `planned` da matriz com `phase` de gate já aprovado.
@@ -43,6 +43,6 @@ Sem estrutura confiável para checar, portanto **responsabilidade de quem muda o
 | Sintoma | Causa | Tratamento |
 |---------|-------|-----------|
 | README com "não migrado" / "Fase 0" | estado volátil copiado em prosa, sem check | README sem estado, aponta para as autoridades |
-| `ecosystem.phase = phase-0` | campo sem semântica definida e sem relação com o ROADMAP | coerência neutra + ADR-0010/DEC-0019 |
+| `ecosystem.phase = phase-0` | campo sem semântica definida e sem relação com o ROADMAP | DEC-0019-A: campo removido; a fase existe só no ROADMAP (ADR-0010) |
 | Issue #6 `state:review` com P1-3 `[x]` | nenhum check relacionava ROADMAP e Issue; Issues das tarefas seguintes nem foram abertas | `CHK-STATE-CONSISTENCY` (3) e regra de abrir Issue para tarefa em andamento |
 | `ARCHITECTURE.md` com "planejado para a Fase 1" | documento "inicial" nunca reclassificado; matriz com `planned` vencido | §8 em Planejado × Não decidido; checks 4 e 5 |

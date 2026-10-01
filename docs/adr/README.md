@@ -31,4 +31,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0007](0007-resposta-a-decisoes-pelo-portal.md) | Resposta a decisões pelo portal | Aceito |
 | [0008](0008-aprovacao-de-validacoes-pelo-portal.md) | Aprovação de validações humanas pelo portal | Aceito |
 | [0009](0009-refatoracao-dos-produtos-pos-migracao.md) | Refatoração dos produtos depois da migração | Aceito |
-| [0010](0010-semantica-de-ecosystem-phase-e-estado-derivado.md) | Semântica de ecosystem.phase e deriva de estado entre fontes | Proposto |
+| [0010](0010-semantica-de-ecosystem-phase-e-estado-derivado.md) | Semântica de ecosystem.phase e deriva de estado entre fontes | Aceito |
+| [0011](0011-local-first-e-promocao-por-evidencia.md) | Local-first e promoção por evidência | Aceito |

@@ -9,14 +9,14 @@
 - `[x]` concluído com evidência · `[~]` verificado automaticamente, **aguardando validação humana/revisão** · `[ ]` aberto.
 - Um item nunca é marcado `[x]` enquanto depender de validação humana (NN-017); `CHK-ROADMAP` fiscaliza parte disso.
 - Evidência de cada item concluído: handoff em `docs/governance/handoffs/`.
-- **Estado de um gate** (autoridade: este arquivo): uma linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` (padrão quando a linha não existe) logo depois de cada `**Gate:**`. `CHK-STATE-CONSISTENCY` exige que um gate `aprovado` não tenha itens da fase abertos (`[ ]` ou `[~]`) e que o campo `ecosystem.phase` de `ecosystem.json` seja coerente com os gates e com as tarefas iniciadas.
+- **Estado de um gate** (autoridade: este arquivo): uma linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` (padrão quando a linha não existe) logo depois de cada `**Gate:**`. `CHK-STATE-CONSISTENCY` exige que um gate `aprovado` não tenha itens da fase abertos (`[ ]` ou `[~]`) e que o portal projete os mesmos gates (`CHK-PORTAL`); a fase não é copiada em `ecosystem.json` (DEC-0019-A).
 - **Estado vivo × caixa:** `[x]` exige que a Issue da tarefa (título começando pelo ID) esteja fechada e sem `state:` incompatível; `[~]` exige uma Issue aberta com `state:` ≠ `done` (DEC-0003; verificado quando há instantâneo das Issues).
 
 ## Próxima tarefa
 
 **Fase 2 — Contracts e Registry: abrir o plano da fase** (tarefas `P2-x`, ainda não iniciada). Antes dela e em paralelo a ela, o proprietário pode **refatorar os aplicativos** (passo 10) pelas regras do ADR-0009 `Aceito` e do guia [`refactoring.md`](docs/architecture/refactoring.md); a ordem sugerida está em [`candidates.md`](docs/architecture/candidates.md).
 
-*Por quê:* a Fase 1 está encerrada (gate aprovado em 2026-10-01); a Fase 2 é o que habilita extrações para o Ecosystem (contratos de Capability e Context, Distribution Profile, registry). Decisão pendente sobre o contrato do próprio ROADMAP/`ecosystem.phase`: **DEC-0019**.
+*Por quê:* a Fase 1 está encerrada (gate aprovado em 2026-10-01); a Fase 2 é o que habilita extrações para o Ecosystem (contratos de Capability e Context, Distribution Profile, registry).
 
 *Como ler o estado:* fase e gates = este arquivo (linha `*Estado do gate:*` de cada fase); tarefas em andamento = Issues (`state:<estado>`); resultado e evidência = handoffs; decisões e validações pendentes = portal.
 

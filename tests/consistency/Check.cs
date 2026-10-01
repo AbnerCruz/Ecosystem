@@ -539,12 +539,50 @@ static class Checks
         c.R.Ran(id);
         var comps = c.Components().Select(x => x.Id).Append("ecosystem").ToHashSet();
         var decisions = c.DecisionList().Select(d => d.Str("id")).ToHashSet();
+        var adrIds = c.AdrFiles().Select(f => "ADR-" + Path.GetFileName(f)[..4]).ToHashSet();
+        // reuse_assessment (ADR-0011): (subject, componente) -> avaliação mais recente
+        var assessments = new Dictionary<(string Subject, string Owner), (string Ts, string Status, string File)>();
+        var subjectParties = new Dictionary<string, HashSet<string>>();
         foreach (var (file, doc) in c.Handoffs())
         {
             var h = doc.RootElement;
             if (h.ValueKind != JsonValueKind.Object) continue;
             if (h.Str("component") is { } comp && !comps.Contains(comp))
                 c.R.Fail(id, $"{file}: componente inexistente '{comp}'");
+            foreach (var ra in h.Arr("reuse_assessment"))
+            {
+                var subject = ra.Str("subject") ?? ""; var st = ra.Str("status") ?? ""; var owner = h.Str("component") ?? "";
+                var consumers = ra.Arr("consumers").Select(x => x.GetString() ?? "").ToList();
+                var review = ra.Str("extraction_review");
+                if (st == "external-consumer-exists")
+                {
+                    if (consumers.Count == 0) c.R.Fail(id, $"{file}: reuse_assessment '{subject}' é external-consumer-exists sem 'consumers' (precisa de pelo menos um consumidor concreto)");
+                    foreach (var cn in consumers)
+                    {
+                        if (!comps.Contains(cn)) c.R.Fail(id, $"{file}: reuse_assessment '{subject}': consumidor inexistente '{cn}'");
+                        if (cn == owner) c.R.Fail(id, $"{file}: reuse_assessment '{subject}': o consumidor '{cn}' é o próprio dono");
+                    }
+                    if (review is null) c.R.Fail(id, $"{file}: reuse_assessment '{subject}' é external-consumer-exists sem 'extraction_review' (pending, declined ou ADR-NNNN)");
+                    else if (review.StartsWith("ADR-") && !adrIds.Contains(review)) c.R.Fail(id, $"{file}: reuse_assessment '{subject}': extraction_review cita {review}, que não existe");
+                }
+                else if (consumers.Count > 0 || review is not null)
+                    c.R.Fail(id, $"{file}: reuse_assessment '{subject}' ({st}) não pode ter 'consumers' nem 'extraction_review': só external-consumer-exists");
+                var key = (subject, owner); var ts = h.Str("timestamp") ?? "";
+                if (!assessments.TryGetValue(key, out var prev) || string.CompareOrdinal(prev.Ts, ts) < 0) assessments[key] = (ts, st, file);
+            }
+        }
+        // Segundo consumidor (ADR-0011): a mesma necessidade avaliada em 2+ componentes, sem nenhuma avaliação external-consumer-exists, é um
+        // candidato esquecido: a Extraction Review precisa ser aberta (e registrada), nunca a extração automática.
+        foreach (var grp in assessments.GroupBy(a => a.Key.Subject))
+        {
+            var owners = grp.Select(g => g.Key.Owner).Distinct().ToList();
+            if (owners.Count >= 2 && !grp.Any(g => g.Value.Status == "external-consumer-exists"))
+                c.R.Fail(id, $"reuse_assessment '{grp.Key}' aparece em {owners.Count} componentes ({string.Join(", ", owners.Order())}) sem external-consumer-exists: abra a Extraction Review (ADR-0011)");
+        }
+        foreach (var (file, doc) in c.Handoffs())
+        {
+            var h = doc.RootElement;
+            if (h.ValueKind != JsonValueKind.Object) continue;
             foreach (var d in h.Arr("decisions_required"))
                 if (!decisions.Contains(d.GetString())) c.R.Fail(id, $"{file}: decisão inexistente {d.GetString()}");
             foreach (var s in h.Arr("normative_sources"))
@@ -738,15 +776,7 @@ static class Checks
             foreach (var (tid, mark) in p.Items.Where(i => i.Mark != 'x'))
                 c.R.Fail(id, $"ROADMAP: o gate da Fase {p.Number} está 'aprovado', mas {tid} continua {(mark == '~' ? "[~]" : "[ ]")}");
 
-        // 2. ecosystem.phase coerente com os gates e com as tarefas iniciadas.
-        if (c.Ecosystem is { } eco && eco.TryGetProperty("ecosystem", out var e) && e.Str("phase") is { } ph && Regex.Match(ph, @"^phase-(\d+)$") is { Success: true } pm)
-        {
-            var n = int.Parse(pm.Groups[1].Value);
-            foreach (var k in phases.Where(p => p.Number < n && p.Gate != "aprovado"))
-                c.R.Fail(id, $"ecosystem.phase = {ph}, mas o gate da Fase {k.Number} não está aprovado no ROADMAP");
-            foreach (var k in phases.Where(p => p.Number > n && p.Items.Any(i => i.Mark != ' ')))
-                c.R.Fail(id, $"ecosystem.phase = {ph}, mas a Fase {k.Number} já tem tarefas iniciadas no ROADMAP");
-        }
+        // 2. A fase não é copiada em ecosystem.json (ADR-0010, DEC-0019-A): a autoridade é o ROADMAP. O schema recusa o campo.
 
         // 3. ROADMAP × Issues (DEC-0003).
         var snap = c.P("site/data/issues-snapshot.json");
@@ -927,8 +957,6 @@ static class Checks
 
         var p = doc.RootElement;
         var eco = c.Ecosystem!.Value.GetProperty("ecosystem");
-        if (p.GetProperty("ecosystem").Str("phase") != eco.Str("phase"))
-            c.R.Fail(id, $"{rel}: fase diverge de ecosystem.json");
         if (p.GetProperty("source").Str("repository") != eco.Str("repository"))
             c.R.Fail(id, $"{rel}: repositório diverge de ecosystem.json");
 
@@ -981,6 +1009,18 @@ static class Checks
         var projectedDecisions = p.Arr("pendingDecisions").Select(d => d.Str("id")!).ToHashSet();
         if (!projectedDecisions.SetEquals(expectedDecisions))
             c.R.Fail(id, $"{rel}: decisões pendentes divergem de decisions.json (esperadas: {string.Join(", ", expectedDecisions.Order())}; projetadas: {string.Join(", ", projectedDecisions.Order())})");
+
+        // Candidatos a reutilização (ADR-0011): a projeção só pode listar o que os handoffs registram, e nada pode faltar.
+        var expectedReuse = new Dictionary<(string, string), (string Ts, string Status)>();
+        foreach (var (_, hd) in c.Handoffs())
+            foreach (var ra in hd.RootElement.Arr("reuse_assessment"))
+            {
+                var key = (ra.Str("subject") ?? "", hd.RootElement.Str("component") ?? ""); var ts = hd.RootElement.Str("timestamp") ?? "";
+                if (!expectedReuse.TryGetValue(key, out var prev) || string.CompareOrdinal(prev.Ts, ts) < 0) expectedReuse[key] = (ts, ra.Str("status") ?? "");
+            }
+        var expectedReuseSet = expectedReuse.Where(x => x.Value.Status != "product-specific").Select(x => $"{x.Key.Item1}|{x.Key.Item2}|{x.Value.Status}").ToHashSet();
+        var projectedReuse = p.Arr("reuseCandidates").Select(x => $"{x.Str("subject")}|{x.Str("component")}|{x.Str("status")}").ToHashSet();
+        if (!projectedReuse.SetEquals(expectedReuseSet)) c.R.Fail(id, $"{rel}: candidatos a reutilização divergem dos handoffs");
 
         foreach (var d in p.Arr("docs"))
             if (d.Str("path") is { } dp && !File.Exists(c.P(dp)))
@@ -1279,6 +1319,23 @@ static class SelfTest
         if (proc.ExitCode != 0) throw new InvalidOperationException("self-test: o gerador da projeção falhou na cópia do repositório");
     }
 
+    /// <summary>Cria, na cópia, um handoff 'done' baseado em um real, com reuse_assessment (self-test de ADR-0011).</summary>
+    static void AddReuseHandoff(string root, string suffix, string component, string timestamp, string reuseJson)
+    {
+        var dir = Path.Combine(root, "docs", "governance", "handoffs");
+        var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(dir, "HO-20261001-p0-15-aprovado.json")))!.AsObject();
+        n["message_id"] = "HO-99990101-" + suffix; n["task_id"] = "P9-" + suffix.Length; n["component"] = component; n["timestamp"] = timestamp;
+        n["reuse_assessment"] = System.Text.Json.Nodes.JsonNode.Parse(reuseJson);
+        File.WriteAllText(Path.Combine(dir, "HO-99990101-" + suffix + ".json"), n.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
+    }
+
+    /// <summary>Acrescenta um item citando a decisão na seção "Não decidido" de ARCHITECTURE.md (self-test).</summary>
+    static void CiteInArchitecture(string root, string decisionId) =>
+        Replace(root, "ARCHITECTURE.md", "### 8.2 Não decidido (nenhum agente deve tratar como decidido)\n\n", $"### 8.2 Não decidido (nenhum agente deve tratar como decidido)\n\n- tema de teste ({decisionId});\n");
+
+    static string Reuse(string subject, string status, string extra = "") =>
+        $"[{{\"subject\":\"{subject}\",\"status\":\"{status}\",\"rationale\":\"teste\"{extra}}}]";
+
     static readonly Case[] Cases =
     [
         new("arquivo de fundação removido", "CHK-FOUNDATION-FILES", r => File.Delete(Path.Combine(r, "ROADMAP.md"))),
@@ -1349,7 +1406,7 @@ static class SelfTest
                   "schema": "ecosystem/contracts/ecosystem-status/1", "schemaVersion": 1, "kind": "projection", "authority": false,
                   "generatedAt": "2026-01-01T00:00:00Z", "generator": "self-test",
                   "source": { "repository": "https://github.com/AbnerCruz/Ecosystem", "ref": "HEAD", "commit": null, "files": ["ecosystem.json"] },
-                  "ecosystem": { "name": "Ecosystem", "phase": "phase-0",
+                  "ecosystem": { "name": "Ecosystem",
                     "checks": { "value": null, "availability": "not-available", "source": "x", "url": null } },
                   "components": [], "pendingDecisions": [], "pendingValidations": [], "docs": []
                 }
@@ -1377,16 +1434,22 @@ static class SelfTest
                 Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true));
             }),
         // --- deriva semântica (ADR-0010): duas fontes estruturadas com estados incompatíveis ---
+        new("external-consumer-exists sem consumidor concreto", "CHK-HANDOFFS",
+            r => AddReuseHandoff(r, "a", "urbe", "2099-01-01T00:00:00Z", Reuse("account-login", "external-consumer-exists", ",\"extraction_review\":\"pending\""))),
+        new("segundo consumidor sem Extraction Review", "CHK-HANDOFFS",
+            r => { AddReuseHandoff(r, "b", "urbe", "2099-01-01T00:00:00Z", Reuse("account-login", "possible-candidate")); AddReuseHandoff(r, "bb", "lunet2d", "2099-01-02T00:00:00Z", Reuse("account-login", "possible-candidate")); }),
+        new("possible-candidate com extraction_review", "CHK-HANDOFFS",
+            r => AddReuseHandoff(r, "c", "urbe", "2099-01-01T00:00:00Z", Reuse("account-login", "possible-candidate", ",\"extraction_review\":\"pending\""))),
         new("Caso A: ROADMAP [x] com Issue em state:review", "CHK-STATE-CONSISTENCY",
             r => { Directory.CreateDirectory(Path.Combine(r, "site", "data")); File.WriteAllText(Path.Combine(r, "site", "data", "issues-snapshot.json"), "[{\"number\":6,\"title\":\"P1-3 — Plano\",\"state\":\"OPEN\",\"labels\":[{\"name\":\"state:review\"}]}]"); }),
         new("tarefa [~] sem Issue aberta", "CHK-STATE-CONSISTENCY",
             r => { Directory.CreateDirectory(Path.Combine(r, "site", "data")); File.WriteAllText(Path.Combine(r, "site", "data", "issues-snapshot.json"), "[]"); Replace(r, "ROADMAP.md", "- [x] P1-12 —", "- [~] P1-12 —"); }),
         new("gate aprovado com item da fase aberto", "CHK-STATE-CONSISTENCY",
             r => Replace(r, "ROADMAP.md", "- [x] P0-1 —", "- [ ] P0-1 —")),
-        new("ecosystem.phase atrás do ROADMAP", "CHK-STATE-CONSISTENCY",
-            r => Replace(r, "ecosystem.json", "\"phase\": \"phase-1\"", "\"phase\": \"phase-0\"")),
+        new("fase copiada de volta em ecosystem.json", "CHK-SCHEMA",
+            r => Replace(r, "ecosystem.json", "\"id\": \"ecosystem\",", "\"id\": \"ecosystem\",\n    \"phase\": \"phase-1\",")),
         new("ARCHITECTURE apresenta decisão já decidida como não decidida", "CHK-STATE-CONSISTENCY",
-            r => Replace(r, "ARCHITECTURE.md", "(DEC-0019)", "(DEC-0018)")),
+            r => { Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true).Replace("\"status\": \"pending\"", "\"status\": \"decided\"")); CiteInArchitecture(r, "DEC-9999"); }),
         new("matriz com mecanismo planned de fase já aprovada", "CHK-STATE-CONSISTENCY",
             r => Replace(r, "docs/governance/enforcement-matrix.json", "\"phase\": \"phase-2\"\n        }\n      ]", "\"phase\": \"phase-1\"\n        }\n      ]")),
         new("produto importado sem registro de importação", "CHK-MIGRATION-HISTORY",
@@ -1396,7 +1459,7 @@ static class SelfTest
         new("Caso B: produto active no ecosystem.json, projeção diz not-migrated", "CHK-PORTAL",
             r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"active\"", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"not-migrated\""); }),
         new("Caso C: decisão decided, projeção ainda a mostra pendente", "CHK-PORTAL",
-            r => { RunGenerator(r); Replace(r, "docs/governance/decisions.json", "\"id\": \"DEC-0019\",\n      \"status\": \"pending\"", "\"id\": \"DEC-0019\",\n      \"status\": \"decided\""); }),
+            r => { Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true)); RunGenerator(r); Replace(r, "docs/governance/decisions.json", "\"status\": \"pending\"", "\"status\": \"decided\""); }),
         new("Caso D: build VALIDATED no registro, projeção diz HUMAN_VALIDATION_PENDING", "CHK-PORTAL",
             r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"state\": \"VALIDATED\"", "\"state\": \"HUMAN_VALIDATION_PENDING\"")); }),
         new("workflow de decisão sem a guarda do dono", "CHK-DECISION-FLOW",
@@ -1506,7 +1569,7 @@ static class SelfTest
             Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body).Code == 3, "recusa decisão que já foi decidida");
             Report(File.ReadAllText(Path.Combine(tmp, "docs", "governance", "decisions.json")).Contains("\"consequencesApplied\": false"), "registro automático marca as consequências como a aplicar");
             // Decisão registrada pela automação e citada em ARCHITECTURE §8.2 como aberta NÃO pode bloquear o registro (caso real DEC-0019)...
-            Replace(tmp, "ARCHITECTURE.md", "(DEC-0019)", "(DEC-9999)");
+            CiteInArchitecture(tmp, "DEC-9999");
             RunGenerator(tmp);
             Report(!Checks.RunAll(tmp).Failed, "decisão recém-registrada e ainda citada como aberta não bloqueia a automação");
             // ...mas, depois que o agente declara as consequências aplicadas, citá-la como aberta é deriva.
