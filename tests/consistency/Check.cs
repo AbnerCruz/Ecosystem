@@ -511,8 +511,15 @@ static class Checks
             var st = Regex.Match(text, @"^## Status\s*\n+\s*(\S+)", RegexOptions.Multiline);
             if (st.Success && !AdrStatuses.Any(s => st.Groups[1].Value.TrimEnd('.', ',', ';').Equals(s)))
                 c.R.Fail(id, $"{name}: status '{st.Groups[1].Value}' inválido; use um de: {string.Join(", ", AdrStatuses)}");
-            if (!index.Contains(name))
-                c.R.Fail(id, $"{name}: não listado no índice docs/adr/README.md");
+            // Índice (docs/adr/README.md): exatamente uma linha por ADR, com o mesmo status do arquivo. O índice usa merge=union
+            // (.gitattributes) para que acréscimos concorrentes de dois agentes não conflitem; esta regra garante que o resultado é válido.
+            var rows = Regex.Matches(index, $@"(?m)^\| \[{num}\]\({Regex.Escape(name)}\) \|[^|\n]*\| *([^|\n]+?) *\|\s*$").ToList();
+            if (rows.Count == 0)
+                c.R.Fail(id, $"{name}: não listado no índice docs/adr/README.md (linha '| [{num}]({name}) | título | status |')");
+            else if (rows.Count > 1)
+                c.R.Fail(id, $"{name}: listado {rows.Count} vezes no índice docs/adr/README.md");
+            else if (st.Success && !rows[0].Groups[1].Value.StartsWith(st.Groups[1].Value.TrimEnd('.', ',', ';', '—'), StringComparison.Ordinal))
+                c.R.Fail(id, $"{name}: status no índice ('{rows[0].Groups[1].Value}') difere do arquivo ('{st.Groups[1].Value}')");
         }
     }
 
@@ -1929,6 +1936,10 @@ static class SelfTest
             r => Replace(r, ".github/workflows/decision.yml", "          exit \"$verdict_code\"\n", "")),
         new("workflow de decisão grava sem exigir outcome=registered", "CHK-DECISION-FLOW",
             r => Replace(r, ".github/workflows/decision.yml", " && steps.apply.outputs.outcome == 'registered' && steps.verify.outputs.code == '0'", " && steps.verify.outputs.code == '0'")),
+        new("ADR listado duas vezes no índice (merge=union mal resolvido)", "CHK-ADR",
+            r => File.AppendAllText(Path.Combine(r, "docs", "adr", "README.md"), "| [0011](0011-local-first-e-promocao-por-evidencia.md) | duplicado | Aceito |\n")),
+        new("status do ADR no índice difere do arquivo", "CHK-ADR",
+            r => Replace(r, "docs/adr/README.md", "| [0011](0011-local-first-e-promocao-por-evidencia.md) | Local-first e promoção por evidência | Aceito |", "| [0011](0011-local-first-e-promocao-por-evidencia.md) | Local-first e promoção por evidência | Proposto |")),
         new("segredo commitado", "CHK-SECRETS",
             r => File.WriteAllText(Path.Combine(r, "leak.txt"), "token=" + "gh" + "p_" + new string('a', 36))),
     ];

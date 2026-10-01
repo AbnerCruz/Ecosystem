@@ -14,7 +14,7 @@
 
 ## Próxima tarefa
 
-**Fase 2 concluída** (gate aprovado em 2026-10-01). **Fase 3 — Hub read-only** aberta: próxima tarefa é a decisão **P3-2** (DEC-0022, UI e plataforma-alvo do Hub, pendente no portal); sem ela, `apps/hub` não é criado.
+**Fase 2 concluída** (gate aprovado em 2026-10-01). **Fase 3 — Hub read-only** em andamento: DEC-0022 decidida (A — Android nativo em C#); próxima tarefa é **P3-3** (esqueleto do Hub em `apps/hub`).
 
 Em paralelo, como trabalho **interno dos próprios Products** e **fora do escopo da Fase 2** (infraestrutura compartilhada): refatorações em `apps/urbe/` e `apps/lunet2d/` — que **fazem parte deste repositório** e são o único lugar de desenvolvimento deles; `AbnerCruz/Urbe` e `AbnerCruz/Lunet2D` não são lugares de desenvolvimento (são espelhos de distribuição transitórios, DEC-0008/DEC-0009) — governadas pelo ADR-0009 e [`refactoring.md`](docs/architecture/refactoring.md) — sugestão: **U-R1** no Urbe (continuar a decomposição de `app.js` / Product Shell) e **L-R2** no Lunet2D (decompor `MainActivity` em Shell + painéis), conforme [`candidates.md`](docs/architecture/candidates.md), cada uma delegada em tarefa própria e conduzida pelos processos locais de cada Product. Nenhum subsistema é extraído sem evidência de segundo consumidor ([`local-first.md`](docs/architecture/local-first.md)).
 
@@ -144,12 +144,12 @@ Cada tarefa traz: *saída verificável* · *depende de* · *evidência* · *gate
 
 ## Fase 3 — Hub read-only
 
-Objetivo: Hub inicial em C#; lê `ecosystem.json`; mostra Lunet2D e Urbe; integra leitura do GitHub; Past / Now / Next; CI, releases, branches, PRs e tarefas. **Somente leitura:** o Hub consome as fontes canônicas e nunca vira autoridade de estado (NN-001, NN-021) nem dependência dos produtos (NN-003, NN-023). Contratos e proposta: [ADR-0013](docs/adr/0013-hub-read-only-fase-3.md) (`Proposto`; tecnologia de UI e plataforma = **DEC-0022**, pendente no portal, bloqueante para o código). Evidência de abertura: handoff `HO-20261001-fase-3-aberta`.
+Objetivo: Hub inicial em C#; lê `ecosystem.json`; mostra Lunet2D e Urbe; integra leitura do GitHub; Past / Now / Next; CI, releases, branches, PRs e tarefas. **Somente leitura:** o Hub consome as fontes canônicas e nunca vira autoridade de estado (NN-001, NN-021) nem dependência dos produtos (NN-003, NN-023). Contratos: [ADR-0013](docs/adr/0013-hub-read-only-fase-3.md) (`Aceito`; UI e plataforma decididas em **DEC-0022-A**: Android nativo em C#). Evidência de abertura: handoff `HO-20261001-fase-3-aberta`.
 
 Cada tarefa traz: *saída verificável* · *depende de* · *evidência*. O gate é humano e em aparelho (NN-017).
 
-- [ ] P3-2 — **Decisão de UI e plataforma-alvo do Hub** (ADR-0013 B, DEC-0022): o agente propõe, o proprietário decide no portal.
-  - Saída: ADR-0013 `Aceito` e DEC-0022 registrada. Depende de: —. Evidência: handoff `HO-20261001-fase-3-aberta` (proposta e decisão pendente). **Não** é autoaprovável.
+- [x] P3-2 — **Decisão de UI e plataforma-alvo do Hub** (ADR-0013 B, DEC-0022): o proprietário escolheu **A — Android nativo em C#** no portal (Issue #37, 2026-10-01).
+  - Saída: ADR-0013 `Aceito` e DEC-0022 registrada. Depende de: —. Evidência: `responses/DEC-0022.md`; handoff `HO-20261002-dec-0022-e-integracao`.
 - [ ] P3-3 — **Esqueleto do Hub** em `apps/hub` (um projeto C#, na tecnologia decidida), com leitura de dados em biblioteca independente de UI; `hub` sai de `planned` em `ecosystem.json`; `CHK-BOUNDARIES` e `CHK-ARCH-REFS` fiscalizam o Hub real (nenhum Product depende dele). Sem `platform/`, sem Service, sem componente compartilhado (ADR-0011).
   - Saída: `apps/hub` compilando e testado; manifest do `hub` com `version.authority` decidida e `permissions.requests` (`network.access`, `ui.display`). Depende de: P3-2. Evidência: build + testes do Hub; checks de consistência verdes.
 - [ ] P3-4 — **Ler `ecosystem.json` e mostrar Lunet2D e Urbe** (nome, tipo, versão, status, links), com `not-available` quando faltar fonte; funciona offline com o último estado marcado como tal.

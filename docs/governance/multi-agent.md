@@ -47,6 +47,10 @@ Arquivos de **alto risco** de conflito semântico (destacados por `--integration
 
 A status machine dos handoffs ([`definition-of-done.md`](definition-of-done.md)) já distingue: `working` → `verifying`/`review` (agente terminou; aguardando revisão, validação humana ou integração) → `done` (integrado na `main` **e** verificado). `blocked` quando depende de decisão. Validação humana pendente aparece no portal (`HUMAN_VALIDATION_PENDING`). Não há lock nem reserva de arquivos.
 
-## 5. Futuro (não implementado)
+## 5. Integração automática (pendente: DEC-0023)
+
+O proprietário pediu que verificar o trabalho concorrente não dependa de acionar um agente ([ADD-0011](addenda/ADD-0011-colaboracao-multiagente-sem-verificacao-manual.md)). O integrador automático (verificação do estado combinado a cada PR e a cada mudança da `main`, com devolução ao agente autor em caso de conflito) espera a decisão DEC-0023 sobre até onde ele vai (só verificar ou também integrar). Até lá vale o fluxo manual do §1. Duas proteções já automáticas: `--integration` (base obsoleta e sobreposição) e o índice de ADRs com `merge=union` validado por `CHK-ADR`.
+
+## 6. Futuro (não implementado)
 
 Quando vários agentes receberem tarefas ao mesmo tempo, o sistema poderá comparar escopo esperado, paths prováveis, componentes e arquivos de alto risco e sinalizar `LOW OVERLAP` (paralelizar) ou `HIGH OVERLAP` (coordenar) antes de começar. Hoje a coordenação acontece na integração.

@@ -1,0 +1,3 @@
+# Índice de ADRs: acréscimos concorrentes de agentes diferentes (uma linha nova cada) se juntam sem conflito.
+# CHK-ADR garante o resultado: exatamente uma linha por ADR, com o mesmo status do arquivo (ADR-0015).
+docs/adr/README.md merge=union
