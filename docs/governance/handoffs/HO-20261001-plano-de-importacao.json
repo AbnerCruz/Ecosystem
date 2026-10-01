@@ -101,11 +101,10 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Proprietário: decidir DEC-0014 (e DEC-0013) no portal; revisar o plano.",
+    "Proprietário: decidir DEC-0014 no portal; revisar o plano (DEC-0013 já decidida: A).",
     "Próximo agente: P1-4 — importação do Lunet2D (PR A), só depois de DEC-0014 aprovada."
   ],
   "decisions_required": [
-    "DEC-0013",
     "DEC-0014"
   ],
   "normative_sources": [

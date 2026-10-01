@@ -142,7 +142,7 @@ Comportamentos do GitHub **NÃO VERIFICADOS** nesta sessão (sem acesso a config
 
 - **Lunet2D:** as 3 branches estão incorporadas à `main`: **não importar**.
 - **Urbe:** `claude/beta-v1` e `claude/mundo-real` contêm só merges de PR (#16/#17); `claude/fix-explorer-celular` tem 1 commit com **patch idêntico** ao `0cf0da8` da `main` (`git patch-id`). **PROPOSTA:** importá-las como `archive/urbe/<nome>` (custo desprezível, preserva tudo); as 27 branches `claude/*`/`chore/*` já são ancestrais da `main` e as 10 `dependabot/*` são propostas automáticas: **não importar**.
-- **Issues e PRs não fazem parte do histórico git**: `filter-repo` não os leva (R-LUN-7, R-URB-7). Hoje (FATO, 2026-10-01): **Lunet2D** 0 Issues e 25 PRs fechados; **Urbe** 1 Issue aberta (#33) e **10 PRs abertos do Dependabot** (#37–#46). A origem permanece viva (DEC-0008-A): **nada é apagado**; os PRs do Dependabot são fechados pelo passo de corte (§7.6). Onde ficam as Issues **novas** de cada produto: **DEC-0013** (não bloqueia).
+- **Issues e PRs não fazem parte do histórico git**: `filter-repo` não os leva (R-LUN-7, R-URB-7). Hoje (FATO, 2026-10-01): **Lunet2D** 0 Issues e 25 PRs fechados; **Urbe** 1 Issue aberta (#33) e **10 PRs abertos do Dependabot** (#37–#46). A origem permanece viva (DEC-0008-A): **nada é apagado**; os PRs do Dependabot são fechados pelo passo de corte (§7.6). Onde ficam as Issues **novas** de cada produto: **DEC-0013-A (decidida)** — nos repositórios de origem; o Ecosystem fica só com as Issues do próprio Ecosystem e da migração. A Issue #33 do Urbe permanece onde está.
 
 ## 10. Decisão de aprovação e critérios de aceite
 

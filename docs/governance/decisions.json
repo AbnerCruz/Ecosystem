@@ -410,7 +410,7 @@
     },
     {
       "id": "DEC-0013",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": false,
       "title": "Onde ficam as Issues de cada produto depois da migração",
@@ -434,7 +434,10 @@
         "docs/migration/inventory-urbe.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Nos repositórios de origem de cada produto; o Ecosystem fica só com as Issues do próprio Ecosystem e da migração (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/7).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0013.md"
     },
     {
       "id": "DEC-0014",
