@@ -79,9 +79,9 @@
     {
       "check": "Instalar a release v0.0.1-dev.107 do Lunet2D em aparelho (atualizando por cima; reinstalar é aceitável, ADD-0006) e abrir o app",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "https://github.com/AbnerCruz/Lunet2D/releases/tag/v0.0.1-dev.107",
-      "evidence": "Pendente (NN-017, DEVICE). O build é o mesmo código da dev.103, publicado pelo novo caminho."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-01 (Issue https://github.com/AbnerCruz/Ecosystem/issues/24); registro em docs/governance/responses/VAL-HO-20261001-distribuicao-automatizada-parte-1-873ec13d8960.md."
     }
   ],
   "known_issues": [
