@@ -337,6 +337,32 @@
       "decision": "Sim: o proprietário quer clicar na alternativa no portal e ter a decisão registrada no repositório. O mecanismo é proposta do agente (ADR-0007) e aguarda ratificação (DEC-0011).",
       "decidedAt": "2026-10-01",
       "record": "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md"
+    },
+    {
+      "id": "DEC-9999",
+      "status": "pending",
+      "component": "portal",
+      "blocking": false,
+      "title": "TESTE do mecanismo de resposta pelo portal (pode ignorar)",
+      "context": "Decisão sintética criada pelo agente apenas para validar de ponta a ponta o fluxo de ADR-0007. Será removida logo após o teste. Não requer nenhuma ação do proprietário.",
+      "question": "[TESTE] Esta decisão existe só para testar o registro automático. Ignore.",
+      "alternatives": [
+        {
+          "option": "Alternativa A de teste",
+          "consequences": "Nenhuma: decisão sintética."
+        },
+        {
+          "option": "Alternativa B de teste",
+          "consequences": "Nenhuma: decisão sintética."
+        }
+      ],
+      "consequences": "Nenhuma.",
+      "manifestCompatibility": "Teste técnico; sem efeito sobre o produto.",
+      "related": [
+        "docs/adr/0007-resposta-a-decisoes-pelo-portal.md"
+      ],
+      "raisedBy": "claude-code (teste do mecanismo)",
+      "raisedAt": "2026-10-01"
     }
   ]
 }
