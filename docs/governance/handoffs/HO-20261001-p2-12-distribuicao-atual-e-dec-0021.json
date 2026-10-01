@@ -8,7 +8,7 @@
     "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
   },
   "branch": "claude/new-session-vfwhkv",
-  "commit": null,
+  "commit": "08f5663",
   "pr": null,
   "blockers": [],
   "cost": null,
@@ -73,6 +73,12 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "decision-verdict.sh: registered+verify0+pushed → 0; already-registered → 0; recusa, erro, consistência recusada, push falho, sem outcome e aplicador não executado → 1."
+    },
+    {
+      "check": "CI consistency na branch (run 36869104313, commit 08f5663)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/36869104313 — conclusion: success (checks, self-test e verificação do histórico com fetch-depth 0). O workflow pages só roda na main e é confirmado depois do avanço da main (ver mensagem final da tarefa)."
     }
   ],
   "known_issues": [
