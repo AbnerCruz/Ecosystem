@@ -66,6 +66,7 @@ portal: "Escolher B"  ──►  GitHub abre uma Issue já preenchida  ──►
 - **Formato único:** o gerador da projeção define o título e o corpo da Issue; o aplicador os valida (marcador `ecosystem-decision:v1`, decisão, letra e hash do texto da alternativa). Uma escolha cujo texto mudou depois de exibida é recusada.
 - **Registro:** `docs/governance/decisions.json` (decisão `decided`, data, texto, `record`) e `docs/governance/responses/DEC-NNNN.md`.
 - **Depois do registro:** um agente aplica as consequências nos documentos dependentes e registra o handoff; decisão estrutural continua exigindo ADR (NN-011).
+- **Quem pode responder:** só o proprietário. Ver [`access.md`](access.md) (quem vê, quem decide e por que uma senha no portal não protege).
 - **Agentes nunca respondem uma decisão pendente do proprietário**, nem criando essa Issue (MANIFEST §23.2).
 
 Evolução incompatível incrementa `schemaVersion` e exige ADR.

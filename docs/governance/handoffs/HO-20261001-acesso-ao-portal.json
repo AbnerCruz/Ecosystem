@@ -1,0 +1,86 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-acesso-ao-portal",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T00:24:33Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-36",
+  "component": "portal",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/architecture/access.md",
+    "docs/architecture/portal.md",
+    "docs/governance/decisions.json",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-acesso-ao-portal.json"
+  ],
+  "work_completed": [
+    "Pergunta do proprietário sobre quem vê e quem decide respondida com fatos verificados e registrada em docs/architecture/access.md.",
+    "DEC-0012 levantada (manter público / barreira de senha cosmética / repositório privado), visível no portal com o objeto.",
+    "Nenhuma senha foi gravada no repositório; o pedido de 'colocar a senha' não foi implementado porque o GitHub Pages é estático e o repositório é público: trancar a página não esconderia os dados."
+  ],
+  "verification": [
+    {
+      "check": "Repositório e Pages públicos; sem segredos nem e-mail pessoal no repositório",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "API do GitHub: visibility=public; git grep sem ocorrências; CHK-SECRETS passa."
+    },
+    {
+      "check": "Decidir é restrito ao dono do repositório",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Guarda 'github.event.issue.user.login == github.repository_owner' no workflow decision.yml (CHK-DECISION-FLOW) e recusa de autor errado no self-test do aplicador."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: todos os checks passaram."
+    }
+  ],
+  "known_issues": [
+    "O que a documentação do GitHub diz sobre Pages de repositório privado não foi verificado (docs.github.com bloqueado neste ambiente); está marcado como NÃO VERIFICADO em access.md.",
+    "A senha enviada no chat deve ser considerada exposta."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: responder DEC-0012 no portal."
+  ],
+  "decisions_required": [
+    "DEC-0012"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/architecture/portal.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "A pergunta virou decisão pendente em fonte persistida, não só resposta no chat."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Escrita automatizada continua restrita ao dono; nenhuma credencial nova criada."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Estado de acesso e decisão pendente visíveis no portal com objeto."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado 'review': decisão do proprietário pendente."
+    }
+  ],
+  "cost": null
+}

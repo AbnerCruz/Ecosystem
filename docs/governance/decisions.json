@@ -369,6 +369,38 @@
       ],
       "raisedBy": "claude-code",
       "raisedAt": "2026-10-01"
+    },
+    {
+      "id": "DEC-0012",
+      "status": "pending",
+      "component": "portal",
+      "blocking": false,
+      "title": "Quem pode ver o portal e o repositório",
+      "context": "FATO (docs/architecture/access.md): o repositório e o portal são públicos; qualquer pessoa com o link vê estado, decisões e documentos. Decidir já é restrito ao proprietário: só o dono do repositório tem Issue aceita pelo workflow. O GitHub Pages é estático e não tem como conferir uma senha de verdade; como o repositório é público, trancar a página não esconderia os mesmos dados nos arquivos. A senha enviada no chat não foi gravada em lugar nenhum e deve ser considerada exposta.",
+      "question": "Quem deve poder ver o portal e o repositório?",
+      "alternatives": [
+        {
+          "option": "Manter público (decisões já são restritas ao proprietário)",
+          "consequences": "Nada a fazer. Qualquer pessoa vê estado, decisões e documentos; ninguém além de você registra decisões. Não há segredos no repositório (verificado)."
+        },
+        {
+          "option": "Barreira de senha no navegador (cosmética)",
+          "consequences": "Esconde a interface e os dados da projeção de quem não tem a senha, com a senha guardada como secret do repositório (não no código). Não esconde o repositório; a cifra é quebrável offline se a senha for fraca; exige que você crie o secret e escolha uma senha forte. Dá mais sensação de segurança do que proteção real."
+        },
+        {
+          "option": "Tornar o repositório privado",
+          "consequences": "É a única opção que esconde o conteúdo. Pelo que o GitHub documenta (não verificado agora), o Pages de repositório privado depende do plano e o site pode continuar público ou sair do ar; os links de objeto do portal passariam a exigir login; um portal privado de verdade exigiria hospedagem com login fora do GitHub Pages."
+        }
+      ],
+      "consequences": "Define se o portal e o repositório são abertos, parcialmente barrados ou fechados. Nenhuma opção altera quem pode decidir.",
+      "manifestCompatibility": "Compatível: dados do usuário e do proprietário sob controle dele (MANIFEST §41); segredos nunca no repositório (§30.2); NN-001 (o portal é projeção, o repositório é a autoridade).",
+      "recommendation": "Manter público. Nada sensível está no repositório e decidir já é restrito a você. Escolha privado só se houver conteúdo que não deve ser lido por terceiros; a senha no portal daria falsa segurança.",
+      "related": [
+        "docs/architecture/access.md",
+        "docs/architecture/portal.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }
