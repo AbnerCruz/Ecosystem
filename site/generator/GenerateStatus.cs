@@ -348,6 +348,62 @@ if (Directory.Exists(hdir))
                 reuseLatest[key] = (ts, a, S(hn["message_id"])!, key.Item2);
         }
     }
+// Distribuição atual (P2-12/P2-13): derivada do perfil `current`; as localizações vêm do próprio componente (nada digitado).
+JsonObject? distribution = null;
+if (File.Exists(P("docs/distribution/current.profile.json")))
+{
+    var prof = Load("docs/distribution/current.profile.json");
+    var chRows = new JsonArray();
+    foreach (var e in prof["entries"]!.AsArray())
+    {
+        var cid = S(e!["component"])!; var comp = eco["components"]![cid]!;
+        foreach (var ch in e["channels"]?.AsArray() ?? [])
+        {
+            var from = S(ch!["locationFrom"]);
+            chRows.Add(new JsonObject
+            {
+                ["component"] = cid,
+                ["componentName"] = S(comp["name"]),
+                ["sourcePath"] = S(comp["path"]),
+                ["channel"] = S(ch["id"]),
+                ["kind"] = S(ch["kind"]),
+                ["role"] = S(ch["role"]),
+                ["location"] = from == "source.repository" ? S(comp["source"]?["repository"]) : S(comp[from!]),
+                ["artifacts"] = new JsonArray((ch["artifacts"]?.AsArray() ?? []).Select(x => (JsonNode?)JsonValue.Create(S(x))).ToArray()),
+                ["updateMechanism"] = S(ch["updateMechanism"]),
+            });
+        }
+    }
+    distribution = new JsonObject
+    {
+        ["profile"] = S(prof["id"]), ["name"] = S(prof["name"]), ["status"] = S(prof["status"]),
+        ["decisions"] = new JsonArray((prof["decisions"]?.AsArray() ?? []).Select(x => (JsonNode?)JsonValue.Create(S(x))).ToArray()),
+        ["channels"] = chRows,
+        ["source"] = "docs/distribution/current.profile.json (SOURCE = path do componente no Ecosystem; localizações derivadas de ecosystem.json)",
+    };
+}
+// Capabilities (P2-13): derivadas de provides/requires dos manifests; nenhuma é inventada. Vazio hoje, e o portal não mostra a seção.
+var capabilityIndex = new SortedDictionary<string, (SortedSet<string> Providers, SortedSet<string> Consumers)>(StringComparer.Ordinal);
+foreach (var (cid, comp) in eco["components"]!.AsObject())
+{
+    foreach (var pv in comp!["provides"]?.AsArray() ?? [])
+    {
+        var k = S(pv!["capability"])!; if (!capabilityIndex.ContainsKey(k)) capabilityIndex[k] = ([], []);
+        capabilityIndex[k].Providers.Add(cid);
+    }
+    foreach (var rq in comp["requires"]?.AsArray() ?? [])
+    {
+        var k = S(rq!["capability"])!; if (!capabilityIndex.ContainsKey(k)) capabilityIndex[k] = ([], []);
+        capabilityIndex[k].Consumers.Add(cid);
+    }
+}
+var capabilities = new JsonArray(capabilityIndex.Select(kv => (JsonNode?)new JsonObject
+{
+    ["id"] = kv.Key,
+    ["providers"] = new JsonArray(kv.Value.Providers.Select(x => (JsonNode?)JsonValue.Create(x)).ToArray()),
+    ["consumers"] = new JsonArray(kv.Value.Consumers.Select(x => (JsonNode?)JsonValue.Create(x)).ToArray()),
+}).ToArray());
+
 var reuseCandidates = new JsonArray(reuseLatest.Values.Where(v => S(v.Node["status"]) != "product-specific")
     .OrderBy(v => S(v.Node["subject"]), StringComparer.Ordinal).ThenBy(v => v.Component, StringComparer.Ordinal)
     .Select(v => (JsonNode?)new JsonObject
@@ -471,6 +527,8 @@ var result = new JsonObject
     ["pendingDecisions"] = pendingDecisions,
     ["pendingValidations"] = pending,
     ["reuseCandidates"] = reuseCandidates,
+    ["distribution"] = distribution,
+    ["capabilities"] = capabilities,
     ["docs"] = docs,
 };
 

@@ -54,7 +54,7 @@ jobs:
 
       - name: Conferir consistência antes de gravar
         id: verify
-        if: steps.apply.outputs.code == '0'
+        if: steps.apply.outputs.code == '0' && steps.apply.outputs.outcome == 'registered'
         run: |
           set +e
           dotnet run tests/consistency/Check.cs > /tmp/check.log 2>&1
@@ -74,7 +74,7 @@ jobs:
 
       - name: Gravar no repositório
         id: push
-        if: steps.apply.outputs.code == '0' && steps.verify.outputs.code == '0'
+        if: steps.apply.outputs.code == '0' && steps.apply.outputs.outcome == 'registered' && steps.verify.outputs.code == '0'
         env:
           COMMIT_MESSAGE: ${{ steps.apply.outputs.commit_message }}
         run: |
@@ -97,17 +97,31 @@ jobs:
         if: steps.push.outputs.pushed == 'true'
         run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref "$DEFAULT_BRANCH"
 
-      - name: Responder na Issue e encerrá-la
+      # Veredito: o workflow só termina verde quando o resultado desejado existe no repositório (registrado agora, ou já
+      # registrado com a mesma escolha). Recusa, erro, falha de consistência ou de push => falha (vermelho), com a causa
+      # na Issue. A regra vive em decision-verdict.sh (testada pelo self-test), não em texto de stdout.
+      - name: Responder na Issue, encerrá-la e dar o veredito
         if: always()
         env:
           APPLY_CODE: ${{ steps.apply.outputs.code }}
+          OUTCOME: ${{ steps.apply.outputs.outcome }}
           VERIFY_CODE: ${{ steps.verify.outputs.code }}
           PUSHED: ${{ steps.push.outputs.pushed }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          reason="not planned"
-          if [ "$APPLY_CODE" = "0" ] && [ "$VERIFY_CODE" = "0" ] && [ "$PUSHED" = "true" ]; then reason="completed"; fi
+          set +e
+          bash .github/scripts/decision-verdict.sh > /tmp/verdict.txt
+          verdict_code=$?
+          reason=$(sed -n 's/^reason=//p' /tmp/verdict.txt)
           if [ ! -s /tmp/decision-result.md ]; then
-            echo '**Registro não efetuado.** A automação falhou antes de produzir um resultado; veja a execução do workflow.' > /tmp/decision-result.md
+            echo '**Registro não efetuado.** A automação falhou antes de produzir um resultado.' > /tmp/decision-result.md
+          fi
+          if [ "$verdict_code" != "0" ]; then
+            {
+              echo
+              echo "**Esta decisão NÃO foi registrada** e a execução do workflow termina em falha de propósito. Corrija a causa acima (ou reabra a escolha no portal) e envie de novo. Execução: $RUN_URL"
+            } >> /tmp/decision-result.md
           fi
           gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/decision-result.md
           gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason "$reason"
+          exit "$verdict_code"

@@ -185,6 +185,15 @@ function render(s) {
         el("p", { class: "hint" }, link(p.record, "registro"))))
     : [el("li", { class: "hint" }, "Nenhuma validação humana pendente registrada.")]));
 
+  const dist = s.distribution;
+  document.getElementById("distribution-hint").textContent = dist
+    ? `Perfil ${dist.status} (${dist.profile}); decisões: ${dist.decisions.join(", ")}. Fonte = código em cada caminho abaixo, no Ecosystem; distribuição = canal listado. Derivado; nada aqui é alterado pelo portal.`
+    : "Nenhum perfil de distribuição registrado.";
+  document.getElementById("distribution").replaceChildren(...(dist ? dist.channels : []).map((ch) => el("li", {},
+    el("strong", {}, ch.componentName), ` · fonte ${ch.sourcePath} · canal ${ch.kind} (${ch.role}) · `,
+    ch.location ? link(ch.location, ch.location) : el("span", { class: "na" }, "sem localização"),
+    ch.artifacts.length ? ` · ${ch.artifacts.join(", ")}` : "", ch.updateMechanism ? ` · atualização: ${ch.updateMechanism}` : "")));
+
   const reuse = document.getElementById("reuse");
   reuse.replaceChildren(...((s.reuseCandidates || []).length
     ? s.reuseCandidates.map((r) => el("li", {},

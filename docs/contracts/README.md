@@ -4,7 +4,7 @@
 
 ## Estado atual
 
-Contratos da fundação (ADR-0002), da projeção do portal (ADR-0005) e **da Fase 2** (ADR-0012, `Proposto` até DEC-0020), em [`schemas/`](schemas/):
+Contratos da fundação (ADR-0002), da projeção do portal (ADR-0005) e **da Fase 2** (ADR-0012, `Aceito` em parte: DEC-0020-B), em [`schemas/`](schemas/):
 
 | Schema / arquivo | Autoridade de | ID |
 |--------|---------------|----|
@@ -12,7 +12,7 @@ Contratos da fundação (ADR-0002), da projeção do portal (ADR-0005) e **da Fa
 | [`capability-contract.schema.json`](schemas/capability-contract.schema.json) | contrato de uma capability (`docs/contracts/capabilities/<id>.json`; hoje nenhuma capability real: só o slice de exemplo) | `ecosystem/contracts/capability-contract/1` |
 | [`permissions-catalog.schema.json`](schemas/permissions-catalog.schema.json) · [`permissions.json`](permissions.json) | catálogo de permissões (deny-by-default) | `ecosystem/contracts/permissions-catalog/1` |
 | [`context.schema.json`](schemas/context.schema.json) | Context hierárquico (exemplos em [`examples/context/`](examples/context/)) | `ecosystem/contracts/context/1` |
-| [`distribution-profile.schema.json`](schemas/distribution-profile.schema.json) | Distribution Profile (nomes dos eixos provisórios; exemplo em [`examples/distribution/`](examples/distribution/)) | `ecosystem/contracts/distribution-profile/1` |
+| [`distribution-profile.schema.json`](schemas/distribution-profile.schema.json) | Distribution Profile (nomes dos eixos **provisórios**; exemplo em [`examples/distribution/`](examples/distribution/); arranjo real em [`docs/distribution/current.profile.json`](../distribution/current.profile.json)) | `ecosystem/contracts/distribution-profile/1` |
 | [`handoff.schema.json`](schemas/handoff.schema.json) | handoffs de agentes (inclui `reuse_assessment` opcional, ADR-0011) | `ecosystem/contracts/handoff/1` |
 | [`decisions.schema.json`](schemas/decisions.schema.json) | decisões do proprietário | `ecosystem/contracts/decisions/1` |
 | [`validation-record.schema.json`](schemas/validation-record.schema.json) | registro de validação por build | `ecosystem/contracts/validation-record/1` |

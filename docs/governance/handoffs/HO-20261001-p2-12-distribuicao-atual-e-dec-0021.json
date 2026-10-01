@@ -1,0 +1,145 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "ecosystem",
+  "state": "done",
+  "message_id": "HO-20261001-p2-12-distribuicao-atual-e-dec-0021",
+  "timestamp": "2026-10-01T18:00:00Z",
+  "task_id": "P2-12",
+  "files_changed": [
+    ".github/scripts/apply-decision.cs",
+    ".github/scripts/decision-verdict.sh",
+    ".github/workflows/decision.yml",
+    "tests/consistency/Check.cs",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "AGENTS.md",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/README.md",
+    "docs/governance/communication.md",
+    "docs/governance/decisions.json",
+    "docs/contracts/README.md",
+    "docs/contracts/schemas/distribution-profile.schema.json",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "docs/distribution/current.profile.json",
+    "docs/architecture/distribution.md",
+    "site/generator/GenerateStatus.cs",
+    "site/app.js",
+    "site/index.html",
+    "site/data/ecosystem-status.json",
+    "docs/governance/handoffs/HO-20261001-p2-12-distribuicao-atual-e-dec-0021.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO (HEAD inicial 794e6b4, branch igual à main): ao reler o repositório, o proprietário já havia respondido DEC-0020 no portal (Issue #30) e o registrador gravou o commit 7768938 'Registrar DEC-0020: alternativa B'. decisions.json: DEC-0020 decided, alternativa B, record docs/governance/responses/DEC-0020.md, consequencesApplied=false. Nada foi gravado à mão; não houve reconciliação do evento (o fluxo funcionou nesta vez: o defeito do falso-sucesso só aparece quando o registro é recusado).",
+    "DECISÃO DO PROPRIETÁRIO (DEC-0020-B): aceitar os contratos estruturais da Fase 2 e manter PROVISÓRIOS os nomes dos eixos do Distribution Profile. APLICADA: ADR-0012 'Aceito em parte' (contratos ratificados; nomes provisórios até DEC-0021/P2-9), ADR README, contracts README, ARCHITECTURE §3.2/§8.2, ROADMAP P2-9 (continua ABERTA e agora depende de DEC-0021 e do perfil current), consequencesApplied=true.",
+    "FATO / CAUSA RAIZ do falso-sucesso (DEC-0019): em .github/workflows/decision.yml o último passo ('Responder na Issue e encerrá-la', if: always()) calculava o motivo, comentava e fechava a Issue 'not planned' e terminava com o código do último comando (0), qualquer que fosse o resultado; os passos anteriores usam set +e e só gravam códigos em outputs. Logo, recusa do aplicador (código 3), falha dos checks ou falha do push nunca tornavam o job vermelho. Além disso o aplicador não distinguia 'já registrada' de 'recusada' (recusava a repetição com 3), e exceções não tratadas saíam sem mensagem estruturada.",
+    "ALTERAÇÃO — registrador (.github/scripts/apply-decision.cs): contrato estruturado de saída (código 0+outcome=registered | 0+already-registered | 3+rejected | 2+error), outcome em GITHUB_OUTPUT; idempotência para decisões e validações (mesma escolha = sucesso sem alterar nada; outra escolha = recusa sem sobrescrever; autorização continua antes da idempotência); estado inconsistente (registro de resposta pré-existente com decisão pendente; decisions.json ilegível) = erro 2 sem gravar; gravação em duas etapas com desfazer; try/catch geral com mensagem de resultado. 'Decidida com consequencesApplied=false' continua sendo sucesso do registrador (distinção explícita: decisão registrada + consequências pendentes ≠ decisão não registrada).",
+    "ALTERAÇÃO — workflow (.github/workflows/decision.yml) e novo .github/scripts/decision-verdict.sh: conferir e gravar só quando outcome=registered; o último passo comenta na Issue (com aviso explícito 'Esta decisão NÃO foi registrada' e o link da execução quando falha), encerra a Issue e termina com exit \"$verdict_code\". Regra do veredito num script testável: falha é o padrão; só 'registered+verify 0+pushed true' e 'already-registered' são sucesso.",
+    "ALTERAÇÃO — testes (self-test e CHK-DECISION-FLOW): Caso A (válida: pending→decided, código 0, outcome registered), Caso B (idempotência de decisão e de validação, nada alterado), Caso C (hash/título/autor inválidos e outra alternativa: recusa, nada gravado), Caso D (registro pré-existente e decisions.json ilegível: erro 2, nenhum arquivo criado), Caso E (decidida + consequencesApplied=false é consistente e sucesso), 10 combinações do veredito, e 2 mutações do workflow (sem 'exit $verdict_code'; gravar sem outcome=registered). CHK-DECISION-FLOW agora exige o veredito no último passo.",
+    "ALTERAÇÃO — ROADMAP: 'Em paralelo e fora do Ecosystem' reescrito: as refatorações de apps/urbe/ e apps/lunet2d/ são trabalho interno dos próprios Products (fora do escopo da Fase 2 de infraestrutura compartilhada), o único lugar de desenvolvimento deles é este repositório e AbnerCruz/Urbe e AbnerCruz/Lunet2D não são lugares de desenvolvimento. A mesma regra foi registrada em AGENTS.md e na tabela de autoridades. P1-14 recebeu a nota histórica de que DEC-0019 foi criada ali e resolvida em P1-15 (ADR-0010 Aceito).",
+    "ALTERAÇÃO — P2-12: SOURCE × DISTRIBUTION formalizado (docs/architecture/distribution.md §10): SOURCE = path do componente no Ecosystem; DISTRIBUTION = por onde builds/releases/web chegam ao usuário. O formato do Distribution Profile ganhou, de forma aditiva e ainda provisória, status (example|current), decisions e channels (kind, role, locationFrom, artifacts, updateMechanism; as localizações vêm de ecosystem.json, não são copiadas). O arranjo atual está descrito como dado em docs/distribution/current.profile.json (Lunet2D: GitHub Release com APK, sem atualizador; Urbe: GitHub Release com APK e instalador Windows + atualização por releases/latest, e GitHub Pages com service worker), validado por CHK-REGISTRY (4 mutações). Nenhum canal, release, endpoint, Pages ou repositório foi alterado.",
+    "INFERÊNCIA (achado de P2-12): o eixo provisório 'distribution' não tinha valor para 'canal externo ao Ecosystem' (GitHub Releases/Pages); acrescentado external-channel (provisório). visibility=public e commercialModel=undecided do perfil current são inferência (o portal lê as origens sem token; nenhum modelo comercial decidido). Também: o campo source.repository de ecosystem.json guarda o repositório de ORIGEM (nome histórico), não a fonte de desenvolvimento; está esclarecido nos schemas/documentos, sem renomear.",
+    "ALTERAÇÃO — DEC-0021 (nova, pendente, não bloqueante, no portal): distribuição definitiva dos Products. A — manter o arranjo atual com gatilhos de reavaliação (recomendação); B — centralizar no Ecosystem/GitHub; C — preparar plataforma first-party progressivamente. Consequências reais por cenário (apps instalados, URLs, canais de atualização, assinatura Android, Electron updater, Urbe Web/PWA, GitHub Releases, histórico, Issues/PRs, redirects, fallback, custo) em distribution.md §10. Invariante: nenhum repositório antigo apagado/arquivado, nenhum Pages desligado, nenhuma release removida.",
+    "ALTERAÇÃO — P2-13 (condição do ROADMAP atendida pelo perfil real): projeção derivada 'distribution' e 'capabilities' (esta vazia: nenhuma capability real; o portal não exibe seção para ela), seção 'Distribuição atual dos Products' no portal, CHK-PORTAL compara com o perfil e com provides/requires (2 casos de self-test). Sem estado manual, sem capability inventada.",
+    "ESTADO: P2-9 aberta (depende de DEC-0021); P2-14 NÃO iniciada nem autoaprovada (gate da Fase 2 'aguardando'). Nenhum Product refatorado, nenhuma Tool/Service/Workspace extraído, nenhum diretório platform/tools/workspaces/services criado, releases/canais/Urbe Web intactos, repositórios antigos intactos."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "21/21 checks verdes no HEAD de trabalho (inclui CHK-REGISTRY com o perfil current, CHK-PORTAL com distribution/capabilities e CHK-DECISION-FLOW com o veredito)."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "'todos os checks provaram detectar suas violações': 8 casos novos do aplicador (A–E, idempotência de decisão e validação), 10 do veredito, 4 do perfil de distribuição, 2 do portal, 2 mutações do workflow."
+    },
+    {
+      "check": "Veredito do workflow executado como script",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "decision-verdict.sh: registered+verify0+pushed → 0; already-registered → 0; recusa, erro, consistência recusada, push falho, sem outcome e aplicador não executado → 1."
+    }
+  ],
+  "known_issues": [
+    "O workflow real não foi exercitado com uma recusa de verdade (não se cria Issue de resposta no lugar do proprietário, MANIFEST §23.2); a prova é o veredito testado como script, a presença do passo final verificada por CHK-DECISION-FLOW e a mutação do workflow no self-test. Quem confirmar em produção é o próximo clique real que for recusado ou repetido.",
+    "source.repository em ecosystem.json mantém o nome histórico; renomear para 'origin' seria mudança de schema/gerador/checks e fica como proposta se o proprietário quiser."
+  ],
+  "next_actions": [
+    "Proprietário: responder DEC-0021 no portal (não bloqueia; recomendação A).",
+    "Agente, após DEC-0021: aplicar a decisão, congelar os nomes dos eixos (P2-9) e preparar a validação do gate (P2-14) no portal para o proprietário aprovar.",
+    "Trabalhos paralelos NÃO executados aqui, em tarefas separadas e dentro de apps/: Urbe U-R1 (apps/urbe, continuar a decomposição de app.js / Product Shell) e Lunet2D L-R2 (apps/lunet2d, decompor MainActivity em Shell + painéis); ADR-0009."
+  ],
+  "decisions_required": [
+    "DEC-0021"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/adr/0008-aprovacao-de-validacoes-pelo-portal.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/adr/0010-semantica-de-ecosystem-phase-e-estado-derivado.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/architecture/local-first.md",
+    "docs/architecture/refactoring.md",
+    "docs/architecture/distribution.md",
+    "docs/migration/import-plan.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Perfil current sem URLs copiadas (locationFrom aponta para ecosystem.json); projeção conferida por CHK-PORTAL; uma autoridade para a distribuição atual."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A resposta DEC-0020 foi registrada pelo mecanismo canônico (7768938) e suas consequências aplicadas nos documentos; DEC-0021 criada em decisions.json, não só no chat."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma mudança de canal/distribuição sem decisão; DEC-0021 pendente; ADR-0012 ratificado apenas no que o proprietário decidiu."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "apps/ inalterado; nenhum Product refatorado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "O registrador continua restrito ao dono; a autorização é avaliada antes da idempotência (teste)."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Verde = resultado aplicado: veredito testado; P2-14 não autoaprovada."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhum componente, diretório de plataforma ou Service criado; um arquivo de dados e um script de 20 linhas."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração; nenhuma capability real registrada só porque o Registry existe (ADR-0011)."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "O perfil current não inclui o Hub; a regra do Hub bundled continua verificada."
+    }
+  ]
+}

@@ -18,7 +18,9 @@
     "pendingDecisions",
     "pendingValidations",
     "reuseCandidates",
-    "docs"
+    "docs",
+    "distribution",
+    "capabilities"
   ],
   "properties": {
     "schema": {
@@ -392,14 +394,44 @@
           "record"
         ],
         "properties": {
-          "subject": { "type": "string", "minLength": 1 },
-          "component": { "type": "string", "minLength": 1 },
-          "status": { "enum": ["possible-candidate", "external-consumer-exists"] },
-          "rationale": { "type": "string", "minLength": 1 },
-          "consumers": { "type": "array", "items": { "type": "string" } },
-          "extractionReview": { "type": ["string", "null"] },
-          "handoff": { "type": "string", "minLength": 1 },
-          "record": { "type": "string", "pattern": "^https://" }
+          "subject": {
+            "type": "string",
+            "minLength": 1
+          },
+          "component": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "possible-candidate",
+              "external-consumer-exists"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1
+          },
+          "consumers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "extractionReview": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "handoff": {
+            "type": "string",
+            "minLength": 1
+          },
+          "record": {
+            "type": "string",
+            "pattern": "^https://"
+          }
         }
       }
     },
@@ -529,6 +561,131 @@
           "raisedAt": {
             "type": "string",
             "minLength": 1
+          }
+        }
+      }
+    },
+    "distribution": {
+      "description": "Distribuição atual dos Products (P2-13): derivada de docs/distribution/current.profile.json e de ecosystem.json. Nunca digitada; null quando não há perfil.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "profile",
+        "name",
+        "status",
+        "decisions",
+        "channels",
+        "source"
+      ],
+      "properties": {
+        "profile": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "example",
+            "current"
+          ]
+        },
+        "decisions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source": {
+          "type": "string"
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "component",
+              "componentName",
+              "sourcePath",
+              "channel",
+              "kind",
+              "role",
+              "location",
+              "artifacts",
+              "updateMechanism"
+            ],
+            "properties": {
+              "component": {
+                "type": "string"
+              },
+              "componentName": {
+                "type": "string"
+              },
+              "sourcePath": {
+                "type": "string"
+              },
+              "channel": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string"
+              },
+              "location": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "artifacts": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "updateMechanism": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "description": "Capabilities derivadas de provides/requires em ecosystem.json (P2-13). Vazio enquanto nenhuma capability real existir; nunca inventadas.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "providers",
+          "consumers"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "consumers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }

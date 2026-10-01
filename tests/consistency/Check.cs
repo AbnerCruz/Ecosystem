@@ -176,7 +176,7 @@ static class Checks
         "docs/contracts/permissions.json" => "docs/contracts/schemas/permissions-catalog.schema.json",
         _ when file.StartsWith("docs/contracts/") && file.Contains("/capabilities/") && file.EndsWith(".json") => "docs/contracts/schemas/capability-contract.schema.json",
         _ when file.StartsWith("docs/contracts/examples/context/") => "docs/contracts/schemas/context.schema.json",
-        _ when file.StartsWith("docs/contracts/examples/distribution/") => "docs/contracts/schemas/distribution-profile.schema.json",
+        _ when file.StartsWith("docs/contracts/examples/distribution/") || (file.StartsWith("docs/distribution/") && file.EndsWith(".profile.json")) => "docs/contracts/schemas/distribution-profile.schema.json",
         _ => null,
     };
 
@@ -751,9 +751,19 @@ static class Checks
         foreach (var f in (Directory.Exists(c.P("docs/contracts/examples/context")) ? Directory.EnumerateFiles(c.P("docs/contracts/examples/context"), "*.json") : []).Order())
             using (var doc = JsonDocument.Parse(File.ReadAllText(f)))
                 foreach (var e in RegistryFiles.ContextErrors(doc.RootElement, products)) c.R.Fail(id, $"{c.Rel(f)}: {e}");
-        foreach (var f in (Directory.Exists(c.P("docs/contracts/examples/distribution")) ? Directory.EnumerateFiles(c.P("docs/contracts/examples/distribution"), "*.json") : []).Order())
+        var compMap = c.Components().GroupBy(x => x.Id).ToDictionary(g => g.Key, g => g.First().El);
+        var decisionIds = c.DecisionList().Select(d => d.Str("id") ?? "").ToHashSet();
+        var profileFiles = new List<string>();
+        if (Directory.Exists(c.P("docs/contracts/examples/distribution"))) profileFiles.AddRange(Directory.EnumerateFiles(c.P("docs/contracts/examples/distribution"), "*.json").Order());
+        if (Directory.Exists(c.P("docs/distribution"))) profileFiles.AddRange(Directory.EnumerateFiles(c.P("docs/distribution"), "*.profile.json").Order());
+        foreach (var f in profileFiles)
             using (var doc = JsonDocument.Parse(File.ReadAllText(f)))
-                foreach (var e in RegistryFiles.ProfileErrors(doc.RootElement, ids)) c.R.Fail(id, $"{c.Rel(f)}: {e}");
+            {
+                var inReal = c.Rel(f).StartsWith("docs/distribution/");
+                if (inReal && doc.RootElement.Str("status") != "current") c.R.Fail(id, $"{c.Rel(f)}: perfil real em docs/distribution/ precisa ter status 'current'");
+                foreach (var e in RegistryFiles.ProfileErrors(doc.RootElement, compMap, decisionIds)) c.R.Fail(id, $"{c.Rel(f)}: {e}");
+            }
+        if (!profileFiles.Any(f => c.Rel(f) == "docs/distribution/current.profile.json")) c.R.Fail(id, "docs/distribution/current.profile.json ausente: a distribuição atual dos Products precisa estar descrita como dado (P2-12)");
     }
 
     // --- CHK-MIGRATION-HISTORY (NN-012; P1-8) ---
@@ -961,6 +971,15 @@ static class Checks
         if (!Regex.IsMatch(text, @"(?m)^permissions:\s*$")) c.R.Fail(id, $"{wf}: permissões explícitas ausentes (NN-016)");
         if (!text.Contains(".github/scripts/apply-decision.cs")) c.R.Fail(id, $"{wf}: não chama o aplicador");
         if (!text.Contains("tests/consistency/Check.cs")) c.R.Fail(id, $"{wf}: não roda os checks antes de gravar");
+        // Veredito (falso-sucesso do caso DEC-0019): o último passo precisa terminar com o código do veredito, e o veredito
+        // vem do script testado, não de texto. Gravar/conferir só quando o aplicador registrou algo agora (outcome=registered).
+        const string verdict = ".github/scripts/decision-verdict.sh";
+        if (!File.Exists(c.P(verdict))) c.R.Fail(id, $"{verdict} ausente");
+        var lastStep = text[text.LastIndexOf("      - name:", StringComparison.Ordinal)..];
+        if (!lastStep.Contains("if: always()") || !lastStep.Contains("decision-verdict.sh") || !Regex.IsMatch(lastStep, @"(?m)^\s+exit ""\$verdict_code""\s*$"))
+            c.R.Fail(id, $"{wf}: o último passo não termina com o veredito (exit \"$verdict_code\"): uma decisão recusada poderia terminar verde");
+        if (Regex.Matches(text, @"steps\.apply\.outputs\.outcome == 'registered'").Count < 2)
+            c.R.Fail(id, $"{wf}: conferir e gravar precisam depender de outcome == 'registered' (a repetição idempotente não grava nada)");
         var n = 0;
         foreach (var line in text.Split('\n'))
         {
@@ -1091,6 +1110,28 @@ static class Checks
         var projectedReuse = p.Arr("reuseCandidates").Select(x => $"{x.Str("subject")}|{x.Str("component")}|{x.Str("status")}").ToHashSet();
         if (!projectedReuse.SetEquals(expectedReuseSet)) c.R.Fail(id, $"{rel}: candidatos a reutilização divergem dos handoffs");
 
+        // Distribuição atual e capabilities (P2-13): derivadas, conferidas contra as fontes.
+        var profPath = c.P("docs/distribution/current.profile.json");
+        var expectedChannels = new HashSet<string>();
+        if (File.Exists(profPath))
+            using (var pd = JsonDocument.Parse(File.ReadAllText(profPath)))
+                foreach (var e in pd.RootElement.Arr("entries"))
+                    foreach (var ch in e.Arr("channels")) expectedChannels.Add($"{e.Str("component")}|{ch.Str("id")}|{ch.Str("kind")}|{ch.Str("role")}");
+        var projectedChannels = (p.TryGetProperty("distribution", out var pdist) && pdist.ValueKind == JsonValueKind.Object ? pdist.Arr("channels") : [])
+            .Select(x => $"{x.Str("component")}|{x.Str("channel")}|{x.Str("kind")}|{x.Str("role")}").ToHashSet();
+        if (!projectedChannels.SetEquals(expectedChannels)) c.R.Fail(id, $"{rel}: canais de distribuição divergem de docs/distribution/current.profile.json");
+        var expectedCaps = new HashSet<string>();
+        foreach (var (cid, comp) in c.Components())
+            foreach (var key in new[] { "provides", "requires" })
+                foreach (var x in comp.Arr(key)) expectedCaps.Add($"{x.Str("capability")}|{key}|{cid}");
+        var projectedCaps = new HashSet<string>();
+        foreach (var cap in p.Arr("capabilities"))
+        {
+            foreach (var pr in cap.Arr("providers")) projectedCaps.Add($"{cap.Str("id")}|provides|{pr.GetString()}");
+            foreach (var cs in cap.Arr("consumers")) projectedCaps.Add($"{cap.Str("id")}|requires|{cs.GetString()}");
+        }
+        if (!projectedCaps.SetEquals(expectedCaps)) c.R.Fail(id, $"{rel}: capabilities projetadas divergem de provides/requires em ecosystem.json");
+
         foreach (var d in p.Arr("docs"))
             if (d.Str("path") is { } dp && !File.Exists(c.P(dp)))
                 c.R.Fail(id, $"{rel}: documento inexistente {dp}");
@@ -1124,6 +1165,8 @@ sealed class Context(string root, Report r)
             if (Directory.Exists(P(d)))
                 files.AddRange(Directory.EnumerateFiles(P(d), "*.json", SearchOption.AllDirectories).Order().Select(Rel)
                     .Where(f => f.Contains("/capabilities/") || f.Contains("/examples/context/") || f.Contains("/examples/distribution/")));
+        if (Directory.Exists(P("docs/distribution")))
+            files.AddRange(Directory.EnumerateFiles(P("docs/distribution"), "*.profile.json").Order().Select(Rel));
         var vdir = P("docs/validation");
         if (Directory.Exists(vdir))
             files.AddRange(Directory.EnumerateFiles(vdir, "*.json", SearchOption.AllDirectories).Order().Select(Rel));
@@ -1377,15 +1420,33 @@ static class RegistryFiles
         return errors;
     }
 
-    /// <summary>Regras de Distribution Profile além do schema: componentes existem, sem duplicata e NN-023 (Hub nunca bundled com Product público).</summary>
-    public static List<string> ProfileErrors(JsonElement prof, ISet<string> componentIds)
+    /// <summary>Regras de Distribution Profile além do schema: componentes existem, sem duplicata, NN-023 (Hub nunca bundled com Product público) e,
+    /// em perfis `current`, canais resolvíveis a partir do próprio componente (sem URL copiada), todo componente com canal e decisões existentes.</summary>
+    public static List<string> ProfileErrors(JsonElement prof, IReadOnlyDictionary<string, JsonElement> components, ISet<string> decisionIds)
     {
         var errors = new List<string>(); var entries = prof.Arr("entries").ToList();
-        foreach (var e in entries.Where(e => !componentIds.Contains(e.Str("component") ?? ""))) errors.Add($"componente '{e.Str("component")}' não existe em ecosystem.json");
+        foreach (var e in entries.Where(e => !components.ContainsKey(e.Str("component") ?? ""))) errors.Add($"componente '{e.Str("component")}' não existe em ecosystem.json");
         foreach (var g in entries.GroupBy(e => e.Str("component")).Where(g => g.Count() > 1)) errors.Add($"componente '{g.Key}' repetido");
         var publicProduct = entries.Any(e => e.Str("component") is { } cid && cid != "hub" && e.Str("visibility") == "public" && e.Str("availability") is "bundled" or "optional" or "marketplace");
         if (publicProduct && entries.Any(e => e.Str("component") == "hub" && e.Str("availability") == "bundled"))
             errors.Add("o Hub não pode ser 'bundled' em um perfil que inclui um componente público (NN-023)");
+        foreach (var d in prof.Arr("decisions").Select(x => x.GetString() ?? "").Where(d => !decisionIds.Contains(d))) errors.Add($"a decisão {d} citada não existe em decisions.json");
+        if (prof.Str("status") != "current") return errors;
+        foreach (var e in entries)
+        {
+            var cid = e.Str("component") ?? "";
+            var channels = e.Arr("channels").ToList();
+            if (channels.Count == 0) errors.Add($"perfil 'current': '{cid}' não descreve nenhum canal de distribuição");
+            if (!components.TryGetValue(cid, out var comp)) continue;
+            if (comp.Str("type") == "product" && !comp.TryGetProperty("path", out _)) errors.Add($"'{cid}' não declara o path de desenvolvimento (SOURCE)");
+            foreach (var ch in channels)
+            {
+                var from = ch.Str("locationFrom") ?? "";
+                var resolved = from == "source.repository" ? (comp.TryGetProperty("source", out var s) ? s.Str("repository") : null) : comp.Str(from);
+                if (string.IsNullOrEmpty(resolved)) errors.Add($"canal '{ch.Str("id")}': '{cid}' não declara '{from}' em ecosystem.json (a localização não pode ser inventada no perfil)");
+                if (ch.Str("kind") is "first-party-platform" or "external-store") errors.Add($"canal '{ch.Str("id")}': o tipo '{ch.Str("kind")}' não existe hoje; um perfil 'current' só descreve canais reais");
+            }
+        }
         return errors;
     }
 }
@@ -1715,6 +1776,14 @@ static class SelfTest
             r => Replace(r, "docs/contracts/examples/context/lunet-editor.json", "\"level\": \"tool\"", "\"level\": \"project\"")),
         new("Distribution Profile com o Hub bundled (NN-023)", "CHK-REGISTRY",
             r => Replace(r, "docs/contracts/examples/distribution/lunet-public.example.json", "\"availability\": \"optional\"", "\"availability\": \"bundled\"")),
+        new("perfil de distribuição atual com canal que o componente não declara", "CHK-REGISTRY",
+            r => Replace(r, "ecosystem.json", "\"publicUrl\": \"https://abnercruz.github.io/Urbe/\",", "")),
+        new("perfil de distribuição atual descreve plataforma first-party inexistente", "CHK-REGISTRY",
+            r => Replace(r, "docs/distribution/current.profile.json", "\"kind\": \"github-release\"", "\"kind\": \"first-party-platform\"")),
+        new("perfil de distribuição atual cita decisão inexistente", "CHK-REGISTRY",
+            r => Replace(r, "docs/distribution/current.profile.json", "\"DEC-0008\"", "\"DEC-8888\"")),
+        new("perfil de distribuição atual removido", "CHK-REGISTRY",
+            r => File.Delete(Path.Combine(r, "docs", "distribution", "current.profile.json"))),
         new("Caso A: ROADMAP [x] com Issue em state:review", "CHK-STATE-CONSISTENCY",
             r => { Directory.CreateDirectory(Path.Combine(r, "site", "data")); File.WriteAllText(Path.Combine(r, "site", "data", "issues-snapshot.json"), "[{\"number\":6,\"title\":\"P1-3 — Plano\",\"state\":\"OPEN\",\"labels\":[{\"name\":\"state:review\"}]}]"); }),
         new("tarefa [~] sem Issue aberta", "CHK-STATE-CONSISTENCY",
@@ -1731,6 +1800,10 @@ static class SelfTest
             r => File.Delete(Path.Combine(r, "docs", "migration", "import-urbe.json"))),
         new("portal mostra gate não aprovado como aprovado", "CHK-PORTAL",
             r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"phase\": 2,\n        \"state\": \"aguardando\"", "\"phase\": 2,\n        \"state\": \"aprovado\"")); }),
+        new("portal mostra canal de distribuição que o perfil não declara", "CHK-PORTAL",
+            r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"channel\": \"urbe-github-pages\"", "\"channel\": \"urbe-inventado\""); }),
+        new("portal mostra capability que nenhum manifest declara", "CHK-PORTAL",
+            r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"capabilities\": []", "\"capabilities\": [ { \"id\": \"inventada.cap\", \"providers\": [\"urbe\"], \"consumers\": [] } ]"); }),
         new("Caso B: produto active no ecosystem.json, projeção diz not-migrated", "CHK-PORTAL",
             r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"active\"", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"not-migrated\""); }),
         new("Caso C: decisão decided, projeção ainda a mostra pendente", "CHK-PORTAL",
@@ -1742,6 +1815,10 @@ static class SelfTest
         new("texto da Issue interpolado em script", "CHK-DECISION-FLOW",
             r => Replace(r, ".github/workflows/decision.yml", "          dotnet run .github/scripts/apply-decision.cs\n",
                 "          echo \"${{ github.event.issue.body }}\"\n          dotnet run .github/scripts/apply-decision.cs\n")),
+        new("workflow de decisão termina verde mesmo sem registrar (sem o veredito)", "CHK-DECISION-FLOW",
+            r => Replace(r, ".github/workflows/decision.yml", "          exit \"$verdict_code\"\n", "")),
+        new("workflow de decisão grava sem exigir outcome=registered", "CHK-DECISION-FLOW",
+            r => Replace(r, ".github/workflows/decision.yml", " && steps.apply.outputs.outcome == 'registered' && steps.verify.outputs.code == '0'", " && steps.verify.outputs.code == '0'")),
         new("segredo commitado", "CHK-SECRETS",
             r => File.WriteAllText(Path.Combine(r, "leak.txt"), "token=" + "gh" + "p_" + new string('a', 36))),
     ];
@@ -1778,6 +1855,7 @@ static class SelfTest
 
         failures += ApplierTests(repoRoot);
         failures += ValidationApplierTests(repoRoot);
+        failures += DecisionVerdictTests(repoRoot);
         failures += OriginSyncTests(repoRoot);
         failures += RegistryUnitTests();
         failures += MigrationHistoryTests(repoRoot);
@@ -1793,20 +1871,22 @@ static class SelfTest
         return failures == 0 ? 0 : 1;
     }
 
-    static (int Code, string Result) RunApplier(string root, string author, string association, string title, string body)
+    static (int Code, string Result, string Outcome) RunApplier(string root, string author, string association, string title, string body)
     {
         var resultFile = Path.GetTempFileName();
+        var outputFile = Path.GetTempFileName();
         var psi = new ProcessStartInfo("dotnet") { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var a in new[] { "run", ".github/scripts/apply-decision.cs" }) psi.ArgumentList.Add(a);
         psi.Environment["ISSUE_NUMBER"] = "1"; psi.Environment["ISSUE_TITLE"] = title; psi.Environment["ISSUE_BODY"] = body;
         psi.Environment["ISSUE_AUTHOR"] = author; psi.Environment["AUTHOR_ASSOCIATION"] = association; psi.Environment["REPO_OWNER"] = "AbnerCruz";
         psi.Environment["ISSUE_URL"] = "https://github.com/AbnerCruz/Ecosystem/issues/1"; psi.Environment["ISSUE_CREATED_AT"] = "2026-10-01T12:00:00Z";
-        psi.Environment["RESULT_FILE"] = resultFile; psi.Environment.Remove("GITHUB_OUTPUT");
+        psi.Environment["RESULT_FILE"] = resultFile; psi.Environment["GITHUB_OUTPUT"] = outputFile;
         using var proc = Process.Start(psi)!;
         proc.StandardOutput.ReadToEnd(); proc.StandardError.ReadToEnd(); proc.WaitForExit();
         var result = File.Exists(resultFile) ? File.ReadAllText(resultFile) : "";
-        File.Delete(resultFile);
-        return (proc.ExitCode, result);
+        var outcome = File.ReadAllLines(outputFile).Where(l => l.StartsWith("outcome=")).Select(l => l["outcome=".Length..]).LastOrDefault() ?? "";
+        File.Delete(resultFile); File.Delete(outputFile);
+        return (proc.ExitCode, result, outcome);
     }
 
     /// <summary>Prova o aplicador de decisões: o caminho feliz registra e deixa o repositório consistente; cada recusa de segurança recusa.</summary>
@@ -1824,26 +1904,52 @@ static class SelfTest
             var dec = proj.RootElement.Arr("pendingDecisions").First(d => d.Str("id") == "DEC-9999");
             var alt = dec.Arr("alternatives").ElementAt(1);
             string title = alt.Str("issueTitle")!, body = alt.Str("issueBody")!;
-            var before = File.ReadAllText(Path.Combine(tmp, "docs", "governance", "decisions.json"));
+            var decisionsFile = Path.Combine(tmp, "docs", "governance", "decisions.json");
+            var before = File.ReadAllText(decisionsFile);
+            string title0 = dec.Arr("alternatives").ElementAt(0).Str("issueTitle")!, body0 = dec.Arr("alternatives").ElementAt(0).Str("issueBody")!;
+            bool Rejected((int Code, string Result, string Outcome) r) => r.Code == 3 && r.Outcome == "rejected" && r.Result.StartsWith("**Registro não efetuado.**");
 
-            Report(RunApplier(tmp, "intruso", "NONE", title, body).Code == 3, "recusa autor que não é o proprietário");
-            Report(RunApplier(tmp, "AbnerCruz", "OWNER", "Decisão DEC-9999", body).Code == 3, "recusa título fora do formato");
-            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body.Replace("option-hash: ", "option-hash: 0")).Code == 3, "recusa hash adulterado");
-            Report(RunApplier(tmp, "AbnerCruz", "OWNER", "Decisão DEC-9999: Z", body).Code == 3, "recusa título e corpo que discordam");
-            Report(File.ReadAllText(Path.Combine(tmp, "docs", "governance", "decisions.json")) == before, "recusas não alteram decisions.json");
+            // Caso C — tentativa inválida: recusa (código ≠ 0) e não grava.
+            Report(Rejected(RunApplier(tmp, "intruso", "NONE", title, body)), "recusa autor que não é o proprietário");
+            Report(Rejected(RunApplier(tmp, "AbnerCruz", "OWNER", "Decisão DEC-9999", body)), "recusa título fora do formato");
+            Report(Rejected(RunApplier(tmp, "AbnerCruz", "OWNER", title, body.Replace("option-hash: ", "option-hash: 0"))), "recusa hash adulterado");
+            Report(Rejected(RunApplier(tmp, "AbnerCruz", "OWNER", "Decisão DEC-9999: Z", body)), "recusa título e corpo que discordam");
+            Report(File.ReadAllText(decisionsFile) == before, "recusas não alteram decisions.json");
 
+            // Caso D — estado inconsistente: o aplicador não grava parcialmente e sai com erro (≠ 0).
+            var staleRecord = Path.Combine(tmp, "docs", "governance", "responses", "DEC-9999.md");
+            File.WriteAllText(staleRecord, "resto de uma tentativa anterior\n");
+            var stale = RunApplier(tmp, "AbnerCruz", "OWNER", title, body);
+            Report(stale.Code == 2 && stale.Outcome == "error" && File.ReadAllText(decisionsFile) == before, "registro pré-existente com a decisão pendente: erro, nada gravado");
+            File.Delete(staleRecord);
+            File.WriteAllText(decisionsFile, "{ isto não é JSON");
+            var broken = RunApplier(tmp, "AbnerCruz", "OWNER", title, body);
+            Report(broken.Code == 2 && broken.Outcome == "error" && broken.Result.StartsWith("**Registro não efetuado.**") && !File.Exists(staleRecord), "decisions.json ilegível: erro estruturado, nenhum arquivo criado");
+            File.WriteAllText(decisionsFile, before);
+
+            // Caso A — decisão válida: pending → decided, código 0 e outcome=registered.
             var ok = RunApplier(tmp, "AbnerCruz", "OWNER", title, body);
-            Report(ok.Code == 0, "registra a decisão do proprietário");
-            using var after = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "docs", "governance", "decisions.json")));
+            Report(ok.Code == 0 && ok.Outcome == "registered", "registra a decisão do proprietário (código 0, outcome=registered)");
+            using var after = JsonDocument.Parse(File.ReadAllText(decisionsFile));
             var d9999 = after.RootElement.Arr("decisions").First(d => d.Str("id") == "DEC-9999");
             Report(d9999.Str("status") == "decided" && d9999.Str("decidedAt") == "2026-10-01" && d9999.Str("record") == "docs/governance/responses/DEC-9999.md"
-                && File.Exists(Path.Combine(tmp, "docs", "governance", "responses", "DEC-9999.md")), "decisão fica decidida, datada e com registro persistido");
+                && File.Exists(staleRecord), "decisão fica decidida, datada e com registro persistido");
             RunGenerator(tmp);
             var consistent = Checks.RunAll(tmp);
             if (consistent.Failed) consistent.Print(Console.Out);
             Report(!consistent.Failed, "o repositório continua consistente depois do registro");
-            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body).Code == 3, "recusa decisão que já foi decidida");
-            Report(File.ReadAllText(Path.Combine(tmp, "docs", "governance", "decisions.json")).Contains("\"consequencesApplied\": false"), "registro automático marca as consequências como a aplicar");
+
+            // Caso E — decisão registrada com consequências ainda a aplicar é um estado LEGÍTIMO (sucesso do registrador), não "não registrada".
+            Report(File.ReadAllText(decisionsFile).Contains("\"consequencesApplied\": false") && !consistent.Failed, "decidida + consequencesApplied=false é estado válido e consistente");
+
+            // Caso B — idempotência: reprocessar o mesmo evento não duplica nada e é sucesso; outra alternativa é recusa.
+            var registered = File.ReadAllText(decisionsFile); var recordText = File.ReadAllText(staleRecord);
+            var again = RunApplier(tmp, "AbnerCruz", "OWNER", title, body);
+            Report(again.Code == 0 && again.Outcome == "already-registered" && File.ReadAllText(decisionsFile) == registered && File.ReadAllText(staleRecord) == recordText,
+                "reprocessar o mesmo evento é idempotente (código 0, already-registered, nada alterado)");
+            Report(Rejected(RunApplier(tmp, "AbnerCruz", "OWNER", title0, body0)) && File.ReadAllText(decisionsFile) == registered, "outra alternativa para decisão já decidida: recusa e não sobrescreve");
+            Report(RunApplier(tmp, "intruso", "NONE", title, body).Code == 3, "reprocessar com autor inválido continua recusando (a autorização vem antes da idempotência)");
+            Report(File.ReadAllText(decisionsFile).Contains("\"consequencesApplied\": false"), "registro automático marca as consequências como a aplicar");
             // Decisão registrada pela automação e citada em ARCHITECTURE §8.2 como aberta NÃO pode bloquear o registro (caso real DEC-0019)...
             CiteInArchitecture(tmp, "DEC-9999");
             RunGenerator(tmp);
@@ -1896,7 +2002,7 @@ static class SelfTest
             Report(File.ReadAllText(path) == before, "recusas não alteram o handoff");
 
             var ok = RunApplier(tmp, "AbnerCruz", "OWNER", title, body + "ficou ótimo `x`\n");
-            Report(ok.Code == 0, "registra a aprovação do proprietário");
+            Report(ok.Code == 0 && ok.Outcome == "registered", "registra a aprovação do proprietário (outcome=registered)");
             using var after = JsonDocument.Parse(File.ReadAllText(path));
             var entry = after.RootElement.Arr("verification").First();
             Report(entry.Str("result") == "passed" && (entry.Str("evidence") ?? "").Contains("Aprovada pelo proprietário")
@@ -1907,7 +2013,11 @@ static class SelfTest
             var consistent = Checks.RunAll(tmp);
             if (consistent.Failed) consistent.Print(Console.Out);
             Report(!consistent.Failed, "o repositório continua consistente depois do registro");
-            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body).Code == 3, "recusa validação que já foi respondida");
+            var handoffRegistered = File.ReadAllText(path);
+            var replayVal = RunApplier(tmp, "AbnerCruz", "OWNER", title, body);
+            Report(replayVal.Code == 0 && replayVal.Outcome == "already-registered" && File.ReadAllText(path) == handoffRegistered, "reprocessar a mesma validação é idempotente (nada alterado)");
+            var opposite = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
+            Report(opposite.Code == 3 && opposite.Outcome == "rejected" && File.ReadAllText(path) == handoffRegistered, "resposta oposta a uma validação já respondida é recusada e não sobrescreve");
 
             // Reprovação e handoff substituído por um mais recente da mesma tarefa.
             using var proj2 = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site", "data", "ecosystem-status.json")));
@@ -1918,6 +2028,30 @@ static class SelfTest
         }
         catch (Exception e) { Report(false, "execução: " + e.Message); }
         finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }
+        return failures;
+    }
+
+    /// <summary>Prova o veredito do workflow de decisão: só "registrada agora" ou "já registrada" terminam verdes; todo o resto falha.</summary>
+    static int DecisionVerdictTests(string repoRoot)
+    {
+        var failures = 0;
+        void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  veredito do workflow de decisão: {name}"); if (!ok) failures++; }
+        int Verdict(string apply, string outcome, string verify, string pushed)
+        {
+            var (code, _) = Sh(repoRoot, "bash", [".github/scripts/decision-verdict.sh"],
+                new() { ["APPLY_CODE"] = apply, ["OUTCOME"] = outcome, ["VERIFY_CODE"] = verify, ["PUSHED"] = pushed });
+            return code;
+        }
+        Report(Verdict("0", "registered", "0", "true") == 0, "registrada, consistente e enviada: sucesso");
+        Report(Verdict("0", "already-registered", "", "") == 0, "já registrada com a mesma escolha: sucesso idempotente");
+        Report(Verdict("3", "rejected", "", "") != 0, "recusada pelo aplicador: falha");
+        Report(Verdict("2", "error", "", "") != 0, "erro/estado inconsistente: falha");
+        Report(Verdict("0", "registered", "1", "") != 0, "registrada no arquivo, mas a consistência recusou o repositório: falha");
+        Report(Verdict("0", "registered", "0", "false") != 0, "registrada, mas o push falhou: falha");
+        Report(Verdict("0", "registered", "", "") != 0, "registrada sem conferência nem push: falha");
+        Report(Verdict("0", "", "", "") != 0, "aplicador sem outcome: falha");
+        Report(Verdict("", "", "", "") != 0, "aplicador nem chegou a rodar (checkout/.NET falhou): falha");
+        Report(Verdict("1", "registered", "0", "true") != 0, "código do aplicador diferente de 0 nunca é sucesso, mesmo com o resto verde");
         return failures;
     }
 

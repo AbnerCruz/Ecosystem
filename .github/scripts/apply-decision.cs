@@ -6,8 +6,13 @@
 // Entradas (variáveis de ambiente; o workflow as passa por 'env', nunca por interpolação em script):
 //   ISSUE_NUMBER, ISSUE_TITLE, ISSUE_BODY, ISSUE_AUTHOR, AUTHOR_ASSOCIATION, REPO_OWNER, ISSUE_URL, ISSUE_CREATED_AT
 //   RESULT_FILE   (opcional) arquivo onde a mensagem de resultado é escrita (padrão: decision-result.md)
-//   GITHUB_OUTPUT (opcional) recebe commit_message=<assunto do commit> em caso de sucesso
-// Saída: código 0 = decisão registrada; 3 = recusada (motivo no RESULT_FILE); 2 = erro de ambiente.
+// Saída (contrato estruturado; o workflow decide pelo código e por `outcome`, nunca pelo texto):
+//   código 0 + outcome=registered          decisão/validação gravada agora (há o que commitar; commit_message=<assunto>)
+//   código 0 + outcome=already-registered  mesma escolha já estava registrada: reprocessar o evento é idempotente (nada a gravar)
+//   código 3 + outcome=rejected            recusada (motivo no RESULT_FILE); nada foi gravado
+//   código 2 + outcome=error               erro de ambiente ou estado canônico ilegível/inconsistente; nada foi gravado
+// Somente os dois primeiros significam "o resultado desejado existe no repositório" (sucesso). Veja .github/scripts/decision-verdict.sh.
+//   GITHUB_OUTPUT (opcional) recebe outcome=<...> e, em caso de gravação, commit_message=<assunto do commit>
 //
 // Formato da Issue (gerado por site/generator/GenerateStatus.cs, uma única fonte):
 //   título:  "Decisão DEC-0008: A"
@@ -30,17 +35,39 @@ string Env(string name) => Environment.GetEnvironmentVariable(name) ?? "";
 
 var resultFile = Env("RESULT_FILE") is { Length: > 0 } rf ? rf : "decision-result.md";
 
+void Outcome(string value)
+{
+    if (Env("GITHUB_OUTPUT") is { Length: > 0 } o) File.AppendAllText(o, $"outcome={value}\n");
+}
+
 int Reject(string message)
 {
     File.WriteAllText(resultFile, "**Registro não efetuado.** " + message + "\n");
     Console.Error.WriteLine("RECUSADA: " + message);
+    Outcome("rejected");
     return 3;
+}
+
+int Error(string message)
+{
+    File.WriteAllText(resultFile, "**Registro não efetuado.** " + message + " Nada foi gravado.\n");
+    Console.Error.WriteLine("ERRO: " + message);
+    Outcome("error");
+    return 2;
+}
+
+int AlreadyRegistered(string what)
+{
+    File.WriteAllText(resultFile, $"**Já estava registrada.** {what} Nada foi alterado: reprocessar o mesmo evento é idempotente.\n");
+    Console.WriteLine("JÁ REGISTRADA: " + what);
+    Outcome("already-registered");
+    return 0;
 }
 
 string? root = null;
 for (var d = new DirectoryInfo(Directory.GetCurrentDirectory()); d is not null; d = d.Parent)
     if (File.Exists(Path.Combine(d.FullName, "MANIFEST.md")) && File.Exists(Path.Combine(d.FullName, "ecosystem.json"))) { root = d.FullName; break; }
-if (root is null) { Console.Error.WriteLine("Raiz do repositório não encontrada."); return 2; }
+if (root is null) return Error("Raiz do repositório não encontrada.");
 
 var author = Env("ISSUE_AUTHOR");
 var owner = Env("REPO_OWNER");
@@ -49,6 +76,11 @@ var body = Env("ISSUE_BODY").Replace("\r\n", "\n");
 var number = Env("ISSUE_NUMBER");
 var issueUrl = Env("ISSUE_URL");
 
+try { return Apply(); }
+catch (Exception e) { return Error($"Falha ao aplicar ({e.GetType().Name}: {e.Message.Split('\n')[0]})."); }
+
+int Apply()
+{
 // 1. Autorização: somente o dono do repositório (NN-016).
 if (owner.Length == 0 || !string.Equals(author, owner, StringComparison.OrdinalIgnoreCase) || Env("AUTHOR_ASSOCIATION") != "OWNER")
     return Reject("O autor da Issue não é o proprietário do repositório.");
@@ -81,22 +113,25 @@ int ApplyValidation()
     var target = all.FirstOrDefault(h => h.Node["message_id"]?.GetValue<string>() == bHandoff);
     if (target.Node is null) return Reject($"O handoff {bHandoff} não existe.");
     if (target.Node["task_id"]?.GetValue<string>() != taskId) return Reject($"O handoff {bHandoff} não é da tarefa {taskId}.");
+    JsonObject? entry = null;
+    foreach (var v in target.Node["verification"]!.AsArray())
+    {
+        if (v?["kind"]?.GetValue<string>() != "human") continue;
+        var chk = v["check"]?.GetValue<string>() ?? ""; var obj = v["object"]?.GetValue<string>() ?? "";
+        var h = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(chk + "\n" + obj))).ToLowerInvariant()[..12];
+        if (h == bHash) { entry = v.AsObject(); break; }
+    }
+    if (entry is null) return Reject("Nenhuma verificação humana confere com o 'check-hash': o objeto mudou desde que o portal o exibiu. Recarregue o portal.");
+    // Idempotência: a mesma resposta já gravada é sucesso; uma resposta diferente não sobrescreve a anterior.
+    var currentResult = entry["result"]?.GetValue<string>();
+    if (currentResult == (approve ? "passed" : "failed")) return AlreadyRegistered($"A validação {taskId} já está {(approve ? "aprovada" : "reprovada")}.");
+    if (currentResult != "pending") return Reject($"A validação {taskId} já foi respondida ({currentResult}); a resposta anterior não é sobrescrita. Recarregue o portal.");
     var latest = all.Where(h => h.Node["task_id"]?.GetValue<string>() == taskId)
         .OrderBy(h => h.Node["timestamp"]?.GetValue<string>() ?? "", StringComparer.Ordinal).Last();
     if (latest.Node["message_id"]?.GetValue<string>() != bHandoff)
         return Reject($"O handoff {bHandoff} não é o mais recente da tarefa {taskId}; a validação foi substituída. Recarregue o portal.");
     var state = target.Node["state"]?.GetValue<string>();
     if (state is "done" or "cancelled" or "failed") return Reject($"O handoff {bHandoff} já está encerrado ({state}).");
-
-    JsonObject? entry = null;
-    foreach (var v in target.Node["verification"]!.AsArray())
-    {
-        if (v?["kind"]?.GetValue<string>() != "human" || v["result"]?.GetValue<string>() != "pending") continue;
-        var chk = v["check"]?.GetValue<string>() ?? ""; var obj = v["object"]?.GetValue<string>() ?? "";
-        var h = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(chk + "\n" + obj))).ToLowerInvariant()[..12];
-        if (h == bHash) { entry = v.AsObject(); break; }
-    }
-    if (entry is null) return Reject("Nenhuma verificação humana pendente confere com o 'check-hash': já foi respondida ou mudou desde que o portal a exibiu. Recarregue o portal.");
 
     var checkText = entry["check"]!.GetValue<string>(); var objText = entry["object"]!.GetValue<string>();
     var created = Env("ISSUE_CREATED_AT");
@@ -132,19 +167,22 @@ int ApplyValidation()
     sb.AppendLine(approve
         ? "O resultado foi gravado na verificação do handoff. O `state` do handoff e o ROADMAP **não** foram alterados por este registro: um agente deve atualizá-los (AGENTS.md §3)."
         : "O resultado `failed` foi gravado na verificação do handoff. Um agente deve tratá-lo como bloqueio: corrigir, e então levar uma nova validação ao portal. O `state` do handoff não foi alterado por este registro.");
-    File.WriteAllText(recordPath, sb.ToString());
-
     var date = Regex.IsMatch(created, @"^\d{4}-\d{2}-\d{2}") ? created[..10] : DateTime.UtcNow.ToString("yyyy-MM-dd");
     entry["result"] = approve ? "passed" : "failed";
     entry["evidence"] = $"{(approve ? "Aprovada" : "Reprovada")} pelo proprietário pelo portal em {date} (Issue {issueRef}); registro em {recordRel}.";
-    File.WriteAllText(target.File, target.Node.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
+    // Gravação em duas etapas com desfazer (nunca fica registro parcial).
+    var handoffBefore = File.ReadAllText(target.File);
+    var recordExisted = File.Exists(recordPath);
+    File.WriteAllText(recordPath, sb.ToString());
+    try { File.WriteAllText(target.File, target.Node.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n"); }
+    catch { if (!recordExisted) File.Delete(recordPath); File.WriteAllText(target.File, handoffBefore); throw; }
 
     File.WriteAllText(resultFile,
         $"**Validação registrada.** {taskId}: **{verb}**\n\n" +
         $"Registro: `{recordRel}` e a verificação no handoff `{bHandoff}`. O portal é republicado em seguida. " +
         "O estado do handoff e o ROADMAP serão atualizados por um agente.\n");
     if (Env("GITHUB_OUTPUT") is { Length: > 0 } outFile)
-        File.AppendAllText(outFile, $"commit_message=Registrar validação {taskId}: {verb} (pelo proprietário no portal, Issue #{number})\n");
+        File.AppendAllText(outFile, $"outcome=registered\ncommit_message=Registrar validação {taskId}: {verb} (pelo proprietário no portal, Issue #{number})\n");
     Console.WriteLine($"REGISTRADA: validação {taskId} {verb}");
     return 0;
 }
@@ -167,7 +205,7 @@ var doc = JsonNode.Parse(File.ReadAllText(decisionsPath))!;
 var decisions = doc["decisions"]!.AsArray();
 var decision = decisions.FirstOrDefault(x => x?["id"]?.GetValue<string>() == decisionId)?.AsObject();
 if (decision is null) return Reject($"{decisionId} não existe em decisions.json.");
-if (decision["status"]?.GetValue<string>() != "pending") return Reject($"{decisionId} não está pendente (estado atual: {decision["status"]}).");
+var currentStatus = decision["status"]?.GetValue<string>();
 
 // 4. A alternativa precisa existir e ser exatamente a que o portal mostrou (impede aplicar uma escolha desatualizada).
 var alternatives = decision["alternatives"]!.AsArray();
@@ -179,11 +217,23 @@ var expectedHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(op
 if (bodyHash != expectedHash)
     return Reject($"O texto da alternativa {letter} mudou desde que o portal a exibiu (hash esperado {expectedHash}). Recarregue o portal e escolha de novo.");
 
+// 4b. Idempotência: a mesma escolha já registrada é sucesso (reprocessar o evento não duplica nada); outra escolha, ou um estado
+// que não é nem pendente nem decidido, é recusa. "Decidida com consequências a aplicar" é um estado legítimo, não uma falha.
+if (currentStatus == "decided")
+{
+    var recorded = decision["decision"]?.GetValue<string>() ?? "";
+    return recorded.StartsWith($"Alternativa {letter} — ", StringComparison.Ordinal)
+        ? AlreadyRegistered($"{decisionId} já está decidida com a alternativa {letter}.")
+        : Reject($"{decisionId} já está decidida com outra alternativa; o registro não é sobrescrito por esta Issue.");
+}
+if (currentStatus != "pending") return Reject($"{decisionId} não está pendente (estado atual: {currentStatus}).");
+
 // 5. Registro persistido (NN-009): arquivo de resposta + atualização de decisions.json.
 var created = Env("ISSUE_CREATED_AT");
 var decidedAt = Regex.IsMatch(created, @"^\d{4}-\d{2}-\d{2}") ? created[..10] : DateTime.UtcNow.ToString("yyyy-MM-dd");
 var recordRel = $"docs/governance/responses/{decisionId}.md";
 var recordPath = Path.Combine(root, recordRel.Replace('/', Path.DirectorySeparatorChar));
+if (File.Exists(recordPath)) return Error($"Estado inconsistente: {decisionId} está pendente, mas {recordRel} já existe.");
 Directory.CreateDirectory(Path.GetDirectoryName(recordPath)!);
 
 var sb = new StringBuilder();
@@ -213,20 +263,23 @@ for (var i = 0; i < alternatives.Count; i++)
 sb.AppendLine("## Próximo passo");
 sb.AppendLine();
 sb.AppendLine("A decisão está registrada em `docs/governance/decisions.json`. As consequências nos documentos dependentes (ADR, arquitetura, roadmap, migração) **ainda não foram aplicadas por este registro**: um agente deve aplicá-las e registrar o handoff (AGENTS.md §3). Uma decisão estrutural continua exigindo ADR (NN-011).");
-File.WriteAllText(recordPath, sb.ToString());
-
 decision["status"] = "decided";
 decision["decision"] = $"Alternativa {letter} — {option} (escolhida pelo proprietário pelo portal; Issue {(issueUrl.Length > 0 ? issueUrl : "#" + number)}).";
 decision["decidedAt"] = decidedAt;
 decision["record"] = recordRel;
 decision["consequencesApplied"] = false; // o registro é automático; um agente aplica as consequências e muda para true (ADR-0010)
-File.WriteAllText(decisionsPath, doc.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
+// Gravação em duas etapas com desfazer: se a segunda falhar, a primeira é revertida (nunca fica registro parcial).
+var decisionsBefore = File.ReadAllText(decisionsPath);
+File.WriteAllText(recordPath, sb.ToString());
+try { File.WriteAllText(decisionsPath, doc.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n"); }
+catch { File.Delete(recordPath); File.WriteAllText(decisionsPath, decisionsBefore); throw; }
 
 File.WriteAllText(resultFile,
     $"**Decisão registrada.** {decisionId}: alternativa **{letter}** — {option}\n\n" +
     $"Registro: `{recordRel}` e `docs/governance/decisions.json`. O portal é republicado em seguida. " +
     "As consequências nos documentos dependentes serão aplicadas por um agente.\n");
 if (Env("GITHUB_OUTPUT") is { Length: > 0 } outFile)
-    File.AppendAllText(outFile, $"commit_message=Registrar {decisionId}: alternativa {letter} (escolhida pelo proprietário no portal, Issue #{number})\n");
+    File.AppendAllText(outFile, $"outcome=registered\ncommit_message=Registrar {decisionId}: alternativa {letter} (escolhida pelo proprietário no portal, Issue #{number})\n");
 Console.WriteLine($"REGISTRADA: {decisionId} alternativa {letter}");
 return 0;
+}

@@ -99,9 +99,39 @@ No futuro podem existir Services compartilhados: `Identity`, `Catalog`, `Commerc
 
 ## 9. O que ainda não está decidido [Aberto]
 
-- nome, formato e validação do Distribution Profile;
-- nomes e contrato dos três eixos de disponibilidade;
+- nomes **finais** dos eixos do Distribution Profile (o formato e a validação existem desde a Fase 2, ADR-0012; os nomes seguem provisórios, DEC-0020-B, até a decisão de distribuição DEC-0021);
+- a distribuição **definitiva** dos Products (DEC-0021; ver §10);
 - quais Services existirão, com que fronteiras, e se algum será extraído;
 - qual é a fonte canônica de catálogo, entitlements e identidade;
 - política de edições (Starter/limitada/completa) e canais externos;
 - modelo de extensões/plugins e de Tools de terceiros no catálogo (MANIFEST §29 exige ADR para o modelo de plugins).
+
+## 10. Source × Distribution e o arranjo atual (P2-12) [Fato · Aberto: destino]
+
+```text
+SOURCE        = onde o produto é DESENVOLVIDO            → Ecosystem, apps/<id>   (ecosystem.json: components.<id>.path)
+DISTRIBUTION  = por onde builds/releases/web CHEGAM      → hoje, os repositórios de origem        (docs/distribution/current.profile.json)
+                ao usuário
+```
+
+**Fato (DEC-0008-A, DEC-0009-A, DEC-0016, DEC-0017-A; transitório e intencional):** o código vive **só** no Ecosystem (`apps/urbe/`, `apps/lunet2d/`). `AbnerCruz/Urbe` e `AbnerCruz/Lunet2D` **não são lugares de desenvolvimento**: são espelhos que o `sync-from-ecosystem.yml` mantém iguais a `apps/<id>` e que continuam construindo e publicando releases (e o Urbe Web, no Pages) com os pipelines e secrets que já tinham. Um commit humano que mexa fora de `.github/` nesses repositórios é deriva (o espelho para e abre uma Issue). Observação: o campo `source.repository` de `ecosystem.json` guarda esse repositório de **origem** (nome histórico); não é a fonte de desenvolvimento, que é o `path`.
+
+O arranjo atual está descrito **como dado**, sem alterar nenhum canal, em [`docs/distribution/current.profile.json`](../distribution/current.profile.json) (Distribution Profile `current`, validado por `CHK-REGISTRY`; as localizações vêm de `ecosystem.json`, não são copiadas). Achado de P2-12: o eixo provisório `distribution` não tinha um valor para "canal externo ao Ecosystem" (GitHub Releases/Pages); foi acrescentado `external-channel` — mais uma razão para os nomes só serem congelados depois da decisão (P2-9).
+
+### Consequências reais por cenário (insumo de DEC-0021)
+
+| Aspecto | A — manter por mais tempo | B — centralizar no Ecosystem/GitHub | C — plataforma first-party (progressivo) |
+|---------|---------------------------|--------------------------------------|-------------------------------------------|
+| Apps instalados | nada muda | Urbe só atualiza se a versão-ponte sair antes no canal antigo (mudança de produto, item próprio, NN-013); beta: reinstalar é aceitável (ADD-0006) | só quando a plataforma existir; precisa de versão-ponte por produto |
+| URLs existentes | iguais | Urbe Web muda de `/Urbe/` para uma rota do Ecosystem; links divulgados quebram sem redirecionamento | iguais até a migração de cada produto; depois, redirecionamento a partir dos repositórios antigos |
+| Canais de atualização | `releases/latest` por produto, como hoje | `releases/latest` passa a ser único para o repositório (tags prefixadas): os leitores atuais podem ler a release de outro produto | canal novo por produto; os antigos permanecem como ponte |
+| Assinatura Android | chave e `versionCode` ficam onde estão (R-LUN-1/R-URB-1 eliminadas) | a chave e os secrets precisam ser levados ao Ecosystem; sem a mesma chave o APK não atualiza por cima | idem B para a plataforma que assinar/hospedar |
+| Electron updater (Urbe) | lê `owner/repo` do `package.json`, sem mudança | exige mudar o repositório lido (código de produto) | exige canal compatível ou ponte |
+| Urbe Web / PWA | mesmo escopo de service worker e PWAs instalados | escopo e URL do service worker mudam; PWAs instalados e o armazenamento por origem precisam ser provados antes (P1-10 já mostrou o cuidado) | depende do domínio da plataforma; mesma ressalva |
+| GitHub Releases | continuam sendo o histórico e a fonte dos instaladores | histórico antigo fica no repositório de origem; novas no Ecosystem | passam a canal alternativo/espelho |
+| Histórico, Issues e PRs | preservados (DEC-0013-A: Issues dos produtos ficam nas origens) | idem; nada é apagado | idem; nada é apagado |
+| Redirects | desnecessários | necessários (Pages e links) | necessários na migração |
+| Fallback / recuperação | o proprietário já instala a partir das releases (portal) | manter o canal antigo vivo durante a transição | manter os canais antigos como recuperação |
+| Custo | latência de 10–15 min do espelho; dois repositórios vivos | mudança de produto e risco de quebra | construir a plataforma (Services especulativos são proibidos sem consumidor, NN-020/NN-022) |
+
+**Invariante de todos os cenários:** nenhum repositório antigo é apagado ou arquivado, nenhum Pages é desligado e nenhuma release é removida por esta decisão; qualquer aposentadoria é item próprio, com plano de migração e evidência. A direção de longo prazo (Ecosystem como fonte; plataforma first-party como possível distribuição principal; repositórios antigos como espelho/canal alternativo/legado) é a de [§7](#7-plataforma-first-party-própria-decisão), sem prazo.

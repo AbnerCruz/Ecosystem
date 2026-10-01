@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — a ser ratificado pelo proprietário em DEC-0020 (não bloqueante: o vertical slice e os checks já funcionam com estes contratos). Aplica o princípio local-first ([ADR-0011](0011-local-first-e-promocao-por-evidencia.md)) à própria plataforma. Os **nomes e valores dos eixos do Distribution Profile são provisórios** até a ratificação.
+Aceito **em parte** — o proprietário decidiu em DEC-0020 (alternativa B, escolhida no portal em 2026-10-01; [registro](../governance/responses/DEC-0020.md)): **ratificados** os contratos estruturais (ComponentManifest, Capability, versões/compatibilidade, permissões, Context, Registry e o formato do Distribution Profile); **os nomes e valores dos eixos do Distribution Profile (`visibility`, `distribution`, `commercialModel`, `availability`) continuam PROVISÓRIOS** e só serão congelados (P2-9) depois de a distribuição definitiva dos Products ser decidida (DEC-0021) e modelada. Aceitar os contratos não é aceitar os nomes. Aplica o princípio local-first ([ADR-0011](0011-local-first-e-promocao-por-evidencia.md)) à própria plataforma.
 
 ## Contexto
 
@@ -20,7 +20,7 @@ Qual é o **mínimo** contrato que torna capabilities declaráveis, descobrívei
 
 ## Decisão
 
-Opção 1 (a ratificar em DEC-0020).
+Opção 1 (ratificada em DEC-0020-B, exceto os nomes dos eixos de distribuição).
 
 - **ComponentManifest = entrada de `ecosystem.json`** (`ecosystem.schema.json#/$defs/component`). Identidade: a **chave** (ID estável, NN-019); `type`, `version` (autoridade), `owners`, `status`, `dependencies`, mais `responsibility`/`contract`/`consumers`/`compatibility`/`extractionReason` para compartilhados (NN-004). Acrescentados, opcionais: `provides` (`{capability, version}`), `requires` (`{capability, range, optional?}`) e `permissions.requests`. **Nada de estado de execução**: o manifest é estrutura. Campos de distribuição (visibility/distribution/commercial) **não** entram no manifest: pertencem ao Distribution Profile.
 - **Capability = contrato versionado** em `docs/contracts/capabilities/<id>.json` (`capability-contract.schema.json`): ID (`sprite.edit`), `versions[]` com `inputs`, `outputs`, `errors`, `requiredPermissions`, `lifecycle` e `status`, e `compatibility: semver`. O **provider não é declarado no contrato**: é derivado dos `provides` dos manifests (uma autoridade). Um consumidor depende da capability e da faixa, nunca de classe, Product, Host ou path (NN-006, NN-007).
@@ -28,7 +28,8 @@ Opção 1 (a ratificar em DEC-0020).
 - **Permissões (modelo inicial):** catálogo `docs/contracts/permissions.json` (ids `fs.read`, `fs.write`, `network.access`, `execute.code`, `agent.act`, `ui.display`; `sensitive`). Deny-by-default: o componente só tem o que **solicitou** (`permissions.requests`), um pedido fora do catálogo é inválido, e um consumidor precisa ter solicitado as `requiredPermissions` do contrato da versão que consome. Um agente nunca herda `sensitive` por conveniência (NN-016). Enforcement em runtime: Fase 5.
 - **Context** (`context.schema.json` + regras): caminho do mais amplo ao mais específico — `ecosystem → product → project → workspace → tool`; começa em `ecosystem`, níveis em ordem estrita sem repetir, `product` referencia um componente `product`. Base para Agents, Tools, permissões e discovery contextual; **não** é IPC nem Host API (Fase 5).
 - **Registry inicial:** índice local/estático **derivado** dos manifests e contratos: registrar, indexar capabilities, descobrir providers (`Discover`) e validar compatibilidade (`Validate`), com códigos de erro estáveis (`CAP_UNKNOWN`, `CAP_VERSION_UNKNOWN`, `CAP_NO_PROVIDER`, `CAP_INCOMPATIBLE`, `RANGE_INVALID`, `PERMISSION_UNKNOWN`, `PERMISSION_MISSING`, `TOOL_KNOWS_HOST`, `PRODUCT_DEPENDS_ON_PRODUCT`). Mora **dentro dos checks** (`tests/consistency/Check.cs`: `CHK-REGISTRY` e `-- --registry [--discover ...]`), onde estão seus consumidores reais. Promoção a componente próprio só quando o Hub (ou outro consumidor real) existir (ADR-0011). Sem GitHub como runtime, sem serviço remoto.
-- **Distribution Profile** (`distribution-profile.schema.json` + regras): lista de entradas `{component, availability (bundled|optional|marketplace|unavailable), visibility (public|unlisted|private|internal), distribution (first-party|external-store|none), commercialModel (free|paid|subscription|undecided)}`. Os três eixos são independentes; **nomes e valores provisórios (DEC-0020)**. NN-023: um perfil que inclui componente público não pode ter o Hub `bundled`.
+- **Distribution Profile** (`distribution-profile.schema.json` + regras): lista de entradas `{component, availability (bundled|optional|marketplace|unavailable), visibility (public|unlisted|private|internal), distribution (first-party|external-store|none), commercialModel (free|paid|subscription|undecided)}`. Os três eixos são independentes; **nomes e valores provisórios (DEC-0020-B; congelamento em P2-9, depois de DEC-0021)**. NN-023: um perfil que inclui componente público não pode ter o Hub `bundled`.
+- **Perfil `current` e canais (P2-12):** o formato admite `status` (`example`|`current`) e, por entrada, `channels[]` (`kind`, `role`, `locationFrom`, `artifacts`, `updateMechanism`). Um perfil `current` descreve o arranjo REAL — hoje `docs/distribution/current.profile.json` — sem copiar URLs (as localizações vêm de `ecosystem.json`) e sem inventar canais que não existem. **SOURCE ≠ DISTRIBUTION:** a fonte de desenvolvimento é o `path` do componente (`apps/<id>`); `channels` dizem por onde builds/releases/web chegam ao usuário. Achado: o eixo provisório `distribution` não tinha um valor para canal externo ao Ecosystem; acrescentado `external-channel` (ainda provisório).
 - **Vertical slice** em `docs/contracts/examples/registry-slice/`: capability de teste `capability.test`; provider A v1, consumer B `^1.0.0` (descoberta e compatibilidade OK) e consumer C `^2.0.0` (falha `CAP_INCOMPATIBLE`), mais negativos de permissão, capability desconhecida, sem provider, Tool que conhece Host e Product→Product. Fixtures, **sem extrair nenhuma Tool real**.
 - **Nenhum diretório novo** (`platform/`, `tools/`…): arquivos de contrato ficam em `docs/contracts/`; nada é criado sem conteúdo.
 
@@ -37,7 +38,7 @@ Opção 1 (a ratificar em DEC-0020).
 - O gate da Fase 2 tem evidência executável (`CHK-REGISTRY` + self-test), não só documentos.
 - Nenhum Product muda: `ecosystem.json` real não declara capabilities hoje (nenhum consumidor real); `provides`/`requires` passam a ser usados quando a primeira capability for **promovida por evidência** (ADR-0011).
 - O Registry é pequeno e privado aos checks; o custo de promovê-lo depois é conhecido (extrair `Registry`, `SemVer`, `VersionRange`).
-- Os nomes dos eixos podem mudar na ratificação sem afetar manifests (o perfil é um arquivo separado).
+- Os nomes dos eixos podem mudar no congelamento (P2-9) sem afetar manifests (o perfil é um arquivo separado); o único perfil real é `docs/distribution/current.profile.json`.
 
 ## Alternativas rejeitadas
 
