@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+    <SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+    <AndroidApplication>true</AndroidApplication>
+    <ApplicationId>io.lunet.studio</ApplicationId>
+    <ApplicationTitle>Lunet</ApplicationTitle>
+    <ApplicationDisplayVersion>$(LunetVersion)</ApplicationDisplayVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' != ''">$(GITHUB_RUN_NUMBER)</ApplicationVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' == ''">1</ApplicationVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <AndroidUseAapt2>true</AndroidUseAapt2>
+    <!-- APK autônomo (sem fast deployment) para poder ser baixado do GitHub Releases e instalado. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <!-- Roslyn e o Preview dependem de reflexão sobre assemblies; sem trimming. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <AndroidLinkMode>None</AndroidLinkMode>
+    <!-- Assinatura estável das builds de desenvolvimento: sem ela cada build usa uma chave nova e o Android
+         recusa atualizar uma versão sobre a outra (ADR 0004). Chave pública, só para desenvolvimento. -->
+    <AndroidKeyStore>true</AndroidKeyStore>
+    <AndroidSigningKeyStore>$(MSBuildThisFileDirectory)..\..\tools\lunet-dev.keystore</AndroidSigningKeyStore>
+    <AndroidSigningKeyAlias>lunetdev</AndroidSigningKeyAlias>
+    <AndroidSigningStorePass>pass:android</AndroidSigningStorePass>
+    <AndroidSigningKeyPass>pass:android</AndroidSigningKeyPass>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Avisos de anotação de nulidade dos bindings Android não devem quebrar o build. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <AndroidAsset Include="..\..\docs\api\lunet-framework.json" Link="Assets\docs\lunet-framework.json" />
+    <AndroidAsset Include="..\..\docs\guides\*.md" Link="Assets\docs\guides\%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Lunet.Core\Lunet.Core.csproj" />
+    <ProjectReference Include="..\Lunet.Compiler\Lunet.Compiler.csproj" />
+    <ProjectReference Include="..\Lunet.Docs\Lunet.Docs.csproj" />
+    <ProjectReference Include="..\Lunet.Git\Lunet.Git.csproj" />
+    <ProjectReference Include="..\Lunet.Editor\Lunet.Editor.csproj" />
+    <ProjectReference Include="..\Lunet.Framework\Lunet.Framework.csproj" />
+    <ProjectReference Include="..\Lunet.Runtime\Lunet.Runtime.csproj" />
+  </ItemGroup>
+</Project>

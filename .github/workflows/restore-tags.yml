@@ -1,0 +1,47 @@
+name: restore-tags
+
+# Recria no Ecosystem as tags importadas de um produto (NN-012, plano de importação §4).
+# Necessário porque as sessões de agente não conseguem empurrar tags; o GITHUB_TOKEN do repositório consegue.
+# Lê docs/migration/tags-<componente>.txt ("<tag> <sha>"), exige que cada SHA esteja no histórico da ref atual
+# e nunca move uma tag existente. Só dispara manualmente; a entrada passa por 'env', nunca interpolada em script.
+
+on:
+  workflow_dispatch:
+    inputs:
+      component:
+        description: Componente importado
+        type: choice
+        options: [lunet2d, urbe]
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    env:
+      COMPONENT: ${{ inputs.component }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Restaurar tags
+        run: |
+          set -euo pipefail
+          file="docs/migration/tags-${COMPONENT}.txt"
+          test -f "$file"
+          created=0; present=0
+          while read -r tag sha; do
+            [ -z "$tag" ] && continue
+            case "$tag" in "${COMPONENT}/"*) ;; *) echo "tag fora do prefixo: $tag"; exit 1;; esac
+            git merge-base --is-ancestor "$sha" HEAD || { echo "SHA $sha de $tag não está no histórico"; exit 1; }
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              [ "$(git rev-parse "$tag^{commit}")" = "$sha" ] || { echo "tag $tag existe com outro SHA"; exit 1; }
+              present=$((present+1))
+            else
+              git tag "$tag" "$sha"; created=$((created+1))
+            fi
+          done < "$file"
+          git push origin --tags
+          echo "criadas: $created; já presentes: $present"

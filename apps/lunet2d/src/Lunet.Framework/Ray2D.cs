@@ -1,0 +1,80 @@
+using System.Numerics;
+
+namespace Lunet;
+
+/// <summary>Raio 2D: origem e direção (normalizada na criação).</summary>
+/// <example>
+/// <code>
+/// var ray = new Ray2D(new Vector2(0, 0), new Vector2(1, 0));
+/// if (ray.Intersects(new Circle(new Vector2(50, 0), 10), out float distance))
+///     position = ray.PointAt(distance);
+/// </code>
+/// </example>
+public readonly struct Ray2D
+{
+    /// <summary>Cria um raio.</summary>
+    /// <param name="origin">Ponto de partida.</param>
+    /// <param name="direction">Direção (é normalizada). Não pode ser zero.</param>
+    public Ray2D(Vector2 origin, Vector2 direction)
+    {
+        if (direction == Vector2.Zero) throw new ArgumentException("A direção não pode ser zero.", nameof(direction));
+        Origin = origin;
+        Direction = Vector2.Normalize(direction);
+    }
+
+    /// <summary>Ponto de partida do raio.</summary>
+    public Vector2 Origin { get; }
+    /// <summary>Direção do raio, com comprimento 1.</summary>
+    public Vector2 Direction { get; }
+
+    /// <summary>Ponto do raio a uma distância da origem.</summary>
+    /// <param name="distance">Distância ao longo do raio.</param>
+    /// <returns>Origin + Direction × distance.</returns>
+    public Vector2 PointAt(float distance) => Origin + Direction * distance;
+
+    /// <summary>Distância até a primeira interseção com o círculo, ou falso.</summary>
+    /// <param name="circle">Círculo a testar.</param>
+    /// <param name="distance">Distância do início do raio até o primeiro ponto atingido.</param>
+    /// <returns>Verdadeiro se o raio atinge a forma.</returns>
+    public bool Intersects(Circle circle, out float distance)
+    {
+        var toCenter = circle.Center - Origin;
+        var projection = Vector2.Dot(toCenter, Direction);
+        var closestSquared = toCenter.LengthSquared() - projection * projection;
+        var radiusSquared = circle.Radius * circle.Radius;
+        distance = 0;
+        if (closestSquared > radiusSquared) return false;
+        var half = MathF.Sqrt(radiusSquared - closestSquared);
+        var near = projection - half;
+        var far = projection + half;
+        if (far < 0) return false;
+        distance = near >= 0 ? near : 0; // origem dentro do círculo: acerto imediato
+        return true;
+    }
+
+    /// <summary>Distância até a primeira interseção com o retângulo (método das lâminas), ou falso.</summary>
+    /// <param name="rect">Retângulo a testar.</param>
+    /// <param name="distance">Distância do início do raio até o primeiro ponto atingido.</param>
+    /// <returns>Verdadeiro se o raio atinge a forma.</returns>
+    public bool Intersects(RectangleF rect, out float distance)
+    {
+        var tMin = 0f;
+        var tMax = float.PositiveInfinity;
+        distance = 0;
+        if (!Slab(Origin.X, Direction.X, rect.X, rect.Right, ref tMin, ref tMax)) return false;
+        if (!Slab(Origin.Y, Direction.Y, rect.Y, rect.Bottom, ref tMin, ref tMax)) return false;
+        distance = tMin;
+        return true;
+    }
+
+    private static bool Slab(float origin, float direction, float min, float max, ref float tMin, ref float tMax)
+    {
+        if (MathF.Abs(direction) < 1e-8f) return origin >= min && origin <= max;
+        var t1 = (min - origin) / direction;
+        var t2 = (max - origin) / direction;
+        if (t1 > t2) (t1, t2) = (t2, t1);
+        tMin = MathF.Max(tMin, t1);
+        tMax = MathF.Min(tMax, t2);
+        return tMin <= tMax;
+    }
+}

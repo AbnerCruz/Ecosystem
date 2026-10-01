@@ -51,6 +51,7 @@ git merge --allow-unrelated-histories --no-ff -m "Importar <Repo> (histórico pr
 - **Fusão do PR por *merge commit*** (nunca *squash*/*rebase*: reescreveriam o histórico e invalidariam o `commit-map`).
 - O PR A altera **apenas**: histórico importado, `ecosystem.json` (§6) e `docs/migration/commit-map-<id>.txt`. **Nenhum arquivo dentro de `apps/<id>/`.**
 - **Corte sem congelamento:** a importação roda de novo imediatamente antes do corte; se a origem ganhou commits, entram só eles (§5, T1b). O PR A registra o `HEAD` da origem importado e a verificação de que a origem não avançou depois.
+- **Tags:** as sessões de agente não conseguem empurrar tags (o proxy responde 403; FATO em 2026-10-01). O PR A traz `docs/migration/tags-<id>.txt` (tag → SHA) e o workflow manual `restore-tags.yml`, que recria as tags com o `GITHUB_TOKEN` do repositório depois do merge, sem mover nenhuma existente. Zero ação do proprietário.
 - Branches: ver §9.
 
 ## 5. Ensaios executados (FATO, 2026-10-01, em `/tmp`, sem tocar no Ecosystem nem nas origens)
@@ -129,7 +130,7 @@ Comportamentos do GitHub **NÃO VERIFICADOS** nesta sessão (sem acesso a config
 | # | Ajuste | PR / momento | Dentro de `apps/<id>/`? |
 |---|--------|--------------|------------------------|
 | 1 | `ecosystem.json`: status e autoridade de versão (§6) | A | não |
-| 2 | `docs/migration/commit-map-<id>.txt` | A | não |
+| 2 | `docs/migration/commit-map-<id>.txt`, `docs/migration/tags-<id>.txt` e `.github/workflows/restore-tags.yml` (tags, §4) | A | não |
 | 3 | CI por produto na raiz com filtro de caminho; Dependabot na raiz (§7.5) | B | não |
 | 4 | `sync-from-ecosystem.yml` em cada origem (§7.1) | corte | não (é na origem) |
 | 5 | Lunet2D: condição do job `release` aceita `workflow_dispatch` (§7.2) | corte | não (é na origem) |

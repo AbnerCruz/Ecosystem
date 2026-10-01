@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-importacao-lunet2d",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T01:30:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-4",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/** (importado, sem alterações)",
+    "ecosystem.json",
+    "docs/migration/commit-map-lunet2d.txt",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-importacao-lunet2d.json",
+    "docs/migration/tags-lunet2d.txt",
+    ".github/workflows/restore-tags.yml",
+    "docs/migration/import-plan.md"
+  ],
+  "work_completed": [
+    "Importação do Lunet2D (AbnerCruz/Lunet2D, main be30e62) para apps/lunet2d com git filter-repo --to-subdirectory-filter, tags renomeadas com prefixo lunet2d/ e merge --allow-unrelated-histories --no-ff (plano import-plan.md §4).",
+    "ecosystem.json: lunet2d status active; versão por arquivo apps/lunet2d/VERSION (plano §6). commit-map versionado em docs/migration/commit-map-lunet2d.txt.",
+    "Nenhum arquivo dentro de apps/lunet2d foi alterado (NN-013); repositório de origem não foi tocado (somente clone de leitura).",
+    "O proxy da sessão recusa push de tags (403): adicionados docs/migration/tags-lunet2d.txt e o workflow manual restore-tags.yml, que recria as 25 tags lunet2d/* com o GITHUB_TOKEN após o merge (plano §4 e §8)."
+  ],
+  "verification": [
+    {
+      "check": "Commits preservados",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "84 commits na main de origem e 84 após o filtro; commit-map com 84 linhas mais cabeçalho."
+    },
+    {
+      "check": "Tags preservadas com prefixo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "25 tags de origem -> 25 tags lunet2d/v0.0.1-dev.N."
+    },
+    {
+      "check": "Conteúdo idêntico à origem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "git rev-parse HEAD:apps/lunet2d = db9f6cd51ec796fe4d8b57692fda708c51a4d90c, igual à árvore da main de origem (be30e62); filtro determinístico (mesma main filtrada 1fe8e82f0816d263952b86926609c976f373f3cc do ensaio)."
+    },
+    {
+      "check": "Testes do produto no novo caminho",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d: dotnet test --project tests/Lunet.Tests: 286/286, igual à linha de base."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: todos os 16 checks passaram com o produto importado."
+    }
+  ],
+  "known_issues": [
+    "Pipelines do Lunet2D (CI, release) ficam inertes em apps/lunet2d/.github até P1-6; a origem continua publicando as releases (DEC-0008-A).",
+    "O corte final (sincronização da origem, plano §7.6) é feito em P1-6; até lá o desenvolvimento no monorepo e na origem não deve divergir (origem sem commits novos verificada em 2026-10-01: be30e62).",
+    "As 25 tags só existem no Ecosystem depois de executar restore-tags.yml (componente lunet2d) na main; o handoff deve ser atualizado com a verificação."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Mergear o PR com merge commit (nunca squash/rebase) depois do CI verde.",
+    "P1-5 — importação do Urbe (PR A)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/migration/README.md",
+    "docs/migration/import-plan.md",
+    "docs/migration/inventory-lunet2d.md",
+    "docs/governance/decisions.json",
+    "docs/governance/responses/DEC-0014.md",
+    "AGENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-012",
+      "evidence": "84 commits e 25 tags preservados; commit-map versionado."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Hash da árvore apps/lunet2d idêntico ao da origem; só ecosystem.json e o commit-map foram alterados fora do produto."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "lunet2d mantém versão e lifecycle próprios (VERSION do produto)."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência criada entre produtos; checks de boundary passam."
+    }
+  ],
+  "cost": null
+}

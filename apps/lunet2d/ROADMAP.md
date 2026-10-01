@@ -1,0 +1,354 @@
+# Roadmap
+
+Fonte de verdade do que existe e do que falta. A especificação completa está em [`docs/SPEC.md`](docs/SPEC.md); as seções citadas como **§N** referem-se a ela. A rotina de trabalho está em [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+
+## Regras deste arquivo
+
+- Uma caixa `[x]` só vale quando **implementação, testes, documentação e integração** estão completos (§24) **e** o comportamento visível ao usuário foi validado no aparelho quando depende de Android.
+- Trabalho feito mas ainda não validado em aparelho fica `[ ]` com a marca **(feito, sem validação em aparelho)**.
+- Trabalho parcial fica `[ ]` com o que falta escrito ao lado. Nunca marque por aproximação (§30, §31).
+- Não se avança para a fase seguinte antes do gate da fase atual **e** da auditoria da fase (ver `docs/DEVELOPMENT.md`). Exceção: itens transversais listados na seção "Transversal".
+- Estado do resumo por fase: `bash tools/roadmap-status.sh`.
+
+Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andamento · ⬜ não iniciada.
+
+## Estado atual
+
+| Fase | Estado |
+| --- | --- |
+| 0 Foundation | ✅ concluída (auditoria em `docs/audits/fase-0.md`) |
+| 1 Vertical Slice | ✅ concluída (auditoria em `docs/audits/fase-1.md`) |
+| 2 Framework Core | ✅ concluída e aprovada (auditoria em `docs/audits/fase-2.md`) |
+| 3 IDE | 🟡 IDE, documentação, Inspector, layouts e Git implementados em parte; validação em aparelho e demais pendências abaixo |
+| 4–15 | ⬜ |
+
+---
+
+## Fase 0 — Foundation (§28)
+
+Gate: GitHub Actions gera APK instalável. **Atingido** (validado em aparelho, v0.0.1-dev.8).
+
+- [x] Repositório, projetos `Lunet.Framework/Core/Compiler/Runtime/Editor/Android`, `tests/`.
+- [x] Regras de dependência verificadas por teste (`ArchitectureTests`).
+- [x] README, ROADMAP, CHANGELOG, `docs/adr/`, `VERSION`.
+- [x] CI: restore, build, testes, validação de arquitetura, APK, checksums, release de desenvolvimento (§25).
+- [x] Assinatura estável das builds de desenvolvimento (ADR 0004), verificada no CI, para que uma release atualize a anterior.
+- [x] Android shell e primeiro APK instalável (validado em aparelho).
+- [x] Arquivo de solução (`Lunet.slnx`) na raiz.
+- [x] `LICENSE.md` proprietária provisória (uso proprietário, sem redistribuição, modificação ou exploração comercial por terceiros sem autorização; código exibido no app é só para estudo). Revisável no futuro.
+- [x] `release-notes.json` publicado junto de cada release (§24, §25) (verificado na v0.0.1-dev.22).
+- [x] Estrutura de pastas do §26 existente onde há conteúdo (`src/`, `tests/`, `docs/`, `tools/`, `.github/workflows/`). As pastas `samples/`, `templates/`, `runtime-template/`, `native/` e `site/` serão criadas junto da primeira entrega que as usa: `samples/` e `templates/` na Fase 11 (jogos oficiais e modelos como arquivos), `runtime-template/` na Fase 9, `native/` se a Fase 14 exigir Oboe, `site/` na Fase 12.
+- [x] Auditoria de fechamento da Fase 0 registrada em `docs/audits/fase-0.md`.
+
+## Fase 1 — Vertical Slice (§27, §33)
+
+Gate: no telefone é possível criar projeto, escrever C#, apertar Run e mover sprite com toque. **Atingido** (validado em aparelho).
+
+- [x] Criar projeto, persistir como pasta comum com `lunet.json` (§5).
+- [x] Editar C# com salvamento atômico.
+- [x] Roslyn no Android, com referências em memória e diagnósticos com arquivo/linha/coluna (ADR 0002).
+- [x] Framework mínimo: `Game`, `GameTime`, `SpriteBatch`, `Texture2D`, toque.
+- [x] Renderer OpenGL ES 3.x, sprite e toque.
+- [x] Preview com Run, Stop, Restart, Pause, Step (§10).
+- [x] Fluxo completo criar → editar → Run → mover sprite.
+- [x] Explorer (painel lateral com árvore, pastas recolhíveis, novo arquivo/pasta, renomear, excluir) — validado em aparelho (pastas).
+- [x] Recuperação após crash: working buffer a cada pausa na digitação, descarte ao salvar, oferta de recuperação ao abrir o projeto (§22). No aparelho, fechar o app pelos recentes já salva o texto (salvamento ao pausar); a recuperação de um encerramento sem pausa é coberta por testes automáticos. Snapshot do projeto inteiro: Fase 13.
+- [x] Exportar ZIP: menu ⋯ do editor e toque longo na lista de projetos — validado em aparelho na v0.0.1-dev.63 (a barra do editor cortava o ⋯; corrigido).
+- [x] Workspace mínimo do §33: Explorer, Editor, Preview, Problems/Console (Documentation: hoje só a referência rápida; painel de documentação completo na Fase 3, opção "Tutorial" na criação de projeto na Fase 11 — itens movidos para lá).
+- [x] Auditoria de fechamento da Fase 1 registrada em `docs/audits/fase-1.md`.
+
+## Fase 2 — Framework Core (§7)
+
+Gate: pequeno jogo 2D completo somente com código. **Atingido** pelo Demo "Coletor de moedas" (validado em aparelho).
+
+Core
+- [x] `Game`, `GameTime`, `GameConfiguration`, `GameLog`.
+- [x] Loop de passo fixo, interpolação, proteção contra spiral-of-death, pause/resume.
+- [x] `GameServices` (registro de serviços do jogo; o host registra os padrão).
+- [x] `Dispatcher` (executar trabalho na thread do jogo).
+- [x] Lifecycle completo do Android: app em segundo plano pausa jogo e áudio; o contexto GL é preservado ao pausar (`PreserveEGLContextOnPause`) (validado em aparelho na v0.0.1-dev.53); se o driver perder o contexto, o jogo reinicia (recriar texturas sem reiniciar fica para a Fase 13).
+- [x] Suporte a refresh rate superior a 60 Hz: atualização fixa independente da taxa (testada de 30 a 144 Hz) e pedido do modo de maior taxa no Preview (validado em aparelho na v0.0.1-dev.53).
+- [x] Timers e object pools (§7 complementares).
+
+Matemática
+- [x] `RectangleF`, `Circle`, `Color`, `MathEx`, `RandomSource`.
+- [x] `Transform2D`, `Ray2D`, `Geometry` (distância, interseções de segmentos, polígonos, SAT).
+
+Graphics
+- [x] `GraphicsDevice`, `Texture2D`, `SpriteBatch`, `SpriteSheet`, resolução virtual com letterbox, filtro Point/Linear, fonte bitmap embutida.
+- [x] `Sprite` (textura/região, origem, cor, escala, rotação; `SpriteBatch.Draw(sprite, posição)`; `Sprite.FromAtlas`).
+- [x] `RenderTarget2D` (FBO no OpenGL ES; testado com backend em memória) (validado em aparelho na v0.0.1-dev.53).
+- [x] `Shader` (fragmento GLSL ES com uniforms) e `Material` (validado em aparelho na v0.0.1-dev.53).
+- [x] `BlendState` (Alpha, Additive, Opaque, Multiply, Premultiplied), `SamplerState` e `Viewport` como tipos públicos (validado em aparelho na v0.0.1-dev.53).
+- [x] Clipping (`Begin(clip:)`), pixel perfect (`PixelPerfect`), densidade (`Density`) e área segura (`SafeArea`, recorte de câmera) (validado em aparelho na v0.0.1-dev.53).
+- [x] Texture atlas em runtime (`Content.LoadAtlas`, regiões com pivô, `SpriteBatch.Draw(atlas, região, ...)`); o formato JSON fica como contrato para o Atlas Studio (Fase 5).
+- [x] Debug drawing (`Line`, `Rect`, `FillRect`, `Circle`, `Cross`) (validado em aparelho na v0.0.1-dev.53).
+- [x] Sem alocação por quadro no caminho quente do framework (Tick, SpriteBatch, DrawString, gestos, timers, controles virtuais), verificado por teste de alocação; a medição em aparelho fica com o Profiler (Fase 4).
+
+Input
+- [x] Toque (`TouchPoint`), Tap, LongPress, Drag, Swipe, teclado, acelerômetro.
+- [x] `TouchCollection` e `Pointer` como tipos públicos.
+- [x] DoubleTap, Pinch, Rotate (testados com toques sintéticos; multitoque real só valida em aparelho — validado em aparelho na v0.0.1-dev.53).
+- [x] `VirtualStick` e `VirtualButton` (validados no Laboratório, v0.0.1-dev.53).
+- [x] Gamepad (botões, sticks, gatilhos, D-pad; `IsButtonDown/Pressed`) (validado em aparelho na v0.0.1-dev.53).
+- [x] Giroscópio (`Input.Gyroscope`) (validado em aparelho na v0.0.1-dev.53).
+- [x] Haptics (`Haptics.Vibrate`, permissão VIBRATE) (validado em aparelho na v0.0.1-dev.53).
+
+Áudio
+- [x] `SoundEffect`, `SoundInstance` (volume, pan, pitch, loop) com SoundPool.
+- [x] `Music` em streaming (`Content.LoadMusic`, `Audio.PlayMusic/StopMusic`, MediaPlayer no Android) (validado em aparelho na v0.0.1-dev.53).
+- [x] `AudioBus` (Master/Sfx/Music e barramentos próprios, mute) (validado em aparelho na v0.0.1-dev.53).
+- [x] Fade de efeitos (`FadeTo`) e de música (validado em aparelho na v0.0.1-dev.53).
+
+Conteúdo e armazenamento
+- [x] Decodificador PNG, `ContentManager` com cache, importação de PNG.
+- [x] Salvamento JSON com gravação atômica.
+- [x] Carregar dados JSON (`Content.LoadJson<T>`) via `ContentManager` (lógica portátil, testada); fontes e mapas entram com Fonts/Tilemaps na Fase 4.
+- [x] Localization (`SetLanguage`, reserva, formatação; lógica portátil testada). Conferência do idioma do aparelho: Fase 13.
+
+Auditoria
+- [x] Auditoria de fechamento da Fase 2 registrada em `docs/audits/fase-2.md` (aprovada pelo usuário com a v0.0.1-dev.53).
+
+Itens movidos para outras fases, com motivo: baixa latência com Oboe/AAudio → Fase 14 (só se a medição de desempenho exigir); contador de audio underruns → Fase 4 (Profiler); recriar texturas quando o contexto GL é perdido e conferir o idioma do aparelho na `Localization` → Fase 13.
+
+## Fase 3 — IDE (§9, §11, §12, §15)
+
+Gate: experiência de IDE real.
+
+Editor de código (§9)
+- [ ] Realce, números de linha, desfazer/refazer, indentação, autocompletar, definição, referências, dica, localizar/substituir, diagnósticos ao vivo **(feito, sem validação em aparelho)**.
+- [ ] Multi-cursor / multi-seleção. (feito, sem validação em aparelho; `MultiCursor` testado; próxima ocorrência, todas, cursor acima/abaixo, digitação replicada)
+- [ ] Code folding. (feito, sem validação em aparelho; marcador no número da linha e menu Edição; regiões vindas do Roslyn)
+- [ ] Atalhos de teclado (teclado físico). (feito, sem validação em aparelho; mapa testado, ajuda em Ferramentas → Atalhos)
+- [ ] Minimap opcional. (feito, sem validação em aparelho; liga/desliga em Configurações)
+- [ ] Documentos grandes e virtualização (medir; ADR 0003 prevê view própria se necessário).
+- [ ] Estrutura de texto eficiente (piece table/rope) se a medição justificar. (`PieceTable` pronta e testada; medição no host: 500 edições em 200 mil linhas < 2 s; integração ao editor depende da medição em aparelho)
+
+Roslyn (§9)
+- [ ] Renomear símbolo. (feito, sem validação em aparelho; recusa conflitos e símbolos do framework)
+- [ ] Formatação de código. (feito, sem validação em aparelho; opção "formatar ao executar")
+- [ ] Quick fixes e code actions. (feito, sem validação em aparelho; using faltando/sobrando, ";", "você quis dizer", ordenar usings)
+- [x] Compilação incremental (reaproveitar compilação entre Runs). (árvores reaproveitadas e resultado em cache quando nada mudou; testado)
+- [ ] Inspeção de símbolos. (feito, sem validação em aparelho; Informações do símbolo e Estrutura do arquivo)
+
+IDE mobile (§11)
+- [x] Explorer (ver Fase 1).
+- [ ] Painéis: Preview, Inspector, Console, Problems, Search, Documentation e Explorer (feito, sem validação em aparelho). Movidos com motivo: Assets → Fase 5 (nasce com os Studios), Profiler → Fase 4 (depende das métricas do framework), Agent → Fase 8.
+- [ ] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes. (feito, sem validação em aparelho; painel encaixa embaixo/à direita, divisória arrastável, layouts salvos e predefinidos)
+- [ ] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles. (feito, sem validação em aparelho; em paisagem o painel vai para a direita; rótulos e botões não são selecionáveis)
+- [ ] Busca no projeto inteiro. (feito, sem validação em aparelho; menu ⋯ → Buscar no projeto)
+- [ ] Console e Problems com logs exportáveis (§23). (feito, sem validação em aparelho; Ferramentas → Exportar logs)
+- [ ] Settings. (feito, sem validação em aparelho; fonte, números de linha, minimapa, formatar ao executar, tela ligada, taxa de atualização)
+
+Inspector (§12)
+- [ ] Inspector padrão por reflexão; atributos Range, ReadOnly, Hidden, Multiline, Color, File, Asset, Group, Tooltip. (feito, sem validação em aparelho; testado por reflexão, ainda falta a bateria no aparelho)
+- [ ] `Inspector<T>` customizado. (feito, sem validação em aparelho)
+- [ ] Inspecionar variáveis do jogo em execução (fluxo principal §29). (feito, sem validação em aparelho; botão 🔍 no Preview, edição ao vivo na thread do jogo)
+
+Documentação (§15)
+- [ ] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33). (feito, sem validação em aparelho; `Lunet.Docs`, `docs/api/lunet-framework.json` com teste de deriva, guias em `docs/guides`)
+- [x] Cada API com descrição, assinatura, parâmetros, retorno, exemplos, remarks, relacionadas e versão de introdução. (teste `DocumentationCoverageTests` exige resumo, assinatura, versão, cada parâmetro e retorno descritos; `DocumentedExamplesTests` exige um exemplo por tipo e o compila; remarks e relacionadas onde fazem sentido)
+- [ ] Integração com o editor: "Explain in Documentation". (feito, sem validação em aparelho; botão na Dica do símbolo)
+- [ ] Documentação apontando para trechos dos jogos oficiais (depende da Fase 11).
+
+Preview e hot reload (§10)
+- [x] Classificação de mudanças: hot reload possível × restart required. (a cada Run o status diz o que mudou; o jogo sempre reinicia — sem hot reload mágico)
+- [ ] Fast Preview × Isolated Preview. (feito, sem validação em aparelho; ADR 0006; opção "Preview isolado" em Configurações roda o jogo em outro processo)
+
+Git, autosave e recovery (§22)
+- [ ] Autosave com journal (ver Fase 1) e recuperação. (histórico limitado a cinco versões por arquivo, escolha da versão na recuperação e acesso pelo menu Ferramentas implementados; testes no CI e validação no aparelho pendentes)
+- [ ] Git progressivo: status, diff, commit, history, branches, revert, push, pull. (feito, sem validação em aparelho; `Lunet.Git` em C# puro, ADR 0005; testado contra o `git` de verdade; falta validar push/pull no GitHub real)
+
+Auditoria
+- [ ] Auditoria de fechamento da Fase 3 registrada em `docs/audits/`. (auditoria técnica em `docs/audits/fase-3.md` e roteiro do usuário em `docs/audits/fase-3-roteiro.md` prontos; falta o retorno e a aprovação do usuário)
+
+## Fase 4 — Framework Advanced (§7)
+
+Gate: jogos 2D substanciais apenas com APIs oficiais.
+
+- [ ] Camada simples de colisão: AABB, Rectangle, Circle, Point, Ray, overlap, intersection, distance, SAT.
+- [ ] Física completa (`PhysicsWorld`, `RigidBody2D`, `Collider2D`, `Fixture2D`, `Joint2D`, `Contact`, `Raycast`) sobre backend maduro (Box2D ou equivalente) sem expor tipos internos; ADR da escolha.
+- [ ] `Camera2D`.
+- [ ] Animação de sprites e tweening.
+- [ ] Partículas.
+- [ ] Tilemaps (carregar formato do Tile Studio, colisão).
+- [ ] Fontes personalizadas (bitmap e TrueType).
+- [ ] UI (layout, âncoras, nine-slice, temas).
+- [ ] Pathfinding A*.
+- [ ] Scene2D opcional e API entidade/componente opcional (sem obrigar ECS).
+- [ ] Debug APIs e helpers.
+- [ ] Profiler básico do framework (FPS, frame time, update/render time, draw calls, triângulos, memória, GC, audio underruns) (§23), com o painel Profiler no workspace (movido da Fase 3).
+- [ ] Auditoria de fechamento da Fase 4 registrada em `docs/audits/`.
+
+## Fase 5 — Studio Tools (§13)
+
+Gate: a maior parte dos assets/dados necessários pode ser produzida dentro do Lunet. As ferramentas usam o `Lunet.Editor.SDK` (criado na Fase 6 ou antes, ver ADR).
+
+- [ ] Painel Assets no workspace: lista os arquivos de `Content/` com prévia e uso (movido da Fase 3).
+- [ ] Sprite Studio: pixel art, layers, frames, timeline, onion skin, paletas, lápis, borracha, balde, conta-gotas, linhas, formas, seleção, laço, transformar, flip, rotate, simetria, grade, zoom, spritesheet, preview de animação, importar/exportar PNG, transparência, toque e stylus.
+- [ ] Tile Studio: tilesets, edição de mapas, layers, camada de colisão, propriedades, autotiling, brushes, preview.
+- [ ] Animation Studio: clips, timeline, frames, eventos, playback, animação de sprites, estados.
+- [ ] Atlas Studio: criação de atlas, packing, preview, metadata; inclui o pipeline de conteúdo com cache de assets processados em disco e invalidação (movido da Fase 2: só faz sentido com uma etapa de processamento real).
+- [ ] UI Studio: layouts, âncoras, margens, tamanhos, nine-slice, fontes, temas/skins, preview.
+- [ ] Physics Studio: colliders, polígonos, círculos, triggers, joints, camadas de colisão, debug view.
+- [ ] Particle Studio: emissor, preview, vida, velocidade, cores, tamanho, curvas, burst.
+- [ ] Audio Studio: waveform, trim, loop points, volume, preview, preparação de assets.
+- [ ] Palette Studio: criar, extrair, salvar/reusar, substituir cores.
+- [ ] Data Studio: JSON estruturado, tabelas, schemas, dados de jogo, validação.
+- [ ] Auditoria de fechamento da Fase 5 registrada em `docs/audits/`.
+
+## Fase 6 — Plugins (§14)
+
+Gate: plugin criado no Lunet adiciona painel e inspector sem modificar o app.
+
+- [ ] `Lunet.Editor.SDK` (API pública compartilhada por ferramentas oficiais e plugins).
+- [ ] `Lunet.PluginHost`: formato `*.lunetplugin` (`plugin.json`, `Plugin.dll`, `assets/`, `docs/`), carregamento, recarga.
+- [ ] Permissões declarativas: `workspace.read`, `workspace.write`, `network`, `build`, `editor`, `assets`, `agent.tools`; consentimento explícito do usuário.
+- [ ] Extensões: painéis, comandos, menus, inspectors, importers, exporters, templates, code actions, build steps, documentação, agent tools, asset tools, studio tools.
+- [ ] Criar e compilar plugin em C# dentro do próprio Lunet.
+- [ ] Isolamento de falhas: plugin com erro não derruba o app (§13).
+- [ ] Fluxo de aceitação "Plugin" (§29).
+- [ ] Auditoria de fechamento da Fase 6 registrada em `docs/audits/`.
+
+## Fase 7 — Networking (§8)
+
+Gate: dois clientes jogam demonstração realtime com latência simulada.
+
+- [ ] `Lunet.Networking`: `INetworkTransport`, transports substituíveis (LiteNetLib interno, sem vazar tipos).
+- [ ] Serialização, `NetworkClock`, conexões, sessões, mensagens, RPC.
+- [ ] `NetworkIdentity`, `NetworkObject`, `NetworkVariable`.
+- [ ] Snapshots, replicação, interpolação, predição, reconciliação.
+- [ ] Abstrações de lobby e matchmaking; diagnósticos.
+- [ ] Client-hosted, dedicated server e backend-integrated; servidor .NET headless; projetos `Shared/`, `Client/`, `Server/`.
+- [ ] Network Simulator: latência, jitter, perda, duplicação, limite de banda.
+- [ ] Testes de rede (serialização, reconexão, perda de pacotes).
+- [ ] Auditoria de fechamento da Fase 7 registrada em `docs/audits/`.
+
+## Fase 8 — Agentic Workspace (§16)
+
+Gate: modelo configurado altera código, compila, detecta erro, corrige e executa. IA é opcional; nada depende dela.
+
+- [ ] Painel Agent no workspace (movido da Fase 3).
+- [ ] Model Gateway, Provider Adapters (OpenAI, Anthropic, Gemini, OpenRouter, OpenAI-compatible, custom), Capability Discovery.
+- [ ] Tool API interna própria (mesmas operações usadas por humano e plugin) e depois bridge MCP.
+- [ ] Ferramentas tipadas: Project, Code, Compiler, Runtime, Testing, Assets, Documentation, Build, Versioning/checkpoints.
+- [ ] Context Engine por relevância (árvore, símbolos, referências, diagnósticos, arquivos relacionados, logs, histórico, docs, diffs, memória do projeto).
+- [ ] Agent Runtime com loop Understand → Plan → Inspect → Act → Compile → Run/Test → Verify → Repair → Finish; não concluir só por ter escrito arquivos.
+- [ ] Permissões, observabilidade e custo.
+- [ ] Chaves de API no Android Keystore; nunca no projeto, Git ou APK exportado.
+- [ ] Edits com checkpoint → mudanças → diff → verificação → aceitar/reverter; modos Ask, Edit, Agent.
+- [ ] Fluxo de aceitação "Agent" (§29); testes com saídas ruins de LLM e agente descontrolado.
+- [ ] Auditoria de fechamento da Fase 8 registrada em `docs/audits/`.
+
+## Fase 9 — APK Build (§18, §19)
+
+Gate obrigatório: desligar internet, criar projeto, programar, buildar APK, instalar e jogar. Se etapa local for inviável, implementar fallback via GitHub build e **registrar ADR**; não fingir.
+
+- [ ] Experimento inicial de viabilidade: Game.dll + Content + runtime template → APK (AAPT2, alinhamento, assinatura, arm64) — decidir e registrar ADR (§32 risco 4).
+- [ ] `runtime-template/` e `Lunet.Build`.
+- [ ] Empacotamento, recursos, AAPT2, alinhamento (zipalign) e assinatura.
+- [ ] Assinatura de desenvolvimento automática; assinatura de release com chave do usuário (gerar, importar, proteger, verificar, backup, aviso de perda). Nunca usar chave do Lunet nos jogos.
+- [ ] Build & Install e exportar APK; requisitos modernos do Android (API alvo).
+- [ ] Fluxo de aceitação principal (§29) completo, offline.
+- [ ] Auditoria de fechamento da Fase 9 registrada em `docs/audits/`.
+
+## Fase 10 — Cloud Build (§18)
+
+Gate: gerar AAB usando apenas telefone + GitHub.
+
+- [ ] Integração com GitHub (opcional, sem conta obrigatória).
+- [ ] Geração de workflow no projeto do usuário; build oficial .NET Android; APK e AAB; logs; dependências nativas e APIs Android avançadas.
+- [ ] Auditoria de fechamento da Fase 10 registrada em `docs/audits/`.
+
+## Fase 11 — Tutorial Games (§15)
+
+Gate: cada jogo compila, roda, está documentado e ensina efetivamente seu nível.
+
+- [ ] Opção "Tutorial" na criação de projeto (§33), abrindo os três jogos oficiais.
+- [ ] Tutorial 1 — Platformer (iniciante): estrutura, C# aplicado, Update/Draw, sprites, toque, movimento, colisão, câmera, animações, áudio, UI, checkpoints, save.
+- [ ] Tutorial 2 — Top-down Action Roguelite (intermediário): tilemap, inimigos, IA, A*, armas, projéteis, partículas, pools, geração de salas, inventário, upgrades, HUD, serialização, assets, profiling.
+- [ ] Tutorial 3 — Online Co-op Action RPG/Survival (avançado): cliente, servidor, shared code, lobby, conexão, replicação, snapshots, interpolação, predição, reconciliação, network variables, combate, inimigos, reconexão, diagnósticos, simulação de rede.
+- [ ] Documentação apontando para arquivos e trechos dos três jogos.
+- [ ] Fluxo de aceitação "Multiplayer" (§29).
+- [ ] Auditoria de fechamento da Fase 11 registrada em `docs/audits/`.
+
+## Fase 12 — Updates / Monetization Infrastructure (§19, §20, §21, §25)
+
+Sem paywall real obrigatório.
+
+- [ ] Settings → Updates com canais Stable, Beta e Development: consultar GitHub Releases, mostrar versão, patchnotes, tamanho, data e canal; Check → Download → Verify → pedir instalação.
+- [ ] SDK de content updates (manifest, hashes, substituição atômica, rollback); binário novo só por novo APK/AAB; nunca baixar código remoto para contornar Android/Play.
+- [ ] `Lunet.Entitlements` e `IEntitlementProvider`; provider de desenvolvimento habilita tudo; arquitetura para PlayBilling, DirectSubscription e Enterprise; recursos pagos consultam entitlements centralizados; assinatura expirada nunca bloqueia acesso, edição ou exportação dos projetos.
+- [ ] Metadata da futura loja no `lunet.json`: GameId, PackageId, DeveloperId, Version, Title, Description, Icon, Screenshots, Tags, AgeMetadata, BuildHash, Signature, ReleaseChannel; publicação por adapters (APK, GitHub Release, AAB). A loja em si **não** é implementada.
+- [ ] Landing page estática em `site/` para GitHub Pages (sem atrasar o app).
+- [ ] Auditoria de fechamento da Fase 12 registrada em `docs/audits/`.
+
+## Fase 13 — Hardening (§30)
+
+- [ ] Process death, pouca memória, rotação, projeto corrompido, arquivos enormes, muitos assets.
+- [ ] Plugins que falham e plugins malformados; falhas do compilador.
+- [ ] Saídas ruins de LLM e agente descontrolado; erros de assinatura e de atualização; falhas de rede.
+- [ ] Testes de ciclo de vida do Android e smoke tests em CI onde possível.
+- [ ] Snapshot do projeto inteiro para recuperação (§22).
+- [ ] Recriar texturas, alvos de desenho e shaders quando o contexto GL é perdido, sem reiniciar o jogo.
+- [ ] `Localization.UseDeviceLanguage` conferido em aparelhos com idiomas diferentes.
+- [ ] Auditoria de fechamento da Fase 13 registrada em `docs/audits/`.
+
+## Fase 14 — Beta
+
+- [ ] Documentação completa e tutoriais completos.
+- [ ] Revisão de API pública (nada vazando detalhes internos).
+- [ ] Revisão de desempenho (§23), latência de áudio (avaliar Oboe/AAudio se a medição exigir) e testes de migração de projetos.
+- [ ] Releases beta no canal Beta.
+- [ ] Auditoria de fechamento da Fase 14 registrada em `docs/audits/`.
+
+## Fase 15 — 1.0
+
+Somente quando os acceptance flows funcionarem no aparelho.
+
+- [ ] Fluxo principal (§29) completo, offline.
+- [ ] Fluxo Agent, Plugin e Multiplayer (§29).
+- [ ] Auditoria final contra o spec inteiro (§1–§36) registrada em `docs/audits/`.
+
+---
+
+## Transversal (valem em qualquer fase)
+
+Princípios (§2), checados em toda auditoria de fase:
+- [ ] Offline first: editor, projetos, docs, Roslyn, compilador, Preview, framework, plugins locais, profiler, build local funcionam sem internet.
+- [ ] Nenhuma conta obrigatória; nenhuma telemetria obrigatória.
+- [ ] Projetos são arquivos normais; usuário mantém propriedade.
+- [ ] APIs públicas sem detalhes internos; sem dependências circulares (testado).
+- [ ] Ferramentas oficiais usam as mesmas APIs dos plugins.
+
+Qualidade (§30):
+- [ ] Testes de: unidade, integração, compilador, sistema de projetos, framework, serialização, rede, plugins, build, smoke e ciclo de vida Android.
+- [ ] Sem TODO crítico escondido, mock passado como feature, botão sem comportamento, exceção ignorada, API sem documentação, código morto.
+
+Observabilidade (§23):
+- [ ] Profiler: FPS, frame time, update/render time, draw calls, triângulos, memória, GC, memória de assets, audio underruns.
+- [ ] Monitorar memória, Roslyn, responsividade do editor, carga de assets e latência de build.
+- [ ] Erros de build, Roslyn, runtime, plugin e agente aparecem nos painéis certos; logs exportáveis.
+
+Entrega (§24, §25):
+- [x] Ao terminar cada fase, entregar roteiro detalhado de validação da release ao usuário, registrar resultados na auditoria e aguardar aceite explícito antes de marcá-la ✅ ou iniciar a próxima fase (§24, §28, §36; pedido do usuário em 2026-09-29). Diretriz documentada; aplica-se às próximas fases, sem alterar retroativamente as auditorias 0–2.
+- [x] Continuidade entre agentes: migrar `CLAUDE.md` para `AGENTS.md`, criar `AgentsChat.md` e retomar o PR #20 corrigindo o build Android (§24, §30, §36; pedido do usuário em 2026-09-29).
+- [x] CHANGELOG com Added/Changed/Fixed/Performance/Deprecated/Removed/Security.
+- [x] SemVer com `VERSION`.
+- [x] Cada alteração na `main` com CI verde gera development release com APK, checksums e notas.
+- [x] `release-notes.json` (ver Fase 0).
+- [ ] ADR para toda decisão arquitetural relevante (existentes: 0001–0003).
+
+## Riscos técnicos (§32)
+
+1. Roslyn no Android — **validado** (v0.0.1-dev.8).
+2. Runtime/Preview executando jogo compilado — **validado**.
+3. Renderer 2D funcional e performático — funcional **validado**; desempenho ainda sem medição.
+4. Estratégia de geração de APK do jogo — **não validada**; experimento na Fase 9 (adiantar se houver dúvida sobre viabilidade).
+
+## Aceitação final (§29)
+
+- [ ] Principal: instalar → offline → criar projeto → C# → autocompletar → docs offline → criar/editar sprite → Run → jogar no Preview → inspecionar variáveis → corrigir → áudio → física → gerar APK → instalar o jogo → abrir → jogar → compartilhar.
+- [ ] Agent.
+- [ ] Plugin.
+- [ ] Multiplayer.
