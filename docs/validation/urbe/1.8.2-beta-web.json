@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../docs/contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-urbe-1.8.2-beta-web",
+  "component": "urbe",
+  "build": "1.8.2-beta-web",
+  "recorded_at": "2026-10-01",
+  "state": "VALIDATED",
+  "objective": "Confirmar que o Urbe Web continua funcionando em https://abnercruz.github.io/Urbe/ depois do corte para o espelho de distribuição (mesmo código, mesma URL).",
+  "preconditions": [
+    "Navegador atual (e, se houver, o PWA do Urbe já instalado)."
+  ],
+  "steps": [
+    "Abrir https://abnercruz.github.io/Urbe/.",
+    "Navegar pelas áreas principais (notas, páginas, mundo).",
+    "Se o Urbe estiver instalado como PWA, abri-lo e conferir que continua abrindo."
+  ],
+  "expected": "O Urbe Web abre na mesma URL, com a versão 1.8.2-beta, sem erro e com o PWA instalado funcionando.",
+  "known_issues": [
+    "Esta validação cobre o Urbe Web; instalador Windows e APK do Urbe não foram reconstruídos nesta etapa (a release 1.8.2-beta é anterior ao corte)."
+  ],
+  "artifact": {
+    "name": "Urbe Web (GitHub Pages)",
+    "url": "https://abnercruz.github.io/Urbe/",
+    "sha256": null
+  },
+  "traceability": {
+    "task": "P1-6",
+    "commit": "16ba1ecbe9dc9b3240d983326f5a8186bb3b6cd8",
+    "pr": "https://github.com/AbnerCruz/Urbe/pull/48",
+    "handoff": "HO-20261001-distribuicao-automatizada-parte-1"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Urbe: primeira execução do espelho e Pages",
+      "result": "passed",
+      "evidence": "Execução 36813347280: âncora 16ba1ec do github-actions[bot] (Ecosystem-Commit 547ef18); pages build and deployment sobre 16ba1ec: success.",
+      "handoff": "HO-20261001-distribuicao-automatizada-parte-1"
+    },
+    {
+      "kind": "human",
+      "check": "Urbe Web continua funcionando em https://abnercruz.github.io/Urbe/ depois do corte (abrir, navegar e, se instalado como PWA, conferir que abre)",
+      "result": "passed",
+      "evidence": "Proprietário: \"Tudo aprovado\" (2026-10-01), persistido em docs/governance/addenda/ADD-0007-validacoes-aprovadas.md. O agente não aprovou por ele.",
+      "handoff": "HO-20261001-distribuicao-automatizada-parte-1"
+    }
+  ]
+}

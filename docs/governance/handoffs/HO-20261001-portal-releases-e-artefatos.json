@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261001-portal-releases-e-artefatos",
   "category": "HANDOFF",
-  "timestamp": "2026-10-01T08:00:00Z",
+  "timestamp": "2026-10-01T09:00:00Z",
   "agent": {
     "id": "claude-code",
     "kind": "ai-agent",
@@ -11,7 +11,7 @@
   },
   "task_id": "P1-9",
   "component": "portal",
-  "state": "review",
+  "state": "done",
   "branch": "claude/new-session-vfwhkv",
   "commit": null,
   "pr": null,
@@ -44,9 +44,9 @@
     {
       "check": "Conferir no portal publicado a versão, a última release, o APK e o checksum de Lunet2D e Urbe",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "https://abnercruz.github.io/Ecosystem/",
-      "evidence": "Pendente (NN-017): layout e legibilidade em aparelho; os valores devem bater com as páginas de release de cada origem."
+      "evidence": "Proprietário: \"Tudo aprovado\" (2026-10-01), persistido em docs/governance/addenda/ADD-0007-validacoes-aprovadas.md. O agente não aprovou por ele."
     }
   ],
   "known_issues": [
@@ -55,7 +55,6 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Proprietário: conferir o portal (Aprovar/Reprovar).",
     "P1-10, P1-11, P1-12."
   ],
   "decisions_required": [],

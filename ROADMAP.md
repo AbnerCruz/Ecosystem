@@ -12,9 +12,9 @@
 
 ## Próxima tarefa
 
-**Fechar o P1-6** (validação do Urbe Web pelo proprietário, agendamento do espelho e a primeira release do Urbe pelo novo caminho) e seguir para **P1-9/P1-10** (portal com dados de release e Urbe Web) e **P1-11**.
+**Fechar o P1-6** (primeira release do Urbe pelo novo caminho e o agendamento do espelho; **DEC-0017** pendente no portal). Depois, **P1-10** (publicação definitiva do Urbe Web) e **P1-12** (classificação de candidatos a partir dos mapas já validados), que dependem da sua ordem/decisão.
 
-*Por quê:* P1-1 a P1-5, P1-7 e P1-8 estão concluídos; P1-6 está implementado e provado para o Lunet2D (release dev.107 a partir do espelho, validada em aparelho) e cortado para o Urbe (espelho ativo, Pages construído), faltando o que só o tempo e uma release real do Urbe provam.
+*Por quê:* P1-1 a P1-5, P1-7, P1-8, P1-9 e P1-11 estão concluídos. O gate da Fase 1 ainda exige P1-6 completo (release real do Urbe), P1-10 e P1-12.
 
 ---
 
@@ -81,9 +81,9 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 - [~] P1-6 — Restaurar build/testes/workflows/releases de cada produto; pipelines seletivos por path (NN-014). Atenção herdada dos inventários: `versionCode` do Android do Lunet2D (R-LUN-1), checks do Urbe que leem `.github/workflows` na raiz do produto (R-URB-3), secrets de assinatura do Urbe a recriar pelo proprietário (R-URB-5).
 - [x] P1-7 — Architecture tests sobre referências reais de código (NN-002, NN-003): `CHK-ARCH-REFS` (handoff `HO-20261001-arch-refs-e-auditoria-pos-migracao`).
 - [x] P1-8 — Auditoria pós-migração: commits/tags da origem presentes (NN-012). Evidência: [`audit-post-migration.md`](docs/migration/audit-post-migration.md) (84/84 e 382/382 commits, 25/25 e 6/6 tags, conteúdo idêntico).
-- [~] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados). Fontes hoje: Lunet2D publica `release-manifest.json`, `SHA256SUMS.txt` e notas em cada release; o Urbe publica APK, instalador Windows e `latest.yml` (checksum só pelo digest do GitHub). Por DEC-0008-A, lê as releases dos repositórios de origem de cada produto (transitório). **Implementado** (handoff `HO-20261001-portal-releases-e-artefatos`); aguardando conferência humana no portal (NN-017).
+- [x] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados). Fontes hoje: Lunet2D publica `release-manifest.json`, `SHA256SUMS.txt` e notas em cada release; o Urbe publica APK, instalador Windows e `latest.yml` (checksum só pelo digest do GitHub). Por DEC-0008-A, lê as releases dos repositórios de origem de cada produto (transitório). **Concluído** (handoff `HO-20261001-portal-releases-e-artefatos`; conferência humana aprovada pelo proprietário, [ADD-0007](docs/governance/addenda/ADD-0007-validacoes-aprovadas.md)).
 - [ ] P1-10 — Urbe Web: por **DEC-0009-A** (transitória), o Urbe Web continua em `AbnerCruz/Urbe` durante a migração; este item trata a publicação definitiva, com base no inventário P1-2 (§6: hoje publicado por Pages a partir da `main` de `AbnerCruz/Urbe`), como o Urbe Web é publicado no monorepo sem quebrar a publicação atual, e expor rota previsível no portal.
-- [ ] P1-11 — Registros canônicos de validação por build (contrato + estados de `definition-of-done.md` §4) e páginas `/testing/<componente>/<build>/` geradas deles.
+- [x] P1-11 — Registros canônicos de validação por build (contrato + estados de `definition-of-done.md` §4) e páginas `/testing/<componente>/<build>/` geradas deles. Evidência: handoff `HO-20261001-registros-de-validacao-por-build`; `CHK-VALIDATION`.
 - [ ] P1-12 — Classificar candidatos (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter) a partir dos mapas funcionais **já validados pós-migração**: apenas proposta; nenhuma extração (passo 9 de [`docs/migration/README.md`](docs/migration/README.md) §7). Extração/modernização (passo 10) está fora da Fase 1 e exige ADR por extração.
 
 Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → preservar histórico → restaurar build → restaurar testes → restaurar releases → validar produto → provar ausência de regressão conhecida → classificar candidatos → extrair/modernizar gradualmente. **Proibido** durante a importação: separar o Editor, extrair o Sprite Studio, reescrever o Agent Workspace, criar Store, criar Product Shell novo, transformar código em capabilities, reorganizar tudo em packages, reescrever o Urbe em C#, mudar a arquitetura interna porque a arquitetura futura é conhecida.

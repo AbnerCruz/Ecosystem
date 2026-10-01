@@ -405,7 +405,7 @@
         {
           "mechanism": "TEST",
           "status": "implemented",
-          "how": "Portal: CI e validação humana em campos separados; estado VALIDATED exige evidência (definition-of-done.md §4).",
+          "how": "Portal: CI e validação humana em campos separados; estado VALIDATED exige evidência (definition-of-done.md §4). CHK-VALIDATION (P1-11): nos registros por build, VALIDATED só com evidência humana aprovada; CI verde leva no máximo a AUTOMATED_VERIFIED.",
           "check": "CHK-PORTAL"
         },
         {

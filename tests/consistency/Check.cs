@@ -48,6 +48,7 @@ static class Checks
         "CHK-ADR",
         "CHK-DECISIONS",
         "CHK-HANDOFFS",
+        "CHK-VALIDATION",
         "CHK-ROADMAP",
         "CHK-SECRETS",
         "CHK-PORTAL",
@@ -87,6 +88,7 @@ static class Checks
         Guard(r, "CHK-ADR", () => Adr(ctx));
         Guard(r, "CHK-DECISIONS", () => Decisions(ctx));
         Guard(r, "CHK-HANDOFFS", () => Handoffs(ctx));
+        Guard(r, "CHK-VALIDATION", () => ValidationRecords(ctx));
         Guard(r, "CHK-ROADMAP", () => Roadmap(ctx));
         Guard(r, "CHK-SECRETS", () => Secrets(ctx));
         Guard(r, "CHK-PORTAL", () => Portal(ctx));
@@ -159,6 +161,7 @@ static class Checks
         "docs/governance/decisions.json" => "docs/contracts/schemas/decisions.schema.json",
         "docs/governance/enforcement-matrix.json" => "docs/contracts/schemas/enforcement-matrix.schema.json",
         _ when file.StartsWith("docs/governance/handoffs/") => "docs/contracts/schemas/handoff.schema.json",
+        _ when file.StartsWith("docs/validation/") => "docs/contracts/schemas/validation-record.schema.json",
         _ => null,
     };
 
@@ -564,6 +567,58 @@ static class Checks
         }
     }
 
+    // --- CHK-VALIDATION (P1-11; NN-001, NN-017, NN-018) ---
+    // Registros canônicos de validação por build: o estado precisa ser sustentado pela evidência (CI nunca vira VALIDATED) e a
+    // evidência que cita um handoff precisa coincidir com a verificação do handoff (uma só fonte para o mesmo fato).
+    static void ValidationRecords(Context c)
+    {
+        const string id = "CHK-VALIDATION";
+        c.R.Ran(id);
+        var comps = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        foreach (var (k, v) in c.Components()) comps.TryAdd(k, v); // duplicatas são reportadas por CHK-IDS-UNIQUE
+        var handoffs = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        foreach (var (_, d) in c.Handoffs()) handoffs.TryAdd(d.RootElement.Str("message_id") ?? "", d.RootElement);
+        var seen = new HashSet<string>();
+        foreach (var (file, doc) in c.ValidationRecords())
+        {
+            var r = doc.RootElement;
+            var comp = r.Str("component"); var build = r.Str("build"); var rid = r.Str("record_id");
+            if (comp is null || build is null || rid is null) continue; // o schema já reportou
+            if (file != $"docs/validation/{comp}/{build}.json") c.R.Fail(id, $"{file}: o caminho deve ser docs/validation/{comp}/{build}.json");
+            if (rid != $"VR-{comp}-{build}") c.R.Fail(id, $"{file}: record_id deve ser VR-{comp}-{build}");
+            if (!seen.Add(rid)) c.R.Fail(id, $"{file}: record_id duplicado {rid}");
+            if (!comps.TryGetValue(comp, out var cc) || cc.Str("type") != "product") { c.R.Fail(id, $"{file}: componente '{comp}' inexistente ou não é um produto"); continue; }
+
+            var ev = r.Arr("evidence").ToList();
+            bool Has(string kind, string res) => ev.Any(e => e.Str("kind") == kind && e.Str("result") == res);
+            var state = r.Str("state");
+            if (ev.Any(e => e.Str("result") == "failed") && state is "VALIDATED" or "AUTOMATED_VERIFIED")
+                c.R.Fail(id, $"{file}: estado {state} com evidência reprovada");
+            switch (state)
+            {
+                case "VALIDATED":
+                    if (!Has("human", "passed")) c.R.Fail(id, $"{file}: VALIDATED exige evidência humana aprovada (CI nunca basta, NN-017)");
+                    if (Has("human", "pending")) c.R.Fail(id, $"{file}: VALIDATED com validação humana ainda pendente");
+                    break;
+                case "AUTOMATED_VERIFIED":
+                    if (!Has("automated", "passed")) c.R.Fail(id, $"{file}: AUTOMATED_VERIFIED exige evidência automática aprovada");
+                    break;
+                case "HUMAN_VALIDATION_PENDING":
+                    if (!Has("human", "pending")) c.R.Fail(id, $"{file}: HUMAN_VALIDATION_PENDING exige uma verificação humana pendente");
+                    break;
+            }
+            foreach (var e in ev.Where(e => e.Str("handoff") is not null))
+            {
+                var hid = e.Str("handoff")!;
+                if (!handoffs.TryGetValue(hid, out var h)) { c.R.Fail(id, $"{file}: handoff {hid} inexistente"); continue; }
+                var match = h.Arr("verification").FirstOrDefault(v => v.Str("check") == e.Str("check"));
+                if (match.ValueKind != JsonValueKind.Object) c.R.Fail(id, $"{file}: o handoff {hid} não tem a verificação '{e.Str("check")}' (evidência divergente, NN-001)");
+                else if (match.Str("result") != e.Str("result") || match.Str("kind") != e.Str("kind"))
+                    c.R.Fail(id, $"{file}: a evidência '{e.Str("check")}' diverge do handoff {hid} (registro: {e.Str("kind")}/{e.Str("result")}; handoff: {match.Str("kind")}/{match.Str("result")})");
+            }
+        }
+    }
+
     // --- CHK-ROADMAP (MANIFEST §46, NN-017) ---
     static void Roadmap(Context c)
     {
@@ -664,7 +719,7 @@ static class Checks
 
             var published = Repo.WalkFiles(c.P(path))
                 .Select(c.Rel)
-                .Where(f => !f.StartsWith($"{path}/generator/") && !f.StartsWith($"{path}/data/"))
+                .Where(f => !f.StartsWith($"{path}/generator/") && !f.StartsWith($"{path}/data/") && !f.StartsWith($"{path}/testing/"))
                 .Where(f => f.EndsWith(".html") || f.EndsWith(".js") || f.EndsWith(".css"))
                 .ToList();
             var referencesProjection = false;
@@ -717,6 +772,11 @@ static class Checks
             var v = pc.GetProperty("validation");
             if (v.Str("state") == "VALIDATED" && string.IsNullOrWhiteSpace(v.Str("evidence")))
                 c.R.Fail(id, $"{rel}: '{pid}' apresentado como VALIDATED sem evidência (NN-017)");
+            var latest = c.ValidationRecords().Select(x => x.Doc.RootElement).Where(x => x.Str("component") == pid)
+                .OrderBy(x => x.Str("recorded_at"), StringComparer.Ordinal).ThenBy(x => x.Str("build"), StringComparer.Ordinal).LastOrDefault();
+            var expectedState = latest.ValueKind == JsonValueKind.Object ? latest.Str("state") : "UNKNOWN";
+            if (v.Str("state") != expectedState)
+                c.R.Fail(id, $"{rel}: '{pid}.validation.state' ({v.Str("state")}) diverge do registro canônico de validação ({expectedState})");
         }
 
         // Validações humanas pendentes: último handoff de cada tarefa ainda não encerrado.
@@ -767,6 +827,9 @@ sealed class Context(string root, Report r)
         var hdir = P("docs/governance/handoffs");
         if (Directory.Exists(hdir))
             files.AddRange(Directory.EnumerateFiles(hdir, "*.json").Order().Select(Rel));
+        var vdir = P("docs/validation");
+        if (Directory.Exists(vdir))
+            files.AddRange(Directory.EnumerateFiles(vdir, "*.json", SearchOption.AllDirectories).Order().Select(Rel));
         foreach (var f in files)
         {
             if (!File.Exists(P(f))) { R.Fail("CHK-SCHEMA", $"{f} ausente"); continue; }
@@ -794,6 +857,8 @@ sealed class Context(string root, Report r)
 
     public IEnumerable<JsonElement> MatrixInvariants() =>
         Json.FirstOrDefault(j => j.File == "docs/governance/enforcement-matrix.json").Doc?.RootElement.Arr("invariants") ?? [];
+
+    public IEnumerable<(string File, JsonDocument Doc)> ValidationRecords() => Json.Where(j => j.File.StartsWith("docs/validation/"));
 
     public IEnumerable<(string File, JsonDocument Doc)> Handoffs() => Json.Where(j => j.File.StartsWith("docs/governance/handoffs/"));
 
@@ -1048,6 +1113,12 @@ static class SelfTest
             r => File.AppendAllText(Path.Combine(r, "apps", "lunet2d", "VERSION"), "\nEcosystem Hub\n")),
         new("ProjectReference para fora do produto", "CHK-ARCH-REFS",
             r => File.WriteAllText(Path.Combine(r, "apps", "lunet2d", "src", "Fora.csproj"), "<Project><ItemGroup><ProjectReference Include=\"../../../../platform/X/X.csproj\" /></ItemGroup></Project>")),
+        new("build VALIDATED sem evidência humana", "CHK-VALIDATION",
+            r => Replace(r, "docs/validation/lunet2d/v0.0.1-dev.107.json", "\"kind\": \"human\"", "\"kind\": \"automated\"")),
+        new("evidência do registro diverge do handoff", "CHK-VALIDATION",
+            r => { var f = Path.Combine(r, "docs", "validation", "urbe", "1.8.2-beta-web.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"result\": \"passed\"", "\"result\": \"failed\"")); }),
+        new("registro de validação fora do caminho", "CHK-VALIDATION",
+            r => { var d = Path.Combine(r, "docs", "validation", "urbe"); File.Move(Path.Combine(d, "1.8.2-beta-web.json"), Path.Combine(d, "outro.json")); }),
         new("Hub como dependência obrigatória", "CHK-BOUNDARIES",
             r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/lunet2d/VERSION\" },\n      \"dependencies\": []",
                 "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/lunet2d/VERSION\" },\n      \"dependencies\": [{ \"component\": \"hub\", \"kind\": \"required\", \"reason\": \"x\" }]")),

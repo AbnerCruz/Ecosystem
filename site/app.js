@@ -56,6 +56,7 @@ function validationRow(v) {
     el("dd", {},
       el("span", { class: `badge v-${v.state}` }, VALIDATION_LABELS[v.state] || v.state),
       v.evidence ? el("small", { class: "src" }, v.evidence) : null,
+      v.page ? el("small", { class: "src" }, link(v.page, `Página de validação do build ${v.build}`)) : null,
       el("small", { class: "src" }, v.source)));
 }
 

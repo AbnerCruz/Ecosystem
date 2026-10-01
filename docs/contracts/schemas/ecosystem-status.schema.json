@@ -240,6 +240,20 @@
               "source": {
                 "type": "string",
                 "minLength": 1
+              },
+              "build": {
+                "description": "Build do registro canônico mais recente (P1-11); nulo quando não há registro.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "page": {
+                "description": "URL da página /testing/<componente>/<build>/ gerada do registro; nulo quando não há registro.",
+                "type": [
+                  "string",
+                  "null"
+                ]
               }
             }
           }

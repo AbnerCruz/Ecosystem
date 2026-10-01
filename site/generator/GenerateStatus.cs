@@ -109,6 +109,35 @@ string? Fetch(string url)
     return (r, artifacts, "API de releases do GitHub (lida na geração).");
 }
 
+// --- registros canônicos de validação por build (P1-11): estado de validação por componente e páginas /testing/ ---
+var records = new List<(string Rel, JsonNode Node)>();
+var vdir = P("docs/validation");
+if (Directory.Exists(vdir))
+    foreach (var f in Directory.EnumerateFiles(vdir, "*.json", SearchOption.AllDirectories).Order())
+        records.Add((Path.GetRelativePath(root, f).Replace('\\', '/'), Load(Path.GetRelativePath(root, f).Replace('\\', '/'))));
+(string Rel, JsonNode Node)? LatestRecord(string componentId) => records
+    .Where(r => S(r.Node["component"]) == componentId)
+    .OrderBy(r => S(r.Node["recorded_at"]), StringComparer.Ordinal).ThenBy(r => S(r.Node["build"]), StringComparer.Ordinal)
+    .Select(r => ((string, JsonNode)?)r).LastOrDefault();
+string TestingPath(JsonNode n) => $"testing/{S(n["component"])}/{S(n["build"])}/";
+string? pagesBase = repo.StartsWith("https://github.com/") ? $"https://{repo.Split('/')[3].ToLowerInvariant()}.github.io/{repo.Split('/')[4]}/" : null;
+
+JsonObject ValidationOf(string componentId)
+{
+    if (LatestRecord(componentId) is not { } lr)
+        return new JsonObject { ["state"] = "UNKNOWN", ["evidence"] = null, ["source"] = "Nenhum registro canônico de validação para este componente (docs/validation/).", ["build"] = null, ["page"] = null };
+    var state = S(lr.Node["state"])!;
+    var human = (lr.Node["evidence"]!.AsArray()).Where(e => S(e!["kind"]) == "human" && S(e["result"]) == "passed").Select(e => S(e!["evidence"])).FirstOrDefault();
+    return new JsonObject
+    {
+        ["state"] = state,
+        ["evidence"] = state == "VALIDATED" ? human : null,
+        ["source"] = $"Registro canônico {lr.Rel} (build {S(lr.Node["build"])}).",
+        ["build"] = S(lr.Node["build"]),
+        ["page"] = pagesBase is null ? null : pagesBase + TestingPath(lr.Node),
+    };
+}
+
 // --- componentes ---
 var components = new JsonArray();
 foreach (var (id, c) in eco["components"]!.AsObject())
@@ -158,12 +187,7 @@ foreach (var (id, c) in eco["components"]!.AsObject())
         ["release"] = release,
         ["artifacts"] = artifacts,
         ["ci"] = ci,
-        ["validation"] = new JsonObject
-        {
-            ["state"] = "UNKNOWN",
-            ["evidence"] = null,
-            ["source"] = "Ainda não existem registros canônicos de validação por build (P1-11).",
-        },
+        ["validation"] = ValidationOf(id),
     });
 }
 
@@ -298,6 +322,54 @@ Doc("Modelo de produto (Product Shell, Context)", "docs/architecture/product-mod
 Doc("Distribuição e plataforma própria", "docs/architecture/distribution.md");
 Doc("Perguntas-chave", "docs/architecture/faq.md");
 Doc("Portal (arquitetura)", "docs/architecture/portal.md");
+
+// --- páginas de validação /testing/<componente>/<build>/ geradas dos registros (P1-11): só leitura, sem script ---
+string H(string? t) => System.Net.WebUtility.HtmlEncode(t ?? "");
+string Items(JsonNode? arr, string tag) => string.Join("", (arr?.AsArray() ?? []).Select(x => $"<li>{H(S(x))}</li>"));
+var stateLabels = new Dictionary<string, string> { ["IMPLEMENTED"] = "implementado", ["AUTOMATED_VERIFIED"] = "verificado automaticamente", ["HUMAN_VALIDATION_PENDING"] = "validação humana pendente", ["VALIDATED"] = "validado por humano" };
+var testingRoot = P("site/testing");
+if (Directory.Exists(testingRoot)) Directory.Delete(testingRoot, true);
+foreach (var (rel, n) in records)
+{
+    var dir = P("site/" + TestingPath(n));
+    Directory.CreateDirectory(dir);
+    var art = n["artifact"]!; var tr = n["traceability"]!;
+    var ev = string.Join("", n["evidence"]!.AsArray().Select(e =>
+        $"<li><strong>{(S(e!["kind"]) == "human" ? "Humana" : "Automática")} · {H(S(e["result"]))}</strong>: {H(S(e["check"]))}<br><small>{H(S(e["evidence"]))}</small></li>"));
+    var html = $$"""
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Validação — {{H(S(n["component"]))}} {{H(S(n["build"]))}}</title>
+  <link rel="stylesheet" href="../../../style.css">
+</head>
+<body>
+  <header class="top"><h1>Validação do build {{H(S(n["build"]))}}</h1>
+    <p class="meta">{{H(S(n["component"]))}} · <span class="badge v-{{H(S(n["state"]))}}">{{H(stateLabels.GetValueOrDefault(S(n["state"]) ?? "", S(n["state"])))}}</span> · <a href="../../../">portal</a></p></header>
+  <main>
+    <section><h2>Objetivo</h2><p>{{H(S(n["objective"]))}}</p></section>
+    <section><h2>Pré-condições</h2><ul>{{Items(n["preconditions"], "li")}}</ul></section>
+    <section><h2>Passos</h2><ol>{{Items(n["steps"], "li")}}</ol></section>
+    <section><h2>Resultado esperado</h2><p>{{H(S(n["expected"]))}}</p></section>
+    <section><h2>Problemas conhecidos</h2><ul>{{Items(n["known_issues"], "li")}}</ul></section>
+    <section><h2>Artefato</h2><p><a href="{{H(S(art["url"]))}}">{{H(S(art["name"]))}}</a>{{(S(art["sha256"]) is { } sh ? $"<br><small>SHA-256 {H(sh)}</small>" : "")}}</p></section>
+    <section><h2>Evidência</h2><ul>{{ev}}</ul></section>
+    <section><h2>Rastreabilidade</h2><p>Tarefa {{H(S(tr["task"]))}} · commit {{H(S(tr["commit"])?[..Math.Min(8, (S(tr["commit"]) ?? "").Length)])}}{{(S(tr["pr"]) is { } pr ? $" · <a href=\"{H(pr)}\">PR</a>" : "")}} · <a href="{{Blob(rel)}}">registro canônico</a></p>
+      <p class="hint">Esta página é gerada do registro canônico; não é fonte de verdade.</p></section>
+  </main>
+</body>
+</html>
+""";
+    File.WriteAllText(Path.Combine(dir, "index.html"), html);
+}
+if (records.Count > 0)
+{
+    var rows = string.Join("", records.OrderBy(r => S(r.Node["component"]), StringComparer.Ordinal).ThenByDescending(r => S(r.Node["recorded_at"]), StringComparer.Ordinal)
+        .Select(r => $"<li><a href=\"{H(S(r.Node["component"]))}/{H(S(r.Node["build"]))}/\">{H(S(r.Node["component"]))} · {H(S(r.Node["build"]))}</a> — {H(stateLabels.GetValueOrDefault(S(r.Node["state"]) ?? "", S(r.Node["state"])))}</li>"));
+    File.WriteAllText(P("site/testing/index.html"), "<!doctype html>\n<html lang=\"pt-BR\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Validações por build</title><link rel=\"stylesheet\" href=\"../style.css\"></head><body><header class=\"top\"><h1>Validações por build</h1><p class=\"meta\"><a href=\"../\">portal</a></p></header><main><section><ul>" + rows + "</ul></section></main></body></html>\n");
+}
 
 var result = new JsonObject
 {

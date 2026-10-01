@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ecosystem/contracts/validation-record/1",
+  "title": "Registro canônico de validação de um build (P1-11)",
+  "description": "Um registro por build em docs/validation/<componente>/<build>.json. É a autoridade do ESTADO DE VALIDAÇÃO do build (definition-of-done.md §4). Evidência humana referenciada por handoff precisa coincidir com a verificação do handoff (CHK-VALIDATION): o registro não cria uma segunda fonte para o mesmo fato (NN-001).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "record_id",
+    "component",
+    "build",
+    "recorded_at",
+    "state",
+    "objective",
+    "preconditions",
+    "steps",
+    "expected",
+    "known_issues",
+    "artifact",
+    "traceability",
+    "evidence"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "record_id": { "type": "string", "pattern": "^VR-[a-z0-9-]+-[A-Za-z0-9._-]+$" },
+    "component": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
+    "build": { "type": "string", "pattern": "^[A-Za-z0-9._-]+$" },
+    "recorded_at": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+    "state": { "enum": ["IMPLEMENTED", "AUTOMATED_VERIFIED", "HUMAN_VALIDATION_PENDING", "VALIDATED"] },
+    "objective": { "type": "string", "minLength": 1 },
+    "preconditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "steps": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "expected": { "type": "string", "minLength": 1 },
+    "known_issues": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "url", "sha256"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "pattern": "^https://" },
+        "sha256": { "type": ["string", "null"] }
+      }
+    },
+    "traceability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task", "commit", "pr", "handoff"],
+      "properties": {
+        "task": { "type": "string", "minLength": 1 },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "pr": { "type": ["string", "null"] },
+        "handoff": { "type": ["string", "null"] }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "check", "result", "evidence", "handoff"],
+        "properties": {
+          "kind": { "enum": ["automated", "human"] },
+          "check": { "type": "string", "minLength": 1 },
+          "result": { "enum": ["passed", "failed", "pending"] },
+          "evidence": { "type": "string", "minLength": 1 },
+          "handoff": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

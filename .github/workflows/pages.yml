@@ -69,6 +69,7 @@ jobs:
           test -s _site/app.js
           test -s _site/style.css
           test -s _site/data/ecosystem-status.json
+          test -s _site/testing/index.html
           test ! -e _site/README.md
 
           # O artefato é estático e deve chegar ao Pages sem processamento Jekyll.

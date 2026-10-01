@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261001-distribuicao-automatizada-parte-1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-01T05:10:00Z",
+  "timestamp": "2026-10-01T09:00:00Z",
   "agent": {
     "id": "claude-code",
     "kind": "ai-agent",
@@ -102,9 +102,9 @@
     {
       "check": "Urbe Web continua funcionando em https://abnercruz.github.io/Urbe/ depois do corte (abrir, navegar e, se instalado como PWA, conferir que abre)",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "https://abnercruz.github.io/Urbe/",
-      "evidence": "Pendente (NN-017). Mesmo código, mesma URL, publicado por um commit do espelho."
+      "evidence": "Proprietário: \"Tudo aprovado\" (2026-10-01), persistido em docs/governance/addenda/ADD-0007-validacoes-aprovadas.md. O agente não aprovou por ele."
     }
   ],
   "known_issues": [
@@ -117,8 +117,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Proprietário: validar o Urbe Web no portal (Aprovar/Reprovar).",
-    "Agente: confirmar o cron do espelho; P1-7 (architecture tests) e P1-8 (auditoria pós-migração); a prova do release.yml acontece na próxima release do Urbe."
+    "Proprietário: decidir DEC-0017 no portal.",
+    "Agente: provar release.yml do Urbe na próxima release real; confirmar o agendamento se passar a rodar."
   ],
   "decisions_required": [
     "DEC-0017"

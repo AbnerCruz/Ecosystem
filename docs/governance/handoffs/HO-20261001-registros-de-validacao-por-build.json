@@ -1,0 +1,92 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-registros-de-validacao-por-build",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T10:00:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-11",
+  "component": "portal",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/contracts/schemas/validation-record.schema.json",
+    "docs/validation/lunet2d/v0.0.1-dev.107.json",
+    "docs/validation/urbe/1.8.2-beta-web.json",
+    "site/generator/GenerateStatus.cs",
+    "site/app.js",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "tests/consistency/Check.cs",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/definition-of-done.md",
+    "docs/architecture/portal.md",
+    ".github/workflows/pages.yml",
+    ".gitignore",
+    "ROADMAP.md",
+    "docs/governance/addenda/ADD-0007-validacoes-aprovadas.md",
+    "docs/governance/handoffs/HO-20261001-registros-de-validacao-por-build.json"
+  ],
+  "work_completed": [
+    "Contrato validation-record/1 e dois registros canônicos: Lunet2D v0.0.1-dev.107 (VALIDATED, instalação e abertura em aparelho) e Urbe 1.8.2-beta-web (VALIDATED).",
+    "CHK-VALIDATION: caminho/ID, estado sustentado pela evidência (VALIDATED exige humana aprovada; CI só chega a AUTOMATED_VERIFIED) e evidência que cita handoff coincide com a verificação do handoff (NN-001). 3 casos no self-test.",
+    "Gerador: o estado de validação de cada componente na projeção vem do registro mais recente (antes: sempre UNKNOWN); gera as páginas /testing/<componente>/<build>/ e /testing/ (objetivo, pré-condições, passos, esperado, problemas conhecidos, artefato, evidência, rastreabilidade). CHK-PORTAL recusa estado divergente do registro.",
+    "ADD-0007 registra a aprovação do proprietário ('Tudo aprovado'); DEC-0017 não foi respondida por ele e continua pendente."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "18/18 checks; todos os checks provaram detectar suas violações (inclui CHK-VALIDATION)."
+    },
+    {
+      "check": "Páginas geradas renderizam no navegador (viewport de celular)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Playwright: /testing/lunet2d/v0.0.1-dev.107/ com 8 seções e 3 passos; cartão do portal mostra o link da página de validação de cada produto."
+    }
+  ],
+  "known_issues": [
+    "Os registros desta etapa cobrem dois builds já validados; novos builds precisam de registro novo (hoje manual, por agente).",
+    "Persistir PASS/FAIL pela própria página não é objetivo inicial (portal.md)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "P1-10 (publicação definitiva do Urbe Web) e P1-12 (classificação de candidatos) dependem de decisão/ordem do proprietário; DEC-0017 pendente."
+  ],
+  "decisions_required": [
+    "DEC-0017"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/definition-of-done.md",
+    "docs/architecture/portal.md",
+    "docs/contracts/schemas/validation-record.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Evidência de handoff conferida contra o handoff; estado do build só no registro."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI nunca vira VALIDATED; CHK-VALIDATION fiscaliza."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Registros trazem objetivo, passos, artefato, evidência e rastreabilidade."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Estado de validação por build descobrível no portal com página própria."
+    }
+  ],
+  "cost": null
+}

@@ -1,0 +1,58 @@
+{
+  "$schema": "../../../docs/contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-lunet2d-v0.0.1-dev.107",
+  "component": "lunet2d",
+  "build": "v0.0.1-dev.107",
+  "recorded_at": "2026-10-01",
+  "state": "VALIDATED",
+  "objective": "Confirmar que a release de desenvolvimento publicada pelo novo caminho (Ecosystem → espelho → CI da origem) instala em um aparelho Android e abre o app.",
+  "preconditions": [
+    "Aparelho Android compatível com arm64.",
+    "Permissão para instalar apps de fontes externas.",
+    "Opcional: versão anterior do Lunet instalada (atualizar por cima; reinstalar é aceitável durante a Fase 1, ADD-0006)."
+  ],
+  "steps": [
+    "Baixar o APK da release no link do artefato e conferir o SHA-256 informado.",
+    "Instalar (por cima da versão anterior ou, se necessário, desinstalar e instalar).",
+    "Abrir o app e conferir que a tela inicial aparece."
+  ],
+  "expected": "O app instala, abre e mostra a versão 0.0.1-dev.107.",
+  "known_issues": [
+    "O escopo validado é instalação e abertura. Os recursos recentes da Fase 3 (IDE) ainda exigem validação em aparelho, conforme o README do produto."
+  ],
+  "artifact": {
+    "name": "Lunet-0.0.1-dev.107-arm64.apk",
+    "url": "https://github.com/AbnerCruz/Lunet2D/releases/download/v0.0.1-dev.107/Lunet-0.0.1-dev.107-arm64.apk",
+    "sha256": "ca0c774d772a095969c872a4d6721b18e2d08033aead240dba8784b5d3903ea5"
+  },
+  "traceability": {
+    "task": "P1-6",
+    "commit": "d43de2e7c9dc4f3b4336d556cb00ba9853b4ae53",
+    "pr": null,
+    "handoff": "HO-20261001-distribuicao-automatizada-parte-1"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Ciclo completo Lunet2D: espelho -> dispatch do ci.yml -> release",
+      "result": "passed",
+      "evidence": "Release v0.0.1-dev.107 (target d43de2e, commit do github-actions[bot] 'Sincronizar com Ecosystem@bbd6a3b'); assets: Lunet-0.0.1-dev.107-arm64.apk, release-manifest.json, release-notes.json, release-notes.md, SHA256SUMS.txt; CI e job release verdes. Numeração continuou (dev.106 -> dev.107).",
+      "handoff": "HO-20261001-distribuicao-automatizada-parte-1"
+    },
+    {
+      "kind": "automated",
+      "check": "CI do PR no Lunet2D (test + apk) e CI por produto no monorepo",
+      "result": "passed",
+      "evidence": "PR #26: CI verde (test e apk). Monorepo: lunet2d-ci e urbe-checks verdes na main (6497aa1).",
+      "handoff": "HO-20261001-distribuicao-automatizada-parte-1"
+    },
+    {
+      "kind": "human",
+      "check": "Instalar a release v0.0.1-dev.107 do Lunet2D em aparelho (atualizando por cima; reinstalar é aceitável, ADD-0006) e abrir o app",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-01 (Issue https://github.com/AbnerCruz/Ecosystem/issues/24); registro em docs/governance/responses/VAL-HO-20261001-distribuicao-automatizada-parte-1-873ec13d8960.md.",
+      "handoff": "HO-20261001-distribuicao-automatizada-parte-1"
+    }
+  ]
+}
