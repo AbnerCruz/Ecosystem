@@ -1,0 +1,94 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "721dcf6",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "ecosystem",
+  "state": "done",
+  "message_id": "HO-20261002-dec-0022-e-integracao",
+  "timestamp": "2026-10-02T00:30:00Z",
+  "task_id": "P3-2",
+  "files_changed": [
+    "docs/governance/addenda/ADD-0011-colaboracao-multiagente-sem-verificacao-manual.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/adr/README.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/governance/multi-agent.md",
+    ".gitattributes",
+    "tests/consistency/Check.cs",
+    "docs/governance/handoffs/HO-20261002-dec-0022-e-integracao.json"
+  ],
+  "work_completed": [
+    "FATO (base 721dcf6): o proprietário respondeu DEC-0022 no portal (A — Android nativo em C#; Issue #37, commit do registrador 721dcf6) e escreveu no chat: 'Pode fazer o merge e aprovar tudo. Mas eu precisar pegar um agente (no caso você) para verificar esse trabalho multiagente é o insustentável, o sistema deve permitir essa colaboração sem erros' — persistido em ADD-0011.",
+    "DECISÃO DO PROPRIETÁRIO aplicada (DEC-0022-A): ADR-0013 'Aceito' (índice atualizado), ARCHITECTURE §8.1 (Hub Android nativo em C#) e §8.2 (item removido), ROADMAP P3-2 [x] e 'Próxima tarefa' = P3-3; consequencesApplied=true. Nenhum código do Hub criado.",
+    "DECISÃO DO PROPRIETÁRIO aplicada (merge do PR #35): reconciliado com a main (base obsoleta após o registro da DEC-0022, sem sobreposição), RM-F2-03 [x] no próprio PR, TRACEABILITY regenerada, handoff do Urbe 'done'; CI do PR verde no head reconciliado (urbe-checks run 36913073586, consistency 36913073692); --integration = FRESH; integrado em c77a5ae. Sincronização da origem disparada (sync-from-ecosystem.yml em AbnerCruz/Urbe, DEC-0017-A).",
+    "ALTERAÇÃO (prevenção automática do conflito observado no teste): .gitattributes com merge=union para docs/adr/README.md (acréscimos concorrentes de ADRs se juntam sem conflito) e CHK-ADR passa a exigir exatamente uma linha por ADR no índice, com o mesmo status do arquivo (2 casos de self-test).",
+    "PENDÊNCIA (requisito do ADD-0011): integrador automático. O agente desenhou e escreveu um rascunho (workflow integrate.yml, script de efeitos e lógica testável no Check.cs: plano por PR, portões de handoff e política de merge por componente), mas o sistema de permissões desta sessão BLOQUEOU a etapa que permitiria ao integrador fazer merge na main sem revisão humana. Nada disso foi commitado. A forma (só verificar e deixar o merge num clique do proprietário, ou também integrar sozinho) foi levada ao portal como DEC-0023 (recomendação B)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "21/21 e 'todos os checks provaram detectar suas violações' (inclui os 2 casos novos de CHK-ADR)."
+    },
+    {
+      "check": "PR #35 integrado com o estado combinado verde",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "1093257",
+      "evidence": "urbe-checks e consistency verdes no head reconciliado 1093257; --integration FRESH; merge c77a5ae."
+    }
+  ],
+  "known_issues": [
+    "O integrador automático não existe ainda: depende de DEC-0023 e, para a alternativa A, de autorização explícita para o agente criar automação que faz merge sem revisão."
+  ],
+  "next_actions": [
+    "Proprietário: decidir DEC-0023 no portal.",
+    "Agente: implementar o integrador na forma decidida (rascunho pronto), com self-tests e um teste real com dois PRs simultâneos; depois, P3-3 (esqueleto do Hub Android em C#)."
+  ],
+  "decisions_required": [
+    "DEC-0023"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/governance/multi-agent.md",
+    "apps/urbe/AGENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Mensagem do proprietário persistida em ADD-0011; DEC-0023 no portal, não só no chat."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "A forma da automação de merge é decisão do proprietário (DEC-0023); nada implementado antes."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "RM-F2-03 só virou [x] com o E2E de ZIP verde e integrado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Merge do #35 só depois do estado combinado verde e FRESH."
+    }
+  ]
+}

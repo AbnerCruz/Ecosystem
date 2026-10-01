@@ -147,12 +147,11 @@ Este documento descreve a arquitetura **atual** nas seções anteriores. Aqui fi
 - enforcement de permissões em runtime (Fase 5);
 - packaging e distribuição pelo Distribution Profile (Fase 4);
 - plataforma first-party como distribuição principal dos Products (DEC-0021-C): **progressiva** — até ela existir valem DEC-0008/DEC-0009 (repositórios de origem); depois, cada Product migra em item próprio, com ponte de atualização, redirecionamento e recuperação, e os repositórios antigos viram canal alternativo, sem serem apagados. Nenhum Service de distribuição antes de haver consumidor real (NN-020, NN-022);
-- tecnologia de UI e plataformas-alvo do Hub (Fase 3);
+- Hub read-only **Android nativo em C#** (`net10.0-android`), com a leitura de dados em biblioteca independente de UI (Fase 3; ADR-0013, DEC-0022-A);
 - estrutura de `platform/`, `workspaces/`, `tools/` e `services/`: os diretórios só nascem quando tiverem conteúdo com função (ADR-0004); `apps/` existe e contém Lunet2D e Urbe.
 
 ### 8.2 Não decidido (nenhum agente deve tratar como decidido)
 
-- tecnologia de UI e plataforma-alvo do Hub: proposta no [ADR-0013](docs/adr/0013-hub-read-only-fase-3.md) (`Proposto`); a escolha é do proprietário (DEC-0022);
 - quando e como a plataforma first-party será construída (fase, Services, identidade e catálogo) — a direção está decidida (perfil `target`), o plano não;
 - quais Services compartilhados (Identity, Catalog, Commerce, Entitlements, Downloads, Updates, Reviews, Creator Profiles, Notifications) existirão, se algum — só com consumidores reais, contrato e ADR (NN-020, NN-022);
 - fonte canônica de catálogo, entitlements e identidade; política de edições e canais externos;

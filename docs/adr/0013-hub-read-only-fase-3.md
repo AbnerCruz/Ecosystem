@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — a escolha da tecnologia de UI e da plataforma-alvo cabe ao proprietário (NN-011) e está pendente em **DEC-0022** no portal. Nenhum código do Hub (`apps/hub`) é criado antes dessa decisão.
+Aceito — o proprietário decidiu em DEC-0022 (alternativa A, escolhida no portal em 2026-10-01; [registro](../governance/responses/DEC-0022.md)): **Hub Android nativo em C# (`net10.0-android`)**, a mesma pilha do Lunet2D, com a leitura de dados numa biblioteca independente de UI. A parte A (contrato de dados somente leitura) segue como proposta pelo agente e aceita junto.
 
 ## Contexto
 
@@ -35,12 +35,11 @@ Qual a menor arquitetura que cumpre o gate da Fase 3 sem criar segunda fonte de 
 
 ## Decisão
 
-**Pendente.** O agente propõe a opção A integralmente (é detalhe de implementação dentro de contratos existentes, MANIFEST §22.4) e recomenda **B1** como ponto de partida, com a leitura de dados em biblioteca C# **independente de UI** dentro de `apps/hub` — de modo que trocar a camada de UI depois não reescreva a leitura. Isso é INFERÊNCIA e PROPOSTA, não decisão: B1 minimiza novas pilhas e CI (NN-020); B2 compra desktop e iOS ao custo de uma pilha nova; B3 sobrepõe-se ao portal (ADD-0001) e não atende às fases 4–5 (instalar/abrir apps, IPC) sem outra camada.
+**B1 — Android nativo em C#** (DEC-0022-A). Registro da proposta que precedeu a decisão: o agente propôs a opção A integralmente (é detalhe de implementação dentro de contratos existentes, MANIFEST §22.4) e recomenda **B1** como ponto de partida, com a leitura de dados em biblioteca C# **independente de UI** dentro de `apps/hub` — de modo que trocar a camada de UI depois não reescreva a leitura. Isso é INFERÊNCIA e PROPOSTA, não decisão: B1 minimiza novas pilhas e CI (NN-020); B2 compra desktop e iOS ao custo de uma pilha nova; B3 sobrepõe-se ao portal (ADD-0001) e não atende às fases 4–5 (instalar/abrir apps, IPC) sem outra camada.
 
 ## Consequências
 
-- Até a decisão, a Fase 3 avança apenas em documentação e contrato de dados; `apps/hub` não é criado e `hub` permanece `planned`.
-- Depois da decisão: P3-3 cria `apps/hub` (um único projeto de início; nenhum `platform/`, nenhum Service, nenhum componente compartilhado — ADR-0011), `status` do `hub` sai de `planned`, e `CHK-BOUNDARIES`/`CHK-ARCH-REFS` passam a fiscalizar o Hub real: nenhum Product pode depender dele (NN-003).
+- P3-3 cria `apps/hub` (um único projeto de início; nenhum `platform/`, nenhum Service, nenhum componente compartilhado — ADR-0011), `status` do `hub` sai de `planned`, e `CHK-BOUNDARIES`/`CHK-ARCH-REFS` passam a fiscalizar o Hub real: nenhum Product pode depender dele (NN-003).
 - O Hub é Product independente com versão própria (NN-014); `version.authority` é decidido em P3-3.
 - Se o Hub vier a precisar do Registry, ele é consumidor real e a promoção segue Extraction Review (ADR-0011) — não é automática.
 
