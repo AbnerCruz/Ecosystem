@@ -46,9 +46,9 @@
     {
       "check": "Aprovação do gate da Fase 1 pelo proprietário",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "ROADMAP.md",
-      "evidence": "Pendente: aprovar no portal libera o passo 10 (com as regras de DEC-0018)."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-01 (Issue https://github.com/AbnerCruz/Ecosystem/issues/28); registro em docs/governance/responses/VAL-HO-20261001-gate-da-fase-1-247456bb21aa.md."
     }
   ],
   "known_issues": [
