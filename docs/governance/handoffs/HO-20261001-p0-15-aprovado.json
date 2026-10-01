@@ -1,0 +1,68 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-p0-15-aprovado",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T03:00:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-12",
+  "component": "portal",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-p0-15-aprovado.json"
+  ],
+  "work_completed": [
+    "Registrada a aprovação, pelo proprietário, da validação humana do portal no celular (P0-15), antes só pendente. A mensagem do proprietário foi persistida na íntegra em ADD-0005 (NN-009).",
+    "Primeira publicação no GitHub Pages: já publicada e servindo o portal (verificada em execuções anteriores do pages.yml)."
+  ],
+  "verification": [
+    {
+      "check": "Primeira publicação no GitHub Pages",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Portal publicado em https://abnercruz.github.io/Ecosystem/ pelo workflow pages.yml (build_type=workflow) e usado pelo proprietário para responder DEC-0011, DEC-0012, DEC-0013 e DEC-0014."
+    },
+    {
+      "check": "Validação humana do portal no celular (layout, toque, legibilidade)",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "Proprietário: \"P0-15 aprovado\" (2026-10-01), persistido em docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md. O agente não aprovou por ele."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Capacidade de aprovar validações pelo portal: ADR-0008 e DEC-0015 (handoff HO-20261001-aprovar-validacoes-pelo-portal)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/definition-of-done.md",
+    "docs/architecture/portal.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "A validação em aparelho foi feita e declarada pelo proprietário; o agente apenas a registrou."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A aprovação dita em chat foi persistida em ADD-0005 e neste handoff."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidência: mensagem do proprietário transcrita em ADD-0005."
+    }
+  ],
+  "cost": null
+}

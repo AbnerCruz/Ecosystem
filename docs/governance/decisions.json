@@ -473,6 +473,38 @@
       "decision": "Alternativa A — Aprovar o plano automatizado: a origem puxa apps/<id> do monorepo e continua construindo e publicando com seus próprios pipelines e secrets (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/8).",
       "decidedAt": "2026-10-01",
       "record": "docs/governance/responses/DEC-0014.md"
+    },
+    {
+      "id": "DEC-0015",
+      "status": "pending",
+      "component": "portal",
+      "blocking": false,
+      "title": "Ratificar a aprovação de validações humanas pelo portal (ADR-0008)",
+      "context": "Você pediu para aprovar pelo próprio portal (ADD-0005). O agente propôs o ADR-0008: estender o mecanismo do ADR-0007 — cada validação humana pendente ganha Aprovar e Reprovar; cada botão abre uma Issue pré-preenchida; ao enviá-la, uma automação restrita ao dono grava o resultado na própria verificação do handoff. Será validado de ponta a ponta quando você aprovar a validação criada para isso (handoff de aprovar-validacoes-pelo-portal).",
+      "question": "O mecanismo do ADR-0008 deve ser aceito como está, trocado por clique único com token no navegador, ou rejeitado?",
+      "alternatives": [
+        {
+          "option": "Aceitar o ADR-0008: Issue pré-preenchida e confirmação no GitHub (dois toques; nenhum token no navegador)",
+          "consequences": "Mesmo fluxo e mesma segurança das decisões: só o dono é aceito, a Issue é a trilha, nenhum segredo no site. A automação só altera o resultado de uma verificação humana pendente, no handoff (fonte única), e o agente continua dono do estado do handoff."
+        },
+        {
+          "option": "Trocar por clique único: token do GitHub guardado no navegador",
+          "consequences": "Um toque só, mas um token de escrita fica em um site público estático (risco de vazamento e XSS), criado e renovado por você, sem confirmação independente. Exigiria novo ADR e nova implementação."
+        },
+        {
+          "option": "Rejeitar e voltar a validar pelo chat",
+          "consequences": "Remove a superfície de escrita para validações; o agente voltaria a editar o handoff com sua palavra no chat."
+        }
+      ],
+      "consequences": "Se aceita, o ADR-0008 passa a Aceito. Não bloqueia nenhuma tarefa.",
+      "manifestCompatibility": "Compatível: NN-001 (o resultado fica só no handoff), NN-009, NN-016, NN-017, NN-021. O agente nunca valida por você.",
+      "recommendation": "Aceitar o ADR-0008: reaproveita o mecanismo já validado com cliques reais, sem segredo no navegador.",
+      "related": [
+        "docs/adr/0008-aprovacao-de-validacoes-pelo-portal.md",
+        "docs/architecture/portal.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }

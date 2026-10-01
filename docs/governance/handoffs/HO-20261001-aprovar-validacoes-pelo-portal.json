@@ -1,0 +1,106 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-aprovar-validacoes-pelo-portal",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T03:30:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-37",
+  "component": "portal",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/scripts/apply-decision.cs",
+    ".github/workflows/decision.yml",
+    "site/app.js",
+    "site/generator/GenerateStatus.cs",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "tests/consistency/Check.cs",
+    "docs/adr/0008-aprovacao-de-validacoes-pelo-portal.md",
+    "docs/adr/README.md",
+    "docs/architecture/portal.md",
+    "docs/governance/communication.md",
+    "docs/governance/decisions.json",
+    "docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-p0-15-aprovado.json",
+    "docs/governance/handoffs/HO-20261001-aprovar-validacoes-pelo-portal.json"
+  ],
+  "work_completed": [
+    "Registrada a aprovação do P0-15 pelo proprietário (ADD-0005; handoff HO-20261001-p0-15-aprovado).",
+    "Aprovar/Reprovar no portal para cada validação humana pendente (ADR-0008, Proposto; DEC-0015 para ratificar): a projeção emite handoff, checkHash e as duas respostas; o portal monta a Issue pré-preenchida; decision.yml e apply-decision.cs tratam também 'Validação <tarefa>: aprovada|reprovada', gravando o resultado na verificação do handoff e um registro VAL-*.md; o state do handoff continua com o agente.",
+    "Fiscalização: CHK-DECISION-FLOW exige o filtro 'Validação ' e os botões no portal; o self-test cobre aprovar, recusas (autor, título, hash, título/corpo, tarefa errada, handoff substituído, já respondida) e a consistência após o registro.",
+    "Criada, para o proprietário, uma validação humana ponta a ponta no portal: aprovar esta própria tarefa clicando em Aprovar."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: 16/16 checks; self-test: todos os checks provaram detectar suas violações, incluindo 11 casos do aplicador de validações."
+    },
+    {
+      "check": "Validação ponta a ponta pelo proprietário: tocar Aprovar nesta validação no portal, enviar a Issue e ver o resultado registrado",
+      "kind": "human",
+      "result": "pending",
+      "object": "https://abnercruz.github.io/Ecosystem/",
+      "evidence": "Pendente. Depois que o portal for republicado com os botões."
+    }
+  ],
+  "known_issues": [
+    "O mecanismo é Proposto (ADR-0008) até DEC-0015.",
+    "O workflow em si só roda na branch padrão: a validação real só acontece depois do merge na main."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: aprovar a validação desta tarefa no portal e decidir DEC-0015.",
+    "Agente: com o resultado registrado, atualizar o state deste handoff, o ADR-0008 (Aceito, se DEC-0015 A) e o ROADMAP (P0-37)."
+  ],
+  "decisions_required": [
+    "DEC-0015"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/adr/0008-aprovacao-de-validacoes-pelo-portal.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/architecture/portal.md",
+    "docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O resultado da validação fica só na verificação do handoff; o registro VAL-*.md é auditoria, não segunda fonte."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Pedido do proprietário persistido em ADD-0005; mecanismo em ADR-0008."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Capacidade nova (escrita automática em handoffs) tem ADR-0008 e DEC-0015 pendente."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Mesma guarda do dono, permissões explícitas e texto da Issue só por env; token nunca no navegador."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A validação ponta a ponta é humana e permanece pendente; P0-37 marcado [~]."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "A validação pendente aparece no portal com o objeto e os botões Aprovar/Reprovar."
+    }
+  ],
+  "cost": null
+}

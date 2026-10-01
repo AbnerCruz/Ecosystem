@@ -90,6 +90,12 @@ function choiceLink(repo, alt) {
   return el("a", { href: url, class: "btn primary choose", target: "_blank", rel: "noopener" }, `Escolher ${alt.id}`);
 }
 
+// Aprovar ou reprovar uma validação humana segue o mesmo caminho (ADR-0008): Issue pré-preenchida, confirmada no GitHub.
+function answerLink(repo, ans, label, cls) {
+  const url = `${repo}/issues/new?title=${encodeURIComponent(ans.issueTitle)}&body=${encodeURIComponent(ans.issueBody)}`;
+  return el("a", { href: url, class: `btn ${cls} choose`, target: "_blank", rel: "noopener" }, label);
+}
+
 function decisionCard(d, repo) {
   return el("article", { class: "card decision" },
     el("header", {},
@@ -137,6 +143,11 @@ function render(s) {
         " ", el("strong", {}, `${p.component} · ${p.taskId}`), el("br"),
         p.check, el("p", { class: "label" }, "Objeto a validar"),
         objectLinks([p.object]),
+        el("div", { class: "actions" },
+          answerLink(s.source.repository, p.approve, "Aprovar", "primary"),
+          answerLink(s.source.repository, p.reject, "Reprovar", "")),
+        el("p", { class: "hint" }, "Ao responder, o GitHub abre uma Issue já preenchida: toque em ", el("strong", {}, "Submit new issue"),
+          " para confirmar. Na reprovação, escreva o motivo depois de ", el("code", {}, "comment:"), "."),
         el("p", { class: "hint" }, link(p.record, "registro"))))
     : [el("li", { class: "hint" }, "Nenhuma validação humana pendente registrada.")]));
 

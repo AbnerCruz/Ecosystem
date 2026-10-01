@@ -136,6 +136,32 @@ JsonObject Alternative(string decisionId, int index, string option, string conse
     };
 }
 
+// Resposta a uma validação humana (ADD-0005, ADR-0008). Mesmo princípio de Alternative(): título e corpo são definidos AQUI e
+// validados por .github/scripts/apply-decision.cs; o hash impede aplicar uma resposta a uma validação que mudou.
+string ValidationHash(string check, string obj) =>
+    Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(check + "\n" + obj))).ToLowerInvariant()[..12];
+
+JsonObject ValidationAnswer(string taskId, string handoffId, string hash, bool approve)
+{
+    var result = approve ? "passed" : "failed";
+    var verb = approve ? "aprovada" : "reprovada";
+    return new JsonObject
+    {
+        ["result"] = result,
+        ["issueTitle"] = $"Validação {taskId}: {verb}",
+        ["issueBody"] =
+            "<!-- ecosystem-validation:v1 -->\n" +
+            $"validation: {taskId}\n" +
+            $"handoff: {handoffId}\n" +
+            $"check-hash: {hash}\n" +
+            $"result: {result}\n\n" +
+            $"Validação humana da tarefa {taskId} **{verb}**, feita pelo portal do Ecosystem.\n\n" +
+            "Enviar esta Issue confirma o resultado: uma automação o registra na verificação do handoff. " +
+            "Não edite as cinco primeiras linhas. Se quiser, escreva um comentário depois da linha `comment:`.\n\n" +
+            "comment:\n",
+    };
+}
+
 // --- decisões pendentes do proprietário (DEC-0007): sempre com o objeto a revisar ---
 var pendingDecisions = new JsonArray();
 var decisionsDoc = Load("docs/governance/decisions.json");
@@ -184,6 +210,10 @@ if (Directory.Exists(hdir))
                     ["state"] = "HUMAN_VALIDATION_PENDING",
                     ["record"] = Blob(rel),
                     ["object"] = Link(obj),
+                    ["handoff"] = S(h["message_id"]),
+                    ["checkHash"] = ValidationHash(S(v["check"])!, obj),
+                    ["approve"] = ValidationAnswer(S(h["task_id"])!, S(h["message_id"])!, ValidationHash(S(v["check"])!, obj), true),
+                    ["reject"] = ValidationAnswer(S(h["task_id"])!, S(h["message_id"])!, ValidationHash(S(v["check"])!, obj), false),
                 });
             }
     }

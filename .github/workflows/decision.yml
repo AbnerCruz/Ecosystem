@@ -1,6 +1,7 @@
 name: decision
 
-# Registra no repositório a decisão que o proprietário escolheu no portal (ADR-0007, DEC-0010).
+# Registra no repositório a decisão que o proprietário escolheu no portal (ADR-0007, DEC-0010) e o resultado da
+# validação humana que aprovou ou reprovou nele (ADR-0008, ADD-0005).
 # O portal abre uma Issue já preenchida; ENVIAR a Issue é a confirmação. Só o dono do repositório é aceito.
 # Segurança: o texto da Issue nunca é interpolado em script (só chega por 'env'); o aplicador compara o texto com
 # decisions.json de forma estrita; os checks de consistência rodam antes de qualquer gravação.
@@ -21,7 +22,7 @@ concurrency:
 jobs:
   record:
     name: Registrar decisão do proprietário
-    if: github.event.issue.user.login == github.repository_owner && startsWith(github.event.issue.title, 'Decisão DEC-')
+    if: github.event.issue.user.login == github.repository_owner && (startsWith(github.event.issue.title, 'Decisão DEC-') || startsWith(github.event.issue.title, 'Validação '))
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -63,7 +64,7 @@ jobs:
             git checkout -- .
             git clean -fdq docs/governance/responses
             {
-              echo '**Decisão não registrada.** O repositório ficaria inconsistente com esta decisão; nada foi alterado.'
+              echo '**Registro não efetuado.** O repositório ficaria inconsistente com esta decisão; nada foi alterado.'
               echo
               echo '```'
               tail -n 30 /tmp/check.log
@@ -75,14 +76,13 @@ jobs:
         id: push
         if: steps.apply.outputs.code == '0' && steps.verify.outputs.code == '0'
         env:
-          DECISION: ${{ steps.apply.outputs.decision }}
-          OPTION: ${{ steps.apply.outputs.option }}
+          COMMIT_MESSAGE: ${{ steps.apply.outputs.commit_message }}
         run: |
           set +e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs/governance
-          git commit -q -m "Registrar ${DECISION}: alternativa ${OPTION} (escolhida pelo proprietário no portal, Issue #${ISSUE_NUMBER})"
+          git commit -q -m "${COMMIT_MESSAGE}"
           pushed=false
           for i in 1 2 3; do
             if git push origin "HEAD:${DEFAULT_BRANCH}"; then pushed=true; break; fi
@@ -90,7 +90,7 @@ jobs:
           done
           echo "pushed=$pushed" >> "$GITHUB_OUTPUT"
           if [ "$pushed" != "true" ]; then
-            echo '**Decisão não registrada.** Não foi possível gravar no repositório (o push falhou três vezes). Nada foi alterado na branch padrão.' > /tmp/decision-result.md
+            echo '**Registro não efetuado.** Não foi possível gravar no repositório (o push falhou três vezes). Nada foi alterado na branch padrão.' > /tmp/decision-result.md
           fi
 
       - name: Republicar o portal
@@ -107,7 +107,7 @@ jobs:
           reason="not planned"
           if [ "$APPLY_CODE" = "0" ] && [ "$VERIFY_CODE" = "0" ] && [ "$PUSHED" = "true" ]; then reason="completed"; fi
           if [ ! -s /tmp/decision-result.md ]; then
-            echo '**Decisão não registrada.** A automação falhou antes de produzir um resultado; veja a execução do workflow.' > /tmp/decision-result.md
+            echo '**Registro não efetuado.** A automação falhou antes de produzir um resultado; veja a execução do workflow.' > /tmp/decision-result.md
           fi
           gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/decision-result.md
           gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --reason "$reason"

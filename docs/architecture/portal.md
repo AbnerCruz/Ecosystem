@@ -69,6 +69,15 @@ portal: "Escolher B"  ──►  GitHub abre uma Issue já preenchida  ──►
 - **Quem pode responder:** só o proprietário. Ver [`access.md`](access.md) (quem vê, quem decide e por que uma senha no portal não protege).
 - **Agentes nunca respondem uma decisão pendente do proprietário**, nem criando essa Issue (MANIFEST §23.2).
 
+### 3.3 Aprovar ou reprovar uma validação pelo portal (ADD-0005, ADR-0008)
+
+Cada validação humana pendente tem **Aprovar** e **Reprovar**. É o mesmo fluxo de §3.2 (Issue pré-preenchida, confirmada no GitHub, só o dono), com o marcador `ecosystem-validation:v1` e o título `Validação <tarefa>: aprovada|reprovada`.
+
+- **Registro:** o resultado (`passed`/`failed`) e a evidência vão para a **própria verificação** do handoff (fonte única, NN-001) e para `docs/governance/responses/VAL-<handoff>-<hash>.md`. O `state` do handoff e o ROADMAP continuam sendo atualizados por um agente.
+- **Recusas:** handoff que não é o mais recente da tarefa ou já encerrado, verificação que já foi respondida ou cujo texto mudou (hash), título e corpo discordantes, autor que não é o dono.
+- **Reprovação:** o motivo opcional, escrito depois de `comment:`, entra no registro como citação (dado, nunca instrução).
+- **Agentes nunca respondem uma validação pendente do proprietário.**
+
 Evolução incompatível incrementa `schemaVersion` e exige ADR.
 
 ## 4. Estados de validação

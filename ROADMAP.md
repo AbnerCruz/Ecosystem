@@ -39,7 +39,7 @@ Portal web (ADD-0001, ADR-0005, [`docs/architecture/portal.md`](docs/architectur
 - [x] P0-12 — `site/` com página simples, mobile-first, mostrando Ecosystem, Lunet2D, Urbe e Hub e links para a documentação canônica; dados não automatizados marcados como "não disponível".
 - [x] P0-13 — Contrato da projeção `ecosystem-status/1`, gerador em C# e `CHK-PORTAL` contra divergência e dados canônicos escritos à mão.
 - [x] P0-14 — Portal publicado por `pages.yml`; API confirmou `build_type=workflow`, artefato foi validado e smoke test confirmou o `site/index.html` na URL pública (run 36758554559).
-- [~] P0-15 — Validação humana do portal no celular (layout, toque, legibilidade) — NN-017. **Objeto:** https://abnercruz.github.io/Ecosystem/
+- [x] P0-15 — Validação humana do portal no celular (layout, toque, legibilidade) — NN-017. **Aprovada pelo proprietário em 2026-10-01** ([ADD-0005](docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md); handoff `HO-20261001-p0-15-aprovado`).
 
 Alinhamento arquitetural pré-migração — Product Shells, distribuição independente e plataforma própria (ADD-0002, DEC-0006, ADR-0006). Somente conceito, documentação, governança e fiscalização; nenhum código, diretório ou Service criado; nenhum dado de Lunet2D/Urbe importado:
 
@@ -64,9 +64,10 @@ Alinhamento arquitetural pré-migração — Product Shells, distribuição inde
 - [x] P0-34 — Responder decisões clicando no portal (DEC-0010, ADR-0007): projeção com título/corpo da Issue, página com botões por alternativa, workflow `decision.yml`, aplicador `apply-decision.cs`, `CHK-DECISION-FLOW` e testes do aplicador.
 - [x] P0-35 — Mecanismo ratificado (ADR-0007 `Aceito`, DEC-0011) e validado ponta a ponta com cliques reais do proprietário no portal (Issues #4 e #5; commits do bot `420c85b` e `e363a1e`).
 - [x] P0-36 — Acesso e visibilidade do portal e do repositório decididos (DEC-0012: manter público; [`access.md`](docs/architecture/access.md)).
+- [~] P0-37 — Aprovar ou reprovar validações humanas pelo portal (ADD-0005, ADR-0008 `Proposto`, DEC-0015): projeção com respostas por validação, botões no portal, aplicador/workflow estendidos, `CHK-DECISION-FLOW` e self-test. Implementado; **aguardando ratificação (DEC-0015) e validação ponta a ponta pelo proprietário** (NN-017).
 
 **Gate:** um agente novo consegue entrar no repositório e compreender corretamente o produto, a autoridade documental e o processo de trabalho sem depender de uma conversa anterior.
-*Estado do gate:* **aprovado pelo proprietário em 2026-09-30** ([ADD-0003](docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)); a validação do portal no celular (P0-15) segue à parte e continua pendente.
+*Estado do gate:* **aprovado pelo proprietário em 2026-09-30** ([ADD-0003](docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)); a validação do portal no celular (P0-15) foi aprovada em 2026-10-01 ([ADD-0005](docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md)).
 
 ## Fase 1 — Inventário e migração
 

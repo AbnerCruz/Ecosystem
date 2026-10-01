@@ -567,6 +567,8 @@ static class Checks
             c.R.Fail(id, $"{wf}: falta a guarda que restringe o workflow ao dono do repositório (NN-016)");
         if (!text.Contains("startsWith(github.event.issue.title, 'Decisão DEC-')"))
             c.R.Fail(id, $"{wf}: falta o filtro de título 'Decisão DEC-' gerado pelo portal");
+        if (!text.Contains("startsWith(github.event.issue.title, 'Validação ')"))
+            c.R.Fail(id, $"{wf}: falta o filtro de título 'Validação ' gerado pelo portal (ADR-0008)");
         if (!Regex.IsMatch(text, @"(?m)^permissions:\s*$")) c.R.Fail(id, $"{wf}: permissões explícitas ausentes (NN-016)");
         if (!text.Contains(".github/scripts/apply-decision.cs")) c.R.Fail(id, $"{wf}: não chama o aplicador");
         if (!text.Contains("tests/consistency/Check.cs")) c.R.Fail(id, $"{wf}: não roda os checks antes de gravar");
@@ -581,6 +583,7 @@ static class Checks
         }
         var js = File.Exists(c.P("site/app.js")) ? File.ReadAllText(c.P("site/app.js")) : "";
         if (!js.Contains("/issues/new?title=")) c.R.Fail(id, "site/app.js: o portal não monta o link de resposta (/issues/new?title=)");
+        if (!js.Contains("p.approve") || !js.Contains("p.reject")) c.R.Fail(id, "site/app.js: o portal não oferece Aprovar/Reprovar nas validações pendentes (ADR-0008)");
     }
 
     // --- CHK-PORTAL (ADD-0001, ADR-0005; NN-001, NN-017, NN-021) ---
@@ -1090,6 +1093,7 @@ static class SelfTest
         }
 
         failures += ApplierTests(repoRoot);
+        failures += ValidationApplierTests(repoRoot);
 
         foreach (var id in Checks.Ids.Where(i => !covered.Contains(i)))
         {
@@ -1152,6 +1156,70 @@ static class SelfTest
             if (consistent.Failed) consistent.Print(Console.Out);
             Report(!consistent.Failed, "o repositório continua consistente depois do registro");
             Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body).Code == 3, "recusa decisão que já foi decidida");
+        }
+        catch (Exception e) { Report(false, "execução: " + e.Message); }
+        finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }
+        return failures;
+    }
+
+    /// <summary>Prova a resposta a validações humanas (ADR-0008): aprova/reprova gravando na verificação do handoff; cada recusa de segurança recusa.</summary>
+    static int ValidationApplierTests(string repoRoot)
+    {
+        var failures = 0;
+        void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  aplicador de validações: {name}"); if (!ok) failures++; }
+        var tmp = Path.Combine(Path.GetTempPath(), "ecosystem-applier-val-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Copy(repoRoot, tmp);
+            var hdir = Path.Combine(tmp, "docs", "governance", "handoffs");
+            var template = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(hdir, "HO-20261001-p0-15-aprovado.json")))!.AsObject();
+            System.Text.Json.Nodes.JsonObject Make(string id, string task, string timestamp, string state)
+            {
+                var n = System.Text.Json.Nodes.JsonNode.Parse(template.ToJsonString())!.AsObject();
+                n["message_id"] = id; n["task_id"] = task; n["timestamp"] = timestamp; n["state"] = state;
+                var v = n["verification"]!.AsArray(); v.Clear();
+                v.Add(new System.Text.Json.Nodes.JsonObject { ["check"] = "Validação de teste", ["kind"] = "human", ["result"] = "pending", ["object"] = "docs/governance/handoffs/" + id + ".json", ["evidence"] = "x" });
+                return n;
+            }
+            void Save(System.Text.Json.Nodes.JsonObject n) =>
+                File.WriteAllText(Path.Combine(hdir, n["message_id"]!.GetValue<string>() + ".json"), n.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
+            Save(Make("HO-99990101-teste-validacao", "P9-9", "2099-01-01T00:00:00Z", "review"));
+            Save(Make("HO-99990102-teste-validacao-2", "P9-8", "2099-01-02T00:00:00Z", "review"));
+            RunGenerator(tmp);
+            using var proj = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site", "data", "ecosystem-status.json")));
+            var val = proj.RootElement.Arr("pendingValidations").First(v => v.Str("taskId") == "P9-9");
+            var approve = val.GetProperty("approve"); var reject = val.GetProperty("reject");
+            string title = approve.Str("issueTitle")!, body = approve.Str("issueBody")!;
+            var path = Path.Combine(hdir, "HO-99990101-teste-validacao.json");
+            var before = File.ReadAllText(path);
+
+            Report(RunApplier(tmp, "intruso", "NONE", title, body).Code == 3, "recusa autor que não é o proprietário");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", "Validação P9-9", body).Code == 3, "recusa título fora do formato");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body.Replace("check-hash: ", "check-hash: 0")).Code == 3, "recusa hash adulterado");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body.Replace("result: passed", "result: failed")).Code == 3, "recusa título e corpo que discordam");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", "Validação P9-8: aprovada", body.Replace("validation: P9-9", "validation: P9-8")).Code == 3, "recusa handoff que não é da tarefa informada");
+            Report(File.ReadAllText(path) == before, "recusas não alteram o handoff");
+
+            var ok = RunApplier(tmp, "AbnerCruz", "OWNER", title, body + "ficou ótimo `x`\n");
+            Report(ok.Code == 0, "registra a aprovação do proprietário");
+            using var after = JsonDocument.Parse(File.ReadAllText(path));
+            var entry = after.RootElement.Arr("verification").First();
+            Report(entry.Str("result") == "passed" && (entry.Str("evidence") ?? "").Contains("Aprovada pelo proprietário")
+                && after.RootElement.Str("state") == "review"
+                && Directory.EnumerateFiles(Path.Combine(tmp, "docs", "governance", "responses"), "VAL-HO-99990101-teste-validacao-*.md").Any(),
+                "grava o resultado na verificação, não muda o estado e persiste o registro");
+            RunGenerator(tmp);
+            var consistent = Checks.RunAll(tmp);
+            if (consistent.Failed) consistent.Print(Console.Out);
+            Report(!consistent.Failed, "o repositório continua consistente depois do registro");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body).Code == 3, "recusa validação que já foi respondida");
+
+            // Reprovação e handoff substituído por um mais recente da mesma tarefa.
+            using var proj2 = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site", "data", "ecosystem-status.json")));
+            var other = proj2.RootElement.Arr("pendingValidations").First(v => v.Str("taskId") == "P9-8");
+            Save(Make("HO-99990103-teste-validacao-3", "P9-8", "2099-01-03T00:00:00Z", "review"));
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", other.GetProperty("reject").Str("issueTitle")!, other.GetProperty("reject").Str("issueBody")!).Code == 3,
+                "recusa handoff que não é mais o mais recente da tarefa");
         }
         catch (Exception e) { Report(false, "execução: " + e.Message); }
         finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }

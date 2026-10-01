@@ -216,7 +216,11 @@
           "check",
           "state",
           "record",
-          "object"
+          "object",
+          "handoff",
+          "checkHash",
+          "approve",
+          "reject"
         ],
         "properties": {
           "component": {
@@ -240,6 +244,20 @@
           },
           "object": {
             "$ref": "#/$defs/link"
+          },
+          "handoff": {
+            "type": "string",
+            "minLength": 1
+          },
+          "checkHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{12}$"
+          },
+          "approve": {
+            "$ref": "#/$defs/validationAnswer"
+          },
+          "reject": {
+            "$ref": "#/$defs/validationAnswer"
           }
         }
       }
@@ -436,6 +454,32 @@
         "url": {
           "type": "string",
           "pattern": "^https://"
+        }
+      }
+    },
+    "validationAnswer": {
+      "description": "Resposta do proprietário a uma validação humana pelo portal (ADR-0008): título e corpo da Issue pré-preenchida.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "result",
+        "issueTitle",
+        "issueBody"
+      ],
+      "properties": {
+        "result": {
+          "enum": [
+            "passed",
+            "failed"
+          ]
+        },
+        "issueTitle": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issueBody": {
+          "type": "string",
+          "minLength": 1
         }
       }
     }
