@@ -10,11 +10,11 @@
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "a4ad875",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/36",
   "blockers": [],
   "cost": null,
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261001-integracao-multiagente",
   "timestamp": "2026-10-01T23:30:00Z",
   "task_id": "P1-17",
@@ -31,22 +31,58 @@
     ".github/pull_request_template.md",
     "AGENTS.md",
     "ROADMAP.md",
-    "docs/governance/handoffs/HO-20261001-integracao-multiagente.json"
+    "docs/governance/handoffs/HO-20261001-integracao-multiagente.json",
+    "docs/governance/handoffs/HO-20261001-fase-3-aberta.json",
+    "docs/governance/handoffs/HO-20261001-urbe-r1-jszip-em-vendor.json",
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/docs/v2/ROADMAP.md"
   ],
   "work_completed": [
-    "(preenchido na integração)"
+    "FATO (HEAD inicial a4ad875): main parada em a4ad875; agente A (Fase 3) em ccr-31501aad-6bwq7y, commit 7274f38; agente B (Urbe RM-F2-03) em ccr-5adec8cc-oy464b, commit d7443fd; ambos com merge-base a4ad875; nenhum PR aberto; nenhum arquivo em comum. Auditoria: A não cria apps/hub, ADR-0013 Proposto, DEC-0022 pending (não respondida); B só em apps/urbe (+ handoff), RM-F2-03 [?], handoff em review. Defeitos de rastreabilidade: handoff de B com commit = a4ad875 (a base) e de A com commit null.",
+    "ALTERAÇÃO (PR #33, integrado em 1732164): ADD-0010 (instrução do proprietário), ADR-0014 (Aceito por delegação), docs/governance/multi-agent.md; handoff com base_commit (obrigatório a partir de 2026-10-02), commit = resultado ou null (derivado), nunca a base; verification[].tested_commit; CHK-HANDOFFS recusa commit = base, SHA inexistente e resultado que não descende da base; Check.cs -- --integration (FRESH 0 / STALE 3 / STALE+sobreposição 4, alto risco destacado); AGENTS.md, communication.md, definition-of-done.md (review = agente terminou; done = integrado) e template de PR. Nenhum workflow alterado, nenhum lock.",
+    "TESTE DE BASE OBSOLETA (natural): após o merge do PR #33, --integration acusou A = STALE com sobreposição de alto risco (ROADMAP.md, docs/adr/README.md; código 4) e B = STALE sem sobreposição (código 3).",
+    "CONFLITO (A): docs/adr/README.md — os dois lados acrescentaram uma linha ao fim do índice (ADR-0013 em A, ADR-0014 na main). Causa: append concorrente no mesmo ponto de um índice. Resolução semântica: manter as duas linhas em ordem numérica (sem colisão de número). ROADMAP.md mesclou sem conflito textual e foi conferido (P1-17 e Fase 3 presentes, 'Próxima tarefa' da Fase 3 preservada). Evidência: commit de reconciliação 2f68744; Check.cs 21/21 e --self-test no estado combinado; PR #34 com CI verde no head reconciliado. A integrado em 7a751f0 (merge do PR #34). DEC-0022 continua pendente e passa a aparecer no portal.",
+    "RECONCILIAÇÃO (B): após o PR #34, B ficou STALE de novo (5 commits); merge da main sem conflito (e6c3e7f). Estado combinado (fluxo multiagente + Fase 3 + RM-F2-03): Check.cs 21/21 e --self-test; npm ci && npm run check em apps/urbe (56/56); tests/e2e/zip.e2e.mjs em Chromium real (1/1). PR #35: urbe-checks verde (run 36898463052) e consistency verde (run 36898463053) no estado combinado. --integration = FRESH. NÃO integrado: o Urbe exige pedido explícito do proprietário para merge (apps/urbe/AGENTS.md). RM-F2-03 continua [?] (falta integrar; SPEC §10.1).",
+    "HANDOFFS CORRIGIDOS (sem reescrever o trabalho): A → base_commit a4ad875, commit 7274f38, pr #34; B → base_commit a4ad875, commit d7443fd (o resultado real, não a base), pr #35, verificação do E2E com tested_commit d7443fd. AGENTSCHAT e ROADMAP do Urbe: PR #35, E2E executado, merge pendente de pedido do proprietário.",
+    "INCIDENTE encontrado e corrigido: rodar o --self-test dentro de um git worktree fez a cópia temporária levar o arquivo .git (que aponta para o repositório real); o self-test de histórico migrado executou git commit/tag no repositório real (commit local 'base' na branch de A e tags locais movidas). Nada foi enviado: a branch foi refeita a partir da origem, as 31 tags locais restauradas de origin (todas conferidas) e a reconciliação refeita no checkout normal. Correção: Copy nunca leva .git; regressão no self-test.",
+    "Nenhum código do Hub; nenhum item extra de U-R1; Lunet2D intocado; nenhum lock global."
   ],
   "verification": [
     {
-      "check": "dotnet run tests/consistency/Check.cs e --self-test (branch do fluxo)",
+      "check": "--integration detecta base obsoleta após a primeira integração",
       "kind": "automated",
       "result": "passed",
-      "evidence": "21/21; self-test com IntegrationTests (5 casos) e 2 casos novos de CHK-HANDOFFS."
+      "tested_commit": "1732164",
+      "evidence": "A: STALE + sobreposição [ALTO RISCO] ROADMAP.md e docs/adr/README.md (código 4); B: STALE sem sobreposição (código 3); depois da reconciliação, ambos FRESH."
+    },
+    {
+      "check": "Estado combinado da Fase 3 com a main (PR #34)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "2f68744",
+      "evidence": "Check.cs 21/21 e --self-test locais; consistency verde no PR #34 (runs 36897374823, 36897366758); integrado em 7a751f0."
+    },
+    {
+      "check": "Estado combinado do Urbe com a main (PR #35): Ecosystem + Urbe",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "e6c3e7f",
+      "evidence": "Check.cs 21/21 e --self-test; npm ci && npm run check 56/56; zip.e2e 1/1 em Chromium; PR #35: urbe-checks (run 36898463052) e consistency (run 36898463053) verdes."
+    },
+    {
+      "check": "Self-test da nova infraestrutura (IntegrationTests, CHK-HANDOFFS, cópia sem .git)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "6 casos de integração multiagente e 2 de CHK-HANDOFFS no self-test; 'todos os checks provaram detectar suas violações'."
     }
   ],
-  "known_issues": [],
+  "known_issues": [
+    "PR #35 (Urbe RM-F2-03) pronto para integrar, aguardando pedido explícito do proprietário; quando a main andar antes disso, rodar --integration de novo e reconciliar.",
+    "A detecção de sobreposição ANTES de começar (LOW/HIGH OVERLAP) é direção futura, não implementada (multi-agent.md §5)."
+  ],
   "next_actions": [
-    "Integrar os PRs na ordem do fluxo (ADR-0014)."
+    "Proprietário: pedir (ou não) o merge do PR #35; depois do merge, o agente dispara sync-from-ecosystem.yml em AbnerCruz/Urbe e marca RM-F2-03 [x].",
+    "Proprietário: decidir DEC-0022 no portal (UI e plataforma do Hub)."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -65,8 +101,28 @@
   ],
   "invariants": [
     {
+      "id": "NN-001",
+      "evidence": "Resultado e integração derivados de branch/PR; nenhum campo duplicado."
+    },
+    {
       "id": "NN-008",
-      "evidence": "Handoffs passam a registrar a base e não podem afirmar resultado falso."
+      "evidence": "Base, resultado, integração e validação rastreáveis por handoff + PR."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Processo formalizado por ADR-0014 sobre decisão do proprietário (ADD-0010)."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Trabalho dos agentes não reimplementado; só reconciliação e metadados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "RM-F2-03 continua [?] e handoff do Urbe em review até a integração autorizada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CI do estado combinado registrado com tested_commit."
     }
   ]
 }
