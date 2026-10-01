@@ -134,6 +134,10 @@ Feito por mim com as credenciais de sessão já anexadas, ou pelo próprio `sync
 
 - **Urbe, corte feito (FATO, 2026-10-01):** PR #48 fundido (CI do produto verde com o ajuste de DEC-0016-A); os PRs #37–#46 do Dependabot foram fechados com comentário; a primeira execução do espelho (execução 36813347280) criou só a âncora `16ba1ec` (`Ecosystem-Commit: 547ef18`), o que prova que o espelho coincidia com a origem. O `pages build and deployment` rodou sobre `16ba1ec` e terminou com sucesso (uma execução anterior foi cancelada pela seguinte): a construção do Pages **ocorreu** após o push do bot (por push ou pelo pedido explícito do script; o log não distingue).
 
+### 7.6.2 Disparo da sincronização (DEC-0017-A)
+
+O agendamento não rodou nas primeiras horas. Decisão do proprietário: **manter o agendamento como reforço e adotar o disparo explícito** — o agente dispara `sync-from-ecosystem.yml` na origem após cada mudança em `apps/<id>` na `main` (regra em `AGENTS.md` §3), e o proprietário pode dispará-lo pelo botão *Run workflow*. O portal confere **ao vivo** se cada espelho está em dia (último `Ecosystem-Tree` da origem × árvore de `apps/<id>` no commit publicado) e, se não estiver, mostra o link para rodar a sincronização.
+
 ### 7.7 O que só a primeira execução real confirma
 Comportamentos do GitHub **NÃO VERIFICADOS** nesta sessão (sem acesso a configurações; `docs.github.com` bloqueado): (a) push do `GITHUB_TOKEN` dispara a construção do Pages (se não, plano B da API); (b) o intervalo real do agendamento (mínimo 5 min; pode atrasar); (c) `workflow_dispatch` do `GITHUB_TOKEN` sobre o `ci.yml`/`release.yml` da origem — **`ci.yml` do Lunet2D PROVADO em 2026-10-01 (§7.6.1)**; `release.yml` do Urbe ainda não (só uma release real do Urbe prova); (a) a construção do Pages ocorreu após o push do bot (§7.6.1); (b) o agendamento de 10 min **não foi observado após ~90 min** (instalado às 03:34 no Lunet2D e às 04:03 no Urbe; às 05:04 UTC só existiam execuções manuais): o GitHub pode atrasar ou não iniciar agendamentos novos. Levado ao proprietário em **DEC-0017**. **Se algum falhar, o agente para, registra o achado e leva uma decisão ao portal.**
 

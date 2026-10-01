@@ -173,6 +173,38 @@
           "release": {
             "$ref": "#/$defs/datum"
           },
+          "mirror": {
+            "description": "Espelho de distribuição do produto (DEC-0014-A, DEC-0017-A): árvore esperada na origem; o portal confere ao vivo. Nulo quando não se aplica.",
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": false,
+            "required": [
+              "origin",
+              "expectedTree",
+              "workflowUrl",
+              "source"
+            ],
+            "properties": {
+              "origin": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+              },
+              "expectedTree": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{40}$"
+              },
+              "workflowUrl": {
+                "type": "string",
+                "pattern": "^https://"
+              },
+              "source": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
           "artifacts": {
             "description": "Artefatos instaláveis da release mais recente, derivados da API de releases do GitHub na geração (P1-9). Vazio quando a geração é offline ou não há release.",
             "type": "array",

@@ -70,6 +70,27 @@ function artifactRows(c) {
   });
 }
 
+// Espelho de distribuição: compara ao vivo (API pública do GitHub) a última sincronização da origem com a árvore esperada.
+function mirrorRow(m) {
+  const value = el("span", { class: "na" }, "conferindo…");
+  const row = el("div", { class: "row" },
+    el("dt", {}, "Espelho de distribuição"),
+    el("dd", {}, value, el("small", { class: "src" }, m.source)));
+  fetch(`https://api.github.com/repos/${m.origin}/commits?per_page=30`)
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+    .then((commits) => {
+      const found = commits.map((c) => /^Ecosystem-Tree: ([0-9a-f]{40})$/m.exec(c.commit.message)).find(Boolean);
+      if (found && found[1] === m.expectedTree) {
+        value.replaceChildren(el("span", { class: "value" }, "em dia com o Ecosystem"));
+      } else {
+        value.replaceChildren(el("span", { class: "badge v-HUMAN_VALIDATION_PENDING" }, found ? "atrasado" : "sem sincronização registrada"),
+          " ", link(m.workflowUrl, "Rodar a sincronização", "btn"));
+      }
+    })
+    .catch(() => value.replaceChildren(el("span", { class: "na" }, "não foi possível conferir agora")));
+  return row;
+}
+
 function appCard(c) {
   const actions = el("div", { class: "actions" });
   if (c.links.web) actions.append(link(c.links.web, "Abrir versão Web", "btn primary"));
@@ -85,6 +106,7 @@ function appCard(c) {
       datum("Versão", c.version),
       datum("Última release", c.release),
       ...artifactRows(c),
+      c.mirror ? mirrorRow(c.mirror) : null,
       datum("CI (automático)", c.ci, (v) => CHECK_LABELS[v] || v),
       validationRow(c.validation)),
     actions.childElementCount ? actions : el("p", { class: "hint" }, "Nenhum artefato ou link disponível ainda."));

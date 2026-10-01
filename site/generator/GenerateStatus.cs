@@ -138,6 +138,20 @@ JsonObject ValidationOf(string componentId)
     };
 }
 
+// Hash da árvore de um caminho no HEAD (funciona em checkout raso); nulo se git não estiver disponível.
+string? GitTree(string rel)
+{
+    try
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo("git") { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var a in new[] { "rev-parse", "HEAD:" + rel }) psi.ArgumentList.Add(a);
+        using var proc = System.Diagnostics.Process.Start(psi)!;
+        var o = proc.StandardOutput.ReadToEnd().Trim(); proc.StandardError.ReadToEnd(); proc.WaitForExit();
+        return proc.ExitCode == 0 && System.Text.RegularExpressions.Regex.IsMatch(o, "^[0-9a-f]{40}$") ? o : null;
+    }
+    catch { return null; }
+}
+
 // --- componentes ---
 var components = new JsonArray();
 foreach (var (id, c) in eco["components"]!.AsObject())
@@ -165,6 +179,19 @@ foreach (var (id, c) in eco["components"]!.AsObject())
     };
     if (authority == "version-file" && versionFile is not null) sources.Add(versionFile);
 
+    // Espelho de distribuição (DEC-0014-A, DEC-0017-A): a árvore que a origem deveria ter; o portal compara ao vivo com o
+    // último commit de sincronização da origem e mostra se ela está atrasada (com o link para disparar a sincronização).
+    JsonObject? mirror = null;
+    if (status == "active" && sourceRepo is not null && GitTree(path) is { } tree
+        && System.Text.RegularExpressions.Regex.Match(sourceRepo, @"^https://github\.com/([^/]+/[^/]+?)/?$") is { Success: true } om)
+        mirror = new JsonObject
+        {
+            ["origin"] = om.Groups[1].Value,
+            ["expectedTree"] = tree,
+            ["workflowUrl"] = $"{sourceRepo}/actions/workflows/sync-from-ecosystem.yml",
+            ["source"] = $"Árvore de {path} neste commit do Ecosystem; a origem é conferida ao vivo pelo navegador (último commit com Ecosystem-Tree).",
+        };
+
     var (latest, artifacts, relNote) = sourceRepo is not null ? LatestRelease(sourceRepo) : (null, new JsonArray(), "Sem releases projetadas.");
     var release = latest is null
         ? Datum(null, relNote)
@@ -186,6 +213,7 @@ foreach (var (id, c) in eco["components"]!.AsObject())
         ["version"] = version,
         ["release"] = release,
         ["artifacts"] = artifacts,
+        ["mirror"] = mirror,
         ["ci"] = ci,
         ["validation"] = ValidationOf(id),
     });
