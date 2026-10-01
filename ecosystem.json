@@ -21,11 +21,11 @@
       "type": "product",
       "language": "csharp",
       "path": "apps/lunet2d",
-      "status": "not-migrated",
+      "status": "active",
       "description": "Ambiente de desenvolvimento de jogos 2D: framework, runtime e tooling (MANIFEST §5.1).",
       "owners": ["AbnerCruz"],
       "source": { "repository": "https://github.com/AbnerCruz/Lunet2D", "confirmed": true },
-      "version": { "authority": "source-repository" },
+      "version": { "authority": "version-file", "file": "apps/lunet2d/VERSION" },
       "dependencies": []
     },
     "urbe": {
