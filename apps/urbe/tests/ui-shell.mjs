@@ -1,0 +1,68 @@
+import fs from 'node:fs';import vm from 'node:vm';
+const read=p=>fs.readFileSync(new URL('../'+p,import.meta.url),'utf8');
+const index=read('index.html'),sw=read('sw.js'),theme=read('src/styles/theme.css'),base=read('src/styles/base.css');
+const ui=['src/app.js','src/explorer/mobile-ui.js','src/composition/ui.js','src/ui/quick-open.js','src/ui/tips.js','src/editor/visual-tools.js'].map(f=>[f,read(f)]);
+function test(name,fn){try{fn();console.log('OK  ',name)}catch(e){console.error('FAIL',name,e.message);process.exitCode=1}}
+
+test('interface sem prompt/confirm/alert nativos',()=>{
+  for(const [f,src] of ui){const m=src.match(/(?<![\w.])(?:global\.|window\.|g\.)?(prompt|confirm|alert)\(/);if(m)throw new Error(f+' usa '+m[1]+'()')}
+});
+test('ícones e diálogos carregam antes do app; tema por último',()=>{
+  const at=s=>index.indexOf(s);
+  if(!(at('./src/ui/icons.js')>0&&at('./src/ui/icons.js')<at('./src/ui/dialogs.js')&&at('./src/ui/dialogs.js')<at('./src/app.js')))throw new Error('ordem de scripts');
+  const links=[...index.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map(m=>m[1]);
+  /* o tema vem depois de todo CSS legado; só folhas feitas sobre os tokens (agent.css) podem vir depois */
+  const ti=links.indexOf('./src/styles/theme.css');if(ti<0||links.slice(ti+1).some(l=>!['./src/styles/agent.css','./src/styles/pages.css','./src/styles/math.css','./src/styles/customize.css'].includes(l)))throw new Error('theme.css precisa vir depois do CSS legado');
+});
+test('cache offline inclui a nova casca',()=>{
+  for(const f of ['./src/styles/theme.css','./src/ui/icons.js','./src/ui/dialogs.js','./src/editor/visual-tools.js','./src/ui/tips.js','./src/world/terrain.js','./src/world/pixel-art.js','./src/world/chunk-worker.js'])if(!sw.includes("'"+f+"'"))throw new Error('sw.js sem '+f);
+});
+test('sem cantos retos forçados globalmente',()=>{
+  if(/button,input,textarea,select\{border-radius:0!important\}/.test(base))throw new Error('regra global de border-radius:0 voltou');
+});
+test('tema define tokens e redireciona os legados',()=>{
+  for(const t of ['--ui-bg','--ui-accent','--ui-font','--v23-accent:var(--ui-accent)'])if(!theme.includes(t))throw new Error('token ausente: '+t);
+});
+test('diálogos: API assíncrona completa',()=>{
+  const d=read('src/ui/dialogs.js');
+  for(const k of ['prompt:prompt','confirm:confirm','alert:alert','choose:choose','menu:menu'])if(!d.includes(k))throw new Error('UrbeDialogs sem '+k);
+  if(!d.includes("aria-modal=\"true\""))throw new Error('diálogo sem aria-modal');
+});
+
+test('celular: uma só barra de abas, × com área de toque, barra de seleção sem rolagem',()=>{
+  if(!/#v21EditorTabs\{display:none!important\}/.test(theme))throw new Error('barra de abas legada visível');
+  const chrome=read('src/editor/chrome.js');if(!chrome.includes('class="uec-x"')||!chrome.includes("e.target.closest('[data-x]')"))throw new Error('fechar aba sem alvo de toque');
+  const ex=read('src/explorer/mobile-ui.js');if(!ex.includes('data-move')||/ume-actions[^\n]*>Abrir</.test(ex))throw new Error('barra de seleção antiga');
+  if(/addEventListener\('pointerup',function\(e\)\{[^}]*openId/.test(ex))throw new Error('ação no pointerup volta a disparar duas vezes');
+});
+test('atualização chega sozinha: sw assume na hora e busca na rede primeiro',()=>{
+  if(!/install[\s\S]*skipWaiting\(\)/.test(sw))throw new Error('sw.js não chama skipWaiting() na instalação');
+  const f=sw.slice(sw.indexOf("addEventListener('fetch'"));
+  if(!(f.indexOf('fetch(')>0&&f.indexOf('fetch(')<f.indexOf('cache.match(')))throw new Error('fetch não é rede-primeiro');
+  if(!/NETWORK_TIMEOUT/.test(f))throw new Error('sem limite de espera da rede (cache offline)');
+  const app=read('src/app.js');if(/controllerchange[^\n]*location\.reload\(\)/.test(app))throw new Error('troca de service worker recarrega a página no meio da edição');
+});
+test('Notas: lixeira funciona com pasta selecionada e contador distingue pastas',()=>{
+  const m=read('src/explorer/mobile-ui.js');
+  if(!/deleteFolder/.test(m))throw new Error('excluir ignora pastas');
+  if(/textContent=n\+\(n===1\?' nota'/.test(m))throw new Error('contador chama pasta de nota');
+});
+test('moradores: sprites em pixel-art, variedade, ritmo próprio, pausa na porta e conversa',()=>{
+  const app=read('src/app.js'),art=read('src/world/pixel-art.js');
+  if(!/villager:villager/.test(art)||!/villagerFlip/.test(art))throw new Error('sprite de morador ausente');
+  if(/ctx\.fillRect\(p\.x-larg\/2/.test(app))throw new Error('moradores ainda são retângulos');
+  for(const k of ['function v25Visual','function v25Ociosos','a.conversa','a.pausa','UrbeArt.villager('])if(!app.includes(k))throw new Error('falta '+k);
+  /* desenha todas as combinações num canvas de mentira */
+  const data=[];const fake=()=>({width:0,height:0,getContext:()=>({createImageData:(w,h)=>({data:new Uint8ClampedArray(w*h*4)}),putImageData:(img)=>data.push(img),translate(){},scale(){},drawImage(){}})});
+  const W={};vm.runInContext(art,vm.createContext({window:W,self:W,OffscreenCanvas:function(w,h){const c=fake();c.width=w;c.height=h;return c},console}));
+  const A=W.UrbeArt;
+  for(const style of ['short','long','straw','bald','cap','hood'])for(const acc of [null,'basket','sack','staff','bucket'])for(const dir of ['down','up','side'])for(let f=0;f<4;f++){
+    const c=A.villager({skin:f,hair:f,pants:f,style,shirt:'#b84a3a',acc,dress:f&1},dir,f);if(c.width!==14||c.height!==20)throw new Error('tamanho '+c.width+'x'+c.height)}
+  const px=data[0].data;let cheios=0;for(let i=3;i<px.length;i+=4)if(px[i])cheios++;if(cheios<120)throw new Error('sprite vazio: '+cheios);
+});
+test('mundo vivo: fauna registrada depois do terreno e visão de longe com copas',()=>{
+  const app=read('src/app.js'),art=read('src/world/pixel-art.js'),wk=read('src/world/chunk-worker.js');
+  if(app.indexOf("sch.add('world.fauna'")<app.indexOf('var MUNDO='))throw new Error('fauna precisa iniciar depois de MUNDO');
+  if(!/drawTrees=function\(\)\{urbeFaunaBaseTrees\(\);urbeDesenharFauna\(\)\}/.test(app))throw new Error('fauna fora do desenho');
+  if(!/chunkFarPixels/.test(art)||!/far:far\.buffer/.test(wk)||!/img\.far&&camera\.z<URBE_LONGE/.test(app))throw new Error('visão de longe ausente');
+});

@@ -1,0 +1,18 @@
+import fs from 'node:fs';import vm from 'node:vm';
+const context={window:{}};vm.createContext(context);
+for(const file of ['src/core/artifacts.js','src/core/core.js','src/core/documents.js','src/core/knowledge-index.js','src/editor/session.js','src/editor/context.js'])vm.runInContext(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'),context);
+const core=context.window.UrbeCore,docs=core.service('documents'),session=core.service('editor.session'),ctx=core.service('editor.context');
+docs.replaceAll([{path:'A.md',content:'# A\n## Parte\nVeja [[B]].'},{path:'B.md',content:'# B\nVolta [[A]].'}]);
+session.open('A.md');session.open('B.md');session.activate('A.md');
+if(session.listTabs().length!==2||session.active()?.title!=='A')throw new Error('tabs');
+session.record('A.md','# A\nAlterado [[B]].');
+if(!session.status('A.md').canUndo)throw new Error('history');
+session.undo('A.md');if(!docs.get('A.md').content.includes('## Parte'))throw new Error('undo');
+session.redo('A.md');if(!docs.get('A.md').content.includes('Alterado'))throw new Error('redo');
+docs.upsert({path:'A.md',content:'# A\n## Um\n### Dois\n[[B]]'});
+const c=ctx.context('A.md');if(c.outline.length!==3||c.links[0]?.title!=='B'||c.backlinks[0]?.title!=='B')throw new Error('context');
+session.close('B.md');if(session.listTabs().length!==1)throw new Error('close tab');
+console.log('OK   editor tabs');
+console.log('OK   editor history undo/redo');
+console.log('OK   outline');
+console.log('OK   editor links/backlinks context');

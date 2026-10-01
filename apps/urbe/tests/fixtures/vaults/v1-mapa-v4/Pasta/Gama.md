@@ -1,0 +1,3 @@
+# Gama
+
+Nota numa pasta.

@@ -1,0 +1,87 @@
+{
+  "name": "urbe",
+  "productName": "Urbe",
+  "version": "1.8.2-beta",
+  "description": "Suas notas como uma cidade: markdown, páginas, livros e assistente.",
+  "author": "Abner P. S. Cruz",
+  "license": "SEE LICENSE IN LICENSE",
+  "private": true,
+  "homepage": "https://github.com/AbnerCruz/Urbe",
+  "main": "native/desktop/main.js",
+  "scripts": {
+    "desktop": "electron .",
+    "desktop:build": "electron-builder --win --x64 --publish never",
+    "www": "node tools/build-www.mjs",
+    "android:sync": "node tools/build-www.mjs && cap sync android",
+    "test": "node tools/run-tests.mjs",
+    "check": "node tools/check-all.mjs",
+    "test:e2e": "node tools/run-e2e.mjs",
+    "perf": "node tools/perf/run.mjs"
+  },
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/filesystem": "^8.0.0",
+    "electron": "^38.2.0",
+    "electron-builder": "^26.0.12",
+    "playwright": "^1.56.1"
+  },
+  "build": {
+    "appId": "app.urbe.desktop",
+    "productName": "Urbe",
+    "copyright": "© Abner P. S. Cruz",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "manifest.webmanifest",
+      "*.png",
+      "src/**/*",
+      "vendor/**/*",
+      "native/desktop/*.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon-512.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Urbe",
+      "artifactName": "Urbe-Setup-${version}.${ext}",
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "icon-512.png",
+      "category": "Office"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "AbnerCruz",
+        "repo": "Urbe",
+        "releaseType": "release"
+      }
+    ]
+  }
+}

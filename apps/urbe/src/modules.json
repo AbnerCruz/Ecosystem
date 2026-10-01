@@ -1,0 +1,1747 @@
+{
+  "version": 1,
+  "note": "Fonte única dos módulos (ADR-0001). index.html (blocos urbe:styles/urbe:scripts) e sw.js (urbe:shell) são derivados por tools/check-modules.mjs --write.",
+  "styles": [
+    "vendor/katex/katex.min.css",
+    "src/styles/base.css",
+    "src/styles/shell.css",
+    "src/styles/command-palette.css",
+    "src/styles/editor-chrome.css",
+    "src/styles/explorer-mobile.css",
+    "src/styles/composition.css",
+    "src/styles/theme.css",
+    "src/styles/agent.css",
+    "src/styles/pages.css",
+    "src/styles/math.css",
+    "src/styles/customize.css"
+  ],
+  "assets": [
+    "src/world/chunk-worker.js",
+    "manifest.webmanifest",
+    "icon-192.png",
+    "icon-512.png",
+    "icon-maskable-512.png",
+    "apple-touch-icon.png",
+    "vendor/katex/fonts/KaTeX_AMS-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Caligraphic-Bold.woff2",
+    "vendor/katex/fonts/KaTeX_Caligraphic-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Fraktur-Bold.woff2",
+    "vendor/katex/fonts/KaTeX_Fraktur-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Main-Bold.woff2",
+    "vendor/katex/fonts/KaTeX_Main-BoldItalic.woff2",
+    "vendor/katex/fonts/KaTeX_Main-Italic.woff2",
+    "vendor/katex/fonts/KaTeX_Main-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Math-BoldItalic.woff2",
+    "vendor/katex/fonts/KaTeX_Math-Italic.woff2",
+    "vendor/katex/fonts/KaTeX_SansSerif-Bold.woff2",
+    "vendor/katex/fonts/KaTeX_SansSerif-Italic.woff2",
+    "vendor/katex/fonts/KaTeX_SansSerif-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Script-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Size1-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Size2-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Size3-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Size4-Regular.woff2",
+    "vendor/katex/fonts/KaTeX_Typewriter-Regular.woff2"
+  ],
+  "modules": [
+    {
+      "name": "core/artifacts",
+      "file": "src/core/artifacts.js",
+      "layer": "kit",
+      "phase": "boot",
+      "provides": {
+        "globals": [
+          "UrbeArtifacts"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ui/icons",
+      "file": "src/ui/icons.js",
+      "layer": "kit",
+      "phase": "boot",
+      "provides": {
+        "globals": [
+          "UrbeIcons"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ui/dialogs",
+      "file": "src/ui/dialogs.js",
+      "layer": "kit",
+      "phase": "boot",
+      "provides": {
+        "globals": [
+          "UrbeDialogs"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/ui/icons.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "native/bridge",
+      "file": "src/native/bridge.js",
+      "layer": "native",
+      "phase": "boot",
+      "provides": {
+        "globals": [
+          "UrbeNative",
+          "UrbeNativeContract",
+          "UrbeNativeFS",
+          "UrbeNativeToast"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/artifacts.js"
+      ],
+      "uses": [
+        "src/core/core.js",
+        "src/persistence/workspace.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ui/touch-debug",
+      "file": "src/ui/touch-debug.js",
+      "layer": "ui",
+      "phase": "boot",
+      "provides": {
+        "globals": [
+          "UrbeTouchDebug"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [
+        "src/core/core.js",
+        "src/app.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/terrain",
+      "file": "src/world/terrain.js",
+      "layer": "feature",
+      "phase": "boot",
+      "provides": {
+        "globals": [
+          "UrbeTerrain"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/pixel-art",
+      "file": "src/world/pixel-art.js",
+      "layer": "feature",
+      "phase": "boot",
+      "provides": {
+        "globals": [
+          "UrbeArt"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "legacy/bootstrap",
+      "file": "src/legacy/bootstrap.js",
+      "layer": "vendor",
+      "phase": "boot",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "core/core",
+      "file": "src/core/core.js",
+      "layer": "core",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeCore"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "core/documents",
+      "file": "src/core/documents.js",
+      "layer": "core",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeDocumentModel"
+        ],
+        "services": [
+          "documents"
+        ]
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/core/core.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "core/trash",
+      "file": "src/core/trash.js",
+      "layer": "core",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeTrash"
+        ],
+        "services": [
+          "trash"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "core/history",
+      "file": "src/core/history.js",
+      "layer": "core",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeRevisionHistory"
+        ],
+        "services": [
+          "history"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "composition/store",
+      "file": "src/composition/store.js",
+      "layer": "core",
+      "phase": "core",
+      "provides": {
+        "globals": [],
+        "services": [
+          "compositions"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "composition/compiler",
+      "file": "src/composition/compiler.js",
+      "layer": "core",
+      "phase": "core",
+      "provides": {
+        "globals": [],
+        "services": [
+          "composition.compiler"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/composition/store.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "core/knowledge-index",
+      "file": "src/core/knowledge-index.js",
+      "layer": "core",
+      "phase": "core",
+      "provides": {
+        "globals": [],
+        "services": [
+          "knowledge"
+        ]
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/core/core.js",
+        "src/core/documents.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/vault-meta",
+      "file": "src/persistence/vault-meta.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeVaultMeta"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/backup",
+      "file": "src/persistence/backup.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeBackup"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/identity",
+      "file": "src/persistence/identity.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeIdentity"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/workspace",
+      "file": "src/persistence/workspace.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbePersistence"
+        ],
+        "services": [
+          "persistence"
+        ]
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/persistence/vault-meta.js",
+        "src/persistence/backup.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/core/trash.js",
+        "src/core/history.js",
+        "src/composition/store.js",
+        "src/persistence/identity.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/gc",
+      "file": "src/persistence/gc.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeGC"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/persistence/workspace.js"
+      ],
+      "uses": [
+        "src/core/history.js",
+        "src/core/trash.js",
+        "src/composition/store.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/export-manifest",
+      "file": "src/persistence/export-manifest.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeExportManifest"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/multi-city",
+      "file": "src/persistence/multi-city.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeMultiCity"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/core/core.js"
+      ],
+      "uses": [
+        "src/persistence/workspace.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/adapters/idb",
+      "file": "src/persistence/adapters/idb.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeAdapters"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/adapters/fsa",
+      "file": "src/persistence/adapters/fsa.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeAdapters"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/adapters/router",
+      "file": "src/persistence/adapters/router.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeAdapters"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/projection",
+      "file": "src/world/projection.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeWorldProjection"
+        ],
+        "services": [
+          "world.projection"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/stable-ids",
+      "file": "src/world/stable-ids.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeStableIds"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/layout-guard",
+      "file": "src/world/layout-guard.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeLayoutGuard"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/persistence/backup.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/system",
+      "file": "src/world/system.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeAquariumWorld"
+        ],
+        "services": [
+          "aquarium.world"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/core/knowledge-index.js",
+        "src/world/projection.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/roads",
+      "file": "src/world/roads.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeRoadGraph"
+        ],
+        "services": [
+          "aquarium.roads"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/world/system.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "core/scheduler",
+      "file": "src/core/scheduler.js",
+      "layer": "core",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeScheduler"
+        ],
+        "services": [
+          "scheduler"
+        ]
+      },
+      "requires": [
+        "src/core/core.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/renderer",
+      "file": "src/world/renderer.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeAquariumRenderer"
+        ],
+        "services": [
+          "aquarium.renderer"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/scheduler.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/touch",
+      "file": "src/world/touch.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeTouchController"
+        ],
+        "services": [
+          "aquarium.touch"
+        ]
+      },
+      "requires": [
+        "src/core/core.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "explorer/model",
+      "file": "src/explorer/model.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeExplorerModel"
+        ],
+        "services": [
+          "explorer"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "explorer/operations",
+      "file": "src/explorer/operations.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": [
+          "explorer.operations"
+        ]
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/core/trash.js",
+        "src/explorer/model.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "explorer/mobile-ui",
+      "file": "src/explorer/mobile-ui.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": [
+          "explorer.ui"
+        ]
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/ui/icons.js",
+        "src/ui/dialogs.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/core/trash.js",
+        "src/composition/store.js",
+        "src/persistence/workspace.js",
+        "src/explorer/model.js"
+      ],
+      "uses": [
+        "src/app.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "composition/ui",
+      "file": "src/composition/ui.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": [
+          "composition.ui"
+        ]
+      },
+      "requires": [
+        "src/ui/dialogs.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/composition/store.js",
+        "src/composition/compiler.js",
+        "src/persistence/workspace.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "core/diagnostics",
+      "file": "src/core/diagnostics.js",
+      "layer": "core",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeDiagnostics"
+        ],
+        "services": [
+          "diagnostics"
+        ]
+      },
+      "requires": [
+        "src/ui/dialogs.js",
+        "src/core/core.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "editor/session",
+      "file": "src/editor/session.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeEditorModel"
+        ],
+        "services": [
+          "editor.session"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "editor/context",
+      "file": "src/editor/context.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": [
+          "editor.context"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/core/knowledge-index.js",
+        "src/editor/session.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "editor/workspace",
+      "file": "src/editor/workspace.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": [
+          "editor.workspace"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/editor/session.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "editor/split",
+      "file": "src/editor/split.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": [
+          "editor.split"
+        ]
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/ui/dialogs.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/editor/session.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "editor/split-ui",
+      "file": "src/editor/split-ui.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/editor/split.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "editor/find-ui",
+      "file": "src/editor/find-ui.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": [
+          "editor.findBar"
+        ]
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/editor/workspace.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "editor/chrome",
+      "file": "src/editor/chrome.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [
+        "src/ui/icons.js",
+        "src/core/core.js",
+        "src/editor/session.js",
+        "src/editor/context.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ai/providers",
+      "file": "src/ai/providers.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeAIProviders"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ai/tools",
+      "file": "src/ai/tools.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeAITools"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/core/documents.js",
+        "src/core/trash.js",
+        "src/core/knowledge-index.js",
+        "src/persistence/workspace.js",
+        "src/explorer/model.js"
+      ],
+      "uses": [
+        "src/ui/quick-open.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ai/store",
+      "file": "src/ai/store.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeAIStore"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ai/agent",
+      "file": "src/ai/agent.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeAgent"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/documents.js",
+        "src/ai/providers.js",
+        "src/ai/tools.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ai/ui",
+      "file": "src/ai/ui.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeAgentUI"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/ui/icons.js",
+        "src/ui/dialogs.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/ai/providers.js",
+        "src/ai/tools.js",
+        "src/ai/store.js",
+        "src/ai/agent.js"
+      ],
+      "uses": [
+        "src/math/core.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "vendor/katex/katex.min",
+      "file": "vendor/katex/katex.min.js",
+      "layer": "vendor",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "math/core",
+      "file": "src/math/core.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeMath"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "pages/engine",
+      "file": "src/pages/engine.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbePages"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/math/core.js"
+      ],
+      "uses": [
+        "src/app.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "pages/free",
+      "file": "src/pages/free.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [
+        "src/pages/engine.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "pages/templates",
+      "file": "src/pages/templates.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbePageTemplates"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/pages/engine.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "pages/ai-tools",
+      "file": "src/pages/ai-tools.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [
+        "src/core/documents.js",
+        "src/ai/tools.js",
+        "src/pages/engine.js",
+        "src/pages/templates.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "customize/customize",
+      "file": "src/customize/customize.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeCustomize"
+        ],
+        "services": [
+          "customize"
+        ]
+      },
+      "requires": [
+        "src/world/pixel-art.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/persistence/workspace.js"
+      ],
+      "uses": [
+        "src/app.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "customize/plugins",
+      "file": "src/customize/plugins.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbePlugins"
+        ],
+        "services": [
+          "plugins"
+        ]
+      },
+      "requires": [
+        "src/ui/icons.js",
+        "src/ui/dialogs.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/persistence/workspace.js",
+        "src/editor/session.js",
+        "src/ai/tools.js",
+        "src/customize/customize.js"
+      ],
+      "uses": [
+        "src/app.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "customize/ai-tools",
+      "file": "src/customize/ai-tools.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [
+        "src/core/documents.js",
+        "src/ai/tools.js",
+        "src/customize/customize.js",
+        "src/customize/plugins.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "tutorial/content",
+      "file": "src/tutorial/content.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeTutorialContent"
+        ],
+        "services": []
+      },
+      "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "tutorial/tutorial",
+      "file": "src/tutorial/tutorial.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [],
+        "services": [
+          "tutorial"
+        ]
+      },
+      "requires": [
+        "src/ui/dialogs.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/persistence/workspace.js",
+        "src/tutorial/content.js"
+      ],
+      "uses": [
+        "src/app.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "app",
+      "file": "src/app.js",
+      "layer": "app",
+      "phase": "app",
+      "provides": {
+        "globals": [
+          "URBE"
+        ],
+        "services": [
+          "city.layout",
+          "legacy.documents",
+          "legacy.runtime",
+          "workspace.storage",
+          "world.custom",
+          "world.life.host"
+        ]
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/ui/icons.js",
+        "src/ui/dialogs.js",
+        "src/native/bridge.js",
+        "src/world/terrain.js",
+        "src/world/pixel-art.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/core/history.js",
+        "src/core/knowledge-index.js",
+        "src/persistence/workspace.js",
+        "src/world/projection.js",
+        "src/world/roads.js",
+        "src/core/scheduler.js",
+        "src/explorer/mobile-ui.js",
+        "src/editor/session.js",
+        "src/editor/workspace.js",
+        "src/ai/ui.js",
+        "src/math/core.js",
+        "src/persistence/adapters/idb.js",
+        "src/persistence/adapters/fsa.js",
+        "src/persistence/adapters/router.js",
+        "src/world/stable-ids.js",
+        "src/world/layout-guard.js",
+        "src/persistence/export-manifest.js",
+        "src/persistence/multi-city.js"
+      ],
+      "uses": [
+        "src/pages/studio.js",
+        "src/math/editor.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "world/life",
+      "file": "src/world/life.js",
+      "layer": "feature",
+      "phase": "late",
+      "provides": {
+        "globals": [
+          "UrbeVida"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/scheduler.js",
+        "src/app.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "pages/studio",
+      "file": "src/pages/studio.js",
+      "layer": "feature",
+      "phase": "late",
+      "provides": {
+        "globals": [
+          "UrbePageStudio"
+        ],
+        "services": [
+          "pages.studio"
+        ]
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/ui/icons.js",
+        "src/ui/dialogs.js",
+        "src/native/bridge.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/core/trash.js",
+        "src/explorer/model.js",
+        "src/ai/ui.js",
+        "src/pages/engine.js",
+        "src/pages/templates.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "editor/visual-tools",
+      "file": "src/editor/visual-tools.js",
+      "layer": "feature",
+      "phase": "late",
+      "provides": {
+        "globals": [
+          "UrbeVisualTools"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/ui/icons.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "math/editor",
+      "file": "src/math/editor.js",
+      "layer": "feature",
+      "phase": "late",
+      "provides": {
+        "globals": [
+          "UrbeMathEditor"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/math/core.js",
+        "src/editor/visual-tools.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ui/settings",
+      "file": "src/ui/settings.js",
+      "layer": "ui",
+      "phase": "late",
+      "provides": {
+        "globals": [
+          "UrbeSettings"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/ui/dialogs.js",
+        "src/native/bridge.js",
+        "src/ui/touch-debug.js",
+        "src/core/core.js",
+        "src/app.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "customize/panel",
+      "file": "src/customize/panel.js",
+      "layer": "feature",
+      "phase": "late",
+      "provides": {
+        "globals": [
+          "UrbeCustomizePanel"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/ui/icons.js",
+        "src/ui/dialogs.js",
+        "src/world/pixel-art.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/customize/customize.js",
+        "src/customize/plugins.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ui/tips",
+      "file": "src/ui/tips.js",
+      "layer": "ui",
+      "phase": "late",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/core/knowledge-index.js",
+        "src/explorer/mobile-ui.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "core/keymap",
+      "file": "src/core/keymap.js",
+      "layer": "core",
+      "phase": "late",
+      "provides": {
+        "globals": [],
+        "services": [
+          "keymap"
+        ]
+      },
+      "requires": [
+        "src/core/core.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ui/command-palette",
+      "file": "src/ui/command-palette.js",
+      "layer": "ui",
+      "phase": "late",
+      "provides": {
+        "globals": [],
+        "services": [
+          "commandPalette"
+        ]
+      },
+      "requires": [
+        "src/core/core.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ui/quick-open",
+      "file": "src/ui/quick-open.js",
+      "layer": "ui",
+      "phase": "late",
+      "provides": {
+        "globals": [],
+        "services": [
+          "quickOpen"
+        ]
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/ui/icons.js",
+        "src/core/core.js",
+        "src/core/documents.js",
+        "src/explorer/model.js"
+      ],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "ui/vault-notices",
+      "file": "src/ui/vault-notices.js",
+      "layer": "ui",
+      "phase": "late",
+      "provides": {
+        "globals": [],
+        "services": []
+      },
+      "requires": [
+        "src/core/core.js"
+      ],
+      "uses": [
+        "src/ui/dialogs.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    }
+  ]
+}

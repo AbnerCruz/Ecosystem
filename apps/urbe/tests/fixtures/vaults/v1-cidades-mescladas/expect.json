@@ -1,0 +1,22 @@
+{
+  "notes": [
+    "Cidades/Norte/Um.md",
+    "Cidades/Sul/Dois.md"
+  ],
+  "ids": {},
+  "keepFiles": [
+    ".urbe/merged-v1.json",
+    ".urbe/origens/Norte.json",
+    ".urbe/origens/Sul.json"
+  ],
+  "noteHashes": {
+    "Cidades/Norte/Um.md": "c372fa8f7542c0a819ec578b70105604d8870b279b8d42462a89c71ea3250e44",
+    "Cidades/Sul/Dois.md": "c2a7c2498f5a357769fc05b3a2295ff06fcbac3ee15d3cb21c91f0926a3242fc"
+  },
+  "futureHashes": {},
+  "keepHashes": {
+    ".urbe/merged-v1.json": "b44153fd5ef3ff561096add15079730b8509bb132b42abdbe0b2c1c957ceea03",
+    ".urbe/origens/Norte.json": "2f0d289a616e6e0129b13992cf71a360cb260037aa2117d3c7f7fd7078e93771",
+    ".urbe/origens/Sul.json": "2f0d289a616e6e0129b13992cf71a360cb260037aa2117d3c7f7fd7078e93771"
+  }
+}

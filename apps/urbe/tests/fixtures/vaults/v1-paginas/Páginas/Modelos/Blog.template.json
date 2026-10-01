@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "kind": "urbe-template",
+  "meta": {
+    "title": "Blog",
+    "lang": "pt-BR"
+  },
+  "theme": {
+    "id": "claro"
+  },
+  "layout": {
+    "format": "page"
+  },
+  "sections": [
+    {
+      "id": "s1",
+      "type": "hero",
+      "props": {
+        "title": "Blog"
+      },
+      "style": {}
+    }
+  ],
+  "template": {
+    "name": "Blog",
+    "description": "modelo"
+  }
+}

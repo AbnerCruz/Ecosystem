@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mínimo necessário (RM-F3-12): o app não compartilha arquivos por FileProvider hoje. Só uma subpasta
+     do cache, para o caso de um compartilhamento futuro. NUNCA expor external-path "." (todo o armazenamento)
+     nem o cache inteiro. Qualquer novo caminho exige revisão do THREAT-MODEL §3. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="urbe_share" path="urbe-share/" />
+</paths>

@@ -1,0 +1,25 @@
+name: Urbe structural checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: JavaScript syntax (todos os arquivos)
+        run: |
+          set -e
+          git ls-files -z '*.js' | xargs -0 -n1 node --check
+      - name: Checagens estruturais e testes (npm run check)
+        # versão única, módulos/boundaries, dívida, rastreabilidade, workflows, tutorial e todos os tests/*.mjs
+        run: npm run check
