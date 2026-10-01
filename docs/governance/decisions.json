@@ -340,7 +340,7 @@
     },
     {
       "id": "DEC-9999",
-      "status": "pending",
+      "status": "decided",
       "component": "portal",
       "blocking": false,
       "title": "TESTE do mecanismo de resposta pelo portal (pode ignorar)",
@@ -362,7 +362,10 @@
         "docs/adr/0007-resposta-a-decisoes-pelo-portal.md"
       ],
       "raisedBy": "claude-code (teste do mecanismo)",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Alternativa A de teste (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/3).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-9999.md"
     }
   ]
 }
