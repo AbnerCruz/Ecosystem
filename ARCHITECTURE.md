@@ -93,6 +93,7 @@ Exceções exigem ADR e alteração explícita do check.
 | Fase e estado de cada gate | `ROADMAP.md` (linha `*Estado do gate:*` de cada fase) | Não há campo de fase em `ecosystem.json` (DEC-0019-A, ADR-0010); o portal projeta os gates derivados do ROADMAP (`CHK-PORTAL`, `CHK-STATE-CONSISTENCY`). |
 | Estado de validação de um build (`IMPLEMENTED` … `VALIDATED`) | `docs/validation/<componente>/<build>.json` | Contrato `validation-record.schema.json`; `CHK-VALIDATION`. Evidência humana vem dos handoffs e não é duplicada (NN-001). |
 | Registros de trabalho de agentes | `docs/governance/handoffs/` | |
+| Política de integração (o que o integrador leva à `main` sozinho) | `ecosystem.json`: `ecosystem.mergePolicy` (piso) e `mergePolicy` de cada componente | ADR-0015; o piso é escolha do proprietário (DEC-0023). O status `ecosystem/integration` e as labels nos PRs são derivados; `CHK-INTEGRATION`. |
 | Alterações do `MANIFEST.md` | `docs/governance/manifest-changelog.md` | Registro exigido por MANIFEST §0; o texto do manifesto continua sendo o próprio `MANIFEST.md`. |
 | Decisões/adendos do proprietário (texto integral) | `docs/governance/addenda/` | Nível 1 da hierarquia (MANIFEST §24); referenciados por `decisions.json`. |
 | Estado exibido no portal web | **nenhuma** — `site/data/ecosystem-status.json` é projeção (`authority: false`) | Gerada no CI a partir das fontes acima; não versionada; validada por `CHK-PORTAL`. |

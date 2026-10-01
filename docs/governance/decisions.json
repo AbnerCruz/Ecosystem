@@ -770,33 +770,33 @@
       "component": "ecosystem",
       "blocking": false,
       "title": "Até onde a integração do trabalho dos agentes deve ser automática",
-      "context": "FATO: no teste com dois agentes simultâneos, a verificação e a reconciliação foram feitas por um terceiro agente, acionado pelo proprietário (ADR-0014). O proprietário pediu (ADD-0011) que o sistema permita essa colaboração sem erros e sem precisar acionar um agente para verificar. Desenho proposto (ADR-0014 §futuro, rascunho pronto): um integrador no GitHub Actions que, a cada PR de agente e a cada mudança da main, monta o estado combinado (main ATUAL + PR), roda os checks do Ecosystem e o CI de cada Product tocado, confere o handoff (NN-008) e reporta no PR (status, comentário, label); conflito ou check vermelho volta ao agente autor, nunca ao proprietário. FATO: nesta sessão, o sistema de permissões do agente bloqueou a criação de uma automação que faça merge na main sem revisão humana; por isso nada foi implementado ainda. FATO: merge na main de apps/urbe publica o Urbe Web e merge de apps/lunet2d gera release de desenvolvimento depois da sincronização da origem.",
-      "question": "O integrador automático deve só verificar (o merge fica com você, num clique) ou também fazer o merge sozinho quando tudo passar?",
+      "context": "FATO: no teste com dois agentes simultâneos, a verificação e a reconciliação foram feitas por um terceiro agente, acionado pelo proprietário (ADR-0014). O proprietário pediu (ADD-0011) que o sistema permita essa colaboração sem precisar acionar um agente e corrigiu a mensagem com 'Automaticamente*' — enviada antes de esta pergunta existir, por isso não foi tratada como resposta. FATO: o integrador automático já está implementado (ADR-0015): a cada PR de agente e a cada mudança da main, ele monta o estado combinado (main ATUAL + PR), roda os checks do Ecosystem e o CI de cada Product tocado, confere o handoff (NN-008) e reporta no PR (status, comentário, label); conflito ou check vermelho volta ao agente autor, nunca a você. Enquanto esta decisão estiver pendente, ele funciona no modo seguro: verifica tudo sozinho e só leva à main o que você autorizar (label 'integrar', que ele integra exatamente no estado testado). FATO: merge na main de apps/urbe publica o Urbe Web e merge de apps/lunet2d gera release de desenvolvimento depois da sincronização da origem.",
+      "question": "O integrador deve também levar à main, sozinho, o que passou em todos os checks, ou cada PR continua esperando um toque seu?",
       "alternatives": [
         {
-          "option": "A — Verificar e integrar sozinho: quando o estado combinado com a main atual passa em todos os checks e o handoff está completo, o integrador faz o merge exatamente do estado testado; Products com regra própria (Urbe: pedido explícito) continuam exigindo um toque seu (label 'integrar')",
-          "consequences": "Nenhum agente nem você precisa verificar nada; a main só recebe estados combinados testados. Mudanças de agentes no Ecosystem e no Lunet2D entram sem revisão humana por PR (os agentes usam suas credenciais, então a proteção é o processo e a auditoria). Implementar exige sua autorização explícita para o agente criar uma automação que faz merge sem revisão (bloqueada por padrão nesta sessão)."
+          "option": "A — Integrar sozinho: todo PR cujo estado combinado com a main atual passou em todos os checks e tem handoff entra na main sem nenhum toque seu; o Urbe (regra própria) continua exigindo sua label 'integrar'",
+          "consequences": "Ninguém precisa verificar nem clicar: o trabalho dos agentes no Ecosystem e no Lunet2D entra assim que fica verde contra a main atual. A proteção deixa de ser a revisão humana por PR e passa a ser o processo: só entra o commit combinado testado, nunca por force; mudar qualquer política de integração nunca se autoaprova; tudo fica registrado no PR e no handoff. Aplicação: um agente muda ecosystem.mergePolicy para 'automatic' num PR — esse PR, por mudar a política, ainda pede a sua label 'integrar' uma última vez."
         },
         {
-          "option": "B — Só verificar automaticamente: o integrador faz toda a verificação (base obsoleta, estado combinado, CI dos Products, handoff) e marca o PR como pronto (status verde, comentário, label); o merge é sempre o seu clique no botão Merge do GitHub",
-          "consequences": "Nenhum agente precisa verificar; você revisa e integra cada PR com um clique, já sabendo que o estado combinado passou. Se a main mudar depois da verificação, o integrador reverifica e o status volta a amarelo até ficar verde de novo. Não cria merge sem revisão humana."
+          "option": "B — Só verificar automaticamente: o integrador faz toda a verificação e marca o PR como pronto (status verde, comentário, label 'pronto-para-integrar'); a entrada na main é sempre um toque seu (label 'integrar' ou o botão Merge)",
+          "consequences": "Nenhum agente precisa verificar; você dá um toque por PR, já sabendo que o estado combinado passou. Se a main mudar antes do seu toque, o integrador retesta sozinho. É o modo em que o integrador já está funcionando; escolher B só o torna permanente."
         },
         {
-          "option": "C — Manter como hoje: um agente integrador verifica e integra quando você pede",
-          "consequences": "Nada novo para manter; você continua precisando acionar um agente a cada rodada de trabalho paralelo (o que o ADD-0011 chama de insustentável)."
+          "option": "C — Desligar o integrador e voltar ao fluxo manual: um agente integrador verifica e integra quando você pede",
+          "consequences": "Nada novo para manter; você volta a precisar acionar um agente a cada rodada de trabalho paralelo (o que o ADD-0011 chama de insustentável)."
         }
       ],
-      "consequences": "Não bloqueia o trabalho dos agentes (o fluxo do ADR-0014 continua valendo). Define o próximo item de governança: implementar o integrador na forma escolhida, com self-tests e um teste real com dois PRs simultâneos.",
-      "manifestCompatibility": "Respeita NN-001 (o integrador só lê fontes canônicas), NN-008 (handoff obrigatório), NN-011 (decisão do proprietário), NN-014 (CI por Product) e NN-018 (main só recebe estado testado). A respeita a regra de merge do Urbe pela label; B e C não mudam regra nenhuma.",
-      "recommendation": "B agora: tira o agente da verificação, que é o que o ADD-0011 pede, sem criar merge sem revisão. A pode vir depois, se você quiser abrir mão do clique.",
+      "consequences": "Não bloqueia o trabalho dos agentes: o integrador já verifica tudo; a decisão define só se o último passo (entrar na main) precisa de um toque seu.",
+      "manifestCompatibility": "Respeita NN-001 (o integrador só lê fontes canônicas; a política fica em ecosystem.json), NN-008 (handoff obrigatório), NN-011 (decisão do proprietário), NN-014 (CI por Product), NN-016 (política explícita, deny-by-default enquanto pendente) e NN-018 (a main só recebe estado combinado testado). A respeita a regra de merge do Urbe pela label.",
+      "recommendation": "A, porque é o que 'Automaticamente*' (ADD-0011) pede e as proteções já estão provadas pelo self-test: só entra o estado combinado testado, o Urbe continua com sua label e nenhuma mudança de política se autoaprova. B se você prefere ver cada PR antes de entrar.",
       "related": [
+        "docs/adr/0015-integrador-automatico.md",
         "docs/governance/addenda/ADD-0011-colaboracao-multiagente-sem-verificacao-manual.md",
-        "docs/adr/0014-fluxo-multiagente-minimo.md",
         "docs/governance/multi-agent.md",
-        "apps/urbe/AGENTS.md"
+        "ecosystem.json"
       ],
       "raisedBy": "claude-code (integração multiagente)",
-      "raisedAt": "2026-10-02"
+      "raisedAt": "2026-10-01"
     }
   ]
 }

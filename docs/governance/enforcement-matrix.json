@@ -200,6 +200,12 @@
           "status": "planned",
           "how": "Observabilidade de agentes em execução no Hub/Agent Workspace.",
           "phase": "phase-6"
+        },
+        {
+          "mechanism": "TEST",
+          "status": "implemented",
+          "how": "O integrador automático (ADR-0015) só leva à main PR que traz handoff em review/verifying/done e registra cada avaliação no PR (status ecosystem/integration, comentário, labels).",
+          "check": "CHK-INTEGRATION"
         }
       ]
     },
@@ -387,6 +393,12 @@
           "status": "implemented",
           "how": "O workflow que escreve decisões na branch padrão é restrito ao dono do repositório, tem permissões explícitas e não interpola texto não confiável em scripts.",
           "check": "CHK-DECISION-FLOW"
+        },
+        {
+          "mechanism": "CI",
+          "status": "implemented",
+          "how": "O integrador que escreve na main roda a definição da main (pull_request_target); o código do PR só roda nos checks, com token de leitura; nenhum push forçado na main; texto do PR só em env; política de integração explícita (mergePolicy), com piso owner-authorization até DEC-0023.",
+          "check": "CHK-INTEGRATION"
         }
       ]
     },
@@ -448,6 +460,12 @@
           "mechanism": "DEVICE",
           "status": "manual",
           "how": "Validação humana quando o requisito depende de aparelho."
+        },
+        {
+          "mechanism": "TEST",
+          "status": "implemented",
+          "how": "A main só recebe o commit combinado (main atual + PR) aprovado pelos checks do Ecosystem e pelo CI dos Products tocados; se a main muda durante o teste, o PR é retestado (ADR-0015).",
+          "check": "CHK-INTEGRATION"
         }
       ]
     },

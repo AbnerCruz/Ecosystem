@@ -11,9 +11,16 @@ on:
   pull_request:
     paths: ['apps/lunet2d/**', '.github/workflows/lunet2d-ci.yml']
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit a testar (o integrador passa o estado combinado main + PR; ADR-0015)'
+        type: string
+        required: false
+        default: ''
 
 concurrency:
-  group: lunet2d-ci-${{ github.ref }}
+  group: lunet2d-ci-${{ inputs.ref || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -27,6 +34,8 @@ jobs:
         working-directory: apps/lunet2d
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'

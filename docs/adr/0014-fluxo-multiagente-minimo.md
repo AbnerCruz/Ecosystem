@@ -23,7 +23,7 @@ Qual é o mínimo de processo e de estrutura que torna verificável, para trabal
 Opção 1.
 
 - **Quatro identidades** (todas verificáveis, nenhuma autorreferente):
-  - **BASE** — `base_commit` no handoff: SHA de onde o agente partiu. Obrigatório para handoffs a partir de 2026-10-02 (`CHK-HANDOFFS`); deve existir no histórico.
+  - **BASE** — `base_commit` no handoff: SHA de onde o agente partiu. Obrigatório para handoffs a partir de 2026-10-01T19:00Z (`CHK-HANDOFFS`; a data original, 2026-10-02, estava errada — o dia real era 2026-10-01 — e foi corrigida com o ADR-0015); deve existir no histórico.
   - **WORK RESULT** — o commit da `branch` que introduz/atualiza o handoff (derivado). O campo `commit` só é preenchido quando o resultado já é conhecido ao gravar (ex.: numa reconciliação posterior); **nunca** é o commit de partida — `CHK-HANDOFFS` recusa `commit` igual a `base_commit`, inexistente ou que não descenda da base.
   - **INTEGRATION** — o merge do `pr` na `main` (derivado do PR; não gravado no handoff, que não pode conhecê-lo).
   - **VALIDATION** — `verification[].tested_commit` (opcional): o estado efetivamente testado (ex.: o estado combinado depois da reconciliação).
@@ -38,7 +38,7 @@ Opção 1.
 - A segunda branch a integrar sempre passa por reconciliação explícita e CI do estado combinado.
 - O teste de concorrência fica reprodutível pelo self-test (`IntegrationTests`: mesmo HEAD, primeira integração, base obsoleta, sobreposição de alto risco, reconciliação preservando os dois trabalhos).
 - Custo: um comando a mais antes de integrar e um campo a mais no handoff.
-- Verificação/integração automática pedida pelo proprietário (ADD-0011): forma pendente em DEC-0023.
+- Verificação e integração automáticas pedidas pelo proprietário (ADD-0011): [ADR-0015](0015-integrador-automatico.md) (integrador); integrar sem nenhum toque do proprietário depende de DEC-0023.
 - Futuro (não implementado): comparar escopo esperado, paths prováveis e componentes de tarefas atribuídas ao mesmo tempo e sinalizar LOW/HIGH OVERLAP antes de começar.
 
 ## Alternativas rejeitadas
