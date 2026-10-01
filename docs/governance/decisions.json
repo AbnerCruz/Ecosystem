@@ -375,7 +375,7 @@
     },
     {
       "id": "DEC-0012",
-      "status": "pending",
+      "status": "decided",
       "component": "portal",
       "blocking": false,
       "title": "Quem pode ver o portal e o repositório",
@@ -403,7 +403,10 @@
         "docs/architecture/portal.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Manter público (decisões já são restritas ao proprietário) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/5).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0012.md"
     }
   ]
 }
