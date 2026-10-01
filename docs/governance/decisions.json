@@ -441,7 +441,7 @@
     },
     {
       "id": "DEC-0014",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": true,
       "title": "Aprovar o plano de importação automatizado e o mecanismo de publicação das origens",
@@ -469,7 +469,10 @@
         "docs/migration/README.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Aprovar o plano automatizado: a origem puxa apps/<id> do monorepo e continua construindo e publicando com seus próprios pipelines e secrets (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/8).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0014.md"
     }
   ]
 }
