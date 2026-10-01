@@ -47,9 +47,9 @@
     {
       "check": "Revisão da classificação de candidatos e da ordem sugerida de refatoração",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "docs/architecture/candidates.md",
-      "evidence": "Pendente (proposta; aprovar ou reprovar no portal)."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-01 (Issue https://github.com/AbnerCruz/Ecosystem/issues/27); registro em docs/governance/responses/VAL-HO-20261001-classificacao-de-candidatos-f2cc354957c9.md."
     }
   ],
   "known_issues": [
