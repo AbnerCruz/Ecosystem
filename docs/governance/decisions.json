@@ -339,33 +339,36 @@
       "record": "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md"
     },
     {
-      "id": "DEC-9999",
-      "status": "decided",
+      "id": "DEC-0011",
+      "status": "pending",
       "component": "portal",
       "blocking": false,
-      "title": "TESTE do mecanismo de resposta pelo portal (pode ignorar)",
-      "context": "Decisão sintética criada pelo agente apenas para validar de ponta a ponta o fluxo de ADR-0007. Será removida logo após o teste. Não requer nenhuma ação do proprietário.",
-      "question": "[TESTE] Esta decisão existe só para testar o registro automático. Ignore.",
+      "title": "Ratificar o mecanismo de resposta pelo portal (ADR-0007)",
+      "context": "Você pediu para clicar na alternativa no site e ter a decisão registrada no repositório (DEC-0010). O agente propôs o mecanismo do ADR-0007: cada alternativa abre uma Issue já preenchida no GitHub; enviar a Issue confirma a escolha e uma automação, restrita ao dono do repositório, registra a decisão. Foi validado de ponta a ponta com uma decisão de teste. Responder a esta decisão clicando no portal é a validação real do mecanismo (P0-35).",
+      "question": "O mecanismo de resposta pelo portal do ADR-0007 deve ser aceito como está, trocado por clique único com token no navegador, ou rejeitado?",
       "alternatives": [
         {
-          "option": "Alternativa A de teste",
-          "consequences": "Nenhuma: decisão sintética."
+          "option": "Aceitar o ADR-0007: Issue pré-preenchida e confirmação no GitHub (dois toques; nenhum token no navegador)",
+          "consequences": "Seguro e já funcionando: só o dono do repositório é aceito, a Issue é a trilha de auditoria e o site não guarda segredo de escrita. Custa um toque extra (\"Submit new issue\")."
         },
         {
-          "option": "Alternativa B de teste",
-          "consequences": "Nenhuma: decisão sintética."
+          "option": "Trocar por clique único: token do GitHub guardado no navegador, gravando direto pela API",
+          "consequences": "Um toque só, mas um token com permissão de escrita fica no navegador de um site público estático (risco de vazamento e de XSS), precisa ser criado e renovado por você e não há confirmação independente. Exigiria um novo ADR e nova implementação."
+        },
+        {
+          "option": "Rejeitar o mecanismo e voltar a responder pelo chat",
+          "consequences": "Remove a superfície de escrita automática (workflow e aplicador seriam desativados); as decisões voltam a depender do agente na conversa."
         }
       ],
-      "consequences": "Nenhuma.",
-      "manifestCompatibility": "Teste técnico; sem efeito sobre o produto.",
+      "consequences": "Se aceita, o ADR-0007 passa a Aceito. Esta decisão também é a validação ponta a ponta do mecanismo pelo proprietário.",
+      "manifestCompatibility": "Compatível: NN-009 (decisão em fonte persistida), NN-016 (acesso restrito e explícito), NN-021 (estado visível). O agente nunca responde por você.",
+      "recommendation": "Aceitar o ADR-0007: dois toques, sem segredo de escrita no navegador. O clique único pode ser reavaliado depois, por ADR, se os dois toques incomodarem.",
       "related": [
-        "docs/adr/0007-resposta-a-decisoes-pelo-portal.md"
+        "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+        "docs/architecture/portal.md"
       ],
-      "raisedBy": "claude-code (teste do mecanismo)",
-      "raisedAt": "2026-10-01",
-      "decision": "Alternativa A — Alternativa A de teste (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/3).",
-      "decidedAt": "2026-10-01",
-      "record": "docs/governance/responses/DEC-9999.md"
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }

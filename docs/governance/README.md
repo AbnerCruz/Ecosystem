@@ -8,6 +8,7 @@
 | [`decisions.json`](decisions.json) | Perguntas ao proprietário — "onde o ecossistema precisa de mim?" (MANIFEST §35). | [schema](../contracts/schemas/decisions.schema.json) |
 | [`manifest-changelog.md`](manifest-changelog.md) | Registro das alterações do `MANIFEST.md` (MANIFEST §0). | normativo |
 | [`addenda/`](addenda/) | Texto integral de adendos/instruções do proprietário (MANIFEST §24, nível 1). | Markdown |
+| `responses/` | Registro gerado de cada decisão respondida pelo portal (criado pela primeira resposta; ADR-0007). | Markdown |
 | [`handoffs/`](handoffs/) | Um handoff/resultado por arquivo. | [schema](../contracts/schemas/handoff.schema.json) |
 
 Todos os arquivos JSON são validados por `dotnet run tests/consistency/Check.cs`.

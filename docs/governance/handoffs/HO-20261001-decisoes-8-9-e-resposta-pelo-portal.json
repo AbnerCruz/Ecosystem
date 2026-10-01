@@ -1,0 +1,158 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-decisoes-8-9-e-resposta-pelo-portal",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T00:20:47Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-34",
+  "component": "portal",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": "cc6f65ae9046ab376fcc030ddb4d4ae6cf94266b",
+  "pr": null,
+  "files_changed": [
+    ".github/scripts/apply-decision.cs",
+    ".github/workflows/decision.yml",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/adr/README.md",
+    "docs/architecture/portal.md",
+    "docs/contracts/schemas/decisions.schema.json",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/governance/README.md",
+    "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md",
+    "docs/governance/communication.md",
+    "docs/governance/decisions.json",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/handoffs/HO-20261001-decisoes-8-9-e-resposta-pelo-portal.json",
+    "docs/migration/README.md",
+    "docs/migration/inventory-lunet2d.md",
+    "docs/migration/inventory-urbe.md",
+    "ecosystem.json",
+    "site/app.js",
+    "site/generator/GenerateStatus.cs",
+    "site/style.css",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md"
+  ],
+  "work_completed": [
+    "P0-33: DEC-0008 e DEC-0009 decididas (alternativa A, transitórias: valem para a migração; depois o Ecosystem declara a distribuição) a partir da mensagem do proprietário persistida em ADD-0004; consequências aplicadas em docs/migration/README.md §9, inventários, ROADMAP e ARCHITECTURE §8. Nenhum campo novo em ecosystem.json.",
+    "P0-34: resposta a decisões clicando no portal (DEC-0010, ADR-0007 Proposto). Projeção com título/corpo/hash da Issue por alternativa; botão por alternativa na página; workflow decision.yml (só dono do repositório, texto da Issue só por env, checks antes de gravar, commit na branch padrão, republica o portal, comenta e fecha a Issue); aplicador apply-decision.cs; componente de automação decision-recorder; CHK-DECISION-FLOW; testes do aplicador no self-test.",
+    "DEC-0011 levantada como pendente: ratificar o mecanismo (aceitar / clique único com token no navegador / rejeitar).",
+    "Regra permanente: agentes nunca respondem uma decisão pendente do proprietário (AGENTS.md, communication.md §9, ADR-0007)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: 'Todos os 16 checks passaram.'"
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: casos de CHK-DECISION-FLOW e 9 testes do aplicador (autor errado, título inválido, hash adulterado, título/corpo discordantes, recusas sem alterar o arquivo, registro, estado final, consistência depois do registro, decisão já decidida)."
+    },
+    {
+      "check": "Workflow consistency no GitHub Actions",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Concluído com success no commit cc6f65a (inclui o self-test completo)."
+    },
+    {
+      "check": "Ponta a ponta do mecanismo com a decisão sintética DEC-9999 na branch padrão",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Issue #3 (https://github.com/AbnerCruz/Ecosystem/issues/3) -> execução 36795529924 do workflow decision (todos os passos success) -> commit 5f63c17 do github-actions[bot] na main com DEC-9999 'decided' e docs/governance/responses/DEC-9999.md -> Issue comentada e fechada (completed) -> pages republicado por workflow_dispatch. DEC-9999 e seu registro foram removidos em seguida."
+    },
+    {
+      "check": "Renderização do portal com 3 alternativas, 390x844, tema claro",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sem erros de console e sem overflow; botão 'Escolher X' por alternativa; link gerado confere com título e corpo da projeção."
+    },
+    {
+      "check": "Validação ponta a ponta pelo proprietário: clicar numa alternativa no portal, enviar a Issue no GitHub e ver a decisão registrada",
+      "kind": "human",
+      "result": "pending",
+      "object": "https://abnercruz.github.io/Ecosystem/",
+      "evidence": "Pendente. A decisão que o proprietário deve responder é DEC-0011, que aparece no portal."
+    }
+  ],
+  "known_issues": [
+    "A Issue de teste #3 foi criada pelo agente com a credencial da conta do proprietário, para uma decisão sintética (DEC-9999) removida em seguida. O GitHub não distingue o agente do proprietário nesse caso; a proteção é a regra de que agentes nunca respondem decisão real (ADR-0007, 'Limite conhecido').",
+    "A confirmação no GitHub (\"Submit new issue\") é um toque extra deliberado: o site estático não guarda token de escrita. O clique único exigiria token no navegador (alternativa B de DEC-0011).",
+    "O registro automático não aplica as consequências nos documentos dependentes; um agente deve fazê-lo depois (o registro responses/*.md diz isso).",
+    "Se a branch padrão passar a ter proteção que bloqueie o push do bot, o fluxo precisará de exceção explícita."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: responder DEC-0011 clicando no portal (também valida o mecanismo, P0-35).",
+    "Próximo agente: P1-3 — plano de importação, sem bloqueio de decisão (DEC-0008/DEC-0009 decididas)."
+  ],
+  "decisions_required": [
+    "DEC-0011"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md",
+    "docs/governance/decisions.json",
+    "docs/migration/README.md",
+    "docs/adr/0005-portal-web-github-pages.md",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/architecture/portal.md",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "decisions.json segue a única autoridade das decisões; o portal projeta; responses/*.md é registro gerado que aponta para ela."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Mensagem do proprietário persistida em ADD-0004; respostas pelo portal geram registro persistido; o self-test e o E2E provam."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR-0007 com status Proposto; ratificação pedida em DEC-0011; nada marcado Aceito sem decisão do proprietário."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "DEC-0008/0009 não alteram código de produto; mudança de updater continua proibida na migração."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Releases por produto preservadas (A): lifecycles independentes."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Workflow restrito ao dono, permissões explícitas, texto da Issue só em env, checks antes de gravar; CHK-DECISION-FLOW."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A validação humana do clique ponta a ponta fica pendente com objeto; nada marcado como validado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado 'review': há verificação humana pendente."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Pendência do proprietário (DEC-0011) e validação humana aparecem no portal com objeto."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Releases e site publicados por produto, sem depender do Hub."
+    }
+  ],
+  "cost": null
+}
