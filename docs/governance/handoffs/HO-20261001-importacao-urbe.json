@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-importacao-urbe",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T02:10:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-5",
+  "component": "urbe",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/** (importado, sem alterações)",
+    "ecosystem.json",
+    "docs/migration/commit-map-urbe.txt",
+    "docs/migration/tags-urbe.txt",
+    "tests/consistency/Check.cs",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-importacao-urbe.json"
+  ],
+  "work_completed": [
+    "Importação do Urbe (AbnerCruz/Urbe, main 662ca5b) para apps/urbe com git filter-repo --to-subdirectory-filter, tags urbe/* e merge --allow-unrelated-histories --no-ff (plano §4).",
+    "ecosystem.json: urbe status active; versão por arquivo apps/urbe/package.json (plano §6). commit-map e tags versionados em docs/migration/.",
+    "Self-test do checker acompanha a nova autoridade de versão e o caso 'produto não migrado existindo no monorepo' (agora com status not-migrated forçado).",
+    "Nada dentro de apps/urbe foi alterado (NN-013); origem somente lida. As branches claude/* não incorporadas (conteúdo já está na main, plano §9) não foram importadas: o proxy da sessão só permite empurrar a branch da sessão; a origem permanece viva e preserva as branches."
+  ],
+  "verification": [
+    {
+      "check": "Commits preservados",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "382 commits na main de origem e 382 após o filtro; commit-map versionado."
+    },
+    {
+      "check": "Tags preservadas com prefixo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "6 tags de origem -> 6 tags urbe/v1.7.0-beta..v1.8.2-beta, todas ancestrais da main."
+    },
+    {
+      "check": "Conteúdo idêntico à origem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "git rev-parse HEAD:apps/urbe = 8f4f53dbbfd1c46dfb8a3c44ab29bd6d7ec43c89, igual à árvore da main de origem (662ca5b)."
+    },
+    {
+      "check": "Testes do produto no novo caminho",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/urbe: npm ci && npm run check: 56/56 arquivos de teste, 'todas as checagens passaram'."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: 16/16 checks e todos os checks provaram detectar suas violações."
+    }
+  ],
+  "known_issues": [
+    "As 6 tags só existem no Ecosystem depois de executar restore-tags.yml (componente urbe) na main.",
+    "Pipelines e releases do Urbe seguem na origem (DEC-0008-A) e os workflows importados ficam inertes em apps/urbe/.github até P1-6.",
+    "Branches não incorporadas da origem (claude/beta-v1, claude/mundo-real, claude/fix-explorer-celular) não foram importadas; seu conteúdo já está na main (plano §9)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Mergear com merge commit depois do CI verde e executar restore-tags.yml (urbe).",
+    "P1-6 — distribuição automatizada (plano §7)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/migration/README.md",
+    "docs/migration/import-plan.md",
+    "docs/migration/inventory-urbe.md",
+    "docs/governance/decisions.json",
+    "docs/governance/responses/DEC-0014.md",
+    "AGENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-012",
+      "evidence": "382 commits e 6 tags preservados; commit-map e lista de tags versionados."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Hash da árvore apps/urbe idêntico ao da origem."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "urbe mantém versão e lifecycle próprios (package.json do produto)."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência criada entre produtos; checks de boundary passam."
+    }
+  ],
+  "cost": null
+}

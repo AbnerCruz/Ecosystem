@@ -33,11 +33,11 @@
       "type": "product",
       "language": "javascript",
       "path": "apps/urbe",
-      "status": "not-migrated",
+      "status": "active",
       "description": "Workspace de conhecimento, documentos, vault, páginas, mundo e organização (MANIFEST §5.2).",
       "owners": ["AbnerCruz"],
       "source": { "repository": "https://github.com/AbnerCruz/Urbe", "confirmed": true },
-      "version": { "authority": "source-repository" },
+      "version": { "authority": "version-file", "file": "apps/urbe/package.json" },
       "dependencies": []
     },
     "hub": {
