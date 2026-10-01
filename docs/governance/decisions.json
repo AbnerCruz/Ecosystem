@@ -407,6 +407,34 @@
       "decision": "Alternativa A — Manter público (decisões já são restritas ao proprietário) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/5).",
       "decidedAt": "2026-10-01",
       "record": "docs/governance/responses/DEC-0012.md"
+    },
+    {
+      "id": "DEC-0013",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Onde ficam as Issues de cada produto depois da migração",
+      "context": "FATO: Issues e PRs não migram com o histórico git. Hoje o Lunet2D tem 0 Issues e 25 PRs fechados; o Urbe tem 1 Issue aberta (#33) e 10 PRs abertos do Dependabot. Por DEC-0008-A os repositórios de origem continuam vivos como canal de distribuição, então nada é apagado. O repositório do Ecosystem já concentra as Issues de tarefas e de decisões (DEC-0003). Falta dizer onde ficam as Issues dos produtos (relatos de usuários, bugs, tarefas do produto) daqui para frente.",
+      "question": "Depois da migração, onde ficam as Issues de Lunet2D e Urbe?",
+      "alternatives": [
+        {
+          "option": "Nos repositórios de origem de cada produto; o Ecosystem fica só com as Issues do próprio Ecosystem e da migração",
+          "consequences": "Coerente com DEC-0008-A (canal por produto): quem chega pela release ou pelo repositório do produto abre Issue ali. A Issue #33 do Urbe e os PRs do Dependabot ficam onde estão, sem nenhuma ação. O custo é ter dois lugares para olhar, que o portal e o Hub podem agregar depois."
+        },
+        {
+          "option": "Tudo no repositório do Ecosystem, com rótulos por produto (product:urbe, product:lunet2d)",
+          "consequences": "Um só lugar para o proprietário e para os agentes (DEC-0003). A Issue #33 do Urbe poderia ser transferida ao Ecosystem pelo recurso de transferência do GitHub (mantém comentários; PRs não transferem), e as Issues dos repositórios de origem seriam desativadas apontando para o Ecosystem. Usuários que chegam pela release teriam que achar o novo lugar."
+        }
+      ],
+      "consequences": "Não bloqueia P1-3 nem a importação. Define onde o plano de pipelines (P1-6) configura o Dependabot e onde os agentes registram o estado vivo das tarefas de cada produto.",
+      "manifestCompatibility": "Ambas respeitam NN-001 (uma autoridade por conceito) desde que cada Issue viva em um só lugar. Pode ser transitória, como DEC-0008 e DEC-0009, até o Ecosystem declarar a distribuição.",
+      "recommendation": "A, pelo mesmo motivo de DEC-0008-A: nenhum movimento agora e o repositório do produto continua sendo o ponto de contato de quem usa o app.",
+      "related": [
+        "docs/migration/import-plan.md",
+        "docs/migration/inventory-urbe.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }

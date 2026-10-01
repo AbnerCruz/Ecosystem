@@ -128,7 +128,9 @@ Os testes `tests/workflows.mjs`, `tests/consistency.mjs` e `tools/check-workflow
 
 - **Lunet2D:** as 3 branches estão incorporadas à `main` (0 commits à frente): **não importar**.
 - **Urbe:** `claude/beta-v1` e `claude/mundo-real` contêm só merges dos PRs #16/#17; `claude/fix-explorer-celular` tem 1 commit cujo **patch é idêntico** ao `0cf0da8` da `main` (verificado por `git patch-id`). **PROPOSTA:** importá-las como `archive/urbe/<nome>` (custo desprezível e preserva tudo, NN-012); as 27 branches `claude/*` e `chore/*` já são ancestrais da `main` e as 10 `dependabot/*` são propostas automáticas: **não importar**.
-- PRs, Issues e comentários **não migram** (R-LUN-7, R-URB-7): o repositório de origem permanece vivo (DEC-0008-A), o que os preserva.
+- **Issues e PRs não fazem parte do histórico git**: `filter-repo` não os leva (R-LUN-7, R-URB-7). Estado hoje (FATO, 2026-10-01): **Lunet2D** sem Issues e com 25 PRs fechados; **Urbe** com 1 Issue aberta (#33, "Urbe 2.0 — concluir descoberta antes da SPEC canônica", 1 comentário) e **10 PRs abertos do Dependabot** (#37–#46), além do histórico de PRs até o #47.
+- Como o repositório de origem permanece vivo (DEC-0008-A), **nada disso é apagado nem alterado pela importação**; os links antigos continuam funcionando. Fechar ou mergear os PRs do Dependabot é ação do proprietário antes do PR A do Urbe (§3.2).
+- **Onde ficam as Issues novas de cada produto depois da migração** é a decisão pendente **DEC-0013** (não bloqueia a importação). A Issue #33 do Urbe e os PRs do Dependabot não são tocados por nenhum agente.
 
 ## 10. Revisão do proprietário e critérios de aceite
 
