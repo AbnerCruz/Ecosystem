@@ -20,12 +20,16 @@
     "ecosystem.json",
     "docs/migration/commit-map-lunet2d.txt",
     "ROADMAP.md",
-    "docs/governance/handoffs/HO-20261001-importacao-lunet2d.json"
+    "docs/governance/handoffs/HO-20261001-importacao-lunet2d.json",
+    "docs/migration/tags-lunet2d.txt",
+    ".github/workflows/restore-tags.yml",
+    "docs/migration/import-plan.md"
   ],
   "work_completed": [
     "Importação do Lunet2D (AbnerCruz/Lunet2D, main be30e62) para apps/lunet2d com git filter-repo --to-subdirectory-filter, tags renomeadas com prefixo lunet2d/ e merge --allow-unrelated-histories --no-ff (plano import-plan.md §4).",
     "ecosystem.json: lunet2d status active; versão por arquivo apps/lunet2d/VERSION (plano §6). commit-map versionado em docs/migration/commit-map-lunet2d.txt.",
-    "Nenhum arquivo dentro de apps/lunet2d foi alterado (NN-013); repositório de origem não foi tocado (somente clone de leitura)."
+    "Nenhum arquivo dentro de apps/lunet2d foi alterado (NN-013); repositório de origem não foi tocado (somente clone de leitura).",
+    "O proxy da sessão recusa push de tags (403): adicionados docs/migration/tags-lunet2d.txt e o workflow manual restore-tags.yml, que recria as 25 tags lunet2d/* com o GITHUB_TOKEN após o merge (plano §4 e §8)."
   ],
   "verification": [
     {
@@ -61,7 +65,8 @@
   ],
   "known_issues": [
     "Pipelines do Lunet2D (CI, release) ficam inertes em apps/lunet2d/.github até P1-6; a origem continua publicando as releases (DEC-0008-A).",
-    "O corte final (sincronização da origem, plano §7.6) é feito em P1-6; até lá o desenvolvimento no monorepo e na origem não deve divergir (origem sem commits novos verificada em 2026-10-01: be30e62)."
+    "O corte final (sincronização da origem, plano §7.6) é feito em P1-6; até lá o desenvolvimento no monorepo e na origem não deve divergir (origem sem commits novos verificada em 2026-10-01: be30e62).",
+    "As 25 tags só existem no Ecosystem depois de executar restore-tags.yml (componente lunet2d) na main; o handoff deve ser atualizado com a verificação."
   ],
   "blockers": [],
   "next_actions": [
