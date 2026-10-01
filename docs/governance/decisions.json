@@ -728,7 +728,7 @@
     },
     {
       "id": "DEC-0022",
-      "status": "pending",
+      "status": "decided",
       "component": "hub",
       "blocking": true,
       "title": "Tecnologia de UI e plataforma-alvo do Hub (Fase 3)",
@@ -758,7 +758,11 @@
         "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Android nativo em C# (net10.0-android), a mesma pilha do Lunet2D (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/37).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0022.md",
+      "consequencesApplied": false
     }
   ]
 }
