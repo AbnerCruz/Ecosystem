@@ -1,0 +1,106 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01Cqs24pT9sHieyegVt62nFc"
+  },
+  "branch": "ccr-31501aad-6bwq7y",
+  "base_commit": "a4ad875",
+  "commit": "7274f38",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/34",
+  "blockers": [
+    "DEC-0022 pendente no portal: tecnologia de UI e plataforma-alvo do Hub"
+  ],
+  "cost": null,
+  "component": "ecosystem",
+  "state": "blocked",
+  "message_id": "HO-20261001-fase-3-aberta",
+  "timestamp": "2026-10-01T18:00:00Z",
+  "task_id": "P3-2",
+  "files_changed": [
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261001-fase-3-aberta.json"
+  ],
+  "work_completed": [
+    "FATO: a Fase 2 está com gate aprovado; a Fase 3 (Hub read-only) tinha apenas P3-1 e o gate no ROADMAP; ARCHITECTURE §8 listava a tecnologia de UI e a plataforma-alvo do Hub como não decididas; apps/hub não existe e o componente hub é 'planned'.",
+    "ALTERAÇÃO: Fase 3 aberta no ROADMAP com P3-1..P3-8 (decisão de UI, esqueleto apps/hub, leitura de ecosystem.json, Past/Now/Next derivado, leitura do GitHub, empacotamento/release, portal lista releases, gate humano em aparelho) e gate 'não iniciado'. P3-1 preservada (ID estável) e passou a depender da release do Hub.",
+    "PROPOSTA: ADR-0013 (Proposto) fixa o contrato de dados (somente leitura; ecosystem.json + projeção do portal + API pública do GitHub; not-available quando faltar fonte; Past/Now/Next derivado, sem fabricar Next; network.access declarado) e recomenda Android nativo em C# (mesma pilha do Lunet2D), com leitura de dados independente de UI. DECISÃO NÃO TOMADA: a escolha da UI é do proprietário (NN-011) e foi levada ao portal como DEC-0022 (bloqueante, com 3 alternativas e consequências).",
+    "NÃO FEITO, de propósito: nenhum código do Hub, nenhum diretório novo, nenhuma alteração em ecosystem.json, Products, releases ou canais. Escrever o Hub antes de DEC-0022 criaria a pilha de UI por conta própria.",
+    "Ambiente: o .NET SDK 10 não estava instalado; instalado por apt para rodar os checks."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "21/21 checks (CHK-DECISIONS, CHK-ROADMAP, CHK-ADR, CHK-STATE-CONSISTENCY, CHK-PORTAL incluídos); ROADMAP × Issues não verificado por falta do instantâneo das Issues."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "todos os checks provaram detectar suas violações."
+    }
+  ],
+  "known_issues": [
+    "O gate da Fase 3 exige validação humana em aparelho (NN-017); nada do Hub existe ainda.",
+    "Os checks de ROADMAP × Issues não rodaram (sem instantâneo); P3-2 está [ ] até existir Issue com state:."
+  ],
+  "next_actions": [
+    "Proprietário: responder DEC-0022 no portal.",
+    "Agente, depois da decisão: aplicar consequências (ADR-0013 → Aceito) e executar P3-3 (esqueleto de apps/hub) em diante."
+  ],
+  "decisions_required": [
+    "DEC-0022"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0005-portal-web-github-pages.md",
+    "docs/governance/addenda/ADD-0001-portal-github-pages.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O Hub é definido como consumidor das fontes canônicas; nenhuma segunda fonte de estado."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Hub fora do caminho dos produtos; nenhuma alteração em Products."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A decisão pendente está em decisions.json e ADR-0013, não só no chat."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "A escolha de UI/plataforma ficou como DEC-0022 pendente; nenhum agente a decidiu."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "O gate é marcado como validação humana em aparelho."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhum componente, diretório ou abstração novos."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "hub-data-reading",
+      "status": "product-specific",
+      "rationale": "A leitura de ecosystem.json/GitHub nasce no Hub; o Registry dos checks só será promovido se o Hub virar consumidor real (ADR-0011)."
+    }
+  ]
+}
