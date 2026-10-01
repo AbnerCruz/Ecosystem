@@ -435,6 +435,38 @@
       ],
       "raisedBy": "claude-code",
       "raisedAt": "2026-10-01"
+    },
+    {
+      "id": "DEC-0014",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Aprovar o plano de importação automatizado e o mecanismo de publicação das origens",
+      "context": "FATO: o plano de importação (P1-3) foi redesenhado para que o proprietário só decida. Ensaio (2026-10-01, fora do repositório): a importação é determinística e incremental (dispensa congelar o desenvolvimento) e a origem pode ser espelho de apps/<id> via git archive (0 arquivos alterados logo após importar; idempotente; checks originais do Urbe passam). LIMITE: nenhum agente cria tokens, secrets nem altera configurações de repositório; por isso o desenho evita precisar deles. NÃO VERIFICADO: que push do GITHUB_TOKEN dispare a construção do Pages, o intervalo real do agendamento e o workflow_dispatch sobre os pipelines de origem (docs.github.com é inacessível a esta sessão); se algum falhar na primeira execução, o agente para e traz nova decisão ao portal. Isto muda o mecanismo de DEC-0008-A/DEC-0009-A (transitórias): o resultado para o usuário é o mesmo (releases e Urbe Web nas origens), mas quem constrói passa a ser a origem, não o monorepo.",
+      "question": "Aprovar o plano de importação e como as origens publicam enquanto DEC-0008/0009 valerem?",
+      "alternatives": [
+        {
+          "option": "Aprovar o plano automatizado: a origem puxa apps/<id> do monorepo e continua construindo e publicando com seus próprios pipelines e secrets",
+          "consequences": "Você não faz nenhuma ação manual além desta decisão: sem token, sem recriar secrets de assinatura, sem trocar a fonte do Pages, sem congelar. Autoriza P1-4 e P1-5 (importações) e P1-6, e a instalação de um workflow de sincronização e de ajustes mínimos de CI em cada origem (plano §8). Custo: release chega 10-15 min depois do merge (hoje ~3 min); pipelines de origem e cópias inertes em apps/<id>/.github convivem; dependência de comportamentos do GitHub ainda não verificados (§7.7)."
+        },
+        {
+          "option": "Aprovar a importação, mas com o pipeline de release no monorepo publicando nas origens (variante do plano original)",
+          "consequences": "Releases imediatas a partir do monorepo e uma só definição de pipeline. Exige que VOCÊ crie um token limitado a contents/releases das duas origens, recrie os secrets de assinatura do Android do Urbe e troque a fonte do Pages do Urbe, além de uma regra de continuidade do versionCode do Lunet2D. A chave de assinatura sairia do repositório do Urbe."
+        },
+        {
+          "option": "Não aprovar ainda; pedir mudanças no plano",
+          "consequences": "Nada é importado. Descreva a mudança em um comentário ou Issue; o agente revisa o plano e traz nova decisão."
+        }
+      ],
+      "consequences": "Bloqueia P1-4, P1-5 e P1-6. A aprovação não encerra a revisão humana do plano em si (verificação pendente do handoff).",
+      "manifestCompatibility": "A e B respeitam NN-012/013 (nada dentro de apps/<id>/ muda), NN-001 (monorepo é a autoridade do código; a origem é projeção com fonte declarada no commit), NN-003/NN-023 (sem Hub), NN-014 e NN-016 (permissões: A usa só o token da própria origem; B cria credencial cross-repo). Transitória como DEC-0008/0009.",
+      "recommendation": "A: é a única que cumpre o seu pedido de só decidir, mantém a chave de assinatura onde está e preserva a sequência do versionCode sem regra nova. Se a latência de ~10-15 min incomodar, B é a alternativa.",
+      "related": [
+        "docs/migration/import-plan.md",
+        "docs/migration/README.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }

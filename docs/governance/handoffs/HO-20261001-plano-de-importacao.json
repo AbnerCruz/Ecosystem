@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261001-plano-de-importacao",
   "category": "HANDOFF",
-  "timestamp": "2026-10-01T00:39:09Z",
+  "timestamp": "2026-10-01T03:00:00Z",
   "agent": {
     "id": "claude-code",
     "kind": "ai-agent",
@@ -19,12 +19,16 @@
     "docs/migration/import-plan.md",
     "docs/migration/README.md",
     "ROADMAP.md",
+    "docs/governance/decisions.json",
     "docs/governance/handoffs/HO-20261001-plano-de-importacao.json"
   ],
   "work_completed": [
     "Plano de importação por produto (docs/migration/import-plan.md): dois PRs por produto (A importação, B restauração de pipelines), procedimento reproduzível com git filter-repo, pré-condições do proprietário, ecosystem.json do PR A, pipelines e publicação cross-repo (DEC-0008-A/DEC-0009-A), ajustes técnicos inevitáveis, tratamento de branches, critérios de aceite.",
     "Ensaio completo em diretório temporário (sem tocar no Ecosystem nem nas origens): espelho + filter-repo + merge em clone do monorepo; contagens de commits e tags, hash da árvore, testes no novo caminho e checks do Ecosystem.",
-    "Achados do ensaio que mudaram o plano: o filtro leva .github/ do produto para apps/<id>/.github (workflows inertes; os testes do Urbe passam por validarem as cópias inertes, deixando os workflows ativos sem verificação automática); alvo das tags de release no repositório de origem não é o commit construído (consequência de DEC-0008-A)."
+    "Achados do ensaio que mudaram o plano: o filtro leva .github/ do produto para apps/<id>/.github (workflows inertes; os testes do Urbe passam por validarem as cópias inertes, deixando os workflows ativos sem verificação automática); alvo das tags de release no repositório de origem não é o commit construído (consequência de DEC-0008-A).",
+    "Redesenho por pedido do proprietário ('automatiza tudo e deixa só decisões'): congelamento substituído por importação determinística e incremental; origem passa a espelho de distribuição que puxa apps/<id> (sem token cross-repo, sem recriar secrets Android, sem trocar Pages); fechamento dos PRs do Dependabot e ajustes na origem feitos pelo agente no passo de corte.",
+    "Ensaios adicionais fora do repositório: T1 (filter-repo determinístico: mesmo SHA em duas execuções; origem +1 commit importa exatamente 1) e T2 (espelho git archive: 0 alterações após importar, mudança e remoção propagadas, idempotente, .github intacto, checks originais do Urbe passam, deriva detectada).",
+    "DEC-0014 registrada como pendente (recomendação A) com import-plan.md e README §9 como objetos."
   ],
   "verification": [
     {
@@ -70,33 +74,51 @@
       "evidence": "Local: todos os checks passaram."
     },
     {
-      "check": "Revisão do plano de importação pelo proprietário (janela de congelamento, proveniência das releases do Lunet2D, troca da fonte do Pages do Urbe, numeração 103+run_number, importação das 3 branches como archive/urbe/*)",
+      "check": "Ensaio T1: determinismo e importação incremental",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Duas execuções de filter-repo: mesma main 1fe8e82f0816d263952b86926609c976f373f3cc; origem +1 commit mantém os SHAs antigos e importa 1 commit."
+    },
+    {
+      "check": "Ensaio T2: espelho de distribuição da origem (Urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "0 alterações logo após importar; mudança+remoção propagadas; 2ª sincronização idempotente; .github intacto; tools/version.mjs check, tests/workflows.mjs e tests/consistency.mjs passam no espelho."
+    },
+    {
+      "check": "Revisão do plano de importação automatizado (§1 sem ações manuais; §7.7 pontos do GitHub não verificados; latência de release)",
       "kind": "human",
       "result": "pending",
       "object": "docs/migration/import-plan.md",
-      "evidence": "Pendente. Nada será importado antes desta revisão."
+      "evidence": "Pendente. Nada será importado antes de DEC-0014."
     }
   ],
   "known_issues": [
-    "O ensaio usou o estado das origens em 2026-10-01 (be30e62 e 662ca5b); a importação real deve registrar o HEAD no momento da janela de congelamento.",
-    "A suficiência do conjunto de arquivos do site do Urbe (build-www + sw.js) é INFERÊNCIA a validar em P1-6.",
-    "O ensaio não cobriu a publicação cross-repo (token) nem o Pages por gh-pages: dependem de ações do proprietário e entram no PR B."
+    "NÃO VERIFICADO (sem acesso a configurações nem à documentação do GitHub nesta sessão): push do GITHUB_TOKEN dispara a construção do Pages; intervalo real do agendamento; workflow_dispatch pelo GITHUB_TOKEN sobre os pipelines de origem. Plano §7.7: se falhar, o agente para e traz decisão ao portal.",
+    "O ensaio usou o estado das origens em 2026-10-01 (be30e62 e 662ca5b); a importação real registra o HEAD no corte.",
+    "A suficiência do conjunto de arquivos do site do Urbe é INFERÊNCIA; no desenho novo o site é o próprio espelho, o que a reduz.",
+    "Release da origem passa de ~3 min para ~10-15 min após o merge (explicitado em DEC-0014)."
   ],
   "blockers": [],
   "next_actions": [
-    "Proprietário: revisar o plano (aparece no portal) e executar as pré-condições do §3 quando for iniciar a importação.",
-    "Próximo agente: P1-4 — importação do Lunet2D (PR A), depois da revisão."
+    "Proprietário: decidir DEC-0014 (e DEC-0013) no portal; revisar o plano.",
+    "Próximo agente: P1-4 — importação do Lunet2D (PR A), só depois de DEC-0014 aprovada."
   ],
-  "decisions_required": [],
+  "decisions_required": [
+    "DEC-0013",
+    "DEC-0014"
+  ],
   "normative_sources": [
+    "AGENTS.md",
     "MANIFEST.md",
-    "docs/migration/README.md",
-    "docs/migration/inventory-lunet2d.md",
-    "docs/migration/inventory-urbe.md",
-    "docs/governance/decisions.json",
+    "ROADMAP.md",
     "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
     "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md",
-    "ROADMAP.md"
+    "docs/governance/communication.md",
+    "docs/governance/decisions.json",
+    "docs/migration/README.md",
+    "docs/migration/inventory-lunet2d.md",
+    "docs/migration/inventory-urbe.md"
   ],
   "invariants": [
     {
@@ -109,7 +131,7 @@
     },
     {
       "id": "NN-014",
-      "evidence": "Pipelines por produto com filtro de caminho; releases por produto nos repositórios de origem."
+      "evidence": "Cada origem publica por conta própria; o espelho só atua em mudanças de apps/<id>/** do seu produto."
     },
     {
       "id": "NN-017",
@@ -126,6 +148,14 @@
     {
       "id": "NN-023",
       "evidence": "Os produtos continuam publicados sem o Hub."
+    },
+    {
+      "id": "NN-001",
+      "evidence": "Monorepo é a autoridade do código; a origem é projeção com Ecosystem-Commit declarado no commit; deriva (commit humano na origem) é detectada e alertada."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "O desenho usa apenas o GITHUB_TOKEN de cada origem; nenhuma credencial cross-repo é criada."
     }
   ],
   "cost": null
