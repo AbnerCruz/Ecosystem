@@ -1,0 +1,72 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "a4ad875",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "ecosystem",
+  "state": "review",
+  "message_id": "HO-20261001-integracao-multiagente",
+  "timestamp": "2026-10-01T23:30:00Z",
+  "task_id": "P1-17",
+  "files_changed": [
+    "docs/governance/addenda/ADD-0010-concorrencia-multiagente.md",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/adr/README.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md",
+    ".github/pull_request_template.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-integracao-multiagente.json"
+  ],
+  "work_completed": [
+    "(preenchido na integração)"
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test (branch do fluxo)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "21/21; self-test com IntegrationTests (5 casos) e 2 casos novos de CHK-HANDOFFS."
+    }
+  ],
+  "known_issues": [],
+  "next_actions": [
+    "Integrar os PRs na ordem do fluxo (ADR-0014)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/architecture/refactoring.md",
+    "docs/architecture/local-first.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/AGENTSCHAT.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoffs passam a registrar a base e não podem afirmar resultado falso."
+    }
+  ]
+}
