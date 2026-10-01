@@ -26,7 +26,7 @@ main (BASE) ──► branch do agente ──► commits ──► handoff (stat
    - `STALE` + sobreposição (4): os dois lados mudaram os mesmos arquivos — reconciliação semântica obrigatória (§3).
 6. **Checks no estado combinado:** `Check.cs` e `--self-test`; para cada Product tocado, o CI do Product no PR (e localmente, quando possível: `npm ci && npm run check` em `apps/urbe`). O que vale é **A + B juntos**, não A e B separados. Registrar em `verification[].tested_commit` o estado testado.
 7. **Integrar** respeitando as regras de merge vigentes: no Urbe, só com pedido explícito do proprietário (`apps/urbe/AGENTS.md`); validação humana pendente continua pendente (NN-017).
-8. **Depois do merge:** handoff `done` (com o PR), ROADMAP/Issue atualizados; se mudou `apps/<id>`, disparar `sync-from-ecosystem.yml` na origem (DEC-0017-A).
+8. **Estado final:** o handoff pode entrar na `main` já como `done` **no próprio PR que integra o trabalho** (na `main`, `done` ⇒ integrado; enquanto o PR não é mergeado, o `done` da branch é só proposta). Se ainda faltar validação humana ou merge autorizado, fica em `review`. ROADMAP/Issue atualizados; se mudou `apps/<id>`, disparar `sync-from-ecosystem.yml` na origem (DEC-0017-A).
 
 ## 2. Quatro identidades (ADR-0014)
 

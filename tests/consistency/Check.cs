@@ -2300,6 +2300,10 @@ static class SelfTest
             Report(Run("agent-b").Code == 0 && File.ReadAllText(Path.Combine(tmp, "apps/urbe/a.js")) == "b\n" && File.Exists(Path.Combine(tmp, "docs/adr/0013.md")),
                 "B reconciliada com a main: FRESH e os dois trabalhos preservados");
             Report(Run("nao-existe").Code == 2, "referência inexistente é erro, nunca FRESH");
+            // Regressão do incidente: a cópia usada pelos self-tests nunca leva o `.git` (arquivo de worktree ou diretório).
+            var wt = Path.Combine(tmp, "wt"); Directory.CreateDirectory(wt); File.WriteAllText(Path.Combine(wt, ".git"), "gitdir: /repositorio/real\n"); File.WriteAllText(Path.Combine(wt, "x.txt"), "x");
+            var copy = Path.Combine(tmp, "copia"); Copy(wt, copy);
+            Report(!File.Exists(Path.Combine(copy, ".git")) && File.Exists(Path.Combine(copy, "x.txt")), "cópia do self-test não leva o .git de um worktree (não escreve no repositório real)");
         }
         catch (Exception e) { Report(false, "execução: " + e.Message); }
         finally { try { if (Directory.Exists(tmp)) { foreach (var f in Directory.EnumerateFiles(tmp, "*", SearchOption.AllDirectories)) File.SetAttributes(f, FileAttributes.Normal); Directory.Delete(tmp, true); } } catch { } }
@@ -2336,6 +2340,9 @@ static class SelfTest
         {
             var rel = Path.GetRelativePath(from, f);
             if (rel.Replace('\\', '/') == "site/data/issues-snapshot.json") continue; // o instantâneo é de ambiente; as fixtures criam o seu
+            // Num git worktree, `.git` é um ARQUIVO que aponta para o repositório real: copiá-lo faria o self-test (git init/commit/tag)
+            // escrever no repositório real (incidente de 2026-10-01, ADR-0014). A cópia nunca leva metadados do git.
+            if (rel == ".git" || rel.StartsWith(".git" + Path.DirectorySeparatorChar)) continue;
             var dest = Path.Combine(to, rel);
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             File.Copy(f, dest);
