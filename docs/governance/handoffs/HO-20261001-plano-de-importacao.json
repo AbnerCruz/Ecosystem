@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261001-plano-de-importacao",
   "category": "HANDOFF",
-  "timestamp": "2026-10-01T03:00:00Z",
+  "timestamp": "2026-10-01T01:15:00Z",
   "agent": {
     "id": "claude-code",
     "kind": "ai-agent",
@@ -11,7 +11,7 @@
   },
   "task_id": "P1-3",
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "branch": "claude/new-session-vfwhkv",
   "commit": null,
   "pr": null,
@@ -20,7 +20,8 @@
     "docs/migration/README.md",
     "ROADMAP.md",
     "docs/governance/decisions.json",
-    "docs/governance/handoffs/HO-20261001-plano-de-importacao.json"
+    "docs/governance/handoffs/HO-20261001-plano-de-importacao.json",
+    "docs/governance/responses/DEC-0014.md"
   ],
   "work_completed": [
     "Plano de importação por produto (docs/migration/import-plan.md): dois PRs por produto (A importação, B restauração de pipelines), procedimento reproduzível com git filter-repo, pré-condições do proprietário, ecosystem.json do PR A, pipelines e publicação cross-repo (DEC-0008-A/DEC-0009-A), ajustes técnicos inevitáveis, tratamento de branches, critérios de aceite.",
@@ -88,9 +89,8 @@
     {
       "check": "Revisão do plano de importação automatizado (§1 sem ações manuais; §7.7 pontos do GitHub não verificados; latência de release)",
       "kind": "human",
-      "result": "pending",
-      "object": "docs/migration/import-plan.md",
-      "evidence": "Pendente. Nada será importado antes de DEC-0014."
+      "result": "passed",
+      "evidence": "Proprietário aprovou o plano automatizado (DEC-0014, alternativa A, Issue #8; registro docs/governance/responses/DEC-0014.md)."
     }
   ],
   "known_issues": [
@@ -101,12 +101,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Proprietário: decidir DEC-0014 no portal; revisar o plano (DEC-0013 já decidida: A).",
-    "Próximo agente: P1-4 — importação do Lunet2D (PR A), só depois de DEC-0014 aprovada."
+    "Próximo agente: P1-4 — importação do Lunet2D (PR A), autorizada por DEC-0014-A."
   ],
-  "decisions_required": [
-    "DEC-0014"
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "AGENTS.md",
     "MANIFEST.md",
