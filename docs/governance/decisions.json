@@ -476,7 +476,7 @@
     },
     {
       "id": "DEC-0015",
-      "status": "pending",
+      "status": "decided",
       "component": "portal",
       "blocking": false,
       "title": "Ratificar a aprovação de validações humanas pelo portal (ADR-0008)",
@@ -504,7 +504,10 @@
         "docs/architecture/portal.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Aceitar o ADR-0008: Issue pré-preenchida e confirmação no GitHub (dois toques; nenhum token no navegador) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/21).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0015.md"
     },
     {
       "id": "DEC-0016",
