@@ -10,7 +10,7 @@
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "cf7ad46",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/39",
   "blockers": [],
   "cost": null,
   "component": "ecosystem",
