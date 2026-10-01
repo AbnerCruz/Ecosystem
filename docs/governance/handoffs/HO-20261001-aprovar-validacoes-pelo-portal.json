@@ -49,9 +49,9 @@
     {
       "check": "Validação ponta a ponta pelo proprietário: tocar Aprovar nesta validação no portal, enviar a Issue e ver o resultado registrado",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "https://abnercruz.github.io/Ecosystem/",
-      "evidence": "Pendente. Depois que o portal for republicado com os botões."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-01 (Issue https://github.com/AbnerCruz/Ecosystem/issues/23); registro em docs/governance/responses/VAL-HO-20261001-aprovar-validacoes-pelo-portal-84b7bf713ea7.md."
     }
   ],
   "known_issues": [
