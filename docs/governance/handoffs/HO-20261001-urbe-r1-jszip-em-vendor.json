@@ -8,8 +8,9 @@
     "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
   },
   "branch": "ccr-5adec8cc-oy464b",
-  "commit": "a4ad875",
-  "pr": null,
+  "base_commit": "a4ad875",
+  "commit": "d7443fd",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/35",
   "blockers": [],
   "cost": null,
   "component": "urbe",
@@ -48,14 +49,21 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "56/56 arquivos de teste passaram; licença, catálogo de dados, fixtures, tutorial e rastreabilidade verdes."
+    },
+    {
+      "check": "E2E de import/export ZIP em Chromium real (tests/e2e/zip.e2e.mjs, apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "d7443fd",
+      "evidence": "Executado pelo agente integrador (claude-code, sessão de integração multiagente, ADR-0014) com o Chromium do ambiente: 'zip.e2e: ok', 1/1 cenários E2E (export do vault em ZIP com manifesto e hashes íntegros, sem segredos; import em app novo). O ROADMAP do Urbe mantém RM-F2-03 em [?] até a integração na main (SPEC §10.1: 'integrado' e 'CI')."
     }
   ],
   "known_issues": [
     "NÃO EXECUTADO: dotnet run tests/consistency/Check.cs (dotnet indisponível neste ambiente; download bloqueado pelo proxy). Rodará no CI da branch; o resultado do CI é a evidência, não este handoff.",
-    "Import/export de ZIP não foi exercitado em navegador real (tests/e2e/zip.e2e.mjs exige Playwright, ausente aqui); por isso RM-F2-03 está [?] e o handoff está em 'review', não 'done' (NN-017).",
     "vendor/jszip/LICENSE foi escrito a partir do cabeçalho do arquivo (MIT, opção já adotada em THIRD-PARTY-NOTICES); conferir com a licença upstream.",
     "Os documentos de discovery do Urbe (LEGACY-MAP, DATA-CATALOG, PERFORMANCE, AUDIT-1X) citam o caminho antigo src/legacy/bootstrap.js; são evidência histórica da 1.x e foram mantidos.",
-    "L-R2 (MainActivity do Lunet2D) não foi feito: exige build Android/.NET e validação em aparelho, indisponíveis aqui."
+    "L-R2 (MainActivity do Lunet2D) não foi feito: exige build Android/.NET e validação em aparelho, indisponíveis aqui.",
+    "RM-F2-03 continua [?] até o merge do PR #35 na main, que exige pedido explícito do proprietário (apps/urbe/AGENTS.md); o E2E de ZIP já passou (ver verificação)."
   ],
   "next_actions": [
     "Proprietário/agente com Playwright: rodar tests/e2e/zip.e2e.mjs e conferir import/export ZIP; então RM-F2-03 -> [x].",

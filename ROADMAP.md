@@ -14,7 +14,7 @@
 
 ## Próxima tarefa
 
-**Fase 2 concluída** (gate aprovado em 2026-10-01). Próxima: **Fase 3 — Hub read-only** (tarefas P3-x a abrir no ROADMAP antes de implementar).
+**Fase 2 concluída** (gate aprovado em 2026-10-01). **Fase 3 — Hub read-only** aberta: próxima tarefa é a decisão **P3-2** (DEC-0022, UI e plataforma-alvo do Hub, pendente no portal); sem ela, `apps/hub` não é criado.
 
 Em paralelo, como trabalho **interno dos próprios Products** e **fora do escopo da Fase 2** (infraestrutura compartilhada): refatorações em `apps/urbe/` e `apps/lunet2d/` — que **fazem parte deste repositório** e são o único lugar de desenvolvimento deles; `AbnerCruz/Urbe` e `AbnerCruz/Lunet2D` não são lugares de desenvolvimento (são espelhos de distribuição transitórios, DEC-0008/DEC-0009) — governadas pelo ADR-0009 e [`refactoring.md`](docs/architecture/refactoring.md) — sugestão: **U-R1** no Urbe (continuar a decomposição de `app.js` / Product Shell) e **L-R2** no Lunet2D (decompor `MainActivity` em Shell + painéis), conforme [`candidates.md`](docs/architecture/candidates.md), cada uma delegada em tarefa própria e conduzida pelos processos locais de cada Product. Nenhum subsistema é extraído sem evidência de segundo consumidor ([`local-first.md`](docs/architecture/local-first.md)).
 
@@ -92,6 +92,7 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 - [x] P1-13 — Gate da Fase 1 **aprovado pelo proprietário** em 2026-10-01 (Issue #28, `VAL-HO-20261001-gate-da-fase-1-247456bb21aa`); evidências no handoff `HO-20261001-gate-da-fase-1`.
 - [x] P1-14 — Reconciliação de deriva de estado (auditoria externa pós-gate, sem tocar nos produtos): README sem estado, ARCHITECTURE atual × planejado × não decidido, Issue #6, matriz de enforcement, gates no portal; `CHK-STATE-CONSISTENCY` e `CHK-MIGRATION-HISTORY`; ADR-0010 `Proposto` e **DEC-0019** levada ao portal (*histórico: no momento desta tarefa a decisão foi criada; foi resolvida depois, em P1-15 — ADR-0010 `Aceito`, DEC-0019-A*). Evidência: handoff `HO-20261001-reconciliacao-de-deriva-de-estado`; mapa em [`state-drift.md`](docs/governance/state-drift.md).
 - [x] P1-16 — Veredito do fluxo de decisões: um workflow `decision` só termina verde quando a decisão foi **registrada ou já estava registrada com a mesma escolha** (aplicador com resultado estruturado `outcome` + `decision-verdict.sh`; idempotência; sem gravação parcial); a recusa deixa o workflow vermelho e a Issue com a causa. Corrige também a redação "fora do Ecosystem" das refatorações dos Products. Evidência: handoff `HO-20261001-p2-12-distribuicao-atual-e-dec-0021`; self-tests do aplicador e do veredito.
+- [x] P1-17 — **Fluxo multiagente mínimo** ([ADR-0014](docs/adr/0014-fluxo-multiagente-minimo.md), [ADD-0010](docs/governance/addenda/ADD-0010-concorrencia-multiagente.md), [`multi-agent.md`](docs/governance/multi-agent.md)): `base_commit` e identidades BASE/RESULT/INTEGRATION/VALIDATION nos handoffs, `Check.cs -- --integration` (base obsoleta e sobreposição), PR como ponto de integração; integração auditada do teste com dois agentes simultâneos (Fase 3 e Urbe RM-F2-03). Evidência: handoff `HO-20261001-integracao-multiagente`.
 - [x] P1-15 — Reconciliação de DEC-0019 (clique do proprietário recusado pelo registrador por defeito do `CHK-STATE-CONSISTENCY`; corrigido e registrado pelo mecanismo canônico), remoção de `ecosystem.phase` e **princípio local-first / promoção por evidência** ([ADR-0011](docs/adr/0011-local-first-e-promocao-por-evidencia.md), [ADD-0009](docs/governance/addenda/ADD-0009-local-first-e-promocao-por-evidencia.md)). Evidência: handoff `HO-20261001-dec-0019-e-local-first`.
 
 Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → preservar histórico → restaurar build → restaurar testes → restaurar releases → validar produto → provar ausência de regressão conhecida → classificar candidatos → extrair/modernizar gradualmente. **Proibido** durante a importação: separar o Editor, extrair o Sprite Studio, reescrever o Agent Workspace, criar Store, criar Product Shell novo, transformar código em capabilities, reorganizar tudo em packages, reescrever o Urbe em C#, mudar a arquitetura interna porque a arquitetura futura é conhecida.
@@ -143,11 +144,29 @@ Cada tarefa traz: *saída verificável* · *depende de* · *evidência* · *gate
 
 ## Fase 3 — Hub read-only
 
-Objetivo: Hub inicial em C#; lê `ecosystem.json`; mostra Lunet2D e Urbe; integra leitura do GitHub; Past / Now / Next; CI, releases, branches, PRs e tarefas.
+Objetivo: Hub inicial em C#; lê `ecosystem.json`; mostra Lunet2D e Urbe; integra leitura do GitHub; Past / Now / Next; CI, releases, branches, PRs e tarefas. **Somente leitura:** o Hub consome as fontes canônicas e nunca vira autoridade de estado (NN-001, NN-021) nem dependência dos produtos (NN-003, NN-023). Contratos e proposta: [ADR-0013](docs/adr/0013-hub-read-only-fase-3.md) (`Proposto`; tecnologia de UI e plataforma = **DEC-0022**, pendente no portal, bloqueante para o código). Evidência de abertura: handoff `HO-20261001-fase-3-aberta`.
 
+Cada tarefa traz: *saída verificável* · *depende de* · *evidência*. O gate é humano e em aparelho (NN-017).
+
+- [ ] P3-2 — **Decisão de UI e plataforma-alvo do Hub** (ADR-0013 B, DEC-0022): o agente propõe, o proprietário decide no portal.
+  - Saída: ADR-0013 `Aceito` e DEC-0022 registrada. Depende de: —. Evidência: handoff `HO-20261001-fase-3-aberta` (proposta e decisão pendente). **Não** é autoaprovável.
+- [ ] P3-3 — **Esqueleto do Hub** em `apps/hub` (um projeto C#, na tecnologia decidida), com leitura de dados em biblioteca independente de UI; `hub` sai de `planned` em `ecosystem.json`; `CHK-BOUNDARIES` e `CHK-ARCH-REFS` fiscalizam o Hub real (nenhum Product depende dele). Sem `platform/`, sem Service, sem componente compartilhado (ADR-0011).
+  - Saída: `apps/hub` compilando e testado; manifest do `hub` com `version.authority` decidida e `permissions.requests` (`network.access`, `ui.display`). Depende de: P3-2. Evidência: build + testes do Hub; checks de consistência verdes.
+- [ ] P3-4 — **Ler `ecosystem.json` e mostrar Lunet2D e Urbe** (nome, tipo, versão, status, links), com `not-available` quando faltar fonte; funciona offline com o último estado marcado como tal.
+  - Saída: tela/projeção dos dois produtos. Depende de: P3-3. Evidência: testes de leitura sobre o `ecosystem.json` real e sobre fixtures com campos ausentes.
+- [ ] P3-5 — **Past / Now / Next derivado** (MANIFEST §18): Past = fases e gates concluídos, releases, decisões decididas, validações; Now = Issues com `state:`, branches, PRs, CI, decisões e validações pendentes; Next = itens `[ ]` do ROADMAP, gates e decisões necessárias. O Hub **não fabrica o Next**.
+  - Saída: derivação testada contra o ROADMAP, `decisions.json` e handoffs reais. Depende de: P3-4. Evidência: testes que provam que o Next só contém o que o ROADMAP/decisões declaram.
+- [ ] P3-6 — **Leitura do GitHub** (CI, releases, branches, PRs, Issues/tarefas): somente leitura pela API pública, sem token embutido, falha de rede nunca derruba o Hub; permissão `network.access` declarada (NN-016). GitHub como registro, não IPC (NN-015).
+  - Saída: cliente de leitura com degradação para `not-available`. Depende de: P3-3. Evidência: testes com respostas gravadas e com falha de rede.
+- [ ] P3-7 — **Empacotar o Hub e publicar a release** (P3-1 lista essa release no portal); o Hub nunca `bundled` em perfil com componente público (NN-023); os produtos continuam funcionando sem ele (NN-003).
+  - Saída: artefato instalável do Hub. Depende de: P3-4..P3-6, P3-1. Evidência: build/release do Hub e teste de produtos standalone.
 - [ ] P3-1 — Portal lista as releases do Hub para instalação e recuperação (o portal continua existindo como mecanismo independente).
+  - Depende de: P3-7 (a release existir). Evidência: seção do portal projetada de dados derivados, sem inventar release.
+- [ ] P3-8 — **Gate da Fase 3**: o proprietário abre o Hub no celular e compreende o estado dos dois produtos sem abrir o GitHub; evidência automática pronta, validação humana em aparelho pendente no portal.
+  - Saída: handoff do gate com `object` da validação. Depende de: P3-2..P3-7. **Não** é autoaprovável (NN-017).
 
 **Gate:** no celular, o proprietário abre o Hub e compreende o estado atual dos dois produtos sem abrir GitHub manualmente. *(requer validação humana em aparelho)*
+*Estado do gate:* **não iniciado**
 
 ## Fase 4 — Launcher e Updates
 

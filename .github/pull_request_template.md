@@ -15,6 +15,13 @@
 
 <!-- NN-010: MANIFEST.md, ADRs, SPECs, contracts lidos diretamente. -->
 
+## Base e integração (ADR-0014)
+
+- Base (`base_commit` do handoff):
+- [ ] `dotnet run tests/consistency/Check.cs -- --integration <esta branch>` = FRESH (se STALE: merge da `main`, reconciliação semântica, checks de novo)
+- [ ] Conflitos/sobreposição: nenhum / descritos no handoff (causa, resolução, evidência)
+- [ ] Regras de merge do Product respeitadas (ex.: Urbe só com pedido explícito do proprietário)
+
 ## Verificação
 
 - [ ] `dotnet run tests/consistency/Check.cs`
