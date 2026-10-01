@@ -1,0 +1,132 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-plano-de-importacao",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T00:39:09Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-3",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/migration/import-plan.md",
+    "docs/migration/README.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-plano-de-importacao.json"
+  ],
+  "work_completed": [
+    "Plano de importação por produto (docs/migration/import-plan.md): dois PRs por produto (A importação, B restauração de pipelines), procedimento reproduzível com git filter-repo, pré-condições do proprietário, ecosystem.json do PR A, pipelines e publicação cross-repo (DEC-0008-A/DEC-0009-A), ajustes técnicos inevitáveis, tratamento de branches, critérios de aceite.",
+    "Ensaio completo em diretório temporário (sem tocar no Ecosystem nem nas origens): espelho + filter-repo + merge em clone do monorepo; contagens de commits e tags, hash da árvore, testes no novo caminho e checks do Ecosystem.",
+    "Achados do ensaio que mudaram o plano: o filtro leva .github/ do produto para apps/<id>/.github (workflows inertes; os testes do Urbe passam por validarem as cópias inertes, deixando os workflows ativos sem verificação automática); alvo das tags de release no repositório de origem não é o commit construído (consequência de DEC-0008-A)."
+  ],
+  "verification": [
+    {
+      "check": "Ensaio: commits preservados",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet2D 84 -> 84; Urbe 382 -> 382; monorepo de teste 20 -> 488 (20+84+382+2 merges)."
+    },
+    {
+      "check": "Ensaio: tags preservadas com prefixo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet2D 25 tags lunet2d/v0.0.1-dev.N; Urbe 6 tags urbe/v1.7.0-beta..v1.8.2-beta."
+    },
+    {
+      "check": "Ensaio: conteúdo idêntico à origem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "git rev-parse HEAD:apps/<id> igual à árvore da main de origem: lunet2d db9f6cd51ec796fe4d8b57692fda708c51a4d90c; urbe 8f4f53dbbfd1c46dfb8a3c44ab29bd6d7ec43c89."
+    },
+    {
+      "check": "Ensaio: testes dos produtos no novo caminho",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "apps/lunet2d: dotnet test 286/286; apps/urbe: npm run check 56/56, 'todas as checagens passaram'."
+    },
+    {
+      "check": "Ensaio: checks do Ecosystem com os produtos importados",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Antes de atualizar ecosystem.json falha só CHK-SINGLE-AUTHORITY (esperado); depois, 16/16 checks passam (CHK-BOUNDARIES e CHK-SECRETS sem falso positivo)."
+    },
+    {
+      "check": "Branches do Urbe não incorporadas: conteúdo já está na main",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "claude/beta-v1 e claude/mundo-real só têm merges de PR; claude/fix-explorer-celular tem o mesmo patch-id do commit 0cf0da8 da main."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: todos os checks passaram."
+    },
+    {
+      "check": "Revisão do plano de importação pelo proprietário (janela de congelamento, proveniência das releases do Lunet2D, troca da fonte do Pages do Urbe, numeração 103+run_number, importação das 3 branches como archive/urbe/*)",
+      "kind": "human",
+      "result": "pending",
+      "object": "docs/migration/import-plan.md",
+      "evidence": "Pendente. Nada será importado antes desta revisão."
+    }
+  ],
+  "known_issues": [
+    "O ensaio usou o estado das origens em 2026-10-01 (be30e62 e 662ca5b); a importação real deve registrar o HEAD no momento da janela de congelamento.",
+    "A suficiência do conjunto de arquivos do site do Urbe (build-www + sw.js) é INFERÊNCIA a validar em P1-6.",
+    "O ensaio não cobriu a publicação cross-repo (token) nem o Pages por gh-pages: dependem de ações do proprietário e entram no PR B."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: revisar o plano (aparece no portal) e executar as pré-condições do §3 quando for iniciar a importação.",
+    "Próximo agente: P1-4 — importação do Lunet2D (PR A), depois da revisão."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/migration/README.md",
+    "docs/migration/inventory-lunet2d.md",
+    "docs/migration/inventory-urbe.md",
+    "docs/governance/decisions.json",
+    "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
+    "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md",
+    "ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-012",
+      "evidence": "Ensaio provou preservação de commits, tags e árvore; origens intactas; nada importado."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Plano separa importação (PR A) de pipelines (PR B) e proíbe qualquer alteração dentro de apps/<id>/."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Pipelines por produto com filtro de caminho; releases por produto nos repositórios de origem."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Revisão humana do plano e validação em aparelho do PR B ficam pendentes; P1-3 marcado [~]."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado 'review' com evidências automáticas e uma verificação humana pendente."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "A revisão pendente aparece no portal com o plano como objeto."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Os produtos continuam publicados sem o Hub."
+    }
+  ],
+  "cost": null
+}

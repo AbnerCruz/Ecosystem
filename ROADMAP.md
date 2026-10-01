@@ -12,11 +12,9 @@
 
 ## Próxima tarefa
 
-**P1-3 — Plano de importação de Lunet2D e Urbe** (um plano por produto, em `docs/migration/`), a partir dos inventários P1-1 e P1-2, já concluídos: [`inventory-lunet2d.md`](docs/migration/inventory-lunet2d.md) e [`inventory-urbe.md`](docs/migration/inventory-urbe.md).
+**Revisão do plano de importação pelo proprietário** ([`import-plan.md`](docs/migration/import-plan.md), P1-3) e, em seguida, **P1-4 — importação do Lunet2D** (PR A).
 
-*Por quê:* a importação (P1-4/P1-5) só pode começar depois de um plano revisado (NN-012, MANIFEST §44). Os inventários mostraram que o plano precisa tratar riscos concretos (R-LUN-1…11, R-URB-1…12): `versionCode` do Android do Lunet2D, atualizadores do Urbe que leem `releases/latest` de `AbnerCruz/Urbe`, Pages por branch do Urbe Web, workflows e checks que dependem da raiz do repositório, secrets de assinatura.
-
-*Sem bloqueio:* DEC-0008 e DEC-0009 foram decididas em 2026-10-01 (alternativa A, **transitórias**: valem para a migração; depois o próprio Ecosystem declara a distribuição). O plano deve detalhar, em cada produto, o que `docs/migration/README.md` §9 deixa em aberto: nomes de secrets e branches, regra do `versionCode`, filtros de caminho dos workflows, adaptação mínima dos checks do Urbe e o mecanismo de publicação do site no Pages do repositório de origem.
+*Por quê:* o plano está escrito e o **ensaio** em diretório temporário provou a técnica (DEC-0002-A): commits e tags preservados, hash da árvore `apps/<id>` idêntico ao da origem, 286 testes do Lunet2D e 56/56 do Urbe passando no novo caminho, 16/16 checks do Ecosystem. Nada foi importado. A importação exige antes a janela de congelamento e as ações do proprietário listadas em §3 do plano.
 
 ---
 
@@ -76,7 +74,7 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 
 - [x] P1-1 — Inventário do Lunet2D ([`inventory-lunet2d.md`](docs/migration/inventory-lunet2d.md)), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16). Evidência: handoff `HO-20260930-inventario-lunet2d`. Linha de base: 286 testes aprovados; CI da `main` verde.
 - [x] P1-2 — Inventário do Urbe ([`inventory-urbe.md`](docs/migration/inventory-urbe.md)), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16). Evidência: handoff `HO-20260930-inventario-urbe`. Linha de base: `npm run check` com 56/56 arquivos de teste; CI da `main` verde.
-- [ ] P1-3 — Plano de importação por produto, a partir dos inventários P1-1/P1-2 (DEC-0002: técnica A; DEC-0004: origens confirmadas). DEC-0008/DEC-0009 decididas (A, transitórias; `docs/migration/README.md` §9). Deve tratar cada risco dos inventários e listar, um a um, os ajustes técnicos inevitáveis (NN-013).
+- [~] P1-3 — Plano de importação por produto ([`import-plan.md`](docs/migration/import-plan.md); ensaio executado; **aguardando revisão do proprietário** — NN-017), a partir dos inventários P1-1/P1-2 (DEC-0002: técnica A; DEC-0004: origens confirmadas). DEC-0008/DEC-0009 decididas (A, transitórias; `docs/migration/README.md` §9). Deve tratar cada risco dos inventários e listar, um a um, os ajustes técnicos inevitáveis (NN-013).
 - [ ] P1-4 — Importação do Lunet2D preservando histórico (PR de escopo restrito, NN-013).
 - [ ] P1-5 — Importação do Urbe preservando histórico (PR de escopo restrito, NN-013).
 - [ ] P1-6 — Restaurar build/testes/workflows/releases de cada produto; pipelines seletivos por path (NN-014). Atenção herdada dos inventários: `versionCode` do Android do Lunet2D (R-LUN-1), checks do Urbe que leem `.github/workflows` na raiz do produto (R-URB-3), secrets de assinatura do Urbe a recriar pelo proprietário (R-URB-5).

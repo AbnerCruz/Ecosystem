@@ -16,7 +16,7 @@ Fonte de verdade: campo `source` em [`ecosystem.json`](../../ecosystem.json). En
 
 Para cada produto, criar `docs/migration/inventory-<id>.md` a partir de [`inventory-template.md`](inventory-template.md), cobrindo: repositórios de origem, branches relevantes, tags, releases e artefatos, workflows, GitHub Pages, secrets/configuração necessária (**nomes apenas, nunca valores** — MANIFEST §30.2), dependências externas, arquivos normativos (SPEC, ROADMAP, AGENTS, ADRs), status atual e comandos de build/teste com o resultado atual (linha de base "antes").
 
-**Inventários concluídos (2026-09-30):** [`inventory-lunet2d.md`](inventory-lunet2d.md) (P1-1) e [`inventory-urbe.md`](inventory-urbe.md) (P1-2). Os riscos deles alimentam o plano de importação (P1-3).
+**Inventários concluídos (2026-09-30):** [`inventory-lunet2d.md`](inventory-lunet2d.md) (P1-1) e [`inventory-urbe.md`](inventory-urbe.md) (P1-2). Os riscos deles alimentaram o [plano de importação](import-plan.md) (P1-3).
 
 **Mapa funcional e arquitetural (ADD-0002 §16).** O inventário também registra, para cada subsistema importante, nome, responsabilidade atual, arquivos/diretórios, dependências, dados que possui, UI, se funciona standalone hoje, se é específico do Product e dependências externas e riscos. Acrescenta uma **classificação futura, explicitamente PROPOSTA** (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter ou ainda indeterminado). A classificação é insumo de inventário: **não autoriza extrair nada** (§7).
 
