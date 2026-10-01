@@ -1,0 +1,67 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-acesso-ao-portal-decidido",
+  "category": "RESULT",
+  "timestamp": "2026-10-01T00:31:32Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-36",
+  "component": "portal",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/architecture/access.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-acesso-ao-portal-decidido.json"
+  ],
+  "work_completed": [
+    "DEC-0012 decidida pelo proprietário: manter o portal e o repositório públicos. Nada a implementar; decidir continua restrito ao dono do repositório. access.md atualizado com o resultado."
+  ],
+  "verification": [
+    {
+      "check": "Decisão do proprietário registrada em fonte persistida",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "Issue #5 (DEC-0012, alternativa A), commit e363a1e do github-actions[bot]; registro em docs/governance/responses/DEC-0012.md."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: todos os checks passaram."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Próximo agente: P1-3 — plano de importação."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Decisão persistida pela automação a partir do clique do proprietário."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Nenhuma credencial nova criada; escrita automatizada continua restrita ao dono."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado 'done' com evidência."
+    }
+  ],
+  "cost": null
+}

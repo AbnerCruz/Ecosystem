@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — a capacidade ("clicar na alternativa no site e ter a decisão registrada no repositório") foi decidida pelo proprietário (DEC-0010, [ADD-0004](../governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md)); o **mecanismo** abaixo é proposta do agente e aguarda ratificação em DEC-0011.
+Aceito — mecanismo ratificado pelo proprietário em DEC-0011 (alternativa A, escolhida no próprio portal em 2026-10-01; [registro](../governance/responses/DEC-0011.md)). A capacidade já havia sido decidida em DEC-0010.
 
 ## Contexto
 
@@ -37,7 +37,7 @@ Opção 1 (a ser ratificada em DEC-0011).
 - **Limite conhecido:** agentes que operam com as credenciais do proprietário também *poderiam* criar a Issue. A proteção é a regra (MANIFEST §23.2; `AGENTS.md`: agentes nunca respondem decisão pendente) e a auditoria; não há como o GitHub distinguir. Quando o Hub existir, a identidade pode ser reforçada.
 - O registro automático **não aplica** as consequências da decisão nos documentos dependentes nem substitui o ADR de decisões estruturais (NN-011); um agente as aplica depois (`responses/*.md` diz isso).
 - Se a branch padrão passar a ter proteção que bloqueie o push do bot, o fluxo precisará de uma exceção explícita.
-- O mecanismo foi validado de ponta a ponta com uma decisão sintética (`DEC-9999`, removida depois), registrada no handoff.
+- O mecanismo foi validado de ponta a ponta com uma decisão sintética (`DEC-9999`, removida depois) e depois **com cliques reais do proprietário** (DEC-0011 e DEC-0012, Issues #4 e #5).
 
 ## Alternativas rejeitadas
 

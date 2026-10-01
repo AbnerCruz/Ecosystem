@@ -64,8 +64,8 @@ Alinhamento arquitetural pré-migração — Product Shells, distribuição inde
 - [x] P0-32 — Aplicar DEC-0001…DEC-0004: ADRs 0001–0006 `Aceito`, origens confirmadas em `ecosystem.json`, técnica de importação e convenção de Issues documentadas.
 - [x] P0-33 — Registrar DEC-0008 e DEC-0009 (alternativa A, **transitórias**) e aplicá-las na migração (`docs/migration/README.md` §9), nos inventários e neste ROADMAP.
 - [x] P0-34 — Responder decisões clicando no portal (DEC-0010, ADR-0007): projeção com título/corpo da Issue, página com botões por alternativa, workflow `decision.yml`, aplicador `apply-decision.cs`, `CHK-DECISION-FLOW` e testes do aplicador.
-- [~] P0-35 — Ratificar o mecanismo (ADR-0007, DEC-0011) e validar ponta a ponta com um clique real do proprietário no portal — NN-017. **Objeto:** https://abnercruz.github.io/Ecosystem/
-- [~] P0-36 — Decidir o acesso e a visibilidade do portal e do repositório (DEC-0012; [`access.md`](docs/architecture/access.md)).
+- [x] P0-35 — Mecanismo ratificado (ADR-0007 `Aceito`, DEC-0011) e validado ponta a ponta com cliques reais do proprietário no portal (Issues #4 e #5; commits do bot `420c85b` e `e363a1e`).
+- [x] P0-36 — Acesso e visibilidade do portal e do repositório decididos (DEC-0012: manter público; [`access.md`](docs/architecture/access.md)).
 
 **Gate:** um agente novo consegue entrar no repositório e compreender corretamente o produto, a autoridade documental e o processo de trabalho sem depender de uma conversa anterior.
 *Estado do gate:* **aprovado pelo proprietário em 2026-09-30** ([ADD-0003](docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)); a validação do portal no celular (P0-15) segue à parte e continua pendente.

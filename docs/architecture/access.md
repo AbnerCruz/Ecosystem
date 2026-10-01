@@ -1,6 +1,7 @@
 # Quem pode ver o portal e quem pode decidir
 
 > **Autoridade:** documento de arquitetura, subordinado ao `MANIFEST.md`. Descreve o estado verificado em 2026-10-01 e as opções; a escolha é do proprietário (DEC-0012).
+> **Decidido em DEC-0012 (2026-10-01, pelo portal): alternativa A, manter público.** Nada a implementar; decidir continua restrito ao dono do repositório. [Registro](../governance/responses/DEC-0012.md).
 > Legenda: **FATO** verificado nesta data · **NÃO VERIFICADO** não foi possível conferir agora.
 
 ## 1. Quem pode **ver** (hoje: qualquer pessoa com o link)

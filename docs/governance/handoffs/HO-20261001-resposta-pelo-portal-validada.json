@@ -1,0 +1,73 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-resposta-pelo-portal-validada",
+  "category": "RESULT",
+  "timestamp": "2026-10-01T00:31:32Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P0-34",
+  "component": "portal",
+  "state": "done",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/adr/README.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-resposta-pelo-portal-validada.json"
+  ],
+  "work_completed": [
+    "O proprietário respondeu DEC-0011 e DEC-0012 clicando no portal; a automação registrou ambas sem intervenção do agente.",
+    "ADR-0007 passou a Aceito (DEC-0011-A); o agente aplicou a consequência da decisão (ADR, índice, ROADMAP)."
+  ],
+  "verification": [
+    {
+      "check": "Validação ponta a ponta pelo proprietário: clicar numa alternativa no portal, enviar a Issue no GitHub e ver a decisão registrada",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "Issue #4 (DEC-0011, alternativa A) e Issue #5 (DEC-0012, alternativa A), ambas fechadas como 'completed'; commits 420c85b e e363a1e do github-actions[bot] na main; registros docs/governance/responses/DEC-0011.md e DEC-0012.md."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: todos os checks passaram depois dos registros e das atualizações."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Próximo agente: P1-3 — plano de importação."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "Decisões do proprietário registradas em fonte persistida pela automação; nenhum agente respondeu por ele."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR-0007 só passou a Aceito depois da decisão registrada do proprietário (DEC-0011)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana real, com evidência."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado 'done' com evidência humana e automática."
+    }
+  ],
+  "cost": null
+}

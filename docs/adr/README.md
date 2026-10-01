@@ -28,4 +28,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0004](0004-estrutura-inicial-do-repositorio.md) | Estrutura inicial do repositório | Aceito |
 | [0005](0005-portal-web-github-pages.md) | Portal web via GitHub Pages como projeção | Aceito |
 | [0006](0006-product-shell-context-distribuicao-independente.md) | Product Shell, Context e distribuição independente | Aceito |
-| [0007](0007-resposta-a-decisoes-pelo-portal.md) | Resposta a decisões pelo portal | Proposto (capacidade decidida em DEC-0010; mecanismo em DEC-0011) |
+| [0007](0007-resposta-a-decisoes-pelo-portal.md) | Resposta a decisões pelo portal | Aceito |
