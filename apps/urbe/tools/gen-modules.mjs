@@ -18,7 +18,7 @@ for (const [f, s] of scans) { for (const g of s.globals) providerOfGlobal.set(g,
 const idx = (f) => scripts.indexOf(f);
 const appIdx = idx('src/app.js'), coreIdx = idx('src/core/core.js');
 const LAYER = (f) => {
-  if (f.startsWith('vendor/') || f === 'src/legacy/bootstrap.js') return 'vendor';
+  if (f.startsWith('vendor/')) return 'vendor';
   if (f === 'src/native/bridge.js') return 'native';
   if (f === 'src/app.js') return 'app';
   if (f.startsWith('src/persistence/')) return 'persistence';

@@ -191,8 +191,8 @@
       ]
     },
     {
-      "name": "legacy/bootstrap",
-      "file": "src/legacy/bootstrap.js",
+      "name": "vendor/jszip/jszip.min",
+      "file": "vendor/jszip/jszip.min.js",
       "layer": "vendor",
       "phase": "boot",
       "provides": {

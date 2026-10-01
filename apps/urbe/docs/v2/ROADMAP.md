@@ -660,13 +660,13 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G2
 
 ### RM-F2-03 — Mover JSZip para `vendor/jszip`
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-031
 - **SPEC:** §3.3
 - **Fase:** F2
 - **Depende:** RM-F0-08
 - **Implementação:** `vendor/jszip/jszip.min.js` + `LICENSE`; atualizar `index.html`, `sw.js`, `modules.json`, `build-www`.
-- **Integração:** Removido `src/legacy/bootstrap.js`.
+- **Integração:** Removido `src/legacy/bootstrap.js`; o arquivo (JSZip 3.10.1, conteúdo idêntico) está em `vendor/jszip/jszip.min.js` com `LICENSE`. Feito no monorepo Ecosystem (U-R1). Falta: validar import/export ZIP no navegador (`tests/e2e/zip.e2e.mjs`, Playwright, não executado nesta sessão).
 - **Testes:** `consistency.mjs` e `modules-manifest` verdes; import/export ZIP funciona.
 - **Documentação:** THIRD-PARTY.
 - **Aceite:** `src/legacy/` sem vendor.

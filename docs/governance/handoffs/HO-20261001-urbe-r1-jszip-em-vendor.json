@@ -1,0 +1,103 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
+  },
+  "branch": "ccr-5adec8cc-oy464b",
+  "commit": "a4ad875",
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261001-urbe-r1-jszip-em-vendor",
+  "timestamp": "2026-10-01T22:00:00Z",
+  "task_id": "UR1-1",
+  "files_changed": [
+    "apps/urbe/vendor/jszip/jszip.min.js",
+    "apps/urbe/vendor/jszip/LICENSE",
+    "apps/urbe/src/modules.json",
+    "apps/urbe/index.html",
+    "apps/urbe/sw.js",
+    "apps/urbe/tools/gen-modules.mjs",
+    "apps/urbe/THIRD-PARTY-NOTICES.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/TRACEABILITY.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261001-urbe-r1-jszip-em-vendor.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: a etapa de refatoração (passo 10; ADR-0009 Aceito, refactoring.md, ROADMAP 'Próxima tarefa') sugere U-R1 (Urbe) e L-R2 (Lunet2D). Esta tarefa executou apenas o primeiro item pronto de U-R1 segundo o processo do próprio Urbe: RM-F2-03 (REQ-031), cujas dependências (RM-F0-08) estão [x].",
+    "ALTERAÇÃO (refatoração interna R, só dentro de apps/urbe): src/legacy/bootstrap.js (JSZip 3.10.1) movido com git mv, conteúdo idêntico, para vendor/jszip/jszip.min.js; vendor/jszip/LICENSE criado; src/modules.json, index.html, sw.js (derivados do manifesto por check-modules), tools/gen-modules.mjs e THIRD-PARTY-NOTICES.md atualizados; src/legacy/ removido (Aceite: 'src/legacy/ sem vendor'). Ordem de carga e fase 'boot' preservadas.",
+    "Documentação do produto: ROADMAP RM-F2-03 -> [?] (aguarda validação do ZIP no navegador), TRACEABILITY regenerada, entrada em AGENTSCHAT.md.",
+    "Nenhum formato de dados do usuário, boundary, contrato, release ou versão foi tocado; nenhum outro produto ou o Hub referenciado; nada extraído para o Ecosystem."
+  ],
+  "verification": [
+    {
+      "check": "node tools/check-modules.mjs (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "OK: 73 módulos, 12 estilos, 26 assets; index.html e sw.js derivados do manifesto."
+    },
+    {
+      "check": "npm run check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "56/56 arquivos de teste passaram; licença, catálogo de dados, fixtures, tutorial e rastreabilidade verdes."
+    }
+  ],
+  "known_issues": [
+    "NÃO EXECUTADO: dotnet run tests/consistency/Check.cs (dotnet indisponível neste ambiente; download bloqueado pelo proxy). Rodará no CI da branch; o resultado do CI é a evidência, não este handoff.",
+    "Import/export de ZIP não foi exercitado em navegador real (tests/e2e/zip.e2e.mjs exige Playwright, ausente aqui); por isso RM-F2-03 está [?] e o handoff está em 'review', não 'done' (NN-017).",
+    "vendor/jszip/LICENSE foi escrito a partir do cabeçalho do arquivo (MIT, opção já adotada em THIRD-PARTY-NOTICES); conferir com a licença upstream.",
+    "Os documentos de discovery do Urbe (LEGACY-MAP, DATA-CATALOG, PERFORMANCE, AUDIT-1X) citam o caminho antigo src/legacy/bootstrap.js; são evidência histórica da 1.x e foram mantidos.",
+    "L-R2 (MainActivity do Lunet2D) não foi feito: exige build Android/.NET e validação em aparelho, indisponíveis aqui."
+  ],
+  "next_actions": [
+    "Proprietário/agente com Playwright: rodar tests/e2e/zip.e2e.mjs e conferir import/export ZIP; então RM-F2-03 -> [x].",
+    "Depois do merge na main: disparar sync-from-ecosystem.yml em AbnerCruz/Urbe (DEC-0017-A).",
+    "Próximos itens de U-R1: RM-F2-01 (HOTSPOTS) e RM-F2-02 (harness do monólito); L-R2 em tarefa própria com .NET."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/architecture/refactoring.md",
+    "docs/architecture/candidates.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudança só em apps/urbe; nenhuma referência a Lunet2D ou Hub."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Sem reescrita; apenas mover arquivo de vendor, com testes do produto verdes."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Escopo restrito a REQ-031/RM-F2-03; sem mudança de comportamento."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Versão e release do Urbe intocados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação do ZIP em navegador registrada como pendente; item [?] e handoff em review."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidência de check-modules e npm run check; lacunas declaradas em known_issues."
+    }
+  ]
+}
