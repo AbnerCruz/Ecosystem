@@ -100,7 +100,7 @@
       "minLength": 1
     },
     "commit": {
-      "description": "SHA do commit, ou null quando o handoff é gravado no próprio commit que descreve (o SHA é o do commit que introduz este arquivo).",
+      "description": "WORK RESULT (ADR-0014): SHA do commit que contém o resultado do agente, quando já é conhecido ao gravar o handoff (ex.: atualização posterior). null = derivado: o resultado é o commit que introduz/atualiza este handoff na `branch` (o arquivo não pode conhecer o próprio hash). NUNCA o commit de partida (isso é `base_commit`). A INTEGRAÇÃO é o merge do `pr` na main (derivado do PR, não gravado aqui).",
       "type": [
         "string",
         "null"
@@ -108,6 +108,7 @@
       "pattern": "^[0-9a-f]{7,40}$"
     },
     "pr": {
+      "description": "URL do PR que integra o trabalho (ponto de integração, ADR-0014), ou null quando ainda não aberto ou quando o trabalho foi integrado sem PR (histórico anterior ao ADR-0014).",
       "type": [
         "string",
         "null"
@@ -163,6 +164,11 @@
             "description": "O que deve ser validado/decidido: caminho no repositório ou URL do artefato/página. Obrigatório (verificado por CHK-HANDOFFS) quando kind = human e result = pending, para que o portal apresente o objeto (DEC-0007).",
             "type": "string",
             "minLength": 1
+          },
+          "tested_commit": {
+            "description": "VALIDATION (ADR-0014): SHA do estado efetivamente testado por esta verificação (pode diferir do resultado, ex.: estado combinado após reconciliação com a main).",
+            "type": "string",
+            "pattern": "^[0-9a-f]{7,40}$"
           }
         }
       }
@@ -275,6 +281,11 @@
           }
         }
       }
+    },
+    "base_commit": {
+      "description": "BASE (ADR-0014): SHA do commit de onde o agente partiu (normalmente a main lida no início). Obrigatório para handoffs a partir de 2026-10-02 (CHK-HANDOFFS). Verificado contra o histórico quando há git completo.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$"
     }
   }
 }

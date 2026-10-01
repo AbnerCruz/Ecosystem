@@ -4,6 +4,7 @@
 //   dotnet run tests/consistency/Check.cs               executa todos os checks
 //   dotnet run tests/consistency/Check.cs -- --self-test prova que cada check falha quando violado
 //   dotnet run tests/consistency/Check.cs -- --registry [--file <json com components>] [--discover <capability> [<faixa>]]
+//   dotnet run tests/consistency/Check.cs -- --integration <branch> [--base <ref>]   base obsoleta e sobreposição antes de integrar (ADR-0014)
 //                                                      indice do Registry (capabilities, providers, consumers) e descoberta
 //
 // Cada check possui um ID estável (CHK-...) referenciado por docs/governance/enforcement-matrix.json.
@@ -26,6 +27,9 @@ if (root is null)
 
 if (args.Contains("--registry"))
     return RegistryCli.Run(root, args);
+
+if (args.Contains("--integration"))
+    return IntegrationCli.Run(root, args, Console.Out);
 
 if (selfTest)
     return SelfTest.Run(root);
@@ -551,6 +555,7 @@ static class Checks
         var comps = c.Components().Select(x => x.Id).Append("ecosystem").ToHashSet();
         var decisions = c.DecisionList().Select(d => d.Str("id")).ToHashSet();
         var adrIds = c.AdrFiles().Select(f => "ADR-" + Path.GetFileName(f)[..4]).ToHashSet();
+        var gitHistory = Git(c.Root, "rev-parse", "--is-inside-work-tree").Out == "true" && Git(c.Root, "rev-parse", "--is-shallow-repository").Out == "false";
         // reuse_assessment (ADR-0011): (subject, componente) -> avaliação mais recente
         var assessments = new Dictionary<(string Subject, string Owner), (string Ts, string Status, string File)>();
         var subjectParties = new Dictionary<string, HashSet<string>>();
@@ -626,8 +631,30 @@ static class Checks
             }
             if (state == "blocked" && !h.Arr("blockers").Any())
                 c.R.Fail(id, $"{file}: estado 'blocked' sem bloqueios declarados");
+
+            // Identidades (ADR-0014): BASE (base_commit) ≠ WORK RESULT (commit) ≠ INTEGRATION (merge do pr) ≠ VALIDATION (tested_commit).
+            // O handoff não pode mentir: um resultado igual ao ponto de partida, um SHA inexistente ou um resultado que não descende da base.
+            var baseSha = h.Str("base_commit"); var resultSha = h.Str("commit");
+            if (baseSha is null && string.CompareOrdinal(h.Str("timestamp") ?? "", BaseCommitRequiredFrom) >= 0)
+                c.R.Fail(id, $"{file}: handoff a partir de {BaseCommitRequiredFrom[..10]} sem 'base_commit' (de onde o agente partiu; ADR-0014)");
+            if (baseSha is not null && resultSha is not null && (baseSha.StartsWith(resultSha) || resultSha.StartsWith(baseSha)))
+                c.R.Fail(id, $"{file}: 'commit' (resultado) é o próprio 'base_commit' (ponto de partida); use null se o resultado ainda não é conhecido (ADR-0014)");
+            if (gitHistory)
+            {
+                foreach (var (field, sha) in new[] { ("base_commit", baseSha), ("commit", resultSha) }.Concat(ver.Select(v => ("verification.tested_commit", v.Str("tested_commit")))))
+                    if (sha is not null && Git(c.Root, "cat-file", "-e", sha + "^{commit}").Code != 0)
+                        c.R.Fail(id, $"{file}: {field} {sha} não existe no histórico (ADR-0014)");
+                if (baseSha is not null && resultSha is not null && Git(c.Root, "cat-file", "-e", baseSha + "^{commit}").Code == 0
+                    && Git(c.Root, "cat-file", "-e", resultSha + "^{commit}").Code == 0 && Git(c.Root, "merge-base", "--is-ancestor", baseSha, resultSha).Code != 0)
+                    c.R.Fail(id, $"{file}: o resultado {resultSha} não descende da base {baseSha} (ADR-0014)");
+            }
         }
+        if (!gitHistory && c.Handoffs().Any(x => x.Doc.RootElement.ValueKind == JsonValueKind.Object && (x.Doc.RootElement.Str("base_commit") ?? x.Doc.RootElement.Str("commit")) is not null))
+            c.R.Note(id, "commits dos handoffs no histórico (sem git completo; use fetch-depth: 0)");
     }
+
+    /// <summary>A partir desta data (timestamp do handoff), 'base_commit' é obrigatório (ADR-0014). Handoffs anteriores ficam como estão.</summary>
+    const string BaseCommitRequiredFrom = "2026-10-02T00:00:00Z";
 
     // --- CHK-VALIDATION (P1-11; NN-001, NN-017, NN-018) ---
     // Registros canônicos de validação por build: o estado precisa ser sustentado pela evidência (CI nunca vira VALIDATED) e a
@@ -1467,6 +1494,63 @@ static class RegistryFiles
     }
 }
 
+/// <summary>
+/// Pré-integração (ADR-0014): o mundo pode ter mudado enquanto o agente trabalhava. Compara a branch com a base atual (padrão origin/main):
+/// FRESH (código 0) = a base atual é ancestral da branch; STALE (3) = a base andou e a branch precisa ser reconciliada; STALE com
+/// sobreposição (4) = os dois lados mudaram os mesmos arquivos e a reconciliação precisa ser semântica. Só usa dados estruturados do git.
+/// </summary>
+static class IntegrationCli
+{
+    public static readonly string[] HighRisk =
+    [
+        "ROADMAP.md", "ARCHITECTURE.md", "AGENTS.md", "MANIFEST.md", "ecosystem.json", "docs/governance/decisions.json",
+        "docs/governance/enforcement-matrix.json", "docs/adr/README.md", "tests/consistency/Check.cs",
+    ];
+    static readonly string[] HighRiskPrefixes = ["docs/contracts/schemas/", "site/generator/", ".github/workflows/"];
+
+    public static bool IsHighRisk(string path) => HighRisk.Contains(path) || HighRiskPrefixes.Any(path.StartsWith) || path.EndsWith("/AGENTS.md");
+
+    static (int Code, string Out) Git(string dir, params string[] a)
+    {
+        var psi = new ProcessStartInfo("git") { WorkingDirectory = dir, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var x in a) psi.ArgumentList.Add(x);
+        using var p = Process.Start(psi)!;
+        var o = p.StandardOutput.ReadToEnd(); p.StandardError.ReadToEnd(); p.WaitForExit();
+        return (p.ExitCode, o.Trim());
+    }
+
+    public static int Run(string root, string[] args, TextWriter w)
+    {
+        string Opt(string name, string def) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : def; }
+        var branch = Opt("--integration", ""); var baseRef = Opt("--base", "origin/main");
+        if (branch.Length == 0 || branch.StartsWith("--")) { w.WriteLine("uso: --integration <branch> [--base <ref>]"); return 2; }
+        foreach (var r in new[] { branch, baseRef })
+            if (Git(root, "rev-parse", "--verify", "-q", r + "^{commit}").Code != 0) { w.WriteLine($"ERRO: referência inexistente: {r} (faça git fetch)"); return 2; }
+        var mb = Git(root, "merge-base", baseRef, branch).Out;
+        var baseTip = Git(root, "rev-parse", baseRef).Out;
+        w.WriteLine($"branch: {branch} ({Git(root, "rev-parse", "--short", branch).Out}) · base: {baseRef} ({baseTip[..Math.Min(7, baseTip.Length)]}) · merge-base: {mb[..Math.Min(7, mb.Length)]}");
+        List<string> Files(string from, string to) => Git(root, "diff", "--name-only", from, to).Out.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList();
+        var mine = Files(mb, branch);
+        if (mb == baseTip)
+        {
+            w.WriteLine($"FRESH: {baseRef} é ancestral de {branch}; {mine.Count} arquivo(s) alterado(s) pela branch. Ainda assim: rerodar os checks no estado a integrar.");
+            return 0;
+        }
+        var ahead = Git(root, "rev-list", "--count", $"{mb}..{baseRef}").Out;
+        var theirs = Files(mb, baseRef);
+        var overlap = mine.Intersect(theirs).Order().ToList();
+        w.WriteLine($"STALE: {baseRef} avançou {ahead} commit(s) desde a base desta branch; {theirs.Count} arquivo(s) mudaram na base.");
+        if (overlap.Count == 0)
+        {
+            w.WriteLine("Sem sobreposição de arquivos. Reconcilie (merge da base na branch), rerode os checks no estado combinado e só então integre.");
+            return 3;
+        }
+        w.WriteLine($"SOBREPOSIÇÃO em {overlap.Count} arquivo(s) — reconciliação semântica obrigatória (nunca --ours/--theirs às cegas):");
+        foreach (var f in overlap) w.WriteLine($"  {(IsHighRisk(f) ? "[ALTO RISCO] " : "")}{f}");
+        return 4;
+    }
+}
+
 static class RegistryCli
 {
     public static int Run(string root, string[] args)
@@ -1662,12 +1746,14 @@ static class SelfTest
     }
 
     /// <summary>Cria, na cópia, um handoff 'done' baseado em um real, com reuse_assessment (self-test de ADR-0011).</summary>
-    static void AddReuseHandoff(string root, string suffix, string component, string timestamp, string reuseJson)
+    static void AddReuseHandoff(string root, string suffix, string component, string timestamp, string reuseJson, string? baseCommit = "a4ad875", string? commit = null)
     {
         var dir = Path.Combine(root, "docs", "governance", "handoffs");
         var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(dir, "HO-20261001-p0-15-aprovado.json")))!.AsObject();
         n["message_id"] = "HO-99990101-" + suffix; n["task_id"] = "P9-" + suffix.Length; n["component"] = component; n["timestamp"] = timestamp;
-        n["reuse_assessment"] = System.Text.Json.Nodes.JsonNode.Parse(reuseJson);
+        if (reuseJson.Length > 0) n["reuse_assessment"] = System.Text.Json.Nodes.JsonNode.Parse(reuseJson);
+        if (baseCommit is not null) n["base_commit"] = baseCommit;
+        n["commit"] = commit;
         File.WriteAllText(Path.Combine(dir, "HO-99990101-" + suffix + ".json"), n.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
     }
 
@@ -1830,6 +1916,10 @@ static class SelfTest
             r => { Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true)); RunGenerator(r); Replace(r, "docs/governance/decisions.json", "\"status\": \"pending\"", "\"status\": \"decided\""); }),
         new("Caso D: build VALIDATED no registro, projeção diz HUMAN_VALIDATION_PENDING", "CHK-PORTAL",
             r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"state\": \"VALIDATED\"", "\"state\": \"HUMAN_VALIDATION_PENDING\"")); }),
+        new("handoff afirma como resultado o próprio commit de partida", "CHK-HANDOFFS",
+            r => AddReuseHandoff(r, "x", "urbe", "2099-01-01T00:00:00Z", "", "a4ad875", "a4ad875")),
+        new("handoff novo sem base_commit", "CHK-HANDOFFS",
+            r => AddReuseHandoff(r, "y", "urbe", "2099-01-01T00:00:00Z", "", null, null)),
         new("workflow de decisão sem a guarda do dono", "CHK-DECISION-FLOW",
             r => Replace(r, ".github/workflows/decision.yml", "github.event.issue.user.login == github.repository_owner && ", "")),
         new("texto da Issue interpolado em script", "CHK-DECISION-FLOW",
@@ -1879,6 +1969,7 @@ static class SelfTest
         failures += OriginSyncTests(repoRoot);
         failures += RegistryUnitTests();
         failures += MigrationHistoryTests(repoRoot);
+        failures += IntegrationTests();
 
         foreach (var id in Checks.Ids.Where(i => !covered.Contains(i)))
         {
@@ -1999,6 +2090,7 @@ static class SelfTest
                 var n = System.Text.Json.Nodes.JsonNode.Parse(template.ToJsonString())!.AsObject();
                 n["message_id"] = id; n["task_id"] = task; n["timestamp"] = timestamp; n["state"] = state;
                 var v = n["verification"]!.AsArray(); v.Clear();
+                n["base_commit"] = "a4ad875";
                 v.Add(new System.Text.Json.Nodes.JsonObject { ["check"] = "Validação de teste", ["kind"] = "human", ["result"] = "pending", ["object"] = "docs/governance/handoffs/" + id + ".json", ["evidence"] = "x" });
                 return n;
             }
@@ -2175,6 +2267,39 @@ static class SelfTest
             Report(Fails(), "tag ausente é detectada");
             G("tag", "urbe/v1.8.2-beta", Sh(tmp, "git", ["commit-tree", "HEAD^{tree}", "-m", "x"], g).Output);
             Report(Fails(), "tag apontando para outro commit é detectada");
+        }
+        catch (Exception e) { Report(false, "execução: " + e.Message); }
+        finally { try { if (Directory.Exists(tmp)) { foreach (var f in Directory.EnumerateFiles(tmp, "*", SearchOption.AllDirectories)) File.SetAttributes(f, FileAttributes.Normal); Directory.Delete(tmp, true); } } catch { } }
+        return failures;
+    }
+
+    /// <summary>Pré-integração (ADR-0014): base atual ancestral = FRESH; base que andou = STALE; os dois lados no mesmo arquivo = sobreposição.</summary>
+    static int IntegrationTests()
+    {
+        var failures = 0;
+        void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  integração multiagente: {name}"); if (!ok) failures++; }
+        var tmp = Path.Combine(Path.GetTempPath(), "ecosystem-integration-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(tmp);
+            var g = new Dictionary<string, string> { ["GIT_AUTHOR_NAME"] = "t", ["GIT_AUTHOR_EMAIL"] = "t@t", ["GIT_COMMITTER_NAME"] = "t", ["GIT_COMMITTER_EMAIL"] = "t@t" };
+            void G(params string[] a) => Sh(tmp, "git", a, g);
+            void W(string f, string text) { Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(tmp, f))!); File.WriteAllText(Path.Combine(tmp, f), text); G("add", "-A"); G("commit", "-qm", f); }
+            (int Code, string Out) Run(string branch) { var sw = new StringWriter(); var c = IntegrationCli.Run(tmp, ["--integration", branch, "--base", "main"], sw); return (c, sw.ToString()); }
+            G("init", "-q", "-b", "main"); W("ROADMAP.md", "r\n"); W("apps/urbe/a.js", "a\n");
+            G("checkout", "-qb", "agent-a"); W("docs/adr/0013.md", "a\n"); W("ROADMAP.md", "r\nfase 3\n");
+            G("checkout", "-q", "main"); G("checkout", "-qb", "agent-b"); W("apps/urbe/a.js", "b\n");
+            G("checkout", "-q", "main"); G("checkout", "-qb", "agent-c"); W("ROADMAP.md", "r\nfase 1\n");
+            Report(Run("agent-a").Code == 0 && Run("agent-b").Code == 0, "duas branches do mesmo HEAD, main parada: FRESH");
+            G("checkout", "-q", "main"); G("merge", "-q", "--no-ff", "agent-a", "-m", "integra A");
+            var b = Run("agent-b");
+            Report(b.Code == 3 && b.Out.Contains("STALE"), "main avançou (A integrada): B fica STALE sem sobreposição");
+            var c = Run("agent-c");
+            Report(c.Code == 4 && c.Out.Contains("[ALTO RISCO] ROADMAP.md"), "C mudou o mesmo ROADMAP.md que A: sobreposição de alto risco");
+            G("checkout", "-q", "agent-b"); G("merge", "-q", "--no-edit", "main");
+            Report(Run("agent-b").Code == 0 && File.ReadAllText(Path.Combine(tmp, "apps/urbe/a.js")) == "b\n" && File.Exists(Path.Combine(tmp, "docs/adr/0013.md")),
+                "B reconciliada com a main: FRESH e os dois trabalhos preservados");
+            Report(Run("nao-existe").Code == 2, "referência inexistente é erro, nunca FRESH");
         }
         catch (Exception e) { Report(false, "execução: " + e.Message); }
         finally { try { if (Directory.Exists(tmp)) { foreach (var f in Directory.EnumerateFiles(tmp, "*", SearchOption.AllDirectories)) File.SetAttributes(f, FileAttributes.Normal); Directory.Delete(tmp, true); } } catch { } }

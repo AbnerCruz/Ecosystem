@@ -22,8 +22,8 @@ qualquer estado ─► cancelled
 | `waiting` | aguardando algo externo não bloqueante (CI, outra tarefa) |
 | `blocked` | impedido; `blockers` obrigatório |
 | `verifying` | executando verificações |
-| `review` | aguardando revisão humana/independente ou validação humana |
-| `done` | Definition of Done satisfeita, com evidência |
+| `review` | o agente terminou a execução; aguardando revisão humana/independente, validação humana **ou integração** (PR) — ADR-0014 |
+| `done` | Definition of Done satisfeita, com evidência, e o resultado **integrado na `main`** (trabalho em branch: PR mergeado) |
 | `failed` | tentativa encerrada sem sucesso; motivo registrado |
 | `cancelled` | não será feita; motivo registrado |
 
