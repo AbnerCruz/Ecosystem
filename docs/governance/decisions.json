@@ -546,7 +546,7 @@
     },
     {
       "id": "DEC-0017",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": false,
       "title": "Como a sincronização das origens é disparada se o agendamento do GitHub não rodar",
@@ -573,7 +573,10 @@
         "docs/migration/import-plan.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Manter o agendamento (pode passar a rodar depois) e adotar o disparo explícito: o agente dispara a sincronização após cada mudança em apps/<id>, e você pode disparar pelo botão 'Run workflow' do GitHub (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/25).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0017.md"
     }
   ]
 }
