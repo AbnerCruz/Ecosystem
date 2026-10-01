@@ -56,9 +56,9 @@
     {
       "check": "Aprovação do gate da Fase 2 pelo proprietário",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "ROADMAP.md",
-      "evidence": "Aguardando o proprietário no portal (Aprovar/Reprovar). Ler: ROADMAP 'Fase 2' (P2-1..P2-14 e o critério do gate), ADR-0012, docs/contracts/examples/registry-slice/ e este handoff."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-01 (Issue https://github.com/AbnerCruz/Ecosystem/issues/32); registro em docs/governance/responses/VAL-HO-20261001-gate-da-fase-2-388a8354a4eb.md."
     }
   ],
   "known_issues": [
