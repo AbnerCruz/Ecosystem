@@ -1,0 +1,12 @@
+**/bin/
+**/obj/
+.vs/
+.idea/
+*.user
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Chave PÚBLICA de desenvolvimento do app Lunet (ver docs/adr/0004). Chaves de release nunca entram no repositório.
+!tools/lunet-dev.keystore
