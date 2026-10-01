@@ -652,7 +652,7 @@
     },
     {
       "id": "DEC-0020",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": false,
       "title": "Ratificar os contratos da Fase 2 (ADR-0012) e os nomes provisórios dos eixos de distribuição",
@@ -681,7 +681,11 @@
         "docs/contracts/examples/distribution/lunet-public.example.json"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa B — Aceitar os contratos (manifest, capability, versões, Context, permissões, Registry) e manter os nomes dos eixos provisórios até a reavaliação de DEC-0008/DEC-0009 (P2-12) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/30).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0020.md",
+      "consequencesApplied": false
     }
   ]
 }
