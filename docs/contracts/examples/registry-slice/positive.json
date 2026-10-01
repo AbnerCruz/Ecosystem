@@ -1,0 +1,59 @@
+{
+  "description": "Caso positivo: A fornece capability.test v1; B exige ^1.0.0; o Registry descobre A e a compatibilidade é confirmada.",
+  "components": {
+    "provider-a": {
+      "name": "Provider A",
+      "type": "tool",
+      "language": "csharp",
+      "path": "examples/provider-a",
+      "status": "planned",
+      "description": "Fixture: fornece capability.test 1.0.0.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": [],
+      "provides": [
+        {
+          "capability": "capability.test",
+          "version": "1.0.0"
+        }
+      ],
+      "permissions": {
+        "requests": [
+          "fs.read"
+        ]
+      }
+    },
+    "consumer-b": {
+      "name": "Consumer B",
+      "type": "workspace",
+      "language": "csharp",
+      "path": "examples/consumer-b",
+      "status": "planned",
+      "description": "Fixture: consome capability.test ^1.0.0.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": [],
+      "requires": [
+        {
+          "capability": "capability.test",
+          "range": "^1.0.0"
+        }
+      ],
+      "permissions": {
+        "requests": [
+          "fs.read"
+        ]
+      }
+    }
+  },
+  "expect": {
+    "ok": true,
+    "discover": {
+      "capability.test": [
+        "provider-a@1.0.0"
+      ]
+    }
+  }
+}

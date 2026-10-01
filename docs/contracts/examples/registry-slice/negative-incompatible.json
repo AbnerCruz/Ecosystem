@@ -1,0 +1,54 @@
+{
+  "description": "Caso negativo: C exige capability.test ^2.0.0, mas só existe provider da v1.",
+  "components": {
+    "provider-a": {
+      "name": "Provider A",
+      "type": "tool",
+      "language": "csharp",
+      "path": "examples/provider-a",
+      "status": "planned",
+      "description": "Fixture: fornece capability.test 1.0.0.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": [],
+      "provides": [
+        {
+          "capability": "capability.test",
+          "version": "1.0.0"
+        }
+      ],
+      "permissions": {
+        "requests": [
+          "fs.read"
+        ]
+      }
+    },
+    "consumer-c": {
+      "name": "Consumer C",
+      "type": "workspace",
+      "language": "csharp",
+      "path": "examples/consumer-c",
+      "status": "planned",
+      "description": "Fixture: exige ^2.0.0.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": [],
+      "requires": [
+        {
+          "capability": "capability.test",
+          "range": "^2.0.0"
+        }
+      ],
+      "permissions": {
+        "requests": [
+          "fs.read"
+        ]
+      }
+    }
+  },
+  "expect": {
+    "error": "CAP_INCOMPATIBLE"
+  }
+}

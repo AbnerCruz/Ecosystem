@@ -1,0 +1,23 @@
+{
+  "$schema": "../../schemas/context.schema.json",
+  "schemaVersion": 1,
+  "description": "Ecosystem → Lunet2D → MeuJogo → Editor",
+  "path": [
+    {
+      "level": "ecosystem",
+      "id": "ecosystem"
+    },
+    {
+      "level": "product",
+      "id": "lunet2d"
+    },
+    {
+      "level": "project",
+      "id": "MeuJogo"
+    },
+    {
+      "level": "tool",
+      "id": "editor"
+    }
+  ]
+}

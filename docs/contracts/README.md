@@ -4,23 +4,28 @@
 
 ## Estado atual
 
-Ainda **não existe** nenhum contrato de capability ou de runtime. O formato de `ComponentManifest`, `Capability`, versionamento e permission model é trabalho da **Fase 2** e exigirá ADR.
+Contratos da fundação (ADR-0002), da projeção do portal (ADR-0005) e **da Fase 2** (ADR-0012, `Proposto` até DEC-0020), em [`schemas/`](schemas/):
 
-Existem apenas os contratos dos registros da fundação (ADR-0002) e da projeção do portal (ADR-0005), em [`schemas/`](schemas/):
-
-| Schema | Autoridade de | ID |
+| Schema / arquivo | Autoridade de | ID |
 |--------|---------------|----|
-| [`ecosystem.schema.json`](schemas/ecosystem.schema.json) | formato de `ecosystem.json` | `ecosystem/contracts/ecosystem-manifest/1` |
-| [`handoff.schema.json`](schemas/handoff.schema.json) | handoffs de agentes | `ecosystem/contracts/handoff/1` |
+| [`ecosystem.schema.json`](schemas/ecosystem.schema.json) | formato de `ecosystem.json` **e do ComponentManifest** (a entrada de componente, com `provides`, `requires`, `permissions`) | `ecosystem/contracts/ecosystem-manifest/1` |
+| [`capability-contract.schema.json`](schemas/capability-contract.schema.json) | contrato de uma capability (`docs/contracts/capabilities/<id>.json`; hoje nenhuma capability real: só o slice de exemplo) | `ecosystem/contracts/capability-contract/1` |
+| [`permissions-catalog.schema.json`](schemas/permissions-catalog.schema.json) · [`permissions.json`](permissions.json) | catálogo de permissões (deny-by-default) | `ecosystem/contracts/permissions-catalog/1` |
+| [`context.schema.json`](schemas/context.schema.json) | Context hierárquico (exemplos em [`examples/context/`](examples/context/)) | `ecosystem/contracts/context/1` |
+| [`distribution-profile.schema.json`](schemas/distribution-profile.schema.json) | Distribution Profile (nomes dos eixos provisórios; exemplo em [`examples/distribution/`](examples/distribution/)) | `ecosystem/contracts/distribution-profile/1` |
+| [`handoff.schema.json`](schemas/handoff.schema.json) | handoffs de agentes (inclui `reuse_assessment` opcional, ADR-0011) | `ecosystem/contracts/handoff/1` |
 | [`decisions.schema.json`](schemas/decisions.schema.json) | decisões do proprietário | `ecosystem/contracts/decisions/1` |
+| [`validation-record.schema.json`](schemas/validation-record.schema.json) | registro de validação por build | `ecosystem/contracts/validation-record/1` |
 | [`enforcement-matrix.schema.json`](schemas/enforcement-matrix.schema.json) | matriz NN → fiscalização | `ecosystem/contracts/enforcement-matrix/1` |
 | [`ecosystem-status.schema.json`](schemas/ecosystem-status.schema.json) | projeção do portal web (`authority: false`; ADR-0005) | `ecosystem/contracts/ecosystem-status/1` |
+
+**Registry e vertical slice (Fase 2).** O Registry é derivado dos manifests e contratos e mora dentro dos checks (`CHK-REGISTRY`); `dotnet run tests/consistency/Check.cs -- --registry [--file <json com "components">] [--discover <capability> [<faixa>]]` mostra o índice, os providers e consumers e valida. O slice em [`examples/registry-slice/`](examples/registry-slice/) prova o caso positivo (provider A v1, consumer B `^1.0.0`) e os negativos (`^2.0.0` incompatível, sem provider, permissão ausente, capability desconhecida, Tool que conhece Host, Product → Product).
 
 Os schemas usam o subconjunto de JSON Schema 2020-12 suportado por `tests/consistency/Check.cs` (ADR-0003); o check falha se um schema usar keyword não suportada.
 
 ## Requisitos mínimos de um contrato de capability (NN-006)
 
-Quando a Fase 2 formalizar capabilities, cada contrato público ou compartilhado deverá declarar, no mínimo:
+Cada contrato público ou compartilhado declara, no mínimo (formalizado em `capability-contract.schema.json`; o **provider** é derivado dos `provides` dos manifests):
 
 - ID estável;
 - versão;

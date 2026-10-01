@@ -1,0 +1,38 @@
+{
+  "description": "Caso negativo: Product → Product direto (NN-002).",
+  "components": {
+    "product-one": {
+      "name": "Product One",
+      "type": "product",
+      "language": "csharp",
+      "path": "examples/product-one",
+      "status": "planned",
+      "description": "Fixture.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": []
+    },
+    "product-two": {
+      "name": "Product Two",
+      "type": "product",
+      "language": "csharp",
+      "path": "examples/product-two",
+      "status": "planned",
+      "description": "Fixture.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": [
+        {
+          "component": "product-one",
+          "kind": "required",
+          "reason": "direto"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "error": "PRODUCT_DEPENDS_ON_PRODUCT"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "description": "Caso negativo: uma Tool depende de um Product concreto (NN-007).",
+  "components": {
+    "some-product": {
+      "name": "Some Product",
+      "type": "product",
+      "language": "csharp",
+      "path": "examples/some-product",
+      "status": "planned",
+      "description": "Fixture: um Product qualquer.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": []
+    },
+    "provider-a": {
+      "name": "Provider A",
+      "type": "tool",
+      "language": "csharp",
+      "path": "examples/provider-a",
+      "status": "planned",
+      "description": "Fixture: fornece capability.test 1.0.0.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": [
+        {
+          "component": "some-product",
+          "kind": "required",
+          "reason": "conhece o host"
+        }
+      ],
+      "provides": [
+        {
+          "capability": "capability.test",
+          "version": "1.0.0"
+        }
+      ],
+      "permissions": {
+        "requests": [
+          "fs.read"
+        ]
+      }
+    }
+  },
+  "expect": {
+    "error": "TOOL_KNOWS_HOST"
+  }
+}

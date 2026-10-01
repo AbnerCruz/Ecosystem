@@ -39,6 +39,16 @@ Para criar um componente compartilhado (`platform/`, `workspaces/`, `tools/`, Se
 
 Uma funcionalidade nova nasce **no Product que tem a necessidade**; vira componente compartilhado só por **promoção baseada em evidência** (segundo consumidor real → Extraction Review → NN-022 → ADR → contrato). Duplicação temporária é preferível a uma abstração compartilhada errada. O potencial de reutilização é registrado nos handoffs (`reuse_assessment`). Guia: [`docs/architecture/local-first.md`](docs/architecture/local-first.md); refatoração e extração: [`docs/architecture/refactoring.md`](docs/architecture/refactoring.md).
 
+## 3.2 Contratos da Fase 2 (ADR-0012, `Proposto` até DEC-0020)
+
+- **ComponentManifest** = a entrada de componente de `ecosystem.json` (identidade = chave; `type`, `version`, `owners`, `status`) com, opcionalmente, `provides`, `requires` e `permissions.requests`. Sem estado de execução e sem campos de distribuição.
+- **Capability** = contrato versionado (`docs/contracts/capabilities/<id>.json`: inputs, outputs, erros, permissões exigidas, lifecycle, compatibilidade semver). O provider é derivado dos `provides` dos manifests; um consumidor depende da capability e da faixa de versões, nunca de Product, Host, classe ou path.
+- **Permissões:** catálogo `docs/contracts/permissions.json`; deny-by-default (o componente só tem o que solicitou; o consumidor precisa ter solicitado o que o contrato exige). Enforcement em runtime: Fase 5.
+- **Context:** caminho `ecosystem → product → project → workspace → tool` (contrato inicial; sem IPC nem Host API).
+- **Registry:** índice local derivado, dentro dos checks (`CHK-REGISTRY`, `-- --registry`): registrar, indexar, descobrir providers, validar compatibilidade. Nasce local (ADR-0011) e só vira componente próprio com consumidor real.
+- **Distribution Profile:** entradas com `availability` e três eixos independentes (visibility, distribution, commercialModel; **nomes provisórios**); o Hub nunca é `bundled` em perfil com componente público (NN-023).
+- Nenhuma capability real existe ainda: só o vertical slice de exemplo (`docs/contracts/examples/`). Capabilities reais aparecem por **promoção baseada em evidência**.
+
 ## 4. Boundaries (MANIFEST §12)
 
 Permitido:
@@ -72,6 +82,7 @@ Exceções exigem ADR e alteração explícita do check.
 | Princípios e invariantes | `MANIFEST.md` | `AGENTS.md` reproduz; não substitui. |
 | Componentes do ecossistema | `ecosystem.json` | Único manifest raiz (`CHK-SINGLE-AUTHORITY`). |
 | Formato dos registros | `docs/contracts/schemas/*.schema.json` | O check valida contra eles; não duplica o formato. |
+| Contrato de uma capability / catálogo de permissões | `docs/contracts/capabilities/<id>.json` / `docs/contracts/permissions.json` | Provider **derivado** dos `provides` em `ecosystem.json` (uma autoridade); `CHK-REGISTRY`. |
 | Código, versão e histórico de Lunet2D/Urbe | `apps/<id>/` deste repositório quando `status = active`; o repositório de origem enquanto `status = not-migrated` | Ver `source`, `path` e `version.authority` em `ecosystem.json`. Com o produto `active`, o repositório de origem é **espelho de distribuição** (releases e Urbe Web; DEC-0008/DEC-0009 transitórias, DEC-0014): nunca autoridade de código. |
 | Mapeamento NN → fiscalização | `docs/governance/enforcement-matrix.json` | |
 | Decisões pendentes/tomadas do proprietário | `docs/governance/decisions.json` | Decisão tomada aponta para ADR/SPEC/ROADMAP. |
@@ -122,7 +133,7 @@ Nada disso autoriza criar código, diretórios, Services, Shells, Store ou schem
 
 ## 7. Permissões (MANIFEST §30, NN-016)
 
-Princípio: menor privilégio, deny-by-default quando aplicável, agentes não herdam todas as permissões do usuário. O permission model concreto é trabalho da Fase 2 (ver §8).
+Princípio: menor privilégio, deny-by-default quando aplicável, agentes não herdam todas as permissões do usuário. O modelo inicial de permissões (declaração, deny-by-default) está em §3.2; o enforcement em runtime é da Fase 5 (ver §8).
 
 ## 8. Planejado e em aberto
 
@@ -130,16 +141,17 @@ Este documento descreve a arquitetura **atual** nas seções anteriores. Aqui fi
 
 ### 8.1 Planejado (a fase em que vira concreto está no ROADMAP)
 
-- formato do `ComponentManifest`, do contrato de `Capability`, versionamento e permission model (Fase 2);
-- contrato de **Context** (Fases 2 e 5) e Host API do Product Shell (Fase 5);
-- nome e formato do **Distribution Profile** e dos três eixos de disponibilidade — visibilidade, distribuição e modelo comercial (Fase 2; packaging na Fase 4);
-- distribuição e publicação **definitivas** de cada produto (canal de releases, publicação web): declaradas pelo próprio Ecosystem nas Fases 2 e 4. Até lá valem DEC-0008 e DEC-0009 (alternativa A, **transitórias**; `docs/migration/README.md` §9);
-- protocolo e transporte de IPC (Fase 5), por ADR **antes** da primeira dependência séria entre processos;
+- capabilities reais, por **promoção baseada em evidência** (ADR-0011) — nenhuma existe ainda;
+- Host API do Product Shell e contrato de Context em runtime (Fase 5); IPC e transporte (Fase 5), por ADR **antes** da primeira dependência séria entre processos;
+- enforcement de permissões em runtime (Fase 5);
+- packaging e distribuição pelo Distribution Profile (Fase 4);
+- distribuição e publicação **definitivas** de cada produto (canal de releases, publicação web): declaradas pelo próprio Ecosystem; até lá valem DEC-0008 e DEC-0009 (alternativa A, **transitórias**; `docs/migration/README.md` §9), reavaliadas em P2-12;
 - tecnologia de UI e plataformas-alvo do Hub (Fase 3);
-- estrutura de `platform/`, `workspaces/` e `tools/`: os diretórios só serão criados quando tiverem conteúdo com função (ADR-0004); `apps/` existe e contém Lunet2D e Urbe.
+- estrutura de `platform/`, `workspaces/`, `tools/` e `services/`: os diretórios só nascem quando tiverem conteúdo com função (ADR-0004); `apps/` existe e contém Lunet2D e Urbe.
 
 ### 8.2 Não decidido (nenhum agente deve tratar como decidido)
 
+- ratificação dos contratos da Fase 2 e congelamento dos nomes dos eixos de distribuição (DEC-0020);
 - quais Services compartilhados (Identity, Catalog, Commerce, Entitlements, Downloads, Updates, Reviews, Creator Profiles, Notifications) existirão, se algum — só com consumidores reais, contrato e ADR (NN-020, NN-022);
 - fonte canônica de catálogo, entitlements e identidade; política de edições e canais externos;
 - estrutura **final** de cada Product Shell no código: há classificação proposta e aprovada como proposta ([`docs/architecture/candidates.md`](docs/architecture/candidates.md)) e regras de refatoração aceitas (ADR-0009), mas cada mudança estrutural é decidida na própria refatoração.

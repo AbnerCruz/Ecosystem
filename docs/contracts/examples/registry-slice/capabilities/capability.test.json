@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../schemas/capability-contract.schema.json",
+  "schemaVersion": 1,
+  "capability": "capability.test",
+  "description": "Capability de teste do vertical slice da Fase 2 (fixture). Não é uma Tool real.",
+  "compatibility": "semver",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "status": "stable",
+      "inputs": [ { "name": "text", "type": "string", "required": true, "description": "Texto a processar." } ],
+      "outputs": [ { "name": "result", "type": "string", "required": true } ],
+      "errors": [ { "code": "INVALID_INPUT", "description": "Entrada recusada." } ],
+      "requiredPermissions": [ "fs.read" ],
+      "lifecycle": "stateless"
+    },
+    {
+      "version": "2.0.0",
+      "status": "draft",
+      "inputs": [ { "name": "document", "type": "object", "required": true } ],
+      "outputs": [ { "name": "result", "type": "object", "required": true } ],
+      "errors": [ { "code": "INVALID_INPUT", "description": "Entrada recusada." } ],
+      "requiredPermissions": [ "fs.read" ],
+      "lifecycle": "stateless"
+    }
+  ]
+}

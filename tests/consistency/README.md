@@ -17,6 +17,7 @@ Requer .NET SDK 10+. Execute a partir de qualquer diretório dentro do repositó
 | `CHK-SINGLE-AUTHORITY` | único manifest raiz; paths sem sobreposição; `not-migrated`/`planned` não existem no repo; `active` existe; autoridade de versão coerente | NN-001, NN-021 |
 | `CHK-BOUNDARIES` | grafo declarado: Urbe↔Lunet2D, Product→Product, Hub obrigatório, não-produto→produto, qualquer dependência do portal | NN-002, NN-003, NN-007, NN-023 |
 | `CHK-ARCH-REFS` | código real dos produtos ativos: referência a outro Product ou ao Hub; `ProjectReference`/`file:`/`link:` para fora do produto | NN-002, NN-003, NN-023 |
+| `CHK-REGISTRY` | Fase 2: Registry de produção consistente (providers, consumers, versões, permissões, Tool sem Host) e vertical slice em `docs/contracts/examples` (positivo passa, cada negativo falha com o código esperado); exemplos de Context e Distribution Profile | NN-006, NN-007, NN-016, NN-023 |
 | `CHK-MIGRATION-HISTORY` | histórico importado preservado: ponta importada ancestral do HEAD com a contagem registrada, tags de cada produto presentes no commit registrado (`docs/migration/import-*.json`, `tags-*.txt`); precisa de histórico completo, senão "não verificado" | NN-012 |
 | `CHK-VALIDATION` | registros de validação por build: estado sustentado pela evidência; evidência de handoff coincide com o handoff | NN-001, NN-017, NN-018 |
 | `CHK-STATE-CONSISTENCY` | deriva entre fontes estruturadas: gate `aprovado` sem itens abertos; `ecosystem.phase` coerente com o ROADMAP; ROADMAP × Issues (com `site/data/issues-snapshot.json`, senão "não verificado"); "Não decidido" de ARCHITECTURE × decisions.json; mecanismos `planned` da matriz de fase já aprovada ([`state-drift.md`](../../docs/governance/state-drift.md)) | NN-001, NN-017, NN-021 |
@@ -26,7 +27,7 @@ Requer .NET SDK 10+. Execute a partir de qualquer diretório dentro do repositó
 | `CHK-AGENTS-NN` | `AGENTS.md` reproduz todas as NN com o mesmo título e cláusula de enforcement; referencia o MANIFEST | NN-010 |
 | `CHK-ADR` | nome, título, seções obrigatórias, status válido e índice dos ADRs | NN-011 |
 | `CHK-DECISIONS` | decisão tomada aponta para registro persistido existente; decisão pendente exige objeto (`related`) existente | NN-009, NN-021 |
-| `CHK-HANDOFFS` | referências válidas; `done` exige verificação passada com evidência e sem bloqueios; validação humana pendente exige objeto | NN-008, NN-010, NN-017, NN-018, NN-021 |
+| `CHK-HANDOFFS` | referências válidas; `reuse_assessment` (ADR-0011): consumidor concreto + Extraction Review, segundo componente exige `external-consumer-exists`; `done` exige verificação passada com evidência e sem bloqueios; validação humana pendente exige objeto | NN-008, NN-010, NN-017, NN-018, NN-021 |
 | `CHK-ROADMAP` | fases 0–7 presentes; item `[x]` sem validação humana pendente | NN-017 |
 | `CHK-SECRETS` | padrões comuns de tokens e chaves privadas | MANIFEST §30.2 |
 | `CHK-DECISION-FLOW` | workflow de registro de decisões: guarda do dono, permissões explícitas, texto da Issue só em `env`, link de resposta no portal; o self-test executa o aplicador (feliz + recusas) | NN-009, NN-016 |

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ecosystem/contracts/distribution-profile/1",
+  "title": "Distribution Profile — schemaVersion 1 (nomes dos eixos PROVISÓRIOS)",
+  "description": "Descreve quais componentes formam uma edição/distribuição e em que condições (ADD-0002 §7-§8, distribution.md §2-§3; ADR-0012). Arquitetura ≠ distribuição: existir no Registry não significa estar incluído. Três eixos independentes por entrada: visibility, distribution e commercialModel; os NOMES e valores são provisórios até a ratificação (DEC-0020). NN-023: nenhum perfil que inclua um Product público pode ter o Hub como 'bundled'.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "id", "name", "entries"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
+    "name": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["component", "availability", "visibility", "distribution", "commercialModel"],
+        "properties": {
+          "component": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
+          "availability": {
+            "description": "Como o componente entra no perfil: bundled (vem junto), optional (instalável à parte), marketplace (via catálogo), unavailable (interno/fora do perfil).",
+            "enum": ["bundled", "optional", "marketplace", "unavailable"]
+          },
+          "visibility": { "enum": ["public", "unlisted", "private", "internal"] },
+          "distribution": { "enum": ["first-party", "external-store", "none"] },
+          "commercialModel": { "enum": ["free", "paid", "subscription", "undecided"] }
+        }
+      }
+    }
+  }
+}

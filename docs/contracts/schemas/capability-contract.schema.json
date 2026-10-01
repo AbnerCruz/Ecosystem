@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ecosystem/contracts/capability-contract/1",
+  "title": "Contrato de Capability — schemaVersion 1",
+  "description": "Autoridade do formato de um contrato de capability (MANIFEST §6.3, NN-006; ADR-0012). Um arquivo por capability em docs/contracts/capabilities/<id>.json. O provider NÃO é declarado aqui: é derivado das declarações 'provides' dos ComponentManifests (uma só autoridade, NN-001).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schemaVersion", "capability", "description", "compatibility", "versions"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "capability": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*(\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)+$" },
+    "description": { "type": "string", "minLength": 1 },
+    "compatibility": {
+      "description": "Política de compatibilidade. 'semver': mudança incompatível incrementa MAJOR; um provider em X.y.z satisfaz consumers cuja faixa inclui X.y.z.",
+      "enum": ["semver"]
+    },
+    "versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version", "status", "inputs", "outputs", "errors", "requiredPermissions", "lifecycle"],
+        "properties": {
+          "version": { "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
+          "status": { "enum": ["draft", "stable", "deprecated"] },
+          "inputs": { "type": "array", "items": { "$ref": "#/$defs/field" } },
+          "outputs": { "type": "array", "items": { "$ref": "#/$defs/field" } },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "description"],
+              "properties": {
+                "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+                "description": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "requiredPermissions": {
+            "description": "Permissões que um consumidor precisa ter solicitado (deny-by-default, NN-016). Ids de docs/contracts/permissions.json.",
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)+$" }
+          },
+          "lifecycle": { "enum": ["stateless", "session", "long-running"] }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "type", "required"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][A-Za-z0-9]*$" },
+        "type": { "enum": ["string", "number", "integer", "boolean", "object", "array", "binary"] },
+        "required": { "type": "boolean" },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

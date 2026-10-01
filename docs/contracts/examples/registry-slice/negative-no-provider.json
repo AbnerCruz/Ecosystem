@@ -1,0 +1,31 @@
+{
+  "description": "Caso negativo: B exige capability.test e nenhum componente a fornece.",
+  "components": {
+    "consumer-b": {
+      "name": "Consumer B",
+      "type": "workspace",
+      "language": "csharp",
+      "path": "examples/consumer-b",
+      "status": "planned",
+      "description": "Fixture: consome capability.test ^1.0.0.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": [],
+      "requires": [
+        {
+          "capability": "capability.test",
+          "range": "^1.0.0"
+        }
+      ],
+      "permissions": {
+        "requests": [
+          "fs.read"
+        ]
+      }
+    }
+  },
+  "expect": {
+    "error": "CAP_NO_PROVIDER"
+  }
+}

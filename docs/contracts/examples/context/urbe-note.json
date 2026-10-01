@@ -1,0 +1,23 @@
+{
+  "$schema": "../../schemas/context.schema.json",
+  "schemaVersion": 1,
+  "description": "Ecosystem → Urbe → MeuVault → Nota",
+  "path": [
+    {
+      "level": "ecosystem",
+      "id": "ecosystem"
+    },
+    {
+      "level": "product",
+      "id": "urbe"
+    },
+    {
+      "level": "project",
+      "id": "MeuVault"
+    },
+    {
+      "level": "workspace",
+      "id": "Nota"
+    }
+  ]
+}

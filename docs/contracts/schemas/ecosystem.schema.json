@@ -45,6 +45,10 @@
   },
   "$defs": {
     "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
+    "capabilityId": { "description": "ID estável de capability: segmentos separados por ponto (ex.: sprite.edit, git.status).", "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*(\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)+$" },
+    "permissionId": { "type": "string", "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)+$" },
+    "semver": { "description": "Versão MAJOR.MINOR.PATCH (sem pré-lançamento nesta fase).", "type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$" },
+    "versionRange": { "description": "Faixa de versões: exata (1.2.0), caret (^1.2.0), tilde (~1.2.0) ou comparadores (>=1.0.0 <2.0.0). Ver ADR-0012.", "type": "string", "minLength": 1, "pattern": "^((\\^|~)?(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)|(>=|>|<=|<)(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)( (>=|>|<=|<)(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*))*)$" },
     "path": { "type": "string", "pattern": "^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$" },
     "component": {
       "type": "object",
@@ -125,6 +129,42 @@
         "compatibility": {
           "description": "Obrigatório (verificado pelo check) para componentes compartilhados — NN-004.",
           "type": "string", "minLength": 1
+        },
+        "provides": {
+          "description": "Capabilities que o componente fornece (provider). Cada par (capability, version) precisa ter contrato em docs/contracts/capabilities/ (ADR-0012, NN-006).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["capability", "version"],
+            "properties": {
+              "capability": { "$ref": "#/$defs/capabilityId" },
+              "version": { "$ref": "#/$defs/semver" }
+            }
+          }
+        },
+        "requires": {
+          "description": "Capabilities que o componente consome (consumer), com a faixa de versões aceita. Nunca nomeia Product ou Host concreto (NN-007).",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["capability", "range"],
+            "properties": {
+              "capability": { "$ref": "#/$defs/capabilityId" },
+              "range": { "$ref": "#/$defs/versionRange" },
+              "optional": { "type": "boolean" }
+            }
+          }
+        },
+        "permissions": {
+          "description": "Permissões solicitadas pelo componente (deny-by-default; NN-016). Precisam existir em docs/contracts/permissions.json e cobrir as exigidas pelos contratos das capabilities que ele consome.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requests"],
+          "properties": {
+            "requests": { "type": "array", "items": { "$ref": "#/$defs/permissionId" } }
+          }
         },
         "dependencies": {
           "description": "Dependências declaradas entre componentes. Verificadas contra as regras de boundary (ARCHITECTURE.md §4).",

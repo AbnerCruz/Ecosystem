@@ -1,0 +1,23 @@
+{
+  "$schema": "../../schemas/distribution-profile.schema.json",
+  "schemaVersion": 1,
+  "id": "lunet-public",
+  "name": "Lunet público (EXEMPLO conceitual)",
+  "description": "Exemplo ilustrativo; não descreve a distribuição real (DEC-0008/DEC-0009 seguem valendo até a reavaliação, P2-12). O Hub não é bundled: NN-023.",
+  "entries": [
+    {
+      "component": "lunet2d",
+      "availability": "bundled",
+      "visibility": "public",
+      "distribution": "first-party",
+      "commercialModel": "free"
+    },
+    {
+      "component": "hub",
+      "availability": "optional",
+      "visibility": "private",
+      "distribution": "none",
+      "commercialModel": "undecided"
+    }
+  ]
+}

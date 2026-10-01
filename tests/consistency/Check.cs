@@ -3,6 +3,8 @@
 // Uso (a partir da raiz do repositório, .NET SDK 10+):
 //   dotnet run tests/consistency/Check.cs               executa todos os checks
 //   dotnet run tests/consistency/Check.cs -- --self-test prova que cada check falha quando violado
+//   dotnet run tests/consistency/Check.cs -- --registry [--file <json com components>] [--discover <capability> [<faixa>]]
+//                                                      indice do Registry (capabilities, providers, consumers) e descoberta
 //
 // Cada check possui um ID estável (CHK-...) referenciado por docs/governance/enforcement-matrix.json.
 // Sem dependências externas: o validador de JSON Schema abaixo implementa apenas o subconjunto usado
@@ -21,6 +23,9 @@ if (root is null)
     Console.Error.WriteLine("Raiz do repositório não encontrada (procurei MANIFEST.md + ecosystem.json).");
     return 2;
 }
+
+if (args.Contains("--registry"))
+    return RegistryCli.Run(root, args);
 
 if (selfTest)
     return SelfTest.Run(root);
@@ -41,6 +46,7 @@ static class Checks
         "CHK-SINGLE-AUTHORITY",
         "CHK-BOUNDARIES",
         "CHK-ARCH-REFS",
+        "CHK-REGISTRY",
         "CHK-MIGRATION-HISTORY",
         "CHK-GENERIC-DIRS",
         "CHK-SHARED-DECLARATION",
@@ -83,6 +89,7 @@ static class Checks
         Guard(r, "CHK-SINGLE-AUTHORITY", () => SingleAuthority(ctx));
         Guard(r, "CHK-BOUNDARIES", () => Boundaries(ctx));
         Guard(r, "CHK-ARCH-REFS", () => ArchRefs(ctx));
+        Guard(r, "CHK-REGISTRY", () => RegistryContracts(ctx));
         Guard(r, "CHK-MIGRATION-HISTORY", () => MigrationHistory(ctx));
         Guard(r, "CHK-GENERIC-DIRS", () => GenericDirs(ctx));
         Guard(r, "CHK-SHARED-DECLARATION", () => SharedDeclaration(ctx));
@@ -166,6 +173,10 @@ static class Checks
         "docs/governance/enforcement-matrix.json" => "docs/contracts/schemas/enforcement-matrix.schema.json",
         _ when file.StartsWith("docs/governance/handoffs/") => "docs/contracts/schemas/handoff.schema.json",
         _ when file.StartsWith("docs/validation/") => "docs/contracts/schemas/validation-record.schema.json",
+        "docs/contracts/permissions.json" => "docs/contracts/schemas/permissions-catalog.schema.json",
+        _ when file.StartsWith("docs/contracts/") && file.Contains("/capabilities/") && file.EndsWith(".json") => "docs/contracts/schemas/capability-contract.schema.json",
+        _ when file.StartsWith("docs/contracts/examples/context/") => "docs/contracts/schemas/context.schema.json",
+        _ when file.StartsWith("docs/contracts/examples/distribution/") => "docs/contracts/schemas/distribution-profile.schema.json",
         _ => null,
     };
 
@@ -687,6 +698,64 @@ static class Checks
                 c.R.Fail(id, $"ROADMAP.md: item marcado como concluído com validação humana pendente: {m.Value.Trim()}");
     }
 
+    // --- CHK-REGISTRY (ADR-0012; NN-006, NN-007, NN-016, NN-023) ---
+    // Contratos da Fase 2 com estrutura confiável: o Registry de produção (ecosystem.json + docs/contracts/capabilities) é consistente e o
+    // vertical slice em docs/contracts/examples prova descoberta e compatibilidade (caso positivo) e cada tipo de falha (casos negativos).
+    static void RegistryContracts(Context c)
+    {
+        const string id = "CHK-REGISTRY";
+        c.R.Ran(id);
+        var perms = RegistryFiles.LoadPermissions(c.P("docs/contracts/permissions.json"));
+        if (perms.Count == 0) { c.R.Fail(id, "docs/contracts/permissions.json ausente ou sem permissões"); return; }
+
+        var reg = new Registry(c.Components(), RegistryFiles.LoadContracts(c.P("docs/contracts/capabilities")), perms);
+        foreach (var (code, msg) in reg.Validate()) c.R.Fail(id, $"ecosystem.json: {code}: {msg}");
+
+        var schema = c.LoadSchema("docs/contracts/schemas/ecosystem.schema.json");
+        var dir = c.P("docs/contracts/examples/registry-slice");
+        if (!Directory.Exists(dir) || schema is null) { c.R.Fail(id, "vertical slice ausente: docs/contracts/examples/registry-slice"); return; }
+        var exContracts = RegistryFiles.LoadContracts(Path.Combine(dir, "capabilities"));
+        var seen = new HashSet<string>();
+        foreach (var f in Directory.EnumerateFiles(dir, "*.json").Order())
+        {
+            var name = Path.GetFileName(f); seen.Add(name);
+            using var doc = JsonDocument.Parse(File.ReadAllText(f));
+            var comps = doc.RootElement.GetProperty("components");
+            var serr = new List<string>();
+            new SchemaValidator(schema.RootElement).ValidateAt("#/properties/components", comps, serr);
+            foreach (var e in serr) c.R.Fail(id, $"{name}: {e}");
+            var rg = new Registry(comps.EnumerateObject().Select(p => (p.Name, p.Value)), exContracts, perms);
+            var errors = rg.Validate();
+            var expect = doc.RootElement.GetProperty("expect");
+            if (expect.Str("error") is { } code)
+            {
+                if (!errors.Any(e => e.Code == code)) c.R.Fail(id, $"{name}: esperava a falha {code}, obteve [{string.Join(", ", errors.Select(e => e.Code))}]");
+            }
+            else
+            {
+                foreach (var (ecode, msg) in errors) c.R.Fail(id, $"{name}: o caso positivo falhou: {ecode}: {msg}");
+                if (expect.TryGetProperty("discover", out var disc))
+                    foreach (var cap in disc.EnumerateObject())
+                    {
+                        var want = cap.Value.EnumerateArray().Select(x => x.GetString()!).Order().ToList();
+                        var got = rg.Providers(cap.Name).Select(p => $"{p.Component}@{p.Version}").Order().ToList();
+                        if (!want.SequenceEqual(got)) c.R.Fail(id, $"{name}: descoberta de {cap.Name}: esperado [{string.Join(", ", want)}], obtido [{string.Join(", ", got)}]");
+                    }
+            }
+        }
+        foreach (var required in new[] { "positive.json", "negative-incompatible.json" })
+            if (!seen.Contains(required)) c.R.Fail(id, $"vertical slice sem {required}");
+
+        var products = c.Components().Where(x => x.El.Str("type") == "product").Select(x => x.Id).ToHashSet();
+        var ids = c.Components().Select(x => x.Id).ToHashSet();
+        foreach (var f in (Directory.Exists(c.P("docs/contracts/examples/context")) ? Directory.EnumerateFiles(c.P("docs/contracts/examples/context"), "*.json") : []).Order())
+            using (var doc = JsonDocument.Parse(File.ReadAllText(f)))
+                foreach (var e in RegistryFiles.ContextErrors(doc.RootElement, products)) c.R.Fail(id, $"{c.Rel(f)}: {e}");
+        foreach (var f in (Directory.Exists(c.P("docs/contracts/examples/distribution")) ? Directory.EnumerateFiles(c.P("docs/contracts/examples/distribution"), "*.json") : []).Order())
+            using (var doc = JsonDocument.Parse(File.ReadAllText(f)))
+                foreach (var e in RegistryFiles.ProfileErrors(doc.RootElement, ids)) c.R.Fail(id, $"{c.Rel(f)}: {e}");
+    }
+
     // --- CHK-MIGRATION-HISTORY (NN-012; P1-8) ---
     // O histórico importado continua presente: todo commit do commit-map é ancestral do HEAD e toda tag registrada existe no commit
     // registrado. Precisa de histórico completo (CI usa fetch-depth: 0); sem git ou com clone raso é "não verificado", nunca aprovado.
@@ -1050,6 +1119,11 @@ sealed class Context(string root, Report r)
         var hdir = P("docs/governance/handoffs");
         if (Directory.Exists(hdir))
             files.AddRange(Directory.EnumerateFiles(hdir, "*.json").Order().Select(Rel));
+        if (File.Exists(P("docs/contracts/permissions.json"))) files.Add("docs/contracts/permissions.json");
+        foreach (var d in new[] { "docs/contracts/capabilities", "docs/contracts/examples" })
+            if (Directory.Exists(P(d)))
+                files.AddRange(Directory.EnumerateFiles(P(d), "*.json", SearchOption.AllDirectories).Order().Select(Rel)
+                    .Where(f => f.Contains("/capabilities/") || f.Contains("/examples/context/") || f.Contains("/examples/distribution/")));
         var vdir = P("docs/validation");
         if (Directory.Exists(vdir))
             files.AddRange(Directory.EnumerateFiles(vdir, "*.json", SearchOption.AllDirectories).Order().Select(Rel));
@@ -1159,6 +1233,194 @@ static class Repo
         Directory.EnumerateFiles(dir).Concat(WalkDirs(dir).SelectMany(Directory.EnumerateFiles));
 }
 
+// =============================================================================================================================
+// Registry inicial e validador de compatibilidade (Fase 2, ADR-0012). Local-first (ADR-0011): nasce DENTRO dos checks do Ecosystem,
+// onde estão seus consumidores reais (CHK-REGISTRY, `--registry`); só será promovido a componente próprio quando o Hub for consumidor.
+// =============================================================================================================================
+
+readonly record struct SemVer(int Major, int Minor, int Patch) : IComparable<SemVer>
+{
+    public static bool TryParse(string? s, out SemVer v)
+    {
+        v = default;
+        var m = Regex.Match(s ?? "", @"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$");
+        if (!m.Success) return false;
+        v = new SemVer(int.Parse(m.Groups[1].Value), int.Parse(m.Groups[2].Value), int.Parse(m.Groups[3].Value));
+        return true;
+    }
+    public int CompareTo(SemVer o) => Major != o.Major ? Major.CompareTo(o.Major) : Minor != o.Minor ? Minor.CompareTo(o.Minor) : Patch.CompareTo(o.Patch);
+    public override string ToString() => $"{Major}.{Minor}.{Patch}";
+}
+
+static class VersionRange
+{
+    /// <summary>Exata (1.2.0), caret (^1.2.0), tilde (~1.2.0) ou comparadores separados por espaço (&gt;=1.0.0 &lt;2.0.0). Inválida: null.</summary>
+    public static bool? Satisfies(SemVer v, string range)
+    {
+        range = range.Trim();
+        if (range.Length == 0) return null;
+        if (range[0] is '^' or '~')
+        {
+            if (!SemVer.TryParse(range[1..], out var b)) return null;
+            SemVer upper = range[0] == '~' ? new(b.Major, b.Minor + 1, 0)
+                : b.Major > 0 ? new(b.Major + 1, 0, 0) : b.Minor > 0 ? new(0, b.Minor + 1, 0) : new(0, 0, b.Patch + 1);
+            return v.CompareTo(b) >= 0 && v.CompareTo(upper) < 0;
+        }
+        if (SemVer.TryParse(range, out var exact)) return v.CompareTo(exact) == 0;
+        var ok = true;
+        foreach (var part in range.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var m = Regex.Match(part, @"^(>=|>|<=|<)(.+)$");
+            if (!m.Success || !SemVer.TryParse(m.Groups[2].Value, out var bound)) return null;
+            var cmp = v.CompareTo(bound);
+            ok &= m.Groups[1].Value switch { ">=" => cmp >= 0, ">" => cmp > 0, "<=" => cmp <= 0, _ => cmp < 0 };
+        }
+        return ok;
+    }
+}
+
+sealed class Registry(IEnumerable<(string Id, JsonElement El)> components, Dictionary<string, Dictionary<string, JsonElement>> contracts, ISet<string> permissions)
+{
+    readonly List<(string Id, JsonElement El)> comps = components.ToList();
+
+    public IEnumerable<string> Capabilities => comps.SelectMany(c => c.El.Arr("provides").Select(p => p.Str("capability")!))
+        .Concat(comps.SelectMany(c => c.El.Arr("requires").Select(r => r.Str("capability")!))).Distinct().Order();
+
+    /// <summary>Todos os providers declarados de uma capability, com a versão fornecida.</summary>
+    public IEnumerable<(string Component, SemVer Version)> Providers(string capability) =>
+        comps.SelectMany(c => c.El.Arr("provides").Where(p => p.Str("capability") == capability)
+            .Where(p => SemVer.TryParse(p.Str("version"), out _)).Select(p => { SemVer.TryParse(p.Str("version"), out var v); return (c.Id, v); }));
+
+    /// <summary>Descoberta: providers cuja versão satisfaz a faixa.</summary>
+    public IEnumerable<(string Component, SemVer Version)> Discover(string capability, string range) =>
+        Providers(capability).Where(p => VersionRange.Satisfies(p.Version, range) == true);
+
+    public List<(string Code, string Message)> Validate()
+    {
+        var errors = new List<(string, string)>();
+        var types = new Dictionary<string, string?>();
+        foreach (var (cid, cel) in comps) types.TryAdd(cid, cel.Str("type")); // duplicatas são reportadas por CHK-IDS-UNIQUE
+        foreach (var (id, el) in comps)
+        {
+            foreach (var p in el.Arr("provides"))
+            {
+                var cap = p.Str("capability")!; var ver = p.Str("version")!;
+                if (!contracts.TryGetValue(cap, out var versions)) errors.Add(("CAP_UNKNOWN", $"{id} fornece '{cap}', que não tem contrato"));
+                else if (!versions.ContainsKey(ver)) errors.Add(("CAP_VERSION_UNKNOWN", $"{id} fornece {cap}@{ver}, versão sem contrato"));
+            }
+            var requested = el.TryGetProperty("permissions", out var perms) ? perms.Arr("requests").Select(x => x.GetString()!).ToHashSet() : [];
+            foreach (var rq in requested.Where(x => !permissions.Contains(x)))
+                errors.Add(("PERMISSION_UNKNOWN", $"{id} solicita a permissão '{rq}', que não existe em docs/contracts/permissions.json"));
+            foreach (var r in el.Arr("requires"))
+            {
+                var cap = r.Str("capability")!; var range = r.Str("range")!;
+                var optional = r.TryGetProperty("optional", out var o) && o.ValueKind == JsonValueKind.True;
+                if (!contracts.TryGetValue(cap, out var versions)) { errors.Add(("CAP_UNKNOWN", $"{id} exige '{cap}', que não tem contrato")); continue; }
+                if (VersionRange.Satisfies(new SemVer(0, 0, 0), range) is null) { errors.Add(("RANGE_INVALID", $"{id} exige {cap} com faixa inválida '{range}'")); continue; }
+                var providers = Providers(cap).ToList();
+                if (providers.Count == 0) { if (!optional) errors.Add(("CAP_NO_PROVIDER", $"{id} exige {cap} {range}, mas nenhum componente a fornece")); continue; }
+                var matching = Discover(cap, range).ToList();
+                if (matching.Count == 0)
+                {
+                    if (!optional) errors.Add(("CAP_INCOMPATIBLE", $"{id} exige {cap} {range}; providers disponíveis: {string.Join(", ", providers.Select(p => $"{p.Component}@{p.Version}"))}"));
+                    continue;
+                }
+                // deny-by-default (NN-016): o consumidor precisa ter solicitado as permissões que o contrato da versão fornecida exige.
+                foreach (var (_, ver) in matching)
+                    if (versions.TryGetValue(ver.ToString(), out var vc))
+                        foreach (var need in vc.Arr("requiredPermissions").Select(x => x.GetString()!).Where(x => !requested.Contains(x)))
+                            errors.Add(("PERMISSION_MISSING", $"{id} consome {cap}@{ver}, que exige a permissão '{need}', não solicitada"));
+            }
+            // boundaries também no Registry: Tool/Service/Library/Workspace/Adapter não conhecem Host concreto (NN-007); Product → Product direto é proibido (NN-002).
+            foreach (var d in el.Arr("dependencies").Select(x => x.Str("component")).Where(x => x is not null && types.TryGetValue(x, out var t) && t == "product"))
+                if (types[id] == "product") errors.Add(("PRODUCT_DEPENDS_ON_PRODUCT", $"{id} depende diretamente do Product {d}"));
+                else if (types[id] is "tool" or "service" or "library" or "workspace" or "adapter")
+                    errors.Add(("TOOL_KNOWS_HOST", $"{id} ({types[id]}) depende do Product/Host concreto {d}"));
+        }
+        return errors.Distinct().ToList();
+    }
+}
+
+static class RegistryFiles
+{
+    public static Dictionary<string, Dictionary<string, JsonElement>> LoadContracts(string dir)
+    {
+        var result = new Dictionary<string, Dictionary<string, JsonElement>>();
+        if (!Directory.Exists(dir)) return result;
+        foreach (var f in Directory.EnumerateFiles(dir, "*.json").Order())
+        {
+            var doc = JsonDocument.Parse(File.ReadAllText(f)).RootElement.Clone();
+            if (doc.Str("capability") is not { } cap) continue;
+            result[cap] = doc.Arr("versions").Where(v => v.Str("version") is not null).ToDictionary(v => v.Str("version")!, v => v);
+        }
+        return result;
+    }
+
+    public static HashSet<string> LoadPermissions(string file) =>
+        File.Exists(file) ? JsonDocument.Parse(File.ReadAllText(file)).RootElement.Arr("permissions").Select(p => p.Str("id")!).ToHashSet() : [];
+
+    /// <summary>Regras de Context além do schema: começa em ecosystem, níveis em ordem estrita e o produto existe.</summary>
+    public static List<string> ContextErrors(JsonElement ctx, ISet<string> products)
+    {
+        var errors = new List<string>(); var order = new[] { "ecosystem", "product", "project", "workspace", "tool" };
+        var path = ctx.Arr("path").ToList();
+        if (path.Count == 0) return ["path vazio"];
+        if (path[0].Str("level") != "ecosystem") errors.Add("o Context precisa começar no nível 'ecosystem'");
+        var last = -1;
+        foreach (var seg in path)
+        {
+            var i = Array.IndexOf(order, seg.Str("level"));
+            if (i <= last) errors.Add($"nível '{seg.Str("level")}' fora de ordem (ecosystem → product → project → workspace → tool, sem repetir)");
+            last = Math.Max(last, i);
+            if (seg.Str("level") == "product" && !products.Contains(seg.Str("id") ?? "")) errors.Add($"product '{seg.Str("id")}' não existe em ecosystem.json");
+        }
+        return errors;
+    }
+
+    /// <summary>Regras de Distribution Profile além do schema: componentes existem, sem duplicata e NN-023 (Hub nunca bundled com Product público).</summary>
+    public static List<string> ProfileErrors(JsonElement prof, ISet<string> componentIds)
+    {
+        var errors = new List<string>(); var entries = prof.Arr("entries").ToList();
+        foreach (var e in entries.Where(e => !componentIds.Contains(e.Str("component") ?? ""))) errors.Add($"componente '{e.Str("component")}' não existe em ecosystem.json");
+        foreach (var g in entries.GroupBy(e => e.Str("component")).Where(g => g.Count() > 1)) errors.Add($"componente '{g.Key}' repetido");
+        var publicProduct = entries.Any(e => e.Str("component") is { } cid && cid != "hub" && e.Str("visibility") == "public" && e.Str("availability") is "bundled" or "optional" or "marketplace");
+        if (publicProduct && entries.Any(e => e.Str("component") == "hub" && e.Str("availability") == "bundled"))
+            errors.Add("o Hub não pode ser 'bundled' em um perfil que inclui um componente público (NN-023)");
+        return errors;
+    }
+}
+
+static class RegistryCli
+{
+    public static int Run(string root, string[] args)
+    {
+        string Opt(string name) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : ""; }
+        var file = Opt("--file") is { Length: > 0 } f ? Path.GetFullPath(f) : Path.Combine(root, "ecosystem.json");
+        using var doc = JsonDocument.Parse(File.ReadAllText(file));
+        var comps = doc.RootElement.GetProperty("components").EnumerateObject().Select(p => (p.Name, p.Value)).ToList();
+        var contractsDir = Opt("--file").Length > 0 ? Path.Combine(Path.GetDirectoryName(file)!, "capabilities") : Path.Combine(root, "docs", "contracts", "capabilities");
+        var reg = new Registry(comps, RegistryFiles.LoadContracts(contractsDir), RegistryFiles.LoadPermissions(Path.Combine(root, "docs", "contracts", "permissions.json")));
+        var disc = Array.IndexOf(args, "--discover");
+        if (disc >= 0 && disc + 1 < args.Length)
+        {
+            var cap = args[disc + 1]; var range = disc + 2 < args.Length && !args[disc + 2].StartsWith("--") ? args[disc + 2] : ">=0.0.0";
+            var found = reg.Discover(cap, range).ToList();
+            Console.WriteLine($"{cap} {range}: " + (found.Count == 0 ? "nenhum provider compativel" : string.Join(", ", found.Select(p => $"{p.Component}@{p.Version}"))));
+            return found.Count == 0 ? 1 : 0;
+        }
+        foreach (var cap in reg.Capabilities)
+        {
+            Console.WriteLine(cap);
+            foreach (var p in reg.Providers(cap)) Console.WriteLine($"  provider: {p.Component}@{p.Version}");
+            foreach (var (id, el) in comps) foreach (var r in el.Arr("requires").Where(r => r.Str("capability") == cap)) Console.WriteLine($"  consumer: {id} ({r.Str("range")})");
+        }
+        var errors = reg.Validate();
+        foreach (var (code, msg) in errors) Console.WriteLine($"ERRO {code}: {msg}");
+        if (!reg.Capabilities.Any()) Console.WriteLine("(nenhuma capability declarada)");
+        return errors.Count == 0 ? 0 : 1;
+    }
+}
+
 static class Json
 {
     public static string? Str(this JsonElement e, string name) =>
@@ -1197,6 +1459,9 @@ sealed class SchemaValidator(JsonElement rootSchema)
         ["type", "const", "enum", "pattern", "minLength", "minItems", "required", "properties", "additionalProperties", "propertyNames", "items", "$ref"];
 
     public void Validate(JsonElement instance, List<string> errors) => Validate(instance, rootSchema, "$", errors);
+
+    /// <summary>Valida contra uma sub-definição do mesmo arquivo (ex.: "#/properties/components").</summary>
+    public void ValidateAt(string reference, JsonElement instance, List<string> errors) => Validate(instance, Resolve(reference), "$", errors);
 
     void Validate(JsonElement inst, JsonElement schema, string path, List<string> errors)
     {
@@ -1440,6 +1705,16 @@ static class SelfTest
             r => { AddReuseHandoff(r, "b", "urbe", "2099-01-01T00:00:00Z", Reuse("account-login", "possible-candidate")); AddReuseHandoff(r, "bb", "lunet2d", "2099-01-02T00:00:00Z", Reuse("account-login", "possible-candidate")); }),
         new("possible-candidate com extraction_review", "CHK-HANDOFFS",
             r => AddReuseHandoff(r, "c", "urbe", "2099-01-01T00:00:00Z", Reuse("account-login", "possible-candidate", ",\"extraction_review\":\"pending\""))),
+        new("vertical slice: positivo deixa de ser compatível", "CHK-REGISTRY",
+            r => Replace(r, "docs/contracts/examples/registry-slice/positive.json", "\"range\": \"^1.0.0\"", "\"range\": \"^2.0.0\"")),
+        new("vertical slice: negativo não falha como esperado", "CHK-REGISTRY",
+            r => Replace(r, "docs/contracts/examples/registry-slice/negative-incompatible.json", "\"error\": \"CAP_INCOMPATIBLE\"", "\"error\": \"CAP_NO_PROVIDER\"")),
+        new("componente real exige capability sem contrato", "CHK-REGISTRY",
+            r => Replace(r, "ecosystem.json", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"requires\": [{ \"capability\": \"nao.existe\", \"range\": \"^1.0.0\" }],")),
+        new("Context fora de ordem", "CHK-REGISTRY",
+            r => Replace(r, "docs/contracts/examples/context/lunet-editor.json", "\"level\": \"tool\"", "\"level\": \"project\"")),
+        new("Distribution Profile com o Hub bundled (NN-023)", "CHK-REGISTRY",
+            r => Replace(r, "docs/contracts/examples/distribution/lunet-public.example.json", "\"availability\": \"optional\"", "\"availability\": \"bundled\"")),
         new("Caso A: ROADMAP [x] com Issue em state:review", "CHK-STATE-CONSISTENCY",
             r => { Directory.CreateDirectory(Path.Combine(r, "site", "data")); File.WriteAllText(Path.Combine(r, "site", "data", "issues-snapshot.json"), "[{\"number\":6,\"title\":\"P1-3 — Plano\",\"state\":\"OPEN\",\"labels\":[{\"name\":\"state:review\"}]}]"); }),
         new("tarefa [~] sem Issue aberta", "CHK-STATE-CONSISTENCY",
@@ -1455,7 +1730,7 @@ static class SelfTest
         new("produto importado sem registro de importação", "CHK-MIGRATION-HISTORY",
             r => File.Delete(Path.Combine(r, "docs", "migration", "import-urbe.json"))),
         new("portal mostra gate não aprovado como aprovado", "CHK-PORTAL",
-            r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"phase\": 2,\n        \"state\": \"não iniciado\"", "\"phase\": 2,\n        \"state\": \"aprovado\"")); }),
+            r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"phase\": 2,\n        \"state\": \"aguardando\"", "\"phase\": 2,\n        \"state\": \"aprovado\"")); }),
         new("Caso B: produto active no ecosystem.json, projeção diz not-migrated", "CHK-PORTAL",
             r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"active\"", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"not-migrated\""); }),
         new("Caso C: decisão decided, projeção ainda a mostra pendente", "CHK-PORTAL",
@@ -1504,6 +1779,7 @@ static class SelfTest
         failures += ApplierTests(repoRoot);
         failures += ValidationApplierTests(repoRoot);
         failures += OriginSyncTests(repoRoot);
+        failures += RegistryUnitTests();
         failures += MigrationHistoryTests(repoRoot);
 
         foreach (var id in Checks.Ids.Where(i => !covered.Contains(i)))
@@ -1748,6 +2024,29 @@ static class SelfTest
         }
         catch (Exception e) { Report(false, "execução: " + e.Message); }
         finally { try { if (Directory.Exists(tmp)) { foreach (var f in Directory.EnumerateFiles(tmp, "*", SearchOption.AllDirectories)) File.SetAttributes(f, FileAttributes.Normal); Directory.Delete(tmp, true); } } catch { } }
+        return failures;
+    }
+
+    /// <summary>Semântica de versões e faixas (ADR-0012): exata, caret, tilde e comparadores; faixas inválidas são recusadas.</summary>
+    static int RegistryUnitTests()
+    {
+        var failures = 0;
+        void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  registry: {name}"); if (!ok) failures++; }
+        bool? S(string v, string r) { SemVer.TryParse(v, out var sv); return VersionRange.Satisfies(sv, r); }
+        Report(S("1.2.3", "1.2.3") == true && S("1.2.4", "1.2.3") == false, "versão exata");
+        Report(S("1.9.0", "^1.2.0") == true && S("2.0.0", "^1.2.0") == false && S("1.1.9", "^1.2.0") == false, "caret: compatível dentro do mesmo MAJOR");
+        Report(S("0.2.9", "^0.2.1") == true && S("0.3.0", "^0.2.1") == false, "caret em 0.x: MINOR é quebra");
+        Report(S("1.2.9", "~1.2.0") == true && S("1.3.0", "~1.2.0") == false, "tilde: só PATCH");
+        Report(S("1.5.0", ">=1.0.0 <2.0.0") == true && S("2.0.0", ">=1.0.0 <2.0.0") == false && S("0.9.0", ">=1.0.0 <2.0.0") == false, "comparadores combinados");
+        Report(S("1.0.0", "latest") is null && S("1.0.0", "^1.x") is null && S("1.0.0", "") is null, "faixa inválida é recusada, não aceita");
+        Report(!SemVer.TryParse("1.0", out _) && !SemVer.TryParse("01.0.0", out _) && SemVer.TryParse("10.20.30", out var v) && v.CompareTo(new SemVer(9, 99, 99)) > 0, "versão: formato estrito e ordenação numérica");
+        var perms = new HashSet<string> { "fs.read" };
+        using var doc = JsonDocument.Parse("""{"a":{"type":"tool","provides":[{"capability":"x.y","version":"1.0.0"},{"capability":"x.y","version":"1.4.0"}]},"b":{"type":"tool","provides":[{"capability":"x.y","version":"2.0.0"}]},"c":{"type":"workspace","requires":[{"capability":"x.y","range":"^1.0.0"}]}}""");
+        using var contract = JsonDocument.Parse("""{"capability":"x.y","versions":[{"version":"1.0.0","requiredPermissions":[]},{"version":"1.4.0","requiredPermissions":[]},{"version":"2.0.0","requiredPermissions":[]}]}""");
+        var contracts = new Dictionary<string, Dictionary<string, JsonElement>> { ["x.y"] = contract.RootElement.Arr("versions").ToDictionary(v2 => v2.Str("version")!, v2 => v2) };
+        var reg = new Registry(doc.RootElement.EnumerateObject().Select(p => (p.Name, p.Value)), contracts, perms);
+        var found = reg.Discover("x.y", "^1.0.0").Select(p => $"{p.Component}@{p.Version}").Order().ToList();
+        Report(found.SequenceEqual(["a@1.0.0", "a@1.4.0"]) && reg.Validate().Count == 0, "descoberta devolve só providers compatíveis; consumidor satisfeito valida");
         return failures;
     }
 

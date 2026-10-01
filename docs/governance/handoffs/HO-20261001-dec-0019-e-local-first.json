@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "ecosystem",
+  "state": "done",
+  "message_id": "HO-20261001-dec-0019-e-local-first",
+  "timestamp": "2026-10-01T16:00:00Z",
+  "task_id": "P1-15",
+  "files_changed": [
+    "docs/governance/decisions.json",
+    "docs/governance/responses/DEC-0019.md",
+    "ecosystem.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "docs/contracts/schemas/decisions.schema.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    ".github/scripts/apply-decision.cs",
+    "tests/consistency/Check.cs",
+    "site/generator/GenerateStatus.cs",
+    "site/app.js",
+    "site/index.html",
+    "docs/adr/0010-semantica-de-ecosystem-phase-e-estado-derivado.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/architecture/local-first.md",
+    "docs/architecture/refactoring.md",
+    "docs/governance/addenda/ADD-0009-local-first-e-promocao-por-evidencia.md",
+    "ARCHITECTURE.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/handoffs/HO-20261001-dec-0019-e-local-first.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO (HEAD inicial 599afae): o clique do proprietário em DEC-0019 (Issue #29, execução 36851899880) terminou 'success', mas decisions.json seguia 'pending'. Causa raiz: a automação recusou o registro ('Registro não efetuado') porque CHK-STATE-CONSISTENCY (criado em P1-14) falhava ao ver ARCHITECTURE §8.2 citar a decisão como aberta — estado que o registro automático necessariamente cria; a Issue foi fechada como 'not planned' com a recusa em comentário, e o workflow ficou verde. Foi um defeito introduzido por mim em P1-14, não uma indexação atrasada.",
+    "ALTERAÇÃO: o registrador passou a gravar consequencesApplied=false (estado transitório visível e não bloqueante; o agente muda para true ao aplicar as consequências, e só então citar a decisão como aberta é deriva). Self-test reproduz o caso real e a deriva posterior. Reconciliação pelo mecanismo canônico: reexecução (rerun) da mesma execução do workflow sobre o evento original do proprietário, sem gravar nada à mão e sem criar Issue; o bot registrou DEC-0019 = A (commit 6eb5bc6).",
+    "DECISÃO EXISTENTE aplicada (DEC-0019-A): ecosystem.phase removido de ecosystem.json, do schema e da projeção; o portal mostra os gates derivados do ROADMAP; ADR-0010 Aceito; consequencesApplied=true.",
+    "DECISÃO DO PROPRIETÁRIO persistida (ADD-0009): Local-first e promoção por evidência. ALTERAÇÃO: ADR-0011 (Aceito), guia docs/architecture/local-first.md (fluxo, três estados, Extraction Review, exemplo de login, duplicação temporária), ADR-0009 complementado (sem terceiro sistema), refactoring.md/ARCHITECTURE/AGENTS/communication atualizados. Nenhuma NN nova; MANIFEST intacto.",
+    "ALTERAÇÃO — mecanismo de registro (delegado, menor complexidade): campo OPCIONAL reuse_assessment[] no schema de handoff (sem nova versão; handoffs históricos intactos), validado em CHK-HANDOFFS (external-consumer-exists exige consumidores concretos e extraction_review; segundo componente com o mesmo subject sem Extraction Review falha) e projetado no portal (reuseCandidates, derivado, conferido por CHK-PORTAL). 3 casos de self-test."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "21/21 checks e 'todos os checks provaram detectar suas violações' (inclui o caso real do registrador bloqueado)."
+    },
+    {
+      "check": "DEC-0019 registrada pelo mecanismo canônico",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Issue #29 fechada; execução 36851899880 (tentativa 2) concluída com 'Decisão registrada'; commit 6eb5bc6 do bot; responses/DEC-0019.md; decisions.json decided/A."
+    }
+  ],
+  "known_issues": [
+    "A recusa do registrador fecha a Issue como 'not planned' e o workflow termina verde; hoje só o comentário da Issue avisa. Candidato a melhoria (fazer o workflow falhar visivelmente em recusa por inconsistência), não feito nesta tarefa."
+  ],
+  "next_actions": [
+    "Fase 2 (handoff HO-20261001-fase-2-aberta-e-vertical-slice)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/adr/0010-semantica-de-ecosystem-phase-e-estado-derivado.md",
+    "docs/governance/addenda/ADD-0009-local-first-e-promocao-por-evidencia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "A decisão do proprietário foi registrada pelo mecanismo canônico e o princípio local-first persistido em ADD-0009/ADR-0011."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma decisão gravada à mão; mecanismo de registro e consequências aplicadas com ADR."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "apps/ inalterado."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Mecanismo mínimo (campo opcional), nenhuma NN nova, nenhum diretório novo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Extraction Review com as cinco perguntas é o gate de qualquer promoção."
+    }
+  ]
+}

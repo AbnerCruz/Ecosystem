@@ -649,6 +649,39 @@
       "decidedAt": "2026-10-01",
       "record": "docs/governance/responses/DEC-0019.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0020",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Ratificar os contratos da Fase 2 (ADR-0012) e os nomes provisórios dos eixos de distribuição",
+      "context": "A Fase 2 foi aberta e o primeiro vertical slice já roda (capability.test: provider A v1, consumer B ^1 compatível, consumer C ^2 incompatível; Registry local dentro dos checks). Os contratos estão no ADR-0012 (Proposto): ComponentManifest = a entrada de ecosystem.json estendida com provides/requires/permissions; capability em docs/contracts/capabilities com versões semver; permissões deny-by-default; Context hierárquico; Registry derivado; Distribution Profile com três eixos independentes. Os NOMES e valores dos eixos (visibility: public|unlisted|private|internal; distribution: first-party|external-store|none; commercialModel: free|paid|subscription|undecided; availability: bundled|optional|marketplace|unavailable) são provisórios. Nada disso muda Lunet2D ou Urbe nem as releases atuais.",
+      "question": "Os contratos da Fase 2 do ADR-0012 devem ser aceitos, e os nomes dos eixos de distribuição congelados ou mantidos provisórios?",
+      "alternatives": [
+        {
+          "option": "Aceitar o ADR-0012 inteiro, mantendo os nomes dos eixos como estão",
+          "consequences": "Contratos e nomes passam a valer; o ADR vira Aceito. Mudar um nome depois exige novo ADR e migração do arquivo de perfil (nenhum perfil real existe ainda). O gate da Fase 2 pode seguir."
+        },
+        {
+          "option": "Aceitar os contratos (manifest, capability, versões, Context, permissões, Registry) e manter os nomes dos eixos provisórios até a reavaliação de DEC-0008/DEC-0009 (P2-12)",
+          "consequences": "Os contratos que o Registry usa ficam estáveis; os nomes só são congelados quando houver um perfil real a descrever (a distribuição definitiva dos produtos), o que reduz o risco de nomear às cegas. Recomendação."
+        },
+        {
+          "option": "Não aprovar ainda; pedir mudanças nos contratos",
+          "consequences": "Os checks e o slice continuam, mas a Fase 2 não pode ter o gate aprovado. Descreva a mudança e o agente a aplica."
+        }
+      ],
+      "consequences": "Não bloqueia o trabalho: o slice e os checks já passam. Bloqueia apenas a aprovação do gate da Fase 2 (P2-14) e o congelamento dos nomes (P2-9).",
+      "manifestCompatibility": "Respeita NN-001 (manifest é a entrada de ecosystem.json; provider derivado), NN-004/NN-020/NN-022 (nenhum componente ou diretório novo), NN-006, NN-007, NN-016, NN-023 e ADR-0011.",
+      "recommendation": "B: congela já o que o Registry precisa e deixa os nomes de distribuição para quando existir um perfil real (P2-12).",
+      "related": [
+        "docs/adr/0012-contratos-da-fase-2.md",
+        "docs/contracts/examples/registry-slice/positive.json",
+        "docs/contracts/examples/distribution/lunet-public.example.json"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }

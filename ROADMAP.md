@@ -14,9 +14,9 @@
 
 ## Próxima tarefa
 
-**Fase 2 — Contracts e Registry: abrir o plano da fase** (tarefas `P2-x`, ainda não iniciada). Antes dela e em paralelo a ela, o proprietário pode **refatorar os aplicativos** (passo 10) pelas regras do ADR-0009 `Aceito` e do guia [`refactoring.md`](docs/architecture/refactoring.md); a ordem sugerida está em [`candidates.md`](docs/architecture/candidates.md).
+**Fase 2 em andamento** (aguardando o gate): **P2-12** — reavaliar DEC-0008/DEC-0009 com o modelo declarativo pronto — e **DEC-0020** (ratificar o ADR-0012 e os nomes dos eixos) no portal; depois P2-13 e o gate (P2-14).
 
-*Por quê:* a Fase 1 está encerrada (gate aprovado em 2026-10-01); a Fase 2 é o que habilita extrações para o Ecosystem (contratos de Capability e Context, Distribution Profile, registry).
+Em paralelo e **fora do Ecosystem**: refatorações internas dos aplicativos pelo ADR-0009 e [`refactoring.md`](docs/architecture/refactoring.md) — sugestão: **U-R1** no Urbe (continuar a decomposição de `app.js` / Product Shell) e **L-R2** no Lunet2D (decompor `MainActivity` em Shell + painéis), conforme [`candidates.md`](docs/architecture/candidates.md). Nenhum subsistema é extraído sem evidência de segundo consumidor ([`local-first.md`](docs/architecture/local-first.md)).
 
 *Como ler o estado:* fase e gates = este arquivo (linha `*Estado do gate:*` de cada fase); tarefas em andamento = Issues (`state:<estado>`); resultado e evidência = handoffs; decisões e validações pendentes = portal.
 
@@ -91,6 +91,7 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 - [x] P1-12 — Classificar candidatos (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter) a partir dos mapas funcionais **já validados pós-migração**: apenas proposta; nenhuma extração (passo 9 de [`docs/migration/README.md`](docs/migration/README.md) §7). Extração/modernização (passo 10) está fora da Fase 1 e exige ADR por extração. **Concluído:** [`candidates.md`](docs/architecture/candidates.md), revisão aprovada pelo proprietário (Issue #27, `VAL-HO-20261001-classificacao-de-candidatos-f2cc354957c9`); regras do passo 10 em ADR-0009 `Aceito` (DEC-0018-A).
 - [x] P1-13 — Gate da Fase 1 **aprovado pelo proprietário** em 2026-10-01 (Issue #28, `VAL-HO-20261001-gate-da-fase-1-247456bb21aa`); evidências no handoff `HO-20261001-gate-da-fase-1`.
 - [x] P1-14 — Reconciliação de deriva de estado (auditoria externa pós-gate, sem tocar nos produtos): README sem estado, ARCHITECTURE atual × planejado × não decidido, Issue #6, matriz de enforcement, gates no portal; `CHK-STATE-CONSISTENCY` e `CHK-MIGRATION-HISTORY`; ADR-0010 `Proposto` e **DEC-0019** pendente. Evidência: handoff `HO-20261001-reconciliacao-de-deriva-de-estado`; mapa em [`state-drift.md`](docs/governance/state-drift.md).
+- [x] P1-15 — Reconciliação de DEC-0019 (clique do proprietário recusado pelo registrador por defeito do `CHK-STATE-CONSISTENCY`; corrigido e registrado pelo mecanismo canônico), remoção de `ecosystem.phase` e **princípio local-first / promoção por evidência** ([ADR-0011](docs/adr/0011-local-first-e-promocao-por-evidencia.md), [ADD-0009](docs/governance/addenda/ADD-0009-local-first-e-promocao-por-evidencia.md)). Evidência: handoff `HO-20261001-dec-0019-e-local-first`.
 
 Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → preservar histórico → restaurar build → restaurar testes → restaurar releases → validar produto → provar ausência de regressão conhecida → classificar candidatos → extrair/modernizar gradualmente. **Proibido** durante a importação: separar o Editor, extrair o Sprite Studio, reescrever o Agent Workspace, criar Store, criar Product Shell novo, transformar código em capabilities, reorganizar tudo em packages, reescrever o Urbe em C#, mudar a arquitetura interna porque a arquitetura futura é conhecida.
 
@@ -103,9 +104,41 @@ Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → 
 
 ## Fase 2 — Contracts e Registry
 
-Objetivo: formalizar `ComponentManifest`, `Capability`, provider/consumer, versionamento e permission model; registry inicial; testes de boundary. **Reavaliar as decisões transitórias DEC-0008 e DEC-0009** (canal de releases e publicação do Urbe Web): quando o Ecosystem passar a declarar distribuição, a declaração dele substitui o que vale na migração. Por ADR (ADD-0002): contrato de **Context**; nomes e formato dos eixos de disponibilidade (visibilidade, distribuição, modelo comercial); formato e validação do **Distribution Profile** (inclusive: nenhum perfil distribuível de um Product inclui o Hub — NN-023).
+Objetivo: formalizar `ComponentManifest`, `Capability`, provider/consumer, versionamento, permission model, `Context`, `Distribution Profile` e Registry inicial; criar testes de boundary. **Reavaliar as decisões transitórias DEC-0008 e DEC-0009** (canal de releases e publicação do Urbe Web): quando o Ecosystem passar a declarar distribuição, a declaração dele substitui o que vale na migração (P2-12). Por ADR (ADD-0002): contrato de **Context**; nomes e formato dos eixos de disponibilidade (visibilidade, distribuição, modelo comercial); formato e validação do **Distribution Profile** (inclusive: nenhum perfil distribuível de um Product inclui o Hub — NN-023). **Princípio da fase (ADR-0011):** os contratos nascem **dentro** do Ecosystem e **nenhum** Product é refatorado nem tem subsistema extraído; capabilities reais só aparecem por promoção baseada em evidência. Contratos: [ADR-0012](docs/adr/0012-contratos-da-fase-2.md) (`Proposto`, DEC-0020). Evidência da fase: handoff `HO-20261001-fase-2-aberta-e-vertical-slice`.
 
-**Gate:** um componente pode declarar uma capability, outro pode descobri-la e a compatibilidade pode ser validada sem dependência direta entre produtos.
+Cada tarefa traz: *saída verificável* · *depende de* · *evidência* · *gate* (critério do gate que ela sustenta: **G-a** declarar capability · **G-b** descobrir · **G-c** validar compatibilidade sem dependência direta entre Products).
+
+- [x] P2-1 — **ComponentManifest e identidade**: o manifest é a entrada de `ecosystem.json` (chave = ID estável, `type`, `version`, `owners`, `provides`, `requires`, `permissions`), sem estado de execução e sem campos de distribuição.
+  - Saída: `ecosystem.schema.json` estendido; ADR-0012 (manifest). Depende de: —. Evidência: `CHK-SCHEMA`; fixtures do slice validam contra `#/properties/components`. Gate: G-a.
+- [x] P2-2 — **Capability contract**: formato versionado (ID, versões, inputs, outputs, erros, permissões exigidas, lifecycle, política de compatibilidade); provider derivado dos manifests.
+  - Saída: `capability-contract.schema.json`; `capability.test` (fixture). Depende de: P2-1. Evidência: `CHK-SCHEMA` sobre `docs/contracts/**/capabilities/*.json`. Gate: G-a.
+- [x] P2-3 — **Provider / Consumer**: `provides` e `requires` com validação (capability conhecida, versão com contrato, consumidor satisfeito).
+  - Saída: `Registry.Validate`. Depende de: P2-1, P2-2. Evidência: `CHK-REGISTRY`, casos positivo e negativos do slice. Gate: G-a, G-c.
+- [x] P2-4 — **Versionamento e regras de compatibilidade**: semver `MAJOR.MINOR.PATCH`; faixas exata, `^`, `~` e comparadores; sem pré-lançamento nem resolução de grafo.
+  - Saída: `SemVer`, `VersionRange`. Depende de: P2-2. Evidência: self-test `registry:` (7 casos) e `CAP_INCOMPATIBLE` no slice. Gate: G-c.
+- [x] P2-5 — **Permission model inicial**: catálogo `permissions.json`, `permissions.requests`, deny-by-default (consumidor precisa solicitar o que o contrato exige). Enforcement em runtime fica para a Fase 5.
+  - Saída: `permissions-catalog.schema.json` + catálogo. Depende de: P2-2. Evidência: `PERMISSION_MISSING`/`PERMISSION_UNKNOWN` no slice. Gate: G-c.
+- [x] P2-6 — **Contrato de Context**: caminho `ecosystem → product → project → workspace → tool`, ordem estrita, `product` existente; exemplos Lunet (`MeuJogo`/`editor`) e Urbe (`MeuVault`/`Nota`). Sem IPC nem Host API (Fase 5).
+  - Saída: `context.schema.json` + regras. Depende de: P2-1. Evidência: `CHK-REGISTRY` valida os exemplos; self-test "Context fora de ordem". Gate: —.
+- [x] P2-7 — **Registry inicial e discovery**: índice local/estático derivado (registrar, indexar capabilities, descobrir providers, validar), dentro dos checks (local-first); CLI `--registry`.
+  - Saída: `Registry`, `RegistryCli`. Depende de: P2-3, P2-4. Evidência: `-- --registry --discover capability.test "^1.0.0"` → `provider-a@1.0.0`. Gate: G-b.
+- [x] P2-8 — **Distribution Profile**: formato com `availability` e três eixos independentes (nomes provisórios); NN-023: Hub nunca `bundled` em perfil com componente público.
+  - Saída: `distribution-profile.schema.json` + exemplo `lunet-public`. Depende de: P2-1. Evidência: `CHK-REGISTRY`; self-test "Hub bundled". Gate: —.
+- [ ] P2-9 — **Congelar os nomes dos eixos** (visibility, distribution, commercialModel, availability) e ratificar o ADR-0012.
+  - Saída: ADR-0012 `Aceito`; nomes finais. Depende de: DEC-0020 (portal), P2-12. Evidência: registro da decisão. Gate: —.
+- [x] P2-10 — **Architecture checks da fase**: `CHK-REGISTRY` (provider/consumer conhecidos, compatibilidade, permissões), Tool/Service/Library sem Host concreto (`TOOL_KNOWS_HOST`), Product → Product (`PRODUCT_DEPENDS_ON_PRODUCT`), Hub não bundled; matriz de enforcement atualizada.
+  - Saída: `CHK-REGISTRY`. Depende de: P2-3..P2-8. Evidência: self-test com mutações reais (5 casos do check + slice). Gate: G-c.
+- [x] P2-11 — **Vertical slice**: A provê `capability.test` v1; B exige `^1.0.0` (compatível, descoberto); C exige `^2.0.0` (falha); mais negativos de permissão, capability desconhecida, sem provider, Tool que conhece Host, Product → Product. Fixtures; nenhuma Tool real extraída.
+  - Saída: `docs/contracts/examples/registry-slice/`. Depende de: P2-1..P2-7. Evidência: `CHK-REGISTRY` verde e o negativo falhando como esperado. Gate: G-a, G-b, G-c.
+- [ ] P2-12 — **Reavaliar DEC-0008/DEC-0009** com o modelo declarativo pronto (Distribution Profile + canais atuais descritos como dados): levar ao portal a decisão sobre a distribuição definitiva dos produtos (releases e Urbe Web). Não alterar canais, releases, Urbe Web, apps instalados nem updates antes da decisão.
+  - Saída: perfil descrevendo o arranjo atual como dado + `DEC-xxxx`. Depende de: P2-8, DEC-0020. Evidência: decisão registrada pelo portal. Gate: —.
+- [ ] P2-13 — **Portal projeta components/capabilities/providers/consumers/profiles** (somente leitura, derivado), quando houver capability real ou perfil real; sem grande UI antes disso.
+  - Saída: projeção + `CHK-PORTAL`. Depende de: P2-7, P2-12. Evidência: portal derivado. Gate: —.
+- [ ] P2-14 — **Gate da Fase 2**: evidência objetiva (slice executável + checks) e aprovação do proprietário.
+  - Saída: handoff do gate. Depende de: P2-1..P2-13 (P2-13 pode ser adiada por decisão), DEC-0020. Evidência: aprovação no portal. Gate: G-a, G-b, G-c.
+
+**Gate:** um componente pode declarar uma capability, outro pode descobri-la e a compatibilidade pode ser validada sem dependência direta entre produtos. *(Evidência executável: `dotnet run tests/consistency/Check.cs` — `CHK-REGISTRY` — e `-- --registry --file docs/contracts/examples/registry-slice/positive.json`.)*
+*Estado do gate:* **aguardando** — tarefas P2-1..P2-8, P2-10 e P2-11 concluídas; P2-9, P2-12, P2-13 e P2-14 abertas; aprovação do proprietário pendente.
 
 ## Fase 3 — Hub read-only
 

@@ -1,0 +1,52 @@
+{
+  "description": "Caso negativo: B consome capability.test (exige fs.read) sem solicitar a permissão (deny-by-default).",
+  "components": {
+    "provider-a": {
+      "name": "Provider A",
+      "type": "tool",
+      "language": "csharp",
+      "path": "examples/provider-a",
+      "status": "planned",
+      "description": "Fixture: fornece capability.test 1.0.0.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": [],
+      "provides": [
+        {
+          "capability": "capability.test",
+          "version": "1.0.0"
+        }
+      ],
+      "permissions": {
+        "requests": [
+          "fs.read"
+        ]
+      }
+    },
+    "consumer-b": {
+      "name": "Consumer B",
+      "type": "workspace",
+      "language": "csharp",
+      "path": "examples/consumer-b",
+      "status": "planned",
+      "description": "Fixture sem permissão.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "dependencies": [],
+      "requires": [
+        {
+          "capability": "capability.test",
+          "range": "^1.0.0"
+        }
+      ],
+      "permissions": {
+        "requests": []
+      }
+    }
+  },
+  "expect": {
+    "error": "PERMISSION_MISSING"
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "ecosystem",
+  "state": "done",
+  "message_id": "HO-20261001-fase-2-aberta-e-vertical-slice",
+  "timestamp": "2026-10-01T16:30:00Z",
+  "task_id": "P2-11",
+  "files_changed": [
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "docs/contracts/README.md",
+    "docs/contracts/permissions.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/contracts/schemas/capability-contract.schema.json",
+    "docs/contracts/schemas/permissions-catalog.schema.json",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/contracts/schemas/distribution-profile.schema.json",
+    "docs/contracts/examples/",
+    "docs/governance/enforcement-matrix.json",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md",
+    "docs/governance/handoffs/HO-20261001-fase-2-aberta-e-vertical-slice.json"
+  ],
+  "work_completed": [
+    "Fase 2 aberta no ROADMAP com 14 tarefas P2-x (objetivo, saída verificável, dependências, evidência e critério de gate), na ordem conceitual pedida: ComponentManifest, Capability, provider/consumer, versionamento/compatibilidade, permissões, Context, Registry/discovery, Distribution Profile, congelar eixos, architecture checks, vertical slice, reavaliação de DEC-0008/DEC-0009, portal e gate. P2-1..P2-8, P2-10, P2-11 concluídas; P2-9, P2-12, P2-13, P2-14 abertas.",
+    "ADR-0012 (Proposto) e DEC-0020 (não bloqueante, no portal, recomendação B): ComponentManifest = entrada de ecosystem.json estendida (provides/requires/permissions); contrato de capability com provider derivado; semver mínimo (exata, caret, tilde, comparadores); permissões deny-by-default; Context hierárquico; Registry derivado; Distribution Profile com três eixos independentes (nomes PROVISÓRIOS).",
+    "Implementação: 4 schemas novos + catálogo de permissões; Registry/SemVer/VersionRange e CHK-REGISTRY dentro dos checks (local-first, sem platform/); CLI `-- --registry [--file] [--discover cap faixa]`.",
+    "Vertical slice (fixtures em docs/contracts/examples/registry-slice): A provê capability.test v1; B exige ^1.0.0 — descoberto e compatível; C exige ^2.0.0 — CAP_INCOMPATIBLE; negativos de permissão ausente, capability desconhecida, sem provider, Tool que conhece Host (NN-007) e Product→Product (NN-002). Nenhuma Tool real extraída; nenhum Product tocado.",
+    "Matriz de enforcement: NN-006 (SCHEMA, TEST), NN-016 (SCHEMA) e NN-023 (SCHEMA) passaram de planned para implemented com CHK-REGISTRY/CHK-SCHEMA.",
+    "DEC-0008/DEC-0009: ponto explícito de reavaliação em P2-12; canais atuais, releases, Urbe Web, apps instalados e updates NÃO foram alterados."
+  ],
+  "verification": [
+    {
+      "check": "Vertical slice: caso positivo (descoberta e compatibilidade)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "`Check.cs -- --registry --file docs/contracts/examples/registry-slice/positive.json --discover capability.test \"^1.0.0\"` → provider-a@1.0.0; CHK-REGISTRY verde."
+    },
+    {
+      "check": "Vertical slice: caso negativo (incompatível)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "negative-incompatible.json → `ERRO CAP_INCOMPATIBLE: consumer-c exige capability.test ^2.0.0; providers disponíveis: provider-a@1.0.0`; CHK-REGISTRY exige essa falha e o self-test prova que a quebra de expectativa é detectada."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "21/21 checks; self-test: todos os checks provaram detectar suas violações (inclui 5 casos de CHK-REGISTRY e 7 de semver/discovery)."
+    }
+  ],
+  "known_issues": [
+    "Nenhuma capability real existe (por desenho: ADR-0011); o gate depende do slice de exemplo e da aprovação do proprietário.",
+    "Nomes dos eixos do Distribution Profile provisórios até DEC-0020.",
+    "O Registry vive dentro dos checks; a promoção a componente próprio é adiada até haver um consumidor real (Hub)."
+  ],
+  "next_actions": [
+    "Proprietário: decidir DEC-0020 no portal.",
+    "Agente: P2-12 (reavaliar DEC-0008/DEC-0009 com o modelo declarativo), P2-13 quando houver capability/perfil real, depois o gate (P2-14).",
+    "Trabalhos paralelos FORA do Ecosystem, disponíveis para delegação separada: Urbe — U-R1 (continuar a decomposição de app.js / Product Shell); Lunet2D — L-R2 (decompor MainActivity em Shell + painéis). Também L-R1, L-R3, L-R4 (candidates.md). Nenhum foi executado aqui."
+  ],
+  "decisions_required": [
+    "DEC-0020"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0004-estrutura-inicial-do-repositorio.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/distribution.md",
+    "docs/governance/addenda/ADD-0002-product-shells-distribuicao-independente.md",
+    "docs/governance/addenda/ADD-0009-local-first-e-promocao-por-evidencia.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Manifest é a entrada de ecosystem.json; provider derivado dos manifests; nenhuma segunda fonte."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Contrato de capability validável; compatibilidade verificada."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "TOOL_KNOWS_HOST detectado no Registry e no self-test."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Permissões deny-by-default declaradas e verificadas."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Registry dentro dos checks; nenhum diretório ou componente novo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração; capabilities reais só por promoção com evidência."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Perfil com Hub bundled e componente público é recusado."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "apps/ inalterado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "capability-registry",
+      "status": "possible-candidate",
+      "rationale": "Registry, SemVer e VersionRange nascem dentro dos checks do Ecosystem (consumidores atuais: CHK-REGISTRY e a CLI). Serão promovidos a componente próprio quando o Hub (ou outro consumidor real) precisar do mesmo índice; até lá continuam locais (ADR-0011)."
+    }
+  ]
+}

@@ -142,15 +142,17 @@
         },
         {
           "mechanism": "SCHEMA",
-          "status": "planned",
-          "how": "Schema de Capability (ID, versão, provider, inputs, outputs, erros, permissões, lifecycle, compatibilidade).",
-          "phase": "phase-2"
+          "status": "implemented",
+          "how": "capability-contract.schema.json: ID, versões, inputs, outputs, erros, permissões exigidas, lifecycle e política de compatibilidade; provider derivado dos manifests (ADR-0012).",
+          "phase": "phase-2",
+          "check": "CHK-SCHEMA"
         },
         {
           "mechanism": "TEST",
-          "status": "planned",
-          "how": "Contract tests e compatibility checks por capability.",
-          "phase": "phase-2"
+          "status": "implemented",
+          "how": "Registry: provider conhecido, consumidor conhecido, versão com contrato, compatibilidade (semver) e vertical slice positivo/negativo em docs/contracts/examples.",
+          "phase": "phase-2",
+          "check": "CHK-REGISTRY"
         }
       ]
     },
@@ -369,9 +371,10 @@
         },
         {
           "mechanism": "SCHEMA",
-          "status": "planned",
-          "how": "Permission model e declaração de permissões nos manifests (deny-by-default).",
-          "phase": "phase-2"
+          "status": "implemented",
+          "how": "docs/contracts/permissions.json + permissions.requests nos manifests; permissão desconhecida ou exigida pelo contrato e não solicitada falha (deny-by-default). Enforcement em runtime: Fase 5.",
+          "phase": "phase-2",
+          "check": "CHK-REGISTRY"
         },
         {
           "mechanism": "RUNTIME",
@@ -574,9 +577,10 @@
         },
         {
           "mechanism": "SCHEMA",
-          "status": "planned",
-          "how": "Validação de Distribution Profile: nenhum perfil distribuível de um Product inclui o Hub como componente obrigatório. Depende do ADR que definir o formato do perfil.",
-          "phase": "phase-2"
+          "status": "implemented",
+          "how": "Distribution Profile: o Hub não pode ser 'bundled' em perfil que inclui componente público (distribution-profile.schema.json + regras; nomes dos eixos provisórios, DEC-0020).",
+          "phase": "phase-2",
+          "check": "CHK-REGISTRY"
         },
         {
           "mechanism": "DEVICE",
