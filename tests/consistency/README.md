@@ -25,6 +25,7 @@ Requer .NET SDK 10+. Execute a partir de qualquer diretório dentro do repositó
 | `CHK-HANDOFFS` | referências válidas; `done` exige verificação passada com evidência e sem bloqueios; validação humana pendente exige objeto | NN-008, NN-010, NN-017, NN-018, NN-021 |
 | `CHK-ROADMAP` | fases 0–7 presentes; item `[x]` sem validação humana pendente | NN-017 |
 | `CHK-SECRETS` | padrões comuns de tokens e chaves privadas | MANIFEST §30.2 |
+| `CHK-DECISION-FLOW` | workflow de registro de decisões: guarda do dono, permissões explícitas, texto da Issue só em `env`, link de resposta no portal; o self-test executa o aplicador (feliz + recusas) | NN-009, NN-016 |
 | `CHK-PORTAL` | portal sem dados canônicos escritos à mão; projeção gerada válida e coerente com as fontes (inclui decisões e validações pendentes); `VALIDATED` exige evidência | NN-001, NN-017, NN-021 |
 
 A lista de NN por check é informativa; a autoridade é [`docs/governance/enforcement-matrix.json`](../../docs/governance/enforcement-matrix.json).

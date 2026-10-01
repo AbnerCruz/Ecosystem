@@ -233,7 +233,7 @@
     },
     {
       "id": "DEC-0008",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": true,
       "title": "Onde ficam as releases e o canal de atualização dos produtos após a migração",
@@ -259,14 +259,22 @@
       "related": [
         "docs/migration/inventory-urbe.md",
         "docs/migration/inventory-lunet2d.md",
-        "docs/migration/README.md"
+        "docs/migration/README.md",
+        "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md"
       ],
       "raisedBy": "claude-code (inventários P1-1/P1-2)",
-      "raisedAt": "2026-09-30"
+      "raisedAt": "2026-09-30",
+      "decision": "Alternativa A — canal de distribuição por produto nos repositórios de origem: o pipeline do monorepo constrói e publica as releases em AbnerCruz/Urbe e AbnerCruz/Lunet2D (aprovada pelo proprietário, recomendação do agente). TRANSITÓRIA: vale para a migração (Fase 1); depois, o próprio Ecosystem declara o canal de cada produto (Distribution Profile, Registry e Launcher).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md",
+      "transitional": {
+        "until": "phase-2",
+        "supersededBy": "Declaração de distribuição no próprio Ecosystem (Distribution Profile, Registry e Launcher — Fases 2 e 4)"
+      }
     },
     {
       "id": "DEC-0009",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": false,
       "title": "Publicação do Urbe Web após a migração",
@@ -287,10 +295,48 @@
       "recommendation": "A durante a migração (comportamento preservado, NN-013). B pode ser adotada depois, como item próprio, se você quiser a rota no portal.",
       "related": [
         "docs/migration/inventory-urbe.md",
-        "docs/adr/0005-portal-web-github-pages.md"
+        "docs/adr/0005-portal-web-github-pages.md",
+        "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md"
       ],
       "raisedBy": "claude-code (inventário P1-2)",
-      "raisedAt": "2026-09-30"
+      "raisedAt": "2026-09-30",
+      "decision": "Alternativa A — o Urbe Web continua em AbnerCruz/Urbe: o pipeline do monorepo publica o site estático no Pages desse repositório (aprovada pelo proprietário, recomendação do agente). TRANSITÓRIA: vale para a migração (Fase 1); depois, a publicação passa a ser declarada pelo próprio Ecosystem.",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md",
+      "transitional": {
+        "until": "phase-2",
+        "supersededBy": "Declaração de distribuição no próprio Ecosystem (Distribution Profile, Registry e Launcher — Fases 2 e 4)"
+      }
+    },
+    {
+      "id": "DEC-0010",
+      "status": "decided",
+      "component": "portal",
+      "blocking": false,
+      "title": "Decisões pendentes podem ser respondidas pelo portal, com registro no repositório",
+      "context": "Até agora o portal só mostrava as decisões e o proprietário respondia ao agente no chat, que então registrava a decisão. O proprietário quer clicar na alternativa no site e ter a decisão registrada no repositório.",
+      "question": "As alternativas de uma decisão pendente devem ser clicáveis no portal, com a escolha registrada automaticamente no repositório?",
+      "alternatives": [
+        {
+          "option": "Sim: clicar na alternativa registra a decisão no repositório, sem o agente intermediar",
+          "consequences": "Exige um caminho seguro de escrita a partir de um site estático, restrito ao proprietário, auditável e com checks; o agente passa a aplicar as consequências da decisão nos documentos depois do registro."
+        },
+        {
+          "option": "Não: manter a resposta pelo chat, com o agente registrando",
+          "consequences": "Nenhuma superfície nova de escrita, mas a decisão depende do agente estar na conversa."
+        }
+      ],
+      "consequences": "O portal deixa de ser somente leitura para decisões. O mecanismo foi proposto em ADR-0007 e aguarda ratificação (DEC-0011). Um agente nunca responde a uma decisão pendente do proprietário.",
+      "manifestCompatibility": "Compatível: decisão persistida em fonte canônica (NN-009), acesso restrito e explícito (NN-016), estado visível (NN-021); o portal continua projeção e o registro de decisões continua a única autoridade (NN-001).",
+      "related": [
+        "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+        "docs/architecture/portal.md"
+      ],
+      "raisedBy": "AbnerCruz (proprietário)",
+      "raisedAt": "2026-10-01",
+      "decision": "Sim: o proprietário quer clicar na alternativa no portal e ter a decisão registrada no repositório. O mecanismo é proposta do agente (ADR-0007) e aguarda ratificação (DEC-0011).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md"
     }
   ]
 }

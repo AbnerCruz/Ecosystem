@@ -52,7 +52,21 @@ O formato de exemplo do adendo (`products.lunet2d.version` etc.) foi analisado e
 - **Decisão a tomar:** `decisions.json` com `status: pending` e `related` apontando para o(s) documento(s)/artefato(s) a revisar. O portal mostra título, pergunta, alternativas com consequências, recomendação do agente e o objeto como botões.
 - **Validação humana pendente:** verificação `kind: human`, `result: pending` em um handoff, com `object` (caminho do repositório ou URL).
 - Sem objeto, a pendência não é registrável: `CHK-DECISIONS` e `CHK-HANDOFFS` falham, o gerador aborta e `CHK-PORTAL` recusa uma projeção que omita qualquer pendência.
-- O portal **não** recebe respostas: o proprietário responde ao agente, que registra a decisão e a fonte persistida.
+- O portal não escreve nada sozinho. A resposta a uma decisão segue o fluxo de §3.2.
+
+### 3.2 Responder a uma decisão pelo portal (DEC-0010, ADR-0007)
+
+```text
+portal: "Escolher B"  ──►  GitHub abre uma Issue já preenchida  ──►  proprietário toca "Submit new issue"
+   ──►  workflow decision.yml (só o dono do repositório)  ──►  aplicador valida e grava
+   ──►  checks de consistência  ──►  commit na branch padrão  ──►  portal republicado  ──►  Issue comentada e fechada
+```
+
+- **Dois toques:** a escolha no portal e a confirmação no GitHub. A confirmação é intencional: o site estático não tem credencial de escrita (nenhum token no navegador).
+- **Formato único:** o gerador da projeção define o título e o corpo da Issue; o aplicador os valida (marcador `ecosystem-decision:v1`, decisão, letra e hash do texto da alternativa). Uma escolha cujo texto mudou depois de exibida é recusada.
+- **Registro:** `docs/governance/decisions.json` (decisão `decided`, data, texto, `record`) e `docs/governance/responses/DEC-NNNN.md`.
+- **Depois do registro:** um agente aplica as consequências nos documentos dependentes e registra o handoff; decisão estrutural continua exigindo ADR (NN-011).
+- **Agentes nunca respondem uma decisão pendente do proprietário**, nem criando essa Issue (MANIFEST §23.2).
 
 Evolução incompatível incrementa `schemaVersion` e exige ADR.
 

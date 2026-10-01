@@ -50,6 +50,7 @@ static class Checks
         "CHK-ROADMAP",
         "CHK-SECRETS",
         "CHK-PORTAL",
+        "CHK-DECISION-FLOW",
     ];
 
     static readonly string[] FoundationFiles =
@@ -87,6 +88,7 @@ static class Checks
         Guard(r, "CHK-ROADMAP", () => Roadmap(ctx));
         Guard(r, "CHK-SECRETS", () => Secrets(ctx));
         Guard(r, "CHK-PORTAL", () => Portal(ctx));
+        Guard(r, "CHK-DECISION-FLOW", () => DecisionFlow(ctx));
         return r;
     }
 
@@ -546,6 +548,39 @@ static class Checks
             foreach (var p in patterns)
                 if (p.IsMatch(text)) { c.R.Fail(id, $"{rel}: possível segredo commitado (padrão {p})"); break; }
         }
+    }
+
+    // --- CHK-DECISION-FLOW (DEC-0010, ADR-0007; NN-009, NN-016) ---
+    // O workflow que registra decisões escreve na branch padrão a partir de texto de Issue: precisa continuar restrito ao dono,
+    // com permissões explícitas e sem interpolar texto não confiável em scripts.
+    static readonly Regex EnvLine = new(@"^\s+[A-Z_]+: \$\{\{ github\.event\.[a-z_.]+ \}\}\s*$");
+
+    static void DecisionFlow(Context c)
+    {
+        const string id = "CHK-DECISION-FLOW";
+        c.R.Ran(id);
+        const string wf = ".github/workflows/decision.yml", script = ".github/scripts/apply-decision.cs";
+        if (!File.Exists(c.P(script))) c.R.Fail(id, $"{script} ausente");
+        if (!File.Exists(c.P(wf))) { c.R.Fail(id, $"{wf} ausente"); return; }
+        var text = File.ReadAllText(c.P(wf));
+        if (!text.Contains("github.event.issue.user.login == github.repository_owner"))
+            c.R.Fail(id, $"{wf}: falta a guarda que restringe o workflow ao dono do repositório (NN-016)");
+        if (!text.Contains("startsWith(github.event.issue.title, 'Decisão DEC-')"))
+            c.R.Fail(id, $"{wf}: falta o filtro de título 'Decisão DEC-' gerado pelo portal");
+        if (!Regex.IsMatch(text, @"(?m)^permissions:\s*$")) c.R.Fail(id, $"{wf}: permissões explícitas ausentes (NN-016)");
+        if (!text.Contains(".github/scripts/apply-decision.cs")) c.R.Fail(id, $"{wf}: não chama o aplicador");
+        if (!text.Contains("tests/consistency/Check.cs")) c.R.Fail(id, $"{wf}: não roda os checks antes de gravar");
+        var n = 0;
+        foreach (var line in text.Split('\n'))
+        {
+            n++;
+            var unsafeField = line.Contains("github.event.issue.title") || line.Contains("github.event.issue.body")
+                || line.Contains("github.event.comment") || line.Contains("github.head_ref");
+            if (unsafeField && !line.TrimStart().StartsWith("if:") && !EnvLine.IsMatch(line))
+                c.R.Fail(id, $"{wf}:{n}: texto não confiável fora de 'env' (risco de injeção em script): {line.Trim()}");
+        }
+        var js = File.Exists(c.P("site/app.js")) ? File.ReadAllText(c.P("site/app.js")) : "";
+        if (!js.Contains("/issues/new?title=")) c.R.Fail(id, "site/app.js: o portal não monta o link de resposta (/issues/new?title=)");
     }
 
     // --- CHK-PORTAL (ADD-0001, ADR-0005; NN-001, NN-017, NN-021) ---
@@ -1015,6 +1050,11 @@ static class SelfTest
                 RunGenerator(r);
                 Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true));
             }),
+        new("workflow de decisão sem a guarda do dono", "CHK-DECISION-FLOW",
+            r => Replace(r, ".github/workflows/decision.yml", "github.event.issue.user.login == github.repository_owner && ", "")),
+        new("texto da Issue interpolado em script", "CHK-DECISION-FLOW",
+            r => Replace(r, ".github/workflows/decision.yml", "          dotnet run .github/scripts/apply-decision.cs\n",
+                "          echo \"${{ github.event.issue.body }}\"\n          dotnet run .github/scripts/apply-decision.cs\n")),
         new("segredo commitado", "CHK-SECRETS",
             r => File.WriteAllText(Path.Combine(r, "leak.txt"), "token=" + "gh" + "p_" + new string('a', 36))),
     ];
@@ -1049,6 +1089,8 @@ static class SelfTest
             finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }
         }
 
+        failures += ApplierTests(repoRoot);
+
         foreach (var id in Checks.Ids.Where(i => !covered.Contains(i)))
         {
             Console.WriteLine($"FAIL  {id} não possui caso de self-test");
@@ -1058,6 +1100,62 @@ static class SelfTest
         Console.WriteLine();
         Console.WriteLine(failures == 0 ? "Self-test: todos os checks provaram detectar suas violações." : $"Self-test: {failures} falha(s).");
         return failures == 0 ? 0 : 1;
+    }
+
+    static (int Code, string Result) RunApplier(string root, string author, string association, string title, string body)
+    {
+        var resultFile = Path.GetTempFileName();
+        var psi = new ProcessStartInfo("dotnet") { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var a in new[] { "run", ".github/scripts/apply-decision.cs" }) psi.ArgumentList.Add(a);
+        psi.Environment["ISSUE_NUMBER"] = "1"; psi.Environment["ISSUE_TITLE"] = title; psi.Environment["ISSUE_BODY"] = body;
+        psi.Environment["ISSUE_AUTHOR"] = author; psi.Environment["AUTHOR_ASSOCIATION"] = association; psi.Environment["REPO_OWNER"] = "AbnerCruz";
+        psi.Environment["ISSUE_URL"] = "https://github.com/AbnerCruz/Ecosystem/issues/1"; psi.Environment["ISSUE_CREATED_AT"] = "2026-10-01T12:00:00Z";
+        psi.Environment["RESULT_FILE"] = resultFile; psi.Environment.Remove("GITHUB_OUTPUT");
+        using var proc = Process.Start(psi)!;
+        proc.StandardOutput.ReadToEnd(); proc.StandardError.ReadToEnd(); proc.WaitForExit();
+        var result = File.Exists(resultFile) ? File.ReadAllText(resultFile) : "";
+        File.Delete(resultFile);
+        return (proc.ExitCode, result);
+    }
+
+    /// <summary>Prova o aplicador de decisões: o caminho feliz registra e deixa o repositório consistente; cada recusa de segurança recusa.</summary>
+    static int ApplierTests(string repoRoot)
+    {
+        var failures = 0;
+        void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  aplicador de decisões: {name}"); if (!ok) failures++; }
+        var tmp = Path.Combine(Path.GetTempPath(), "ecosystem-applier-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Copy(repoRoot, tmp);
+            Replace(tmp, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true));
+            RunGenerator(tmp); // o gerador define título e corpo da Issue; o aplicador os valida (mesmo contrato)
+            using var proj = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site", "data", "ecosystem-status.json")));
+            var dec = proj.RootElement.Arr("pendingDecisions").First(d => d.Str("id") == "DEC-9999");
+            var alt = dec.Arr("alternatives").ElementAt(1);
+            string title = alt.Str("issueTitle")!, body = alt.Str("issueBody")!;
+            var before = File.ReadAllText(Path.Combine(tmp, "docs", "governance", "decisions.json"));
+
+            Report(RunApplier(tmp, "intruso", "NONE", title, body).Code == 3, "recusa autor que não é o proprietário");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", "Decisão DEC-9999", body).Code == 3, "recusa título fora do formato");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body.Replace("option-hash: ", "option-hash: 0")).Code == 3, "recusa hash adulterado");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", "Decisão DEC-9999: Z", body).Code == 3, "recusa título e corpo que discordam");
+            Report(File.ReadAllText(Path.Combine(tmp, "docs", "governance", "decisions.json")) == before, "recusas não alteram decisions.json");
+
+            var ok = RunApplier(tmp, "AbnerCruz", "OWNER", title, body);
+            Report(ok.Code == 0, "registra a decisão do proprietário");
+            using var after = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "docs", "governance", "decisions.json")));
+            var d9999 = after.RootElement.Arr("decisions").First(d => d.Str("id") == "DEC-9999");
+            Report(d9999.Str("status") == "decided" && d9999.Str("decidedAt") == "2026-10-01" && d9999.Str("record") == "docs/governance/responses/DEC-9999.md"
+                && File.Exists(Path.Combine(tmp, "docs", "governance", "responses", "DEC-9999.md")), "decisão fica decidida, datada e com registro persistido");
+            RunGenerator(tmp);
+            var consistent = Checks.RunAll(tmp);
+            if (consistent.Failed) consistent.Print(Console.Out);
+            Report(!consistent.Failed, "o repositório continua consistente depois do registro");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body).Code == 3, "recusa decisão que já foi decidida");
+        }
+        catch (Exception e) { Report(false, "execução: " + e.Message); }
+        finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }
+        return failures;
     }
 
     static void Copy(string from, string to)

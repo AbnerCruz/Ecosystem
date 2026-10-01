@@ -240,6 +240,6 @@ Cada ajuste abaixo seria **necessidade técnica para o produto funcionar em `app
 
 ## 14. Decisões necessárias
 
-- **DEC-0008** — *Canal de releases e de atualização dos produtos após a migração* (afeta R-LUN-1, R-LUN-2; bloqueia P1-3/P1-6). Registrada como pendente em `docs/governance/decisions.json` e visível no portal.
+- **DEC-0008** — *Canal de releases e de atualização dos produtos após a migração*: **decidida em 2026-10-01, alternativa A, transitória** (releases continuam publicadas em `AbnerCruz/Lunet2D` pelo pipeline do monorepo; ver `docs/migration/README.md` §9). R-LUN-2 passa a ser tratada no plano (formato de tag preservado no repositório de origem); R-LUN-1 (`versionCode`) continua exigindo regra de numeração monotônica em P1-3.
 - Questões do plano de importação (P1-3) que o **agente** pode propor sem decisão do proprietário, por estarem dentro de DEC-0002 e NN-013: formato das tags importadas (`lunet2d/v0.0.1-dev.N`), deslocamento do `versionCode`, filtros de caminho do workflow, referências qualificadas de ADR. Serão submetidas à revisão do plano.
 - Nenhum outro repositório, fork ou branch de longa duração precisa ser preservado (DEC-0004).

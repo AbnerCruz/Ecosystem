@@ -92,3 +92,20 @@ Nenhum passo pode ser pulado nem antecipado. Os passos 9 e 10 não fazem parte d
 2. **Gate adicional (ADD-0002 §18):** a importação preservou intencionalmente a arquitetura funcional existente. Candidatos a Product Core, Product Shell, Tool, Workspace, Service, Library e Adapter foram inventariados, porém nenhuma extração estrutural foi realizada como efeito colateral da migração.
 
 O gate adicional **não pode ser marcado como concluído antes da auditoria pós-migração** (P1-8).
+
+## 9. Canal de releases e publicação durante a migração — TRANSITÓRIO (DEC-0008 e DEC-0009, alternativa A)
+
+> Decisões do proprietário ([ADD-0004](../governance/addenda/ADD-0004-decisoes-0008-0009-e-resposta-pelo-portal.md)), **válidas para a migração (Fase 1)**. Depois, o próprio Ecosystem declara como cada produto é distribuído e publicado (Distribution Profile, Registry e Launcher — Fases 2 e 4) e substitui esta seção. Por isso **nenhum campo novo** foi adicionado a `ecosystem.json` por causa delas.
+
+**Releases (DEC-0008-A).** O pipeline do monorepo constrói e **publica as releases de cada produto nos repositórios de origem** (`AbnerCruz/Lunet2D`, `AbnerCruz/Urbe`):
+
+- `releases/latest`, tags e releases continuam **por produto**, no formato atual (`v0.0.1-dev.N`, `v1.8.2-beta`…), em cada repositório de origem. Os apps instalados do Urbe continuam atualizando **sem nenhuma mudança de código** (R-URB-1 deixa de ser bloqueio); a mudança de updater é proibida na migração (NN-013).
+- As tags **importadas** para o monorepo seguem DEC-0002 (prefixo `<id>/`); isso não afeta as tags publicadas nos repositórios de origem.
+- Os repositórios de origem **permanecem vivos** como canal de distribuição: **não arquivar** (um repositório arquivado não recebe releases) e **sem desenvolvimento novo**: depois da importação, o código só evolui no monorepo (NN-001).
+- **Ações do proprietário** (nenhum agente pode criá-las): um token limitado a *contents/releases* daqueles dois repositórios, guardado como secret do monorepo; e recriar os secrets de assinatura do Android do Urbe (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`) — R-URB-5. Os nomes finais dos secrets são definidos em P1-3.
+- O `versionCode` do Android do Lunet2D hoje é o `run_number` do CI do repositório de origem (R-LUN-1): o pipeline do monorepo precisa **continuar a sequência de forma monotônica** (valor inicial e regra definidos em P1-3).
+
+**Urbe Web (DEC-0009-A).** O Urbe Web **continua sendo servido por `AbnerCruz/Urbe`** (Pages): o pipeline do monorepo publica o **site estático** gerado de `apps/urbe/` no Pages desse repositório. URL, escopo do service worker e PWAs instalados **não mudam**. O mecanismo exato (por exemplo, uma branch dedicada de publicação e a alteração da fonte do Pages, que é ação do proprietário) é detalhado em P1-3; o conteúdo publicado é artefato **gerado** e deve declarar sua fonte (NN-001).
+
+**O que esta seção não decide:** nomes de secrets e de branches, regra de numeração do `versionCode`, filtros de caminho dos workflows e a adaptação mínima dos checks do Urbe que leem `.github/workflows` (R-URB-3). São itens do plano P1-3.
+

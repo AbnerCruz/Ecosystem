@@ -220,6 +220,12 @@
           "mechanism": "ADR",
           "status": "manual",
           "how": "Decisão estrutural → ADR; decisão de produto → SPEC/ROADMAP."
+        },
+        {
+          "mechanism": "TEST",
+          "status": "implemented",
+          "how": "A resposta a uma decisão pelo portal é validada e registrada em fonte persistida; o self-test executa o aplicador (caminho feliz e recusas) e CHK-DECISION-FLOW protege o workflow.",
+          "check": "CHK-DECISION-FLOW"
         }
       ]
     },
@@ -372,6 +378,12 @@
           "status": "planned",
           "how": "Verificação de permissões em execução no Capability Runtime.",
           "phase": "phase-5"
+        },
+        {
+          "mechanism": "TEST",
+          "status": "implemented",
+          "how": "O workflow que escreve decisões na branch padrão é restrito ao dono do repositório, tem permissões explícitas e não interpola texto não confiável em scripts.",
+          "check": "CHK-DECISION-FLOW"
         }
       ]
     },

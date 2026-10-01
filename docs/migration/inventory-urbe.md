@@ -260,7 +260,7 @@ Cada ajuste é **necessidade técnica para o produto funcionar em `apps/urbe/`**
 
 ## 14. Decisões necessárias
 
-- **DEC-0008** — *Canal de releases e de atualização dos produtos após a migração* (R-URB-1, R-URB-5; bloqueia P1-3/P1-6). Pendente em `docs/governance/decisions.json` e visível no portal.
-- **DEC-0009** — *Publicação do Urbe Web após a migração* (R-URB-2; bloqueia P1-10, não bloqueia P1-3). Pendente e visível no portal.
+- **DEC-0008** — *Canal de releases e de atualização dos produtos após a migração*: **decidida em 2026-10-01, alternativa A, transitória** (releases continuam em `AbnerCruz/Urbe`, publicadas pelo pipeline do monorepo; os apps instalados seguem atualizando sem mudança de código — R-URB-1 deixa de ser bloqueio). R-URB-5 (secrets de assinatura) permanece como ação do proprietário.
+- **DEC-0009** — *Publicação do Urbe Web após a migração*: **decidida em 2026-10-01, alternativa A, transitória** (o Urbe Web continua em `AbnerCruz/Urbe`; o pipeline do monorepo publica o site estático no Pages desse repositório). R-URB-2 passa a ser tratada no plano; ver `docs/migration/README.md` §9.
 - Branches `claude/beta-v1`, `claude/mundo-real`, `claude/fix-explorer-celular`: preservar até decisão do proprietário (será perguntado no plano de importação, P1-3).
 - Questões do plano de importação (P1-3) que o **agente** pode propor dentro de DEC-0002 e NN-013: formato das tags importadas (`urbe/v1.8.2-beta`), filtros de caminho dos workflows, adaptação mínima dos checks que leem `.github/workflows` (R-URB-3), referências qualificadas de ADR.

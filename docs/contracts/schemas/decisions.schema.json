@@ -5,47 +5,144 @@
   "description": "Autoridade canônica das perguntas ao proprietário (MANIFEST §22.3, §35, NN-021). Uma decisão tomada aponta para a fonte persistida (NN-009).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "decisions"],
+  "required": [
+    "schemaVersion",
+    "decisions"
+  ],
   "properties": {
-    "$schema": { "type": "string" },
-    "schemaVersion": { "const": 1 },
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
     "decisions": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "status", "component", "title", "context", "question", "alternatives", "consequences", "manifestCompatibility", "raisedBy", "raisedAt"],
+        "required": [
+          "id",
+          "status",
+          "component",
+          "title",
+          "context",
+          "question",
+          "alternatives",
+          "consequences",
+          "manifestCompatibility",
+          "raisedBy",
+          "raisedAt"
+        ],
         "properties": {
-          "id": { "type": "string", "pattern": "^DEC-[0-9]{4}$" },
-          "status": { "enum": ["pending", "decided", "withdrawn"] },
-          "component": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" },
-          "blocking": { "type": "boolean" },
-          "title": { "type": "string", "minLength": 1 },
-          "context": { "type": "string", "minLength": 1 },
-          "question": { "type": "string", "minLength": 1 },
+          "id": {
+            "type": "string",
+            "pattern": "^DEC-[0-9]{4}$"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "decided",
+              "withdrawn"
+            ]
+          },
+          "component": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+          },
+          "blocking": {
+            "type": "boolean"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "context": {
+            "type": "string",
+            "minLength": 1
+          },
+          "question": {
+            "type": "string",
+            "minLength": 1
+          },
           "alternatives": {
-            "type": "array", "minItems": 2,
+            "type": "array",
+            "minItems": 2,
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["option", "consequences"],
+              "required": [
+                "option",
+                "consequences"
+              ],
               "properties": {
-                "option": { "type": "string", "minLength": 1 },
-                "consequences": { "type": "string", "minLength": 1 }
+                "option": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "consequences": {
+                  "type": "string",
+                  "minLength": 1
+                }
               }
             }
           },
-          "consequences": { "type": "string", "minLength": 1 },
-          "manifestCompatibility": { "type": "string", "minLength": 1 },
-          "recommendation": { "type": "string" },
-          "related": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-          "raisedBy": { "type": "string", "minLength": 1 },
-          "raisedAt": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
-          "decision": { "type": "string" },
-          "decidedAt": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+          "consequences": {
+            "type": "string",
+            "minLength": 1
+          },
+          "manifestCompatibility": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recommendation": {
+            "type": "string"
+          },
+          "related": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "raisedBy": {
+            "type": "string",
+            "minLength": 1
+          },
+          "raisedAt": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
+          "decision": {
+            "type": "string"
+          },
+          "decidedAt": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+          },
           "record": {
             "description": "Caminho da fonte persistida (ADR, SPEC, ROADMAP...). Obrigatório quando status = decided (verificado pelo check).",
-            "type": "string", "minLength": 1
+            "type": "string",
+            "minLength": 1
+          },
+          "transitional": {
+            "description": "Decisão válida só durante uma etapa (ex.: a migração). 'until' é a fase em que deve ser reavaliada; 'supersededBy' diz o que passa a ser a autoridade depois.",
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "until",
+              "supersededBy"
+            ],
+            "properties": {
+              "until": {
+                "type": "string",
+                "pattern": "^phase-[0-9]+$"
+              },
+              "supersededBy": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
           }
         }
       }

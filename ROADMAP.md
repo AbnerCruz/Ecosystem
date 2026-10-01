@@ -16,7 +16,7 @@
 
 *Por quê:* a importação (P1-4/P1-5) só pode começar depois de um plano revisado (NN-012, MANIFEST §44). Os inventários mostraram que o plano precisa tratar riscos concretos (R-LUN-1…11, R-URB-1…12): `versionCode` do Android do Lunet2D, atualizadores do Urbe que leem `releases/latest` de `AbnerCruz/Urbe`, Pages por branch do Urbe Web, workflows e checks que dependem da raiz do repositório, secrets de assinatura.
 
-*Bloqueio:* a parte do plano sobre **releases e pipelines** depende de **DEC-0008** (canal de releases; pendente e visível no portal). A parte sobre código, histórico e tags (DEC-0002, técnica A) pode ser redigida já. **DEC-0009** (publicação do Urbe Web) não bloqueia o plano; define o item P1-10.
+*Sem bloqueio:* DEC-0008 e DEC-0009 foram decididas em 2026-10-01 (alternativa A, **transitórias**: valem para a migração; depois o próprio Ecosystem declara a distribuição). O plano deve detalhar, em cada produto, o que `docs/migration/README.md` §9 deixa em aberto: nomes de secrets e branches, regra do `versionCode`, filtros de caminho dos workflows, adaptação mínima dos checks do Urbe e o mecanismo de publicação do site no Pages do repositório de origem.
 
 ---
 
@@ -62,6 +62,9 @@ Alinhamento arquitetural pré-migração — Product Shells, distribuição inde
 - [x] P0-30 — Ratificação do ADR-0006 e revisão do alinhamento pelo proprietário (aprovada em 2026-09-30 — ADD-0003).
 - [x] P0-31 — Portal mostra decisões pendentes e validações humanas pendentes, sempre com o objeto (DEC-0007); `CHK-DECISIONS`, `CHK-HANDOFFS` e `CHK-PORTAL` fiscalizam.
 - [x] P0-32 — Aplicar DEC-0001…DEC-0004: ADRs 0001–0006 `Aceito`, origens confirmadas em `ecosystem.json`, técnica de importação e convenção de Issues documentadas.
+- [x] P0-33 — Registrar DEC-0008 e DEC-0009 (alternativa A, **transitórias**) e aplicá-las na migração (`docs/migration/README.md` §9), nos inventários e neste ROADMAP.
+- [x] P0-34 — Responder decisões clicando no portal (DEC-0010, ADR-0007): projeção com título/corpo da Issue, página com botões por alternativa, workflow `decision.yml`, aplicador `apply-decision.cs`, `CHK-DECISION-FLOW` e testes do aplicador.
+- [~] P0-35 — Ratificar o mecanismo (ADR-0007, DEC-0011) e validar ponta a ponta com um clique real do proprietário no portal — NN-017. **Objeto:** https://abnercruz.github.io/Ecosystem/
 
 **Gate:** um agente novo consegue entrar no repositório e compreender corretamente o produto, a autoridade documental e o processo de trabalho sem depender de uma conversa anterior.
 *Estado do gate:* **aprovado pelo proprietário em 2026-09-30** ([ADD-0003](docs/governance/addenda/ADD-0003-aprovacao-de-decisoes-e-superficie-de-decisoes-no-portal.md)); a validação do portal no celular (P0-15) segue à parte e continua pendente.
@@ -72,14 +75,14 @@ Objetivo: auditar Lunet2D e Urbe, mapear históricos e workflows, importar prese
 
 - [x] P1-1 — Inventário do Lunet2D ([`inventory-lunet2d.md`](docs/migration/inventory-lunet2d.md)), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16). Evidência: handoff `HO-20260930-inventario-lunet2d`. Linha de base: 286 testes aprovados; CI da `main` verde.
 - [x] P1-2 — Inventário do Urbe ([`inventory-urbe.md`](docs/migration/inventory-urbe.md)), **incluindo o mapa funcional e arquitetural com classificação futura proposta** (ADD-0002 §16). Evidência: handoff `HO-20260930-inventario-urbe`. Linha de base: `npm run check` com 56/56 arquivos de teste; CI da `main` verde.
-- [ ] P1-3 — Plano de importação por produto, a partir dos inventários P1-1/P1-2 (DEC-0002: técnica A; DEC-0004: origens confirmadas). Seção de releases e pipelines depende de **DEC-0008**. Deve tratar cada risco dos inventários e listar, um a um, os ajustes técnicos inevitáveis (NN-013).
+- [ ] P1-3 — Plano de importação por produto, a partir dos inventários P1-1/P1-2 (DEC-0002: técnica A; DEC-0004: origens confirmadas). DEC-0008/DEC-0009 decididas (A, transitórias; `docs/migration/README.md` §9). Deve tratar cada risco dos inventários e listar, um a um, os ajustes técnicos inevitáveis (NN-013).
 - [ ] P1-4 — Importação do Lunet2D preservando histórico (PR de escopo restrito, NN-013).
 - [ ] P1-5 — Importação do Urbe preservando histórico (PR de escopo restrito, NN-013).
 - [ ] P1-6 — Restaurar build/testes/workflows/releases de cada produto; pipelines seletivos por path (NN-014). Atenção herdada dos inventários: `versionCode` do Android do Lunet2D (R-LUN-1), checks do Urbe que leem `.github/workflows` na raiz do produto (R-URB-3), secrets de assinatura do Urbe a recriar pelo proprietário (R-URB-5).
 - [ ] P1-7 — Architecture tests sobre referências reais de código (NN-002, NN-003).
 - [ ] P1-8 — Auditoria pós-migração: commits/tags da origem presentes (NN-012).
-- [ ] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados). Fontes hoje: Lunet2D publica `release-manifest.json`, `SHA256SUMS.txt` e notas em cada release; o Urbe publica APK, instalador Windows e `latest.yml` (checksum só pelo digest do GitHub). Depende de DEC-0008 para saber de quais repositórios ler.
-- [ ] P1-10 — Urbe Web: decidir (**DEC-0009**, pendente), com base no inventário P1-2 (§6: hoje publicado por Pages a partir da `main` de `AbnerCruz/Urbe`), como o Urbe Web é publicado no monorepo sem quebrar a publicação atual, e expor rota previsível no portal.
+- [ ] P1-9 — Portal: versão, última release, APK, checksum e release notes de cada produto derivados das releases do GitHub (nunca digitados). Fontes hoje: Lunet2D publica `release-manifest.json`, `SHA256SUMS.txt` e notas em cada release; o Urbe publica APK, instalador Windows e `latest.yml` (checksum só pelo digest do GitHub). Por DEC-0008-A, lê as releases dos repositórios de origem de cada produto (transitório).
+- [ ] P1-10 — Urbe Web: por **DEC-0009-A** (transitória), o Urbe Web continua em `AbnerCruz/Urbe` durante a migração; este item trata a publicação definitiva, com base no inventário P1-2 (§6: hoje publicado por Pages a partir da `main` de `AbnerCruz/Urbe`), como o Urbe Web é publicado no monorepo sem quebrar a publicação atual, e expor rota previsível no portal.
 - [ ] P1-11 — Registros canônicos de validação por build (contrato + estados de `definition-of-done.md` §4) e páginas `/testing/<componente>/<build>/` geradas deles.
 - [ ] P1-12 — Classificar candidatos (Product Core, Product Shell, Tool, Workspace, Service, Library, Adapter) a partir dos mapas funcionais **já validados pós-migração**: apenas proposta; nenhuma extração (passo 9 de [`docs/migration/README.md`](docs/migration/README.md) §7). Extração/modernização (passo 10) está fora da Fase 1 e exige ADR por extração.
 
@@ -92,7 +95,7 @@ Sequência obrigatória da Fase 1 (ADD-0002 §17): inventariar → importar → 
 
 ## Fase 2 — Contracts e Registry
 
-Objetivo: formalizar `ComponentManifest`, `Capability`, provider/consumer, versionamento e permission model; registry inicial; testes de boundary. Por ADR (ADD-0002): contrato de **Context**; nomes e formato dos eixos de disponibilidade (visibilidade, distribuição, modelo comercial); formato e validação do **Distribution Profile** (inclusive: nenhum perfil distribuível de um Product inclui o Hub — NN-023).
+Objetivo: formalizar `ComponentManifest`, `Capability`, provider/consumer, versionamento e permission model; registry inicial; testes de boundary. **Reavaliar as decisões transitórias DEC-0008 e DEC-0009** (canal de releases e publicação do Urbe Web): quando o Ecosystem passar a declarar distribuição, a declaração dele substitui o que vale na migração. Por ADR (ADD-0002): contrato de **Context**; nomes e formato dos eixos de disponibilidade (visibilidade, distribuição, modelo comercial); formato e validação do **Distribution Profile** (inclusive: nenhum perfil distribuível de um Product inclui o Hub — NN-023).
 
 **Gate:** um componente pode declarar uma capability, outro pode descobri-la e a compatibilidade pode ser validada sem dependência direta entre produtos.
 

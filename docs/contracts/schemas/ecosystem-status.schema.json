@@ -315,15 +315,35 @@
               "type": "object",
               "additionalProperties": false,
               "required": [
+                "id",
                 "option",
-                "consequences"
+                "consequences",
+                "hash",
+                "issueTitle",
+                "issueBody"
               ],
               "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[A-Z]$"
+                },
                 "option": {
                   "type": "string",
                   "minLength": 1
                 },
                 "consequences": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{12}$"
+                },
+                "issueTitle": {
+                  "type": "string",
+                  "pattern": "^Decisão DEC-[0-9]{4}: [A-Z]$"
+                },
+                "issueBody": {
                   "type": "string",
                   "minLength": 1
                 }

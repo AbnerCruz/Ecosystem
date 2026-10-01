@@ -132,4 +132,5 @@ Os itens abaixo são deliberadamente abertos. Nenhum agente deve tratá-los como
 - quais Services compartilhados (Identity, Catalog, Commerce, Entitlements, Downloads, Updates, Reviews, Creator Profiles, Notifications) existirão, se algum — só com consumidores reais, contrato e ADR (NN-020, NN-022);
 - fonte canônica de catálogo, entitlements e identidade; política de edições e canais externos;
 - como Product Shells serão estruturados no código de cada produto — depende dos inventários P1-1/P1-2 e não deve ser presumido;
+- distribuição e publicação **definitivas** de cada produto (canal de releases, publicação web): serão declaradas pelo próprio Ecosystem nas Fases 2 e 4; durante a migração valem DEC-0008 e DEC-0009 (alternativa A, **transitórias** — `docs/migration/README.md` §9);
 - estrutura interna de `apps/`, `platform/`, `workspaces/` e `tools/` — os diretórios só serão criados quando tiverem conteúdo com função (ADR-0004).

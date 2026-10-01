@@ -64,6 +64,17 @@
       "commands": { "build": "dotnet run site/generator/GenerateStatus.cs" },
       "dependencies": []
     },
+    "decision-recorder": {
+      "name": "Registro de decisões pelo portal",
+      "type": "automation",
+      "language": "csharp",
+      "path": ".github/scripts",
+      "status": "active",
+      "description": "Automação que registra em decisions.json a decisão que o proprietário escolheu no portal: valida a Issue pré-preenchida, grava o registro persistido e o commit (ADR-0007, DEC-0010). Somente o dono do repositório; nunca executa texto da Issue.",
+      "owners": ["AbnerCruz"],
+      "commands": { "test": "dotnet run tests/consistency/Check.cs -- --self-test" },
+      "dependencies": []
+    },
     "consistency-checks": {
       "name": "Consistency checks",
       "type": "check",

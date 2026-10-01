@@ -83,20 +83,33 @@ function objectLinks(objs) {
     ...objs.map((o, i) => link(o.url, o.title, i === 0 ? "btn primary" : "btn")));
 }
 
-function decisionCard(d) {
+// Escolher uma alternativa abre a Issue já preenchida no GitHub; enviar a Issue confirma a escolha e uma
+// automação a registra no repositório (ADR-0007). O portal em si nunca escreve nada.
+function choiceLink(repo, alt) {
+  const url = `${repo}/issues/new?title=${encodeURIComponent(alt.issueTitle)}&body=${encodeURIComponent(alt.issueBody)}`;
+  return el("a", { href: url, class: "btn primary choose", target: "_blank", rel: "noopener" }, `Escolher ${alt.id}`);
+}
+
+function decisionCard(d, repo) {
   return el("article", { class: "card decision" },
     el("header", {},
       el("h3", {}, d.title),
       el("span", { class: `badge ${d.blocking ? "v-HUMAN_VALIDATION_PENDING" : ""}` }, d.blocking ? "bloqueia trabalho" : "não bloqueia")),
     el("p", { class: "meta" }, `${d.id} · ${d.component} · aberta em ${d.raisedAt}`),
     el("p", { class: "question" }, el("strong", {}, "Decisão a tomar: "), d.question),
-    el("details", {},
-      el("summary", {}, `Alternativas (${d.alternatives.length})`),
-      el("ol", { class: "alts" }, ...d.alternatives.map((a) => el("li", {}, el("strong", {}, a.option), el("br"), a.consequences)))),
-    d.recommendation ? el("p", { class: "rec" }, el("strong", {}, "Recomendação do agente: "), d.recommendation) : null,
     el("p", { class: "label" }, "Objeto a revisar"),
     objectLinks(d.objects),
-    el("p", { class: "hint" }, link(d.record, "Registro da decisão")));
+    el("p", { class: "label" }, "Alternativas"),
+    el("ol", { class: "alts" }, ...d.alternatives.map((a) => el("li", { class: "alt" },
+      el("span", { class: "alt-id" }, a.id),
+      el("div", { class: "alt-body" },
+        el("strong", {}, a.option),
+        el("p", {}, a.consequences),
+        choiceLink(repo, a))))),
+    d.recommendation ? el("p", { class: "rec" }, el("strong", {}, "Recomendação do agente: "), d.recommendation) : null,
+    el("p", { class: "hint" }, "Ao escolher, o GitHub abre uma Issue já preenchida: toque em ", el("strong", {}, "Submit new issue"),
+      " para confirmar. A decisão é registrada no repositório automaticamente e este portal é atualizado em seguida."),
+    el("p", { class: "hint" }, link(d.record, "Registro das decisões")));
 }
 
 function render(s) {
@@ -114,7 +127,7 @@ function render(s) {
 
   const dec = document.getElementById("decisions");
   dec.replaceChildren(...(s.pendingDecisions.length
-    ? s.pendingDecisions.map(decisionCard)
+    ? s.pendingDecisions.map((d) => decisionCard(d, s.source.repository))
     : [el("p", { class: "hint" }, "Nenhuma decisão pendente registrada.")]));
 
   const val = document.getElementById("validations");

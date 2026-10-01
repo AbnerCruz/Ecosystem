@@ -54,8 +54,8 @@
       "properties": {
         "name": { "type": "string", "minLength": 1 },
         "type": {
-          "description": "Tipos de MANIFEST §6, mais 'check' (verificação interna do repositório; ADR-0002) e 'portal' (superfície web humana publicada; ADR-0005). Nenhum componente pode depender de um 'portal'.",
-          "enum": ["product", "tool", "service", "library", "workspace", "adapter", "contract", "check", "portal"]
+          "description": "Tipos de MANIFEST §6, mais 'check' (verificação interna do repositório; ADR-0002) 'portal' (superfície web humana publicada; ADR-0005) e 'automation' (automação do repositório que escreve em fontes canônicas; ADR-0007). Nenhum componente pode depender de um 'portal'.",
+          "enum": ["product", "tool", "service", "library", "workspace", "adapter", "contract", "check", "portal", "automation"]
         },
         "language": { "enum": ["csharp", "javascript", "typescript", "none"] },
         "path": { "$ref": "#/$defs/path" },

@@ -111,6 +111,31 @@ JsonObject Link(string target) => new()
     ["url"] = target.StartsWith("https://") ? target : Blob(target.Split('#')[0]),
 };
 
+// Alternativa clicável (DEC-0010, ADR-0007). O título e o corpo da Issue são definidos AQUI e validados por
+// .github/scripts/apply-decision.cs; o hash impede aplicar uma escolha cujo texto mudou desde que o portal a exibiu.
+JsonObject Alternative(string decisionId, int index, string option, string consequences)
+{
+    var letter = (char)('A' + index);
+    var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(option + "\n" + consequences))).ToLowerInvariant()[..12];
+    var issueBody =
+        "<!-- ecosystem-decision:v1 -->\n" +
+        $"decision: {decisionId}\n" +
+        $"option: {letter}\n" +
+        $"option-hash: {hash}\n\n" +
+        $"Escolha da alternativa **{letter}** para a decisão {decisionId}, feita pelo portal do Ecosystem.\n\n" +
+        "Enviar esta Issue confirma a escolha: uma automação a registra em `docs/governance/decisions.json`. " +
+        "Não edite as quatro primeiras linhas.\n";
+    return new JsonObject
+    {
+        ["id"] = letter.ToString(),
+        ["option"] = option,
+        ["consequences"] = consequences,
+        ["hash"] = hash,
+        ["issueTitle"] = $"Decisão {decisionId}: {letter}",
+        ["issueBody"] = issueBody,
+    };
+}
+
 // --- decisões pendentes do proprietário (DEC-0007): sempre com o objeto a revisar ---
 var pendingDecisions = new JsonArray();
 var decisionsDoc = Load("docs/governance/decisions.json");
@@ -127,8 +152,7 @@ foreach (var dn in decisionsDoc["decisions"]!.AsArray())
         ["title"] = S(dn["title"]),
         ["blocking"] = dn["blocking"]?.GetValue<bool>() ?? false,
         ["question"] = S(dn["question"]),
-        ["alternatives"] = new JsonArray(dn["alternatives"]!.AsArray().Select(a => (JsonNode?)new JsonObject
-            { ["option"] = S(a!["option"]), ["consequences"] = S(a["consequences"]) }).ToArray()),
+        ["alternatives"] = new JsonArray(dn["alternatives"]!.AsArray().Select((a, i) => (JsonNode?)Alternative(S(dn["id"])!, i, S(a!["option"])!, S(a["consequences"])!)).ToArray()),
         ["recommendation"] = S(dn["recommendation"]),
         ["objects"] = new JsonArray(related.Select(r => (JsonNode?)Link(r)).ToArray()),
         ["record"] = Blob("docs/governance/decisions.json"),
