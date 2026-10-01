@@ -505,6 +505,38 @@
       ],
       "raisedBy": "claude-code",
       "raisedAt": "2026-10-01"
+    },
+    {
+      "id": "DEC-0016",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": true,
+      "title": "Permitir o workflow de sincronização na checagem de workflows do Urbe",
+      "context": "FATO: o Lunet2D já está sincronizado de verdade (origem Lunet2D, PR #26 e primeira execução do espelho: commit de âncora com a mesma árvore). No Urbe, o CI do PR de instalação (https://github.com/AbnerCruz/Urbe/pull/48) falhou porque a checagem do próprio produto (tools/check-workflows.mjs e tests/workflows.mjs, REQ-006/REQ-066) só admite `contents: write` em release.yml. O espelho precisa de `contents: write` para empurrar o commit de sincronização (o GITHUB_TOKEN só escreve com essa permissão) e NÃO publica releases por conta própria: ele cria a tag e dispara release.yml, que continua sendo o único que publica. Não há forma legítima de contornar a checagem sem alterá-la (esconder a permissão seria burlar a regra do produto). Alterar essa checagem é mudança em apps/urbe, e portanto precisa ser consciente (NN-011, NN-013).",
+      "question": "Como o Urbe deve acomodar o workflow de sincronização, que precisa escrever no repositório de origem?",
+      "alternatives": [
+        {
+          "option": "Ajuste mínimo da checagem do Urbe: permitir, pelo nome, `sync-from-ecosystem.yml` com `contents: write` apenas no nível do job (REQ-006 continua valendo para todo o resto)",
+          "consequences": "Dois arquivos de apps/urbe mudam (tools/check-workflows.mjs e tests/workflows.mjs, com teste de regressão de que nenhum outro workflow pode publicar), em um PR separado no Ecosystem e idêntico na origem; registrado como ajuste técnico inevitável no plano (§8). O Urbe passa a ser sincronizado e publicado sem nenhuma ação sua. Releases do Urbe seguem sendo publicadas só por release.yml."
+        },
+        {
+          "option": "Não instalar o espelho no Urbe: publicar o Urbe a partir do monorepo (variante B da DEC-0014)",
+          "consequences": "Não mexe na checagem do Urbe, mas exige que VOCÊ crie um token de publicação, recrie os secrets de assinatura do Android do Urbe e troque a fonte do Pages (as ações que você quis evitar). O Urbe fica sem release automática até lá."
+        },
+        {
+          "option": "Não aprovar ainda; pedir mudanças",
+          "consequences": "O Urbe continua só importado (sem espelho); o Lunet2D segue sincronizado. Descreva a mudança e o agente revisa."
+        }
+      ],
+      "consequences": "Se A, o agente faz o ajuste no Ecosystem e na origem, instala o espelho e conclui o Urbe do P1-6. Bloqueia só a parte do Urbe.",
+      "manifestCompatibility": "A respeita NN-013 como necessidade técnica inevitável explícita; NN-011 (decisão consciente); NN-016 (escrita só com o GITHUB_TOKEN da origem, permissão de job explícita); NN-001 (o script continua só no Ecosystem).",
+      "recommendation": "A: é o menor ajuste possível, mantém a regra de que só release.yml publica, e é a única opção sem ação manual sua.",
+      "related": [
+        "https://github.com/AbnerCruz/Urbe/pull/48",
+        "docs/migration/import-plan.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }

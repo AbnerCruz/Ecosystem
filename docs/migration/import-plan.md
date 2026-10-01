@@ -126,6 +126,11 @@ Os workflows importados ficam **inertes** em `apps/<id>/.github/` (o GitHub só 
 ### 7.6 Passo de corte (uma vez por produto, depois do PR A)
 Feito por mim com as credenciais de sessão já anexadas, ou pelo próprio `sync` no primeiro disparo: (1) instalar `sync-from-ecosystem.yml` na origem; (2) Lunet2D: ajustar a condição do job `release` (§7.2); (3) Urbe: remover `.github/dependabot.yml` da origem e fechar os PRs do Dependabot (#37–#46) com comentário apontando para o monorepo; (4) primeira sincronização, que deve **não alterar nada** (T2: 0 arquivos), provando que o espelho coincide com a origem.
 
+### 7.6.1 Execução real (FATO, 2026-10-01)
+
+- **Lunet2D:** PR #26 em `AbnerCruz/Lunet2D` (workflow de sincronização + `workflow_dispatch` no job `release`) com CI verde e fundido. A primeira execução real do espelho (`workflow_dispatch`, execução 36811164722) criou **só o commit de âncora** `4d6d5ba` do `github-actions[bot]`, com `Ecosystem-Tree: db9f6cd5…` (a árvore do produto, igual à da origem): a recusa por divergência não foi acionada e **nenhum** release foi disparado. Prova que o `GITHUB_TOKEN` da origem consegue empurrar na `main` e que o script roda no runner.
+- **Urbe:** PR #48 em `AbnerCruz/Urbe` **falhou no CI do próprio produto**: `tests/workflows.mjs` (REQ-006/REQ-066) só admite `contents: write` em `release.yml` e exige `permissions: contents: read` no topo. O espelho precisa de escrita para empurrar. Não há como contornar sem alterar a checagem do produto; levado ao proprietário em **DEC-0016** (ajuste mínimo vs. publicar do monorepo). Até lá o PR #48 fica aberto e o Urbe só está importado.
+
 ### 7.7 O que só a primeira execução real confirma
 Comportamentos do GitHub **NÃO VERIFICADOS** nesta sessão (sem acesso a configurações; `docs.github.com` bloqueado): (a) push do `GITHUB_TOKEN` dispara a construção do Pages (se não, plano B da API); (b) o intervalo real do agendamento (mínimo 5 min; pode atrasar); (c) `workflow_dispatch` do `GITHUB_TOKEN` sobre o `ci.yml`/`release.yml` da origem (comportamento documentado, mas a ser provado). **Se algum falhar, o agente para, registra o achado e leva uma decisão ao portal.**
 
@@ -140,6 +145,8 @@ Comportamentos do GitHub **NÃO VERIFICADOS** nesta sessão (sem acesso a config
 | 5 | Lunet2D: condição do job `release` aceita `workflow_dispatch` (§7.2) | corte | não (é na origem) |
 | 6 | Urbe: remover `dependabot.yml` da origem e fechar os PRs do Dependabot (§7.6) | corte | não (é na origem) |
 | 7 | Verificação dos workflows reais de origem (§7.5) | B | não |
+| 8 | Urbe (condicionado a DEC-0016-A): `tools/check-workflows.mjs` e `tests/workflows.mjs` admitem `sync-from-ecosystem.yml` com `contents: write` só em nível de job | B | **sim** (2 arquivos do produto) |
+| 9 | Lunet2D: aviso de espelho no topo de `apps/lunet2d/README.md` (documentação; feito depois da importação, em PR separado, e também para exercitar o espelho ponta a ponta) | B | **sim** (1 arquivo do produto) |
 
 **Nada** dentro de `apps/<id>/` é alterado na Fase 1. Dívidas preexistentes (token Git em texto claro, `xunit.v3 *`, ações por tag, README e PROGRAM do Urbe desatualizados) **não** são corrigidas.
 

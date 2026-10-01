@@ -1,5 +1,7 @@
 # Lunet2D
 
+> **O código do Lunet2D vive em [`apps/lunet2d` do monorepo Ecosystem](https://github.com/AbnerCruz/Ecosystem/tree/main/apps/lunet2d).** Este repositório é um espelho de distribuição: as releases (APK) continuam sendo construídas e publicadas aqui, mas mudanças de código devem ser feitas no Ecosystem.
+
 Lunet é um ambiente Android para criar jogos 2D em C#. O projeto está na Fase 3 (IDE). O app permite criar um projeto, editar C#, apertar Run (Roslyn + Preview OpenGL ES) e mover um sprite com toque. A cadeia compilar → carregar → executar é testada no CI; as Fases 0–2 foram validadas em aparelho conforme as auditorias. Os recursos recentes da Fase 3 ainda exigem validação em aparelho.
 
 ## Planejamento
