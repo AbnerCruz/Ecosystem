@@ -16,7 +16,7 @@
   "component": "urbe",
   "state": "done",
   "message_id": "HO-20261001-urbe-r1-jszip-em-vendor",
-  "timestamp": "2026-10-01T22:00:00Z",
+  "timestamp": "2026-10-01T19:16:00Z",
   "task_id": "UR1-1",
   "files_changed": [
     "apps/urbe/vendor/jszip/jszip.min.js",
@@ -36,7 +36,7 @@
     "ALTERAÇÃO (refatoração interna R, só dentro de apps/urbe): src/legacy/bootstrap.js (JSZip 3.10.1) movido com git mv, conteúdo idêntico, para vendor/jszip/jszip.min.js; vendor/jszip/LICENSE criado; src/modules.json, index.html, sw.js (derivados do manifesto por check-modules), tools/gen-modules.mjs e THIRD-PARTY-NOTICES.md atualizados; src/legacy/ removido (Aceite: 'src/legacy/ sem vendor'). Ordem de carga e fase 'boot' preservadas.",
     "Documentação do produto: ROADMAP RM-F2-03 -> [?] (aguarda validação do ZIP no navegador), TRACEABILITY regenerada, entrada em AGENTSCHAT.md.",
     "Nenhum formato de dados do usuário, boundary, contrato, release ou versão foi tocado; nenhum outro produto ou o Hub referenciado; nada extraído para o Ecosystem.",
-    "Integração (2026-10-02, agente integrador): o proprietário pediu o merge (ADD-0011 do Ecosystem). RM-F2-03 marcado [x] no próprio PR #35, depois de reconciliado com a main atual (sem sobreposição) e com o estado combinado verde; o handoff passa a 'done' (na main, done ⇒ integrado; multi-agent.md §1.8)."
+    "Integração (2026-10-01, agente integrador): o proprietário pediu o merge (ADD-0011 do Ecosystem). RM-F2-03 marcado [x] no próprio PR #35, depois de reconciliado com a main atual (sem sobreposição) e com o estado combinado verde; o handoff passa a 'done' (na main, done ⇒ integrado; multi-agent.md §1.8)."
   ],
   "verification": [
     {

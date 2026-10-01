@@ -36,3 +36,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0012](0012-contratos-da-fase-2.md) | Contratos da Fase 2 (manifest, capability, versões, Context, permissões, Registry, Distribution Profile) | Aceito (DEC-0020-B; nomes dos eixos congelados em P2-9 após DEC-0021-C) |
 | [0013](0013-hub-read-only-fase-3.md) | Hub read-only (Fase 3): tecnologia de UI, plataforma-alvo e fontes de dados | Aceito (DEC-0022-A: Android nativo em C#) |
 | [0014](0014-fluxo-multiagente-minimo.md) | Fluxo multiagente mínimo: base, resultado, integração e validação | Aceito (ADD-0010) |
+| [0015](0015-integrador-automatico.md) | Integrador automático: estado combinado, fila serial e política de integração | Aceito (ADD-0011; integrar sem toque pendente em DEC-0023) |

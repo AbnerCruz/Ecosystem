@@ -48,8 +48,9 @@ Arquivo `docs/governance/handoffs/<message_id>.json`, validado por [`handoff.sch
 Campos: `message_id`, `category`, `timestamp`, `agent`, `task_id`, `component`, `state`, `branch`, `commit`, `pr`, `files_changed`, `work_completed`, `verification`, `known_issues`, `blockers`, `next_actions`, `decisions_required`, `normative_sources` (documentos consultados diretamente — NN-010), `invariants` (NN-XXX considerados + evidência — MANIFEST §25) e `cost` (opcional).
 
 - `message_id`: `HO-AAAAMMDD-slug`, igual ao nome do arquivo; nunca reutilizado.
+- `timestamp`: hora real em que o handoff foi escrito (de preferência UTC); nunca no futuro — ele ordena os handoffs da mesma tarefa (`CHK-HANDOFFS`).
 - `task_id`: ID do ROADMAP (`P1-1`) ou de Issue.
-- `base_commit`: SHA de onde o agente partiu (BASE; obrigatório a partir de 2026-10-02). `commit`: resultado já conhecido ou `null` (derivado do commit que introduz o handoff); nunca o `base_commit`. A integração é o merge do `pr`; `verification[].tested_commit` registra o estado testado. Ver [`multi-agent.md`](multi-agent.md) e ADR-0014.
+- `base_commit`: SHA de onde o agente partiu (BASE; obrigatório a partir de 2026-10-01T19:00Z). `commit`: resultado já conhecido ou `null` (derivado do commit que introduz o handoff); nunca o `base_commit`. A integração é o merge do `pr` (feito pelo integrador automático, ADR-0015); `verification[].tested_commit` registra o estado testado. O integrador só aceita PR com pelo menos um handoff em `review`, `verifying` ou `done`. Ver [`multi-agent.md`](multi-agent.md), ADR-0014 e ADR-0015.
 - `state`: status machine de [`definition-of-done.md`](definition-of-done.md).
 - `verification[].kind`: `automated` ou `human` — nunca misturar (NN-017).
 - Proibido: segredos, tokens, raciocínio interno privado.
@@ -57,7 +58,7 @@ Campos: `message_id`, `category`, `timestamp`, `agent`, `task_id`, `component`, 
 ## 7. Regras entre agentes (MANIFEST §23)
 
 - **Sem impersonação:** um agente nunca escreve como outro agente nem inventa revisão, aprovação ou decisão.
-- **Concorrência:** paralelizar o independente, coordenar o que se sobrepõe, revalidar tudo na integração ([`multi-agent.md`](multi-agent.md), ADR-0014): antes de integrar, `Check.cs -- --integration <branch>`; base obsoleta ⇒ reconciliar e rerodar os checks no estado combinado. Coordenar por escopo, branch e arquivos. Antes de começar, verificar handoffs e branches abertos; declarar a tarefa (`claimed`). Nunca sobrescrever trabalho de outro agente para resolver divergência — registrar `BLOCKER` e pedir coordenação.
+- **Concorrência:** paralelizar o independente, coordenar o que se sobrepõe, revalidar tudo na integração ([`multi-agent.md`](multi-agent.md), ADR-0014, ADR-0015): o integrador automático testa cada PR no estado combinado com a `main` atual e devolve ao autor conflito ou check vermelho; o autor reconcilia (merge da `main` na branch, resolução semântica) e envia de novo. `Check.cs -- --integration <branch>` confere localmente. Coordenar por escopo, branch e arquivos. Antes de começar, verificar handoffs e branches abertos; declarar a tarefa (`claimed`). Nunca sobrescrever trabalho de outro agente para resolver divergência — registrar `BLOCKER` e pedir coordenação.
 - **Canonicalidade:** mensagens entre agentes comunicam estado; não substituem MANIFEST, SPEC, ADR, contratos, ROADMAP ou testes.
 
 ## 8. Estado vivo das tarefas (DEC-0003)

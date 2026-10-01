@@ -1,0 +1,151 @@
+name: integrate
+
+# Integrador automático (ADR-0015, ADD-0011): leva à main o trabalho dos agentes sem que ninguém precise verificá-lo à mão.
+# Para um PR pronto por execução (não rascunho, da própria base, com handoff), monta o estado combinado com a main ATUAL, roda nele
+# os checks do Ecosystem e o CI de cada Product tocado (workflows reutilizáveis) e, se tudo passar e a política permitir (mergePolicy
+# em ecosystem.json; 'owner-authorization' exige a label 'integrar'), empurra exatamente esse commit testado para a main — sem force:
+# se a main mudou no meio, reavalia. Conflito ou check vermelho: status 'ecosystem/integration' vermelho + comentário no PR para o
+# agente autor. A execução se redispara enquanto houver PR a avaliar; pushes do GITHUB_TOKEN não disparam workflows, por isso o
+# integrador dispara pages/consistency na main depois de integrar.
+# Segurança: pull_request_target roda a definição da main; o código do PR só roda nos jobs de checks, com permissão de leitura;
+# PRs de fork e do Dependabot são ignorados; texto do PR só entra em script via variável de ambiente.
+
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review, labeled]
+  schedule:
+    - cron: '41 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: integrate
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Planejar e montar o estado combinado
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      statuses: write
+      pull-requests: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
+    outputs:
+      action: ${{ steps.prepare.outputs.action || steps.plan.outputs.action }}
+      outcome: ${{ steps.prepare.outputs.outcome }}
+      conflicts: ${{ steps.prepare.outputs.conflicts }}
+      pr: ${{ steps.plan.outputs.pr }}
+      head: ${{ steps.plan.outputs.head }}
+      main: ${{ steps.plan.outputs.main }}
+      authorized: ${{ steps.plan.outputs.authorized }}
+      more: ${{ steps.plan.outputs.more }}
+      combined: ${{ steps.prepare.outputs.combined }}
+      products: ${{ steps.prepare.outputs.products || '[]' }}
+      policy: ${{ steps.prepare.outputs.policy }}
+      policy_reason: ${{ steps.prepare.outputs.policy_reason }}
+      gate_reason: ${{ steps.prepare.outputs.gate_reason }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch || 'main' }}
+          fetch-depth: 0
+          path: trusted
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Coletar PRs abertos e o estado de integração de cada um
+        working-directory: trusted
+        run: bash .github/integrator/integrate.sh collect > /tmp/integration-input.json && cat /tmp/integration-input.json
+      - name: Decidir (lógica testada pelo self-test)
+        id: plan
+        working-directory: trusted
+        run: dotnet run tests/consistency/Check.cs -- --integration-plan --input /tmp/integration-input.json | grep -E '^[a-z_]+=' | tee -a "$GITHUB_OUTPUT"
+      - name: Montar o estado combinado (main atual + PR) e aplicar os portões
+        id: prepare
+        if: steps.plan.outputs.action == 'evaluate'
+        working-directory: trusted
+        env:
+          PR: ${{ steps.plan.outputs.pr }}
+          HEAD_SHA: ${{ steps.plan.outputs.head }}
+          MAIN: ${{ steps.plan.outputs.main }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: bash .github/integrator/integrate.sh prepare
+
+  consistency:
+    name: Checks do Ecosystem no estado combinado
+    needs: plan
+    if: needs.plan.outputs.action == 'evaluate'
+    permissions:
+      contents: read
+      issues: read
+    uses: ./.github/workflows/consistency.yml
+    with:
+      ref: ${{ needs.plan.outputs.combined }}
+
+  urbe:
+    name: CI do Urbe no estado combinado
+    needs: plan
+    if: needs.plan.outputs.action == 'evaluate' && contains(fromJSON(needs.plan.outputs.products), 'urbe')
+    permissions:
+      contents: read
+    uses: ./.github/workflows/urbe-checks.yml
+    with:
+      ref: ${{ needs.plan.outputs.combined }}
+
+  lunet2d:
+    name: CI do Lunet2D no estado combinado
+    needs: plan
+    if: needs.plan.outputs.action == 'evaluate' && contains(fromJSON(needs.plan.outputs.products), 'lunet2d')
+    permissions:
+      contents: read
+    uses: ./.github/workflows/lunet2d-ci.yml
+    with:
+      ref: ${{ needs.plan.outputs.combined }}
+
+  finish:
+    name: Integrar, marcar pronto ou devolver ao autor
+    needs: [plan, consistency, urbe, lunet2d]
+    if: always() && needs.plan.result == 'success' && contains(fromJSON('["evaluate","land","blocked"]'), needs.plan.outputs.action)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      statuses: write
+      pull-requests: write
+      issues: write
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      ACTION: ${{ needs.plan.outputs.action }}
+      OUTCOME: ${{ needs.plan.outputs.outcome }}
+      CONFLICTS: ${{ needs.plan.outputs.conflicts }}
+      PR: ${{ needs.plan.outputs.pr }}
+      HEAD_SHA: ${{ needs.plan.outputs.head }}
+      MAIN: ${{ needs.plan.outputs.main }}
+      AUTHORIZED: ${{ needs.plan.outputs.authorized }}
+      MORE: ${{ needs.plan.outputs.more }}
+      COMBINED: ${{ needs.plan.outputs.combined }}
+      POLICY: ${{ needs.plan.outputs.policy }}
+      POLICY_REASON: ${{ needs.plan.outputs.policy_reason }}
+      GATE_REASON: ${{ needs.plan.outputs.gate_reason }}
+      R_CONSISTENCY: ${{ needs.consistency.result }}
+      R_URBE: ${{ needs.urbe.result }}
+      R_LUNET2D: ${{ needs.lunet2d.result }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch || 'main' }}
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Aplicar o veredito
+        run: bash .github/integrator/integrate.sh finish

@@ -1,0 +1,126 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "cf7ad46",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/39",
+  "blockers": [],
+  "cost": null,
+  "component": "ecosystem",
+  "state": "done",
+  "message_id": "HO-20261001-integrador-automatico",
+  "timestamp": "2026-10-01T19:59:00Z",
+  "task_id": "P1-18",
+  "files_changed": [
+    ".github/workflows/integrate.yml",
+    ".github/integrator/integrate.sh",
+    ".github/integrator/simulate.sh",
+    ".github/workflows/consistency.yml",
+    ".github/workflows/urbe-checks.yml",
+    ".github/workflows/lunet2d-ci.yml",
+    ".github/pull_request_template.md",
+    "ecosystem.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/adr/README.md",
+    "docs/governance/addenda/ADD-0011-colaboracao-multiagente-sem-verificacao-manual.md",
+    "docs/governance/decisions.json",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-integracao-multiagente.json",
+    "docs/governance/handoffs/HO-20261001-urbe-r1-jszip-em-vendor.json",
+    "docs/governance/handoffs/HO-20261002-dec-0022-e-integracao.json",
+    "docs/governance/handoffs/HO-20261001-integrador-automatico.json"
+  ],
+  "work_completed": [
+    "FATO: a mensagem do proprietário 'Automaticamente*' foi enviada às 18:55:42 UTC, 21 s depois de 'Pode fazer o merge e aprovar tudo... sem erros' (18:55:21), como correção dela, e só chegou ao agente às 19:31, depois de DEC-0023 estar no portal. Transcrita em ADD-0011 com essa cronologia. INFERÊNCIA registrada: reforça o requisito (colaboração automática), mas NÃO responde a DEC-0023, escrita depois (MANIFEST §23.2). Na sessão anterior o agente chegou a lê-la como 'DEC-0023 = A'; a leitura foi corrigida antes de qualquer registro.",
+    "ALTERAÇÃO (ADR-0015, mecanismo do requisito do ADD-0011): integrador automático em .github/workflows/integrate.yml + componente 'integrator' (.github/integrator). Fila serial, um PR por execução (land antes de evaluate; rascunhos, forks e Dependabot fora); estado combinado main ATUAL + PR em integration/pr-N; checks do Ecosystem e CI de cada Product tocado reutilizados por workflow_call no commit combinado; portões em C# testado (--integration-plan, --integration-gates): handoff em review/verifying/done, política = mais restritiva entre o piso ecosystem.mergePolicy e o mergePolicy dos componentes tocados, mudança de política nunca se autoaprova; integração por push SEM force e só se a main ainda for o primeiro pai do commit testado; status ecosystem/integration, um comentário por PR e labels (pronto-para-integrar, precisa-reconciliar, integrar).",
+    "SEGURANÇA (NN-016): pull_request_target com a definição da main; código do PR só nos jobs de checks, token de leitura, sem segredos; texto do PR só em env; force só em integration/*. CHK-INTEGRATION fiscaliza isso e que o CI rode a simulação (8 casos de mutação no self-test).",
+    "POLÍTICA ENQUANTO DEC-0023 PENDENTE: piso ecosystem.mergePolicy = owner-authorization — tudo é verificado e devolvido ao autor automaticamente; nada entra na main sem a label 'integrar' do proprietário. Urbe = owner-authorization (a label é o 'pedido explícito'); Lunet2D = automatic (só vale se o piso virar automatic). DEC-0023 continua pendente, com contexto e alternativas atualizados (A = mudar o piso para automatic; B = manter; C = desligar).",
+    "CORREÇÃO DE DATAS (o dia real era 2026-10-01, não 10-02): ADD-0011 'Recebido em', DEC-0023 raisedAt, timestamps de três handoffs que estavam no futuro (HO-20261001-integracao-multiagente 23:30Z→17:29Z, HO-20261001-urbe-r1-jszip-em-vendor 22:00Z→19:16Z, HO-20261002-dec-0022-e-integracao 10-02T00:30Z→10-01T19:25Z; o ID deste último fica como está, NN-019) e BaseCommitRequiredFrom → 2026-10-01T19:00Z (ADR-0014, schema, communication.md). Novo: CHK-HANDOFFS recusa timestamp no futuro (> agora + 30 min), porque o timestamp ordena os handoffs de uma tarefa. As menções a 2026-10-02 em apps/urbe (AGENTSCHAT.md, docs/v2/ROADMAP.md) ficam para um PR do Urbe, que exige a autorização do proprietário.",
+    "DOCUMENTAÇÃO: ADR-0015 (índice), ADR-0014 (consequência), multi-agent.md §1 e §5 (tabela do que cada status/label significa e quem age), AGENTS.md, communication.md §6–§7, template de PR, ARCHITECTURE §5 (autoridade da política de integração), matriz de enforcement (NN-008 TEST, NN-016 CI, NN-018 TEST → CHK-INTEGRATION), tests/consistency/README.md, ROADMAP P1-18."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks; self-test 'todos os checks provaram detectar suas violações', incluindo 23 casos do integrador (fila, base obsoleta, autorização, piso, handoff, CLIs) e as mutações novas de CHK-INTEGRATION e CHK-HANDOFFS (timestamp no futuro)."
+    },
+    {
+      "check": "bash .github/integrator/simulate.sh (efeito do integrador no git, origin local, gh simulado)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "12/12 cenários: estado combinado publicado; piso owner-authorization ⇒ 'pronto' sem tocar a main; label ⇒ main = exatamente o commit testado; redisparo de pages/consistency/fila; conflito ⇒ bloqueado + precisa-reconciliar; CI do Urbe vermelho ⇒ main intocada; main muda durante o teste ⇒ teste velho não entra; reavaliação ⇒ integra o novo combinado; só fast-forward."
+    }
+  ],
+  "known_issues": [
+    "integrate.yml só passa a existir para o GitHub depois deste PR entrar na main (pull_request_target usa a definição da main): este é o último merge feito à mão (bootstrap). O primeiro teste real fica registrado no handoff seguinte.",
+    "O integrador não é branch protection: quem tem escrita ainda pode empurrar na main (agentes não devem). A sincronização das origens dos Products depende do agendamento delas (não há token entre repositórios)."
+  ],
+  "next_actions": [
+    "Agente: teste real no GitHub depois do merge — um PR deste agente e um PR do Urbe (datas de apps/urbe) avaliados pelo integrador; registrar as execuções.",
+    "Proprietário: decidir DEC-0023 no portal (A = integrar sozinho; B = manter um toque por PR). Até lá, para levar um PR verde à main, adicionar a label 'integrar'."
+  ],
+  "decisions_required": [
+    "DEC-0023"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/addenda/ADD-0008-delegacao-ate-a-refatoracao.md",
+    "docs/governance/addenda/ADD-0010-concorrencia-multiagente.md",
+    "docs/governance/addenda/ADD-0011-colaboracao-multiagente-sem-verificacao-manual.md",
+    "apps/urbe/AGENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A política de integração tem uma autoridade (ecosystem.json); status e labels no PR são derivados."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "O integrador exige handoff e registra cada avaliação no PR (status, comentário, labels)."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "'Automaticamente*' persistido em ADD-0011 com cronologia; DEC-0023 atualizada no portal."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Integrar sem toque do proprietário fica para DEC-0023; o piso começa restritivo; mudar política exige autorização."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "pull_request_target, token de leitura para o código do PR, sem force na main, texto do PR só em env (CHK-INTEGRATION)."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "A main só recebe o commit combinado testado; se a main muda no meio, retesta (self-test e simulação)."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Componente 'integrator' declarado em ecosystem.json; estado de cada PR visível no próprio PR."
+    }
+  ]
+}

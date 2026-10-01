@@ -12,13 +12,17 @@
     "ecosystem": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "name", "repository", "normative"],
+      "required": ["id", "name", "repository", "mergePolicy", "normative"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
         "name": { "type": "string", "minLength": 1 },
         "repository": {
           "description": "Repositório canônico do monorepo. Base dos links derivados (ex.: portal).",
           "type": "string", "pattern": "^https://github\\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "mergePolicy": {
+          "description": "Piso da política de integração (ADR-0015): vale para todo PR, inclusive os que só tocam arquivos do Ecosystem; a política efetiva é a mais restritiva entre este piso e o mergePolicy dos componentes tocados. owner-authorization = o integrador verifica tudo sozinho e só leva à main com a autorização do proprietário (label 'integrar'); automatic = integra sozinho o que os componentes permitirem. A escolha é do proprietário (DEC-0023); mudar este valor num PR exige autorização do proprietário.",
+          "enum": ["automatic", "owner-authorization"]
         },
         "normative": {
           "description": "Documentos normativos da raiz. Cada caminho deve existir.",
@@ -62,6 +66,10 @@
         },
         "language": { "enum": ["csharp", "javascript", "typescript", "none"] },
         "path": { "$ref": "#/$defs/path" },
+        "mergePolicy": {
+          "description": "Como um PR que toca este componente entra na main pelo integrador (ADR-0015): automatic = integra sozinho quando o estado combinado com a main atual passa em todos os checks; owner-authorization = além disso, exige a autorização explícita do proprietário (label 'integrar' no PR). Obrigatório para Products ativos (CHK-INTEGRATION); mudar este valor num PR exige autorização do proprietário.",
+          "enum": ["automatic", "owner-authorization"]
+        },
         "status": {
           "description": "planned: ainda não existe no repositório. not-migrated: existe fora do monorepo (ver 'source'). active: existe no path declarado.",
           "enum": ["planned", "not-migrated", "migrating", "active", "deprecated", "archived"]

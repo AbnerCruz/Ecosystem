@@ -4,6 +4,13 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit a testar (o integrador passa o estado combinado main + PR; ADR-0015)'
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -16,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ inputs.ref }}
           fetch-depth: 0
       - uses: actions/setup-dotnet@v4
         with:
@@ -30,3 +38,5 @@ jobs:
         run: dotnet run tests/consistency/Check.cs
       - name: Self-test (each check detects its violation)
         run: dotnet run tests/consistency/Check.cs -- --self-test
+      - name: Simulação do integrador (ADR-0015; git local, sem GitHub)
+        run: bash .github/integrator/simulate.sh

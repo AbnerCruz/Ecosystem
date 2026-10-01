@@ -5,6 +5,7 @@
     "id": "ecosystem",
     "name": "Ecosystem",
     "repository": "https://github.com/AbnerCruz/Ecosystem",
+    "mergePolicy": "owner-authorization",
     "normative": {
       "manifest": "MANIFEST.md",
       "agents": "AGENTS.md",
@@ -21,6 +22,7 @@
       "language": "csharp",
       "path": "apps/lunet2d",
       "status": "active",
+      "mergePolicy": "automatic",
       "description": "Ambiente de desenvolvimento de jogos 2D: framework, runtime e tooling (MANIFEST §5.1).",
       "owners": ["AbnerCruz"],
       "source": { "repository": "https://github.com/AbnerCruz/Lunet2D", "confirmed": true },
@@ -33,6 +35,7 @@
       "language": "javascript",
       "path": "apps/urbe",
       "status": "active",
+      "mergePolicy": "owner-authorization",
       "description": "Workspace de conhecimento, documentos, vault, páginas, mundo e organização (MANIFEST §5.2).",
       "publicUrl": "https://abnercruz.github.io/Urbe/",
       "owners": ["AbnerCruz"],
@@ -85,6 +88,20 @@
       "owners": ["AbnerCruz"],
       "docs": { "readme": "docs/migration/import-plan.md" },
       "dependencies": []
+    },
+    "integrator": {
+      "name": "Integrador automático",
+      "type": "automation",
+      "language": "none",
+      "path": ".github/integrator",
+      "status": "active",
+      "description": "Leva à main o trabalho dos agentes sem verificação manual (ADR-0015, DEC-0023-A): monta o estado combinado main atual + PR, roda nele os checks do Ecosystem e o CI dos Products tocados e, se tudo passar e o mergePolicy permitir, avança a main exatamente para esse commit, sem force. As decisões são funções C# testadas em tests/consistency/Check.cs (--integration-plan, --integration-gates); o script de shell é só cola de git/gh (exceção local ao padrão C# de NN-005, como origin-sync). Workflow: .github/workflows/integrate.yml.",
+      "owners": ["AbnerCruz"],
+      "docs": { "readme": "docs/governance/multi-agent.md" },
+      "commands": { "test": "bash .github/integrator/simulate.sh" },
+      "dependencies": [
+        { "component": "consistency-checks", "kind": "required", "reason": "Decide a fila e os portões com --integration-plan e --integration-gates e roda os checks no estado combinado." }
+      ]
     },
     "consistency-checks": {
       "name": "Consistency checks",

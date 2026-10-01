@@ -10,9 +10,16 @@ on:
   pull_request:
     paths: ['apps/urbe/**', '.github/workflows/urbe-checks.yml']
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit a testar (o integrador passa o estado combinado main + PR; ADR-0015)'
+        type: string
+        required: false
+        default: ''
 
 concurrency:
-  group: urbe-checks-${{ github.ref }}
+  group: urbe-checks-${{ inputs.ref || github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -26,6 +33,8 @@ jobs:
         working-directory: apps/urbe
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22

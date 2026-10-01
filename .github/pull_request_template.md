@@ -15,12 +15,12 @@
 
 <!-- NN-010: MANIFEST.md, ADRs, SPECs, contracts lidos diretamente. -->
 
-## Base e integração (ADR-0014)
+## Base e integração (ADR-0014, ADR-0015)
 
 - Base (`base_commit` do handoff):
-- [ ] `dotnet run tests/consistency/Check.cs -- --integration <esta branch>` = FRESH (se STALE: merge da `main`, reconciliação semântica, checks de novo)
-- [ ] Conflitos/sobreposição: nenhum / descritos no handoff (causa, resolução, evidência)
-- [ ] Regras de merge do Product respeitadas (ex.: Urbe só com pedido explícito do proprietário)
+- [ ] Handoff em `review` (ou `done`, se só faltar a integração) e PR fora de rascunho: o integrador automático testa o estado combinado com a `main` atual e integra conforme o `mergePolicy` (status `ecosystem/integration`)
+- [ ] Conflitos/sobreposição: nenhum / descritos no handoff (causa, resolução, evidência); se o integrador devolver (`precisa-reconciliar`), merge da `main` na branch, reconciliação semântica, push
+- [ ] Regras de merge do Product respeitadas: quem autoriza é o proprietário (label `integrar`); nenhum agente adiciona essa label
 
 ## Verificação
 
