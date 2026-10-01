@@ -1,0 +1,34 @@
+name: lunet2d-ci
+
+# CI do Lunet2D no monorepo: só testes, sem assinatura e sem publicar. Roda apenas quando o produto muda (NN-014).
+# As releases continuam sendo construídas e publicadas pela origem (DEC-0008-A; plano §7). Espelha o job 'test' do ci.yml
+# do produto (apps/lunet2d/.github/workflows/ci.yml, inerte).
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/lunet2d/**', '.github/workflows/lunet2d-ci.yml']
+  pull_request:
+    paths: ['apps/lunet2d/**', '.github/workflows/lunet2d-ci.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: lunet2d-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/lunet2d
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test (framework, compiler, runtime, projects, architecture)
+        run: dotnet test --project tests/Lunet.Tests

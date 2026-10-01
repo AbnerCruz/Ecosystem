@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-distribuicao-automatizada-parte-1",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T04:00:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-6",
+  "component": "ecosystem",
+  "state": "working",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/origin-sync/sync-from-ecosystem.sh",
+    ".github/origin-sync/sync-from-ecosystem.workflow.yml",
+    ".github/workflows/lunet2d-ci.yml",
+    ".github/workflows/urbe-checks.yml",
+    ".github/dependabot.yml",
+    "ecosystem.json",
+    "tests/consistency/Check.cs",
+    "docs/migration/import-plan.md",
+    "docs/governance/addenda/ADD-0006-proxima-fase-e-reinstalacao-dos-apps.md",
+    "docs/governance/handoffs/HO-20261001-distribuicao-automatizada-parte-1.json"
+  ],
+  "work_completed": [
+    "ADD-0006 persiste a mensagem do proprietário (próxima fase; reinstalação dos apps beta aceitável).",
+    "Lado do Ecosystem do P1-6 (plano §7): CI por produto na raiz com filtro de caminho (lunet2d-ci.yml, urbe-checks.yml; só testes/checagens, sem publicar), dependabot.yml na raiz (npm e gradle do Urbe, github-actions) e componente origin-sync.",
+    "Espelho de distribuição: .github/origin-sync/sync-from-ecosystem.sh (âncora na primeira execução, idempotente, propaga mudança/remoção, tags de release pendentes -> tag vX na origem + dispatch de release.yml, ci-dispatch para o Lunet2D, deriva abre Issue e para) e modelo de workflow que busca o script do Ecosystem a cada execução (sem cópia, NN-001).",
+    "Self-test do checker executa o script contra repositórios sintéticos: 7 casos."
+  ],
+  "verification": [
+    {
+      "check": "Ensaio do script contra clones reais das origens (Urbe 662ca5b, Lunet2D be30e62) com remoto simulado",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Bootstrap: espelho idêntico, só âncora; idempotente; mudança+remoção+pasta nova propagadas; tag pendente gera commit, tag vX e gh workflow run release.yml --ref vX; deriva detectada (rc=1, Issue); .github intacto."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Local: 16/16 checks e todos os checks provaram detectar suas violações (inclui espelho das origens)."
+    }
+  ],
+  "known_issues": [
+    "Parte 2 (origens) ainda não feita: instalar o workflow nas duas origens, ajustar o job release do Lunet2D, remover o dependabot.yml do Urbe e fechar os PRs #37-#46; depende de conseguir empurrar nas origens.",
+    "NÃO VERIFICADO até a primeira execução real: push do GITHUB_TOKEN dispara o Pages; intervalo do agendamento; workflow_dispatch pelo GITHUB_TOKEN sobre ci.yml/release.yml.",
+    "O script é shell (exceção local ao padrão C# de NN-005, declarada no componente origin-sync).",
+    "Os workflows reais de origem não são alterados pelo espelho (GITHUB_TOKEN não pode empurrar mudanças em .github/workflows); as cópias em apps/<id>/.github são inertes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Parte 2: PRs nas origens (Urbe e Lunet2D) com o workflow de sincronização e os ajustes de §8, depois disparar a primeira sincronização e provar §7.7."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/migration/README.md",
+    "docs/migration/import-plan.md",
+    "docs/governance/responses/DEC-0014.md",
+    "docs/governance/addenda/ADD-0006-proxima-fase-e-reinstalacao-dos-apps.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Monorepo é a autoridade do código; a origem é projeção com Ecosystem-Commit/Tree nos commits; o script vive só no Ecosystem."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum produto depende do Hub; a distribuição não o usa."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Nada dentro de apps/<id>/ foi alterado."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "CI por produto com filtro de caminho; releases por produto na origem."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Só o GITHUB_TOKEN de cada origem, com permissões explícitas; nenhum token cross-repo."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Produtos continuam distribuídos sem o Hub."
+    }
+  ],
+  "cost": null
+}

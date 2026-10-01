@@ -1,0 +1,17 @@
+# Atualizações automáticas do monorepo (plano de importação §7.5, DEC-0014-A).
+# Substitui o dependabot.yml do repositório de origem do Urbe, que o passo de corte remove de lá.
+# Só cobre manifestos que existem hoje; não adiciona ecossistemas novos (NN-013).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /apps/urbe
+    schedule:
+      interval: weekly
+  - package-ecosystem: gradle
+    directory: /apps/urbe/native/android
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -1,0 +1,35 @@
+name: urbe-checks
+
+# Checagens do Urbe no monorepo: só `npm run check`, sem builds de Windows/Android, sem assinatura e sem publicar.
+# Roda apenas quando o produto muda (NN-014). Releases e builds assinados continuam na origem (DEC-0008-A; plano §7).
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/urbe/**', '.github/workflows/urbe-checks.yml']
+  pull_request:
+    paths: ['apps/urbe/**', '.github/workflows/urbe-checks.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: urbe-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/urbe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/urbe/package-lock.json
+      - run: npm ci
+      - run: npm run check

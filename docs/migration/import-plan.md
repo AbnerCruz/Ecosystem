@@ -97,10 +97,14 @@ Outros achados: o filtro leva `.github/` do produto para `apps/<id>/.github/` (*
 
 O monorepo é a **única autoridade do código** (NN-001). O repositório de origem de cada produto passa a ser uma **projeção** dele, com a fonte declarada no commit (`Ecosystem-Commit: <sha>`), e continua construindo e publicando **com os pipelines e secrets que já tem**.
 
-- **Sincronização puxada** (workflow novo na origem, `sync-from-ecosystem.yml`, agendado e com `workflow_dispatch`): lê o monorepo (público, **sem token**), detecta mudança em `apps/<id>/**`, **espelha a árvore** (excluindo `.git` e `.github`) em um commit do `github-actions[bot]` na `main` da origem e dispara o pipeline de release da própria origem por `workflow_dispatch` (permitido ao `GITHUB_TOKEN`).
+- **Sincronização puxada** (workflow novo na origem, `sync-from-ecosystem.yml`, agendado a cada 10 min e com `workflow_dispatch`; modelo e script em [`.github/origin-sync/`](../../.github/origin-sync/), componente `origin-sync`. **O script não é copiado para a origem**: o workflow o busca do Ecosystem a cada execução, mantendo uma só autoridade, NN-001): lê o monorepo (público, **sem token**), detecta mudança em `apps/<id>/**`, **espelha a árvore** (excluindo `.git` e `.github`) em um commit do `github-actions[bot]` na `main` da origem e dispara o pipeline de release da própria origem por `workflow_dispatch` (permitido ao `GITHUB_TOKEN`).
 - **Deriva:** se a origem recebe um commit **não-bot que toque fora de `.github/`**, o workflow para e abre uma Issue na origem (a origem deixou de ser o lugar de desenvolver).
 - **Keepalive:** o commit de sincronização conta como atividade e evita que o GitHub desative o agendamento após 60 dias sem atividade.
 - Nenhum workflow do monorepo escreve nas origens: **nenhum token cross-repo** existe.
+
+**Ensaio do script (FATO, 2026-10-01, origem simulada com clones locais e `gh` falso):** primeira execução com espelho idêntico registra só a âncora (commit com `Ecosystem-Commit` e `Ecosystem-Tree`, sem disparar release); segunda execução não faz nada; mudança + remoção + nova pasta no `apps/urbe` do Ecosystem são espelhadas; uma tag `urbe/vX` pendente gera commit espelhado da árvore daquela tag, tag `vX` na origem e `gh workflow run release.yml --ref vX`, e depois a `main` é sincronizada; commit humano na origem é detectado como deriva (Issue aberta, exit 1, nada empurrado). Mesmo ensaio no Lunet2D (`ci-dispatch`): espelho idêntico, âncora sem disparo.
+
+**Tolerância à reinstalação (ADD-0006):** o proprietário aceita reinstalar os apps beta durante a Fase 1. O desenho **não depende** disso (chave, `versionCode` e `releases/latest` ficam na origem), mas uma falha de continuidade de atualização deixa de ser bloqueio.
 
 ### 7.2 Lunet2D
 - A origem mantém o `ci.yml` (test → apk → release). Como o `run_number` é o **da própria origem**, o `versionCode` e as tags `v0.0.1-dev.N` **continuam a sequência naturalmente** (a última é `dev.103`): R-LUN-1 e R-LUN-2 deixam de existir, sem offset.

@@ -1094,6 +1094,7 @@ static class SelfTest
 
         failures += ApplierTests(repoRoot);
         failures += ValidationApplierTests(repoRoot);
+        failures += OriginSyncTests(repoRoot);
 
         foreach (var id in Checks.Ids.Where(i => !covered.Contains(i)))
         {
@@ -1223,6 +1224,74 @@ static class SelfTest
         }
         catch (Exception e) { Report(false, "execução: " + e.Message); }
         finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }
+        return failures;
+    }
+
+    static (int Code, string Output) Sh(string dir, string exe, IEnumerable<string> args, Dictionary<string, string>? env = null)
+    {
+        var psi = new ProcessStartInfo(exe) { WorkingDirectory = dir, RedirectStandardOutput = true, RedirectStandardError = true };
+        foreach (var a in args) psi.ArgumentList.Add(a);
+        if (env is not null) foreach (var (k, v) in env) psi.Environment[k] = v;
+        using var proc = Process.Start(psi)!;
+        var o = proc.StandardOutput.ReadToEnd() + proc.StandardError.ReadToEnd(); proc.WaitForExit();
+        return (proc.ExitCode, o.Trim());
+    }
+
+    /// <summary>Prova o espelho de distribuição das origens (plano §7): âncora na primeira execução, idempotência, propagação de mudança e remoção, deriva.</summary>
+    static int OriginSyncTests(string repoRoot)
+    {
+        var failures = 0;
+        void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  espelho das origens: {name}"); if (!ok) failures++; }
+        var script = Path.Combine(repoRoot, ".github", "origin-sync", "sync-from-ecosystem.sh");
+        if (!File.Exists(script)) { Report(false, "script ausente"); return 1; }
+        var tmp = Path.Combine(Path.GetTempPath(), "ecosystem-sync-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(tmp);
+            var g = new Dictionary<string, string> { ["GIT_AUTHOR_NAME"] = "t", ["GIT_AUTHOR_EMAIL"] = "t@t", ["GIT_COMMITTER_NAME"] = "t", ["GIT_COMMITTER_EMAIL"] = "t@t" };
+            (int Code, string Output) Git(string dir, params string[] a) => Sh(dir, "git", a, g);
+            string eco = Path.Combine(tmp, "eco"), originBare = Path.Combine(tmp, "origin.git"), work = Path.Combine(tmp, "work"), bin = Path.Combine(tmp, "bin");
+            Directory.CreateDirectory(Path.Combine(eco, "apps", "demo", "sub")); Directory.CreateDirectory(bin);
+            File.WriteAllText(Path.Combine(eco, "apps", "demo", "a.txt"), "a\n"); File.WriteAllText(Path.Combine(eco, "apps", "demo", "sub", "b.txt"), "b\n");
+            File.WriteAllText(Path.Combine(bin, "gh"), "#!/usr/bin/env bash\nexit 0\n"); Sh(tmp, "chmod", ["+x", Path.Combine(bin, "gh")]);
+            Git(eco, "init", "-q", "-b", "main"); Git(eco, "add", "-A"); Git(eco, "commit", "-qm", "inicial");
+            // origem: mesmo conteúdo + .github próprio
+            Git(tmp, "clone", "-q", "--bare", eco, originBare);
+            Git(tmp, "clone", "-q", originBare, work);
+            // a origem tem a árvore na raiz (sem apps/demo): reconstruir
+            foreach (var f in Directory.GetFileSystemEntries(work).Where(x => !x.EndsWith(".git"))) { if (Directory.Exists(f)) Directory.Delete(f, true); else File.Delete(f); }
+            Directory.CreateDirectory(Path.Combine(work, "sub")); Directory.CreateDirectory(Path.Combine(work, ".github", "workflows"));
+            File.WriteAllText(Path.Combine(work, "a.txt"), "a\n"); File.WriteAllText(Path.Combine(work, "sub", "b.txt"), "b\n");
+            File.WriteAllText(Path.Combine(work, ".github", "workflows", "ci.yml"), "name: ci\n");
+            Git(work, "add", "-A"); Git(work, "commit", "-qm", "origem"); Git(work, "push", "-q", "origin", "HEAD:main");
+            var env = new Dictionary<string, string> { ["COMPONENT"] = "demo", ["ECOSYSTEM_REPO"] = eco, ["PATH"] = bin + ":" + Environment.GetEnvironmentVariable("PATH") };
+            (int Code, string Output) Sync() => Sh(work, "bash", [script], env);
+
+            var r1 = Sync();
+            Report(r1.Code == 0 && Git(work, "log", "-1", "--format=%an").Output == "github-actions[bot]" && Git(work, "log", "-1", "--format=%B").Output.Contains("Ecosystem-Tree: "), "primeira execução registra a âncora (espelho idêntico)");
+            var n1 = Git(work, "rev-list", "--count", "HEAD").Output;
+            Sync();
+            Report(Git(work, "rev-list", "--count", "HEAD").Output == n1, "segunda execução não muda nada (idempotente)");
+
+            File.AppendAllText(Path.Combine(eco, "apps", "demo", "a.txt"), "mais\n"); File.Delete(Path.Combine(eco, "apps", "demo", "sub", "b.txt")); File.WriteAllText(Path.Combine(eco, "apps", "demo", "c.txt"), "c\n");
+            Git(eco, "add", "-A"); Git(eco, "commit", "-qm", "mudança");
+            var r2 = Sync();
+            Report(r2.Code == 0 && File.ReadAllText(Path.Combine(work, "a.txt")) == "a\nmais\n" && !File.Exists(Path.Combine(work, "sub", "b.txt")) && File.Exists(Path.Combine(work, "c.txt")), "propaga mudança, remoção e arquivo novo");
+            Report(File.ReadAllText(Path.Combine(work, ".github", "workflows", "ci.yml")) == "name: ci\n", ".github da origem fica intacto");
+            Report(Git(originBare, "rev-parse", "main").Output == Git(work, "rev-parse", "HEAD").Output, "empurra para a origem");
+
+            File.AppendAllText(Path.Combine(work, "a.txt"), "humano\n"); Git(work, "add", "-A"); Git(work, "commit", "-qm", "edição humana"); Git(work, "push", "-q", "origin", "HEAD:main");
+            var before = Git(originBare, "rev-parse", "main").Output;
+            Report(Sync().Code == 1 && Git(originBare, "rev-parse", "main").Output == before, "detecta deriva e não empurra nada");
+
+            // primeira execução com espelho diferente da origem é recusada
+            var work2 = Path.Combine(tmp, "work2"); Git(tmp, "clone", "-q", originBare, work2);
+            Git(work2, "reset", "-q", "--hard", Git(work2, "rev-list", "--max-parents=0", "HEAD").Output); // histórico sem âncora
+            File.WriteAllText(Path.Combine(work2, "a.txt"), "diferente\n"); Git(work2, "add", "-A"); Git(work2, "commit", "-qm", "divergente");
+            Report(Sh(work2, "bash", [script], env).Code == 1, "primeira sincronização recusada se o espelho difere da origem");
+        }
+        catch (Exception e) { Report(false, "execução: " + e.Message); }
+        finally { try { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); } catch { } }
         return failures;
     }
 

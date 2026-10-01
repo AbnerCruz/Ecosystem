@@ -75,6 +75,17 @@
       "commands": { "test": "dotnet run tests/consistency/Check.cs -- --self-test" },
       "dependencies": []
     },
+    "origin-sync": {
+      "name": "Sincronização das origens",
+      "type": "automation",
+      "language": "none",
+      "path": ".github/origin-sync",
+      "status": "active",
+      "description": "Espelho de distribuição: script de shell (git plumbing; exceção local ao padrão C# de NN-005, por ser cola de git que roda na origem) e modelo de workflow que mantêm o repositório de origem de cada produto igual a apps/<id> e disparam os pipelines de release que a própria origem já possui (DEC-0008-A, DEC-0014-A). Só usa o GITHUB_TOKEN da origem; nunca escreve no Ecosystem.",
+      "owners": ["AbnerCruz"],
+      "docs": { "readme": "docs/migration/import-plan.md" },
+      "dependencies": []
+    },
     "consistency-checks": {
       "name": "Consistency checks",
       "type": "check",

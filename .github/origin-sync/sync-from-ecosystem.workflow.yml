@@ -1,0 +1,42 @@
+# MODELO do workflow que roda na ORIGEM de cada produto (plano de importação §7, DEC-0014-A). Não é executado aqui:
+# o GitHub só executa workflows de .github/workflows/. A instalação na origem substitui COMPONENT, RELEASE_MODE e
+# REQUEST_PAGES_BUILD abaixo. O script NÃO é copiado: a cada execução vem do Ecosystem (uma só autoridade, NN-001).
+name: sync-from-ecosystem
+
+# A origem é um espelho de distribuição de apps/<produto> do Ecosystem. Ver docs/migration/import-plan.md §7.
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  pages: write
+
+concurrency:
+  group: sync-from-ecosystem
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      COMPONENT: __COMPONENT__
+      RELEASE_MODE: __RELEASE_MODE__
+      REQUEST_PAGES_BUILD: '__REQUEST_PAGES_BUILD__'
+      ECOSYSTEM_REPO: https://github.com/AbnerCruz/Ecosystem.git
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+      - name: Sincronizar com o Ecosystem
+        env:
+          BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git fetch -q --no-tags "$ECOSYSTEM_REPO" main
+          git show FETCH_HEAD:.github/origin-sync/sync-from-ecosystem.sh > "$RUNNER_TEMP/sync.sh"
+          bash "$RUNNER_TEMP/sync.sh"
