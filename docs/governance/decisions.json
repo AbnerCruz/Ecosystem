@@ -543,6 +543,37 @@
       "decision": "Alternativa A — Ajuste mínimo da checagem do Urbe: permitir, pelo nome, `sync-from-ecosystem.yml` com `contents: write` apenas no nível do job (REQ-006 continua valendo para todo o resto) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/22).",
       "decidedAt": "2026-10-01",
       "record": "docs/governance/responses/DEC-0016.md"
+    },
+    {
+      "id": "DEC-0017",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Como a sincronização das origens é disparada se o agendamento do GitHub não rodar",
+      "context": "FATO: os workflows de sincronização foram instalados nas origens às 03:34 (Lunet2D) e 04:03 (Urbe) UTC com agendamento de 10 min; às 05:04 UTC não havia nenhuma execução 'schedule', só as manuais que o agente disparou. O GitHub pode atrasar muito ou não iniciar agendamentos de workflows novos; não consigo consultar a documentação para confirmar (INFERÊNCIA). O espelho funciona quando disparado (provado: release dev.107 do Lunet2D; âncora do Urbe). Sem token, o Ecosystem não consegue acionar as origens.",
+      "question": "Se o agendamento não passar a rodar, como a origem deve ser sincronizada?",
+      "alternatives": [
+        {
+          "option": "Manter o agendamento (pode passar a rodar depois) e adotar o disparo explícito: o agente dispara a sincronização após cada mudança em apps/<id>, e você pode disparar pelo botão 'Run workflow' do GitHub",
+          "consequences": "Nenhuma ação nova sua e nenhum token. A release deixa de ser automática: sai quando um agente (ou você) dispara a sincronização, o que o agente faz ao concluir cada tarefa que muda um produto. Se o agendamento começar a rodar, vira bônus."
+        },
+        {
+          "option": "Você cria um token fino (Actions: escrita, só nas duas origens) guardado como secret no Ecosystem, e um workflow do Ecosystem dispara a origem a cada push em apps/<id>",
+          "consequences": "Latência de ~1-2 min e totalmente automática, mas é uma ação manual sua (criar o token e o secret) e uma credencial entre repositórios (NN-016) que você precisa renovar. É a variante que você quis evitar."
+        },
+        {
+          "option": "Esperar mais 24 horas antes de decidir",
+          "consequences": "Nada muda agora; o agente confere de novo e, se o agendamento tiver começado, esta decisão perde o objeto. Se não começar, ela volta."
+        }
+      ],
+      "consequences": "Não bloqueia nada. Define como as próximas mudanças em apps/<id> chegam às releases.",
+      "manifestCompatibility": "A respeita NN-016 (só o GITHUB_TOKEN de cada origem) e NN-001; B cria credencial cross-repo e exige ação manual (NN-016); C não altera nada.",
+      "recommendation": "C primeiro, depois A: novos agendamentos costumam demorar, e A já cobre o caso sem pedir nada a você. B só se a latência de release importar.",
+      "related": [
+        "docs/migration/import-plan.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-01"
     }
   ]
 }

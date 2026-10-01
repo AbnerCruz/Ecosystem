@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261001-distribuicao-automatizada-parte-1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-01T06:40:00Z",
+  "timestamp": "2026-10-01T05:10:00Z",
   "agent": {
     "id": "claude-code",
     "kind": "ai-agent",
@@ -112,7 +112,7 @@
     "O script é shell (exceção local ao padrão C# de NN-005, declarada no componente origin-sync).",
     "Os workflows reais de origem não são alterados pelo espelho (GITHUB_TOKEN não pode empurrar mudanças em .github/workflows); as cópias em apps/<id>/.github são inertes.",
     "A cópia instalada do workflow no Lunet2D tem permissions de escrita no topo; o modelo já usa leitura no topo e escrita no job (diferença funcional nula).",
-    "Não verificado: execução agendada de 10 min (30 min após a instalação só havia execuções manuais) e release.yml do Urbe disparado por workflow_dispatch (só uma release real do Urbe prova; precisa de uma tag urbe/vX com versão/CHANGELOG, decisão de produto).",
+    "Não verificado: execução agendada de 10 min: NÃO observada após ~90 min (execuções 'schedule' ausentes nas duas origens às 05:04 UTC); levado ao proprietário em DEC-0017. release.yml do Urbe disparado por workflow_dispatch só será provado numa release real do Urbe.",
     "P1-6 restante: acompanhar o cron; provar release do Urbe na próxima versão; validação humana do Urbe Web."
   ],
   "blockers": [],
@@ -120,7 +120,9 @@
     "Proprietário: validar o Urbe Web no portal (Aprovar/Reprovar).",
     "Agente: confirmar o cron do espelho; P1-7 (architecture tests) e P1-8 (auditoria pós-migração); a prova do release.yml acontece na próxima release do Urbe."
   ],
-  "decisions_required": [],
+  "decisions_required": [
+    "DEC-0017"
+  ],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",
