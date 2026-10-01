@@ -580,7 +580,7 @@
     },
     {
       "id": "DEC-0018",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": true,
       "title": "Regras para refatorar os aplicativos (ADR-0009)",
@@ -609,7 +609,10 @@
         "docs/architecture/candidates.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Aceitar o ADR-0009: dois trilhos — refatoração interna pelo processo do próprio produto (+ lista do Ecosystem); extração para o Ecosystem com ADR do Ecosystem, NN-022 e contratos da fase (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/26).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0018.md"
     }
   ]
 }
