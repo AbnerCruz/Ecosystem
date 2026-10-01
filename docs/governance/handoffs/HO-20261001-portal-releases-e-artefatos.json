@@ -1,0 +1,84 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261001-portal-releases-e-artefatos",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-01T08:00:00Z",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "task_id": "P1-9",
+  "component": "portal",
+  "state": "review",
+  "branch": "claude/new-session-vfwhkv",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "site/generator/GenerateStatus.cs",
+    "site/app.js",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    ".github/workflows/pages.yml",
+    "docs/architecture/portal.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261001-portal-releases-e-artefatos.json"
+  ],
+  "work_completed": [
+    "Portal mostra, derivados da API pública do GitHub na geração (--releases online no pages.yml): última release (tag, data, pré-lançamento, link), APK/instalador com tamanho e SHA-256 (digest da API ou SHA256SUMS.txt) de Lunet2D e Urbe. Geração offline ou falha de rede: 'não disponível' (nunca derruba o gerador).",
+    "Correção: a versão de um componente com version.file .json agora é o campo 'version' (antes a projeção mostrava o package.json inteiro do Urbe, defeito introduzido na importação P1-5)."
+  ],
+  "verification": [
+    {
+      "check": "Gerador contra a API real",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Lunet2D: v0.0.1-dev.107, APK 29646075 bytes, SHA-256 ca0c774d…; Urbe: v1.8.2-beta (2026-09-28), APK 61487f2b… e instalador .exe 77a1120e…; versões 0.0.1 e 1.8.2-beta."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs (CHK-PORTAL valida a projeção contra o schema)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "17/17 checks locais com a projeção gerada online."
+    },
+    {
+      "check": "Conferir no portal publicado a versão, a última release, o APK e o checksum de Lunet2D e Urbe",
+      "kind": "human",
+      "result": "pending",
+      "object": "https://abnercruz.github.io/Ecosystem/",
+      "evidence": "Pendente (NN-017): layout e legibilidade em aparelho; os valores devem bater com as páginas de release de cada origem."
+    }
+  ],
+  "known_issues": [
+    "As release notes aparecem como link para a página da release (que as contém); o texto não é incorporado ao portal.",
+    "O Urbe Web (link) segue não declarado: a publicação definitiva é P1-10 (DEC-0009 transitória)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: conferir o portal (Aprovar/Reprovar).",
+    "P1-10, P1-11, P1-12."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/architecture/portal.md",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "docs/migration/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A projeção declara fonte (API de releases, arquivo de versão) e nunca é autoridade."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A conferência em aparelho fica pendente no portal; P1-9 [~]."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Releases e artefatos descobríveis no portal com proveniência."
+    }
+  ],
+  "cost": null
+}

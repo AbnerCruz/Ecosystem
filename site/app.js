@@ -59,6 +59,16 @@ function validationRow(v) {
       el("small", { class: "src" }, v.source)));
 }
 
+function artifactRows(c) {
+  return (c.artifacts || []).map((a) => {
+    const size = a.sizeBytes ? ` · ${(a.sizeBytes / 1048576).toFixed(1)} MB` : "";
+    return el("div", { class: "row" },
+      el("dt", {}, a.kind === "apk" ? "APK" : a.kind === "windows-installer" ? "Instalador Windows" : "AppImage"),
+      el("dd", {}, el("span", { class: "value" }, link(a.url, a.name + size)),
+        el("small", { class: "src" }, a.sha256 ? `SHA-256 ${a.sha256}` : "SHA-256 não disponível")));
+  });
+}
+
 function appCard(c) {
   const actions = el("div", { class: "actions" });
   if (c.links.web) actions.append(link(c.links.web, "Abrir versão Web", "btn primary"));
@@ -73,6 +83,7 @@ function appCard(c) {
     el("dl", {},
       datum("Versão", c.version),
       datum("Última release", c.release),
+      ...artifactRows(c),
       datum("CI (automático)", c.ci, (v) => CHECK_LABELS[v] || v),
       validationRow(c.validation)),
     actions.childElementCount ? actions : el("p", { class: "hint" }, "Nenhum artefato ou link disponível ainda."));

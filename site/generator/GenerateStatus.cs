@@ -2,14 +2,17 @@
 //
 // Uso (a partir de qualquer diretório do repositório, .NET SDK 10+):
 //   dotnet run site/generator/GenerateStatus.cs -- [--out <arquivo>] [--ref <branch>] [--commit <sha>]
-//                                                 [--checks passing|failing] [--checks-url <url>]
+//                                                 [--checks passing|failing] [--checks-url <url>] [--releases online|offline]
 //
 // Lê apenas fontes canônicas (ecosystem.json, handoffs, documentos normativos) e escreve
 // site/data/ecosystem-status.json, validado por docs/contracts/schemas/ecosystem-status.schema.json.
 // O resultado é projeção, nunca autoridade: todo dado sem fonte automática sai como "not-available".
+// --releases online consulta a API pública do GitHub (releases dos repositórios de origem, P1-9); o padrão é offline, para que
+// verificações locais e testes não dependam de rede. Falha de rede nunca derruba o gerador: o dado sai "not-available".
 
 #:property Nullable=enable
 
+using System.Net.Http;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -53,6 +56,59 @@ var checksDatum = Datum(checks,
     checks is null ? "Checks de consistência não informados a este gerador (execução local)." : "tests/consistency/Check.cs executado no CI deste commit.",
     opt.GetValueOrDefault("checks-url"));
 
+// --- releases dos repositórios de origem (P1-9): derivadas da API pública do GitHub, nunca digitadas ---
+var online = opt.GetValueOrDefault("releases", "offline") == "online";
+if (opt.GetValueOrDefault("releases", "offline") is not ("online" or "offline")) { Console.Error.WriteLine("--releases deve ser online|offline"); return 2; }
+HttpClient? http = null;
+string? Fetch(string url)
+{
+    try
+    {
+        http ??= new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        using var req = new HttpRequestMessage(HttpMethod.Get, url);
+        req.Headers.UserAgent.ParseAdd("ecosystem-portal-generator");
+        req.Headers.Accept.ParseAdd("application/vnd.github+json");
+        if (Environment.GetEnvironmentVariable("GITHUB_TOKEN") is { Length: > 0 } tk) req.Headers.Authorization = new("Bearer", tk);
+        using var res = http.Send(req);
+        return res.IsSuccessStatusCode ? new StreamReader(res.Content.ReadAsStream()).ReadToEnd() : null;
+    }
+    catch { return null; }
+}
+
+// Retorna a release mais recente publicada (não rascunho) e seus artefatos instaláveis, ou (null, []) se indisponível.
+(JsonObject? Rel, JsonArray Artifacts, string Note) LatestRelease(string sourceRepo)
+{
+    var artifacts = new JsonArray();
+    var m = System.Text.RegularExpressions.Regex.Match(sourceRepo, @"^https://github\.com/([^/]+)/([^/]+?)/?$");
+    if (!online) return (null, artifacts, "Releases não consultadas (geração offline).");
+    if (!m.Success) return (null, artifacts, "Repositório de origem não é um repositório GitHub reconhecido.");
+    var json = Fetch($"https://api.github.com/repos/{m.Groups[1].Value}/{m.Groups[2].Value}/releases?per_page=10");
+    if (json is null) return (null, artifacts, "API de releases do GitHub indisponível na geração; use o link de releases.");
+    var list = JsonNode.Parse(json)?.AsArray();
+    var r = list?.FirstOrDefault(x => x?["draft"]?.GetValue<bool>() == false)?.AsObject();
+    if (r is null) return (null, artifacts, "O repositório de origem ainda não tem releases publicadas.");
+
+    string? sums = null;
+    foreach (var a in r["assets"]?.AsArray() ?? [])
+        if (S(a?["name"]) == "SHA256SUMS.txt" && S(a?["browser_download_url"]) is { } su) sums = Fetch(su);
+    foreach (var a in r["assets"]?.AsArray() ?? [])
+    {
+        var name = S(a?["name"]); var url = S(a?["browser_download_url"]);
+        if (name is null || url is null) continue;
+        var kind = name.EndsWith(".apk") ? "apk" : name.EndsWith(".exe") ? "windows-installer" : name.EndsWith(".AppImage") ? "appimage" : null;
+        if (kind is null) continue;
+        string? sha = S(a?["digest"]) is { } dg && dg.StartsWith("sha256:") ? dg[7..] : null;
+        if (sha is null && sums is not null)
+            foreach (var line in sums.Split('\n'))
+            {
+                var parts = line.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2 && parts[1].TrimStart('*') == name && parts[0].Length == 64) sha = parts[0].ToLowerInvariant();
+            }
+        artifacts.Add(new JsonObject { ["kind"] = kind, ["name"] = name, ["url"] = url, ["sizeBytes"] = a?["size"]?.GetValue<long>(), ["sha256"] = sha });
+    }
+    return (r, artifacts, "API de releases do GitHub (lida na geração).");
+}
+
 // --- componentes ---
 var components = new JsonArray();
 foreach (var (id, c) in eco["components"]!.AsObject())
@@ -70,16 +126,21 @@ foreach (var (id, c) in eco["components"]!.AsObject())
     var version = authority switch
     {
         "version-file" when versionFile is not null && File.Exists(P(versionFile)) =>
-            Datum(File.ReadAllText(P(versionFile)).Trim(), $"Arquivo de versão {versionFile}.", Blob(versionFile)),
+            Datum(versionFile.EndsWith(".json")
+                    ? S(JsonNode.Parse(File.ReadAllText(P(versionFile)))?["version"]) ?? throw new InvalidOperationException($"{versionFile}: campo 'version' ausente")
+                    : File.ReadAllText(P(versionFile)).Trim(),
+                $"Arquivo de versão {versionFile}.", Blob(versionFile)),
         "source-repository" => Datum(null, "Autoridade da versão: repositório de origem (produto ainda não migrado). Não projetada na Fase 0 (P1-9)."),
         "undecided" => Datum(null, "Autoridade da versão ainda não decidida."),
         _ => Datum(null, "Componente não declara versão em ecosystem.json."),
     };
     if (authority == "version-file" && versionFile is not null) sources.Add(versionFile);
 
-    var release = Datum(null, sourceRepo is not null
-        ? "Releases do repositório de origem ainda não projetadas (P1-9); use o link de releases."
-        : "Sem releases projetadas.");
+    var (latest, artifacts, relNote) = sourceRepo is not null ? LatestRelease(sourceRepo) : (null, new JsonArray(), "Sem releases projetadas.");
+    var release = latest is null
+        ? Datum(null, relNote)
+        : Datum($"{S(latest["tag_name"])} ({(S(latest["published_at"]) ?? "")[..Math.Min(10, (S(latest["published_at"]) ?? "").Length)]}{(latest["prerelease"]?.GetValue<bool>() == true ? ", pré-lançamento" : "")})",
+            $"{relNote} Repositório de origem: canal de distribuição durante a migração (DEC-0008).", S(latest["html_url"]));
     var ci = Datum(null,
         inMonorepo ? "CI por componente ainda não projetado; veja os checks do Ecosystem."
         : sourceRepo is not null ? "CI do produto vive no repositório de origem enquanto não migrado."
@@ -95,6 +156,7 @@ foreach (var (id, c) in eco["components"]!.AsObject())
         ["links"] = new JsonObject { ["repository"] = repoLink, ["releases"] = releases, ["web"] = S(c["publicUrl"]) },
         ["version"] = version,
         ["release"] = release,
+        ["artifacts"] = artifacts,
         ["ci"] = ci,
         ["validation"] = new JsonObject
         {

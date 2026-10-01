@@ -53,6 +53,7 @@ jobs:
           --ref "${{ github.event.repository.default_branch }}"
           --commit "${{ github.sha }}"
           --checks passing
+          --releases online
           --checks-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Validate projection (CHK-PORTAL)

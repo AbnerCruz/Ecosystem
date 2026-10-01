@@ -41,7 +41,7 @@ Autoridade do formato: [`docs/contracts/schemas/ecosystem-status.schema.json`](.
 | `kind`, `authority` | sempre `projection` / `false` |
 | `source` | repositório, ref, commit e lista de arquivos canônicos lidos |
 | `ecosystem` | nome, fase e resultado dos checks de consistência do commit projetado |
-| `components[]` | ID, nome, tipo, status, descrição, links (repositório, releases, web) e os dados `version`, `release`, `ci` com proveniência; `validation.state` |
+| `components[]` | ID, nome, tipo, status, descrição, links (repositório, releases, web) e os dados `version`, `release`, `ci` com proveniência; `artifacts[]` (APK, instalador Windows, AppImage da última release, com tamanho e SHA-256; P1-9); `validation.state` |
 | `pendingValidations[]` | validações humanas pendentes derivadas dos registros canônicos (hoje, handoffs) |
 | `docs[]` | documentação canônica com link |
 
@@ -125,7 +125,7 @@ python3 -m http.server -d site 8000   # qualquer servidor estático
 
 ## 7. Evolução planejada (ver ROADMAP)
 
-- **Releases e artefatos (P1-9):** versão, última release, APK, checksum e release notes de cada produto, derivados das releases do GitHub — nunca digitados.
+- **Releases e artefatos (P1-9, implementado):** versão (do arquivo de versão do produto no monorepo), última release (tag, data, pré-lançamento e link para as notas na página da release), APK/instalador com tamanho e SHA-256 (campo `digest` da API ou `SHA256SUMS.txt`) de cada produto, lidos na geração da API pública do GitHub dos repositórios de origem (DEC-0008) com `--releases online` no `pages.yml`; **nunca digitados**. Geração offline ou falha da API: "não disponível".
 - **Urbe Web (P1-10):** rota previsível para abrir o Urbe Web, decidida durante a auditoria/migração do Urbe sem quebrar sua publicação atual. Não presumida agora.
 - **Lunet2D:** o GitHub Pages não executa o Lunet2D; o portal oferece estado, release, APK, checksum, release notes, roteiro de teste, documentação e validações pendentes. Nenhuma versão web falsa.
 - **Páginas de validação (P1-11):** `/testing/<componente>/<build>/`, geradas de registros canônicos de validação, com versão/build, objetivo, pré-condições, passos numerados, resultado esperado, problemas conhecidos, link para o artefato e tarefa/roadmap/commit/PR. Persistência de PASS/FAIL não é objetivo inicial.

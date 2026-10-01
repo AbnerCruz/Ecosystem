@@ -173,6 +173,48 @@
           "release": {
             "$ref": "#/$defs/datum"
           },
+          "artifacts": {
+            "description": "Artefatos instaláveis da release mais recente, derivados da API de releases do GitHub na geração (P1-9). Vazio quando a geração é offline ou não há release.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "name",
+                "url"
+              ],
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "apk",
+                    "windows-installer",
+                    "appimage"
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "url": {
+                  "type": "string",
+                  "pattern": "^https://"
+                },
+                "sizeBytes": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "sha256": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          },
           "ci": {
             "$ref": "#/$defs/datum"
           },
