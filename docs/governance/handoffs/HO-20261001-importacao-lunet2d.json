@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261001-importacao-lunet2d",
   "category": "HANDOFF",
-  "timestamp": "2026-10-01T01:30:00Z",
+  "timestamp": "2026-10-01T01:40:00Z",
   "agent": {
     "id": "claude-code",
     "kind": "ai-agent",
@@ -11,10 +11,10 @@
   },
   "task_id": "P1-4",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "claude/new-session-vfwhkv",
-  "commit": null,
-  "pr": null,
+  "commit": "dd8d4b4998dd635ca0195741dae5e04ffc7a6d56",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/9",
   "files_changed": [
     "apps/lunet2d/** (importado, sem alterações)",
     "ecosystem.json",
@@ -61,17 +61,28 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "Local: todos os 16 checks passaram com o produto importado."
+    },
+    {
+      "check": "CI do PR e fusão por merge commit",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Workflow consistency verde no head do PR #9; fundido com 'Create a merge commit' (dd8d4b4)."
+    },
+    {
+      "check": "Tags restauradas no Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "restore-tags.yml (componente lunet2d) criou 25 tags lunet2d/*; git ls-remote coincide com docs/migration/tags-lunet2d.txt (tag e SHA)."
     }
   ],
   "known_issues": [
     "Pipelines do Lunet2D (CI, release) ficam inertes em apps/lunet2d/.github até P1-6; a origem continua publicando as releases (DEC-0008-A).",
-    "O corte final (sincronização da origem, plano §7.6) é feito em P1-6; até lá o desenvolvimento no monorepo e na origem não deve divergir (origem sem commits novos verificada em 2026-10-01: be30e62).",
-    "As 25 tags só existem no Ecosystem depois de executar restore-tags.yml (componente lunet2d) na main; o handoff deve ser atualizado com a verificação."
+    "O corte final (sincronização da origem, plano §7.6) é feito em P1-6; até lá o desenvolvimento no monorepo e na origem não deve divergir (origem sem commits novos verificada em 2026-10-01: be30e62)."
   ],
   "blockers": [],
   "next_actions": [
-    "Mergear o PR com merge commit (nunca squash/rebase) depois do CI verde.",
-    "P1-5 — importação do Urbe (PR A)."
+    "P1-5 — importação do Urbe (PR A) com o mesmo procedimento; a mutação do self-test para Urbe em tests/consistency/Check.cs precisa acompanhar a autoridade de versão por arquivo.",
+    "P1-6 — distribuição automatizada (plano §7)."
   ],
   "decisions_required": [],
   "normative_sources": [
