@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — o proprietário pediu a capacidade (ADD-0005); o **mecanismo** aguarda ratificação em DEC-0015. Estende o [ADR-0007](0007-resposta-a-decisoes-pelo-portal.md), que continua válido.
+Aceito — mecanismo ratificado pelo proprietário em DEC-0015 (alternativa A, escolhida no portal em 2026-10-01; [registro](../governance/responses/DEC-0015.md)) e validado de ponta a ponta com o clique real do proprietário em **Aprovar** (validação do P0-37, Issue #23; registro `VAL-HO-20261001-aprovar-validacoes-pelo-portal-84b7bf713ea7.md`). A capacidade foi pedida em ADD-0005. Estende o [ADR-0007](0007-resposta-a-decisoes-pelo-portal.md).
 
 ## Contexto
 
@@ -20,7 +20,7 @@ Como o proprietário registra o resultado de uma validação humana (aprovada ou
 
 ## Decisão
 
-Opção 1 (a ser ratificada em DEC-0015).
+Opção 1 (ratificada em DEC-0015).
 
 - **Formato único.** `site/generator/GenerateStatus.cs` emite, para cada validação humana pendente, `handoff` (message_id), `checkHash` (12 hex de SHA-256 de `check + "\n" + object`) e as duas respostas (`approve`, `reject`) com `issueTitle` (`Validação <tarefa>: aprovada|reprovada`) e `issueBody` (marcador `<!-- ecosystem-validation:v1 -->`, linhas `validation:`, `handoff:`, `check-hash:`, `result: passed|failed`). O texto livre depois da linha `comment:` é **dado** (registrado como citação, nunca interpretado).
 - **Mesmo workflow e mesmo aplicador** (`decision.yml`, `apply-decision.cs`), com o filtro de título estendido para `Validação `. Mesma guarda do dono, mesmas permissões, texto da Issue só por `env`, checks antes de gravar, commit na branch padrão, portal republicado.

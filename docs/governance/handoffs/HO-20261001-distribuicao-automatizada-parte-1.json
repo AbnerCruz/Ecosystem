@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261001-distribuicao-automatizada-parte-1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-01T05:00:00Z",
+  "timestamp": "2026-10-01T06:10:00Z",
   "agent": {
     "id": "claude-code",
     "kind": "ai-agent",
@@ -11,7 +11,7 @@
   },
   "task_id": "P1-6",
   "component": "ecosystem",
-  "state": "review",
+  "state": "working",
   "branch": "claude/new-session-vfwhkv",
   "commit": null,
   "pr": null,
@@ -27,7 +27,9 @@
     "docs/governance/addenda/ADD-0006-proxima-fase-e-reinstalacao-dos-apps.md",
     "docs/governance/handoffs/HO-20261001-distribuicao-automatizada-parte-1.json",
     "apps/lunet2d/README.md",
-    "docs/governance/decisions.json"
+    "docs/governance/decisions.json",
+    "apps/urbe/tools/check-workflows.mjs",
+    "apps/urbe/tests/workflows.mjs"
   ],
   "work_completed": [
     "ADD-0006 persiste a mensagem do proprietário (próxima fase; reinstalação dos apps beta aceitável).",
@@ -37,7 +39,8 @@
     "Lunet2D (origem): PR #26 fundido; primeira execução real do espelho criou só a âncora 4d6d5ba (árvore db9f6cd5… igual à da origem), sem disparar release.",
     "Urbe (origem): PR #48 aberto; falhou no CI do próprio produto (REQ-006: só release.yml pode ter contents: write). Levado ao proprietário em DEC-0016.",
     "Aviso de espelho no README do Lunet2D (documentação), para exercitar o espelho e o dispatch do ci.yml ponta a ponta.",
-    "Ciclo completo do Lunet2D provado em produção: Ecosystem@bbd6a3b -> espelho d43de2e (bot) -> ci.yml disparado pelo GITHUB_TOKEN -> release v0.0.1-dev.107 com alvo d43de2e e todos os assets."
+    "Ciclo completo do Lunet2D provado em produção: Ecosystem@bbd6a3b -> espelho d43de2e (bot) -> ci.yml disparado pelo GITHUB_TOKEN -> release v0.0.1-dev.107 com alvo d43de2e e todos os assets.",
+    "DEC-0016 (A): ajuste mínimo da checagem de workflows do Urbe (2 arquivos de apps/urbe) para admitir só sync-from-ecosystem.yml com contents: write no job; validado contra o workflow real."
   ],
   "verification": [
     {
@@ -88,18 +91,14 @@
     "NÃO VERIFICADO até a primeira execução real: push do GITHUB_TOKEN dispara o Pages; intervalo do agendamento; workflow_dispatch pelo GITHUB_TOKEN sobre ci.yml/release.yml.",
     "O script é shell (exceção local ao padrão C# de NN-005, declarada no componente origin-sync).",
     "Os workflows reais de origem não são alterados pelo espelho (GITHUB_TOKEN não pode empurrar mudanças em .github/workflows); as cópias em apps/<id>/.github são inertes.",
-    "Urbe aguarda DEC-0016; Dependabot do Urbe na origem ainda ativo e PRs #37-#46 ainda abertos (passo de corte do Urbe).",
     "A cópia instalada do workflow no Lunet2D tem permissions de escrita no topo; o modelo já usa leitura no topo e escrita no job (diferença funcional nula).",
     "Não verificado ainda: execução agendada (cron de 10 min) e construção do Pages após push do GITHUB_TOKEN (Urbe)."
   ],
   "blockers": [],
   "next_actions": [
-    "Proprietário: decidir DEC-0016.",
-    "Agente: depois de DEC-0016-A, ajustar o Urbe (Ecosystem e origem), fundir PR #48, remover dependabot.yml e fechar os PRs #37-#46; verificar o ciclo do Lunet2D após o aviso de README (release dev.N a partir do espelho)."
+    "Aplicar o mesmo ajuste na origem do Urbe (PR #48), fundir, remover dependabot.yml (já no PR), fechar PRs #37-#46, executar a primeira sincronização e provar release.yml por dispatch e o Pages (§7.7)."
   ],
-  "decisions_required": [
-    "DEC-0016"
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",

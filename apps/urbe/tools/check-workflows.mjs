@@ -5,13 +5,17 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = process.env.URBE_ROOT || join(dirname(fileURLToPath(import.meta.url)), '..');
+const MIRROR_SYNC = 'sync-from-ecosystem.yml';
 export function check(files = null) {
   const dir = join(ROOT, '.github/workflows');
   files ??= Object.fromEntries(readdirSync(dir).filter((f) => f.endsWith('.yml')).map((f) => [f, readFileSync(join(dir, f), 'utf8')]));
   const errors = [];
   for (const [name, text] of Object.entries(files)) {
     const publishes = /softprops\/action-gh-release|gh release create|gh release upload|contents:\s*write/.test(text);
-    if (publishes && name !== 'release.yml') errors.push(`${name}: só release.yml pode publicar (contents: write / criar release)`);
+    // Espelho de distribuição (DEC-0016): o único workflow, além de release.yml, que pode ter `contents: write` (só no nível do job,
+    // para empurrar o commit de sincronização). Ele nunca cria release: quem publica continua sendo release.yml.
+    const releasePublish = /softprops\/action-gh-release|gh release create|gh release upload/.test(text);
+    if (name === MIRROR_SYNC ? releasePublish : publishes && name !== 'release.yml') errors.push(`${name}: só release.yml pode publicar (contents: write / criar release)`);
     if (!/^permissions:\s*\n\s+contents:\s*read/m.test(text)) errors.push(`${name}: falta \`permissions: contents: read\` no nível do workflow`);
     if (name === 'release.yml') {
       if (!/tags:\s*\[\s*'v\*'\s*\]/.test(text)) errors.push('release.yml: deve disparar por tag v*');

@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261001-aprovar-validacoes-pelo-portal",
   "category": "HANDOFF",
-  "timestamp": "2026-10-01T03:30:00Z",
+  "timestamp": "2026-10-01T06:00:00Z",
   "agent": {
     "id": "claude-code",
     "kind": "ai-agent",
@@ -11,7 +11,7 @@
   },
   "task_id": "P0-37",
   "component": "portal",
-  "state": "review",
+  "state": "done",
   "branch": "claude/new-session-vfwhkv",
   "commit": null,
   "pr": null,
@@ -37,7 +37,8 @@
     "Registrada a aprovação do P0-15 pelo proprietário (ADD-0005; handoff HO-20261001-p0-15-aprovado).",
     "Aprovar/Reprovar no portal para cada validação humana pendente (ADR-0008, Proposto; DEC-0015 para ratificar): a projeção emite handoff, checkHash e as duas respostas; o portal monta a Issue pré-preenchida; decision.yml e apply-decision.cs tratam também 'Validação <tarefa>: aprovada|reprovada', gravando o resultado na verificação do handoff e um registro VAL-*.md; o state do handoff continua com o agente.",
     "Fiscalização: CHK-DECISION-FLOW exige o filtro 'Validação ' e os botões no portal; o self-test cobre aprovar, recusas (autor, título, hash, título/corpo, tarefa errada, handoff substituído, já respondida) e a consistência após o registro.",
-    "Criada, para o proprietário, uma validação humana ponta a ponta no portal: aprovar esta própria tarefa clicando em Aprovar."
+    "Criada, para o proprietário, uma validação humana ponta a ponta no portal: aprovar esta própria tarefa clicando em Aprovar.",
+    "DEC-0015 (A) ratificou o ADR-0008 e o proprietário aprovou a validação ponta a ponta pelo portal; ADR-0008 passou a Aceito e P0-37 a [x]."
   ],
   "verification": [
     {
@@ -54,18 +55,12 @@
       "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-01 (Issue https://github.com/AbnerCruz/Ecosystem/issues/23); registro em docs/governance/responses/VAL-HO-20261001-aprovar-validacoes-pelo-portal-84b7bf713ea7.md."
     }
   ],
-  "known_issues": [
-    "O mecanismo é Proposto (ADR-0008) até DEC-0015.",
-    "O workflow em si só roda na branch padrão: a validação real só acontece depois do merge na main."
-  ],
+  "known_issues": [],
   "blockers": [],
   "next_actions": [
-    "Proprietário: aprovar a validação desta tarefa no portal e decidir DEC-0015.",
-    "Agente: com o resultado registrado, atualizar o state deste handoff, o ADR-0008 (Aceito, se DEC-0015 A) e o ROADMAP (P0-37)."
+    "Nenhuma: mecanismo aceito (ADR-0008) e validado ponta a ponta pelo proprietário."
   ],
-  "decisions_required": [
-    "DEC-0015"
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",
