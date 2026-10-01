@@ -724,7 +724,7 @@
       "decision": "Alternativa C — C — Preparar a plataforma first-party como distribuição principal futura, de forma progressiva: registrar a direção (perfil 'first-party' como alvo), manter A até a plataforma existir e migrar um Product por vez, com ponte de atualização, redirecionamento e recuperação (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/31).",
       "decidedAt": "2026-10-01",
       "record": "docs/governance/responses/DEC-0021.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }

@@ -99,14 +99,13 @@ No futuro podem existir Services compartilhados: `Identity`, `Catalog`, `Commerc
 
 ## 9. O que ainda não está decidido [Aberto]
 
-- nomes **finais** dos eixos do Distribution Profile (o formato e a validação existem desde a Fase 2, ADR-0012; os nomes seguem provisórios, DEC-0020-B, até a decisão de distribuição DEC-0021);
-- a distribuição **definitiva** dos Products (DEC-0021; ver §10);
+- quando e como a plataforma first-party será construída (a direção está decidida em DEC-0021-C; fase, Services e plano não);
 - quais Services existirão, com que fronteiras, e se algum será extraído;
 - qual é a fonte canônica de catálogo, entitlements e identidade;
 - política de edições (Starter/limitada/completa) e canais externos;
 - modelo de extensões/plugins e de Tools de terceiros no catálogo (MANIFEST §29 exige ADR para o modelo de plugins).
 
-## 10. Source × Distribution e o arranjo atual (P2-12) [Fato · Aberto: destino]
+## 10. Source × Distribution, arranjo atual e direção (P2-12, DEC-0021-C) [Fato · Decisão]
 
 ```text
 SOURCE        = onde o produto é DESENVOLVIDO            → Ecosystem, apps/<id>   (ecosystem.json: components.<id>.path)
@@ -118,7 +117,11 @@ DISTRIBUTION  = por onde builds/releases/web CHEGAM      → hoje, os repositór
 
 O arranjo atual está descrito **como dado**, sem alterar nenhum canal, em [`docs/distribution/current.profile.json`](../distribution/current.profile.json) (Distribution Profile `current`, validado por `CHK-REGISTRY`; as localizações vêm de `ecosystem.json`, não são copiadas). Achado de P2-12: o eixo provisório `distribution` não tinha um valor para "canal externo ao Ecosystem" (GitHub Releases/Pages); foi acrescentado `external-channel` — mais uma razão para os nomes só serem congelados depois da decisão (P2-9).
 
-### Consequências reais por cenário (insumo de DEC-0021)
+### Direção decidida (DEC-0021-C) [Decisão]
+
+O proprietário escolheu **C**: a plataforma first-party é a distribuição principal **futura**, de forma **progressiva**. Até ela existir, o arranjo atual (perfil `current`) continua valendo — nada muda para apps instalados, URLs, atualizadores, assinatura ou Urbe Web. Quando existir, cada Product migra em **item próprio**, um por vez, com versão-ponte de atualização, redirecionamento e recuperação; os repositórios antigos passam a **canal alternativo** (releases históricas, recuperação), sem serem apagados ou arquivados. A direção está registrada como dado, não operacional, em [`docs/distribution/target.profile.json`](../distribution/target.profile.json) (status `target`). Construir a plataforma não foi decidido nem planejado aqui: os Services dela só nascem com consumidor real (NN-020, NN-022; §8).
+
+### Consequências reais por cenário (insumo de DEC-0021; escolhida: C)
 
 | Aspecto | A — manter por mais tempo | B — centralizar no Ecosystem/GitHub | C — plataforma first-party (progressivo) |
 |---------|---------------------------|--------------------------------------|-------------------------------------------|

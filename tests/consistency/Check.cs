@@ -760,7 +760,7 @@ static class Checks
             using (var doc = JsonDocument.Parse(File.ReadAllText(f)))
             {
                 var inReal = c.Rel(f).StartsWith("docs/distribution/");
-                if (inReal && doc.RootElement.Str("status") != "current") c.R.Fail(id, $"{c.Rel(f)}: perfil real em docs/distribution/ precisa ter status 'current'");
+                if (inReal && doc.RootElement.Str("status") is not ("current" or "target")) c.R.Fail(id, $"{c.Rel(f)}: perfil em docs/distribution/ precisa ter status 'current' ou 'target'");
                 foreach (var e in RegistryFiles.ProfileErrors(doc.RootElement, compMap, decisionIds)) c.R.Fail(id, $"{c.Rel(f)}: {e}");
             }
         if (!profileFiles.Any(f => c.Rel(f) == "docs/distribution/current.profile.json")) c.R.Fail(id, "docs/distribution/current.profile.json ausente: a distribuição atual dos Products precisa estar descrita como dado (P2-12)");
@@ -1431,7 +1431,22 @@ static class RegistryFiles
         if (publicProduct && entries.Any(e => e.Str("component") == "hub" && e.Str("availability") == "bundled"))
             errors.Add("o Hub não pode ser 'bundled' em um perfil que inclui um componente público (NN-023)");
         foreach (var d in prof.Arr("decisions").Select(x => x.GetString() ?? "").Where(d => !decisionIds.Contains(d))) errors.Add($"a decisão {d} citada não existe em decisions.json");
-        if (prof.Str("status") != "current") return errors;
+        var status = prof.Str("status");
+        if (status == "target")
+        {
+            if (!prof.Arr("decisions").Any()) errors.Add("perfil 'target' precisa citar a decisão do proprietário que o sustenta");
+            foreach (var e in entries)
+                foreach (var ch in e.Arr("channels"))
+                {
+                    var from = ch.Str("locationFrom");
+                    if (ch.Str("kind") != "first-party-platform" && from is null) errors.Add($"canal '{ch.Str("id")}': canal existente sem 'locationFrom'");
+                    if (from is not null && components.TryGetValue(e.Str("component") ?? "", out var tc)
+                        && string.IsNullOrEmpty(from == "source.repository" ? (tc.TryGetProperty("source", out var ts) ? ts.Str("repository") : null) : tc.Str(from)))
+                        errors.Add($"canal '{ch.Str("id")}': '{e.Str("component")}' não declara '{from}' em ecosystem.json");
+                }
+            return errors;
+        }
+        if (status != "current") return errors;
         foreach (var e in entries)
         {
             var cid = e.Str("component") ?? "";
@@ -1442,6 +1457,7 @@ static class RegistryFiles
             foreach (var ch in channels)
             {
                 var from = ch.Str("locationFrom") ?? "";
+                if (from.Length == 0) { errors.Add($"canal '{ch.Str("id")}': perfil 'current' exige 'locationFrom'"); continue; }
                 var resolved = from == "source.repository" ? (comp.TryGetProperty("source", out var s) ? s.Str("repository") : null) : comp.Str(from);
                 if (string.IsNullOrEmpty(resolved)) errors.Add($"canal '{ch.Str("id")}': '{cid}' não declara '{from}' em ecosystem.json (a localização não pode ser inventada no perfil)");
                 if (ch.Str("kind") is "first-party-platform" or "external-store") errors.Add($"canal '{ch.Str("id")}': o tipo '{ch.Str("kind")}' não existe hoje; um perfil 'current' só descreve canais reais");
@@ -1782,6 +1798,10 @@ static class SelfTest
             r => Replace(r, "docs/distribution/current.profile.json", "\"kind\": \"github-release\"", "\"kind\": \"first-party-platform\"")),
         new("perfil de distribuição atual cita decisão inexistente", "CHK-REGISTRY",
             r => Replace(r, "docs/distribution/current.profile.json", "\"DEC-0008\"", "\"DEC-8888\"")),
+        new("perfil de distribuição alvo sem a decisão que o sustenta", "CHK-REGISTRY",
+            r => Replace(r, "docs/distribution/target.profile.json", "\"decisions\": [\n    \"DEC-0021\"\n  ],", "\"decisions\": [],")),
+        new("perfil de distribuição alvo com canal existente sem localização", "CHK-REGISTRY",
+            r => Replace(r, "docs/distribution/target.profile.json", "\"locationFrom\": \"publicUrl\",", "")),
         new("perfil de distribuição atual removido", "CHK-REGISTRY",
             r => File.Delete(Path.Combine(r, "docs", "distribution", "current.profile.json"))),
         new("Caso A: ROADMAP [x] com Issue em state:review", "CHK-STATE-CONSISTENCY",

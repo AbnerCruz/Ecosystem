@@ -1,0 +1,77 @@
+{
+  "$schema": "../contracts/schemas/distribution-profile.schema.json",
+  "schemaVersion": 1,
+  "id": "target-distribution",
+  "name": "Distribuição alvo dos Products (direção, não operacional)",
+  "status": "target",
+  "description": "DECISÃO DO PROPRIETÁRIO (DEC-0021-C): a plataforma first-party é a distribuição principal FUTURA, de forma progressiva. Enquanto ela não existir, vale o perfil current (repositórios de origem como distribuição). Quando existir, cada Product migra em item próprio, um por vez, com ponte de atualização, redirecionamento e recuperação; os repositórios antigos passam a canal alternativo (releases históricas e recuperação), sem serem apagados ou arquivados. Este perfil registra só a direção: nenhum canal deste arquivo é operacional como first-party, e nenhum Service de distribuição é criado por causa dele (NN-020, NN-022).",
+  "decisions": [
+    "DEC-0021"
+  ],
+  "entries": [
+    {
+      "component": "lunet2d",
+      "availability": "bundled",
+      "visibility": "public",
+      "distribution": "first-party",
+      "commercialModel": "undecided",
+      "channels": [
+        {
+          "id": "lunet2d-first-party",
+          "kind": "first-party-platform",
+          "role": "primary",
+          "artifacts": [
+            "android-apk"
+          ]
+        },
+        {
+          "id": "lunet2d-github-release",
+          "kind": "github-release",
+          "role": "alternative",
+          "locationFrom": "source.repository",
+          "artifacts": [
+            "android-apk"
+          ]
+        }
+      ]
+    },
+    {
+      "component": "urbe",
+      "availability": "bundled",
+      "visibility": "public",
+      "distribution": "first-party",
+      "commercialModel": "undecided",
+      "channels": [
+        {
+          "id": "urbe-first-party",
+          "kind": "first-party-platform",
+          "role": "primary",
+          "artifacts": [
+            "android-apk",
+            "windows-installer",
+            "web-pwa"
+          ]
+        },
+        {
+          "id": "urbe-github-release",
+          "kind": "github-release",
+          "role": "alternative",
+          "locationFrom": "source.repository",
+          "artifacts": [
+            "android-apk",
+            "windows-installer"
+          ]
+        },
+        {
+          "id": "urbe-github-pages",
+          "kind": "github-pages",
+          "role": "alternative",
+          "locationFrom": "publicUrl",
+          "artifacts": [
+            "web-pwa"
+          ]
+        }
+      ]
+    }
+  ]
+}

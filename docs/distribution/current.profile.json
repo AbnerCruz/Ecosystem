@@ -4,10 +4,11 @@
   "id": "current-distribution",
   "name": "Distribuição atual dos Products (transitória)",
   "status": "current",
-  "description": "FATO (DEC-0008-A, DEC-0009-A, DEC-0016, DEC-0017-A): o código é desenvolvido em apps/<id> no Ecosystem (SOURCE); os repositórios de origem AbnerCruz/Lunet2D e AbnerCruz/Urbe são espelhos que constroem e publicam as releases (e o Urbe Web) com os pipelines e secrets que já tinham (DISTRIBUTION). Arranjo intencional e transitório; este arquivo só o descreve — nenhum canal foi alterado. O destino definitivo é a decisão DEC-0021 (P2-12). Valores de visibility e commercialModel: INFERÊNCIA a confirmar (o portal lê os repositórios sem token; nenhum modelo comercial foi decidido).",
+  "description": "FATO (DEC-0008-A, DEC-0009-A, DEC-0016, DEC-0017-A): o código é desenvolvido em apps/<id> no Ecosystem (SOURCE); os repositórios de origem AbnerCruz/Lunet2D e AbnerCruz/Urbe são espelhos que constroem e publicam as releases (e o Urbe Web) com os pipelines e secrets que já tinham (DISTRIBUTION). Arranjo intencional e transitório; este arquivo só o descreve — nenhum canal foi alterado. Destino decidido em DEC-0021-C: plataforma first-party progressiva (docs/distribution/target.profile.json); até ela existir, este arranjo continua valendo. Valores de visibility e commercialModel: INFERÊNCIA a confirmar (o portal lê os repositórios sem token; nenhum modelo comercial foi decidido).",
   "decisions": [
     "DEC-0008",
-    "DEC-0009"
+    "DEC-0009",
+    "DEC-0021"
   ],
   "entries": [
     {

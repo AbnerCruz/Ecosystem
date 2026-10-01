@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "ecosystem/contracts/distribution-profile/1",
-  "title": "Distribution Profile — schemaVersion 1 (nomes dos eixos PROVISÓRIOS)",
-  "description": "Descreve quais componentes formam uma edição/distribuição e em que condições (ADD-0002 §7-§8, distribution.md; ADR-0012). Arquitetura ≠ distribuição. Três eixos independentes por entrada (visibility, distribution, commercialModel) cujos NOMES e valores continuam PROVISÓRIOS (DEC-0020-B) até a decisão de distribuição (P2-12/P2-9). SOURCE ≠ DISTRIBUTION: a fonte de desenvolvimento de um componente é o seu `path` em ecosystem.json (hoje apps/<id> no Ecosystem); `channels` descrevem POR ONDE builds/releases/web chegam ao usuário e nunca copiam URLs: apontam para o campo do componente (`locationFrom`). `status`: `example` (ilustrativo) ou `current` (descreve o arranjo REAL, transitório; só pode mudar por decisão do proprietário). NN-023: nenhum perfil que inclua um Product público pode ter o Hub como 'bundled'.",
+  "title": "Distribution Profile — schemaVersion 1",
+  "description": "Descreve quais componentes formam uma edição/distribuição e em que condições (ADD-0002 §7-§8, distribution.md; ADR-0012). Arquitetura ≠ distribuição. Três eixos independentes por entrada (visibility, distribution, commercialModel), mais availability; NOMES E VALORES CONGELADOS em P2-9 (2026-10-01, depois de DEC-0020-B e DEC-0021-C): mudar um nome exige ADR e migração dos perfis. SOURCE ≠ DISTRIBUTION: a fonte de desenvolvimento de um componente é o seu `path` em ecosystem.json (apps/<id> no Ecosystem); `channels` descrevem POR ONDE builds/releases/web chegam ao usuário e nunca copiam URLs: apontam para o campo do componente (`locationFrom`). `status`: `example` (ilustrativo), `current` (o arranjo REAL vigente; só descreve canais que existem) ou `target` (direção decidida pelo proprietário, ainda NÃO operacional; precisa citar a decisão). NN-023: nenhum perfil que inclua um Product público pode ter o Hub como 'bundled'.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -67,7 +67,7 @@
             ]
           },
           "distribution": {
-            "description": "PROVISÓRIO. first-party = plataforma própria do Ecosystem (ainda inexistente); external-store = loja de terceiros; external-channel = canal externo ao Ecosystem que publica os builds (hoje GitHub Releases/Pages dos repositórios de origem; achado de P2-12: o enum original não tinha este valor); none = não distribuído.",
+            "description": "first-party = plataforma própria do Ecosystem (direção decidida em DEC-0021-C; ainda inexistente); external-store = loja de terceiros; external-channel = canal externo ao Ecosystem que publica os builds (hoje GitHub Releases/Pages dos repositórios de origem); none = não distribuído.",
             "enum": [
               "first-party",
               "external-store",
@@ -93,8 +93,7 @@
               "required": [
                 "id",
                 "kind",
-                "role",
-                "locationFrom"
+                "role"
               ],
               "properties": {
                 "id": {
@@ -102,7 +101,7 @@
                   "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
                 },
                 "kind": {
-                  "description": "PROVISÓRIO.",
+                  "description": "Tipo do canal. first-party-platform só pode aparecer em perfis `target` enquanto a plataforma não existir.",
                   "enum": [
                     "github-release",
                     "github-pages",
@@ -111,7 +110,7 @@
                   ]
                 },
                 "role": {
-                  "description": "primary = canal em que o usuário obtém o produto hoje; mirror/legacy/alternative = papéis futuros possíveis.",
+                  "description": "primary = onde o usuário obtém o produto; mirror/legacy/alternative = papéis secundários (espelho, legado, canal alternativo/recuperação).",
                   "enum": [
                     "primary",
                     "mirror",
@@ -120,7 +119,7 @@
                   ]
                 },
                 "locationFrom": {
-                  "description": "Campo do componente em ecosystem.json de onde vem a localização (sem copiar a URL; NN-001): source.repository = repositório de ORIGEM (nome histórico do campo: hoje é o repositório que distribui e espelha, não onde se desenvolve) ou publicUrl.",
+                  "description": "Campo do componente em ecosystem.json de onde vem a localização (sem copiar a URL; NN-001): source.repository = repositório de ORIGEM (nome histórico do campo: é o repositório que distribui e espelha, não onde se desenvolve) ou publicUrl. Obrigatório em canais existentes; ausente apenas no canal first-party-platform de um perfil target (a plataforma ainda não tem localização).",
                   "enum": [
                     "source.repository",
                     "publicUrl"
@@ -148,10 +147,11 @@
       }
     },
     "status": {
-      "description": "example = ilustrativo; current = o arranjo real vigente.",
+      "description": "example = ilustrativo; current = arranjo real vigente; target = direção decidida, não operacional.",
       "enum": [
         "example",
-        "current"
+        "current",
+        "target"
       ]
     },
     "decisions": {

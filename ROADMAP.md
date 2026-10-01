@@ -14,7 +14,7 @@
 
 ## Próxima tarefa
 
-**Fase 2 em andamento** (aguardando o gate): **DEC-0021** (distribuição definitiva dos Products) no portal — não bloqueia — e, depois dela, **P2-9** (congelar os nomes dos eixos); em seguida o gate (P2-14, aprovação do proprietário; o agente prepara a evidência e a validação no portal, não aprova). DEC-0020 foi registrada em B.
+**Fase 2 em andamento** (aguardando o gate): todas as tarefas técnicas concluídas; falta **a aprovação do gate pelo proprietário** no portal (P2-14). DEC-0020 (B) e DEC-0021 (C) registradas.
 
 Em paralelo, como trabalho **interno dos próprios Products** e **fora do escopo da Fase 2** (infraestrutura compartilhada): refatorações em `apps/urbe/` e `apps/lunet2d/` — que **fazem parte deste repositório** e são o único lugar de desenvolvimento deles; `AbnerCruz/Urbe` e `AbnerCruz/Lunet2D` não são lugares de desenvolvimento (são espelhos de distribuição transitórios, DEC-0008/DEC-0009) — governadas pelo ADR-0009 e [`refactoring.md`](docs/architecture/refactoring.md) — sugestão: **U-R1** no Urbe (continuar a decomposição de `app.js` / Product Shell) e **L-R2** no Lunet2D (decompor `MainActivity` em Shell + painéis), conforme [`candidates.md`](docs/architecture/candidates.md), cada uma delegada em tarefa própria e conduzida pelos processos locais de cada Product. Nenhum subsistema é extraído sem evidência de segundo consumidor ([`local-first.md`](docs/architecture/local-first.md)).
 
@@ -123,10 +123,10 @@ Cada tarefa traz: *saída verificável* · *depende de* · *evidência* · *gate
   - Saída: `context.schema.json` + regras. Depende de: P2-1. Evidência: `CHK-REGISTRY` valida os exemplos; self-test "Context fora de ordem". Gate: —.
 - [x] P2-7 — **Registry inicial e discovery**: índice local/estático derivado (registrar, indexar capabilities, descobrir providers, validar), dentro dos checks (local-first); CLI `--registry`.
   - Saída: `Registry`, `RegistryCli`. Depende de: P2-3, P2-4. Evidência: `-- --registry --discover capability.test "^1.0.0"` → `provider-a@1.0.0`. Gate: G-b.
-- [x] P2-8 — **Distribution Profile**: formato com `availability` e três eixos independentes (nomes provisórios); NN-023: Hub nunca `bundled` em perfil com componente público.
+- [x] P2-8 — **Distribution Profile**: formato com `availability` e três eixos independentes (nomes congelados depois em P2-9); NN-023: Hub nunca `bundled` em perfil com componente público.
   - Saída: `distribution-profile.schema.json` + exemplo `lunet-public`. Depende de: P2-1. Evidência: `CHK-REGISTRY`; self-test "Hub bundled". Gate: —.
-- [ ] P2-9 — **Congelar os nomes dos eixos** (visibility, distribution, commercialModel, availability). Os contratos estruturais do ADR-0012 já foram aceitos (DEC-0020-B, 2026-10-01); **os nomes continuam provisórios** e só são congelados depois de a distribuição definitiva ser decidida e modelada.
-  - Saída: nomes finais registrados no ADR-0012 (ou ADR substituto) e nos schemas. Depende de: DEC-0021 (portal) e do perfil `current` (P2-12). Evidência: registro da decisão. Gate: —.
+- [x] P2-9 — **Congelar os nomes dos eixos** (visibility, distribution, commercialModel, availability). Os contratos estruturais do ADR-0012 foram aceitos em DEC-0020-B; os nomes ficaram provisórios até a distribuição real ser modelada (P2-12) e o destino decidido (**DEC-0021-C**, 2026-10-01). Congelados como estão no schema, incluindo `external-channel` e o `status` `target`; mudar um nome exige ADR e migração dos perfis.
+  - Saída: ADR-0012 `Aceito`; schema sem marcações de provisório; perfil `target` ([`target.profile.json`](docs/distribution/target.profile.json)). Depende de: DEC-0021 (registrada: C), P2-12. Evidência: handoff `HO-20261001-gate-da-fase-2`; `CHK-REGISTRY` + 2 casos de self-test do perfil `target`. Gate: —.
 - [x] P2-10 — **Architecture checks da fase**: `CHK-REGISTRY` (provider/consumer conhecidos, compatibilidade, permissões), Tool/Service/Library sem Host concreto (`TOOL_KNOWS_HOST`), Product → Product (`PRODUCT_DEPENDS_ON_PRODUCT`), Hub não bundled; matriz de enforcement atualizada.
   - Saída: `CHK-REGISTRY`. Depende de: P2-3..P2-8. Evidência: self-test com mutações reais (5 casos do check + slice). Gate: G-c.
 - [x] P2-11 — **Vertical slice**: A provê `capability.test` v1; B exige `^1.0.0` (compatível, descoberto); C exige `^2.0.0` (falha); mais negativos de permissão, capability desconhecida, sem provider, Tool que conhece Host, Product → Product. Fixtures; nenhuma Tool real extraída.
@@ -136,10 +136,10 @@ Cada tarefa traz: *saída verificável* · *depende de* · *evidência* · *gate
 - [x] P2-13 — **Portal projeta components/capabilities/providers/consumers/profiles** (somente leitura, derivado), quando houver capability real ou perfil real; sem grande UI antes disso. Condição atendida pelo **perfil real** (P2-12): o portal mostra a seção "Distribuição atual dos Products" (fonte = `path` do Ecosystem; canal; localização derivada de `ecosystem.json`). Nenhuma capability real existe: `capabilities` é derivada de `provides`/`requires`, está vazia e o portal não exibe seção para ela (nada é inventado nem mostrado como operacional).
   - Saída: campos `distribution` e `capabilities` da projeção + seção do portal + comparações em `CHK-PORTAL` (2 casos de self-test). Depende de: P2-7, P2-12. Evidência: handoff `HO-20261001-p2-12-distribuicao-atual-e-dec-0021`. Gate: —.
 - [ ] P2-14 — **Gate da Fase 2**: evidência objetiva (slice executável + checks) e aprovação do proprietário.
-  - Saída: handoff do gate. Depende de: P2-1..P2-13 (P2-13 pode ser adiada por decisão), DEC-0020 (registrada: B). Evidência: aprovação no portal. **Não** é autoaprovável: exige a validação humana do proprietário. Gate: G-a, G-b, G-c.
+  - Saída: handoff do gate. Depende de: P2-1..P2-13, DEC-0020 (B), DEC-0021 (C). Evidência: handoff `HO-20261001-gate-da-fase-2` (evidência pronta; validação humana pendente no portal). **Não** é autoaprovável: exige a validação humana do proprietário. Gate: G-a, G-b, G-c.
 
 **Gate:** um componente pode declarar uma capability, outro pode descobri-la e a compatibilidade pode ser validada sem dependência direta entre produtos. *(Evidência executável: `dotnet run tests/consistency/Check.cs` — `CHK-REGISTRY` — e `-- --registry --file docs/contracts/examples/registry-slice/positive.json`.)*
-*Estado do gate:* **aguardando** — P2-1..P2-8 e P2-10..P2-13 concluídas; P2-9 (depende de DEC-0021) e P2-14 abertas; aprovação do proprietário pendente.
+*Estado do gate:* **aguardando** — P2-1..P2-13 concluídas; evidência do gate pronta no handoff `HO-20261001-gate-da-fase-2`; **aprovação do proprietário pendente no portal** (P2-14).
 
 ## Fase 3 — Hub read-only
 
@@ -150,6 +150,8 @@ Objetivo: Hub inicial em C#; lê `ecosystem.json`; mostra Lunet2D e Urbe; integr
 **Gate:** no celular, o proprietário abre o Hub e compreende o estado atual dos dois produtos sem abrir GitHub manualmente. *(requer validação humana em aparelho)*
 
 ## Fase 4 — Launcher e Updates
+
+Direção de distribuição decidida (DEC-0021-C): plataforma first-party como distribuição principal futura e progressiva; cada Product migra em item próprio (versão-ponte, redirecionamento, recuperação), repositórios antigos como canal alternativo. Esta fase é a candidata natural a planejá-la; nenhum item existe ainda.
 
 Objetivo: detectar versões, listar releases, baixar artefatos, validar integridade, conduzir instalação/atualização respeitando o modelo de segurança da plataforma, abrir produto instalado. Packaging e distribuição de cada Product **sem** o Hub (NN-023): o Hub é conveniência do proprietário, não requisito de distribuição; o Hub pode permanecer privado.
 

@@ -18,7 +18,7 @@
 | **Contract** | Descrição explícita, estável, versionada e testável de uma interação. | — |
 | **Product Shell** | Superfície especializada e Host de um Product: representa seu domínio, navegação, biblioteca, projetos, integrações e capabilities, com experiência própria, sem possuir as Tools reutilizáveis que hospeda. Não é o Hub e não exige o Hub. *(ADD-0002; conceito, nada implementado)* | Lunet Product Shell, Urbe Product Shell |
 | **Context** | Escopo atual em que uma operação, Tool, Workspace ou Agent trabalha, hierárquico. *(ADD-0002; só o conceito — contrato nas Fases 2/5)* | Ecosystem → Lunet2D → MeuJogo → Editor |
-| **Distribution Profile** | Descreve quais componentes formam determinada edição/distribuição. Formato na Fase 2 (ADR-0012; nomes dos eixos provisórios). *(ADD-0002; só o perfil `current` dos Products existe: `docs/distribution/current.profile.json`)* | `lunet-public` (conceitual) |
+| **Distribution Profile** | Descreve quais componentes formam determinada edição/distribuição. Formato na Fase 2 (ADR-0012; nomes congelados em P2-9). *(ADD-0002; perfis reais: `current` — arranjo vigente — e `target` — direção decidida em DEC-0021-C, não operacional — em `docs/distribution/`)* | `lunet-public` (conceitual) |
 | **Connections** | Superfície de **UX** de um Product Shell para ver/ligar capabilities. Não é arquitetura paralela: é implementada sobre Capabilities. *(ADD-0002)* | Lunet2D → Connections |
 
 As definições normativas de Product … Contract estão no `MANIFEST.md` §6. As de **Product Shell**, **Context**, **Distribution Profile** e **Connections** estão em [`docs/architecture/product-model.md`](docs/architecture/product-model.md) e [`docs/architecture/distribution.md`](docs/architecture/distribution.md) (MANIFEST §6 não foi alterado; ver [`manifest-changelog.md`](docs/governance/manifest-changelog.md)).
@@ -39,14 +39,14 @@ Para criar um componente compartilhado (`platform/`, `workspaces/`, `tools/`, Se
 
 Uma funcionalidade nova nasce **no Product que tem a necessidade**; vira componente compartilhado só por **promoção baseada em evidência** (segundo consumidor real → Extraction Review → NN-022 → ADR → contrato). Duplicação temporária é preferível a uma abstração compartilhada errada. O potencial de reutilização é registrado nos handoffs (`reuse_assessment`). Guia: [`docs/architecture/local-first.md`](docs/architecture/local-first.md); refatoração e extração: [`docs/architecture/refactoring.md`](docs/architecture/refactoring.md).
 
-## 3.2 Contratos da Fase 2 (ADR-0012, `Aceito` em parte — DEC-0020-B)
+## 3.2 Contratos da Fase 2 (ADR-0012, `Aceito`)
 
 - **ComponentManifest** = a entrada de componente de `ecosystem.json` (identidade = chave; `type`, `version`, `owners`, `status`) com, opcionalmente, `provides`, `requires` e `permissions.requests`. Sem estado de execução e sem campos de distribuição.
 - **Capability** = contrato versionado (`docs/contracts/capabilities/<id>.json`: inputs, outputs, erros, permissões exigidas, lifecycle, compatibilidade semver). O provider é derivado dos `provides` dos manifests; um consumidor depende da capability e da faixa de versões, nunca de Product, Host, classe ou path.
 - **Permissões:** catálogo `docs/contracts/permissions.json`; deny-by-default (o componente só tem o que solicitou; o consumidor precisa ter solicitado o que o contrato exige). Enforcement em runtime: Fase 5.
 - **Context:** caminho `ecosystem → product → project → workspace → tool` (contrato inicial; sem IPC nem Host API).
 - **Registry:** índice local derivado, dentro dos checks (`CHK-REGISTRY`, `-- --registry`): registrar, indexar, descobrir providers, validar compatibilidade. Nasce local (ADR-0011) e só vira componente próprio com consumidor real.
-- **Distribution Profile:** entradas com `availability`, três eixos independentes (visibility, distribution, commercialModel; **nomes provisórios até DEC-0021/P2-9**) e `channels`; o Hub nunca é `bundled` em perfil com componente público (NN-023). O arranjo real (**SOURCE** = `apps/<id>` no Ecosystem; **DISTRIBUTION** = repositórios de origem, transitório) é o perfil `current` em `docs/distribution/current.profile.json` ([`distribution.md`](docs/architecture/distribution.md) §10).
+- **Distribution Profile:** entradas com `availability`, três eixos independentes (visibility, distribution, commercialModel; nomes congelados em P2-9) e `channels`; o Hub nunca é `bundled` em perfil com componente público (NN-023). O arranjo real (**SOURCE** = `apps/<id>` no Ecosystem; **DISTRIBUTION** = repositórios de origem, transitório) é o perfil `current` em `docs/distribution/current.profile.json` ([`distribution.md`](docs/architecture/distribution.md) §10). Direção decidida (DEC-0021-C): plataforma first-party como distribuição principal **futura e progressiva** — perfil `target`, não operacional.
 - Nenhuma capability real existe ainda: só o vertical slice de exemplo (`docs/contracts/examples/`). Capabilities reais aparecem por **promoção baseada em evidência**.
 
 ## 4. Boundaries (MANIFEST §12)
@@ -84,7 +84,7 @@ Exceções exigem ADR e alteração explícita do check.
 | Formato dos registros | `docs/contracts/schemas/*.schema.json` | O check valida contra eles; não duplica o formato. |
 | Contrato de uma capability / catálogo de permissões | `docs/contracts/capabilities/<id>.json` / `docs/contracts/permissions.json` | Provider **derivado** dos `provides` em `ecosystem.json` (uma autoridade); `CHK-REGISTRY`. |
 | Código, versão e histórico de Lunet2D/Urbe | `apps/<id>/` deste repositório quando `status = active`; o repositório de origem enquanto `status = not-migrated` | Ver `source`, `path` e `version.authority` em `ecosystem.json`. Com o produto `active`, o repositório de origem é **espelho de distribuição** (releases e Urbe Web; DEC-0008/DEC-0009 transitórias, DEC-0014): nunca autoridade de código. |
-| Distribuição atual dos Products (canais por onde builds, releases e web chegam ao usuário) | `docs/distribution/current.profile.json` | Perfil `current` (transitório, DEC-0008/DEC-0009; reavaliação em DEC-0021). SOURCE = `path` em `ecosystem.json`; as localizações dos canais vêm de `ecosystem.json`, não são copiadas; `CHK-REGISTRY`. |
+| Distribuição atual dos Products (canais por onde builds, releases e web chegam ao usuário) | `docs/distribution/current.profile.json` | Perfil `current` (transitório: DEC-0008/DEC-0009 valem até a plataforma first-party existir, DEC-0021-C); a direção é o perfil `target.profile.json`. SOURCE = `path` em `ecosystem.json`; as localizações dos canais vêm de `ecosystem.json`, não são copiadas; `CHK-REGISTRY`. |
 | Mapeamento NN → fiscalização | `docs/governance/enforcement-matrix.json` | |
 | Decisões pendentes/tomadas do proprietário | `docs/governance/decisions.json` | Decisão tomada aponta para ADR/SPEC/ROADMAP. |
 | Decisões arquiteturais | `docs/adr/` | |
@@ -146,13 +146,13 @@ Este documento descreve a arquitetura **atual** nas seções anteriores. Aqui fi
 - Host API do Product Shell e contrato de Context em runtime (Fase 5); IPC e transporte (Fase 5), por ADR **antes** da primeira dependência séria entre processos;
 - enforcement de permissões em runtime (Fase 5);
 - packaging e distribuição pelo Distribution Profile (Fase 4);
-- distribuição e publicação **definitivas** de cada produto (canal de releases, publicação web): declaradas pelo próprio Ecosystem; até lá valem DEC-0008 e DEC-0009 (alternativa A, **transitórias**; `docs/migration/README.md` §9), reavaliação levada ao portal em DEC-0021 (P2-12);
+- plataforma first-party como distribuição principal dos Products (DEC-0021-C): **progressiva** — até ela existir valem DEC-0008/DEC-0009 (repositórios de origem); depois, cada Product migra em item próprio, com ponte de atualização, redirecionamento e recuperação, e os repositórios antigos viram canal alternativo, sem serem apagados. Nenhum Service de distribuição antes de haver consumidor real (NN-020, NN-022);
 - tecnologia de UI e plataformas-alvo do Hub (Fase 3);
 - estrutura de `platform/`, `workspaces/`, `tools/` e `services/`: os diretórios só nascem quando tiverem conteúdo com função (ADR-0004); `apps/` existe e contém Lunet2D e Urbe.
 
 ### 8.2 Não decidido (nenhum agente deve tratar como decidido)
 
-- a distribuição definitiva dos Products e, depois dela, o congelamento dos nomes dos eixos do Distribution Profile (DEC-0021; os contratos estruturais da Fase 2 já foram aceitos, ADR-0012);
+- quando e como a plataforma first-party será construída (fase, Services, identidade e catálogo) — a direção está decidida (perfil `target`), o plano não;
 - quais Services compartilhados (Identity, Catalog, Commerce, Entitlements, Downloads, Updates, Reviews, Creator Profiles, Notifications) existirão, se algum — só com consumidores reais, contrato e ADR (NN-020, NN-022);
 - fonte canônica de catálogo, entitlements e identidade; política de edições e canais externos;
 - estrutura **final** de cada Product Shell no código: há classificação proposta e aprovada como proposta ([`docs/architecture/candidates.md`](docs/architecture/candidates.md)) e regras de refatoração aceitas (ADR-0009), mas cada mudança estrutural é decidida na própria refatoração.
