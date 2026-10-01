@@ -511,7 +511,7 @@
     },
     {
       "id": "DEC-0016",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": true,
       "title": "Permitir o workflow de sincronização na checagem de workflows do Urbe",
@@ -539,7 +539,10 @@
         "docs/migration/import-plan.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Ajuste mínimo da checagem do Urbe: permitir, pelo nome, `sync-from-ecosystem.yml` com `contents: write` apenas no nível do job (REQ-006 continua valendo para todo o resto) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/22).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0016.md"
     }
   ]
 }
