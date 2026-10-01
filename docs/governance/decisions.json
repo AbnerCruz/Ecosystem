@@ -616,7 +616,7 @@
     },
     {
       "id": "DEC-0019",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": false,
       "title": "O que significa ecosystem.phase (e se ele deve continuar existindo)",
@@ -644,7 +644,11 @@
         "ROADMAP.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Alternativa A — Remover o campo: a fase existe só no ROADMAP (linha 'Estado do gate'); o portal a deriva de lá (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/29).",
+      "decidedAt": "2026-10-01",
+      "record": "docs/governance/responses/DEC-0019.md",
+      "consequencesApplied": false
     }
   ]
 }
