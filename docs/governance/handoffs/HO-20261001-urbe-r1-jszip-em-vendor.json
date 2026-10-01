@@ -14,7 +14,7 @@
   "blockers": [],
   "cost": null,
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261001-urbe-r1-jszip-em-vendor",
   "timestamp": "2026-10-01T22:00:00Z",
   "task_id": "UR1-1",
@@ -35,7 +35,8 @@
     "FATO OBSERVADO: a etapa de refatoração (passo 10; ADR-0009 Aceito, refactoring.md, ROADMAP 'Próxima tarefa') sugere U-R1 (Urbe) e L-R2 (Lunet2D). Esta tarefa executou apenas o primeiro item pronto de U-R1 segundo o processo do próprio Urbe: RM-F2-03 (REQ-031), cujas dependências (RM-F0-08) estão [x].",
     "ALTERAÇÃO (refatoração interna R, só dentro de apps/urbe): src/legacy/bootstrap.js (JSZip 3.10.1) movido com git mv, conteúdo idêntico, para vendor/jszip/jszip.min.js; vendor/jszip/LICENSE criado; src/modules.json, index.html, sw.js (derivados do manifesto por check-modules), tools/gen-modules.mjs e THIRD-PARTY-NOTICES.md atualizados; src/legacy/ removido (Aceite: 'src/legacy/ sem vendor'). Ordem de carga e fase 'boot' preservadas.",
     "Documentação do produto: ROADMAP RM-F2-03 -> [?] (aguarda validação do ZIP no navegador), TRACEABILITY regenerada, entrada em AGENTSCHAT.md.",
-    "Nenhum formato de dados do usuário, boundary, contrato, release ou versão foi tocado; nenhum outro produto ou o Hub referenciado; nada extraído para o Ecosystem."
+    "Nenhum formato de dados do usuário, boundary, contrato, release ou versão foi tocado; nenhum outro produto ou o Hub referenciado; nada extraído para o Ecosystem.",
+    "Integração (2026-10-02, agente integrador): o proprietário pediu o merge (ADD-0011 do Ecosystem). RM-F2-03 marcado [x] no próprio PR #35, depois de reconciliado com a main atual (sem sobreposição) e com o estado combinado verde; o handoff passa a 'done' (na main, done ⇒ integrado; multi-agent.md §1.8)."
   ],
   "verification": [
     {
@@ -62,13 +63,11 @@
     "NÃO EXECUTADO: dotnet run tests/consistency/Check.cs (dotnet indisponível neste ambiente; download bloqueado pelo proxy). Rodará no CI da branch; o resultado do CI é a evidência, não este handoff.",
     "vendor/jszip/LICENSE foi escrito a partir do cabeçalho do arquivo (MIT, opção já adotada em THIRD-PARTY-NOTICES); conferir com a licença upstream.",
     "Os documentos de discovery do Urbe (LEGACY-MAP, DATA-CATALOG, PERFORMANCE, AUDIT-1X) citam o caminho antigo src/legacy/bootstrap.js; são evidência histórica da 1.x e foram mantidos.",
-    "L-R2 (MainActivity do Lunet2D) não foi feito: exige build Android/.NET e validação em aparelho, indisponíveis aqui.",
-    "RM-F2-03 continua [?] até o merge do PR #35 na main, que exige pedido explícito do proprietário (apps/urbe/AGENTS.md); o E2E de ZIP já passou (ver verificação)."
+    "L-R2 (MainActivity do Lunet2D) não foi feito: exige build Android/.NET e validação em aparelho, indisponíveis aqui."
   ],
   "next_actions": [
-    "Proprietário/agente com Playwright: rodar tests/e2e/zip.e2e.mjs e conferir import/export ZIP; então RM-F2-03 -> [x].",
-    "Depois do merge na main: disparar sync-from-ecosystem.yml em AbnerCruz/Urbe (DEC-0017-A).",
-    "Próximos itens de U-R1: RM-F2-01 (HOTSPOTS) e RM-F2-02 (harness do monólito); L-R2 em tarefa própria com .NET."
+    "Depois do merge: disparar sync-from-ecosystem.yml em AbnerCruz/Urbe (DEC-0017-A).",
+    "Próximos itens de U-R1: RM-F2-01 (HOTSPOTS) e RM-F2-02 (harness do monólito), em tarefas próprias; L-R2 em tarefa própria com .NET."
   ],
   "decisions_required": [],
   "normative_sources": [

@@ -12,6 +12,7 @@
 - **Pendências:** texto de `vendor/jszip/LICENSE` escrito a partir do cabeçalho do arquivo (MIT, opção já adotada em THIRD-PARTY-NOTICES) — conferir com a licença upstream; validação humana do ZIP; origem `AbnerCruz/Urbe` precisa da sincronização (`sync-from-ecosystem.yml`) depois do merge.
 - **Próximos passos:** RM-F2-01 (HOTSPOTS) e RM-F2-02 (harness do monólito); F1 ainda tem RM-F1-20…26 abertos.
 - **Integração (2026-10-01, agente integrador):** branch `ccr-5adec8cc-oy464b`, PR #35 do Ecosystem (reconciliado com a `main` depois da Fase 3; sem conflito). `tests/e2e/zip.e2e.mjs` rodou em Chromium real e passou (1/1). RM-F2-03 segue `[?]` até o merge, que **só acontece com pedido explícito do proprietário**; depois, disparar `sync-from-ecosystem.yml` em `AbnerCruz/Urbe`.
+- **Encerramento (2026-10-02):** o proprietário pediu o merge ("Pode fazer o merge e aprovar tudo"; ADD-0011 do Ecosystem). RM-F2-03 `[x]` no mesmo PR que o integra (estado combinado reconciliado com a `main` e verde). Próximos itens de U-R1: RM-F2-01 e RM-F2-02, em tarefas próprias.
 
 ### 2026-09-30 — Claude — RM-F1-10…19 (persistência, identidade, mundo, export, multi-cidade)
 - **Estado:** F0 quase completa e F1 até RM-F1-19 `[x]`. PR #36 (F0 + RM-F1-01…13) mergeado na `main` (`3351aaa`) com CI verde, como autorizado ("se estiver validado e funcionando é pra entrar na main"). RM-F1-14…19 estão na branch `claude/new-session-eh5rwa`, com PR próprio.
