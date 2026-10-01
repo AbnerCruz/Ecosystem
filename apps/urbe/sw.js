@@ -22,7 +22,7 @@ const APP_SHELL = [
   './src/ui/touch-debug.js',
   './src/world/terrain.js',
   './src/world/pixel-art.js',
-  './src/legacy/bootstrap.js',
+  './vendor/jszip/jszip.min.js',
   './src/core/core.js',
   './src/core/documents.js',
   './src/core/trash.js',

@@ -3,13 +3,13 @@
 O Urbe (© 2026 Abner P. S. Cruz, todos os direitos reservados — ver `LICENSE`) inclui ou usa os componentes abaixo, cada um sob a sua própria licença.
 Este arquivo é verificado por `tools/check-license.mjs` (toda dependência declarada e todo diretório de `vendor/` precisam estar listados).
 
-## Incluídos no código-fonte (`vendor/` e `src/legacy/`)
+## Incluídos no código-fonte (`vendor/`)
 
 | Componente | Versão | Licença | Onde | Aviso de copyright / texto |
 |---|---|---|---|---|
 | KaTeX (com fontes) | 0.16.x | MIT | `vendor/katex/` | © 2013-2020 Khan Academy and other contributors — texto completo em `vendor/katex/LICENSE` |
-| JSZip | 3.10.1 | MIT ou GPLv3 (opção MIT adotada) | `src/legacy/bootstrap.js` (a mover para `vendor/jszip/`, REQ-031) | © 2009-2016 Stuart Knightley — https://raw.github.com/Stuk/jszip/main/LICENSE.markdown |
-| pako (embutido no JSZip) | — | MIT | `src/legacy/bootstrap.js` | © Vitaly Puzrin, Andrei Tuputcyn — https://github.com/nodeca/pako/blob/main/LICENSE |
+| JSZip | 3.10.1 | MIT ou GPLv3 (opção MIT adotada) | `vendor/jszip/jszip.min.js` | © 2009-2016 Stuart Knightley — https://raw.github.com/Stuk/jszip/main/LICENSE.markdown |
+| pako (embutido no JSZip) | — | MIT | `vendor/jszip/jszip.min.js` | © Vitaly Puzrin, Andrei Tuputcyn — https://github.com/nodeca/pako/blob/main/LICENSE |
 
 ## Carregados em tempo de execução (não embutidos)
 

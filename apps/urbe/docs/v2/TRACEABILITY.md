@@ -69,7 +69,7 @@
 | REQ-030 | §3.3 | F2 | RM-F2-12 — Mundo derivado só da projeção (L3, L4) | [ ] | Fixtures abrem com mesmo resultado; sem marcador de texto. | G2 |
 | REQ-030 | §3.3 | F2 | RM-F2-15 — Remover adapters `legacy.runtime` e `legacy.documents` | [ ] | Testes de produção por consumidor (não existiam). | G2 |
 | REQ-030 | §3.3 | F2 | RM-F2-16 — Extrair hosts `world.custom`, `city.layout`, `world.life.host`, `workspace.storage`; remover wrapper `document.open` | [ ] | Testes de contrato de `world.custom`; `world-life.mjs`, `customize.mjs`. | G2 |
-| REQ-031 | §3.3 | F2 | RM-F2-03 — Mover JSZip para `vendor/jszip` | [ ] | `consistency.mjs` e `modules-manifest` verdes; import/export ZIP funciona. | G2 |
+| REQ-031 | §3.3 | F2 | RM-F2-03 — Mover JSZip para `vendor/jszip` | [x] | `consistency.mjs` e `modules-manifest` verdes; import/export ZIP funciona. | G2 |
 | REQ-032 | §3.4 | F2 | RM-F2-16 — Extrair hosts `world.custom`, `city.layout`, `world.life.host`, `workspace.storage`; remover wrapper `document.open` | [ ] | Testes de contrato de `world.custom`; `world-life.mjs`, `customize.mjs`. | G2 |
 | REQ-032 | §3.4 | F2 | RM-F2-17 — Contratos públicos versionados | [ ] | `tests/contracts.mjs`. | G2 |
 | REQ-035 | §5.1 | F1 | RM-F1-05 — Proteção forward: journal, history, trash, compositions | [x] | Fixture `futuro-desconhecido`: bytes inalterados após abrir/salvar; teste de coexistência v1/v2. | G1 |
@@ -193,4 +193,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 39.
+- Itens no ROADMAP: 146; concluídos `[x]`: 40.
