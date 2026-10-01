@@ -786,9 +786,19 @@ static class Checks
                 foreach (Match m in Regex.Matches(sec.Value, @"DEC-\d{4}"))
                     if (!decisions.TryGetValue(m.Value, out var d)) c.R.Fail(id, $"ARCHITECTURE.md §8.2 cita {m.Value}, que não existe em decisions.json");
                     else if (d.Str("status") != "pending" && !d.TryGetProperty("transitional", out _))
-                        c.R.Fail(id, $"ARCHITECTURE.md §8.2 apresenta {m.Value} como não decidido, mas ela está '{d.Str("status")}'");
+                    {
+                        // Registro automático (consequencesApplied=false) é um estado transitório legítimo: o registrador não edita
+                        // documentos e nunca pode ser bloqueado por eles. Fica visível como pendência do agente, sem falhar.
+                        if (d.TryGetProperty("consequencesApplied", out var ca) && ca.ValueKind == JsonValueKind.False)
+                            c.R.Note(id, $"{m.Value} foi decidida e ainda tem consequências a aplicar nos documentos (ARCHITECTURE.md §8.2 a cita como aberta)");
+                        else c.R.Fail(id, $"ARCHITECTURE.md §8.2 apresenta {m.Value} como não decidido, mas ela está '{d.Str("status")}'");
+                    }
             }
         }
+
+        // 4b. Decisões registradas pela automação com consequências ainda a aplicar: pendência do agente, visível, não bloqueante.
+        foreach (var d in c.DecisionList().Where(d => d.Str("status") == "decided" && d.TryGetProperty("consequencesApplied", out var ca) && ca.ValueKind == JsonValueKind.False))
+            c.R.Note(id, $"{d.Str("id")}: decisão registrada, consequências nos documentos dependentes ainda por aplicar (AGENTS.md §3)");
 
         // 5. Matriz de enforcement: mecanismo planejado para uma fase cujo gate já foi aprovado é plano vencido.
         if (File.Exists(c.P("docs/governance/enforcement-matrix.json")))
@@ -1074,7 +1084,7 @@ sealed class Report
             var mine = failures.Where(f => f.Check == id).ToList();
             w.WriteLine($"{(mine.Count == 0 ? "PASS" : "FAIL")}  {id}");
             foreach (var f in mine) w.WriteLine($"      - {f.Message}");
-            foreach (var n in notes.Where(n => n.Check == id)) w.WriteLine($"      ~ não verificado: {n.Message}");
+            foreach (var n in notes.Where(n => n.Check == id)) w.WriteLine($"      ~ {(n.Message.StartsWith("DEC-") || n.Message.Contains("ainda tem consequências") ? "pendência" : "não verificado")}: {n.Message}");
         }
         w.WriteLine();
         w.WriteLine(Failed
@@ -1494,6 +1504,14 @@ static class SelfTest
             if (consistent.Failed) consistent.Print(Console.Out);
             Report(!consistent.Failed, "o repositório continua consistente depois do registro");
             Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body).Code == 3, "recusa decisão que já foi decidida");
+            Report(File.ReadAllText(Path.Combine(tmp, "docs", "governance", "decisions.json")).Contains("\"consequencesApplied\": false"), "registro automático marca as consequências como a aplicar");
+            // Decisão registrada pela automação e citada em ARCHITECTURE §8.2 como aberta NÃO pode bloquear o registro (caso real DEC-0019)...
+            Replace(tmp, "ARCHITECTURE.md", "(DEC-0019)", "(DEC-9999)");
+            RunGenerator(tmp);
+            Report(!Checks.RunAll(tmp).Failed, "decisão recém-registrada e ainda citada como aberta não bloqueia a automação");
+            // ...mas, depois que o agente declara as consequências aplicadas, citá-la como aberta é deriva.
+            Replace(tmp, "docs/governance/decisions.json", "\"consequencesApplied\": false", "\"consequencesApplied\": true");
+            Report(Checks.RunAll(tmp).FailedCheck("CHK-STATE-CONSISTENCY"), "consequências declaradas aplicadas + citada como aberta é deriva");
         }
         catch (Exception e) { Report(false, "execução: " + e.Message); }
         finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }

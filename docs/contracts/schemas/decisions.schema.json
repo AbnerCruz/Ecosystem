@@ -125,6 +125,10 @@
             "type": "string",
             "minLength": 1
           },
+          "consequencesApplied": {
+            "description": "Gravado como false pelo registrador automático (ADR-0007): a decisão foi registrada, mas as consequências nos documentos dependentes ainda não foram aplicadas por um agente. O agente muda para true ao aplicá-las. Ausente = não se aplica (decisão registrada por um agente que já aplicou as consequências). Enquanto false, CHK-STATE-CONSISTENCY só avisa; com true (ou ausente), documentos de estado atual não podem apresentá-la como aberta.",
+            "type": "boolean"
+          },
           "transitional": {
             "description": "Decisão válida só durante uma etapa (ex.: a migração). 'until' é a fase em que deve ser reavaliada; 'supersededBy' diz o que passa a ser a autoridade depois.",
             "type": "object",

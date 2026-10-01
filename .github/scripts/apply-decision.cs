@@ -219,6 +219,7 @@ decision["status"] = "decided";
 decision["decision"] = $"Alternativa {letter} — {option} (escolhida pelo proprietário pelo portal; Issue {(issueUrl.Length > 0 ? issueUrl : "#" + number)}).";
 decision["decidedAt"] = decidedAt;
 decision["record"] = recordRel;
+decision["consequencesApplied"] = false; // o registro é automático; um agente aplica as consequências e muda para true (ADR-0010)
 File.WriteAllText(decisionsPath, doc.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n");
 
 File.WriteAllText(resultFile,
