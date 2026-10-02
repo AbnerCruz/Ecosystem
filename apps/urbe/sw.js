@@ -77,6 +77,7 @@ const APP_SHELL = [
   './src/tutorial/content.js',
   './src/tutorial/tutorial.js',
   './src/editor/markdown.js',
+  './src/editor/visual.js',
   './src/app.js',
   './src/world/life.js',
   './src/pages/studio.js',

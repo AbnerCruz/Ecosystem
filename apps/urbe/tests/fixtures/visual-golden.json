@@ -1,0 +1,772 @@
+[
+ {
+  "kind": "md",
+  "source": "# Título\n\nParágrafo com **negrito**, *itálico*, ~~riscado~~, `código [[x]]` e _ênfase_.",
+  "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código \u00020\u0002</code> e <em>ênfase</em>.</p>",
+  "bodyEditor": "",
+  "md": "# Título\n\nParágrafo com **negrito**, _itálico_, ~~riscado~~, `código \u00020\u0002` e _ênfase_.\n"
+ },
+ {
+  "kind": "md",
+  "source": "# Título\n\nParágrafo com **negrito**, *itálico*, ~~riscado~~, `código [[x]]` e _ênfase_.",
+  "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código \u00020\u0002</code> e <em>ênfase</em>.</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n# Título\n\nParágrafo com **negrito**, _itálico_, ~~riscado~~, `código \u00020\u0002` e _ênfase_.\n"
+ },
+ {
+  "kind": "md",
+  "source": "###### H6\n#### H4 com [link](https://exemplo.com \"t\")",
+  "html": "<h6>H6</h6><h4>H4 com [link](https://exemplo.com &quot;t&quot;)</h4>",
+  "bodyEditor": "",
+  "md": "###### H6\n\n#### H4 com [link](https://exemplo.com \"t\")\n"
+ },
+ {
+  "kind": "md",
+  "source": "###### H6\n#### H4 com [link](https://exemplo.com \"t\")",
+  "html": "<h6>H6</h6><h4>H4 com [link](https://exemplo.com &quot;t&quot;)</h4>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n###### H6\n\n#### H4 com [link](https://exemplo.com \"t\")\n"
+ },
+ {
+  "kind": "md",
+  "source": "#\n\n##   \n\ntexto",
+  "html": "<h1><br></h1><h2><br></h2><p>texto</p>",
+  "bodyEditor": "",
+  "md": "# \n\n## \n\ntexto\n"
+ },
+ {
+  "kind": "md",
+  "source": "#\n\n##   \n\ntexto",
+  "html": "<h1><br></h1><h2><br></h2><p>texto</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n# \n\n## \n\ntexto\n"
+ },
+ {
+  "kind": "md",
+  "source": "```js\nconst a = 1 < 2;\n```\n\ntexto depois\n```\nsem linguagem\n```",
+  "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;</code></pre><p>texto depois</p><pre><code>sem linguagem</code></pre>",
+  "bodyEditor": "",
+  "md": "```js\nconst a = 1 < 2;\n```\n\ntexto depois\n\n```\nsem linguagem\n```\n"
+ },
+ {
+  "kind": "md",
+  "source": "```js\nconst a = 1 < 2;\n```\n\ntexto depois\n```\nsem linguagem\n```",
+  "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;</code></pre><p>texto depois</p><pre><code>sem linguagem</code></pre>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n```js\nconst a = 1 < 2;\n```\n\ntexto depois\n\n```\nsem linguagem\n```\n"
+ },
+ {
+  "kind": "md",
+  "source": "```\nbloco não fechado\nainda código",
+  "html": "<pre><code>bloco não fechado\nainda código</code></pre>",
+  "bodyEditor": "",
+  "md": "```\nbloco não fechado\nainda código\n```\n"
+ },
+ {
+  "kind": "md",
+  "source": "```\nbloco não fechado\nainda código",
+  "html": "<pre><code>bloco não fechado\nainda código</code></pre>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n```\nbloco não fechado\nainda código\n```\n"
+ },
+ {
+  "kind": "md",
+  "source": "- a\n- b\n  - b1\n  - b2\n    - b21\n- c\n\n1. um\n2. dois\n   1. dois-um\n3) três",
+  "html": "<ul><li>a</li><li>b<ul><li>b1</li><li>b2<ul><li>b21</li></ul></li></ul></li><li>c</li></ul><ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li><li>três</li></ol>",
+  "bodyEditor": "",
+  "md": "- a\n- b\n  - b1\n  - b2\n    - b21\n- c\n\n1. um\n2. dois\n   1. dois-um\n3. três\n"
+ },
+ {
+  "kind": "md",
+  "source": "- a\n- b\n  - b1\n  - b2\n    - b21\n- c\n\n1. um\n2. dois\n   1. dois-um\n3) três",
+  "html": "<ul><li>a</li><li>b<ul><li>b1</li><li>b2<ul><li>b21</li></ul></li></ul></li><li>c</li></ul><ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li><li>três</li></ol>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n- a\n- b\n  - b1\n  - b2\n    - b21\n- c\n\n1. um\n2. dois\n   1. dois-um\n3. três\n"
+ },
+ {
+  "kind": "md",
+  "source": "- [ ] tarefa\n- [x] feita\n- [X] também\n  - [ ] filha",
+  "html": "<ul><li class=\"task\"><input type=\"checkbox\">tarefa</li><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\" checked>também<ul><li class=\"task\"><input type=\"checkbox\">filha</li></ul></li></ul>",
+  "bodyEditor": "",
+  "md": "- [ ] tarefa\n- [x] feita\n- [x] também\n  - [ ] filha\n"
+ },
+ {
+  "kind": "md",
+  "source": "- [ ] tarefa\n- [x] feita\n- [X] também\n  - [ ] filha",
+  "html": "<ul><li class=\"task\"><input type=\"checkbox\">tarefa</li><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\" checked>também<ul><li class=\"task\"><input type=\"checkbox\">filha</li></ul></li></ul>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n- [ ] tarefa\n- [x] feita\n- [x] também\n  - [ ] filha\n"
+ },
+ {
+  "kind": "md",
+  "source": "| a | b | c |\n|:--|:-:|--:|\n| 1 | 2 | 3 |\n| x \\| y | | z |\n\nfim",
+  "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th style=\"text-align:left\">a</th><th style=\"text-align:center\">b</th><th style=\"text-align:right\">c</th></tr></thead><tbody><tr><td style=\"text-align:left\">1</td><td style=\"text-align:center\">2</td><td style=\"text-align:right\">3</td></tr><tr><td style=\"text-align:left\">x | y</td><td style=\"text-align:center\"><br></td><td style=\"text-align:right\">z</td></tr></tbody></table><p>fim</p>",
+  "bodyEditor": "",
+  "md": "| a | b | c |\n| :--- | :---: | ---: |\n| 1 | 2 | 3 |\n| x \\| y |  | z |\n\nfim\n"
+ },
+ {
+  "kind": "md",
+  "source": "| a | b | c |\n|:--|:-:|--:|\n| 1 | 2 | 3 |\n| x \\| y | | z |\n\nfim",
+  "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th style=\"text-align:left\">a</th><th style=\"text-align:center\">b</th><th style=\"text-align:right\">c</th></tr></thead><tbody><tr><td style=\"text-align:left\">1</td><td style=\"text-align:center\">2</td><td style=\"text-align:right\">3</td></tr><tr><td style=\"text-align:left\">x | y</td><td style=\"text-align:center\"><br></td><td style=\"text-align:right\">z</td></tr></tbody></table><p>fim</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n| a | b | c |\n| :--- | :---: | ---: |\n| 1 | 2 | 3 |\n| x \\| y |  | z |\n\nfim\n"
+ },
+ {
+  "kind": "md",
+  "source": "cabeça | outra\n--- | ---\nl1 | l2",
+  "html": "<table data-md-table=\"1\" data-align=\",\"><thead><tr><th>cabeça</th><th>outra</th></tr></thead><tbody><tr><td>l1</td><td>l2</td></tr></tbody></table>",
+  "bodyEditor": "",
+  "md": "| cabeça | outra |\n| --- | --- |\n| l1 | l2 |\n"
+ },
+ {
+  "kind": "md",
+  "source": "cabeça | outra\n--- | ---\nl1 | l2",
+  "html": "<table data-md-table=\"1\" data-align=\",\"><thead><tr><th>cabeça</th><th>outra</th></tr></thead><tbody><tr><td>l1</td><td>l2</td></tr></tbody></table>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n| cabeça | outra |\n| --- | --- |\n| l1 | l2 |\n"
+ },
+ {
+  "kind": "md",
+  "source": "> citação simples\n> segunda linha\n\n> [!tip] Dica\n> corpo da dica\n> mais\n\n> [!warning]\n> sem título\n\n> [!custom] Tipo livre\n> x",
+  "html": "<blockquote>citação simples<br>segunda linha</blockquote><div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Dica</div><div class=\"callout-body\">corpo da dica<br>mais</div></div><div class=\"callout callout-warning\" data-callout=\"warning\"><div class=\"callout-title\" data-default=\"Atenção\"><br></div><div class=\"callout-body\">sem título</div></div><div class=\"callout callout-custom\" data-callout=\"custom\"><div class=\"callout-title\" data-default=\"custom\">Tipo livre</div><div class=\"callout-body\">x</div></div>",
+  "bodyEditor": "",
+  "md": "> citação simples\n> segunda linha\n\n> [!tip] Dica\n> corpo da dica\n> mais\n\n> [!warning]\n> sem título\n\n> [!custom] Tipo livre\n> x\n"
+ },
+ {
+  "kind": "md",
+  "source": "> citação simples\n> segunda linha\n\n> [!tip] Dica\n> corpo da dica\n> mais\n\n> [!warning]\n> sem título\n\n> [!custom] Tipo livre\n> x",
+  "html": "<blockquote>citação simples<br>segunda linha</blockquote><div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Dica</div><div class=\"callout-body\">corpo da dica<br>mais</div></div><div class=\"callout callout-warning\" data-callout=\"warning\"><div class=\"callout-title\" data-default=\"Atenção\"><br></div><div class=\"callout-body\">sem título</div></div><div class=\"callout callout-custom\" data-callout=\"custom\"><div class=\"callout-title\" data-default=\"custom\">Tipo livre</div><div class=\"callout-body\">x</div></div>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n> citação simples\n> segunda linha\n\n> [!tip] Dica\n> corpo da dica\n> mais\n\n> [!warning]\n> sem título\n\n> [!custom] Tipo livre\n> x\n"
+ },
+ {
+  "kind": "md",
+  "source": "> [!note]+ Dobrável\n> conteúdo\n\n> [!danger]- Fechado\n> perigo",
+  "html": "<div class=\"callout callout-note\" data-callout=\"note\"><div class=\"callout-title\" data-default=\"Nota\">Dobrável</div><div class=\"callout-body\">conteúdo</div></div><div class=\"callout callout-danger\" data-callout=\"danger\"><div class=\"callout-title\" data-default=\"Perigo\">Fechado</div><div class=\"callout-body\">perigo</div></div>",
+  "bodyEditor": "",
+  "md": "> [!note] Dobrável\n> conteúdo\n\n> [!danger] Fechado\n> perigo\n"
+ },
+ {
+  "kind": "md",
+  "source": "> [!note]+ Dobrável\n> conteúdo\n\n> [!danger]- Fechado\n> perigo",
+  "html": "<div class=\"callout callout-note\" data-callout=\"note\"><div class=\"callout-title\" data-default=\"Nota\">Dobrável</div><div class=\"callout-body\">conteúdo</div></div><div class=\"callout callout-danger\" data-callout=\"danger\"><div class=\"callout-title\" data-default=\"Perigo\">Fechado</div><div class=\"callout-body\">perigo</div></div>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n> [!note] Dobrável\n> conteúdo\n\n> [!danger] Fechado\n> perigo\n"
+ },
+ {
+  "kind": "md",
+  "source": "---\ntitle: Nota\ntags: [a, b, \"c d\"]\naliases:\n  - um\n  - dois\nautor: Ana **Souza**\n---\n\n# Corpo\ntexto",
+  "html": "<section class=\"frontmatterCard\" contenteditable=\"false\" data-frontmatter-card=\"1\"><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">title</span><span class=\"frontmatterValue\">Nota</span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">tags</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">a</span><span class=\"frontmatterChip\">b</span><span class=\"frontmatterChip\">c d</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">aliases</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">um</span><span class=\"frontmatterChip\">dois</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">autor</span><span class=\"frontmatterValue\">Ana <strong>Souza</strong></span></div></section><h1>Corpo</h1><p>texto</p>",
+  "bodyEditor": "",
+  "md": "# Corpo\n\ntexto\n"
+ },
+ {
+  "kind": "md",
+  "source": "---\ntitle: Nota\ntags: [a, b, \"c d\"]\naliases:\n  - um\n  - dois\nautor: Ana **Souza**\n---\n\n# Corpo\ntexto",
+  "html": "<section class=\"frontmatterCard\" contenteditable=\"false\" data-frontmatter-card=\"1\"><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">title</span><span class=\"frontmatterValue\">Nota</span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">tags</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">a</span><span class=\"frontmatterChip\">b</span><span class=\"frontmatterChip\">c d</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">aliases</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">um</span><span class=\"frontmatterChip\">dois</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">autor</span><span class=\"frontmatterValue\">Ana <strong>Souza</strong></span></div></section><h1>Corpo</h1><p>texto</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n# Corpo\n\ntexto\n"
+ },
+ {
+  "kind": "md",
+  "source": "---\nsem fim\ntexto",
+  "html": "<hr><p>sem fim</p><p>texto</p>",
+  "bodyEditor": "",
+  "md": "---\n\nsem fim\n\ntexto\n"
+ },
+ {
+  "kind": "md",
+  "source": "---\nsem fim\ntexto",
+  "html": "<hr><p>sem fim</p><p>texto</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n---\n\nsem fim\n\ntexto\n"
+ },
+ {
+  "kind": "md",
+  "source": "---\n---\ncorpo",
+  "html": "<hr><hr><p>corpo</p>",
+  "bodyEditor": "",
+  "md": "---\n\n---\n\ncorpo\n"
+ },
+ {
+  "kind": "md",
+  "source": "---\n---\ncorpo",
+  "html": "<hr><hr><p>corpo</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n---\n\n---\n\ncorpo\n"
+ },
+ {
+  "kind": "md",
+  "source": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.",
+  "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>\u00022\u0002</code>.</p>",
+  "bodyEditor": "",
+  "md": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `\u00022\u0002`.\n"
+ },
+ {
+  "kind": "md",
+  "source": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.",
+  "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>\u00022\u0002</code>.</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\nVer [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `\u00022\u0002`.\n"
+ },
+ {
+  "kind": "md",
+  "source": "[x](javascript:alert(1)) [y](JaVaScRiPt:alert(1)) [z](vbscript:x) [w](file:///etc/passwd) [ok](https://a.b/c_d_e)",
+  "html": "<p><a href=\"#\" target=\"_blank\" rel=\"noopener\">x</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">y</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">z</a> <a href=\"#\" target=\"_blank\" rel=\"noopener\">w</a> <a href=\"https://a.b/c_d_e\" target=\"_blank\" rel=\"noopener\">ok</a></p>",
+  "bodyEditor": "",
+  "md": "[x](#)) [y](#)) [z](#) [w](#) [ok](https://a.b/c_d_e)\n"
+ },
+ {
+  "kind": "md",
+  "source": "[x](javascript:alert(1)) [y](JaVaScRiPt:alert(1)) [z](vbscript:x) [w](file:///etc/passwd) [ok](https://a.b/c_d_e)",
+  "html": "<p><a href=\"#\" target=\"_blank\" rel=\"noopener\">x</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">y</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">z</a> <a href=\"#\" target=\"_blank\" rel=\"noopener\">w</a> <a href=\"https://a.b/c_d_e\" target=\"_blank\" rel=\"noopener\">ok</a></p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n[x](#)) [y](#)) [z](#) [w](#) [ok](https://a.b/c_d_e)\n"
+ },
+ {
+  "kind": "md",
+  "source": "![img](https://a.b/i.png) ![x](data:image/png;base64,AAAA) ![evil](data:text/html;base64,AAAA) ![j](javascript:alert(1))",
+  "html": "<p><img src=\"https://a.b/i.png\" alt=\"img\"> <img src=\"data:image/png;base64,AAAA\" alt=\"x\"> <img src=\"#\" alt=\"evil\"> <img src=\"#\" alt=\"j\">)</p>",
+  "bodyEditor": "",
+  "md": "![img](https://a.b/i.png) ![x](data:image/png;base64,AAAA) ![evil](#) ![j](#))\n"
+ },
+ {
+  "kind": "md",
+  "source": "![img](https://a.b/i.png) ![x](data:image/png;base64,AAAA) ![evil](data:text/html;base64,AAAA) ![j](javascript:alert(1))",
+  "html": "<p><img src=\"https://a.b/i.png\" alt=\"img\"> <img src=\"data:image/png;base64,AAAA\" alt=\"x\"> <img src=\"#\" alt=\"evil\"> <img src=\"#\" alt=\"j\">)</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n![img](https://a.b/i.png) ![x](data:image/png;base64,AAAA) ![evil](#) ![j](#))\n"
+ },
+ {
+  "kind": "md",
+  "source": "[a](https://x.y/_blank_) e [b](https://x.y/_blank_) com _itálico_ depois e __negrito__",
+  "html": "<p><a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">a</a> e <a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">b</a> com <em>itálico</em> depois e <strong>negrito</strong></p>",
+  "bodyEditor": "",
+  "md": "[a](https://x.y/_blank_) e [b](https://x.y/_blank_) com _itálico_ depois e **negrito**\n"
+ },
+ {
+  "kind": "md",
+  "source": "[a](https://x.y/_blank_) e [b](https://x.y/_blank_) com _itálico_ depois e __negrito__",
+  "html": "<p><a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">a</a> e <a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">b</a> com <em>itálico</em> depois e <strong>negrito</strong></p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n[a](https://x.y/_blank_) e [b](https://x.y/_blank_) com _itálico_ depois e **negrito**\n"
+ },
+ {
+  "kind": "md",
+  "source": "<script>alert(1)</script> & <b>tag</b> \"aspas\" 'simples'",
+  "html": "<p>&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;b&gt;tag&lt;/b&gt; &quot;aspas&quot; &#39;simples&#39;</p>",
+  "bodyEditor": "",
+  "md": "<script>alert(1)</script> & <b>tag</b> \"aspas\" 'simples'\n"
+ },
+ {
+  "kind": "md",
+  "source": "<script>alert(1)</script> & <b>tag</b> \"aspas\" 'simples'",
+  "html": "<p>&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;b&gt;tag&lt;/b&gt; &quot;aspas&quot; &#39;simples&#39;</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n<script>alert(1)</script> & <b>tag</b> \"aspas\" 'simples'\n"
+ },
+ {
+  "kind": "md",
+  "source": "linha 1\nlinha 2\n\n\n\nlinha 3",
+  "html": "<p>linha 1</p><p>linha 2</p><p>linha 3</p>",
+  "bodyEditor": "",
+  "md": "linha 1\n\nlinha 2\n\nlinha 3\n"
+ },
+ {
+  "kind": "md",
+  "source": "linha 1\nlinha 2\n\n\n\nlinha 3",
+  "html": "<p>linha 1</p><p>linha 2</p><p>linha 3</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\nlinha 1\n\nlinha 2\n\nlinha 3\n"
+ },
+ {
+  "kind": "md",
+  "source": "***\n---\n___\n* * *\n- - -",
+  "html": "<hr><hr><hr><hr><hr>",
+  "bodyEditor": "",
+  "md": "---\n\n---\n\n---\n\n---\n\n---\n"
+ },
+ {
+  "kind": "md",
+  "source": "***\n---\n___\n* * *\n- - -",
+  "html": "<hr><hr><hr><hr><hr>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n---\n\n---\n\n---\n\n---\n\n---\n"
+ },
+ {
+  "kind": "md",
+  "source": "Fórmula inline $a^2+b^2=c^2$ e bloco:\n\n$$\n\\int_0^1 x\\,dx\n$$\n\ne \\(x\\) com \\[y\\].",
+  "html": "<p>Fórmula inline <span class=\"umath\" data-tex=\"a^2+b^2=c^2\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2+b^2=c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> e bloco:</p><div class=\"umath umath-block\" data-tex=\"\\int_0^1 x\\,dx\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><mi>x</mi><mtext> </mtext><mi>d</mi><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x\\,dx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span></span></span></span></span></div><p>e <span class=\"umath\" data-tex=\"x\" data-open=\"\\(\" data-close=\"\\)\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span> com <span class=\"umath umath-display\" data-tex=\"y\" data-open=\"\\[\" data-close=\"\\]\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></span>.</p>",
+  "bodyEditor": "",
+  "md": "Fórmula inline $a^2+b^2=c^2$ e bloco:\n\n$$\n\\int_0^1 x\\,dx\n$$\n\ne \\(x\\) com \\[y\\].\n"
+ },
+ {
+  "kind": "md",
+  "source": "Fórmula inline $a^2+b^2=c^2$ e bloco:\n\n$$\n\\int_0^1 x\\,dx\n$$\n\ne \\(x\\) com \\[y\\].",
+  "html": "<p>Fórmula inline <span class=\"umath\" data-tex=\"a^2+b^2=c^2\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2+b^2=c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> e bloco:</p><div class=\"umath umath-block\" data-tex=\"\\int_0^1 x\\,dx\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><mi>x</mi><mtext> </mtext><mi>d</mi><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x\\,dx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span></span></span></span></span></div><p>e <span class=\"umath\" data-tex=\"x\" data-open=\"\\(\" data-close=\"\\)\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span> com <span class=\"umath umath-display\" data-tex=\"y\" data-open=\"\\[\" data-close=\"\\]\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></span>.</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\nFórmula inline $a^2+b^2=c^2$ e bloco:\n\n$$\n\\int_0^1 x\\,dx\n$$\n\ne \\(x\\) com \\[y\\].\n"
+ },
+ {
+  "kind": "md",
+  "source": "$$\nA = B\n$$\n\n# Depois\n- item $x$",
+  "html": "<div class=\"umath umath-block\" data-tex=\"A = B\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>A</mi><mo>=</mo><mi>B</mi></mrow><annotation encoding=\"application/x-tex\">A = B</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\">A</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0502em;\">B</span></span></span></span></span></div><h1>Depois</h1><ul><li>item <span class=\"umath\" data-tex=\"x\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span></li></ul>",
+  "bodyEditor": "",
+  "md": "$$\nA = B\n$$\n\n# Depois\n\n- item $x$\n"
+ },
+ {
+  "kind": "md",
+  "source": "$$\nA = B\n$$\n\n# Depois\n- item $x$",
+  "html": "<div class=\"umath umath-block\" data-tex=\"A = B\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>A</mi><mo>=</mo><mi>B</mi></mrow><annotation encoding=\"application/x-tex\">A = B</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\">A</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0502em;\">B</span></span></span></span></span></div><h1>Depois</h1><ul><li>item <span class=\"umath\" data-tex=\"x\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span></li></ul>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n$$\nA = B\n$$\n\n# Depois\n\n- item $x$\n"
+ },
+ {
+  "kind": "md",
+  "source": "Preço R$ 5 e R$ 10 sem fórmula; 100$ também.",
+  "html": "<p>Preço R$ 5 e R$ 10 sem fórmula; 100$ também.</p>",
+  "bodyEditor": "",
+  "md": "Preço R$ 5 e R$ 10 sem fórmula; 100$ também.\n"
+ },
+ {
+  "kind": "md",
+  "source": "Preço R$ 5 e R$ 10 sem fórmula; 100$ também.",
+  "html": "<p>Preço R$ 5 e R$ 10 sem fórmula; 100$ também.</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\nPreço R$ 5 e R$ 10 sem fórmula; 100$ também.\n"
+ },
+ {
+  "kind": "md",
+  "source": "",
+  "html": "<p><br></p>",
+  "bodyEditor": "",
+  "md": ""
+ },
+ {
+  "kind": "md",
+  "source": "",
+  "html": "<p><br></p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---"
+ },
+ {
+  "kind": "md",
+  "source": "   ",
+  "html": "<p><br></p>",
+  "bodyEditor": "",
+  "md": ""
+ },
+ {
+  "kind": "md",
+  "source": "   ",
+  "html": "<p><br></p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---"
+ },
+ {
+  "kind": "md",
+  "source": "\r\n# CRLF\r\n\r\n- a\r\n- b\r\n",
+  "html": "<h1>CRLF</h1><ul><li>a</li><li>b</li></ul>",
+  "bodyEditor": "",
+  "md": "# CRLF\n\n- a\n- b\n"
+ },
+ {
+  "kind": "md",
+  "source": "\r\n# CRLF\r\n\r\n- a\r\n- b\r\n",
+  "html": "<h1>CRLF</h1><ul><li>a</li><li>b</li></ul>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n# CRLF\n\n- a\n- b\n"
+ },
+ {
+  "kind": "md",
+  "source": "texto *sem fechar e **negrito sem fechar e `crase sem fechar",
+  "html": "<p>texto *sem fechar e **negrito sem fechar e `crase sem fechar</p>",
+  "bodyEditor": "",
+  "md": "texto *sem fechar e **negrito sem fechar e `crase sem fechar\n"
+ },
+ {
+  "kind": "md",
+  "source": "texto *sem fechar e **negrito sem fechar e `crase sem fechar",
+  "html": "<p>texto *sem fechar e **negrito sem fechar e `crase sem fechar</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\ntexto *sem fechar e **negrito sem fechar e `crase sem fechar\n"
+ },
+ {
+  "kind": "md",
+  "source": "1. a\n- b\n2. c\n   - d",
+  "html": "<ol><li>a</li></ol><ul><li>b</li></ul><ol><li>c<ul><li>d</li></ul></li></ol>",
+  "bodyEditor": "",
+  "md": "1. a\n\n- b\n\n1. c\n   - d\n"
+ },
+ {
+  "kind": "md",
+  "source": "1. a\n- b\n2. c\n   - d",
+  "html": "<ol><li>a</li></ol><ul><li>b</li></ul><ol><li>c<ul><li>d</li></ul></li></ol>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n1. a\n\n- b\n\n1. c\n   - d\n"
+ },
+ {
+  "kind": "md",
+  "source": "|solta|\ntexto| com pipe\n\n|a|\n|-|\n|1|",
+  "html": "<p>|solta|</p><p>texto| com pipe</p><table data-md-table=\"1\" data-align=\"\"><thead><tr><th>a</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>",
+  "bodyEditor": "",
+  "md": "|solta|\n\ntexto| com pipe\n\n| a |\n| --- |\n| 1 |\n"
+ },
+ {
+  "kind": "md",
+  "source": "|solta|\ntexto| com pipe\n\n|a|\n|-|\n|1|",
+  "html": "<p>|solta|</p><p>texto| com pipe</p><table data-md-table=\"1\" data-align=\"\"><thead><tr><th>a</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n|solta|\n\ntexto| com pipe\n\n| a |\n| --- |\n| 1 |\n"
+ },
+ {
+  "kind": "md",
+  "source": "> # título em citação\n> - lista em citação\n> | t | u |\n> |---|---|",
+  "html": "<blockquote># título em citação<br>- lista em citação<br>| t | u |<br>|---|---|</blockquote>",
+  "bodyEditor": "",
+  "md": "> # título em citação\n> - lista em citação\n> | t | u |\n> |---|---|\n"
+ },
+ {
+  "kind": "md",
+  "source": "> # título em citação\n> - lista em citação\n> | t | u |\n> |---|---|",
+  "html": "<blockquote># título em citação<br>- lista em citação<br>| t | u |<br>|---|---|</blockquote>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n> # título em citação\n> - lista em citação\n> | t | u |\n> |---|---|\n"
+ },
+ {
+  "kind": "md",
+  "source": "Texto com emoji 😀 e acentuação: ação, coração, açaí.\n\n## Seção ✓",
+  "html": "<p>Texto com emoji 😀 e acentuação: ação, coração, açaí.</p><h2>Seção ✓</h2>",
+  "bodyEditor": "",
+  "md": "Texto com emoji 😀 e acentuação: ação, coração, açaí.\n\n## Seção ✓\n"
+ },
+ {
+  "kind": "md",
+  "source": "Texto com emoji 😀 e acentuação: ação, coração, açaí.\n\n## Seção ✓",
+  "html": "<p>Texto com emoji 😀 e acentuação: ação, coração, açaí.</p><h2>Seção ✓</h2>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\nTexto com emoji 😀 e acentuação: ação, coração, açaí.\n\n## Seção ✓\n"
+ },
+ {
+  "kind": "md",
+  "source": "# Nota longa\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\n",
+  "html": "<h1>Nota longa</h1><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p>",
+  "bodyEditor": "",
+  "md": "# Nota longa\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n"
+ },
+ {
+  "kind": "md",
+  "source": "# Nota longa\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\n",
+  "html": "<h1>Nota longa</h1><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n# Nota longa\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<div>texto<br></div>",
+  "bodyEditor": "",
+  "md": "texto\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<div>texto<br></div>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\ntexto\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p>a</p><p><br></p><p>b</p>",
+  "bodyEditor": "",
+  "md": "a\n\nb\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p>a</p><p><br></p><p>b</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\na\n\nb\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<b>x</b> <i>y</i> <strong>z</strong> <em>w</em>",
+  "bodyEditor": "",
+  "md": "x\n\ny\n\nz\n\nw\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<b>x</b> <i>y</i> <strong>z</strong> <em>w</em>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\nx\n\ny\n\nz\n\nw\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<span style=\"font-weight:700\">negrito</span> <span style=\"font-style:italic\">it</span>",
+  "bodyEditor": "",
+  "md": "negrito\n\nit\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<span style=\"font-weight:700\">negrito</span> <span style=\"font-style:italic\">it</span>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\nnegrito\n\nit\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<h1><br></h1><h2>t​</h2>",
+  "bodyEditor": "",
+  "md": "# \n\n## t\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<h1><br></h1><h2>t​</h2>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n# \n\n## t\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<h3>título <b>forte</b></h3><p>depois</p>",
+  "bodyEditor": "",
+  "md": "### título **forte**\n\ndepois\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<h3>título <b>forte</b></h3><p>depois</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n### título **forte**\n\ndepois\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<ul><li>a<ul><li>b<ul><li>c</li></ul></li></ul></li><li>d</li></ul>",
+  "bodyEditor": "",
+  "md": "- a\n  - b\n    - c\n- d\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<ul><li>a<ul><li>b<ul><li>c</li></ul></li></ul></li><li>d</li></ul>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n- a\n  - b\n    - c\n- d\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li></ol>",
+  "bodyEditor": "",
+  "md": "1. um\n2. dois\n   1. dois-um\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li></ol>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n1. um\n2. dois\n   1. dois-um\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<ul><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\">aberta</li></ul>",
+  "bodyEditor": "",
+  "md": "- [x] feita\n- [ ] aberta\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<ul><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\">aberta</li></ul>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n- [x] feita\n- [ ] aberta\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th>a</th><th>b</th><th>c</th></tr></thead><tbody><tr><td>1</td><td>x | y</td><td><br></td></tr></tbody></table>",
+  "bodyEditor": "",
+  "md": "| a | b | c |\n| :--- | :---: | ---: |\n| 1 | x \\| y |  |\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th>a</th><th>b</th><th>c</th></tr></thead><tbody><tr><td>1</td><td>x | y</td><td><br></td></tr></tbody></table>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n| a | b | c |\n| :--- | :---: | ---: |\n| 1 | x \\| y |  |\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Título</div><div class=\"callout-body\"><p>corpo</p><p>mais</p></div></div>",
+  "bodyEditor": "",
+  "md": "> [!tip] Título\n> corpomais\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Título</div><div class=\"callout-body\"><p>corpo</p><p>mais</p></div></div>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n> [!tip] Título\n> corpomais\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<blockquote>citação<br>segunda</blockquote>",
+  "bodyEditor": "",
+  "md": "> citação\n> segunda\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<blockquote>citação<br>segunda</blockquote>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n> citação\n> segunda\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;\nfim</code></pre><pre><code>sem lang</code></pre>",
+  "bodyEditor": "",
+  "md": "```js\nconst a = 1 < 2;\nfim\n```\n\n```\nsem lang\n```\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;\nfim</code></pre><pre><code>sem lang</code></pre>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n```js\nconst a = 1 < 2;\nfim\n```\n\n```\nsem lang\n```\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p><a href=\"https://a.b/c\">rótulo</a> e <img src=\"https://a.b/i.png\" alt=\"alt\"> e <code>cod</code></p>",
+  "bodyEditor": "",
+  "md": "[rótulo](https://a.b/c) e ![alt](https://a.b/i.png) e `cod`\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p><a href=\"https://a.b/c\">rótulo</a> e <img src=\"https://a.b/i.png\" alt=\"alt\"> e <code>cod</code></p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n[rótulo](https://a.b/c) e ![alt](https://a.b/i.png) e `cod`\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p><span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span> e <span class=\"wikilink\" data-note-name=\"Alvo\">rótulo</span></p>",
+  "bodyEditor": "",
+  "md": "[[Nota A]] e [[Alvo|rótulo]]\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p><span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span> e <span class=\"wikilink\" data-note-name=\"Alvo\">rótulo</span></p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n[[Nota A]] e [[Alvo|rótulo]]\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<hr><p>após hr</p>",
+  "bodyEditor": "",
+  "md": "---\n\napós hr\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<hr><p>após hr</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n---\n\napós hr\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<div>solto</div><div>outro<br></div><div><br></div>",
+  "bodyEditor": "",
+  "md": "solto\n\noutro\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<div>solto</div><div>outro<br></div><div><br></div>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\nsolto\n\noutro\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p>a&nbsp;b &amp; &lt;tag&gt;</p>",
+  "bodyEditor": "",
+  "md": "a b & <tag>\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p>a&nbsp;b &amp; &lt;tag&gt;</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\na b & <tag>\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<section><p>dentro de section</p></section>",
+  "bodyEditor": "",
+  "md": "dentro de section\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<section><p>dentro de section</p></section>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\ndentro de section\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p>​</p><p>a​b</p>",
+  "bodyEditor": "",
+  "md": "\n\nab\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<p>​</p><p>a​b</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\n\n\nab\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<div data-frontmatter-card=\"1\" contenteditable=\"false\"><div class=\"frontmatterRow\"><span>k</span><span>v</span></div></div><p>corpo</p>",
+  "bodyEditor": "",
+  "md": "corpo\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "<div data-frontmatter-card=\"1\" contenteditable=\"false\"><div class=\"frontmatterRow\"><span>k</span><span>v</span></div></div><p>corpo</p>",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---\ncorpo\n"
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "",
+  "bodyEditor": "",
+  "md": ""
+ },
+ {
+  "kind": "html",
+  "source": "",
+  "html": "",
+  "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
+  "md": "---\ntitle: X\ntags: [a]\n---"
+ }
+]

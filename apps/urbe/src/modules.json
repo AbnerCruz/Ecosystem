@@ -1449,6 +1449,31 @@
       ]
     },
     {
+      "name": "editor/visual",
+      "file": "src/editor/visual.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeVisual"
+        ],
+        "services": [
+          "editor.visual"
+        ]
+      },
+      "requires": [
+        "src/core/core.js"
+      ],
+      "uses": [
+        "src/math/editor.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
       "name": "app",
       "file": "src/app.js",
       "layer": "app",
@@ -1492,7 +1517,8 @@
         "src/world/layout-guard.js",
         "src/persistence/export-manifest.js",
         "src/persistence/multi-city.js",
-        "src/editor/markdown.js"
+        "src/editor/markdown.js",
+        "src/editor/visual.js"
       ],
       "uses": [
         "src/pages/studio.js",

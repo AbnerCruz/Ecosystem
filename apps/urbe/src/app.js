@@ -673,110 +673,7 @@ function commitWikiSuggestion(b){
 
 let visualSyncLock=false;
 
-function markdownFromVisual(root){
-  const out=[];
-
-  function textInline(node){
-    if(node.nodeType===Node.TEXT_NODE)return node.nodeValue;
-    if(node.nodeType!==Node.ELEMENT_NODE)return "";
-    const el=node, tag=el.tagName.toLowerCase();
-    const inner=[...el.childNodes].map(textInline).join("");
-
-    if(tag==="strong"||tag==="b")return `**${inner}**`;
-    if(tag==="em"||tag==="i")return `_${inner}_`;
-    if(tag==="del"||tag==="s")return `~~${inner}~~`;
-    if(tag==="code" && el.parentElement?.tagName.toLowerCase()!=="pre")return `\`${inner}\``;
-    if(tag==="a")return `[${inner}](${el.getAttribute("href")||""})`;
-    if(tag==="img")return `![${el.getAttribute("alt")||""}](${el.getAttribute("src")||""})`;
-    if(el.classList.contains("wikilink")){
-      const alvo=el.dataset.noteName||inner,rotulo=inner.trim();
-      return rotulo&&rotulo!==alvo?`[[${alvo}|${rotulo}]]`:`[[${alvo}]]`;
-    }
-    if(tag==="ul"||tag==="ol"||tag==="input")return "";
-    if(tag==="br")return "\n";
-    return inner;
-  }
-
-  function block(el){
-    if(el.nodeType===Node.TEXT_NODE){
-      const t=el.nodeValue.trim();
-      if(t)out.push(t);
-      return;
-    }
-    if(el.nodeType!==Node.ELEMENT_NODE)return;
-    const tag=el.tagName.toLowerCase();
-    if(el.hasAttribute("data-frontmatter-card"))return;
-    if(el.dataset&&el.dataset.callout){
-      const titulo=el.querySelector(".callout-title"),corpo=el.querySelector(".callout-body");
-      const t=titulo?textInline(titulo).replace(/\n/g," ").trim():"",b=corpo?textInline(corpo).replace(/\n+$/,""):"";
-      out.push(["> [!"+el.dataset.callout+"]"+(t?" "+t:"")].concat(b.trim()?b.split("\n").map(x=>x?"> "+x:">"):[]).join("\n"));
-      return;
-    }
-
-    if(/^h[1-6]$/.test(tag)){
-      out.push("#".repeat(Number(tag[1]))+" "+textInline(el).trim());
-      return;
-    }
-    // O navegador cria <div> ao sair de uma lista; se ele contém blocos, serializa cada um.
-    if(tag==="div"&&[...el.children].some(c=>/^(P|DIV|H[1-6]|UL|OL|BLOCKQUOTE|PRE|HR|TABLE)$/.test(c.tagName))){
-      [...el.childNodes].forEach(block);
-      return;
-    }
-    if(tag==="p"||tag==="div"){
-      const t=textInline(el).trim();
-      if(t)out.push(t);
-      return;
-    }
-    if(tag==="blockquote"){
-      const linhas=[...el.childNodes].map(n=>/^(P|DIV)$/.test(n.nodeName)?textInline(n)+"\n":textInline(n)).join("").replace(/\n+$/,"").split("\n");
-      out.push(linhas.map(x=>x?"> "+x:">").join("\n"));
-      return;
-    }
-    if(tag==="table"){
-      const rows=[...el.querySelectorAll("tr")];if(!rows.length)return;
-      const cel=c=>textInline(c).replace(/\n/g," ").replace(/\|/g,"\\|").trim();
-      const head=[...rows[0].children].map(cel),al=(el.dataset.align||"").split(",");
-      const sep=head.map((_,k)=>{const a=al[k]||(rows[0].children[k]&&rows[0].children[k].style.textAlign)||"";return a==="center"?":---:":a==="right"?"---:":a==="left"?":---":"---"});
-      const linhas=["| "+head.join(" | ")+" |","| "+sep.join(" | ")+" |"];
-      rows.slice(1).forEach(r=>{const cs=[...r.children].map(cel);while(cs.length<head.length)cs.push("");linhas.push("| "+cs.join(" | ")+" |")});
-      out.push(linhas.join("\n"));
-      return;
-    }
-    if(tag==="pre"){
-      out.push("```"+(el.dataset.lang||"")+"\n"+el.innerText.replace(/\n+$/,"")+"\n```");
-      return;
-    }
-    if(tag==="hr"){
-      out.push("---");
-      return;
-    }
-    if(tag==="ul"||tag==="ol"){
-      /* itens de uma lista ficam em linhas seguidas, sem linha em branco entre eles;
-         sublistas descem até o início do texto do item de cima */
-      const itens=[];
-      (function lista(ul,recuo){
-        const ord=ul.tagName.toLowerCase()==="ol";let n=0;
-        [...ul.children].forEach(li=>{
-          if(li.tagName.toLowerCase()!=="li")return;n++;
-          const checkbox=[...li.children].find(c=>c.tagName==="INPUT"&&c.type==="checkbox");
-          const content=textInline(li).replace(/\n+/g," ").trim();
-          const marca=checkbox?`- [${checkbox.checked?"x":" "}] `:ord?n+". ":"- ";
-          itens.push(recuo+marca+content);
-          [...li.children].filter(c=>/^(UL|OL)$/.test(c.tagName)).forEach(sub=>lista(sub,recuo+" ".repeat(ord?String(n).length+2:2)));
-        });
-      })(el,"");
-      if(itens.length)out.push(itens.join("\n"));
-      return;
-    }
-
-    [...el.childNodes].forEach(block);
-  }
-
-  [...root.childNodes].forEach(block);
-  const body=out.join("\n\n").replace(/\n{3,}/g,"\n\n").trim();
-  const fm=splitFrontmatter(bodyEditor.value).raw;
-  return (fm?fm+(body?"\n":""):"")+(body?body+"\n":"");
-}
+function markdownFromVisual(root){return window.UrbeVisual.markdownFromVisual(root,{frontmatter:splitFrontmatter(bodyEditor.value).raw})}
 
 function bindPreviewWikiLinks(){
   renderedPreview.querySelectorAll("[data-note-name]").forEach(el=>{
@@ -2806,17 +2703,7 @@ insertAtCursor=function(prefix,suffix){
   return v22Insert(prefix,suffix);
 };
 
-var v22BaseFromVisual=markdownFromVisual;
-markdownFromVisual=function(root){
-  return v22BaseFromVisual(root).replace(/\u200b/g,'').replace(/^(#{1,6})[ \t]*$/gm,'$1 ');
-};
-
-/* ---------- matemática (src/math) ----------
-   As fórmulas saem do Markdown antes da renderização e voltam como blocos
-   atômicos; no caminho de volta cada uma é reescrita com os delimitadores
-   originais. Tudo o que é específico de matemática vive em src/math. */
-var urbeMathBaseFromVisual=markdownFromVisual;
-markdownFromVisual=function(root){var E=window.UrbeMathEditor;return E&&E.serialize?E.serialize(urbeMathBaseFromVisual,root):urbeMathBaseFromVisual(root)};
+/* A volta Visual → Markdown (U+200B, "#" vazio e matemática) vive em src/editor/visual.js (RM-F2-10). */
 
 /* ---------- 5. mapa.json só é gravado quando muda de verdade ----------
    O campo "salvo" trazia a hora atual, então a comparação com o snapshot
