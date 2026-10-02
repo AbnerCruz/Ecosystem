@@ -10,13 +10,13 @@
   "branch": "ccr-p3-9a-carga-de-dados",
   "base_commit": "29f7782",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/60",
   "blockers": [],
   "cost": null,
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261002-p3-10-carga-de-dados",
-  "timestamp": "2026-10-02T11:48:47Z",
+  "timestamp": "2026-10-02T12:00:12Z",
   "task_id": "P3-10",
   "criticality": {
     "declared": "routine",
@@ -38,7 +38,9 @@
     "DECISÃO LOCAL (detalhe de implementação, MANIFEST §22.4): a P3-9 foi dividida; a parte de dados virou o item novo P3-10 (ID novo, nunca reutilizado), pré-requisito da P3-9, e a P3-9 continua sendo só a camada Android. Nenhum item existente mudou de significado; apenas as dependências de P3-9 e P3-8 passaram a citar P3-10.",
     "ALTERAÇÃO (P3-10): RepositoryFileSource (texto por raw.githubusercontent.com; listagem de pasta pela API de conteúdos, só arquivos), HubLoader (lê ecosystem.json, ROADMAP, decisions.json, a pasta de handoffs com concorrência limitada a 8, a leitura do GitHub e as releases de cada Product no repositório de origem declarado em ecosystem.json; monta Products, Past/Now/Next e releases num HubSnapshot) e SnapshotCache (serializa o último HubSnapshot; ao recarregar, tudo volta Stale e conteúdo quebrado vira 'sem estado anterior', nunca exceção). Cada arquivo ou chamada que falha vira nota/NotAvailable com o motivo sem derrubar o resto; handoffs ausentes são contados na nota, não escondidos. O repositório do Ecosystem é a única entrada que o app precisa fornecer (HubOptions); todo o resto é descoberto nos dados.",
     "REFATORAÇÃO MÍNIMA: o tratamento de rede/HTTP que estava dentro do GitHubReader passou para GitHubHttp (interno) para ser reutilizado pela leitura de arquivos; o comportamento é o mesmo (os 57 testes anteriores passam sem alteração). PastNowNext ganhou um construtor primário com Notes e um construtor de 3 argumentos, marcado para a serialização do cache.",
-    "NÃO FEITO, de propósito: o projeto Android e o build do APK (P3-9, em PR próprio); a escolha de onde guardar o cache e o token no aparelho; nenhuma chamada à API real. P3-10 permanece [ ] no ROADMAP até a integração."
+    "NÃO FEITO, de propósito: o projeto Android e o build do APK (P3-9, em PR próprio); a escolha de onde guardar o cache e o token no aparelho; nenhuma chamada à API real. P3-10 permanece [ ] no ROADMAP até a integração.",
+    "INTEGRAÇÃO (FATO, conferido no GitHub e no git): o PR #60 (head 76b93c2) foi integrado na main pelo integrador automático no commit 6f69efaad40c32fdb5a954bafbfa84a4250f9d4f, com trailers Integration-Criticality: routine, Integration-Main: fa2649b e Integration-PR-Head: 76b93c2, em 2026-10-02, sem label nem toque do proprietário. No head 76b93c2: hub-ci (run 37003773389, job test), os dois Foundation consistency checks e, no estado combinado do integrador (run 37003773822), 'CI do Hub no estado combinado / test' e 'Checks do Ecosystem no estado combinado' = success; os CIs de Urbe e Lunet2D ficaram skipped.",
+    "OBSERVAÇÃO: esta foi a primeira execução real do job 'hub' do integrador (acrescentado na P3-3): um PR que muda apps/hub passou a ter o hub-ci rodado no estado combinado, como pretendido; antes disso a ligação só estava provada em simulate.sh."
   ],
   "verification": [
     {
@@ -46,6 +48,13 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "70/70 testes; os 13 novos cobrem carga completa (Products, versão por arquivo remoto, Past/Now/Next com handoffs e GitHub, releases por Product), apenas raw/api.github.com e só GET, tudo fora do ar, limite da API (403) escondendo só o que depende dela, handoff ausente, cancelamento do chamador, ida e volta do cache como Stale, cache vazio/quebrado e VersionFiles."
+    },
+    {
+      "check": "Checks do PR #60 no head integrado e no estado combinado do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "76b93c2603e241ccb017fc8780aa892ec1dbb08d",
+      "evidence": "hub-ci run 37003773389 (test), Foundation consistency checks (2 execuções) e, no run do integrador 37003773822, 'CI do Hub no estado combinado / test' e 'Checks do Ecosystem no estado combinado' = success no head 76b93c2; integração automática como rotina em 6f69efa. Limite: os checks pós-merge da main em 6f69efa não foram conferidos aqui, e nenhuma chamada foi feita à rede real."
     }
   ],
   "known_issues": [
@@ -54,8 +63,8 @@
     "Nada validado em aparelho nem contra a rede real (NN-017); o gate P3-8 segue pendente."
   ],
   "next_actions": [
-    "Integrador avalia o PR; sendo rotina verde, entra sozinho.",
-    "Depois de integrada: P3-10 [x], handoff done. Em seguida P3-9: projeto Hub.Android (net10.0-android) sobre o HubLoader + job de build do APK no CI (workflow novo no control plane, portanto crítico). O workload Android foi instalado neste ambiente, mas o Android SDK não; o build será provado no CI."
+    "Agente: P3-9 (projeto Hub.Android, net10.0-android, sobre o HubLoader/SnapshotCache) + job de build do APK no CI (workflow novo no control plane: mudança crítica, aguarda a autorização do proprietário). O workload Android foi instalado no ambiente do agente, mas o Android SDK não; o build será provado no CI.",
+    "Depois: P3-7 (empacotamento e release) e P3-1; o gate P3-8 segue pendente de validação humana em aparelho (NN-017)."
   ],
   "decisions_required": [],
   "normative_sources": [
