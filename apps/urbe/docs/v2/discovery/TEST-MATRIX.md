@@ -70,7 +70,7 @@
 | Unitário/contrato | Node `vm`/ESM | core, documents, pages, ai, contratos de adapter | G1+ |
 | Fixtures de dados | Node + `tests/fixtures/vaults/*` | abertura/migração de vaults históricos; proteção forward | G1 |
 | Integração de plataforma | Node + Electron/Capacitor mocks + JUnit | `main.js`, `preload`, plugin Java, SW | G3/G4 |
-| E2E | Playwright (web) + smoke Electron (`URBE_TEST_*`) | abrir vault fixture, criar nota, salvar, recarregar, plugin, IA mock | G4 |
+| E2E | Playwright (web) + smoke Electron (`URBE_TEST_*`) | abrir vault fixture, criar nota, salvar, recarregar, plugin, IA mock; harness de produção do monólito `tests/e2e/app-runtime.mjs` (RM-F2-02) | G4 |
 | Performance | script de harness versionado | abertura/edição/busca/cidade/memória | G5 |
 | Manual | checklist em `docs/v2/manual/` | Android real (voltar, permissão, update), SmartScreen | G6 |
 | Segurança | testes de propriedade | zip-slip, CSP, sandbox, permissions | G3 |

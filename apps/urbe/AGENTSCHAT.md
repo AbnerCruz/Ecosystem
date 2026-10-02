@@ -5,6 +5,14 @@
 
 ---
 
+### 2026-10-02 — Claude — RM-F2-01 `[x]` e RM-F2-02 `[?]` (U-R1, monorepo Ecosystem)
+- **Estado:** RM-F2-01 concluído (relatório + script + teste). RM-F2-02 implementado e verde localmente; `[?]` porque os E2E não rodam no CI (nenhum workflow instala o Chromium).
+- **Feito:** `tools/hotspots.mjs`, `docs/v2/discovery/HOTSPOTS.md` (métricas geradas + decisão por arquivo: nenhum dos 7 é extraído agora), `tests/hotspots.mjs`; `tests/e2e/app-runtime.mjs` (harness) e `app-runtime.e2e.mjs` (boot, fixture, criar nota, mundo, recarregar).
+- **Decisões (com fonte):** harness em `tests/e2e/` e não em `tests/` (RM-F2-02 dizia `tests/app-runtime.mjs`): `npm test` roda todo `tests/*.mjs` sem navegador. Registrado no item.
+- **Achado (proposta, não decisão):** `pages/studio` tem o maior acoplamento de UI fora do `app.js`; resolver `studio → ai/ui` exige item novo + ADR (HOTSPOTS §3).
+- **Verificação:** `node tests/hotspots.mjs`; `node tools/run-e2e.mjs app-runtime zip smoke`; `npm run check`.
+- **Próximos passos:** RM-F2-04, RM-F2-09 (usa o harness). Zona crítica da política de integração: `src/persistence/**` — não tocar sem aprovação.
+
 ### 2026-10-02 — Claude — governança: integração rotineira automática (ADD-0012 do Ecosystem)
 - **Estado:** a regra de merge do Urbe em `AGENTS.md` §3 mudou (Ecosystem PR #40, integrado pelo proprietário): trabalho **rotineiro** do Urbe entra na `main` sozinho pelo integrador do Ecosystem, com `npm run check` e o CI verdes no estado combinado; **crítico** (dados, fronteira de confiança do desktop/plugins/credenciais, assinatura/identidade/canal, licença, ADR consolidado) espera a autorização do proprietário.
 - **Feito:** datas corrigidas (o encerramento do RM-F2-03 foi em 2026-10-01, não 10-02) neste log e em `docs/v2/ROADMAP.md`. Esta mudança é o canário rotineiro: não toca zona crítica.

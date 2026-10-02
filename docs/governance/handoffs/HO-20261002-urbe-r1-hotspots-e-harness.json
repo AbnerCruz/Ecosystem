@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
+  },
+  "branch": "ccr-5adec8cc-oy464b",
+  "base_commit": "5c2bc76",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261002-urbe-r1-hotspots-e-harness",
+  "timestamp": "2026-10-02T03:41:00Z",
+  "task_id": "UR1-2",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Relatório, script de métricas, testes e harness E2E dentro de apps/urbe; nenhuma zona crítica da política (sem src/persistence, dados, segurança ou distribuição)."
+  },
+  "files_changed": [
+    "apps/urbe/tools/hotspots.mjs",
+    "apps/urbe/tests/hotspots.mjs",
+    "apps/urbe/docs/v2/discovery/HOTSPOTS.md",
+    "apps/urbe/tests/e2e/app-runtime.mjs",
+    "apps/urbe/tests/e2e/app-runtime.e2e.mjs",
+    "apps/urbe/docs/v2/discovery/TEST-MATRIX.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/TRACEABILITY.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261002-urbe-r1-hotspots-e-harness.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: a origem main avançou desde a sessão anterior (fluxo multiagente ADR-0014/0015, integrador automático, ADD-0012); RM-F2-03 já estava [x] na main. Diretrizes relidas: AGENTS.md (Ecosystem e Urbe), multi-agent.md, integration-policy.json, communication.md §9.1, CONTRIBUTING do Urbe. Branch atualizada (ff com a origem da branch + merge da main 5c2bc76). Escopo: apenas Urbe; Lunet2D ficou com outro agente.",
+    "RM-F2-01 (REQ-022) [x]: tools/hotspots.mjs mede linhas, funções, fan-in/out, superfície, DOM, armazenamento e exceções de boundary dos sete hotspots; HOTSPOTS.md traz o bloco gerado e uma leitura/decisão por arquivo (todos 'Manter'; nenhuma extração). Fatos conferidos no código (consumidores de engine, studio, ai/ui, pixel-art; life consumido via serviço world.life.host; panel acionado pelo comando ui.customize). tests/hotspots.mjs falha se o relatório divergir ou faltar decisão.",
+    "INFERÊNCIA/PROPOSTA registrada no relatório (não decisão): studio -> ai/ui é o maior acoplamento de UI fora do app.js; resolvê-lo exige item novo + ADR de boundary.",
+    "RM-F2-02 (REQ-064/003) [?]: harness tests/e2e/app-runtime.mjs (startRuntime/open/createNote/world/reload/expectNoErrors) sobre o index.html real em Chromium e cenário app-runtime.e2e.mjs (boot, fixture histórica, criar nota, mundo, recarregar, vault S). Fica em tests/e2e/ (npm test roda todo tests/*.mjs sem navegador). Estado [?] porque os E2E não rodam em nenhum workflow (o CI não instala o Chromium).",
+    "Também verificado: zip.e2e e smoke.e2e passam (valida a movimentação do JSZip de RM-F2-03 em navegador real).",
+    "Nada tocado em src/persistence, formatos de dados, boundaries, contratos, versão, release, Web/PWA, Electron ou Capacitor. RM-F2-01 [x] (relatório, script e teste provados); RM-F2-02 [?] (harness criado e executado localmente em Chromium real; falta gate no CI)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram na branch reconciliada (base 5c2bc76), incluindo CHK-HANDOFFS, CHK-ADR e CHK-DECISIONS; o CI do commit anterior só falhava pelos timestamps futuros."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "'todos os checks provaram detectar suas violações'."
+    },
+    {
+      "check": "npm run check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "57/57 arquivos de teste; check-modules, dívida, rastreabilidade (TRACEABILITY.md em dia), workflows, licença, catálogo, fixtures e tutorial verdes."
+    },
+    {
+      "check": "node tools/run-e2e.mjs app-runtime zip smoke (Chromium real, local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "3/3 cenários E2E passaram localmente; não rodam no CI (ver known_issues)."
+    }
+  ],
+  "known_issues": [
+    "CORRIGIDO: o primeiro push (83eb82f/e71f950) deixou o CHK-HANDOFFS vermelho só porque este handoff trazia um timestamp inventado no futuro (2026-10-02T12:00:00Z); agora o timestamp é a hora real do commit. Foi a única causa do consistency vermelho (run 36961491644: os outros 21 checks passaram).",
+    "Os E2E (inclusive o harness novo) não fazem parte do CI do Urbe: nenhum workflow instala o Chromium. Por isso RM-F2-02 continua [?] — não será marcado [x] só porque passou localmente; só depois de um gate no CI ou de decisão registrada de mantê-lo local.",
+    "As métricas de hotspots são regex, não análise sintática; o fan-in estático não vê acoplamento por comando/serviço dinâmico.",
+    "Este handoff e o HO-20261002-urbe-migracao-csharp-decisao vão no mesmo PR; pela política atual o PR combinado é CRÍTICO (decisions.json e docs/adr/**) e não integra sozinho. A parte U-R1 é rotina e não depende da decisão de C#."
+  ],
+  "next_actions": [
+    "Integrador: avaliar o estado combinado do PR (crítico: aguarda a autorização do proprietário).",
+    "RM-F2-02: ligar os E2E ao CI do Urbe (ou registrar a decisão de mantê-los locais); depois [x].",
+    "Itens seguintes de U-R1 em JavaScript: RM-F2-04 e RM-F2-09, com o harness. Nenhum item de U-R1 é convertido em migração C# (isso é trabalho separado, depende de DEC-0024).",
+    "Depois do merge: disparar sync-from-ecosystem.yml em AbnerCruz/Urbe (DEC-0017-A)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/architecture/refactoring.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/CONTRIBUTING.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/SPEC.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças só em apps/urbe; nenhuma referência a Lunet2D ou Hub."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma mudança de boundary/dados; o acoplamento studio->ai/ui ficou como achado, não como decisão."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Escopo restrito a RM-F2-01/02: análise e testes, sem alterar comportamento do produto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem validação humana necessária; limitação de CI do E2E declarada e item mantido [?]."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "npm run check e E2E reais com evidência; lacunas em known_issues."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração para o Ecosystem; sete hotspots avaliados e mantidos locais."
+    }
+  ]
+}
