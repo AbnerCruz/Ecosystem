@@ -1,0 +1,92 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01Cqs24pT9sHieyegVt62nFc"
+  },
+  "branch": "ccr-p3-9b-modelo-de-tela",
+  "base_commit": "a0f584d",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "hub",
+  "state": "review",
+  "message_id": "HO-20261002-p3-11-modelo-de-tela",
+  "timestamp": "2026-10-02T12:10:33Z",
+  "task_id": "P3-11",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Código novo dentro de apps/hub (modelo de tela, sem UI) e ROADMAP. Não toca control plane, política, schemas, permissões, checks nem Products."
+  },
+  "files_changed": [
+    "apps/hub/src/Hub.Core/HubScreen.cs",
+    "apps/hub/tests/Hub.Tests/HubScreenTests.cs",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261002-p3-11-modelo-de-tela.json"
+  ],
+  "work_completed": [
+    "FATO: P3-2..P3-6 e P3-10 integradas e fechadas. A P3-9 (UI Android) precisa de um HubSnapshot (P3-10) para desenhar; o workload Android existe no ambiente do agente, mas o Android SDK não, então nada da UI pode ser compilado ou testado localmente, só no CI.",
+    "DECISÃO LOCAL (detalhe de implementação, MANIFEST §22.4): para que a decisão do que a tela mostra fique testada sem Android, ela foi extraída para Hub.Core como item novo P3-11 (ID novo, nunca reutilizado), pré-requisito da P3-9; a P3-9 passa a ser só o projeto Android que desenha esse modelo e o build do APK no CI. Nenhum item existente mudou de significado; as dependências de P3-9 e P3-8 passaram a citar P3-11.",
+    "ALTERAÇÃO (P3-11): HubScreenBuilder.Build(HubSnapshot?) devolve HubScreen(Banner, Sections). Sem snapshot: banner de 'sem dados' e nenhuma seção. Snapshot do cache: banner de 'último estado conhecido' e cada campo de Product marcado '(último estado)'. Seções fixas: Products (nome · versão · estado, com a última release ou 'nenhuma release publicada' ou 'releases indisponíveis (motivo)'), Passado, Agora, Próximo (id — título, com o detalhe) e Avisos (só se houver notas). Dado ausente é dito ('versão indisponível'), nunca inventado nem escondido; blocos limitados a 15 linhas com '… e mais N'.",
+    "NÃO FEITO, de propósito: o projeto Hub.Android, o AndroidManifest, o cache em arquivo no aparelho e o job de build do APK no CI (P3-9, PR próprio e crítico por tocar o control plane). P3-11 permanece [ ] no ROADMAP até a integração."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Hub.Tests (apps/hub)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "83/83 testes; os 13 novos cobrem sem dados, snapshot do cache (banner e marcação por campo), ordem fixa das seções, linha de Product, dado ausente, releases (pré-lançamento, nenhuma, indisponível, sem repositório), blocos do Past/Now/Next, blocos vazios, limite de 15 linhas, seção de avisos e ida e volta pelo cache real."
+    }
+  ],
+  "known_issues": [
+    "O texto da tela está em português fixo no Hub.Core; internacionalização não foi tratada.",
+    "Nada validado em aparelho (NN-017): o gate P3-8 segue pendente."
+  ],
+  "next_actions": [
+    "Integrador avalia o PR; sendo rotina verde, entra sozinho.",
+    "Depois de integrado: P3-11 [x], handoff done. Em seguida P3-9: projeto Hub.Android (net10.0-android) que desenha o HubScreen, carrega/guarda o cache em arquivo e job de build do APK em hub-ci.yml (control plane: crítico, aguarda a autorização do proprietário)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O modelo de tela é projeção do HubSnapshot; nada vira autoridade nova."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Código e fixtures não nomeiam outro Product; CHK-ARCH-REFS verde."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada marcado como validado em aparelho."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhuma abstração compartilhada nova; tudo dentro de apps/hub."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Dado ausente e leitura em cache são ditos na tela, não escondidos."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "hub-screen-model",
+      "status": "product-specific",
+      "rationale": "Modelo de tela do Hub; sem segundo consumidor."
+    }
+  ]
+}
