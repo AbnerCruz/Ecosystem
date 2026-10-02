@@ -1,0 +1,85 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "07bfa6e",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "integrator",
+  "state": "done",
+  "message_id": "HO-20261002-p1-19-evidencia",
+  "timestamp": "2026-10-02T01:28:00Z",
+  "task_id": "P1-19",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Registro de evidência (handoff) e ROADMAP [x] dentro do plano: nenhuma zona crítica."
+  },
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261002-p1-19-evidencia.json"
+  ],
+  "work_completed": [
+    "PR #40 (crítico: control plane + constituição) — o integrador da main da época avaliou o estado combinado (checks do Ecosystem + CI do Urbe verdes, execução https://github.com/AbnerCruz/Ecosystem/actions/runs/36949192231) e NÃO integrou: ficou 'pronto', aguardando o proprietário. O proprietário integrou pelo botão Merge (df3064c, autor Abner Cruz). FATO: a árvore integrada (4fe5e58) é idêntica à do commit combinado testado (integration/pr-40 = 7d76a53, mesmos pais a232bc4 + bf2be1e).",
+    "PR #41 (canário rotineiro, apps/urbe) — integrado SOZINHO pelo integrador novo, sem label e sem toque humano: execução https://github.com/AbnerCruz/Ecosystem/actions/runs/36950509982; classificação routine pela política da main; checker confiável da main = success; consistency (checks + self-test + simulate.sh) = success; CI do Urbe (npm run check) no estado combinado = success; status 'integrado main=df3064cc… combined=07bfa6e9… routine'; main = 07bfa6e (autor github-actions[bot], pais df3064c + 99a7f07, trailers Integration-Criticality/Main/PR-Head/Handoffs); integration/pr-41 apagada; pages, consistency e a fila redisparados; comentário do integrador com a rastreabilidade completa.",
+    "Origem do Urbe: sync-from-ecosystem.yml disparado em AbnerCruz/Urbe depois do canário (DEC-0017-A)."
+  ],
+  "verification": [
+    {
+      "check": "Crítico verde não entra sozinho (PR #40, ao vivo)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "bf2be1e",
+      "evidence": "Execução 36949192231: estado combinado verde; status 'pronto … aguardando autorização'; main permaneceu a232bc4 até o proprietário integrar."
+    },
+    {
+      "check": "Rotina verde integra sozinha (PR #41, ao vivo)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "07bfa6e",
+      "evidence": "Execução 36950509982: routine, trusted=success, consistency=success, urbe=success; main == commit combinado testado 07bfa6e9db6eb459d863b465ddad0cdaaf1a7924, integrado por github-actions[bot] sem label."
+    },
+    {
+      "check": "Self-test e simulate.sh no CI",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Job 'Checks do Ecosystem no estado combinado' da execução 36950509982: consistency checks, self-test e 'Simulação do integrador' verdes."
+    }
+  ],
+  "known_issues": [
+    "integration/pr-40 ficou no remoto: o PR #40 foi integrado pelo botão Merge (o integrador só apaga a branch quando ele mesmo integra). Inofensivo; poda de branches de PRs fechados é melhoria do control plane (crítica, item próprio).",
+    "Visibilidade: o log do passo 'prepare' não imprime o resumo do checker confiável (só o resultado success/failure e a lista de falhas vão para o status/comentário). Proposta: ecoar a última linha de /tmp/trusted.txt no log — mudança do control plane, portanto crítica (item próprio).",
+    "Limite da plataforma registrado em ADR-0015: credencial do proprietário usada por agente é indistinguível no GitHub; a proteção é de processo."
+  ],
+  "next_actions": [
+    "Nenhuma pendência do proprietário. Próxima tarefa do ROADMAP: P3-3 (esqueleto do Hub Android em C#)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Execuções, PRs, commits e classificações registrados acima e nos próprios PRs."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana envolvida nem dispensada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Done com evidência ao vivo das duas metades da política (rotina automática; crítico espera)."
+    }
+  ]
+}
