@@ -324,6 +324,8 @@ if (Directory.Exists(hdir))
                     ["state"] = "HUMAN_VALIDATION_PENDING",
                     ["record"] = Blob(rel),
                     ["object"] = Link(obj),
+                    // ADD-0012: só a validação crítica interrompe o proprietário; handoffs antigos sem a marcação contam como críticos.
+                    ["critical"] = !(v["critical"] is JsonValue cv && cv.TryGetValue<bool>(out var isCritical) && !isCritical),
                     ["handoff"] = S(h["message_id"]),
                     ["checkHash"] = ValidationHash(S(v["check"])!, obj),
                     ["approve"] = ValidationAnswer(S(h["task_id"])!, S(h["message_id"])!, ValidationHash(S(v["check"])!, obj), true),
@@ -501,6 +503,20 @@ if (File.Exists(P("ROADMAP.md")))
     }
 }
 
+// --- aprovações críticas (ADD-0012): PRs que o integrador marcou como críticos e prontos; instantâneo do GitHub (pages.yml) ---
+// Rotina verde nunca aparece aqui: entra sozinha. Sem instantâneo, o dado é "not-available" (nunca inventado).
+var approvalItems = new JsonArray();
+var approvalsAvailable = File.Exists(P("site/data/approvals-snapshot.json"));
+if (approvalsAvailable)
+    foreach (var pr in JsonNode.Parse(File.ReadAllText(P("site/data/approvals-snapshot.json")))!.AsArray().OrderBy(x => x!["number"]!.GetValue<int>()))
+        approvalItems.Add(new JsonObject
+        {
+            ["number"] = pr!["number"]!.GetValue<int>(),
+            ["title"] = S(pr["title"]),
+            ["url"] = S(pr["url"]),
+        });
+var pendingApprovals = new JsonObject { ["availability"] = approvalsAvailable ? "derived" : "not-available", ["items"] = approvalItems };
+
 var result = new JsonObject
 {
     ["schema"] = "ecosystem/contracts/ecosystem-status/1",
@@ -526,6 +542,7 @@ var result = new JsonObject
     ["components"] = components,
     ["pendingDecisions"] = pendingDecisions,
     ["pendingValidations"] = pending,
+    ["pendingApprovals"] = pendingApprovals,
     ["reuseCandidates"] = reuseCandidates,
     ["distribution"] = distribution,
     ["capabilities"] = capabilities,

@@ -24,6 +24,7 @@ jobs:
     permissions:
       contents: read
       pages: read
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +44,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+
+      - name: Instantâneo das aprovações críticas (PRs crítico + pronto; ADD-0012)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p site/data
+          gh pr list --repo "${GITHUB_REPOSITORY}" --state open --label pronto-para-integrar --label critico --json number,title,url > site/data/approvals-snapshot.json
 
       - name: Consistency checks (fontes canônicas)
         run: dotnet run tests/consistency/Check.cs
