@@ -1,0 +1,101 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "BLOCKER",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
+  },
+  "branch": "ccr-5adec8cc-oy464b",
+  "base_commit": "5c2bc76",
+  "commit": null,
+  "pr": null,
+  "blockers": [
+    "DEC-0024: o alcance e a estratégia da migração do Urbe para C# dependem do proprietário (NN-005, NN-011); nenhuma implementação em C# começa antes."
+  ],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261002-urbe-migracao-csharp-decisao",
+  "timestamp": "2026-10-02T03:44:00Z",
+  "task_id": "UR1-3",
+  "criticality": {
+    "declared": "critical",
+    "reason": "Muda a direção do produto (linguagem/arquitetura do Urbe): decisão crítica do proprietário (ADD-0012); registra ADR e decisão normativos, em zonas críticas (decisions.json, ADR)."
+  },
+  "files_changed": [
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261002-urbe-migracao-csharp-decisao.json"
+  ],
+  "work_completed": [
+    "FATO: o proprietário pediu em conversa (2026-10-02): «Na verdade eu quero que você migre para c#». Sem motivo, alcance ou plataforma.",
+    "FATO (normas lidas diretamente): MANIFEST NN-005 e a seção «C# padrão» (não autoriza reescrita geral do Urbe; migração de partes exige benefício demonstrável, estratégia incremental, testes, ADR, roadmap próprio e aprovação explícita); ADD-0002 §17 e ADR-0009 (reescrita do Urbe em C# proibida sem ADR próprio); NN-011, NN-013, NN-014, ADD-0012, integration-policy.json (src/persistence/** é zona crítica).",
+    "DECISÃO DE PROCESSO (agente): não escrever C# nem alterar o Urbe antes da decisão do proprietário. Persistido em fonte canônica (NN-009): ADR-0016 (Proposto) com quatro opções e DEC-0024 (pending, bloqueante) com alternativas A (incremental pelo núcleo), B (reescrita completa), C (por superfície) e D (manter JS). PROPOSTA do agente (não decisão): A, em fatias, com a primeira fatia candidata em src/persistence (zona crítica; exige sua autorização).",
+    "Nenhum arquivo de apps/urbe foi alterado por esta tarefa; a refatoração em JavaScript (RM-F2-*) segue disponível enquanto a decisão está pendente."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram na branch reconciliada (base 5c2bc76), incluindo CHK-HANDOFFS, CHK-ADR e CHK-DECISIONS; o CI do commit anterior só falhava pelos timestamps futuros."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "'todos os checks provaram detectar suas violações'."
+    },
+    {
+      "check": "decisions.json validado contra decisions.schema.json (jsonschema, local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "DEC-0024 válida: status pending, related existentes, alternativas e recomendação."
+    }
+  ],
+  "known_issues": [
+    "ESTADO: 'review', não 'blocked'. O integrador só aceita handoff em review, verifying ou done (portão do estado combinado; run 36963278661 devolveu 'bloqueado' com state=blocked). O trabalho do agente terminou (ADR-0016 Proposto + DEC-0024 pending); o que resta é a decisão do proprietário, mantida em blockers e decisions_required. A tarefa de migração em si continua sem iniciar até DEC-0024 ser decidida.",
+    "CORRIGIDO: o timestamp original (2026-10-02T15:00:00Z) estava no futuro e fez o CHK-HANDOFFS falhar; agora é a hora real do commit. Nenhum outro check falhou (CHK-ADR e CHK-DECISIONS passaram).",
+    "Nenhum código de migração para C# foi escrito; nada em apps/urbe foi alterado por esta tarefa."
+  ],
+  "next_actions": [
+    "Proprietário: responder DEC-0024 no portal (informar também o motivo da migração ajuda a escolher).",
+    "Agente, depois da resposta: aplicar as consequências (ADR-0016 Aceito/Rejeitado, roadmap específico, ADR do produto por fatia) e só então iniciar a primeira fatia."
+  ],
+  "decisions_required": [
+    "DEC-0024"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/adr/0001-runtime-sem-build-e-registro-de-modulos.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-005",
+      "evidence": "Nenhuma reescrita iniciada; exigência de ADR, roadmap e aprovação registrada em ADR-0016/DEC-0024."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "O pedido feito em conversa foi persistido em ADR-0016 e DEC-0024."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança de direção do produto levada ao proprietário pelo portal, sem decisão silenciosa."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Migração e refatoração mantidas como tarefas separadas."
+    }
+  ]
+}

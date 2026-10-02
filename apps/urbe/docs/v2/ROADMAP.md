@@ -634,27 +634,27 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 ## F2 — Arquitetura do monólito e legacy (G2)
 
 ### RM-F2-01 — Avaliação de hotspots por responsabilidade e acoplamento
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-022
 - **SPEC:** §3.1
 - **Fase:** F2
 - **Depende:** RM-F0-09
 - **Implementação:** Relatório `docs/v2/discovery/HOTSPOTS.md` com métricas (fan-in/out, responsabilidades, coesão) para `pages/engine`, `studio`, `free`, `world/life`, `ai/ui`, `customize/panel`, `pixel-art`; decisão explícita por arquivo (extrair, manter, adiar).
 - **Integração:** Insumo para novos REQ (não extrai).
-- **Testes:** Script `tools/hotspots.mjs` reproduz métricas.
+- **Testes:** Script `tools/hotspots.mjs` reproduz métricas; `tests/hotspots.mjs` falha se o relatório divergir ou se faltar decisão (manter/adiar/extrair) para algum dos sete arquivos.
 - **Documentação:** HOTSPOTS.md.
 - **Aceite:** Nenhuma extração de hotspot sem decisão registrada.
 - **Gate:** G2
 
 ### RM-F2-02 — Harness de teste de produção do monólito
-- **Estado:** [ ]
+- **Estado:** [?]
 - **REQ:** REQ-064, REQ-003
 - **SPEC:** §3.1, §9
 - **Fase:** F2
 - **Depende:** RM-F1-02
-- **Implementação:** `tests/app-runtime.mjs`: carrega `index.html` real em jsdom/Playwright e expõe abertura/boot para testes de comportamento; substitui fatiamento por marcadores.
+- **Implementação:** `tests/app-runtime.mjs`: carrega `index.html` real em jsdom/Playwright e expõe abertura/boot para testes de comportamento; substitui fatiamento por marcadores. **Como feito:** Playwright/Chromium real (já usado pelos E2E), em `tests/e2e/app-runtime.mjs` (módulo auxiliar `startRuntime`/`open`/`createNote`/`world`/`reload`; fica em `tests/e2e/` porque `npm test` roda todo `tests/*.mjs` sem navegador e o CI ainda não instala o Chromium).
 - **Integração:** Usado por todos os itens de extração.
-- **Testes:** Cobre boot, abrir vault fixture, criar nota, mundo.
+- **Testes:** Cobre boot, abrir vault fixture, criar nota, mundo (`tests/e2e/app-runtime.e2e.mjs`; `node tools/run-e2e.mjs app-runtime`). `[?]`: os E2E ainda não rodam no CI (nenhum workflow instala o Chromium) — enquanto isso, o gate do harness é local; ligar ao CI é pendência a registrar antes de marcar `[x]`.
 - **Documentação:** TEST-MATRIX §5.
 - **Aceite:** Testes de extração não dependem de texto de `app.js`.
 - **Gate:** G2
