@@ -1,3 +1,7 @@
 site/data/ecosystem-status.json
 site/testing/
 site/data/issues-snapshot.json
+
+# .NET (Hub)
+apps/hub/**/bin/
+apps/hub/**/obj/

@@ -19,16 +19,21 @@
   "timestamp": "2026-10-02T03:36:24Z",
   "task_id": "P3-3",
   "criticality": {
-    "declared": "routine",
-    "reason": "Esqueleto do Hub dentro do plano (DEC-0022-A, ADR-0013). Acrescenta job do Hub ao integrador (control plane): inclui um Product a ser testado, não afrouxa nenhuma verificação — a classificação efetiva é do integrador."
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "P3-3 é trabalho previsto, mas incluir o Hub no mecanismo central de integração (integrate.yml, integrate.sh, hub-ci.yml, simulate.sh) modifica o control plane e portanto exige autorização do proprietário pela política vigente. A política não foi alterada."
   },
   "files_changed": [
-    "apps/hub/",
+    "apps/hub/ (fontes, testes, VERSION, Hub.slnx, README)",
     "ecosystem.json",
     "ROADMAP.md",
+    ".gitignore",
     ".github/workflows/hub-ci.yml",
     ".github/workflows/integrate.yml",
     ".github/integrator/integrate.sh",
+    ".github/integrator/simulate.sh",
     "docs/governance/handoffs/HO-20261002-p3-3-esqueleto-do-hub.json"
   ],
   "work_completed": [
@@ -37,7 +42,12 @@
     "ALTERAÇÃO: ecosystem.json — hub passa de planned a active, version.authority = version-file apps/hub/VERSION, permissions.requests = network.access + ui.display (catálogo existente), commands.test.",
     "ALTERAÇÃO (integração): hub-ci.yml (só testes, seletivo por caminho, workflow_call) e job 'hub' no integrate.yml + R_HUB no integrate.sh, para que uma mudança em apps/hub seja testada no estado combinado em vez de ser ignorada pelo integrador.",
     "ALTERAÇÃO: ROADMAP — P3-3 [x]; nova P3-9 (camada de UI Android, net10.0-android) como dependência do empacotamento e do gate; ID P3-1 preservado.",
-    "NÃO FEITO: a camada Android não foi criada porque o workload Android não está disponível neste ambiente e não pode ser compilada aqui; fica em P3-9 com build no CI."
+    "NÃO FEITO: a camada Android não foi criada porque o workload Android não está disponível neste ambiente e não pode ser compilada aqui; fica em P3-9 com build no CI.",
+    "CORREÇÃO (revisão): 111 arquivos bin/obj do Hub tinham sido versionados por engano; removidos do índice (git rm --cached) e .gitignore passou a ignorar apps/hub/**/bin e obj. `git ls-files` não lista mais nenhum bin/obj de apps/hub (os arquivos de outros Products não foram tocados).",
+    "CORREÇÃO: ROADMAP P3-3 volta a [ ] (implementado, aguardando integração); só vira [x] depois de integrado na main, pelo fluxo correto.",
+    "CORREÇÃO: criticality = critical (classe control-plane) em vez de routine; política e checker da main intactos.",
+    "CORREÇÃO: integrate.sh falhava com R_HUB não definido (set -u) — agora `${R_HUB:-}`; simulate.sh passa R_HUB e ganhou 3 cenários do Hub (Hub identificado como Product tocado e rotina pela política; hub-ci vermelho → 'falhou' citando hub-ci e main intocada; hub-ci verde → integra). Nenhum cenário nem assertion existente foi removido ou afrouxado.",
+    "Validado: hub-ci é seletivo por apps/hub/**, aceita workflow_call com ref do estado combinado, contents: read, roda dotnet test do Hub, sem publicar/assinar/release; net10.0 igual ao setup-dotnet 10.0.x dos demais CIs."
   ],
   "verification": [
     {
@@ -50,17 +60,25 @@
       "check": "dotnet run tests/consistency/Check.cs e -- --self-test",
       "kind": "automated",
       "result": "passed",
-      "evidence": "22/22 checks; self-test: todos os checks provaram detectar suas violações. ROADMAP × Issues, histórico e commits dos handoffs não verificados (sem instantâneo/clone completo)."
+      "evidence": "22/22 checks; self-test verde. ROADMAP × Issues, histórico/commits dos handoffs sem instantâneo no ambiente local."
+    },
+    {
+      "check": "bash .github/integrator/simulate.sh",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "26/26 cenários, incluindo os 3 do Hub (hub-ci vermelho bloqueia, verde integra)."
     }
   ],
   "known_issues": [
     "CHK-ARCH-REFS recusa qualquer menção textual, em apps/hub, aos nomes de outros Products. O Hub, por definição, lê e mostra esses Products como DADO (P3-4). A regra precisará de uma exceção explícita para o Hub como leitor de dados (sem permitir ProjectReference/imports de código) — isso muda um boundary (NN-011): exige ADR e é mudança crítica; por isso README e testes deste item evitam os nomes e a decisão fica para antes de P3-4.",
-    "O integrador não foi exercitado com um PR do Hub (simulate.sh não cobre o job novo); a primeira execução real será o PR desta branch.",
-    "Nada do Hub foi validado em aparelho (NN-017); o gate é P3-8."
+    "Nada do Hub foi validado em aparelho (NN-017); o gate é P3-8.",
+    "O PR toca o control plane: mesmo com tudo verde fica aguardando a autorização do proprietário (label integrar), por desenho (ADD-0012).",
+    "CHK-ARCH-REFS × Hub como leitor de dados (nomes de Products): não alterado aqui; se P3-4 exigir, ADR/decisão crítica em tarefa própria.",
+    "P3-9 (UI Android) é item separado e não torna P3-3 concluído."
   ],
   "next_actions": [
-    "Agente: ADR (Proposto) + decisão sobre a exceção do CHK-ARCH-REFS para o Hub como leitor de dados, depois P3-4.",
-    "Abrir o PR contra a main para o integrador avaliar (o PR não foi aberto: nenhuma instrução do usuário para isso nesta sessão)."
+    "Integrador: avaliar main atual + PR; sendo crítico, aguardar a autorização do proprietário.",
+    "Depois de integrado: marcar P3-3 [x] e handoff done pelo fluxo correto; só então P3-4."
   ],
   "decisions_required": [],
   "normative_sources": [

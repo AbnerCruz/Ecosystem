@@ -236,7 +236,7 @@ finish() {
     [ "${R_CONSISTENCY}" = "success" ] || failed="${failed} consistency(${R_CONSISTENCY})"
     case "${R_URBE}" in success|skipped|"") ;; *) failed="${failed} urbe-checks(${R_URBE})" ;; esac
     case "${R_LUNET2D}" in success|skipped|"") ;; *) failed="${failed} lunet2d-ci(${R_LUNET2D})" ;; esac
-    case "${R_HUB}" in success|skipped|"") ;; *) failed="${failed} hub-ci(${R_HUB})" ;; esac
+    case "${R_HUB:-}" in success|skipped|"") ;; *) failed="${failed} hub-ci(${R_HUB})" ;; esac
     # Rotina: os checks da main sobre o candidato também precisam passar. Crítico: a divergência vira informação para o proprietário.
     [ "${TRUSTED:-success}" = success ] || [ "${REQUIRES_OWNER}" = "true" ] || failed="${failed} confiável-main(${TRUSTED_FAILURES:-?})"
     if [ -n "$failed" ]; then
