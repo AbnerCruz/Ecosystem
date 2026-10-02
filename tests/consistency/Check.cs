@@ -33,7 +33,7 @@ if (args.Contains("--registry"))
 if (args.Contains("--integration"))
     return IntegrationCli.Run(root, args, Console.Out);
 
-if (args.Contains("--integration-plan") || args.Contains("--integration-gates"))
+if (args.Contains("--integration-plan") || args.Contains("--integration-gates") || args.Contains("--integration-authorization"))
     return IntegrationQueue.Run(args, Console.Out);
 
 if (selfTest)
@@ -182,6 +182,7 @@ static class Checks
         "ecosystem.json" => "docs/contracts/schemas/ecosystem.schema.json",
         "docs/governance/decisions.json" => "docs/contracts/schemas/decisions.schema.json",
         "docs/governance/enforcement-matrix.json" => "docs/contracts/schemas/enforcement-matrix.schema.json",
+        "docs/governance/integration-policy.json" => "docs/contracts/schemas/integration-policy.schema.json",
         _ when file.StartsWith("docs/governance/handoffs/") => "docs/contracts/schemas/handoff.schema.json",
         _ when file.StartsWith("docs/validation/") => "docs/contracts/schemas/validation-record.schema.json",
         "docs/contracts/permissions.json" => "docs/contracts/schemas/permissions-catalog.schema.json",
@@ -629,6 +630,10 @@ static class Checks
                     c.R.Fail(id, $"{file}: validação humana pendente '{v.Str("check")}' sem 'object'; o portal precisa apresentar o que validar (DEC-0007)");
                 else if (!obj.StartsWith("https://") && !File.Exists(c.P(obj.Split('#')[0])))
                     c.R.Fail(id, $"{file}: objeto da validação '{v.Str("check")}' inexistente: {obj}");
+                // ADD-0012: só a validação crítica interrompe o proprietário; a marcação é explícita (sem ela, o portal não sabe onde mostrar).
+                if (string.CompareOrdinal(h.Str("timestamp") ?? "", CriticalValidationRequiredFrom) >= 0
+                    && !(v.TryGetProperty("critical", out var cv) && cv.ValueKind is JsonValueKind.True or JsonValueKind.False))
+                    c.R.Fail(id, $"{file}: validação humana pendente '{v.Str("check")}' sem 'critical' (true = interrompe o proprietário; communication.md §9)");
             }
             if (state == "done")
             {
@@ -672,6 +677,9 @@ static class Checks
 
     /// <summary>A partir deste instante (timestamp do handoff, UTC), 'base_commit' é obrigatório (ADR-0014). Handoffs anteriores ficam como estão.</summary>
     const string BaseCommitRequiredFrom = "2026-10-01T19:00:00Z";
+
+    /// <summary>A partir deste instante, validação humana pendente declara 'critical' (ADD-0012).</summary>
+    const string CriticalValidationRequiredFrom = "2026-10-02T00:00:00Z";
 
     // --- CHK-VALIDATION (P1-11; NN-001, NN-017, NN-018) ---
     // Registros canônicos de validação por build: o estado precisa ser sustentado pela evidência (CI nunca vira VALIDATED) e a
@@ -1038,28 +1046,76 @@ static class Checks
         if (!js.Contains("p.approve") || !js.Contains("p.reject")) c.R.Fail(id, "site/app.js: o portal não oferece Aprovar/Reprovar nas validações pendentes (ADR-0008)");
     }
 
-    // --- CHK-INTEGRATION (ADR-0015; NN-001, NN-008, NN-014, NN-018) ---
-    // O integrador é o único caminho automático para a main: precisa testar o estado combinado com os checks do Ecosystem e com o CI de
-    // cada Product ativo (workflows reutilizáveis), nunca forçar a main, ignorar forks/Dependabot e nunca interpolar texto do PR em script;
-    // todo Product ativo declara sua política de merge (mergePolicy).
+    // --- CHK-INTEGRATION (ADR-0015, ADD-0012; NN-001, NN-008, NN-011, NN-016, NN-018) ---
+    // O integrador é o único caminho automático para a main. Prova estrutural de que: a política tem uma autoridade (e cobre o control
+    // plane e a constituição); a classificação usa a política e as regras DA MAIN; existe o checker confiável; o status persiste o commit
+    // combinado exato; antes do push conferem-se head do PR, ref de integração == commit testado e main; o crítico exige autorização
+    // conferida pelo ator; a rotina integra sozinha; nunca há force na main; texto do PR nunca é interpolado em script.
+    static readonly string[] MustBeProtected =
+    [
+        "MANIFEST.md", "AGENTS.md", ".github/workflows/integrate.yml", ".github/integrator/integrate.sh", ".github/scripts/apply-decision.cs",
+        "tests/consistency/Check.cs", "docs/governance/integration-policy.json", "docs/governance/enforcement-matrix.json",
+        "docs/contracts/schemas/integration-policy.schema.json", "docs/governance/addenda/ADD-9999-qualquer.md",
+    ];
+
     static void Integration(Context c)
     {
         const string id = "CHK-INTEGRATION";
         c.R.Ran(id);
-        foreach (var (cid, comp) in c.Components().Where(x => x.El.Str("type") == "product" && x.El.Str("status") == "active"))
-            if (comp.Str("mergePolicy") is null) c.R.Fail(id, $"produto ativo '{cid}' sem mergePolicy em ecosystem.json (automatic | owner-authorization)");
-        if (c.Ecosystem is { } eco && eco.TryGetProperty("ecosystem", out var ecoInfo) && ecoInfo.Str("mergePolicy") is null)
-            c.R.Fail(id, "ecosystem.json: falta ecosystem.mergePolicy (piso da política de integração; automatic | owner-authorization)");
+        var pol = c.Json.FirstOrDefault(j => j.File == IntegrationQueue.PolicyFile).Doc?.RootElement;
+        if (pol is not { ValueKind: JsonValueKind.Object } p) c.R.Fail(id, $"{IntegrationQueue.PolicyFile} ausente ou inválido: a política de integração precisa de uma autoridade (ADD-0012)");
+        else
+        {
+            var zones = p.Arr("classes").SelectMany(x => x.Arr("paths")).Select(x => x.GetString() ?? "").ToList();
+            foreach (var f in MustBeProtected.Where(f => !zones.Any(z => IntegrationQueue.Glob(z, f))))
+                c.R.Fail(id, $"{IntegrationQueue.PolicyFile}: '{f}' fora das zonas críticas — um PR poderia mudá-lo e se autoaprovar");
+            foreach (var r in p.Arr("classes").SelectMany(x => x.Arr("rules")).Select(x => x.Str("rule") ?? ""))
+                if (!IntegrationQueue.KnownRules.Contains(r)) c.R.Fail(id, $"{IntegrationQueue.PolicyFile}: regra '{r}' sem implementação no checker confiável");
+            if (!(p.TryGetProperty("authorization", out var a) && a.Arr("authorizers").Any()))
+                c.R.Fail(id, $"{IntegrationQueue.PolicyFile}: sem autorizadores para mudanças críticas");
+        }
+        if (c.Ecosystem is { } eco && eco.GetRawText().Contains("\"mergePolicy\""))
+            c.R.Fail(id, $"ecosystem.json declara mergePolicy: a política de integração tem uma autoridade só ({IntegrationQueue.PolicyFile}; NN-001)");
+
         const string wf = ".github/workflows/integrate.yml", script = ".github/integrator/integrate.sh";
         if (!File.Exists(c.P(script))) c.R.Fail(id, $"{script} ausente");
         if (!File.Exists(c.P(wf))) { c.R.Fail(id, $"{wf} ausente"); return; }
         var text = File.ReadAllText(c.P(wf));
+        var sh = File.Exists(c.P(script)) ? File.ReadAllText(c.P(script)) : "";
         if (!text.Contains("pull_request_target:")) c.R.Fail(id, $"{wf}: precisa rodar em pull_request_target (definição da main, não a do PR)");
         if (!File.Exists(c.P(".github/integrator/simulate.sh")) || !(File.Exists(c.P(".github/workflows/consistency.yml")) && File.ReadAllText(c.P(".github/workflows/consistency.yml")).Contains("bash .github/integrator/simulate.sh")))
             c.R.Fail(id, "consistency.yml precisa rodar .github/integrator/simulate.sh (efeito do integrador no git, ADR-0015)");
-        var scriptText = File.Exists(c.P(script)) ? File.ReadAllText(c.P(script)) : "";
-        if (!(text + scriptText).Contains("--integration-plan") || !(text + scriptText).Contains("--integration-gates"))
-            c.R.Fail(id, $"{wf}: precisa decidir com --integration-plan e --integration-gates (lógica testada)");
+        if (!text.Contains("--integration-plan")) c.R.Fail(id, $"{wf}: precisa decidir a fila com --integration-plan (lógica testada)");
+        if (!Regex.IsMatch(sh, @"--integration-gates --base-root \. ")) c.R.Fail(id, $"{script}: a classificação precisa usar a política e as regras da main (--integration-gates --base-root .)");
+        if (!sh.Contains("cd ../work && dotnet run \"$trusted/tests/consistency/Check.cs\"")) c.R.Fail(id, $"{script}: falta o checker confiável (checks da main sobre a árvore candidata)");
+        if (!sh.Contains("combined=$5")) c.R.Fail(id, $"{script}: o status precisa persistir o commit combinado testado (combined=<sha>)");
+        if (!sh.Contains("if [ \"${REQUIRES_OWNER}\" != \"true\" ]; then land;")) c.R.Fail(id, $"{script}: rotina verde precisa integrar sozinha (ADD-0012)");
+
+        // Guardas antes do único push para a main, dentro de land().
+        var land = Regex.Match(sh, @"(?ms)^land\(\) \{\n(.*?)^\}");
+        var push = "git push -q origin \"${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}\"";
+        if (!land.Success) c.R.Fail(id, $"{script}: falta land()");
+        else
+        {
+            var body = land.Groups[1].Value; var at = body.IndexOf(push, StringComparison.Ordinal);
+            if (at < 0) c.R.Fail(id, $"{script}: land() precisa empurrar exatamente o commit testado ({push})");
+            foreach (var g in new[] { "! guard_pr_head", "! guard_combined", "! guard_main", "[ \"${REQUIRES_OWNER}\" = \"true\" ] && ! guard_authorization" })
+            {
+                var gi = body.IndexOf(g, StringComparison.Ordinal);
+                if (gi < 0 || (at >= 0 && gi > at)) c.R.Fail(id, $"{script}: land() precisa conferir '{g.Replace("! ", "")}' antes do push para a main");
+            }
+        }
+        if (Regex.Matches(sh, Regex.Escape(push)).Count != 1) c.R.Fail(id, $"{script}: a main só pode ser avançada em um lugar (land)");
+        string Fn(string name) { var m = Regex.Match(sh, $@"(?ms)^{name}\(\) \{{(.*?)^\}}"); return m.Success ? m.Groups[1].Value : ""; }
+        if (!(Fn("guard_pr_head").Contains("pulls/${PR}") && Fn("guard_pr_head").Contains(".head.sha") && Fn("guard_pr_head").Contains("\"$HEAD_SHA\"")))
+            c.R.Fail(id, $"{script}: guard_pr_head precisa reconsultar o head real do PR e compará-lo ao head testado");
+        if (!Fn("guard_combined").Contains("integration/pr-${PR}\")\" = \"$COMBINED\""))
+            c.R.Fail(id, $"{script}: guard_combined precisa exigir ref de integração == commit testado (não basta ter os mesmos pais)");
+        if (!(Fn("guard_main").Contains("FETCH_HEAD)\" = \"$MAIN\"") && Fn("guard_main").Contains("^1") && Fn("guard_main").Contains("^2")))
+            c.R.Fail(id, $"{script}: guard_main precisa exigir main atual == main testada e os pais do commit testado");
+        if (!(Fn("guard_authorization").Contains("--integration-authorization") && Fn("guard_authorization").Contains("issues/${PR}/events")))
+            c.R.Fail(id, $"{script}: guard_authorization precisa conferir o autor do evento da label (--integration-authorization)");
+
         var called = Regex.Matches(text, @"uses:\s*\./\.github/workflows/([A-Za-z0-9_.-]+\.yml)").Select(m => m.Groups[1].Value).ToHashSet();
         var required = new List<(string Who, string File)> { ("ecosystem", "consistency.yml") };
         var wfDir = c.P(".github/workflows");
@@ -1075,10 +1131,8 @@ static class Checks
             if (!called.Contains(file)) c.R.Fail(id, $"{wf}: não roda o CI de '{who}' ({file}) no estado combinado");
             else if (!File.ReadAllText(Path.Combine(wfDir, file)).Contains("workflow_call:")) c.R.Fail(id, $".github/workflows/{file}: falta 'workflow_call:' (o integrador o reutiliza)");
         }
-        var n = 0;
-        foreach (var line in File.ReadAllLines(c.P(wf)).Concat(File.Exists(c.P(script)) ? File.ReadAllLines(c.P(script)) : []))
+        foreach (var line in File.ReadAllLines(c.P(wf)).Concat(sh.Split('\n')))
         {
-            n++;
             // push forçado só nas branches descartáveis do próprio integrador (integration/pr-N); a main só avança sem force.
             if (Regex.IsMatch(line, @"\bgit\b.*\bpush\b") && (line.Contains("--force") || Regex.IsMatch(line, @"\s-f\b") || Regex.IsMatch(line, @"[\s""']\+[^\s""']*:"))
                 && !line.Contains("refs/heads/integration/"))
@@ -1182,11 +1236,30 @@ static class Checks
             .Where(h => h.Str("state") is not ("done" or "cancelled" or "failed"))
             .SelectMany(h => h.Arr("verification")
                 .Where(v => v.Str("kind") == "human" && v.Str("result") == "pending")
-                .Select(v => $"{h.Str("task_id")}|{v.Str("check")}"))
+                .Select(v => $"{h.Str("task_id")}|{v.Str("check")}|{!(v.TryGetProperty("critical", out var cv) && cv.ValueKind == JsonValueKind.False)}"))
             .ToHashSet();
-        var actual = p.Arr("pendingValidations").Select(v => $"{v.Str("taskId")}|{v.Str("check")}").ToHashSet();
+        var actual = p.Arr("pendingValidations").Select(v => $"{v.Str("taskId")}|{v.Str("check")}|{!(v.TryGetProperty("critical", out var cv) && cv.ValueKind == JsonValueKind.False)}").ToHashSet();
         if (!actual.SetEquals(expected))
             c.R.Fail(id, $"{rel}: validações pendentes divergem dos handoffs");
+
+        // Aprovações críticas (ADD-0012): derivadas do instantâneo dos PRs prontos; sem instantâneo, "not-available" e nada inventado.
+        if (p.TryGetProperty("pendingApprovals", out var pa))
+        {
+            var snapPath = c.P("site/data/approvals-snapshot.json");
+            var projectedPrs = pa.Arr("items").Select(x => x.TryGetProperty("number", out var nn) ? nn.GetRawText() : "?").ToHashSet();
+            if (!File.Exists(snapPath))
+            {
+                if (pa.Str("availability") != "not-available" || projectedPrs.Count > 0)
+                    c.R.Fail(id, $"{rel}: aprovações críticas apresentadas sem instantâneo dos PRs (site/data/approvals-snapshot.json)");
+            }
+            else
+            {
+                using var snapDoc = JsonDocument.Parse(File.ReadAllText(snapPath));
+                var expectedPrs = snapDoc.RootElement.EnumerateArray().Select(x => x.GetProperty("number").GetRawText()).ToHashSet();
+                if (pa.Str("availability") != "derived" || !projectedPrs.SetEquals(expectedPrs))
+                    c.R.Fail(id, $"{rel}: aprovações críticas divergem do instantâneo dos PRs prontos");
+            }
+        }
 
         // Decisões pendentes (DEC-0007): o portal não pode omitir nenhuma, nem inventar outra.
         var expectedDecisions = c.DecisionList().Where(d => d.Str("status") == "pending").Select(d => d.Str("id")!).ToHashSet();
@@ -1252,7 +1325,7 @@ sealed class Context(string root, Report r)
 
     public void LoadJson()
     {
-        var files = new List<string> { "ecosystem.json", "docs/governance/decisions.json", "docs/governance/enforcement-matrix.json" };
+        var files = new List<string> { "ecosystem.json", "docs/governance/decisions.json", "docs/governance/enforcement-matrix.json", "docs/governance/integration-policy.json" };
         var hdir = P("docs/governance/handoffs");
         if (Directory.Exists(hdir))
             files.AddRange(Directory.EnumerateFiles(hdir, "*.json").Order().Select(Rel));
@@ -1621,78 +1694,327 @@ static class IntegrationCli
 }
 
 /// <summary>
-/// Integrador automático (ADR-0015): decide, a partir de dados estruturados (PRs abertos, status 'ecosystem/integration' e manifests), o
-/// que fazer em cada execução da fila. Funções puras, testadas pelo self-test; os efeitos (git, gh) ficam em .github/integrator/integrate.sh (componente integrator).
-/// Status (descrição): "&lt;resultado&gt; main=&lt;sha12&gt; …" com resultado em testando | pronto | integrado | conflito | falhou | bloqueado.
+/// Integrador automático (ADR-0015, ADD-0012): decide, a partir de dados estruturados (PRs abertos, status 'ecosystem/integration',
+/// política da main e árvores base/candidata), o que fazer em cada execução da fila. Funções puras, testadas pelo self-test; os
+/// efeitos (git, gh) ficam em .github/integrator/integrate.sh (componente integrator). Sempre executado a partir da cópia da main:
+/// a política e as regras que classificam um PR nunca vêm do próprio PR.
+/// Status (descrição) no head do PR: "&lt;resultado&gt; main=&lt;sha&gt; combined=&lt;sha|-&gt; &lt;routine|critical|-&gt;[: detalhe]",
+/// com resultado em testando | pronto | integrado | conflito | falhou | bloqueado | obsoleto. combined é o commit EXATO testado.
 /// </summary>
 static class IntegrationQueue
 {
     public const string StatusContext = "ecosystem/integration";
-    public const string AuthorizationLabel = "integrar";
+    public const string PolicyFile = "docs/governance/integration-policy.json";
+    public const string BotLogin = "github-actions[bot]";
+    public const string DefaultLabel = "integrar";
     static readonly string[] ReadyHandoffStates = ["review", "verifying", "done"];
+    public static readonly string[] KnownRules = ["decision-record", "adr-decision", "trust-weakening", "json-keys", "schema-breaking", "capability-breaking", "manifest-structure"];
 
     public sealed record Pr(int Number, bool Draft, bool CrossRepository, string HeadRef, string HeadSha, string[] Labels, string? StatusState, string? StatusDescription);
-    public sealed record Decision(string Action, int Pr, string Head, bool Authorized, bool More, string Reason);
+    public sealed record Decision(string Action, int Pr, string Head, bool Authorized, bool More, string Reason, string Combined, string Criticality);
+    public sealed record Status(string Result, string Main, string? Combined, string? Criticality);
 
-    public static (string? Result, string? Main) ParseStatus(string? description)
+    public static Status? ParseStatus(string? description)
     {
-        if (string.IsNullOrWhiteSpace(description)) return (null, null);
-        var m = Regex.Match(description, @"^(\S+) main=([0-9a-f]{12})\b");
-        return m.Success ? (m.Groups[1].Value, m.Groups[2].Value) : (null, null);
+        if (string.IsNullOrWhiteSpace(description)) return null;
+        var m = Regex.Match(description, @"^(\S+) main=([0-9a-f]{7,40})(?: combined=([0-9a-f]{40}|-))?(?: (routine|critical|-))?(?=:|\s|$)");
+        if (!m.Success) return null;
+        string? G(int i) => m.Groups[i].Success && m.Groups[i].Value != "-" ? m.Groups[i].Value : null;
+        return new Status(m.Groups[1].Value, m.Groups[2].Value, G(3), G(4));
     }
 
-    /// <summary>O que cada PR precisa agora: skip (não é candidato), evaluate (testar contra a main atual), land (já testado contra a main
-    /// atual e autorizado) ou wait (aguardando autorização ou ação do autor).</summary>
-    public static (string Action, string Reason) Need(Pr p, string mainSha)
+    static bool SameSha(string a, string b) => a.Length >= 7 && b.Length >= 7 && (a.StartsWith(b, StringComparison.Ordinal) || b.StartsWith(a, StringComparison.Ordinal));
+
+    /// <summary>O que cada PR precisa agora: skip (não é candidato), evaluate (testar contra a main atual), land (já testado contra a
+    /// main atual, esperando o proprietário e com a label de autorização — o ator é conferido antes de integrar) ou wait.
+    /// Só fica em 'pronto' o que exige o proprietário: rotina verde é integrada na própria avaliação.</summary>
+    public static (string Action, string Reason) Need(Pr p, string mainSha, string label = DefaultLabel)
     {
         if (p.Draft) return ("skip", "rascunho");
         if (p.CrossRepository) return ("skip", "PR de fork");
         if (p.HeadRef.StartsWith("dependabot/", StringComparison.Ordinal)) return ("skip", "Dependabot");
-        var (result, tested) = ParseStatus(p.StatusDescription);
-        var current = mainSha.Length >= 12 ? mainSha[..12] : mainSha;
-        if (result is null || tested != current) return ("evaluate", tested is null ? "nunca avaliado" : $"a main mudou desde a avaliação ({tested})");
-        return result switch
+        var st = ParseStatus(p.StatusDescription);
+        if (st is null) return ("evaluate", "nunca avaliado");
+        if (!SameSha(st.Main, mainSha)) return ("evaluate", $"a main mudou desde a avaliação ({st.Main[..Math.Min(12, st.Main.Length)]})");
+        return st.Result switch
         {
-            "pronto" when p.Labels.Contains(AuthorizationLabel) => ("land", "testado contra a main atual e autorizado"),
-            "pronto" => ("wait", "aguardando autorização do proprietário (label 'integrar')"),
-            "testando" => ("evaluate", "avaliação anterior interrompida"),
+            "pronto" when st.Combined is not null && p.Labels.Contains(label) =>
+                ("land", "verde contra a main atual, aguardando o proprietário, com a label de autorização (o ator é conferido antes de integrar)"),
+            "pronto" when st.Combined is not null => ("wait", "aguardando autorização do proprietário"),
+            "pronto" => ("evaluate", "avaliação sem a identidade completa do estado testado: reavaliar"),
+            "testando" => ("evaluate", "avaliação anterior interrompida ou obsoleta"),
             "integrado" => ("wait", "já integrado"),
-            _ => ("wait", $"resultado '{result}' na main atual: aguarda nova versão do PR"),
+            _ => ("wait", $"resultado '{st.Result}' na main atual: aguarda nova versão do PR"),
         };
     }
 
     /// <summary>Escolhe um PR por execução: primeiro um 'land' (barato, destrava a fila), senão o 'evaluate' de menor número.</summary>
-    public static Decision Plan(string mainSha, IReadOnlyList<Pr> prs)
+    public static Decision Plan(string mainSha, IReadOnlyList<Pr> prs, string label = DefaultLabel)
     {
-        var needs = prs.OrderBy(p => p.Number).Select(p => (Pr: p, N: Need(p, mainSha))).ToList();
+        var needs = prs.OrderBy(p => p.Number).Select(p => (Pr: p, N: Need(p, mainSha, label))).ToList();
         var actionable = needs.Where(x => x.N.Action is "land" or "evaluate").ToList();
         var chosen = actionable.Where(x => x.N.Action == "land").Concat(actionable.Where(x => x.N.Action == "evaluate")).FirstOrDefault();
-        if (chosen.Pr is null) return new Decision("none", 0, "", false, false, "nenhum PR a avaliar ou integrar");
-        return new Decision(chosen.N.Action, chosen.Pr.Number, chosen.Pr.HeadSha, chosen.Pr.Labels.Contains(AuthorizationLabel), actionable.Count > 1, chosen.N.Reason);
+        if (chosen.Pr is null) return new Decision("none", 0, "", false, false, "nenhum PR a avaliar ou integrar", "", "");
+        var st = chosen.N.Action == "land" ? ParseStatus(chosen.Pr.StatusDescription) : null;
+        return new Decision(chosen.N.Action, chosen.Pr.Number, chosen.Pr.HeadSha, chosen.Pr.Labels.Contains(label), actionable.Count > 1, chosen.N.Reason,
+            st?.Combined ?? "", st?.Criticality ?? "");
     }
 
-    public sealed record GateResult(bool Ok, string Reason, string[] Components, string[] Products, string Policy, string PolicyReason);
+    // ---------------------------------------------------------------------------------------------------------------
+    // Classificação de criticidade (ADD-0012): zonas por caminho (falha fechada) + regras semânticas, todas da política da MAIN.
+
+    public sealed record Finding(string Class, string Path, string Detail);
+    public sealed record GateResult(bool Ok, string Reason, string[] Components, string[] Products, string Criticality, bool RequiresOwner,
+        Finding[] Findings, string[] Handoffs);
+
+    /// <summary>Glob mínimo: '*' dentro de um segmento, '**' atravessa segmentos.</summary>
+    public static bool Glob(string pattern, string path)
+    {
+        var rx = "^" + Regex.Escape(pattern).Replace(@"\*\*/", "(?:.*/)?").Replace(@"\*\*", ".*").Replace(@"\*", "[^/]*") + "$";
+        return Regex.IsMatch(path, rx);
+    }
+
+    static JsonDocument? Read(string root, string rel)
+    {
+        var f = Path.Combine(root, rel);
+        return File.Exists(f) ? JsonDocument.Parse(File.ReadAllText(f)) : null;
+    }
+
+    static string? Text(string root, string rel) { var f = Path.Combine(root, rel); return File.Exists(f) ? File.ReadAllText(f) : null; }
+
+    /// <summary>Forma canônica de um valor JSON (chaves ordenadas), para comparar conteúdo independentemente de formatação.</summary>
+    public static string Canon(JsonElement e, ISet<string>? skip = null) => e.ValueKind switch
+    {
+        JsonValueKind.Object => "{" + string.Join(",", e.EnumerateObject().Where(p => skip is null || !skip.Contains(p.Name)).OrderBy(p => p.Name, StringComparer.Ordinal)
+            .Select(p => JsonEncodedText.Encode(p.Name).Value + ":" + Canon(p.Value))) + "}",
+        JsonValueKind.Array => "[" + string.Join(",", e.EnumerateArray().Select(x => Canon(x))) + "]",
+        JsonValueKind.String => "\"" + JsonEncodedText.Encode(e.GetString()!).Value + "\"",
+        _ => e.GetRawText(),
+    };
+
+    static JsonElement? Pointer(JsonElement root, string pointer)
+    {
+        var cur = root;
+        foreach (var raw in pointer.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var seg = raw.Replace("~1", "/").Replace("~0", "~");
+            if (cur.ValueKind == JsonValueKind.Object && cur.TryGetProperty(seg, out var next)) cur = next;
+            else if (cur.ValueKind == JsonValueKind.Array && int.TryParse(seg, out var i) && i < cur.GetArrayLength()) cur = cur[i];
+            else return null;
+        }
+        return cur;
+    }
+
+    /// <summary>Aplica uma regra semântica a um arquivo mudado. Devolve os achados (vazio = a regra não vê nada crítico).</summary>
+    public static IEnumerable<string> ApplyRule(string rule, JsonElement ruleDef, string baseRoot, string combinedRoot, string path) => rule switch
+    {
+        "decision-record" => DecisionRecord(Read(baseRoot, path), Read(combinedRoot, path)),
+        "adr-decision" => AdrDecision(Text(baseRoot, path), Text(combinedRoot, path)),
+        "trust-weakening" => TrustWeakening(path, Text(baseRoot, path), Text(combinedRoot, path)),
+        "json-keys" => JsonKeys(Read(baseRoot, path), Read(combinedRoot, path), ruleDef.Arr("keys").Select(k => k.GetString()!)),
+        "schema-breaking" => SchemaBreaking(Read(baseRoot, path), Read(combinedRoot, path)),
+        "capability-breaking" => CapabilityBreaking(Read(baseRoot, path), Read(combinedRoot, path)),
+        "manifest-structure" => ManifestStructure(Read(baseRoot, path), Read(combinedRoot, path)),
+        _ => [$"regra desconhecida '{rule}' (falha fechada)"],
+    };
+
+    /// <summary>decisions.json: perguntar é rotina (nova decisão pendente, texto de uma pendente, consequências aplicadas);
+    /// registrar, alterar ou remover uma decisão tomada é responder pelo proprietário — crítico.</summary>
+    static IEnumerable<string> DecisionRecord(JsonDocument? b, JsonDocument? c)
+    {
+        if (c is null) { yield return "remove o registro de decisões"; yield break; }
+        var bd = (b?.RootElement.Arr("decisions") ?? []).Where(x => x.Str("id") is not null).ToDictionary(x => x.Str("id")!);
+        var cd = c.RootElement.Arr("decisions").Where(x => x.Str("id") is not null).ToDictionary(x => x.Str("id")!);
+        foreach (var (id, be) in bd)
+        {
+            if (!cd.TryGetValue(id, out var ce)) { yield return $"remove {id}"; continue; }
+            var bs = be.Str("status"); var cs = ce.Str("status");
+            if (bs == "pending")
+            {
+                if (cs != "pending") yield return $"registra {id} como '{cs}' (resposta do proprietário)";
+            }
+            else
+            {
+                var skip = new HashSet<string> { "consequencesApplied" };
+                var applied = ce.TryGetProperty("consequencesApplied", out var ca) && ca.ValueKind == JsonValueKind.True;
+                var wasApplied = be.TryGetProperty("consequencesApplied", out var ba) && ba.ValueKind == JsonValueKind.True;
+                if (Canon(be, skip) != Canon(ce, skip) || (wasApplied && !applied)) yield return $"altera {id}, já '{bs}'";
+            }
+        }
+        foreach (var (id, ce) in cd.Where(x => !bd.ContainsKey(x.Key)))
+            if (ce.Str("status") != "pending") yield return $"cria {id} já como '{ce.Str("status")}'";
+    }
+
+    static string? AdrStatus(string text)
+    {
+        var m = Regex.Match(text, @"(?m)^## Status\s*\n+\s*([^\n]+)");
+        if (!m.Success) m = Regex.Match(text, @"(?m)^-\s*Status:\s*([^\n]+)");
+        return m.Success ? Regex.Match(m.Groups[1].Value, @"^[\p{L}-]+").Value : null;
+    }
+
+    static string AdrDecisionText(string text)
+    {
+        var m = Regex.Match(text, @"(?ms)^## (?:Decisão|Decision)\s*\n(.*?)(?=^## |\z)");
+        return m.Success ? m.Groups[1].Value.Trim() : "";
+    }
+
+    static bool Binding(string? status) => status is not null && !Regex.IsMatch(status, @"^(Propost|Proposed|Draft|Rascunho)", RegexOptions.IgnoreCase);
+
+    /// <summary>ADR: propor é rotina; aceitar, rejeitar, substituir ou mudar a decisão de um ADR já vinculante é decisão — crítico.</summary>
+    static IEnumerable<string> AdrDecision(string? b, string? c)
+    {
+        if (c is null) { if (b is not null) yield return "remove o ADR"; yield break; }
+        var cs = AdrStatus(c);
+        if (b is null) { if (Binding(cs) || cs is null) yield return $"cria ADR já com status '{cs ?? "?"}'"; yield break; }
+        var bs = AdrStatus(b);
+        if (!string.Equals(bs, cs, StringComparison.OrdinalIgnoreCase) && (Binding(bs) || Binding(cs) || cs is null))
+            yield return $"muda o status do ADR de '{bs}' para '{cs ?? "?"}'";
+        else if (Binding(bs) && AdrDecisionText(b) != AdrDecisionText(c))
+            yield return $"altera a decisão de um ADR '{bs}'";
+    }
+
+    /// <summary>Detalha o enfraquecimento da fiscalização (o caminho já é crítico; isto explica o quanto).</summary>
+    static IEnumerable<string> TrustWeakening(string path, string? b, string? c)
+    {
+        if (c is null) { yield return "remove o arquivo"; yield break; }
+        if (b is null) yield break;
+        if (path.EndsWith("Check.cs", StringComparison.Ordinal))
+        {
+            HashSet<string> Ids(string t) { var m = Regex.Match(t, @"Ids\s*=\s*\[(.*?)\];", RegexOptions.Singleline); return m.Success ? Regex.Matches(m.Groups[1].Value, "\"(CHK-[A-Z-]+)\"").Select(x => x.Groups[1].Value).ToHashSet() : []; }
+            var removed = Ids(b).Except(Ids(c)).Order().ToList();
+            if (removed.Count > 0) yield return $"remove checks: {string.Join(", ", removed)}";
+            int Cases(string t) => Regex.Matches(t, @"\bnew\(""").Count;
+            if (Cases(c) < Cases(b)) yield return $"remove {Cases(b) - Cases(c)} caso(s) de self-test";
+        }
+        else
+        {
+            JsonDocument? bj = null, cj = null;
+            try { bj = JsonDocument.Parse(b); cj = JsonDocument.Parse(c); } catch (JsonException) { }
+            if (bj is null || cj is null) { yield return "política ilegível (falha fechada)"; yield break; }
+            foreach (var k in new[] { "routine", "critical" })
+                if (bj.RootElement.Str(k) != cj.RootElement.Str(k)) yield return $"muda '{k}' de '{bj.RootElement.Str(k)}' para '{cj.RootElement.Str(k)}'";
+            var bc = bj.RootElement.Arr("classes").ToDictionary(x => x.Str("id") ?? "");
+            var cc = cj.RootElement.Arr("classes").ToDictionary(x => x.Str("id") ?? "");
+            foreach (var (id, be) in bc)
+            {
+                if (!cc.TryGetValue(id, out var ce)) { yield return $"remove a classe '{id}'"; continue; }
+                var lost = be.Arr("paths").Select(x => x.GetString()).Except(ce.Arr("paths").Select(x => x.GetString())).ToList();
+                if (lost.Count > 0) yield return $"'{id}' deixa de proteger: {string.Join(", ", lost)}";
+                var lostRules = be.Arr("rules").Select(x => Canon(x)).Except(ce.Arr("rules").Select(x => Canon(x))).Count();
+                if (lostRules > 0) yield return $"'{id}' perde/altera {lostRules} regra(s)";
+            }
+            var ba = bj.RootElement.TryGetProperty("authorization", out var x1) ? Canon(x1) : "";
+            var ca = cj.RootElement.TryGetProperty("authorization", out var x2) ? Canon(x2) : "";
+            if (ba != ca) yield return "muda quem autoriza ou a label de autorização";
+        }
+    }
+
+    static IEnumerable<string> JsonKeys(JsonDocument? b, JsonDocument? c, IEnumerable<string> keys)
+    {
+        foreach (var k in keys)
+        {
+            var bv = b is null ? null : Pointer(b.RootElement, k); var cv = c is null ? null : Pointer(c.RootElement, k);
+            if ((bv is null ? "∅" : Canon(bv.Value)) != (cv is null ? "∅" : Canon(cv.Value))) yield return $"muda {k}";
+        }
+    }
+
+    /// <summary>JSON Schema: quebra = remover propriedade, exigir campo novo, remover valor de enum, mudar type/const/pattern, fechar
+    /// additionalProperties ou apertar mínimos. Acrescentar o que é opcional é rotina.</summary>
+    static IEnumerable<string> SchemaBreaking(JsonDocument? b, JsonDocument? c)
+    {
+        if (b is null) yield break;
+        if (c is null) { yield return "remove o schema"; yield break; }
+        var found = new List<string>();
+        void Cmp(JsonElement be, JsonElement ce, string at)
+        {
+            if (be.ValueKind != JsonValueKind.Object || ce.ValueKind != JsonValueKind.Object) return;
+            foreach (var k in new[] { "type", "const", "pattern", "$ref" })
+            {
+                var hb = be.TryGetProperty(k, out var vb); var hc = ce.TryGetProperty(k, out var vc);
+                if (hb && (!hc || Canon(vb) != Canon(vc))) found.Add($"muda {k} em {at}");
+                else if (!hb && hc && k is "const" or "pattern") found.Add($"acrescenta {k} em {at}");
+            }
+            if (be.TryGetProperty("enum", out var eb))
+            {
+                var ec = ce.TryGetProperty("enum", out var x) ? x.EnumerateArray().Select(v => Canon(v)).ToHashSet() : null;
+                var gone = eb.EnumerateArray().Select(v => Canon(v)).Where(v => ec is not null && !ec.Contains(v)).ToList();
+                if (gone.Count > 0) found.Add($"remove valores do enum em {at}: {string.Join(", ", gone)}");
+            }
+            else if (ce.TryGetProperty("enum", out _)) found.Add($"restringe {at} a um enum");
+            var rb = be.Arr("required").Select(x => x.GetString()).ToHashSet();
+            var newReq = ce.Arr("required").Select(x => x.GetString()).Where(x => !rb.Contains(x)).ToList();
+            if (newReq.Count > 0) found.Add($"passa a exigir em {at}: {string.Join(", ", newReq)}");
+            var apb = !be.TryGetProperty("additionalProperties", out var ab) || ab.ValueKind != JsonValueKind.False;
+            var apc = !ce.TryGetProperty("additionalProperties", out var ac) || ac.ValueKind != JsonValueKind.False;
+            if (apb && !apc) found.Add($"fecha additionalProperties em {at}");
+            foreach (var k in new[] { "minLength", "minItems", "minimum" })
+                if (ce.TryGetProperty(k, out var mc) && mc.ValueKind == JsonValueKind.Number
+                    && (!be.TryGetProperty(k, out var mb) || mb.ValueKind != JsonValueKind.Number || mc.GetDouble() > mb.GetDouble()))
+                    found.Add($"aperta {k} em {at}");
+            foreach (var group in new[] { "properties", "$defs" })
+                if (be.TryGetProperty(group, out var pb) && pb.ValueKind == JsonValueKind.Object)
+                {
+                    ce.TryGetProperty(group, out var pc);
+                    foreach (var p in pb.EnumerateObject())
+                        if (pc.ValueKind != JsonValueKind.Object || !pc.TryGetProperty(p.Name, out var child)) found.Add($"remove {at}/{p.Name}");
+                        else Cmp(p.Value, child, $"{at}/{p.Name}");
+                }
+            foreach (var k in new[] { "items", "additionalProperties", "propertyNames" })
+                if (be.TryGetProperty(k, out var ib) && ce.TryGetProperty(k, out var ic)) Cmp(ib, ic, $"{at}/{k}");
+        }
+        Cmp(b.RootElement, c.RootElement, "");
+        foreach (var f in found.Distinct()) yield return f;
+    }
+
+    /// <summary>Contrato de capability: versão publicada é imutável — alterá-la ou removê-la quebra consumidores. Versão nova é rotina.</summary>
+    static IEnumerable<string> CapabilityBreaking(JsonDocument? b, JsonDocument? c)
+    {
+        if (b is null) yield break;
+        if (c is null) { yield return "remove o contrato"; yield break; }
+        var cv = c.RootElement.Arr("versions").ToDictionary(v => v.Str("version") ?? "");
+        foreach (var v in b.RootElement.Arr("versions"))
+        {
+            var id = v.Str("version") ?? "";
+            if (!cv.TryGetValue(id, out var nv)) yield return $"remove a versão {id}";
+            else if (Canon(v) != Canon(nv)) yield return $"altera a versão publicada {id}";
+        }
+        if (b.RootElement.Str("capability") != c.RootElement.Str("capability")) yield return "muda o ID da capability";
+    }
+
+    static readonly HashSet<string> RoutineComponentKeys = ["name", "description", "docs", "commands", "status"];
+
+    /// <summary>ecosystem.json: nome, descrição, docs, comandos e status factual são rotina; criar/remover componente ou mudar tipo,
+    /// caminho, dependências, capabilities, permissões, versão, donos ou o bloco 'ecosystem' é arquitetura.</summary>
+    static IEnumerable<string> ManifestStructure(JsonDocument? b, JsonDocument? c)
+    {
+        if (c is null) { yield return "remove o manifest"; yield break; }
+        if (b is null) yield break;
+        var eb = b.RootElement.TryGetProperty("ecosystem", out var x1) ? Canon(x1) : ""; var ec = c.RootElement.TryGetProperty("ecosystem", out var x2) ? Canon(x2) : "";
+        if (eb != ec) yield return "muda o bloco 'ecosystem'";
+        Dictionary<string, JsonElement> Comps(JsonDocument d) => d.RootElement.TryGetProperty("components", out var cc) && cc.ValueKind == JsonValueKind.Object
+            ? cc.EnumerateObject().ToDictionary(p => p.Name, p => p.Value) : [];
+        var bc = Comps(b); var cc2 = Comps(c);
+        foreach (var id in bc.Keys.Except(cc2.Keys)) yield return $"remove o componente '{id}'";
+        foreach (var id in cc2.Keys.Except(bc.Keys)) yield return $"cria o componente '{id}'";
+        foreach (var (id, be) in bc.Where(x => cc2.ContainsKey(x.Key)))
+        {
+            var ce = cc2[id];
+            var keys = be.EnumerateObject().Select(p => p.Name).Union(ce.EnumerateObject().Select(p => p.Name)).Where(k => !RoutineComponentKeys.Contains(k))
+                .Where(k => (be.TryGetProperty(k, out var vb) ? Canon(vb) : "∅") != (ce.TryGetProperty(k, out var vc) ? Canon(vc) : "∅")).Order().ToList();
+            if (keys.Count > 0) yield return $"muda a estrutura de '{id}' ({string.Join(", ", keys)})";
+        }
+    }
 
     /// <summary>
-    /// Portões do estado combinado: quais componentes e Products o PR toca (pelo 'path' dos manifests da main, a fonte confiável), a
-    /// política de merge (a mais restritiva entre os tocados; mudar um mergePolicy exige autorização) e o handoff obrigatório (NN-008):
-    /// pelo menos um handoff adicionado/alterado, em estado review/verifying/done.
+    /// Portões do estado combinado, todos com a política e as regras da MAIN (baseRoot): componentes e Products tocados, criticidade
+    /// (zonas + regras + escalada declarada no handoff; nunca rebaixada pelo PR) e o handoff obrigatório (NN-008).
     /// </summary>
     public static GateResult Gates(string baseRoot, string combinedRoot, IReadOnlyList<string> changed)
     {
         static Dictionary<string, JsonElement> Comps(string root)
         {
-            var f = Path.Combine(root, "ecosystem.json");
-            if (!File.Exists(f)) return [];
-            using var d = JsonDocument.Parse(File.ReadAllText(f));
-            return d.RootElement.GetProperty("components").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone());
-        }
-        static string? Floor(string root)
-        {
-            var f = Path.Combine(root, "ecosystem.json");
-            if (!File.Exists(f)) return null;
-            using var d = JsonDocument.Parse(File.ReadAllText(f));
-            return d.RootElement.TryGetProperty("ecosystem", out var e) ? e.Str("mergePolicy") : null;
+            using var d = Read(root, "ecosystem.json");
+            return d is null ? [] : d.RootElement.GetProperty("components").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone());
         }
         var baseComps = Comps(baseRoot); var combinedComps = Comps(combinedRoot);
         var touched = new SortedSet<string>(StringComparer.Ordinal);
@@ -1713,22 +2035,37 @@ static class IntegrationQueue
         JsonElement? Find(string t) => combinedComps.TryGetValue(t, out var c) ? c : baseComps.TryGetValue(t, out var b) ? b : null;
         var products = touched.Where(t => Find(t) is { } e && e.Str("type") == "product").ToArray();
 
-        // Política efetiva = a mais restritiva entre o piso do Ecosystem (ecosystem.mergePolicy; ausente = owner-authorization) e a dos
-        // componentes tocados, sempre lida da main (a fonte confiável); mudar qualquer mergePolicy exige autorização (não se autoaprova).
-        var policy = "automatic"; var policyReason = "nenhum componente tocado exige autorização";
-        var floorBefore = Floor(baseRoot); var floorAfter = Floor(combinedRoot);
-        if (floorBefore != "automatic")
-        { policy = "owner-authorization"; policyReason = $"a política do Ecosystem exige autorização do proprietário (ecosystem.mergePolicy = {floorBefore ?? "ausente"})"; }
-        foreach (var t in touched)
-            if (baseComps.TryGetValue(t, out var bc) && bc.Str("mergePolicy") == "owner-authorization")
-            { policy = "owner-authorization"; policyReason = $"'{t}' exige autorização do proprietário (mergePolicy)"; }
-        if (floorBefore != floorAfter)
-        { policy = "owner-authorization"; policyReason = $"o PR muda a política do Ecosystem ({floorBefore ?? "—"} → {floorAfter ?? "—"})"; }
-        foreach (var id in baseComps.Keys.Union(combinedComps.Keys))
+        // Criticidade: política lida da main; sem política legível na main, tudo é crítico (falha fechada).
+        var findings = new List<Finding>();
+        JsonDocument? policy = null;
+        try { policy = Read(baseRoot, PolicyFile); } catch (JsonException) { }
+        var routinePolicy = "owner-authorization";
+        if (policy is null)
+            foreach (var f in changed) findings.Add(new("policy", f, "a main não tem política de integração legível (falha fechada)"));
+        else
         {
-            var before = baseComps.TryGetValue(id, out var b) ? b.Str("mergePolicy") : null;
-            var after = combinedComps.TryGetValue(id, out var a) ? a.Str("mergePolicy") : null;
-            if (before != after) { policy = "owner-authorization"; policyReason = $"o PR muda o mergePolicy de '{id}' ({before ?? "—"} → {after ?? "—"})"; }
+            routinePolicy = policy.RootElement.Str("routine") ?? "owner-authorization";
+            foreach (var cls in policy.RootElement.Arr("classes"))
+            {
+                var id = cls.Str("id") ?? "?";
+                foreach (var f in changed)
+                {
+                    var zone = cls.Arr("paths").Select(p => p.GetString()!).FirstOrDefault(p => Glob(p, f));
+                    if (zone is not null) findings.Add(new(id, f, $"zona crítica '{zone}'"));
+                }
+                foreach (var rule in cls.Arr("rules"))
+                {
+                    var name = rule.Str("rule") ?? "";
+                    foreach (var f in changed.Where(f => rule.Arr("paths").Any(p => Glob(p.GetString()!, f))))
+                    {
+                        List<string> details;
+                        try { details = ApplyRule(name, rule, baseRoot, combinedRoot, f).ToList(); }
+                        catch (Exception e) when (e is JsonException or InvalidOperationException or KeyNotFoundException or FormatException)
+                        { details = [$"não foi possível analisar ({e.GetType().Name}; falha fechada)"]; }
+                        findings.AddRange(details.Select(d => new Finding(id, f, d)));
+                    }
+                }
+            }
         }
 
         var handoffs = changed.Where(f => f.StartsWith("docs/governance/handoffs/", StringComparison.Ordinal) && f.EndsWith(".json", StringComparison.Ordinal)
@@ -1742,19 +2079,68 @@ static class IntegrationQueue
                 using var d = JsonDocument.Parse(File.ReadAllText(Path.Combine(combinedRoot, h)));
                 var st = d.RootElement.Str("state");
                 if (!ReadyHandoffStates.Contains(st)) { ok = false; reason = $"{h}: estado '{st}' — o agente ainda não terminou (review, verifying ou done)"; }
+                // Escalada declarada pelo agente: só sobe a criticidade, nunca a rebaixa.
+                if (d.RootElement.TryGetProperty("criticality", out var cr) && cr.Str("declared") == "critical")
+                {
+                    var classes = cr.Arr("classes").Select(x => x.GetString() ?? "?").DefaultIfEmpty("declared");
+                    foreach (var cl in classes) findings.Add(new(cl, h, $"declarado crítico pelo agente: {cr.Str("reason") ?? "sem motivo"}"));
+                }
             }
             catch (JsonException) { ok = false; reason = $"{h}: JSON inválido"; }
         }
-        return new GateResult(ok, reason, [.. touched], products, policy, policyReason);
+        var criticality = findings.Count > 0 ? "critical" : "routine";
+        var requiresOwner = criticality == "critical" || routinePolicy != "automatic";
+        return new GateResult(ok, reason, [.. touched], products, criticality, requiresOwner, [.. findings], [.. handoffs]);
     }
 
+    // ---------------------------------------------------------------------------------------------------------------
+    // Autorização crítica: a label só vale se o EVENTO que a pôs foi feito por um autorizador, depois de o head atual ser avaliado.
+
+    public sealed record AuthResult(bool Ok, string Reason, string? By);
+
+    /// <param name="events">GET /issues/{n}/events (labeled/unlabeled com actor, label e created_at).</param>
+    /// <param name="statuses">GET /commits/{head}/statuses filtrado pelo contexto do integrador (description, created_at, creator.login).</param>
+    public static AuthResult Authorization(JsonElement events, JsonElement statuses, string label, IReadOnlyCollection<string> authorizers, string owner)
+    {
+        static DateTimeOffset T(JsonElement e) => DateTimeOffset.Parse(e.Str("created_at") ?? "0001-01-01T00:00:00Z", CultureInfo.InvariantCulture);
+        var relevant = events.EnumerateArray().Select((e, i) => (E: e, I: i))
+            .Where(x => x.E.Str("event") is "labeled" or "unlabeled" && x.E.TryGetProperty("label", out var l) && l.Str("name") == label)
+            .OrderBy(x => T(x.E)).ThenBy(x => x.I).ToList();
+        if (relevant.Count == 0 || relevant[^1].E.Str("event") != "labeled") return new(false, $"sem a label '{label}'", null);
+        var last = relevant[^1].E;
+        var actor = last.TryGetProperty("actor", out var a) ? a.Str("login") : null;
+        var allowed = authorizers.Select(x => x == "@repository-owner" ? owner : x).Where(x => x.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (actor is null || !allowed.Contains(actor))
+            return new(false, $"a label '{label}' foi posta por '{actor ?? "?"}', que não pode autorizar (autorizadores: {string.Join(", ", allowed.Order())})", actor);
+        var evaluated = statuses.EnumerateArray()
+            .Where(s => (s.Str("description") ?? "").StartsWith("testando ", StringComparison.Ordinal)
+                && s.TryGetProperty("creator", out var cr) && cr.Str("login") == BotLogin)
+            .Select(T).OrderBy(t => t).ToList();
+        if (evaluated.Count == 0) return new(false, "o head atual ainda não foi avaliado pelo integrador", actor);
+        var at = T(last);
+        if (at <= evaluated[0])
+            return new(false, $"a label foi posta antes de o head atual ser avaliado ({at:u} ≤ {evaluated[0]:u}); recoloque-a para autorizar este estado", actor);
+        return new(true, $"autorizado por {actor} em {at:u}", actor);
+    }
+
+    static string Line(string s) => s.Replace('\r', ' ').Replace('\n', ' ');
     static string J(IEnumerable<string> xs) => "[" + string.Join(",", xs.Select(x => "\"" + JsonEncodedText.Encode(x).Value + "\"")) + "]";
 
-    /// <summary>CLI: --integration-plan --input &lt;json&gt; e --integration-gates --base-root &lt;dir&gt; --combined-root &lt;dir&gt; --files &lt;lista&gt;.
-    /// Saída em linhas chave=valor (próprias para $GITHUB_OUTPUT).</summary>
+    /// <summary>CLI (linhas chave=valor, próprias para $GITHUB_OUTPUT):
+    ///   --integration-plan --input &lt;json&gt; [--policy &lt;arquivo&gt;]
+    ///   --integration-gates --base-root &lt;main&gt; --combined-root &lt;main+PR&gt; --files &lt;lista&gt;
+    ///   --integration-authorization --events &lt;json&gt; --statuses &lt;json&gt; --owner &lt;login&gt; [--policy &lt;arquivo&gt;]</summary>
     public static int Run(string[] args, TextWriter w)
     {
         string Opt(string name) { var i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : ""; }
+        (string Label, string[] Authorizers) Auth()
+        {
+            var p = Opt("--policy");
+            if (p.Length == 0 || !File.Exists(p)) return (DefaultLabel, ["@repository-owner"]);
+            using var d = JsonDocument.Parse(File.ReadAllText(p));
+            var a = d.RootElement.GetProperty("authorization");
+            return (a.Str("label") ?? DefaultLabel, [.. a.Arr("authorizers").Select(x => x.GetString()!)]);
+        }
         if (args.Contains("--integration-plan"))
         {
             using var d = JsonDocument.Parse(File.ReadAllText(Opt("--input")));
@@ -1765,17 +2151,32 @@ static class IntegrationQueue
                 [.. p.Arr("labels").Select(l => l.GetString() ?? "")],
                 p.TryGetProperty("status", out var s) && s.ValueKind == JsonValueKind.Object ? s.Str("state") : null,
                 p.TryGetProperty("status", out var s2) && s2.ValueKind == JsonValueKind.Object ? s2.Str("description") : null)).ToList();
-            var dec = Plan(main, prs);
+            var dec = Plan(main, prs, Auth().Label);
             w.WriteLine($"action={dec.Action}"); w.WriteLine($"pr={(dec.Pr == 0 ? "" : dec.Pr)}"); w.WriteLine($"head={dec.Head}");
             w.WriteLine($"main={main}"); w.WriteLine($"authorized={(dec.Authorized ? "true" : "false")}"); w.WriteLine($"more={(dec.More ? "true" : "false")}");
-            w.WriteLine($"reason={dec.Reason}");
+            w.WriteLine($"tested_combined={dec.Combined}"); w.WriteLine($"tested_criticality={dec.Criticality}");
+            w.WriteLine($"reason={Line(dec.Reason)}");
+            return 0;
+        }
+        if (args.Contains("--integration-authorization"))
+        {
+            using var ev = JsonDocument.Parse(File.ReadAllText(Opt("--events")));
+            using var st = JsonDocument.Parse(File.ReadAllText(Opt("--statuses")));
+            var (label, authorizers) = Auth();
+            var r = Authorization(ev.RootElement, st.RootElement, label, authorizers, Opt("--owner"));
+            w.WriteLine($"authorized={(r.Ok ? "true" : "false")}"); w.WriteLine($"authorized_by={r.By ?? ""}");
+            w.WriteLine($"authorization_reason={Line(r.Reason)}");
             return 0;
         }
         var changed = File.ReadAllLines(Opt("--files")).Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
         var g = Gates(Opt("--base-root"), Opt("--combined-root"), changed);
-        w.WriteLine($"gate={(g.Ok ? "ok" : "blocked")}"); w.WriteLine($"gate_reason={g.Reason}");
+        w.WriteLine($"gate={(g.Ok ? "ok" : "blocked")}"); w.WriteLine($"gate_reason={Line(g.Reason)}");
         w.WriteLine($"components={J(g.Components)}"); w.WriteLine($"products={J(g.Products)}");
-        w.WriteLine($"policy={g.Policy}"); w.WriteLine($"policy_reason={g.PolicyReason}");
+        w.WriteLine($"criticality={g.Criticality}"); w.WriteLine($"requires_owner={(g.RequiresOwner ? "true" : "false")}");
+        w.WriteLine($"critical_classes={J(g.Findings.Select(f => f.Class).Distinct())}");
+        var why = string.Join(" · ", g.Findings.Select(f => $"{f.Class}: {f.Path} — {f.Detail}"));
+        w.WriteLine($"critical_reason={Line(why.Length > 1500 ? why[..1500] + " …" : why)}");
+        w.WriteLine($"handoffs={J(g.Handoffs)}");
         return 0;
     }
 }
@@ -2143,6 +2544,8 @@ static class SelfTest
             r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"active\"", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"not-migrated\""); }),
         new("Caso C: decisão decided, projeção ainda a mostra pendente", "CHK-PORTAL",
             r => { Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true)); RunGenerator(r); Replace(r, "docs/governance/decisions.json", "\"status\": \"pending\"", "\"status\": \"decided\""); }),
+        new("Caso E: portal apresenta aprovação crítica sem instantâneo dos PRs (inventada)", "CHK-PORTAL",
+            r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"availability\": \"not-available\",\n    \"items\": []", "\"availability\": \"derived\",\n    \"items\": [ { \"number\": 7, \"title\": \"x\", \"url\": \"https://github.com/AbnerCruz/Ecosystem/pull/7\" } ]"); }),
         new("Caso D: build VALIDATED no registro, projeção diz HUMAN_VALIDATION_PENDING", "CHK-PORTAL",
             r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"state\": \"VALIDATED\"", "\"state\": \"HUMAN_VALIDATION_PENDING\"")); }),
         new("handoff afirma como resultado o próprio commit de partida", "CHK-HANDOFFS",
@@ -2170,10 +2573,30 @@ static class SelfTest
             r => Replace(r, ".github/workflows/lunet2d-ci.yml", "  workflow_call:\n", "  workflow_call_removido:\n")),
         new("CI deixa de simular o integrador", "CHK-INTEGRATION",
             r => Replace(r, ".github/workflows/consistency.yml", "        run: bash .github/integrator/simulate.sh\n", "        run: echo pulado\n")),
-        new("Ecosystem sem piso de política de integração", "CHK-INTEGRATION",
-            r => Replace(r, "ecosystem.json", "    \"mergePolicy\": \"owner-authorization\",\n    \"normative\"", "    \"normative\"")),
-        new("Product ativo sem mergePolicy", "CHK-INTEGRATION",
-            r => Replace(r, "ecosystem.json", "\"mergePolicy\": \"owner-authorization\",", "")),
+        new("política de integração ausente", "CHK-INTEGRATION",
+            r => File.Delete(Path.Combine(r, "docs", "governance", "integration-policy.json"))),
+        new("control plane fora das zonas críticas (o checker poderia se autoaprovar)", "CHK-INTEGRATION",
+            r => Replace(r, "docs/governance/integration-policy.json", "        \"tests/consistency/**\",\n", "")),
+        new("regra de criticidade sem implementação no checker confiável", "CHK-INTEGRATION",
+            r => Replace(r, "docs/governance/integration-policy.json", "{ \"rule\": \"manifest-structure\",", "{ \"rule\": \"regra-inventada\",")),
+        new("segunda autoridade de política (mergePolicy de volta no manifest)", "CHK-INTEGRATION",
+            r => Replace(r, "ecosystem.json", "      \"status\": \"active\",\n", "      \"status\": \"active\",\n      \"mergePolicy\": \"automatic\",\n")),
+        new("classificação com a política do PR (não da main)", "CHK-INTEGRATION",
+            r => Replace(r, ".github/integrator/integrate.sh", "--integration-gates --base-root . --combined-root ../work", "--integration-gates --base-root ../work --combined-root ../work")),
+        new("sem checker confiável da main sobre o candidato", "CHK-INTEGRATION",
+            r => Replace(r, ".github/integrator/integrate.sh", "(cd ../work && dotnet run \"$trusted/tests/consistency/Check.cs\")", "(cd ../work && dotnet run tests/consistency/Check.cs)")),
+        new("status não persiste o commit combinado testado", "CHK-INTEGRATION",
+            r => Replace(r, ".github/integrator/integrate.sh", "local desc=\"$3 main=$4 combined=$5 $6\"", "local desc=\"$3 main=$4 $6\"")),
+        new("integra sem conferir o head atual do PR (corrida do head)", "CHK-INTEGRATION",
+            r => Replace(r, ".github/integrator/integrate.sh", "  if ! guard_pr_head; then", "  if false; then")),
+        new("integra sem exigir ref de integração == commit testado", "CHK-INTEGRATION",
+            r => Replace(r, ".github/integrator/integrate.sh", "\"$(git rev-parse \"refs/remotes/integration/pr-${PR}\")\" = \"$COMBINED\"", "-n \"$(git rev-parse \"refs/remotes/integration/pr-${PR}\")\"")),
+        new("integra sem conferir a main atual (corrida da main)", "CHK-INTEGRATION",
+            r => Replace(r, ".github/integrator/integrate.sh", "  if ! guard_main; then", "  if false; then")),
+        new("integra crítico sem conferir o autor da label", "CHK-INTEGRATION",
+            r => Replace(r, ".github/integrator/integrate.sh", "  if [ \"${REQUIRES_OWNER}\" = \"true\" ] && ! guard_authorization; then", "  if false; then")),
+        new("rotina verde deixa de integrar sozinha", "CHK-INTEGRATION",
+            r => Replace(r, ".github/integrator/integrate.sh", "if [ \"${REQUIRES_OWNER}\" != \"true\" ]; then land;", "if false; then land;")),
         new("integrador força a main (--force)", "CHK-INTEGRATION",
             r => Replace(r, ".github/integrator/integrate.sh", "git push -q origin \"${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}\"", "git push -q --force origin \"${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}\"")),
         new("integrador força a main (+refspec)", "CHK-INTEGRATION",
@@ -2567,70 +2990,138 @@ static class SelfTest
     {
         var failures = 0;
         void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  integrador: {name}"); if (!ok) failures++; }
-        const string main = "aaaaaaaaaaaa0000000000000000000000000000", old = "bbbbbbbbbbbb0000000000000000000000000000";
+        const string main = "aaaaaaaaaaaa0000000000000000000000000000", old = "bbbbbbbbbbbb0000000000000000000000000000", comb = "cccccccccccc0000000000000000000000000000";
         IntegrationQueue.Pr P(int n, string? st = null, string? desc = null, string[]? labels = null, bool draft = false, bool fork = false, string head = "agente") =>
             new(n, draft, fork, head, $"{n:D40}", labels ?? [], st, desc);
+
+        // --- fila ---
         var d = IntegrationQueue.Plan(main, [P(3), P(1, draft: true), P(2, fork: true), P(4, head: "dependabot/npm/x")]);
         Report(d.Action == "evaluate" && d.Pr == 3 && !d.More, "rascunho, fork e Dependabot são ignorados; PR nunca avaliado é avaliado");
-        d = IntegrationQueue.Plan(main, [P(5, "success", $"pronto main={main[..12]}: verde"), P(6)]);
-        Report(d.Action == "evaluate" && d.Pr == 6, "PR pronto sem autorização espera; o próximo é avaliado");
-        d = IntegrationQueue.Plan(main, [P(6), P(5, "success", $"pronto main={main[..12]}: verde", ["integrar"])]);
-        Report(d.Action == "land" && d.Pr == 5 && d.More, "PR pronto e autorizado contra a main atual é integrado primeiro (sem retestar)");
-        d = IntegrationQueue.Plan(main, [P(5, "success", $"pronto main={old[..12]}: verde", ["integrar"])]);
-        Report(d.Action == "evaluate", "main mudou depois da avaliação (base obsoleta): reavaliar contra a main atual, nunca integrar o teste velho");
-        d = IntegrationQueue.Plan(main, [P(7, "failure", $"conflito main={main[..12]}: ROADMAP.md"), P(8, "failure", $"falhou main={main[..12]}: consistency")]);
+        d = IntegrationQueue.Plan(main, [P(5, "success", $"pronto main={main} combined={comb} critical: aguardando"), P(6)]);
+        Report(d.Action == "evaluate" && d.Pr == 6, "crítico pronto sem autorização espera; o próximo é avaliado");
+        d = IntegrationQueue.Plan(main, [P(6), P(5, "success", $"pronto main={main} combined={comb} critical: aguardando", ["integrar"])]);
+        Report(d.Action == "land" && d.Pr == 5 && d.More && d.Combined == comb && d.Criticality == "critical",
+            "crítico pronto com a label: 'land' do commit combinado EXATO registrado no status (o ator é conferido depois)");
+        d = IntegrationQueue.Plan(main, [P(5, "success", $"pronto main={old} combined={comb} critical", ["integrar"])]);
+        Report(d.Action == "evaluate", "corrida da main: resultado testado sobre M1 não integra quando a main é M2 — reavaliar");
+        d = IntegrationQueue.Plan(main, [P(5, "success", $"pronto main={main[..12]}: verde", ["integrar"])]);
+        Report(d.Action == "evaluate", "status sem o commit combinado testado (formato antigo) nunca integra: reavaliar");
+        d = IntegrationQueue.Plan(main, [P(7, "failure", $"conflito main={main} combined=- -: ROADMAP.md"), P(8, "failure", $"falhou main={main} combined={comb} routine: consistency")]);
         Report(d.Action == "none", "conflito ou check vermelho contra a main atual: aguarda nova versão do PR (sem laço)");
-        d = IntegrationQueue.Plan(main, [P(9, "pending", $"testando main={main[..12]}: x")]);
-        Report(d.Action == "evaluate", "avaliação interrompida é retomada");
+        d = IntegrationQueue.Plan(main, [P(9, "pending", $"testando main={main} combined={comb} routine")]);
+        Report(d.Action == "evaluate", "avaliação interrompida ou obsoleta é retomada");
+        var ps = IntegrationQueue.ParseStatus($"pronto main={main} combined={comb} critical: aguardando autorização");
+        Report(ps is { Result: "pronto", Combined: comb, Criticality: "critical" } && ps.Main == main, "status persiste main, commit combinado exato e classificação");
 
+        // --- classificação (política e regras da MAIN = baseRoot) ---
         var tmp = Path.Combine(Path.GetTempPath(), "ecosystem-queue-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var b = Path.Combine(tmp, "base"); var c = Path.Combine(tmp, "combined");
-            Directory.CreateDirectory(b); Directory.CreateDirectory(c);
-            // Piso do Ecosystem: os casos abaixo simulam primeiro 'automatic' (integração automática decidida) e depois o piso restritivo.
-            static string Floor(string json, string v) => Regex.Replace(json, @"(""ecosystem"": \{[^}]*?""mergePolicy"": "")[a-z-]+""", "${1}" + v + "\"");
-            var manifest = File.ReadAllText(Path.Combine(repoRoot, "ecosystem.json"));
-            File.WriteAllText(Path.Combine(b, "ecosystem.json"), Floor(manifest, "automatic"));
-            File.WriteAllText(Path.Combine(c, "ecosystem.json"), Floor(manifest, "automatic"));
-            Directory.CreateDirectory(Path.Combine(c, "docs", "governance", "handoffs"));
-            void H(string name, string state) => File.WriteAllText(Path.Combine(c, "docs", "governance", "handoffs", name), $"{{\"state\": \"{state}\"}}");
-            H("HO-x.json", "review");
-            var g = IntegrationQueue.Gates(b, c, ["ROADMAP.md", "docs/governance/handoffs/HO-x.json"]);
-            Report(g.Ok && g.Policy == "automatic" && g.Products.Length == 0, "mudança só do Ecosystem com handoff: integra sozinha");
-            g = IntegrationQueue.Gates(b, c, ["apps/urbe/src/app.js", "docs/governance/handoffs/HO-x.json"]);
-            Report(g.Ok && g.Policy == "owner-authorization" && g.Products.SequenceEqual(["urbe"]), "mudança no Urbe: roda o CI do Urbe e exige autorização (mergePolicy)");
-            g = IntegrationQueue.Gates(b, c, ["apps/lunet2d/src/x.cs", "docs/governance/handoffs/HO-x.json"]);
-            Report(g.Ok && g.Policy == "automatic" && g.Products.SequenceEqual(["lunet2d"]), "mudança no Lunet2D: roda o CI do Lunet2D e integra sozinha");
-            g = IntegrationQueue.Gates(b, c, ["ROADMAP.md"]);
-            Report(!g.Ok, "PR sem handoff é bloqueado (NN-008)");
-            H("HO-y.json", "working");
-            g = IntegrationQueue.Gates(b, c, ["ROADMAP.md", "docs/governance/handoffs/HO-y.json"]);
+            var b = Path.Combine(tmp, "base");
+            void Put(string root, string rel, string content) { var f = Path.Combine(root, rel); Directory.CreateDirectory(Path.GetDirectoryName(f)!); File.WriteAllText(f, content); }
+            foreach (var rel in new[] { "ecosystem.json", IntegrationQueue.PolicyFile, "docs/governance/decisions.json", "tests/consistency/Check.cs", "apps/urbe/package.json",
+                "docs/contracts/schemas/handoff.schema.json", "docs/contracts/schemas/context.schema.json", "docs/adr/0014-fluxo-multiagente-minimo.md" })
+                Put(b, rel, File.ReadAllText(Path.Combine(repoRoot, rel)));
+            Put(b, "docs/adr/0099-proposta.md", "# ADR-0099 — x\n\n## Status\n\nProposto — em análise.\n\n## Decisão\n\nNada ainda.\n");
+            var n = 0;
+            (IntegrationQueue.GateResult G, string C) Case(Action<string> change, params string[] files)
+            {
+                var c = Path.Combine(tmp, "c" + n++);
+                Copy(b, c);
+                Put(c, "docs/governance/handoffs/HO-x.json", "{\"state\": \"review\"}");
+                change(c);
+                return (IntegrationQueue.Gates(b, c, [.. files, "docs/governance/handoffs/HO-x.json"]), c);
+            }
+            string R(string c, string rel) => File.ReadAllText(Path.Combine(c, rel));
+            void W(string c, string rel, string content) => Put(c, rel, content);
+            bool Routine(IntegrationQueue.GateResult g) => g.Ok && g.Criticality == "routine" && !g.RequiresOwner;
+            bool Critical(IntegrationQueue.GateResult g, string cls, string? detail = null) => g.Criticality == "critical" && g.RequiresOwner
+                && g.Findings.Any(f => f.Class == cls && (detail is null || f.Detail.Contains(detail)));
+
+            var g = Case(c => { W(c, "ROADMAP.md", "x"); W(c, "ARCHITECTURE.md", "y"); W(c, "site/app.js", "z"); }, "ROADMAP.md", "ARCHITECTURE.md", "site/app.js").G;
+            Report(Routine(g) && g.Products.Length == 0, "rotina: feature/documentação do Ecosystem (ROADMAP, ARCHITECTURE, UI do portal) integra sozinha");
+            g = Case(c => W(c, "apps/urbe/src/app.js", "// botão corrigido"), "apps/urbe/src/app.js").G;
+            Report(Routine(g) && g.Products.SequenceEqual(["urbe"]), "rotina Urbe: bug/feature normal roda o CI do Urbe e integra sozinha (sem label)");
+            g = Case(c => W(c, "apps/lunet2d/src/Lunet.Editor/X.cs", "class X {}"), "apps/lunet2d/src/Lunet.Editor/X.cs").G;
+            Report(Routine(g) && g.Products.SequenceEqual(["lunet2d"]), "rotina Lunet2D: integra sozinha");
+            g = Case(c => W(c, ".github/workflows/integrate.yml", "x"), ".github/workflows/integrate.yml").G;
+            Report(Critical(g, "control-plane"), "control plane: PR que muda integrate.yml é crítico e não entra sozinho");
+            g = Case(c => W(c, "tests/consistency/Check.cs", R(c, "tests/consistency/Check.cs").Replace("        \"CHK-INTEGRATION\",\n", "")), "tests/consistency/Check.cs").G;
+            Report(Critical(g, "control-plane", "remove checks: CHK-INTEGRATION"), "checker: PR que remove fiscalização do Check.cs é crítico e o checker da main aponta o que foi removido");
+            g = Case(c => W(c, IntegrationQueue.PolicyFile, R(c, IntegrationQueue.PolicyFile).Replace("        \"tests/consistency/**\",\n", "")), IntegrationQueue.PolicyFile).G;
+            Report(Critical(g, "control-plane", "deixa de proteger: tests/consistency/**"), "política: PR que afrouxa a política é crítico pela política ANTERIOR (não se autoaprova)");
+            g = Case(c => W(c, IntegrationQueue.PolicyFile, "{\"routine\": \"automatic\", \"classes\": []}"), IntegrationQueue.PolicyFile, "apps/urbe/src/persistence/backup.js").G;
+            Report(Critical(g, "user-data"), "política nova (vazia) não vale para o próprio PR: as zonas da main continuam classificando");
+            g = Case(c => W(c, "apps/urbe/src/persistence/backup.js", "x"), "apps/urbe/src/persistence/backup.js").G;
+            Report(Critical(g, "user-data"), "dados do usuário: backup/persistência do Urbe é crítico");
+            g = Case(c => W(c, "apps/urbe/package.json", R(c, "apps/urbe/package.json").Replace("\"releaseType\": \"release\"", "\"releaseType\": \"draft\"")), "apps/urbe/package.json").G;
+            Report(Critical(g, "distribution", "/build/publish"), "distribuição: mudar o canal de publicação do Urbe é crítico");
+            g = Case(c => W(c, "apps/urbe/package.json", Regex.Replace(R(c, "apps/urbe/package.json"), "\"chokidar\": \"[^\"]+\"", "\"chokidar\": \"^5.0.0\"")), "apps/urbe/package.json").G;
+            Report(Routine(g), "dependência atualizada no package.json do Urbe é rotina (só as chaves de distribuição/licença são críticas)");
+            g = Case(c => W(c, "docs/governance/decisions.json", R(c, "docs/governance/decisions.json").Replace("\"decisions\": [", PendingDecision(withObject: true))), "docs/governance/decisions.json").G;
+            Report(Routine(g), "perguntar ao proprietário (nova decisão pendente) é rotina");
+            var decided = Case(c => W(c, "docs/governance/decisions.json", Regex.Replace(R(c, "docs/governance/decisions.json"), "(\"id\": \"DEC-0001\",\\s*\"status\": )\"decided\"", "$1\"withdrawn\"")), "docs/governance/decisions.json").G;
+            Report(Critical(decided, "constitution", "altera DEC-0001"), "alterar uma decisão já tomada do proprietário é crítico");
+            g = Case(c => W(c, "docs/adr/0100-novo.md", "# ADR-0100 — y\n\n## Status\n\nProposto\n\n## Decisão\n\nx\n"), "docs/adr/0100-novo.md").G;
+            Report(Routine(g), "propor um ADR é rotina");
+            g = Case(c => W(c, "docs/adr/0099-proposta.md", R(c, "docs/adr/0099-proposta.md").Replace("Proposto — em análise.", "Aceito — pelo agente.")), "docs/adr/0099-proposta.md").G;
+            Report(Critical(g, "constitution", "muda o status"), "aceitar um ADR (decisão estrutural) é crítico");
+            g = Case(c => W(c, "docs/contracts/schemas/context.schema.json", R(c, "docs/contracts/schemas/context.schema.json").Replace("\"properties\": {", "\"properties\": { \"novoOpcional\": { \"type\": \"string\" },")), "docs/contracts/schemas/context.schema.json").G;
+            Report(Routine(g), "contrato: acrescentar campo opcional é rotina");
+            g = Case(c => W(c, "docs/contracts/schemas/context.schema.json", Regex.Replace(R(c, "docs/contracts/schemas/context.schema.json"), "\"required\": \\[", "\"required\": [\"campoNovoObrigatorio\", ", RegexOptions.None, TimeSpan.FromSeconds(1))), "docs/contracts/schemas/context.schema.json").G;
+            Report(Critical(g, "compatibility", "passa a exigir"), "contrato: exigir campo novo (breaking) é crítico");
+            g = Case(c => W(c, "ecosystem.json", R(c, "ecosystem.json").Replace("Ambiente de desenvolvimento de jogos 2D", "Ambiente de jogos 2D")), "ecosystem.json").G;
+            Report(Routine(g), "manifest: mudar a descrição de um componente é rotina");
+            g = Case(c => W(c, "ecosystem.json", R(c, "ecosystem.json").Replace("\"components\": {", "\"components\": {\n    \"sprite-studio\": { \"name\": \"Sprite Studio\", \"type\": \"tool\", \"language\": \"csharp\", \"path\": \"tools/sprite-studio\", \"status\": \"planned\", \"owners\": [\"AbnerCruz\"], \"description\": \"x\", \"dependencies\": [] },")), "ecosystem.json").G;
+            Report(Critical(g, "architecture", "cria o componente 'sprite-studio'"), "arquitetura: criar componente compartilhado (NN-022) é crítico");
+            g = Case(c => W(c, "docs/governance/handoffs/HO-x.json", "{\"state\": \"review\", \"criticality\": {\"declared\": \"critical\", \"classes\": [\"user-data\"], \"reason\": \"muda o formato do mapa\"}}"), "apps/urbe/src/app.js").G;
+            Report(Critical(g, "user-data", "declarado crítico pelo agente"), "agente pode escalar para crítico no handoff (nunca rebaixar)");
+            g = Case(c => W(c, "docs/governance/handoffs/HO-x.json", "{\"state\": \"review\", \"criticality\": {\"declared\": \"routine\"}}"), ".github/workflows/integrate.yml").G;
+            Report(Critical(g, "control-plane"), "handoff que se declara rotina não rebaixa uma zona crítica");
+            g = Case(c => W(c, "docs/governance/decisions.json", "{ quebrado"), "docs/governance/decisions.json").G;
+            Report(Critical(g, "constitution", "falha fechada"), "zona crítica que não pode ser analisada: crítico (falha fechada)");
+            var noPolicy = Path.Combine(tmp, "sem-politica"); Copy(b, noPolicy); File.Delete(Path.Combine(noPolicy, IntegrationQueue.PolicyFile));
+            g = IntegrationQueue.Gates(noPolicy, noPolicy, ["ROADMAP.md"]);
+            Report(g.Criticality == "critical", "sem política legível na main: tudo é crítico (falha fechada)");
+            var (gNo, _) = Case(c => File.Delete(Path.Combine(c, "docs/governance/handoffs/HO-x.json")), "ROADMAP.md");
+            Report(!gNo.Ok, "PR sem handoff é bloqueado (NN-008)");
+            g = Case(c => W(c, "docs/governance/handoffs/HO-x.json", "{\"state\": \"working\"}"), "ROADMAP.md").G;
             Report(!g.Ok, "handoff em 'working' (agente não terminou) é bloqueado");
-            File.WriteAllText(Path.Combine(c, "ecosystem.json"), File.ReadAllText(Path.Combine(c, "ecosystem.json")).Replace("\"mergePolicy\": \"owner-authorization\"", "\"mergePolicy\": \"automatic\""));
-            g = IntegrationQueue.Gates(b, c, ["ecosystem.json", "docs/governance/handoffs/HO-x.json"]);
-            Report(g.Policy == "owner-authorization" && g.PolicyReason.Contains("urbe"), "PR que muda um mergePolicy exige autorização (não se autoaprova)");
-            File.WriteAllText(Path.Combine(b, "ecosystem.json"), Floor(manifest, "owner-authorization"));
-            File.WriteAllText(Path.Combine(c, "ecosystem.json"), Floor(manifest, "owner-authorization"));
-            g = IntegrationQueue.Gates(b, c, ["ROADMAP.md", "docs/governance/handoffs/HO-x.json"]);
-            var g2 = IntegrationQueue.Gates(b, c, ["apps/lunet2d/src/x.cs", "docs/governance/handoffs/HO-x.json"]);
-            Report(g.Ok && g.Policy == "owner-authorization" && g2.Policy == "owner-authorization" && g.PolicyReason.Contains("Ecosystem"),
-                "piso do Ecosystem 'owner-authorization': verifica tudo, mas nada entra sem autorização (nem Ecosystem nem Lunet2D)");
-            File.WriteAllText(Path.Combine(c, "ecosystem.json"), Floor(manifest, "automatic"));
-            g = IntegrationQueue.Gates(b, c, ["ecosystem.json", "docs/governance/handoffs/HO-x.json"]);
-            Report(g.Policy == "owner-authorization" && g.PolicyReason.Contains("política do Ecosystem"), "PR que afrouxa o piso do Ecosystem não se autoaprova");
-            // A CLI (usada pelo workflow) produz linhas chave=valor válidas, com listas JSON.
+            Report(IntegrationQueue.Glob("**/*.keystore", "apps/lunet2d/tools/lunet-dev.keystore") && IntegrationQueue.Glob("apps/*/AGENTS.md", "apps/urbe/AGENTS.md")
+                && !IntegrationQueue.Glob("apps/*/AGENTS.md", "apps/urbe/docs/AGENTS.md") && IntegrationQueue.Glob(".github/integrator/**", ".github/integrator/integrate.sh"), "glob das zonas: * dentro do segmento, ** atravessa");
+
+            // --- autorização crítica: o ATOR do evento, depois da avaliação deste head ---
+            JsonElement J(string s) => JsonDocument.Parse(s).RootElement;
+            var st = J("[{\"description\":\"testando main=a combined=b critical\",\"created_at\":\"2026-10-02T10:00:00Z\",\"creator\":{\"login\":\"github-actions[bot]\"}}," +
+                       "{\"description\":\"testando main=a combined=b critical\",\"created_at\":\"2026-10-02T09:00:00Z\",\"creator\":{\"login\":\"intruso\"}}]");
+            string Ev(params (string Ev, string Who, string At)[] es) => "[" + string.Join(",", es.Select(e => $"{{\"event\":\"{e.Ev}\",\"label\":{{\"name\":\"integrar\"}},\"actor\":{{\"login\":\"{e.Who}\"}},\"created_at\":\"{e.At}\"}}")) + "]";
+            string[] owners = ["@repository-owner"];
+            Report(!IntegrationQueue.Authorization(J("[]"), st, "integrar", owners, "AbnerCruz").Ok, "sem label: não autorizado");
+            Report(!IntegrationQueue.Authorization(J(Ev(("labeled", "agente-bot", "2026-10-02T11:00:00Z"))), st, "integrar", owners, "AbnerCruz").Ok, "label posta por quem não é o proprietário: autorização inválida");
+            Report(!IntegrationQueue.Authorization(J(Ev(("labeled", "AbnerCruz", "2026-10-02T09:30:00Z"))), st, "integrar", owners, "AbnerCruz").Ok,
+                "label do proprietário anterior à avaliação deste head: inválida (status de quem não é o integrador não conta)");
+            Report(IntegrationQueue.Authorization(J(Ev(("labeled", "AbnerCruz", "2026-10-02T11:00:00Z"))), st, "integrar", owners, "AbnerCruz").Ok, "label do proprietário depois da avaliação: autorizado");
+            Report(!IntegrationQueue.Authorization(J(Ev(("labeled", "AbnerCruz", "2026-10-02T11:00:00Z"), ("unlabeled", "AbnerCruz", "2026-10-02T11:05:00Z"))), st, "integrar", owners, "AbnerCruz").Ok, "label removida depois: não autorizado");
+            Report(IntegrationQueue.Authorization(J(Ev(("labeled", "delegado", "2026-10-02T11:00:00Z"))), st, "integrar", ["@repository-owner", "delegado"], "AbnerCruz").Ok, "identidade explicitamente autorizada na política: autorizado");
+
+            // --- CLIs usadas pelo workflow ---
+            var (gc, cdir) = Case(c => W(c, "apps/urbe/a.js", "x"), "apps/urbe/a.js");
             File.WriteAllLines(Path.Combine(tmp, "changed.txt"), ["apps/urbe/a.js", "docs/governance/handoffs/HO-x.json"]);
             var sw = new StringWriter();
-            IntegrationQueue.Run(["--integration-gates", "--base-root", b, "--combined-root", c, "--files", Path.Combine(tmp, "changed.txt")], sw);
+            IntegrationQueue.Run(["--integration-gates", "--base-root", b, "--combined-root", cdir, "--files", Path.Combine(tmp, "changed.txt")], sw);
             var lines = sw.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            Report(lines.All(l => Regex.IsMatch(l, "^[a-z_]+=")) && lines.Contains("products=[\"urbe\"]") && lines.Contains("gate=ok"), "CLI de portões: saída chave=valor com listas JSON");
-            File.WriteAllText(Path.Combine(tmp, "in.json"), $"{{\"main\":\"{main}\",\"prs\":[{{\"number\":12,\"draft\":false,\"crossRepository\":false,\"headRef\":\"x\",\"headSha\":\"{old}\",\"labels\":[],\"status\":null}}]}}");
+            Report(lines.All(l => Regex.IsMatch(l, "^[a-z_]+=")) && lines.Contains("products=[\"urbe\"]") && lines.Contains("gate=ok") && lines.Contains("criticality=routine") && lines.Contains("requires_owner=false"),
+                "CLI de portões: saída chave=valor com criticidade e listas JSON");
+            File.WriteAllText(Path.Combine(tmp, "in.json"), $"{{\"main\":\"{main}\",\"prs\":[{{\"number\":12,\"draft\":false,\"crossRepository\":false,\"headRef\":\"x\",\"headSha\":\"{old}\",\"labels\":[\"integrar\"],\"status\":{{\"state\":\"success\",\"description\":\"pronto main={main} combined={comb} critical\"}}}}]}}");
             sw = new StringWriter();
-            IntegrationQueue.Run(["--integration-plan", "--input", Path.Combine(tmp, "in.json")], sw);
-            Report(sw.ToString().Contains("action=evaluate") && sw.ToString().Contains("pr=12"), "CLI do plano: lê a entrada do workflow e decide");
+            IntegrationQueue.Run(["--integration-plan", "--input", Path.Combine(tmp, "in.json"), "--policy", Path.Combine(b, IntegrationQueue.PolicyFile)], sw);
+            Report(sw.ToString().Contains("action=land") && sw.ToString().Contains($"tested_combined={comb}"), "CLI do plano: entrega ao workflow o commit combinado exato testado");
+            File.WriteAllText(Path.Combine(tmp, "ev.json"), Ev(("labeled", "AbnerCruz", "2026-10-02T11:00:00Z"))); File.WriteAllText(Path.Combine(tmp, "st.json"), st.GetRawText());
+            sw = new StringWriter();
+            IntegrationQueue.Run(["--integration-authorization", "--events", Path.Combine(tmp, "ev.json"), "--statuses", Path.Combine(tmp, "st.json"), "--owner", "AbnerCruz", "--policy", Path.Combine(b, IntegrationQueue.PolicyFile)], sw);
+            Report(sw.ToString().Contains("authorized=true") && sw.ToString().Contains("authorized_by=AbnerCruz"), "CLI de autorização: confere o ator do evento");
         }
-        catch (Exception e) { Report(false, "execução: " + e.Message); }
+        catch (Exception e) { Report(false, "execução: " + e.GetType().Name + ": " + e.Message); }
         finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }
         return failures;
     }
@@ -2664,7 +3155,7 @@ static class SelfTest
         foreach (var f in Repo.WalkFiles(from))
         {
             var rel = Path.GetRelativePath(from, f);
-            if (rel.Replace('\\', '/') == "site/data/issues-snapshot.json") continue; // o instantâneo é de ambiente; as fixtures criam o seu
+            if (rel.Replace('\\', '/') is "site/data/issues-snapshot.json" or "site/data/approvals-snapshot.json") continue; // instantâneos são de ambiente; as fixtures criam os seus
             // Num git worktree, `.git` é um ARQUIVO que aponta para o repositório real: copiá-lo faria o self-test (git init/commit/tag)
             // escrever no repositório real (incidente de 2026-10-01, ADR-0014). A cópia nunca leva metadados do git.
             if (rel == ".git" || rel.StartsWith(".git" + Path.DirectorySeparatorChar)) continue;

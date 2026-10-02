@@ -1,0 +1,139 @@
+{
+  "$schema": "../contracts/schemas/integration-policy.schema.json",
+  "schemaVersion": 1,
+  "decision": "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+  "mechanism": "docs/adr/0015-integrador-automatico.md",
+  "routine": "automatic",
+  "critical": "owner-authorization",
+  "authorization": {
+    "label": "integrar",
+    "authorizers": ["@repository-owner"]
+  },
+  "classes": [
+    {
+      "id": "constitution",
+      "title": "Constituição e autoridade",
+      "consequence": "Muda as regras de quem decide o quê, ou registra uma decisão do proprietário. Errar aqui faz o sistema obedecer a uma regra ou decisão que o proprietário não tomou.",
+      "paths": [
+        "MANIFEST.md",
+        "AGENTS.md",
+        "apps/*/AGENTS.md",
+        "docs/governance/*.md",
+        "docs/governance/addenda/**",
+        "docs/governance/responses/**"
+      ],
+      "rules": [
+        { "rule": "decision-record", "paths": ["docs/governance/decisions.json"] },
+        { "rule": "adr-decision", "paths": ["docs/adr/0*.md", "apps/urbe/docs/v2/adr/0*.md", "apps/lunet2d/docs/adr/0*.md"] }
+      ]
+    },
+    {
+      "id": "control-plane",
+      "title": "Controle do próprio sistema",
+      "consequence": "Muda como o sistema verifica, classifica, autoriza ou integra mudanças. Um erro aqui pode deixar passar, sem verificação, tudo o que vier depois.",
+      "paths": [
+        ".github/workflows/**",
+        ".github/integrator/**",
+        ".github/scripts/**",
+        ".gitattributes",
+        "tests/consistency/**",
+        "site/generator/**",
+        "docs/governance/integration-policy.json",
+        "docs/governance/enforcement-matrix.json",
+        "docs/contracts/schemas/integration-policy.schema.json",
+        "docs/contracts/schemas/decisions.schema.json",
+        "docs/contracts/schemas/handoff.schema.json",
+        "docs/contracts/schemas/enforcement-matrix.schema.json",
+        "docs/contracts/schemas/validation-record.schema.json"
+      ],
+      "rules": [
+        { "rule": "trust-weakening", "paths": ["tests/consistency/Check.cs", "docs/governance/integration-policy.json"] }
+      ]
+    },
+    {
+      "id": "security",
+      "title": "Segurança",
+      "consequence": "Muda credenciais, permissões, execução de código ou a fronteira de confiança de um aplicativo.",
+      "paths": [
+        "docs/contracts/permissions.json",
+        "**/*.keystore",
+        "**/*.jks",
+        "**/*.p12",
+        "**/*.pem",
+        "apps/urbe/native/desktop/**",
+        "apps/urbe/native/android/app/src/main/AndroidManifest.xml",
+        "apps/urbe/src/customize/plugins.js",
+        "apps/urbe/src/ai/store.js",
+        "apps/lunet2d/src/Lunet.Core/GitAccount.cs"
+      ],
+      "rules": []
+    },
+    {
+      "id": "user-data",
+      "title": "Dados do usuário",
+      "consequence": "Muda o formato, a migração, o backup ou a restauração de dados do usuário. Um erro aqui pode tornar arquivos ilegíveis ou perdê-los.",
+      "paths": [
+        "apps/urbe/src/persistence/**",
+        "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+        "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
+        "apps/lunet2d/src/Lunet.Core/AtomicFile.cs",
+        "apps/lunet2d/src/Lunet.Core/AutosaveJournal.cs",
+        "apps/lunet2d/src/Lunet.Framework/Storage/**"
+      ],
+      "rules": []
+    },
+    {
+      "id": "distribution",
+      "title": "Distribuição crítica",
+      "consequence": "Muda assinatura, identidade do aplicativo, canal ou mecanismo de atualização/release. Uma release normal pelo mecanismo já aprovado não entra aqui.",
+      "paths": [
+        ".github/origin-sync/**",
+        "docs/distribution/**",
+        "apps/*/.github/**",
+        "apps/urbe/capacitor.config.json",
+        "apps/urbe/native/android/app/build.gradle",
+        "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj"
+      ],
+      "rules": [
+        { "rule": "json-keys", "paths": ["apps/urbe/package.json"], "keys": ["/name", "/build/appId", "/build/publish"] },
+        { "rule": "json-keys", "paths": ["apps/urbe/manifest.webmanifest"], "keys": ["/id", "/start_url", "/scope"] }
+      ]
+    },
+    {
+      "id": "compatibility",
+      "title": "Compatibilidade",
+      "consequence": "Quebra um contrato público ou formato já estabilizado: quem depende dele pode parar de funcionar.",
+      "paths": [],
+      "rules": [
+        { "rule": "schema-breaking", "paths": ["docs/contracts/schemas/*.json"] },
+        { "rule": "capability-breaking", "paths": ["docs/contracts/capabilities/*.json"] }
+      ]
+    },
+    {
+      "id": "architecture",
+      "title": "Arquitetura transversal",
+      "consequence": "Cria, remove ou religa componentes, dependências ou áreas compartilhadas (NN-022): muda a forma do ecossistema.",
+      "paths": [
+        "platform/**",
+        "workspaces/**",
+        "tools/**",
+        "services/**"
+      ],
+      "rules": [
+        { "rule": "manifest-structure", "paths": ["ecosystem.json"] }
+      ]
+    },
+    {
+      "id": "product-strategy",
+      "title": "Estratégia de produto",
+      "consequence": "Muda licença, modelo comercial ou a natureza de um produto.",
+      "paths": [
+        "LICENSE*",
+        "apps/*/LICENSE*"
+      ],
+      "rules": [
+        { "rule": "json-keys", "paths": ["apps/urbe/package.json"], "keys": ["/license"] }
+      ]
+    }
+  ]
+}

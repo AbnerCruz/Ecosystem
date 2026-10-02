@@ -166,6 +166,10 @@
             "type": "string",
             "minLength": 1
           },
+          "critical": {
+            "description": "Validação humana crítica (ADD-0012; communication.md §9): gate de fase, instalação/atualização de build distribuído, dados do usuário, segurança ou release. Crítica aparece em 'Precisa de você' no portal; não crítica continua pendente e visível (NN-017), sem interromper o proprietário. Obrigatório (CHK-HANDOFFS) quando kind = human e result = pending, para handoffs a partir de 2026-10-02.",
+            "type": "boolean"
+          },
           "tested_commit": {
             "description": "VALIDATION (ADR-0014): SHA do estado efetivamente testado por esta verificação (pode diferir do resultado, ex.: estado combinado após reconciliação com a main).",
             "type": "string",
@@ -281,6 +285,17 @@
             "pattern": "^(pending|declined|ADR-[0-9]{4})$"
           }
         }
+      }
+    },
+    "criticality": {
+      "description": "Escalada declarada pelo agente (ADD-0012): 'critical' torna a mudança crítica mesmo fora das zonas da política (ex.: muda formato de dados num arquivo comum); 'routine' não rebaixa nada. A classificação efetiva é derivada pelo integrador com a política da main e fica no PR (status ecosystem/integration) e no commit de integração (trailers Integration-*).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["declared"],
+      "properties": {
+        "declared": { "enum": ["routine", "critical"] },
+        "classes": { "description": "IDs de classes de docs/governance/integration-policy.json.", "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" } },
+        "reason": { "type": "string", "minLength": 1 }
       }
     },
     "base_commit": {

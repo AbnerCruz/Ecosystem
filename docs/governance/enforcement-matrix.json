@@ -204,7 +204,7 @@
         {
           "mechanism": "TEST",
           "status": "implemented",
-          "how": "O integrador automático (ADR-0015) só leva à main PR que traz handoff em review/verifying/done e registra cada avaliação no PR (status ecosystem/integration, comentário, labels).",
+          "how": "O integrador automático (ADR-0015) só leva à main PR com handoff em review/verifying/done e registra cada avaliação no PR (status ecosystem/integration com o commit combinado testado e a classificação, comentário com a rastreabilidade) e no commit de integração (trailers Integration-*).",
           "check": "CHK-INTEGRATION"
         }
       ]
@@ -280,6 +280,12 @@
           "status": "planned",
           "how": "ADR check automático: mudanças em ecosystem.json/boundaries/contracts exigem ADR referenciado no PR. Re-faseado ao fechar a Fase 2: na Fase 2 as mudanças de contrato foram cobertas por ADR-0012 e revisão; a automação no PR fica para a Fase 3.",
           "phase": "phase-3"
+        },
+        {
+          "mechanism": "TEST",
+          "status": "implemented",
+          "how": "O classificador confiável do integrador (política e regras da main, ADD-0012) torna crítica — e portanto dependente do proprietário — toda mudança que aceita/altera ADR vinculante, registra decisão, muda a estrutura de ecosystem.json, quebra contrato, ou toca zonas de controle, segurança, dados ou distribuição; um PR nunca muda a própria classificação.",
+          "check": "CHK-INTEGRATION"
         }
       ]
     },
@@ -397,7 +403,7 @@
         {
           "mechanism": "CI",
           "status": "implemented",
-          "how": "O integrador que escreve na main roda a definição da main (pull_request_target); o código do PR só roda nos checks, com token de leitura; nenhum push forçado na main; texto do PR só em env; política de integração explícita (mergePolicy), com piso owner-authorization até DEC-0023.",
+          "how": "O integrador que escreve na main roda a definição da main (pull_request_target); o código do PR só roda nos checks, com token de leitura; nenhum push forçado na main; texto do PR só em env; mudança crítica só entra com a label posta por um autorizador da política (o autor do evento é conferido).",
           "check": "CHK-INTEGRATION"
         }
       ]
@@ -464,7 +470,7 @@
         {
           "mechanism": "TEST",
           "status": "implemented",
-          "how": "A main só recebe o commit combinado (main atual + PR) aprovado pelos checks do Ecosystem e pelo CI dos Products tocados; se a main muda durante o teste, o PR é retestado (ADR-0015).",
+          "how": "A main só recebe o commit combinado EXATO (main atual + PR) aprovado pelo checker confiável da main, pelos checks do candidato e pelo CI dos Products tocados; antes do push conferem-se o head do PR, a ref de integração e a main (simulate.sh prova as corridas).",
           "check": "CHK-INTEGRATION"
         }
       ]

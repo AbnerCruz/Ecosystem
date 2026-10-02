@@ -31,7 +31,7 @@ Requer .NET SDK 10+. Execute a partir de qualquer diretório dentro do repositó
 | `CHK-ROADMAP` | fases 0–7 presentes; item `[x]` sem validação humana pendente | NN-017 |
 | `CHK-SECRETS` | padrões comuns de tokens e chaves privadas | MANIFEST §30.2 |
 | `CHK-DECISION-FLOW` | workflow de registro de decisões: guarda do dono, permissões explícitas, texto da Issue só em `env`, link de resposta no portal; o self-test executa o aplicador (feliz + recusas) | NN-009, NN-016 |
-| `CHK-INTEGRATION` | integrador automático (ADR-0015): `pull_request_target`, decisões pelas CLIs testadas, CI do Ecosystem e de cada Product ativo reutilizado no estado combinado, nenhum push forçado fora de `integration/*`, texto do PR só em `env`; simulação do integrador no CI; piso `ecosystem.mergePolicy` e `mergePolicy` de cada Product ativo | NN-008, NN-016, NN-018 |
+| `CHK-INTEGRATION` | integrador automático (ADR-0015, ADD-0012): política única (`integration-policy.json`) cobrindo control plane e constituição, toda regra implementada, sem `mergePolicy` paralelo; classificação com a política da `main`; checker confiável; status com o commit combinado; `land()` confere head do PR, ref = commit testado, `main` e autor da label antes do único push; rotina integra sozinha; sem force na `main`; texto do PR só em `env`; simulação no CI; CI do Ecosystem e de cada Product reutilizado no estado combinado | NN-008, NN-011, NN-016, NN-018 |
 | `CHK-PORTAL` | portal sem dados canônicos escritos à mão; projeção gerada válida e coerente com as fontes (inclui gates, decisões e validações pendentes); `VALIDATED` exige evidência | NN-001, NN-017, NN-021 |
 
 A lista de NN por check é informativa; a autoridade é [`docs/governance/enforcement-matrix.json`](../../docs/governance/enforcement-matrix.json).
@@ -50,11 +50,31 @@ dotnet run tests/consistency/Check.cs -- --integration <branch> [--base origin/m
 
 Compara a branch com a base atual usando só o git: `FRESH` (0) quando a base é ancestral da branch; `STALE` (3) quando a base andou desde que o trabalho começou; `STALE` com sobreposição (4) quando os dois lados mudaram os mesmos arquivos (arquivos de alto risco destacados). Com `STALE`, reconcilie (merge da `main` na branch) e rerode os checks no estado combinado antes de integrar. O self-test reproduz o cenário de dois agentes (`IntegrationTests`). `CHK-HANDOFFS` também verifica `base_commit`/`commit`/`tested_commit` contra o histórico (exige `fetch-depth: 0`).
 
-## Integrador automático (ADR-0015)
+## Integrador automático (ADR-0015, ADD-0012)
 
 ```bash
-dotnet run tests/consistency/Check.cs -- --integration-plan --input <prs.json>
+dotnet run tests/consistency/Check.cs -- --integration-plan --input <prs.json> [--policy docs/governance/integration-policy.json]
 dotnet run tests/consistency/Check.cs -- --integration-gates --base-root <main> --combined-root <main+PR> --files <arquivos-mudados>
+dotnet run tests/consistency/Check.cs -- --integration-authorization --events <json> --statuses <json> --owner <login> [--policy ...]
+bash .github/integrator/simulate.sh
 ```
 
-As decisões do integrador (`.github/workflows/integrate.yml`, cola em `.github/integrator/integrate.sh`) são estas duas funções puras; imprimem linhas `chave=valor` para `$GITHUB_OUTPUT`. `--integration-plan` escolhe o que fazer na execução (`land`, `evaluate` ou `none`) a partir dos PRs abertos e do status `ecosystem/integration` de cada um; `--integration-gates` diz quais componentes e Products o PR toca, a política efetiva e se o handoff está em ordem. O self-test (`IntegrationQueueTests`) cobre fila, base obsoleta, autorização, piso e handoff. O efeito no git (o que chega à `main`, conflito, check vermelho, `main` que muda durante o teste, nenhum force) é provado por `bash .github/integrator/simulate.sh`, com um `origin` local e o `gh` simulado; o CI roda os dois.
+As decisões do integrador (`.github/workflows/integrate.yml`, cola em `.github/integrator/integrate.sh`) são funções puras que imprimem linhas `chave=valor` para `$GITHUB_OUTPUT`:
+
+- `--integration-plan` escolhe `land`, `evaluate` ou `none` a partir dos PRs abertos e do status `ecosystem/integration` (que carrega o commit combinado exato testado);
+- `--integration-gates` diz quais componentes e Products o PR toca, se o handoff está em ordem e a **criticidade** (`routine`/`critical`, com classes e motivos), sempre com a política e as regras de `--base-root` (a `main`);
+- `--integration-authorization` confere se a label de autorização foi posta por um autorizador da política depois da avaliação do head atual.
+
+O self-test (`IntegrationQueueTests`) cobre fila, classificação (rotina e cada classe crítica, falha fechada, escalada do agente, política que tenta se afrouxar) e autorização. `simulate.sh` prova o efeito no git com o histórico real, um `origin` local e um `gh` simulado com estado:
+
+- rotina e rotina Urbe integram sozinhas;
+- crítico espera;
+- label de quem não é o proprietário é recusada;
+- label do proprietário integra o commit exato;
+- ref de integração mutada não entra;
+- corridas do head e da `main` reavaliam;
+- checker enfraquecido e política afrouxada são críticos;
+- conflito e CI vermelho voltam ao autor;
+- só fast-forward.
+
+O CI roda os dois.

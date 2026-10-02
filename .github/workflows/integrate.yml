@@ -1,12 +1,12 @@
 name: integrate
 
-# Integrador automático (ADR-0015, ADD-0011): leva à main o trabalho dos agentes sem que ninguém precise verificá-lo à mão.
-# Para um PR pronto por execução (não rascunho, da própria base, com handoff), monta o estado combinado com a main ATUAL, roda nele
-# os checks do Ecosystem e o CI de cada Product tocado (workflows reutilizáveis) e, se tudo passar e a política permitir (mergePolicy
-# em ecosystem.json; 'owner-authorization' exige a label 'integrar'), empurra exatamente esse commit testado para a main — sem force:
-# se a main mudou no meio, reavalia. Conflito ou check vermelho: status 'ecosystem/integration' vermelho + comentário no PR para o
-# agente autor. A execução se redispara enquanto houver PR a avaliar; pushes do GITHUB_TOKEN não disparam workflows, por isso o
-# integrador dispara pages/consistency na main depois de integrar.
+# Integrador automático (ADR-0015, ADD-0012): leva à main o trabalho dos agentes sem que ninguém precise verificá-lo à mão.
+# Para um PR pronto por execução (não rascunho, da própria base, com handoff), monta o estado combinado com a main ATUAL, classifica
+# a mudança com a política e as regras DA MAIN (rotina × crítico; docs/governance/integration-policy.json), roda nele os checks da main
+# (checker confiável) e os do próprio candidato + o CI de cada Product tocado (workflows reutilizáveis). Rotina verde: integra sozinha,
+# empurrando para a main exatamente o commit testado, sem force. Crítico verde: explica a consequência no PR e espera a label de
+# autorização posta pelo proprietário (o autor do evento é conferido). Conflito ou check vermelho: volta ao agente autor.
+# Antes de integrar, confere de novo: head do PR, ref de integração == commit testado, main == main testada.
 # Segurança: pull_request_target roda a definição da main; o código do PR só roda nos jobs de checks, com permissão de leitura;
 # PRs de fork e do Dependabot são ignorados; texto do PR só entra em script via variável de ambiente.
 
@@ -46,10 +46,15 @@ jobs:
       main: ${{ steps.plan.outputs.main }}
       authorized: ${{ steps.plan.outputs.authorized }}
       more: ${{ steps.plan.outputs.more }}
-      combined: ${{ steps.prepare.outputs.combined }}
+      combined: ${{ steps.prepare.outputs.combined || steps.plan.outputs.tested_combined }}
       products: ${{ steps.prepare.outputs.products || '[]' }}
-      policy: ${{ steps.prepare.outputs.policy }}
-      policy_reason: ${{ steps.prepare.outputs.policy_reason }}
+      criticality: ${{ steps.prepare.outputs.criticality || steps.plan.outputs.tested_criticality }}
+      requires_owner: ${{ steps.prepare.outputs.requires_owner || (steps.plan.outputs.action == 'land' && 'true') || '' }}
+      critical_classes: ${{ steps.prepare.outputs.critical_classes }}
+      critical_reason: ${{ steps.prepare.outputs.critical_reason }}
+      handoffs: ${{ steps.prepare.outputs.handoffs }}
+      trusted: ${{ steps.prepare.outputs.trusted }}
+      trusted_failures: ${{ steps.prepare.outputs.trusted_failures }}
       gate_reason: ${{ steps.prepare.outputs.gate_reason }}
     steps:
       - uses: actions/checkout@v4
@@ -66,8 +71,8 @@ jobs:
       - name: Decidir (lógica testada pelo self-test)
         id: plan
         working-directory: trusted
-        run: dotnet run tests/consistency/Check.cs -- --integration-plan --input /tmp/integration-input.json | grep -E '^[a-z_]+=' | tee -a "$GITHUB_OUTPUT"
-      - name: Montar o estado combinado (main atual + PR) e aplicar os portões
+        run: dotnet run tests/consistency/Check.cs -- --integration-plan --input /tmp/integration-input.json --policy docs/governance/integration-policy.json | grep -E '^[a-z_]+=' | tee -a "$GITHUB_OUTPUT"
+      - name: Montar o estado combinado (main atual + PR), classificar e rodar o checker confiável da main
         id: prepare
         if: steps.plan.outputs.action == 'evaluate'
         working-directory: trusted
@@ -133,8 +138,13 @@ jobs:
       AUTHORIZED: ${{ needs.plan.outputs.authorized }}
       MORE: ${{ needs.plan.outputs.more }}
       COMBINED: ${{ needs.plan.outputs.combined }}
-      POLICY: ${{ needs.plan.outputs.policy }}
-      POLICY_REASON: ${{ needs.plan.outputs.policy_reason }}
+      CRITICALITY: ${{ needs.plan.outputs.criticality }}
+      REQUIRES_OWNER: ${{ needs.plan.outputs.requires_owner }}
+      CRITICAL_CLASSES: ${{ needs.plan.outputs.critical_classes }}
+      CRITICAL_REASON: ${{ needs.plan.outputs.critical_reason }}
+      HANDOFFS: ${{ needs.plan.outputs.handoffs }}
+      TRUSTED: ${{ needs.plan.outputs.trusted }}
+      TRUSTED_FAILURES: ${{ needs.plan.outputs.trusted_failures }}
       GATE_REASON: ${{ needs.plan.outputs.gate_reason }}
       R_CONSISTENCY: ${{ needs.consistency.result }}
       R_URBE: ${{ needs.urbe.result }}
