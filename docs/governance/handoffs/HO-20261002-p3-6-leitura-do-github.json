@@ -10,13 +10,13 @@
   "branch": "ccr-p3-6-leitura-github",
   "base_commit": "382069d",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/55",
   "blockers": [],
   "cost": null,
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261002-p3-6-leitura-do-github",
-  "timestamp": "2026-10-02T11:22:23Z",
+  "timestamp": "2026-10-02T11:37:28Z",
   "task_id": "P3-6",
   "criticality": {
     "declared": "routine",
@@ -36,7 +36,8 @@
     "ALTERAÇÃO (P3-6): GitHubReader lê, por GET na API pública e em paralelo, PRs abertos, branches, releases, Issues abertas (descarta PRs e extrai a label state:, DEC-0003) e execuções de CI de uma branch. Sem token embutido: um token opcional entra em tempo de execução e só vira header Authorization quando não vazio. RepositoryRef.TryParse deriva dono/repositório da URL declarada em ecosystem.json (nada de repositório fixo no código). Datum ganhou Note (motivo) sem quebrar o formato existente. HTTP != 200, falha de rede, tempo esgotado, JSON inválido ou formato inesperado viram NotAvailable com o motivo ('HTTP 403', 'falha de rede', 'tempo esgotado', 'resposta inválida', 'resposta inesperada'); uma parte que falha não afeta as outras; cancelamento pedido pelo chamador é propagado, não engolido.",
     "ALTERAÇÃO: TimelineGitHub.AddGitHub acrescenta ao Past/Now/Next: PRs, Issues (com state: ou 'sem state:'), branches (exceto a padrão) e a execução de CI mais recente de cada workflow no Now; releases no Past; fonte indisponível vira PastNowNext.Notes (nunca entrada inventada). O GitHub não alimenta o Next, que continua só ROADMAP.",
     "NÃO FEITO, de propósito: nenhuma chamada real à rede (a rede não é necessária e a política do ambiente a restringe); testes usam respostas gravadas e um handler falso. Tela, escolha de token e persistência do último estado no aparelho ficam para P3-9. P3-6 permanece [ ] no ROADMAP até a integração.",
-    "ACHADO: CHK-ARCH-REFS recusou o User-Agent 'ecosystem-hub' dentro do próprio apps/hub (o check procura 'ecosystem hub' em qualquer Product que não declare dependência do Hub, inclusive o próprio Hub). Resolvido com um User-Agent neutro ('readonly-client'); o check não foi alterado. Se o Hub um dia precisar citar o próprio nome por extenso no código, isso exigirá ajuste do check (boundary: ADR)."
+    "ACHADO: CHK-ARCH-REFS recusou o User-Agent 'ecosystem-hub' dentro do próprio apps/hub (o check procura 'ecosystem hub' em qualquer Product que não declare dependência do Hub, inclusive o próprio Hub). Resolvido com um User-Agent neutro ('readonly-client'); o check não foi alterado. Se o Hub um dia precisar citar o próprio nome por extenso no código, isso exigirá ajuste do check (boundary: ADR).",
+    "INTEGRAÇÃO (FATO, conferido no GitHub e no git): o PR #55 (head 856e4d9) foi integrado na main pelo integrador automático no commit f2a067d688b6d8d4776cc53b89cd295ea2c5fb5e, com trailers Integration-Criticality: routine, Integration-Main: e538d96 e Integration-PR-Head: 856e4d9, em 2026-10-02, sem label nem toque do proprietário. No head 856e4d9: hub-ci (run 37001341456, job test) e os dois Foundation consistency checks (runs 37001341615 e 37001290444) = success."
   ],
   "verification": [
     {
@@ -44,6 +45,13 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "57/57 testes; os 28 novos cobrem respostas gravadas de PRs/branches/releases/Issues/CI, só GET e sem Authorization por padrão, token só quando fornecido, HTTP 403/404/500, falha de rede, tempo esgotado, corpos inválidos, cancelamento do chamador, falha isolada de uma parte e a integração ao Past/Now/Next (CI mais recente por workflow, notas de fonte indisponível, Next intocado)."
+    },
+    {
+      "check": "Checks do PR #55 no head integrado",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "856e4d93e3ff46c784c7f5688f57b63bd6f51078",
+      "evidence": "hub-ci run 37001341456 (job test) e Foundation consistency checks runs 37001341615 e 37001290444 = success no head 856e4d9; integração automática como rotina em f2a067d. Limite: os checks pós-merge da main em f2a067d não foram conferidos aqui, e nenhuma chamada foi feita à API real do GitHub."
     }
   ],
   "known_issues": [
@@ -52,8 +60,8 @@
     "Nada validado em aparelho nem contra a API real (NN-017); o gate P3-8 segue pendente."
   ],
   "next_actions": [
-    "Integrador avalia o PR; sendo rotina verde, entra sozinho.",
-    "Depois de integrada: P3-6 [x], handoff done. Em seguida P3-9 (UI Android) e P3-7."
+    "Agente: P3-9 (camada de UI Android do Hub, net10.0-android, sobre Hub.Core), em tarefa própria; a escolha do token e a persistência do último estado no aparelho entram aí.",
+    "Depois: P3-7 (empacotamento e release) e P3-1; gate P3-8 segue pendente de validação humana em aparelho (NN-017)."
   ],
   "decisions_required": [],
   "normative_sources": [
