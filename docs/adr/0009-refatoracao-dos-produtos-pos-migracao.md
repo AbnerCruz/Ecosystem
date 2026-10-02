@@ -45,6 +45,10 @@ Opção 1 (ratificada em DEC-0018).
 
 O [ADR-0011](0011-local-first-e-promocao-por-evidencia.md) complementa os dois trilhos sem criar um terceiro: **nova feature nasce no Product**; **R** reorganiza internamente; o potencial de reuso é registrado (`reuse_assessment`); a **promoção X** só acontece depois de uma Extraction Review com evidência de segundo consumidor (NN-022).
 
+## Complemento (ADR-0016)
+
+A «reescrita do Urbe em C#» listada como proibida acima **foi objeto de ADR próprio e aprovado**: [ADR-0016](0016-migracao-do-urbe-para-csharp.md) (DEC-0024-B). Ela é migração (NN-013), não refatoração interna (R) nem extração (X); a refatoração do Urbe em JavaScript continua sob este ADR, sujeita à DEC-0025.
+
 ## Referências
 
 ADD-0002 §17, ADD-0008; DEC-0018; MANIFEST §26, §37, §39; NN-002, NN-005, NN-006, NN-011, NN-013, NN-014, NN-017, NN-020, NN-022; [`docs/migration/README.md`](../migration/README.md) §7; P1-12.

@@ -32,4 +32,6 @@ Só depois de uma **Extraction Review** disparada por um segundo consumidor real
 
 ## 4. O que continua proibido
 
-Store; Product Shell compartilhado novo; capabilities improvisadas; packages em massa; reescrita do Urbe em C#; mudança de dados do usuário sem aprovação — salvo ADR específico aprovado (ADD-0002 §17).
+Store; Product Shell compartilhado novo; capabilities improvisadas; packages em massa; mudança de dados do usuário sem aprovação — salvo ADR específico aprovado (ADD-0002 §17).
+
+> **Exceção aprovada:** a **reescrita do Urbe em C#** deixou de ser proibida: é o programa do [ADR-0016](../adr/0016-migracao-do-urbe-para-csharp.md) (DEC-0024-B), regido por `apps/urbe/docs/csharp/`. Ela **não** é um trilho R nem X: é migração (NN-013), com roadmap, gates e ADRs próprios; refatoração do JavaScript continua sendo R, sujeita à DEC-0025.
