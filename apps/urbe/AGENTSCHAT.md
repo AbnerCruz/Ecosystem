@@ -5,6 +5,13 @@
 
 ---
 
+### 2026-10-02 — Claude — correção: código inline com wikilink (achado de RM-F2-09/10), U-R1 no monorepo Ecosystem
+- **Estado:** corrigido em PR próprio (NN-013: refatoração e correção separadas). RM-F2-10 segue `[~]`.
+- **Bug:** `` `[[x]]` `` renderizava com U+0002 dentro do `<code>` (o `inlineMarkdown` v22 trocava wikilinks antes do código).
+- **Correção** (`src/editor/markdown.js`): o código sai primeiro e é opaco; marcadores aninhados voltam em mais de uma passada; `alt` de imagem recebe o código como texto. Efeito colateral deliberado: código dentro do rótulo de um link/ênfase agora renderiza como `<code>` (antes ficava com crases literais).
+- **Prova:** o golden de `markdown.js` mudou em exatamente 2 de 33 casos, os dois com o marcador vazado; 7 casos de regressão novos (40 no total) e asserção de que nenhuma saída contém U+0001..U+0003; 4 entradas do golden do serializador atualizadas. `npm run check` e 14 E2E verdes.
+- **CHANGELOG:** a entrada vai na próxima release (o arquivo só lista versões publicadas).
+
 ### 2026-10-02 — Claude — RM-F2-10 `[~]` (1ª fatia: serializador Visual → Markdown), U-R1 no monorepo Ecosystem
 - **Estado:** RM-F2-09 `[x]` (PR #54). RM-F2-10 em andamento: a parte pura saiu; o editor Visual com estado ainda não.
 - **Feito:** `src/editor/visual.js` (`UrbeVisual`, serviço `editor.visual`) com `markdownFromVisual` e as duas camadas que o embrulhavam (U+200B/`#` vazio e `UrbeMathEditor`); `app.js` ficou com um adaptador de uma linha que injeta o frontmatter (−113 linhas; teto rebaixado). Golden de 110 casos gerado em Chromium com o código antigo; `tests/e2e/app-runtime-visual.e2e.mjs` (nome casa com o filtro `app-runtime` do CI) + caminho real do editor; mutação da normalização derrubou o teste. Contrato `docs/v2/contracts/editor-visual.md`. `tests/ai-agent.mjs` e `tests/search-editor.mjs` passaram a ler o serializador em `visual.js`.

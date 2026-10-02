@@ -24,5 +24,6 @@ antes de `src/app.js`; `app.js` desestrutura o global no topo do seu IIFE.
 
 - **Segurança (REQ-056):** nenhum `href`/`src` com esquema perigoso sai do pipeline; HTML do texto é sempre escapado.
 - **Ida e volta:** tudo o que é desenhado aqui volta igual em `markdownFromVisual` (ainda em `app.js` até RM-F2-10).
+- **Código inline é opaco** (correção de 2026-10-02): o conteúdo de `` `...` `` nunca é interpretado (wikilinks, links, `**`, `_` ficam literais) e nenhum marcador interno (U+0001..U+0003) vaza para a saída. Código dentro do rótulo de um link ou de uma ênfase renderiza como `<code>`; no `alt` de imagem volta como texto com crases, nunca como tag. Antes da correção, `` `[[x]]` `` saía com U+0002 dentro do `<code>`.
 - **Uma autoridade:** `app.js` não define mais `renderMarkdown`, `inlineMarkdown`, `splitFrontmatter`, `renderFrontmatter`, `escapeHTML`, tabelas, callouts nem sanitização de URL (`tests/markdown.mjs` falha se voltarem).
 - **Compatibilidade:** mudar uma saída exige atualizar o golden de propósito (a diferença aparece no diff do PR); o formato dos arquivos do usuário (`.md`) não muda.
