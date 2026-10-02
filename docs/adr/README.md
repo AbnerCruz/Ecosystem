@@ -37,3 +37,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0013](0013-hub-read-only-fase-3.md) | Hub read-only (Fase 3): tecnologia de UI, plataforma-alvo e fontes de dados | Aceito (DEC-0022-A: Android nativo em C#) |
 | [0014](0014-fluxo-multiagente-minimo.md) | Fluxo multiagente mínimo: base, resultado, integração e validação | Aceito (ADD-0010) |
 | [0015](0015-integrador-automatico.md) | Integrador automático: estado combinado, fila serial, criticidade e autorização | Aceito (ADD-0011, ADD-0012) |
+| [0016](0016-migracao-do-urbe-para-csharp.md) | Migração do Urbe para C# | Proposto (DEC-0024) |

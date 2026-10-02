@@ -801,6 +801,44 @@
       "decidedAt": "2026-10-02",
       "record": "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0024",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": true,
+      "title": "Alcance e estratégia da migração do Urbe para C#",
+      "context": "FATO: o proprietário pediu (2026-10-02, em conversa): «Na verdade eu quero que você migre para c#». O pedido não diz motivo, alcance nem plataforma. FATO: o Urbe é JavaScript sem build (~13 mil linhas em src/, 73 módulos, 56 testes Node, E2E em Chromium) com três superfícies — Web/PWA (Urbe Web), Electron (Windows) e Android (Capacitor) — e dados do usuário em vault de arquivos com compatibilidade como invariante (Urbe REQ-007/035/038). FATO: NN-005 e o MANIFEST dizem que C# é padrão para infraestrutura nova, que isso não autoriza reescrita geral do Urbe, e que migração exige ADR, roadmap específico, testes de compatibilidade e aprovação explícita; ADD-0002 §17 proíbe reescrever o Urbe em C# sem ADR próprio. Por isso nenhuma linha de C# foi escrita para o Urbe: o pedido virou o ADR-0016 (Proposto) e esta decisão. Enquanto estiver pendente, o Urbe segue sendo refatorado no stack atual (RM-F2-*).",
+      "question": "Qual deve ser o alcance e a estratégia da migração do Urbe para C#?",
+      "alternatives": [
+        {
+          "option": "A — Incremental pelo núcleo: a lógica pura (vault/migração, projeção do mundo, índice, math) passa para C# dentro de apps/urbe, servida à UI JavaScript atual (WebAssembly no Web; host no Electron/Android), com testes de paridade e fixtures; UI e casca migram só depois de provada a paridade",
+          "consequences": "Nunca há big-bang: o Urbe Web e as instalações atuais continuam funcionando e os dados não mudam de formato. Cada fatia tem ADR do produto e testes de compatibilidade; fatias em src/persistence/** são zona crítica e pedem sua autorização no PR. Migração completa leva muitas fatias e mantém dois stacks durante a transição."
+        },
+        {
+          "option": "B — Reescrita completa em C# (novo cliente, por exemplo Blazor WebAssembly para Web/PWA e hosts para Windows/Android), trocando o produto só quando houver paridade total",
+          "consequences": "Um código só ao final e total alinhamento com Lunet2D/Hub. Maior custo, prazo e risco: reconstruir UI, editor, mundo, páginas, IA e plugins (hoje JS full-trust); exige plano de migração das instalações, do Urbe Web e dos dados, e validação humana por superfície. Contraria hoje a posição do MANIFEST (§C# padrão) e vira exceção explícita aprovada por você."
+        },
+        {
+          "option": "C — Por superfície: Android (e talvez Windows) nativos em C#, como o Hub (DEC-0022-A), mantendo o Web/PWA em JavaScript",
+          "consequences": "Entrega nativa mais cedo onde o motivo for esse, sem tocar o Web. Dois códigos para o mesmo produto até convergirem, com risco de divergência de comportamento e de formato de dados; exige contrato de vault compartilhado."
+        },
+        {
+          "option": "D — Manter JavaScript no Urbe por enquanto e usar C# só em infraestrutura nova (Hub, serviços, ferramentas), reavaliando a migração quando houver benefício demonstrável",
+          "consequences": "Sem custo de migração; segue a posição atual do MANIFEST e a Urbe 2.0. Não atende ao pedido de migrar; fica registrado como a opção de não migrar agora."
+        }
+      ],
+      "consequences": "Bloqueia só o início de qualquer trabalho de C# no Urbe; não bloqueia a refatoração em JavaScript nem o restante do ecossistema. Depois da escolha: roadmap específico, ADR do produto por fatia, testes de paridade/compatibilidade, validação humana por superfície e plano para as instalações existentes.",
+      "manifestCompatibility": "B é exceção explícita a NN-005 / ADD-0002 §17 (precisa de ADR e da sua aprovação, que esta decisão é); A e C respeitam NN-005 se incrementais e testadas. Todas respeitam NN-002 (Urbe independente), NN-003/NN-023 (sem dependência do Hub), NN-013 (migração separada de refatoração), NN-014 (versão própria), NN-017 (validação humana por superfície) e NN-011 (decisão do proprietário).",
+      "recommendation": "Alternativa A, em fatias pequenas, porque cumpre NN-005 sem interromper o Urbe Web nem arriscar dados. Se o objetivo for abandonar o stack JavaScript de vez, B; se for ter app nativo, C. Informar o motivo ajuda a escolher.",
+      "related": [
+        "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+        "MANIFEST.md",
+        "docs/architecture/refactoring.md",
+        "apps/urbe/docs/v2/ROADMAP.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-02"
     }
   ]
 }
