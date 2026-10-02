@@ -1,0 +1,91 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
+  },
+  "branch": "ccr-5adec8cc-oy464b",
+  "base_commit": "5228816",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261002-urbe-r1-e2e-no-ci",
+  "timestamp": "2026-10-02T10:35:01Z",
+  "task_id": "UR1-4",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Altera .github/workflows/urbe-checks.yml (controle do próprio sistema de verificação): zona crítica da política; espera a autorização do proprietário. Efeito: o CI do Urbe passa a rodar E2E em Chromium."
+  },
+  "files_changed": [
+    ".github/workflows/urbe-checks.yml",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/TRACEABILITY.md",
+    "docs/governance/handoffs/HO-20261002-urbe-r1-e2e-no-ci.json"
+  ],
+  "work_completed": [
+    "FATO: depois do PR #44 integrado (RM-F2-01 [x], RM-F2-02 [?], ADR-0016 Proposto, DEC-0024 pending), os itens seguintes da F2 do Urbe (RM-F2-04, RM-F2-09…) dependem de RM-F2-02 [x]; o único critério que faltava a RM-F2-02 era o E2E rodar no CI. Branch recomeçada da main atual (5228816), pois o PR #44 já foi integrado.",
+    "ALTERAÇÃO: novo job 'e2e' em .github/workflows/urbe-checks.yml: Node 22, npm ci, npx playwright install --with-deps chromium e node tools/run-e2e.mjs app-runtime zip smoke (os três cenários já provados localmente em Chromium real). O job roda no PR e, via workflow_call, no estado combinado do integrador. Permissões continuam contents: read; nenhum job publica.",
+    "Documentação do produto: RM-F2-02 [?] -> [x] no ROADMAP do Urbe (a evidência é este job passar no PR/estado combinado); TRACEABILITY regenerada.",
+    "Sem mudança no código do app, nos dados, nos boundaries, na versão ou em release. Nenhuma linha de C# (DEC-0024 continua pending; migração é trabalho separado)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram localmente."
+    },
+    {
+      "check": "node tools/check-workflows.mjs e tests/workflows.mjs (apps/urbe), gen-traceability --check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Workflows respeitam a separação integração × publicação; TRACEABILITY em dia."
+    }
+  ],
+  "known_issues": [
+    "O job 'e2e' só foi executado localmente (3/3 cenários); a primeira execução no runner é a do PR. Se falhar por ambiente (instalação do Chromium), o PR volta a mim e RM-F2-02 não deve ficar [x].",
+    "Os demais E2E (adapters, fixtures, gc, identity, layout, lifecycle, map-writer, multi-city, routing, stable-ids) continuam fora do CI até serem provados em Chromium."
+  ],
+  "next_actions": [
+    "Integrador: classificar como crítico (control-plane) e esperar a autorização do proprietário; o job e2e deve passar no estado combinado.",
+    "Depois de integrado: RM-F2-04 (resíduos de UI e window.URBE) e RM-F2-09 (renderMarkdown para o editor), ambos em JavaScript."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "apps/urbe/docs/v2/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-014",
+      "evidence": "Mudança só no pipeline de verificação do Urbe; nenhum release criado ou afetado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Permissões do workflow inalteradas (contents: read); job sem segredos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "RM-F2-02 só vira [x] com o E2E rodando no CI; validação humana não é exigida."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidência é o job e2e passando no PR e no estado combinado; lacunas em known_issues."
+    }
+  ]
+}

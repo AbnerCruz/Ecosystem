@@ -42,3 +42,24 @@ jobs:
           cache-dependency-path: apps/urbe/package-lock.json
       - run: npm ci
       - run: npm run check
+
+  # E2E em Chromium real (RM-F2-02): o harness de produção do monólito só conta como gate quando roda aqui.
+  # Escopo deliberado: os cenários já provados em Chromium (harness, ZIP e smoke); os demais E2E entram um a um.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/urbe
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/urbe/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: node tools/run-e2e.mjs app-runtime zip smoke
