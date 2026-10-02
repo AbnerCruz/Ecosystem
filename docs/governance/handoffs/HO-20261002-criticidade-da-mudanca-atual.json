@@ -9,8 +9,8 @@
   },
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "5228816",
-  "commit": null,
-  "pr": null,
+  "commit": "947422b",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/50",
   "blockers": [],
   "cost": null,
   "component": "integrator",
@@ -60,7 +60,7 @@
       "check": "Canário real depois da integração: fechamento de handoff crítico entra sozinho",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Depois desta correção integrada (precisa da autorização do proprietário), o PR de fechamento (HO-…-critico-ao-proprietario e este handoff) deve ser 'routine' e entrar sem label."
+      "evidence": "PR #50 (crítico) esperou o proprietário e foi integrado em e538d96 (árvore idêntica ao estado combinado testado 8e797e6). Canário: o PR seguinte, que só fecha o handoff crítico de P1-19 e atualiza este (pr, commit) — exatamente o caso do PR #46 —, deve ser 'routine' e entrar sem label. Resultado no handoff HO-20261002-p1-20-evidencia."
     }
   ],
   "known_issues": [

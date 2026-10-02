@@ -10,11 +10,11 @@
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "a232bc4",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/40",
   "blockers": [],
   "cost": null,
   "component": "integrator",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261002-automatico-por-padrao-critico-ao-proprietario",
   "timestamp": "2026-10-02T00:55:00Z",
   "task_id": "P1-19",
@@ -84,8 +84,8 @@
     {
       "check": "Canário real: PR crítico (este) espera o proprietário; PR rotineiro posterior entra sozinho",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Este PR é crítico pela política anterior (piso owner-authorization). Depois de autorizado, um PR rotineiro (datas do Urbe) prova a integração automática ao vivo; evidência no handoff seguinte."
+      "result": "passed",
+      "evidence": "PR #40 (crítico) esperou a autorização do proprietário; o PR #41 (Urbe, rotina) entrou sozinho pelo integrador. Evidência: handoff HO-20261002-p1-19-evidencia."
     }
   ],
   "known_issues": [
