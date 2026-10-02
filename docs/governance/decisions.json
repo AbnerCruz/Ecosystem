@@ -842,7 +842,41 @@
       "decision": "Alternativa B — B — Reescrita completa em C# (novo cliente, por exemplo Blazor WebAssembly para Web/PWA e hosts para Windows/Android), trocando o produto só quando houver paridade total (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/45).",
       "decidedAt": "2026-10-02",
       "record": "docs/governance/responses/DEC-0024.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0025",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": false,
+      "title": "O que fazer com o programa de refatoração do Urbe 2.0 em JavaScript durante a migração para C#",
+      "context": "FATO: DEC-0024 decidiu (alternativa B) a reescrita completa do Urbe em C#, com troca do produto só em paridade total; o Urbe em JavaScript continua sendo o produto até o corte. FATO: o programa Urbe 2.0 (JavaScript; SPEC e ROADMAP aprovados em 2026-09-30) tem itens abertos — o restante de F2 (RM-F2-05 a 08 renderer e laço de desenho, o fecho de RM-F2-04 e o restante de RM-F2-10, editor Visual com estado) e as fases seguintes. FATO: o que já foi integrado (RM-F2-01 a 04, 09 e 10 parcial, correções) permanece. INFERÊNCIA: investimento estrutural no JavaScript que será substituído compete com o programa de migração; por outro lado, parte do trabalho do 2.0 (fixtures, goldens, contratos de dados, suíte E2E) é exatamente o oráculo de paridade da migração. Esta decisão é do proprietário porque muda a direção de um roadmap que ele aprovou (Urbe AGENTS.md §5: mudança de decisão consolidada). Enquanto estiver pendente, o padrão conservador vale: nenhum item estrutural novo do 2.0 é iniciado; correções e o que alimenta a paridade continuam.",
+      "question": "Durante a migração para C#, o que fazer com os itens estruturais ainda abertos do programa Urbe 2.0 em JavaScript?",
+      "alternatives": [
+        {
+          "option": "A — Manutenção e preparação: só correções e o que alimenta a migração (fixtures, goldens, contratos de dados, suíte de aceite); congelar os itens estruturais abertos (RM-F2-05 a 08, restante de RM-F2-10 e as fases seguintes do 2.0), marcando-os como adiados com justificativa no roadmap do Urbe",
+          "consequences": "Concentra o esforço na migração; o JavaScript atual fica estável e não recebe reestruturação que será descartada. O Urbe JS não melhora estruturalmente até o corte (bugs continuam sendo corrigidos). Itens adiados não são removidos do ledger (REQ intactos) e podem ser retomados."
+        },
+        {
+          "option": "B — Seguir o roadmap 2.0 integralmente, em paralelo à migração",
+          "consequences": "O Urbe atual continua evoluindo e o JavaScript fica mais modular (o que também ajuda a descrever a paridade). Custo: dois programas grandes disputando o mesmo esforço, risco de gastar trabalho em código que será substituído e de a paridade ter alvo móvel."
+        },
+        {
+          "option": "C — Congelamento total do JavaScript, salvo bug crítico",
+          "consequences": "Máximo foco na migração e alvo de paridade estável. Também congela as correções comuns e a preparação do oráculo (fixtures/goldens), exceto bug crítico; o produto distribuído fica sem evolução até o corte, que pode demorar."
+        }
+      ],
+      "consequences": "Não bloqueia a migração (a M0 do programa em apps/urbe/docs/csharp/ não depende dela) nem as correções. Depois da escolha, o roadmap do Urbe 2.0 é atualizado (itens adiados com justificativa, nunca removidos).",
+      "manifestCompatibility": "Respeita NN-005/NN-011 (decisão do proprietário sobre direção), NN-013 (refatoração do JS separada da migração), NN-014 (Urbe com roadmap e versão próprios) e a regra do Urbe de não enfraquecer REQ (itens ficam adiados, não removidos).",
+      "recommendation": "A: concentra o esforço na migração sem perder o que prepara a paridade (fixtures, goldens e contratos de dados já existem e continuam valendo como oráculo).",
+      "related": [
+        "apps/urbe/docs/csharp/ROADMAP.md",
+        "apps/urbe/docs/v2/ROADMAP.md",
+        "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+        "docs/governance/responses/DEC-0024.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-02"
     }
   ]
 }

@@ -26,7 +26,7 @@ As definições normativas de Product … Contract estão no `MANIFEST.md` §6. 
 ## 2. Linguagem (MANIFEST §4, NN-005)
 
 - **C#** é o padrão para toda nova infraestrutura compartilhada (Hub, contracts, registry, IPC, SDKs, tools, workspaces, checks do repositório).
-- O **Urbe** permanece em JavaScript; não há reescrita. Integração por adapters.
+- O **Urbe** em produção é JavaScript hoje; o proprietário decidiu a **reescrita completa em C#, com troca do produto só em paridade total** (DEC-0024-B, [ADR-0016](docs/adr/0016-migracao-do-urbe-para-csharp.md); programa em [`apps/urbe/docs/csharp/`](apps/urbe/docs/csharp/README.md)). Pilha de UI/hosts, transição e corte ainda não estão decididos. Até o corte, a integração com o resto do ecossistema continua por adapters; `ecosystem.json` descreve o produto distribuído (`language` só muda no corte).
 - Contratos que atravessam processos devem ser semanticamente independentes de linguagem (MANIFEST §4.3). Por isso os schemas da fundação são JSON Schema (ADR-0002).
 
 ## 3. Componentes e extração

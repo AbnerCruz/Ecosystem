@@ -65,4 +65,6 @@ Toda refatoração **R** abaixo é possível logo depois do gate. Toda extraçã
 
 ## 6. Proibições que continuam valendo
 
-Criar Store, criar Product Shell **novo** compartilhado, transformar código em capabilities, reorganizar tudo em packages, reescrever o Urbe em C#, mudar formato de dados do usuário sem aprovação, e extrair para `platform/`, `tools/` ou `workspaces/` sem as cinco respostas de NN-022 (ADD-0002 §17, NN-005, NN-020, NN-022).
+Criar Store, criar Product Shell **novo** compartilhado, transformar código em capabilities, reorganizar tudo em packages, mudar formato de dados do usuário sem aprovação, e extrair para `platform/`, `tools/` ou `workspaces/` sem as cinco respostas de NN-022 (ADD-0002 §17, NN-005, NN-020, NN-022).
+
+> **Atualização (DEC-0024-B):** reescrever o Urbe em C# **deixou de ser proibido**: é um programa à parte ([ADR-0016](../adr/0016-migracao-do-urbe-para-csharp.md), `apps/urbe/docs/csharp/`), não uma refatoração desta lista. Os itens R do Urbe (U-R1) ficam sujeitos à DEC-0025.

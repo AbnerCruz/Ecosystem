@@ -18,6 +18,8 @@
 
 Em paralelo, como trabalho **interno dos próprios Products** e **fora do escopo da Fase 2** (infraestrutura compartilhada): refatorações em `apps/urbe/` e `apps/lunet2d/` — que **fazem parte deste repositório** e são o único lugar de desenvolvimento deles; `AbnerCruz/Urbe` e `AbnerCruz/Lunet2D` não são lugares de desenvolvimento (são espelhos de distribuição transitórios, DEC-0008/DEC-0009) — governadas pelo ADR-0009 e [`refactoring.md`](docs/architecture/refactoring.md) — sugestão: **U-R1** no Urbe (continuar a decomposição de `app.js` / Product Shell) e **L-R2** no Lunet2D (decompor `MainActivity` em Shell + painéis), conforme [`candidates.md`](docs/architecture/candidates.md), cada uma delegada em tarefa própria e conduzida pelos processos locais de cada Product. Nenhum subsistema é extraído sem evidência de segundo consumidor ([`local-first.md`](docs/architecture/local-first.md)).
 
+**Urbe em C# (DEC-0024-B, [ADR-0016](docs/adr/0016-migracao-do-urbe-para-csharp.md)):** programa de migração do produto, com roadmap e gates próprios em [`apps/urbe/docs/csharp/ROADMAP.md`](apps/urbe/docs/csharp/ROADMAP.md) (itens `UC-n`, fases M0–M5). Começa pela **M0 — fundamentos de paridade** (sem pilha, sem código de produto); pilha, transição e corte dependem de decisões do proprietário no portal. Não é refatoração: **U-R1** (JavaScript) fica sujeita à **DEC-0025**; enquanto ela estiver pendente nenhum item estrutural novo do Urbe 2.0 é iniciado.
+
 *Como ler o estado:* fase e gates = este arquivo (linha `*Estado do gate:*` de cada fase); tarefas em andamento = Issues (`state:<estado>`); resultado e evidência = handoffs; decisões e validações pendentes = portal.
 
 ---
