@@ -1,0 +1,114 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01Cqs24pT9sHieyegVt62nFc"
+  },
+  "branch": "ccr-31501aad-6bwq7y",
+  "base_commit": "5c2bc76",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "hub",
+  "state": "review",
+  "message_id": "HO-20261002-p3-3-esqueleto-do-hub",
+  "timestamp": "2026-10-02T03:36:24Z",
+  "task_id": "P3-3",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Esqueleto do Hub dentro do plano (DEC-0022-A, ADR-0013). Acrescenta job do Hub ao integrador (control plane): inclui um Product a ser testado, não afrouxa nenhuma verificação — a classificação efetiva é do integrador."
+  },
+  "files_changed": [
+    "apps/hub/",
+    "ecosystem.json",
+    "ROADMAP.md",
+    ".github/workflows/hub-ci.yml",
+    ".github/workflows/integrate.yml",
+    ".github/integrator/integrate.sh",
+    "docs/governance/handoffs/HO-20261002-p3-3-esqueleto-do-hub.json"
+  ],
+  "work_completed": [
+    "FATO: o proprietário decidiu DEC-0022-A (Android nativo em C#); a main trouxe o fluxo multiagente (ADR-0014/0015, ADD-0012). A branch foi atualizada com a main (merge sem conflito) antes do trabalho; DEC-0022 já tinha as consequências aplicadas (ADR-0013 Aceito).",
+    "ALTERAÇÃO (P3-3): apps/hub com Hub.Core (net10.0, independente de UI; Datum<T> com Availability Derived/Stale/NotAvailable e origem em todo dado), Hub.Tests (xunit.v3, 3 testes), VERSION 0.0.1, Directory.Build.props/global.json no padrão do Lunet2D, Hub.slnx e README. Nenhum diretório genérico, Service ou componente compartilhado (ADR-0011).",
+    "ALTERAÇÃO: ecosystem.json — hub passa de planned a active, version.authority = version-file apps/hub/VERSION, permissions.requests = network.access + ui.display (catálogo existente), commands.test.",
+    "ALTERAÇÃO (integração): hub-ci.yml (só testes, seletivo por caminho, workflow_call) e job 'hub' no integrate.yml + R_HUB no integrate.sh, para que uma mudança em apps/hub seja testada no estado combinado em vez de ser ignorada pelo integrador.",
+    "ALTERAÇÃO: ROADMAP — P3-3 [x]; nova P3-9 (camada de UI Android, net10.0-android) como dependência do empacotamento e do gate; ID P3-1 preservado.",
+    "NÃO FEITO: a camada Android não foi criada porque o workload Android não está disponível neste ambiente e não pode ser compilada aqui; fica em P3-9 com build no CI."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Hub.Tests (apps/hub)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "3/3 testes."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs e -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks; self-test: todos os checks provaram detectar suas violações. ROADMAP × Issues, histórico e commits dos handoffs não verificados (sem instantâneo/clone completo)."
+    }
+  ],
+  "known_issues": [
+    "CHK-ARCH-REFS recusa qualquer menção textual, em apps/hub, aos nomes de outros Products. O Hub, por definição, lê e mostra esses Products como DADO (P3-4). A regra precisará de uma exceção explícita para o Hub como leitor de dados (sem permitir ProjectReference/imports de código) — isso muda um boundary (NN-011): exige ADR e é mudança crítica; por isso README e testes deste item evitam os nomes e a decisão fica para antes de P3-4.",
+    "O integrador não foi exercitado com um PR do Hub (simulate.sh não cobre o job novo); a primeira execução real será o PR desta branch.",
+    "Nada do Hub foi validado em aparelho (NN-017); o gate é P3-8."
+  ],
+  "next_actions": [
+    "Agente: ADR (Proposto) + decisão sobre a exceção do CHK-ARCH-REFS para o Hub como leitor de dados, depois P3-4.",
+    "Abrir o PR contra a main para o integrador avaliar (o PR não foi aberto: nenhuma instrução do usuário para isso nesta sessão)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/responses/DEC-0022.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Hub.Core só carrega dado com origem; sem estado próprio."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "CHK-ARCH-REFS verde: apps/hub não referencia outro Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum Product referencia o Hub; Hub não bundled em perfil público."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "hub-ci seletivo por caminho; versão própria em apps/hub/VERSION."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "permissions.requests declara apenas network.access e ui.display."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada marcado como validado em aparelho; gate P3-8 pendente."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhuma abstração compartilhada nova."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "hub-datum",
+      "status": "product-specific",
+      "rationale": "Datum<T> serve à leitura do Hub; não há segundo consumidor."
+    }
+  ]
+}

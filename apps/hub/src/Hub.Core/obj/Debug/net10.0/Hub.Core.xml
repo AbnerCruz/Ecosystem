@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Hub.Core</name>
+    </assembly>
+    <members>
+        <member name="T:Hub.Core.Availability">
+            <summary>Disponibilidade de um dado lido pelo Hub. Nunca é inventada: sem fonte, o dado é <see cref="F:Hub.Core.Availability.NotAvailable"/>.</summary>
+        </member>
+        <member name="F:Hub.Core.Availability.Derived">
+            <summary>Lido de uma fonte canônica na leitura atual.</summary>
+        </member>
+        <member name="F:Hub.Core.Availability.Stale">
+            <summary>Último estado conhecido, lido antes e exibido sem nova leitura (offline).</summary>
+        </member>
+        <member name="F:Hub.Core.Availability.NotAvailable">
+            <summary>Sem fonte disponível.</summary>
+        </member>
+        <member name="T:Hub.Core.Datum`1">
+            <summary>Um valor lido pelo Hub com a sua origem. O Hub só consome fontes; não é autoridade de nenhum dado (NN-001, NN-021).</summary>
+        </member>
+        <member name="M:Hub.Core.Datum`1.#ctor(`0,Hub.Core.Availability,System.String)">
+            <summary>Um valor lido pelo Hub com a sua origem. O Hub só consome fontes; não é autoridade de nenhum dado (NN-001, NN-021).</summary>
+        </member>
+        <member name="M:Hub.Core.Datum`1.AsStale">
+            <summary>Marca como último estado conhecido; um dado que já não está disponível continua não disponível.</summary>
+        </member>
+    </members>
+</doc>

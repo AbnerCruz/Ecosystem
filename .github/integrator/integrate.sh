@@ -11,7 +11,7 @@
 # Status no head do PR: "<resultado> main=<sha> combined=<sha|-> <routine|critical|->[: detalhe]" — combined é o commit exato testado.
 # Variáveis: GH_TOKEN, GITHUB_REPOSITORY, GITHUB_REPOSITORY_OWNER, GITHUB_OUTPUT, RUN_URL e, conforme o passo, PR, HEAD_SHA, MAIN, ACTION,
 # COMBINED, CRITICALITY, REQUIRES_OWNER, CRITICAL_CLASSES, CRITICAL_REASON, GATE_REASON, HANDOFFS, TRUSTED, TRUSTED_FAILURES, MORE,
-# R_CONSISTENCY, R_URBE, R_LUNET2D.
+# R_CONSISTENCY, R_URBE, R_LUNET2D, R_HUB.
 set -euo pipefail
 
 CONTEXT="ecosystem/integration"
@@ -64,7 +64,7 @@ identity() { # bloco de rastreabilidade (visível ≠ precisa de autorização)
   echo "| estado combinado testado | \`${COMBINED:--}\` |"
   echo "| classificação | ${CRITICALITY:-?}${CRITICAL_CLASSES:+ ${CRITICAL_CLASSES}} |"
   echo "| handoff | ${HANDOFFS:-[]} |"
-  echo "| checks | [execução](${RUN_URL:-}) · consistency=${R_CONSISTENCY:-?} · urbe=${R_URBE:-?} · lunet2d=${R_LUNET2D:-?} · confiável(main)=${TRUSTED:-?} |"
+  echo "| checks | [execução](${RUN_URL:-}) · consistency=${R_CONSISTENCY:-?} · urbe=${R_URBE:-?} · lunet2d=${R_LUNET2D:-?} · hub=${R_HUB:-?} · confiável(main)=${TRUSTED:-?} |"
 }
 
 collect() {
@@ -236,6 +236,7 @@ finish() {
     [ "${R_CONSISTENCY}" = "success" ] || failed="${failed} consistency(${R_CONSISTENCY})"
     case "${R_URBE}" in success|skipped|"") ;; *) failed="${failed} urbe-checks(${R_URBE})" ;; esac
     case "${R_LUNET2D}" in success|skipped|"") ;; *) failed="${failed} lunet2d-ci(${R_LUNET2D})" ;; esac
+    case "${R_HUB}" in success|skipped|"") ;; *) failed="${failed} hub-ci(${R_HUB})" ;; esac
     # Rotina: os checks da main sobre o candidato também precisam passar. Crítico: a divergência vira informação para o proprietário.
     [ "${TRUSTED:-success}" = success ] || [ "${REQUIRES_OWNER}" = "true" ] || failed="${failed} confiável-main(${TRUSTED_FAILURES:-?})"
     if [ -n "$failed" ]; then
