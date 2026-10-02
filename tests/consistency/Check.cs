@@ -2079,18 +2079,51 @@ static class IntegrationQueue
                 using var d = JsonDocument.Parse(File.ReadAllText(Path.Combine(combinedRoot, h)));
                 var st = d.RootElement.Str("state");
                 if (!ReadyHandoffStates.Contains(st)) { ok = false; reason = $"{h}: estado '{st}' — o agente ainda não terminou (review, verifying ou done)"; }
-                // Escalada declarada pelo agente: só sobe a criticidade, nunca a rebaixa.
-                if (d.RootElement.TryGetProperty("criticality", out var cr) && cr.Str("declared") == "critical")
-                {
-                    var classes = cr.Arr("classes").Select(x => x.GetString() ?? "?").DefaultIfEmpty("declared");
-                    foreach (var cl in classes) findings.Add(new(cl, h, $"declarado crítico pelo agente: {cr.Str("reason") ?? "sem motivo"}"));
-                }
+                // Escalada declarada pelo agente: só sobe a criticidade, nunca a rebaixa — e julga a MUDANÇA deste PR, não o passado do handoff.
+                foreach (var (cl, why) in DeclaredEscalation(baseRoot, h, d.RootElement))
+                    findings.Add(new(cl, h, why));
             }
             catch (JsonException) { ok = false; reason = $"{h}: JSON inválido"; }
         }
         var criticality = findings.Count > 0 ? "critical" : "routine";
         var requiresOwner = criticality == "critical" || routinePolicy != "automatic";
         return new GateResult(ok, reason, [.. touched], products, criticality, requiresOwner, [.. findings], [.. handoffs]);
+    }
+
+    static (bool Critical, HashSet<string> Classes, string? Reason) Declared(JsonElement handoff) =>
+        handoff.TryGetProperty("criticality", out var cr) && cr.Str("declared") == "critical"
+            ? (true, cr.Arr("classes").Select(x => x.GetString() ?? "?").DefaultIfEmpty("declared").ToHashSet(StringComparer.Ordinal), cr.Str("reason"))
+            : (false, [], null);
+
+    /// <summary>
+    /// Escalada pelo handoff (ADD-0012, ADR-0015): a criticidade pertence à mudança atual, não ao histórico do objeto alterado.
+    /// Handoff NOVO que se declara crítico escala (o agente sinaliza o que as zonas não pegam). Handoff que JÁ EXISTE na main só escala
+    /// quando a declaração crítica é nova em relação à main — passou de rotina/ausente para crítico, ou ganhou uma classe que a base não
+    /// tinha. Fechar ou atualizar o registro de um trabalho crítico já integrado (estado, PR, evidência, próximos passos) não herda a
+    /// criticidade antiga; o histórico continua no handoff. Trabalho crítico novo cria handoff novo. Zonas e regras da política classificam
+    /// os demais arquivos do PR de forma independente: nada aqui rebaixa um caminho crítico.
+    /// </summary>
+    static IEnumerable<(string Class, string Why)> DeclaredEscalation(string baseRoot, string rel, JsonElement combined)
+    {
+        var now = Declared(combined);
+        if (!now.Critical) yield break;
+        var why = now.Reason ?? "sem motivo";
+        var basePath = Path.Combine(baseRoot, rel);
+        if (!File.Exists(basePath))
+        {
+            foreach (var cl in now.Classes) yield return (cl, $"declarado crítico pelo agente (handoff novo): {why}");
+            yield break;
+        }
+        (bool Critical, HashSet<string> Classes, string? Reason) before;
+        try { using var bd = JsonDocument.Parse(File.ReadAllText(basePath)); before = Declared(bd.RootElement); }
+        catch (JsonException) { before = (false, [], null); } // base ilegível: trata a declaração como nova (falha fechada)
+        if (!before.Critical)
+        {
+            foreach (var cl in now.Classes) yield return (cl, $"declarado crítico pelo agente (handoff existente passou a crítico): {why}");
+            yield break;
+        }
+        foreach (var cl in now.Classes.Where(c => !before.Classes.Contains(c)).Order(StringComparer.Ordinal))
+            yield return (cl, $"declarado crítico pelo agente (classe nova no handoff existente): {why}");
     }
 
     // ---------------------------------------------------------------------------------------------------------------
@@ -3078,6 +3111,38 @@ static class SelfTest
             Report(Critical(g, "user-data", "declarado crítico pelo agente"), "agente pode escalar para crítico no handoff (nunca rebaixar)");
             g = Case(c => W(c, "docs/governance/handoffs/HO-x.json", "{\"state\": \"review\", \"criticality\": {\"declared\": \"routine\"}}"), ".github/workflows/integrate.yml").G;
             Report(Critical(g, "control-plane"), "handoff que se declara rotina não rebaixa uma zona crítica");
+
+            // --- escalada pelo handoff julga a MUDANÇA deste PR, não o histórico do handoff (ADD-0012) ---
+            const string HoOld = "docs/governance/handoffs/HO-antigo.json";
+            string Ho(string state, string? pr, string declared, string classes = "\"control-plane\"", string reason = "mudou o integrador") =>
+                $"{{\"state\": \"{state}\", \"pr\": {(pr is null ? "null" : $"\"{pr}\"")}, \"criticality\": {{\"declared\": \"{declared}\", \"classes\": [{classes}], \"reason\": \"{reason}\"}}}}";
+            var bh = Path.Combine(tmp, "base-com-handoff-critico"); Copy(b, bh); Put(bh, HoOld, Ho("review", null, "critical"));
+            IntegrationQueue.GateResult OnOld(string newHandoff, params (string Rel, string Content)[] extra)
+            {
+                var c = Path.Combine(tmp, "c" + n++); Copy(bh, c); Put(c, HoOld, newHandoff);
+                foreach (var (rel, content) in extra) Put(c, rel, content);
+                return IntegrationQueue.Gates(bh, c, [HoOld, .. extra.Select(x => x.Rel)]);
+            }
+            g = Case(c => { W(c, "docs/governance/handoffs/HO-x.json", Ho("review", null, "critical", "\"user-data\"")); W(c, "ROADMAP.md", "x"); }, "ROADMAP.md").G;
+            Report(Critical(g, "user-data", "handoff novo"), "caso A: handoff NOVO declarado crítico + mudança normal ⇒ crítico");
+            g = OnOld(Ho("done", "https://github.com/AbnerCruz/Ecosystem/pull/43", "critical"), ("ROADMAP.md", "- [x] P3-3"));
+            Report(Routine(g), "caso B: fechar handoff crítico já integrado (review→done, pr, ROADMAP [x]) ⇒ rotina (não herda o histórico)");
+            g = OnOld(Ho("done", "https://github.com/AbnerCruz/Ecosystem/pull/43", "critical"), (".github/integrator/integrate.sh", "# x"));
+            Report(Critical(g, "control-plane", "zona crítica"), "caso C: fechar handoff crítico antigo + mudar integrate.sh ⇒ crítico pela zona");
+            g = OnOld(Ho("review", null, "routine", "", "só testes"), ("tests/consistency/Check.cs", "// x"));
+            Report(Critical(g, "control-plane", "zona crítica"), "caso D: handoff declarado rotina + Check.cs alterado ⇒ crítico (handoff nunca rebaixa a política)");
+            var bRoutine = Path.Combine(tmp, "base-com-handoff-rotina"); Copy(b, bRoutine); Put(bRoutine, HoOld, Ho("review", null, "routine", "", "docs"));
+            var cE1 = Path.Combine(tmp, "c" + n++); Copy(bRoutine, cE1); Put(cE1, HoOld, Ho("review", null, "critical", "\"user-data\"", "muda o formato do mapa"));
+            g = IntegrationQueue.Gates(bRoutine, cE1, [HoOld]);
+            Report(Critical(g, "user-data", "passou a crítico"), "caso E1: handoff existente que PASSA a declarar crítico ⇒ crítico (escalada nova e objetiva)");
+            g = OnOld(Ho("review", null, "critical", "\"control-plane\", \"user-data\""));
+            Report(Critical(g, "user-data", "classe nova") && !g.Findings.Any(f => f.Class == "control-plane"), "caso E2: handoff crítico que ganha classe nova ⇒ crítico só pela classe nova");
+            g = OnOld(Ho("done", null, "critical", "\"control-plane\"", "outro texto de motivo"));
+            Report(Routine(g), "caso E3: só o texto do motivo ou o estado mudam (sem classe nova) ⇒ rotina");
+            var cE4 = Path.Combine(tmp, "c" + n++); Copy(bh, cE4); Put(cE4, HoOld, Ho("done", null, "critical"));
+            var bBroken = Path.Combine(tmp, "base-handoff-ilegivel"); Copy(b, bBroken); Put(bBroken, HoOld, "{ quebrado");
+            g = IntegrationQueue.Gates(bBroken, cE4, [HoOld]);
+            Report(Critical(g, "control-plane", "passou a crítico"), "handoff da base ilegível: declaração crítica tratada como nova (falha fechada)");
             g = Case(c => W(c, "docs/governance/decisions.json", "{ quebrado"), "docs/governance/decisions.json").G;
             Report(Critical(g, "constitution", "falha fechada"), "zona crítica que não pode ser analisada: crítico (falha fechada)");
             var noPolicy = Path.Combine(tmp, "sem-politica"); Copy(b, noPolicy); File.Delete(Path.Combine(noPolicy, IntegrationQueue.PolicyFile));

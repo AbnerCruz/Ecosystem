@@ -92,7 +92,14 @@ Um PR nunca classifica a si mesmo. Um PR que muda a política, o integrador ou o
 
 **Classes:** constituição e autoridade; controle do próprio sistema; segurança; dados do usuário; distribuição crítica; compatibilidade; arquitetura transversal; estratégia de produto. As zonas e regras de cada uma estão na política.
 
-**Agente:** pode **escalar** para crítico no handoff (`criticality.declared = critical`), nunca rebaixar.
+**Agente:** pode **escalar** para crítico no handoff (`criticality.declared = critical`), nunca rebaixar. A escalada é julgada pela **mudança deste PR**, comparando o handoff com a `main`:
+
+- handoff **novo** que se declara crítico ⇒ crítico;
+- handoff **existente** ⇒ escala só se a declaração crítica for nova em relação à `main`: passou a crítico, ou ganhou uma classe que a base não tinha;
+- fechar ou atualizar o registro de um trabalho crítico já integrado (estado, `pr`, evidência, próximos passos) ⇒ **não** herda a criticidade antiga. O histórico continua no handoff;
+- trabalho crítico novo cria handoff novo.
+
+Zonas e regras classificam os outros arquivos do PR independentemente: um handoff nunca rebaixa um caminho crítico. Origem: o PR #46 (fechamento do P3-3) foi classificado como crítico só por atualizar o handoff do trabalho crítico já integrado.
 
 **Falhas fechadas:**
 - uma zona crítica que não pode ser analisada é crítica;
