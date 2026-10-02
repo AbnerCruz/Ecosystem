@@ -9,9 +9,10 @@ public sealed record TimelineEntry(EntryKind Kind, string Id, string Title, stri
 
 /// <summary>PAST: o que já aconteceu · NOW: o que está acontecendo ou aguarda alguém · NEXT: o que o ROADMAP/decisões declaram como em seguida (MANIFEST §18).</summary>
 /// <param name="Notes">Fontes que não puderam ser lidas (ex.: GitHub indisponível). Nunca esconde a falta de dado.</param>
-public sealed record PastNowNext(IReadOnlyList<TimelineEntry> Past, IReadOnlyList<TimelineEntry> Now, IReadOnlyList<TimelineEntry> Next, IReadOnlyList<string>? Notes = null)
+[method: System.Text.Json.Serialization.JsonConstructor]
+public sealed record PastNowNext(IReadOnlyList<TimelineEntry> Past, IReadOnlyList<TimelineEntry> Now, IReadOnlyList<TimelineEntry> Next, IReadOnlyList<string> Notes)
 {
-    public IReadOnlyList<string> Notes { get; init; } = Notes ?? [];
+    public PastNowNext(IReadOnlyList<TimelineEntry> past, IReadOnlyList<TimelineEntry> now, IReadOnlyList<TimelineEntry> next) : this(past, now, next, []) { }
 }
 
 /// <summary>

@@ -1,4 +1,3 @@
-using System.Net;
 using System.Text.Json;
 
 namespace Hub.Core;
@@ -75,19 +74,12 @@ public sealed class GitHubReader
     async Task<Datum<IReadOnlyList<T>>> GetList<T>(string path, string? arrayProperty, Func<JsonElement, T?> map, CancellationToken ct) where T : class
     {
         var source = Api + path;
+        var r = await GitHubHttp.GetAsync(_http, source, _token, "application/vnd.github+json", ct).ConfigureAwait(false);
+        if (r.Body is null) return Datum<IReadOnlyList<T>>.Missing(source, r.Note);
+
         try
         {
-            using var req = new HttpRequestMessage(HttpMethod.Get, source);
-            req.Headers.UserAgent.ParseAdd("readonly-client");
-            req.Headers.Accept.ParseAdd("application/vnd.github+json");
-            if (_token is not null) req.Headers.Authorization = new("Bearer", _token);
-
-            using var res = await _http.SendAsync(req, ct).ConfigureAwait(false);
-            if (res.StatusCode != HttpStatusCode.OK)
-                return Datum<IReadOnlyList<T>>.Missing(source, $"HTTP {(int)res.StatusCode}");
-
-            var body = await res.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-            using var doc = JsonDocument.Parse(body);
+            using var doc = JsonDocument.Parse(r.Body);
             var root = doc.RootElement;
             if (arrayProperty is not null)
             {
@@ -101,9 +93,6 @@ public sealed class GitHubReader
                 if (e.ValueKind == JsonValueKind.Object && map(e) is { } item) list.Add(item);
             return Datum<IReadOnlyList<T>>.From(list, source);
         }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; } // cancelamento pedido por quem chamou não é "falha de rede"
-        catch (OperationCanceledException) { return Datum<IReadOnlyList<T>>.Missing(source, "tempo esgotado"); }
-        catch (HttpRequestException) { return Datum<IReadOnlyList<T>>.Missing(source, "falha de rede"); }
         catch (JsonException) { return Datum<IReadOnlyList<T>>.Missing(source, "resposta inválida"); }
     }
 
