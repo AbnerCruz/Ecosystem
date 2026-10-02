@@ -10,11 +10,11 @@
   "branch": "ccr-31501aad-6bwq7y",
   "base_commit": "5c2bc76",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/43",
   "blockers": [],
   "cost": null,
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261002-p3-3-esqueleto-do-hub",
   "timestamp": "2026-10-02T03:36:24Z",
   "task_id": "P3-3",
@@ -47,7 +47,8 @@
     "CORREÇÃO: ROADMAP P3-3 volta a [ ] (implementado, aguardando integração); só vira [x] depois de integrado na main, pelo fluxo correto.",
     "CORREÇÃO: criticality = critical (classe control-plane) em vez de routine; política e checker da main intactos.",
     "CORREÇÃO: integrate.sh falhava com R_HUB não definido (set -u) — agora `${R_HUB:-}`; simulate.sh passa R_HUB e ganhou 3 cenários do Hub (Hub identificado como Product tocado e rotina pela política; hub-ci vermelho → 'falhou' citando hub-ci e main intocada; hub-ci verde → integra). Nenhum cenário nem assertion existente foi removido ou afrouxado.",
-    "Validado: hub-ci é seletivo por apps/hub/**, aceita workflow_call com ref do estado combinado, contents: read, roda dotnet test do Hub, sem publicar/assinar/release; net10.0 igual ao setup-dotnet 10.0.x dos demais CIs."
+    "Validado: hub-ci é seletivo por apps/hub/**, aceita workflow_call com ref do estado combinado, contents: read, roda dotnet test do Hub, sem publicar/assinar/release; net10.0 igual ao setup-dotnet 10.0.x dos demais CIs.",
+    "INTEGRAÇÃO (FATO, conferido no GitHub): o PR #43 (head 4a9d95c) foi integrado na main pelo merge 923268dc75f648405d9725920ea83a9c9322adaa em 2026-10-02T05:41:14Z, depois de o integrador classificar a mudança como critical (control-plane e architecture), testá-la no estado combinado aae9d7a (main 5c2bc76 + head 4a9d95c) com consistency e checker confiável verdes e aguardar a autorização do proprietário. Na main após o merge: hub-ci (run 36970054489), consistency (36970054364) e pages (36970054314) concluíram success em 923268d."
   ],
   "verification": [
     {
@@ -67,18 +68,24 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "26/26 cenários, incluindo os 3 do Hub (hub-ci vermelho bloqueia, verde integra)."
+    },
+    {
+      "check": "Integração do PR #43 e checks na main",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "aae9d7a741ae65180c78bcee30aabba83f282b9f",
+      "evidence": "Estado combinado aae9d7a: consistency=success, confiável(main)=success (comentário do integrador no PR #43). Após o merge, em 923268d: hub-ci run 36970054489, consistency run 36970054364 e pages run 36970054314 = success. Limite: o job do Hub no integrador só passou a existir com este merge; no estado combinado a prova do hub-ci vem do CI do próprio PR e dos cenários de simulate.sh."
     }
   ],
   "known_issues": [
     "CHK-ARCH-REFS recusa qualquer menção textual, em apps/hub, aos nomes de outros Products. O Hub, por definição, lê e mostra esses Products como DADO (P3-4). A regra precisará de uma exceção explícita para o Hub como leitor de dados (sem permitir ProjectReference/imports de código) — isso muda um boundary (NN-011): exige ADR e é mudança crítica; por isso README e testes deste item evitam os nomes e a decisão fica para antes de P3-4.",
     "Nada do Hub foi validado em aparelho (NN-017); o gate é P3-8.",
-    "O PR toca o control plane: mesmo com tudo verde fica aguardando a autorização do proprietário (label integrar), por desenho (ADD-0012).",
     "CHK-ARCH-REFS × Hub como leitor de dados (nomes de Products): não alterado aqui; se P3-4 exigir, ADR/decisão crítica em tarefa própria.",
     "P3-9 (UI Android) é item separado e não torna P3-3 concluído."
   ],
   "next_actions": [
-    "Integrador: avaliar main atual + PR; sendo crítico, aguardar a autorização do proprietário.",
-    "Depois de integrado: marcar P3-3 [x] e handoff done pelo fluxo correto; só então P3-4."
+    "Agente: P3-4 (ler ecosystem.json e mostrar Lunet2D e Urbe), em tarefa própria; antes, resolver CHK-ARCH-REFS × Hub como leitor de dados por ADR/decisão crítica, se necessário.",
+    "Gate da Fase 3 (P3-8) segue pendente de validação humana em aparelho (NN-017)."
   ],
   "decisions_required": [],
   "normative_sources": [
