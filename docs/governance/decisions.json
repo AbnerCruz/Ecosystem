@@ -804,7 +804,7 @@
     },
     {
       "id": "DEC-0024",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": true,
       "title": "Alcance e estratégia da migração do Urbe para C#",
@@ -838,7 +838,11 @@
         "apps/urbe/docs/v2/ROADMAP.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-02"
+      "raisedAt": "2026-10-02",
+      "decision": "Alternativa B — B — Reescrita completa em C# (novo cliente, por exemplo Blazor WebAssembly para Web/PWA e hosts para Windows/Android), trocando o produto só quando houver paridade total (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/45).",
+      "decidedAt": "2026-10-02",
+      "record": "docs/governance/responses/DEC-0024.md",
+      "consequencesApplied": false
     }
   ]
 }
