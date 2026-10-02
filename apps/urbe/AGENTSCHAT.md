@@ -5,6 +5,14 @@
 
 ---
 
+### 2026-10-02 — Claude — DEC-0024-B aplicada: programa de migração do Urbe para C# (UC-n), planejamento
+- **Estado:** o proprietário decidiu a **alternativa B** (reescrita completa em C#, troca do produto só em paridade total) pelo portal (Ecosystem DEC-0024, Issue #45, registro `docs/governance/responses/DEC-0024.md`). Esta entrada **não implementa nada**: aplica as consequências nos documentos.
+- **Feito:** Ecosystem ADR-0016 → Aceito; Urbe **ADR-0010** (referência qualificada ao Ecosystem ADR-0016); programa em `docs/csharp/` (README + ROADMAP `UC-1..UC-32`, fases M0–M5, gates G-C0–G-C5); documentos do Ecosystem que diziam «Urbe permanece em JavaScript / reescrita proibida» corrigidos.
+- **Não decidido (cada um tem item e decisão própria):** pilha de UI/hosts (UC-5), transição das instalações e canais (UC-6), modelo de plugins em C# (UC-20), o corte (UC-31). A pilha do exemplo (Blazor etc.) NÃO foi decidida.
+- **Nova decisão para o proprietário:** Ecosystem **DEC-0025** (não bloqueante): o que fazer com os itens estruturais abertos do programa 2.0 em JavaScript. Padrão conservador enquanto pendente: nenhum item estrutural novo do 2.0; correções e preparação de paridade seguem.
+- **Regras:** dados do usuário não mudam de formato; paridade provada por fixtures/goldens/E2E independentes de linguagem; zona crítica da política precisa cobrir o código novo (UC-7) antes do primeiro PR de código C#.
+- **Próximos passos:** M0 (UC-1 matriz de paridade, UC-2 suíte de aceite, UC-3 contrato do vault, UC-4 dependências, UC-7 política), em PRs próprios.
+
 ### 2026-10-02 — Claude — correção: código inline com wikilink (achado de RM-F2-09/10), U-R1 no monorepo Ecosystem
 - **Estado:** corrigido em PR próprio (NN-013: refatoração e correção separadas). RM-F2-10 segue `[~]`.
 - **Bug:** `` `[[x]]` `` renderizava com U+0002 dentro do `<code>` (o `inlineMarkdown` v22 trocava wikilinks antes do código).

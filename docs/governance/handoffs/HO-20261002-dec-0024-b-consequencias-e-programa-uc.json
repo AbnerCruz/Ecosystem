@@ -1,0 +1,126 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
+  },
+  "branch": "ccr-5adec8cc-oy464b",
+  "base_commit": "a0f584d",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261002-dec-0024-b-consequencias-e-programa-uc",
+  "timestamp": "2026-10-02T12:20:17Z",
+  "task_id": "UC-0",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "Aplica a consequência de uma decisão crítica do proprietário (DEC-0024-B): aceita um ADR, altera decisions.json, cria a decisão derivada DEC-0025 e corrige documentos normativos (ARCHITECTURE, refactoring, ADR-0009). Zonas críticas da política: decisions.json e docs/adr/**."
+  },
+  "files_changed": [
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/adr/README.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/governance/decisions.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/architecture/refactoring.md",
+    "docs/architecture/candidates.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/v2/adr/README.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261002-dec-0024-b-consequencias-e-programa-uc.json"
+  ],
+  "work_completed": [
+    "FATO (verificado na main a0f584d): DEC-0024 está decided, alternativa B (reescrita completa em C#, trocando o produto só com paridade total), registrada em df3341a e na Issue #45 (docs/governance/responses/DEC-0024.md), com consequencesApplied=false. Minha leitura anterior (pending) estava desatualizada: eu não havia atualizado a main. Nenhuma decisão do proprietário foi respondida por agente.",
+    "DECISÃO (proprietário, DEC-0024-B), aplicada sem alterar o seu sentido: ADR-0016 passa a Aceito e o texto da Decisão/Consequências/Alternativas rejeitadas registra o que B autoriza e o que NÃO autoriza. Em particular, a pilha de exemplo da alternativa (Blazor WebAssembly + hosts Windows/Android) NÃO foi decidida: a escolha da pilha, a estratégia de transição, o modelo de plugins em C# e o corte continuam exigindo decisão própria.",
+    "ALTERAÇÃO — programa: apps/urbe/docs/csharp/ (README e ROADMAP com 32 itens UC-n em 6 fases M0–M5 e gates G-C0–G-C5, todos abertos; 'Próxima tarefa' = M0). M0 não escolhe pilha nem escreve código de produto: matriz de paridade (UC-1), suíte de aceite independente de linguagem (UC-2), contrato do vault (UC-3), inventário de dependências (UC-4), proposta de pilha (UC-5), transição (UC-6) e extensão da política de integração ao código novo (UC-7, pré-condição para qualquer PR de código C#). Urbe ADR-0010 (Accepted, referência qualificada ao Ecosystem ADR-0016) e índice atualizados; Urbe ADR-0001 continua valendo para o runtime JS e não rege o cliente C#.",
+    "ALTERAÇÃO — documentos que contradiziam a decisão: ARCHITECTURE §2 («Urbe permanece em JavaScript; não há reescrita»), refactoring.md §4 e candidates.md §6 (reescrita do Urbe em C# deixa de estar na lista de proibições; é programa à parte, não trilho R nem X), complemento no ADR-0009 e o parágrafo 'Em paralelo' do ROADMAP. ecosystem.json NÃO muda (language descreve o produto distribuído; muda no corte, UC-32). MANIFEST e ADD-0002 não foram editados.",
+    "INFERÊNCIA/PROPOSTA -> nova decisão do proprietário DEC-0025 (pending, não bloqueante, no portal): o que fazer com os itens estruturais abertos do programa Urbe 2.0 em JavaScript (A manutenção e preparação, B seguir em paralelo, C congelamento total); recomendação A. Padrão conservador enquanto pendente: nenhum item estrutural novo do 2.0 é iniciado; correções e preparação de paridade continuam. consequencesApplied de DEC-0024 = true.",
+    "Nenhum código de C# foi escrito; nenhum arquivo de código do Urbe foi tocado; formato de dados e canais de distribuição inalterados."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram, inclusive CHK-ADR, CHK-DECISIONS, CHK-ARCH-REFS (as menções a outros produtos nos documentos do Urbe foram reescritas, sem enfraquecer o check) e CHK-HANDOFFS."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Self-test dos checks passou."
+    },
+    {
+      "check": "npm run check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todas as checagens do Urbe passaram (59 arquivos de teste, rastreabilidade em dia)."
+    }
+  ],
+  "known_issues": [
+    "O programa só tem plano: nada de M0 foi executado. Os itens UC-n estão todos abertos e a granularidade de M1–M5 é grossa de propósito (será detalhada quando UC-5 decidir a pilha).",
+    "DEC-0025 é uma decisão nova para o proprietário, derivada da DEC-0024; sem resposta, vale o padrão conservador descrito.",
+    "Nenhuma validação humana é exigida por este PR (só documentação e registro de decisão)."
+  ],
+  "next_actions": [
+    "Proprietário: autorizar este PR crítico (label integrar) e responder DEC-0025 no portal quando quiser (não bloqueia a M0).",
+    "Agente, depois do merge: executar a M0 em PRs próprios (UC-1, UC-2, UC-3, UC-4 e UC-7 podem andar em paralelo; UC-5 e UC-6 dependem delas e abrem ADR Proposto + decisão no portal).",
+    "Itens de Issue por tarefa em andamento conforme communication.md §8."
+  ],
+  "decisions_required": [
+    "DEC-0025"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/governance/responses/DEC-0024.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md",
+    "docs/architecture/refactoring.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+    "apps/urbe/docs/v2/SPEC.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-005",
+      "evidence": "A reescrita só foi planejada depois de ADR aceito, aprovação explícita (DEC-0024-B), roadmap próprio e exigência de testes de compatibilidade (UC-2/UC-3); nenhum código foi escrito."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A decisão do proprietário e suas consequências estão em ADR-0016, decisions.json, ROADMAP e apps/urbe/docs/csharp/."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "A pilha, a transição, o modelo de plugins, o corte e o destino do programa 2.0 NÃO foram decididos pelo agente: ficam como itens e DEC-0025."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Migração tratada como programa separado da refatoração do JavaScript."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana por superfície prevista nos gates G-C3, G-C4 e G-C5; nada marcado como concluído."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Estado do programa descoberto no ROADMAP (linhas de gate), decisão pendente DEC-0025 no portal."
+    }
+  ]
+}
