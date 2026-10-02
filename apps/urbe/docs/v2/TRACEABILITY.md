@@ -11,7 +11,7 @@
 | REQ-002 | §1.2 | F0 | RM-F0-02 — Verificador e gerador de rastreabilidade | [x] | Execução local: `node tools/check-traceability.mjs` retorna 0; teste negativo em `tests/traceability.mjs` (REQ removido → falha). | G0 |
 | REQ-002 | §1.2 | F6 | RM-F6-08 — Relatório final de rastreabilidade | [ ] | `gen-traceability --check`. | G6 |
 | REQ-002 | §1.2 | F7 | RM-F7-28 — Fechar G7: todo OBS com teste e documentação | [ ] | Verificador + revisão. | G7 |
-| REQ-003 | §3.1 | F2 | RM-F2-02 — Harness de teste de produção do monólito | [?] | Cobre boot, abrir vault fixture, criar nota, mundo (`tests/e2e/app-runtime.e2e.mjs`; `node tools/run-e2e.mjs app-runtime`). `[?]`: os E2E ainda não rodam no CI (nenhum workflow instala o Chromium) — enquanto isso, o gate do harness é local; ligar ao CI é pendência a registrar antes de marcar `[x]`. | G2 |
+| REQ-003 | §3.1 | F2 | RM-F2-02 — Harness de teste de produção do monólito | [x] | Cobre boot, abrir vault fixture, criar nota, mundo (`tests/e2e/app-runtime.e2e.mjs`; `node tools/run-e2e.mjs app-runtime`). **No CI:** job `e2e` em `.github/workflows/urbe-checks.yml` (Chromium via `npx playwright install --with-deps chromium`; `node tools/run-e2e.mjs app-runtime zip smoke`), executado no PR e no estado combinado do integrador. Os demais E2E entram no job um a um, depois de provados em Chromium. | G2 |
 | REQ-003 | §3.1 | F2 | RM-F2-19 — `app.js` reduzido a composição/bootstrap | [ ] | Métrica: sem regra de domínio (revisão + lint de imports). | G2 |
 | REQ-004 | §1.2 | F0 | RM-F0-18 — Comando único `npm run check` (sincronização docs×código) | [?] | Falha em qualquer sub-check falha o comando. | G0 |
 | REQ-004 | §1.2 | F6 | RM-F6-09 — Sincronização final docs×código×release | [ ] | CI. | G6 |
@@ -111,7 +111,7 @@
 | REQ-062 | §9 | F3 | RM-F3-19 — Testes de `main.js` e `preload.js` | [x] | `tests/desktop-main.mjs`, `tests/desktop-preload.mjs`. | G3 |
 | REQ-062 | §9 | F3 | RM-F3-20 — Testes JUnit do plugin Android e SW real | [~] | `app/src/test/...`, `tests/e2e/sw.spec`. | G3 |
 | REQ-063 | §9 | F0 | RM-F0-05 — Runner de testes multiplataforma | [?] | Teste do runner com script falho/passando; roda em Windows (CI matrix) e Linux. | G0 |
-| REQ-064 | §9 | F2 | RM-F2-02 — Harness de teste de produção do monólito | [?] | Cobre boot, abrir vault fixture, criar nota, mundo (`tests/e2e/app-runtime.e2e.mjs`; `node tools/run-e2e.mjs app-runtime`). `[?]`: os E2E ainda não rodam no CI (nenhum workflow instala o Chromium) — enquanto isso, o gate do harness é local; ligar ao CI é pendência a registrar antes de marcar `[x]`. | G2 |
+| REQ-064 | §9 | F2 | RM-F2-02 — Harness de teste de produção do monólito | [x] | Cobre boot, abrir vault fixture, criar nota, mundo (`tests/e2e/app-runtime.e2e.mjs`; `node tools/run-e2e.mjs app-runtime`). **No CI:** job `e2e` em `.github/workflows/urbe-checks.yml` (Chromium via `npx playwright install --with-deps chromium`; `node tools/run-e2e.mjs app-runtime zip smoke`), executado no PR e no estado combinado do integrador. Os demais E2E entram no job um a um, depois de provados em Chromium. | G2 |
 | REQ-064 | §9 | F2 | RM-F2-18 — Eliminar testes dependentes de texto de `app.js` | [ ] | grep de `readFileSync('src/app.js')` em `tests/` = 0. | G2 |
 | REQ-065 | §10.2 | F0 | RM-F0-06 — Fonte única de versão (`tools/version.mjs`) | [x] | `tests/version.mjs` (drift injetado falha); `consistency.mjs` adaptado. | G0 |
 | REQ-066 | §10.2 | F0 | RM-F0-14 — Separar integração e publicação (release por tag) | [?] | Dry-run em branch de teste: push em `main` não publica; tag publica em repositório de teste. | G0 |
@@ -193,4 +193,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 41.
+- Itens no ROADMAP: 146; concluídos `[x]`: 42.
