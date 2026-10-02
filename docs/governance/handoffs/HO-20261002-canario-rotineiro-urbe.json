@@ -1,0 +1,79 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "df3064c",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261002-canario-rotineiro-urbe",
+  "timestamp": "2026-10-02T01:16:00Z",
+  "task_id": "P1-19",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção de datas em log e ROADMAP do Urbe e entrada no AGENTSCHAT: nenhuma zona crítica, nenhum formato, nenhuma decisão."
+  },
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261002-canario-rotineiro-urbe.json"
+  ],
+  "work_completed": [
+    "Canário rotineiro real da política do ADD-0012 (primeiro PR depois do PR #40): reconciliadas contra o HEAD df3064c as correções do commit 6ddcc37 que continuam corretas — datas 2026-10-02→2026-10-01 em apps/urbe/AGENTSCHAT.md e apps/urbe/docs/v2/ROADMAP.md; a frase daquele commit sobre a label em apps/urbe/AGENTS.md não foi reaplicada (substituída pela regra semântica do PR #40).",
+    "Entrada no AGENTSCHAT do Urbe registrando a mudança da regra de integração (rotina automática, crítico ao proprietário).",
+    "FATO: o PR #40 foi integrado pelo proprietário pelo botão Merge (df3064c); a árvore integrada (4fe5e58) é idêntica à do estado combinado que o integrador testou (integration/pr-40 = 7d76a53, mesmos pais a232bc4 + bf2be1e)."
+  ],
+  "verification": [
+    {
+      "check": "npm run check em apps/urbe",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "56/56 arquivos de teste; todas as checagens passaram (local, sobre esta árvore)."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks (local)."
+    },
+    {
+      "check": "Classificação local com a política da main (--integration-gates --base-root main)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "criticality=routine, requires_owner=false, products=[\"urbe\"]."
+    }
+  ],
+  "known_issues": [
+    "A branch integration/pr-40 ficou no remoto porque o PR #40 foi integrado pelo botão Merge, não pelo integrador (que só apaga a branch ao integrar)."
+  ],
+  "next_actions": [
+    "Integrador: avaliar e integrar sozinho (rotina). Agente: registrar a evidência (execução, commit combinado) no handoff P1-19 e marcar P1-19 [x] em seguida."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoff com base, arquivos e verificações; classificação e commit combinado ficam no PR."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Integração só do commit combinado testado."
+    }
+  ]
+}
