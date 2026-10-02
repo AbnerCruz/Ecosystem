@@ -142,7 +142,7 @@ check "crítico autorizado pelo proprietário (evento conferido): main = commit 
 # 6. Ref de integração mutada depois do teste → não integra (não basta ter os mesmos pais).
 X="$(branch mutacao 'mkdir -p docs/notes && echo "outra nota" > docs/notes/mutacao.md')"; open_pr 44 "$X"
 prep 44 "$X"; CX="$(out combined)"; M6="$(git --git-dir="$T/origin.git" rev-parse main)"
-B="$(git commit-tree "$CX^{tree}" -p "$CX^1" -p "$CX^2" -m "mesmos pais, outro commit")"; git push -q -f origin "$B:refs/heads/integration/pr-44"
+B="$(G commit-tree "$CX^{tree}" -p "$CX^1" -p "$CX^2" -m "mesmos pais, outro commit")"; git push -q -f origin "$B:refs/heads/integration/pr-44"
 finish_eval 44 "$X"
 check "ref de integração ≠ commit testado (mesmos pais): NÃO integra, volta a testar" 'main_is "$M6" && ! in_main "$B" && last_status "$X" | grep -q "^testando"'
 
