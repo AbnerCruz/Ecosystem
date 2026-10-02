@@ -1,0 +1,107 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01Cqs24pT9sHieyegVt62nFc"
+  },
+  "branch": "ccr-p3-6-leitura-github",
+  "base_commit": "382069d",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "hub",
+  "state": "review",
+  "message_id": "HO-20261002-p3-6-leitura-do-github",
+  "timestamp": "2026-10-02T11:22:23Z",
+  "task_id": "P3-6",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Código novo dentro de apps/hub (cliente de leitura) e ROADMAP, no escopo previsto de P3-6, com network.access já declarada no manifest. Não toca control plane, política, schemas, permissões, checks nem Products."
+  },
+  "files_changed": [
+    "apps/hub/src/Hub.Core/GitHubModels.cs",
+    "apps/hub/src/Hub.Core/GitHubReader.cs",
+    "apps/hub/src/Hub.Core/Datum.cs",
+    "apps/hub/src/Hub.Core/Timeline.cs",
+    "apps/hub/tests/Hub.Tests/GitHubReaderTests.cs",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261002-p3-6-leitura-do-github.json"
+  ],
+  "work_completed": [
+    "FATO: P3-2..P3-5 integradas e fechadas. A P3-5 deixou explícito que PRs, Issues, branches e CI do Now dependiam da leitura do GitHub. ecosystem.json do hub já declara permissions.requests = network.access + ui.display (NN-016).",
+    "ALTERAÇÃO (P3-6): GitHubReader lê, por GET na API pública e em paralelo, PRs abertos, branches, releases, Issues abertas (descarta PRs e extrai a label state:, DEC-0003) e execuções de CI de uma branch. Sem token embutido: um token opcional entra em tempo de execução e só vira header Authorization quando não vazio. RepositoryRef.TryParse deriva dono/repositório da URL declarada em ecosystem.json (nada de repositório fixo no código). Datum ganhou Note (motivo) sem quebrar o formato existente. HTTP != 200, falha de rede, tempo esgotado, JSON inválido ou formato inesperado viram NotAvailable com o motivo ('HTTP 403', 'falha de rede', 'tempo esgotado', 'resposta inválida', 'resposta inesperada'); uma parte que falha não afeta as outras; cancelamento pedido pelo chamador é propagado, não engolido.",
+    "ALTERAÇÃO: TimelineGitHub.AddGitHub acrescenta ao Past/Now/Next: PRs, Issues (com state: ou 'sem state:'), branches (exceto a padrão) e a execução de CI mais recente de cada workflow no Now; releases no Past; fonte indisponível vira PastNowNext.Notes (nunca entrada inventada). O GitHub não alimenta o Next, que continua só ROADMAP.",
+    "NÃO FEITO, de propósito: nenhuma chamada real à rede (a rede não é necessária e a política do ambiente a restringe); testes usam respostas gravadas e um handler falso. Tela, escolha de token e persistência do último estado no aparelho ficam para P3-9. P3-6 permanece [ ] no ROADMAP até a integração.",
+    "ACHADO: CHK-ARCH-REFS recusou o User-Agent 'ecosystem-hub' dentro do próprio apps/hub (o check procura 'ecosystem hub' em qualquer Product que não declare dependência do Hub, inclusive o próprio Hub). Resolvido com um User-Agent neutro ('readonly-client'); o check não foi alterado. Se o Hub um dia precisar citar o próprio nome por extenso no código, isso exigirá ajuste do check (boundary: ADR)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Hub.Tests (apps/hub)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "57/57 testes; os 28 novos cobrem respostas gravadas de PRs/branches/releases/Issues/CI, só GET e sem Authorization por padrão, token só quando fornecido, HTTP 403/404/500, falha de rede, tempo esgotado, corpos inválidos, cancelamento do chamador, falha isolada de uma parte e a integração ao Past/Now/Next (CI mais recente por workflow, notas de fonte indisponível, Next intocado)."
+    }
+  ],
+  "known_issues": [
+    "Sem token, a API pública limita a ~60 requisições/hora por IP; o Hub faz 5 por leitura e mostra 'HTTP 403' quando excedido, sem esconder. Paginação não implementada (até 100 PRs/Issues/branches e 30 releases/execuções por leitura).",
+    "Os dados lidos não são persistidos aqui: o último estado conhecido de GitHub (cache) depende da camada Android (P3-9).",
+    "Nada validado em aparelho nem contra a API real (NN-017); o gate P3-8 segue pendente."
+  ],
+  "next_actions": [
+    "Integrador avalia o PR; sendo rotina verde, entra sozinho.",
+    "Depois de integrada: P3-6 [x], handoff done. Em seguida P3-9 (UI Android) e P3-7."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/contracts/permissions.json",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O GitHub é fonte lida e marcada como derivada; nada vira autoridade nova."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Código e fixtures não nomeiam outro Product; o repositório vem da URL declarada em ecosystem.json."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "GitHub usado só como leitura de registro de desenvolvimento, não como IPC; somente GET."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "network.access já declarada; nenhum token embutido; Authorization só com token fornecido em execução."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada marcado como validado em aparelho nem contra a API real."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhuma abstração compartilhada nova; tudo dentro de apps/hub."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Falta de fonte aparece como NotAvailable/nota com o motivo; nada é inventado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "hub-github-reader",
+      "status": "possible-candidate",
+      "rationale": "O gerador do portal (site/generator) também lê a API pública do GitHub (releases) com código próprio. São dois consumidores com necessidades diferentes e sem contrato comum; um terceiro/real compartilhamento dispararia Extraction Review (ADR-0011), nunca extração automática."
+    }
+  ]
+}
