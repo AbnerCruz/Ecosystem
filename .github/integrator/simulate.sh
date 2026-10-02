@@ -198,7 +198,26 @@ check "hub-ci vermelho no estado combinado: 'falhou' citando hub-ci, main intoca
 prep 51 "$H"; CH="$(out combined)"; finish_eval 51 "$H" skipped success
 check "hub-ci verde: integrada automaticamente (rotina), a main vira o commit testado" 'main_is "$CH" && in_main "$H"'
 
-check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$CU" "$CC" "$CB" "$M2" "$CR" "$CH"; do in_main "$x" || exit 1; done )'
+# 14. Fechamento de handoff de trabalho crítico JÁ integrado (o caso do PR #46): a criticidade é da mudança atual, não do histórico.
+#     O PR só muda estado/PR do handoff antigo (que continua declarando 'critical') → rotina → integra sozinho, sem label; as labels de
+#     crítico de uma avaliação antiga saem.
+git fetch -q origin main; git checkout -q --detach origin/main
+handoff HO-20991231-sim-critico-integrado '{"criticality": {"declared": "critical", "classes": ["control-plane"], "reason": "mudou o integrador"}}'
+G add -A; G commit -qm "trabalho crítico já integrado (com autorização)"; git push -q origin HEAD:refs/heads/main
+git checkout -q -B fechamento origin/main
+python3 - <<'PY'
+import json
+p = 'docs/governance/handoffs/HO-20991231-sim-critico-integrado.json'
+d = json.load(open(p)); d.update(state='done', pr='https://github.com/AbnerCruz/Ecosystem/pull/43')
+json.dump(d, open(p, 'w'), ensure_ascii=False, indent=2)
+PY
+G add -A; G commit -qm "fechamento"; K14="$(git rev-parse HEAD)"; open_pr 53 "$K14"; printf 'critico\npronto-para-integrar\n' > "$T/gh/labels/53"
+prep 53 "$K14"; C14="$(out combined)"
+check "fechamento de handoff crítico já integrado: rotina (o histórico 'critical' continua no handoff, mas não é herdado)" '[ "$(out criticality)" = routine ] && [ "$(out requires_owner)" = false ] && jq -e ".criticality.declared == \"critical\"" docs/governance/handoffs/HO-20991231-sim-critico-integrado.json >/dev/null'
+finish_eval 53 "$K14"
+check "fechamento integrado sozinho, sem label 'integrar'; labels antigas de crítico removidas" 'main_is "$C14" && in_main "$K14" && ! grep -qx critico "$T/gh/labels/53" && ! grep -qx pronto-para-integrar "$T/gh/labels/53" && ! grep -qx integrar "$T/gh/labels/53"'
+
+check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$CU" "$CC" "$CB" "$M2" "$CR" "$CH" "$C14"; do in_main "$x" || exit 1; done )'
 
 echo
 if [ "$fails" -eq 0 ]; then echo "Simulação do integrador: todos os cenários passaram."; else echo "Simulação do integrador: $fails falha(s)."; exit 1; fi

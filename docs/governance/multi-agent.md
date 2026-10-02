@@ -75,7 +75,7 @@ O integrador (`.github/workflows/integrate.yml`, componente `integrator`) faz so
 
 - trabalhar em branch própria (PR em rascunho enquanto trabalha, se precisar do CI do Product);
 - ao terminar, handoff em `review` (ou `done`, se só faltar a integração) e PR pronto para revisão;
-- se a mudança é crítica fora das zonas da política (ex.: muda formato de dados num arquivo comum), **escalar** no handoff (`criticality.declared = critical`);
+- se a mudança é crítica fora das zonas da política (ex.: muda formato de dados num arquivo comum), **escalar** no handoff (`criticality.declared = critical`) — num handoff **novo**: o fechamento posterior desse handoff (estado, `pr`, evidência) é rotina e não volta ao proprietário;
 - se ela exige uma direção ainda não escolhida, abrir antes a decisão no portal (decisão crítica, [`communication.md`](communication.md) §9);
 - atender ao comentário do integrador.
 

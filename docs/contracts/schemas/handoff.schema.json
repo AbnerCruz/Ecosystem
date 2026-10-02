@@ -288,7 +288,7 @@
       }
     },
     "criticality": {
-      "description": "Escalada declarada pelo agente (ADD-0012): 'critical' torna a mudança crítica mesmo fora das zonas da política (ex.: muda formato de dados num arquivo comum); 'routine' não rebaixa nada. A classificação efetiva é derivada pelo integrador com a política da main e fica no PR (status ecosystem/integration) e no commit de integração (trailers Integration-*).",
+      "description": "Escalada declarada pelo agente (ADD-0012): 'critical' torna a mudança crítica mesmo fora das zonas da política (ex.: muda formato de dados num arquivo comum); 'routine' não rebaixa nada. Julgada pela mudança do PR: handoff novo crítico escala; handoff já existente na main só escala se passar a crítico ou ganhar classe nova — fechar o registro de um trabalho crítico já integrado não herda a criticidade (o histórico fica). A classificação efetiva é derivada pelo integrador com a política da main e fica no PR (status ecosystem/integration) e no commit de integração (trailers Integration-*).",
       "type": "object",
       "additionalProperties": false,
       "required": ["declared"],
