@@ -1,7 +1,7 @@
 [
  {
   "input": "# Título\n\nParágrafo com **negrito**, *itálico*, ~~riscado~~, `código [[x]]` e _ênfase_.",
-  "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código \u00020\u0002</code> e <em>ênfase</em>.</p>"
+  "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código [[x]]</code> e <em>ênfase</em>.</p>"
  },
  {
   "input": "###### H6\n#### H4 com [link](https://exemplo.com \"t\")",
@@ -57,7 +57,7 @@
  },
  {
   "input": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.",
-  "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>\u00022\u0002</code>.</p>"
+  "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>[[não]]</code>.</p>"
  },
  {
   "input": "[x](javascript:alert(1)) [y](JaVaScRiPt:alert(1)) [z](vbscript:x) [w](file:///etc/passwd) [ok](https://a.b/c_d_e)",
@@ -130,5 +130,33 @@
  {
   "input": "# Nota longa\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\n",
   "html": "<h1>Nota longa</h1><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p>"
+ },
+ {
+  "input": "`código [[x]]` fim",
+  "html": "<p><code>código [[x]]</code> fim</p>"
+ },
+ {
+  "input": "[`a`](https://x.y) e `b`",
+  "html": "<p><a href=\"https://x.y\" target=\"_blank\" rel=\"noopener\"><code>a</code></a> e <code>b</code></p>"
+ },
+ {
+  "input": "[x `c` y](u)",
+  "html": "<p><a href=\"u\" target=\"_blank\" rel=\"noopener\">x <code>c</code> y</a></p>"
+ },
+ {
+  "input": "![a `c` b](https://x.y/i.png)",
+  "html": "<p><img src=\"https://x.y/i.png\" alt=\"a `c` b\"></p>"
+ },
+ {
+  "input": "**a `c` b** e *x `y` z*",
+  "html": "<p><strong>a <code>c</code> b</strong> e <em>x <code>y</code> z</em></p>"
+ },
+ {
+  "input": "`**não negrito** e _x_ e [l](u)`",
+  "html": "<p><code>**não negrito** e _x_ e [l](u)</code></p>"
+ },
+ {
+  "input": "[[Nota]] e `[[Nota]]` juntas",
+  "html": "<p><span class=\"wikilink\" data-note-name=\"Nota\">Nota</span> e <code>[[Nota]]</code> juntas</p>"
  }
 ]

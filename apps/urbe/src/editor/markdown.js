@@ -25,21 +25,27 @@ function safeUrl(u){
   return u;
 }
 function inlineMarkdown(s){
-  var x=escapeHTML(s),guarda=[];
+  var x=escapeHTML(s),guarda=[],codigos={};
   var guardar=function(html){guarda.push(html);return '\u0002'+(guarda.length-1)+'\u0002'};
+  /* O código sai primeiro: dentro dele [[...]], links, ** e _ são texto. (Antes os wikilinks eram trocados antes do código e o
+     marcador do wikilink vazava como U+0002 dentro do <code>.) */
+  x=x.replace(/`([^`\n]+)`/g,function(m,c){var k=guarda.length;codigos[k]=c;return guardar('<code>'+c+'</code>')});
   x=x.replace(/\[\[([^\]|#]+)(?:\|([^\]]+))?\]\]/g,function(m,alvo,rotulo){
     var nome=(rotulo||alvo).trim();
     return guardar('<span class="wikilink" data-note-name="'+escapeHTML(alvo.trim())+'">'+escapeHTML(nome)+'</span>');
   });
   x=x.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,function(m,alt,src){
+    /* no atributo alt o código volta como texto com crases, nunca como tag */
+    alt=alt.replace(/\u0002(\d+)\u0002/g,function(mm,i){return codigos[i]!=null?'`'+codigos[i]+'`':mm});
     return guardar('<img src="'+safeUrl(src)+'" alt="'+alt+'">');
   });
   x=x.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,function(m,txt,href){
     return guardar('<a href="'+safeUrl(href)+'" target="_blank" rel="noopener">'+inlineEmphasis(txt)+'</a>');
   });
-  x=x.replace(/`([^`\n]+)`/g,function(m,c){return guardar('<code>'+c+'</code>')});
   x=inlineEmphasis(x);
-  return x.replace(/\u0002(\d+)\u0002/g,function(m,i){return guarda[+i]});
+  /* marcadores aninhados (código dentro do rótulo de um link) voltam em mais de uma passada */
+  for(var n=0;n<4&&/\u0002\d+\u0002/.test(x);n++)x=x.replace(/\u0002(\d+)\u0002/g,function(m,i){return guarda[+i]});
+  return x;
 }
 function splitFrontmatter(md){
   const src=String(md||"").replace(/\r\n?/g,"\n");

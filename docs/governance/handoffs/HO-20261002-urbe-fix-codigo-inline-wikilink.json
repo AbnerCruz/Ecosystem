@@ -1,0 +1,98 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
+  },
+  "branch": "ccr-5adec8cc-oy464b",
+  "base_commit": "fa2649b",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261002-urbe-fix-codigo-inline-wikilink",
+  "timestamp": "2026-10-02T12:01:34Z",
+  "task_id": "UR1-8",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção de saída de renderização de Markdown (texto → HTML) dentro de apps/urbe, sem persistência, formato de dados, segurança do app, distribuição ou workflows; a sanitização de URLs não muda."
+  },
+  "files_changed": [
+    "apps/urbe/src/editor/markdown.js",
+    "apps/urbe/tests/markdown.mjs",
+    "apps/urbe/tests/fixtures/markdown-golden.json",
+    "apps/urbe/tests/fixtures/visual-golden.json",
+    "apps/urbe/docs/v2/contracts/editor-markdown.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261002-urbe-fix-codigo-inline-wikilink.json"
+  ],
+  "work_completed": [
+    "FATO: achado do golden de RM-F2-09/10 (PRs #54 e #59): código inline com wikilink (`[[x]]`) renderizava no preview com U+0002 dentro do <code>. Causa: o inlineMarkdown com sanitização trocava wikilinks antes do código, e o marcador do wikilink ficava dentro do código sem ser restaurado. Era comportamento herdado do app.js e foi preservado nas extrações (NN-013: refatoração e correção em PRs separados); esta tarefa é a correção.",
+    "ALTERAÇÃO (src/editor/markdown.js, inlineMarkdown): o código sai primeiro e é opaco (wikilinks, links, ** e _ ficam literais dentro dele); os marcadores aninhados (código no rótulo de um link) voltam em mais de uma passada; no alt de imagem o código volta como texto com crases, nunca como tag. EFEITO DELIBERADO: código dentro do rótulo de um link ou de uma ênfase agora renderiza como <code> (antes ficava com crases literais).",
+    "PROVA: o golden do markdown mudou em exatamente 2 dos 33 casos, os dois com o marcador vazado, e mais nada; 7 casos de regressão novos (40 no total) e asserção de que nenhuma saída contém U+0001..U+0003. 4 entradas do golden do serializador (visual-golden.json) guardavam o HTML antigo com U+0002 e foram regeneradas do render corrigido. Contrato docs/v2/contracts/editor-markdown.md atualizado.",
+    "Sem mudança de dados do usuário, boundary, versão, release ou workflow. DEC-0024 continua pending; nada de C#. A entrada de CHANGELOG fica para a próxima release (o arquivo só lista versões publicadas)."
+  ],
+  "verification": [
+    {
+      "check": "npm run check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todas as checagens passaram (59 arquivos de teste, incluindo tests/markdown.mjs com 40 casos)."
+    },
+    {
+      "check": "node tools/run-e2e.mjs (14 cenários, Chromium real, local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "14/14 cenários E2E passaram, incluindo app-runtime e app-runtime-visual."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os checks passaram localmente."
+    }
+  ],
+  "known_issues": [
+    "O preview agora mostra código dentro de rótulos de link/ênfase como código (mudança visível, deliberada); sem validação visual humana, não exigida para saída de texto coberta por golden.",
+    "Quem tiver o app em cache offline recebe a correção quando o service worker novo instalar (versão inalterada; release é decisão à parte).",
+    "Código com crases desbalanceadas ou multilinha segue como antes (a regex de código não cruza linhas)."
+  ],
+  "next_actions": [
+    "Integrador: rotina verde entra sozinha.",
+    "RM-F2-05..08 (renderer e laço de desenho; fecham o #mini e RM-F2-04); restante de RM-F2-10 depois de um desenho de host e validação em aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "apps/urbe/CONTRIBUTING.md",
+    "apps/urbe/docs/v2/contracts/editor-markdown.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças só em apps/urbe; nenhuma referência a Lunet2D ou Hub."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Sem reescrita para C#; DEC-0024 pending."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Correção separada das refatorações RM-F2-09/10; diferença de saída provada por golden (2 de 33)."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidência: golden, 7 casos novos, npm run check e 14 E2E; lacunas em known_issues."
+    }
+  ]
+}

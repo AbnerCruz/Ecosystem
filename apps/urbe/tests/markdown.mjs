@@ -24,6 +24,15 @@ assert.match(M.render('[[Nota|rótulo]]'), /<span class="wikilink" data-note-nam
 assert.match(M.render('#'), /<h1><br><\/h1>/, 'cabeçalho vazio vira <h1> editável');
 assert.match(M.render('---\ntitle: X\n---\ncorpo'), /data-frontmatter-card="1"/, 'frontmatter vira cartão');
 
+// código inline (correção RM-F2-10/achado): o conteúdo do código nunca é interpretado e nenhum marcador interno vaza
+for (const { input, html } of golden) assert.ok(!/[\u0001\u0002\u0003]/.test(html), 'sem marcador interno na saída: ' + JSON.stringify(input).slice(0, 60));
+assert.equal(M.inlineMarkdown('`a [[x]] b`'), '<code>a [[x]] b</code>', 'wikilink dentro de código fica literal');
+assert.equal(M.inlineMarkdown('[[Nota]] e `[[Nota]]`'), '<span class="wikilink" data-note-name="Nota">Nota</span> e <code>[[Nota]]</code>', 'wikilink fora do código continua wikilink');
+assert.match(M.inlineMarkdown('[x `c` y](u)'), />x <code>c<\/code> y<\/a>/, 'código dentro do rótulo de um link');
+assert.equal(M.inlineMarkdown('![a `c` b](https://x.y/i.png)'), '<img src="https://x.y/i.png" alt="a `c` b">', 'alt de imagem nunca recebe tag');
+assert.equal(M.inlineMarkdown('**a `c` b**'), '<strong>a <code>c</code> b</strong>', 'ênfase atravessa o código');
+assert.equal(M.inlineMarkdown('`**x** _y_`'), '<code>**x** _y_</code>', 'ênfase dentro do código é texto');
+
 // sanitização: nenhum esquema perigoso sobrevive em href/src
 for (const bad of ['javascript:alert(1)', 'JaVaScRiPt:alert(1)', 'vbscript:x', 'file:///etc/passwd', 'data:text/html;base64,AAAA']) {
   const h = M.render(`[a](${bad}) ![b](${bad})`);

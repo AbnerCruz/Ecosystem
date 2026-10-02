@@ -2,16 +2,16 @@
  {
   "kind": "md",
   "source": "# Título\n\nParágrafo com **negrito**, *itálico*, ~~riscado~~, `código [[x]]` e _ênfase_.",
-  "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código \u00020\u0002</code> e <em>ênfase</em>.</p>",
+  "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código [[x]]</code> e <em>ênfase</em>.</p>",
   "bodyEditor": "",
-  "md": "# Título\n\nParágrafo com **negrito**, _itálico_, ~~riscado~~, `código \u00020\u0002` e _ênfase_.\n"
+  "md": "# Título\n\nParágrafo com **negrito**, _itálico_, ~~riscado~~, `código [[x]]` e _ênfase_.\n"
  },
  {
   "kind": "md",
   "source": "# Título\n\nParágrafo com **negrito**, *itálico*, ~~riscado~~, `código [[x]]` e _ênfase_.",
-  "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código \u00020\u0002</code> e <em>ênfase</em>.</p>",
+  "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código [[x]]</code> e <em>ênfase</em>.</p>",
   "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
-  "md": "---\ntitle: X\ntags: [a]\n---\n# Título\n\nParágrafo com **negrito**, _itálico_, ~~riscado~~, `código \u00020\u0002` e _ênfase_.\n"
+  "md": "---\ntitle: X\ntags: [a]\n---\n# Título\n\nParágrafo com **negrito**, _itálico_, ~~riscado~~, `código [[x]]` e _ênfase_.\n"
  },
  {
   "kind": "md",
@@ -198,16 +198,16 @@
  {
   "kind": "md",
   "source": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.",
-  "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>\u00022\u0002</code>.</p>",
+  "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>[[não]]</code>.</p>",
   "bodyEditor": "",
-  "md": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `\u00022\u0002`.\n"
+  "md": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.\n"
  },
  {
   "kind": "md",
   "source": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.",
-  "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>\u00022\u0002</code>.</p>",
+  "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>[[não]]</code>.</p>",
   "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo",
-  "md": "---\ntitle: X\ntags: [a]\n---\nVer [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `\u00022\u0002`.\n"
+  "md": "---\ntitle: X\ntags: [a]\n---\nVer [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.\n"
  },
  {
   "kind": "md",
