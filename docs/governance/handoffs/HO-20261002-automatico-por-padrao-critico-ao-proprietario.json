@@ -1,0 +1,151 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "a232bc4",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "integrator",
+  "state": "review",
+  "message_id": "HO-20261002-automatico-por-padrao-critico-ao-proprietario",
+  "timestamp": "2026-10-02T00:55:00Z",
+  "task_id": "P1-19",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution",
+      "control-plane"
+    ],
+    "reason": "Muda a política de integração, o integrador, os checks e a governança do Urbe; registra a decisão do proprietário (ADD-0012) e fecha DEC-0023. Pela política anterior da main, só entra com a autorização do proprietário."
+  },
+  "files_changed": [
+    ".github/integrator/integrate.sh",
+    ".github/integrator/simulate.sh",
+    ".github/pull_request_template.md",
+    ".github/workflows/integrate.yml",
+    ".github/workflows/pages.yml",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/README.md",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/contracts/schemas/integration-policy.schema.json",
+    "docs/governance/README.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/communication.md",
+    "docs/governance/decisions.json",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/handoffs/HO-20261002-automatico-por-padrao-critico-ao-proprietario.json",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "ecosystem.json",
+    "site/app.js",
+    "site/generator/GenerateStatus.cs",
+    "site/index.html",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md"
+  ],
+  "work_completed": [
+    "FATO (HEAD real auditado): main = a232bc4; PRs abertos só do Dependabot (#11–#20); integrate.yml rodou 4 vezes (push, 2× Dependabot, schedule), todas com action=none; DEC-0023 estava 'pending' enquanto ecosystem.json dizia 'ADR-0015, DEC-0023-A' — deriva corrigida.",
+    "DECISÃO DO PROPRIETÁRIO persistida integralmente em ADD-0012: «Quero decidir e aprovar somente coisas críticas, se uma implementação funciona normalmente dentro dos padrões não deve precisar de mim.» DEC-0023 passa a 'decided' com registro = ADD-0012 e decisão = 'nenhuma das alternativas literais' (a pergunta binária ficou insuficiente); nenhum clique no portal foi simulado; pergunta e alternativas preservadas como histórico.",
+    "POLÍTICA (autoridade única): docs/governance/integration-policy.json + schema. routine=automatic, critical=owner-authorization; 8 classes (constituição, control plane, segurança, dados do usuário, distribuição, compatibilidade, arquitetura, estratégia) com zonas por caminho (falha fechada só nelas) e 7 regras semânticas (decision-record, adr-decision, manifest-structure, schema-breaking, capability-breaking, json-keys, trust-weakening). mergePolicy removido de ecosystem.json e do schema (NN-001); CHK-INTEGRATION recusa um mergePolicy paralelo.",
+    "CLASSIFICADOR CONFIÁVEL: --integration-gates aplica a política e as regras DA MAIN (--base-root . da cópia confiável); um PR que muda política/integrador/checks/workflows é crítico pela política anterior; o agente pode escalar (handoff.criticality), nunca rebaixar; sem política legível na main ⇒ tudo crítico. Checker confiável: os checks da main rodam sobre a árvore candidata, além dos checks do candidato e do CI dos Products.",
+    "AUDITORIA CORRIGIDA: (1) status 'ecosystem/integration' persiste main, commit combinado EXATO e classificação; (2) land() exige ref de integração == commit testado (não só os pais); (3) reconsulta o head real do PR antes do push (corrida do head ⇒ 'obsoleto' e o head novo é avaliado); (4) main atual == main testada (preservado); (5) autorização crítica confere o AUTOR do evento da label (repository owner ou login autorizado na política) e exige evento posterior à avaliação do head; label inválida é removida; (6) rotina verde integra sozinha, sem label. O commit combinado leva trailers Integration-Criticality/Main/PR-Head/Handoffs.",
+    "URBE: a regra 'Não faça merge do PR #34 nem de PR algum sem pedido explícito' (referência envelhecida a um PR histórico) virou regra semântica: rotina do Urbe entra sozinha; crítico (dados, confiança do desktop/plugins/credenciais, assinatura/identidade/canal, licença, ADR consolidado) espera o proprietário. Lunet2D: rotina automática, zonas críticas na mesma política.",
+    "PORTAL: 'Precisa de você' = decisões pendentes + mudanças críticas prontas (instantâneo dos PRs critico+pronto-para-integrar, pages.yml) + validações humanas críticas; validações não críticas visíveis em 'Sem pressa'. Handoff: verification[].critical (obrigatório em validação humana pendente a partir de 2026-10-02) e criticality (escalada).",
+    "NN-017 auditado: nunca bloqueou integração; só a interrupção do proprietário muda (validação crítica × não crítica). Nenhuma alteração do MANIFEST necessária; registrado em ADD-0012 e communication.md §9.1.",
+    "CORREÇÕES do commit 6ddcc37 reavaliadas contra o HEAD: datas 2026-10-02→2026-10-01 em apps/urbe (AGENTSCHAT, ROADMAP) continuam corretas e vão no canário rotineiro; a frase sobre a label em apps/urbe/AGENTS.md foi substituída pela regra semântica acima."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks; self-test verde: 42 casos do integrador (fila, rotina/crítico por classe, falha fechada, escalada, política que se afrouxa, autorização por ator) e 15 mutações de CHK-INTEGRATION (uma por propriedade: guardas, checker confiável, política da main, combined no status, rotina automática, sem mergePolicy paralelo)."
+    },
+    {
+      "check": "bash .github/integrator/simulate.sh (git real com o histórico, gh simulado com estado)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "23/23 cenários: rotina e rotina Urbe integram sozinhas no commit exato; control plane crítico espera; label de não-proprietário recusada e removida; label do proprietário integra o commit exato; ref de integração mutada (mesmos pais) não entra; corrida do head (A obsoleto, B entra); corrida da main (M1 não entra, reavaliado sobre M2); checker enfraquecido e política afrouxada críticos; conflito e CI vermelho devolvidos; só fast-forward."
+    },
+    {
+      "check": "Canário real: PR crítico (este) espera o proprietário; PR rotineiro posterior entra sozinho",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Este PR é crítico pela política anterior (piso owner-authorization). Depois de autorizado, um PR rotineiro (datas do Urbe) prova a integração automática ao vivo; evidência no handoff seguinte."
+    }
+  ],
+  "known_issues": [
+    "Limite da plataforma: se um agente usar a credencial do próprio proprietário, o GitHub não distingue o clique dele; a proteção é de processo (agentes nunca põem a label integrar nem simulam eventos do proprietário).",
+    "Formato persistido em arquivos comuns (ex.: app.js do Urbe) não é zona por caminho; depende da escalada do agente, dos testes de formato do Urbe e da regra que exige atualizar DATA-CATALOG.md (zona crítica).",
+    "Este PR é avaliado pelo integrador ANTIGO (o da main): ele exige a label integrar para tudo. O novo comportamento vale a partir da integração deste PR."
+  ],
+  "next_actions": [
+    "Proprietário: autorizar este PR (label integrar) — é uma aprovação crítica: muda o próprio mecanismo de integração e registra a sua decisão (ADD-0012).",
+    "Agente: depois da integração, abrir o canário rotineiro (datas do Urbe + AGENTSCHAT) e registrar a integração automática ao vivo; ROADMAP P1-19 [x] com a evidência."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/governance/decisions.json",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/addenda/ADD-0010-concorrencia-multiagente.md",
+    "docs/governance/addenda/ADD-0011-colaboracao-multiagente-sem-verificacao-manual.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/urbe/AGENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Política de integração com uma autoridade (integration-policy.json); mergePolicy removido; CHK-INTEGRATION recusa autoridade paralela; DEC-0023 e ecosystem.json deixam de divergir."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff obrigatório; status com commit combinado e classificação; trailers Integration-*; comentário com rastreabilidade."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Decisão do proprietário persistida integralmente em ADD-0012 antes de sustentar a implementação."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança estrutural/decisão consolidada só com o proprietário: classificador crítico; este próprio PR espera autorização."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Autorização crítica confere o ator; código do PR sem escrita; deny-by-default nas zonas conhecidas."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana preservada; só a interrupção é classificada (critical true/false)."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Main só recebe o commit exato testado, com guardas de corrida provadas por simulação."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Pendências do proprietário (decisões, aprovações, validações críticas) no portal; trabalho automático auditável."
+    }
+  ]
+}

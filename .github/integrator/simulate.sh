@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Teste ponta a ponta da cola do integrador (integrate.sh) sem tocar no GitHub (ADR-0015): copia a árvore atual para um repositório
-# temporário com um 'origin' bare local, simula PRs em refs/pull/N/head e substitui o gh por um registrador. Os portões e o plano
-# (C#) já são cobertos pelo self-test; aqui se prova o efeito no git: o que chega à main, quando, e que nunca há force.
+# Teste ponta a ponta da cola do integrador (integrate.sh) sem tocar no GitHub (ADR-0015, ADD-0012): copia a árvore atual para um
+# repositório temporário com um 'origin' bare local, simula PRs em refs/pull/N/head e substitui o gh por um simulador COM ESTADO
+# (head real de cada PR, statuses por commit, eventos de label com o ator). As decisões (fila, criticidade, autorização) são as funções
+# C# reais; aqui se prova o efeito no git: o que chega à main, quando, e que nunca há force.
 #
-#   bash .github/integrator/simulate.sh      (a partir da raiz do repositório; requer git, python3 e .NET SDK 10)
+#   bash .github/integrator/simulate.sh      (a partir da raiz do repositório; requer git, jq, python3 e .NET SDK 10)
 set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
@@ -11,70 +12,183 @@ T="$(mktemp -d)"; trap 'rm -rf "$T"' EXIT
 fails=0
 check() { if eval "$2"; then echo "PASS  $1"; else echo "FAIL  $1"; fails=$((fails + 1)); fi; }
 
+# Origin com o histórico REAL (HEAD + tags): o checker confiável confere SHAs dos handoffs e o histórico migrado (exige fetch-depth: 0).
 git init -q --bare "$T/origin.git"
+git -C "$ROOT" push -q "$T/origin.git" "HEAD:refs/heads/main" "refs/tags/*:refs/tags/*" 2>/dev/null
+git --git-dir="$T/origin.git" symbolic-ref HEAD refs/heads/main
 git clone -q "$T/origin.git" "$T/trusted" 2>/dev/null
 cd "$T/trusted"
-tar --exclude=./.git --exclude=node_modules --exclude=./site/data -C "$ROOT" -cf - . | tar -xf -
 G() { git -c user.name=sim -c user.email=sim@example.invalid "$@"; }
-G add -A >/dev/null; G commit -qm "main com integrador"; git push -q origin HEAD:refs/heads/main
+# A main simulada = a árvore em teste (inclui o que ainda não foi commitado), por cima do histórico real.
+git ls-files -z | xargs -0 rm -f
+tar --exclude=./.git --exclude=node_modules --exclude=./site/data -C "$ROOT" -cf - . | tar -xf -
+G add -A >/dev/null; G commit -q --allow-empty -m "main com integrador (árvore em teste)"; git push -q origin HEAD:refs/heads/main
 MAIN="$(git rev-parse HEAD)"
 
-handoff() { # handoff <id>: handoff mínimo em 'review' (portão NN-008)
-  printf '{"message_id": "%s", "state": "review"}\n' "$1" > "docs/governance/handoffs/$1.json"
-}
-mkdir -p "$T/bin"
+# --- simulador do gh: estado em $T/gh -------------------------------------------------------------------------------------
+mkdir -p "$T/bin" "$T/gh/statuses" "$T/gh/events" "$T/gh/prs" "$T/gh/labels"
+echo 0 > "$T/gh/clock"
 cat > "$T/bin/gh" <<'GH'
 #!/usr/bin/env bash
-echo "gh $*" >> "$GHLOG"
-case "$*" in "pr view"*) echo "PR simulado" ;; esac
+S="$GHSTATE"; echo "gh $*" >> "$GHLOG"
+tick() { local n; n=$(( $(cat "$S/clock") + 1 )); echo "$n" > "$S/clock"; date -u -d "@$((1790000000 + n))" +%Y-%m-%dT%H:%M:%SZ; }
+arg() { local k="$1"; shift; while [ $# -gt 0 ]; do case "$1" in "$k="*) echo "${1#*=}"; return ;; esac; shift; done; }
+case "$*" in
+  "pr view"*) echo "PR simulado" ;;
+  "pr edit"*)
+    n="$3"; lbl=""; op=""
+    for a in "$@"; do [ "$op" = add ] && { lbl="$a"; op=labeled; }; [ "$op" = rm ] && { lbl="$a"; op=unlabeled; }; case "$a" in --add-label) op=add ;; --remove-label) op=rm ;; esac; done
+    touch "$S/labels/$n"
+    if [ "$op" = labeled ]; then grep -qx "$lbl" "$S/labels/$n" || echo "$lbl" >> "$S/labels/$n"
+    elif grep -qx "$lbl" "$S/labels/$n"; then grep -vx "$lbl" "$S/labels/$n" > "$S/labels/$n.tmp" || true; mv "$S/labels/$n.tmp" "$S/labels/$n"
+    else exit 0; fi
+    printf '{"event":"%s","label":{"name":"%s"},"actor":{"login":"github-actions[bot]"},"created_at":"%s"}\n' "$op" "$lbl" "$(tick)" >> "$S/events/$n.jsonl" ;;
+  "label create"*|"workflow run"*) ;;
+  "api -X POST repos/"*"/statuses/"*)
+    sha="${4##*/}"; desc="$(arg description "$@")"; st="$(arg state "$@")"
+    jq -nc --arg d "$desc" --arg s "$st" --arg t "$(tick)" '{state:$s, description:$d, created_at:$t, creator:{login:"github-actions[bot]"}}' >> "$S/statuses/$sha.jsonl" ;;
+  "api repos/"*"/pulls/"*) n="${2##*/}"; cat "$S/prs/$n.json" ;;
+  "api repos/"*"/issues/"*"/events"*) n="$(cut -d/ -f5 <<<"$2")"; cat "$S/events/$n.jsonl" 2>/dev/null || true ;;
+  "api repos/"*"/commits/"*"/statuses"*) sha="$(cut -d/ -f5 <<<"$2")"; jq -c '{description, created_at, creator}' "$S/statuses/$sha.jsonl" 2>/dev/null || true ;;
+  "api repos/"*"/issues/"*"/comments"*) ;;
+  *) ;;
+esac
 exit 0
 GH
 chmod +x "$T/bin/gh"
-export PATH="$T/bin:$PATH" GHLOG="$T/gh.log" GITHUB_REPOSITORY=sim/sim RUN_URL=https://example.invalid/run DEFAULT_BRANCH=main
+export PATH="$T/bin:$PATH" GHLOG="$T/gh.log" GHSTATE="$T/gh" GITHUB_REPOSITORY=sim/sim GITHUB_REPOSITORY_OWNER=AbnerCruz RUN_URL=https://example.invalid/run DEFAULT_BRANCH=main
 O="$T/out.txt"
-prep() { : > "$O"; env GITHUB_OUTPUT="$O" "$@" bash .github/integrator/integrate.sh prepare >/dev/null 2>&1; }
-fin() { : > "$GHLOG"; env GITHUB_OUTPUT=/dev/null "$@" bash .github/integrator/integrate.sh finish >/dev/null 2>&1; }
+tick() { local n; n=$(( $(cat "$T/gh/clock") + 1 )); echo "$n" > "$T/gh/clock"; date -u -d "@$((1790000000 + n))" +%Y-%m-%dT%H:%M:%SZ; }
+label_event() { # label_event <pr> <labeled|unlabeled> <ator> — evento de label feito por alguém de fora do integrador
+  printf '{"event":"%s","label":{"name":"integrar"},"actor":{"login":"%s"},"created_at":"%s"}\n' "$2" "$3" "$(tick)" >> "$T/gh/events/$1.jsonl"
+  if [ "$2" = labeled ]; then echo integrar >> "$T/gh/labels/$1"; else grep -vx integrar "$T/gh/labels/$1" > "$T/l" || true; mv "$T/l" "$T/gh/labels/$1"; fi
+}
+open_pr() { printf '{"state":"open","draft":false,"head":"%s"}\n' "$2" > "$T/gh/prs/$1.json"; touch "$T/gh/labels/$1"; git push -q -f origin "$2:refs/pull/$1/head"; }
+last_status() { tail -n1 "$T/gh/statuses/$1.jsonl" 2>/dev/null | jq -r .description; }
+plan() { # plan <pr> — a fila real (C#) decide sobre o estado simulado; exporta PLAN_* do resultado
+  local main sha; main="$(git --git-dir="$T/origin.git" rev-parse main)"; sha="$(jq -r .head "$T/gh/prs/$1.json")"
+  jq -n --arg m "$main" --arg n "$1" --arg h "$sha" --arg d "$(last_status "$sha")" --argjson l "$(jq -R . "$T/gh/labels/$1" | jq -s .)" \
+    '{main:$m, prs:[{number:($n|tonumber), draft:false, crossRepository:false, headRef:"agente", headSha:$h, labels:$l, status:(if $d == "" or $d == "null" then null else {state:"x", description:$d} end)}]}' > "$T/in.json"
+  dotnet run tests/consistency/Check.cs -- --integration-plan --input "$T/in.json" --policy docs/governance/integration-policy.json | grep -E '^[a-z_]+=' > "$T/plan.txt"
+  PLAN_ACTION="$(sed -n 's/^action=//p' "$T/plan.txt")"; PLAN_COMBINED="$(sed -n 's/^tested_combined=//p' "$T/plan.txt")"
+  PLAN_CRIT="$(sed -n 's/^tested_criticality=//p' "$T/plan.txt")"; PLAN_AUTH="$(sed -n 's/^authorized=//p' "$T/plan.txt")"
+}
 out() { sed -n "s/^$1=//p" "$O"; }
+prep() { : > "$O"; git fetch -q origin main; git checkout -q --detach origin/main; env GITHUB_OUTPUT="$O" PR="$1" HEAD_SHA="$2" MAIN="$(git rev-parse origin/main)" bash .github/integrator/integrate.sh prepare >/dev/null 2>&1; }
+finish_eval() { # finish_eval <pr> <head> [R_URBE] — termina a avaliação com os checks do candidato verdes (ou o resultado dado)
+  : > "$GHLOG"
+  env GITHUB_OUTPUT=/dev/null ACTION=evaluate PR="$1" HEAD_SHA="$2" MAIN="$(out main_tested)" COMBINED="$(out combined)" CRITICALITY="$(out criticality)" \
+    REQUIRES_OWNER="$(out requires_owner)" CRITICAL_CLASSES="$(out critical_classes)" CRITICAL_REASON="$(out critical_reason)" HANDOFFS="$(out handoffs)" \
+    TRUSTED="$(out trusted)" TRUSTED_FAILURES="$(out trusted_failures)" AUTHORIZED="$(grep -qx integrar "$T/gh/labels/$1" && echo true || echo false)" MORE=false \
+    R_CONSISTENCY=success R_URBE="${3:-skipped}" R_LUNET2D=skipped bash .github/integrator/integrate.sh finish >/dev/null 2>&1
+}
+finish_land() { # finish_land <pr> — execução 'land' decidida pela fila real
+  : > "$GHLOG"; plan "$1"
+  [ "$PLAN_ACTION" = land ] || return 0
+  env GITHUB_OUTPUT=/dev/null ACTION=land PR="$1" HEAD_SHA="$(jq -r .head "$T/gh/prs/$1.json")" MAIN="$(git --git-dir="$T/origin.git" rev-parse main)" \
+    COMBINED="$PLAN_COMBINED" CRITICALITY="$PLAN_CRIT" REQUIRES_OWNER=true AUTHORIZED="$PLAN_AUTH" MORE=false bash .github/integrator/integrate.sh finish >/dev/null 2>&1
+}
 main_is() { [ "$(git --git-dir="$T/origin.git" rev-parse main)" = "$1" ]; }
 in_main() { git --git-dir="$T/origin.git" merge-base --is-ancestor "$1" main; }
 logged() { grep -q -- "$1" "$GHLOG"; }
+handoff() { # handoff <id> [extra-json]: handoff válido em 'review' (portão NN-008 e checks confiáveis)
+  python3 - "$1" "$(git rev-parse origin/main)" "${2:-}" <<'PY'
+import json, sys, datetime
+d = json.load(open('docs/governance/handoffs/HO-20261002-dec-0022-e-integracao.json'))
+d.update(message_id=sys.argv[1], state='review', base_commit=sys.argv[2], commit=None, pr=None, task_id='P9-1',
+         timestamp=(datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=1)).strftime('%Y-%m-%dT%H:%M:%SZ'))
+if sys.argv[3]: d.update(json.loads(sys.argv[3]))
+json.dump(d, open(f'docs/governance/handoffs/{sys.argv[1]}.json', 'w'), ensure_ascii=False, indent=2)
+PY
+}
+branch() { # branch <nome> <comando>: commit a partir da main atual com a mudança dada e um handoff; imprime o SHA
+  git fetch -q origin main; git checkout -q -B "$1" origin/main; eval "$2"; handoff "HO-20991231-sim-$1"; G add -A; G commit -qm "$1"; git rev-parse HEAD
+}
 
-# Três PRs a partir da mesma main: 41 só Ecosystem; 42 Urbe; 43 conflita com o 41.
-git checkout -q -b a "$MAIN"; echo "nota A" >> docs/governance/README.md; handoff HO-sim-a; G add -A; G commit -qm a; A="$(git rev-parse HEAD)"; git push -q origin HEAD:refs/pull/41/head
-git checkout -q -b b "$MAIN"; echo "// B" >> apps/urbe/src/app.js; handoff HO-sim-b; G add -A; G commit -qm b; B="$(git rev-parse HEAD)"; git push -q origin HEAD:refs/pull/42/head
-git checkout -q -b c "$MAIN"; echo "nota C" >> docs/governance/README.md; handoff HO-sim-c; G add -A; G commit -qm c; C="$(git rev-parse HEAD)"; git push -q origin HEAD:refs/pull/43/head
-git checkout -q --detach "$MAIN"
-floor="$(python3 -c 'import json;print(json.load(open("ecosystem.json"))["ecosystem"]["mergePolicy"])')"
-
-prep PR=41 HEAD_SHA="$A" MAIN="$MAIN"; CA="$(out combined)"; POL="$(out policy)"
-check "estado combinado montado e publicado em integration/pr-41" '[ -n "$CA" ] && [ "$(git --git-dir="$T/origin.git" rev-parse refs/heads/integration/pr-41)" = "$CA" ]'
-check "PR só do Ecosystem: política = piso do Ecosystem ($floor)" '[ "$POL" = "$floor" ]'
-fin ACTION=evaluate PR=41 HEAD_SHA="$A" MAIN="$MAIN" COMBINED="$CA" POLICY=owner-authorization POLICY_REASON=piso AUTHORIZED=false MORE=false R_CONSISTENCY=success R_URBE=skipped R_LUNET2D=skipped
-check "verde sem autorização: 'pronto', label pronto-para-integrar, main intocada" 'logged "description=pronto main=${MAIN:0:12}" && logged "add-label pronto-para-integrar" && main_is "$MAIN"'
-fin ACTION=land PR=41 HEAD_SHA="$A" MAIN="$MAIN" POLICY=owner-authorization AUTHORIZED=true MORE=false
-check "autorizado (land): a main vira exatamente o commit testado, com o head do PR" 'main_is "$CA" && in_main "$A" && logged "description=integrado"'
+# 1. Rotina (Ecosystem): feature normal, checks verdes → integra sozinha, sem label, sem proprietário.
+A="$(branch rotina 'echo "nota rotineira" >> README.md')"; open_pr 41 "$A"
+prep 41 "$A"; CA="$(out combined)"
+check "rotina: classificada pela política da main como 'routine', checker confiável verde" '[ "$(out criticality)" = routine ] && [ "$(out requires_owner)" = false ] && [ "$(out trusted)" = success ]'
+check "estado combinado montado e publicado em integration/pr-41 (commit exato no status 'testando')" '[ "$(git --git-dir="$T/origin.git" rev-parse refs/heads/integration/pr-41)" = "$CA" ] && last_status "$A" | grep -q "^testando main=.* combined=$CA routine"'
+finish_eval 41 "$A"
+check "rotina verde: a main vira EXATAMENTE o commit testado, sem label nem proprietário" 'main_is "$CA" && in_main "$A" && last_status "$A" | grep -q "^integrado .*combined=$CA routine"'
 check "depois de integrar: pages, consistency e a fila são redisparados" 'logged "workflow run pages.yml" && logged "workflow run consistency.yml" && logged "workflow run integrate.yml"'
 
-git fetch -q origin main; M2="$(git rev-parse origin/main)"; git checkout -q --detach "$M2"
-prep PR=43 HEAD_SHA="$C" MAIN="$M2"
-check "conflito com a main atual: bloqueado, arquivo apontado, nada publicado" '[ "$(out action)" = blocked ] && [ "$(out conflicts)" = docs/governance/README.md ] && main_is "$M2"'
-fin ACTION=blocked OUTCOME=conflito CONFLICTS=docs/governance/README.md PR=43 HEAD_SHA="$C" MAIN="$M2" MORE=false
-check "conflito volta ao autor: label precisa-reconciliar" 'logged "add-label precisa-reconciliar"'
+# 2. Rotina Urbe: bug normal em apps/urbe → CI do Urbe no estado combinado → integra sozinha.
+U="$(branch urbe 'echo "// botão corrigido" >> apps/urbe/src/app.js')"; open_pr 42 "$U"
+prep 42 "$U"; CU="$(out combined)"
+check "rotina Urbe: CI do Urbe exigido e nenhuma autorização" '[ "$(out products)" = "[\"urbe\"]" ] && [ "$(out criticality)" = routine ]'
+finish_eval 42 "$U" success
+check "rotina Urbe verde: integrada automaticamente" 'main_is "$CU" && in_main "$U"'
 
-prep PR=42 HEAD_SHA="$B" MAIN="$M2"; CB="$(out combined)"
-check "PR do Urbe: CI do Urbe no estado combinado e autorização exigida" '[ "$(out products)" = "[\"urbe\"]" ] && [ "$(out policy)" = owner-authorization ]'
-fin ACTION=evaluate PR=42 HEAD_SHA="$B" MAIN="$M2" COMBINED="$CB" POLICY=owner-authorization AUTHORIZED=true MORE=false R_CONSISTENCY=success R_URBE=failure R_LUNET2D=skipped
-check "check vermelho no estado combinado: 'falhou', main intocada" 'logged "description=falhou" && main_is "$M2"'
+# 3. Crítico (control plane): PR que muda o integrador → verde, mas NÃO entra sozinho.
+C="$(branch critico 'echo "# comentário" >> .github/workflows/integrate.yml')"; open_pr 43 "$C"
+prep 43 "$C"; CC="$(out combined)"; M3="$(git --git-dir="$T/origin.git" rev-parse main)"
+check "control plane: integrate.yml classificado como crítico pela política da main" '[ "$(out criticality)" = critical ] && grep -q control-plane <<<"$(out critical_classes)"'
+finish_eval 43 "$C"
+check "crítico verde: 'pronto', labels critico/pronto-para-integrar, main intocada" 'main_is "$M3" && last_status "$C" | grep -q "^pronto .*combined=$CC critical" && grep -qx critico "$T/gh/labels/43" && grep -qx pronto-para-integrar "$T/gh/labels/43"'
+check "crítico verde: o portal é redisparado ('Precisa de você')" 'logged "workflow run pages.yml"'
 
-echo paralelo > PARALELO.txt; G add -A; G commit -qm paralelo; git push -q origin HEAD:refs/heads/main; git checkout -q --detach "$M2"
-fin ACTION=evaluate PR=42 HEAD_SHA="$B" MAIN="$M2" COMBINED="$CB" POLICY=owner-authorization AUTHORIZED=true MORE=false R_CONSISTENCY=success R_URBE=success R_LUNET2D=skipped
-check "a main mudou durante o teste: o teste velho não entra; reavaliação" '! in_main "$B" && logged "description=testando"'
+# 4. Label de quem não é o proprietário → autorização inválida, label removida, nada entra.
+label_event 43 labeled agente-com-token
+finish_land 43
+check "label 'integrar' posta por não-proprietário: inválida, removida, main intocada" 'main_is "$M3" && ! grep -qx integrar "$T/gh/labels/43" && logged "remove-label integrar"'
 
-git fetch -q origin main; M3="$(git rev-parse origin/main)"; git checkout -q --detach "$M3"
-prep PR=42 HEAD_SHA="$B" MAIN="$M3"; CB2="$(out combined)"
-fin ACTION=evaluate PR=42 HEAD_SHA="$B" MAIN="$M3" COMBINED="$CB2" POLICY=owner-authorization AUTHORIZED=true MORE=false R_CONSISTENCY=success R_URBE=success R_LUNET2D=skipped
-check "reavaliado contra a main nova: integra o novo combinado, com a mudança paralela e o PR" 'main_is "$CB2" && in_main "$M3" && in_main "$B"'
-check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$M2" "$M3" "$CB2"; do in_main "$x" || exit 1; done )'
+# 5. Proprietário autoriza → entra exatamente o commit combinado testado.
+label_event 43 labeled AbnerCruz
+finish_land 43
+check "crítico autorizado pelo proprietário (evento conferido): main = commit combinado testado" 'main_is "$CC" && in_main "$C" && last_status "$C" | grep -q "^integrado .*combined=$CC critical"'
+
+# 6. Ref de integração mutada depois do teste → não integra (não basta ter os mesmos pais).
+X="$(branch mutacao 'mkdir -p docs/notes && echo "outra nota" > docs/notes/mutacao.md')"; open_pr 44 "$X"
+prep 44 "$X"; CX="$(out combined)"; M6="$(git --git-dir="$T/origin.git" rev-parse main)"
+B="$(G commit-tree "$CX^{tree}" -p "$CX^1" -p "$CX^2" -m "mesmos pais, outro commit")"; git push -q -f origin "$B:refs/heads/integration/pr-44"
+finish_eval 44 "$X"
+check "ref de integração ≠ commit testado (mesmos pais): NÃO integra, volta a testar" 'main_is "$M6" && ! in_main "$B" && last_status "$X" | grep -q "^testando"'
+
+# 7. Corrida do head: A testado, autor envia B → A não entra; B é avaliado e entra.
+HA="$(branch corrida 'mkdir -p docs/notes && echo "versão A" > docs/notes/corrida.md')"; open_pr 45 "$HA"
+prep 45 "$HA"; M7="$(git --git-dir="$T/origin.git" rev-parse main)"
+git checkout -q corrida; echo "versão B" >> docs/notes/corrida.md; G commit -qam "B"; HB="$(git rev-parse HEAD)"; open_pr 45 "$HB"
+finish_eval 45 "$HA"
+check "corrida do head: resultado de A não integra quando o PR já é B (A fica 'obsoleto')" 'main_is "$M7" && ! in_main "$HA" && last_status "$HA" | grep -q "^obsoleto"'
+plan 45
+check "corrida do head: a fila reavalia B" '[ "$PLAN_ACTION" = evaluate ]'
+prep 45 "$HB"; CB="$(out combined)"; finish_eval 45 "$HB"
+check "corrida do head: B testado entra (main = combinado de B)" 'main_is "$CB" && in_main "$HB"'
+
+# 8. Corrida da main: M1 + PR testado, a main vira M2 → resultado de M1 não entra; reavaliado contra M2, entra.
+R="$(branch mainrace 'echo "x" > MAINRACE.md')"; open_pr 46 "$R"
+prep 46 "$R"; M1="$(git --git-dir="$T/origin.git" rev-parse main)"
+git checkout -q --detach "$M1"; echo paralelo > PARALELO.txt; G add -A; G commit -qm paralelo; git push -q origin HEAD:refs/heads/main; M2="$(git rev-parse HEAD)"
+finish_eval 46 "$R"
+check "corrida da main: resultado de M1 não integra quando a main é M2" 'main_is "$M2" && ! in_main "$R" && last_status "$R" | grep -q "^testando"'
+plan 46
+check "corrida da main: a fila reavalia contra M2" '[ "$PLAN_ACTION" = evaluate ]'
+prep 46 "$R"; CR="$(out combined)"; finish_eval 46 "$R"
+check "corrida da main: reavaliado e integrado sobre M2 (com a mudança paralela)" 'main_is "$CR" && in_main "$M2" && in_main "$R"'
+
+# 9. PR que enfraquece o checker: crítico, com o motivo apontado pela versão da main; não se autoaprova.
+W="$(branch checker 'sed -i "/^        \"CHK-INTEGRATION\",$/d" tests/consistency/Check.cs')"; open_pr 47 "$W"
+prep 47 "$W"; M9="$(git --git-dir="$T/origin.git" rev-parse main)"; finish_eval 47 "$W"
+check "checker enfraquecido: crítico ('remove checks'), não entra sozinho" '[ "$(out criticality)" = critical ] && grep -q "remove checks: CHK-INTEGRATION" <<<"$(out critical_reason)" && main_is "$M9"'
+
+# 10. PR que afrouxa a própria política: classificado pela política ANTERIOR (da main).
+P="$(branch politica "jq '.classes = []' docs/governance/integration-policy.json > /tmp/p.json && cp /tmp/p.json docs/governance/integration-policy.json && echo x >> apps/urbe/src/persistence/backup.js")"; open_pr 48 "$P"
+prep 48 "$P"; finish_eval 48 "$P"
+check "política afrouxada: a política da main classifica o PR como crítico (control-plane e user-data)" '[ "$(out criticality)" = critical ] && grep -q control-plane <<<"$(out critical_classes)" && grep -q user-data <<<"$(out critical_classes)" && main_is "$M9"'
+
+# 11. Conflito com a main atual → devolvido ao autor.
+K="$(git checkout -q -B conflito "$MAIN" && echo "nota conflitante" >> README.md && handoff HO-20991231-sim-conflito && G add -A && G commit -qm conflito && git rev-parse HEAD)"; open_pr 49 "$K"
+prep 49 "$K"
+check "conflito com a main atual: bloqueado, arquivo apontado, nada publicado" '[ "$(out action)" = blocked ] && grep -q README.md <<<"$(out conflicts)" && main_is "$M9"'
+
+# 12. Check do candidato vermelho → 'falhou', main intocada.
+F="$(branch vermelho 'echo "// y" >> apps/urbe/src/app.js')"; open_pr 50 "$F"
+prep 50 "$F"; finish_eval 50 "$F" failure
+check "CI do Urbe vermelho no estado combinado: 'falhou', main intocada" 'main_is "$M9" && last_status "$F" | grep -q "^falhou"'
+
+check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$CU" "$CC" "$CB" "$M2" "$CR"; do in_main "$x" || exit 1; done )'
 
 echo
 if [ "$fails" -eq 0 ]; then echo "Simulação do integrador: todos os cenários passaram."; else echo "Simulação do integrador: $fails falha(s)."; exit 1; fi

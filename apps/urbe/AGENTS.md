@@ -24,7 +24,8 @@ Na execução, cada item segue: `IMPLEMENTAR → TESTAR → VERIFICAR → CORRIG
 - **Uma autoridade por vez:** extrair código de `app.js` = provar a substituta com teste de produção e **apagar** a implementação antiga no mesmo item. Nada de nova camada de versão, `V21_VERSION` extra, wrapper histórico ou "TODO marcado como feito" (`tools/check-debt.mjs`, quando existir, bloqueia).
 - **Dados do usuário são invariante:** local-first/offline-first; nenhum leitor sobrescreve/descarta arquivo de versão desconhecida; migração só com backup restaurável e idempotente (REQ-007/035/038).
 - Não altere formato persistido sem linha em `discovery/DATA-CATALOG.md`, política de migração, fixture e teste.
-- Não publique versão por efeito colateral: release só por tag/dispatch aprovado (REQ-066). Não faça merge do PR #34 nem de PR algum sem pedido explícito do proprietário.
+- Não publique versão por efeito colateral: release só por tag/dispatch aprovado (REQ-066).
+- **Integração (ADD-0012 e ADR-0015 do Ecosystem):** não integre à mão; quem integra é o integrador automático do Ecosystem. Mudança **rotineira** do Urbe (bug, feature de item autorizado do ROADMAP, refatoração interna, testes, UI, documentação), com `npm run check` e o CI verdes no estado combinado, entra **sozinha**. Mudança **crítica** espera a autorização do proprietário. São críticas as que tocam as zonas críticas do Urbe em `docs/governance/integration-policy.json` do Ecosystem e tudo o que a §5 abaixo lista: formato persistido, migração e backup (`src/persistence/**`, `DATA-CATALOG.md`), fronteira de confiança do desktop, plugins e credenciais de IA, assinatura, identidade e canal de publicação, licença, e mudança de ADR consolidado. Se a sua mudança é crítica fora dessas zonas (ex.: formato persistido dentro do `app.js`), declare-a crítica no handoff do Ecosystem (`criticality`). Nenhum agente põe a label `integrar`.
 - Segredos: nunca commitar chaves, tokens ou dados pessoais; chaves de IA nunca vão ao vault, export ou logs.
 - Item só vira `[x]` com a Definition of Done (SPEC §10.1) verificada. Se faltar validação humana: `[?]`. Se bloqueado: `[!]` com o bloqueio exato. Nunca comprimir vários requisitos em um item genérico.
 - Descobertas novas **aumentam** o ledger/roadmap; nunca o encolhem.
@@ -38,7 +39,7 @@ Na execução, cada item segue: `IMPLEMENTAR → TESTAR → VERIFICAR → CORRIG
 6. Acrescente entrada em `AGENTSCHAT.md` (formato abaixo) e pare no limite do item.
 
 ## 5. O que sempre confirmar com o proprietário
-Budgets absolutos de performance (após o baseline); qualquer quebra de compatibilidade de dados; remoção de funcionalidade da 1.x; mudança de qualquer decisão consolidada (ADR-0001..0007); merge/publicação que não estejam autorizados.
+Budgets absolutos de performance (após o baseline); qualquer quebra de compatibilidade de dados; remoção de funcionalidade da 1.x; mudança de qualquer decisão consolidada (ADRs aceitos); publicação fora do mecanismo aprovado (REQ-066). Isto é o que é **crítico** no Urbe; o resto do trabalho dentro do ROADMAP é rotina e não precisa do proprietário (ADD-0012 do Ecosystem).
 
 ## 6. Limites
 - Fora do escopo da 2.0: reescrita geral, bundler/ES modules (ADR-0001), launcher multi-app, isolamento de plugins, i18n, macOS/Linux, sync/nuvem próprios (`docs/v2/SPEC.md` §13).

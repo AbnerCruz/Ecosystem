@@ -38,7 +38,7 @@ Opção 1.
 - A segunda branch a integrar sempre passa por reconciliação explícita e CI do estado combinado.
 - O teste de concorrência fica reprodutível pelo self-test (`IntegrationTests`: mesmo HEAD, primeira integração, base obsoleta, sobreposição de alto risco, reconciliação preservando os dois trabalhos).
 - Custo: um comando a mais antes de integrar e um campo a mais no handoff.
-- Verificação e integração automáticas pedidas pelo proprietário (ADD-0011): [ADR-0015](0015-integrador-automatico.md) (integrador); integrar sem nenhum toque do proprietário depende de DEC-0023.
+- Verificação e integração automáticas pedidas pelo proprietário (ADD-0011): [ADR-0015](0015-integrador-automatico.md) (integrador); rotina integra sozinha e só o crítico vai ao proprietário (ADD-0012).
 - Futuro (não implementado): comparar escopo esperado, paths prováveis e componentes de tarefas atribuídas ao mesmo tempo e sinalizar LOW/HIGH OVERLAP antes de começar.
 
 ## Alternativas rejeitadas

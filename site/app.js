@@ -170,20 +170,33 @@ function render(s) {
     ? s.pendingDecisions.map((d) => decisionCard(d, s.source.repository))
     : [el("p", { class: "hint" }, "Nenhuma decisão pendente registrada.")]));
 
-  const val = document.getElementById("validations");
-  val.replaceChildren(...(s.pendingValidations.length
-    ? s.pendingValidations.map((p) => el("li", {},
-        el("span", { class: "badge v-HUMAN_VALIDATION_PENDING" }, VALIDATION_LABELS[p.state]),
-        " ", el("strong", {}, `${p.component} · ${p.taskId}`), el("br"),
-        p.check, el("p", { class: "label" }, "Objeto a validar"),
-        objectLinks([p.object]),
-        el("div", { class: "actions" },
-          answerLink(s.source.repository, p.approve, "Aprovar", "primary"),
-          answerLink(s.source.repository, p.reject, "Reprovar", "")),
-        el("p", { class: "hint" }, "Ao responder, o GitHub abre uma Issue já preenchida: toque em ", el("strong", {}, "Submit new issue"),
-          " para confirmar. Na reprovação, escreva o motivo depois de ", el("code", {}, "comment:"), "."),
-        el("p", { class: "hint" }, link(p.record, "registro"))))
-    : [el("li", { class: "hint" }, "Nenhuma validação humana pendente registrada.")]));
+  const validationItem = (p) => el("li", {},
+    el("span", { class: "badge v-HUMAN_VALIDATION_PENDING" }, VALIDATION_LABELS[p.state]),
+    " ", el("strong", {}, `${p.component} · ${p.taskId}`), el("br"),
+    p.check, el("p", { class: "label" }, "Objeto a validar"),
+    objectLinks([p.object]),
+    el("div", { class: "actions" },
+      answerLink(s.source.repository, p.approve, "Aprovar", "primary"),
+      answerLink(s.source.repository, p.reject, "Reprovar", "")),
+    el("p", { class: "hint" }, "Ao responder, o GitHub abre uma Issue já preenchida: toque em ", el("strong", {}, "Submit new issue"),
+      " para confirmar. Na reprovação, escreva o motivo depois de ", el("code", {}, "comment:"), "."),
+    el("p", { class: "hint" }, link(p.record, "registro")));
+  const critical = s.pendingValidations.filter((p) => p.critical !== false);
+  const later = s.pendingValidations.filter((p) => p.critical === false);
+  document.getElementById("validations").replaceChildren(...(critical.length
+    ? critical.map(validationItem)
+    : [el("li", { class: "hint" }, "Nenhuma validação crítica pendente.")]));
+  document.getElementById("validations-later").replaceChildren(...(later.length
+    ? later.map(validationItem)
+    : [el("li", { class: "hint" }, "Nenhuma.")]));
+
+  const approvals = s.pendingApprovals || { availability: "not-available", items: [] };
+  document.getElementById("approvals").replaceChildren(...(approvals.availability !== "derived"
+    ? [el("li", {}, el("span", { class: "na" }, "não disponível"))]
+    : approvals.items.length
+      ? approvals.items.map((a) => el("li", {}, el("strong", {}, `PR #${a.number}`), " · ", link(a.url, a.title),
+          el("p", { class: "hint" }, "Leia no PR o que muda e a consequência; autorize com a label integrar, posta por você.")))
+      : [el("li", { class: "hint" }, "Nenhuma mudança crítica aguardando você.")]));
 
   const dist = s.distribution;
   document.getElementById("distribution-hint").textContent = dist

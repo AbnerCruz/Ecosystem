@@ -20,7 +20,8 @@
     "reuseCandidates",
     "docs",
     "distribution",
-    "capabilities"
+    "capabilities",
+    "pendingApprovals"
   ],
   "properties": {
     "schema": {
@@ -335,7 +336,8 @@
           "handoff",
           "checkHash",
           "approve",
-          "reject"
+          "reject",
+          "critical"
         ],
         "properties": {
           "component": {
@@ -373,6 +375,10 @@
           },
           "reject": {
             "$ref": "#/$defs/validationAnswer"
+          },
+          "critical": {
+            "description": "Validação crítica (ADD-0012): aparece em 'Precisa de você'. Não crítica fica visível sem interromper.",
+            "type": "boolean"
           }
         }
       }
@@ -685,6 +691,47 @@
             "type": "array",
             "items": {
               "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "pendingApprovals": {
+      "description": "Aprovações críticas (ADD-0012): PRs que o integrador classificou como críticos e já estão verdes no estado combinado, aguardando a autorização do proprietário. Derivado do instantâneo site/data/approvals-snapshot.json (pages.yml); rotina nunca aparece aqui.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "availability",
+        "items"
+      ],
+      "properties": {
+        "availability": {
+          "enum": [
+            "derived",
+            "not-available"
+          ]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "number",
+              "title",
+              "url"
+            ],
+            "properties": {
+              "number": {
+                "type": "integer"
+              },
+              "title": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "pattern": "^https://github\\.com/"
+              }
             }
           }
         }

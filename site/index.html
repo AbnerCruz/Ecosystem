@@ -17,15 +17,27 @@
 
   <main>
     <section aria-labelledby="h-decisions">
-      <h2 id="h-decisions">Decisões a tomar</h2>
-      <p class="hint">Cada decisão mostra o <strong>objeto</strong> a revisar. Este portal é somente leitura: responda ao agente com a opção escolhida e ele registra a decisão.</p>
+      <h2 id="h-decisions">Precisa de você · decisões</h2>
+      <p class="hint">Só chega aqui o que é crítico (ADD-0012): uma direção nova a escolher. Cada decisão mostra o <strong>objeto</strong> a revisar.</p>
       <div id="decisions" class="cards"></div>
     </section>
 
+    <section aria-labelledby="h-approvals">
+      <h2 id="h-approvals">Precisa de você · mudanças críticas prontas</h2>
+      <p class="hint">Mudanças críticas já testadas no estado combinado com a <code>main</code>. O PR explica a consequência; para autorizar, você mesmo põe a label <code>integrar</code>. Trabalho rotineiro nunca aparece aqui: entra sozinho.</p>
+      <ul id="approvals" class="list"></ul>
+    </section>
+
     <section aria-labelledby="h-validations">
-      <h2 id="h-validations">Validações pendentes</h2>
-      <p class="hint">Validações que só uma pessoa pode fazer (aparelho, layout, toque…), com o objeto a validar.</p>
+      <h2 id="h-validations">Precisa de você · validações críticas</h2>
+      <p class="hint">Validações que só uma pessoa pode fazer e que importam agora (gate de fase, instalação/atualização, dados, segurança, release), com o objeto a validar.</p>
       <ul id="validations" class="list"></ul>
+    </section>
+
+    <section aria-labelledby="h-later">
+      <h2 id="h-later">Sem pressa · validações não críticas</h2>
+      <p class="hint">Continuam pendentes e visíveis (CI verde não substitui a validação humana), mas não bloqueiam nada nem interrompem você.</p>
+      <ul id="validations-later" class="list"></ul>
     </section>
 
     <aside class="notice" role="note">

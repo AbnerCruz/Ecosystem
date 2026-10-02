@@ -35,7 +35,7 @@ Uma decisão pendente é diferente de erro, tarefa, sugestão ou notificação (
 
 ## 4. Autonomia (MANIFEST §22.4)
 
-O proprietário não deve ser gargalo para decisões triviais. Agentes decidem sozinhos detalhes de implementação que estejam dentro de contratos aprovados e não mudem produto, boundary, compatibilidade, dados, decisão consolidada nem adicionem tecnologia estrutural. Todo o resto segue NN-011.
+O proprietário não deve ser gargalo para decisões triviais. Agentes decidem sozinhos detalhes de implementação que estejam dentro de contratos aprovados e não mudem produto, boundary, compatibilidade, dados, decisão consolidada nem adicionem tecnologia estrutural. Todo o resto segue NN-011. A integração segue o mesmo princípio: rotina entra sozinha, só o crítico vai ao proprietário (§9.1).
 
 ## 5. Separação de fato, inferência, proposta e decisão (MANIFEST §53)
 
@@ -50,7 +50,7 @@ Campos: `message_id`, `category`, `timestamp`, `agent`, `task_id`, `component`, 
 - `message_id`: `HO-AAAAMMDD-slug`, igual ao nome do arquivo; nunca reutilizado.
 - `timestamp`: hora real em que o handoff foi escrito (de preferência UTC); nunca no futuro — ele ordena os handoffs da mesma tarefa (`CHK-HANDOFFS`).
 - `task_id`: ID do ROADMAP (`P1-1`) ou de Issue.
-- `base_commit`: SHA de onde o agente partiu (BASE; obrigatório a partir de 2026-10-01T19:00Z). `commit`: resultado já conhecido ou `null` (derivado do commit que introduz o handoff); nunca o `base_commit`. A integração é o merge do `pr` (feito pelo integrador automático, ADR-0015); `verification[].tested_commit` registra o estado testado. O integrador só aceita PR com pelo menos um handoff em `review`, `verifying` ou `done`. Ver [`multi-agent.md`](multi-agent.md), ADR-0014 e ADR-0015.
+- `base_commit`: SHA de onde o agente partiu (BASE; obrigatório a partir de 2026-10-01T19:00Z). `commit`: resultado já conhecido ou `null` (derivado do commit que introduz o handoff); nunca o `base_commit`. A integração é o commit combinado que o integrador leva à `main` (ADR-0015): derivado, nunca gravado no handoff — fica no status do PR e nos trailers `Integration-*` do próprio commit; `verification[].tested_commit` registra o estado testado. O integrador só aceita PR com pelo menos um handoff em `review`, `verifying` ou `done`. `criticality` (opcional) é a **escalada** declarada pelo agente: `declared: critical` com as classes e o motivo; nunca rebaixa a classificação da `main` (§9.1). Ver [`multi-agent.md`](multi-agent.md), ADR-0014 e ADR-0015.
 - `state`: status machine de [`definition-of-done.md`](definition-of-done.md).
 - `verification[].kind`: `automated` ou `human` — nunca misturar (NN-017).
 - Proibido: segredos, tokens, raciocínio interno privado.
@@ -83,3 +83,31 @@ O agente **nunca** pede uma decisão ou validação só no chat. Antes de pedir:
 - **Validação humana pendente:** verificação `kind: human`, `result: pending` em um handoff, com `object` (caminho do repositório ou URL do artefato/página a validar). `CHK-HANDOFFS` recusa validação pendente sem objeto.
 
 O gerador do portal projeta ambas em seções próprias, com link para o objeto, e `CHK-PORTAL` recusa uma projeção que omita alguma pendência. O proprietário responde **clicando na alternativa no portal** (Issue pré-preenchida confirmada no GitHub, registrada pela automação — [`portal.md`](../architecture/portal.md) §3.2, ADR-0007) ou, se preferir, ao agente no chat; nos dois casos a decisão fica em `decisions.json` com a fonte persistida (NN-009). Uma **validação humana** é respondida do mesmo modo, com **Aprovar** ou **Reprovar** no portal (ADR-0008, ADD-0005): a automação grava o resultado na própria verificação do handoff e o agente depois atualiza o `state`. Um agente **nunca** responde por ele (decisão ou validação) nem cria a Issue de resposta. **Veredito do registro:** o workflow `decision` só termina **verde** quando o resultado desejado existe no repositório (registrado agora, ou já registrado com a mesma escolha — reprocessar o evento é idempotente); recusa, erro, falha de consistência ou de push terminam **vermelho**, com a causa em comentário na Issue (`decision-verdict.sh`, testado pelo self-test). "Decidida com consequências ainda a aplicar" (`consequencesApplied: false`) é um estado legítimo de **sucesso** do registrador; "não registrada" nunca é.
+
+## 9.1 Só o crítico chega ao proprietário (ADD-0012)
+
+> «Quero decidir e aprovar somente coisas críticas, se uma implementação funciona normalmente dentro dos padrões não deve precisar de mim.»
+
+O proprietário não é um CI humano. Trabalho rotineiro integra sozinho pelo integrador ([ADR-0015](../adr/0015-integrador-automatico.md)): escopo autorizado, invariantes e contratos respeitados, testes e checks verdes, sem decisão estrutural nova. O que é crítico está em [`integration-policy.json`](integration-policy.json), a autoridade única.
+
+Há três coisas que chegam a ele, e só elas:
+
+| Tipo | Quando | Caminho |
+|------|--------|---------|
+| **Decisão crítica** | é preciso escolher uma direção ainda não tomada (ex.: "login: conta local ou identidade compartilhada?") | DEC-XXXX `pending` no portal (§9), com alternativas e consequências; depois da escolha, as implementações normais que seguem são rotina |
+| **Aprovação crítica** | a direção já está decidida, mas a execução tem efeito crítico (dados, segurança, distribuição, control plane, licença, decisão consolidada…) | PR crítico pronto e verde; o integrador explica a consequência no PR e no portal; o proprietário autoriza com a label `integrar` (o autor do evento é conferido). **Não** se cria DEC nova para isso |
+| **Validação humana crítica** | algo que só uma pessoa pode validar e que importa agora: gate de fase, instalação/atualização de build distribuído, dados do usuário, segurança ou release para usuários | verificação `kind: human`, `result: pending`, `critical: true` no handoff; aparece em "Precisa de você" |
+
+O que **não** chega a ele:
+
+- bug normal, feature já autorizada, refatoração interna, testes, UI, documentação, ROADMAP dentro do plano aprovado, PR grande;
+- a pergunta "o código está pronto, quer fazer merge?" para trabalho rotineiro.
+
+**Validações humanas não críticas** (aparência, layout, toque em mudanças rotineiras) continuam pendentes e visíveis, com `critical: false`: NN-017 não muda — o item segue `[?]` no ROADMAP até alguém validar —, mas elas não bloqueiam a integração (nunca bloquearam) nem interrompem o proprietário. `CHK-HANDOFFS` exige a marcação explícita em handoffs a partir de 2026-10-02.
+
+**Visível ≠ precisa de autorização:** todo trabalho automático continua auditável sem pedir nada a ninguém:
+
+- no PR: status `ecosystem/integration` com o commit combinado testado e a classificação, mais o comentário do integrador;
+- no commit de integração: trailers `Integration-*`;
+- no handoff do agente.
+

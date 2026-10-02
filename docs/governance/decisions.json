@@ -766,7 +766,7 @@
     },
     {
       "id": "DEC-0023",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": false,
       "title": "Até onde a integração do trabalho dos agentes deve ser automática",
@@ -790,13 +790,17 @@
       "manifestCompatibility": "Respeita NN-001 (o integrador só lê fontes canônicas; a política fica em ecosystem.json), NN-008 (handoff obrigatório), NN-011 (decisão do proprietário), NN-014 (CI por Product), NN-016 (política explícita, deny-by-default enquanto pendente) e NN-018 (a main só recebe estado combinado testado). A respeita a regra de merge do Urbe pela label.",
       "recommendation": "A, porque é o que 'Automaticamente*' (ADD-0011) pede e as proteções já estão provadas pelo self-test: só entra o estado combinado testado, o Urbe continua com sua label e nenhuma mudança de política se autoaprova. B se você prefere ver cada PR antes de entrar.",
       "related": [
+        "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+        "docs/governance/integration-policy.json",
         "docs/adr/0015-integrador-automatico.md",
-        "docs/governance/addenda/ADD-0011-colaboracao-multiagente-sem-verificacao-manual.md",
-        "docs/governance/multi-agent.md",
-        "ecosystem.json"
+        "docs/governance/addenda/ADD-0011-colaboracao-multiagente-sem-verificacao-manual.md"
       ],
       "raisedBy": "claude-code (integração multiagente)",
-      "raisedAt": "2026-10-01"
+      "raisedAt": "2026-10-01",
+      "decision": "Nenhuma das alternativas literais. O proprietário decidiu explicitamente, fora do portal, uma política que torna a pergunta binária insuficiente (ADD-0012): «Quero decidir e aprovar somente coisas críticas, se uma implementação funciona normalmente dentro dos padrões não deve precisar de mim.» Rotina (padrões atendidos, checks e CI verdes, handoff válido) integra sozinha, inclusive no Urbe e no Lunet2D; mudança crítica (classes em docs/governance/integration-policy.json) espera a autorização do proprietário. Nenhum clique no portal foi registrado para esta decisão; a pergunta e as alternativas acima ficam como histórico.",
+      "decidedAt": "2026-10-02",
+      "record": "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+      "consequencesApplied": true
     }
   ]
 }
