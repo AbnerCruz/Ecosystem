@@ -10,13 +10,13 @@
   "branch": "ccr-p3-4-leitura-ecosystem",
   "base_commit": "5228816",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/48",
   "blockers": [],
   "cost": null,
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261002-p3-4-leitura-do-ecosystem",
-  "timestamp": "2026-10-02T10:32:34Z",
+  "timestamp": "2026-10-02T10:47:30Z",
   "task_id": "P3-4",
   "criticality": {
     "declared": "routine",
@@ -34,7 +34,8 @@
     "FATO: P3-3 integrada (PR #43) e fechada (PR #46). A pendência registrada era que CHK-ARCH-REFS recusa nomes de outros Products em apps/hub. FATO observado no código do check: ele só procura os nomes/ids dos outros Products no texto de apps/hub e referências de código para fora do diretório; não recusa ler um arquivo do repositório por caminho.",
     "DECISÃO LOCAL (detalhe de implementação, MANIFEST §22.4): o Hub descobre os Products nos dados de ecosystem.json em tempo de execução e nunca os nomeia no código nem nas fixtures (fixtures neutras). Por isso NÃO foi necessário alterar o boundary nem abrir ADR/DEC; CHK-ARCH-REFS permanece intacto. Se um dia o Hub precisar nomear um Product no código, aí sim exigiria ADR crítico.",
     "ALTERAÇÃO (P3-4): EcosystemReader.ReadProducts lê os componentes type=product exceto o próprio Hub; cada campo (nome, tipo, status, versão, repositório, publicUrl) é um Datum com origem, NotAvailable quando falta; a versão vem do arquivo declarado em version.file (autoridade, NN-001) — texto simples ou campo version de JSON; fonte inválida, arquivo ausente/ilegível ou JSON quebrado nunca lançam exceção. ProductCache serializa/recarrega o último estado devolvendo tudo como Stale (offline). Nada é escrito de volta.",
-    "NÃO FEITO, de propósito: a tela (camada Android, P3-9); fonte remota do ecosystem.json (leitura do GitHub é P3-6); Past/Now/Next (P3-5). P3-4 permanece [ ] no ROADMAP até a integração."
+    "NÃO FEITO, de propósito: a tela (camada Android, P3-9); fonte remota do ecosystem.json (leitura do GitHub é P3-6); Past/Now/Next (P3-5). P3-4 permanece [ ] no ROADMAP até a integração.",
+    "INTEGRAÇÃO (FATO, conferido no GitHub): o PR #48 (head 8d813f0) foi integrado na main pelo integrador automático (merged_by github-actions[bot]) no commit ab9cffaa6f1ac1f1f68a6723fbb9f942bf808f58, com trailers Integration-Criticality: routine, Integration-Main: 7554a5e e Integration-PR-Head: 8d813f0, em 2026-10-02T10:46:52Z, sem label nem toque do proprietário. No head 8d813f0: hub-ci (run 36996414295, job test) e os dois Foundation consistency checks = success."
   ],
   "verification": [
     {
@@ -42,6 +43,13 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "17/17 testes, incluindo leitura do ecosystem.json real (todo Product com nome e versão derivados), campos ausentes, arquivo de versão ilegível/malformado, fonte inválida e cache quebrado."
+    },
+    {
+      "check": "Checks do PR #48 no head integrado",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "8d813f07070647104f0dd500b2088916c2ca7210",
+      "evidence": "hub-ci run 36996414295 (job test) e Foundation consistency checks runs 36996414269 e 36996397817 = success no head 8d813f0; integração automática como rotina em ab9cffa. Limite: os checks pós-merge da main em ab9cffa não foram conferidos aqui."
     }
   ],
   "known_issues": [
@@ -49,8 +57,8 @@
     "Mostrar os Products numa tela é P3-9; a gate P3-8 segue dependente de validação humana em aparelho (NN-017)."
   ],
   "next_actions": [
-    "Integrador avalia o PR; sendo rotina verde, entra sozinho.",
-    "Depois de integrada: P3-4 [x], handoff done; então P3-5."
+    "Agente: P3-5 (Past / Now / Next derivado), em tarefa própria.",
+    "Gate da Fase 3 (P3-8) segue pendente de validação humana em aparelho (NN-017)."
   ],
   "decisions_required": [],
   "normative_sources": [
