@@ -75,12 +75,12 @@ plan() { # plan <pr> — a fila real (C#) decide sobre o estado simulado; export
 }
 out() { sed -n "s/^$1=//p" "$O"; }
 prep() { : > "$O"; git fetch -q origin main; git checkout -q --detach origin/main; env GITHUB_OUTPUT="$O" PR="$1" HEAD_SHA="$2" MAIN="$(git rev-parse origin/main)" bash .github/integrator/integrate.sh prepare >/dev/null 2>&1; }
-finish_eval() { # finish_eval <pr> <head> [R_URBE] — termina a avaliação com os checks do candidato verdes (ou o resultado dado)
+finish_eval() { # finish_eval <pr> <head> [R_URBE] [R_HUB] — termina a avaliação com os checks do candidato verdes (ou o resultado dado)
   : > "$GHLOG"
   env GITHUB_OUTPUT=/dev/null ACTION=evaluate PR="$1" HEAD_SHA="$2" MAIN="$(out main_tested)" COMBINED="$(out combined)" CRITICALITY="$(out criticality)" \
     REQUIRES_OWNER="$(out requires_owner)" CRITICAL_CLASSES="$(out critical_classes)" CRITICAL_REASON="$(out critical_reason)" HANDOFFS="$(out handoffs)" \
     TRUSTED="$(out trusted)" TRUSTED_FAILURES="$(out trusted_failures)" AUTHORIZED="$(grep -qx integrar "$T/gh/labels/$1" && echo true || echo false)" MORE=false \
-    R_CONSISTENCY=success R_URBE="${3:-skipped}" R_LUNET2D=skipped bash .github/integrator/integrate.sh finish >/dev/null 2>&1
+    R_CONSISTENCY=success R_URBE="${3:-skipped}" R_LUNET2D=skipped R_HUB="${4:-skipped}" bash .github/integrator/integrate.sh finish >/dev/null 2>&1
 }
 finish_land() { # finish_land <pr> — execução 'land' decidida pela fila real
   : > "$GHLOG"; plan "$1"
@@ -188,7 +188,17 @@ F="$(branch vermelho 'echo "// y" >> apps/urbe/src/app.js')"; open_pr 50 "$F"
 prep 50 "$F"; finish_eval 50 "$F" failure
 check "CI do Urbe vermelho no estado combinado: 'falhou', main intocada" 'main_is "$M9" && last_status "$F" | grep -q "^falhou"'
 
-check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$CU" "$CC" "$CB" "$M2" "$CR"; do in_main "$x" || exit 1; done )'
+# 13. Hub (P3-3): mudança em apps/hub → Hub é o Product tocado → hub-ci exigido → verde integra; vermelho não mexe na main.
+H="$(branch hub 'echo "// nota" >> apps/hub/src/Hub.Core/Datum.cs')"; open_pr 51 "$H"
+prep 51 "$H"; CH="$(out combined)"
+check "Hub: identificado como Product tocado (hub-ci exigido) e classificado pela política da main" '[ "$(out products)" = "[\"hub\"]" ] && [ "$(out criticality)" = routine ]'
+HF="$(branch hub-vermelho 'echo "// quebra" >> apps/hub/src/Hub.Core/Datum.cs')"; open_pr 52 "$HF"
+prep 52 "$HF"; M13="$(git --git-dir="$T/origin.git" rev-parse main)"; finish_eval 52 "$HF" skipped failure
+check "hub-ci vermelho no estado combinado: 'falhou' citando hub-ci, main intocada" 'main_is "$M13" && last_status "$HF" | grep -q "^falhou" && last_status "$HF" | grep -q "hub-ci"'
+prep 51 "$H"; CH="$(out combined)"; finish_eval 51 "$H" skipped success
+check "hub-ci verde: integrada automaticamente (rotina), a main vira o commit testado" 'main_is "$CH" && in_main "$H"'
+
+check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$CU" "$CC" "$CB" "$M2" "$CR" "$CH"; do in_main "$x" || exit 1; done )'
 
 echo
 if [ "$fails" -eq 0 ]; then echo "Simulação do integrador: todos os cenários passaram."; else echo "Simulação do integrador: $fails falha(s)."; exit 1; fi

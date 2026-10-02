@@ -14,7 +14,7 @@
 
 ## Próxima tarefa
 
-**Fase 2 concluída** (gate aprovado em 2026-10-01). **Fase 3 — Hub read-only** em andamento: DEC-0022 decidida (A — Android nativo em C#); próxima tarefa é **P3-3** (esqueleto do Hub em `apps/hub`).
+**Fase 2 concluída** (gate aprovado em 2026-10-01). **Fase 3 — Hub read-only** em andamento: DEC-0022 decidida (A — Android nativo em C#); esqueleto do Hub (**P3-3**) implementado e em integração (PR crítico: toca o control plane); depois dela, **P3-4** (ler `ecosystem.json` e mostrar os dois produtos).
 
 Em paralelo, como trabalho **interno dos próprios Products** e **fora do escopo da Fase 2** (infraestrutura compartilhada): refatorações em `apps/urbe/` e `apps/lunet2d/` — que **fazem parte deste repositório** e são o único lugar de desenvolvimento deles; `AbnerCruz/Urbe` e `AbnerCruz/Lunet2D` não são lugares de desenvolvimento (são espelhos de distribuição transitórios, DEC-0008/DEC-0009) — governadas pelo ADR-0009 e [`refactoring.md`](docs/architecture/refactoring.md) — sugestão: **U-R1** no Urbe (continuar a decomposição de `app.js` / Product Shell) e **L-R2** no Lunet2D (decompor `MainActivity` em Shell + painéis), conforme [`candidates.md`](docs/architecture/candidates.md), cada uma delegada em tarefa própria e conduzida pelos processos locais de cada Product. Nenhum subsistema é extraído sem evidência de segundo consumidor ([`local-first.md`](docs/architecture/local-first.md)).
 
@@ -153,7 +153,7 @@ Cada tarefa traz: *saída verificável* · *depende de* · *evidência*. O gate 
 - [x] P3-2 — **Decisão de UI e plataforma-alvo do Hub** (ADR-0013 B, DEC-0022): o proprietário escolheu **A — Android nativo em C#** no portal (Issue #37, 2026-10-01).
   - Saída: ADR-0013 `Aceito` e DEC-0022 registrada. Depende de: —. Evidência: `responses/DEC-0022.md`; handoff `HO-20261002-dec-0022-e-integracao`.
 - [ ] P3-3 — **Esqueleto do Hub** em `apps/hub` (um projeto C#, na tecnologia decidida), com leitura de dados em biblioteca independente de UI; `hub` sai de `planned` em `ecosystem.json`; `CHK-BOUNDARIES` e `CHK-ARCH-REFS` fiscalizam o Hub real (nenhum Product depende dele). Sem `platform/`, sem Service, sem componente compartilhado (ADR-0011).
-  - Saída: `apps/hub` compilando e testado; manifest do `hub` com `version.authority` decidida e `permissions.requests` (`network.access`, `ui.display`). Depende de: P3-2. Evidência: build + testes do Hub; checks de consistência verdes.
+  - Saída: `apps/hub` compilando e testado; manifest do `hub` com `version.authority` decidida e `permissions.requests` (`network.access`, `ui.display`). Depende de: P3-2. Evidência: build + testes do Hub; checks de consistência verdes. **Implementado no PR da branch (aguardando integração; vira `[x]` só quando integrado na `main`):** `apps/hub` com `Hub.Core` (`net10.0`, tipo `Datum<T>` com `NotAvailable`) e `Hub.Tests`; CI `hub-ci` ligado ao integrador; `hub` `active` com `version.authority` = `apps/hub/VERSION`; handoff `HO-20261002-p3-3-esqueleto-do-hub`. A camada de UI Android não está neste item (P3-9).
 - [ ] P3-4 — **Ler `ecosystem.json` e mostrar Lunet2D e Urbe** (nome, tipo, versão, status, links), com `not-available` quando faltar fonte; funciona offline com o último estado marcado como tal.
   - Saída: tela/projeção dos dois produtos. Depende de: P3-3. Evidência: testes de leitura sobre o `ecosystem.json` real e sobre fixtures com campos ausentes.
 - [ ] P3-5 — **Past / Now / Next derivado** (MANIFEST §18): Past = fases e gates concluídos, releases, decisões decididas, validações; Now = Issues com `state:`, branches, PRs, CI, decisões e validações pendentes; Next = itens `[ ]` do ROADMAP, gates e decisões necessárias. O Hub **não fabrica o Next**.
@@ -161,11 +161,13 @@ Cada tarefa traz: *saída verificável* · *depende de* · *evidência*. O gate 
 - [ ] P3-6 — **Leitura do GitHub** (CI, releases, branches, PRs, Issues/tarefas): somente leitura pela API pública, sem token embutido, falha de rede nunca derruba o Hub; permissão `network.access` declarada (NN-016). GitHub como registro, não IPC (NN-015).
   - Saída: cliente de leitura com degradação para `not-available`. Depende de: P3-3. Evidência: testes com respostas gravadas e com falha de rede.
 - [ ] P3-7 — **Empacotar o Hub e publicar a release** (P3-1 lista essa release no portal); o Hub nunca `bundled` em perfil com componente público (NN-023); os produtos continuam funcionando sem ele (NN-003).
-  - Saída: artefato instalável do Hub. Depende de: P3-4..P3-6, P3-1. Evidência: build/release do Hub e teste de produtos standalone.
+  - Saída: artefato instalável do Hub. Depende de: P3-4..P3-6, P3-9, P3-1. Evidência: build/release do Hub e teste de produtos standalone.
 - [ ] P3-1 — Portal lista as releases do Hub para instalação e recuperação (o portal continua existindo como mecanismo independente).
   - Depende de: P3-7 (a release existir). Evidência: seção do portal projetada de dados derivados, sem inventar release.
+- [ ] P3-9 — **Camada de UI Android do Hub** (`net10.0-android`, DEC-0022-A) sobre `Hub.Core`: mostra o que P3-4..P3-6 leem; build do APK no CI.
+  - Saída: projeto Android que compila no CI e abre no aparelho. Depende de: P3-3, P3-4. Evidência: build do APK; a abertura em aparelho é validação humana (P3-8).
 - [ ] P3-8 — **Gate da Fase 3**: o proprietário abre o Hub no celular e compreende o estado dos dois produtos sem abrir o GitHub; evidência automática pronta, validação humana em aparelho pendente no portal.
-  - Saída: handoff do gate com `object` da validação. Depende de: P3-2..P3-7. **Não** é autoaprovável (NN-017).
+  - Saída: handoff do gate com `object` da validação. Depende de: P3-2..P3-7, P3-9. **Não** é autoaprovável (NN-017).
 
 **Gate:** no celular, o proprietário abre o Hub e compreende o estado atual dos dois produtos sem abrir GitHub manualmente. *(requer validação humana em aparelho)*
 *Estado do gate:* **não iniciado**

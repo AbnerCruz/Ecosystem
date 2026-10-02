@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Leitura de dados do Hub, independente de UI (ADR-0013). Sem referência a outro Product (NN-002) nem a UI. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+</Project>

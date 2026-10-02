@@ -114,9 +114,19 @@ jobs:
     with:
       ref: ${{ needs.plan.outputs.combined }}
 
+  hub:
+    name: CI do Hub no estado combinado
+    needs: plan
+    if: needs.plan.outputs.action == 'evaluate' && contains(fromJSON(needs.plan.outputs.products), 'hub')
+    permissions:
+      contents: read
+    uses: ./.github/workflows/hub-ci.yml
+    with:
+      ref: ${{ needs.plan.outputs.combined }}
+
   finish:
     name: Integrar, marcar pronto ou devolver ao autor
-    needs: [plan, consistency, urbe, lunet2d]
+    needs: [plan, consistency, urbe, lunet2d, hub]
     if: always() && needs.plan.result == 'success' && contains(fromJSON('["evaluate","land","blocked"]'), needs.plan.outputs.action)
     runs-on: ubuntu-latest
     permissions:
@@ -149,6 +159,7 @@ jobs:
       R_CONSISTENCY: ${{ needs.consistency.result }}
       R_URBE: ${{ needs.urbe.result }}
       R_LUNET2D: ${{ needs.lunet2d.result }}
+      R_HUB: ${{ needs.hub.result }}
     steps:
       - uses: actions/checkout@v4
         with:
