@@ -44,6 +44,28 @@ public static class EcosystemReader
         }
     }
 
+    /// <summary>
+    /// Arquivos que são autoridade de versão (<c>version.file</c>) dos Products declarados, para quem precisa buscá-los antes de
+    /// chamar <see cref="ReadProducts"/> (ex.: leitura remota, que é assíncrona).
+    /// </summary>
+    public static IReadOnlyList<string> VersionFiles(string ecosystemJson, string selfId = "hub")
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(ecosystemJson);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object ||
+                !doc.RootElement.TryGetProperty("components", out var comps) || comps.ValueKind != JsonValueKind.Object) return [];
+            var files = new List<string>();
+            foreach (var c in comps.EnumerateObject())
+                if (c.Name != selfId && c.Value.ValueKind == JsonValueKind.Object && Str(c.Value, "type") == "product" &&
+                    c.Value.TryGetProperty("version", out var v) && v.ValueKind == JsonValueKind.Object &&
+                    Str(v, "authority") == "version-file" && Str(v, "file") is { Length: > 0 } f)
+                    files.Add(f);
+            return files;
+        }
+        catch (JsonException) { return []; }
+    }
+
     static string? Str(JsonElement e, string name) =>
         e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
