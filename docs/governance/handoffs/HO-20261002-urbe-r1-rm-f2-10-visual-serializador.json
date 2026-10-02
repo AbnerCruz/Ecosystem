@@ -1,0 +1,127 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
+  },
+  "branch": "ccr-5adec8cc-oy464b",
+  "base_commit": "2e73173",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261002-urbe-r1-rm-f2-10-visual-serializador",
+  "timestamp": "2026-10-02T11:46:19Z",
+  "task_id": "UR1-7",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Extração interna de um serializador puro (DOM → Markdown) dentro de apps/urbe, com saídas idênticas provadas por golden; sem persistência, dados do usuário, segurança do app, distribuição ou workflows."
+  },
+  "files_changed": [
+    "apps/urbe/src/editor/visual.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/modules.json",
+    "apps/urbe/index.html",
+    "apps/urbe/sw.js",
+    "apps/urbe/tests/e2e/app-runtime-visual.e2e.mjs",
+    "apps/urbe/tests/fixtures/visual-golden.json",
+    "apps/urbe/tests/ai-agent.mjs",
+    "apps/urbe/tests/search-editor.mjs",
+    "apps/urbe/tools/debt-ceiling.json",
+    "apps/urbe/docs/v2/contracts/editor-visual.md",
+    "apps/urbe/docs/v2/discovery/HOTSPOTS.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/TRACEABILITY.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261002-urbe-r1-rm-f2-10-visual-serializador.json"
+  ],
+  "work_completed": [
+    "FATO: PR #54 integrado (RM-F2-09 [x]). Branch recomeçada da main atual. Próximo item de U-R1: RM-F2-10 (REQ-027). Decisão de escopo (agente, dentro do processo do Urbe): fazer só a fatia pura e deixar o restante do item aberto, porque o editor Visual com estado depende de closures do app.js e pede validação em aparelho (NN-017). DEC-0024 continua pending; esta tarefa é só JavaScript e não é migração para C#.",
+    "ALTERAÇÃO (refatoração interna R): markdownFromVisual (104 linhas) e as duas camadas que o app.js empilhava (normalização de U+200B e '#' vazio; UrbeMathEditor.serialize) viraram src/editor/visual.js (UrbeVisual.markdownFromVisual e serviço editor.visual). O único acoplamento ao estado, splitFrontmatter(bodyEditor.value).raw, virou o parâmetro opts.frontmatter; app.js mantém um adaptador de uma linha. Módulo registrado em modules.json (antes de app; uses math/editor), index.html e sw.js derivados.",
+    "PROVA DE EQUIVALÊNCIA: golden de 110 casos gerado em Chromium com o código ANTIGO (copiado do app.js como texto) sobre (a) o DOM produzido por UrbeMarkdown.render para o corpus de 33 entradas de Markdown (inclui matemática com UrbeMathEditor real) e (b) 24 trechos de HTML típicos de contenteditable, cada um com e sem frontmatter. O E2E exige saída idêntica no módulo novo (DOM em <template> inerte) e exercita o caminho real: editar o DOM do editor aberto grava o Markdown da nota. Mutação (remover a normalização de U+200B) derrubou o teste.",
+    "ACHADO (bug pré-existente, não corrigido por NN-013): código inline com wikilink (`[[x]]`) renderiza com caracteres de controle U+0002 no preview; a versão v22 do inlineMarkdown troca wikilinks antes do código. Está preservado no golden do markdown (2 casos). Correção em item/PR próprio.",
+    "Atualizados dois testes que conferiam texto do app.js (tests/ai-agent.mjs e tests/search-editor.mjs) para ler o serializador em visual.js. ROADMAP RM-F2-10 = [~] (o aceite 'Visual fora de app.js' ainda não é total), contrato docs/v2/contracts/editor-visual.md, HOTSPOTS e TRACEABILITY regenerados.",
+    "Nada tocado em src/persistence, formatos de dados, versão, release, Electron, Capacitor ou workflows (o E2E novo entra no CI pelo filtro app-runtime já existente)."
+  ],
+  "verification": [
+    {
+      "check": "npm run check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "59/59 arquivos de teste, check-modules, dívida (ratchet), rastreabilidade e hotspots verdes."
+    },
+    {
+      "check": "node tools/run-e2e.mjs (todos os 14 cenários, Chromium real, local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "14/14 cenários E2E passaram, incluindo app-runtime-visual (110 casos)."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os checks passaram localmente."
+    }
+  ],
+  "known_issues": [
+    "RM-F2-10 fica [~]: faltam setEditorViewMode, a sincronização Visual↔fonte (syncVisualToMarkdown e camadas), contenteditable/seleção, estado vazio e o teste «sem ressuscitar nota apagada»; exigem desenho de contrato de host e validação em aparelho.",
+    "Bug pré-existente do código inline com wikilink (ver ACHADO) segue presente até o PR de correção.",
+    "O golden registra o comportamento herdado, inclusive normalizações: no corpus só 11 de 33 entradas voltam byte a byte iguais pela ida e volta render→serialização.",
+    "Service worker rede-primeiro e versão inalterada: quem estiver offline com cache antigo recebe o conjunto antigo até o SW novo instalar (como em RM-F2-03 e RM-F2-09)."
+  ],
+  "next_actions": [
+    "Integrador: rotina verde entra sozinha.",
+    "PR de correção do bug do código inline com wikilink (atualiza o golden de propósito).",
+    "RM-F2-05..08 (renderer/laço de desenho; fecham o #mini e RM-F2-04); restante de RM-F2-10 depois de um desenho de host e validação em aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/architecture/refactoring.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/SPEC.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças só em apps/urbe; nenhuma referência a Lunet2D ou Hub."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Sem reescrita para C#; refatoração interna em JavaScript (DEC-0024 pending)."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Escopo restrito à parte pura de RM-F2-10; comportamento idêntico provado por golden; bug encontrado registrado, não misturado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A parte com estado/seleção do editor (que depende de aparelho) ficou fora e o item fica [~]."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidência: golden gerado do código antigo, npm run check, 14 E2E em Chromium real e mutação; lacunas em known_issues."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração para o Ecosystem: módulo local ao produto."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "visual-editor-serializer",
+      "status": "product-specific",
+      "rationale": "Serializador do DOM do editor Visual do Urbe (callouts, wikilinks, tabelas e matemática do Urbe); sem segundo consumidor real, sem Extraction Review."
+    }
+  ]
+}

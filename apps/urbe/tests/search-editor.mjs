@@ -35,7 +35,7 @@ test('editor Visual: menu /, bolha e serialização de <div> com blocos',()=>{
   const vt=read('src/editor/visual-tools.js'),app=read('src/app.js'),index=read('index.html');
   if(!index.includes('./src/editor/visual-tools.js')||index.indexOf('./src/editor/visual-tools.js')<index.indexOf('./src/app.js'))throw new Error('visual-tools deve carregar depois do app');
   for(const k of ['urbeSlashMenu','urbeFormatBubble',"act:'rule'","act:'task'"])if(!vt.includes(k))throw new Error('falta '+k);
-  if(!app.includes('if(tag==="div"&&[...el.children].some('))throw new Error('div com blocos não é serializada');
+  if(!read('src/editor/visual.js').includes('if(tag==="div"&&[...el.children].some('))throw new Error('div com blocos não é serializada (serializador em src/editor/visual.js)');
   if(app.includes("md==='\\\\n---\\\\n'"))throw new Error('comparação de divisória com barra literal voltou');
   if(!app.includes('if(!sel.isCollapsed)return sel.getRangeAt(0).getBoundingClientRect();'))throw new Error('clique volta a colapsar a seleção');
 });

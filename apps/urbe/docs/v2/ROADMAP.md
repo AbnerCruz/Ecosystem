@@ -752,7 +752,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G2
 
 ### RM-F2-10 — Extrair editor Visual e conversão
-- **Estado:** [ ]
+- **Estado:** [~]
 - **REQ:** REQ-027
 - **SPEC:** §3.3
 - **Fase:** F2
@@ -760,8 +760,9 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Implementação:** `src/editor/visual.js` (`markdownFromVisual`, contenteditable, `setEditorViewMode`).
 - **Integração:** `editor-persistence` ajustado.
 - **Testes:** Round-trip Markdown↔Visual em fixtures; sem ressuscitar nota apagada.
-- **Documentação:** —
+- **Documentação:** `docs/v2/contracts/editor-visual.md`.
 - **Aceite:** Visual fora de `app.js`.
+- **Progresso (2026-10-02):** 1ª fatia feita — `markdownFromVisual` (e as duas camadas que o embrulhavam: normalização U+200B/`#` vazio e matemática) saiu para `src/editor/visual.js` (`UrbeVisual`, serviço `editor.visual`); `app.js` ficou com um adaptador que injeta o frontmatter. Golden de 110 casos gerado em Chromium com o código antigo (`tests/e2e/app-runtime-visual.e2e.mjs`, roda no CI pelo filtro `app-runtime`) + caminho real do editor. **Falta (por isso `[~]`):** `setEditorViewMode`, sincronização Visual↔fonte (`syncVisualToMarkdown` e suas camadas), `contenteditable`/seleção, estado vazio e o teste «sem ressuscitar nota apagada». Essa parte depende de closures do `app.js` e de estado do editor; requer validação em aparelho (NN-017) e um desenho do contrato de host antes de mover.
 - **Gate:** G2
 
 ### RM-F2-11 — Extrair autocompletar de wikilinks e barra de formatação

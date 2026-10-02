@@ -5,6 +5,13 @@
 
 ---
 
+### 2026-10-02 — Claude — RM-F2-10 `[~]` (1ª fatia: serializador Visual → Markdown), U-R1 no monorepo Ecosystem
+- **Estado:** RM-F2-09 `[x]` (PR #54). RM-F2-10 em andamento: a parte pura saiu; o editor Visual com estado ainda não.
+- **Feito:** `src/editor/visual.js` (`UrbeVisual`, serviço `editor.visual`) com `markdownFromVisual` e as duas camadas que o embrulhavam (U+200B/`#` vazio e `UrbeMathEditor`); `app.js` ficou com um adaptador de uma linha que injeta o frontmatter (−113 linhas; teto rebaixado). Golden de 110 casos gerado em Chromium com o código antigo; `tests/e2e/app-runtime-visual.e2e.mjs` (nome casa com o filtro `app-runtime` do CI) + caminho real do editor; mutação da normalização derrubou o teste. Contrato `docs/v2/contracts/editor-visual.md`. `tests/ai-agent.mjs` e `tests/search-editor.mjs` passaram a ler o serializador em `visual.js`.
+- **Achado (bug pré-existente, não corrigido aqui por NN-013):** código inline com wikilink (`` `[[x]]` ``) renderiza com caracteres de controle `\x02`: o `inlineMarkdown` com sanitização (v22) troca wikilinks antes do código; a versão base tratava o código primeiro. Está travado no golden de `markdown.js` (2 casos) e entra como correção em item/PR próprio, atualizando o golden de propósito.
+- **Falta de RM-F2-10:** `setEditorViewMode`, sincronização Visual↔fonte, `contenteditable`/seleção, estado vazio e «sem ressuscitar nota apagada»: dependem de closures do app.js e pedem validação em aparelho (NN-017).
+- **Próximos passos:** corrigir o bug do código inline; depois RM-F2-05..08 (renderer/laço de desenho; fecham o `#mini` e RM-F2-04).
+
 ### 2026-10-02 — Claude — RM-F2-09 `[x]` (renderMarkdown fora do app.js), U-R1 no monorepo Ecosystem
 - **Estado:** RM-F2-09 concluído; RM-F2-04 segue `[~]` (falta só o minimapa legado).
 - **Feito:** `src/editor/markdown.js` (global `UrbeMarkdown` + serviço `editor.markdown`): render de blocos, inline, frontmatter, tabelas, callouts, `safeUrl`, cabeçalho vazio e a camada de matemática — copiados do `app.js`, que agora só desestrutura o global no topo. `app.js` −201 linhas (5199 → 4998) (teto de dívida rebaixado). Contrato em `docs/v2/contracts/editor-markdown.md`.

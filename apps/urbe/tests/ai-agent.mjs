@@ -224,7 +224,7 @@ await test('interface: markdown do modelo é escapado (sem HTML/JS injetado) e d
 
 await test('editor: abrir e sair de uma nota não reescreve o arquivo; listas sem linha em branco',async()=>{
   const app=read('src/app.js');ok(app.includes('if(urbeVisualBase!=null&&next===urbeVisualBase)return;'),'sync só quando há mudança');
-  ok(app.includes('if(itens.length)out.push(itens.join("\\n"));'),'itens de lista juntos');
+  ok(read('src/editor/visual.js').includes('if(itens.length)out.push(itens.join("\\n"));'),'itens de lista juntos (serializador em src/editor/visual.js)');
 });
 
 if(!failed)console.log('OK   todos os testes do agente');
