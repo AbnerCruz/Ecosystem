@@ -1,0 +1,42 @@
+name: hub-ci
+
+# CI do Hub no monorepo: só testes, sem assinatura e sem publicar. Roda apenas quando o Hub muda (NN-014).
+# O empacotamento e a release do Hub são a tarefa P3-7.
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/hub/**', '.github/workflows/hub-ci.yml']
+  pull_request:
+    paths: ['apps/hub/**', '.github/workflows/hub-ci.yml']
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit a testar (o integrador passa o estado combinado main + PR; ADR-0015)'
+        type: string
+        required: false
+        default: ''
+
+concurrency:
+  group: hub-ci-${{ inputs.ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/hub
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test (Hub.Core)
+        run: dotnet test --project tests/Hub.Tests
