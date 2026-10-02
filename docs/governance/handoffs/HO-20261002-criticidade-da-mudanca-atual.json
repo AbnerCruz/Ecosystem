@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "5228816",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "integrator",
+  "state": "review",
+  "message_id": "HO-20261002-criticidade-da-mudanca-atual",
+  "timestamp": "2026-10-02T10:49:00Z",
+  "task_id": "P1-20",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Altera o classificador confiável (tests/consistency/Check.cs) e a cola do integrador (.github/integrator/**): control plane. Pela política da main, só entra com a autorização do proprietário."
+  },
+  "files_changed": [
+    "tests/consistency/Check.cs",
+    ".github/integrator/integrate.sh",
+    ".github/integrator/simulate.sh",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/handoffs/HO-20261002-criticidade-da-mudanca-atual.json"
+  ],
+  "work_completed": [
+    "FATO (estado real, main 5228816): o PR #46 (P3-3, fechamento: ROADMAP + handoff) foi classificado 'critical' pelo integrador — comentário do integrador: 'control-plane: docs/governance/handoffs/HO-20261002-p3-3-esqueleto-do-hub.json — declarado crítico pelo agente'. O #46 já foi integrado pelo botão Merge (10:30 UTC) antes desta correção, então deixou de ser o canário; o canário equivalente é o fechamento do handoff crítico do PR #40 (HO-20261002-automatico-por-padrao-critico-ao-proprietario), ainda em 'review' na main.",
+    "CAUSA RAIZ (reproduzida localmente com o Check.cs da main): Gates escalava qualquer handoff ALTERADO pelo PR cuja declaração fosse 'critical', sem olhar a main — a criticidade histórica do trabalho original vazava para os fechamentos. Reprodução: fechar HO-…-critico-ao-proprietario (review→done, pr) dava criticality=critical, requires_owner=true.",
+    "CORREÇÃO: DeclaredEscalation julga a mudança do PR contra a main — handoff novo crítico escala; handoff existente só escala se passar a crítico ou ganhar classe nova (fora disso, fechamento/atualização é rotina); base ilegível = declaração tratada como nova (falha fechada). Zonas e regras continuam independentes: o handoff nunca rebaixa caminho crítico. O histórico 'critical' dos handoffs não foi tocado.",
+    "INTEGRADOR: num PR reavaliado como rotina, as labels 'critico' e 'pronto-para-integrar' de uma avaliação anterior são removidas (o proprietário não vê crítico onde não há).",
+    "AUDITORIA de outros falsos positivos por histórico: decision-record (alterar decisão já tomada é mudar o registro do proprietário, não herança; consequencesApplied segue rotina), adr-decision (só status/Decisão de ADR vinculante), zonas por caminho (sem estado histórico). Nenhum outro caso inequívoco.",
+    "Proteções preservadas sem alteração: commit combinado exato, reconferência do head do PR e da main, checker confiável da main, autor do evento da label, base obsoleta, sem force na main, Dependabot/fork fora, falha fechada nas zonas."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22; self-test verde, com os casos novos: A (handoff novo crítico ⇒ crítico), B (fechar handoff crítico já integrado ⇒ rotina), C (handoff antigo + integrate.sh ⇒ crítico), D (handoff 'routine' + Check.cs ⇒ crítico), E1 (passa a crítico ⇒ crítico), E2 (classe nova ⇒ crítico só por ela), E3 (só motivo/estado ⇒ rotina), base ilegível ⇒ falha fechada."
+    },
+    {
+      "check": "bash .github/integrator/simulate.sh (sem identidade git, como no runner)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os cenários, inclusive o 14 (caso do PR #46): fechamento de handoff crítico já integrado ⇒ rotina, integrado sozinho, sem label, labels antigas de crítico removidas. Com o Check.cs antigo da main o cenário 14 FALHA (defeito reproduzido)."
+    },
+    {
+      "check": "Canário real depois da integração: fechamento de handoff crítico entra sozinho",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Depois desta correção integrada (precisa da autorização do proprietário), o PR de fechamento (HO-…-critico-ao-proprietario e este handoff) deve ser 'routine' e entrar sem label."
+    }
+  ],
+  "known_issues": [
+    "O PR #46, alvo original do canário, já foi integrado manualmente pelo proprietário antes da correção; a prova ao vivo usa o fechamento equivalente de outros handoffs críticos já integrados."
+  ],
+  "next_actions": [
+    "Proprietário: autorizar este PR (mudança crítica do control plane).",
+    "Agente: depois, abrir o PR de fechamento (rotina) e registrar a integração automática."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/handoffs/HO-20261002-p3-3-esqueleto-do-hub.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Histórico de criticidade preservado nos handoffs; a classificação do PR fica no status e nos trailers."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança do control plane passa pelo proprietário; zonas continuam críticas."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Defeito reproduzido antes e provado corrigido depois (self-test + simulação)."
+    }
+  ]
+}

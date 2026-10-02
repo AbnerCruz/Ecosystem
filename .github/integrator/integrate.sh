@@ -232,6 +232,8 @@ finish() {
   fi
 
   if [ "${ACTION}" = "evaluate" ]; then
+    # Reclassificado como rotina (ex.: avaliação anterior crítica): labels de crítico não ficam penduradas no PR.
+    [ "${REQUIRES_OWNER}" = "true" ] || labels "$PR" -critico -pronto-para-integrar
     local failed=""
     [ "${R_CONSISTENCY}" = "success" ] || failed="${failed} consistency(${R_CONSISTENCY})"
     case "${R_URBE}" in success|skipped|"") ;; *) failed="${failed} urbe-checks(${R_URBE})" ;; esac
