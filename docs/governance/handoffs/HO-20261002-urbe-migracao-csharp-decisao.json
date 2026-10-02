@@ -18,7 +18,7 @@
   "component": "urbe",
   "state": "blocked",
   "message_id": "HO-20261002-urbe-migracao-csharp-decisao",
-  "timestamp": "2026-10-02T15:00:00Z",
+  "timestamp": "2026-10-02T03:44:00Z",
   "task_id": "UR1-3",
   "criticality": {
     "declared": "critical",
@@ -38,6 +38,18 @@
   ],
   "verification": [
     {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram na branch reconciliada (base 5c2bc76), incluindo CHK-HANDOFFS, CHK-ADR e CHK-DECISIONS; o CI do commit anterior só falhava pelos timestamps futuros."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "'todos os checks provaram detectar suas violações'."
+    },
+    {
       "check": "decisions.json validado contra decisions.schema.json (jsonschema, local)",
       "kind": "automated",
       "result": "passed",
@@ -45,7 +57,8 @@
     }
   ],
   "known_issues": [
-    "NÃO EXECUTADO: dotnet run tests/consistency/Check.cs (dotnet indisponível aqui); CHK-ADR, CHK-DECISIONS e CHK-HANDOFFS rodam no integrador. Formato conferido manualmente contra as regras do Check.cs (nome, seções, status e índice do ADR; campos da DEC)."
+    "CORRIGIDO: o timestamp original (2026-10-02T15:00:00Z) estava no futuro e fez o CHK-HANDOFFS falhar; agora é a hora real do commit. Nenhum outro check falhou (CHK-ADR e CHK-DECISIONS passaram).",
+    "Nenhum código de migração para C# foi escrito; nada em apps/urbe foi alterado por esta tarefa."
   ],
   "next_actions": [
     "Proprietário: responder DEC-0024 no portal (informar também o motivo da migração ajuda a escolher).",

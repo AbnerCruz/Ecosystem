@@ -14,6 +14,18 @@ Proposto — aguardando DEC-0024 (portal). Nenhuma implementação autorizada at
 
 **INFERÊNCIA:** o pedido é uma mudança de direção do produto, não detalhe de implementação; portanto é decisão crítica do proprietário (ADD-0012; `communication.md` §9.1).
 
+**FATO — superfícies atuais e o que cada uma implica (2026-10-02):**
+
+| Superfície | Tecnologia hoje | Canal de distribuição (`docs/distribution/current.profile.json`) | Implicação de uma migração |
+|---|---|---|---|
+| Web/PWA | JavaScript no navegador, service worker, IndexedDB/OPFS | GitHub Pages («Urbe Web») | Precisa continuar funcionando offline e sem build (Urbe ADR-0001); C# no navegador exige WebAssembly |
+| Windows | Electron (`native/desktop/`), instalador e atualização por releases | GitHub Releases | Trocar o host não pode quebrar a atualização das instalações existentes |
+| Android | Capacitor (`native/android/`), APK | GitHub Releases | Idem; assinatura e identidade do app não mudam sem decisão própria |
+
+**FATO — dados do usuário:** o vault é uma pasta de arquivos (Markdown e `.urbe/*`) lida e escrita pelas três superfícies; vale ler tudo que a 1.x escreveu, escrever com proteção forward e backup restaurável antes de migração de formato (Urbe ADR-0004, REQ-007/035/038). `src/persistence/**` e `DATA-CATALOG.md` são zona crítica na política de integração.
+
+**RISCOS** (de qualquer migração; a intensidade varia por opção): (1) perder ou corromper dados do usuário; (2) regressão de comportamento sem paridade provada; (3) quebrar instalações e o Urbe Web existentes; (4) dois stacks mantidos em paralelo durante a transição; (5) custo e prazo altos frente ao ganho, se o motivo não for claro (NN-020); (6) plugins JavaScript full-trust (Urbe ADR-0002) sem equivalente em C#.
+
 ## Problema
 
 Qual é o alcance e a estratégia da migração do Urbe para C#, de modo a respeitar os dados do usuário, os três canais de distribuição e a independência do Urbe (NN-002, NN-003, NN-023), sem quebrar o produto durante a transição?
@@ -27,7 +39,7 @@ Qual é o alcance e a estratégia da migração do Urbe para C#, de modo a respe
 
 ## Decisão
 
-**Pendente** (DEC-0024). **PROPOSTA do agente, não decisão:** A, em fatias pequenas e cada uma com ADR do produto, porque é a única que cumpre NN-005 sem interromper o Urbe Web nem arriscar dados; B só se o objetivo for abandonar o stack JS e o proprietário aceitar o custo e o tempo de paridade; C só se o motivo for Android/Windows nativos. A primeira fatia candidata (a decidir depois da escolha): migração/backup de vault em C#, por ser pura, testável com as fixtures existentes e **sem alterar o formato** — mas `src/persistence/**` é zona crítica (`integration-policy.json`, «dados do usuário»), então essa fatia exige a sua autorização no PR.
+**Pendente** (DEC-0024): a escolha é do proprietário e nenhuma opção está selecionada. **PROPOSTA do agente (preferência técnica, não decisão e não vincula o proprietário):** A, em fatias pequenas e cada uma com ADR do produto, porque é a única que cumpre NN-005 sem interromper o Urbe Web nem arriscar dados; B só se o objetivo for abandonar o stack JS e o proprietário aceitar o custo e o tempo de paridade; C só se o motivo for Android/Windows nativos. A primeira fatia candidata (a decidir depois da escolha): migração/backup de vault em C#, por ser pura, testável com as fixtures existentes e **sem alterar o formato** — mas `src/persistence/**` é zona crítica (`integration-policy.json`, «dados do usuário»), então essa fatia exige a sua autorização no PR.
 
 ## Consequências
 

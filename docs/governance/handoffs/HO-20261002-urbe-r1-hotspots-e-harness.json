@@ -16,7 +16,7 @@
   "component": "urbe",
   "state": "review",
   "message_id": "HO-20261002-urbe-r1-hotspots-e-harness",
-  "timestamp": "2026-10-02T12:00:00Z",
+  "timestamp": "2026-10-02T03:41:00Z",
   "task_id": "UR1-2",
   "criticality": {
     "declared": "routine",
@@ -40,32 +40,44 @@
     "INFERÊNCIA/PROPOSTA registrada no relatório (não decisão): studio -> ai/ui é o maior acoplamento de UI fora do app.js; resolvê-lo exige item novo + ADR de boundary.",
     "RM-F2-02 (REQ-064/003) [?]: harness tests/e2e/app-runtime.mjs (startRuntime/open/createNote/world/reload/expectNoErrors) sobre o index.html real em Chromium e cenário app-runtime.e2e.mjs (boot, fixture histórica, criar nota, mundo, recarregar, vault S). Fica em tests/e2e/ (npm test roda todo tests/*.mjs sem navegador). Estado [?] porque os E2E não rodam em nenhum workflow (o CI não instala o Chromium).",
     "Também verificado: zip.e2e e smoke.e2e passam (valida a movimentação do JSZip de RM-F2-03 em navegador real).",
-    "Nada tocado em src/persistence, formatos de dados, boundaries, contratos, versão ou release."
+    "Nada tocado em src/persistence, formatos de dados, boundaries, contratos, versão, release, Web/PWA, Electron ou Capacitor. RM-F2-01 [x] (relatório, script e teste provados); RM-F2-02 [?] (harness criado e executado localmente em Chromium real; falta gate no CI)."
   ],
   "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram na branch reconciliada (base 5c2bc76), incluindo CHK-HANDOFFS, CHK-ADR e CHK-DECISIONS; o CI do commit anterior só falhava pelos timestamps futuros."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "'todos os checks provaram detectar suas violações'."
+    },
     {
       "check": "npm run check (apps/urbe)",
       "kind": "automated",
       "result": "passed",
-      "evidence": "57/57 arquivos de teste; check-modules, dívida, rastreabilidade, workflows, licença, catálogo, fixtures e tutorial verdes."
+      "evidence": "57/57 arquivos de teste; check-modules, dívida, rastreabilidade (TRACEABILITY.md em dia), workflows, licença, catálogo, fixtures e tutorial verdes."
     },
     {
-      "check": "node tools/run-e2e.mjs app-runtime zip smoke (Chromium real)",
+      "check": "node tools/run-e2e.mjs app-runtime zip smoke (Chromium real, local)",
       "kind": "automated",
       "result": "passed",
-      "evidence": "app-runtime.e2e, zip.e2e e smoke.e2e: ok."
+      "evidence": "3/3 cenários E2E passaram localmente; não rodam no CI (ver known_issues)."
     }
   ],
   "known_issues": [
-    "NÃO EXECUTADO: dotnet run tests/consistency/Check.cs e --self-test (dotnet indisponível aqui; download bloqueado pelo proxy). O integrador roda os checks do Ecosystem no estado combinado.",
-    "Os E2E (inclusive o harness novo) não fazem parte do CI do Urbe; RM-F2-02 só vira [x] quando houver gate no CI ou decisão registrada de mantê-lo local.",
-    "As métricas são regex, não análise sintática; fan-in estático não vê acoplamento por comando/serviço dinâmico.",
-    "PR não aberto por mim nesta sessão (instrução geral da sessão: só abrir PR a pedido); a regra do repositório pede PR para mudança em apps/<id> para o integrador agir."
+    "CORRIGIDO: o primeiro push (83eb82f/e71f950) deixou o CHK-HANDOFFS vermelho só porque este handoff trazia um timestamp inventado no futuro (2026-10-02T12:00:00Z); agora o timestamp é a hora real do commit. Foi a única causa do consistency vermelho (run 36961491644: os outros 21 checks passaram).",
+    "Os E2E (inclusive o harness novo) não fazem parte do CI do Urbe: nenhum workflow instala o Chromium. Por isso RM-F2-02 continua [?] — não será marcado [x] só porque passou localmente; só depois de um gate no CI ou de decisão registrada de mantê-lo local.",
+    "As métricas de hotspots são regex, não análise sintática; o fan-in estático não vê acoplamento por comando/serviço dinâmico.",
+    "Este handoff e o HO-20261002-urbe-migracao-csharp-decisao vão no mesmo PR; pela política atual o PR combinado é CRÍTICO (decisions.json e docs/adr/**) e não integra sozinho. A parte U-R1 é rotina e não depende da decisão de C#."
   ],
   "next_actions": [
-    "Abrir/marcar pronto o PR da branch para o integrador (rotina: entra sozinho se verde).",
-    "RM-F2-02: ligar os E2E ao CI do Urbe ou registrar a decisão; depois [x].",
-    "Próximos itens: RM-F2-04 (resíduos de UI/window.URBE) e RM-F2-09 (renderMarkdown para o editor, remove a exceção pages/engine -> app.js), usando o harness.",
+    "Integrador: avaliar o estado combinado do PR (crítico: aguarda a autorização do proprietário).",
+    "RM-F2-02: ligar os E2E ao CI do Urbe (ou registrar a decisão de mantê-los locais); depois [x].",
+    "Itens seguintes de U-R1 em JavaScript: RM-F2-04 e RM-F2-09, com o harness. Nenhum item de U-R1 é convertido em migração C# (isso é trabalho separado, depende de DEC-0024).",
     "Depois do merge: disparar sync-from-ecosystem.yml em AbnerCruz/Urbe (DEC-0017-A)."
   ],
   "decisions_required": [],
