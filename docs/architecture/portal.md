@@ -132,7 +132,7 @@ python3 -m http.server -d site 8000   # qualquer servidor estático
 - **Páginas de validação (P1-11, implementado):** `/testing/<componente>/<build>/`, geradas de registros canônicos de validação, com versão/build, objetivo, pré-condições, passos numerados, resultado esperado, problemas conhecidos, link para o artefato e tarefa/roadmap/commit/PR. Persistência de PASS/FAIL não é objetivo inicial. O gerador (`site/generator/GenerateStatus.cs`) escreve as páginas em `site/testing/` (não versionado, como `site/data/`) a partir de `docs/validation/**/*.json`; o estado de validação de cada componente na projeção é o do registro mais recente, e `CHK-PORTAL` recusa divergência.
 - **Hub (P3-x):** o portal passa a listar as releases do Hub para instalação e recuperação.
 
-## 8. Interface e indicadores ao vivo (P3-11)
+## 8. Interface e indicadores ao vivo (P3-12)
 
 A interface segue o ADR-0005 (HTML/CSS/JS estáticos, sem build, sem dependências e sem fontes ou scripts de terceiros) e é organizada pela pergunta do proprietário, não pela estrutura do repositório:
 
