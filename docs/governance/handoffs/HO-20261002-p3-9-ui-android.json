@@ -1,0 +1,123 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01Cqs24pT9sHieyegVt62nFc"
+  },
+  "branch": "ccr-p3-9-ui-android",
+  "base_commit": "9f5e626",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "hub",
+  "state": "review",
+  "message_id": "HO-20261002-p3-9-ui-android",
+  "timestamp": "2026-10-02T12:35:41Z",
+  "task_id": "P3-9",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "P3-9 é trabalho previsto (DEC-0022-A), mas acrescenta o job 'apk' a .github/workflows/hub-ci.yml, que é zona crítica (control plane) da política de integração; por isso exige a autorização do proprietário. Efeito: todo PR que tocar apps/hub passa a compilar o APK de depuração no CI. A política não foi alterada."
+  },
+  "files_changed": [
+    "apps/hub/src/Hub.Android/Hub.Android.csproj",
+    "apps/hub/src/Hub.Android/MainActivity.cs",
+    "apps/hub/src/Hub.Android/Properties/AssemblyInfo.cs",
+    "apps/hub/src/Hub.Core/HubLoader.cs",
+    "apps/hub/tests/Hub.Tests/HubLoaderTests.cs",
+    "apps/hub/README.md",
+    ".github/workflows/hub-ci.yml",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261002-p3-9-ui-android.json"
+  ],
+  "work_completed": [
+    "FATO: P3-2..P3-6, P3-10 e P3-12 (modelo de tela, antes P3-11) integradas e fechadas. O workload Android foi instalado no ambiente do agente, mas dl.google.com está bloqueado (curl HTTP 000), então o Android SDK não pôde ser obtido e o projeto Android NÃO foi compilado localmente: a prova de compilação é o job 'apk' do CI.",
+    "ALTERAÇÃO (P3-9): src/Hub.Android — Hub.Android.csproj (net10.0-android, mesmo padrão de propriedades do app Android do outro Product, sem referenciá-lo; ApplicationId io.abnercruz.hub; fora de Hub.slnx de propósito), AssemblyInfo com só a permissão INTERNET (network.access, NN-016) e MainActivity: tela única que mostra na hora o último estado guardado (FilesDir/snapshot.json), lê o Ecosystem de novo com HubLoader (repositório público, sem token) e redesenha; botão Atualizar; toda decisão do que mostrar vem do HubScreenBuilder.",
+    "ALTERAÇÃO (Hub.Core, testável no CI): SnapshotFile (cache em arquivo com gravação atômica; falha de disco nunca lança) e HubRefresh.Resolve (uma leitura sem conteúdo nunca apaga o último estado conhecido, e os avisos da leitura que falhou são somados ao cache para a tela explicar). 8 testes novos (91 no total).",
+    "ALTERAÇÃO (CI): job 'apk' em hub-ci.yml — instala o workload Android, compila src/Hub.Android em Debug com AndroidSdkDirectory=$ANDROID_HOME, confere que o APK existe e o guarda como artefato 'hub-apk-debug' (7 dias). Só contents: read; não publica, não cria release, não usa chave de assinatura (empacotamento e release são a P3-7).",
+    "NÃO FEITO, de propósito: assinatura estável, release e instalação/atualização (P3-7 e Fase 4); persistência de token (repositório público, sem token); qualquer validação em aparelho (P3-8). P3-9 permanece [ ] no ROADMAP até a integração."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Hub.Tests (apps/hub)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "91/91 testes (SnapshotFile: grava/recarrega como Stale, substitui, arquivo ausente/quebrado, local não gravável sem exceção; HubRefresh: leitura com conteúdo vence e grava, leitura vazia não apaga o cache, sem nada mostra os avisos, avisos duplicados)."
+    },
+    {
+      "check": "Compilação do app Android (job apk do hub-ci)",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Não compilável no ambiente do agente (sem Android SDK). A prova é o job 'apk' do PR; se falhar, o PR volta ao agente com a causa."
+    }
+  ],
+  "known_issues": [
+    "Se o job 'apk' falhar no PR, o projeto Android precisará de correção a partir do log do CI (não foi possível compilar localmente).",
+    "O integrador testa o estado combinado com os workflows da main: o job 'apk' novo roda nas verificações do próprio PR (hub-ci.yml está no filtro de caminhos), e só passa a valer dentro do integrador depois que este PR entrar.",
+    "O APK de depuração usa a chave de depuração local do SDK, que muda de build para build: o Android recusa atualizar uma instalação feita com outra chave (desinstalar antes). Assinatura estável é da P3-7.",
+    "O texto da tela está em português fixo; sem internacionalização. Sem paginação nem token: o limite da API pública (~60/h) pode mostrar 'HTTP 403' nos avisos.",
+    "Nada validado em aparelho (NN-017): abrir o app no celular e entender o estado dos Products é o gate P3-8."
+  ],
+  "next_actions": [
+    "Integrador classifica como crítico (hub-ci.yml) e aguarda a label 'integrar' do proprietário, se o job 'apk' e os demais checks ficarem verdes.",
+    "Depois de integrado: P3-9 [x], handoff done; então P3-7 (empacotamento estável e release) e P3-1; o gate P3-8 precisa que o proprietário instale o APK e abra o Hub no celular."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/contracts/permissions.json",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A tela é projeção do HubSnapshot; o cache é projeção e volta Stale; nenhuma autoridade nova."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Código e fixtures do Hub não nomeiam outro Product; CHK-ARCH-REFS verde; o projeto Android não referencia o app Android do outro Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum Product depende do Hub; o Hub continua opcional."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Pipeline seletivo (hub-ci só roda em apps/hub); versão própria em apps/hub/VERSION."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Só a permissão INTERNET, que corresponde a network.access já declarada; nenhum token."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada marcado como validado em aparelho; a compilação ainda depende do CI; o gate P3-8 é humano."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhuma abstração compartilhada nova; tudo dentro de apps/hub."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "A tela diz quando é cache, quando não há dados e quando uma fonte falhou."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "hub-android-ui",
+      "status": "product-specific",
+      "rationale": "UI do Hub; o outro app Android do repositório tem outra tela e outras necessidades; sem segundo consumidor."
+    }
+  ]
+}

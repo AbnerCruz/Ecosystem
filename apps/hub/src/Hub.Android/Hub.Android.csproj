@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Camada de UI Android do Hub (DEC-0022-A, ADR-0013): só desenha o que o Hub.Core entrega (HubScreenBuilder) e guarda o
+    último estado em arquivo. Não faz parte de Hub.slnx de propósito: compilar exige o workload Android e o SDK, que só o CI tem
+    (job 'apk' de .github/workflows/hub-ci.yml). Mesmo padrão de projeto do app Android do outro Product, sem referência a ele.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+    <SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+    <AndroidApplication>true</AndroidApplication>
+    <ApplicationId>io.abnercruz.hub</ApplicationId>
+    <ApplicationTitle>Hub</ApplicationTitle>
+    <ApplicationDisplayVersion>$(HubVersion)</ApplicationDisplayVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' != ''">$(GITHUB_RUN_NUMBER)</ApplicationVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' == ''">1</ApplicationVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <AndroidUseAapt2>true</AndroidUseAapt2>
+    <!-- APK autônomo (sem fast deployment), para poder ser instalado a partir de um arquivo. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <!-- A serialização do cache usa reflexão; sem trimming. -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <AndroidLinkMode>None</AndroidLinkMode>
+    <!-- Avisos de anotação de nulidade dos bindings Android não devem quebrar o build. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hub.Core\Hub.Core.csproj" />
+  </ItemGroup>
+</Project>

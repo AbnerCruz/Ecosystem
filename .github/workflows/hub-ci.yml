@@ -40,3 +40,39 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Test (Hub.Core)
         run: dotnet test --project tests/Hub.Tests
+
+  # Compila o app Android do Hub (P3-9). Só compila: não publica, não cria release e não usa chave de assinatura
+  # (a build de depuração usa a chave de depuração local do SDK); empacotamento e release são a P3-7.
+  apk:
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/hub
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Android workload
+        run: dotnet workload install android
+      - name: Build APK
+        run: >
+          dotnet build src/Hub.Android/Hub.Android.csproj -c Debug
+          -p:AndroidSdkDirectory="$ANDROID_HOME"
+          -p:GITHUB_RUN_NUMBER=${{ github.run_number }}
+      - name: Collect APK
+        run: |
+          apk=$(find src/Hub.Android/bin -name '*.apk' | head -n1)
+          test -n "$apk" || { echo "APK não encontrado"; find src/Hub.Android/bin -type f | head -n 50; exit 1; }
+          mkdir -p dist
+          cp "$apk" dist/hub-debug.apk
+          ls -l dist/hub-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hub-apk-debug
+          path: apps/hub/dist/hub-debug.apk
+          if-no-files-found: error
+          retention-days: 7

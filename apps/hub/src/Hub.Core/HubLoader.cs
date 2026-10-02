@@ -125,3 +125,50 @@ public static class SnapshotCache
         catch (JsonException) { return null; }
     }
 }
+
+/// <summary>
+/// Guarda o último <see cref="HubSnapshot"/> em um arquivo local (no aparelho: a pasta de dados do app). A gravação é atômica —
+/// escreve num arquivo temporário e troca — para que uma queda no meio nunca deixe o cache pela metade.
+/// Falha de disco nunca lança: o Hub continua funcionando sem cache.
+/// </summary>
+public static class SnapshotFile
+{
+    /// <returns><c>true</c> se gravou.</returns>
+    public static bool Save(string path, HubSnapshot snapshot)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(Path.GetFullPath(path));
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            var tmp = path + ".tmp";
+            File.WriteAllText(tmp, SnapshotCache.Serialize(snapshot));
+            File.Move(tmp, path, overwrite: true);
+            return true;
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or NotSupportedException) { return false; }
+    }
+
+    /// <summary>Último estado gravado (marcado <c>Stale</c>), ou <c>null</c> se não existe, não pode ser lido ou está quebrado.</summary>
+    public static HubSnapshot? Load(string path)
+    {
+        try { return File.Exists(path) ? SnapshotCache.Load(File.ReadAllText(path)) : null; }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException or NotSupportedException) { return null; }
+    }
+}
+
+/// <summary>Política de atualização: uma leitura que não trouxe nada (ex.: sem rede) nunca apaga o último estado conhecido.</summary>
+public static class HubRefresh
+{
+    public static bool HasContent(HubSnapshot s) =>
+        s.Products.Count > 0 || s.Timeline.Past.Count > 0 || s.Timeline.Now.Count > 0 || s.Timeline.Next.Count > 0;
+
+    /// <returns>O que mostrar e se deve gravar no cache. Leitura com conteúdo vence e é gravada; sem conteúdo, mantém o cache
+    /// (ainda <c>Stale</c>) e acrescenta os avisos da leitura que falhou, para a tela explicar por quê; sem nada, mostra a leitura vazia com seus avisos.</returns>
+    public static (HubSnapshot Show, bool Save) Resolve(HubSnapshot live, HubSnapshot? cached)
+    {
+        if (HasContent(live)) return (live, true);
+        if (cached is null) return (live, false);
+        var notes = live.Timeline.Notes.Concat(cached.Timeline.Notes.Where(n => !live.Timeline.Notes.Contains(n))).ToList();
+        return (cached with { Timeline = cached.Timeline with { Notes = notes } }, false);
+    }
+}

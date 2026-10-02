@@ -189,3 +189,101 @@ public class HubLoaderTests
         Assert.Empty(EcosystemReader.VersionFiles("[]"));
     }
 }
+
+public class SnapshotFileTests : IDisposable
+{
+    readonly string _dir = Path.Combine(Path.GetTempPath(), "hub-snap-" + Guid.NewGuid().ToString("N"));
+
+    public void Dispose() { if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true); }
+
+    static HubSnapshot Sample() => new(
+        [new ProductSummary("alpha", Datum<string>.From("Alpha", "s"), Datum<string>.From("product", "s"), Datum<string>.From("active", "s"),
+            Datum<string>.From("1.0.0", "s"), Datum<string>.Missing("s"), Datum<string>.Missing("s"))],
+        new PastNowNext([], [], []), new Dictionary<string, Datum<IReadOnlyList<ReleaseInfo>>>(), Stale: false);
+
+    [Fact]
+    public void SavesAndLoadsBackAsStale()
+    {
+        var path = Path.Combine(_dir, "sub", "snapshot.json");   // a pasta ainda não existe: é criada
+        Assert.True(SnapshotFile.Save(path, Sample()));
+        var back = SnapshotFile.Load(path);
+        Assert.NotNull(back);
+        Assert.True(back!.Stale);
+        Assert.Equal("alpha", back.Products.Single().Id);
+        Assert.False(File.Exists(path + ".tmp"));                // nada temporário fica para trás
+    }
+
+    [Fact]
+    public void SavingAgainReplacesThePreviousState()
+    {
+        var path = Path.Combine(_dir, "snapshot.json");
+        SnapshotFile.Save(path, Sample());
+        SnapshotFile.Save(path, Sample() with { Products = [] });
+        Assert.Empty(SnapshotFile.Load(path)!.Products);
+    }
+
+    [Fact]
+    public void MissingOrBrokenFileMeansNoPreviousState()
+    {
+        var path = Path.Combine(_dir, "snapshot.json");
+        Assert.Null(SnapshotFile.Load(path));
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(path, "{ quebrado");
+        Assert.Null(SnapshotFile.Load(path));
+    }
+
+    [Fact]
+    public void AnUnwritableLocationNeverThrows()
+    {
+        Directory.CreateDirectory(_dir);
+        var blocker = Path.Combine(_dir, "arquivo");
+        File.WriteAllText(blocker, "x");                          // um arquivo onde deveria haver pasta
+        Assert.False(SnapshotFile.Save(Path.Combine(blocker, "snapshot.json"), Sample()));
+    }
+}
+
+public class HubRefreshTests
+{
+    static ProductSummary P(string id) => new(id, Datum<string>.From(id, "s"), Datum<string>.Missing("s"), Datum<string>.Missing("s"), Datum<string>.Missing("s"), Datum<string>.Missing("s"), Datum<string>.Missing("s"));
+
+    static HubSnapshot Snap(bool withContent, bool stale, params string[] notes) => new(
+        withContent ? [P("alpha")] : [], new PastNowNext([], [], [], notes),
+        new Dictionary<string, Datum<IReadOnlyList<ReleaseInfo>>>(), stale);
+
+    [Fact]
+    public void ALiveReadingWithContentWinsAndIsSaved()
+    {
+        var live = Snap(true, false);
+        var (show, save) = HubRefresh.Resolve(live, Snap(true, true));
+        Assert.Same(live, show);
+        Assert.True(save);
+    }
+
+    [Fact]
+    public void AnEmptyReadingNeverErasesTheLastKnownState()
+    {
+        var cached = Snap(true, true, "aviso antigo");
+        var (show, save) = HubRefresh.Resolve(Snap(false, false, "ecosystem.json indisponível — falha de rede"), cached);
+        Assert.False(save);                                                       // o cache não é sobrescrito por uma leitura vazia
+        Assert.True(show.Stale);
+        Assert.Equal("alpha", show.Products.Single().Id);
+        Assert.Equal(["ecosystem.json indisponível — falha de rede", "aviso antigo"], show.Timeline.Notes);   // a tela explica por quê
+    }
+
+    [Fact]
+    public void WithNothingAtAllTheEmptyReadingIsShownWithItsNotes()
+    {
+        var live = Snap(false, false, "sem rede");
+        var (show, save) = HubRefresh.Resolve(live, null);
+        Assert.Same(live, show);
+        Assert.False(save);
+        Assert.Equal("sem rede", HubScreenBuilder.Build(show).Sections.Single(s => s.Title == "Avisos").Lines.Single().Text);
+    }
+
+    [Fact]
+    public void DuplicateNotesAreNotRepeated()
+    {
+        var (show, _) = HubRefresh.Resolve(Snap(false, false, "mesmo aviso"), Snap(true, true, "mesmo aviso"));
+        Assert.Single(show.Timeline.Notes);
+    }
+}
