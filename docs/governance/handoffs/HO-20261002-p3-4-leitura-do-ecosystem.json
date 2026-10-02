@@ -1,0 +1,99 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01Cqs24pT9sHieyegVt62nFc"
+  },
+  "branch": "ccr-p3-4-leitura-ecosystem",
+  "base_commit": "5228816",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "hub",
+  "state": "review",
+  "message_id": "HO-20261002-p3-4-leitura-do-ecosystem",
+  "timestamp": "2026-10-02T10:32:34Z",
+  "task_id": "P3-4",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Código novo dentro de apps/hub (leitura de dados) e ROADMAP, no escopo previsto de P3-4. Não toca control plane, política, schemas, permissões, CHK-ARCH-REFS nem Products."
+  },
+  "files_changed": [
+    "apps/hub/src/Hub.Core/ProductSummary.cs",
+    "apps/hub/src/Hub.Core/EcosystemReader.cs",
+    "apps/hub/src/Hub.Core/ProductCache.cs",
+    "apps/hub/tests/Hub.Tests/EcosystemReaderTests.cs",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261002-p3-4-leitura-do-ecosystem.json"
+  ],
+  "work_completed": [
+    "FATO: P3-3 integrada (PR #43) e fechada (PR #46). A pendência registrada era que CHK-ARCH-REFS recusa nomes de outros Products em apps/hub. FATO observado no código do check: ele só procura os nomes/ids dos outros Products no texto de apps/hub e referências de código para fora do diretório; não recusa ler um arquivo do repositório por caminho.",
+    "DECISÃO LOCAL (detalhe de implementação, MANIFEST §22.4): o Hub descobre os Products nos dados de ecosystem.json em tempo de execução e nunca os nomeia no código nem nas fixtures (fixtures neutras). Por isso NÃO foi necessário alterar o boundary nem abrir ADR/DEC; CHK-ARCH-REFS permanece intacto. Se um dia o Hub precisar nomear um Product no código, aí sim exigiria ADR crítico.",
+    "ALTERAÇÃO (P3-4): EcosystemReader.ReadProducts lê os componentes type=product exceto o próprio Hub; cada campo (nome, tipo, status, versão, repositório, publicUrl) é um Datum com origem, NotAvailable quando falta; a versão vem do arquivo declarado em version.file (autoridade, NN-001) — texto simples ou campo version de JSON; fonte inválida, arquivo ausente/ilegível ou JSON quebrado nunca lançam exceção. ProductCache serializa/recarrega o último estado devolvendo tudo como Stale (offline). Nada é escrito de volta.",
+    "NÃO FEITO, de propósito: a tela (camada Android, P3-9); fonte remota do ecosystem.json (leitura do GitHub é P3-6); Past/Now/Next (P3-5). P3-4 permanece [ ] no ROADMAP até a integração."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Hub.Tests (apps/hub)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "17/17 testes, incluindo leitura do ecosystem.json real (todo Product com nome e versão derivados), campos ausentes, arquivo de versão ilegível/malformado, fonte inválida e cache quebrado."
+    }
+  ],
+  "known_issues": [
+    "O cache só serializa/recarrega; onde ele fica persistido (arquivo no aparelho) depende da camada Android (P3-9).",
+    "Mostrar os Products numa tela é P3-9; a gate P3-8 segue dependente de validação humana em aparelho (NN-017)."
+  ],
+  "next_actions": [
+    "Integrador avalia o PR; sendo rotina verde, entra sozinho.",
+    "Depois de integrada: P3-4 [x], handoff done; então P3-5."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A versão é lida do arquivo que é sua autoridade; o cache é projeção e volta como Stale."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Código e fixtures do Hub não nomeiam outro Product; CHK-ARCH-REFS verde sem alteração."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum Product referencia o Hub."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada marcado como validado em aparelho."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhuma abstração compartilhada nova; tudo dentro de apps/hub."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Todo dado tem origem e disponibilidade explícita; nada é inventado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "hub-ecosystem-reader",
+      "status": "product-specific",
+      "rationale": "Leitura de ecosystem.json para o Hub; os checks do repositório têm leitor próprio, sem segundo consumidor comum (ADR-0011)."
+    }
+  ]
+}
