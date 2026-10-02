@@ -39,7 +39,7 @@ const checks = [
   ['css shell externo', index.includes('./src/styles/shell.css')],
   ['versão derivada de UrbeCore (uma fonte: package.json)', index.includes('Urbe v'+PKG_VERSION) && app.includes('var V21_VERSION=window.UrbeCore.version;') && core.includes("version: '"+PKG_VERSION+"'")],
   ['ponte nativa antes do app', index.indexOf('./src/native/bridge.js') > 0 && index.indexOf('./src/native/bridge.js') < index.indexOf('./src/app.js')],
-  ['diagnóstico URBE', app.includes('window.URBE')],
+  ['diagnóstico do mundo legado só como serviço do core (sem window.URBE)', !app.includes('window.URBE') && app.includes("core.provide('diagnostics.world'")],
   ['bairros organizados', app.includes("core.provide('city.layout'") && app.includes("register('city.reorganize'") && read('src/ui/settings.js').includes('city.reorganize')],
   ['ponte de comandos', app.includes("workspace.navigate.world") && app.includes("document.create") && app.includes("workspace.save")],
   ['core contratos', core.includes('class EventBus') && core.includes('class CommandRegistry') && core.includes('class StateStore')],

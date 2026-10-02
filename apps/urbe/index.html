@@ -67,7 +67,6 @@
     <div class="sidebarTop">
       <strong style="flex:1">Explorador</strong>
       <button class="iconBtn importBtn" id="explorerImportFolderBtn" title="Importar do dispositivo" aria-label="Importar do dispositivo">⇩</button>
-      <button class="iconBtn" id="explorerImportFilesBtn" hidden aria-hidden="true">⇩</button>
       <button class="btn" id="closeSidebar">×</button>
     </div>
     <div id="explorerContext"><button id="explorerRootBtn" class="explorerCrumb">Raiz</button><span>›</span><strong id="explorerPath">/</strong></div>
@@ -75,7 +74,6 @@
     <div id="tree" role="tree" aria-label="Arquivos do vault"></div>
     <div class="explorerHoldHint">Toque abre · arraste move · segure para opções · duplo toque renomeia.</div>
     <!-- controles legados ficam invisíveis; o fluxo visível usa um único botão contextual -->
-    <div class="explorerFoot" hidden><button class="iconBtn" id="newFileBtn">Nota</button><button class="iconBtn" id="newFolderBtn">Pasta</button><button class="btn" id="explorerExportBtn">Exportar</button></div>
     <input id="vaultFolderIn" type="file" webkitdirectory directory multiple hidden>
     <input id="vaultFilesIn" type="file" multiple hidden>
   </aside>
@@ -158,22 +156,6 @@
 </div></div>
 <div id="wikiSuggest" role="listbox" aria-label="Sugestões de notas"></div>
 <!-- Vault dialog -->
-<div id="vaultDlg" style="position:absolute;inset:0;z-index:31;background:#0009;display:none;place-items:center;padding:16px">
-  <div class="dialogBox">
-    <h3>Vault</h3>
-    <p style="font-size:11px;color:#9db1bf;margin:0 0 10px">Cada pasta vira uma região, cada <code>.md</code> vira uma casa. Os <code>[[wiki-links]]</code> viram estradas.</p>
-    <label style="display:block">Importar .zip ou arquivos .md<input id="vaultIn" type="file" multiple accept=".md,.markdown,.txt,.zip"></label>
-    <div id="vaultMsg" style="font-size:11px;color:#9db1bf;margin:8px 0"></div>
-    <div class="row">
-      <button class="btn" id="vaultExport">Exportar vault .zip</button>
-      <button class="btn" id="vaultClose">Fechar</button>
-    </div>
-    <div class="row" style="margin-top:6px">
-      <button class="btn" id="cityExport">Salvar cidade .json</button>
-      <label class="btn" style="text-align:center">Abrir cidade .json<input id="cityIn" type="file" accept=".json" hidden></label>
-    </div>
-  </div>
-</div>
 <div id="menuCidades"><div class="caixa">
   <h1 id="menuTitulo">URBE</h1>
   <div class="sub">Suas notas em Markdown, desenhadas como cidade.<br>

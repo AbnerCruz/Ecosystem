@@ -673,7 +673,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G2
 
 ### RM-F2-04 — Remover resíduos de UI e gancho `window.URBE`
-- **Estado:** [ ]
+- **Estado:** [~]
 - **REQ:** REQ-030
 - **SPEC:** §3.3
 - **Fase:** F2
@@ -683,6 +683,7 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Testes:** Teste de UI sem referência; grep zero.
 - **Documentação:** LEGACY-MAP L10/L11.
 - **Aceite:** L10 e L11 removidos.
+- **Progresso (2026-10-02):** L11 feito (`window.URBE` fora; resta o serviço `diagnostics.world` para 3 E2E até RM-F2-12). L10 feito, exceto o minimapa legado `#mini`, que depende do laço de desenho (RM-F2-05/08). Teste: `tests/legacy-ui-residue.mjs`. `[~]` até o minimapa sair.
 - **Gate:** G2
 
 ### RM-F2-05 — Ligar renderer canônico (paridade visual)

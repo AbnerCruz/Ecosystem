@@ -65,7 +65,7 @@
 | REQ-029 | §3.3 | F2 | RM-F2-13 — Eliminar cadeia `estadoDesejado` e `abrirCidade` | [ ] | Fixtures; `check-debt` cai. | G2 |
 | REQ-029 | §3.3 | F2 | RM-F2-14 — Eliminar demais cadeias e duplicadas; `V21_VERSION` | [ ] | `check-debt` = 0 sobrescritas/duplicadas; testes verdes. | G2 |
 | REQ-029 | §3.3 | F2 | RM-F2-19 — `app.js` reduzido a composição/bootstrap | [ ] | Métrica: sem regra de domínio (revisão + lint de imports). | G2 |
-| REQ-030 | §3.3 | F2 | RM-F2-04 — Remover resíduos de UI e gancho `window.URBE` | [ ] | Teste de UI sem referência; grep zero. | G2 |
+| REQ-030 | §3.3 | F2 | RM-F2-04 — Remover resíduos de UI e gancho `window.URBE` | [~] | Teste de UI sem referência; grep zero. | G2 |
 | REQ-030 | §3.3 | F2 | RM-F2-12 — Mundo derivado só da projeção (L3, L4) | [ ] | Fixtures abrem com mesmo resultado; sem marcador de texto. | G2 |
 | REQ-030 | §3.3 | F2 | RM-F2-15 — Remover adapters `legacy.runtime` e `legacy.documents` | [ ] | Testes de produção por consumidor (não existiam). | G2 |
 | REQ-030 | §3.3 | F2 | RM-F2-16 — Extrair hosts `world.custom`, `city.layout`, `world.life.host`, `workspace.storage`; remover wrapper `document.open` | [ ] | Testes de contrato de `world.custom`; `world-life.mjs`, `customize.mjs`. | G2 |

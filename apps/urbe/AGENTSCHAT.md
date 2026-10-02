@@ -5,6 +5,14 @@
 
 ---
 
+### 2026-10-02 — Claude — RM-F2-04 `[~]` (L11 feito; L10 feito exceto o minimapa), U-R1 no monorepo Ecosystem
+- **Estado:** RM-F2-02 `[x]` (E2E no CI, PR #47). RM-F2-04 em andamento: `window.URBE` removido e resíduos de UI (L10) saíram, menos o minimapa legado `#mini` (depende do laço de desenho: RM-F2-05/08).
+- **Feito:** `app.js` −61 linhas (teto de dívida rebaixado); `index.html`/CSS sem rodapé do Explorador, botão de importar arquivos e diálogo antigo de Vault/cidade; serviço `diagnostics.world` no lugar do gancho global (3 E2E migrados); `tests/legacy-ui-residue.mjs` (grep zero); LEGACY-MAP L10/L11 atualizado.
+- **Achado:** o LEGACY-MAP dizia que `window.URBE` não tinha consumidor; tinha (`URBE.mundo` em 3 E2E). Corrigido no mapa.
+- **Mantido de propósito:** `vaultFolderIn`/`vaultFilesIn` (fallback de seleção de pasta/arquivos) e `fromGlyph` — são funcionais.
+- **Verificação:** `npm run check` (58 testes) e E2E `app-runtime zip smoke stable-ids layout identity lifecycle` (7/7) no Chromium real.
+- **Próximos passos:** RM-F2-09 (renderMarkdown para o editor, remove a exceção `pages/engine → app.js`); depois RM-F2-05/06/07/08.
+
 ### 2026-10-02 — Claude — RM-F2-01 `[x]` e RM-F2-02 `[?]` (U-R1, monorepo Ecosystem)
 - **Estado:** RM-F2-01 concluído (relatório + script + teste). RM-F2-02 implementado e verde localmente; `[?]` porque os E2E não rodam no CI (nenhum workflow instala o Chromium).
 - **Feito:** `tools/hotspots.mjs`, `docs/v2/discovery/HOTSPOTS.md` (métricas geradas + decisão por arquivo: nenhum dos 7 é extraído agora), `tests/hotspots.mjs`; `tests/e2e/app-runtime.mjs` (harness) e `app-runtime.e2e.mjs` (boot, fixture, criar nota, mundo, recarregar).

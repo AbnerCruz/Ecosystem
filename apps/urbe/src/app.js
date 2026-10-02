@@ -1394,24 +1394,6 @@ document.querySelectorAll(".mdBtn").forEach(btn=>btn.onclick=()=>{
   if(btn.dataset.wrap){insertAtCursor(btn.dataset.wrap,btn.dataset.wrap);return}
   insertAtCursor(btn.dataset.md||"")
 });
-document.getElementById("newFileBtn").onclick=()=>{
-  const sem=semente("novo"+Date.now()),dest=destinoCriacaoExplorer();
-  const r=dest?world.regions.find(x=>x.id===dest)||null:null;
-  const pos=r?vagaNaRegiao(r,sem,new Set()):vagaAleatoria(sem,3,3);
-  if(!pos){toast(r?"Sem lote 3x3 livre nesta pasta/região.":"Não encontrei lote livre próximo; mova a câmera e tente novamente.");return}
-  const b={id:id("b"),kind:"building",regionId:r?r.id:null,x:pos.x,y:pos.y,w:3,h:3,
-    name:"Novo arquivo",description:"",content:"# Novo arquivo\n\n",sprite:"house1",tipo:"nota",tags:[],created:nowDate(),modified:nowDate()};
-  world.buildings.push(b);explorerRegionTarget=r?r.id:null;marcarIndice();indexar();counts();scheduleRoadRebuild();agendarSalvar();
-  openFullEditor(b);fileSidebar.classList.remove("open");toast("Nova nota criada"+(r?" em "+r.name:" na raiz")+".");
-};
-document.getElementById("newFolderBtn").onclick=async()=>{
-  const nome=((await UD.prompt({title:"Nova pasta",label:"Nome da pasta",value:"Nova pasta",confirm:"Criar pasta"}))||"").trim();if(!nome)return;
-  const parentId=destinoCriacaoExplorer(),parent=parentId?world.regions.find(x=>x.id===parentId)||null:null;
-  const r=criarRegiaoOrganica(nome,1,semente(nome+Date.now()),parent?parent.id:null,null,"Pasta criada pelo Explorador.");
-  if(!r){toast(parent?"A pasta selecionada não tem área seca disponível para uma sub-região.":"Não encontrei terra seca para a nova região.");return}
-  explorerRegionTarget=r.id;marcarIndice();indexar();counts();buildTree();agendarSalvar();
-  toast("Pasta \""+nome+"\" criada"+(parent?" dentro de "+parent.name:"")+".");
-};
 document.getElementById("groupFilesBtn").onclick=agruparSelecionados;
 document.getElementById("moveFilesBtn").onclick=()=>escolherDestinoEMover([...explorerSelection]);
 document.getElementById("deleteFilesBtn").onclick=excluirSelecionados;
@@ -1677,7 +1659,6 @@ function baixarBlob(blob,nome){
 }
 
 /* ---------- importação/exportação pelo Explorador ---------- */
-const vaultDlg=document.getElementById("vaultDlg"),vaultMsg=document.getElementById("vaultMsg");
 function nomeRaizEntrada(files){
   for(const f of files){const rel=(f.webkitRelativePath||"").split("/").filter(Boolean);if(rel.length>1)return rel[0]}return "Vault";
 }
@@ -1698,26 +1679,8 @@ document.getElementById("explorerImportFolderBtn").onclick=async()=>{
   if(typeof window.showDirectoryPicker==="function"){try{const h=await window.showDirectoryPicker({mode:"read"});const itens=await listarHandlePasta(h);await importarArquivosUI(itens,true,h.name)}catch(e){if(e?.name!=="AbortError"){console.warn(e);toast("Não consegui abrir a pasta.")}}}
   else document.getElementById("vaultFolderIn").click();
 };
-document.getElementById("explorerImportFilesBtn").onclick=()=>document.getElementById("vaultFilesIn").click();
 document.getElementById("vaultFolderIn").onchange=async e=>{const fs=[...e.target.files],nome=nomeRaizEntrada(fs),prefixo=nome+"/";const entradas=fs.map(f=>({file:f,rel:(f.webkitRelativePath||f.name).startsWith(prefixo)?(f.webkitRelativePath||f.name).slice(prefixo.length):(f.webkitRelativePath||f.name)}));await importarArquivosUI(entradas,true,nome);e.target.value=""};
 document.getElementById("vaultFilesIn").onchange=async e=>{await importarArquivosUI([...e.target.files],false,"Arquivos");e.target.value=""};
-document.getElementById("explorerExportBtn").onclick=exportarVault;
-/* diálogo antigo fica apenas para compatibilidade da importação/exportação JSON */
-document.getElementById("vaultClose").onclick=()=>vaultDlg.style.display="none";
-document.getElementById("vaultExport").onclick=exportarVault;
-document.getElementById("vaultIn").onchange=async e=>{const fs=[...e.target.files];try{const itens=await lerEntrada(fs,{expandZip:fs.length===1&&/\.zip$/i.test(fs[0].name)});const r=importarItens(itens,await resolverDestinoImportacao("Vault",false));toast(`${r.notas} nota(s) · ${r.orfaos} arquivo(s)`) }catch(err){toast("Falhou ao importar: "+err.message)}e.target.value=""};
-document.getElementById("cityExport").onclick=()=>{
-  baixarBlob(new Blob([JSON.stringify(serializarCidade(),null,2)],{type:"application/json"}),"cidade.json");
-};
-document.getElementById("cityIn").onchange=async e=>{
-  try{
-    const d=JSON.parse(await e.target.files[0].text());
-    if(!aplicarCidade(d))throw new Error("arquivo n\u00e3o parece uma cidade");
-    buildTree();salvarCidade();toast("Cidade carregada.");vaultDlg.style.display="none";
-  }catch(err){vaultMsg.textContent="Falhou: "+err.message}
-  e.target.value="";
-};
-
 /* ---------- IA ---------- */
 
 
@@ -2333,9 +2296,6 @@ fileNameDisplay.onblur=()=>finalizarEdicaoNomeEditor(false);
 const _loadFileV19=loadFile;
 loadFile=function(b){if(!b.ext)b.ext='.md';_loadFileV19(b);fileNameDisplay.textContent=nomeCompletoNota(b);document.getElementById('documentWatermark').textContent=nomeCompletoNota(b)};
 
-/* Evita voltar a inserir "# Nome" automaticamente ao criar nota. */
-document.getElementById('newFileBtn').onclick=()=>criarNotaNoDestino(destinoCriacaoExplorer()||null);
-
 /* ---------- diálogo de região sem ghost-click ---------- */
 function protegerDialogRegiao(){
   dlg.classList.add('regionInputGuard');
@@ -2704,9 +2664,6 @@ const _buildTreeV20=buildTree;buildTree=function(){_buildTreeV20();for(const el 
 const _abrirEntradaTreeV20=abrirEntradaTree;abrirEntradaTree=function(e){if(v20EntrySelection.size){const k=v20EntryKey(e);v20EntrySelection.has(k)?v20EntrySelection.delete(k):v20EntrySelection.add(k);buildTree();return}_abrirEntradaTreeV20(e)};
 /* clicar no vazio apenas muda contexto para raiz; nunca abre painel */
 treeRoot.addEventListener('click',e=>{if(e.target===treeRoot||e.target.classList.contains('treeEmpty')){v20EntrySelection.clear();explorerRegionTarget=null;buildTree()}},true);
-
-/* botão legado de Vault/ZIP fica definitivamente fora da experiência */
-const vd=document.getElementById('vaultDlg');if(vd)vd.remove();
 
 /* ---------- PDF.js local no PWA ---------- */
 obterPdfJs=async function(){if(!pdfJsPromise)pdfJsPromise=import(PDFJS_URL).then(m=>{m.GlobalWorkerOptions.workerSrc=PDFJS_WORKER_URL;return m});return pdfJsPromise};
@@ -3944,27 +3901,9 @@ function v25Ciclo(){
 }
 (function(){var scheduler=window.UrbeCore&&window.UrbeCore.service('scheduler');if(scheduler)scheduler.add('aquarium.pedestrians',v25Ciclo,{interval:V25_FPS,whenVisible:true});else v25Relogio=setInterval(v25Ciclo,V25_FPS)})();
 
-/* Gancho de inspeção: tudo do app vive dentro de uma IIFE, o que torna
-   impossível testar de fora. Estes acessos são só de leitura e existem
-   para o harness de verificação — nenhum deles altera estado sozinho. */
-window.URBE=window.URBE||{};
-Object.defineProperties(window.URBE,{
-  povo:{get:function(){return v25Povo},configurable:true},
-  rotas:{get:function(){return v25Rotas},configurable:true},
-  mundo:{get:function(){return world},configurable:true},
-  fauna:{get:function(){return urbeFauna},configurable:true}
-
-});
-Object.assign(window.URBE,{
-  passo:function(dt){v25Passo(dt)},
-  olhar:function(x,y,z){camera.x=(x+.5)*TILE;camera.y=(y+.5)*TILE;if(z)camera.z=z;counts();pedirDesenho()},
-  camera:function(){return{x:camera.x/TILE,y:camera.y/TILE,z:camera.z}},
-  quadro:function(){drawGround();drawRegions();drawRoads();drawTrees();drawBuildings()},
-  naEstrada:function(t){return world.roads.has(K(t.x,t.y))},
-  diagnostico:function(){return {mapaVisivel:v25MapaVisivel(),ligado:v25Ligado,
-    editor:v23Aberto(editorFull),explorador:v23Aberto(fileSidebar),ia:v23Aberto(aiPanel),
-    menu:v23Aberto(menuEl),visibilidade:document.visibilityState,povo:v25Povo.length}}
-});
+/* Diagnóstico (RM-F2-04, L11): o antigo gancho global `URBE` (8 acessos, 7 sem consumidor) saiu. Resta só a leitura do mundo legado,
+   como serviço do core, para os E2E que ainda inspecionam o estado em memória; sai com RM-F2-12 (mundo derivado só da projeção). */
+(function(){var core=window.UrbeCore;if(core)core.provide('diagnostics.world',{legacy:function(){return world}})})();
 
 /* Mudou a geografia ou os links, as rotas guardadas não valem mais. */
 var v25BaseRebuild=rebuildRoadNetwork;

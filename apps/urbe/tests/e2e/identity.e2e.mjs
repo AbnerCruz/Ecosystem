@@ -18,7 +18,7 @@ const moveIdb = (page, moves) => page.evaluate(async (moves) => {
   db.close();
 }, moves);
 const ready = async (page, n) => { await page.waitForFunction((n) => window.UrbeCore && UrbeCore.state.select('ready') && UrbeCore.service('documents').list().length >= n, n, { timeout: 60000 }); await waitCityLoaded(page); };
-const house = (page, path) => page.evaluate((path) => { const d = UrbeCore.service('documents').get(path); const b = d && URBE.mundo.buildings.filter((x) => x.tipo === 'nota' && x.documentId === d.id); return d && { id: d.id, houses: b.length, x: b[0]?.x, y: b[0]?.y }; }, path);
+const house = (page, path) => page.evaluate((path) => { const d = UrbeCore.service('documents').get(path); const b = d && UrbeCore.service('diagnostics.world').legacy().buildings.filter((x) => x.tipo === 'nota' && x.documentId === d.id); return d && { id: d.id, houses: b.length, x: b[0]?.x, y: b[0]?.y }; }, path);
 
 const app = await launchApp();
 try {
