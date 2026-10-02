@@ -108,9 +108,9 @@ O workflow valida também o estado efetivo do Pages via API antes de publicar: `
 
 ```text
 site/
-├── index.html           estrutura estática, mobile-first
-├── app.js               busca data/ecosystem-status.json e renderiza (sem dependências)
-├── style.css            tema claro/escuro
+├── index.html           estrutura estática, mobile-first (casca da página, navegação, paleta de busca)
+├── app.js               busca data/ecosystem-status.json e renderiza; indicadores ao vivo (§8); sem dependências
+├── style.css            design system: tokens por papel, tema claro/escuro, páginas de validação
 ├── generator/           gerador C# da projeção (não publicado)
 └── data/                gerado no CI (não versionado)
 ```
@@ -131,3 +131,36 @@ python3 -m http.server -d site 8000   # qualquer servidor estático
 - **Lunet2D:** o GitHub Pages não executa o Lunet2D; o portal oferece estado, release, APK, checksum, release notes, roteiro de teste, documentação e validações pendentes. Nenhuma versão web falsa.
 - **Páginas de validação (P1-11, implementado):** `/testing/<componente>/<build>/`, geradas de registros canônicos de validação, com versão/build, objetivo, pré-condições, passos numerados, resultado esperado, problemas conhecidos, link para o artefato e tarefa/roadmap/commit/PR. Persistência de PASS/FAIL não é objetivo inicial. O gerador (`site/generator/GenerateStatus.cs`) escreve as páginas em `site/testing/` (não versionado, como `site/data/`) a partir de `docs/validation/**/*.json`; o estado de validação de cada componente na projeção é o do registro mais recente, e `CHK-PORTAL` recusa divergência.
 - **Hub (P3-x):** o portal passa a listar as releases do Hub para instalação e recuperação.
+
+## 8. Interface e indicadores ao vivo (P3-11)
+
+A interface segue o ADR-0005 (HTML/CSS/JS estáticos, sem build, sem dependências e sem fontes ou scripts de terceiros) e é organizada pela pergunta do proprietário, não pela estrutura do repositório:
+
+| Seção | Responde | Fonte |
+|-------|----------|-------|
+| Cabeçalho | "Algo precisa de mim?" — resumo em uma frase, checks, idade da projeção, estado dos dados ao vivo | projeção + §8.1 |
+| Precisa de você | decisões, mudanças críticas prontas e validações críticas, cada uma com o objeto (§3.1–§3.3); validações não críticas recolhidas em "Sem pressa" | projeção; mudanças críticas prontas lidas ao vivo (§8.1), com o instantâneo da projeção como reserva |
+| Indicadores | saúde do desenvolvimento em números | §8.1 + projeção |
+| Apps | versão, release, downloads (com tamanho), validação humana, espelho, fontes e SHA-256 copiável | projeção (+ espelho ao vivo, já existente) |
+| Atividade de integração | integrações por dia (rotina × crítico), fila atual, últimas integrações com o commit exato | §8.1 |
+| Roadmap | fases e gates; nome e progresso de cada fase quando a projeção trouxer `roadmap` | projeção |
+| Distribuição e recuperação, Documentação | canais, recuperação sem o Hub, candidatos a reutilização, fontes normativas | projeção |
+
+Busca e navegação: `Ctrl K` / `⌘K` (ou `/`) abre uma paleta que procura seções, ações de cada Product (abrir, baixar, roteiro de teste), pendências, PRs abertos, integrações recentes e documentos. O tema (automático, claro, escuro) é preferência local do visitante (`localStorage`), nunca estado do Ecosystem.
+
+### 8.1 Indicadores ao vivo
+
+Lidos **pelo navegador do visitante** da API pública do GitHub, sem token, somente leitura e nunca gravados (mesmo princípio do espelho de distribuição). Cache de 5 minutos por sessão (`sessionStorage`) para respeitar o limite da API pública (60 requisições/hora por IP). Falha de rede ou limite ⇒ o indicador mostra "não disponível" com o motivo; leitura incompleta do histórico ⇒ o número diz "parcial". Nada é inventado nem extrapolado.
+
+| Indicador | Definição | Origem |
+|-----------|-----------|--------|
+| Integradas sem você | integrações dos últimos 14 dias que entraram sozinhas ÷ todas as integrações do período. "Sozinha" = commit do integrador com `Integration-Criticality: routine`; "com você" = `Integration-Criticality: critical` (autorizada) ou merge pelo botão do GitHub | commits da branch padrão |
+| Do PR à main | mediana (e p90) de `merged_at − created_at` dos PRs integrados nos últimos 14 dias | PRs fechados |
+| Fila agora | PRs abertos elegíveis para a fila, pelas mesmas regras do integrador (rascunho, fork e Dependabot ficam fora e são contados à parte): esperando você (`critico` + `pronto-para-integrar`), devolvidos ao autor (`precisa-reconciliar`), em teste ou na fila | PRs abertos e suas labels |
+| CI da main | execuções concluídas com sucesso ÷ (sucesso + falha) entre as últimas execuções do GitHub Actions na branch padrão | execuções do Actions |
+| Gates aprovados, Products ativos | contagens da projeção | projeção |
+
+As cores de dados usam uma paleta categórica validada para daltonismo nos dois temas (rotina = azul, crítico = laranja); cores de status (bom, atenção, crítico) são reservadas e sempre acompanhadas de ícone e rótulo. Todo gráfico tem legenda, detalhe ao passar o mouse ou focar pelo teclado e uma visão em tabela.
+
+Estes indicadores são do **desenvolvimento** (portal humano de desenvolvimento, ADD-0001); não reproduzem o Past / Now / Next nem o control plane do Hub (§1).
+

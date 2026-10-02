@@ -3,79 +3,189 @@
 <head>
   <!-- pages-entrypoint: site/index.html; published artifact root -->
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Ecosystem — Portal</title>
   <meta name="description" content="Portal humano de desenvolvimento, distribuição, documentação, testes e recuperação do Ecosystem.">
+  <meta name="theme-color" content="#f6f6f3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0c0c0b" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232a78d6'/%3E%3Ccircle cx='11' cy='12' r='4' fill='%23fff'/%3E%3Ccircle cx='22' cy='11' r='3' fill='%23fff' fill-opacity='.75'/%3E%3Ccircle cx='17' cy='22' r='4.5' fill='%23fff' fill-opacity='.9'/%3E%3C/svg%3E">
+  <script>
+    // Tema escolhido pelo visitante (conveniência local; nada de estado do Ecosystem). Antes do CSS, para não piscar.
+    try { var t = localStorage.getItem("eco-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
-<body>
-  <header class="top">
-    <h1>Ecosystem</h1>
-    <p class="meta" id="meta">Carregando projeção…</p>
+<body class="app">
+  <a class="skip" href="#main">Pular para o conteúdo</a>
+
+  <header class="bar">
+    <div class="bar-in">
+      <a class="brand" href="#top" aria-label="Ecosystem — início">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3987e5"/><stop offset="1" stop-color="#1c5cab"/></linearGradient></defs>
+          <rect width="32" height="32" rx="9" fill="url(#bg)"/>
+          <path d="M11 12 22 11M11 12l6 10M22 11l-5 11" stroke="#fff" stroke-opacity=".45" stroke-width="1.5"/>
+          <circle cx="11" cy="12" r="4" fill="#fff"/><circle cx="22" cy="11" r="3" fill="#fff" fill-opacity=".8"/><circle cx="17" cy="22" r="4.5" fill="#fff" fill-opacity=".92"/>
+        </svg>
+        <span>Ecosystem</span>
+      </a>
+      <nav class="tabs" aria-label="Seções" data-nav>
+        <a href="#inbox">Precisa de você</a>
+        <a href="#apps">Apps</a>
+        <a href="#activity">Atividade</a>
+        <a href="#roadmap">Roadmap</a>
+        <a href="#distribution">Distribuição</a>
+        <a href="#docs">Documentação</a>
+      </nav>
+      <div class="bar-actions">
+        <button class="search-btn" id="open-palette" type="button" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <span>Buscar ou ir para…</span><kbd id="kbd-hint">Ctrl K</kbd>
+        </button>
+        <button class="icon-btn" id="theme" type="button" aria-label="Tema: automático">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 0 0 18Z" fill="currentColor"/></svg>
+        </button>
+      </div>
+    </div>
+    <nav class="subnav" aria-label="Seções" data-nav>
+      <a href="#inbox">Precisa de você</a>
+      <a href="#apps">Apps</a>
+      <a href="#activity">Atividade</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="#distribution">Distribuição</a>
+      <a href="#docs">Docs</a>
+    </nav>
   </header>
 
-  <main>
-    <section aria-labelledby="h-decisions">
-      <h2 id="h-decisions">Precisa de você · decisões</h2>
-      <p class="hint">Só chega aqui o que é crítico (ADD-0012): uma direção nova a escolher. Cada decisão mostra o <strong>objeto</strong> a revisar.</p>
-      <div id="decisions" class="cards"></div>
-    </section>
+  <main id="main">
+    <div class="wrap">
+      <section class="hero" id="top" aria-labelledby="hero-title">
+        <p class="eyebrow">Portal do Ecosystem</p>
+        <h1 id="hero-title">Carregando o estado do Ecosystem…</h1>
+        <p class="lede" id="hero-lede">Lendo a projeção gerada a partir das fontes canônicas do repositório.</p>
+        <div class="hero-meta" id="hero-meta"></div>
+      </section>
 
-    <section aria-labelledby="h-approvals">
-      <h2 id="h-approvals">Precisa de você · mudanças críticas prontas</h2>
-      <p class="hint">Mudanças críticas já testadas no estado combinado com a <code>main</code>. O PR explica a consequência; para autorizar, você mesmo põe a label <code>integrar</code>. Trabalho rotineiro nunca aparece aqui: entra sozinho.</p>
-      <ul id="approvals" class="list"></ul>
-    </section>
+      <section class="section" id="inbox" aria-labelledby="h-inbox">
+        <div class="section-head">
+          <div>
+            <h2 id="h-inbox">Precisa de você</h2>
+            <p>Só chega aqui o que é crítico: uma direção nova a escolher, uma mudança crítica pronta para a sua autorização ou uma validação que só você pode fazer. Rotina entra sozinha.</p>
+          </div>
+        </div>
+        <div id="inbox-body"></div>
+      </section>
 
-    <section aria-labelledby="h-validations">
-      <h2 id="h-validations">Precisa de você · validações críticas</h2>
-      <p class="hint">Validações que só uma pessoa pode fazer e que importam agora (gate de fase, instalação/atualização, dados, segurança, release), com o objeto a validar.</p>
-      <ul id="validations" class="list"></ul>
-    </section>
+      <section class="section" id="pulse" aria-labelledby="h-pulse">
+        <div class="section-head">
+          <div>
+            <h2 id="h-pulse">Indicadores</h2>
+            <p>Saúde do desenvolvimento, derivada do repositório e da API pública do GitHub — nunca digitada.</p>
+          </div>
+          <span class="live-note" id="live-note"></span>
+        </div>
+        <div class="kpis" id="kpis"></div>
+      </section>
 
-    <section aria-labelledby="h-later">
-      <h2 id="h-later">Sem pressa · validações não críticas</h2>
-      <p class="hint">Continuam pendentes e visíveis (CI verde não substitui a validação humana), mas não bloqueiam nada nem interrompem você.</p>
-      <ul id="validations-later" class="list"></ul>
-    </section>
+      <section class="section" id="apps" aria-labelledby="h-apps">
+        <div class="section-head">
+          <div>
+            <h2 id="h-apps">Apps</h2>
+            <p>Versão, release, downloads e validação de cada Product. CI verde é verificação automática; validação no aparelho é outra coisa.</p>
+          </div>
+        </div>
+        <div class="apps" id="apps-grid"></div>
+      </section>
 
-    <aside class="notice" role="note">
-      <strong>Portal, não Hub.</strong>
-      Esta página é uma <em>projeção</em> gerada a partir das fontes canônicas do repositório — nunca é fonte de verdade.
-      Campos marcados <span class="na">não disponível</span> ainda não possuem fonte automática.
-      CI verde é verificação automática; não significa validação no aparelho.
-    </aside>
+      <section class="section" id="activity" aria-labelledby="h-activity">
+        <div class="section-head">
+          <div>
+            <h2 id="h-activity">Atividade de integração</h2>
+            <p>O que entrou na <code>main</code> e como: sozinho (rotina, pelo integrador) ou com você (crítico). Lido ao vivo da API pública do GitHub.</p>
+          </div>
+        </div>
+        <div class="grid cols-2">
+          <article class="card chart-card" aria-labelledby="h-chart">
+            <div class="card-head">
+              <div><h3 id="h-chart">Integrações por dia</h3><p class="card-sub" id="chart-sub">Últimos 14 dias</p></div>
+              <div class="legend" id="chart-legend"></div>
+            </div>
+            <div class="chart" id="chart"></div>
+            <details class="table-toggle"><summary>Ver como tabela</summary><div id="chart-table"></div></details>
+          </article>
+          <article class="card" aria-labelledby="h-queue">
+            <div class="card-head">
+              <div><h3 id="h-queue">Fila de integração</h3><p class="card-sub">PRs abertos e o que cada um espera</p></div>
+            </div>
+            <ul class="feed" id="queue"></ul>
+          </article>
+        </div>
+        <article class="card" style="margin-top:14px" aria-labelledby="h-recent">
+          <div class="card-head">
+            <div><h3 id="h-recent">Últimas integrações</h3><p class="card-sub">Commit exato testado no estado combinado com a <code>main</code></p></div>
+          </div>
+          <ul class="feed" id="recent"></ul>
+        </article>
+      </section>
 
-    <section aria-labelledby="h-apps">
-      <h2 id="h-apps">Apps</h2>
-      <div id="apps" class="cards"></div>
-    </section>
+      <section class="section" id="roadmap" aria-labelledby="h-roadmap">
+        <div class="section-head">
+          <div>
+            <h2 id="h-roadmap">Roadmap</h2>
+            <p id="roadmap-sub">Fases e gates, derivados do ROADMAP (a autoridade).</p>
+          </div>
+          <a class="btn sm" id="roadmap-link" href="#">Abrir o ROADMAP <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a>
+        </div>
+        <ol class="phases" id="phases"></ol>
+      </section>
 
-    <section aria-labelledby="h-distribution">
-      <h2 id="h-distribution">Distribuição atual dos Products</h2>
-      <p class="hint" id="distribution-hint"></p>
-      <ul id="distribution" class="list"></ul>
-    </section>
+      <section class="section" id="distribution" aria-labelledby="h-distribution">
+        <div class="section-head">
+          <div>
+            <h2 id="h-distribution">Distribuição e recuperação</h2>
+            <p id="distribution-hint">Se o Hub estiver ausente ou quebrado, os produtos e seus artefatos continuam acessíveis por aqui.</p>
+          </div>
+        </div>
+        <div class="grid cols-2">
+          <article class="card" aria-labelledby="h-channels"><div class="card-head"><h3 id="h-channels">Canais de distribuição</h3></div><div class="rows" id="channels" style="margin-top:12px"></div></article>
+          <article class="card" aria-labelledby="h-recovery"><div class="card-head"><h3 id="h-recovery">Recuperação</h3></div><div class="rows" id="recovery" style="margin-top:12px"></div></article>
+        </div>
+        <article class="card" style="margin-top:14px" aria-labelledby="h-reuse">
+          <div class="card-head"><div><h3 id="h-reuse">Candidatos a reutilização</h3><p class="card-sub">Funcionalidades locais com potencial fora do Product. Continuam locais até uma Extraction Review concluir o contrário.</p></div></div>
+          <div class="rows" id="reuse" style="margin-top:12px"></div>
+        </article>
+      </section>
 
-    <section aria-labelledby="h-reuse">
-      <h2 id="h-reuse">Candidatos a reutilização</h2>
-      <p class="hint">Funcionalidades locais registradas pelos agentes com potencial fora do Product (ADR-0011). Continuam locais até uma Extraction Review concluir o contrário.</p>
-      <ul id="reuse" class="list"></ul>
-    </section>
-
-    <section aria-labelledby="h-recovery">
-      <h2 id="h-recovery">Recuperação</h2>
-      <p class="hint">Se o Hub estiver ausente ou quebrado, os produtos e seus artefatos continuam acessíveis por aqui.</p>
-      <ul id="recovery" class="list"></ul>
-    </section>
-
-    <section aria-labelledby="h-docs">
-      <h2 id="h-docs">Documentação</h2>
-      <ul id="docs" class="list links"></ul>
-    </section>
+      <section class="section" id="docs" aria-labelledby="h-docs">
+        <div class="section-head">
+          <div>
+            <h2 id="h-docs">Documentação</h2>
+            <p>As fontes normativas. Este portal é uma projeção: em caso de dúvida, vale o documento.</p>
+          </div>
+        </div>
+        <div class="docs" id="docs-grid"></div>
+        <div class="callout" style="margin-top:14px" role="note">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <p><strong>Portal, não Hub.</strong> Esta página é uma <em>projeção</em> gerada das fontes canônicas do repositório e nunca é fonte de verdade. Onde aparece <span class="na">não disponível</span>, ainda não há fonte automática — nada é inventado.</p>
+        </div>
+      </section>
+    </div>
   </main>
 
-  <footer id="footer" class="meta"></footer>
+  <footer class="foot"><div class="wrap" id="footer"></div></footer>
+
+  <dialog class="palette" id="palette" aria-label="Buscar ou ir para">
+    <div class="pal-in">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="pal-q" type="search" placeholder="Buscar apps, downloads, documentos, PRs…" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="pal-list" aria-autocomplete="list">
+      <kbd>Esc</kbd>
+    </div>
+    <ul class="pal-list" id="pal-list" role="listbox" aria-label="Resultados"></ul>
+    <div class="pal-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> navegar</span><span><kbd>Enter</kbd> abrir</span><span><kbd>Esc</kbd> fechar</span></div>
+  </dialog>
+
+  <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
