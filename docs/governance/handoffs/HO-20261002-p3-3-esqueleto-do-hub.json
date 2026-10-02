@@ -70,11 +70,11 @@
       "evidence": "26/26 cenários, incluindo os 3 do Hub (hub-ci vermelho bloqueia, verde integra)."
     },
     {
-      "check": "Integração do PR #43 e checks na main",
+      "check": "Checks na main após a integração do PR #43 (merge 923268d)",
       "kind": "automated",
       "result": "passed",
-      "tested_commit": "aae9d7a741ae65180c78bcee30aabba83f282b9f",
-      "evidence": "Estado combinado aae9d7a: consistency=success, confiável(main)=success (comentário do integrador no PR #43). Após o merge, em 923268d: hub-ci run 36970054489, consistency run 36970054364 e pages run 36970054314 = success. Limite: o job do Hub no integrador só passou a existir com este merge; no estado combinado a prova do hub-ci vem do CI do próprio PR e dos cenários de simulate.sh."
+      "tested_commit": "923268dc75f648405d9725920ea83a9c9322adaa",
+      "evidence": "Na main, em 923268d: hub-ci run 36970054489, consistency run 36970054364 e pages run 36970054314 = success. Antes do merge, o integrador testou o estado combinado aae9d7a (main 5c2bc76 + head 4a9d95c) com consistency e checker confiável verdes; esse commit existia só na ref de integração (removida após o merge) e por isso não é usado como tested_commit. Limite: o job do Hub no integrador só passou a existir com este merge; no estado combinado a prova do hub-ci vem do CI do próprio PR e dos cenários de simulate.sh."
     }
   ],
   "known_issues": [
