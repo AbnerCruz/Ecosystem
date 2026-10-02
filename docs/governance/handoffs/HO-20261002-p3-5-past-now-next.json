@@ -10,13 +10,13 @@
   "branch": "ccr-p3-5-past-now-next",
   "base_commit": "490421c",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/52",
   "blockers": [],
   "cost": null,
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261002-p3-5-past-now-next",
-  "timestamp": "2026-10-02T10:57:10Z",
+  "timestamp": "2026-10-02T11:12:17Z",
   "task_id": "P3-5",
   "criticality": {
     "declared": "routine",
@@ -33,7 +33,8 @@
     "FATO: P3-3 e P3-4 integradas e fechadas (PRs #43, #46, #48, #49). O MANIFEST §18 define Past/Now/Next e exige que o Hub não fabrique o Next, mas o derive das fontes de verdade.",
     "ALTERAÇÃO (P3-5): RoadmapReader lê os itens do ROADMAP ([x] concluído, [~] aguardando validação, [ ] aberto), o 'Depende de:' (inclusive faixas como P3-4..P3-6; DEC-xxxx e texto livre são ignorados) e o estado dos gates (padrão 'não iniciado'). TimelineBuilder deriva: PAST = itens [x], gates aprovados, decisões decididas, handoffs done; NOW = itens [~], gates aguardando, decisões pendentes (bloqueantes marcadas), handoffs em andamento/revisão/bloqueados e validações humanas pendentes; NEXT = só itens [ ] do ROADMAP (marcados 'pronta' ou 'depende de …') e gates de fases que já têm itens — fases futuras sem itens não geram Next. Toda entrada carrega sua fonte. Fontes quebradas viram resultado vazio, nunca exceção.",
     "ACHADO CORRIGIDO NO CAMINHO: o primeiro regex de 'Depende de:' parava no primeiro ponto e perdia as faixas 'P3-4..P3-6' que o ROADMAP real usa; o teste de fixture e a asserção sobre o ROADMAP real (P3-7 depende de P3-5) o pegaram antes do commit.",
-    "NÃO FEITO, de propósito: Issues, PRs, branches e CI (exigem a leitura do GitHub, P3-6); a tela (P3-9). A parte 'Now' do ROADMAP descreve Issues com state: — isso fica para P3-6. P3-5 permanece [ ] no ROADMAP até a integração."
+    "NÃO FEITO, de propósito: Issues, PRs, branches e CI (exigem a leitura do GitHub, P3-6); a tela (P3-9). A parte 'Now' do ROADMAP descreve Issues com state: — isso fica para P3-6. P3-5 permanece [ ] no ROADMAP até a integração.",
+    "INTEGRAÇÃO (FATO, conferido no GitHub e no git): o PR #52 (head 464ce96) foi integrado na main pelo integrador automático no commit e495cc45525a188263f016d9f7367bf3faeff3a8, com trailers Integration-Criticality: routine, Integration-Main: 21d48f5 e Integration-PR-Head: 464ce96, em 2026-10-02, sem label nem toque do proprietário. No head 464ce96: hub-ci (run 36998665118, job test) e os dois Foundation consistency checks (runs 36998665070 e 36998646646) = success."
   ],
   "verification": [
     {
@@ -41,6 +42,13 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "29/29 testes, incluindo derivação sobre o ROADMAP, decisions.json e handoffs reais do repositório (Next só contém itens/gates declarados no ROADMAP, todos com fonte ROADMAP.md), fixtures neutras, dependências com faixas e fontes quebradas."
+    },
+    {
+      "check": "Checks do PR #52 no head integrado",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "464ce96e92a885abe4d548a93a1f6cbbc44fa149",
+      "evidence": "hub-ci run 36998665118 (job test) e Foundation consistency checks runs 36998665070 e 36998646646 = success no head 464ce96; integração automática como rotina em e495cc4. Limite: os checks pós-merge da main em e495cc4 não foram conferidos aqui."
     }
   ],
   "known_issues": [
@@ -49,8 +57,8 @@
     "Nada validado em aparelho (NN-017); gate P3-8 pendente."
   ],
   "next_actions": [
-    "Integrador avalia o PR; sendo rotina verde, entra sozinho.",
-    "Depois de integrada: P3-5 [x], handoff done; então P3-6."
+    "Agente: P3-6 (leitura do GitHub: CI, releases, branches, PRs, Issues), em tarefa própria; inclui permissão network.access já declarada.",
+    "Gate da Fase 3 (P3-8) segue pendente de validação humana em aparelho (NN-017)."
   ],
   "decisions_required": [],
   "normative_sources": [
