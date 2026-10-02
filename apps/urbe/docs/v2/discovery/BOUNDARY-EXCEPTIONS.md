@@ -9,7 +9,6 @@
 | `src/ui/touch-debug.js` | `src/app.js` | usa `legacy.runtime` (versão) | RM-F2-15 |
 | `src/explorer/mobile-ui.js` | `src/app.js` | consome `legacy.runtime` e `workspace.storage` (importar/exportar ZIP) | RM-F2-15, RM-F2-16 |
 | `src/ai/tools.js` | `src/ui/quick-open.js` | ferramenta de busca usa o serviço `quickOpen` | RM-F5-04 |
-| `src/pages/engine.js` | `src/app.js` | usa serviço provido por `app.js` (renderização de Markdown) | RM-F2-09 |
 | `src/customize/customize.js` | `src/app.js` | `world.custom` (`app.js:5192`) | RM-F2-16 |
 | `src/customize/plugins.js` | `src/app.js` | `legacy.runtime`, `world.custom` | RM-F2-15, RM-F2-16 |
 | `src/tutorial/tutorial.js` | `src/app.js` | `legacy.runtime.ensureFolders` | RM-F2-15 |

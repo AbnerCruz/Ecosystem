@@ -29,6 +29,18 @@ try {
   assert.equal((await a.notes())['Harness/Nota nova.md']?.id, id, 'mesmo id após recarregar');
   a.expectNoErrors();
 
+  // 3b) preview do editor no app real: o pipeline de Markdown (src/editor/markdown.js) desenha tabela, callout, wikilink e sanitiza links
+  await a.createNote('Harness/Preview.md', '# Preview\n\n| a | b |\n|:--|--:|\n| 1 | 2 |\n\n> [!tip] Dica\n> corpo\n\n[[Nota nova]] e [x](javascript:alert(1)) e [ok](https://exemplo.com)\n');
+  await a.page.evaluate(() => document.getElementById('viewModeBtn').click());
+  await a.page.waitForFunction(() => document.getElementById('renderedPreview').querySelector('table'), null, { timeout: 15000 });
+  const html = await a.page.evaluate(() => document.getElementById('renderedPreview').innerHTML);
+  assert.match(html, /<table data-md-table="1" data-align="left,right">/, 'tabela no preview');
+  assert.match(html, /data-callout="tip"/, 'callout no preview');
+  assert.match(html, /class="wikilink" data-note-name="Nota nova"/, 'wikilink no preview');
+  assert.doesNotMatch(html, /href="javascript:/i, 'link javascript: sanitizado no preview');
+  assert.match(html, /href="https:\/\/exemplo\.com"/, 'link https preservado');
+  a.expectNoErrors();
+
   // 4) vault semeado (S): escala maior abre sem erro
   const seed = makeVault('S');
   const s = await rt.open({ seed });
