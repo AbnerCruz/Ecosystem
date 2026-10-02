@@ -1,0 +1,94 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01Cqs24pT9sHieyegVt62nFc"
+  },
+  "branch": "ccr-p3-5-past-now-next",
+  "base_commit": "490421c",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "hub",
+  "state": "review",
+  "message_id": "HO-20261002-p3-5-past-now-next",
+  "timestamp": "2026-10-02T10:57:10Z",
+  "task_id": "P3-5",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Código novo dentro de apps/hub (derivação somente leitura) e ROADMAP, no escopo previsto de P3-5. Não toca control plane, política, schemas, permissões, checks nem Products."
+  },
+  "files_changed": [
+    "apps/hub/src/Hub.Core/RoadmapReader.cs",
+    "apps/hub/src/Hub.Core/Timeline.cs",
+    "apps/hub/tests/Hub.Tests/TimelineTests.cs",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261002-p3-5-past-now-next.json"
+  ],
+  "work_completed": [
+    "FATO: P3-3 e P3-4 integradas e fechadas (PRs #43, #46, #48, #49). O MANIFEST §18 define Past/Now/Next e exige que o Hub não fabrique o Next, mas o derive das fontes de verdade.",
+    "ALTERAÇÃO (P3-5): RoadmapReader lê os itens do ROADMAP ([x] concluído, [~] aguardando validação, [ ] aberto), o 'Depende de:' (inclusive faixas como P3-4..P3-6; DEC-xxxx e texto livre são ignorados) e o estado dos gates (padrão 'não iniciado'). TimelineBuilder deriva: PAST = itens [x], gates aprovados, decisões decididas, handoffs done; NOW = itens [~], gates aguardando, decisões pendentes (bloqueantes marcadas), handoffs em andamento/revisão/bloqueados e validações humanas pendentes; NEXT = só itens [ ] do ROADMAP (marcados 'pronta' ou 'depende de …') e gates de fases que já têm itens — fases futuras sem itens não geram Next. Toda entrada carrega sua fonte. Fontes quebradas viram resultado vazio, nunca exceção.",
+    "ACHADO CORRIGIDO NO CAMINHO: o primeiro regex de 'Depende de:' parava no primeiro ponto e perdia as faixas 'P3-4..P3-6' que o ROADMAP real usa; o teste de fixture e a asserção sobre o ROADMAP real (P3-7 depende de P3-5) o pegaram antes do commit.",
+    "NÃO FEITO, de propósito: Issues, PRs, branches e CI (exigem a leitura do GitHub, P3-6); a tela (P3-9). A parte 'Now' do ROADMAP descreve Issues com state: — isso fica para P3-6. P3-5 permanece [ ] no ROADMAP até a integração."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project tests/Hub.Tests (apps/hub)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "29/29 testes, incluindo derivação sobre o ROADMAP, decisions.json e handoffs reais do repositório (Next só contém itens/gates declarados no ROADMAP, todos com fonte ROADMAP.md), fixtures neutras, dependências com faixas e fontes quebradas."
+    }
+  ],
+  "known_issues": [
+    "O Now ainda não inclui Issues com state:, PRs, branches e CI: dependem da leitura do GitHub (P3-6).",
+    "A regra 'pronta' considera só tarefas P*-* concluídas ([x]); dependências de decisão (DEC-xxxx) são ignoradas, então 'pronta' não garante que uma decisão pendente já foi tomada.",
+    "Nada validado em aparelho (NN-017); gate P3-8 pendente."
+  ],
+  "next_actions": [
+    "Integrador avalia o PR; sendo rotina verde, entra sozinho.",
+    "Depois de integrada: P3-5 [x], handoff done; então P3-6."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Past/Now/Next são projeção derivada; ROADMAP, decisions.json e handoffs continuam as autoridades."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Código e fixtures do Hub não nomeiam outro Product; CHK-ARCH-REFS verde sem alteração."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nada marcado como validado em aparelho."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhuma abstração compartilhada nova; tudo dentro de apps/hub."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Cada entrada tem a fonte; o Next não é fabricado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "hub-roadmap-timeline",
+      "status": "possible-candidate",
+      "rationale": "O portal (site/generator) e CHK-ROADMAP/CHK-STATE-CONSISTENCY já leem o ROADMAP com parsers próprios. Hoje cada consumidor tem o seu e não há contrato comum; um segundo consumidor real do mesmo parser dispararia Extraction Review (ADR-0011), nunca extração automática."
+    }
+  ]
+}
