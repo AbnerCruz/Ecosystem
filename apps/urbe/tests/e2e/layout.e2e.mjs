@@ -7,7 +7,7 @@ import { launchApp, openApp, readVault, waitSaved, waitCityLoaded } from '../../
 
 const FIX = new URL('../fixtures/vaults/', import.meta.url).pathname;
 function fixture(name) { const out = new Map(); (function walk(d, pre) { for (const e of readdirSync(d, { withFileTypes: true })) { if (e.isDirectory()) walk(join(d, e.name), pre + e.name + '/'); else if (e.name !== 'expect.json') { const rel = pre + e.name, buf = readFileSync(join(d, e.name)); out.set(rel, /\.(md|json)$/.test(rel) ? buf.toString('utf8') : new Uint8Array(buf)); } } })(join(FIX, name), ''); return out; }
-const pos = (page, path) => page.evaluate((path) => { const d = UrbeCore.service('documents').get(path), b = URBE.mundo.buildings.find((x) => x.tipo === 'nota' && x.documentId === d.id); return [b.x, b.y]; }, path);
+const pos = (page, path) => page.evaluate((path) => { const d = UrbeCore.service('documents').get(path), b = UrbeCore.service('diagnostics.world').legacy().buildings.find((x) => x.tipo === 'nota' && x.documentId === d.id); return [b.x, b.y]; }, path);
 const save = async (page) => { await page.evaluate(() => UrbeCore.commands.execute('workspace.save')); await waitSaved(page); return readVault(page); };
 const layoutBackups = (vault) => Object.keys(vault).filter((k) => /^\.urbe\/backup\/[^/]+-layout-layout[^/]*\/manifest\.json$/.test(k)).map((k) => JSON.parse(vault[k]));
 

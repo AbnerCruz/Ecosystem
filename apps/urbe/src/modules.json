@@ -1431,11 +1431,10 @@
       "layer": "app",
       "phase": "app",
       "provides": {
-        "globals": [
-          "URBE"
-        ],
+        "globals": [],
         "services": [
           "city.layout",
+          "diagnostics.world",
           "legacy.documents",
           "legacy.runtime",
           "workspace.storage",

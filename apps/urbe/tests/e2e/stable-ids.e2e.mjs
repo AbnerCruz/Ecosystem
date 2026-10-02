@@ -33,7 +33,7 @@ try {
   assert.equal(mapa.construcoes.find((c) => c.name === 'logo.png')?.id, ast.id, 'ID do asset estável após recarregar');
 
   // renomear a pasta no app: caminho muda, ID fica
-  await page.evaluate(() => { const r = URBE.mundo.regions.find((x) => x.name === 'Pasta'); r.name = 'Pasta nova'; });
+  await page.evaluate(() => { const r = UrbeCore.service('diagnostics.world').legacy().regions.find((x) => x.name === 'Pasta'); r.name = 'Pasta nova'; });
   mapa = await save(page);
   const renomeada = mapa.regioes.find((r) => r.id === reg.id);
   assert.equal(renomeada?.caminho, 'Pasta nova', 'mesmo ID com o caminho novo');

@@ -1,0 +1,115 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
+  },
+  "branch": "ccr-5adec8cc-oy464b",
+  "base_commit": "7554a5e",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261002-urbe-r1-rm-f2-04-residuos-e-urbe-global",
+  "timestamp": "2026-10-02T10:51:24Z",
+  "task_id": "UR1-5",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Refatoração interna do Urbe (remoção de código/HTML/CSS mortos e troca de um gancho de diagnóstico) fora das zonas críticas: sem persistência, dados do usuário, segurança, distribuição ou workflows."
+  },
+  "files_changed": [
+    "apps/urbe/src/app.js",
+    "apps/urbe/index.html",
+    "apps/urbe/src/styles/base.css",
+    "apps/urbe/src/modules.json",
+    "apps/urbe/tests/legacy-ui-residue.mjs",
+    "apps/urbe/tests/static.mjs",
+    "apps/urbe/tests/e2e/stable-ids.e2e.mjs",
+    "apps/urbe/tests/e2e/layout.e2e.mjs",
+    "apps/urbe/tests/e2e/identity.e2e.mjs",
+    "apps/urbe/tools/debt-ceiling.json",
+    "apps/urbe/docs/v2/discovery/LEGACY-MAP.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/TRACEABILITY.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261002-urbe-r1-rm-f2-04-residuos-e-urbe-global.json"
+  ],
+  "work_completed": [
+    "FATO: PR #47 integrado (RM-F2-02 [x], E2E no CI). Branch recomeçada da main atual. Próximo item pronto de U-R1: RM-F2-04 (REQ-030, L10 e L11). DEC-0024 continua pending; esta tarefa é só JavaScript e não é migração para C#.",
+    "FATO (medido em Chromium real com o harness): em runtime #vaultDlg, #vaultClose, #vaultIn e #cityIn não existem (app.js os removia no boot); .explorerFoot e #explorerImportFilesBtn existem mas ficam hidden e nenhum código os exibe; #mini existe, mas é display:none por CSS.",
+    "ALTERAÇÃO L11: gancho global window.URBE (8 acessos) removido. Havia consumidor, ao contrário do LEGACY-MAP: URBE.mundo em 3 E2E (stable-ids, layout, identity). Resta o serviço de core 'diagnostics.world' (legacy() devolve o mundo em memória), declarado em modules.json; os 3 E2E migrados; sai com RM-F2-12.",
+    "ALTERAÇÃO L10: removidos rodapé oculto do Explorador (Nota/Pasta/Exportar), botão oculto de importar arquivos, o diálogo antigo de Vault/cidade e seus handlers/CSS (app.js -61 linhas; teto de dívida rebaixado). Mantidos por serem funcionais: vaultFolderIn/vaultFilesIn e fromGlyph. Pendente: minimapa legado #mini (depende do laço de desenho, RM-F2-05/08).",
+    "Teste novo tests/legacy-ui-residue.mjs (grep zero sobre o código servido); tests/static.mjs atualizado. ROADMAP RM-F2-04 = [~] (não [x]: o aceite 'L10 e L11 removidos' ainda não é total por causa do #mini). LEGACY-MAP e TRACEABILITY atualizados.",
+    "Nada tocado em src/persistence, formatos de dados, boundaries, versão, release, Electron, Capacitor ou workflows."
+  ],
+  "verification": [
+    {
+      "check": "npm run check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todas as checagens passaram, 58 arquivos de teste, check-modules e dívida (ratchet aplicado) verdes."
+    },
+    {
+      "check": "node tools/run-e2e.mjs app-runtime zip smoke stable-ids layout identity lifecycle (Chromium real, local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "7/7 cenários E2E passaram."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os checks passaram localmente (ver commit)."
+    }
+  ],
+  "known_issues": [
+    "RM-F2-04 fica [~]: falta o minimapa legado #mini (laço de desenho chama desenharMini; #mini.onclick abre o mapão).",
+    "Os E2E stable-ids, layout, identity e lifecycle passaram localmente mas não fazem parte do job e2e do CI (só app-runtime, zip e smoke).",
+    "A remoção de UI oculta foi provada por medição em runtime e por E2E; nenhuma validação visual humana foi feita, e não é exigida (elementos nunca visíveis)."
+  ],
+  "next_actions": [
+    "Integrador: rotina verde entra sozinha.",
+    "RM-F2-09 (renderMarkdown para o editor, remove a exceção pages/engine -> app.js), depois RM-F2-05/06/07/08 (removem o #mini).",
+    "Depois do merge: disparar sync-from-ecosystem.yml em AbnerCruz/Urbe (DEC-0017-A) quando quiser levar isso às releases/Urbe Web."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/architecture/refactoring.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/discovery/LEGACY-MAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças só em apps/urbe; nenhuma referência a Lunet2D ou Hub."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Sem reescrita para C#; refatoração interna em JS (DEC-0024 pending)."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Escopo restrito a RM-F2-04; sem mudança de comportamento visível (UI removida nunca aparecia)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem validação humana exigida; item mantido [~] por critério técnico pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidência: npm run check, E2E em Chromium real e medição em runtime; lacunas em known_issues."
+    }
+  ]
+}
