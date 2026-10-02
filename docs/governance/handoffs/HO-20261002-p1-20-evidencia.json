@@ -1,0 +1,84 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "6aef4f8",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "integrator",
+  "state": "done",
+  "message_id": "HO-20261002-p1-20-evidencia",
+  "timestamp": "2026-10-02T11:50:00Z",
+  "task_id": "P1-20",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Registro de evidência (handoff novo rotineiro), fechamento do handoff de P1-20 e ROADMAP [x]: nenhuma zona crítica."
+  },
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261002-criticidade-da-mudanca-atual.json",
+    "docs/governance/handoffs/HO-20261002-p1-20-evidencia.json"
+  ],
+  "work_completed": [
+    "PR #50 (crítico: constitution + control-plane) — o integrador o reavaliou a cada avanço da main (490421c, 21d48f5, e495cc4, 382069d, 2e73173), sempre verde e sempre parado esperando o proprietário; nenhum agente postou a label 'integrar'. O proprietário integrou pelo botão Merge (e538d96, autor Abner Cruz). FATO: a árvore integrada (c834b92) é idêntica à do último commit combinado testado (8e797e6, main 2e73173 + head 947422b).",
+    "Reprodução do defeito antes do canário: os arquivos do PR #56 classificados pelo Check.cs da main anterior ao #50 (2e73173) ⇒ critical [\"constitution\",\"control-plane\"] por 'declarado crítico pelo agente' (herança); pelo Check.cs da main atual (e538d96) ⇒ routine, requires_owner=false.",
+    "PR #56 (canário: fecha HO-20261002-automatico-por-padrao-critico-ao-proprietario e atualiza pr/commit de HO-20261002-criticidade-da-mudanca-atual, sem mudar 'criticality') — integrado SOZINHO pelo integrador, sem label e sem toque humano: execução https://github.com/AbnerCruz/Ecosystem/actions/runs/37002002954; consistency (checks + self-test + simulate.sh) = success; status 'integrado main=f2a067d… combined=6aef4f8… routine'; main = 6aef4f8 (autor github-actions[bot], pais f2a067d + 7a5e494, trailers Integration-Criticality: routine [], Integration-Main, Integration-PR-Head, Integration-Handoffs)."
+  ],
+  "verification": [
+    {
+      "check": "Crítico verde não entra sozinho, mesmo com a main andando (PR #50, ao vivo)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "947422b",
+      "evidence": "Cinco reavaliações automáticas do mesmo head sobre mains novas (última: execução 37001342396, combined 8e797e6); status sempre 'pronto … aguardando autorização' até o merge do proprietário."
+    },
+    {
+      "check": "Fechamento de handoff crítico já integrado é rotina e entra sozinho (PR #56, ao vivo)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "6aef4f8",
+      "evidence": "Execução 37002002954: routine [], consistency=success; main == commit combinado testado 6aef4f8b899b437089ea20647bdb286c1977700c, integrado por github-actions[bot] sem label."
+    },
+    {
+      "check": "Mesmo diff no classificador anterior (reprodução do defeito)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Check.cs de 2e73173 --integration-gates sobre os arquivos do PR #56 ⇒ critical (herança do handoff); Check.cs de e538d96 ⇒ routine."
+    }
+  ],
+  "known_issues": [
+    "integration/pr-50 pode ter ficado no remoto: o PR #50 foi integrado pelo botão Merge (o integrador só apaga a branch quando ele mesmo integra). Inofensivo; poda é melhoria do control plane (crítica, item próprio), já registrada em HO-20261002-p1-19-evidencia."
+  ],
+  "next_actions": [
+    "Nenhuma pendência do proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Execuções, PRs, commits e classificações registrados acima e nos próprios PRs."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana envolvida nem dispensada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Done com evidência ao vivo: crítico esperou o proprietário; o fechamento rotineiro entrou sozinho."
+    }
+  ]
+}
