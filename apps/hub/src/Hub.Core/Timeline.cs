@@ -2,13 +2,17 @@ using System.Text.Json;
 
 namespace Hub.Core;
 
-public enum EntryKind { RoadmapItem, Gate, Decision, Handoff, HumanValidation }
+public enum EntryKind { RoadmapItem, Gate, Decision, Handoff, HumanValidation, PullRequest, Issue, Branch, Release, CiRun }
 
 /// <summary>Uma entrada de Past/Now/Next com a fonte de onde foi derivada. Nada aqui é digitado no Hub.</summary>
 public sealed record TimelineEntry(EntryKind Kind, string Id, string Title, string Source, string? Detail = null);
 
 /// <summary>PAST: o que já aconteceu · NOW: o que está acontecendo ou aguarda alguém · NEXT: o que o ROADMAP/decisões declaram como em seguida (MANIFEST §18).</summary>
-public sealed record PastNowNext(IReadOnlyList<TimelineEntry> Past, IReadOnlyList<TimelineEntry> Now, IReadOnlyList<TimelineEntry> Next);
+/// <param name="Notes">Fontes que não puderam ser lidas (ex.: GitHub indisponível). Nunca esconde a falta de dado.</param>
+public sealed record PastNowNext(IReadOnlyList<TimelineEntry> Past, IReadOnlyList<TimelineEntry> Now, IReadOnlyList<TimelineEntry> Next, IReadOnlyList<string>? Notes = null)
+{
+    public IReadOnlyList<string> Notes { get; init; } = Notes ?? [];
+}
 
 /// <summary>
 /// Deriva Past / Now / Next das fontes de verdade do repositório (ROADMAP, decisions.json, handoffs). Só lê.
@@ -118,5 +122,45 @@ public static class TimelineBuilder
             return new Handoff(id, Str(r, "task_id") ?? "?", state, pending);
         }
         catch (JsonException) { return null; }
+    }
+}
+
+/// <summary>Acrescenta ao Past/Now/Next o que vem do GitHub (P3-6). Só lê; o que não pôde ser lido vira nota, nunca é inventado.</summary>
+public static class TimelineGitHub
+{
+    public static PastNowNext AddGitHub(PastNowNext baseline, GitHubSnapshot gh, string defaultBranch = "main")
+    {
+        var past = baseline.Past.ToList();
+        var now = baseline.Now.ToList();
+        var notes = baseline.Notes.ToList();
+
+        void Note(string what, string source, string? why) => notes.Add($"GitHub ({gh.Repository.FullName}): {what} indisponível{(why is null ? "" : $" — {why}")} [{source}]");
+
+        if (gh.PullRequests is { Availability: Availability.Derived, Value: { } prs })
+            foreach (var p in prs)
+                now.Add(new TimelineEntry(EntryKind.PullRequest, $"PR #{p.Number}", p.Title, p.Url, p.Draft ? $"rascunho · {p.HeadRef}" : p.HeadRef));
+        else Note("PRs", gh.PullRequests.Source, gh.PullRequests.Note);
+
+        if (gh.Issues is { Availability: Availability.Derived, Value: { } issues })
+            foreach (var i in issues)
+                now.Add(new TimelineEntry(EntryKind.Issue, $"#{i.Number}", i.Title, i.Url, i.State is null ? "sem state:" : $"state:{i.State}"));
+        else Note("Issues", gh.Issues.Source, gh.Issues.Note);
+
+        if (gh.Branches is { Availability: Availability.Derived, Value: { } branches })
+            foreach (var b in branches.Where(b => b.Name != defaultBranch))
+                now.Add(new TimelineEntry(EntryKind.Branch, b.Name, b.Name, gh.Branches.Source));
+        else Note("branches", gh.Branches.Source, gh.Branches.Note);
+
+        if (gh.CiRuns is { Availability: Availability.Derived, Value: { } runs })
+            foreach (var r in runs.GroupBy(r => r.Name).Select(g => g.First())) // a mais recente de cada workflow
+                now.Add(new TimelineEntry(EntryKind.CiRun, r.Name, r.Name, r.Url, r.Conclusion ?? r.Status));
+        else Note("CI", gh.CiRuns.Source, gh.CiRuns.Note);
+
+        if (gh.Releases is { Availability: Availability.Derived, Value: { } rels })
+            foreach (var r in rels)
+                past.Add(new TimelineEntry(EntryKind.Release, r.Tag, r.Name ?? r.Tag, r.Url, r.PublishedAt));
+        else Note("releases", gh.Releases.Source, gh.Releases.Note);
+
+        return baseline with { Past = past, Now = now, Notes = notes };
     }
 }

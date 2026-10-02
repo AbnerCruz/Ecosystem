@@ -12,11 +12,12 @@ public enum Availability
 }
 
 /// <summary>Um valor lido pelo Hub com a sua origem. O Hub só consome fontes; não é autoridade de nenhum dado (NN-001, NN-021).</summary>
-public sealed record Datum<T>(T? Value, Availability Availability, string Source)
+public sealed record Datum<T>(T? Value, Availability Availability, string Source, string? Note = null)
 {
     public static Datum<T> From(T value, string source) => new(value, Availability.Derived, source);
 
-    public static Datum<T> Missing(string source) => new(default, Availability.NotAvailable, source);
+    /// <summary>Sem fonte. <paramref name="note"/> diz por quê (ex.: "HTTP 403"), para a UI explicar em vez de esconder.</summary>
+    public static Datum<T> Missing(string source, string? note = null) => new(default, Availability.NotAvailable, source, note);
 
     /// <summary>Marca como último estado conhecido; um dado que já não está disponível continua não disponível.</summary>
     public Datum<T> AsStale() => Availability == Availability.Derived ? this with { Availability = Availability.Stale } : this;
