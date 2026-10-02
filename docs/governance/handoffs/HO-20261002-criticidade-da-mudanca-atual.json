@@ -14,7 +14,7 @@
   "blockers": [],
   "cost": null,
   "component": "integrator",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261002-criticidade-da-mudanca-atual",
   "timestamp": "2026-10-02T10:49:00Z",
   "task_id": "P1-20",
@@ -59,8 +59,8 @@
     {
       "check": "Canário real depois da integração: fechamento de handoff crítico entra sozinho",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "PR #50 (crítico) esperou o proprietário e foi integrado em e538d96 (árvore idêntica ao estado combinado testado 8e797e6). Canário: o PR seguinte, que só fecha o handoff crítico de P1-19 e atualiza este (pr, commit) — exatamente o caso do PR #46 —, deve ser 'routine' e entrar sem label. Resultado no handoff HO-20261002-p1-20-evidencia."
+      "result": "passed",
+      "evidence": "PR #56 (só fecha handoffs críticos já integrados) classificado 'routine' e integrado sozinho, sem label: main = 6aef4f8 = commit combinado testado. Pelo classificador anterior seria crítico por herança. Evidência: handoff HO-20261002-p1-20-evidencia."
     }
   ],
   "known_issues": [
