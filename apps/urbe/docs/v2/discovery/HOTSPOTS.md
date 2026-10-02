@@ -10,7 +10,7 @@ Definições: *Linhas* = linhas do arquivo; *Funções* = declarações `functio
 <!-- hotspots:begin -->
 | Arquivo | Camada | Linhas | Funções | Fan-out | Fan-in | Provê | DOM | Armaz. | Exceções de boundary |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `src/pages/engine.js` | feature | 678 | 51 | 3 | 4 | 1 | 19 | 2 | 1 |
+| `src/pages/engine.js` | feature | 678 | 51 | 2 | 4 | 1 | 19 | 2 | 0 |
 | `src/pages/studio.js` | feature | 592 | 126 | 11 | 1 | 2 | 92 | 0 | 1 |
 | `src/pages/free.js` | feature | 273 | 33 | 1 | 0 | 0 | 0 | 0 | 0 |
 | `src/world/life.js` | feature | 442 | 36 | 3 | 0 | 1 | 6 | 0 | 1 |
@@ -18,14 +18,14 @@ Definições: *Linhas* = linhas do arquivo; *Funções* = declarações `functio
 | `src/customize/panel.js` | feature | 307 | 57 | 7 | 0 | 1 | 35 | 0 | 0 |
 | `src/world/pixel-art.js` | feature | 384 | 39 | 0 | 3 | 1 | 1 | 0 | 0 |
 
-_Base: 73 módulos em `src/modules.json`; reproduza com `node tools/hotspots.mjs`._
+_Base: 74 módulos em `src/modules.json`; reproduza com `node tools/hotspots.mjs`._
 <!-- hotspots:end -->
 
 ## 2. Leitura por arquivo e decisão
 
 | Arquivo | Responsabilidades observadas [F/I] | Acoplamento | Decisão proposta |
 |---|---|---|---|
-| `src/pages/engine.js` | Motor **puro** (sem DOM de montagem): valida/normaliza `.page.json`, descreve blocos, gera a saída exportada. Uma responsabilidade coesa. | Fan-in 4 (`pages/free`, `pages/templates`, `pages/ai-tools`, `pages/studio`). Única exceção: usa `renderMarkdown` provido por `app.js`. | **Manter.** A exceção sai com **RM-F2-09** (Markdown vai para o editor); não há o que extrair do arquivo. |
+| `src/pages/engine.js` | Motor **puro** (sem DOM de montagem): valida/normaliza `.page.json`, descreve blocos, gera a saída exportada. Uma responsabilidade coesa. | Fan-in 4 (`pages/free`, `pages/templates`, `pages/ai-tools`, `pages/studio`). Sem exceções (atualizado em RM-F2-09): a exceção `engine → app.js` era um falso positivo — o motor tem o próprio `markdown()` e nunca chamou o `app.js`; a dependência vinha de a palavra «URBE» num texto do arquivo casar com o global `URBE`, que saiu em RM-F2-04. | **Manter.** Não há o que extrair do arquivo; a exceção foi removida em RM-F2-09. |
 | `src/pages/studio.js` | Editor visual: prévia em iframe, lista de seções com arraste, inspetor, tema, JSON, desfazer/refazer, salvamento. Várias responsabilidades de UI no mesmo arquivo (126 funções, 92 acessos a DOM). | Maior fan-out do grupo (11 módulos); fan-in 1 (`app`). Exceção `studio → ai/ui` (reutiliza o painel do agente). | **Adiar a divisão** (nenhum consumidor novo a exige; NN-020 vale dentro do Urbe). **Exceção `studio → ai/ui`: manter listada**; resolvê-la por serviço de painel é mudança de boundary → exige item novo + ADR (AGENTS.md §3), então fica como **achado**, não como decisão. |
 | `src/pages/free.js` | Árvore de elementos do layout livre, estilos responsivos por breakpoint, conversão. Sem DOM. | Fan-out 1 (engine), fan-in 0 no grafo; sem acesso direto a `document.`. | **Manter.** Coeso e sem exceções. |
 | `src/world/life.js` | Vida do mundo (luz, clima, água, fauna, fumaça…): simulação e desenho em um módulo de fase `late`. | Exceção `life → app.js` (`world.life.host`). Fan-in 0 no grafo estático: `app.js` provê o serviço `world.life.host` e `life.js` o consome (`requires` de `app.js`); nenhum módulo referencia `UrbeVida`. | **Manter o módulo; a exceção sai com RM-F2-16** (host extraído). Divisão interna (luz × clima × fauna) só se um item de mundo exigir. |

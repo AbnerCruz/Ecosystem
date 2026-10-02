@@ -54,7 +54,7 @@
 | REQ-026 | §3.3 | F2 | RM-F2-06 — Ligar controlador de toque canônico | [ ] | `runtime-adapters.mjs` + E2E de gesto (RM-F4-06). | G2 |
 | REQ-026 | §3.3 | F2 | RM-F2-07 — Ligar grafo de ruas canônico | [ ] | `world-system.mjs` + testes de rota com fixtures. | G2 |
 | REQ-026 | §3.3 | F2 | RM-F2-08 — Remover desenho e laço duplicados de `app.js` | [ ] | Paridade visual; `check-debt` cai; testes verdes. | G2 |
-| REQ-027 | §3.3 | F2 | RM-F2-09 — Extrair renderMarkdown para o editor | [ ] | Testes de renderização (tabelas, callouts, math, links, sanitização) + regressão `composition`. | G2 |
+| REQ-027 | §3.3 | F2 | RM-F2-09 — Extrair renderMarkdown para o editor | [x] | Testes de renderização (tabelas, callouts, math, links, sanitização) + regressão `composition`. Feito: `tests/markdown.mjs` (33 casos iguais a um golden gerado do código antigo, sanitização e «autoridade única»), preview no app real em `tests/e2e/app-runtime.e2e.mjs` (roda no CI) e a suíte inteira (`npm run check`, 13/13 E2E). | G2 |
 | REQ-027 | §3.3 | F2 | RM-F2-10 — Extrair editor Visual e conversão | [ ] | Round-trip Markdown↔Visual em fixtures; sem ressuscitar nota apagada. | G2 |
 | REQ-027 | §3.3 | F2 | RM-F2-11 — Extrair autocompletar de wikilinks e barra de formatação | [ ] | Testes de sugestão/inserção; E2E. | G2 |
 | REQ-028 | §3.3 | F1 | RM-F1-10 — Contrato de adapters de persistência e testes | [x] | Suíte roda contra mock e contra `vault-fs.js`. | G1 |
@@ -193,4 +193,4 @@
 ## Cobertura
 
 - REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 42.
+- Itens no ROADMAP: 146; concluídos `[x]`: 43.

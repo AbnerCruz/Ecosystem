@@ -1,0 +1,134 @@
+[
+ {
+  "input": "# Título\n\nParágrafo com **negrito**, *itálico*, ~~riscado~~, `código [[x]]` e _ênfase_.",
+  "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código \u00020\u0002</code> e <em>ênfase</em>.</p>"
+ },
+ {
+  "input": "###### H6\n#### H4 com [link](https://exemplo.com \"t\")",
+  "html": "<h6>H6</h6><h4>H4 com [link](https://exemplo.com &quot;t&quot;)</h4>"
+ },
+ {
+  "input": "#\n\n##   \n\ntexto",
+  "html": "<h1><br></h1><h2><br></h2><p>texto</p>"
+ },
+ {
+  "input": "```js\nconst a = 1 < 2;\n```\n\ntexto depois\n```\nsem linguagem\n```",
+  "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;</code></pre><p>texto depois</p><pre><code>sem linguagem</code></pre>"
+ },
+ {
+  "input": "```\nbloco não fechado\nainda código",
+  "html": "<pre><code>bloco não fechado\nainda código</code></pre>"
+ },
+ {
+  "input": "- a\n- b\n  - b1\n  - b2\n    - b21\n- c\n\n1. um\n2. dois\n   1. dois-um\n3) três",
+  "html": "<ul><li>a</li><li>b<ul><li>b1</li><li>b2<ul><li>b21</li></ul></li></ul></li><li>c</li></ul><ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li><li>três</li></ol>"
+ },
+ {
+  "input": "- [ ] tarefa\n- [x] feita\n- [X] também\n  - [ ] filha",
+  "html": "<ul><li class=\"task\"><input type=\"checkbox\">tarefa</li><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\" checked>também<ul><li class=\"task\"><input type=\"checkbox\">filha</li></ul></li></ul>"
+ },
+ {
+  "input": "| a | b | c |\n|:--|:-:|--:|\n| 1 | 2 | 3 |\n| x \\| y | | z |\n\nfim",
+  "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th style=\"text-align:left\">a</th><th style=\"text-align:center\">b</th><th style=\"text-align:right\">c</th></tr></thead><tbody><tr><td style=\"text-align:left\">1</td><td style=\"text-align:center\">2</td><td style=\"text-align:right\">3</td></tr><tr><td style=\"text-align:left\">x | y</td><td style=\"text-align:center\"><br></td><td style=\"text-align:right\">z</td></tr></tbody></table><p>fim</p>"
+ },
+ {
+  "input": "cabeça | outra\n--- | ---\nl1 | l2",
+  "html": "<table data-md-table=\"1\" data-align=\",\"><thead><tr><th>cabeça</th><th>outra</th></tr></thead><tbody><tr><td>l1</td><td>l2</td></tr></tbody></table>"
+ },
+ {
+  "input": "> citação simples\n> segunda linha\n\n> [!tip] Dica\n> corpo da dica\n> mais\n\n> [!warning]\n> sem título\n\n> [!custom] Tipo livre\n> x",
+  "html": "<blockquote>citação simples<br>segunda linha</blockquote><div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Dica</div><div class=\"callout-body\">corpo da dica<br>mais</div></div><div class=\"callout callout-warning\" data-callout=\"warning\"><div class=\"callout-title\" data-default=\"Atenção\"><br></div><div class=\"callout-body\">sem título</div></div><div class=\"callout callout-custom\" data-callout=\"custom\"><div class=\"callout-title\" data-default=\"custom\">Tipo livre</div><div class=\"callout-body\">x</div></div>"
+ },
+ {
+  "input": "> [!note]+ Dobrável\n> conteúdo\n\n> [!danger]- Fechado\n> perigo",
+  "html": "<div class=\"callout callout-note\" data-callout=\"note\"><div class=\"callout-title\" data-default=\"Nota\">Dobrável</div><div class=\"callout-body\">conteúdo</div></div><div class=\"callout callout-danger\" data-callout=\"danger\"><div class=\"callout-title\" data-default=\"Perigo\">Fechado</div><div class=\"callout-body\">perigo</div></div>"
+ },
+ {
+  "input": "---\ntitle: Nota\ntags: [a, b, \"c d\"]\naliases:\n  - um\n  - dois\nautor: Ana **Souza**\n---\n\n# Corpo\ntexto",
+  "html": "<section class=\"frontmatterCard\" contenteditable=\"false\" data-frontmatter-card=\"1\"><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">title</span><span class=\"frontmatterValue\">Nota</span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">tags</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">a</span><span class=\"frontmatterChip\">b</span><span class=\"frontmatterChip\">c d</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">aliases</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">um</span><span class=\"frontmatterChip\">dois</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">autor</span><span class=\"frontmatterValue\">Ana <strong>Souza</strong></span></div></section><h1>Corpo</h1><p>texto</p>"
+ },
+ {
+  "input": "---\nsem fim\ntexto",
+  "html": "<hr><p>sem fim</p><p>texto</p>"
+ },
+ {
+  "input": "---\n---\ncorpo",
+  "html": "<hr><hr><p>corpo</p>"
+ },
+ {
+  "input": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.",
+  "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>\u00022\u0002</code>.</p>"
+ },
+ {
+  "input": "[x](javascript:alert(1)) [y](JaVaScRiPt:alert(1)) [z](vbscript:x) [w](file:///etc/passwd) [ok](https://a.b/c_d_e)",
+  "html": "<p><a href=\"#\" target=\"_blank\" rel=\"noopener\">x</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">y</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">z</a> <a href=\"#\" target=\"_blank\" rel=\"noopener\">w</a> <a href=\"https://a.b/c_d_e\" target=\"_blank\" rel=\"noopener\">ok</a></p>"
+ },
+ {
+  "input": "![img](https://a.b/i.png) ![x](data:image/png;base64,AAAA) ![evil](data:text/html;base64,AAAA) ![j](javascript:alert(1))",
+  "html": "<p><img src=\"https://a.b/i.png\" alt=\"img\"> <img src=\"data:image/png;base64,AAAA\" alt=\"x\"> <img src=\"#\" alt=\"evil\"> <img src=\"#\" alt=\"j\">)</p>"
+ },
+ {
+  "input": "[a](https://x.y/_blank_) e [b](https://x.y/_blank_) com _itálico_ depois e __negrito__",
+  "html": "<p><a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">a</a> e <a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">b</a> com <em>itálico</em> depois e <strong>negrito</strong></p>"
+ },
+ {
+  "input": "<script>alert(1)</script> & <b>tag</b> \"aspas\" 'simples'",
+  "html": "<p>&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;b&gt;tag&lt;/b&gt; &quot;aspas&quot; &#39;simples&#39;</p>"
+ },
+ {
+  "input": "linha 1\nlinha 2\n\n\n\nlinha 3",
+  "html": "<p>linha 1</p><p>linha 2</p><p>linha 3</p>"
+ },
+ {
+  "input": "***\n---\n___\n* * *\n- - -",
+  "html": "<hr><hr><hr><hr><hr>"
+ },
+ {
+  "input": "Fórmula inline $a^2+b^2=c^2$ e bloco:\n\n$$\n\\int_0^1 x\\,dx\n$$\n\ne \\(x\\) com \\[y\\].",
+  "html": "<p>Fórmula inline <span class=\"umath\" data-tex=\"a^2+b^2=c^2\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><code class=\"umath-raw\">a^2+b^2=c^2</code></span> e bloco:</p><div class=\"umath umath-block\" data-tex=\"\\int_0^1 x\\,dx\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><code class=\"umath-raw\">\\int_0^1 x\\,dx</code></div><p>e <span class=\"umath\" data-tex=\"x\" data-open=\"\\(\" data-close=\"\\)\" contenteditable=\"false\"><code class=\"umath-raw\">x</code></span> com <span class=\"umath umath-display\" data-tex=\"y\" data-open=\"\\[\" data-close=\"\\]\" contenteditable=\"false\"><code class=\"umath-raw\">y</code></span>.</p>"
+ },
+ {
+  "input": "$$\nA = B\n$$\n\n# Depois\n- item $x$",
+  "html": "<div class=\"umath umath-block\" data-tex=\"A = B\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><code class=\"umath-raw\">A = B</code></div><h1>Depois</h1><ul><li>item <span class=\"umath\" data-tex=\"x\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><code class=\"umath-raw\">x</code></span></li></ul>"
+ },
+ {
+  "input": "Preço R$ 5 e R$ 10 sem fórmula; 100$ também.",
+  "html": "<p>Preço R$ 5 e R$ 10 sem fórmula; 100$ também.</p>"
+ },
+ {
+  "input": "",
+  "html": "<p><br></p>"
+ },
+ {
+  "input": "   ",
+  "html": "<p><br></p>"
+ },
+ {
+  "input": "\r\n# CRLF\r\n\r\n- a\r\n- b\r\n",
+  "html": "<h1>CRLF</h1><ul><li>a</li><li>b</li></ul>"
+ },
+ {
+  "input": "texto *sem fechar e **negrito sem fechar e `crase sem fechar",
+  "html": "<p>texto *sem fechar e **negrito sem fechar e `crase sem fechar</p>"
+ },
+ {
+  "input": "1. a\n- b\n2. c\n   - d",
+  "html": "<ol><li>a</li></ol><ul><li>b</li></ul><ol><li>c<ul><li>d</li></ul></li></ol>"
+ },
+ {
+  "input": "|solta|\ntexto| com pipe\n\n|a|\n|-|\n|1|",
+  "html": "<p>|solta|</p><p>texto| com pipe</p><table data-md-table=\"1\" data-align=\"\"><thead><tr><th>a</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"
+ },
+ {
+  "input": "> # título em citação\n> - lista em citação\n> | t | u |\n> |---|---|",
+  "html": "<blockquote># título em citação<br>- lista em citação<br>| t | u |<br>|---|---|</blockquote>"
+ },
+ {
+  "input": "Texto com emoji 😀 e acentuação: ação, coração, açaí.\n\n## Seção ✓",
+  "html": "<p>Texto com emoji 😀 e acentuação: ação, coração, açaí.</p><h2>Seção ✓</h2>"
+ },
+ {
+  "input": "# Nota longa\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\n",
+  "html": "<h1>Nota longa</h1><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p>"
+ }
+]

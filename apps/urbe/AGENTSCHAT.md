@@ -5,6 +5,14 @@
 
 ---
 
+### 2026-10-02 — Claude — RM-F2-09 `[x]` (renderMarkdown fora do app.js), U-R1 no monorepo Ecosystem
+- **Estado:** RM-F2-09 concluído; RM-F2-04 segue `[~]` (falta só o minimapa legado).
+- **Feito:** `src/editor/markdown.js` (global `UrbeMarkdown` + serviço `editor.markdown`): render de blocos, inline, frontmatter, tabelas, callouts, `safeUrl`, cabeçalho vazio e a camada de matemática — copiados do `app.js`, que agora só desestrutura o global no topo. `app.js` −201 linhas (5199 → 4998) (teto de dívida rebaixado). Contrato em `docs/v2/contracts/editor-markdown.md`.
+- **Prova de equivalência:** `tests/fixtures/markdown-golden.json` foi gerado do código antigo (33 casos) e `tests/markdown.mjs` exige saídas idênticas; o preview no app real está em `tests/e2e/app-runtime.e2e.mjs` (mutação da sanitização derruba o teste). `npm run check` 59/59 e os 13 E2E passam.
+- **Achado:** a exceção `pages/engine → app.js` era falso positivo (a palavra «URBE» num texto casava com o global `URBE`, que saiu em RM-F2-04); removida de `BOUNDARY-EXCEPTIONS.md`. O nome do serviço ficou `editor.markdown` (o roadmap dizia `editor.surface`).
+- **Pendências:** `markdownFromVisual` e o editor Visual ainda em `app.js` (RM-F2-10/11); nada para o proprietário.
+- **Próximos passos:** RM-F2-10, depois RM-F2-05/06/07/08 (renderer/laço de desenho; removem o `#mini`).
+
 ### 2026-10-02 — Claude — RM-F2-04 `[~]` (L11 feito; L10 feito exceto o minimapa), U-R1 no monorepo Ecosystem
 - **Estado:** RM-F2-02 `[x]` (E2E no CI, PR #47). RM-F2-04 em andamento: `window.URBE` removido e resíduos de UI (L10) saíram, menos o minimapa legado `#mini` (depende do laço de desenho: RM-F2-05/08).
 - **Feito:** `app.js` −61 linhas (teto de dívida rebaixado); `index.html`/CSS sem rodapé do Explorador, botão de importar arquivos e diálogo antigo de Vault/cidade; serviço `diagnostics.world` no lugar do gancho global (3 E2E migrados); `tests/legacy-ui-residue.mjs` (grep zero); LEGACY-MAP L10/L11 atualizado.

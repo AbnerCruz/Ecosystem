@@ -739,15 +739,15 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Gate:** G2
 
 ### RM-F2-09 — Extrair renderMarkdown para o editor
-- **Estado:** [ ]
+- **Estado:** [x]
 - **REQ:** REQ-027
 - **SPEC:** §3.3
 - **Fase:** F2
 - **Depende:** RM-F2-02
 - **Implementação:** `src/editor/markdown.js` (render, sanitização `v22Url`); `app.js` consome.
-- **Integração:** Serviço `editor.surface`.
-- **Testes:** Testes de renderização (tabelas, callouts, math, links, sanitização) + regressão `composition`.
-- **Documentação:** contracts.
+- **Integração:** Serviço `editor.markdown` (nome ajustado: `editor.surface` descreveria a superfície de edição inteira, que é o escopo de RM-F2-10/11) e global `UrbeMarkdown`; `app.js` consome. Efeito colateral: a exceção `pages/engine → app.js` de `BOUNDARY-EXCEPTIONS.md` era um falso positivo (casava a palavra «URBE» num texto com o global `URBE`, removido em RM-F2-04) e foi removida.
+- **Testes:** Testes de renderização (tabelas, callouts, math, links, sanitização) + regressão `composition`. Feito: `tests/markdown.mjs` (33 casos iguais a um golden gerado do código antigo, sanitização e «autoridade única»), preview no app real em `tests/e2e/app-runtime.e2e.mjs` (roda no CI) e a suíte inteira (`npm run check`, 13/13 E2E).
+- **Documentação:** `docs/v2/contracts/editor-markdown.md`.
 - **Aceite:** `renderMarkdown` fora de `app.js`.
 - **Gate:** G2
 

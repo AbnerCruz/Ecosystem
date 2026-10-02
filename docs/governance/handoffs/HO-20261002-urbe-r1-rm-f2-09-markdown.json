@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TQf4ivvpLksL2yVbXBgeux"
+  },
+  "branch": "ccr-5adec8cc-oy464b",
+  "base_commit": "21d48f5",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261002-urbe-r1-rm-f2-09-markdown",
+  "timestamp": "2026-10-02T11:18:48Z",
+  "task_id": "UR1-6",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Extração interna de um pipeline puro (Markdown → HTML) dentro de apps/urbe, com saídas idênticas provadas por golden; sem persistência, dados do usuário, segurança do app, distribuição ou workflows."
+  },
+  "files_changed": [
+    "apps/urbe/src/editor/markdown.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/modules.json",
+    "apps/urbe/index.html",
+    "apps/urbe/sw.js",
+    "apps/urbe/tests/markdown.mjs",
+    "apps/urbe/tests/fixtures/markdown-golden.json",
+    "apps/urbe/tests/e2e/app-runtime.e2e.mjs",
+    "apps/urbe/tools/debt-ceiling.json",
+    "apps/urbe/docs/v2/contracts/editor-markdown.md",
+    "apps/urbe/docs/v2/discovery/BOUNDARY-EXCEPTIONS.md",
+    "apps/urbe/docs/v2/discovery/HOTSPOTS.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/TRACEABILITY.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261002-urbe-r1-rm-f2-09-markdown.json"
+  ],
+  "work_completed": [
+    "FATO: PR #51 integrado (RM-F2-04 [~], L10/L11). Branch recomeçada da main atual. Próximo item pronto de U-R1: RM-F2-09 (REQ-027). DEC-0024 continua pending; esta tarefa é só JavaScript e não é migração para C#.",
+    "ALTERAÇÃO (refatoração interna R): o pipeline de Markdown saiu de src/app.js para src/editor/markdown.js (global UrbeMarkdown e serviço editor.markdown): escapeHTML, inlineMarkdown (a versão efetiva, com sanitização e marcadores), splitFrontmatter, renderFrontmatter, MD_CALLOUTS, tabelas, renderBlocks, cabeçalho vazio e a camada de matemática. As três camadas que o app.js empilhava (base, '# ' vazio, matemática) viraram uma função render com a mesma ordem. app.js desestrutura o global no topo do IIFE (evita TDZ), perdeu 201 linhas (5199 → 4998) e não define mais nenhuma dessas funções; módulo registrado em modules.json (antes de app), index.html e sw.js derivados por check-modules --write.",
+    "PROVA DE EQUIVALÊNCIA: golden (33 casos: tabelas com alinhamento, callouts, listas aninhadas e tarefas, código, frontmatter, wikilinks, links e imagens com esquemas perigosos, cabeçalho vazio, CRLF, matemática) gerado do código ANTIGO do app.js antes da mudança; tests/markdown.mjs exige saídas idênticas e que app.js não redefina o pipeline. Preview no app real em tests/e2e/app-runtime.e2e.mjs; uma mutação da sanitização derrubou esse teste (não é vacuoso).",
+    "FATO/CORREÇÃO: a exceção de boundary pages/engine -> app.js era falso positivo: engine.js nunca chamou o app.js (tem markdown() próprio); a dependência vinha de a palavra URBE num texto casar com o global URBE, removido em RM-F2-04. Removida de BOUNDARY-EXCEPTIONS.md e de uses; HOTSPOTS.md regenerado (exceções do engine = 0).",
+    "Documentação: contrato docs/v2/contracts/editor-markdown.md; ROADMAP RM-F2-09 = [x] (o serviço se chama editor.markdown, não editor.surface: registrado no item); TRACEABILITY regenerada.",
+    "Nada tocado em src/persistence, formatos de dados, versão, release, Electron, Capacitor ou workflows."
+  ],
+  "verification": [
+    {
+      "check": "npm run check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "59/59 arquivos de teste, check-modules, dívida (ratchet), rastreabilidade e hotspots verdes."
+    },
+    {
+      "check": "node tools/run-e2e.mjs (todos os 13 cenários, Chromium real, local)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "13/13 cenários E2E passaram; o CI roda app-runtime, zip e smoke."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os checks passaram localmente."
+    }
+  ],
+  "known_issues": [
+    "O service worker é rede-primeiro com cache só como fallback offline e a versão do pacote não mudou; ao adicionar um módulo ao shell, quem estiver offline com cache antigo recebe o conjunto antigo até o SW novo instalar (mesmo comportamento de RM-F2-03). Release/versão são decisão à parte.",
+    "Os E2E fora de app-runtime/zip/smoke continuam fora do job e2e do CI (passam localmente 13/13).",
+    "markdownFromVisual (volta do editor Visual) e o editor Visual seguem em app.js até RM-F2-10/11; o golden cobre só o caminho Markdown → HTML.",
+    "Nenhuma validação visual humana: a saída HTML é byte a byte a mesma do código anterior nos casos do golden."
+  ],
+  "next_actions": [
+    "Integrador: rotina verde entra sozinha.",
+    "RM-F2-10 (editor Visual e conversão) e RM-F2-05..08 (renderer e laço de desenho, que removem o #mini e fecham RM-F2-04).",
+    "Depois do merge: disparar sync-from-ecosystem.yml em AbnerCruz/Urbe (DEC-0017-A) quando quiser levar isso às releases/Urbe Web."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/architecture/refactoring.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/discovery/BOUNDARY-EXCEPTIONS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças só em apps/urbe; nenhuma referência a Lunet2D ou Hub."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Sem reescrita para C#; refatoração interna em JavaScript (DEC-0024 pending)."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Escopo restrito a RM-F2-09; comportamento idêntico provado por golden."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidência: golden gerado do código antigo, npm run check, 13 E2E em Chromium real e mutação; lacunas em known_issues."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração para o Ecosystem: o módulo continua local ao produto (sem segundo consumidor)."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "markdown-render",
+      "status": "product-specific",
+      "rationale": "Pipeline Markdown → HTML do editor do Urbe (wikilinks, callouts, frontmatter, matemática do Urbe). O Lunet2D tem docs próprios e nenhum segundo consumidor real foi identificado; sem Extraction Review."
+    }
+  ]
+}

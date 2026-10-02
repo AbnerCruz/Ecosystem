@@ -1226,9 +1226,7 @@
         "src/core/artifacts.js",
         "src/math/core.js"
       ],
-      "uses": [
-        "src/app.js"
-      ],
+      "uses": [],
       "platforms": [
         "web",
         "electron",
@@ -1426,6 +1424,31 @@
       ]
     },
     {
+      "name": "editor/markdown",
+      "file": "src/editor/markdown.js",
+      "layer": "feature",
+      "phase": "feature",
+      "provides": {
+        "globals": [
+          "UrbeMarkdown"
+        ],
+        "services": [
+          "editor.markdown"
+        ]
+      },
+      "requires": [
+        "src/core/core.js"
+      ],
+      "uses": [
+        "src/math/core.js"
+      ],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
       "name": "app",
       "file": "src/app.js",
       "layer": "app",
@@ -1468,7 +1491,8 @@
         "src/world/stable-ids.js",
         "src/world/layout-guard.js",
         "src/persistence/export-manifest.js",
-        "src/persistence/multi-city.js"
+        "src/persistence/multi-city.js",
+        "src/editor/markdown.js"
       ],
       "uses": [
         "src/pages/studio.js",
