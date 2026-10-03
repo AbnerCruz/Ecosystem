@@ -14,7 +14,7 @@
   "blockers": [],
   "cost": null,
   "component": "hub",
-  "state": "waiting",
+  "state": "review",
   "message_id": "HO-20261003-p3-7-decisoes-de-release",
   "timestamp": "2026-10-03T05:26:49Z",
   "task_id": "P3-7",
@@ -33,7 +33,8 @@
   "work_completed": [
     "FATO: o P3-7 (empacotar o Hub e publicar a release) é o que destrava o P3-1 (portal listar as releases do Hub) e o gate P3-8 (instalar o Hub no celular), e depende de duas escolhas de direção que não são detalhe de implementação (NN-011): onde o Hub publica as releases e se são públicas; e com que chave o APK é assinado.",
     "Pesquisa nas fontes normativas (NN-010): DEC-0008-A e `current.profile.json` (releases dos outros Products nos repositórios de origem), DEC-0012-A (portal público, lê sem token), NN-023 (o Hub pode ser privado/interno), MANIFEST §30.2 (signing keys nunca commitadas) e o ADR 0004 do Lunet2D (chave de desenvolvimento pública e estável como exceção declarada, com chave privada antes do canal estável). O Hub não declara `source` em ecosystem.json, e o Hub.Core descobre releases por `source.repository`.",
-    "DEC-0028 (canal e visibilidade) e DEC-0029 (assinatura do APK) abertas no portal, cada uma com objetos a revisar, alternativas com consequências, compatibilidade com o MANIFEST e recomendação do agente (A nas duas). ROADMAP P3-7 passa a [~] com a dependência explícita e a Issue #84 (state:waiting)."
+    "DEC-0028 (canal e visibilidade) e DEC-0029 (assinatura do APK) abertas no portal, cada uma com objetos a revisar, alternativas com consequências, compatibilidade com o MANIFEST e recomendação do agente (A nas duas). ROADMAP P3-7 passa a [~] com a dependência explícita e a Issue #84 (state:waiting).",
+    "O handoff está em review porque a parte do agente (abrir as decisões com tudo o que o proprietário precisa) está concluída; a tarefa P3-7 em si segue [~] e a Issue #84 em state:waiting até as respostas."
   ],
   "verification": [
     {
