@@ -67,10 +67,10 @@
     {
       "check": "Instalar, atualizar, cancelar, recuperar e abrir no Android",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/hub/docs/instalar-e-abrir.md",
-      "evidence": "Roteiro pronto; depende de aprovação específica DEC-0032 e APK candidato. Não autoaprovado."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/135); registro em docs/governance/responses/VAL-HO-20261003-p4-3-install-launch-ca447f13ed16.md."
     }
   ],
   "known_issues": [
