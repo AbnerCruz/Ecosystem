@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-p3-1-releases-do-hub",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T08:09:17Z",
+  "timestamp": "2026-10-03T08:25:52Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
@@ -47,14 +47,16 @@
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Tentativa local retornou dotnet: command not found. Ambiente sem SDK .NET; verificar CI do PR."
+      "result": "passed",
+      "evidence": "22/22 no CI do estado combinado: https://github.com/AbnerCruz/Ecosystem/actions/runs/37109060025/job/111163347409. Execução local indisponível por ausência de .NET.",
+      "tested_commit": "eeceb2fd18b0dfade051fb35ea5b6ccc0f6c7ce8"
     },
     {
       "check": "dotnet run tests/consistency/Check.cs -- --self-test",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "SDK .NET ausente; casos novos serão executados pelo workflow consistency do PR."
+      "result": "passed",
+      "evidence": "CI do estado combinado passou, incluindo todos os checks, nove asserções do gerador de releases e simulação do integrador. Execução https://github.com/AbnerCruz/Ecosystem/actions/runs/37109060025/job/111163347409 (head d624fec32a9b57dfa12ff30c96860c138b69e32c; main 0636b233).",
+      "tested_commit": "eeceb2fd18b0dfade051fb35ea5b6ccc0f6c7ce8"
     },
     {
       "check": "Projeção publicada com a release real do Hub",
@@ -70,8 +72,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI do PR e corrigir falhas.",
-    "Após CI verde, autorização crítica do proprietário pelo fluxo vigente e integração automática.",
+    "Autorizar integração crítica pelo fluxo do proprietário (label integrar no PR #93); o integrador revalida o head atualizado.",
     "Confirmar projeção publicada; encerrar Issue #92, ROADMAP P3-1 [x] e handoff done somente após evidência. Depois preparar P3-8."
   ],
   "decisions_required": [],
