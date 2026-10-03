@@ -1,7 +1,7 @@
 name: hub-ci
 
 # CI do Hub no monorepo: só testes, sem assinatura e sem publicar. Roda apenas quando o Hub muda (NN-014).
-# O empacotamento e a release do Hub são a tarefa P3-7.
+# O job `android` só prova que a camada de UI (P3-9) compila e gera um APK de depuração; assinatura estável, empacotamento e release do Hub são a tarefa P3-7.
 
 on:
   push:
@@ -40,3 +40,32 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Test (Hub.Core)
         run: dotnet test --project tests/Hub.Tests
+
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Android workload
+        run: dotnet workload install android
+      - name: Build APK (depuração)
+        run: >
+          dotnet build apps/hub/src/Hub.Android/Hub.Android.csproj -c Debug
+          -p:AndroidSdkDirectory="$ANDROID_HOME"
+          -p:GITHUB_RUN_NUMBER=${{ github.run_number }}
+      - name: Collect APK
+        run: |
+          apk=$(find apps/hub/src/Hub.Android/bin -name '*-Signed.apk' | head -n1)
+          test -n "$apk" || { echo "APK assinado não encontrado"; find apps/hub/src/Hub.Android/bin -name '*.apk'; exit 1; }
+          mkdir -p dist
+          cp "$apk" dist/hub-debug.apk
+          ls -l dist/hub-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hub-debug-apk
+          path: dist/hub-debug.apk
+          if-no-files-found: error

@@ -1,0 +1,130 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "7320741",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "hub",
+  "state": "verifying",
+  "message_id": "HO-20261003-p3-9-ui-android-do-hub",
+  "timestamp": "2026-10-03T05:03:28Z",
+  "task_id": "P3-9",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Adiciona um job ao workflow hub-ci.yml (zona .github/workflows/**) e corrige um defeito do CHK-ARCH-REFS em tests/consistency/Check.cs (zona do control-plane). O restante é código do Hub (rotina)."
+  },
+  "files_changed": [
+    "apps/hub/src/Hub.Android/ (Hub.Android.csproj, MainActivity.cs, ScreenRenderer.cs, Properties/AssemblyInfo.cs)",
+    "apps/hub/src/Hub.Core/SnapshotPolicy.cs",
+    "apps/hub/tests/Hub.Tests/SnapshotPolicyTests.cs",
+    "apps/hub/README.md",
+    ".github/workflows/hub-ci.yml",
+    "ROADMAP.md",
+    "tests/consistency/Check.cs",
+    "docs/governance/handoffs/HO-20261003-p3-9-ui-android-do-hub.json"
+  ],
+  "work_completed": [
+    "FATO: a camada de UI Android do Hub (DEC-0022-A, ADR-0013) foi criada em apps/hub/src/Hub.Android (net10.0-android, ApplicationId io.ecosystem.hub, só a permissão INTERNET, declarada por atributo de assembly como no Lunet2D). Uma tela: cabeçalho com botão Atualizar, linha de estado, banner e seções do HubScreen.",
+    "A UI só desenha: a decisão do que mostrar vem do Hub.Core. Para manter a regra testável sem aparelho, SnapshotPolicy (Hub.Core) decide o que mostrar e o que guardar: leitura com Products é mostrada e gravada no cache; leitura sem Products nunca sobrescreve o último estado bom e cai para ele marcado como Stale; sem estado anterior mostra a leitura com as notas, nunca esconde a falha.",
+    "Cache do último estado: um arquivo no armazenamento privado do app; falha de leitura ou escrita do cache não derruba o app. Nada é gravado no repositório; nenhum token é embutido.",
+    "hub-ci.yml ganhou o job `android`: instala o workload, compila Hub.Android em Debug e publica o APK de depuração como artefato (para a validação humana do P3-8). A solution Hub.slnx não inclui o projeto Android de propósito: os testes do núcleo não devem exigir o workload.",
+    "Correção do CHK-ARCH-REFS (tests/consistency/Check.cs): o check tratava o nome do próprio Hub ('Ecosystem Hub', 'ecosystem.hub') como referência ao Hub e reprovava o Hub ao ganhar um app com nome e identificador próprios. Agora a regra 'referenciar o Hub' vale só para os outros Products; a cobertura da correção é a própria execução do check sobre o Hub real, que passa a conter o nome. Self-test continua provando que o check detecta Lunet2D/Urbe referenciando o Hub."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/hub/tests/Hub.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "90/90 (5 novos de SnapshotPolicy)."
+    },
+    {
+      "check": "Compilação do Hub.Android e geração do APK (job android do hub-ci)",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O ambiente do agente não alcança o SDK do Android (dl.google.com bloqueado), então esta verificação só existe no CI; o handoff vai a review quando o job estiver verde."
+    },
+    {
+      "check": "Abrir o Hub no aparelho e conferir a tela",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Validação humana em aparelho é o gate P3-8 (NN-017); este item não a declara."
+    }
+  ],
+  "known_issues": [
+    "Compilação Android não verificada localmente (sem SDK); o CI é a única prova até aqui.",
+    "O APK de depuração é assinado com a chave de depuração gerada em cada build: não atualiza uma versão instalada sobre a outra. Assinatura estável e release são o P3-7.",
+    "A tela é deliberadamente simples (views por código, sem layout XML): serve ao gate de leitura. Refinar o desenho é item futuro, não escopo da Fase 3."
+  ],
+  "next_actions": [
+    "Esperar o job android verde; depois P3-7 (empacotar e publicar), P3-1 e o gate P3-8 (validação humana em aparelho)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/governance/integration-policy.json",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/hub/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O Hub não guarda estado próprio como autoridade: o cache é projeção marcada como Stale e nunca sobrescreve o estado bom com uma leitura vazia."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Hub.Android só referencia Hub.Core; CHK-ARCH-REFS varre apps/hub sem referência a outro Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum Product depende do Hub; o Hub continua leitor, nunca dependência."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Versão do Hub vem de apps/hub/VERSION (ApplicationDisplayVersion); job no workflow próprio do Hub."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "GitHub só como leitura de registro de desenvolvimento, não IPC."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Única permissão do app: INTERNET, declarada (network.access no manifest do componente); nada gravado de volta."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A abertura em aparelho não é declarada pronta: fica para o gate P3-8; o handoff não marca validação humana como feita."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "O item só vai a done depois do job android verde e da integração; até lá fica [~]/verifying."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "A tela mostra dado ausente e leitura indisponível de forma explícita (banner, notas, 'Último estado conhecido')."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "offline-last-good-state",
+      "status": "product-specific",
+      "rationale": "A política de 'mostrar o último estado bom, nunca sobrescrevê-lo com uma leitura vazia' nasceu para o Hub (SnapshotPolicy). Nenhum outro Product precisa dela hoje; reavaliar só se um segundo consumidor real aparecer (NN-022)."
+    }
+  ]
+}
