@@ -181,6 +181,15 @@ Não introduza dependências circulares.
 
 Um projeto deve ser uma pasta normal.
 
+A tela de projetos permite importar ZIPs exportados pelo Lunet e ZIPs com
+`lunet.json` na raiz. A importação valida manifesto, arquivo de entrada e
+caminhos antes de publicar o projeto completo. Nunca sobrescreve um projeto
+existente: em conflito de nome, cria uma cópia com sufixo numérico, preservando
+GameId e demais metadados. Limites locais: ZIP de até 256 MiB, até 10.000
+entradas, até 512 MiB descompactados e manifesto de até 1 MiB. Arquivos fora
+do projeto, caminhos ambíguos e links são recusados. Cancelamento não altera
+os projetos; falhas removem a área temporária.
+
 Exemplo:
 
 ``` text

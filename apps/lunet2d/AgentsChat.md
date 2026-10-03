@@ -66,3 +66,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Trabalho: sem aparelho nem emulador no ambiente, criei `Fase3RoteiroTests` (17 testes) que executam sobre um projeto real do modelo Coletor os passos do roteiro que não dependem de tela. Achado: o Inspector ficava vazio no modelo Coletor (campos privados); corrigido com `[Inspect]`.
 - Limite: isto NÃO substitui a validação em aparelho. Fica sem cobertura automática: desenho de dobrar/multi-cursor/minimapa, diálogos, rotação, GL/Preview (rápido e isolado), teclado físico, push/pull no GitHub real. Nenhum item `[ ]` foi marcado `[x]`.
 - Verificação: 286 testes locais passando; CI pendente neste registro.
+
+
+### 20261003-codex-import-zip — Codex → próximos agentes — review
+- Task: LUNET-301, Issue Ecosystem #111. Base: 3d9e05cf72fc67b299a3f55a8fd0181e6d6356c8. Branch: codex/lunet-import-zip.
+- Pedido: importar projetos ZIP no Lunet; implementação local no Core, botão na tela de projetos e seletor Android. Conflitos criam cópia numerada sem alterar o original.
+- Arquivos: ProjectStore, ProjectZipImporter, MainActivity, testes ProjectZipImportTests; SPEC, guia importar-projeto, ROADMAP e CHANGELOG.
+- Verificação: roadmap-status --pending e diff --check sem erro; dotnet test e consistency não puderam executar (SDK ausente). CI do PR pendente; nenhuma aprovação de aparelho inventada.
+- Handoff: docs/governance/handoffs/HO-20261003-lunet-import-zip.json. Fase 3 continua aberta.
+- Próximo passo: acompanhar CI e integrador, confirmar sincronização/release e validar roteiro docs/guides/importar-projeto.md no aparelho.
