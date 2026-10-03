@@ -10,11 +10,11 @@
   },
   "task_id": "P4-11",
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "branch": "codex/governance-validation-fix",
   "base_commit": "d629af882cd9580adc6e2fc0174c96a1d7754db0",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/129",
   "files_changed": [
     ".github/integrator/integrate.sh",
     ".github/integrator/simulate.sh",
@@ -38,7 +38,8 @@
     "Projeção transacional de evidências humanas já vinculadas e workflow grava docs/validation; repetição válida republica Pages.",
     "P4-8 histórico Patch Notes preservado; releases diretas renumeradas P4-10, P4-9 depende dele; resposta #126 imutável.",
     "CHK-ROADMAP detecta duplicate task id em qualquer fase; regressões de fluxo/recusas/reprovação/idempotência/VR.",
-    "Auditoria Fase 4 e recuperação sem novo clique documentadas; estado não fechado antes do mecanismo corrigido."
+    "Auditoria Fase 4 e recuperação sem novo clique documentadas; estado não fechado antes do mecanismo corrigido.",
+    "Reconciliação posterior: integração e evidências humanas/canônicas conferidas; encerramento documental sem nova aprovação."
   ],
   "verification": [
     {
@@ -52,16 +53,18 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "Fixtures isoladas com corpo/autor/hash das Issues reais: #114 → already-registered (registro #117 existente preservado), #125 → registered após migração P4-10; ambos verdict=success. /tmp/governance-real-replay.log. Não executado na main, não fabricada aprovação."
+    },
+    {
+      "check": "Integração e recuperação dos eventos originais",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #129 integrado em 6f64d8e96543d1a8f508cc5fb7e22a84d2faf843; consistency main 37137553938 verde. Reexecuções originais 37128804541 (#114) e 37133027012 (#125), tentativa 2, completed/success. #114 idempotente conserva #117; #125 registrado pelo bot em 139c538."
     }
   ],
-  "known_issues": [
-    "Correção muda control plane e depende de integração crítica autorizada pelo proprietário; agente não adiciona integrar.",
-    "P4-2/P4-8 e demais fechamentos serão reconciliados após integração usando respostas reais, sem novo clique."
-  ],
+  "known_issues": [],
   "blockers": [],
   "next_actions": [
-    "Completar testes/CI, abrir PR e deixar classificação/integração ao integrador.",
-    "Após integrar, reprocessar execuções originais #114/#125 e abrir reconciliação documental; nenhuma validação nova."
+    "Continuar P4-3 conforme ADR-0018-A; P4-4 exige validação independente de instalação/atualização/standalone."
   ],
   "decisions_required": [],
   "normative_sources": [

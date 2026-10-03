@@ -10,11 +10,11 @@
   },
   "task_id": "P4-6",
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p4-6-installation-model",
   "base_commit": "3d9e05cf72fc67b299a3f55a8fd0181e6d6356c8",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/110",
   "files_changed": [
     "ROADMAP.md",
     "docs/adr/README.md",
@@ -29,7 +29,8 @@
     "Proposta de ADR e modelo de segurança, sem código, chaves, canais ou permissões efetivas.",
     "DEC-0030 pendente com três alternativas e consequências explícitas; recomendação A não aceita pelo agente.",
     "Evidência real P4-2: integração/CI/build/publicação/hash; conferência humana permanece pendente.",
-    "Consequências da DEC-0030-A aplicadas ao ADR/modelo/índice após resposta real do proprietário (Issue #112); sem instalação ou aprovação de pins."
+    "Consequências da DEC-0030-A aplicadas ao ADR/modelo/índice após resposta real do proprietário (Issue #112); sem instalação ou aprovação de pins.",
+    "Reconciliação posterior: integração e evidências humanas/canônicas conferidas; encerramento documental sem nova aprovação."
   ],
   "verification": [
     {
@@ -37,6 +38,12 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks; git diff --check passou. Log /tmp/p4-6-consistency.log. CI/integrador confirmarão estado combinado e snapshot real de Issues."
+    },
+    {
+      "check": "Decisão e consequências integradas",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "DEC-0030-A registrada pela Issue #112, ADR-0018 Aceito e consequências integradas pelo PR #115; CI combinado 37129342065 verde. Modelo somente; não aprova pins nem instalação."
     }
   ],
   "known_issues": [
@@ -45,8 +52,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Concluir integração das consequências reais e encerrar P4-6 por evidência.",
-    "Implementar P4-3 em PR crítico conforme A, preservando gate de dispositivo humano."
+    "Continuar P4-3 conforme ADR-0018-A; P4-4 exige validação independente de instalação/atualização/standalone."
   ],
   "decisions_required": [],
   "normative_sources": [

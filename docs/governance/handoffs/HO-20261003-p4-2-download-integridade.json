@@ -10,7 +10,7 @@
   },
   "task_id": "P4-2",
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p4-2-artifact-download",
   "base_commit": "7ff0ba05510731595605f445b1ec15c07ad5d690",
   "commit": "3f9322d14d7aa90fbfbc9f68aed269db545e4d21",
@@ -34,7 +34,8 @@
     "Streaming com buffer de 64 KiB e leitura limitada ao tamanho declarado + 1 byte; limite de 128 MiB e prazo de 5 minutos incluindo corpo. HTTP/tamanho/bytes/hash/timeout/cancelamento/armazenamento viram resultados explícitos.",
     "SHA-256 incremental e tamanho conferidos antes de renomear parte única para hub-verified.apk. Cancelamento/falha descarta parcial e não devolve cópia anterior como resultado; partes abandonadas são limpas na próxima tentativa.",
     "Painel Android seleciona APK e solicita Baixar e conferir/Cancelar. Bloqueia troca/refresh durante transferência; OnStop/OnDestroy cancelam. Sem instalador, exportação, assinatura ou nova permissão Android.",
-    "Documentação registra limites, armazenamento, ausência de acesso a projeto/vault, semântica do checksum e conferência em aparelho."
+    "Documentação registra limites, armazenamento, ausência de acesso a projeto/vault, semântica do checksum e conferência em aparelho.",
+    "Reconciliação posterior: integração e evidências humanas/canônicas conferidas; encerramento documental sem nova aprovação."
   ],
   "verification": [
     {
@@ -84,8 +85,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Conferência P4-2 em aparelho, mantendo review até evidência humana; pendência não crítica não bloqueia trabalho independente.",
-    "Resolver DEC-0030 sobre modelo Proposto P4-6 antes da implementação do instalador P4-3."
+    "Continuar P4-3 conforme ADR-0018-A; P4-4 exige validação independente de instalação/atualização/standalone."
   ],
   "decisions_required": [],
   "normative_sources": [

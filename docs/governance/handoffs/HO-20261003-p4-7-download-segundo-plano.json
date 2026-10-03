@@ -10,11 +10,11 @@
   },
   "task_id": "P4-7",
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p4-7-background-download",
   "base_commit": "9a935188955d1653806ddb7c3cbed6dc927d20a5",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/115",
   "files_changed": [
     "ROADMAP.md",
     "apps/hub/README.md",
@@ -43,7 +43,8 @@
     "Operação estável evita duplicação, comando atrasado, início negado travado, interferência de tela/observador e resultado fictício pós-processo morto. Marker privado não autoriza retomada.",
     "Downloader P4-2 mantém limites/tamanho/hash/descarte; dez testes novos de lifecycle de sessão e documentação/roteiro em aparelho.",
     "Resposta real DEC-0030-A detectada na Issue #112; aplicada ao ADR/modelo sem ativar instalador/pins.",
-    "Corrige VR dev.4 para registrar apenas evidência automática; validação humana pending permanece com autoridade única no handoff. A resposta já enviada pelo proprietário na Issue #114 será reprocessada pelo workflow após integrar a correção, sem criar resposta ou marcar aprovação como agente."
+    "Corrige VR dev.4 para registrar apenas evidência automática; validação humana pending permanece com autoridade única no handoff. A resposta já enviada pelo proprietário na Issue #114 será reprocessada pelo workflow após integrar a correção, sem criar resposta ou marcar aprovação como agente.",
+    "Reconciliação posterior: integração e evidências humanas/canônicas conferidas; encerramento documental sem nova aprovação."
   ],
   "verification": [
     {
@@ -61,8 +62,8 @@
     {
       "check": "Compilação Android e estado combinado",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "CI hub-ci e integrador confirmarão bindings Android, APK e testes; workload Android não disponível localmente."
+      "result": "passed",
+      "evidence": "CI Android/test e integrador verdes: https://github.com/AbnerCruz/Ecosystem/actions/runs/37129344009 e https://github.com/AbnerCruz/Ecosystem/actions/runs/37129342065. PR #115 integrado; aprovação humana real #118 já registrada. Release Hub dev.5 publicada, confirmada pela API de releases."
     },
     {
       "check": "Download em segundo plano, notificação e reconexão no aparelho",
@@ -87,10 +88,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Concluir CI e integrador; apresentar PR crítico verde para autorização de integração do proprietário.",
-    "Após integração, rerun da execução decision 37128804541, que usa a resposta real do proprietário na Issue #114, sem novo clique ou edição manual de validação.",
-    "Registrar conferência em aparelho e release efetiva sem inventar aprovação; preservar gate humano P4-4.",
-    "Implementação do instalador P4-3 seguirá modelo A já escolhido, em mudança própria."
+    "Continuar P4-3 conforme ADR-0018-A; P4-4 exige validação independente de instalação/atualização/standalone."
   ],
   "decisions_required": [],
   "normative_sources": [
