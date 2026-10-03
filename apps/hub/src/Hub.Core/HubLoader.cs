@@ -25,11 +25,13 @@ public sealed class HubLoader
 
     readonly HttpClient _http;
     readonly HubOptions _options;
+    readonly Func<ReleaseChannel, IReleaseProvider>? _releaseProvider;
 
-    public HubLoader(HttpClient http, HubOptions options)
+    public HubLoader(HttpClient http, HubOptions options, Func<ReleaseChannel, IReleaseProvider>? releaseProvider = null)
     {
         _http = http;
         _options = options;
+        _releaseProvider = releaseProvider;
     }
 
     public async Task<HubSnapshot> LoadAsync(CancellationToken ct = default)
@@ -92,9 +94,15 @@ public sealed class HubLoader
                 var channel = channels[p.Id];
                 if (channel.Value is not { } c)
                     return (p.Id, Data: Datum<IReadOnlyList<ReleaseInfo>>.Missing(channel.Source, channel.Note));
-                var data = c.Repository.FullName.Equals(o.Repository.FullName, StringComparison.OrdinalIgnoreCase)
-                    ? ghT.Result.Releases : await new GitHubReader(_http, c.Repository, o.Token).ReadReleasesAsync(ct).ConfigureAwait(false);
-                return (p.Id, Data: GitHubReader.ForChannel(data, c));
+                try
+                {
+                    var data = _releaseProvider is null && c.Repository.FullName.Equals(o.Repository.FullName, StringComparison.OrdinalIgnoreCase)
+                        ? ghT.Result.Releases : await (_releaseProvider?.Invoke(c) ?? new GitHubReader(_http, c.Repository, o.Token)).ReadReleasesAsync(ct).ConfigureAwait(false);
+                    return (p.Id, Data: GitHubReader.ForChannel(data, c));
+                }
+                catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+                catch (Exception)
+                { return (p.Id, Data: Datum<IReadOnlyList<ReleaseInfo>>.Missing(channel.Source, "provider de releases indisponível")); }
             })
             .ToList();
         foreach (var (id, data) in await Task.WhenAll(releaseTasks).ConfigureAwait(false)) releases[id] = data;

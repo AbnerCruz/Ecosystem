@@ -14,7 +14,21 @@ public static class SnapshotPolicy
     public static SnapshotChoice Choose(HubSnapshot? fresh, string? cachedJson)
     {
         if (fresh is { Products.Count: > 0 })
+        {
+            // Uma falha parcial não apaga releases confiáveis; nunca cruza canais ou transforma vazio válido em fallback.
+            if (SnapshotCache.Load(cachedJson) is { } cachedHistory)
+            {
+                var releases = fresh.ProductReleases.ToDictionary(x => x.Key, x => x.Value);
+                foreach (var (id, failed) in fresh.ProductReleases)
+                    if (failed.Availability == Availability.NotAvailable &&
+                        fresh.ReleaseChannels?.GetValueOrDefault(id) is { Availability: Availability.Derived, Value: { } channel } &&
+                        cachedHistory.ReleaseChannels?.GetValueOrDefault(id)?.Value == channel &&
+                        cachedHistory.ProductReleases.GetValueOrDefault(id) is { Value: not null, Availability: not Availability.NotAvailable } saved)
+                        releases[id] = saved.AsStale() with { Note = "Último histórico conhecido; consulta atual indisponível: " + failed.Note };
+                fresh = fresh with { ProductReleases = releases };
+            }
             return new SnapshotChoice(fresh, SnapshotCache.Serialize(fresh));
+        }
 
         if (SnapshotCache.Load(cachedJson) is { } previous)
             return new SnapshotChoice(previous, null);

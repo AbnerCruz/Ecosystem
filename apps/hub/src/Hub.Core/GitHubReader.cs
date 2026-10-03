@@ -8,7 +8,7 @@ namespace Hub.Core;
 /// (a API pública sem token tem limite baixo e responde 403 ao excedê-lo — isso vira <see cref="Availability.NotAvailable"/>).
 /// Falha de rede, tempo esgotado, status HTTP de erro ou resposta inválida nunca lançam: viram dado não disponível com o motivo.
 /// </summary>
-public sealed class GitHubReader
+public sealed class GitHubReader : IReleaseProvider
 {
     const string Api = "https://api.github.com";
     readonly HttpClient _http;
@@ -33,7 +33,7 @@ public sealed class GitHubReader
 
     public async Task<Datum<IReadOnlyList<ReleaseInfo>>> ReadReleasesAsync(CancellationToken ct = default)
     {
-        var data = await GetList<ReleaseInfo>($"/repos/{_repo.FullName}/releases?per_page=100", null, ParseRelease, ct).ConfigureAwait(false);
+        var data = await GetList<ReleaseInfo>($"/repos/{_repo.FullName}/releases?per_page=100", null, ParseRelease, ct, strictRelease: true).ConfigureAwait(false);
         return data.Value is null ? data : data with { Note = data.Value.Count >= 100 ? "consulta limitada às 100 releases mais recentes" : data.Note,
             Value = data.Value.OrderByDescending(r =>
             DateTimeOffset.TryParse(r.PublishedAt, System.Globalization.CultureInfo.InvariantCulture,
@@ -50,7 +50,8 @@ public sealed class GitHubReader
 
     static ReleaseInfo? ParseRelease(JsonElement e)
     {
-        if (Bool(e, "draft") || Str(e, "tag_name") is not { Length: > 0 } tag) return null;
+        if (Bool(e, "draft")) return null;
+        if (Str(e, "tag_name") is not { Length: > 0 } tag) throw new JsonException("release sem tag");
         List<ReleaseAssetInfo>? artifacts = null; var count = 0; string? note = null;
         if (e.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
         {
@@ -68,7 +69,7 @@ public sealed class GitHubReader
             }
             if (artifacts.Count < count) note = "há artefatos com metadados incompletos ou inválidos";
         }
-        return new(tag, Str(e, "name"), Bool(e, "prerelease"), Str(e, "published_at"), Str(e, "html_url") ?? "", count, artifacts, note);
+        return new(tag, Str(e, "name"), Bool(e, "prerelease"), Str(e, "published_at"), Str(e, "html_url") ?? "", count, artifacts, note, Str(e, "body"));
     }
 
     /// <summary>Issues abertas (a API devolve PRs na mesma lista; elas são descartadas aqui).</summary>
@@ -104,7 +105,7 @@ public sealed class GitHubReader
         return new GitHubSnapshot(_repo, pr.Result, br.Result, rel.Result, iss.Result, ci.Result);
     }
 
-    async Task<Datum<IReadOnlyList<T>>> GetList<T>(string path, string? arrayProperty, Func<JsonElement, T?> map, CancellationToken ct) where T : class
+    async Task<Datum<IReadOnlyList<T>>> GetList<T>(string path, string? arrayProperty, Func<JsonElement, T?> map, CancellationToken ct, bool strictRelease = false) where T : class
     {
         var source = Api + path;
         var r = await GitHubHttp.GetAsync(_http, source, _token, "application/vnd.github+json", ct).ConfigureAwait(false);
@@ -122,8 +123,11 @@ public sealed class GitHubReader
             if (root.ValueKind != JsonValueKind.Array) return Datum<IReadOnlyList<T>>.Missing(source, "resposta inesperada");
 
             var list = new List<T>();
-            foreach (var e in root.EnumerateArray())
+            foreach (var e in root.EnumerateArray().Take(strictRelease ? 100 : int.MaxValue))
+            {
+                if (strictRelease && e.ValueKind != JsonValueKind.Object) throw new JsonException("release inválida");
                 if (e.ValueKind == JsonValueKind.Object && map(e) is { } item) list.Add(item);
+            }
             return Datum<IReadOnlyList<T>>.From(list, source);
         }
         catch (JsonException) { return Datum<IReadOnlyList<T>>.Missing(source, "resposta inválida"); }

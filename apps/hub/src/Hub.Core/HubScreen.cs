@@ -1,7 +1,7 @@
 namespace Hub.Core;
 
 /// <summary>Uma linha de tela já em texto. A camada de UI só desenha; a decisão do que mostrar (e do que avisar) é testada aqui.</summary>
-public sealed record ScreenLine(string Text, string? Detail = null);
+public sealed record ScreenLine(string Text, string? Detail = null, string? ProductId = null);
 
 public sealed record ScreenSection(string Title, IReadOnlyList<ScreenLine> Lines);
 
@@ -44,7 +44,7 @@ public static class HubScreenBuilder
             var version = Show(p.Version, "versão indisponível");
             var status = Show(p.Status, "estado indisponível");
             var detail = Release(s, p.Id);
-            return new ScreenLine($"{name} · {version} · {status}", detail);
+            return new ScreenLine($"{name} · {version} · {status}", detail, p.Id);
         }).ToList();
         return new ScreenSection("Products", lines);
     }

@@ -7,7 +7,7 @@ using Hub.Core;
 namespace HubApp;
 
 /// <summary>Desenha um <see cref="HubScreen"/>. Sem decisão: o que mostrar e o que avisar já veio decidido e testado do Hub.Core.</summary>
-sealed class ScreenRenderer(Context context, LinearLayout container)
+sealed class ScreenRenderer(Context context, LinearLayout container, Action<string>? openChanges = null)
 {
     public static int Dp(Context context, float dp) =>
         (int)((dp * (context.Resources?.DisplayMetrics?.Density ?? 1f)) + 0.5f);
@@ -47,6 +47,12 @@ sealed class ScreenRenderer(Context context, LinearLayout container)
         box.AddView(new TextView(context) { Text = line.Text, TextSize = 16 });
         if (line.Detail is { } detail)
             box.AddView(new TextView(context) { Text = detail, TextSize = 13, Alpha = 0.7f });
+        if (line.ProductId is { } productId && openChanges is not null)
+        {
+            var changes = new Button(context) { Text = "Ver mudanças" };
+            changes.Click += (_, _) => openChanges(productId);
+            box.AddView(changes);
+        }
         return box;
     }
 }
