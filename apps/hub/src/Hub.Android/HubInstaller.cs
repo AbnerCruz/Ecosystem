@@ -16,6 +16,7 @@ internal static class HubInstaller
     static readonly SemaphoreSlim Gate = new(1, 1);
     internal static event Action? Changed;
     internal static string Marker(Context c) => Path.Combine(c.FilesDir!.AbsolutePath, "hub-install.json");
+    internal static bool HasOperation(Context c) => File.Exists(Marker(c));
     internal static InstallOperation? Operation(Context c)
     {
         try { return File.Exists(Marker(c)) ? JsonSerializer.Deserialize<InstallOperation>(File.ReadAllText(Marker(c))) : null; }
@@ -30,7 +31,7 @@ internal static class HubInstaller
     internal static void SetMessage(string message) { Message = message; Changed?.Invoke(); }
     internal static AndroidPackageEvidence? Installed(Context c, string package)
     {
-        try { return Evidence(c.PackageManager!.GetPackageInfo(package, PackageInfoFlags.SigningCertificates)); }
+        try { return Evidence(c.PackageManager!.GetPackageInfo(package, PackageInfoFlags.SigningCertificates)) ?? throw new InvalidDataException("Estado/signatário instalado indisponível; instalação bloqueada."); }
         catch (PackageManager.NameNotFoundException) { return null; }
     }
     static AndroidPackageEvidence? Evidence(PackageInfo? info)
@@ -43,7 +44,17 @@ internal static class HubInstaller
     }
     internal static void Recover(Context c)
     {
-        if (Preparing || Operation(c) is not { } op) return;
+        if (Preparing) return;
+        try
+        {
+            foreach (var file in Directory.EnumerateFiles(c.CacheDir!.AbsolutePath, "install-*.apk")) File.Delete(file);
+        }
+        catch (Exception) { SetMessage("Não foi possível limpar cópias privadas abandonadas."); }
+        if (Operation(c) is not { } op)
+        {
+            if (HasOperation(c)) SetMessage("Registro de sessão ilegível; instalação bloqueada. Consulte o instalador Android.");
+            return;
+        }
         try
         {
             var session = c.PackageManager!.PackageInstaller!.GetSessionInfo(op.SessionId);
@@ -81,7 +92,7 @@ internal static class HubInstaller
         try
         {
             ct.ThrowIfCancellationRequested();
-            if (Operation(c) is not null || HubDownloads.Session.Status.Active) throw new InvalidOperationException("Outra operação está ativa.");
+            if (HasOperation(c) || HubDownloads.Session.Status.Active) throw new InvalidOperationException("Outra operação está ativa.");
             Preparing = true;
             SetMessage("Reconferindo bytes, pacote, assinatura e versão…");
             if (download.State != ArtifactDownloadState.Verified || download.LocalPath != Path.Combine(HubDownloads.Directory(c), "hub-verified.apk"))

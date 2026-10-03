@@ -62,7 +62,7 @@ public sealed partial class MainActivity
     {
         var choice = SelectedArtifact();
         var invalid = choice is null ? null : ArtifactDownloader.Ineligible(choice);
-        bool busy = HubDownloads.Session.Status.Active || HubInstaller.Preparing || _checkingInstall || _installConfirmation is not null || HubInstaller.Operation(this) is not null;
+        bool busy = HubDownloads.Session.Status.Active || HubInstaller.Preparing || _checkingInstall || _installConfirmation is not null || HubInstaller.HasOperation(this);
         _refresh!.Enabled = !busy && !_refreshing;
         _artifact!.Enabled = !busy && !_refreshing && _choices.Count > 0;
         _startDownload!.Enabled = !busy && !_refreshing && choice is not null && invalid is null;
@@ -115,7 +115,7 @@ public sealed partial class MainActivity
 
     void DownloadSelected()
     {
-        if (_destroyed || _refreshing || HubInstaller.Preparing || _checkingInstall || _installConfirmation is not null || HubInstaller.Operation(this) is not null || HubDownloads.Session.Status.Active || SelectedArtifact() is not { } choice) return;
+        if (_destroyed || _refreshing || HubInstaller.Preparing || _checkingInstall || _installConfirmation is not null || HubInstaller.HasOperation(this) || HubDownloads.Session.Status.Active || SelectedArtifact() is not { } choice) return;
         if (OperatingSystem.IsAndroidVersionAtLeast(33) && !_notificationPermissionRequested &&
             CheckSelfPermission(Android.Manifest.Permission.PostNotifications) != Permission.Granted)
         {

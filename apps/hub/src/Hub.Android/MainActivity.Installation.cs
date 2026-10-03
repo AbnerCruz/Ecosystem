@@ -58,8 +58,14 @@ public sealed partial class MainActivity
     async Task RefreshInstallationTrust(CancellationToken ct)
     {
         _approvedPackages.Clear();
-        // Only packages declared in Android queries can be used; metadata alone never expands visibility.
-        foreach (var choice in _choices.DistinctBy(x => x.ProductId).Take(8))
+        var source = new RepositoryFileSource(Http, Options.Repository, Options.Branch, Options.Token);
+        var catalog = await source.ReadTextAsync("docs/architecture/hub-android-products.json", ct);
+        AndroidProductTrust[] candidates = [];
+        try { if (catalog.Availability == Availability.Derived && catalog.Value is not null) candidates = JsonSerializer.Deserialize<AndroidProductTrust[]>(catalog.Value) ?? []; }
+        catch (JsonException) { }
+        // Metadata alone never expands Android visibility. Fetch decisions/current channel only for eligible products.
+        var ids = candidates.Where(x => VisiblePackages.Contains(x.PackageId)).Select(x => x.ProductId).ToHashSet();
+        foreach (var choice in _choices.Where(x => ids.Contains(x.ProductId)).DistinctBy(x => x.ProductId).Take(8))
         {
             try { if (await LoadTrust(choice, ct) is { } approved) _approvedPackages[choice.ProductId] = approved; }
             catch (OperationCanceledException) { throw; }
@@ -74,23 +80,25 @@ public sealed partial class MainActivity
         var choice = SelectedArtifact();
         var trust = choice is null ? null : _approvedPackages.GetValueOrDefault(choice.ProductId);
         var transfer = HubDownloads.Session.Status;
-        var busy = _installConfirmation is not null || _checkingInstall || HubInstaller.Preparing || HubInstaller.Operation(this) is not null;
+        var busy = _installConfirmation is not null || _checkingInstall || HubInstaller.Preparing || HubInstaller.HasOperation(this);
         var downloadMatches = transfer is { Choice: not null, Result.State: ArtifactDownloadState.Verified } && transfer.Choice == choice;
         AndroidPackageEvidence? installed = null;
+        bool installedUnavailable = false;
         try { if (trust is not null) installed = HubInstaller.Installed(this, trust.PackageId); }
-        catch (Exception) { }
-        _install!.Enabled = !_refreshing && !busy && !transfer.Active && trust is not null && downloadMatches;
+        catch (Exception) { installedUnavailable = true; }
+        _install!.Enabled = !_refreshing && !busy && !transfer.Active && !installedUnavailable && trust is not null && downloadMatches;
         _install.Text = installed is null ? "Instalar" : "Atualizar";
         _openProduct!.Enabled = !_refreshing && _installConfirmation is null && !_checkingInstall && trust is not null && installed is not null && InstallationPolicy.TrustedPackage(trust, installed);
-        _cancelInstall!.Enabled = _checkingInstall || HubInstaller.Preparing || HubInstaller.Operation(this) is not null;
+        _cancelInstall!.Enabled = _checkingInstall || HubInstaller.Preparing || HubInstaller.HasOperation(this);
         _installationStatus.Text = (trust is null ? "Instalação/abertura bloqueadas: identidade ou certificado sem aprovação atual. Canal independente continua disponível."
+            : installedUnavailable ? "Estado instalado indisponível; instalação bloqueada."
             : installed is null ? "Pacote não encontrado/acessível no Android."
             : $"Instalado: {installed.VersionName ?? "versão sem nome"} ({installed.VersionCode}).") + "\n" + HubInstaller.Message;
     }
 
     async void ConfirmInstallation()
     {
-        if (_destroyed || _installConfirmation is not null || _checkingInstall || HubInstaller.Preparing || HubInstaller.Operation(this) is not null || SelectedArtifact() is not { } choice) return;
+        if (_destroyed || _installConfirmation is not null || _checkingInstall || HubInstaller.Preparing || HubInstaller.HasOperation(this) || SelectedArtifact() is not { } choice) return;
         var status = HubDownloads.Session.Status;
         if (status.Active || status.Choice != choice || status.Result is not { State: ArtifactDownloadState.Verified } download) return;
         _prepareInstall?.Cancel();
