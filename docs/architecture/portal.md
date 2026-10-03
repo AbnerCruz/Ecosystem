@@ -41,7 +41,7 @@ Autoridade do formato: [`docs/contracts/schemas/ecosystem-status.schema.json`](.
 | `kind`, `authority` | sempre `projection` / `false` |
 | `source` | repositório, ref, commit e lista de arquivos canônicos lidos |
 | `ecosystem` | nome, fase e resultado dos checks de consistência do commit projetado |
-| `ecosystem.gates[]` | estado do gate de cada fase, derivado do ROADMAP (`*Estado do gate:*`); `CHK-PORTAL` recusa divergência |
+| `ecosystem.gates[]` | estado do gate de cada fase, derivado do ROADMAP (`*Estado do gate:*`), com o nome da fase e a contagem dos itens por caixa; `CHK-PORTAL` recusa divergência |
 | `components[]` | ID, nome, tipo, status, descrição, links (repositório, releases, web) e os dados `version`, `release`, `ci` com proveniência; `artifacts[]` (APK, instalador Windows, AppImage da última release, com tamanho e SHA-256; P1-9); `validation.state` |
 | `pendingValidations[]` | validações humanas pendentes derivadas dos registros canônicos (hoje, handoffs) |
 | `docs[]` | documentação canônica com link |
@@ -143,7 +143,7 @@ A interface segue o ADR-0005 (HTML/CSS/JS estáticos, sem build, sem dependênci
 | Indicadores | saúde do desenvolvimento em números | §8.1 + projeção |
 | Apps | versão, release, downloads (com tamanho), validação humana, espelho, fontes e SHA-256 copiável | projeção (+ espelho ao vivo, já existente) |
 | Atividade de integração | integrações por dia (rotina × crítico), fila atual, últimas integrações com o commit exato | §8.1 |
-| Roadmap | fases e gates; nome e progresso de cada fase quando a projeção trouxer `roadmap` | projeção |
+| Roadmap | fases e gates, com o nome e o progresso de cada fase (itens `[x]`, `[~]`, `[ ]`) | projeção (`ecosystem.gates[]`, derivado do ROADMAP; `CHK-PORTAL` compara) |
 | Distribuição e recuperação, Documentação | canais, recuperação sem o Hub, candidatos a reutilização, fontes normativas | projeção |
 
 Busca e navegação: `Ctrl K` / `⌘K` (ou `/`) abre uma paleta que procura seções, ações de cada Product (abrir, baixar, roteiro de teste), pendências, PRs abertos, integrações recentes e documentos. O tema (automático, claro, escuro) é preferência local do visitante (`localStorage`), nunca estado do Ecosystem.

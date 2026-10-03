@@ -9,12 +9,12 @@
   },
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "a0f584d",
-  "commit": null,
-  "pr": null,
+  "commit": "b4b52d8",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/66",
   "blockers": [],
   "cost": null,
   "component": "portal",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261002-portal-v2",
   "timestamp": "2026-10-02T12:40:00Z",
   "task_id": "P3-11",
@@ -70,11 +70,10 @@
   "known_issues": [
     "Os indicadores ao vivo dependem da API pública do GitHub (60 requisições/hora por IP sem token); com o limite atingido, aparecem como 'não disponível' até a próxima janela. Nenhum token é embutido (NN-016).",
     "'Integradas sem você' cobre 14 dias e inclui o período anterior ao integrador automático (merges do proprietário pelo botão): o número sobe sozinho conforme a janela avança; o subtítulo mostra também o dia de hoje.",
-    "Nome e progresso por fase no Roadmap dependem do campo 'roadmap' na projeção, que exige mudar o gerador (control plane, crítico): item separado, com PR próprio."
+    "Nome e progresso por fase no Roadmap: continuação em P3-13 (gerador, mudança crítica)."
   ],
   "next_actions": [
-    "PR crítico do gerador: projetar roadmap.phases (nome, gate, itens concluídos/em andamento/abertos) a partir do ROADMAP, comparado por CHK-PORTAL.",
-    "Depois da validação humana (não crítica) pelo portal: P3-11 [x], Issue fechada, handoff done."
+    "Nenhuma pendência do proprietário. Continuação (nome e progresso por fase) em P3-13, handoff HO-20261003-portal-roadmap-por-fase."
   ],
   "decisions_required": [],
   "normative_sources": [

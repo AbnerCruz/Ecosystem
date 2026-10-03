@@ -499,7 +499,19 @@ if (File.Exists(P("ROADMAP.md")))
         if (!hm.Success) continue;
         var body = rtext[heads[hi].Index..(hi + 1 < heads.Count ? heads[hi + 1].Index : rtext.Length)];
         var gm = System.Text.RegularExpressions.Regex.Match(body, @"^\*Estado do gate:\* \*\*(aprovado|aguardando|não iniciado)\*\*", System.Text.RegularExpressions.RegexOptions.Multiline);
-        roadmapGates.Add(new JsonObject { ["phase"] = int.Parse(hm.Groups[1].Value), ["state"] = gm.Success ? gm.Groups[1].Value : "não iniciado" });
+        // Nome e progresso da fase: o título "## Fase N — <nome>" e as caixas dos itens "- [x|~| ] P<n>-<m> " (mesmas linhas
+        // de formato fixo que CHK-STATE-CONSISTENCY lê); CHK-PORTAL compara.
+        var marks = System.Text.RegularExpressions.Regex.Matches(body, @"^- \[( |~|x)\] P\d+-\d+ ", System.Text.RegularExpressions.RegexOptions.Multiline)
+            .Select(x => x.Groups[1].Value).ToList();
+        roadmapGates.Add(new JsonObject
+        {
+            ["phase"] = int.Parse(hm.Groups[1].Value),
+            ["state"] = gm.Success ? gm.Groups[1].Value : "não iniciado",
+            ["name"] = heads[hi].Groups[1].Value[hm.Length..].Trim(),
+            ["done"] = marks.Count(x => x == "x"),
+            ["inProgress"] = marks.Count(x => x == "~"),
+            ["todo"] = marks.Count(x => x == " "),
+        });
     }
 }
 

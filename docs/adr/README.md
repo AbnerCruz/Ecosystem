@@ -38,4 +38,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0014](0014-fluxo-multiagente-minimo.md) | Fluxo multiagente mínimo: base, resultado, integração e validação | Aceito (ADD-0010) |
 | [0015](0015-integrador-automatico.md) | Integrador automático: estado combinado, fila serial, criticidade e autorização | Aceito (ADD-0011, ADD-0012) |
 | [0016](0016-migracao-do-urbe-para-csharp.md) | Migração do Urbe para C# | Aceito (DEC-0024-B: reescrita completa com paridade; pilha e corte ainda por decidir) |
-| [0017](0017-agent-runtime-execution-runtime-e-organizacoes.md) | Agent Runtime, Execution Runtime e organizações de agentes: fronteiras e sequência | Proposto (aceite pela DEC-0026) |
+| [0017](0017-agent-runtime-execution-runtime-e-organizacoes.md) | Agent Runtime, Execution Runtime e organizações de agentes: fronteiras e sequência | Aceito (DEC-0026-C; escolha A revogada, ADD-0014) |

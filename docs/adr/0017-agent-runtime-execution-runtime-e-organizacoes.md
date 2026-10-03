@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — vira `Aceito` somente pela decisão do proprietário registrada (**DEC-0026**, alternativas A, B ou C; a alternativa D o rejeita). Agentes nunca marcam `Aceito` uma decisão que exige o proprietário (MANIFEST §23.2). Enquanto `Proposto`, **nenhum** código, diretório, componente, schema ou permissão deste ADR existe.
+Aceito — o proprietário decidiu em **DEC-0026**: alternativa **C** (R1 dentro de um Product novo de IA, com fronteira de extração desde o primeiro dia). A escolha inicial A foi revogada por ele no mesmo dia, por engano ([ADD-0014](../governance/addenda/ADD-0014-dec-0026-revogada-a-escolhida-c.md); histórico em [`responses/DEC-0026.md`](../governance/responses/DEC-0026.md)). **Aceitar este ADR não implementa nada:** nenhum código, diretório, componente, schema ou permissão existe; o R1 só começa depois da **DEC-0027** (id e nome do Product) e das aprovações críticas que ele exigir (entrada em `ecosystem.json`).
 
 ## Contexto
 
@@ -27,7 +27,7 @@ Fronteiras (§Decisão, D1–D6) e sequenciamento do primeiro slice:
 
 ## Decisão
 
-> **PROPOSTA** (aceita ou rejeitada pela DEC-0026; as alternativas A, B e C aceitam D1–D9 e diferem só em quando/onde nasce o R1).
+> D1–D9 foram aceitas pela DEC-0026 (alternativa C). A alternativa C só define **quando e onde nasce o R1**; o desenho de D1–D9 vale em qualquer caso.
 
 **D1 — Agent Runtime** é um **Service** (MANIFEST §6.5): decide e coordena (modelos, contexto, memória, ferramentas, permissões, planejamento, verificação, eventos). Núcleo **novo, em C#**, **sem dependências**; contratos em JSON Schema. Nunca abre processo, socket ou arquivo por conta própria: só chama **capabilities**. Provedores de modelo são **adapters** atrás de uma porta (`IModelProvider`), fora do Core.
 
@@ -41,7 +41,7 @@ Fronteiras (§Decisão, D1–D6) e sequenciamento do primeiro slice:
 
 **D6 — Escalonamento** generaliza o modelo de `integration-policy.json`: o sistema julga o que já sabe julgar; direção nova ou efeito crítico (gasto, operação externa, segredo, perda irreversível de dados, e as classes já existentes) vai ao proprietário.
 
-**D7 — Sequência:** slices R1 (runtime mínimo, em processo) → R2 (duas equipes, workspace isolado, change set) → R3 (Workspace hospedado em Product existente, anfitrião por critério, §11.1 do plano) → R4 (Product de IA) → R5 (Remote Worker, depois da Fase 5) → R6 (deploy). **Nenhum slice é implementado antes da DEC-0026** nem antes das aprovações críticas que ele exigir. Fases: R1–R4 na **Fase 6**; organização persistente e Remote Workers na **Fase 8 (proposta)**; Execution Runtime de serviços, deploy, gasto real e segredos de plataforma na **Fase 9 (proposta)**.
+**D7 — Sequência (R1 conforme a alternativa C da DEC-0026: nasce dentro do Product de IA, com o `Core` sem referência a Product, UI ou provedor, provado por testes de arquitetura, e promoção a Service por Extraction Review quando houver um segundo consumidor real; o id e o nome do Product são a DEC-0027):** slices R1 (runtime mínimo, em processo) → R2 (duas equipes, workspace isolado, change set) → R3 (Workspace hospedado em Product existente, anfitrião por critério, §11.1 do plano) → R4 (Product de IA) → R5 (Remote Worker, depois da Fase 5) → R6 (deploy). **Nenhum slice é implementado antes da DEC-0026** nem antes das aprovações críticas que ele exigir. Fases: R1–R4 na **Fase 6**; organização persistente e Remote Workers na **Fase 8 (proposta)**; Execution Runtime de serviços, deploy, gasto real e segredos de plataforma na **Fase 9 (proposta)**.
 
 **D8 — Dogfooding sem recursão:** o Runtime nunca ganha escrita na `main`; produz `Change Set` que passa pelo **mesmo integrador** e pelas **mesmas zonas críticas**. Git/GitHub são **adapters**, nunca parte do Core (NN-015).
 
@@ -60,7 +60,7 @@ Fronteiras (§Decisão, D1–D6) e sequenciamento do primeiro slice:
 - Boundaries explícitos para os próximos ADRs; o vocabulário (Service, Workspace, Product, Capability, Context, permissões) é **reutilizado**, não substituído.
 - O ROADMAP ganha itens P6-1..P6-5 e um bloco de fases propostas (8–9), sem gate nem ID até este ADR ser aceito.
 - **Decisões críticas futuras** ficam previstas, não abertas (plano §13): UC-21 × Runtime compartilhado, id/nome do Product, política de orçamento, segredos por plataforma, confiança do Worker, primeiro provider de deploy, retenção em organizações persistentes. Cada nova permissão (`model.invoke`, `process.run`, `secret.use`, `budget.spend`, `deploy.production`…) altera `permissions.json` (zona crítica `security`) no slice que a exigir.
-- Se aceito pela alternativa **C**, nasce um Product novo (entrada em `ecosystem.json`, regra de arquitetura `manifest-structure`, crítica); se pela **B**, nasce um componente compartilhado com `CHK-SHARED-DECLARATION`.
+- Pela alternativa **C** (decidida), nasce um Product novo no R1: entrada em `ecosystem.json` (regra de arquitetura `manifest-structure`, crítica), `apps/<id>`, versão e CI do Product. Um componente compartilhado (`CHK-SHARED-DECLARATION`) só nasce na promoção, por Extraction Review.
 - **Riscos assumidos:** contrato prematuro (mitigado por duas implementações de provedor antes de congelar) e deriva entre IAs (mitigada pela decisão futura sobre UC-21).
 
 ## Alternativas rejeitadas
