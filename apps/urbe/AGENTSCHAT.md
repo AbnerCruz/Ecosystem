@@ -1,17 +1,16 @@
 ### 2026-10-03 — ChatGPT — UC-2: crash recovery portável (REQ-007/038/046)
-(REQ-007/038/046)
-- Estado: verificando no PR #165, empilhado sobre o PR #161; não integrar antes da fatia IDB.
-- Feito: quatro casos `vault.crash-recovery` injetam falha na criação do journal, no segundo arquivo, na remoção de nota e na remoção final do journal. O corpus empilhado passa de 205 para 209 casos.
+- Estado: verificando no PR #165, agora baseado diretamente em `main` após integração do PR #161.
+- Feito: quatro casos `vault.crash-recovery` injetam falha na criação do journal, no segundo arquivo, na remoção de nota e na remoção final do journal. O corpus passa de 205 para 209 casos.
 - Invariante: nenhum arquivo de runtime congelado foi alterado; somente tooling, testes e documentação do corpus UC-2.
 - Restante após esta fatia: atomicidade/rollback de restauração de backup, capacidades nativas portáveis e UI/E2E por superfície.
 
 
 
 ### 2026-10-03 — ChatGPT — UC-2: IndexedDB legado e gestão de vaults (REQ-007/028/046)
-- Estado: review, Issue #139; PR #161 com gates do head reconciliado verdes; fechamento formal em andamento.
+- Estado: integrado na `main` pelo PR #161; Issue #139 continua aberta para as fatias restantes de UC-2.
 - Feito: quatro cenários portáveis IDB/browser adicionados ao `storage.scenario` e um caso separado para a migração v1 `kv["cidade"]`; corpus candidato 205. O `idb.js` real é executado sobre IndexedDB determinístico do tooling, cobrindo chaves legadas `knowledge-city`, gestão/isolamento de vaults, pastas e binários.
 - Limites: runtime JS congelado não foi alterado; o harness determinístico não substitui `tests/e2e/adapters.e2e.mjs` em Chromium nem valida aparelho/permissão do SO. UC-2 segue aberto.
-- Verificação: `urbe-checks` e `consistency` do PR #161 em execução.
+- Verificação: gates próprios e estado combinado do integrador passaram antes do merge.
 
 ### 2026-10-03 — codex — UC-2: identidade/GC (REQ-042)
 - Estado: revisão parcial, Issue #139; branch codex/urbe-domain-parity.
