@@ -41,3 +41,9 @@ Requer .NET SDK 10+. Não há provedor de modelo real, rede nem segredo: o R1 pr
 
 A prova de equipes, isolamento e integração está descrita em [docs-r2.md](docs-r2.md).
 Autoridade do escopo: P6-3 no ROADMAP; contrato candidato: ADR-0020.
+
+## Sessão do Agent Workspace
+
+A prova local de hospedagem em dois contextos está em [docs-r3.md](docs-r3.md).
+O Workspace consome o Core; ainda não existe UI nem integração com Host real.
+Escopo: P6-4 / Issue #144; detalhes candidatos no ADR-0021.

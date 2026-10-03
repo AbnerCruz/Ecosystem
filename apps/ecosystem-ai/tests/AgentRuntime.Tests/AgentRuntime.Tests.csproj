@@ -13,6 +13,7 @@
     <Using Include="Xunit" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../../src/AgentWorkspace/AgentWorkspace.csproj" />
     <ProjectReference Include="..\..\src\AgentRuntime.Core\AgentRuntime.Core.csproj" />
     <ProjectReference Include="..\..\src\AgentRuntime.Testing\AgentRuntime.Testing.csproj" />
     <ProjectReference Include="..\..\src\AgentRuntime.Tools.Files\AgentRuntime.Tools.Files.csproj" />

@@ -4,6 +4,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
 using AgentRuntime.Testing;
 using AgentRuntime.Tools.Files;
+using AgentWorkspace;
 
 namespace AgentRuntime.Tests;
 
@@ -117,9 +118,11 @@ public class ArchitectureTests
     [InlineData("Core")]
     [InlineData("Testing")]
     [InlineData("Files")]
+    [InlineData("Workspace")]
     public void T13_nenhum_assembly_menciona_product_hub_ui_github_ou_sdk_de_provedor(string which)
     {
-        var assembly = which switch { "Core" => Core, "Testing" => TestingAssembly, _ => FilesAssembly };
+        var assembly = which switch { "Core" => Core, "Testing" => TestingAssembly,
+            "Workspace" => typeof(WorkspaceSession).Assembly, _ => FilesAssembly };
         var surface = Read(assembly);
         var hits = surface.Names.Concat(surface.UserStrings)
             .SelectMany(text => BannedWords.Where(w => text.Contains(w, StringComparison.OrdinalIgnoreCase)).Select(w => $"'{w}' em \"{text}\""))
@@ -130,7 +133,7 @@ public class ArchitectureTests
     [Fact]
     public void T13_testing_e_files_dependem_so_do_core_e_da_biblioteca_base()
     {
-        foreach (var assembly in new[] { TestingAssembly, FilesAssembly })
+        foreach (var assembly in new[] { TestingAssembly, FilesAssembly, typeof(WorkspaceSession).Assembly })
         {
             var refs = Read(assembly).AssemblyRefs.Where(a => !a.StartsWith("System.", StringComparison.Ordinal) && a != "netstandard").Order().ToList();
             Assert.Equal(["AgentRuntime.Core"], refs);
@@ -153,7 +156,7 @@ public class ArchitectureTests
         Assert.DoesNotContain("PackageReference", coreProject);
         Assert.DoesNotContain("ProjectReference", coreProject);
 
-        foreach (var name in new[] { "AgentRuntime.Testing", "AgentRuntime.Tools.Files" })
+        foreach (var name in new[] { "AgentRuntime.Testing", "AgentRuntime.Tools.Files", "AgentWorkspace" })
         {
             var text = File.ReadAllText(Path.Combine(root, "src", name, $"{name}.csproj"));
             Assert.DoesNotContain("PackageReference", text);
@@ -185,6 +188,18 @@ public class ArchitectureTests
         Assert.NotEmpty(exported);
         Assert.All(exported, t => Assert.Equal("AgentRuntime", t.Namespace)); // um único namespace público, sem subáreas "shared"
         Assert.DoesNotContain(exported, t => t.Namespace!.Contains("Testing") || t.Namespace.Contains("Tools"));
+    }
+
+    [Fact]
+    public void Workspace_nao_contem_loop_cliente_de_modelo_ledger_log_ou_io_proprios()
+    {
+        var assembly = typeof(WorkspaceSession).Assembly;
+        var surface = Read(assembly);
+        Assert.DoesNotContain(surface.TypeRefs, t => BannedTypePrefixes.Any(p => t.StartsWith(p, StringComparison.Ordinal)));
+        Assert.DoesNotContain(surface.MemberRefs, m => m.StartsWith("AgentRuntime.IModelProvider::", StringComparison.Ordinal)
+            || m.StartsWith("AgentRuntime.ILedger::", StringComparison.Ordinal)
+            || m.StartsWith("AgentRuntime.IEventLog::", StringComparison.Ordinal));
+        Assert.DoesNotContain(Core.GetReferencedAssemblies(), a => a.Name == assembly.GetName().Name);
     }
 
     private static string AppRoot()
