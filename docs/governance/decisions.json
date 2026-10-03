@@ -881,6 +881,44 @@
       "decidedAt": "2026-10-02",
       "record": "docs/governance/responses/DEC-0025.md",
       "consequencesApplied": false
+    },
+    {
+      "id": "DEC-0026",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Quando e onde nasce o primeiro slice do Agent Runtime (e aceite do ADR-0017)",
+      "context": "FATO: o proprietário enviou a diretiva ADD-0013 (infraestrutura universal de IA e agentes: Agent Runtime, Agent Workspace, Product de IA, organizações, execução persistente, deploy, orçamento) e pediu, como primeira entrega, um plano arquitetural executável, sem destruir a arquitetura atual e sem pular fases. FATO: o plano está em docs/architecture/agent-runtime.md e o ADR-0017 (Proposto) fixa as fronteiras: Agent Runtime (Service) × Execution Runtime × Agent Workspace × Product de IA × Hub. FATO: o MANIFEST já classifica o Agent Runtime como Service e o Agent Workspace como Workspace (§6.5, §6.7, §20, §39); a Fase 6 do ROADMAP é \"Agent Workspace compartilhado\", depois da Fase 5 (Capability Runtime). FATO: o primeiro slice proposto (R1) é uma biblioteca em C#, em processo, local e determinística (provedor falso, sem rede, sem nuvem, sem deploy, sem segredo), que depende só dos contratos da Fase 2 (prontos) — não de IPC nem de Host API. FATO: nenhuma linha de IA está nascendo agora fora do Urbe JS (congelado por DEC-0025-C); a IA do Urbe em C# (UC-21) está no marco M3 do programa dele e o Agentic Workspace do Lunet2D na Fase 8 do roadmap dele. INFERÊNCIA: antecipar o R1 acelera o dogfooding (o Ecosystem desenvolvendo o Ecosystem) sem tocar em caminho crítico, mas compete com ADR-0011 (nascer no Product, promover por evidência) e com a ordem das fases; esperar até a Fase 6 não faz as IAs divergirem no código (nenhuma está sendo escrita), mas adia a evidência prática. Esta decisão é do proprietário porque define direção e sequência de uma infraestrutura transversal (NN-011). As alternativas A, B e C aceitam o ADR-0017; só a D o rejeita. Nada é implementado antes da resposta.",
+      "question": "Quando e onde deve nascer o primeiro slice do Agent Runtime (R1), e o ADR-0017 é aceito?",
+      "alternatives": [
+        {
+          "option": "A — Ordem do ROADMAP: o R1 só começa na Fase 6 (depois do Capability Runtime). O plano, o ADR-0017 (aceito) e os itens P6-1 a P6-5 ficam registrados; nada é antecipado",
+          "consequences": "Menor risco de abstração prematura e nenhum Product novo. Nenhuma linha de IA diverge até lá (o Urbe JS está congelado; UC-21 e a Fase 8 do Lunet2D ainda não começaram), mas o dogfooding e a evidência prática do Runtime só começam depois das Fases 3 a 5. Aceita o ADR-0017."
+        },
+        {
+          "option": "B — Antecipar o R1 como Service compartilhado em services/agent-runtime/ (C#, em processo, provedor falso, sem rede, sem segredo), em paralelo às Fases 3 a 5, com consumidores previstos declarados (Product de IA, Urbe em C#, Lunet2D)",
+          "consequences": "Entrega cedo a infraestrutura universal pedida e já fixa o lugar do contrato. Declara consumidores que ainda não existem (tensão com NN-022 e ADR-0011) e congela cedo uma versão 0 de contratos sem consumidor real; exige a declaração do componente compartilhado (CHK-SHARED-DECLARATION) e um ADR por contrato. Aceita o ADR-0017."
+        },
+        {
+          "option": "C — Antecipar o R1 dentro de um Product novo de IA (nome de exibição provisório \"Ecosystem AI\"), com fronteira de extração desde o primeiro dia (Core sem referência a Product, UI ou provedor, provada por testes de arquitetura; mesmo precedente do Hub.Core) e promoção a Service por Extraction Review quando houver um segundo consumidor real",
+          "consequences": "Respeita o ADR-0011, dá ao R1 um consumidor real imediato (o próprio Product) e deixa a promoção barata. Cria um Product (o id é estável, NN-019): antes de qualquer código, uma decisão curta de id e nome será aberta no portal, e a entrada em ecosystem.json é mudança crítica. Se Urbe em C# e Lunet2D não adotarem, o Core continua local ao Product (resultado válido). Aceita o ADR-0017."
+        },
+        {
+          "option": "D — Não aceitar o plano agora: nenhuma antecipação e o ADR-0017 volta para revisão (diga o que ajustar em uma Issue ou comentário)",
+          "consequences": "A diretiva (ADD-0013) e o plano continuam registrados; os itens P6 ficam para revisão; nada é implementado. Escolher D não apaga a visão, só devolve o desenho para ajuste."
+        }
+      ],
+      "consequences": "Não bloqueia o desenvolvimento atual (Fase 3, Hub, Urbe em C#, Lunet2D). Depois da escolha, o agente aplica as consequências nos documentos dependentes: ADR-0017 passa a Aceito (A, B, C) ou volta para revisão (D), os itens P6 do ROADMAP são reordenados conforme a alternativa, e as decisões futuras previstas no plano (§13) só são abertas quando se tornarem necessárias. Qualquer implementação de slice abre PR próprio e passa pela política de integração; entrada em ecosystem.json, nova permissão ou diretório compartilhado são mudanças críticas à parte.",
+      "manifestCompatibility": "Respeita NN-002 (sem dependência entre Products), NN-003 e NN-023 (o Hub e sua distribuição nunca são requisito), NN-006 e NN-016 (ferramentas são capabilities, deny-by-default), NN-011 (direção decidida pelo proprietário), NN-015 (GitHub só como adapter), NN-018 (concluído exige evidência), NN-020 e NN-022 (A: nenhuma abstração nova; B: abstração antecipada com consumidores previstos; C: nasce local com fronteira de extração) e ADR-0011. Nenhuma alternativa altera decisão já consolidada (DEC-0024-B, DEC-0025-C continuam valendo).",
+      "recommendation": "C: honra o princípio local-first que o próprio proprietário decidiu (ADR-0011), dá ao R1 um consumidor real desde o início e mantém a promoção barata, porque o Core nasce sem dependência de Product. O risco de A é só atraso do aprendizado; o de B é congelar cedo um contrato sem consumidor. A recomendação é do agente; qualquer das três é compatível com o MANIFEST.",
+      "related": [
+        "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+        "docs/architecture/agent-runtime.md",
+        "docs/governance/addenda/ADD-0013-agent-runtime-execution-runtime-e-organizacoes.md",
+        "ROADMAP.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-03"
     }
   ]
 }
