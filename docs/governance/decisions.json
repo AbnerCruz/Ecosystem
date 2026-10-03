@@ -1053,7 +1053,7 @@
     },
     {
       "id": "DEC-0030",
-      "status": "pending",
+      "status": "decided",
       "component": "hub",
       "blocking": true,
       "title": "Modelo de confiança para instalação pelo Hub (P4-3)",
@@ -1082,7 +1082,11 @@
         "ROADMAP.md"
       ],
       "raisedBy": "codex",
-      "raisedAt": "2026-10-03"
+      "raisedAt": "2026-10-03",
+      "decision": "Alternativa A — A — Pacote canônico e certificado previamente aprovado (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/112).",
+      "decidedAt": "2026-10-03",
+      "record": "docs/governance/responses/DEC-0030.md",
+      "consequencesApplied": false
     }
   ]
 }
