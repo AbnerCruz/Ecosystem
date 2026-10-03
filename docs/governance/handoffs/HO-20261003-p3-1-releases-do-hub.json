@@ -48,15 +48,13 @@
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
       "result": "passed",
-      "evidence": "22/22 no CI do estado combinado: https://github.com/AbnerCruz/Ecosystem/actions/runs/37109060025/job/111163347409. Execução local indisponível por ausência de .NET.",
-      "tested_commit": "eeceb2fd18b0dfade051fb35ea5b6ccc0f6c7ce8"
+      "evidence": "22/22 no CI do estado combinado: https://github.com/AbnerCruz/Ecosystem/actions/runs/37109060025/job/111163347409. Execução local indisponível por ausência de .NET. Estado combinado efetivamente testado: eeceb2fd18b0dfade051fb35ea5b6ccc0f6c7ce8 (commit temporário do integrador, não presente no histórico do checkout do PR)."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs -- --self-test",
       "kind": "automated",
       "result": "passed",
-      "evidence": "CI do estado combinado passou, incluindo todos os checks, nove asserções do gerador de releases e simulação do integrador. Execução https://github.com/AbnerCruz/Ecosystem/actions/runs/37109060025/job/111163347409 (head d624fec32a9b57dfa12ff30c96860c138b69e32c; main 0636b233).",
-      "tested_commit": "eeceb2fd18b0dfade051fb35ea5b6ccc0f6c7ce8"
+      "evidence": "CI do estado combinado passou, incluindo todos os checks, nove asserções do gerador de releases e simulação do integrador. Execução https://github.com/AbnerCruz/Ecosystem/actions/runs/37109060025/job/111163347409 (head d624fec32a9b57dfa12ff30c96860c138b69e32c; main 0636b233). Estado combinado efetivamente testado: eeceb2fd18b0dfade051fb35ea5b6ccc0f6c7ce8 (commit temporário do integrador, não presente no histórico do checkout do PR)."
     },
     {
       "check": "Projeção publicada com a release real do Hub",
@@ -68,7 +66,8 @@
   "known_issues": [
     "Consulta limitada às últimas 100 releases do canal; ausência nesse recorte é explícita e mantém o link de releases.",
     "Snapshot de arquivos recuperado via integração GitHub; clonagem local impossível porque proxy:8080 está indisponível. Nenhum histórico foi reescrito.",
-    "Não declara instalação nem validação em aparelho: gate separado P3-8."
+    "Não declara instalação nem validação em aparelho: gate separado P3-8.",
+    "O campo tested_commit exige objeto disponível no histórico do checkout; o SHA combinado temporário do integrador é documentado na evidência textual e no comentário do integrador."
   ],
   "blockers": [],
   "next_actions": [
