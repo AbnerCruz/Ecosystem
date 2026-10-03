@@ -10,11 +10,11 @@
   },
   "task_id": "UC-7",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "codex/urbe-csharp-policy",
   "base_commit": "3f99f9bbf048dac84e86b003c36fc86bf1876f22",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/151",
   "files_changed": [
     "docs/governance/integration-policy.json",
     "apps/urbe/docs/csharp/INTEGRATION.md",
@@ -32,7 +32,8 @@
     "UC-7 (#148): zonas críticas de dados, segurança e distribuição sob apps/urbe/csharp; raízes/nomes protegidos antes de código.",
     "Nenhuma proteção existente removida, regra enfraquecida ou autorizador alterado. Root de fonte documentado sem escolher stack/UI/host.",
     "Teste CLI real de 25 caminhos: novos C#, JS atuais e rotina de UI/docs.",
-    "Correção de CI: preserva a formatação original das regras JSON exigida pelo self-test de mutação; conteúdo lógico idêntico e 25 classificações reexecutadas."
+    "Correção de CI: preserva a formatação original das regras JSON exigida pelo self-test de mutação; conteúdo lógico idêntico e 25 classificações reexecutadas.",
+    "Reconciliação: PR #151 autorizado pelo proprietário e integrado em 584fe73; zonas C# vigentes. G-C0 ainda não aprovado."
   ],
   "verification": [
     {
@@ -52,12 +53,9 @@
     "Classificação por glob exige revisão semântica e declaração crítica se área sensível estiver fora dos caminhos.",
     "UC-7 só concluído depois da integração autorizada; G-C0 exige UC-1..7 e decisões UC-5/6."
   ],
-  "blockers": [
-    "Autorização crítica do proprietário para integrar este PR."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Integrador testa head combinado; proprietário autoriza o PR crítico após avaliação. Agente não adiciona integrar.",
-    "Nenhum código de produto C# antes da política integrada e G-C0."
+    "Continuar UC-2 e preparar UC-5/6 após concluir os fundamentos; G-C0 permanece fechado."
   ],
   "decisions_required": [],
   "normative_sources": [

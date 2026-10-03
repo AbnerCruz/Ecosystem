@@ -4062,6 +4062,895 @@
           []
         ]
       }
+    },
+    {
+      "id": "identity-text-empty",
+      "operation": "identity.text",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "src/persistence/identity.js",
+      "input": {
+        "text": ""
+      },
+      "expected": {
+        "normalized": "",
+        "fingerprint": ""
+      }
+    },
+    {
+      "id": "identity-text-whitespace",
+      "operation": "identity.text",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "src/persistence/identity.js",
+      "input": {
+        "text": "  \n\n"
+      },
+      "expected": {
+        "normalized": "",
+        "fingerprint": ""
+      }
+    },
+    {
+      "id": "identity-text-lf",
+      "operation": "identity.text",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "src/persistence/identity.js",
+      "input": {
+        "text": "a\nb"
+      },
+      "expected": {
+        "normalized": "a\nb",
+        "fingerprint": "28e4c71066812094:3"
+      }
+    },
+    {
+      "id": "identity-text-crlf",
+      "operation": "identity.text",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "src/persistence/identity.js",
+      "input": {
+        "text": "a\r\nb  \n\n"
+      },
+      "expected": {
+        "normalized": "a\nb",
+        "fingerprint": "28e4c71066812094:3"
+      }
+    },
+    {
+      "id": "identity-text-cr",
+      "operation": "identity.text",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "src/persistence/identity.js",
+      "input": {
+        "text": "a\rb\t\r"
+      },
+      "expected": {
+        "normalized": "a\nb",
+        "fingerprint": "28e4c71066812094:3"
+      }
+    },
+    {
+      "id": "identity-text-accent",
+      "operation": "identity.text",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "src/persistence/identity.js",
+      "input": {
+        "text": "ação"
+      },
+      "expected": {
+        "normalized": "ação",
+        "fingerprint": "0fddca5baac712aa:4"
+      }
+    },
+    {
+      "id": "identity-text-emoji",
+      "operation": "identity.text",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "src/persistence/identity.js",
+      "input": {
+        "text": "🌊🙂"
+      },
+      "expected": {
+        "normalized": "🌊🙂",
+        "fingerprint": "9a9ebaa8bdfd6a79:4"
+      }
+    },
+    {
+      "id": "identity-text-mixed",
+      "operation": "identity.text",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "src/persistence/identity.js",
+      "input": {
+        "text": "Ação 🌊 — fim\r\n"
+      },
+      "expected": {
+        "normalized": "Ação 🌊 — fim",
+        "fingerprint": "33345f23b0fd55a2:d"
+      }
+    },
+    {
+      "id": "identity-text-nul",
+      "operation": "identity.text",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "src/persistence/identity.js",
+      "input": {
+        "text": "a\u0000b"
+      },
+      "expected": {
+        "normalized": "a\u0000b",
+        "fingerprint": "10f3abd23a7363c6:3"
+      }
+    },
+    {
+      "id": "identity-parse-absent",
+      "operation": "identity.parse",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "raw": null
+      },
+      "expected": {
+        "state": "absent"
+      }
+    },
+    {
+      "id": "identity-parse-corrupt",
+      "operation": "identity.parse",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "raw": "{"
+      },
+      "expected": {
+        "state": "corrupt"
+      }
+    },
+    {
+      "id": "identity-parse-future",
+      "operation": "identity.parse",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "raw": "{\"version\":9,\"docs\":{}}"
+      },
+      "expected": {
+        "state": "future"
+      }
+    },
+    {
+      "id": "identity-parse-current",
+      "operation": "identity.parse",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "raw": "{\"version\":1,\"docs\":{}}"
+      },
+      "expected": {
+        "state": "current"
+      }
+    },
+    {
+      "id": "identity-parse-missing-version",
+      "operation": "identity.parse",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "raw": "{\"docs\":{}}"
+      },
+      "expected": {
+        "state": "corrupt"
+      }
+    },
+    {
+      "id": "identity-parse-old",
+      "operation": "identity.parse",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "raw": "{\"version\":0,\"docs\":{}}"
+      },
+      "expected": {
+        "state": "corrupt"
+      }
+    },
+    {
+      "id": "identity-pair-unique",
+      "operation": "identity.pair",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "vanished": [
+          {
+            "id": "doc_a",
+            "path": "A.md",
+            "fingerprint": "abcd:1"
+          }
+        ],
+        "appeared": [
+          {
+            "path": "B.md",
+            "fingerprint": "abcd:1"
+          }
+        ]
+      },
+      "expected": {
+        "pairs": [
+          {
+            "id": "doc_a",
+            "from": "A.md",
+            "to": "B.md"
+          }
+        ],
+        "ambiguous": []
+      }
+    },
+    {
+      "id": "identity-pair-ambiguous",
+      "operation": "identity.pair",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "vanished": [
+          {
+            "id": "doc_a",
+            "path": "A.md",
+            "fingerprint": "abcd:1"
+          }
+        ],
+        "appeared": [
+          {
+            "path": "B.md",
+            "fingerprint": "abcd:1"
+          },
+          {
+            "path": "C.md",
+            "fingerprint": "abcd:1"
+          }
+        ]
+      },
+      "expected": {
+        "pairs": [],
+        "ambiguous": [
+          {
+            "fingerprint": "abcd:1",
+            "from": [
+              "A.md"
+            ],
+            "to": [
+              "B.md",
+              "C.md"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "identity-pair-old-ambiguous",
+      "operation": "identity.pair",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "vanished": [
+          {
+            "id": "doc_a",
+            "path": "A.md",
+            "fingerprint": "abcd:1"
+          },
+          {
+            "id": "doc_b",
+            "path": "D.md",
+            "fingerprint": "abcd:1"
+          }
+        ],
+        "appeared": [
+          {
+            "path": "B.md",
+            "fingerprint": "abcd:1"
+          }
+        ]
+      },
+      "expected": {
+        "pairs": [],
+        "ambiguous": [
+          {
+            "fingerprint": "abcd:1",
+            "from": [
+              "A.md",
+              "D.md"
+            ],
+            "to": [
+              "B.md"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "identity-pair-empty",
+      "operation": "identity.pair",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "vanished": [
+          {
+            "id": "doc_a",
+            "path": "A.md",
+            "fingerprint": ""
+          }
+        ],
+        "appeared": [
+          {
+            "path": "B.md",
+            "fingerprint": ""
+          }
+        ]
+      },
+      "expected": {
+        "pairs": [],
+        "ambiguous": []
+      }
+    },
+    {
+      "id": "identity-pair-unmatched",
+      "operation": "identity.pair",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/identity.mjs",
+      "input": {
+        "vanished": [
+          {
+            "id": "doc_a",
+            "path": "A.md",
+            "fingerprint": "abcd:1"
+          }
+        ],
+        "appeared": [
+          {
+            "path": "B.md",
+            "fingerprint": "ffff:1"
+          }
+        ]
+      },
+      "expected": {
+        "pairs": [],
+        "ambiguous": []
+      }
+    },
+    {
+      "id": "gc-default",
+      "operation": "gc.plan",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/gc.mjs",
+      "input": {
+        "state": {
+          "docs": [
+            {
+              "id": "live"
+            }
+          ],
+          "trash": [
+            {
+              "document": {
+                "id": "trashed",
+                "path": "T.md"
+              },
+              "originalPath": "T.md",
+              "deletedAt": 7776000000
+            }
+          ],
+          "history": {
+            "live": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "trashed": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "old": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "recent": [
+              {
+                "timestamp": 7776000000
+              }
+            ],
+            "border": [
+              {
+                "timestamp": 6048000000
+              }
+            ]
+          },
+          "compositions": [
+            {
+              "id": "cmp_a",
+              "name": "Livro",
+              "sources": [
+                "live",
+                "trashed",
+                "old",
+                "recent"
+              ]
+            }
+          ]
+        },
+        "options": {
+          "now": 8640000000
+        }
+      },
+      "expected": {
+        "history": [
+          {
+            "id": "old",
+            "revisions": 1,
+            "last": 86400000
+          },
+          {
+            "id": "border",
+            "revisions": 1,
+            "last": 6048000000
+          }
+        ],
+        "trash": [],
+        "compositions": [
+          {
+            "id": "cmp_a",
+            "name": "Livro",
+            "sources": [
+              "old",
+              "recent"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "gc-retain",
+      "operation": "gc.plan",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/gc.mjs",
+      "input": {
+        "state": {
+          "docs": [
+            {
+              "id": "live"
+            }
+          ],
+          "trash": [
+            {
+              "document": {
+                "id": "trashed",
+                "path": "T.md"
+              },
+              "originalPath": "T.md",
+              "deletedAt": 7776000000
+            }
+          ],
+          "history": {
+            "live": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "trashed": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "old": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "recent": [
+              {
+                "timestamp": 7776000000
+              }
+            ],
+            "border": [
+              {
+                "timestamp": 6048000000
+              }
+            ]
+          },
+          "compositions": [
+            {
+              "id": "cmp_a",
+              "name": "Livro",
+              "sources": [
+                "live",
+                "trashed",
+                "old",
+                "recent"
+              ]
+            }
+          ]
+        },
+        "options": {
+          "now": 8640000000,
+          "orphanDays": 120
+        }
+      },
+      "expected": {
+        "history": [],
+        "trash": [],
+        "compositions": [
+          {
+            "id": "cmp_a",
+            "name": "Livro",
+            "sources": [
+              "old",
+              "recent"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "gc-zero",
+      "operation": "gc.plan",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/gc.mjs",
+      "input": {
+        "state": {
+          "docs": [
+            {
+              "id": "live"
+            }
+          ],
+          "trash": [
+            {
+              "document": {
+                "id": "trashed",
+                "path": "T.md"
+              },
+              "originalPath": "T.md",
+              "deletedAt": 7776000000
+            }
+          ],
+          "history": {
+            "live": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "trashed": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "old": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "recent": [
+              {
+                "timestamp": 7776000000
+              }
+            ],
+            "border": [
+              {
+                "timestamp": 6048000000
+              }
+            ]
+          },
+          "compositions": [
+            {
+              "id": "cmp_a",
+              "name": "Livro",
+              "sources": [
+                "live",
+                "trashed",
+                "old",
+                "recent"
+              ]
+            }
+          ]
+        },
+        "options": {
+          "now": 8640000000,
+          "orphanDays": 0
+        }
+      },
+      "expected": {
+        "history": [
+          {
+            "id": "old",
+            "revisions": 1,
+            "last": 86400000
+          },
+          {
+            "id": "recent",
+            "revisions": 1,
+            "last": 7776000000
+          },
+          {
+            "id": "border",
+            "revisions": 1,
+            "last": 6048000000
+          }
+        ],
+        "trash": [],
+        "compositions": [
+          {
+            "id": "cmp_a",
+            "name": "Livro",
+            "sources": [
+              "old",
+              "recent"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "gc-expire",
+      "operation": "gc.plan",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/gc.mjs",
+      "input": {
+        "state": {
+          "docs": [
+            {
+              "id": "live"
+            }
+          ],
+          "trash": [
+            {
+              "document": {
+                "id": "trashed",
+                "path": "T.md"
+              },
+              "originalPath": "T.md",
+              "deletedAt": 7776000000
+            }
+          ],
+          "history": {
+            "live": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "trashed": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "old": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "recent": [
+              {
+                "timestamp": 7776000000
+              }
+            ],
+            "border": [
+              {
+                "timestamp": 6048000000
+              }
+            ]
+          },
+          "compositions": [
+            {
+              "id": "cmp_a",
+              "name": "Livro",
+              "sources": [
+                "live",
+                "trashed",
+                "old",
+                "recent"
+              ]
+            }
+          ]
+        },
+        "options": {
+          "now": 8640000000,
+          "trashDays": 7
+        }
+      },
+      "expected": {
+        "history": [
+          {
+            "id": "old",
+            "revisions": 1,
+            "last": 86400000
+          },
+          {
+            "id": "border",
+            "revisions": 1,
+            "last": 6048000000
+          }
+        ],
+        "trash": [
+          {
+            "id": "trashed",
+            "path": "T.md",
+            "deletedAt": 7776000000
+          }
+        ],
+        "compositions": [
+          {
+            "id": "cmp_a",
+            "name": "Livro",
+            "sources": [
+              "old",
+              "recent"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "gc-trash-never",
+      "operation": "gc.plan",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/gc.mjs",
+      "input": {
+        "state": {
+          "docs": [
+            {
+              "id": "live"
+            }
+          ],
+          "trash": [
+            {
+              "document": {
+                "id": "trashed",
+                "path": "T.md"
+              },
+              "originalPath": "T.md",
+              "deletedAt": 7776000000
+            }
+          ],
+          "history": {
+            "live": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "trashed": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "old": [
+              {
+                "timestamp": 86400000
+              }
+            ],
+            "recent": [
+              {
+                "timestamp": 7776000000
+              }
+            ],
+            "border": [
+              {
+                "timestamp": 6048000000
+              }
+            ]
+          },
+          "compositions": [
+            {
+              "id": "cmp_a",
+              "name": "Livro",
+              "sources": [
+                "live",
+                "trashed",
+                "old",
+                "recent"
+              ]
+            }
+          ]
+        },
+        "options": {
+          "now": 8640000000,
+          "trashDays": -1
+        }
+      },
+      "expected": {
+        "history": [
+          {
+            "id": "old",
+            "revisions": 1,
+            "last": 86400000
+          },
+          {
+            "id": "border",
+            "revisions": 1,
+            "last": 6048000000
+          }
+        ],
+        "trash": [],
+        "compositions": [
+          {
+            "id": "cmp_a",
+            "name": "Livro",
+            "sources": [
+              "old",
+              "recent"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "gc-empty",
+      "operation": "gc.plan",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "tests/gc.mjs",
+      "input": {
+        "state": {
+          "docs": [],
+          "trash": [],
+          "history": {},
+          "compositions": []
+        },
+        "options": {
+          "now": 8640000000
+        }
+      },
+      "expected": {
+        "history": [],
+        "trash": [],
+        "compositions": []
+      }
     }
   ]
 }

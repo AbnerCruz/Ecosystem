@@ -1,3 +1,8 @@
+### 2026-10-03 — codex — UC-2: identidade/GC (REQ-042)
+- Estado: revisão parcial, Issue #139; branch codex/urbe-domain-parity.
+- Feito: 26 cenários portáveis; 200 casos, 64/64 testes e 22 checks verdes. UC-7 reconciliado após PR #151.
+- Limites: nenhuma feature futura, formato ou runtime alterados; UC-2 segue aberto. Visão de produto recebida será tratada em branch própria.
+
 ### 2026-10-03 — codex — UC-2: operações de storage (REQ-007/028/055)
 - Estado: revisão parcial, Issue #139.
 - Feito: nove casos JSON de storage, adapter de referência com FSA real sobre ponte nativa em arquivos temporários; corpus total 174.
