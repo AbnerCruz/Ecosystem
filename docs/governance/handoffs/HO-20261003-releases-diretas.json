@@ -13,7 +13,7 @@
   "branch": "codex/direct-product-releases",
   "base_commit": "4161bbac0d4b186fa8ce9b4464ad15793f587daa",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/123",
   "files_changed": [
     ".github/integrator/integrate.sh",
     ".github/integrator/simulate.sh",
@@ -50,26 +50,26 @@
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "22 checks passaram antes da correção de descoberta; reexecutar estado final."
+      "result": "passed",
+      "evidence": "22 checks passaram no estado final; /tmp/distribution-consistency-final.log."
     },
     {
       "check": "self-test e simulação integrador",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Em execução após corrigir seleção de CI versus publicação."
+      "result": "passed",
+      "evidence": "Self-test completo passou; todos os cenários da simulação, inclusive dispatch seletivo/falha, passaram."
     },
     {
       "check": "dotnet test Lunet",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "309/310 passaram; teste de alocação reporta 1 byte por quadro neste SDK. Baseline inalterada sendo conferida; CI deve verificar."
+      "result": "failed",
+      "evidence": "Local SDK 10.0.401: 309/310 passaram; FrameworkHotPath_DoesNotAllocatePerFrame_WithTouchAndGestures reportou 1 byte/frame em três execuções. Baseline 4161bba: 310/310 passaram. Nenhum código/teste do Lunet alterado; verificar CI e não desabilitar teste."
     },
     {
       "check": "npm run check Urbe",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Em execução; world-terrain é longo."
+      "result": "passed",
+      "evidence": "59/59 arquivos de teste passaram; todas as checagens passaram."
     },
     {
       "check": "Build APK direto e primeira publicação",
