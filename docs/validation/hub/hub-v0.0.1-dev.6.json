@@ -1,0 +1,75 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-hub-hub-v0.0.1-dev.6",
+  "component": "hub",
+  "build": "hub-v0.0.1-dev.6",
+  "recorded_at": "2026-10-03",
+  "state": "AUTOMATED_VERIFIED",
+  "objective": "P4-8: histórico e Patch Notes nativos como projeção das releases canônicas. Evidência automatizada deste build; validação humana permanece exclusivamente no handoff.",
+  "preconditions": [
+    "Android compatível, instalar APK publicado pela release dev.6.",
+    "Products com canal canônico disponível; repetir offline após atualização/cache."
+  ],
+  "steps": [
+    "Seguir apps/hub/docs/patch-notes.md: Products → Ver mudanças → versão → notas e detalhes técnicos.",
+    "Conferir datas/prereleases/Markdown, expansão do histórico e fallback offline; retornar e repetir refresh sem perder download em segundo plano.",
+    "Registrar resultado real no portal para HO-20261003-p4-8-patch-notes, check 9ace6f262de6."
+  ],
+  "expected": "Histórico limitado, Markdown e categorias tolerantes, dados/fonte explícitos; provider indisponível conserva cache stale ou mostra indisponível. Nenhuma versão instalada presumida.",
+  "known_issues": [
+    "Versão instalada não é conhecida; UI não infere do SOURCE. Agregação só habilita quando futura leitura fornece versão explícita.",
+    "Histórico limitado às 100 últimas releases do canal, filtrado por prefixo. Datas ausentes usam SemVer/tag; tags desconhecidas continuam visíveis, sem agregação inferida.",
+    "Sem HTML executável/imagem remota; links não HTTPS/relativos não são executados. Release original acessível.",
+    "Falha parcial usa cache somente se o canal corrente puder ser resolvido e for o mesmo; sem canal confiável não cruza fontes antigas.",
+    "Mobile/lifecycle ainda depende de conferência humana real."
+  ],
+  "artifact": {
+    "name": "ecosystem-hub-0.0.1-dev.6.apk",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v0.0.1-dev.6/ecosystem-hub-0.0.1-dev.6.apk",
+    "sha256": "1f0b2d5588ececfa26a02fbe168755ddab8dc7b9382d688a048a7f4d699da678"
+  },
+  "traceability": {
+    "task": "P4-8",
+    "commit": "58138560fdd287b51e25b98031279f7a83266823",
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/122",
+    "handoff": "HO-20261003-p4-8-patch-notes"
+  },
+  "evidence": [
+    {
+      "check": "Testes de Patch Notes, provider, cache e regressão Hub",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "194/194 testes: 159 anteriores + 35 novos. Markdown/categorias/body ausente/texto livre/múltiplas/datas-SemVer/prerelease/drafts/indisponibilidade/JSON e estrutura inválidos/limite100/cache parcial/canal diferente/vazio/cache antigo/agregação/provider alternativo sem mudar UI. /tmp/patchnotes-tests.log.",
+      "handoff": "HO-20261003-p4-8-patch-notes"
+    },
+    {
+      "check": "Smoke de releases reais pelos canais atuais",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Harness /tmp/ecosystem-patchnotes-smoke referencia Core desta branch. Provider público leu 28 releases do canal Lunet2D, mais recente v0.0.1-dev.108 (9332 caracteres, 5 seções, 5 assets), e 6 do Urbe, v1.8.2-beta (818 caracteres, 1 seção, 4 assets). Fonte API/canal conservada e body idêntico no roundtrip JSON. /tmp/patchnotes-smoke.log. Nenhum Product/pipeline mudou.",
+      "handoff": "HO-20261003-p4-8-patch-notes"
+    },
+    {
+      "check": "Consistência e diff-check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22; git diff --check passou. /tmp/patchnotes-consistency.log. CI ainda confere snapshot real de Issues e estado combinado.",
+      "handoff": "HO-20261003-p4-8-patch-notes"
+    },
+    {
+      "check": "CI Hub e Android no estado combinado",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Hub CI/Android e consistency verdes no estado combinado 58138560fdd287b51e25b98031279f7a83266823, integrado automaticamente (routine), main base b22204b3a4b8de0b1839008ea73f0392962a132e e head fd186567e8e56c60ca8f4714aa234ba8587b74d4. https://github.com/AbnerCruz/Ecosystem/actions/runs/37132090290; CI do head: https://github.com/AbnerCruz/Ecosystem/actions/runs/37132089803.",
+      "handoff": "HO-20261003-p4-8-patch-notes"
+    },
+    {
+      "check": "APK publicado e SHA256 confirmado",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Release hub-v0.0.1-dev.6, source 58138560fdd287b51e25b98031279f7a83266823, 22051219 bytes. Download público real /tmp/ecosystem-hub-0.0.1-dev.6.apk e sidecar: sha256sum -c passou; SHA256 1f0b2d5588ececfa26a02fbe168755ddab8dc7b9382d688a048a7f4d699da678 coincide com digest da API. Publicação https://github.com/AbnerCruz/Ecosystem/actions/runs/37132295671.",
+      "handoff": "HO-20261003-p4-8-patch-notes"
+    }
+  ]
+}
