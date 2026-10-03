@@ -14,7 +14,7 @@
   "branch": "codex/p3-1-closeout-p3-8",
   "base_commit": "40e6afb62f799572e8d86a1827422f5d971d7567",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/95",
   "files_changed": [
     "ROADMAP.md",
     "docs/governance/handoffs/HO-20261003-p3-1-releases-do-hub.json",
