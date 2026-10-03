@@ -884,7 +884,7 @@
     },
     {
       "id": "DEC-0026",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": false,
       "title": "Quando e onde nasce o primeiro slice do Agent Runtime (e aceite do ADR-0017)",
@@ -918,7 +918,11 @@
         "ROADMAP.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-03"
+      "raisedAt": "2026-10-03",
+      "decision": "Alternativa A — A — Ordem do ROADMAP: o R1 só começa na Fase 6 (depois do Capability Runtime). O plano, o ADR-0017 (aceito) e os itens P6-1 a P6-5 ficam registrados; nada é antecipado (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/73).",
+      "decidedAt": "2026-10-03",
+      "record": "docs/governance/responses/DEC-0026.md",
+      "consequencesApplied": false
     }
   ]
 }
