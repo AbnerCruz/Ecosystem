@@ -1122,7 +1122,7 @@
     },
     {
       "id": "DEC-0032",
-      "status": "pending",
+      "status": "decided",
       "component": "hub",
       "blocking": true,
       "title": "Aprovar identidade e certificado do Lunet no instalador do Hub",
@@ -1147,7 +1147,11 @@
         "docs/adr/0018-instalacao-e-launcher-do-hub.md"
       ],
       "raisedBy": "codex",
-      "raisedAt": "2026-10-03"
+      "raisedAt": "2026-10-03",
+      "decision": "Alternativa A — A — Aprovar lunet2d, io.lunet.studio, AbnerCruz/Ecosystem, lunet2d-v, certificado 4807F9080BF5535D20734476E3E3BC9FE6446C70E384771486E6AC333EDD9207 (desenvolvimento público); configuração SHA-256 8D9AE31CBB8E82FED8DE6E635811A7E8395243EE897262F5564BFCAAD51EC216 (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/134).",
+      "decidedAt": "2026-10-03",
+      "record": "docs/governance/responses/DEC-0032.md",
+      "consequencesApplied": false
     }
   ]
 }
