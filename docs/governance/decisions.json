@@ -846,7 +846,7 @@
     },
     {
       "id": "DEC-0025",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": false,
       "title": "O que fazer com o programa de refatoração do Urbe 2.0 em JavaScript durante a migração para C#",
@@ -876,7 +876,11 @@
         "docs/governance/responses/DEC-0024.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-02"
+      "raisedAt": "2026-10-02",
+      "decision": "Alternativa C — C — Congelamento total do JavaScript, salvo bug crítico (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/68).",
+      "decidedAt": "2026-10-02",
+      "record": "docs/governance/responses/DEC-0025.md",
+      "consequencesApplied": false
     }
   ]
 }
