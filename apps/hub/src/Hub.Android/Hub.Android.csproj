@@ -20,6 +20,13 @@
     <!-- APK autônomo (sem fast deployment) para poder ser instalado a partir de um arquivo. -->
     <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
     <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <!-- Assinatura estável do canal de DESENVOLVIMENTO (DEC-0029-A): sem ela cada build usa uma chave nova e o Android recusa atualizar
+         uma versão sobre a outra. Chave PÚBLICA, só para desenvolvimento (ver docs/assinatura-de-desenvolvimento.md). -->
+    <AndroidKeyStore>true</AndroidKeyStore>
+    <AndroidSigningKeyStore>$(MSBuildThisFileDirectory)..\..\tools\hub-dev.keystore</AndroidSigningKeyStore>
+    <AndroidSigningKeyAlias>hubdev</AndroidSigningKeyAlias>
+    <AndroidSigningStorePass>pass:android</AndroidSigningStorePass>
+    <AndroidSigningKeyPass>pass:android</AndroidSigningKeyPass>
     <!-- Avisos de anotação de nulidade dos bindings Android não devem quebrar o build. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>

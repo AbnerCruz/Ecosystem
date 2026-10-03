@@ -46,6 +46,7 @@
       "language": "csharp",
       "path": "apps/hub",
       "status": "active",
+      "publicUrl": "https://github.com/AbnerCruz/Ecosystem/releases",
       "description": "Control Plane, Host geral, Registry e Launcher do ecossistema (MANIFEST §5.3). Nunca dependência essencial dos produtos (NN-003).",
       "owners": ["AbnerCruz"],
       "version": { "authority": "version-file", "file": "apps/hub/VERSION" },

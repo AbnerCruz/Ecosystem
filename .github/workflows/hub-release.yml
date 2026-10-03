@@ -1,0 +1,77 @@
+name: hub-release
+
+# Release de DESENVOLVIMENTO do Hub (P3-7; DEC-0028-A: GitHub Releases públicas deste repositório, tag `hub-vX.Y.Z-dev.N`, como
+# pré-lançamento; DEC-0029-A: assinatura com a chave de desenvolvimento pública e estável de apps/hub/tools).
+# Roda só na `main`, só quando o Hub muda (NN-014) e nunca depende de segredo. Os Products continuam funcionando sem o Hub (NN-003, NN-023).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/hub/src/**'
+      - 'apps/hub/VERSION'
+      - 'apps/hub/Directory.Build.props'
+      - 'apps/hub/tools/**'
+      - '.github/workflows/hub-release.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: hub-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Testes do núcleo (Hub.Core)
+        run: dotnet test --project apps/hub/tests/Hub.Tests
+      - name: Install Android workload
+        run: dotnet workload install android
+      - name: Build APK
+        run: >
+          dotnet build apps/hub/src/Hub.Android/Hub.Android.csproj -c Debug
+          -p:AndroidSdkDirectory="$ANDROID_HOME"
+          -p:GITHUB_RUN_NUMBER=${{ github.run_number }}
+      - name: Reunir os arquivos da release
+        env:
+          RUN_NUMBER: ${{ github.run_number }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          apk=$(find apps/hub/src/Hub.Android/bin -name '*-Signed.apk' | head -n1)
+          test -n "$apk" || { echo "APK assinado não encontrado"; find apps/hub/src/Hub.Android/bin -name '*.apk'; exit 1; }
+          expected=$(tr -d '[:space:]' < apps/hub/tools/hub-dev.keystore.sha256)
+          keytool -printcert -jarfile "$apk" | grep -E "Owner|SHA256"
+          keytool -printcert -jarfile "$apk" | grep -q "SHA256: $expected" || { echo "APK não está assinado com a chave de desenvolvimento estável do Hub"; exit 1; }
+          version=$(tr -d '[:space:]' < apps/hub/VERSION)
+          name="ecosystem-hub-${version}-dev.${RUN_NUMBER}"
+          mkdir -p out
+          cp "$apk" "out/${name}.apk"
+          (cd out && sha256sum "${name}.apk" > "${name}.apk.sha256")
+          {
+            echo "Ecosystem Hub ${version} — canal de desenvolvimento (pré-lançamento)"
+            echo
+            echo "- Commit: ${COMMIT}"
+            echo "- Arquivo: ${name}.apk (Android, arm64)"
+            echo "- SHA-256 do APK: $(cut -d' ' -f1 "out/${name}.apk.sha256")"
+            echo
+            echo "O Hub é só leitura: consulta o repositório e a API pública do GitHub e não grava nada de volta."
+            echo
+            echo "Assinatura: chave de desenvolvimento PÚBLICA e estável (DEC-0029-A). Ela permite atualizar o app por cima de si mesmo, mas não prova autoria: não distribua este canal a terceiros como se fosse estável."
+          } > out/release-notes.md
+          echo "TAG=hub-v${version}-dev.${RUN_NUMBER}" >> "$GITHUB_ENV"
+          echo "TITLE=Ecosystem Hub ${version} (development ${RUN_NUMBER})" >> "$GITHUB_ENV"
+      - name: Publicar a release de desenvolvimento
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "Release $TAG já existe; nada a fazer."; exit 0; fi
+          gh release create "$TAG" out/*.apk out/*.sha256 --target "$COMMIT" --prerelease \
+            --title "$TITLE" --notes-file out/release-notes.md
