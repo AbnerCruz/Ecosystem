@@ -134,6 +134,7 @@ O inventário abaixo inclui todos os testes atuais de comportamento e todos os t
 | tests/consistency.mjs:1 | Todo arquivo do app está onde precisa: carregado no index.html, guardado pelo  service worker (para funcionar offline) e conferido pelo CI. Um arquivo esquecido  em qualquer um desses lugares é um bug silencioso. | Node/contrato simulado; não prova aparelho |
 | tests/core.mjs:1 | tests/core.mjs | Node/contrato simulado; não prova aparelho |
 | tests/csharp-parity.mjs:1 | UC-1/UC-2: corpus não pode encolher ou virar verde com resultados ausentes/fabricados pelo runner.  Runner deve falhar por timeout/processo inválido/JSON inválido/cliente que não implementa a operação. | Node/contrato simulado; não prova aparelho |
+| tests/csharp-vault-parity.mjs:1 | UC-2: dados de aceite atravessam cliente real; corrupção, omissão e sequência ignorada não podem passar. | Node/contrato simulado; não prova aparelho |
 | tests/customize.mjs:1 | tests/customize.mjs | Node/contrato simulado; não prova aparelho |
 | tests/debt.mjs:1 | Gate de dívida de src/app.js (REQ-012): o estado atual respeita os tetos e nova sobrescrita/camada de versão falha.  nova sobrescrita de função → falha  nova declaração duplicada → falha (ou empata se já houver) | Node/contrato simulado; não prova aparelho |
 | tests/desktop-main.mjs:1 | Electron (native/desktop/main.js + guards.js): guard de IPC por origem, permissões, protocolo app:,  links externos, window.open, printToPDF isolado, modo de teste e fs:saveFile.  O Electron é simulado (tests/lib/fake-electron.mjs): provamos a lógica e a fiação, não o Chromium. | Node/contrato simulado; não prova aparelho |
@@ -289,10 +290,12 @@ Sem escolher a implementação C#, estas são as operações e saídas obrigató
 |---|---|---|
 | markdown.render | 40 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | visual.serialize | 110 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| vault.scenario | 12 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| vault.restore | 3 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 
 ## Lacunas e ligação com o Ecosystem
 
-- UC-2 contém dados executáveis de Markdown e serialização Visual. Fixtures de vault, contratos nativos/persistência e E2E estão congelados por hash; a tradução de seus cenários para operações C# integra UC-9/10/18/23/24/25. Não são apresentados como casos portáveis já executados.
+- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; ainda faltam IndexedDB legado, adapters e UI. A execução no C# integra UC-9/10/18/23/24/25.
 - REQ aceito ainda não entregue no JS continua como obrigação do C#, com o teste/aceite do ROADMAP acima; um golden de comportamento antigo nunca fecha esse requisito.
 - Android físico, Windows instalado e PWA offline ainda precisam de evidência própria. Simulações e Chromium não os validam.
 - Context/capabilities do Ecosystem têm contrato na Fase 2; transporte/Host API da Fase 5 ainda não implementados. Urbe fornece seu domínio por adapter quando esses contratos estiverem prontos; nunca depende do plano de controle nem diretamente de outro Product.

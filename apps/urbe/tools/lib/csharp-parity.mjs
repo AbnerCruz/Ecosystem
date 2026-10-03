@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ROOT, parseRequirements, parseSpec, parseRoadmap } from './v2-docs.mjs';
+import { makeVaultCases, makeRestoreCases } from './parity-vault.mjs';
 
 export const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 export const json = (p) => JSON.parse(read(p));
@@ -16,7 +17,7 @@ const lineOf = (p, text) => `${p}:${read(p).split('\n').findIndex((s) => s.inclu
 
 // Inventário inclui arquivos ocultos das fixtures: .urbe e .pasta fazem parte do contrato.
 export function oraclePaths() {
-  return [...files('tests').filter((p) => p !== 'tests/csharp-parity.mjs'),
+  return [...files('tests').filter((p) => !['tests/csharp-parity.mjs', 'tests/csharp-vault-parity.mjs'].includes(p)),
     ...files('docs/v2/contracts'), ...files('tutorial'),
     'docs/v2/REQUIREMENTS.md', 'docs/v2/SPEC.md', 'docs/v2/ROADMAP.md',
     'docs/v2/discovery/DATA-CATALOG.md', 'docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md'].sort();
@@ -93,7 +94,7 @@ export function renderParity(corpus) {
     out.push(`| ${op} | ${corpus.cases.filter((c) => c.operation === op).length} | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |`);
   }
   out.push('', '## Lacunas e ligação com o Ecosystem', '',
-    '- UC-2 contém dados executáveis de Markdown e serialização Visual. Fixtures de vault, contratos nativos/persistência e E2E estão congelados por hash; a tradução de seus cenários para operações C# integra UC-9/10/18/23/24/25. Não são apresentados como casos portáveis já executados.',
+    '- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; ainda faltam IndexedDB legado, adapters e UI. A execução no C# integra UC-9/10/18/23/24/25.',
     '- REQ aceito ainda não entregue no JS continua como obrigação do C#, com o teste/aceite do ROADMAP acima; um golden de comportamento antigo nunca fecha esse requisito.',
     '- Android físico, Windows instalado e PWA offline ainda precisam de evidência própria. Simulações e Chromium não os validam.',
     '- Context/capabilities do Ecosystem têm contrato na Fase 2; transporte/Host API da Fase 5 ainda não implementados. Urbe fornece seu domínio por adapter quando esses contratos estiverem prontos; nunca depende do plano de controle nem diretamente de outro Product.',
@@ -111,7 +112,8 @@ export function makeCorpus() {
       input: { markdown: g.input }, expected: { html: g.html } })),
     ...visual.map((g, i) => ({ id: `visual-${String(i + 1).padStart(3, '0')}`, operation: 'visual.serialize',
       requirements: ['REQ-027'], source: `tests/fixtures/visual-golden.json#/${i}`,
-      input: { html: g.html, bodyEditor: g.bodyEditor }, expected: { markdown: g.md } }))] };
+      input: { html: g.html, bodyEditor: g.bodyEditor }, expected: { markdown: g.md } })),
+    ...makeVaultCases(), ...makeRestoreCases()] };
 }
 export function validateCorpus(corpus) {
   if (corpus.schemaVersion !== 1 || corpus.product !== 'urbe') throw new Error('corpus inválido');

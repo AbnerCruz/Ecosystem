@@ -1,4 +1,9 @@
 ### 2026-10-03 — codex — UC-1 / UC-2 (REQ-002/004/007/016/027/037)
+
+## 2026-10-03 — codex — UC-2: vault e restauração
+
+12 fixtures convertidas para casos JSON portáveis e três casos de restauração válida/corrompida/ausente. Adapter calcula saídas do domínio JS em memória; verifica hashes, IDs, proteção forward, recuperação e backup. Baseline congelado preservado. UC-2 (#139) continua parcial; nenhum runtime ou formato alterado.
+
 - Estado: revisão, Issues Ecosystem #138/#139; base 2e4cfa902c86d2eb2441bacfa6b29267f7e46c9e.
 - Feito: matriz dos 101 REQ IMPLEMENTAR com fontes/aceite e inventário de testes/tutorial; oráculo SHA-256 incluindo .urbe; 40 casos Markdown e 110 Visual como JSON portável; protocolo de cliente e runner que recusam resultados incompletos/divergentes; adapter JS calcula Markdown real.
 - Decisões (fonte): DEC-0024-B / ADR-0016 e DEC-0025-C; runtime JS congelado. Sem escolha de pilha, mudança de vault/canal, ou código C# de produto.
