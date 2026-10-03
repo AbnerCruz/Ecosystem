@@ -68,22 +68,27 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnDestroy()
     {
+        UnobserveDownloads();
         _destroyed = true;
         _load?.Cancel();
-        _download?.Cancel();
         base.OnDestroy();
+    }
+
+    protected override void OnStart()
+    {
+        base.OnStart();
+        ObserveDownloads();
     }
 
     protected override void OnStop()
     {
-        // Downloads são solicitados em primeiro plano; sair do app cancela, sem serviço/permissão adicional.
-        _download?.Cancel();
+        UnobserveDownloads();
         base.OnStop();
     }
 
     async void Refresh()
     {
-        if (_download is not null || _destroyed) return;
+        if (HubDownloads.Session.Status.Active || _destroyed) return;
         _load?.Cancel();
         _load = new CancellationTokenSource();
         var ct = _load.Token;

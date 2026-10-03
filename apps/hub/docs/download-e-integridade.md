@@ -1,5 +1,7 @@
 # Download e integridade — P4-2
 
+Este documento descreve o comportamento original do P4-2, publicado até `hub-v0.0.1-dev.4`. A extensão solicitada pelo proprietário para continuar fora da Activity está documentada em [Download em segundo plano — P4-7](download-em-segundo-plano.md), com permissões, notificação e roteiro próprios.
+
 O painel **Baixar APK** usa os mesmos Products, três releases e quatro APKs por release do catálogo. A seleção mantém Product, canal, tag, artefato e indicação de metadados antigos. Não permite digitar URL ou caminho de destino. Canais/release indisponíveis e cache anterior ao catálogo não fabricam uma seleção.
 
 **Baixar e conferir** faz um GET público da URL daquele repositório/tag/artefato em GitHub Releases. Nome e tag são conferidos; diferenças de maiúsculas no nome do repositório não mudam sua identidade. O cliente dos artefatos é separado das leituras da API e não recebe token, cookie ou credencial. O transporte usa HTTPS, inclusive após redirecionamento. Digest ausente/inválido, arquivo que não é APK, tamanho vazio ou acima de **128 MiB** deixam o download indisponível com motivo explícito. O limite total de tempo é **5 minutos**, incluindo a leitura do corpo.

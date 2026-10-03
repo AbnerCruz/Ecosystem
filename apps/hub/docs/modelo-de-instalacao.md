@@ -1,6 +1,6 @@
-# Proposta de segurança para instalação e launcher
+# Modelo de segurança para instalação e launcher
 
-**Proposta, sem implementação ou concessão vigente.** ADR-0018 / DEC-0030 são as autoridades da escolha; este documento explica os requisitos de P4-3.
+**Política A aceita pelo proprietário na DEC-0030 (Issue #112); instalador ainda não implementado e sem concessão vigente.** ADR-0018 / DEC-0030 são as autoridades da escolha; este documento explica os requisitos de P4-3. Os trechos B/C registram alternativas avaliadas, não modos habilitados.
 
 ## Identidade e proveniência
 
@@ -22,7 +22,7 @@ A aprovação de download não se reaproveita como aprovação durável de insta
 ## Permissões e abertura
 
 - `REQUEST_INSTALL_PACKAGES` é permissão Android proposta exclusivamente para A/B. Catálogo de permissões e manifest só mudarão na implementação após decisão; consentimento Android não concede capacidade a agente/plugin.
-- A proposta exige concessões explícitas separadas de instalar/atualizar e abrir, limitadas ao pacote/canal alvo e operação pedida. IDs concretos dessas concessões devem ser definidos no contrato, sem reutilizar `execute.code` como permissão genérica de instalar.
+- O modelo exige concessões explícitas separadas de instalar/atualizar e abrir, limitadas ao pacote/canal alvo e operação pedida. IDs concretos dessas concessões devem ser definidos no contrato, sem reutilizar `execute.code` como permissão genérica de instalar.
 - Não solicitar `QUERY_ALL_PACKAGES`. Declarar visibilidade somente para pacotes aprovados; ausência/inacessibilidade não vira inferência de versão.
 - Abrir somente após toque e consulta real da entrada de launcher do pacote instalado. Não executar URLs/comandos arbitrários derivados de assets, nem abrir Product automaticamente após instalar. Sem entrada, mostrar indisponibilidade.
 - Cache privado do Hub não concede acesso a projetos/vault nem armazenamento compartilhado. Não exportar APK, solicitar armazenamento geral ou permitir que plugins preencham uma sessão de instalação.

@@ -1,3 +1,7 @@
+using Android.App;
+using Android.Content;
+using Android.Content.PM;
+using Android.OS;
 using Android.Views;
 using Android.Widget;
 using Hub.Core;
@@ -6,20 +10,19 @@ namespace HubApp;
 
 public sealed partial class MainActivity
 {
-    // Cliente separado das leituras do GitHub: sem token, cookies ou credencial. O Core limita todo o download a 5 minutos.
-    static readonly HttpClient ArtifactHttp = new(new HttpClientHandler { UseCookies = false })
-        { Timeout = Timeout.InfiniteTimeSpan };
-    ArtifactDownloader? _downloader;
     Spinner? _artifact;
     Button? _startDownload;
     Button? _cancelDownload;
     TextView? _downloadStatus;
     IReadOnlyList<ArtifactChoice> _choices = [];
-    CancellationTokenSource? _download;
+    bool _observingDownloads;
+    static bool _notificationPermissionRequested;
+    ArtifactChoice? _awaitingNotificationPermission;
+    const int NotificationPermissionRequest = 4202;
 
     void AddDownloads(LinearLayout root)
     {
-        _downloader = new ArtifactDownloader(ArtifactHttp, Path.Combine(CacheDir!.AbsolutePath, "hub-artifacts"));
+        HubDownloads.Recover(this);
         var panel = new LinearLayout(this) { Orientation = Orientation.Vertical };
         panel.SetPadding(ScreenRenderer.Dp(this, 16), 0, ScreenRenderer.Dp(this, 16), ScreenRenderer.Dp(this, 8));
         panel.AddView(new TextView(this) { Text = "Baixar APK", TextSize = 16 });
@@ -30,7 +33,7 @@ public sealed partial class MainActivity
         _startDownload = new Button(this) { Text = "Baixar e conferir", Enabled = false };
         _cancelDownload = new Button(this) { Text = "Cancelar", Enabled = false };
         _startDownload.Click += (_, _) => DownloadSelected();
-        _cancelDownload.Click += (_, _) => { _download?.Cancel(); _cancelDownload!.Enabled = false; };
+        _cancelDownload.Click += (_, _) => HubDownloads.Session.Cancel(HubDownloads.Session.Status.Operation);
         actions.AddView(_startDownload, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WrapContent, 1f));
         actions.AddView(_cancelDownload, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WrapContent, ViewGroup.LayoutParams.WrapContent));
         panel.AddView(actions);
@@ -41,7 +44,7 @@ public sealed partial class MainActivity
 
     void ShowDownloadChoices(HubSnapshot? snapshot)
     {
-        if (_download is not null) return;
+        if (HubDownloads.Session.Status.Active) return;
         _choices = ArtifactCatalog.Choices(snapshot);
         var labels = _choices.Select(c => $"{c.ProductName} · {c.Tag} · {c.Asset.Name}").ToArray();
         if (labels.Length == 0) labels = ["Nenhum APK disponível no catálogo"];
@@ -58,46 +61,87 @@ public sealed partial class MainActivity
     {
         var choice = SelectedArtifact();
         var invalid = choice is null ? null : ArtifactDownloader.Ineligible(choice);
-        bool busy = _download is not null;
+        bool busy = HubDownloads.Session.Status.Active;
         _artifact!.Enabled = !busy && !_refreshing && _choices.Count > 0;
         _startDownload!.Enabled = !busy && !_refreshing && choice is not null && invalid is null;
-        _cancelDownload!.Enabled = busy;
-        if (showSelection && !busy)
+        _cancelDownload!.Enabled = busy && !HubDownloads.Session.Status.Cancelling;
+        if (showSelection && !busy && HubDownloads.Session.Status.Result is null)
             _downloadStatus!.Text = choice is null ? "Nenhum APK com metadados disponível; atualize ou consulte o canal do Product."
                 : invalid?.Message ?? $"{choice.Asset.Size:N0} bytes · limite de {ArtifactDownloader.DefaultMaxBytes / 1024 / 1024} MiB."
                     + (choice.Stale ? " Metadados do último estado conhecido." : "");
     }
 
-    async void DownloadSelected()
+    void ObserveDownloads()
     {
-        if (_destroyed || _refreshing || _download is not null || SelectedArtifact() is not { } choice) return;
-        using var cancellation = new CancellationTokenSource();
-        _download = cancellation;
-        _refresh!.Enabled = false;
+        if (_observingDownloads) return;
+        _observingDownloads = true;
+        HubDownloads.Session.Changed += DownloadChanged;
+        RenderDownloadStatus();
+    }
+
+    void UnobserveDownloads()
+    {
+        _observingDownloads = false;
+        HubDownloads.Session.Changed -= DownloadChanged;
+    }
+
+    void DownloadChanged() => RunOnUiThread(() =>
+    {
+        if (!_destroyed && _observingDownloads) RenderDownloadStatus();
+    });
+
+    void RenderDownloadStatus()
+    {
+        var status = HubDownloads.Session.Status;
+        if (_downloadStatus is null) return;
+        if (status.Active)
+            _downloadStatus.Text = status.Cancelling ? "Cancelando e descartando o arquivo incompleto…"
+                : $"{status.Choice?.ProductName} · {status.Choice?.Asset.Name}\n"
+                    + (status.Progress is { } p ? $"Baixando: {p.Bytes:N0} de {p.ExpectedBytes:N0} bytes."
+                        : "Preparando download…")
+                    + " Continua em segundo plano."
+                    + (OperatingSystem.IsAndroidVersionAtLeast(33) && CheckSelfPermission(Android.Manifest.Permission.PostNotifications) != Permission.Granted
+                        ? " Notificações bloqueadas; use Cancelar aqui ou o painel de apps ativos do Android." : "");
+        else if (status.Result is { } result) _downloadStatus.Text = result.Message;
+        _refresh!.Enabled = !status.Active && !_refreshing;
         UpdateDownloadControls();
-        _downloadStatus!.Text = "Baixando e conferindo…";
-        var progress = new Progress<ArtifactDownloadProgress>(p =>
+    }
+
+    void DownloadSelected()
+    {
+        if (_destroyed || _refreshing || HubDownloads.Session.Status.Active || SelectedArtifact() is not { } choice) return;
+        if (OperatingSystem.IsAndroidVersionAtLeast(33) && !_notificationPermissionRequested &&
+            CheckSelfPermission(Android.Manifest.Permission.PostNotifications) != Permission.Granted)
         {
-            if (!_destroyed && ReferenceEquals(_download, cancellation) && !cancellation.IsCancellationRequested)
-                _downloadStatus!.Text = $"Baixando: {p.Bytes:N0} de {p.ExpectedBytes:N0} bytes.";
-        });
+            _notificationPermissionRequested = true;
+            _awaitingNotificationPermission = choice;
+            RequestPermissions([Android.Manifest.Permission.PostNotifications], NotificationPermissionRequest);
+            return;
+        }
+        StartDownload(choice);
+    }
+
+    public override void OnRequestPermissionsResult(int requestCode, string[] permissions, Permission[] grantResults)
+    {
+        base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode != NotificationPermissionRequest) return;
+        var choice = _awaitingNotificationPermission;
+        _awaitingNotificationPermission = null;
+        if (!_destroyed && choice is not null) StartDownload(choice);
+    }
+
+    void StartDownload(ArtifactChoice choice)
+    {
+        if (HubDownloads.Session.Queue(choice) is not { } operation) return;
         try
         {
-            var result = await _downloader!.DownloadAsync(choice, progress, cancellation.Token);
-            if (!_destroyed) _downloadStatus!.Text = result.Message;
+            var intent = new Intent(this, typeof(ArtifactDownloadService))
+                .SetAction(ArtifactDownloadService.StartAction)
+                .PutExtra(ArtifactDownloadService.OperationExtra, operation.ToString());
+            StartForegroundService(intent);
         }
         catch (Exception)
-        {
-            if (!_destroyed) _downloadStatus!.Text = "Não foi possível concluir o download. Tente atualizar o catálogo.";
-        }
-        finally
-        {
-            _download = null;
-            if (!_destroyed)
-            {
-                _refresh!.Enabled = true;
-                UpdateDownloadControls();
-            }
-        }
+        { HubDownloads.Session.FailQueued(operation, "O Android não permitiu iniciar o download. Abra o Hub e tente novamente."); }
+        RenderDownloadStatus();
     }
 }

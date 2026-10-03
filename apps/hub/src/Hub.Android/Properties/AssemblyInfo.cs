@@ -1,4 +1,8 @@
 using Android.App;
 
-// Leitura do repositório e da API pública do GitHub (NN-016: permissão declarada). Nenhuma outra permissão.
+// NN-016: rede pública e serviço dataSync apenas para APK explicitamente solicitado, em cache privado.
 [assembly: UsesPermission(Android.Manifest.Permission.Internet)]
+[assembly: UsesPermission(Android.Manifest.Permission.ForegroundService)]
+[assembly: UsesPermission(Android.Manifest.Permission.ForegroundServiceDataSync)]
+// Android 13+: solicitada pela UI; recusa não impede FGS, exibido pelo painel de apps ativos do sistema.
+[assembly: UsesPermission(Android.Manifest.Permission.PostNotifications)]

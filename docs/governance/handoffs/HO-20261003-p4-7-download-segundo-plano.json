@@ -1,0 +1,137 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p4-7-download-segundo-plano",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T14:10:00Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-7",
+  "component": "hub",
+  "state": "review",
+  "branch": "codex/p4-7-background-download",
+  "base_commit": "9a935188955d1653806ddb7c3cbed6dc927d20a5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/hub/README.md",
+    "apps/hub/docs/download-e-integridade.md",
+    "apps/hub/docs/download-em-segundo-plano.md",
+    "apps/hub/src/Hub.Android/ArtifactDownloadService.cs",
+    "apps/hub/src/Hub.Android/MainActivity.Downloads.cs",
+    "apps/hub/src/Hub.Android/MainActivity.cs",
+    "apps/hub/src/Hub.Android/Properties/AssemblyInfo.cs",
+    "apps/hub/src/Hub.Core/ArtifactDownloads.cs",
+    "apps/hub/src/Hub.Core/ArtifactTransferSession.cs",
+    "apps/hub/tests/Hub.Tests/ArtifactTransferSessionTests.cs",
+    "docs/governance/handoffs/HO-20261003-p4-7-download-segundo-plano.json",
+    "docs/adr/0018-instalacao-e-launcher-do-hub.md",
+    "docs/adr/README.md",
+    "apps/hub/docs/modelo-de-instalacao.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261003-p4-6-modelo-instalacao.json"
+  ],
+  "work_completed": [
+    "Pedido explícito do proprietário: Segundo plano também. Implementação local no Hub; sem subagentes, extração ou outro Product.",
+    "Activity observa sessão de transferência do processo e reconecta em OnStart; OnStop/OnDestroy não cancelam.",
+    "Serviço Android não exportado, tipo dataSync, notificação de progresso/cancelamento/resultado; início somente por toque, retorno NotSticky.",
+    "Permissões Android foreground service/dataSync/notificações explicitamente declaradas; recusa de notificações explicada. Nenhuma instalação/exportação/acesso a projeto-vault.",
+    "Operação estável evita duplicação, comando atrasado, início negado travado, interferência de tela/observador e resultado fictício pós-processo morto. Marker privado não autoriza retomada.",
+    "Downloader P4-2 mantém limites/tamanho/hash/descarte; dez testes novos de lifecycle de sessão e documentação/roteiro em aparelho.",
+    "Resposta real DEC-0030-A detectada na Issue #112; aplicada ao ADR/modelo sem ativar instalador/pins."
+  ],
+  "verification": [
+    {
+      "check": "Testes Core e sessão de transferência",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet test --project tests/Hub.Tests: 159/159 (149 anteriores + 10 novos). /tmp/p4-7-tests.log. Observer detach/reconnect, single operation, cancel/cleanup gating, old events, start denial, interruption/recovery."
+    },
+    {
+      "check": "Consistência e diff-check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks locais; git diff --check passou. /tmp/p4-7-consistency.log. CI verificará snapshot real e estado combinado."
+    },
+    {
+      "check": "Compilação Android e estado combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI hub-ci e integrador confirmarão bindings Android, APK e testes; workload Android não disponível localmente."
+    },
+    {
+      "check": "Download em segundo plano, notificação e reconexão no aparelho",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/hub/docs/download-em-segundo-plano.md",
+      "evidence": "Roteiro P4-7: sair/voltar, completar/cancelar por notificação, recriar Activity, recusar/autorizar notificações, interromper processo, rede/storage. Não autoaprovável; pendência de UI/lifecycle separada do PR crítico de permissões."
+    }
+  ],
+  "known_issues": [
+    "Serviço não promete sobreviver a force-stop, processo morto ou restrições de rede/bateria do Android/fabricante.",
+    "Sem retomada automática, exportação, instalação ou wake lock; marcador/cache podem ser removidos pelo Android.",
+    "Recusa de notificações oculta a gaveta em Android 13+, mas serviço fica no painel de apps ativos e Cancelar na tela.",
+    "Build dev.4 contém P4-2 anterior, não P4-7; usar APK candidato do CI para conferência antes da integração."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Concluir CI e integrador; apresentar PR crítico verde para autorização de integração do proprietário.",
+    "Registrar conferência em aparelho e release efetiva sem inventar aprovação; preservar gate humano P4-4.",
+    "Implementação do instalador P4-3 seguirá modelo A já escolhido, em mudança própria."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/README.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/contracts/permissions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma sessão por processo é autoridade da transferência; UI/notificação apenas projetam estado; marker não prova sucesso."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #113, branch/base/handoff/evidências descobríveis."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Permissões Android mínimas declaradas/documentadas; início explícito, serviço não exportado, sem execução/instalação nem acesso a projetos/vault."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "159 testes não validam lifecycle/notificações em aparelho; conferência humana pending."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Somente download local do Hub; distribuição independente de Products intacta."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "artifact-transfer-session",
+      "status": "product-specific",
+      "rationale": "Sessão local do Hub; foreground service Android interno não é Service compartilhado do Ecosystem. Nenhum segundo consumidor/extraction."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security"
+    ],
+    "reason": "Adiciona FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC e POST_NOTIFICATIONS; modela operação explicitamente solicitada fora da Activity. Direção do proprietário já autorizada; integração crítica segue política da main."
+  },
+  "cost": null
+}

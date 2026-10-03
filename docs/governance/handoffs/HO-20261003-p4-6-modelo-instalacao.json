@@ -28,7 +28,8 @@
   "work_completed": [
     "Proposta de ADR e modelo de segurança, sem código, chaves, canais ou permissões efetivas.",
     "DEC-0030 pendente com três alternativas e consequências explícitas; recomendação A não aceita pelo agente.",
-    "Evidência real P4-2: integração/CI/build/publicação/hash; conferência humana permanece pendente."
+    "Evidência real P4-2: integração/CI/build/publicação/hash; conferência humana permanece pendente.",
+    "Consequências da DEC-0030-A aplicadas ao ADR/modelo/índice após resposta real do proprietário (Issue #112); sem instalação ou aprovação de pins."
   ],
   "verification": [
     {
@@ -40,18 +41,14 @@
   ],
   "known_issues": [
     "Certificado de chave de desenvolvimento pública não prova autoria.",
-    "Sem DEC-0030 persistida, modelo permanece Proposto e não autoriza instalação."
+    "Pins e identidades precisam de registro explícito antes de habilitar instalação A; esta escolha não aprova dados descobertos automaticamente."
   ],
-  "blockers": [
-    "DEC-0030: escolha do proprietário para implementar P4-3."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Integrar proposta de rotina, publicar pergunta no portal e acompanhar resposta real.",
-    "Aplicar consequências da DEC-0030 e implementar P4-3 em mudança crítica rastreável; não criar resposta em nome do proprietário."
+    "Concluir integração das consequências reais e encerrar P4-6 por evidência.",
+    "Implementar P4-3 em PR crítico conforme A, preservando gate de dispositivo humano."
   ],
-  "decisions_required": [
-    "DEC-0030"
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",
@@ -68,7 +65,7 @@
   "invariants": [
     {
       "id": "NN-011",
-      "evidence": "ADR Proposto e DEC-0030 pending; sem aceitação inventada."
+      "evidence": "ADR Aceito somente após resposta real DEC-0030-A, Issue #112 e registro canônico persistido."
     },
     {
       "id": "NN-016",
