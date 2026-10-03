@@ -19,11 +19,8 @@
   "timestamp": "2026-10-03T05:26:49Z",
   "task_id": "P3-7",
   "criticality": {
-    "declared": "critical",
-    "classes": [
-      "constitution"
-    ],
-    "reason": "Abre duas decisões do proprietário (DEC-0028, DEC-0029) em docs/governance/decisions.json (zona crítica de registro de decisões). Nenhum canal, chave ou código de release é criado."
+    "declared": "routine",
+    "reason": "Só abre decisões pendentes (decisions.json), atualiza ROADMAP e adiciona handoff; nenhum canal, chave, workflow ou código de release é criado. A política da main trata isso como rotina; as decisões chegam ao proprietário pelo portal, sem exigir autorização de PR."
   },
   "files_changed": [
     "docs/governance/decisions.json",
