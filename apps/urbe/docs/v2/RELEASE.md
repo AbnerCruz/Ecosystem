@@ -31,7 +31,7 @@
 ## Ponte de distribuição P4-9
 
 - `1.8.3-beta` é a ponte: deve ser publicada primeiro no canal legado assinado, antes de desligar o espelho.
-- A ponte não muda dados nem exige Hub; muda apenas a origem de **futuras** atualizações instaladas.
+- A ponte não muda dados nem exige launcher externo; muda apenas a origem de **futuras** atualizações instaladas.
 - Primeiro release direto Android exige a mesma chave privada; chave de debug é proibida para corte.
 - Só depois de release direto + atualização em aparelho + preservação do vault o Distribution Profile `current` pode mudar.
 - O repositório/Pages legado permanece como recuperação; desativar sincronização automática não significa apagar histórico nem releases.
