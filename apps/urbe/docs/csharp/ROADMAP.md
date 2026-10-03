@@ -7,7 +7,7 @@
 
 ## Próxima tarefa
 
-**M0 — Fundamentos de paridade.** UC-1 está concluído (Issue #138, PR #142 integrado). UC-2 começou pelo corpus Markdown/Visual e oráculo congelado (Issue #139); há 12 cenários portáveis de vault, três de restauração, quatro de crash recovery, 13 de storage (nove FSA/native + quatro IDB/browser), um de migração IDB v1 `kv["cidade"]` e 26 de identidade/GC; faltam atomicidade de restauração, capacidades nativas completas e UI. UC-3/UC-4 estão concluídos (PR #150 integrado, Issues #146/#147); UC-7 está concluído (PR #151); UC-5 e UC-6 dependem de UC-1 a UC-4.
+**M0 — Fundamentos de paridade.** UC-1 está concluído (Issue #138, PR #142 integrado). UC-2 começou pelo corpus Markdown/Visual e oráculo congelado (Issue #139); há 12 cenários portáveis de vault, três de restauração, quatro de crash recovery, 13 de storage (nove FSA/native + quatro IDB/browser), um de migração IDB v1 `kv["cidade"]` e 26 de identidade/GC; faltam capacidades nativas completas e UI. UC-3/UC-4 estão concluídos (PR #150 integrado, Issues #146/#147); UC-7 está concluído (PR #151); UC-5 e UC-6 dependem de UC-1 a UC-4.
 
 ---
 

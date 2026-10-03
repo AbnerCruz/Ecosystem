@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-urbe-crash-recovery-parity",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T23:26:00Z",
+  "timestamp": "2026-10-03T23:29:00Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
@@ -58,13 +58,13 @@
     }
   ],
   "known_issues": [
-    "Os quatro casos não provam rollback atômico de restore de backup quando uma escrita da restauração falha no meio."
+    "Rollback atômico de uma restauração de backup que falhe no meio não é provado; não é requisito explícito de REQ-038/046 e fica fora do bloqueio de UC-2."
   ],
   "blockers": [],
   "next_actions": [
-    "Reexecutar consistency e urbe-checks no PR #165 agora baseado diretamente em main.",
-    "Se os gates finais passarem, mover handoff para review e liberar o integrador.",
-    "Seguir UC-2 com rollback de restore ou capacidades nativas portáveis."
+    "Reexecutar consistency e urbe-checks no PR #165 baseado diretamente em main.",
+    "Se os gates finais passarem, liberar o integrador.",
+    "Seguir UC-2 com capacidades nativas portáveis e depois UI/E2E por superfície."
   ],
   "decisions_required": [],
   "normative_sources": [

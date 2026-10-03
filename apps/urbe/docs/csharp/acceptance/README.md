@@ -60,7 +60,7 @@ O adapter JS executa o renderer real em VM. `run all` com ele falha de propósit
 
 ## Restante de UC-2
 
-1. Completar recuperação extrema. As 12 fixtures já têm load/edição/flush/reabertura, hashes, IDs, proteção forward e backup íntegro/idempotente; três casos cobrem restauração válida e rejeição de cópia corrompida/ausente; quatro casos de crash cobrem falha ao escrever o journal, escrita parcial, remoção parcial e journal residual. Ainda falta provar atomicidade/rollback de uma restauração de backup que falhe no meio.
+1. Recuperação portável está coberta para o contrato atual: 12 fixtures com load/edição/flush/reabertura, três casos de restauração e quatro casos de crash em gravação multi-arquivo. Rollback atômico de uma restauração que falhe no meio não é requisito explícito de REQ-038/046 e não bloqueia UC-2; pode virar hardening futuro sem congelar o comportamento legado.
 2. Completar o contrato nativo para capacidades presentes/ausentes e permissões recusadas por superfície. Gestão de vaults, estado existente da loja `fs`, pastas e binários do backend IDB/browser já têm quatro casos portáveis; a migração histórica `kv["cidade"]` tem um caso próprio, além do E2E real em Chromium.
 3. Transcrever UI/E2E para passos e resultados observáveis por superfície; seletores dependem da pilha UC-5. Chromium não valida Android físico ou Windows instalado.
 4. Ligar os adapters C# ao mesmo corpus em M1–M4. UC-7 e G-C0 continuam precedendo qualquer código C# de produto.
