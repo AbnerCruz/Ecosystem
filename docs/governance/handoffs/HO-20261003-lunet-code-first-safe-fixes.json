@@ -70,9 +70,10 @@
     {
       "check": "C6 correções rápidas no Android",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/audits/fase-3-roteiro.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/155); registro em docs/governance/responses/VAL-HO-20261003-lunet-code-first-safe-fixes-f584fb33de0c.md."
     }
   ],
   "known_issues": [
