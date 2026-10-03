@@ -11,10 +11,10 @@ public class TeamIntegrationTests
     }
     private sealed class Gates : IChangeReviewer, ICombinedVerifier, IChangePolicy, IChangeAuthorizer
     {
-        public Func<IntegrationCandidate, ChangeReview> Review { get; set; } = c => new(c.Id, "reviewer", true, "conteúdo conferido");
+        public Func<IntegrationCandidate, ChangeReview> Review { get; set; } = c => new(c, "reviewer", true, "conteúdo conferido");
         public Func<IntegrationCandidate, VerificationResult> Verify { get; set; } = c => VerificationResult.Pass(c.Change.TaskId, "combinado conferido", "conteúdo");
         public Func<IntegrationCandidate, ChangeClassification> Policy { get; set; } = _ => new(ChangeDisposition.Automatic, []);
-        public Func<IntegrationCandidate, ChangeAuthorization> Authorize { get; set; } = c => new(c.Id, true, "owner");
+        public Func<IntegrationCandidate, ChangeAuthorization> Authorize { get; set; } = c => new(c, true, "owner");
         public ValueTask<ChangeReview> ReviewAsync(IntegrationCandidate c, CancellationToken ct) => ValueTask.FromResult(Review(c));
         public ValueTask<VerificationResult> VerifyAsync(IntegrationCandidate c, CancellationToken ct) => ValueTask.FromResult(Verify(c));
         public ChangeClassification Classify(IntegrationCandidate c) => Policy(c);
@@ -49,7 +49,7 @@ public class TeamIntegrationTests
     [InlineData("self")][InlineData("stale")][InlineData("failed")][InlineData("no-evidence")]
     public async Task Revisao_propria_antiga_reprovada_ou_sem_evidencia_bloqueia(string kind)
     {
-        var g = new Gates { Review = c => new(kind == "stale" ? "old" : c.Id, kind == "self" ? "writer" : "reviewer", kind != "failed", kind == "no-evidence" ? "" : "e") };
+        var g = new Gates { Review = c => new(kind == "stale" ? c with { Id = c.Id } : c, kind == "self" ? "writer" : "reviewer", kind != "failed", kind == "no-evidence" ? "" : "e") };
         var i = g.Integrator(); Assert.Equal(IntegrationStatus.ReviewFailed, (await i.IntegrateAsync(Change(i.Current), default)).Status);
         Assert.Equal(0, i.Current.Revision);
     }
@@ -66,7 +66,7 @@ public class TeamIntegrationTests
     public async Task Critico_exige_autorizacao_do_proprietario_para_candidato_exato(string kind)
     {
         var g = new Gates { Policy = _ => new(ChangeDisposition.OwnerAuthorization, ["security"]),
-            Authorize = c => new(kind == "candidate" ? "old" : c.Id, kind != "denied", kind == "actor" ? "writer" : "owner") };
+            Authorize = c => new(kind == "candidate" ? c with { Id = c.Id } : c, kind != "denied", kind == "actor" ? "writer" : "owner") };
         var i = g.Integrator(kind != "missing");
         Assert.Equal(IntegrationStatus.Escalated, (await i.IntegrateAsync(Change(i.Current), default)).Status); Assert.Equal(0, i.Current.Revision);
     }
@@ -108,10 +108,10 @@ public class TeamIntegrationTests
     public async Task Dependencia_so_libera_depois_de_integracao_real()
     {
         var plan = new TeamPlan([Assignment("t1"), Assignment("t2", "t1")]);
-        var g = new Gates { Review = c => new(c.Id, "reviewer", false, "precisa corrigir") }; var i = g.Integrator();
+        var g = new Gates { Review = c => new(c, "reviewer", false, "precisa corrigir") }; var i = g.Integrator();
         var receipt = await i.IntegrateAsync(Change(i.Current), default);
         Assert.Throws<InvalidOperationException>(() => plan.Record(receipt)); Assert.Equal("t1", Assert.Single(plan.Ready).Task.Id);
-        g.Review = c => new(c.Id, "reviewer", true, "ok"); plan.Record(await i.IntegrateAsync(Change(i.Current, "retry"), default));
+        g.Review = c => new(c, "reviewer", true, "ok"); plan.Record(await i.IntegrateAsync(Change(i.Current, "retry"), default));
         Assert.Equal("t2", Assert.Single(plan.Ready).Task.Id);
     }
 
@@ -129,7 +129,7 @@ public class TeamIntegrationTests
                 Agent = Rig.Request().Agent with { Identity = new("reviewer", "Revisor", "review") } };
             request = request with { Agent = request.Agent with { Grant = Rig.Grant(["artifact.read"]) } };
             var run = await rig.Runner().RunAsync(request, ct);
-            return new(c.Id, "reviewer", run.State.Status == RunStatus.Succeeded, run.Verification?.Evidence ?? "");
+            return new(c, "reviewer", run.State.Status == RunStatus.Succeeded, run.Verification?.Evidence ?? "");
         }
     }
     [Fact]

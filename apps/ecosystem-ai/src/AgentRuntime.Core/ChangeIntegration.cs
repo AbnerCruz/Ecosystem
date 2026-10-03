@@ -75,10 +75,10 @@ public sealed class IsolatedWorkspace(WorkspaceSnapshot basis)
 }
 
 public sealed record IntegrationCandidate(string Id, ChangeSet Change, WorkspaceSnapshot Current, WorkspaceSnapshot Combined);
-public sealed record ChangeReview(string CandidateId, string ReviewerId, bool Passed, string Evidence);
+public sealed record ChangeReview(IntegrationCandidate Candidate, string ReviewerId, bool Passed, string Evidence);
 public enum ChangeDisposition { Automatic, OwnerAuthorization, Deny }
 public sealed record ChangeClassification(ChangeDisposition Disposition, IReadOnlyList<string> Classes);
-public sealed record ChangeAuthorization(string CandidateId, bool Approved, string AuthorizedBy);
+public sealed record ChangeAuthorization(IntegrationCandidate Candidate, bool Approved, string AuthorizedBy);
 
 /// <summary>Portas confiáveis do Host. Não são argumentos gerados pelo produtor.</summary>
 public interface IChangeReviewer
@@ -147,7 +147,7 @@ public sealed class ChangeIntegrator(WorkspaceSnapshot initial, IChangeReviewer 
             var candidate = new IntegrationCandidate($"candidate-{checked(++_attempt)}", change, current,
                 new WorkspaceSnapshot(checked(current.Revision + 1), combined));
             var review = await reviewer.ReviewAsync(candidate, cancellationToken);
-            if (!review.Passed || review.CandidateId != candidate.Id || string.IsNullOrWhiteSpace(review.ReviewerId)
+            if (!review.Passed || !ReferenceEquals(review.Candidate, candidate) || string.IsNullOrWhiteSpace(review.ReviewerId)
                 || review.ReviewerId == change.ProducerId || string.IsNullOrWhiteSpace(review.Evidence))
                 return Result(IntegrationStatus.ReviewFailed, candidate.Id, review.ReviewerId);
             var verification = await verifier.VerifyAsync(candidate, cancellationToken);
@@ -161,7 +161,7 @@ public sealed class ChangeIntegrator(WorkspaceSnapshot initial, IChangeReviewer 
             {
                 if (authorizer is null || string.IsNullOrWhiteSpace(ownerId)) return Result(IntegrationStatus.Escalated, candidate.Id, review.ReviewerId);
                 var authorization = await authorizer.AuthorizeAsync(candidate, classification, cancellationToken);
-                if (!authorization.Approved || authorization.CandidateId != candidate.Id || authorization.AuthorizedBy != ownerId)
+                if (!authorization.Approved || !ReferenceEquals(authorization.Candidate, candidate) || authorization.AuthorizedBy != ownerId)
                     return Result(IntegrationStatus.Escalated, candidate.Id, review.ReviewerId);
                 // A política é lida novamente; uma autorização nunca contorna uma revogação.
                 var fresh = policy.Classify(candidate);

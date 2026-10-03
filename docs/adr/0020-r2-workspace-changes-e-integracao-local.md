@@ -13,7 +13,15 @@ produção e revisão por identidades diferentes, tarefas dependentes e integra�
 sem conceder escrita do estado canônico ao produtor. Os contratos do plano §10
 não existem como protocolo público. Esta proposta mantém tudo local ao Product.
 
-## Proposta
+## Problema
+
+Impedir que produção isolada seja confundida com sucesso canônico, que revisão
+antiga autorize conteúdo novo ou que uma mudança sobreponha trabalho concorrente.
+
+## Decisão
+
+Proposta a avaliar na integração crítica, sem aceite antecipado:
+
 
 - `WorkspaceSnapshot` imutável; `IsolatedWorkspace` overlay sobre uma base fixa;
   `ChangeSet` selado com ID, tarefa, produtor, run e alterações antes/depois.
@@ -23,7 +31,8 @@ não existem como protocolo público. Esta proposta mantém tudo local ao Produc
 - Integrador serial combina com estado atual; alteração no mesmo path desde a
   base gera conflito explícito, sem sobrescrita. Mudanças independentes sobre base
   antiga são combinadas e verificadas novamente. Retrabalho sela proposta nova.
-- Revisão independente vinculada ao candidato exato; verificador confiável recebe
+- Revisão independente vinculada ao objeto candidato exato (identidade por referência
+  nesta API em processo; ID textual sozinho nunca autoriza); verificador confiável recebe
   combinado imutável e exige tarefa correta/evidência. Cancelamento/erro/reprovação
   deixam canônico intacto. ID já integrado não é aplicado duas vezes.
 - Policy/authorizer são portas confiáveis do Host, nunca conteúdo do agente.
@@ -41,14 +50,14 @@ contrato compartilhado/serializado exige ADR próprio com JSON Schema antes do
 adapter entre processos, conforme ADR-0017 D9. Snapshots e receipts são efêmeros,
 sem promessa de replay durável. Não alterar o contrato de eventos do R1.
 
-## Alternativas
+## Opções
 
 1. Agente escrever no canônico: elimina isolamento e torna revisão ineficaz.
 2. Reproduzir PR/Actions no Core: acopla domínio ao fornecedor e viola NN-015.
 3. Overlay e portas locais (recomendação): prova o algoritmo com custo mínimo;
    adapter durável, auditoria persistente e protocolo entram em itens posteriores.
 
-## Consequências e limites
+## Consequências
 
 Sem extração: só ecosystem-ai é consumidor. A biblioteca continua local (NN-022).
 Testes incluem dois AgentRunner reais com providers determinísticos e capabilities
@@ -59,6 +68,11 @@ coordenador autônomo/24h, filesystem de produção nem interface de usuário.
 Mudança crítica de segurança: cria uma fronteira de publicação do canônico e
 escalonamento. Handoff declara security, mesmo fora dos paths da política. O
 integrador existente testa o PR e espera autorização do proprietário.
+
+## Alternativas rejeitadas
+
+Escrita direta do canônico e dependência do fornecedor no Core são descartadas
+pelos limites já aprovados no ADR-0017. Nenhuma permissão nova é adicionada.
 
 ## Referências
 

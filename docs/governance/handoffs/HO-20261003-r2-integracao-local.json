@@ -13,7 +13,7 @@
   "branch": "codex/p6-3-team-integration",
   "base_commit": "2e4cfa902c86d2eb2441bacfa6b29267f7e46c9e",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/140",
   "files_changed": [
     "apps/ecosystem-ai/src/AgentRuntime.Core/ChangeIntegration.cs",
     "apps/ecosystem-ai/src/AgentRuntime.Core/TeamPlan.cs",
@@ -37,6 +37,13 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "Sem erro de whitespace no diff local."
+    },
+    {
+      "check": "Runtime e arquitetura candidato inicial",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "ecosystem-ai-ci 37144357657: 111/111 testes, zero falhas. Revisão seguinte endurece vínculo de autorização por identidade do objeto; novo CI obrigatório.",
+      "tested_commit": "824eeae2c063e70e4bae8adb8a506a1c5cfe1fc5"
     },
     {
       "check": "Runtime, arquitetura e consistency",
