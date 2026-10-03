@@ -17,7 +17,7 @@
   "state": "review",
   "message_id": "HO-20261002-portal-v2",
   "timestamp": "2026-10-02T12:40:00Z",
-  "task_id": "P3-12",
+  "task_id": "P3-11",
   "criticality": {
     "declared": "routine",
     "reason": "Interface do portal (site/index.html, app.js, style.css) e documentação de arquitetura: nenhuma zona crítica; o gerador da projeção (control plane) não muda neste PR."
@@ -31,12 +31,13 @@
     "docs/governance/handoffs/HO-20261002-portal-v2.json"
   ],
   "work_completed": [
-    "FATO: pedido do proprietário em 2026-10-02 (conversa): o portal estava com UX, design e métricas ruins; subir ao nível do topo de linha. Persistido como P3-12 no ROADMAP (NN-009).",
+    "FATO: pedido do proprietário em 2026-10-02 (conversa): o portal estava com UX, design e métricas ruins; subir ao nível do topo de linha. Persistido como P3-11 no ROADMAP (NN-009).",
     "Design system novo (style.css): tokens por papel, tema claro e escuro com passos próprios, tipografia do sistema, cartões, pills de status com ícone e rótulo, foco visível, alvos de toque ≥ 40 px, reduced-motion e forced-colors; as páginas de validação geradas herdam a mesma linguagem sem mudar o gerador.",
     "Casca (index.html): barra fixa com navegação por seção (rolagem horizontal no celular), busca Ctrl K/⌘K, alternância de tema; seções: cabeçalho-resumo, Precisa de você, Indicadores, Apps, Atividade de integração, Roadmap, Distribuição e recuperação, Documentação.",
     "Indicadores ao vivo (app.js, portal.md §8.1): integradas sem você (trailer Integration-Criticality dos commits do integrador e merges pelo botão), do PR à main (mediana e p90), fila agora (mesmas regras de elegibilidade de IntegrationQueue.Plan: rascunho, fork e Dependabot fora), CI da main; gráfico de integrações por dia (rotina × crítico) com tooltip, foco por teclado e visão em tabela; lista das últimas integrações com o commit exato. Falha = 'não disponível' com o motivo; histórico incompleto = 'parcial'.",
     "Precisa de você: decisões, mudanças críticas prontas (ao vivo pelas labels critico + pronto-para-integrar, com o instantâneo da projeção como reserva) e validações críticas; não críticas recolhidas em 'Sem pressa'. Fluxos de resposta (Issue pré-preenchida, Aprovar/Reprovar) preservados.",
-    "Apps: versão, release com idade, downloads com tamanho, validação humana, espelho ao vivo, fontes e SHA-256 copiável. Roadmap: fases e gates; aceita o campo opcional 'roadmap' da projeção (nome e progresso por fase) quando o gerador o trouxer (item crítico separado)."
+    "Apps: versão, release com idade, downloads com tamanho, validação humana, espelho ao vivo, fontes e SHA-256 copiável. Roadmap: fases e gates; aceita o campo opcional 'roadmap' da projeção (nome e progresso por fase) quando o gerador o trouxer (item crítico separado).",
+    "ID: colisão com o 'Modelo de tela do Hub' (outro agente), também aberto como P3-11 (PR #63). Os dois lados renumeraram ao mesmo tempo; o outro agente integrou o seu como P3-12 (PR #67) e cedeu P3-11 ao Portal v2 (Issue #64). Para convergir, este item fica P3-11 — nenhum ID ficou com dois donos na main."
   ],
   "verification": [
     {
@@ -72,7 +73,7 @@
   ],
   "next_actions": [
     "PR crítico do gerador: projetar roadmap.phases (nome, gate, itens concluídos/em andamento/abertos) a partir do ROADMAP, comparado por CHK-PORTAL.",
-    "Depois da validação humana (não crítica) pelo portal: P3-12 [x], Issue fechada, handoff done."
+    "Depois da validação humana (não crítica) pelo portal: P3-11 [x], Issue fechada, handoff done."
   ],
   "decisions_required": [],
   "normative_sources": [
