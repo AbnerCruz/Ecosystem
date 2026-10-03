@@ -11,7 +11,8 @@ public sealed record HubSnapshot(
     IReadOnlyList<ProductSummary> Products,
     PastNowNext Timeline,
     IReadOnlyDictionary<string, Datum<IReadOnlyList<ReleaseInfo>>> ProductReleases,
-    bool Stale);
+    bool Stale,
+    IReadOnlyDictionary<string, Datum<ReleaseChannel>>? ReleaseChannels = null);
 
 /// <summary>
 /// Carrega o estado do Ecosystem a partir do repositório e do GitHub — só leitura, nada é gravado de volta, nada é inventado.
@@ -38,11 +39,12 @@ public sealed class HubLoader
         var github = new GitHubReader(_http, o.Repository, o.Token);
 
         var ecoT = files.ReadTextAsync("ecosystem.json", ct);
+        var profileT = files.ReadTextAsync(DistributionReader.ProfilePath, ct);
         var roadmapT = files.ReadTextAsync("ROADMAP.md", ct);
         var decisionsT = files.ReadTextAsync("docs/governance/decisions.json", ct);
         var handoffListT = files.ListFilesAsync(HandoffsDir, ct);
         var ghT = github.ReadAllAsync(o.Branch, ct);
-        await Task.WhenAll(ecoT, roadmapT, decisionsT, handoffListT, ghT).ConfigureAwait(false);
+        await Task.WhenAll(ecoT, profileT, roadmapT, decisionsT, handoffListT, ghT).ConfigureAwait(false);
 
         var notes = new List<string>();
         void Need<T>(Datum<T> d, string what)
@@ -75,21 +77,29 @@ public sealed class HubLoader
 
         Need(roadmapT.Result, "ROADMAP.md");
         Need(decisionsT.Result, "decisions.json");
+        Need(profileT.Result, "perfil de distribuição");
 
         var timeline = TimelineBuilder.Build(roadmapT.Result.Value ?? "", decisionsT.Result.Value ?? "", handoffs);
         timeline = TimelineGitHub.AddGitHub(timeline, ghT.Result, o.Branch);
         timeline = timeline with { Notes = notes.Concat(timeline.Notes).ToList() };
 
-        // Releases de cada Product, no repositório de origem declarado em ecosystem.json.
+        // Canal operacional declarado pelo perfil. SOURCE e DISTRIBUTION não são intercambiáveis.
         var releases = new Dictionary<string, Datum<IReadOnlyList<ReleaseInfo>>>();
+        var channels = products.ToDictionary(p => p.Id, p => DistributionReader.ReleaseChannelFor(p, profileT.Result, o.Repository));
         var releaseTasks = products
-            .Select(p => (p.Id, Repo: RepositoryRef.TryParse(p.Repository.Value)))
-            .Where(x => x.Repo is not null)
-            .Select(async x => (x.Id, Data: await new GitHubReader(_http, x.Repo!, o.Token).ReadReleasesAsync(ct).ConfigureAwait(false)))
+            .Select(async p =>
+            {
+                var channel = channels[p.Id];
+                if (channel.Value is not { } c)
+                    return (p.Id, Data: Datum<IReadOnlyList<ReleaseInfo>>.Missing(channel.Source, channel.Note));
+                var data = c.Repository.FullName.Equals(o.Repository.FullName, StringComparison.OrdinalIgnoreCase)
+                    ? ghT.Result.Releases : await new GitHubReader(_http, c.Repository, o.Token).ReadReleasesAsync(ct).ConfigureAwait(false);
+                return (p.Id, Data: GitHubReader.ForChannel(data, c));
+            })
             .ToList();
         foreach (var (id, data) in await Task.WhenAll(releaseTasks).ConfigureAwait(false)) releases[id] = data;
 
-        return new HubSnapshot(products, timeline, releases, Stale: false);
+        return new HubSnapshot(products, timeline, releases, Stale: false, channels);
     }
 
     static async Task<Dictionary<string, string?>> ReadAll(RepositoryFileSource files, IEnumerable<string> paths, CancellationToken ct)
@@ -120,7 +130,12 @@ public static class SnapshotCache
         try
         {
             var s = JsonSerializer.Deserialize<HubSnapshot>(cached);
-            return s is null ? null : s with { Products = s.Products.Select(p => p.AsStale()).ToList(), Stale = true };
+            return s is null || s.Products is null || s.Timeline is null || s.ProductReleases is null ? null : s with
+            {
+                Products = s.Products.Select(p => p.AsStale()).ToList(), Stale = true,
+                ProductReleases = s.ProductReleases.ToDictionary(p => p.Key, p => p.Value.AsStale()),
+                ReleaseChannels = s.ReleaseChannels?.ToDictionary(p => p.Key, p => p.Value.AsStale()),
+            };
         }
         catch (JsonException) { return null; }
     }

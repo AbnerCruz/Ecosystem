@@ -31,12 +31,45 @@ public sealed class GitHubReader
     public Task<Datum<IReadOnlyList<BranchInfo>>> ReadBranchesAsync(CancellationToken ct = default) =>
         GetList($"/repos/{_repo.FullName}/branches?per_page=100", null, e => Str(e, "name") is { } n ? new BranchInfo(n) : null, ct);
 
-    public Task<Datum<IReadOnlyList<ReleaseInfo>>> ReadReleasesAsync(CancellationToken ct = default) =>
-        GetList($"/repos/{_repo.FullName}/releases?per_page=30", null, e =>
-            Str(e, "tag_name") is { } tag
-                ? new ReleaseInfo(tag, Str(e, "name"), Bool(e, "prerelease"), Str(e, "published_at"), Str(e, "html_url") ?? "",
-                    e.TryGetProperty("assets", out var a) && a.ValueKind == JsonValueKind.Array ? a.GetArrayLength() : 0)
-                : null, ct);
+    public async Task<Datum<IReadOnlyList<ReleaseInfo>>> ReadReleasesAsync(CancellationToken ct = default)
+    {
+        var data = await GetList<ReleaseInfo>($"/repos/{_repo.FullName}/releases?per_page=100", null, ParseRelease, ct).ConfigureAwait(false);
+        return data.Value is null ? data : data with { Note = data.Value.Count >= 100 ? "consulta limitada às 100 releases mais recentes" : data.Note,
+            Value = data.Value.OrderByDescending(r =>
+            DateTimeOffset.TryParse(r.PublishedAt, System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AssumeUniversal, out var date) ? date : DateTimeOffset.MinValue).ToList() };
+    }
+
+    public static Datum<IReadOnlyList<ReleaseInfo>> ForChannel(Datum<IReadOnlyList<ReleaseInfo>> data, ReleaseChannel channel) =>
+        data.Value is null || channel.TagPrefix is null ? data : data with
+        {
+            Value = data.Value.Where(r => r.Tag.StartsWith(channel.TagPrefix, StringComparison.Ordinal)).ToList(),
+            Note = data.Value.Count > 0 && !data.Value.Any(r => r.Tag.StartsWith(channel.TagPrefix, StringComparison.Ordinal))
+                ? "nenhuma release deste Product entre as releases consultadas" : data.Note,
+        };
+
+    static ReleaseInfo? ParseRelease(JsonElement e)
+    {
+        if (Bool(e, "draft") || Str(e, "tag_name") is not { Length: > 0 } tag) return null;
+        List<ReleaseAssetInfo>? artifacts = null; var count = 0; string? note = null;
+        if (e.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
+        {
+            count = assets.GetArrayLength(); artifacts = [];
+            foreach (var a in assets.EnumerateArray())
+            {
+                if (a.ValueKind != JsonValueKind.Object || Str(a, "name") is not { Length: > 0 } name
+                    || !Uri.TryCreate(Str(a, "browser_download_url"), UriKind.Absolute, out var url) || url.Scheme != Uri.UriSchemeHttps
+                    || !a.TryGetProperty("size", out var size) || size.ValueKind != JsonValueKind.Number
+                    || !size.TryGetInt64(out var bytes) || bytes < 0) continue;
+                var digest = Str(a, "digest");
+                var sha = digest is { Length: 71 } && digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
+                    && digest[7..].All(Uri.IsHexDigit) ? digest[7..].ToLowerInvariant() : null;
+                artifacts.Add(new(name, url.AbsoluteUri, bytes, sha));
+            }
+            if (artifacts.Count < count) note = "há artefatos com metadados incompletos ou inválidos";
+        }
+        return new(tag, Str(e, "name"), Bool(e, "prerelease"), Str(e, "published_at"), Str(e, "html_url") ?? "", count, artifacts, note);
+    }
 
     /// <summary>Issues abertas (a API devolve PRs na mesma lista; elas são descartadas aqui).</summary>
     public Task<Datum<IReadOnlyList<IssueInfo>>> ReadIssuesAsync(CancellationToken ct = default) =>

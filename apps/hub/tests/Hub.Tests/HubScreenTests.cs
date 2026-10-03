@@ -87,6 +87,55 @@ public class HubScreenTests
     }
 
     [Fact]
+    public void CatalogShowsApkMetadataAsReportedNotAsVerified()
+    {
+        var sha = new string('a', 64);
+        var releases = new Dictionary<string, Datum<IReadOnlyList<ReleaseInfo>>>
+        {
+            ["alpha"] = Datum<IReadOnlyList<ReleaseInfo>>.From([
+                new("v2", null, true, null, "https://example.invalid/release", 2,
+                    [new("alpha.apk", "https://example.invalid/alpha.apk", 123, sha),
+                     new("SHA256SUMS.txt", "https://example.invalid/sums", 10, null)])], "api"),
+        };
+        var channels = new Dictionary<string, Datum<ReleaseChannel>>
+        { ["alpha"] = Datum<ReleaseChannel>.From(new(new("acme", "alpha"), "https://github.com/acme/alpha/releases", null), "profile") };
+        var snapshot = Snap([Product("alpha")], releases: releases) with { ReleaseChannels = channels };
+        var lines = Section(HubScreenBuilder.Build(snapshot), "Releases e artefatos").Lines;
+        Assert.Contains("pré-lançamento", lines[0].Text);
+        Assert.Contains("alpha.apk", lines[0].Detail);
+        Assert.Contains("123 bytes", lines[0].Detail);
+        Assert.Contains("SHA-256 informado: " + sha, lines[0].Detail);
+        Assert.DoesNotContain("SHA256SUMS.txt", lines[0].Detail);
+        Assert.DoesNotContain("verificado", lines[0].Detail);
+        Assert.DoesNotContain("validado", lines[0].Detail);
+    }
+
+    [Fact]
+    public void CatalogExplainsFailureAndKeepsItsRecoveryChannel()
+    {
+        var channel = Datum<ReleaseChannel>.From(new(new("acme", "alpha"), "https://github.com/acme/alpha/releases", null), "profile");
+        var snapshot = Snap([Product("alpha")], releases: new Dictionary<string, Datum<IReadOnlyList<ReleaseInfo>>>
+        { ["alpha"] = Datum<IReadOnlyList<ReleaseInfo>>.Missing("api", "HTTP 403") }) with
+        { ReleaseChannels = new Dictionary<string, Datum<ReleaseChannel>> { ["alpha"] = channel } };
+        var line = Section(HubScreenBuilder.Build(snapshot), "Releases e artefatos").Lines.Single();
+        Assert.Contains("indisponíveis", line.Text);
+        Assert.Contains("HTTP 403", line.Detail);
+        Assert.Contains(channel.Value!.ReleasesUrl, line.Detail);
+    }
+
+    [Fact]
+    public void LegacyCacheDoesNotInventArtifactMetadata()
+    {
+        var snapshot = Snap([Product("alpha")], releases: new Dictionary<string, Datum<IReadOnlyList<ReleaseInfo>>>
+        { ["alpha"] = Datum<IReadOnlyList<ReleaseInfo>>.From([new("v1", null, false, null, "r", 2)], "api") }) with
+        { ReleaseChannels = new Dictionary<string, Datum<ReleaseChannel>>
+          { ["alpha"] = Datum<ReleaseChannel>.From(new(new("acme", "alpha"), "https://github.com/acme/alpha/releases", null), "profile") } };
+        var line = Section(HubScreenBuilder.Build(snapshot), "Releases e artefatos").Lines.Single();
+        Assert.Contains("Metadados de artefatos não disponíveis", line.Detail);
+        Assert.DoesNotContain("Nenhum APK", line.Detail);
+    }
+
+    [Fact]
     public void TimelineBlocksShowIdTitleAndDetail()
     {
         var s = HubScreenBuilder.Build(Snap(timeline: new PastNowNext([E("P1-1")], [E("P1-2", "aguardando validação/revisão")], [E("P1-3", "pronta")])));

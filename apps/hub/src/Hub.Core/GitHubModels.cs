@@ -19,7 +19,17 @@ public sealed record PullRequestInfo(int Number, string Title, bool Draft, strin
 
 public sealed record BranchInfo(string Name);
 
-public sealed record ReleaseInfo(string Tag, string? Name, bool Prerelease, string? PublishedAt, string Url, int Assets);
+/// <summary>Metadados informados pelo canal. SHA-256 informado não significa que os bytes foram baixados/verificados.</summary>
+public sealed record ReleaseAssetInfo(string Name, string Url, long Size, string? Sha256)
+{
+    public bool IsAndroidApk => Name.EndsWith(".apk", StringComparison.OrdinalIgnoreCase);
+}
+
+// Campos opcionais preservam a leitura de caches da Fase 3.
+public sealed record ReleaseInfo(string Tag, string? Name, bool Prerelease, string? PublishedAt, string Url, int Assets,
+    IReadOnlyList<ReleaseAssetInfo>? Artifacts = null, string? ArtifactNote = null);
+
+public sealed record ReleaseChannel(RepositoryRef Repository, string ReleasesUrl, string? TagPrefix);
 
 /// <param name="State">Valor da label <c>state:&lt;x&gt;</c> (DEC-0003), quando houver.</param>
 public sealed record IssueInfo(int Number, string Title, string Url, IReadOnlyList<string> Labels, string? State);
