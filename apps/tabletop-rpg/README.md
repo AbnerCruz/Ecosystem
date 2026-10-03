@@ -25,7 +25,8 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 ## Teste
 
 ```bash
-dotnet test apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj
+cd apps/tabletop-rpg
+dotnet test --project tests/TabletopRpg.Core.Tests
 ```
 
 Requer .NET SDK 10+. O primeiro slice não faz chamadas de rede e não contém provedor LLM real.
