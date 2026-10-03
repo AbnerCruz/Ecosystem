@@ -9,12 +9,12 @@
   },
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "8e0ff79",
-  "commit": null,
-  "pr": null,
+  "commit": "a078d46",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/75",
   "blockers": [],
   "cost": null,
   "component": "portal",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261003-portal-roadmap-por-fase",
   "timestamp": "2026-10-03T02:23:50Z",
   "task_id": "P3-13",
@@ -68,7 +68,7 @@
     "Fases 8 e 9 (propostas no ROADMAP) não aparecem no portal: ficam fora do parser de fases até o ADR-0017 ser aceito (por desenho)."
   ],
   "next_actions": [
-    "Proprietário: autorizar o PR crítico (label integrar). Depois: fechamento pós-integração (P3-13 [x], Issue fechada, handoff done)."
+    "Nenhuma pendência."
   ],
   "decisions_required": [],
   "normative_sources": [
