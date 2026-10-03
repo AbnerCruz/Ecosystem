@@ -1,0 +1,161 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-urbe-m0-contracts",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T19:38:42.340963Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-3",
+  "component": "urbe",
+  "state": "review",
+  "branch": "codex/urbe-m0-contracts",
+  "base_commit": "c024c0876b09721e7868c4b14c97ee71e4088746",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/docs/csharp/PARITY.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/tools/check-all.mjs",
+    "apps/urbe/tools/lib/csharp-parity.mjs",
+    "apps/urbe/docs/csharp/DEPENDENCIES.md",
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "apps/urbe/docs/csharp/acceptance/vault-manifest.json",
+    "apps/urbe/tests/csharp-vault-contract.mjs",
+    "apps/urbe/tools/lib/vault-contract.mjs",
+    "apps/urbe/tools/vault-contract.mjs",
+    "docs/governance/handoffs/HO-20261003-urbe-m0-contracts.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UC-3/4: projeções e tooling de aceite autorizados; sem mudança de autoridade, catálogo normativo, formato, runtime, stack ou política."
+  },
+  "work_completed": [
+    "UC-3 (#146): contrato gerado do catálogo/ADR-0004, manifesto com todas as 12 fixtures incluindo ocultos/binários e hashes de fontes/implementação; gate em npm run check.",
+    "UC-4 (#147): uso real, opções e riscos das dependências, fontes primárias consultadas; nenhum substituto ou plataforma escolhidos.",
+    "Diferenças UTF-16/UTF-8, restauração sequencial e proteção parcial documentadas; não foram transformadas em mudanças de formato."
+  ],
+  "verification": [
+    {
+      "check": "node tests/csharp-vault-contract.mjs + vault-contract.mjs check + csharp-parity.mjs check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "12 fixtures, hashes/fontes, negativos de arquivo/expectativa/hash/documento; oráculo inicial intacto."
+    },
+    {
+      "check": "npm run check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "62/62 arquivos de teste e todos os gates; terrain concluído em 232 segundos."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks no estado final, incluindo main atualizado pelo PR #145."
+    }
+  ],
+  "known_issues": [
+    "UC-2 continua parcial; C# de produto não existe.",
+    "UC-5/6 sem decisão; UC-7 precisa aprovação crítica antes de código."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrador: rotina; verificar combinado e integrar se verde.",
+    "Reconciliar UC-3/4 após integração; continuar UC-2/7."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+    "apps/urbe/docs/v2/contracts/persistence-adapter.md",
+    "apps/urbe/docs/v2/contracts/native.md",
+    "apps/urbe/docs/v2/contracts/editor-markdown.md",
+    "apps/urbe/docs/v2/contracts/editor-visual.md",
+    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/architecture/local-first.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/state-drift.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "PARITY gerada das fontes; oracle declara snapshot/base e não copia estado vivo."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência runtime Product→Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Urbe continua standalone; nenhuma mudança de runtime."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Programa C# autorizado por DEC-0024-B; somente M0, sem código C# de produto antes do gate."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issues #138/#139 e handoff com base, verificações e limites."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "DEC-0024/25 e ADR-0016 consultados; nenhuma inferência virou decisão."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Documentos normativos consultados diretamente e listados."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Sem refatoração do runtime junto da preparação de migração."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não há prova humana alegada nem gate aprovado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-1 em revisão; UC-2 parcial, nunca marcado concluído."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs UC/REQ preservados e IDs de casos documentados como estáveis."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Tooling permanece local ao Product; sem nova abstração compartilhada."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição/independência do produto atual preservadas."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-csharp-parity-corpus",
+      "status": "product-specific",
+      "rationale": "Critérios e goldens específicos do Urbe; nenhum consumidor externo."
+    }
+  ],
+  "cost": null
+}
