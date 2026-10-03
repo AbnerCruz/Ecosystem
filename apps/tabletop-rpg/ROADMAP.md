@@ -8,7 +8,7 @@ Convenção: `RPG-<n>` é ID estável de tarefa.
 
 Objetivo: provar o modelo de mesa sem UI e sem provedor real.
 
-- [ ] **RPG-001 — Fundação do Product e slice headless.** Registrar Product, SPEC/roadmap, participantes, perspectivas, intents, regras e Agent Turn Runner dirigido por evento, com testes.
+- [~] **RPG-001 — Fundação do Product e slice headless.** Registrar Product, SPEC/roadmap, participantes, perspectivas, intents, regras e Agent Turn Runner dirigido por evento, com testes.
 - [ ] RPG-002 — Persistência local v1: campanha/sessão, versionamento, save atômico, export/import e recuperação.
 - [ ] RPG-003 — Modelo de cena, relógio de campanha, quests, inventário, condições e recursos.
 - [ ] RPG-004 — Runtime de combate independente de sistema específico.
