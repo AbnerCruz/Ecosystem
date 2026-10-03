@@ -42,6 +42,12 @@
       "evidence": "Nesta branch: dotnet run tests/consistency/Check.cs passou 22/22; geração online com GenerateStatus.cs --ref main --releases online passou; checks repetidos sobre a projeção passaram 22/22. pendingValidations contém P3-8 critical=true, link do roteiro e ações Aprovar/Reprovar com hash 166e1aa80bb5. SDK 10.0.401 instalado nesta sessão."
     },
     {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução local completa nesta branch com SDK 10.0.401: todos os checks provaram detectar suas violações, incluindo a mutação de estado do gate em aguardando e os nove casos de releases. Exit code 0; log local /tmp/ecosystem-gate-selftest.log. A falha anterior do CI foi uma mutação literal que não correspondia mais ao estado atual, corrigida sem alterar CHK-PORTAL."
+    },
+    {
       "check": "Gate P3-8: instalar o Hub e compreender no celular o estado de Lunet2D e Urbe sem abrir GitHub manualmente",
       "kind": "human",
       "result": "pending",
