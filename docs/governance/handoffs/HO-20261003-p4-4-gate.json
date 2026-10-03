@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p4-4-gate",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T21:58:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-4",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p4-4-gate",
+  "base_commit": "c48075df088498cbe28dd45bf941d29cf9aa2d45",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/validation/P4-4-device-gate.md",
+    "docs/validation/hub/hub-v0.0.1-dev.7.json",
+    "docs/validation/lunet2d/0.0.1-dev.1000008.json",
+    "docs/validation/urbe/1.8.2-beta-android.json",
+    "docs/governance/handoffs/HO-20261003-p4-4-gate.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: P4-1..P4-3 estão integrados; Hub dev.7 é o build aprovado em P4-3 e DEC-0032-A autoriza confiança específica somente para Lunet2D.",
+    "FATO OBSERVADO: Lunet2D possui canal primário direto no Ecosystem; Urbe permanece no canal AbnerCruz/Urbe até P4-9.",
+    "Preparado roteiro DEVICE separado do P4-3, cobrindo instalação, atualização, abertura, preservação de dados e uso standalone de cada Product.",
+    "Criados registros HUMAN_VALIDATION_PENDING por build para Hub dev.7, Lunet 0.0.1-dev.1000008 e Urbe 1.8.2-beta Android.",
+    "O roteiro trata a ausência de confiança do Urbe no Hub como limite obrigatório: nenhum fallback ou bypass é aceito."
+  ],
+  "verification": [
+    {
+      "check": "Gate P4-4 em aparelho: Lunet via Hub, Urbe no canal atual e ambos standalone",
+      "kind": "human",
+      "result": "pending",
+      "object": "docs/validation/P4-4-device-gate.md",
+      "critical": true,
+      "evidence": "Aguardando execução integral do roteiro DEVICE e aprovação/reprovação do proprietário pelo portal."
+    }
+  ],
+  "known_issues": [
+    "Urbe não possui pin/certificado aprovado no Hub; por desenho, instalação/abertura via Hub deve permanecer indisponível neste gate.",
+    "P4-10 ainda aguarda fechamento das verificações de release direta; P4-9 depende dela e não é condição para falsificar o caminho atual do Urbe.",
+    "As chaves de desenvolvimento públicas limitam substituição acidental, mas não provam autoria; o gate não promove esses canais a estáveis."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário executa docs/validation/P4-4-device-gate.md em aparelho real e responde Aprovar/Reprovar pelo portal.",
+    "Após resposta humana, reconciliar os três registros de build, fechar P4-4 e só aprovar o gate da Fase 4 quando todo o escopo da fase satisfizer suas condições."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/distribution/current.profile.json",
+    "docs/architecture/hub-android-products.json",
+    "apps/hub/docs/instalar-e-abrir.md",
+    "docs/adr/0018-instalacao-e-launcher-do-hub.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Canais e estado de build são derivados de current.profile/releases e registros de validação; o roteiro não cria autoridade concorrente."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "O roteiro remove o Hub e exige uso essencial dos Products sem ele."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #141, branch, handoff, builds e objeto DEVICE tornam o trabalho e a pendência descobríveis."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Nenhuma nova permissão é criada; o teste usa apenas o fluxo Android já aprovado e não autoriza bypass."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Gate permanece em review/[~] com validação DEVICE pendente e crítica; CI não é tratado como aprovação."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Conclusão não é declarada antes de evidência humana e reconciliação dos registros."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Critério explícito exige instalar/atualizar/usar Products pelo canal próprio e usá-los sem o Hub presente."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "A mudança prepara evidência e roteiro do gate sem alterar canal, assinatura, permissão, arquitetura ou decisão consolidada."
+  },
+  "cost": null
+}
