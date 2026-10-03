@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-tabletop-rpg-foundation",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T21:27:53Z",
+  "timestamp": "2026-10-03T21:29:35Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
@@ -62,10 +62,10 @@
   ],
   "verification": [
     {
-      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "check": "dotnet test apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
       "kind": "automated",
       "result": "pending",
-      "evidence": "O ambiente local desta sessão não possui .NET SDK; o workflow tabletop-rpg-ci executará este comando no GitHub com .NET 10."
+      "evidence": "Primeiro run do tabletop-rpg-ci falhou antes de compilar porque `dotnet test --project` foi repassado ao MSBuild como switch inválido no SDK 10.0.401. O comando foi corrigido para apontar diretamente ao .csproj; rerun automático pendente."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
