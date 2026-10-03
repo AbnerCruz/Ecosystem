@@ -50,10 +50,10 @@
     {
       "check": "Gate P3-8: instalar o Hub e compreender no celular o estado de Lunet2D e Urbe sem abrir GitHub manualmente",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "docs/validation/hub/hub-v0.0.1-dev.2.md",
-      "evidence": "Somente o proprietário pode validar instalação, toque/layout e compreensão em aparelho (NN-017). Roteiro e APK são o objeto, com resposta Aprovar/Reprovar no portal."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/96); registro em docs/governance/responses/VAL-HO-20261003-p3-8-gate-no-celular-166e1aa80bb5.md."
     }
   ],
   "known_issues": [
