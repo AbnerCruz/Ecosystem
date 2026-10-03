@@ -4,9 +4,9 @@
 
 ### Atualizações
 - Esta é a **versão-ponte** do corte de distribuição: ela ainda deve chegar pelo canal antigo do Urbe para que instalações existentes aprendam o novo feed sem reinstalação.
-- **Windows:** o updater passa a consultar `AbnerCruz/Ecosystem` e somente tags `urbe-v<versão>`; releases do Hub e do Lunet não entram no canal do Urbe.
+- **Windows:** o updater passa a consultar `AbnerCruz/Ecosystem` e somente tags `urbe-v<versão>`; releases de outros Products não entram no canal do Urbe.
 - **Android:** deixa de consultar `/releases/latest` global. A busca lista releases do Ecosystem, aceita somente tags `urbe-v<versão>` e exige o APK exato `Urbe-<versão>.apk` hospedado no próprio Ecosystem.
-- A URL/PWA antiga continua intacta. O Hub continua opcional; o Urbe atualiza e funciona sem ele.
+- A URL/PWA antiga continua intacta. O Urbe atualiza e funciona sem depender de launcher externo.
 - O primeiro APK publicado diretamente no Ecosystem continua condicionado à **mesma chave privada** usada nas versões anteriores. Sem ela, o pipeline falha fechado e nenhum APK de teste vira release.
 
 
