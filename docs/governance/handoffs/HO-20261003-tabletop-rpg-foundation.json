@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-tabletop-rpg-foundation",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T21:29:35Z",
+  "timestamp": "2026-10-03T21:31:09Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
@@ -25,6 +25,7 @@
     "docs/governance/addenda/ADD-0016-tabletop-rpg-solo-first.md",
     "docs/governance/decisions.json",
     "docs/governance/handoffs/HO-20261003-tabletop-rpg-foundation.json",
+    "apps/tabletop-rpg/global.json",
     "apps/tabletop-rpg/VERSION",
     "apps/tabletop-rpg/README.md",
     "apps/tabletop-rpg/AGENTS.md",
@@ -62,10 +63,10 @@
   ],
   "verification": [
     {
-      "check": "dotnet test apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+      "check": "cd apps/tabletop-rpg && dotnet test --project tests/TabletopRpg.Core.Tests",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Primeiro run do tabletop-rpg-ci falhou antes de compilar porque `dotnet test --project` foi repassado ao MSBuild como switch inválido no SDK 10.0.401. O comando foi corrigido para apontar diretamente ao .csproj; rerun automático pendente."
+      "evidence": "Dois runs iniciais falharam antes dos testes: primeiro por `--project` sem o novo test runner; depois porque xunit.v3/Microsoft.Testing.Platform requer opt-in no SDK .NET 10. O Product agora possui global.json com runner Microsoft.Testing.Platform e o CI executa no diretório do Product; novo run pendente."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
