@@ -1,0 +1,94 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "20cbf6d",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "urbe",
+  "state": "review",
+  "message_id": "HO-20261003-dec-0025-c-consequencias",
+  "timestamp": "2026-10-03T05:31:28Z",
+  "task_id": "DEC-0025",
+  "criticality": {
+    "declared": "routine",
+    "reason": "Aplica as consequências de uma decisão já registrada (DEC-0025-C): nota de congelamento no ROADMAP 2.0 do Urbe, textos que diziam «pendente» e a bandeira consequencesApplied. Nenhum código, schema, workflow nem ADR com mudança de status; a política da main classifica como rotina."
+  },
+  "files_changed": [
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261003-dec-0025-c-consequencias.json"
+  ],
+  "work_completed": [
+    "FATO: o proprietário decidiu a DEC-0025 com a alternativa C (congelamento total do JavaScript do Urbe, salvo bug crítico; Issue #68, registro docs/governance/responses/DEC-0025.md), e o `Check.cs` apontava a pendência das consequências desde 2026-10-02.",
+    "Consequência prevista pela própria decisão: «o roadmap do Urbe 2.0 é atualizado (itens adiados com justificativa, nunca removidos)». Aplicada como nota de congelamento no topo de apps/urbe/docs/v2/ROADMAP.md, com a justificativa, a preservação de todos os itens, REQ e gates e o que continua permitido (bug crítico com regressão). Os estados dos itens não foram alterados: o marcador `[ ]`/`[~]` continua o mesmo e a ferramenta de rastreabilidade não muda.",
+    "Textos que diziam «pendente» ou «depende da DEC-0025» corrigidos: apps/urbe/docs/csharp/README.md, ADR-0010 do Urbe e a consequência «Urbe em JavaScript» do ADR-0016 do Ecosystem (o padrão conservador anterior, que ainda permitia fixtures e goldens, deixou de valer). Entrada em apps/urbe/AGENTSCHAT.md (mais recente no topo).",
+    "decisions.json: DEC-0025 consequencesApplied passa a true."
+  ],
+  "verification": [
+    {
+      "check": "node tools/check-traceability.mjs e node tools/gen-traceability.mjs --check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "OK: 109 REQ · 146 itens de ROADMAP · cobertura completa; TRACEABILITY.md em dia."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Ver evidência do PR (a pendência da DEC-0025 deixa de aparecer)."
+    }
+  ],
+  "known_issues": [
+    "O texto do congelamento é geral (todo item `[ ]`/`[~]`); não enumera os itens um a um para não criar uma segunda lista que divergiria do ROADMAP (NN-001).",
+    "Quando o congelamento termina não está decidido: depende do corte (UC-31), decisão do proprietário."
+  ],
+  "next_actions": [
+    "Depois da integração, disparar sync-from-ecosystem.yml em AbnerCruz/Urbe para levar a documentação à origem (AGENTS.md §3, DEC-0017-A)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/responses/DEC-0025.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/csharp/README.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "A decisão do proprietário já estava persistida (DEC-0025, registro em responses/); aqui só se aplicam as consequências nos documentos dependentes."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma decisão nova: só se aplica o que o proprietário escolheu; nenhum ADR muda de status."
+    },
+    {
+      "id": "NN-001",
+      "evidence": "Sem lista duplicada de itens congelados: a fonte continua sendo o ROADMAP 2.0 e seus marcadores."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Mudança só de documentação; nenhum comportamento do produto foi tocado."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "A pendência deixa de existir em decisions.json, no Check.cs e nos textos; o estado real do Urbe JS (congelado) fica descobrível no ROADMAP e no AGENTSCHAT."
+    }
+  ]
+}
