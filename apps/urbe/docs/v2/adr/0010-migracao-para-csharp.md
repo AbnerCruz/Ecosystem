@@ -17,7 +17,7 @@ O Urbe passa a ter um programa de migração para C# regido por [`docs/csharp/`]
 - **Ficam valendo** para o produto atual: ADR-0002 (plugins full-trust), ADR-0003 (licença), ADR-0004 (compatibilidade e proteção forward — **e é o contrato de dados do cliente novo**), ADR-0005 (release por tag), ADR-0006, ADR-0007, ADR-0008, ADR-0009.
 - **ADR-0001 (runtime sem build e registro de módulos)** continua valendo para o runtime JavaScript enquanto ele for o produto; **não rege** o cliente C#.
 - Pilha de UI/hosts, estratégia de transição, modelo de plugins em C# e o corte **não** estão decididos aqui; cada um tem item (UC-5, UC-6, UC-20, UC-31) e decisão própria.
-- O programa de refatoração da 2.0 em JavaScript durante a migração foi decidido no Ecosystem **DEC-0025-C**: congelamento total do JavaScript, salvo bug crítico; os itens do ROADMAP 2.0 ficam adiados, nunca removidos (nota no topo de `docs/v2/ROADMAP.md`).
+- O programa de refatoração da 2.0 em JavaScript durante a migração depende do Ecosystem DEC-0025.
 
 ## Consequências
 

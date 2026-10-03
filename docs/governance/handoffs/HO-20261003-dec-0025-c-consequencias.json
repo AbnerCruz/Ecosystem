@@ -25,7 +25,6 @@
   "files_changed": [
     "apps/urbe/docs/v2/ROADMAP.md",
     "apps/urbe/docs/csharp/README.md",
-    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
     "apps/urbe/AGENTSCHAT.md",
     "docs/adr/0016-migracao-do-urbe-para-csharp.md",
     "docs/governance/decisions.json",
@@ -34,7 +33,7 @@
   "work_completed": [
     "FATO: o proprietário decidiu a DEC-0025 com a alternativa C (congelamento total do JavaScript do Urbe, salvo bug crítico; Issue #68, registro docs/governance/responses/DEC-0025.md), e o `Check.cs` apontava a pendência das consequências desde 2026-10-02.",
     "Consequência prevista pela própria decisão: «o roadmap do Urbe 2.0 é atualizado (itens adiados com justificativa, nunca removidos)». Aplicada como nota de congelamento no topo de apps/urbe/docs/v2/ROADMAP.md, com a justificativa, a preservação de todos os itens, REQ e gates e o que continua permitido (bug crítico com regressão). Os estados dos itens não foram alterados: o marcador `[ ]`/`[~]` continua o mesmo e a ferramenta de rastreabilidade não muda.",
-    "Textos que diziam «pendente» ou «depende da DEC-0025» corrigidos: apps/urbe/docs/csharp/README.md, ADR-0010 do Urbe e a consequência «Urbe em JavaScript» do ADR-0016 do Ecosystem (o padrão conservador anterior, que ainda permitia fixtures e goldens, deixou de valer). Entrada em apps/urbe/AGENTSCHAT.md (mais recente no topo).",
+    "Textos que diziam «pendente» corrigidos: apps/urbe/docs/csharp/README.md e a consequência «Urbe em JavaScript» do ADR-0016 do Ecosystem (o padrão conservador anterior, que ainda permitia fixtures e goldens, deixou de valer). Entrada em apps/urbe/AGENTSCHAT.md (mais recente no topo).",
     "decisions.json: DEC-0025 consequencesApplied passa a true."
   ],
   "verification": [
@@ -53,7 +52,8 @@
   ],
   "known_issues": [
     "O texto do congelamento é geral (todo item `[ ]`/`[~]`); não enumera os itens um a um para não criar uma segunda lista que divergiria do ROADMAP (NN-001).",
-    "Quando o congelamento termina não está decidido: depende do corte (UC-31), decisão do proprietário."
+    "Quando o congelamento termina não está decidido: depende do corte (UC-31), decisão do proprietário.",
+    "O ADR-0010 do Urbe (Accepted) segue dizendo que o programa 2.0 «depende do Ecosystem DEC-0025»: não foi editado de propósito, porque alterar o texto de decisão de um ADR aceito é mudança constitucional (o integrador a classifica como crítica) e o ADR é registro histórico. O estado atual está no ROADMAP 2.0, no README do programa C# e no AGENTSCHAT."
   ],
   "next_actions": [
     "Depois da integração, disparar sync-from-ecosystem.yml em AbnerCruz/Urbe para levar a documentação à origem (AGENTS.md §3, DEC-0017-A)."
@@ -76,7 +76,7 @@
     },
     {
       "id": "NN-011",
-      "evidence": "Nenhuma decisão nova: só se aplica o que o proprietário escolheu; nenhum ADR muda de status."
+      "evidence": "Nenhuma decisão nova: só se aplica o que o proprietário escolheu; nenhum ADR muda de status e nenhum texto de decisão de ADR aceito foi alterado (o ADR-0010 do Urbe ficou intacto de propósito)."
     },
     {
       "id": "NN-001",
