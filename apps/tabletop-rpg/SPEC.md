@@ -12,7 +12,7 @@ Tabletop RPG é uma plataforma completa para RPG de mesa em que humanos e agente
 
 - **RPG-REQ-001 — C#.** Todo código novo do Product é C#, salvo exceção estrutural decidida por ADR.
 - **RPG-REQ-002 — Mobile-first.** A primeira experiência de usuário é projetada para celular. O Core permanece independente de UI.
-- **RPG-REQ-003 — Independência.** O Product funciona sem Hub e sem outro Product do Ecosystem.
+- **RPG-REQ-003 — Independência.** O Product funciona sem depender de qualquer outro Product do Ecosystem.
 - **RPG-REQ-004 — Local-first.** Campanhas e dados primários pertencem ao usuário; conta e backend não são requisito do domínio solo.
 
 ### Participantes e agentes
