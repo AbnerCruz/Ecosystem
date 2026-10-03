@@ -133,10 +133,11 @@ public sealed class ArtifactDownloadService : Service
             PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
         var title = status.Active ? "Baixando e conferindo APK" : "Download do Hub";
         var message = status.Cancelling ? "Cancelando e descartando o arquivo incompleto…"
-            : status.Result?.Message ?? $"{status.Choice?.ProductName} · {status.Choice?.Asset.Name}";
+            : status.Result is { } result ? $"{status.Choice?.ProductName} · {status.Choice?.Asset.Name}: {result.Message}"
+                : $"{status.Choice?.ProductName} · {status.Choice?.Asset.Name}";
         var builder = new Notification.Builder(this, ChannelId)
             .SetSmallIcon(global::Android.Resource.Drawable.StatSysDownload)
-            .SetContentTitle(title).SetContentText(message).SetContentIntent(open)
+            .SetContentTitle(title).SetContentText(message).SetStyle(new Notification.BigTextStyle().BigText(message)).SetContentIntent(open)
             .SetOnlyAlertOnce(true).SetOngoing(status.Active).SetAutoCancel(!status.Active);
         if (status.Active)
         {

@@ -5,7 +5,7 @@
   "component": "hub",
   "build": "hub-v0.0.1-dev.4",
   "recorded_at": "2026-10-03",
-  "state": "HUMAN_VALIDATION_PENDING",
+  "state": "AUTOMATED_VERIFIED",
   "objective": "P4-2: download conferido, progresso, cancelamento e primeiro plano em aparelho.",
   "preconditions": [
     "Android 10 ou posterior, arm64; APK de desenvolvimento do Hub.",
@@ -18,6 +18,7 @@
   ],
   "expected": "Resultado Verified apenas com bytes completos e SHA-256 correto; cancelamento/saída de primeiro plano não declaram sucesso.",
   "known_issues": [
+    "Conferência humana P4-2 tem autoridade única no handoff HO-20261003-p4-2-download-integridade. A Issue #114 foi enviada pelo proprietário, mas a automação não a gravou por divergência com evidência pending duplicada neste VR. Este registro declara somente verificação automática até a resposta real ser reprocessada e refletida por evidência.",
     "Hash confere bytes contra o valor do canal, não assinatura/identidade do pacote/compatibilidade. Instalador fica em P4-3.",
     "APK sem SHA-256 válido ou acima de 128 MiB não é baixado; limite de cinco minutos pode exigir tentar novamente em rede lenta.",
     "Sem retomada/exportação/background; sair do primeiro plano cancela. Cache é privado e pode ser limpo pelo Android; não reusa aprovação de checksum depois de reiniciar o processo.",
@@ -35,13 +36,6 @@
     "handoff": "HO-20261003-p4-2-download-integridade"
   },
   "evidence": [
-    {
-      "check": "Conferência do download, cancelamento e primeiro plano no celular",
-      "kind": "human",
-      "result": "pending",
-      "evidence": "Conferência de seleção/progresso/legibilidade e cancelamento por botão/OnStop no aparelho pendente para build contendo P4-2. Não crítica: fica visível no portal e não bloqueia integração. Não é o gate de instalação/launcher P4-4.",
-      "handoff": "HO-20261003-p4-2-download-integridade"
-    },
     {
       "check": "Release pública P4-2 e integridade do APK",
       "kind": "automated",

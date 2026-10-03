@@ -65,10 +65,12 @@ public sealed partial class MainActivity
         _artifact!.Enabled = !busy && !_refreshing && _choices.Count > 0;
         _startDownload!.Enabled = !busy && !_refreshing && choice is not null && invalid is null;
         _cancelDownload!.Enabled = busy && !HubDownloads.Session.Status.Cancelling;
-        if (showSelection && !busy && HubDownloads.Session.Status.Result is null)
+        if (showSelection && !busy)
             _downloadStatus!.Text = choice is null ? "Nenhum APK com metadados disponível; atualize ou consulte o canal do Product."
                 : invalid?.Message ?? $"{choice.Asset.Size:N0} bytes · limite de {ArtifactDownloader.DefaultMaxBytes / 1024 / 1024} MiB."
                     + (choice.Stale ? " Metadados do último estado conhecido." : "");
+        if (showSelection && !busy && HubDownloads.Session.Status is { Result: { } prior } previous)
+            _downloadStatus!.Text += $"\nÚltima tentativa: {previous.Choice?.Asset.Name ?? "interrompida"} · {prior.Message}";
     }
 
     void ObserveDownloads()
@@ -102,7 +104,8 @@ public sealed partial class MainActivity
                     + " Continua em segundo plano."
                     + (OperatingSystem.IsAndroidVersionAtLeast(33) && CheckSelfPermission(Android.Manifest.Permission.PostNotifications) != Permission.Granted
                         ? " Notificações bloqueadas; use Cancelar aqui ou o painel de apps ativos do Android." : "");
-        else if (status.Result is { } result) _downloadStatus.Text = result.Message;
+        else if (status.Result is { } result) _downloadStatus.Text = status.Choice is { } completed
+            ? $"{completed.ProductName} · {completed.Asset.Name}\n{result.Message}" : result.Message;
         _refresh!.Enabled = !status.Active && !_refreshing;
         UpdateDownloadControls();
     }
