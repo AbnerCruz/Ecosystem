@@ -3,17 +3,17 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-p3-8-gate-no-celular",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T09:00:56Z",
+  "timestamp": "2026-10-03T09:49:59Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
   },
   "task_id": "P3-8",
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p3-1-closeout-p3-8",
   "base_commit": "40e6afb62f799572e8d86a1827422f5d971d7567",
-  "commit": null,
+  "commit": "c92de21325d1a77fd7d40537c84c92075dbb02e6",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/95",
   "files_changed": [
     "ROADMAP.md",
@@ -25,8 +25,9 @@
   "work_completed": [
     "FATO OBSERVADO: P3-1 integrado e publicado; release hub-v0.0.1-dev.2 disponível com APK e SHA-256.",
     "Roteiro de validação criado para instalação, leitura dos Products, Passado/Agora/Próximo, legibilidade/toque e cache offline; pendência humana crítica com objeto no portal.",
-    "ROADMAP P3-8 [~] e gate aguardando; Issue #94 aberta. Nenhuma validação em aparelho declarada.",
-    "CI expôs self-test desatualizado: mutação buscava texto phase=3/state=não iniciado e virava no-op quando o gate passou a aguardando. Corrigido para escolher um gate da projeção e trocar seu estado por outro; não depende de número de fase, formatação nem estado vivo. O check CHK-PORTAL permanece inalterado."
+    "P3-8 aprovado pelo proprietário no portal (Issue #96), resposta canônica integrada em 0b59547b8c6074bdd8e6acc5741cd1ea048414bc. ROADMAP P3-8 [x]; APK hub-v0.0.1-dev.2 registrado como VALIDATED. O gate global da Fase 3 aguarda a reconciliação dos mecanismos de fiscalização listados em P3-14, sem confundir essa dívida com validação humana pendente.",
+    "CI expôs self-test desatualizado: mutação buscava texto phase=3/state=não iniciado e virava no-op quando o gate passou a aguardando. Corrigido para escolher um gate da projeção e trocar seu estado por outro; não depende de número de fase, formatação nem estado vivo. O check CHK-PORTAL permanece inalterado.",
+    "PR #95 integrado em 5ef4d1751e485e09810fd23438456b871717adc0; consistência da main e publicação passaram. Fechamento documental preserva a verificação humana registrada pela automação, sem editar seu resultado ou evidência."
   ],
   "verification": [
     {
@@ -54,6 +55,12 @@
       "critical": true,
       "object": "docs/validation/hub/hub-v0.0.1-dev.2.md",
       "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/96); registro em docs/governance/responses/VAL-HO-20261003-p3-8-gate-no-celular-166e1aa80bb5.md."
+    },
+    {
+      "check": "Fechamento documental P3-8 e registro do build",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22; projeção gerada e conferida, sem validações humanas pendentes, com registro hub-v0.0.1-dev.2 VALIDATED. Gate global permanece aguardando P3-14, sem alterar a matriz ou os checks."
     }
   ],
   "known_issues": [
@@ -62,9 +69,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Integrar e publicar este roteiro/pendência pelo integrador automático.",
-    "Proprietário executa roteiro e registra Aprovar/Reprovar pelo portal.",
-    "Após a resposta, um agente atualiza handoff/ROADMAP e registra o estado de validação do build; só aprovar o gate com evidência humana."
+    "Implementar os mecanismos de NN-011/CI e NN-013/TEST ainda previstos para phase-3 e reconciliar NN-021/RUNTIME com o Hub entregue, conforme P3-14; só então fechar o gate global da fase."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -78,7 +83,8 @@
     "docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md",
     "docs/contracts/schemas/handoff.schema.json",
     "apps/hub/README.md",
-    "docs/governance/integration-policy.json"
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/validation-record.schema.json"
   ],
   "invariants": [
     {
@@ -91,11 +97,11 @@
     },
     {
       "id": "NN-017",
-      "evidence": "Validação humana pending e critical; P3-8 [~], gate aguardando, sem inventar resultado."
+      "evidence": "Validação humana passed registrada pelo workflow a partir da Issue #96 do proprietário; build VALIDATED referencia exatamente o mesmo check e evidência."
     },
     {
       "id": "NN-018",
-      "evidence": "Gate só encerra após evidência humana e integração; estado review."
+      "evidence": "Roteiro e checks integrados no PR #95, aprovação humana integrada em 0b59547b8c6074bdd8e6acc5741cd1ea048414bc; P3-8 encerrado com evidência, sem encerrar a dívida de fiscalização da Fase 3."
     },
     {
       "id": "NN-023",
