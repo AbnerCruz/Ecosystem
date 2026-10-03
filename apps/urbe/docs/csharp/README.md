@@ -31,3 +31,5 @@ A documentação de [`../v2/`](../v2/) descreve o programa de 2.0 em JavaScript,
 ## Prova de paridade
 
 A matriz verificável está em [`PARITY.md`](PARITY.md). O corpus, seu protocolo e limites estão em [`acceptance/README.md`](acceptance/README.md). `npm run check` verifica hashes, cobertura e a projeção. O estado das tarefas continua no ROADMAP/Issues; corpus intacto não significa cliente C# aprovado.
+
+O contrato de dados projetado está em [`VAULT-CONTRACT.md`](VAULT-CONTRACT.md), com manifesto verificável das fixtures. O inventário de dependências e riscos está em [`DEPENDENCIES.md`](DEPENDENCIES.md); suas opções não escolhem a pilha.

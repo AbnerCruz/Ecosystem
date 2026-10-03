@@ -134,6 +134,7 @@ O inventário abaixo inclui todos os testes atuais de comportamento e todos os t
 | tests/consistency.mjs:1 | Todo arquivo do app está onde precisa: carregado no index.html, guardado pelo  service worker (para funcionar offline) e conferido pelo CI. Um arquivo esquecido  em qualquer um desses lugares é um bug silencioso. | Node/contrato simulado; não prova aparelho |
 | tests/core.mjs:1 | tests/core.mjs | Node/contrato simulado; não prova aparelho |
 | tests/csharp-parity.mjs:1 | UC-1/UC-2: corpus não pode encolher ou virar verde com resultados ausentes/fabricados pelo runner.  Runner deve falhar por timeout/processo inválido/JSON inválido/cliente que não implementa a operação. | Node/contrato simulado; não prova aparelho |
+| tests/csharp-vault-contract.mjs:1 | tests/csharp-vault-contract.mjs | Node/contrato simulado; não prova aparelho |
 | tests/csharp-vault-parity.mjs:1 | UC-2: dados de aceite atravessam cliente real; corrupção, omissão e sequência ignorada não podem passar. | Node/contrato simulado; não prova aparelho |
 | tests/customize.mjs:1 | tests/customize.mjs | Node/contrato simulado; não prova aparelho |
 | tests/debt.mjs:1 | Gate de dívida de src/app.js (REQ-012): o estado atual respeita os tetos e nova sobrescrita/camada de versão falha.  nova sobrescrita de função → falha  nova declaração duplicada → falha (ou empata se já houver) | Node/contrato simulado; não prova aparelho |
