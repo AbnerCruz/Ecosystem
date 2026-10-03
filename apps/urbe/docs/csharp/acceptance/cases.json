@@ -3580,6 +3580,488 @@
         "targetHash": "d274c19ceb2e6420c3b35f64ab00dbc87483db47e641509d9e425e220b233103",
         "restoredPaths": []
       }
+    },
+    {
+      "id": "storage-text",
+      "operation": "storage.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-055"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-native",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "olá\n"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "nova versão"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "ausente.md"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          "olá\n",
+          null,
+          "nova versão",
+          null
+        ]
+      }
+    },
+    {
+      "id": "storage-nested",
+      "operation": "storage.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-055"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-native",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "Pasta/Sub/b.md",
+              "# b"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              ".urbe/mapa.json",
+              "{\"v\":4}"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          },
+          {
+            "method": "read",
+            "args": [
+              ".urbe/mapa.json"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          [
+            ".urbe/mapa.json",
+            "Pasta/Sub/b.md"
+          ],
+          "{\"v\":4}"
+        ]
+      }
+    },
+    {
+      "id": "storage-unicode",
+      "operation": "storage.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-055"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-native",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "Diário de bordo/Ação ✔.md",
+              "coração 🌊 — ção"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "Diário de bordo/Ação ✔.md"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          "coração 🌊 — ção",
+          [
+            "Diário de bordo/Ação ✔.md"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "storage-binary",
+      "operation": "storage.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-055"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-native",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "writeBlob",
+            "args": [
+              "Anexos/x.bin",
+              [
+                0,
+                255,
+                1,
+                2,
+                128,
+                10,
+                13,
+                0
+              ]
+            ]
+          },
+          {
+            "method": "readBlob",
+            "args": [
+              "Anexos/x.bin"
+            ]
+          },
+          {
+            "method": "readBlob",
+            "args": [
+              "Anexos/ausente.bin"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          [
+            0,
+            255,
+            1,
+            2,
+            128,
+            10,
+            13,
+            0
+          ],
+          null
+        ]
+      }
+    },
+    {
+      "id": "storage-remove",
+      "operation": "storage.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-055"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-native",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "a"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "b.md",
+              "b"
+            ]
+          },
+          {
+            "method": "remove",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "remove",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "b.md"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          "b",
+          [
+            "b.md"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "storage-folders",
+      "operation": "storage.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-055"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-native",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "createFolder",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "createFolder",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Vazia/Filha/c.md",
+              "c"
+            ]
+          },
+          {
+            "method": "removeFolder",
+            "args": [
+              "Vazia/Filha"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "Vazia/Filha/c.md"
+            ]
+          },
+          {
+            "method": "remove",
+            "args": [
+              "Vazia/Filha/c.md"
+            ]
+          },
+          {
+            "method": "removeFolder",
+            "args": [
+              "Vazia/Filha"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "Vazia/Filha/c.md"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          null,
+          "c",
+          null,
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "id": "storage-hidden",
+      "operation": "storage.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-055"
+      ],
+      "source": "docs/v2/contracts/persistence-adapter.md",
+      "input": {
+        "backend": "fsa-native",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              ".urbe/history.v2.json",
+              "{\"version\":2}"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              ".oculta/a.md",
+              "oculto"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "A.md",
+              "visível"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          [
+            ".urbe/history.v2.json",
+            "A.md"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "storage-escape",
+      "operation": "storage.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-055"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "backend": "fsa-native",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "../escape.md",
+              "não pode"
+            ],
+            "expectError": true
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "rejected": true
+          },
+          []
+        ]
+      }
+    },
+    {
+      "id": "storage-denied",
+      "operation": "storage.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-055"
+      ],
+      "source": "docs/v2/contracts/persistence-adapter.md",
+      "input": {
+        "backend": "fsa-native",
+        "permission": "denied",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "não pode"
+            ],
+            "expectError": true
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "rejected": true
+          },
+          []
+        ]
+      }
     }
   ]
 }

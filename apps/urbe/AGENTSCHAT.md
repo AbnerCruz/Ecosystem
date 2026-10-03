@@ -1,3 +1,9 @@
+### 2026-10-03 — codex — UC-2: operações de storage (REQ-007/028/055)
+- Estado: revisão parcial, Issue #139.
+- Feito: nove casos JSON de storage, adapter de referência com FSA real sobre ponte nativa em arquivos temporários; corpus total 174.
+- Verificado: Unicode, bytes, hidden dirs/sidecars, overwrite/remove, pasta não vazia, traversal e recusa injetada; mutações negativas.
+- Limites: não prova permissão do SO, browser IDB ou aparelho; gestão de vaults/capacidades nativas/UI ainda pendentes. Nenhum runtime/formato alterado.
+
 ### 2026-10-03 — codex — UC-3/UC-4 (REQ-007/023/035/038/042)
 - Estado: revisão, Issues #146/#147.
 - Feito: contrato gerado das autoridades de dados, manifesto integral das 12 fixtures e gate contra divergência; inventário de dependências com fontes primárias e riscos por plataforma.

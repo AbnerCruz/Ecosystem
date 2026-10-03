@@ -1,33 +1,32 @@
 {
   "$schema": "../../contracts/schemas/handoff.schema.json",
   "schemaVersion": 1,
-  "message_id": "HO-20261003-urbe-m0-contracts",
+  "message_id": "HO-20261003-urbe-storage-parity",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T19:38:42.340963Z",
+  "timestamp": "2026-10-03T19:47:38.555191Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
   },
-  "task_id": "UC-3",
+  "task_id": "UC-2",
   "component": "urbe",
-  "state": "done",
-  "branch": "codex/urbe-m0-contracts",
-  "base_commit": "c024c0876b09721e7868c4b14c97ee71e4088746",
+  "state": "review",
+  "branch": "codex/urbe-storage-parity",
+  "base_commit": "8a2dabd8cf17df1e37b41b63e4236c82b20f38d8",
   "commit": null,
-  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/150",
+  "pr": null,
   "files_changed": [
     "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/docs/csharp/PARITY.md",
-    "apps/urbe/docs/csharp/README.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
-    "apps/urbe/tools/check-all.mjs",
+    "apps/urbe/docs/csharp/acceptance/README.md",
+    "apps/urbe/docs/csharp/acceptance/cases.json",
     "apps/urbe/tools/lib/csharp-parity.mjs",
-    "apps/urbe/docs/csharp/DEPENDENCIES.md",
-    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
-    "apps/urbe/docs/csharp/acceptance/vault-manifest.json",
-    "apps/urbe/tests/csharp-vault-contract.mjs",
-    "apps/urbe/tools/lib/vault-contract.mjs",
-    "apps/urbe/tools/vault-contract.mjs",
+    "apps/urbe/tests/csharp-storage-parity.mjs",
+    "apps/urbe/tools/lib/parity-storage.mjs",
+    "apps/urbe/tools/parity-storage-client.mjs",
+    "docs/governance/handoffs/HO-20261003-urbe-storage-parity.json",
+    "docs/governance/handoffs/HO-20261003-urbe-csharp-parity.json",
     "docs/governance/handoffs/HO-20261003-urbe-m0-contracts.json"
   ],
   "criticality": {
@@ -35,39 +34,39 @@
     "reason": "UC-3/4: projeções e tooling de aceite autorizados; sem mudança de autoridade, catálogo normativo, formato, runtime, stack ou política."
   },
   "work_completed": [
-    "UC-3 (#146): contrato gerado do catálogo/ADR-0004, manifesto com todas as 12 fixtures incluindo ocultos/binários e hashes de fontes/implementação; gate em npm run check.",
-    "UC-4 (#147): uso real, opções e riscos das dependências, fontes primárias consultadas; nenhum substituto ou plataforma escolhidos.",
-    "Diferenças UTF-16/UTF-8, restauração sequencial e proteção parcial documentadas; não foram transformadas em mudanças de formato.",
-    "Reconciliação: entrega integrada na main pelo integrador (commit 4f89efe); CI verde. Estado done vale para UC-3, não conclui UC-2 ou G-C0."
+    "UC-2 (#139) parcial: nove casos portáveis de métodos/argumentos/saídas do adapter; corpus 174.",
+    "Adapter JS usa FSA real sobre bridge/VaultFS e pasta temporária removida; recusa de escrita é injetada no limite do adapter.",
+    "Bytes Unicode/binários, sidecars/ocultos, sobrescrita, remoção, pasta não vazia e traversal verificados; testes de mutação em bytes/arquivo restante/recusa.",
+    "Reconcilia UC-1/3/4 já integrados (#142/#150); UC-2 parcial e G-C0 não iniciado."
   ],
   "verification": [
     {
-      "check": "node tests/csharp-vault-contract.mjs + vault-contract.mjs check + csharp-parity.mjs check",
+      "check": "node tests/csharp-storage-parity.mjs + csharp-parity.mjs check/run storage.scenario",
       "kind": "automated",
       "result": "passed",
-      "evidence": "12 fixtures, hashes/fontes, negativos de arquivo/expectativa/hash/documento; oráculo inicial intacto."
+      "evidence": "9 resultados calculados e comparados; negativas recusadas; fonte congelada intacta."
     },
     {
       "check": "npm run check (apps/urbe)",
       "kind": "automated",
       "result": "passed",
-      "evidence": "62/62 arquivos de teste e todos os gates; terrain concluído em 232 segundos."
+      "evidence": "63/63 arquivos e todos os gates; world-terrain concluído em 231 segundos."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
       "result": "passed",
-      "evidence": "22 checks no estado final, incluindo main atualizado pelo PR #145."
+      "evidence": "22 checks no estado final."
     }
   ],
   "known_issues": [
-    "UC-2 continua parcial; C# de produto não existe.",
-    "UC-5/6 sem decisão; UC-7 precisa aprovação crítica antes de código."
+    "UC-2 continua parcial: IndexedDB legado, gestão de vaults/browser, capacidades nativas e UI.",
+    "Não valida permissões reais do SO, Android/Windows instalados nem C# inexistente."
   ],
   "blockers": [],
   "next_actions": [
-    "Integrador: rotina; verificar combinado e integrar se verde.",
-    "Reconciliar UC-3/4 após integração; continuar UC-2/7."
+    "Integrador: após PR #150, testar combinado e integrar rotina se verde.",
+    "Completar cenários restantes e revisar UC-5/6 quando fundamentos concluídos."
   ],
   "decisions_required": [],
   "normative_sources": [

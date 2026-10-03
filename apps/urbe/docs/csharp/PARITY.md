@@ -134,6 +134,7 @@ O inventário abaixo inclui todos os testes atuais de comportamento e todos os t
 | tests/consistency.mjs:1 | Todo arquivo do app está onde precisa: carregado no index.html, guardado pelo  service worker (para funcionar offline) e conferido pelo CI. Um arquivo esquecido  em qualquer um desses lugares é um bug silencioso. | Node/contrato simulado; não prova aparelho |
 | tests/core.mjs:1 | tests/core.mjs | Node/contrato simulado; não prova aparelho |
 | tests/csharp-parity.mjs:1 | UC-1/UC-2: corpus não pode encolher ou virar verde com resultados ausentes/fabricados pelo runner.  Runner deve falhar por timeout/processo inválido/JSON inválido/cliente que não implementa a operação. | Node/contrato simulado; não prova aparelho |
+| tests/csharp-storage-parity.mjs:1 | tests/csharp-storage-parity.mjs | Node/contrato simulado; não prova aparelho |
 | tests/csharp-vault-contract.mjs:1 | tests/csharp-vault-contract.mjs | Node/contrato simulado; não prova aparelho |
 | tests/csharp-vault-parity.mjs:1 | UC-2: dados de aceite atravessam cliente real; corrupção, omissão e sequência ignorada não podem passar. | Node/contrato simulado; não prova aparelho |
 | tests/customize.mjs:1 | tests/customize.mjs | Node/contrato simulado; não prova aparelho |
@@ -293,10 +294,11 @@ Sem escolher a implementação C#, estas são as operações e saídas obrigató
 | visual.serialize | 110 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | vault.scenario | 12 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | vault.restore | 3 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| storage.scenario | 9 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 
 ## Lacunas e ligação com o Ecosystem
 
-- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; ainda faltam IndexedDB legado, adapters e UI. A execução no C# integra UC-9/10/18/23/24/25.
+- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; nove casos de storage verificam FSA sobre ponte nativa; ainda faltam IndexedDB legado, operações de vault no IDB, capacidades nativas completas e UI. A execução no C# integra UC-9/10/18/23/24/25.
 - REQ aceito ainda não entregue no JS continua como obrigação do C#, com o teste/aceite do ROADMAP acima; um golden de comportamento antigo nunca fecha esse requisito.
 - Android físico, Windows instalado e PWA offline ainda precisam de evidência própria. Simulações e Chromium não os validam.
 - Context/capabilities do Ecosystem têm contrato na Fase 2; transporte/Host API da Fase 5 ainda não implementados. Urbe fornece seu domínio por adapter quando esses contratos estiverem prontos; nunca depende do plano de controle nem diretamente de outro Product.
