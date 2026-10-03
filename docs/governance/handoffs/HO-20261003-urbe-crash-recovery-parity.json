@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-urbe-crash-recovery-parity",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T23:23:00Z",
+  "timestamp": "2026-10-03T23:26:00Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "UC-2",
   "component": "urbe",
-  "state": "verifying",
+  "state": "review",
   "branch": "chatgpt/urbe-uc2-recovery-parity",
   "base_commit": "f23f8ace32093d6943d33cf4c7111f312e733b02",
   "commit": null,
@@ -42,19 +42,19 @@
       "check": "node tests/csharp-vault-parity.mjs / npm run check",
       "kind": "automated",
       "result": "passed",
-      "evidence": "PR #165 stacked urbe-checks run 37161006751: 209 casos portáveis; csharp-vault-parity e todas as checagens passaram. Repetir após reconstrução sobre main."
+      "evidence": "PR #165 stacked urbe-checks run 37161006751: corpus 209; csharp-vault-parity passou e npm run check terminou verde. Rodada final sobre main será o gate do PR."
     },
     {
       "check": "node tools/run-e2e.mjs app-runtime zip smoke",
       "kind": "automated",
       "result": "passed",
-      "evidence": "PR #165 stacked urbe-checks run 37161006751: E2E Chromium passou. Repetir após reconstrução sobre main."
+      "evidence": "PR #165 stacked urbe-checks run 37161006751: E2E Chromium passou. Rodada final sobre main será o gate do PR."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Aguardando estado definitivo baseado em main; falha anterior do PR empilhado era externa a esta fatia."
+      "evidence": "Rodada final do PR #165 baseado diretamente em main em execução."
     }
   ],
   "known_issues": [

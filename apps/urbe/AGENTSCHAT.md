@@ -1,5 +1,5 @@
 ### 2026-10-03 — ChatGPT — UC-2: crash recovery portável (REQ-007/038/046)
-- Estado: verificando no PR #165, agora baseado diretamente em `main` após integração do PR #161.
+- Estado: review no PR #165, baseado diretamente em `main` após integração do PR #161; gates finais em execução.
 - Feito: quatro casos `vault.crash-recovery` injetam falha na criação do journal, no segundo arquivo, na remoção de nota e na remoção final do journal. O corpus passa de 205 para 209 casos.
 - Invariante: nenhum arquivo de runtime congelado foi alterado; somente tooling, testes e documentação do corpus UC-2.
 - Restante após esta fatia: atomicidade/rollback de restauração de backup, capacidades nativas portáveis e UI/E2E por superfície.
