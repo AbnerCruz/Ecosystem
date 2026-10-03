@@ -4,11 +4,13 @@
   "id": "current-distribution",
   "name": "Distribuição atual dos Products (transitória)",
   "status": "current",
-  "description": "FATO (DEC-0008-A, DEC-0009-A, DEC-0016, DEC-0017-A): o código é desenvolvido em apps/<id> no Ecosystem (SOURCE); os repositórios de origem AbnerCruz/Lunet2D e AbnerCruz/Urbe são espelhos que constroem e publicam as releases (e o Urbe Web) com os pipelines e secrets que já tinham (DISTRIBUTION). Arranjo intencional e transitório; este arquivo só o descreve — nenhum canal foi alterado. Destino decidido em DEC-0021-C: plataforma first-party progressiva (docs/distribution/target.profile.json); até ela existir, este arranjo continua valendo. Valores de visibility e commercialModel: INFERÊNCIA a confirmar (o portal lê os repositórios sem token; nenhum modelo comercial foi decidido).",
+  "description": "FATO (DEC-0008-A, DEC-0009-A, DEC-0016, DEC-0017-A): o código é desenvolvido em apps/<id> no Ecosystem (SOURCE); os repositórios de origem AbnerCruz/Lunet2D e AbnerCruz/Urbe são espelhos que constroem e publicam as releases (e o Urbe Web) com os pipelines e secrets que já tinham (DISTRIBUTION). Arranjo intencional e transitório; este arquivo só o descreve — nenhum canal foi alterado. Destino decidido em DEC-0021-C: plataforma first-party progressiva (docs/distribution/target.profile.json); até ela existir, este arranjo continua valendo. Valores de visibility e commercialModel: INFERÊNCIA a confirmar (o portal lê os repositórios sem token; nenhum modelo comercial foi decidido). Hub (DEC-0028-A, DEC-0029-A): releases de DESENVOLVIMENTO públicas no próprio repositório do Ecosystem (tag hub-vX.Y.Z-dev.N, pré-lançamento), APK assinado com a chave de desenvolvimento pública e estável; o Hub nunca é 'bundled' e nenhum Product depende dele (NN-003, NN-023).",
   "decisions": [
     "DEC-0008",
     "DEC-0009",
-    "DEC-0021"
+    "DEC-0021",
+    "DEC-0028",
+    "DEC-0029"
   ],
   "entries": [
     {
@@ -57,6 +59,25 @@
             "web-pwa"
           ],
           "updateMechanism": "service-worker"
+        }
+      ]
+    },
+    {
+      "component": "hub",
+      "availability": "optional",
+      "visibility": "public",
+      "distribution": "external-channel",
+      "commercialModel": "undecided",
+      "channels": [
+        {
+          "id": "hub-github-release",
+          "kind": "github-release",
+          "role": "primary",
+          "locationFrom": "publicUrl",
+          "artifacts": [
+            "android-apk"
+          ],
+          "updateMechanism": "none"
         }
       ]
     }

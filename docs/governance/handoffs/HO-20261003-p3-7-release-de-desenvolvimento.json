@@ -1,0 +1,152 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "cdb4f66",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "hub",
+  "state": "review",
+  "message_id": "HO-20261003-p3-7-release-de-desenvolvimento",
+  "timestamp": "2026-10-03T05:45:29Z",
+  "task_id": "P3-7",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane",
+      "security",
+      "distribution",
+      "architecture"
+    ],
+    "reason": "Cria o workflow .github/workflows/hub-release.yml (publica releases com permissão contents: write) e altera hub-ci.yml (zona .github/workflows/**); também declara o canal do Hub em ecosystem.json e no perfil de distribuição e adiciona uma chave de assinatura PÚBLICA de desenvolvimento ao repositório (exceção ao §30.2 decidida pelo proprietário na DEC-0029-A)."
+  },
+  "files_changed": [
+    ".github/workflows/hub-release.yml",
+    ".github/workflows/hub-ci.yml",
+    "apps/hub/tools/hub-dev.keystore",
+    "apps/hub/tools/hub-dev.keystore.sha256",
+    "apps/hub/src/Hub.Android/Hub.Android.csproj",
+    "apps/hub/docs/assinatura-de-desenvolvimento.md",
+    "apps/hub/README.md",
+    "ecosystem.json",
+    "docs/distribution/current.profile.json",
+    "docs/governance/decisions.json",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261003-p3-7-release-de-desenvolvimento.json"
+  ],
+  "work_completed": [
+    "FATO: o proprietário respondeu no portal DEC-0028 (alternativa A: GitHub Releases públicas do próprio repositório Ecosystem, tag hub-vX.Y.Z, desenvolvimento como pré-lançamento) e DEC-0029 (alternativa A: chave de desenvolvimento pública e estável, só canal de desenvolvimento, certificado conferido no CI). Este item aplica as duas.",
+    "Assinatura: apps/hub/tools/hub-dev.keystore (PKCS12, alias hubdev, senha pública) gerado com keytool, sem segredo; a impressão digital SHA-256 esperada fica em apps/hub/tools/hub-dev.keystore.sha256, única autoridade dela (NN-001), lida pelos dois workflows. Hub.Android.csproj assina com essa chave. A lógica de conferência do certificado foi testada localmente com um JAR assinado (o ambiente do agente não alcança o SDK do Android, então o APK em si só é provado pelo CI).",
+    "hub-ci.yml: o job android passa a falhar se o APK sair com outro certificado. hub-release.yml (novo): só na main e só quando o Hub muda (src, VERSION, Directory.Build.props, tools, o próprio workflow), roda os testes do núcleo, compila, confere o certificado, calcula o SHA-256 e publica a release de desenvolvimento como pré-lançamento com notas que dizem o que a chave garante e o que não garante; idempotente por tag; nenhum segredo; permissão contents: write só neste workflow.",
+    "Canal declarado como dado: ecosystem.json do Hub ganha publicUrl (a página de releases deste repositório; `source` não serve, é o repositório de origem pré-migração e exigiria registro de importação) e o perfil `current` ganha a entrada do Hub (availability optional, nunca bundled — NN-023; canal github-release primário; sem atualização automática). A projeção do portal e o CHK-PORTAL refletem o canal.",
+    "Documentação da exceção: apps/hub/docs/assinatura-de-desenvolvimento.md (o que a chave garante e NÃO garante, limites do canal e o caminho para a chave privada). Consequências das DEC-0028 e DEC-0029 aplicadas (consequencesApplied true). ROADMAP: P3-7 com a evidência e a frase velha do cabeçalho (\"próxima tarefa é P3-9\") corrigida; Issue #84 em state:review."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 (CHK-REGISTRY valida o perfil com o canal do Hub; CHK-ARCH-REFS varre apps/hub sem citar outro Product; CHK-SECRETS passa: o keystore é binário e a chave é pública por decisão)."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os checks provaram detectar suas violações."
+    },
+    {
+      "check": "Conferência do certificado (keytool -printcert -jarfile) contra o arquivo de impressão digital",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Testada localmente com um JAR assinado pelo keystore do Hub: a conferência passa com o certificado certo."
+    },
+    {
+      "check": "Primeira release de desenvolvimento publicada pelo hub-release na main",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Só existe depois da integração: o workflow roda na main. O P3-7 só vai a [x] com a release existindo (evidência a registrar no fechamento)."
+    },
+    {
+      "check": "Instalar o APK da release no celular e abrir o Hub",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Validação humana em aparelho é o gate P3-8 (NN-017); este item não a declara."
+    }
+  ],
+  "known_issues": [
+    "A primeira release só será publicada depois que este PR entrar na main; se o workflow falhar lá, a correção vem em PR rotineiro-crítico próprio (workflow). Por isso o P3-7 permanece [~].",
+    "O APK sai do build Debug (modelo já usado pelo outro app Android do repositório), então é depurável; aceitável no canal de desenvolvimento, a revisar antes de qualquer canal estável.",
+    "A chave é pública por decisão (DEC-0029-A): protege contra conflito de atualização, não contra falsificação. Antes de distribuir o Hub a outras pessoas é preciso nova decisão (chave privada em segredo do CI) e uma desinstalação única."
+  ],
+  "next_actions": [
+    "Depois da integração e da primeira release: fechar o P3-7 com a evidência, depois P3-1 (portal lista as releases do Hub com a chave `publicUrl`) e preparar o gate P3-8 (validação humana em aparelho, com o APK da release como objeto)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/governance/responses/DEC-0028.md",
+    "docs/governance/responses/DEC-0029.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/architecture/distribution.md",
+    "docs/distribution/current.profile.json",
+    "docs/contracts/schemas/distribution-profile.schema.json",
+    "docs/governance/integration-policy.json",
+    "apps/hub/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A impressão digital do certificado tem uma autoridade (apps/hub/tools/hub-dev.keystore.sha256) lida pelos dois workflows; o canal é declarado uma vez (publicUrl) e o perfil aponta para o campo, sem copiar a URL."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum Product depende do Hub nem do release dele; o workflow só roda quando apps/hub muda."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Canal, visibilidade e assinatura vêm das DEC-0028-A e DEC-0029-A, decididas pelo proprietário no portal; o agente não decidiu nada."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Versão e release do Hub são independentes (apps/hub/VERSION; workflow com filtro de caminho do Hub)."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Sem segredo: o único material de assinatura é uma chave pública de desenvolvimento, exceção explícita ao §30.2 decidida pelo proprietário e documentada; contents: write só no workflow de release; release só na main."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A instalação e abertura em aparelho não são declaradas feitas: ficam para o gate P3-8; este handoff não marca validação humana como feita."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "O P3-7 não vai a done nem a [x] sem a primeira release existir; a verificação pendente está registrada."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "O canal e a exceção de assinatura são descobríveis como dado (ecosystem.json, perfil current, documento do Hub) e o estado do item está no ROADMAP e na Issue #84."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "O Hub entra no perfil como optional, nunca bundled; a distribuição dos Products não depende da distribuição do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "development-signing-key",
+      "status": "product-specific",
+      "rationale": "O padrão de chave de desenvolvimento pública e estável com impressão digital conferida no CI foi aplicado ao Hub como cópia do padrão já usado por outro app do repositório; cada Product mantém a sua chave e o seu arquivo de impressão digital. Se um terceiro app precisar da mesma coisa, avaliar extração por Extraction Review (NN-022), não antes."
+    }
+  ]
+}

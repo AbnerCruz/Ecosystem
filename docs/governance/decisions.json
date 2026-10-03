@@ -1009,7 +1009,7 @@
       "decision": "Alternativa A — A — GitHub Releases do próprio repositório Ecosystem, públicas, com tag própria do Hub (`hub-vX.Y.Z`; as de desenvolvimento como pré-lançamento) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/87).",
       "decidedAt": "2026-10-03",
       "record": "docs/governance/responses/DEC-0028.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     },
     {
       "id": "DEC-0029",
@@ -1049,7 +1049,7 @@
       "decision": "Alternativa A — A — Chave de desenvolvimento pública e estável no repositório (mesmo padrão do Lunet2D), só para o canal de desenvolvimento (pré-lançamento), com o certificado conferido no CI (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/88).",
       "decidedAt": "2026-10-03",
       "record": "docs/governance/responses/DEC-0029.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }
