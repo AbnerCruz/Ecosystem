@@ -5,7 +5,7 @@
   "component": "urbe",
   "build": "1.8.2-beta-android",
   "recorded_at": "2026-10-03",
-  "state": "AUTOMATED_VERIFIED",
+  "state": "VALIDATED",
   "objective": "Validar atualização 1.8.1-beta → 1.8.2-beta pelo canal atual do Urbe, preservação de dados e uso standalone; confirmar que o Hub não contorna ausência de confiança aprovada.",
   "preconditions": [
     "Baseline v1.8.1-beta disponível no canal atual.",
