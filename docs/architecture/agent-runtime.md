@@ -272,7 +272,7 @@ AgentRuntime.Tools.Files       files.read / files.write presos à raiz do Contex
 AgentRuntime.Tests             contrato, comportamento e arquitetura
 ```
 
-Onde isto mora foi decidido na **DEC-0026** (ver o registro): dentro do Product novo de IA, cujo id e nome são a **DEC-0027**.
+Onde isto mora foi decidido na **DEC-0026** (ver o registro): dentro do Product novo de IA, cujo id (`ecosystem-ai`) e nome ("Ecosystem AI") foram fixados na **DEC-0027** (alternativa B); o diretório é `apps/ecosystem-ai`.
 
 ## 12. Fases no ROADMAP
 
@@ -290,7 +290,7 @@ As fases 8 e 9 são **propostas**: aparecem no ROADMAP como bloco não-vigente, 
 
 ## 13. Decisões críticas e ADRs
 
-**Já decidida:** **DEC-0026** — quando e onde nasce o R1 (ratifica o ADR-0017; ver o registro). **Em seguida:** **DEC-0027** — id e nome do Product de IA (bloqueia só o R1).
+**Já decidida:** **DEC-0026** — quando e onde nasce o R1 (ratifica o ADR-0017; ver o registro). **DEC-0027** — id e nome do Product de IA (alternativa B: `ecosystem-ai`, "Ecosystem AI").
 
 **Previstas** (cada uma é aberta **no momento em que a anterior a torna necessária**, nunca antes):
 

@@ -1,0 +1,42 @@
+name: ecosystem-ai-ci
+
+# CI do Ecosystem AI no monorepo: só testes, sem assinatura e sem publicar. Roda apenas quando o Product muda (NN-014).
+# Inclui os testes de arquitetura (T-13): o Core do Agent Runtime não pode conhecer rede, processo, UI, SDK de provedor, outro Product nem o Hub.
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/ecosystem-ai/**', '.github/workflows/ecosystem-ai-ci.yml']
+  pull_request:
+    paths: ['apps/ecosystem-ai/**', '.github/workflows/ecosystem-ai-ci.yml']
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit a testar (o integrador passa o estado combinado main + PR; ADR-0015)'
+        type: string
+        required: false
+        default: ''
+
+concurrency:
+  group: ecosystem-ai-ci-${{ inputs.ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/ecosystem-ai
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: 'Test (Agent Runtime: Core, Testing, Tools.Files)'
+        run: dotnet test --project tests/AgentRuntime.Tests

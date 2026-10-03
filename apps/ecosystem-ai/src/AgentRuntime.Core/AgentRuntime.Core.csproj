@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Núcleo do Agent Runtime (ADR-0017 D1). FRONTEIRA DE EXTRAÇÃO: nenhuma referência a pacote, a outro projeto, a Product,
+    a UI ou a provedor de modelo. Só o framework base. Quem garante isto é AgentRuntime.Tests/ArchitectureTests (por metadados do
+    assembly), não esta nota. Promoção a Service só por Extraction Review (ADR-0011, NN-022).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>AgentRuntime</RootNamespace>
+  </PropertyGroup>
+</Project>
