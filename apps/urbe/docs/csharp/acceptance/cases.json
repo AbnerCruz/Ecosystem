@@ -3582,6 +3582,235 @@
       }
     },
     {
+      "id": "vault-crash-journal-write",
+      "operation": "vault.crash-recovery",
+      "requirements": [
+        "REQ-007",
+        "REQ-038",
+        "REQ-046"
+      ],
+      "source": "src/persistence/workspace.js",
+      "input": {
+        "files": [
+          {
+            "path": "A.md",
+            "encoding": "utf8",
+            "content": "A0\n"
+          },
+          {
+            "path": "B.md",
+            "encoding": "utf8",
+            "content": "B0\n"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\"v\":4,\"notas\":{},\"regioes\":[],\"construcoes\":[]}"
+          },
+          {
+            "path": ".urbe/vault.json",
+            "encoding": "utf8",
+            "content": "{\"formatVersion\":2,\"createdBy\":\"urbe@2.0.0-beta.1\",\"lastWriter\":\"urbe@2.0.0-beta.1\",\"created\":\"2026-10-01T00:00:00.000Z\",\"migrations\":[]}"
+          }
+        ],
+        "edits": {
+          "A.md": "A1\n",
+          "B.md": "B1\n"
+        },
+        "remove": [],
+        "fail": {
+          "method": "write",
+          "path": ".urbe/journal.v2.json"
+        }
+      },
+      "expected": {
+        "flushRejected": true,
+        "journalAfterFailure": false,
+        "afterFailure": {
+          "A.md": "A0\n",
+          "B.md": "B0\n"
+        },
+        "recovered": false,
+        "afterReload": {
+          "A.md": "A0\n",
+          "B.md": "B0\n"
+        },
+        "journalAfterReload": false
+      }
+    },
+    {
+      "id": "vault-crash-second-note",
+      "operation": "vault.crash-recovery",
+      "requirements": [
+        "REQ-007",
+        "REQ-038",
+        "REQ-046"
+      ],
+      "source": "src/persistence/workspace.js",
+      "input": {
+        "files": [
+          {
+            "path": "A.md",
+            "encoding": "utf8",
+            "content": "A0\n"
+          },
+          {
+            "path": "B.md",
+            "encoding": "utf8",
+            "content": "B0\n"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\"v\":4,\"notas\":{},\"regioes\":[],\"construcoes\":[]}"
+          },
+          {
+            "path": ".urbe/vault.json",
+            "encoding": "utf8",
+            "content": "{\"formatVersion\":2,\"createdBy\":\"urbe@2.0.0-beta.1\",\"lastWriter\":\"urbe@2.0.0-beta.1\",\"created\":\"2026-10-01T00:00:00.000Z\",\"migrations\":[]}"
+          }
+        ],
+        "edits": {
+          "A.md": "A1\n",
+          "B.md": "B1\n"
+        },
+        "remove": [],
+        "fail": {
+          "method": "write",
+          "path": "B.md"
+        }
+      },
+      "expected": {
+        "flushRejected": true,
+        "journalAfterFailure": true,
+        "afterFailure": {
+          "A.md": "A1\n",
+          "B.md": "B0\n"
+        },
+        "recovered": true,
+        "afterReload": {
+          "A.md": "A1\n",
+          "B.md": "B1\n"
+        },
+        "journalAfterReload": false
+      }
+    },
+    {
+      "id": "vault-crash-remove-note",
+      "operation": "vault.crash-recovery",
+      "requirements": [
+        "REQ-007",
+        "REQ-038",
+        "REQ-046"
+      ],
+      "source": "src/persistence/workspace.js",
+      "input": {
+        "files": [
+          {
+            "path": "A.md",
+            "encoding": "utf8",
+            "content": "A0\n"
+          },
+          {
+            "path": "B.md",
+            "encoding": "utf8",
+            "content": "B0\n"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\"v\":4,\"notas\":{},\"regioes\":[],\"construcoes\":[]}"
+          },
+          {
+            "path": ".urbe/vault.json",
+            "encoding": "utf8",
+            "content": "{\"formatVersion\":2,\"createdBy\":\"urbe@2.0.0-beta.1\",\"lastWriter\":\"urbe@2.0.0-beta.1\",\"created\":\"2026-10-01T00:00:00.000Z\",\"migrations\":[]}"
+          }
+        ],
+        "edits": {
+          "A.md": "A1\n"
+        },
+        "remove": [
+          "B.md"
+        ],
+        "fail": {
+          "method": "remove",
+          "path": "B.md"
+        }
+      },
+      "expected": {
+        "flushRejected": true,
+        "journalAfterFailure": true,
+        "afterFailure": {
+          "A.md": "A1\n",
+          "B.md": "B0\n"
+        },
+        "recovered": true,
+        "afterReload": {
+          "A.md": "A1\n",
+          "B.md": null
+        },
+        "journalAfterReload": false
+      }
+    },
+    {
+      "id": "vault-crash-journal-remove",
+      "operation": "vault.crash-recovery",
+      "requirements": [
+        "REQ-007",
+        "REQ-038",
+        "REQ-046"
+      ],
+      "source": "src/persistence/workspace.js",
+      "input": {
+        "files": [
+          {
+            "path": "A.md",
+            "encoding": "utf8",
+            "content": "A0\n"
+          },
+          {
+            "path": "B.md",
+            "encoding": "utf8",
+            "content": "B0\n"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\"v\":4,\"notas\":{},\"regioes\":[],\"construcoes\":[]}"
+          },
+          {
+            "path": ".urbe/vault.json",
+            "encoding": "utf8",
+            "content": "{\"formatVersion\":2,\"createdBy\":\"urbe@2.0.0-beta.1\",\"lastWriter\":\"urbe@2.0.0-beta.1\",\"created\":\"2026-10-01T00:00:00.000Z\",\"migrations\":[]}"
+          }
+        ],
+        "edits": {
+          "A.md": "A1\n",
+          "B.md": "B1\n"
+        },
+        "remove": [],
+        "fail": {
+          "method": "remove",
+          "path": ".urbe/journal.v2.json"
+        }
+      },
+      "expected": {
+        "flushRejected": true,
+        "journalAfterFailure": true,
+        "afterFailure": {
+          "A.md": "A1\n",
+          "B.md": "B1\n"
+        },
+        "recovered": true,
+        "afterReload": {
+          "A.md": "A1\n",
+          "B.md": "B1\n"
+        },
+        "journalAfterReload": false
+      }
+    },
+    {
       "id": "storage-text",
       "operation": "storage.scenario",
       "requirements": [

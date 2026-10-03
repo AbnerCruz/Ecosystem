@@ -1,3 +1,12 @@
+### 2026-10-03 — ChatGPT — UC-2: crash recovery portável (REQ-007/038/046)
+(REQ-007/038/046)
+- Estado: verificando no PR #165, empilhado sobre o PR #161; não integrar antes da fatia IDB.
+- Feito: quatro casos `vault.crash-recovery` injetam falha na criação do journal, no segundo arquivo, na remoção de nota e na remoção final do journal. O corpus empilhado passa de 205 para 209 casos.
+- Invariante: nenhum arquivo de runtime congelado foi alterado; somente tooling, testes e documentação do corpus UC-2.
+- Restante após esta fatia: atomicidade/rollback de restauração de backup, capacidades nativas portáveis e UI/E2E por superfície.
+
+
+
 ### 2026-10-03 — ChatGPT — UC-2: IndexedDB legado e gestão de vaults (REQ-007/028/046)
 - Estado: review, Issue #139; PR #161 com gates do head reconciliado verdes; fechamento formal em andamento.
 - Feito: quatro cenários portáveis IDB/browser adicionados ao `storage.scenario` e um caso separado para a migração v1 `kv["cidade"]`; corpus candidato 205. O `idb.js` real é executado sobre IndexedDB determinístico do tooling, cobrindo chaves legadas `knowledge-city`, gestão/isolamento de vaults, pastas e binários.

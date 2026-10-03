@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ROOT, parseRequirements, parseSpec, parseRoadmap } from './v2-docs.mjs';
-import { makeVaultCases, makeRestoreCases } from './parity-vault.mjs';
+import { makeVaultCases, makeRestoreCases, makeCrashCases } from './parity-vault.mjs';
 import { makeStorageCases, makeLegacyIdbCases } from './parity-storage.mjs';
 import { makeDomainCases } from './parity-domain.mjs';
 
@@ -96,7 +96,7 @@ export function renderParity(corpus) {
     out.push(`| ${op} | ${corpus.cases.filter((c) => c.operation === op).length} | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |`);
   }
   out.push('', '## Lacunas e ligação com o Ecosystem', '',
-    '- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; 13 casos de storage verificam FSA sobre ponte nativa e o adapter IDB/browser, e um caso próprio cobre a migração histórica `kv["cidade"]` para o vault único sem confundi-la com a loja `fs` atual. Ainda faltam falhas adicionais de recuperação, capacidades nativas completas e UI. A execução no C# integra UC-9/10/18/23/24/25.',
+    '- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; quatro casos injetam crash antes/durante/depois de gravação multi-arquivo; 13 casos de storage verificam FSA sobre ponte nativa e o adapter IDB/browser, e um caso próprio cobre a migração histórica `kv["cidade"]` para o vault único sem confundi-la com a loja `fs` atual. Ainda faltam atomicidade de restauração, capacidades nativas completas e UI. A execução no C# integra UC-9/10/18/23/24/25.',
     '- REQ aceito ainda não entregue no JS continua como obrigação do C#, com o teste/aceite do ROADMAP acima; um golden de comportamento antigo nunca fecha esse requisito.',
     '- Android físico, Windows instalado e PWA offline ainda precisam de evidência própria. Simulações e Chromium não os validam.',
     '- Context/capabilities do Ecosystem têm contrato na Fase 2; transporte/Host API da Fase 5 ainda não implementados. Urbe fornece seu domínio por adapter quando esses contratos estiverem prontos; nunca depende do plano de controle nem diretamente de outro Product.',
@@ -115,7 +115,7 @@ export function makeCorpus() {
     ...visual.map((g, i) => ({ id: `visual-${String(i + 1).padStart(3, '0')}`, operation: 'visual.serialize',
       requirements: ['REQ-027'], source: `tests/fixtures/visual-golden.json#/${i}`,
       input: { html: g.html, bodyEditor: g.bodyEditor }, expected: { markdown: g.md } })),
-    ...makeVaultCases(), ...makeRestoreCases(), ...makeStorageCases(), ...makeLegacyIdbCases(), ...makeDomainCases()] };
+    ...makeVaultCases(), ...makeRestoreCases(), ...makeCrashCases(), ...makeStorageCases(), ...makeLegacyIdbCases(), ...makeDomainCases()] };
 }
 export function validateCorpus(corpus) {
   if (corpus.schemaVersion !== 1 || corpus.product !== 'urbe') throw new Error('corpus inválido');

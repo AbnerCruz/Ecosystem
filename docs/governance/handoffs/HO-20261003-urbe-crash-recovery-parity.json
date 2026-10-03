@@ -1,0 +1,142 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-urbe-crash-recovery-parity",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T23:23:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-2",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "chatgpt/urbe-uc2-recovery-parity",
+  "base_commit": "f23f8ace32093d6943d33cf4c7111f312e733b02",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/165",
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/docs/csharp/PARITY.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/acceptance/README.md",
+    "apps/urbe/docs/csharp/acceptance/cases.json",
+    "apps/urbe/tests/csharp-vault-parity.mjs",
+    "apps/urbe/tools/lib/csharp-parity.mjs",
+    "apps/urbe/tools/lib/parity-vault.mjs",
+    "apps/urbe/tools/parity-vault-client.mjs",
+    "docs/governance/handoffs/HO-20261003-urbe-crash-recovery-parity.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Amplia apenas o corpus/tooling de paridade UC-2 já autorizado. Não altera runtime JS congelado, formato persistido, stack C#, distribuição ou segurança."
+  },
+  "work_completed": [
+    "Adicionados quatro casos vault.crash-recovery, elevando o corpus empilhado de 205 para 209 casos.",
+    "Os casos injetam falha ao criar o journal, ao escrever o segundo arquivo, ao remover uma nota e ao remover o journal depois da gravação.",
+    "O runner observa estado parcial no disco, presença do journal, evento de recuperação e estado final após reabertura.",
+    "A documentação passa a deixar explícito que ainda falta provar atomicidade/rollback de restauração de backup."
+  ],
+  "verification": [
+    {
+      "check": "node tests/csharp-vault-parity.mjs / npm run check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #165 stacked urbe-checks run 37161006751: 209 casos portáveis; csharp-vault-parity e todas as checagens passaram. Repetir após reconstrução sobre main."
+    },
+    {
+      "check": "node tools/run-e2e.mjs app-runtime zip smoke",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #165 stacked urbe-checks run 37161006751: E2E Chromium passou. Repetir após reconstrução sobre main."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando estado definitivo baseado em main; falha anterior do PR empilhado era externa a esta fatia."
+    }
+  ],
+  "known_issues": [
+    "Os quatro casos não provam rollback atômico de restore de backup quando uma escrita da restauração falha no meio."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Reexecutar consistency e urbe-checks no PR #165 agora baseado diretamente em main.",
+    "Se os gates finais passarem, mover handoff para review e liberar o integrador.",
+    "Seguir UC-2 com rollback de restore ou capacidades nativas portáveis."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/v2/contracts/persistence-adapter.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/src/persistence/workspace.js",
+    "apps/urbe/src/persistence/backup.js",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "cases.json continua derivado do tooling canônico; PARITY segue projeção."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Nenhum código C# de produto foi iniciado antes do gate."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Trabalho observável em branch, Issue #139, AGENTSCHAT e handoff."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "DEC-0024-B/DEC-0025-C preservadas; nenhuma direção nova escolhida."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Somente tooling/testes/docs; runtime JS congelado permanece intocado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação física foi inventada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-2 permanece aberto após esta fatia."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs publicados preservados; quatro IDs novos são aditivos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Tooling permanece específico do Urbe."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma dependência do Hub/control plane foi adicionada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-crash-recovery-parity",
+      "status": "product-specific",
+      "rationale": "Cenários refletem journal e WorkspacePersistence específicos do Urbe."
+    }
+  ],
+  "cost": null
+}
