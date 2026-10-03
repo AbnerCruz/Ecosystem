@@ -1,0 +1,52 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-hub-hub-v0.0.1-dev.7",
+  "component": "hub",
+  "build": "hub-v0.0.1-dev.7",
+  "recorded_at": "2026-10-03",
+  "state": "VALIDATED",
+  "objective": "Registrar o build Hub dev.7 efetivamente validado em P4-3 para instalação/atualização/abertura Android; P4-4 permanece um gate cruzado separado.",
+  "preconditions": [
+    "P4-3 integrado no commit 26678efa5a414a99f0596ccedf3ad47ab3f55f03.",
+    "DEC-0032-A vigente para Lunet2D.",
+    "Validação DEVICE de P4-3 aprovada pelo proprietário na Issue #135."
+  ],
+  "steps": [
+    "Instalar a release Hub dev.7 publicada após P4-3.",
+    "Executar instalar/atualizar/cancelar/recuperar/abrir no Android conforme apps/hub/docs/instalar-e-abrir.md.",
+    "Registrar a aprovação humana pelo mecanismo canônico do portal."
+  ],
+  "expected": "O build Hub dev.7 executa o fluxo Android aprovado de P4-3 com consentimento, identidade/signatário/versionCode e recuperação, sem substituir os canais independentes dos Products.",
+  "known_issues": [
+    "Canal dev usa chave pública e não prova autoria.",
+    "Urbe não possui confiança específica aprovada no Hub."
+  ],
+  "artifact": {
+    "name": "ecosystem-hub-0.0.1-dev.7.apk",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v0.0.1-dev.7/ecosystem-hub-0.0.1-dev.7.apk",
+    "sha256": "54ea1fdf09d4db87c998c6863a9b96cc0faee9c243a468ad6195830c9645b6e9"
+  },
+  "traceability": {
+    "task": "P4-3",
+    "commit": "26678efa5a414a99f0596ccedf3ad47ab3f55f03",
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/133",
+    "handoff": "HO-20261003-p4-3-install-launch"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Artefato publicado do Hub dev.7",
+      "result": "passed",
+      "evidence": "Release hub-v0.0.1-dev.7 publicada para o commit 26678efa5a414a99f0596ccedf3ad47ab3f55f03; APK SHA-256 54ea1fdf09d4db87c998c6863a9b96cc0faee9c243a468ad6195830c9645b6e9.",
+      "handoff": null
+    },
+    {
+      "kind": "human",
+      "check": "Instalar, atualizar, cancelar, recuperar e abrir no Android",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/135); registro em docs/governance/responses/VAL-HO-20261003-p4-3-install-launch-ca447f13ed16.md.",
+      "handoff": "HO-20261003-p4-3-install-launch"
+    }
+  ]
+}

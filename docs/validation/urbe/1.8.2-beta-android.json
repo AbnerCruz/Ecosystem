@@ -1,0 +1,53 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-urbe-1.8.2-beta-android",
+  "component": "urbe",
+  "build": "1.8.2-beta-android",
+  "recorded_at": "2026-10-03",
+  "state": "HUMAN_VALIDATION_PENDING",
+  "objective": "Validar atualização 1.8.1-beta → 1.8.2-beta pelo canal atual do Urbe, preservação de dados e uso standalone; confirmar que o Hub não contorna ausência de confiança aprovada.",
+  "preconditions": [
+    "Baseline v1.8.1-beta disponível no canal atual.",
+    "Conteúdo de teste/backup preparado.",
+    "Hub não é requisito do Product."
+  ],
+  "steps": [
+    "Instalar v1.8.1-beta pelo canal atual.",
+    "Criar/alterar conteúdo de teste.",
+    "Atualizar para v1.8.2-beta pelo mecanismo current baseado em GitHub latest release.",
+    "Confirmar dados e uso standalone.",
+    "Confirmar que Hub dev.7 não oferece instalação/abertura sem pin aprovado."
+  ],
+  "expected": "Urbe atualiza pelo canal atual, preserva dados, funciona sem Hub e permanece bloqueado no Hub até existir confiança específica aprovada.",
+  "known_issues": [
+    "Distribuição direta pelo Ecosystem ainda depende de P4-9/P4-10; este registro valida o canal current, não o futuro."
+  ],
+  "artifact": {
+    "name": "Urbe-1.8.2-beta.apk",
+    "url": "https://github.com/AbnerCruz/Urbe/releases/download/v1.8.2-beta/Urbe-1.8.2-beta.apk",
+    "sha256": "61487f2bb0a43067e25aefa64c246d3769460a53920d74aa1e08e1cca6ea8d35"
+  },
+  "traceability": {
+    "task": "P4-4",
+    "commit": "91de0f4bc3626ffdf471b81d1b9b7e74ff0fceea",
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/160",
+    "handoff": "HO-20261003-p4-4-gate"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Artefato e canal resolvidos",
+      "result": "passed",
+      "evidence": "Release/canal e digest SHA-256 conferidos nas fontes declaradas do GitHub em 2026-10-03.",
+      "handoff": null
+    },
+    {
+      "kind": "human",
+      "check": "Gate P4-4 em aparelho: Lunet via Hub, Urbe no canal atual e ambos standalone",
+      "result": "pending",
+      "evidence": "Aguardando execução integral do roteiro DEVICE e aprovação/reprovação do proprietário pelo portal.",
+      "handoff": "HO-20261003-p4-4-gate"
+    }
+  ]
+}

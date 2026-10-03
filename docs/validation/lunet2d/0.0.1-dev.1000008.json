@@ -1,0 +1,52 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-lunet2d-0.0.1-dev.1000008",
+  "component": "lunet2d",
+  "build": "0.0.1-dev.1000008",
+  "recorded_at": "2026-10-03",
+  "state": "HUMAN_VALIDATION_PENDING",
+  "objective": "Validar atualização 0.0.1-dev.1000004 → 0.0.1-dev.1000008 pelo Hub, abertura pelo Hub e uso standalone com preservação do projeto.",
+  "preconditions": [
+    "Baseline 0.0.1-dev.1000004 disponível.",
+    "Hub dev.7 instalado para a etapa mediada.",
+    "Projeto de teste/backup preparado."
+  ],
+  "steps": [
+    "Instalar baseline diretamente.",
+    "Criar/alterar projeto de teste.",
+    "Atualizar para 1000008 pelo Hub e abrir pelo Hub.",
+    "Remover o Hub e abrir/usar Lunet pelo launcher."
+  ],
+  "expected": "Lunet atualiza sem perda de dados, abre pelo Hub e continua plenamente utilizável sem o Hub.",
+  "known_issues": [
+    "Build de desenvolvimento; chave pública não prova autoria."
+  ],
+  "artifact": {
+    "name": "Lunet-0.0.1-dev.1000008-arm64.apk",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/lunet2d-v0.0.1-dev.1000008/Lunet-0.0.1-dev.1000008-arm64.apk",
+    "sha256": "9e3881cbcc2a9b1d2208410756fbf19631d0922aa59818cce666abc750c70146"
+  },
+  "traceability": {
+    "task": "P4-4",
+    "commit": "1ff4386bae93edf027db81c8de6579640d2e58ed",
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/160",
+    "handoff": "HO-20261003-p4-4-gate"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Artefato e canal resolvidos",
+      "result": "passed",
+      "evidence": "Release/canal e digest SHA-256 conferidos nas fontes declaradas do GitHub em 2026-10-03.",
+      "handoff": null
+    },
+    {
+      "kind": "human",
+      "check": "Gate P4-4 em aparelho: Lunet via Hub, Urbe no canal atual e ambos standalone",
+      "result": "pending",
+      "evidence": "Aguardando execução integral do roteiro DEVICE e aprovação/reprovação do proprietário pelo portal.",
+      "handoff": "HO-20261003-p4-4-gate"
+    }
+  ]
+}
