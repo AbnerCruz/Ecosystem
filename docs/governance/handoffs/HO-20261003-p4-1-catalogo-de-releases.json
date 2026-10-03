@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-p4-1-catalogo-de-releases",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T12:15:27Z",
+  "timestamp": "2026-10-03T12:29:13Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
@@ -36,7 +36,8 @@
     "HubLoader resolve canais declarados e filtra tags do próprio monorepo por component-id-v; reutiliza a leitura do monorepo. Perfil ausente/target/Web/ambiguidade ficam indisponíveis, sem presumir o canal da origem.",
     "Modelo de tela mostra até 3 releases por Product e 4 APKs por release, com motivos de falha e canal de recuperação. Sidecars não viram APK. Nenhum download, verificação de bytes ou instalação declarado.",
     "Cache da Fase 3 continua carregando; cache novo preserva releases e canais marcados como Stale.",
-    "Main reconciliada por fast-forward com fechamento da Fase 3 (PR #100, fb71b21). ROADMAP inicia P4-1 em revisão e planeja download/integridade, launcher/instalador e gate independente do Hub."
+    "Main reconciliada por fast-forward com fechamento da Fase 3 (PR #100, fb71b21). ROADMAP inicia P4-1 em revisão e planeja download/integridade, launcher/instalador e gate independente do Hub.",
+    "FATO OBSERVADO: PR #102 integrado automaticamente, Core/build Android e consistency verdes. Conferência visual permanece pendente não crítica; publicação do APK depende do mecanismo de dispatch P4-5."
   ],
   "verification": [
     {
@@ -54,8 +55,9 @@
     {
       "check": "Build Android e CI no estado combinado",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "CI do PR e integrador executarão hub-ci (Core e Android) sobre o estado combinado; ambiente local não possui workload android."
+      "result": "passed",
+      "evidence": "Integrador 37122632485 verde: testes Hub e build Android passaram (jobs 111201753316 e 111201753348), consistency e checker confiável verdes. PR #102 integrado automaticamente na main em 23b69a308cd795e6a882460ebd53fed9654d1239. Pages 37122897469 publicado. Isso não prova APK publicado pelo hub-release.",
+      "tested_commit": "23b69a308cd795e6a882460ebd53fed9654d1239"
     },
     {
       "check": "Conferência visual do catálogo no celular",
@@ -74,7 +76,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI/integrador e corrigir qualquer falha. Corrigir dispatch seletivo de hub-release em PR separado antes de afirmar publicação automática.",
+    "P4-5 prepara dispatch seletivo em PR crítico separado; após autorização, conferir execução hub-release e artefato público antes de declarar publicação.",
     "Registrar evidência do build publicado e conferência visual quando o proprietário a realizar; manter estado review enquanto essa validação não existir.",
     "P4-2: download com cancelamento/limite e verificação de tamanho/SHA-256; P4-3 exige modelo explícito de permissões e segurança antes do instalador/launcher."
   ],
