@@ -3,17 +3,17 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-tabletop-rpg-foundation",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T21:39:25Z",
+  "timestamp": "2026-10-03T21:52:27Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "RPG-001",
   "component": "tabletop-rpg",
-  "state": "review",
+  "state": "done",
   "branch": "chatgpt/tabletop-rpg-foundation",
   "base_commit": "615f001df548af192b494be4efe468c4671d5f5b",
-  "commit": null,
+  "commit": "e55bf38082e5c995499612268255d97a21e2991d",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/157",
   "files_changed": [
     ".github/integrator/integrate.sh",
@@ -76,6 +76,13 @@
       "result": "passed",
       "evidence": "consistency run 37155647794 no head caeacb91f8a00466a872de7120823a830de25ea3: consistency checks, self-test de violações e .github/integrator/simulate.sh concluíram com sucesso.",
       "tested_commit": "caeacb91f8a00466a872de7120823a830de25ea3"
+    },
+    {
+      "check": "Integração na main pelo integrador automático",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #157 integrado em 2026-10-03T21:52:27Z. Estado combinado testado 789ad83190e02c187769ee2d51b5e2e445946ade; merge/integration commit c48075df088498cbe28dd45bf941d29cf9aa2d45.",
+      "tested_commit": "e55bf38082e5c995499612268255d97a21e2991d"
     }
   ],
   "known_issues": [
@@ -84,9 +91,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Deixar o integrador reavaliar este handoff final no estado combinado com a main atual.",
-    "Após os gates do PR #157 ficarem verdes, o proprietário adiciona a label integrar para autorizar a mudança crítica; o agente não adiciona essa label.",
-    "Depois da integração na main, fechar RPG-001 com evidência e iniciar RPG-002 conforme o ROADMAP."
+    "RPG-001 está concluída e integrada.",
+    "Iniciar RPG-002: persistência local v1 com save atômico, versionamento, export/import e recuperação."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -152,7 +158,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "RPG-001 permanece verifying; não é declarada done antes de testes, integração e evidência."
+      "evidence": "RPG-001 só passa a done após PR #157 integrado na main com checks e autorização crítica concluídos."
     },
     {
       "id": "NN-019",
