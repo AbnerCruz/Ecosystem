@@ -152,8 +152,8 @@ await test('conformidade — Android (ponte sobre o Capacitor simulado)',async()
 await test('Android updater: feed direto filtra Product, APK exato e ignora latest global',async()=>{
   const seen=[];
   const releases=[
-    {tag_name:'hub-v99.0.0',assets:[{name:'ecosystem-hub.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v99.0.0/ecosystem-hub.apk'}]},
-    {tag_name:'lunet2d-v99.0.0',assets:[{name:'Lunet.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/lunet2d-v99.0.0/Lunet.apk'}]},
+    {tag_name:'other-a-v99.0.0',assets:[{name:'other-a.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/other-a-v99.0.0/other-a.apk'}]},
+    {tag_name:'other-b-v99.0.0',assets:[{name:'other-b.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/other-b-v99.0.0/other-b.apk'}]},
     {tag_name:'urbe-v9.9.9',assets:[{name:'Outro.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v9.9.9/Outro.apk'}]},
     {tag_name:'urbe-v99.0.0garbage',assets:[{name:'Urbe-99.0.0garbage.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v99.0.0garbage/Urbe-99.0.0garbage.apk'}]},
     {tag_name:'urbe-v1.8.2-beta',body:'antiga',assets:[{name:'Urbe-1.8.2-beta.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.2-beta/Urbe-1.8.2-beta.apk'}]},
@@ -170,7 +170,7 @@ await test('Android updater: feed direto filtra Product, APK exato e ignora late
 });
 await test('Android updater: sem release urbe-v válida fica sem atualização, não pega outro Product',async()=>{
   const f=fakeCapacitor({lote:true}),{W}=loadAndroid(f,async()=>({ok:true,json:async()=>[
-    {tag_name:'hub-v9.0.0',assets:[{name:'Urbe-9.0.0.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v9.0.0/Urbe-9.0.0.apk'}]},
+    {tag_name:'other-a-v9.0.0',assets:[{name:'Urbe-9.0.0.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/other-a-v9.0.0/Urbe-9.0.0.apk'}]},
     {tag_name:'urbe-v9.0.0',assets:[{name:'Urbe-9.0.0.apk',browser_download_url:'https://example.com/Urbe-9.0.0.apk'}]}
   ]})));
   const s=await W.UrbeNative.update.check();ok(s.state==='none'&&s.version==='1.7.0-beta','nenhum fallback cruzado: '+JSON.stringify(s));
