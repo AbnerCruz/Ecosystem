@@ -68,6 +68,24 @@
       "commands": { "test": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests" },
       "dependencies": []
     },
+    "tabletop-rpg": {
+      "name": "Tabletop RPG",
+      "type": "product",
+      "language": "csharp",
+      "path": "apps/tabletop-rpg",
+      "status": "active",
+      "description": "Plataforma mobile-first de RPG de mesa: MVP solo com humanos e agentes de IA sobre um motor C# determinístico; multiplayer é evolução futura (ADR-0022, DEC-0033).",
+      "owners": ["AbnerCruz"],
+      "version": { "authority": "version-file", "file": "apps/tabletop-rpg/VERSION" },
+      "docs": {
+        "readme": "apps/tabletop-rpg/README.md",
+        "spec": "apps/tabletop-rpg/SPEC.md",
+        "roadmap": "apps/tabletop-rpg/ROADMAP.md",
+        "agents": "apps/tabletop-rpg/AGENTS.md"
+      },
+      "commands": { "test": "cd apps/tabletop-rpg && dotnet test --project tests/TabletopRpg.Core.Tests" },
+      "dependencies": []
+    },
     "portal": {
       "name": "Portal web (GitHub Pages)",
       "type": "portal",

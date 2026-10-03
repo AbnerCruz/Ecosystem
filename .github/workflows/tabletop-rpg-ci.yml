@@ -1,0 +1,39 @@
+name: tabletop-rpg-ci
+
+on:
+  push:
+    paths:
+      - 'apps/tabletop-rpg/**'
+      - '.github/workflows/tabletop-rpg-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/tabletop-rpg/**'
+      - '.github/workflows/tabletop-rpg-ci.yml'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit a testar no estado combinado do integrador'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Tabletop RPG Core
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/tabletop-rpg
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Testar Core
+        run: dotnet test --project tests/TabletopRpg.Core.Tests
