@@ -118,7 +118,7 @@ async function electronAdapter(){
 
 /* ---------- adaptador: Android ---------- */
 async function androidAdapter(){
-  const f=fakeCapacitor({lote:true}),{W,listeners}=loadAndroid(f,async()=>({ok:true,json:async()=>({tag_name:'v1.7.0-beta',assets:[]})})),N=W.UrbeNative;
+  const f=fakeCapacitor({lote:true}),{W,listeners}=loadAndroid(f,async()=>({ok:true,json:async()=>[]})),N=W.UrbeNative;
   const opened=[],orig=f.cap.nativePromise;
   // o Java (UrlGuard) é quem barra esquemas perigosos; aqui só registramos o que chegou ao plugin
   f.cap.nativePromise=(pl,m,o)=>{if(pl==='UrbeAndroid'&&m==='openUrl'){opened.push(o.url);return Promise.resolve()}return orig(pl,m,o)};
@@ -149,6 +149,37 @@ await test('conformidade — Android (ponte sobre o Capacitor simulado)',async()
   // esquemas: a ponte barra antes de chegar ao Java (o UrlGuard do Java barra de novo)
   ok(ad.win.UrbeNativeFS.isExternalAllowed('https://a.com')&&!ad.win.UrbeNativeFS.isExternalAllowed('javascript:alert(1)'),'allowlist na ponte');
 });
+await test('Android updater: feed direto filtra Product, APK exato e ignora latest global',async()=>{
+  const seen=[];
+  const releases=[
+    {tag_name:'hub-v99.0.0',assets:[{name:'ecosystem-hub.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v99.0.0/ecosystem-hub.apk'}]},
+    {tag_name:'lunet2d-v99.0.0',assets:[{name:'Lunet.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/lunet2d-v99.0.0/Lunet.apk'}]},
+    {tag_name:'urbe-v9.9.9',assets:[{name:'Outro.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v9.9.9/Outro.apk'}]},
+    {tag_name:'urbe-v1.8.2-beta',body:'antiga',assets:[{name:'Urbe-1.8.2-beta.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.2-beta/Urbe-1.8.2-beta.apk'}]},
+    {tag_name:'urbe-v1.8.3-beta',body:'ponte direta',assets:[{name:'Urbe-1.8.3-beta.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.3-beta/Urbe-1.8.3-beta.apk'}]},
+    {tag_name:'urbe-v1.8.4-beta',draft:true,assets:[{name:'Urbe-1.8.4-beta.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk'}]},
+    {tag_name:'urbe-v2.0.0',assets:[{name:'Urbe-2.0.0.apk',browser_download_url:'https://evil.example/Urbe-2.0.0.apk'}]}
+  ];
+  const f=fakeCapacitor({lote:true}),{W}=loadAndroid(f,async(url)=>{seen.push(String(url));return{ok:true,json:async()=>releases}});
+  const s=await W.UrbeNative.update.check();
+  ok(seen.length===1&&seen[0]==='https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100','consulta lista do Ecosystem, não /latest: '+seen);
+  ok(s.state==='available'&&s.version==='1.8.3-beta','seleciona maior release válida do Urbe: '+JSON.stringify(s));
+  ok(s.url==='https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.3-beta/Urbe-1.8.3-beta.apk','APK exato do Product: '+s.url);
+  ok(s.notes==='ponte direta','notas da release selecionada');
+});
+await test('Android updater: sem release urbe-v válida fica sem atualização, não pega outro Product',async()=>{
+  const f=fakeCapacitor({lote:true}),{W}=loadAndroid(f,async()=>({ok:true,json:async()=>[
+    {tag_name:'hub-v9.0.0',assets:[{name:'Urbe-9.0.0.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v9.0.0/Urbe-9.0.0.apk'}]},
+    {tag_name:'urbe-v9.0.0',assets:[{name:'Urbe-9.0.0.apk',browser_download_url:'https://example.com/Urbe-9.0.0.apk'}]}
+  ]})));
+  const s=await W.UrbeNative.update.check();ok(s.state==='none'&&s.version==='1.7.0-beta','nenhum fallback cruzado: '+JSON.stringify(s));
+});
+await test('Windows updater: package aponta para release do Ecosystem com prefixo de Product',()=>{
+  const pkg=JSON.parse(read('package.json')),p=pkg.build&&pkg.build.publish&&pkg.build.publish[0];
+  ok(p&&p.provider==='github'&&p.owner==='AbnerCruz'&&p.repo==='Ecosystem','feed GitHub do Ecosystem: '+JSON.stringify(p));
+  ok(p.tagNamePrefix==='urbe-v','prefixo impede consumir tags de outros Products: '+JSON.stringify(p));
+});
+
 await test('conformidade — web (sem UrbeNative): nada declarado, tudo ausente',async()=>{
   const win=bridgeWin(null),c=win.UrbeNativeContract;
   ok(win.UrbeNative===undefined&&win.UrbeNativeFS===undefined,'a ponte não inventa UrbeNative nem UrbeNativeFS no navegador');
