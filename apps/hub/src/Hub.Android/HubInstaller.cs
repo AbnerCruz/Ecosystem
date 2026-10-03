@@ -180,6 +180,7 @@ internal static class HubInstaller
         }
         else SetMessage(status == 3 ? "Instalação cancelada pelo Android/usuário." : $"Android recusou a instalação (código {status}); app anterior preservado.");
         try { File.Delete(Marker(c)); } catch (Exception) { SetMessage("Resultado recebido, mas marcador não pôde ser limpo. Consulte o sistema."); }
+        Changed?.Invoke();
     }
 }
 

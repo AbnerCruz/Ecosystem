@@ -5,6 +5,8 @@ Autoridades: ADR-0018 / DEC-0030-A. Mapeamento candidato local e explícito em
 Product. Pacote do Lunet vem de seu csproj; fingerprint é conferido por seu pipeline.
 **DEC-0032 está pendente:** a política A exige aprovar esses valores específicos.
 Sem o registro canônico da alternativa A exata, o fluxo permanece bloqueado.
+A aprovação vincula também fonte de identidade e condição de chave pública pelo
+SHA-256 da configuração; mudar qualquer valor exige nova aprovação.
 O Product sem pin não tem certificado confirmado neste mapeamento e usa seu canal independente.
 
 ## Fluxo e limites

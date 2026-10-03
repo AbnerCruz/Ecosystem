@@ -14,6 +14,14 @@ public sealed record InstallVerdict(bool Allowed, string Message);
 public static class InstallationPolicy
 {
     public static string NormalizeFingerprint(string fingerprint) => fingerprint.Replace(":", "").ToUpperInvariant();
+    public static string ApprovalOptionFor(AndroidProductTrust t)
+    {
+        var payload = JsonSerializer.Serialize(new[] { t.ProductId, t.PackageId, t.Repository, t.TagPrefix,
+            NormalizeFingerprint(t.CertificateSha256), t.ApprovalDecision, t.IdentitySource, t.PublicDevelopmentKey ? "public" : "private" });
+        var binding = Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(payload)));
+        return $"A — Aprovar {t.ProductId}, {t.PackageId}, {t.Repository}, {t.TagPrefix}, certificado {NormalizeFingerprint(t.CertificateSha256)}"
+            + (t.PublicDevelopmentKey ? " (desenvolvimento público)" : " (chave privada)") + $"; configuração SHA-256 {binding}";
+    }
     public static AndroidProductTrust? Approved(AndroidProductTrust candidate, Datum<string> decisions)
     {
         // Never accept permission from a cached/stale snapshot or approval of another fingerprint/channel.
@@ -38,10 +46,7 @@ public static class InstallationPolicy
         System.Text.RegularExpressions.Regex.IsMatch(t.PackageId, @"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$") &&
         NormalizeFingerprint(t.CertificateSha256) is { Length: 64 } f && f.All(Uri.IsHexDigit) &&
         !string.IsNullOrWhiteSpace(t.Repository) && !string.IsNullOrWhiteSpace(t.TagPrefix) &&
-        t.ApprovalOption.Contains(t.PackageId, StringComparison.Ordinal) &&
-        t.ApprovalOption.Contains(t.Repository, StringComparison.Ordinal) &&
-        t.ApprovalOption.Contains(t.TagPrefix, StringComparison.Ordinal) &&
-        t.ApprovalOption.Contains(NormalizeFingerprint(t.CertificateSha256), StringComparison.Ordinal);
+        t.ApprovalOption == ApprovalOptionFor(t);
 
     public static bool TrustedPackage(AndroidProductTrust trust, AndroidPackageEvidence package) =>
         package.PackageId == trust.PackageId && package.VersionCode > 0 &&

@@ -9,8 +9,14 @@ public sealed class InstallationPolicyTests
     static readonly string Cert = new('A', 64);
     static readonly byte[] Bytes = Enumerable.Range(0, 160000).Select(i => (byte)(i % 251)).ToArray();
     static readonly string Hash = Convert.ToHexString(SHA256.HashData(Bytes));
-    static AndroidProductTrust Trust => new("alpha", "io.alpha.app", "acme/catalog", "alpha-v", Cert, "DEC-0040",
-        $"A — alpha io.alpha.app acme/catalog alpha-v {Cert}", "apps/alpha/build", true);
+    static AndroidProductTrust Trust
+    {
+        get
+        {
+            var t = new AndroidProductTrust("alpha", "io.alpha.app", "acme/catalog", "alpha-v", Cert, "DEC-0040", "", "apps/alpha/build", true);
+            return t with { ApprovalOption = InstallationPolicy.ApprovalOptionFor(t) };
+        }
+    }
     static ArtifactChoice Choice => new("alpha", "Alpha", new(new("acme", "catalog"), "https://github.com/acme/catalog/releases", "alpha-v"), "alpha-v2",
         new("alpha.apk", "https://github.com/acme/catalog/releases/download/alpha-v2/alpha.apk", Bytes.Length, Hash), false);
     static AndroidPackageEvidence Package(long version = 20) => new("io.alpha.app", version, "2.0", [Cert]);
@@ -20,6 +26,20 @@ public sealed class InstallationPolicyTests
             decision = "Alternativa A — " + (option ?? Trust.ApprovalOption) + " (escolhida pelo proprietário pelo portal; Issue https://github.com/acme/catalog/issues/1)." } }
     });
 
+    [Fact] public void Published_metadata_matches_the_runtime_approval_binding()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "ecosystem.json"))) root = root.Parent;
+        Assert.NotNull(root);
+        var candidates = JsonSerializer.Deserialize<AndroidProductTrust[]>(File.ReadAllText(Path.Combine(root.FullName, "docs/architecture/hub-android-products.json")));
+        Assert.NotNull(candidates);
+        Assert.NotEmpty(candidates);
+        foreach (var t in candidates)
+        {
+            Assert.Equal(InstallationPolicy.ApprovalOptionFor(t), t.ApprovalOption);
+            Assert.True(File.Exists(Path.Combine(root.FullName, t.IdentitySource)));
+        }
+    }
     [Fact] public void Exact_current_canonical_approval_is_required()
     {
         Assert.Equal(Trust, InstallationPolicy.Approved(Trust, Datum<string>.From(Decisions(), "decisions")));
@@ -39,6 +59,13 @@ public sealed class InstallationPolicyTests
         Assert.Null(InstallationPolicy.Approved(Trust with { TagPrefix = "beta-v" }, source));
         Assert.Null(InstallationPolicy.Approved(Trust, Datum<string>.From(Decisions(option: "B — Adiar"), "decisions")));
         Assert.Null(InstallationPolicy.Approved(Trust, Datum<string>.From(Decisions(record: "unrelated.md"), "decisions")));
+    }
+    [Fact] public void Approval_binds_public_key_warning_identity_source_and_product_identity()
+    {
+        var source = Datum<string>.From(Decisions(), "decisions");
+        Assert.Null(InstallationPolicy.Approved(Trust with { PublicDevelopmentKey = false }, source));
+        Assert.Null(InstallationPolicy.Approved(Trust with { IdentitySource = "another/build" }, source));
+        Assert.Null(InstallationPolicy.Approved(Trust with { ProductId = "beta" }, source));
     }
     [Fact] public void Ambiguous_decision_denies()
     {
