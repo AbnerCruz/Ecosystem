@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-releases-diretas",
   "category": "RESULT",
-  "timestamp": "2026-10-03T15:06:24.697985Z",
+  "timestamp": "2026-10-03T22:18:00Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
   },
   "task_id": "P4-10",
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "branch": "codex/direct-product-releases",
   "base_commit": "4161bbac0d4b186fa8ce9b4464ad15793f587daa",
   "commit": null,
@@ -42,7 +42,8 @@
     "Urbe: pipelines diretos Windows/Android, PR sem secrets, release só por tag; chave privada obrigatória e corte de updater em P4-9.",
     "Pages prepara Urbe Web diretamente em /Ecosystem/urbe/, preservando URL/PWA antigas.",
     "Checker distingue CI combinado de pipeline de publicação; simulação estendida para seletividade e falha de dispatch.",
-    "Perfil current declara canal direto do Lunet, origem alternativa, enquanto Urbe continua no canal real antigo."
+    "Perfil current declara canal direto do Lunet, origem alternativa, enquanto Urbe continua no canal real antigo.",
+    "Fechamento por evidência: PR #123 foi integrado em 2605d224; o pipeline direto do Lunet publicou lunet2d-v0.0.1-dev.1000004 a partir desse commit; os builds Windows/Android do Urbe passaram sem publicar/cortar o canal, preservando o bloqueio deliberado para P4-9."
   ],
   "verification": [
     {
@@ -54,26 +55,26 @@
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "22 checks passaram antes da correção de descoberta; reexecutar estado final."
+      "result": "passed",
+      "evidence": "PR #123 run 37132627035, job 111230596882: Consistency checks concluído com sucesso no estado final."
     },
     {
       "check": "self-test e simulação integrador",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Em execução após corrigir seleção de CI versus publicação."
+      "result": "passed",
+      "evidence": "PR #123 run 37132627035, job 111230596882: Self-test e Simulação do integrador concluídos com sucesso."
     },
     {
       "check": "npm run check Urbe",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Em execução; world-terrain é longo."
+      "result": "not-applicable",
+      "evidence": "P4-10 não alterou código do Product Urbe; o integrador 37132625343 pulou corretamente o CI do Urbe por escopo. O workflow direto urbe-app 37132627114 validou a infraestrutura nova: jobs versao, build/windows e build/android passaram; Android executou npm ci, preparação web, assinatura de teste e APK. Testes de produto permanecem responsabilidade do CI quando apps/urbe é alterado."
     },
     {
       "check": "Build APK direto e primeira publicação",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "CI do PR e dispatch após integração."
+      "result": "passed",
+      "evidence": "PR #123 run 37132627043: test e apk passaram. Após integração, a release direta lunet2d-v0.0.1-dev.1000004 foi publicada em 2026-10-03T15:24:47Z, alvo 2605d22421bdad4b756d175ea5edabbd9b3a1268 (o merge de #123), com APK e manifests/checksums. Urbe permanece sem release/corte até P4-9, que exige a mesma chave privada."
     },
     {
       "check": "Instalar/atualizar Lunet direto e conferir Urbe Web offline",
@@ -97,10 +98,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Completar CI/build do PR e atender falhas.",
-    "Integrar pelo mecanismo existente, nunca label integrar pelo agente.",
-    "Publicar primeiro Lunet direto, conferir artefatos e atualizar perfil current/links; depois desativar sync do Lunet.",
-    "Configurar chave do Urbe e preparar versão-ponte P4-9 antes de corte."
+    "P4-9: configurar a mesma chave privada do Urbe no Ecosystem, publicar versão-ponte, validar instalação/atualização e só então cortar o canal antigo.",
+    "P4-4: concluir o gate DEVICE cruzado de launcher/updates/standalone já exposto no portal."
   ],
   "decisions_required": [],
   "normative_sources": [
