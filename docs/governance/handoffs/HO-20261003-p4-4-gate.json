@@ -33,10 +33,10 @@
     {
       "check": "Gate P4-4 em aparelho: Lunet via Hub, Urbe no canal atual e ambos standalone",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "docs/validation/P4-4-device-gate.md",
       "critical": true,
-      "evidence": "Aguardando execução integral do roteiro DEVICE e aprovação/reprovação do proprietário pelo portal."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/163); registro em docs/governance/responses/VAL-HO-20261003-p4-4-gate-a3646008086c.md."
     }
   ],
   "known_issues": [
