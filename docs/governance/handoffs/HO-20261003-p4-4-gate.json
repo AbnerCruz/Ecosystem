@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-p4-4-gate",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T22:05:30Z",
+  "timestamp": "2026-10-03T22:12:30Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
@@ -26,7 +26,7 @@
     "FATO OBSERVADO: P4-1..P4-3 estão integrados; Hub dev.7 é o build aprovado em P4-3 e DEC-0032-A autoriza confiança específica somente para Lunet2D.",
     "FATO OBSERVADO: Lunet2D possui canal primário direto no Ecosystem; Urbe permanece no canal AbnerCruz/Urbe até P4-9.",
     "Preparado roteiro DEVICE separado do P4-3, cobrindo instalação, atualização, abertura, preservação de dados e uso standalone de cada Product.",
-    "Criados registros HUMAN_VALIDATION_PENDING por build para Hub dev.7, Lunet 0.0.1-dev.1000008 e Urbe 1.8.2-beta Android.",
+    "Registrado Hub dev.7 como VALIDATED pela evidência já aprovada em P4-3; criados registros HUMAN_VALIDATION_PENDING para os builds alvo Lunet 0.0.1-dev.1000008 e Urbe 1.8.2-beta Android. O gate cruzado P4-4 continua pendente no próprio handoff.",
     "O roteiro trata a ausência de confiança do Urbe no Hub como limite obrigatório: nenhum fallback ou bypass é aceito."
   ],
   "verification": [
