@@ -1,0 +1,52 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-hub-hub-v0.0.1-dev.7",
+  "component": "hub",
+  "build": "hub-v0.0.1-dev.7",
+  "recorded_at": "2026-10-03",
+  "state": "HUMAN_VALIDATION_PENDING",
+  "objective": "Validar o Hub dev.7 como caminho real para atualizar/abrir Lunet e como componente removível sem quebrar Products.",
+  "preconditions": [
+    "P4-3 integrado e DEVICE aprovado.",
+    "DEC-0032-A vigente para Lunet2D.",
+    "Aparelho Android real e backup de dados de teste."
+  ],
+  "steps": [
+    "Executar docs/validation/P4-4-device-gate.md com Hub dev.7.",
+    "Atualizar/abrir Lunet pelo Hub.",
+    "Remover o Hub e confirmar Lunet/Urbe standalone."
+  ],
+  "expected": "O Hub conduz o fluxo aprovado do Lunet, não oferece bypass para Urbe e pode ser removido sem afetar o domínio essencial dos Products.",
+  "known_issues": [
+    "Canal dev usa chave pública e não prova autoria.",
+    "Urbe não possui confiança específica aprovada no Hub."
+  ],
+  "artifact": {
+    "name": "ecosystem-hub-0.0.1-dev.7.apk",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v0.0.1-dev.7/ecosystem-hub-0.0.1-dev.7.apk",
+    "sha256": "54ea1fdf09d4db87c998c6863a9b96cc0faee9c243a468ad6195830c9645b6e9"
+  },
+  "traceability": {
+    "task": "P4-4",
+    "commit": "26678efa5a414a99f0596ccedf3ad47ab3f55f03",
+    "pr": null,
+    "handoff": "HO-20261003-p4-4-gate"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Artefato e canal resolvidos",
+      "result": "passed",
+      "evidence": "Release/canal e digest SHA-256 conferidos nas fontes declaradas do GitHub em 2026-10-03.",
+      "handoff": null
+    },
+    {
+      "kind": "human",
+      "check": "Gate P4-4 em aparelho: Lunet via Hub, Urbe no canal atual e ambos standalone",
+      "result": "pending",
+      "evidence": "Aguardando execução integral do roteiro DEVICE e aprovação/reprovação do proprietário pelo portal.",
+      "handoff": "HO-20261003-p4-4-gate"
+    }
+  ]
+}
