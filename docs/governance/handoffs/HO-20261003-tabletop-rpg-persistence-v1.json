@@ -3,16 +3,16 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-tabletop-rpg-persistence-v1",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T23:09:53Z",
+  "timestamp": "2026-10-03T23:12:45Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "RPG-002",
   "component": "tabletop-rpg",
-  "state": "review",
+  "state": "verifying",
   "branch": "chatgpt/tabletop-rpg-persistence-v1",
-  "base_commit": "7087dff4394297ef30342245f759bc9947c0962a",
+  "base_commit": "36707a312a241449b5cac17760b38f23b5d764d2",
   "commit": null,
   "pr": null,
   "files_changed": [
@@ -63,15 +63,14 @@
       "check": "cd apps/tabletop-rpg && dotnet test --project tests/TabletopRpg.Core.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "tabletop-rpg-ci run 37160570055 no head reconciliado b87f1099f686b7f1b8fcb15988961f3aaa2f16d2: Test run summary Passed; 22 testes, 0 falhas.",
-      "tested_commit": "b87f1099f686b7f1b8fcb15988961f3aaa2f16d2"
+      "evidence": "tabletop-rpg-ci run 37160999103 no head 2acb449965bcc713b4832d325269cfe5c0afedd6: 22 testes, 0 falhas.",
+      "tested_commit": "2acb449965bcc713b4832d325269cfe5c0afedd6"
     },
     {
       "check": "dotnet run tests/consistency/Check.cs + self-test + simulação do integrador",
       "kind": "automated",
-      "result": "passed",
-      "evidence": "consistency run 37160654483 no head 9963ebfc2d5c51aecdb23d4eb97a4ae5915f204e: consistency checks, self-test de violações e simulação do integrador concluíram com sucesso.",
-      "tested_commit": "9963ebfc2d5c51aecdb23d4eb97a4ae5915f204e"
+      "result": "pending",
+      "evidence": "Reanchor final removeu do histórico os SHAs anteriores de evidência. O código e o Product CI estão verdes em 2acb449; consistency será reexecutado após esta correção de rastreabilidade."
     }
   ],
   "known_issues": [
