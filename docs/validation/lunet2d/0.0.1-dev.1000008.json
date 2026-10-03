@@ -5,7 +5,7 @@
   "component": "lunet2d",
   "build": "0.0.1-dev.1000008",
   "recorded_at": "2026-10-03",
-  "state": "AUTOMATED_VERIFIED",
+  "state": "VALIDATED",
   "objective": "Validar atualização 0.0.1-dev.1000004 → 0.0.1-dev.1000008 pelo Hub, abertura pelo Hub e uso standalone com preservação do projeto.",
   "preconditions": [
     "Baseline 0.0.1-dev.1000004 disponível.",

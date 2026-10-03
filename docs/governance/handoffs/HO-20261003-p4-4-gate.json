@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-p4-4-gate",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T22:12:30Z",
+  "timestamp": "2026-10-03T23:05:00Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "P4-4",
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "branch": "chatgpt/p4-4-gate",
   "base_commit": "c48075df088498cbe28dd45bf941d29cf9aa2d45",
   "commit": null,
@@ -27,7 +27,10 @@
     "FATO OBSERVADO: Lunet2D possui canal primário direto no Ecosystem; Urbe permanece no canal AbnerCruz/Urbe até P4-9.",
     "Preparado roteiro DEVICE separado do P4-3, cobrindo instalação, atualização, abertura, preservação de dados e uso standalone de cada Product.",
     "Registrado Hub dev.7 como VALIDATED pela evidência já aprovada em P4-3; criados registros HUMAN_VALIDATION_PENDING para os builds alvo Lunet 0.0.1-dev.1000008 e Urbe 1.8.2-beta Android. O gate cruzado P4-4 continua pendente no próprio handoff.",
-    "O roteiro trata a ausência de confiança do Urbe no Hub como limite obrigatório: nenhum fallback ou bypass é aceito."
+    "O roteiro trata a ausência de confiança do Urbe no Hub como limite obrigatório: nenhum fallback ou bypass é aceito.",
+    "Validação DEVICE P4-4 aprovada pelo proprietário na Issue #163 e persistida pelo mecanismo canônico.",
+    "Registros Lunet 0.0.1-dev.1000008 e Urbe 1.8.2-beta Android promovidos a VALIDATED após evidência humana aprovada.",
+    "P4-4 encerrado; o gate da Fase 4 continua aguardando exclusivamente o corte de distribuição do Urbe em P4-9."
   ],
   "verification": [
     {
@@ -46,8 +49,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Proprietário executa docs/validation/P4-4-device-gate.md em aparelho real e responde Aprovar/Reprovar pelo portal.",
-    "Após resposta humana, reconciliar os três registros de build, fechar P4-4 e só aprovar o gate da Fase 4 quando todo o escopo da fase satisfizer suas condições."
+    "P4-9: configurar a mesma chave privada do Urbe no Ecosystem, publicar versão-ponte, validar atualização/instalação e só então cortar o canal antigo.",
+    "Após P4-9, reavaliar e aprovar o gate da Fase 4 se nenhum item permanecer aberto."
   ],
   "decisions_required": [],
   "normative_sources": [
