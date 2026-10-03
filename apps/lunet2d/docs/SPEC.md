@@ -32,8 +32,19 @@ A prioridade absoluta é:
 
 ## 1. DEFINIÇÃO DO PRODUTO
 
-Lunet é um ambiente completo de desenvolvimento de jogos 2D criado
-especificamente para Android.
+Lunet é um ambiente completo e **code-first** de desenvolvimento de jogos 2D
+em C#, criado especificamente para Android. Um único Product instalado, **Lunet**,
+possui três camadas sobre **o mesmo projeto**:
+
+- **Lunet Framework**: APIs e runtime permitem construir jogos inteiramente por código, independente da IDE, Studio, IA e control plane do ecossistema.
+- **Lunet IDE**: ambiente profissional para escrever, compreender, executar, testar, depurar e otimizar C#; a Fase 3 constrói esta experiência.
+- **Lunet Studio**: ferramentas visuais opcionais que aceleram produção de conteúdo e editam o mesmo projeto; a Fase 5 constrói esta camada.
+
+CODE IS THE SOURCE OF TRUTH. NO HIDDEN GAME LOGIC.
+EVERY VISUAL ACTION MUST HAVE AN INSPECTABLE SOURCE REPRESENTATION.
+
+O código do jogo é a autoridade. Ferramentas visuais nunca substituem,
+escondem ou aprisionam o código. ADR 0007 formaliza os limites.
 
 É simultaneamente:
 
@@ -405,10 +416,36 @@ Permita `Inspector<T>` customizado e substituição completa por plugins.
 
 ------------------------------------------------------------------------
 
-## 13. LUNET STUDIO TOOLS
+## 13. LUNET STUDIO
 
-Crie uma suíte nativa de ferramentas 2D usando ao máximo o
-`Lunet.Editor.SDK`.
+Crie uma suíte nativa opcional de ferramentas 2D usando ao máximo o
+`Lunet.Editor.SDK`. Ferramentas oficiais e plugins usam os mesmos contratos
+públicos adequados; não manter uma API privada privilegiada para as oficiais.
+
+### Política Visual ↔ Source
+
+Lógica, comportamento, composição e controle do jogo ficam preferencialmente
+em C#. Dados/assets declarativos podem usar JSON ou outro texto aberto,
+documentado e determinístico dentro do projeto. PNG, WAV, OGG e fontes binárias
+continuam permitidos; lógica e metadata essencial não podem ficar em blobs
+controlados exclusivamente pela UI. `.lunet/cache` é derivado, nunca autoridade.
+
+Cada ferramenta documenta o que modifica, onde armazena, como inspecionar,
+versionar e editar sem a UI, e demonstra que o jogo compila sem abrir Studio.
+Alterações visuais produzem diffs compreensíveis; alterações na representação
+fonte são refletidas pela ferramenta onde tecnicamente razoável. C# arbitrário
+não deve ser sobrescrito por um parser visual incompleto: estruturas não
+suportadas permanecem preservadas e a limitação deve ser explícita.
+
+Scene2D, ECS e futuros nodes são opcionais. Não criar projeto paralelo de
+Studio/IDE: Code, Scene, Sprite, Tilemap, Animation, UI e Run abrem a mesma
+pasta com `lunet.json`. Navegação é incremental, mobile-first e offline-first.
+
+`Lunet.Studio` só nasce como boundary de código quando a primeira ferramenta
+real justificar. Framework, Runtime e Compiler nunca dependem dele; Android
+compõe, Editor implementa a IDE. Não criar `.csproj` vazio ou renomear projetos
+existentes por estética. `LunetEngine` não é nome da camada visual; Engine pode
+conceitualmente designar Framework + Runtime, sem mudar `Lunet.Runtime`.
 
 ### Sprite Studio
 
@@ -531,9 +568,13 @@ projetos, e o editor deve oferecer algo equivalente a
 Implemente um **model-agnostic agentic workspace with tool-using LLM
 agents**, não simplesmente chatbot.
 
-Arquitetura: Model Gateway, Provider Adapters, Capability Discovery,
-Context Engine, Agent Runtime, Tool Registry, Permission System,
-Verification, Observability, Cost Tracking e MCP Bridge.
+A UI Agent Workspace é hospedada no Lunet, mas consome o Agent Runtime
+compartilhado do Ecosystem (plano canônico
+`docs/architecture/agent-runtime.md` do monorepo). Model Gateway, providers,
+contexto, memória, loop, permissões, observabilidade e custos pertencem a esse
+Runtime: não implementar uma segunda infraestrutura específica do Lunet.
+Lunet oferece capabilities tipadas: code.read/edit, build, test, run, inspect,
+profile, assets e futuramente playtest, conforme contratos aprovados.
 
 Capabilities podem incluir text, reasoning, vision, tools, structured
 output, streaming e context size.
@@ -857,7 +898,7 @@ Core, Time, Graphics, Math, Input, Content, Storage e Audio.
 
 **Gate:** pequeno jogo 2D completo somente com código.
 
-### Fase 3 --- IDE
+### Fase 3 --- Lunet IDE
 
 Editor definitivo, IntelliSense, autocomplete, diagnostics, navigation,
 search, Problems, Console, layouts e docs.
@@ -871,7 +912,7 @@ optional Scene2D e debug APIs.
 
 **Gate:** jogos 2D substanciais apenas com APIs oficiais.
 
-### Fase 5 --- Studio Tools
+### Fase 5 --- Lunet Studio
 
 Sprite, Tile, Animation, Atlas, UI, Physics, Particle, Audio, Palette e
 Data Studios.
@@ -1255,3 +1296,16 @@ O primeiro grande marco é inequívoco:
 
 A partir desse ponto, continue implementando a especificação completa
 até que os gates restantes sejam satisfeitos.
+
+
+## 37. Vocabulário e evolução code-first
+
+Framework fornece APIs usadas pelo jogo. Package instala biblioteca/recurso
+no projeto; Plugin estende o ambiente Lunet; Tool é ferramenta reutilizável;
+Studio é a experiência/conjunto de ferramentas visuais. Pacotes não são plugins.
+
+Debugger completo, packages reais, Playtest Agent e Release Cockpit ampliam
+fases existentes conforme classificação no ROADMAP. Replay, time-travel,
+Game Doctor, test matrix, game services substituíveis e preview em outro
+aparelho são backlog posterior ou investigação. Não são funcionalidades prontas
+nem autorização para saltar gates. A prioridade é controle integral via código.

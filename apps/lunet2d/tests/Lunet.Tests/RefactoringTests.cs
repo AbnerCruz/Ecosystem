@@ -167,6 +167,52 @@ public class RefactoringTests
         var sort = fixes.First(f => f.Title == "Ordenar usings");
         Assert.StartsWith("using System;\nusing System.Text;\nusing Lunet;\n", TextChanges.Apply(code, sort.Changes));
     }
+    [Theory]
+    [InlineData("using System; class Player { public int Score = 7; } // keep")]
+    [InlineData("using System; using System.Text; class Player { public int Score = 7; } // keep")]
+    public void RemoveUnusedUsings_PreservesInlineGameCodeAndComments(string code)
+    {
+        var analyzer = Analyzer(("A.cs", code));
+        var fixes = analyzer.GetQuickFixes("A.cs", 1);
+        var fix = fixes.FirstOrDefault(f => f.Title.StartsWith("Remover todos"))
+            ?? fixes.First(f => f.Title == "Remover using desnecessário");
+        var result = TextChanges.Apply(code, fix.Changes);
+        Assert.Contains("class Player { public int Score = 7; } // keep", result);
+        analyzer.SetFile("A.cs", result);
+        Assert.DoesNotContain(analyzer.GetDiagnostics("A.cs"), d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void SortUsings_PreservesGlobalScopeCommentsAndCrLfAcrossFiles()
+    {
+        var code = "global using System.Text; // builder\r\nglobal using System; // action\r\nclass A { }\r\n";
+        var other = "class Player { public StringBuilder Label = new(); public Action? Hit; }";
+        var analyzer = Analyzer(("A.cs", code), ("Player.cs", other));
+        var sort = analyzer.GetQuickFixes("A.cs", 0).First(f => f.Title == "Ordenar usings");
+        var result = TextChanges.Apply(code, sort.Changes);
+        Assert.Equal("global using System; // action\r\nglobal using System.Text; // builder\r\nclass A { }\r\n", result);
+        analyzer.SetFile("A.cs", result);
+        Assert.DoesNotContain(analyzer.GetDiagnostics("Player.cs"), d => d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Theory]
+    [InlineData("using System.Text;\nusing System; class Player { }\n")]
+    [InlineData("using System.Text;\nusing System\n;\nclass Player { }\n")]
+    [InlineData("#if DEBUG\nusing System.Text;\n#endif\nusing System;\nclass Player { }\n")]
+    [InlineData("using System.Text;\n// belongs to System\nusing System;\nclass Player { }\n")]
+    public void SortUsings_DoesNotRewriteMixedCodeOrConditionalBlocks(string code)
+    {
+        Assert.DoesNotContain(Analyzer(("A.cs", code)).GetQuickFixes("A.cs", 0), f => f.Title == "Ordenar usings");
+    }
+
+    [Fact]
+    public void SortUsings_PreservesMissingFinalNewline()
+    {
+        var code = "using System.Text;\nusing System;";
+        var sort = Analyzer(("A.cs", code)).GetQuickFixes("A.cs", 0).First(f => f.Title == "Ordenar usings");
+        Assert.Equal("using System;\nusing System.Text;", TextChanges.Apply(code, sort.Changes));
+    }
+
 }
 
 public class IncrementalCompilerTests

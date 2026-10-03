@@ -1,8 +1,18 @@
 # Lunet2D
 
-> **O código do Lunet2D vive em [`apps/lunet2d` do monorepo Ecosystem](https://github.com/AbnerCruz/Ecosystem/tree/main/apps/lunet2d).** Este repositório é um espelho de distribuição: as releases (APK) continuam sendo construídas e publicadas aqui, mas mudanças de código devem ser feitas no Ecosystem.
+O código canônico está em [`apps/lunet2d` do Ecosystem](https://github.com/AbnerCruz/Ecosystem/tree/main/apps/lunet2d).
+APKs são publicados diretamente nas [Releases do Ecosystem](https://github.com/AbnerCruz/Ecosystem/releases), com tags `lunet2d-v…`.
 
-Lunet é um ambiente Android para criar jogos 2D em C#. O projeto está na Fase 3 (IDE). O app permite criar um projeto, editar C#, apertar Run (Roslyn + Preview OpenGL ES) e mover um sprite com toque. A cadeia compilar → carregar → executar é testada no CI; as Fases 0–2 foram validadas em aparelho conforme as auditorias. Os recursos recentes da Fase 3 ainda exigem validação em aparelho.
+Lunet é um ambiente completo e **code-first** para criar jogos 2D em C# no Android.
+Um único produto, um único projeto em pasta comum e três camadas:
+
+- **Lunet Framework**: APIs para construir o jogo inteiramente por código.
+- **Lunet IDE**: ferramentas profissionais para escrever, compreender, executar, testar e depurar esse código.
+- **Lunet Studio**: ferramentas visuais opcionais sobre os mesmos arquivos, sem esconder lógica ou tornar a UI obrigatória.
+
+O código é a autoridade: **CODE IS THE SOURCE OF TRUTH / NO HIDDEN GAME LOGIC**.
+Framework e código bastam; Studio acelera a produção. A disponibilidade e os
+gates de cada recurso estão no [ROADMAP](ROADMAP.md), não nesta apresentação.
 
 ## Planejamento
 
@@ -22,6 +32,8 @@ dotnet build src/Lunet.Android/Lunet.Android.csproj -c Debug -f net10.0-android 
 Testes: `dotnet test --project tests/Lunet.Tests` (só precisa do .NET 10 SDK). O CI testa, constrói o APK e, na `main`, publica uma release de desenvolvimento em GitHub Releases.
 
 ## Direção
+
+A política Visual ↔ Source e os limites estão no [ADR 0007](docs/adr/0007-framework-ide-studio-code-first.md) e no [SPEC §13](docs/SPEC.md).
 
 O código dos jogos será C# com uma API própria, e os projetos serão pastas comuns. O framework será independente da IDE. Ferramentas visuais, plugins, IA e serviços online virão depois de validarmos compilação Roslyn e execução de código no Android. Os critérios e bloqueios atuais estão em [ROADMAP.md](ROADMAP.md).
 

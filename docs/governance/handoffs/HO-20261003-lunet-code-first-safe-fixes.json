@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-lunet-code-first-safe-fixes",
+  "category": "RESULT",
+  "timestamp": "2026-10-03T19:47:38.019110Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-302",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "codex/lunet-code-first-safe-fixes",
+  "base_commit": "c024c0876b09721e7868c4b14c97ee71e4088746",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "README.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/README.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/audits/fase-3-roteiro.md",
+    "apps/lunet2d/docs/audits/fase-3.md",
+    "apps/lunet2d/src/Lunet.Editor/CodeAnalyzer.Refactoring.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ArchitectureTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/RefactoringTests.cs",
+    "apps/lunet2d/docs/adr/0007-framework-ide-studio-code-first.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261003-lunet-code-first-safe-fixes.json"
+  ],
+  "work_completed": [
+    "DECISÃO: direção explicitamente autorizada pelo proprietário no documento entregue em 2026-10-03; registrada em ADR 0007/SPEC/ROADMAP, sem inventar resposta pelo portal.",
+    "Framework/IDE/Studio sobre o mesmo projeto; Studio opcional, fonte inspecionável, SDK comum e backlog classificado. Agent Runtime compartilhado (primeiro consumidor ecosystem-ai), sem runtime paralelo.",
+    "FATO OBSERVADO: remoção de using apagava classe inline; ordenação perdia global/comentários. Correção preserva source, CRLF e EOF; casos ambíguos recusados.",
+    "ArchitectureTests protegem independência transitiva contra Studio e ferramentas; roteiro C6 e auditoria atualizados.",
+    "FATO OBSERVADO: #121 aprovada; #111 ainda state:review; nenhuma segunda reconciliação concorrente criada."
+  ],
+  "verification": [
+    {
+      "check": "Build .NET 10 portátil",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "MSBuildEnableWorkloadResolver=false dotnet build apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj -m:1; zero warnings/errors. SDK /tmp/urbe-dotnet; MTP --project indisponível no modo paralelo local, executável xUnit usado após build."
+    },
+    {
+      "check": "Lunet.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Executável xUnit .NET 10: 321 testes, zero failed/errors/skipped; inclui 11 regressões/guards adicionais. Código Lunet inalterado pelo merge da main 3f99f9b."
+    },
+    {
+      "check": "Consistency checks",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks passaram no estado combinado com main 3f99f9b. Instantâneo de Issues ausente; ROADMAP global não alterado.",
+      "tested_commit": "162c5b0483ffda5f911b7e0112bffb43fea2917e"
+    },
+    {
+      "check": "Consistency self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Em execução com PATH incluindo SDK para subprocessos."
+    },
+    {
+      "check": "CI do PR e APK",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR será aberto; integrador testa main atual + PR. Sem APK candidato antes da integração."
+    },
+    {
+      "check": "C6 correções rápidas no Android",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/audits/fase-3-roteiro.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Gate da Fase 3 permanece pendente; não começou Fase 4.",
+    "Roteiro da Fase 3 não possui aprovação integral; medição J1 permanece necessária."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI e classificação crítica do ADR pelo integrador; não integrar manualmente nem aplicar label integrar.",
+    "Confirmar APK pela distribuição direta após integração; entregar C6 e roteiro completo da Fase 3."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/audits/fase-3.md",
+    "apps/lunet2d/docs/audits/fase-3-roteiro.md",
+    "docs/governance/decisions.json",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/adr/0001-registro-de-decisoes-arquiteturais.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/distribution/direct-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Código e manifesto são autoridade; Studio projeção opcional."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma referência de assembly entre Products ou nova dependência."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Framework/IDE offline e standalone preservados."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #149, branch, ADR e handoff observáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Direção autorizada persistida em SPEC e ADR 0007."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR registra direção explícita, sem boundary novo nem csproj vazio."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "C6 Android pendente; gate aberto."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Review até integração/CI/evidência humana aplicável."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Correção local Editor; não extrai runtime."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Pipeline direto preservado, sem requisito de distribuição central."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "ADR local registra a direção Framework/IDE/Studio já autorizada; o integrador exige autorização crítica para registrar decisão arquitetural."
+  }
+}
