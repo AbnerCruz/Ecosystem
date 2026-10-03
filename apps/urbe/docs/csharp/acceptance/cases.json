@@ -2251,6 +2251,1335 @@
       "expected": {
         "markdown": "---\ntitle: X\ntags: [a]\n---"
       }
+    },
+    {
+      "id": "vault-futuro-desconhecido",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/futuro-desconhecido/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/compositions.json",
+            "encoding": "utf8",
+            "content": "{\"version\":99,\"items\":[{\"id\":\"cmp_futuro\",\"novoCampo\":1}]}"
+          },
+          {
+            "path": ".urbe/history.json",
+            "encoding": "utf8",
+            "content": "{\"version\":99,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1,\"path\":\"Alfa.md\",\"content\":\"futuro\"}]},\"campoFuturo\":true}"
+          },
+          {
+            "path": ".urbe/journal.json",
+            "encoding": "utf8",
+            "content": "{\"version\":99,\"timestamp\":1,\"documents\":[{\"id\":\"doc_00000001-0000-4000-8000-000000000000\",\"path\":\"Alfa.md\",\"content\":\"NÃO USAR\",\"tags\":[],\"created\":\"\",\"modified\":\"\"}],\"campoFuturo\":true}"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 99,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": ".urbe/trash.json",
+            "encoding": "utf8",
+            "content": "{\n \"version\": 99,\n \"items\": [],\n \"campoFuturo\": true\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Personalização/tema.json",
+            "encoding": "utf8",
+            "content": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 99,\n  \"tema\": \"escuro\",\n  \"cores\": {\n    \"fundo\": \"#101418\"\n  },\n  \"estilos\": {\n    \"Personalização/estilos/meu.css\": true\n  },\n  \"css\": \"\",\n  \"campoFuturo\": \"x\"\n}"
+          },
+          {
+            "path": "Páginas/Futura.page.json",
+            "encoding": "utf8",
+            "content": "{\n  \"version\": 99,\n  \"kind\": \"urbe-page\",\n  \"meta\": {\n    \"title\": \"Futura\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Futura\"\n      },\n      \"style\": {}\n    }\n  ],\n  \"campoFuturo\": {\n    \"a\": 1\n  }\n}"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            ".urbe/compositions.json",
+            ".urbe/history.json",
+            ".urbe/journal.json",
+            ".urbe/trash.json",
+            "Alfa.md",
+            "Personalização/tema.json",
+            "Páginas/Futura.page.json"
+          ],
+          "fixedIdPaths": [
+            "Alfa.md"
+          ],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md",
+          "Personalização/tema.json",
+          "Páginas/Futura.page.json"
+        ],
+        "fixedIds": {
+          "Alfa.md": "doc_00000001-0000-4000-8000-000000000000"
+        },
+        "initialReadOnly": false,
+        "initialMapReadOnly": true,
+        "diskHashes": {
+          ".urbe/compositions.json": "8ca2500e4a6501d0a2d2f3b2f63b2aaf782f91dd36a36703b6d69479cbd54b10",
+          ".urbe/history.json": "83ccdf6db6de0fab3eeabc06c9c33e8adde7451b52c02ab80c194500be6195e7",
+          ".urbe/journal.json": "9b2e799e6fd8c2840574a493463085398afeeefaf89f690562448c8e94e8ee04",
+          ".urbe/trash.json": "d261cd9596380af8b1d99077132978adce334321f85d8388696fa302c8f2b432",
+          "Alfa.md": "e7c37472ec2961d2ed6841bbbd975686348f3a3beee0b3d17fcb171e99a538d7",
+          "Personalização/tema.json": "18f3afcb56544bee9db7ec61879b5fc91014f777602441a2be8c95ecea38dfc3",
+          "Páginas/Futura.page.json": "7eb995d242ebbd9fb62656b5a4a6dfd108a4783ac1006202ff5e6f3f7c8f18f2"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/compositions.json",
+          ".urbe/history.json",
+          ".urbe/journal.json",
+          ".urbe/mapa.json",
+          ".urbe/trash.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-futuro-v2",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/futuro-v2/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/compositions.v2.json",
+            "encoding": "utf8",
+            "content": "{\"version\":3,\"items\":[{\"id\":\"cmp_futuro\"}]}"
+          },
+          {
+            "path": ".urbe/history.v2.json",
+            "encoding": "utf8",
+            "content": "{\"version\":3,\"documents\":{},\"campoFuturo\":true}"
+          },
+          {
+            "path": ".urbe/journal.v2.json",
+            "encoding": "utf8",
+            "content": "{\"version\":3,\"timestamp\":1,\"documents\":[{\"id\":\"doc_00000001-0000-4000-8000-000000000000\",\"path\":\"Alfa.md\",\"content\":\"NÃO USAR\",\"tags\":[],\"created\":\"\",\"modified\":\"\"}]}"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": ".urbe/trash.v2.json",
+            "encoding": "utf8",
+            "content": "{\n \"version\": 3,\n \"items\": [],\n \"campoFuturo\": true\n}"
+          },
+          {
+            "path": ".urbe/vault.json",
+            "encoding": "utf8",
+            "content": "{\n \"formatVersion\": 2,\n \"createdBy\": \"urbe@2.0.0-beta.1\",\n \"lastWriter\": \"urbe@2.0.0-beta.1\",\n \"created\": \"2026-10-01T00:00:00.000Z\",\n \"migrations\": []\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            ".urbe/compositions.v2.json",
+            ".urbe/history.v2.json",
+            ".urbe/journal.v2.json",
+            ".urbe/trash.v2.json",
+            "Alfa.md",
+            "Beta.md"
+          ],
+          "fixedIdPaths": [
+            "Alfa.md"
+          ],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md",
+          "Beta.md"
+        ],
+        "fixedIds": {
+          "Alfa.md": "doc_00000001-0000-4000-8000-000000000000"
+        },
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          ".urbe/compositions.v2.json": "8edc22bd268fa432e7371052dc8cbbe8b0ef5e2d248527c6f6aa934f789b2ade",
+          ".urbe/history.v2.json": "ee6d705335c5a71746d710387487bd8c0be2d08697d130f95eccda6f372ade56",
+          ".urbe/journal.v2.json": "ee9e2bdf55cf9266a80f36764b31d28531ed5d690f911b32044862acd103d4b0",
+          ".urbe/trash.v2.json": "2ef6b0a77ca94fb65afbf631c2e9e4b639aa64770bdbb66bfd683cc4192931b3",
+          "Alfa.md": "e7c37472ec2961d2ed6841bbbd975686348f3a3beee0b3d17fcb171e99a538d7",
+          "Beta.md": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 0,
+        "backupSources": [],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-v1-cidades-mescladas",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/v1-cidades-mescladas/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": ".urbe/merged-v1.json",
+            "encoding": "utf8",
+            "content": "{\n \"Norte\": {\n  \"folder\": \"Cidades/Norte\",\n  \"importedAt\": \"2026-09-10T00:00:00.000Z\"\n },\n \"Sul\": {\n  \"folder\": \"Cidades/Sul\",\n  \"importedAt\": \"2026-09-10T00:00:00.000Z\"\n }\n}"
+          },
+          {
+            "path": ".urbe/origens/Norte.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"notas\": {}\n}"
+          },
+          {
+            "path": ".urbe/origens/Sul.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"notas\": {}\n}"
+          },
+          {
+            "path": "Cidades/Norte/Um.md",
+            "encoding": "utf8",
+            "content": "# Um\n"
+          },
+          {
+            "path": "Cidades/Sul/Dois.md",
+            "encoding": "utf8",
+            "content": "# Dois\n"
+          }
+        ],
+        "steps": [
+          "load",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": null,
+        "probe": {
+          "paths": [
+            ".urbe/merged-v1.json",
+            ".urbe/origens/Norte.json",
+            ".urbe/origens/Sul.json",
+            "Cidades/Norte/Um.md",
+            "Cidades/Sul/Dois.md"
+          ],
+          "fixedIdPaths": [],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Cidades/Norte/Um.md",
+          "Cidades/Sul/Dois.md"
+        ],
+        "fixedIds": {},
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          ".urbe/merged-v1.json": "b44153fd5ef3ff561096add15079730b8509bb132b42abdbe0b2c1c957ceea03",
+          ".urbe/origens/Norte.json": "2f0d289a616e6e0129b13992cf71a360cb260037aa2117d3c7f7fd7078e93771",
+          ".urbe/origens/Sul.json": "2f0d289a616e6e0129b13992cf71a360cb260037aa2117d3c7f7fd7078e93771",
+          "Cidades/Norte/Um.md": "c372fa8f7542c0a819ec578b70105604d8870b279b8d42462a89c71ea3250e44",
+          "Cidades/Sul/Dois.md": "c2a7c2498f5a357769fc05b3a2295ff06fcbac3ee15d3cb21c91f0926a3242fc"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/mapa.json",
+          ".urbe/merged-v1.json",
+          ".urbe/origens/Norte.json",
+          ".urbe/origens/Sul.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-v1-journal-pendente",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/v1-journal-pendente/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/journal.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"timestamp\":1790000100000,\"documents\":[{\"id\":\"doc_00000001-0000-4000-8000-000000000000\",\"path\":\"Alfa.md\",\"content\":\"# Alfa\\n\\nrecuperada do journal\\n\",\"tags\":[],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"},{\"id\":\"doc_00000004-0000-4000-8000-000000000000\",\"path\":\"Delta.md\",\"content\":\"# Delta\\n\",\"tags\":[],\"created\":\"2026-09-02\",\"modified\":\"2026-09-02\"}],\"metadata\":{\"v\":4,\"app\":\"Urbe\",\"version\":\"1.8.2-beta\",\"mundo\":\"placas-1\",\"salvo\":\"2026-09-02T10:00:00.000Z\",\"camera\":{\"x\":120,\"y\":90,\"z\":1},\"regioes\":[{\"caminho\":\"Pasta\",\"nome\":\"Pasta\",\"cor\":\"#4aa3ff\",\"x\":30,\"y\":30,\"w\":12,\"h\":10,\"cells\":null,\"descricao\":\"\"}],\"notas\":{\"Alfa.md\":{\"id\":\"doc_00000001-0000-4000-8000-000000000000\",\"x\":32,\"y\":32,\"sprite\":\"house1\",\"tags\":[],\"anexos\":[],\"criado\":\"2026-09-01\",\"modificado\":\"2026-09-02\",\"aiLocal\":null},\"Beta.md\":{\"id\":\"doc_00000002-0000-4000-8000-000000000000\",\"x\":36,\"y\":33,\"sprite\":\"house1\",\"tags\":[],\"anexos\":[],\"criado\":\"2026-09-01\",\"modificado\":\"2026-09-02\",\"aiLocal\":null},\"Pasta/Gama.md\":{\"id\":\"doc_00000003-0000-4000-8000-000000000000\",\"x\":34,\"y\":36,\"sprite\":\"house1\",\"tags\":[\"pasta\"],\"anexos\":[],\"criado\":\"2026-09-01\",\"modificado\":\"2026-09-02\",\"aiLocal\":null}},\"construcoes\":[{\"tipo\":\"arquivo\",\"fileClass\":\"image\",\"name\":\"logo.png\",\"fileName\":\"logo.png\",\"caminho\":\"Pasta\",\"x\":38,\"y\":32,\"w\":3,\"h\":3,\"description\":\"\",\"sprite\":\"file-image\",\"parentNoteName\":\"Alfa\",\"files\":[{\"nome\":\"logo.png\",\"tipo\":\"png\",\"mime\":\"image/png\",\"relPath\":\"Pasta/logo.png\",\"folderPath\":\"Pasta\",\"tamanho\":8}],\"anexos\":[],\"created\":\"2026-09-01\",\"modified\":\"2026-09-01\"}]},\"trash\":null,\"history\":null,\"compositions\":null}"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "conteúdo antigo em disco\n"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            "Alfa.md",
+            "Delta.md"
+          ],
+          "fixedIdPaths": [
+            "Alfa.md",
+            "Delta.md"
+          ],
+          "removedPaths": [
+            ".urbe/journal.json"
+          ]
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md",
+          "Delta.md"
+        ],
+        "fixedIds": {
+          "Alfa.md": "doc_00000001-0000-4000-8000-000000000000",
+          "Delta.md": "doc_00000004-0000-4000-8000-000000000000"
+        },
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          "Alfa.md": "e7c37472ec2961d2ed6841bbbd975686348f3a3beee0b3d17fcb171e99a538d7",
+          "Delta.md": "54a3ebbcc0730562b21454f556de5c093be53b7d643dfafbd7e5252ee0a632ab"
+        },
+        "journalsRemoved": true,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/journal.json",
+          ".urbe/mapa.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-v1-mapa-v2",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/v1-mapa-v2/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 2,\n \"app\": \"Urbe\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [],\n \"notas\": {\n  \"Alfa.md\": {\n   \"x\": 10,\n   \"y\": 10,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-08-01\",\n   \"modificado\": \"2026-08-02\"\n  },\n  \"Beta.md\": {\n   \"x\": 14,\n   \"y\": 10,\n   \"sprite\": \"house2\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-08-01\",\n   \"modificado\": \"2026-08-02\"\n  }\n },\n \"construcoes\": []\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            "Alfa.md",
+            "Beta.md"
+          ],
+          "fixedIdPaths": [],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md",
+          "Beta.md"
+        ],
+        "fixedIds": {},
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          "Alfa.md": "e7c37472ec2961d2ed6841bbbd975686348f3a3beee0b3d17fcb171e99a538d7",
+          "Beta.md": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/mapa.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-v1-mapa-v4",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/v1-mapa-v4/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/compositions.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}"
+          },
+          {
+            "path": ".urbe/history.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"# Alfa\\n\\nversão antiga\\n\"}]}}"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": ".urbe/trash.json",
+            "encoding": "utf8",
+            "content": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          },
+          {
+            "path": "Pasta/Gama.md",
+            "encoding": "utf8",
+            "content": "# Gama\n\nNota numa pasta.\n"
+          },
+          {
+            "path": "Pasta/logo.png",
+            "encoding": "base64",
+            "content": "wolQTkcNChoK"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            "Alfa.md",
+            "Beta.md",
+            "Pasta/Gama.md",
+            "Pasta/logo.png"
+          ],
+          "fixedIdPaths": [
+            "Alfa.md",
+            "Beta.md",
+            "Pasta/Gama.md"
+          ],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md",
+          "Beta.md",
+          "Pasta/Gama.md"
+        ],
+        "fixedIds": {
+          "Alfa.md": "doc_00000001-0000-4000-8000-000000000000",
+          "Beta.md": "doc_00000002-0000-4000-8000-000000000000",
+          "Pasta/Gama.md": "doc_00000003-0000-4000-8000-000000000000"
+        },
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          "Alfa.md": "e7c37472ec2961d2ed6841bbbd975686348f3a3beee0b3d17fcb171e99a538d7",
+          "Beta.md": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9",
+          "Pasta/Gama.md": "2e2c23aa8895912aa37ea9bc86b26504c2b6245b69d657ca3e6c23daec5554cd",
+          "Pasta/logo.png": "19ebbebd7eaf12d4fb59e09368b966517c1f3bc5f29a2fc054157eb02a3f3b91"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/compositions.json",
+          ".urbe/history.json",
+          ".urbe/mapa.json",
+          ".urbe/trash.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-v1-mundo-antigo",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/v1-mundo-antigo/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.5.0-beta\",\n \"mundo\": \"placas-0\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            "Alfa.md",
+            "Beta.md"
+          ],
+          "fixedIdPaths": [
+            "Alfa.md",
+            "Beta.md"
+          ],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md",
+          "Beta.md"
+        ],
+        "fixedIds": {
+          "Alfa.md": "doc_00000001-0000-4000-8000-000000000000",
+          "Beta.md": "doc_00000002-0000-4000-8000-000000000000"
+        },
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          "Alfa.md": "e7c37472ec2961d2ed6841bbbd975686348f3a3beee0b3d17fcb171e99a538d7",
+          "Beta.md": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/mapa.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-v1-notas-sem-id",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/v1-notas-sem-id/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            "Alfa.md",
+            "Beta.md"
+          ],
+          "fixedIdPaths": [],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md",
+          "Beta.md"
+        ],
+        "fixedIds": {},
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          "Alfa.md": "e7c37472ec2961d2ed6841bbbd975686348f3a3beee0b3d17fcb171e99a538d7",
+          "Beta.md": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/mapa.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-v1-orfaos",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/v1-orfaos/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/compositions.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}"
+          },
+          {
+            "path": ".urbe/history.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"v0\"}],\"doc_00000007-0000-4000-8000-000000000000\":[{\"timestamp\":1780000000000,\"path\":\"Sumida.md\",\"content\":\"x\"}],\"doc_00000008-0000-4000-8000-000000000000\":[{\"timestamp\":1790500000000,\"path\":\"Recente.md\",\"content\":\"y\"}],\"doc_00000009-0000-4000-8000-000000000000\":[{\"timestamp\":1788000000000,\"path\":\"Velha.md\",\"content\":\"z\"}]}}"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 32\n  }\n },\n \"construcoes\": []\n}"
+          },
+          {
+            "path": ".urbe/trash.json",
+            "encoding": "utf8",
+            "content": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            "Alfa.md",
+            "Beta.md"
+          ],
+          "fixedIdPaths": [
+            "Alfa.md",
+            "Beta.md"
+          ],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md",
+          "Beta.md"
+        ],
+        "fixedIds": {
+          "Alfa.md": "doc_00000001-0000-4000-8000-000000000000",
+          "Beta.md": "doc_00000002-0000-4000-8000-000000000000"
+        },
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          "Alfa.md": "e7c37472ec2961d2ed6841bbbd975686348f3a3beee0b3d17fcb171e99a538d7",
+          "Beta.md": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/compositions.json",
+          ".urbe/history.json",
+          ".urbe/mapa.json",
+          ".urbe/trash.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-v1-paginas",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/v1-paginas/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Páginas/Blocos/Rodape.block.json",
+            "encoding": "utf8",
+            "content": "{\n  \"kind\": \"urbe-block\",\n  \"name\": \"Rodapé\",\n  \"description\": \"\",\n  \"section\": {\n    \"type\": \"text\",\n    \"props\": {},\n    \"style\": {}\n  }\n}"
+          },
+          {
+            "path": "Páginas/Inicio.page.json",
+            "encoding": "utf8",
+            "content": "{\n  \"version\": 1,\n  \"kind\": \"urbe-page\",\n  \"meta\": {\n    \"title\": \"Início\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Início\"\n      },\n      \"style\": {}\n    }\n  ]\n}"
+          },
+          {
+            "path": "Páginas/Modelos/Blog.template.json",
+            "encoding": "utf8",
+            "content": "{\n  \"version\": 1,\n  \"kind\": \"urbe-template\",\n  \"meta\": {\n    \"title\": \"Blog\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Blog\"\n      },\n      \"style\": {}\n    }\n  ],\n  \"template\": {\n    \"name\": \"Blog\",\n    \"description\": \"modelo\"\n  }\n}"
+          }
+        ],
+        "steps": [
+          "load",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": null,
+        "probe": {
+          "paths": [
+            "Páginas/Blocos/Rodape.block.json",
+            "Páginas/Inicio.page.json",
+            "Páginas/Modelos/Blog.template.json"
+          ],
+          "fixedIdPaths": [],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Páginas/Blocos/Rodape.block.json",
+          "Páginas/Inicio.page.json",
+          "Páginas/Modelos/Blog.template.json"
+        ],
+        "fixedIds": {},
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          "Páginas/Blocos/Rodape.block.json": "e5f57707a354050bcab44d069672400848e3b3bfc42e08ae17794a06c2b1e1cd",
+          "Páginas/Inicio.page.json": "9c4b30ecc670aff8833e6ecb76e9f71514a438d10aa6c3d9b3bd549f01fafd51",
+          "Páginas/Modelos/Blog.template.json": "705fe4de912a02a71cf004120d3060abb2152e3a95b22322d551db6ea07fb12b"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/mapa.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-v1-personalizacao",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/v1-personalizacao/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Personalização/estilos/meu.css",
+            "encoding": "utf8",
+            "content": "body{--x:1}\n"
+          },
+          {
+            "path": "Personalização/plugins/ola.js",
+            "encoding": "utf8",
+            "content": "urbe.plugin({nome:'Olá',versao:'1.0.0',descricao:'exemplo',ligar:function(api){api.log('ligado')},desligar:function(){}});\n"
+          },
+          {
+            "path": "Personalização/tema.json",
+            "encoding": "utf8",
+            "content": "{\n  \"$schema\": \"urbe-tema-1\",\n  \"versao\": 1,\n  \"tema\": \"escuro\",\n  \"cores\": {\n    \"fundo\": \"#101418\"\n  },\n  \"estilos\": {\n    \"Personalização/estilos/meu.css\": true\n  },\n  \"css\": \"\"\n}"
+          },
+          {
+            "path": "Personalização/temas/noite.json",
+            "encoding": "utf8",
+            "content": "{\n  \"nome\": \"Noite\",\n  \"claro\": false,\n  \"base\": \"escuro\",\n  \"cores\": {\n    \"fundo\": \"#000\"\n  }\n}"
+          },
+          {
+            "path": "Personalização/texturas/grama.json",
+            "encoding": "utf8",
+            "content": "{\n  \"nome\": \"Grama\",\n  \"chao\": {},\n  \"construcoes\": {}\n}"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            "Alfa.md",
+            "Personalização/estilos/meu.css",
+            "Personalização/plugins/ola.js",
+            "Personalização/tema.json",
+            "Personalização/temas/noite.json",
+            "Personalização/texturas/grama.json"
+          ],
+          "fixedIdPaths": [],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md",
+          "Personalização/estilos/meu.css",
+          "Personalização/plugins/ola.js",
+          "Personalização/tema.json",
+          "Personalização/temas/noite.json",
+          "Personalização/texturas/grama.json"
+        ],
+        "fixedIds": {},
+        "initialReadOnly": false,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          "Alfa.md": "e7c37472ec2961d2ed6841bbbd975686348f3a3beee0b3d17fcb171e99a538d7",
+          "Personalização/estilos/meu.css": "0f98632f4e25c4b97fd6eabde57b03a55009351e1ef7a88ba143b1d62671076c",
+          "Personalização/plugins/ola.js": "5d9ce684dc6ebe3ce5608c2a66a61959f1f89ace13db86eddfc3bf0664f72ece",
+          "Personalização/tema.json": "6e01cc934d3801448cf01cb284c085ec5d484d4277a9b4f3f9e43fd31aaaeac5",
+          "Personalização/temas/noite.json": "c602e095b9a1eb838177d6a0603d2d4c66e62e55e4239430199ca0b2355cc2fb",
+          "Personalização/texturas/grama.json": "b230b443fc14dedfe68ad4f42bd8d71c24c08b85bc458bb25daf63b8e17476fd"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": false,
+        "backupCount": 1,
+        "backupSources": [
+          ".urbe/mapa.json"
+        ],
+        "backupIntegrity": true,
+        "formatVersion": 2,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-vault-futuro",
+      "operation": "vault.scenario",
+      "requirements": [
+        "REQ-007",
+        "REQ-035",
+        "REQ-036",
+        "REQ-037",
+        "REQ-038",
+        "REQ-042"
+      ],
+      "source": "tests/fixtures/vaults/vault-futuro/expect.json",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": ".urbe/vault.json",
+            "encoding": "utf8",
+            "content": "{\n \"formatVersion\": 3,\n \"createdBy\": \"urbe@3.0.0\",\n \"lastWriter\": \"urbe@3.0.0\",\n \"migrations\": [],\n \"campoFuturo\": 1\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          }
+        ],
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "reload",
+          "flush"
+        ],
+        "edit": {
+          "path": "Alfa.md",
+          "content": "# Alfa\n\nEdição de paridade.\n"
+        },
+        "probe": {
+          "paths": [
+            ".urbe/mapa.json",
+            ".urbe/vault.json",
+            "Alfa.md"
+          ],
+          "fixedIdPaths": [
+            "Alfa.md"
+          ],
+          "removedPaths": []
+        }
+      },
+      "expected": {
+        "loadedPaths": [
+          "Alfa.md"
+        ],
+        "fixedIds": {
+          "Alfa.md": "doc_00000001-0000-4000-8000-000000000000"
+        },
+        "initialReadOnly": true,
+        "initialMapReadOnly": false,
+        "diskHashes": {
+          ".urbe/mapa.json": "8ae72756740470af3b1a7f48f6eedd12eb84c869a1942a10ed8f0158ebf0141d",
+          ".urbe/vault.json": "022fe707e4ae2402ddccb82371d1b05342fb6d4abebe0a155c810c18fd82b790",
+          "Alfa.md": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+        },
+        "journalsRemoved": false,
+        "wholeVaultUnchanged": true,
+        "backupCount": 0,
+        "backupSources": [],
+        "backupIntegrity": true,
+        "formatVersion": 3,
+        "migrationIdempotent": true,
+        "idsStableAfterReload": true
+      }
+    },
+    {
+      "id": "vault-backup-valid",
+      "operation": "vault.restore",
+      "requirements": [
+        "REQ-007",
+        "REQ-038"
+      ],
+      "source": "tests/vault-format.mjs",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/compositions.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}"
+          },
+          {
+            "path": ".urbe/history.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"# Alfa\\n\\nversão antiga\\n\"}]}}"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": ".urbe/trash.json",
+            "encoding": "utf8",
+            "content": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          },
+          {
+            "path": "Pasta/Gama.md",
+            "encoding": "utf8",
+            "content": "# Gama\n\nNota numa pasta.\n"
+          },
+          {
+            "path": "Pasta/logo.png",
+            "encoding": "base64",
+            "content": "wolQTkcNChoK"
+          }
+        ],
+        "target": ".urbe/history.json",
+        "mode": "valid",
+        "edit": {
+          "path": "Alfa.md",
+          "content": "edição para disparar migração\n"
+        },
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "corrupt-original",
+          "restore"
+        ]
+      },
+      "expected": {
+        "backupCreated": true,
+        "restoreRejected": false,
+        "targetHash": "1bedeeabdcaf044b5d8803f8f97cd498e5ac0a191f133336d9dbd5dd3e9ea0b7",
+        "restoredPaths": [
+          ".urbe/compositions.json",
+          ".urbe/history.json",
+          ".urbe/mapa.json",
+          ".urbe/trash.json"
+        ]
+      }
+    },
+    {
+      "id": "vault-backup-corrupt",
+      "operation": "vault.restore",
+      "requirements": [
+        "REQ-007",
+        "REQ-038"
+      ],
+      "source": "tests/vault-format.mjs",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/compositions.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}"
+          },
+          {
+            "path": ".urbe/history.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"# Alfa\\n\\nversão antiga\\n\"}]}}"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": ".urbe/trash.json",
+            "encoding": "utf8",
+            "content": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          },
+          {
+            "path": "Pasta/Gama.md",
+            "encoding": "utf8",
+            "content": "# Gama\n\nNota numa pasta.\n"
+          },
+          {
+            "path": "Pasta/logo.png",
+            "encoding": "base64",
+            "content": "wolQTkcNChoK"
+          }
+        ],
+        "target": ".urbe/history.json",
+        "mode": "corrupt",
+        "edit": {
+          "path": "Alfa.md",
+          "content": "edição para disparar migração\n"
+        },
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "corrupt-original",
+          "corrupt-backup",
+          "restore"
+        ]
+      },
+      "expected": {
+        "backupCreated": true,
+        "restoreRejected": true,
+        "targetHash": "d274c19ceb2e6420c3b35f64ab00dbc87483db47e641509d9e425e220b233103",
+        "restoredPaths": []
+      }
+    },
+    {
+      "id": "vault-backup-missing",
+      "operation": "vault.restore",
+      "requirements": [
+        "REQ-007",
+        "REQ-038"
+      ],
+      "source": "tests/vault-format.mjs",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/compositions.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}"
+          },
+          {
+            "path": ".urbe/history.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"# Alfa\\n\\nversão antiga\\n\"}]}}"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": ".urbe/trash.json",
+            "encoding": "utf8",
+            "content": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          },
+          {
+            "path": "Pasta/Gama.md",
+            "encoding": "utf8",
+            "content": "# Gama\n\nNota numa pasta.\n"
+          },
+          {
+            "path": "Pasta/logo.png",
+            "encoding": "base64",
+            "content": "wolQTkcNChoK"
+          }
+        ],
+        "target": ".urbe/history.json",
+        "mode": "missing",
+        "edit": {
+          "path": "Alfa.md",
+          "content": "edição para disparar migração\n"
+        },
+        "steps": [
+          "load",
+          "edit",
+          "flush",
+          "corrupt-original",
+          "missing-backup",
+          "restore"
+        ]
+      },
+      "expected": {
+        "backupCreated": true,
+        "restoreRejected": true,
+        "targetHash": "d274c19ceb2e6420c3b35f64ab00dbc87483db47e641509d9e425e220b233103",
+        "restoredPaths": []
+      }
     }
   ]
 }

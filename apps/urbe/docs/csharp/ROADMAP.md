@@ -7,7 +7,7 @@
 
 ## Próxima tarefa
 
-**M0 — Fundamentos de paridade.** UC-1 tem matriz/inventário verificáveis em revisão (Issue #138). UC-2 começou pelo corpus Markdown/Visual e oráculo congelado (Issue #139); faltam cenários portáveis de vault, adapters e UI. UC-3, UC-4 e UC-7 podem avançar; UC-5 e UC-6 dependem de UC-1 a UC-4.
+**M0 — Fundamentos de paridade.** UC-1 tem matriz/inventário verificáveis em revisão (Issue #138). UC-2 começou pelo corpus Markdown/Visual e oráculo congelado (Issue #139); há 12 cenários portáveis de vault e três de restauração; faltam IndexedDB legado, adapters e UI. UC-3, UC-4 e UC-7 podem avançar; UC-5 e UC-6 dependem de UC-1 a UC-4.
 
 ---
 
@@ -16,7 +16,7 @@
 Objetivo: saber exatamente o que é «paridade», ter como provar, e decidir com evidência a pilha e a transição.
 
 - [~] UC-1 — **Matriz de paridade:** cada REQ `IMPLEMENTAR` do Urbe (101 hoje) e cada comportamento observável do 1.x/2.0 (tutorial, E2E, contratos) vira uma linha verificável e independente de linguagem, com a fonte (`caminho:linha` ou teste) e a superfície onde vale. Lacunas ficam explícitas. Saída: `docs/csharp/PARITY.md`. Implementado e verificado na primeira fatia; revisão/integração na Issue #138 e handoff `HO-20261003-urbe-csharp-parity`.
-- [ ] UC-2 — **Suíte de aceite independente de linguagem:** congelar como oráculo as fixtures de vault (`tests/fixtures/vaults`), os goldens (`markdown-golden.json`, `visual-golden.json`), os contratos (`persistence-adapter`, `native`, `editor-markdown`, `editor-visual`) e os cenários E2E; definir o formato dos casos (dados, não JS) e como o cliente C# os executa. Primeira fatia: `acceptance/README.md`, `oracle.json`, `cases.json` e runner; restante explícito no README, Issue #139. Não concluído.
+- [ ] UC-2 — **Suíte de aceite independente de linguagem:** congelar como oráculo as fixtures de vault (`tests/fixtures/vaults`), os goldens (`markdown-golden.json`, `visual-golden.json`), os contratos (`persistence-adapter`, `native`, `editor-markdown`, `editor-visual`) e os cenários E2E; definir o formato dos casos (dados, não JS) e como o cliente C# os executa. Corpus atual: 165 casos, incluindo 12 cenários de vault e três de restauração; `acceptance/README.md`, `oracle.json`, `cases.json` e runner; restante explícito no README, Issue #139. Não concluído.
 - [ ] UC-3 — **Contrato do vault:** `DATA-CATALOG.md` + Urbe ADR-0004 como contrato único legível pelos dois clientes (versões, proteção forward, backup restaurável, identidade, GC), com manifesto das fixtures.
 - [ ] UC-4 — **Inventário de dependências sem equivalente direto:** KaTeX, JSZip, PDF.js, providers de IA, plugins JS full-trust, File System Access/OPFS/IndexedDB, Electron, Capacitor. Para cada uma: uso real, opções em C#/WASM/nativo, risco.
 - [ ] UC-5 — **Proposta de pilha de UI e de hosts** por superfície: ADR do Ecosystem `Proposto` + decisão pendente no portal, com alternativas reais e consequências. Depende de UC-1 a UC-4.
