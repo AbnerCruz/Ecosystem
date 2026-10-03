@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "codex/hub-release-notes",
   "base_commit": "4161bbac0d4b186fa8ce9b4464ad15793f587daa",
-  "commit": null,
-  "pr": null,
+  "commit": "fd186567e8e56c60ca8f4714aa234ba8587b74d4",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/122",
   "files_changed": [
     "ROADMAP.md",
     "apps/hub/README.md",
@@ -42,7 +42,8 @@
     "Markdig com projeção nativa testável: Markdown livre, categorias tolerantes, technical expansível, HTML literal/imagens sem recurso remoto; notas originais intactas.",
     "SOURCE/instalada/latest explícitos e separados; instalada desconhecida. Boundary e agregação SemVer determinística desde versão explicitamente fornecida, sem inventar update/PR/resumo.",
     "Fallback no SnapshotCache existente: falha parcial preserva histórico stale do mesmo canal; vazio válido/troca de canal não reutilizam releases antigas.",
-    "Reconciliada main com P4-7 e aprovações reais #117/#118; download em segundo plano preservado, sem editar outro Product."
+    "Reconciliada main com P4-7 e aprovações reais #117/#118; download em segundo plano preservado, sem editar outro Product.",
+    "PR #122 integrado automaticamente como routine, CI verde e release dev.6 publicada/baixada/hash conferido. Portal publicou check humano 9ace6f262de6; validação mobile continua pending, sem segunda fonte do resultado humano."
   ],
   "verification": [
     {
@@ -66,8 +67,8 @@
     {
       "check": "CI Hub e Android no estado combinado",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "CI do PR e integrador confirmarão bindings/compilação do renderer nativo e estado combinado; sem workload Android local."
+      "result": "passed",
+      "evidence": "Hub CI/Android e consistency verdes no estado combinado 58138560fdd287b51e25b98031279f7a83266823, integrado automaticamente (routine), main base b22204b3a4b8de0b1839008ea73f0392962a132e e head fd186567e8e56c60ca8f4714aa234ba8587b74d4. https://github.com/AbnerCruz/Ecosystem/actions/runs/37132090290; CI do head: https://github.com/AbnerCruz/Ecosystem/actions/runs/37132089803."
     },
     {
       "check": "Patch Notes e histórico no celular",
@@ -76,6 +77,12 @@
       "critical": false,
       "object": "apps/hub/docs/patch-notes.md",
       "evidence": "Roteiro mobile com navegação, textos/categorias/técnico, datas/prereleases/assets, scroll/expansão10/offline/cache/refresh e coexistência com download. CI não prova DEVICE; manter review até resultado humano. Não é gate de instalação P4-4."
+    },
+    {
+      "check": "APK publicado e SHA256 confirmado",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Release hub-v0.0.1-dev.6, source 58138560fdd287b51e25b98031279f7a83266823, 22051219 bytes. Download público real /tmp/ecosystem-hub-0.0.1-dev.6.apk e sidecar: sha256sum -c passou; SHA256 1f0b2d5588ececfa26a02fbe168755ddab8dc7b9382d688a048a7f4d699da678 coincide com digest da API. Publicação https://github.com/AbnerCruz/Ecosystem/actions/runs/37132295671."
     }
   ],
   "known_issues": [
@@ -87,8 +94,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Abrir PR pronto, acompanhar CI e classificação real, corrigir falhas/reconciliar main e deixar integração ao integrador.",
-    "Conferir release efetiva e publicar evidência; manter validação mobile pending sem fabricar aprovação."
+    "Validar no celular usando apps/hub/docs/patch-notes.md e Hub dev.6; registrar resultado pelo portal (check 9ace6f262de6).",
+    "Somente após resposta humana real e registrada, reconciliar tarefa/roadmap/registro por build; não marcar P4-8 done antes disso."
   ],
   "decisions_required": [],
   "normative_sources": [
