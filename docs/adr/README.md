@@ -40,3 +40,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0016](0016-migracao-do-urbe-para-csharp.md) | Migração do Urbe para C# | Aceito (DEC-0024-B: reescrita completa com paridade; pilha e corte ainda por decidir) |
 | [0017](0017-agent-runtime-execution-runtime-e-organizacoes.md) | Agent Runtime, Execution Runtime e organizações de agentes: fronteiras e sequência | Aceito (DEC-0026-C; escolha A revogada, ADD-0014) |
 | [0018](0018-instalacao-e-launcher-do-hub.md) | Instalação e launcher do Hub | Aceito (DEC-0030-A) |
+
+| [0019](0019-releases-diretas-dos-products.md) | Releases diretas dos Products no Ecosystem | Aceito (DEC-0031; ADD-0015) |

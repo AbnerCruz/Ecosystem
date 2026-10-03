@@ -1087,6 +1087,38 @@
       "decidedAt": "2026-10-03",
       "record": "docs/governance/responses/DEC-0030.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0031",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": false,
+      "title": "Builds e releases diretos no Ecosystem",
+      "context": "Proprietário pediu remover sincronização intermediária para distribuir seus apps; chaves, versões e consumidores precisam continuar compatíveis.",
+      "question": "Produzir os artefatos diretamente no Ecosystem?",
+      "alternatives": [
+        {
+          "option": "Pipelines diretos por Product",
+          "consequences": "Elimina espelho como requisito de build; migração de updaters e assinatura exige validação por produto."
+        },
+        {
+          "option": "Manter pipelines de origem",
+          "consequences": "Continua dependendo da sincronização para publicar."
+        }
+      ],
+      "consequences": "Lunet direto; pipelines Urbe preparados, migração de canal em P4-9 com mesma chave e versão-ponte. Hub permanece direto. Nenhum novo runtime nem Hub obrigatório.",
+      "manifestCompatibility": "NN-011: decisão explícita persistida; NN-014/023: versões e distribuição independentes; NN-016/017: chaves e validação preservadas.",
+      "recommendation": "Pipelines diretos por Product.",
+      "related": [
+        "docs/adr/0019-releases-diretas-dos-products.md",
+        "docs/distribution/direct-releases.md"
+      ],
+      "raisedBy": "codex",
+      "raisedAt": "2026-10-03",
+      "decision": "O proprietário autorizou no chat: “Ok quero fazer isso”, após explicação da distribuição direta por produto. Fonte ADD-0015.",
+      "decidedAt": "2026-10-03",
+      "record": "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
+      "consequencesApplied": false
     }
   ]
 }

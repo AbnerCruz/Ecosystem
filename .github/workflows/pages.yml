@@ -87,6 +87,21 @@ jobs:
           find _site -maxdepth 2 -type f -printf '%P\n' | sort
           grep -Fq '<title>Ecosystem — Portal</title>' _site/index.html
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare standalone Urbe Web from canonical source (P4-8)
+        working-directory: apps/urbe
+        run: |
+          npm run check
+          node tools/build-www.mjs
+          mkdir -p ../../_site/urbe
+          cp -a native/www/. ../../_site/urbe/
+          cp sw.js ../../_site/urbe/sw.js
+          test -s ../../_site/urbe/index.html
+          test -s ../../_site/urbe/src/modules.json
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v4

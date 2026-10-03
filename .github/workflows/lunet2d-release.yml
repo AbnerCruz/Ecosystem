@@ -1,0 +1,90 @@
+name: lunet2d-release
+
+on:
+  push:
+    branches: [main]
+    paths: ['apps/lunet2d/**', '.github/workflows/lunet2d-release.yml']
+  pull_request:
+    paths: ['apps/lunet2d/**', '.github/workflows/lunet2d-release.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: lunet2d-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/lunet2d
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test (framework, compiler, runtime, projects, architecture)
+        run: dotnet test --project tests/Lunet.Tests
+
+  apk:
+    needs: test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/lunet2d
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install Android workload
+        run: dotnet workload install android
+      - name: Build APK
+        run: >
+          dotnet build src/Lunet.Android/Lunet.Android.csproj -c Debug
+          -p:AndroidSdkDirectory="$ANDROID_HOME"
+          -p:GITHUB_RUN_NUMBER=$((1000000 + ${{ github.run_number }}))
+      - name: Collect APK
+        run: |
+          apk=$(find src/Lunet.Android/bin -name '*-Signed.apk' | head -n1)
+          test -n "$apk" || { echo "APK assinado não encontrado"; find src/Lunet.Android/bin -name '*.apk'; exit 1; }
+          mkdir -p dist
+          cp "$apk" dist/lunet.apk
+          echo "Certificado de assinatura do APK (deve ser igual em todas as builds):"
+          keytool -printcert -jarfile dist/lunet.apk | grep -E "Owner|SHA256"
+          expected="48:07:F9:08:0B:F5:53:5D:20:73:44:76:E3:E3:BC:9F:E6:44:6C:70:E3:84:77:14:86:E6:AC:33:3E:DD:92:07"
+          keytool -printcert -jarfile dist/lunet.apk | grep -q "SHA256: $expected" || { echo "APK não está assinado com a chave de desenvolvimento estável"; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lunet-apk
+          path: apps/lunet2d/dist/lunet.apk
+          if-no-files-found: error
+
+  release:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: apk
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/lunet2d
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: lunet-apk
+          path: apps/lunet2d/dist
+      - name: Publish development release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="lunet2d-v$(tr -d '[:space:]' < VERSION)-dev.$((1000000 + ${{ github.run_number }}))"
+          tools/make-release-files.sh dist/lunet.apk "${tag#lunet2d-v}" development "${{ github.sha }}" out
+          gh release view "$tag" >/dev/null 2>&1 && exit 0
+          gh release create "$tag" out/* --target "${{ github.sha }}" --prerelease --latest=false \
+            --title "Lunet ${tag#lunet2d-v} (development)" --notes-file out/release-notes.md
