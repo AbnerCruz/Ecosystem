@@ -9,12 +9,12 @@
   },
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "7320741",
-  "commit": null,
+  "commit": "d0e531b",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/82",
   "blockers": [],
   "cost": null,
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261003-p3-9-ui-android-do-hub",
   "timestamp": "2026-10-03T05:03:28Z",
   "task_id": "P3-9",
@@ -41,7 +41,8 @@
     "Cache do último estado: um arquivo no armazenamento privado do app; falha de leitura ou escrita do cache não derruba o app. Nada é gravado no repositório; nenhum token é embutido.",
     "hub-ci.yml ganhou o job `android`: instala o workload, compila Hub.Android em Debug e publica o APK de depuração como artefato (para a validação humana do P3-8). A solution Hub.slnx não inclui o projeto Android de propósito: os testes do núcleo não devem exigir o workload.",
     "Correção do CHK-ARCH-REFS (tests/consistency/Check.cs): o check tratava o nome do próprio Hub ('Ecosystem Hub', 'ecosystem.hub') como referência ao Hub e reprovava o Hub ao ganhar um app com nome e identificador próprios. Agora a regra 'referenciar o Hub' vale só para os outros Products; a cobertura da correção é a própria execução do check sobre o Hub real, que passa a conter o nome. Self-test continua provando que o check detecta Lunet2D/Urbe referenciando o Hub.",
-    "Primeira execução do job android no CI achou um erro de compilação real (OperationCanceledException ambíguo entre Android.OS e System); corrigido qualificando o tipo."
+    "Primeira execução do job android no CI achou um erro de compilação real (OperationCanceledException ambíguo entre Android.OS e System); corrigido qualificando o tipo.",
+    "Integrado na main pelo PR #82 (merge d0e531b) com a autorização do proprietário; Issue #81 encerrada com state:done e ROADMAP P3-9 [x]."
   ],
   "verification": [
     {
@@ -69,7 +70,7 @@
     "A tela é deliberadamente simples (views por código, sem layout XML): serve ao gate de leitura. Refinar o desenho é item futuro, não escopo da Fase 3."
   ],
   "next_actions": [
-    "Autorização do proprietário para integrar o PR crítico (label integrar). Depois: P3-7 (empacotar e publicar, com assinatura estável), P3-1 e o gate P3-8 (validação humana em aparelho). O item P3-9 só vai a [x] depois da integração."
+    "Nenhuma pendência deste item. Próximos da Fase 3: P3-7 (empacotar e publicar, com assinatura estável do APK), P3-1 e o gate P3-8 (validação humana em aparelho)."
   ],
   "decisions_required": [],
   "normative_sources": [
