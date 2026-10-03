@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "codex/p4-2-artifact-download",
   "base_commit": "7ff0ba05510731595605f445b1ec15c07ad5d690",
-  "commit": null,
-  "pr": null,
+  "commit": "3f9322d14d7aa90fbfbc9f68aed269db545e4d21",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/108",
   "files_changed": [
     "ROADMAP.md",
     "apps/hub/README.md",
@@ -58,8 +58,8 @@
     {
       "check": "Build Android e CI no estado combinado",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "CI hub-ci e integrador confirmarão compilação Android; workload android não está instalado localmente."
+      "result": "passed",
+      "evidence": "Integrador 37126282390: consistency=success, hub=success, confiável(main)=success; estado combinado 3d9e05cf72fc67b299a3f55a8fd0181e6d6356c8 integrado automaticamente (comentário bot PR #108). hub-ci 37126282198 verde. hub-release 37126564302 verde publicou dev.4 por dispatch do integrador."
     },
     {
       "check": "Conferência do download, cancelamento e primeiro plano no celular",
@@ -68,6 +68,12 @@
       "critical": false,
       "object": "apps/hub/docs/download-e-integridade.md",
       "evidence": "Conferência de seleção/progresso/legibilidade e cancelamento por botão/OnStop no aparelho pendente para build contendo P4-2. Não crítica: fica visível no portal e não bloqueia integração. Não é o gate de instalação/launcher P4-4."
+    },
+    {
+      "check": "Release pública P4-2 e integridade do APK",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "hub-v0.0.1-dev.4, fonte 3d9e05c, APK ecosystem-hub-0.0.1-dev.4.apk baixado publicamente para /tmp/ecosystem-hub-dev4.apk: 21821765 bytes; SHA-256 abfadbf2efec3b42b7afed70ad8ae61b64e92e93cd23d1a5901106fec32daf21 coincide com API e sidecar público. Publicação automática confirma P4-5 em operação."
     }
   ],
   "known_issues": [
@@ -78,9 +84,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI/integrador, corrigir falhas, conferir publicação pelo hub-release e registrar build real.",
-    "Conferência em aparelho quando proprietário a realizar, mantendo review enquanto faltar essa evidência; não interromper por validação não crítica.",
-    "Continuar preparação de P4-3: ADR e modelo de permissões/identidade/assinatura/consentimento antes de implementar instalador/launcher."
+    "Conferência P4-2 em aparelho, mantendo review até evidência humana; pendência não crítica não bloqueia trabalho independente.",
+    "Resolver DEC-0030 sobre modelo Proposto P4-6 antes da implementação do instalador P4-3."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -123,7 +128,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "Estado review; build Android, integração e conferência visual aguardam evidência."
+      "evidence": "Estado review: build Android, testes, integração e APK publicados; falta a conferência visual/lifecycle em aparelho."
     },
     {
       "id": "NN-021",

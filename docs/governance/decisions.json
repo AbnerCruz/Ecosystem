@@ -1050,6 +1050,39 @@
       "decidedAt": "2026-10-03",
       "record": "docs/governance/responses/DEC-0029.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0030",
+      "status": "pending",
+      "component": "hub",
+      "blocking": true,
+      "title": "Modelo de confiança para instalação pelo Hub (P4-3)",
+      "context": "P4-2 já baixa e confere bytes. Instalar aplicativos amplia o Hub read-only e exige política explícita de identidade, assinatura, permissões e consentimento. ADR-0018 e modelo-de-instalacao.md estão Propostos; nenhum código ou permissão é ativado. Chaves de desenvolvimento públicas não provam autoria, mesmo com pin.",
+      "question": "Qual política deve orientar o instalador/launcher Android do Hub?",
+      "alternatives": [
+        {
+          "option": "A — Pacote canônico e certificado previamente aprovado (recomendada)",
+          "consequences": "Instala/atualiza apenas com identidade e certificado/linhagem aprovados por Product/canal, tamanho/hash reconferidos e consentimento Android. Sem pin, oferece canal independente. Exige registrar fingerprints públicos; chave de desenvolvimento pública continua sem garantia de autoria."
+        },
+        {
+          "option": "B — Pacote canônico e confiança no canal declarado, sem pin inicial",
+          "consequences": "Primeira instalação depende de identidade/hash/canal HTTPS e consentimento, sem fixar certificado. Atualizações ficam sujeitas à assinatura compatível do Android. Menor preparação e menor proteção contra assinante inesperado em canal comprometido."
+        },
+        {
+          "option": "C — Adiar instalador; implementar somente launcher",
+          "consequences": "Não solicita REQUEST_INSTALL_PACKAGES. Consulta versão e abre pacote aprovado por toque; download e instalação independente continuam. Gate de instalação P4-4 permanece pendente."
+        }
+      ],
+      "consequences": "Bloqueia implementação do instalador P4-3, mas não conferência humana P4-2, publicação ou canais independentes. Após resposta, aplicar ADR/modelo e registrar concessões no PR crítico de implementação; nenhuma aprovação automática de gate humano.",
+      "manifestCompatibility": "NN-011: escolha estrutural explicitamente registrada; NN-016: nenhuma permissão efetiva concedida nesta proposta; NN-023: distribuição standalone preservada; NN-017: gate humano não autoaprovado.",
+      "recommendation": "A, com consentimento do sistema e ausência de fallback silencioso para B. Pin restringe assinantes; não autentica autoria com chave pública de desenvolvimento.",
+      "related": [
+        "docs/adr/0018-instalacao-e-launcher-do-hub.md",
+        "apps/hub/docs/modelo-de-instalacao.md",
+        "ROADMAP.md"
+      ],
+      "raisedBy": "codex",
+      "raisedAt": "2026-10-03"
     }
   ]
 }
