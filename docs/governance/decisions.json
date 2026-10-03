@@ -880,7 +880,7 @@
       "decision": "Alternativa C — C — Congelamento total do JavaScript, salvo bug crítico (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/68).",
       "decidedAt": "2026-10-02",
       "record": "docs/governance/responses/DEC-0025.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     },
     {
       "id": "DEC-0026",

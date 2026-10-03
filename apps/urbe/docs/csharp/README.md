@@ -12,7 +12,7 @@ Reescrita completa do Urbe em C#: um **novo cliente**, trocando o produto distri
 - **Estratégia de transição** das instalações e dos canais de distribuição (APK, instalador Windows com atualização, Urbe Web/PWA): UC-6.
 - **Modelo de plugins** em C# (hoje JS full-trust, Urbe ADR-0002): UC-20.
 - **O corte** (trocar o produto distribuído): decisão crítica do proprietário (UC-31).
-- **O programa de refatoração do Urbe 2.0 em JavaScript** durante a migração: DEC-0025.
+- ~~O programa de refatoração do Urbe 2.0 em JavaScript durante a migração~~ — **decidido em DEC-0025-C**: o JavaScript fica **congelado, salvo bug crítico**; os itens do 2.0 ficam adiados, nunca removidos (nota no topo de [`../v2/ROADMAP.md`](../v2/ROADMAP.md)).
 
 ## Regras do programa
 
