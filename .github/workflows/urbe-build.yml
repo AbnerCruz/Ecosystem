@@ -1,0 +1,100 @@
+name: urbe-build
+
+# Workflow reutilizável (REQ-006, REQ-066): só constrói e envia os artefatos. Quem publica é o release.yml.
+# - app.yml (PR e execução manual): valida que continua compilando (sem publicar).
+# - release.yml (tag v*): constrói para publicação; sem os secrets da chave Android, falha.
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Versão do package.json (usada no nome do APK)'
+        type: string
+        required: true
+      release:
+        description: 'Build para publicação (exige a chave de assinatura Android)'
+        type: boolean
+        default: false
+    secrets:
+      ANDROID_KEYSTORE_BASE64:
+        required: false
+      ANDROID_KEYSTORE_PASSWORD:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: apps/urbe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/urbe/package-lock.json
+      - run: npm ci
+      - name: Instalador (NSIS)
+        run: npx electron-builder --win --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            apps/urbe/dist/*.exe
+            apps/urbe/dist/*.exe.blockmap
+            apps/urbe/dist/latest.yml
+          if-no-files-found: error
+
+  android:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/urbe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/urbe/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - name: App web para o Android
+        run: node tools/build-www.mjs && npx cap sync android
+      - name: Chave de assinatura
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/urbe.keystore"
+            echo "URBE_KEYSTORE=$RUNNER_TEMP/urbe.keystore" >> "$GITHUB_ENV"
+            echo "URBE_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "Assinando com a chave do Urbe."
+          elif [ "${{ inputs.release }}" = "true" ]; then
+            echo "::error::Faltam os secrets ANDROID_KEYSTORE_BASE64 e ANDROID_KEYSTORE_PASSWORD (Settings → Secrets and variables → Actions). Sem a chave, o APK não pode ser atualizado depois."
+            exit 1
+          else
+            echo "::notice::Sem a chave do Urbe: APK de teste assinado com a chave de depuração."
+          fi
+      - name: APK
+        working-directory: apps/urbe/native/android
+        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
+      - name: Nome do arquivo
+        run: |
+          mkdir -p out
+          cp native/android/app/build/outputs/apk/release/app-release.apk "out/Urbe-${{ inputs.version }}.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: apps/urbe/out/*.apk
+          if-no-files-found: error

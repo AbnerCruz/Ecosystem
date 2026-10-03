@@ -43,6 +43,7 @@ case "$*" in
     elif grep -qx "$lbl" "$S/labels/$n"; then grep -vx "$lbl" "$S/labels/$n" > "$S/labels/$n.tmp" || true; mv "$S/labels/$n.tmp" "$S/labels/$n"
     else exit 0; fi
     printf '{"event":"%s","label":{"name":"%s"},"actor":{"login":"github-actions[bot]"},"created_at":"%s"}\n' "$op" "$lbl" "$(tick)" >> "$S/events/$n.jsonl" ;;
+  "workflow run lunet2d-release.yml"*) [ "${FAIL_LUNET_DISPATCH:-false}" != true ] || exit 1 ;;
   "workflow run hub-release.yml"*) [ "${FAIL_HUB_DISPATCH:-false}" != true ] || exit 1 ;;
   "label create"*|"workflow run"*) ;;
   "api -X POST repos/"*"/statuses/"*)
@@ -246,6 +247,26 @@ for path in apps/hub/src/Hub.Core/Datum.cs apps/hub/VERSION apps/hub/Directory.B
     *) check "$path: dispatch de release" 'logged "workflow run hub-release.yml --repo sim/sim --ref main"' ;;
   esac
 done
+
+# P4-8: direct Lunet release selection and observable dispatch failure.
+SELECT_MAIN="$(git rev-parse HEAD)"
+for path in apps/lunet2d/README.md apps/lunet2d/src/Lunet.Core/dispatch-fixture.cs .github/workflows/lunet2d-release.yml apps/urbe/dispatch-fixture.md apps/hub/README.md; do
+  git checkout -q -B "select-direct-${RANDOM}" "$SELECT_MAIN"
+  mkdir -p "$(dirname "$path")"; echo "# fixture" >> "$path"; G add -A; G commit -qm "direct selection $path"
+  : > "$GHLOG"
+  env MAIN="$SELECT_MAIN" COMBINED="$(git rev-parse HEAD)" bash -c '. "$1"; dispatch_lunet_release' bash "$T/library.sh" >"$T/direct-selection.log" 2>&1
+  case "$path" in
+    apps/lunet2d/*|.github/workflows/lunet2d-release.yml) check "$path: direct Lunet release dispatch" 'logged "workflow run lunet2d-release.yml --repo sim/sim --ref main"' ;;
+    *) check "$path: no direct Lunet release" '! logged "workflow run lunet2d-release.yml"' ;;
+  esac
+  check "$path: never releases Urbe on merge" '! logged "workflow run urbe-release.yml"'
+done
+git checkout -q -B select-direct-failure "$SELECT_MAIN"
+echo "# fixture" >> apps/lunet2d/README.md; G add -A; G commit -qm 'dispatch failure'
+if env FAIL_LUNET_DISPATCH=true MAIN="$SELECT_MAIN" COMBINED="$(git rev-parse HEAD)" bash -c '. "$1"; dispatch_lunet_release' bash "$T/library.sh" >/dev/null 2>&1; then
+  check "direct Lunet dispatch failure must fail" false
+else check "direct Lunet dispatch failure must fail" true; fi
+git checkout -q main
 
 # 16. Head do Hub muda depois do teste: não publica; depois retesta, integra e torna falha de dispatch observável.
 HD="$(branch hub-dispatch 'echo "// dispatch" >> apps/hub/src/Hub.Core/Datum.cs')"; open_pr 54 "$HD"

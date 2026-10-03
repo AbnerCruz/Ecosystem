@@ -167,3 +167,13 @@ Requer .NET SDK 10+. O mesmo check roda no CI ([`.github/workflows/consistency.y
 ## 6. Instruções locais
 
 Componentes podem ter `AGENTS.md` próprio (ex.: `apps/lunet2d/AGENTS.md`). A regra local complementa esta; **não pode contradizê-la** (MANIFEST §26).
+
+## 7. Distribuição direta (ADD-0015 / DEC-0031)
+
+A decisão posterior ADD-0015 autoriza pipelines diretos por Product no Ecosystem.
+Lunet usa lunet2d-release.yml e canal primário publicUrl no perfil current; não
+dispare a sincronização como requisito de publicação do Lunet após esse corte.
+Urbe tem pipelines diretos preparados, mas mantém canal/assinatura/updaters reais
+até P4-9; não desligue seu espelho nem publique com chave de teste. Hub já é direto.
+Ver docs/distribution/direct-releases.md. A instrução histórica da §3 para espelhos
+vale apenas para Products cujo corte ainda não foi realizado.

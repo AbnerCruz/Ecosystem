@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-releases-diretas",
+  "category": "RESULT",
+  "timestamp": "2026-10-03T15:06:24.697985Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-8",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "codex/direct-product-releases",
+  "base_commit": "4161bbac0d4b186fa8ce9b4464ad15793f587daa",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/123",
+  "files_changed": [
+    ".github/integrator/integrate.sh",
+    ".github/integrator/simulate.sh",
+    ".github/workflows/pages.yml",
+    "ROADMAP.md",
+    "docs/adr/README.md",
+    "docs/architecture/distribution.md",
+    "docs/governance/decisions.json",
+    "docs/migration/import-plan.md",
+    "tests/consistency/Check.cs",
+    ".github/workflows/lunet2d-release.yml",
+    ".github/workflows/urbe-app.yml",
+    ".github/workflows/urbe-build.yml",
+    ".github/workflows/urbe-release.yml",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
+    "docs/governance/handoffs/HO-20261003-releases-diretas.json",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/distribution/current.profile.json"
+  ],
+  "work_completed": [
+    "ADD-0015/DEC-0031/ADR-0019 persistem a autorização de builds diretos.",
+    "Lunet: pipeline direto com teste/APK/release, mesma chave, versionCode acima da origem e tags prefixadas; dispatch seletivo após integração.",
+    "Urbe: pipelines diretos Windows/Android, PR sem secrets, release só por tag; chave privada obrigatória e corte de updater em P4-9.",
+    "Pages prepara Urbe Web diretamente em /Ecosystem/urbe/, preservando URL/PWA antigas.",
+    "Checker distingue CI combinado de pipeline de publicação; simulação estendida para seletividade e falha de dispatch.",
+    "Perfil current declara canal direto do Lunet, origem alternativa, enquanto Urbe continua no canal real antigo."
+  ],
+  "verification": [
+    {
+      "check": "actionlint dos cinco workflows novos/alterados",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "actionlint 1.7.7, zero erros."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "22 checks passaram antes da correção de descoberta; reexecutar estado final."
+    },
+    {
+      "check": "self-test e simulação integrador",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Em execução após corrigir seleção de CI versus publicação."
+    },
+    {
+      "check": "npm run check Urbe",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Em execução; world-terrain é longo."
+    },
+    {
+      "check": "Build APK direto e primeira publicação",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do PR e dispatch após integração."
+    },
+    {
+      "check": "Instalar/atualizar Lunet direto e conferir Urbe Web offline",
+      "kind": "human",
+      "result": "pending",
+      "object": "docs/distribution/direct-releases.md",
+      "critical": true
+    },
+    {
+      "check": "dotnet test Lunet",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "CI do PR run 37132241431 job test passou. Localmente teste de alocação falhou; baseline local passou; nenhum código do Product foi alterado."
+    }
+  ],
+  "known_issues": [
+    "Urbe: GitHub não permite recuperar valores dos secrets; configurar MESMA chave no Ecosystem antes de publicar.",
+    "Updaters e PWA antigos do Urbe não são migrados automaticamente; item P4-9 explícito.",
+    "Canais atuais e espelhos não desativados antes de publicação conferida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Completar CI/build do PR e atender falhas.",
+    "Integrar pelo mecanismo existente, nunca label integrar pelo agente.",
+    "Publicar primeiro Lunet direto, conferir artefatos e atualizar perfil current/links; depois desativar sync do Lunet.",
+    "Configurar chave do Urbe e preparar versão-ponte P4-9 antes de corte."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/architecture/distribution.md",
+    "docs/migration/import-plan.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/contracts/schemas/distribution-profile.schema.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0005-release-e-versao-unica.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versões vêm dos arquivos do Product; canais continuam no perfil real, sem fingir publicação."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Direção solicitada e persistida ADD-0015/DEC-0031; ADR-0019."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Tags por Product; Urbe não publica em merge de main; Hub inalterado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Mesma assinatura Lunet, secrets Urbe obrigatórios para release e ausentes em PR."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Instalação/atualização e PWA explicitamente pendentes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review; falhas e pendências não declaradas como verde."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Builds/artefatos standalone sem dependência do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane",
+      "distribution",
+      "constitution"
+    ],
+    "reason": "Pipelines e dispatch de publicação, decisão registrada e mudança de distribuição."
+  }
+}

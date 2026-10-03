@@ -173,3 +173,10 @@ Comportamentos do GitHub **NÃO VERIFICADOS** nesta sessão (sem acesso a config
 ## 11. O que este plano não faz
 
 Não extrai Editor, Sprite Studio ou Agent Workspace; não cria Store, Product Shell nem capabilities; não reescreve o Urbe; não altera updaters, formatos de dados ou arquitetura interna; não muda o código de `apps/<id>/` (ADD-0002 §17).
+
+## 12. Sucessão do pipeline de origem (DEC-0031)
+
+ADD-0015/ADR-0019 autorizam pipelines diretos no Ecosystem. O protocolo §7 é
+legado para Products já cortados; continua necessário para os ainda não migrados.
+P4-8 prepara builds; P4-9 trata da assinatura/ponte do Urbe. Não desativar espelho
+antes de publicar e conferir o canal direto correspondente. Ver direct-releases.md.
