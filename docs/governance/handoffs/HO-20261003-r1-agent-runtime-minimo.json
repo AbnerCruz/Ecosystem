@@ -9,12 +9,12 @@
   },
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "31f5991",
-  "commit": null,
+  "commit": "7460454",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/79",
   "blockers": [],
   "cost": null,
   "component": "ecosystem-ai",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261003-r1-agent-runtime-minimo",
   "timestamp": "2026-10-03T03:09:37Z",
   "task_id": "P6-2",
@@ -44,7 +44,8 @@
     "Suíte de enforcement com 86 testes cobrindo T-1..T-15 (T-16 é do R5). Testes de arquitetura leem os metadados do IL (referências de assembly, tipos e membros) e provei por mutação temporária (revertida) que falham ao introduzir HttpClient, DateTime.UtcNow, Task.Delay e nomes proibidos no Core.",
     "Retomada provada por teste parametrizado que derruba o log em cada ponto possível do run e retoma: o run sempre termina e o efeito não idempotente nunca é repetido.",
     "Fiação: entrada `ecosystem-ai` em ecosystem.json (permissões agent.act, fs.read, fs.write, já existentes no catálogo), workflow ecosystem-ai-ci.yml com filtro de caminho (NN-014) e job no integrador (integrate.yml + R_ECOSYSTEM_AI em integrate.sh), no mesmo padrão do Hub.",
-    "Consequências da DEC-0027 aplicadas (ROADMAP P6-2 [~] com Issue #78, plano e `consequencesApplied: true`)."
+    "Consequências da DEC-0027 aplicadas (ROADMAP P6-2 [~] com Issue #78, plano e `consequencesApplied: true`).",
+    "Integrado na main pelo PR #79 (merge 7460454) com a autorização do proprietário; Issue #78 encerrada com state:done e ROADMAP P6-2 [x]."
   ],
   "verification": [
     {
@@ -72,7 +73,7 @@
     "A política de integração atual não marca arquivos sensíveis do runtime como zona crítica. Sugestão, não aplicada (mudar a política é mudança crítica): tratar ToolResolver.cs, Ledger.cs e Secrets.cs como zona `security` e ArchitectureTests.cs como `control-plane`."
   ],
   "next_actions": [
-    "Autorização do proprietário para integrar o PR crítico (label `integrar`, aplicada por ele). Depois: P6-3 (R2, duas equipes) em PR próprio."
+    "Nenhuma pendência deste slice. Próximo: P6-3 (R2, duas equipes, uma integração) em PR próprio."
   ],
   "decisions_required": [],
   "normative_sources": [
