@@ -5,3 +5,5 @@ site/data/issues-snapshot.json
 # .NET (Hub)
 apps/hub/**/bin/
 apps/hub/**/obj/
+apps/ecosystem-ai/**/bin/
+apps/ecosystem-ai/**/obj/

@@ -1,0 +1,176 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "31f5991",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/79",
+  "blockers": [],
+  "cost": null,
+  "component": "ecosystem-ai",
+  "state": "review",
+  "message_id": "HO-20261003-r1-agent-runtime-minimo",
+  "timestamp": "2026-10-03T03:09:37Z",
+  "task_id": "P6-2",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Fiação do integrador (integrate.yml, integrate.sh) e um workflow de CI novo (zonas de control-plane), além da entrada de um Product novo em ecosystem.json. A entrada do Product foi autorizada em princípio pela DEC-0026-C e pela DEC-0027-B; o PR espera a autorização do proprietário (label integrar), sem decisão nova."
+  },
+  "files_changed": [
+    "apps/ecosystem-ai/ (Product novo: Core, Testing, Tools.Files, Tests, README, VERSION, global.json, Directory.Build.props, EcosystemAI.slnx)",
+    "ecosystem.json",
+    ".github/workflows/ecosystem-ai-ci.yml",
+    ".github/workflows/integrate.yml",
+    ".github/integrator/integrate.sh",
+    ".gitignore",
+    "ROADMAP.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261003-r1-agent-runtime-minimo.json"
+  ],
+  "work_completed": [
+    "FATO: R1 do Agent Runtime implementado dentro do Product novo `ecosystem-ai` (DEC-0026-C, DEC-0027-B), seguindo ADR-0017 e o plano §14: Core em C# sem nenhuma dependência além da biblioteca-base, em processo, local e determinístico (sem rede, nuvem, deploy nem segredo real).",
+    "Core: Context (níveis em ordem estrita), Money inteiro checado, ledger de orçamento (reserva tudo-ou-nada, limites total/diário/mensal/por operação, deny-by-default, estouro registrado), Tool = capability resolvida por Host ∩ organização ∩ projeto ∩ agente com `agent.act` obrigatório e escopo de Context, event log como fonte do estado (RunState.Replay valida invariantes e recusa log adulterado), TaskRecord em que `Completed` só existe com verificação aprovada da própria tarefa e com evidência, AgentRunner (reserva→provedor→sanitiza→ferramentas→verifica→retrabalho com limite), aprovação obrigatória para risco destrutivo (sem aprovador, escala), retomada do log, redator de segredos, RuntimeHost dirigido por eventos.",
+    "Testing: provedores `Scripted` e `Recorded` (mesma suíte de contrato), relógio falso, log em memória, log com injeção de falha, aprovadores e verificador de teste. Tools.Files: files.read/write/delete presos à raiz (travessia, caminho absoluto e symlink recusados) e verificador de arquivos que olha o disco e falha fechado em critério desconhecido.",
+    "Suíte de enforcement com 86 testes cobrindo T-1..T-15 (T-16 é do R5). Testes de arquitetura leem os metadados do IL (referências de assembly, tipos e membros) e provei por mutação temporária (revertida) que falham ao introduzir HttpClient, DateTime.UtcNow, Task.Delay e nomes proibidos no Core.",
+    "Retomada provada por teste parametrizado que derruba o log em cada ponto possível do run e retoma: o run sempre termina e o efeito não idempotente nunca é repetido.",
+    "Fiação: entrada `ecosystem-ai` em ecosystem.json (permissões agent.act, fs.read, fs.write, já existentes no catálogo), workflow ecosystem-ai-ci.yml com filtro de caminho (NN-014) e job no integrador (integrate.yml + R_ECOSYSTEM_AI em integrate.sh), no mesmo padrão do Hub.",
+    "Consequências da DEC-0027 aplicadas (ROADMAP P6-2 [~] com Issue #78, plano e `consequencesApplied: true`)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "86/86 (T-1..T-15, contrato de provedor em 2 implementações, arquitetura por IL, retomada com queda em cada ponto)."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Ver evidência do PR (CHK-ARCH-REFS varre o Product sem referência a outro Product ou ao Control Plane)."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Ver evidência do PR."
+    }
+  ],
+  "known_issues": [
+    "Ainda não há provedor de modelo real, rede, segredo de plataforma, persistência durável do log nem Execution Runtime: são R5/R6 e decisões críticas próprias (plano §13). O log em memória prova o contrato; um adapter durável é trabalho futuro.",
+    "A equivalência de falhas é por texto normalizado (caixa e espaços); evidências que variam a cada tentativa (timestamps) só são contidas pelo teto de tentativas de verificação.",
+    "A política de integração atual não marca arquivos sensíveis do runtime como zona crítica. Sugestão, não aplicada (mudar a política é mudança crítica): tratar ToolResolver.cs, Ledger.cs e Secrets.cs como zona `security` e ArchitectureTests.cs como `control-plane`."
+  ],
+  "next_actions": [
+    "Autorização do proprietário para integrar o PR crítico (label `integrar`, aplicada por ele). Depois: P6-3 (R2, duas equipes) em PR próprio."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/addenda/ADD-0013-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/governance/addenda/ADD-0014-dec-0026-revogada-a-escolhida-c.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/architecture/local-first.md",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/contracts/permissions.json",
+    "docs/governance/responses/DEC-0027.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma autoridade por conceito: o estado do run é reconstruído do log (RunState.Replay), nunca guardado ao lado; versão em apps/ecosystem-ai/VERSION; estado de tarefa na Issue #78 e no ROADMAP."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Sem dependência Product→Product: CHK-ARCH-REFS varre o Product e passou; testes de arquitetura T-13 proíbem referência a outro Product ou ao Control Plane."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhuma referência ao Control Plane no Product nem no grafo (`dependencies: []`)."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Infraestrutura nova em C#; nenhuma reescrita do Urbe nem do Lunet2D."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Tool = capability com id estável, versão, permissões, risco e escopo (ToolDescriptor); sem integração improvisada."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Tools só conhecem ToolContext (Context e agente), nunca um Host concreto; teste de arquitetura impede nomes de Hosts/Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Todo evento do runtime responde quem/por quê/ferramenta/modelo/custo/contexto/resultado/verificação/aprovação (T-11, EventContract)."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Decisões persistidas: DEC-0026/0027 registradas, ADD-0013/0014, ADR-0017 Aceito; nada sustentado só por conversa."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente (lista em normative_sources)."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nada decidido sozinho: Product e id/nome vêm de DEC-0026-C e DEC-0027-B; o PR é crítico e espera o proprietário."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Workflow próprio com filtro de caminho e versão própria (VERSION); mudança no Product não cria release de outro."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Deny-by-default: sem agent.act nada age; permissões = interseção organização∩projeto∩agente; destrutivo exige aprovação (T-1, T-2, testes de aprovação)."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem requisito que dependa de dispositivo, UI ou visual: não há validação humana pendente; verificação é automatizada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Saída ≠ sucesso: Completed exige verificação aprovada com evidência (T-5); este handoff só vai a `done` depois da integração."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Ids estáveis: componente ecosystem-ai, capabilities files.read/write/delete, EventId = run+sequência."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "A abstração nasce local, sem pacote externo e com consumidor real único (o próprio Product); o saldo é medido na Extraction Review."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "O Product é descobrível (ecosystem.json), declara permissões e comandos e aparece no portal e no integrador."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Não é extração: nasce no Product (ADR-0011); a fronteira de extração é fiscalizada por testes, e nenhuma promoção ocorre sem segundo consumidor real."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "agent-runtime",
+      "status": "possible-candidate",
+      "rationale": "O Core não depende de Product, UI nem provedor e é testado por contrato com duas implementações de provedor, o que o torna candidato a Service compartilhado. Hoje o único consumidor é o próprio Product; o Urbe em C# (UC-21) e o Lunet2D (Fase 8) são consumidores previstos, ainda inexistentes. Nenhuma extração sem segundo consumidor real e Extraction Review (NN-022)."
+    }
+  ]
+}

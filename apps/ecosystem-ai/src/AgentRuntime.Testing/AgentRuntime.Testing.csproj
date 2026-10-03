@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Implementações determinísticas das portas do Core, para teste: provedores Scripted e Recorded, relógio e log em memória. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>AgentRuntime.Testing</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AgentRuntime.Core\AgentRuntime.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Tool segura de exemplo: files.read e files.write presos à raiz do Context, mais o verificador de arquivos. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>AgentRuntime.Tools.Files</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AgentRuntime.Core\AgentRuntime.Core.csproj" />
+  </ItemGroup>
+</Project>

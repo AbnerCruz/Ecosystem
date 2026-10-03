@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <OutputType>Exe</OutputType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="*" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\AgentRuntime.Core\AgentRuntime.Core.csproj" />
+    <ProjectReference Include="..\..\src\AgentRuntime.Testing\AgentRuntime.Testing.csproj" />
+    <ProjectReference Include="..\..\src\AgentRuntime.Tools.Files\AgentRuntime.Tools.Files.csproj" />
+  </ItemGroup>
+</Project>
