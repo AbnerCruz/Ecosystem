@@ -1,0 +1,179 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-tabletop-rpg-foundation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T21:26:44Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-001",
+  "component": "tabletop-rpg",
+  "state": "verifying",
+  "branch": "chatgpt/tabletop-rpg-foundation",
+  "base_commit": "615f001df548af192b494be4efe468c4671d5f5b",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/integrator/integrate.sh",
+    ".github/workflows/integrate.yml",
+    ".github/workflows/tabletop-rpg-ci.yml",
+    "ecosystem.json",
+    "docs/adr/README.md",
+    "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+    "docs/governance/addenda/ADD-0016-tabletop-rpg-solo-first.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261003-tabletop-rpg-foundation.json",
+    "apps/tabletop-rpg/VERSION",
+    "apps/tabletop-rpg/README.md",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/TabletopRpg.Core.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Identity.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Participants.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Perspective.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Campaign.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Rules.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Intents.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/SessionEngine.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Agents.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/CoreDomainTests.cs"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution",
+      "architecture",
+      "control-plane"
+    ],
+    "reason": "Funda um Product, registra decisão/ADR e ecosystem.json, adiciona AGENTS local e conecta o CI do novo Product ao integrador. A política exige autorização do proprietário depois dos gates."
+  },
+  "work_completed": [
+    "DEC-0033, ADD-0016 e ADR-0022 persistem a direção C#, mobile-first, solo-first e multiplayer futuro antes de ela sustentar o Product.",
+    "Product tabletop-rpg registrado com versão, SPEC, ROADMAP, regras locais, comando de teste e lifecycle independente.",
+    "Core C# headless implementa participantes humanos/agentes, personagens, Campaign State, conhecimento e memória separados, intents comuns, regras substituíveis e SessionEngine como única autoridade de resolução.",
+    "PlayerView não expõe World State; fatos não viram conhecimento automaticamente e conhecimento não é propagado entre personagens.",
+    "AgentTurnRunner é dirigido por wake signal explícito e recebe apenas a visão filtrada do participante; não existe polling nem SDK de modelo.",
+    "Testes cobrem isolamento cognitivo, memória subjetiva, autorização de personagem, humano/agente no mesmo motor, resolução de d20 determinística e limites do AgentTurnRunner.",
+    "CI seletivo tabletop-rpg-ci criado e ligado ao estado combinado do integrador."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O ambiente local desta sessão não possui .NET SDK; o workflow tabletop-rpg-ci executará este comando no GitHub com .NET 10."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O ambiente local desta sessão não possui .NET SDK; consistency.yml e o integrador executarão os checks no estado combinado."
+    }
+  ],
+  "known_issues": [
+    "RPG-001 é fundação headless: persistência de campanha, shell mobile, provedor LLM real, mapas e multiplayer pertencem às próximas tarefas do ROADMAP.",
+    "BasicD20RuleSystem é apenas implementação de referência substituível; não define o Product como dependente de D&D ou de sistema comercial."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR para main e observar os checks do Product, consistência e integrador.",
+    "Corrigir qualquer falha detectada pelos gates do estado combinado.",
+    "Quando o integrador marcar o PR crítico como pronto, aguardar a autorização do proprietário pela label integrar; o agente não adiciona essa label.",
+    "Após integração e evidência, atualizar RPG-001 para done e iniciar RPG-002 conforme o ROADMAP."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/local-first.md",
+    "docs/adr/README.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/contracts/schemas/decisions.schema.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ecosystem.json é a autoridade da identidade do componente; VERSION, SPEC e ROADMAP possuem responsabilidades únicas declaradas."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "tabletop-rpg declara dependencies vazio e seu diretório não referencia diretamente outro Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "O Product não depende do Hub para executar seu domínio."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Todo o código novo do Product e seu Core usam C# net10.0."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #156, branch dedicada, handoff, lista de arquivos, verificações e próximos passos tornam o trabalho observável."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A decisão desta conversa foi persistida em ADD-0016, DEC-0033, ADR-0022 e SPEC antes da integração."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas listadas foram consultadas diretamente, inclusive MANIFEST integral e schemas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Criação do Product e arquitetura solo-first estão registradas em ADR-0022/DEC-0033; o PR é declarado crítico."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "VERSION, comando de teste e workflow seletivo próprios preservam lifecycle independente."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "O primeiro slice não solicita rede, filesystem, credenciais nem permissões de agente; nenhuma permissão implícita foi criada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma UI/device validation é declarada nesta fundação headless; checks automáticos permanecem separados de validação humana futura."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-001 permanece verifying; não é declarada done antes de testes, integração e evidência."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "tabletop-rpg é o ID técnico estável; Tabletop RPG é nome de exibição mutável."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Product, tarefa, decisão, roadmap, branch e handoff são descobríveis nas fontes canônicas."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "O Core permanece dentro do Product; nenhuma abstração compartilhada nova foi criada sem segundo consumidor."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "O Product não exige distribuição do Hub e ainda não assume canal de distribuição próprio nesta fundação."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "tabletop-rpg-core",
+      "status": "product-specific",
+      "rationale": "Existe um único consumidor real; regras, sessão e perspectivas permanecem locais ao Product até evidência concreta de reutilização."
+    }
+  ],
+  "cost": null
+}
