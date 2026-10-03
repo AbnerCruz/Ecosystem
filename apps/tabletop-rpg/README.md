@@ -13,7 +13,7 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - O motor do jogo, não o modelo, é autoridade de estado, regras e resultados.
 - Estado real do mundo, conhecimento de cada personagem e memória subjetiva são domínios separados.
 - Agentes recebem visão filtrada e devolvem intents; não recebem uma referência mutável ao estado.
-- Local-first e Product independente: o Hub nunca é requisito de funcionamento ou distribuição.
+- Local-first e Product independente: nenhum outro Product é requisito de funcionamento ou distribuição.
 
 ## Estrutura inicial
 
