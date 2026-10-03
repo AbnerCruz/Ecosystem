@@ -1,0 +1,149 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-urbe-idb-parity",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T23:14:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-2",
+  "component": "urbe",
+  "state": "review",
+  "branch": "chatgpt/urbe-uc2-idb-parity",
+  "base_commit": "7087dff4394297ef30342245f759bc9947c0962a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/161",
+  "files_changed": [
+    "apps/urbe/tools/lib/parity-storage.mjs",
+    "apps/urbe/tests/csharp-storage-parity.mjs",
+    "apps/urbe/docs/csharp/acceptance/cases.json",
+    "apps/urbe/docs/csharp/acceptance/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/tools/lib/csharp-parity.mjs",
+    "apps/urbe/docs/csharp/PARITY.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261003-urbe-idb-parity.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Amplia apenas tooling, testes e documentação do corpus UC-2 já autorizado. Não altera runtime JavaScript congelado, formato persistido, política, stack, canal de distribuição nem código C# de produto."
+  },
+  "work_completed": [
+    "Adicionados quatro cenários portáveis de IndexedDB/browser ao contrato storage.scenario e um caso separado da migração IDB v1 kv[\"cidade\"], levando o corpus de 200 para 205 casos.",
+    "Os quatro casos de storage exercitam o adapter idb.js real sobre IndexedDB determinístico do tooling: estado existente da loja fs, gestão e isolamento de vaults, pastas e binários.",
+    "O caso idb.legacy-city usa a fixture histórica idb-legado-kv-cidade.json e deriva a transformação observável para Urbe/Cidades/Cidade anterior/**, preservação da origem e remoção da chave antiga.",
+    "O runner de storage passou a aceitar operações cities/createCity/removeCity e backend idb sem alterar src/persistence/adapters/idb.js.",
+    "ROADMAP, README de aceite e projeção PARITY foram atualizados sem marcar UC-2 como concluído."
+  ],
+  "verification": [
+    {
+      "check": "node tests/csharp-storage-parity.mjs / npm run check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #161 urbe-checks run 37160643052, job checks 111313180697: npm run check concluído com sucesso no head 10f2163."
+    },
+    {
+      "check": "node tools/run-e2e.mjs app-runtime zip smoke",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #161 urbe-checks run 37160643052, job e2e 111313180813: Chromium concluído com sucesso no head 10f2163."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs + self-test + integrator simulation",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #161 consistency run 37160643085, job 111313180487 concluído com sucesso no head 10f2163 após integração do PR #162."
+    }
+  ],
+  "known_issues": [
+    "UC-2 continua parcial: faltam falhas adicionais de recuperação, capacidades nativas completas/permissões por superfície e UI/E2E portáveis.",
+    "O harness IDB determinístico não substitui navegador real; tests/e2e/adapters.e2e.mjs permanece a prova congelada do adapter IDB no Chromium."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI no PR e corrigir qualquer divergência do corpus ou dos checks.",
+    "Depois desta fatia, continuar UC-2 com capacidades nativas/permissões ou falhas adicionais de recuperação sem tocar o runtime JS congelado."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/v2/contracts/persistence-adapter.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "cases.json continua derivado de makeCorpus; PARITY continua projeção gerada, sem nova autoridade."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência Product→Product adicionada."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Urbe permanece standalone; só tooling local do Product mudou."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Programa C# autorizado; esta fatia M0 não introduz código de produto antes de G-C0."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #139, branch dedicada e este handoff tornam o trabalho observável."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "DEC-0024-B/DEC-0025-C e ADR-0016 respeitados; nenhuma decisão nova foi presumida."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas foram consultadas diretamente e estão listadas."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Tooling de migração/paridade foi alterado sem refatorar o runtime JS congelado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação de navegador/aparelho foi inventada; E2E Chromium anterior é apenas evidência congelada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-2 permanece aberto; conclusão depende dos restantes e dos gates."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs UC/REQ e casos publicados existentes foram preservados; novos IDs são aditivos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Tooling permanece dentro do Urbe; nenhuma extração compartilhada criada."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma dependência do Hub/control plane no runtime ou distribuição do Urbe."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-csharp-parity-corpus",
+      "status": "product-specific",
+      "rationale": "Casos refletem contratos e dados legados específicos do Urbe; não há consumidor externo."
+    }
+  ],
+  "cost": null
+}

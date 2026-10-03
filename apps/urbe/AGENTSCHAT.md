@@ -1,3 +1,9 @@
+### 2026-10-03 — ChatGPT — UC-2: IndexedDB legado e gestão de vaults (REQ-007/028/046)
+- Estado: review, Issue #139; PR #161 com gates do head reconciliado verdes; fechamento formal em andamento.
+- Feito: quatro cenários portáveis IDB/browser adicionados ao `storage.scenario` e um caso separado para a migração v1 `kv["cidade"]`; corpus candidato 205. O `idb.js` real é executado sobre IndexedDB determinístico do tooling, cobrindo chaves legadas `knowledge-city`, gestão/isolamento de vaults, pastas e binários.
+- Limites: runtime JS congelado não foi alterado; o harness determinístico não substitui `tests/e2e/adapters.e2e.mjs` em Chromium nem valida aparelho/permissão do SO. UC-2 segue aberto.
+- Verificação: `urbe-checks` e `consistency` do PR #161 em execução.
+
 ### 2026-10-03 — codex — UC-2: identidade/GC (REQ-042)
 - Estado: revisão parcial, Issue #139; branch codex/urbe-domain-parity.
 - Feito: 26 cenários portáveis; 200 casos, 64/64 testes e 22 checks verdes. UC-7 reconciliado após PR #151.

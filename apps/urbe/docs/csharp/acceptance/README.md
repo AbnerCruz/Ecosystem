@@ -5,7 +5,7 @@ Autoridade: DEC-0024-B / ADR-0016 e `../ROADMAP.md`. Tooling local de migração
 ## Dados e limites
 
 - `oracle.json`: caminho relativo ao Product, tamanho em bytes e SHA-256 de fixtures (incluindo `.urbe` e binários), testes, quatro contratos, requisitos/SPEC/ROADMAP e tutorial. Sem dados reais do usuário ou segredos.
-- `cases.json`: todos os goldens convertidos para dados JSON com ID estável, operação, requisitos, fonte, entrada e saída esperada. Nesta base: 40 casos Markdown, 110 Visual, 12 cenários de vault três de restauração nove de storage e 26 de identidade/GC.
+- `cases.json`: todos os goldens convertidos para dados JSON com ID estável, operação, requisitos, fonte, entrada e saída esperada. Nesta base: 40 casos Markdown, 110 Visual, 12 cenários de vault, três de restauração, 13 de storage (nove FSA/native + quatro IDB/browser), um de migração IDB v1 e 26 de identidade/GC — 205 casos no total.
 - `../PARITY.md`: projeção das fontes, 101 REQ IMPLEMENTAR e inventário observável. Não é uma SPEC concorrente nem resultado do cliente C#.
 - Os contratos de persistência/cascas e os E2E estão congelados, mas **ainda precisam ser transcritos para cenários portáveis**. UC-2 continua aberto; este corpus não fecha UC-9/10/18 nem gate de plataforma.
 
@@ -26,7 +26,8 @@ O cliente devolve somente JSON em stdout (logs em stderr):
 - `identity.parse`: estado de sidecar ausente/corrompido/atual/futuro.
 - `identity.pair`: renames por fingerprint único; duplicidade/ambiguidade/vazio não herdam ID.
 - `gc.plan`: plano determinístico de retenção de histórico/lixeira e fontes de composição, sem gravação.
-- `storage.scenario`: métodos/argumentos explícitos do adapter → valores de leitura, listagem, bytes e rejeição esperada. Adapter JS usa FSA real sobre ponte/arquivos temporários do host; permissão recusada é injetada no adapter, não prova diálogo ou permissão do SO. IDB e gestão de vaults ainda pendentes.
+- `storage.scenario`: métodos/argumentos explícitos do adapter → valores de leitura, listagem, bytes e rejeição esperada. Adapter JS usa FSA real sobre ponte/arquivos temporários do host e o `idb.js` real sobre um IndexedDB determinístico do tooling; o E2E congelado `tests/e2e/adapters.e2e.mjs` prova IDB real no Chromium. A permissão recusada do FSA é injetada no adapter e não prova diálogo ou permissão do SO.
+- `idb.legacy-city`: fixture histórica `kv["cidade"]` da 1.x → projeção observável da migração já congelada pelo E2E: chave antiga removida, origem `Cidade anterior` preservada e conteúdo reunido no vault único `Urbe/Cidades/Cidade anterior/**`. O runner Node prova a transformação semântica; `tests/e2e/fixtures.e2e.mjs` continua sendo a prova do boot/migração real no Chromium.
 - `vault.scenario`: arquivos com bytes UTF-8/base64 e passos explícitos → caminhos carregados, hashes, IDs, proteção forward, recuperação e backup. O adapter usa o domínio JS real em memória, sem abrir dados do usuário.
 - `vault.restore`: migração, alteração e restauração → hash recuperado ou rejeição de cópia corrompida/ausente.
 - `visual.serialize`: DOM **inerte** criado de `input.html`, frontmatter de `input.bodyEditor` conforme `splitFrontmatter`, serialização `editor-visual.md` com integração matemática. Resultado `output.markdown`. Nunca executar scripts/carregar imagens do corpus. Normalizações e quebras de linha seguem o golden; o avaliador não normaliza strings.
@@ -43,6 +44,7 @@ node tools/csharp-parity.mjs run markdown.render node tools/parity-js-client.mjs
 node tools/csharp-parity.mjs run vault.scenario node tools/parity-vault-client.mjs
 node tools/csharp-parity.mjs run vault.restore node tools/parity-vault-client.mjs
 node tools/csharp-parity.mjs run storage.scenario node tools/parity-storage-client.mjs
+node tools/csharp-parity.mjs run idb.legacy-city node tools/parity-storage-client.mjs
 node tools/csharp-parity.mjs run identity.text node tools/parity-domain-client.mjs
 node tools/csharp-parity.mjs run gc.plan node tools/parity-domain-client.mjs
 node tests/csharp-domain-parity.mjs
@@ -56,7 +58,7 @@ O adapter JS executa o renderer real em VM. `run all` com ele falha de propósit
 
 ## Restante de UC-2
 
-1. Converter o IndexedDB legado e ampliar as falhas de recuperação. As 12 fixtures já têm load/edição/flush/reabertura, hashes, IDs, proteção forward e backup íntegro/idempotente. Três casos cobrem restauração válida e rejeição de cópia corrompida/ausente; a rejeição não afirma atomicidade da restauração inteira.
-2. Ampliar contrato adapter com gestão de vaults e backend IDB/browser (nove casos FSA/native já portáveis); contrato nativo para capacidades presentes/ausentes e permissões recusadas.
+1. Ampliar as falhas de recuperação. As 12 fixtures já têm load/edição/flush/reabertura, hashes, IDs, proteção forward e backup íntegro/idempotente. Três casos cobrem restauração válida e rejeição de cópia corrompida/ausente; a rejeição não afirma atomicidade da restauração inteira.
+2. Completar o contrato nativo para capacidades presentes/ausentes e permissões recusadas por superfície. Gestão de vaults, estado existente da loja `fs`, pastas e binários do backend IDB/browser já têm quatro casos portáveis; a migração histórica `kv["cidade"]` tem um caso próprio, além do E2E real em Chromium.
 3. Transcrever UI/E2E para passos e resultados observáveis por superfície; seletores dependem da pilha UC-5. Chromium não valida Android físico ou Windows instalado.
 4. Ligar os adapters C# ao mesmo corpus em M1–M4. UC-7 e G-C0 continuam precedendo qualquer código C# de produto.
