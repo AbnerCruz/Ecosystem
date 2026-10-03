@@ -199,6 +199,19 @@ Objetivo: IPC; command/event/request; capability discovery local; lifecycle; per
 
 Objetivo: mapear IA do Urbe e Agentic Workspace do Lunet; definir Agent Runtime comum; implementar/adaptar contratos; preservar integrações específicas. Sem reescrita cega (MANIFEST §39).
 
+Programa **Agent Runtime** (diretiva [ADD-0013](docs/governance/addenda/ADD-0013-agent-runtime-execution-runtime-e-organizacoes.md); plano em [`docs/architecture/agent-runtime.md`](docs/architecture/agent-runtime.md); [ADR-0017](docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md) `Proposto`). A ordem e o lugar do primeiro slice dependem da **DEC-0026** no portal; **nenhum slice é implementado antes dela**.
+
+- [~] P6-1 — **Plano arquitetural do Agent Runtime e do Execution Runtime**: auditoria do que existe (IA do Urbe, spec do Lunet2D, fluxo multiagente), conflitos e resoluções, fronteiras (Agent Runtime × Execution Runtime × Agent Workspace × Product de IA × Hub), contratos propostos, fatiamento R1–R6, enforcement por conceito e mapeamento inicial das IAs existentes (somente leitura, sem reescrita; MANIFEST §39). `[~]` aqui significa entregue e **aguardando a decisão do proprietário (DEC-0026)**, não validação em aparelho.
+  - Saída: `docs/architecture/agent-runtime.md`, ADR-0017 `Proposto`, DEC-0026. Depende de: —. Evidência: handoff `HO-20261003-agent-runtime-plano`.
+- [ ] P6-2 — **R1 — Agent Runtime mínimo** (em processo, C#, local e determinístico): `Agent`, `Task`, `Context` (contrato existente), `Tool` = capability, `Permission`, `Run`, event log, `Verifier`, ledger de orçamento com custo sintético, cancelamento e retomada; provedor `Scripted` e `Recorded` com a mesma suíte de contrato; sem rede, nuvem, deploy ou segredo real.
+  - Saída: testes T-1..T-15 do plano §14 (cada um falha de verdade se a regra for violada). Depende de: P6-1, **DEC-0026** (aceite do ADR-0017 e lugar onde nasce), contratos da Fase 2. Pode ser antecipado em relação às Fases 3–5 se a DEC-0026 assim decidir. Evidência: handoff do slice.
+- [ ] P6-3 — **R2 — Duas equipes, uma integração:** 2 agentes, tarefas dependentes, workspace isolado, produção, revisão e integração por `Change Set` com política de escalonamento (generaliza `integration-policy.json`); Git/GitHub só como adapter, nunca no Core.
+  - Saída: cenário de 2 agentes verde, com conflito e retrabalho. Depende de: P6-2. Evidência: handoff do slice.
+- [ ] P6-4 — **R3 — Agent Workspace hospedado em um Product existente**, com contexto e capabilities daquele Product. Anfitrião escolhido por critério (plano §11.1), não por palpite: hoje nem o Urbe (JS congelado, DEC-0025-C; IA em C# em UC-21, marco M3) nem o Lunet2D (Fase 8) estão prontos, então o contrato é provado primeiro com um **Host de teste**.
+  - Saída: o mesmo Workspace operando em dois contextos por capabilities diferentes. Depende de: P6-3 e dos contratos de Host da Fase 5 para o anfitrião real. Evidência: handoff do slice.
+- [ ] P6-5 — **R4 — Product de IA** consumindo exatamente o mesmo Runtime e o mesmo Workspace (prova: Runtime ≠ Product). Nome de exibição provisório "Ecosystem AI"; o **id** é estável e decidido em decisão própria antes de criar o Product.
+  - Saída: o Product sem loop agêntico nem cliente de provedor próprio. Depende de: P6-4. Evidência: handoff do slice.
+
 **Gate:** o mesmo modelo conceitual de Agent Workspace opera com contexto do Urbe ou do Lunet por tools/capabilities diferentes.
 
 ## Fase 7 — Primeira Tool real compartilhada
@@ -206,6 +219,13 @@ Objetivo: mapear IA do Urbe e Agentic Workspace do Lunet; definir Agent Runtime 
 Objetivo: extrair uma ferramenta com boundary claro (ex.: Sprite Studio ou Editor), após auditoria.
 
 **Gate:** a ferramenta funciona standalone e integrada sem duplicação de implementação.
+
+### Fases propostas (não vigentes até o ADR-0017 ser aceito)
+
+**Proposta**, sem gate nem IDs de tarefa (o MANIFEST §46 define as Fases 0–7; novas fases só existem depois do aceite do [ADR-0017](docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md), e este bloco não é lido como fase pelos checks). Detalhes: [`docs/architecture/agent-runtime.md`](docs/architecture/agent-runtime.md) §12.
+
+- **Fase 8 — Organizações persistentes e Remote Workers (proposta):** organização persistente (goals, agents, teams, projects, budgets, history), Remote Worker que registra capabilities, recebe jobs autorizados, executa isolado, respeita orçamento e timeout e aceita cancelamento. Depende da Fase 5 (IPC, Host API) e de decisões críticas futuras (modelo de confiança do Worker; retenção e privacidade das organizações).
+- **Fase 9 — Execution Runtime de serviços e Deployment (proposta):** serviços, deploy por capabilities abstratas (`deploy.*`) com um primeiro provider escolhido por comparação no momento, gasto real sob política de orçamento, segredos de plataforma. Depende da Fase 8 e de decisões críticas futuras (política de orçamento, armazenamento de segredos, primeiro provider).
 
 ---
 
