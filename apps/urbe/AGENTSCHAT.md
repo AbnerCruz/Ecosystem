@@ -5,6 +5,12 @@
 
 ---
 
+### 2026-10-03 — Claude — DEC-0025-C aplicada: Urbe JavaScript congelado, salvo bug crítico
+- **Estado:** o proprietário decidiu a **alternativa C** pelo portal (Ecosystem DEC-0025, Issue #68, registro `docs/governance/responses/DEC-0025.md`): congelamento total do JavaScript, salvo bug crítico. Esta entrada **não implementa nada**: aplica as consequências nos documentos.
+- **Feito:** nota de congelamento com justificativa no topo de `docs/v2/ROADMAP.md` (itens `[ ]`/`[~]` adiados, **nenhum item, REQ ou gate removido**); `docs/csharp/README.md`, Urbe ADR-0010 e Ecosystem ADR-0016 deixam de dizer «pendente».
+- **Regra daqui em diante:** não iniciar nem continuar item do 2.0 em JavaScript (nem preparação de fixtures/goldens); bug crítico do produto distribuído segue sendo corrigido, com regressão. A preparação do oráculo da paridade passa a ser do programa C# (UC-1..UC-4).
+- **Não decidido:** quando o congelamento termina (o corte, UC-31, é decisão do proprietário).
+
 ### 2026-10-02 — Claude — DEC-0024-B aplicada: programa de migração do Urbe para C# (UC-n), planejamento
 - **Estado:** o proprietário decidiu a **alternativa B** (reescrita completa em C#, troca do produto só em paridade total) pelo portal (Ecosystem DEC-0024, Issue #45, registro `docs/governance/responses/DEC-0024.md`). Esta entrada **não implementa nada**: aplica as consequências nos documentos.
 - **Feito:** Ecosystem ADR-0016 → Aceito; Urbe **ADR-0010** (referência qualificada ao Ecosystem ADR-0016); programa em `docs/csharp/` (README + ROADMAP `UC-1..UC-32`, fases M0–M5, gates G-C0–G-C5); documentos do Ecosystem que diziam «Urbe permanece em JavaScript / reescrita proibida» corrigidos.
