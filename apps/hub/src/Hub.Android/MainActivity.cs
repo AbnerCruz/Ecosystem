@@ -33,6 +33,7 @@ public sealed partial class MainActivity : Activity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         base.OnCreate(savedInstanceState);
+        HubInstaller.Changed += InstallationChanged;
 
         var root = new LinearLayout(this) { Orientation = Orientation.Vertical };
         root.SetOnApplyWindowInsetsListener(new SystemBarsPadding());
@@ -73,6 +74,9 @@ public sealed partial class MainActivity : Activity
     protected override void OnDestroy()
     {
         UnobserveDownloads();
+        HubInstaller.Changed -= InstallationChanged;
+        _prepareInstall?.Cancel();
+        _installConfirmation?.Dismiss();
         _releaseNotes?.Dismiss();
         _destroyed = true;
         _load?.Cancel();
@@ -83,6 +87,8 @@ public sealed partial class MainActivity : Activity
     {
         base.OnStart();
         ObserveDownloads();
+        HubInstaller.Recover(this);
+        UpdateInstallationControls();
     }
 
     protected override void OnStop()
@@ -122,6 +128,7 @@ public sealed partial class MainActivity : Activity
         _refresh.Enabled = true;
         _refreshing = false;
         UpdateDownloadControls();
+        try { await RefreshInstallationTrust(ct); } catch (OperationCanceledException) { }
     }
 
     string? ReadCache()
