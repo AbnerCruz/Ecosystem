@@ -30,7 +30,7 @@
   "traceability": {
     "task": "P4-4",
     "commit": "26678efa5a414a99f0596ccedf3ad47ab3f55f03",
-    "pr": null,
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/160",
     "handoff": "HO-20261003-p4-4-gate"
   },
   "evidence": [
