@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-p4-1-catalogo-de-releases",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T12:29:13Z",
+  "timestamp": "2026-10-03T12:42:59Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
   },
   "task_id": "P4-1",
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p4-1-release-catalog",
   "base_commit": "503bbdb894f0c3ef644d714de5aae4cc7b6424f8",
   "commit": "6230cb42b54c22a599da6f6f290bd214e5534e01",
@@ -37,7 +37,8 @@
     "Modelo de tela mostra até 3 releases por Product e 4 APKs por release, com motivos de falha e canal de recuperação. Sidecars não viram APK. Nenhum download, verificação de bytes ou instalação declarado.",
     "Cache da Fase 3 continua carregando; cache novo preserva releases e canais marcados como Stale.",
     "Main reconciliada por fast-forward com fechamento da Fase 3 (PR #100, fb71b21). ROADMAP inicia P4-1 em revisão e planeja download/integridade, launcher/instalador e gate independente do Hub.",
-    "FATO OBSERVADO: PR #102 integrado automaticamente, Core/build Android e consistency verdes. Conferência visual permanece pendente não crítica; publicação do APK depende do mecanismo de dispatch P4-5."
+    "FATO OBSERVADO: PR #102 integrado automaticamente, Core/build Android e consistency verdes. Conferência visual permanece pendente não crítica; publicação do APK depende do mecanismo de dispatch P4-5.",
+    "Release hub-v0.0.1-dev.3 publicada pelo workflow 37123442289 no commit 5c9e23f; APK público de 21805381 bytes conferido por download e SHA-256. Conferência visual aprovada pelo proprietário na Issue #105 e registrada em f018e3c."
   ],
   "verification": [
     {
@@ -66,19 +67,23 @@
       "critical": false,
       "object": "apps/hub/docs/catalogo-de-releases.md",
       "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/105); registro em docs/governance/responses/VAL-HO-20261003-p4-1-catalogo-de-releases-9190e538e0d8.md."
+    },
+    {
+      "check": "Release pública e integridade do APK do catálogo",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "5c9e23f73f0279c7ef32d1c7891dea8b4d3fd273",
+      "evidence": "hub-release 37123442289 verde, tag hub-v0.0.1-dev.3. Download do APK /tmp/ecosystem-hub-0.0.1-dev.3.apk: 21805381 bytes; SHA-256 29979d73076b8e216093d2196e166c9a77ea200f1c887fa4e7359c67b8e1870e coincide com API e sidecar público."
     }
   ],
   "known_issues": [
     "A API pública sem token limita requisições por IP; falha aparece com o canal de recuperação, sem fabricar release.",
     "Consulta até 100 releases recentes do repositório; ausência no recorte não prova ausência no histórico completo.",
-    "SHA-256 informado não prova integridade dos bytes, assinatura ou compatibilidade do APK. Não há ação de baixar/instalar neste slice.",
-    "O integrador não dispara hub-release após push com GITHUB_TOKEN; a publicação do APK depende de correção separada de control plane ou execução manual do workflow. CI de build não prova release publicada."
+    "SHA-256 informado não prova integridade dos bytes, assinatura ou compatibilidade do APK. Não há ação de baixar/instalar neste slice."
   ],
   "blockers": [],
   "next_actions": [
-    "P4-5 prepara dispatch seletivo em PR crítico separado; após autorização, conferir execução hub-release e artefato público antes de declarar publicação.",
-    "Registrar evidência do build publicado e conferência visual quando o proprietário a realizar; manter estado review enquanto essa validação não existir.",
-    "P4-2: download com cancelamento/limite e verificação de tamanho/SHA-256; P4-3 exige modelo explícito de permissões e segurança antes do instalador/launcher."
+    "P4-2: download com cancelamento/limite e verificação de tamanho/SHA-256; P4-3 exige ADR e modelo explícito de permissões/segurança antes do instalador/launcher."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -118,11 +123,11 @@
     },
     {
       "id": "NN-017",
-      "evidence": "Conferência visual pending/critical=false; CI não é teste no aparelho."
+      "evidence": "Conferência visual aprovada pelo proprietário na Issue #105; verificação humana preservada exatamente como registrada pela automação. Não aprova o futuro gate da Fase 4."
     },
     {
       "id": "NN-018",
-      "evidence": "Estado review; build Android e integração precisam de evidência do CI."
+      "evidence": "PR #102 integrado, 111 testes e build Android verdes, release pública conferida e aprovação humana registrada."
     },
     {
       "id": "NN-021",

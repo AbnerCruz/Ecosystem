@@ -1,0 +1,52 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-hub-hub-v0.0.1-dev.3",
+  "component": "hub",
+  "build": "hub-v0.0.1-dev.3",
+  "recorded_at": "2026-10-03",
+  "state": "VALIDATED",
+  "objective": "Catálogo P4-1: conferência visual das releases e metadados de APK pelo canal declarado.",
+  "preconditions": [
+    "Android 10 ou posterior, arm64; APK de desenvolvimento do Hub.",
+    "Internet para a carga inicial; dados antigos identificados offline."
+  ],
+  "steps": [
+    "Instalar a build contendo P4-1 e atualizar com internet.",
+    "Conferir Releases e artefatos, nomes/tamanhos/URLs/checksums e explicação de canal/APK ausente.",
+    "Conferir legibilidade, rolagem e aviso do último estado conhecido offline."
+  ],
+  "expected": "Catálogo compreensível no celular, com metadados informados e estados de ausência/rede explícitos.",
+  "known_issues": [
+    "Escopo da aprovação: conferência visual P4-1. Download/verificação de bytes/instalação de Products são P4-2/P4-3 e gate P4-4.",
+    "API pública sujeita a rate limit; catálogo mostra até 3 releases e 4 APKs por release.",
+    "Canal de desenvolvimento com assinatura pública estável, conforme DEC-0029-A."
+  ],
+  "artifact": {
+    "name": "ecosystem-hub-0.0.1-dev.3.apk",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v0.0.1-dev.3/ecosystem-hub-0.0.1-dev.3.apk",
+    "sha256": "29979d73076b8e216093d2196e166c9a77ea200f1c887fa4e7359c67b8e1870e"
+  },
+  "traceability": {
+    "task": "P4-1",
+    "commit": "5c9e23f73f0279c7ef32d1c7891dea8b4d3fd273",
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/102",
+    "handoff": "HO-20261003-p4-1-catalogo-de-releases"
+  },
+  "evidence": [
+    {
+      "kind": "human",
+      "check": "Conferência visual do catálogo no celular",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/105); registro em docs/governance/responses/VAL-HO-20261003-p4-1-catalogo-de-releases-9190e538e0d8.md.",
+      "handoff": "HO-20261003-p4-1-catalogo-de-releases"
+    },
+    {
+      "kind": "automated",
+      "check": "Release pública e integridade do APK do catálogo",
+      "result": "passed",
+      "evidence": "hub-release 37123442289 verde, tag hub-v0.0.1-dev.3. Download do APK /tmp/ecosystem-hub-0.0.1-dev.3.apk: 21805381 bytes; SHA-256 29979d73076b8e216093d2196e166c9a77ea200f1c887fa4e7359c67b8e1870e coincide com API e sidecar público.",
+      "handoff": "HO-20261003-p4-1-catalogo-de-releases"
+    }
+  ]
+}
