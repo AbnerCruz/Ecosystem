@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace TabletopRpg.Core;
 
 public enum ControllerKind
@@ -15,6 +17,7 @@ public enum SeatRole
 public sealed class Character
 {
     private readonly Dictionary<string, int> _attributes;
+    private readonly IReadOnlyDictionary<string, int> _attributesView;
 
     public Character(CharacterId id, string name, IReadOnlyDictionary<string, int>? attributes = null)
     {
@@ -25,20 +28,23 @@ public sealed class Character
         Name = name.Trim();
         _attributes = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-        if (attributes is null) return;
-
-        foreach (var pair in attributes)
+        if (attributes is not null)
         {
-            if (string.IsNullOrWhiteSpace(pair.Key))
-                throw new ArgumentException("Attribute names cannot be empty.", nameof(attributes));
+            foreach (var pair in attributes)
+            {
+                if (string.IsNullOrWhiteSpace(pair.Key))
+                    throw new ArgumentException("Attribute names cannot be empty.", nameof(attributes));
 
-            _attributes[pair.Key.Trim()] = pair.Value;
+                _attributes[pair.Key.Trim()] = pair.Value;
+            }
         }
+
+        _attributesView = new ReadOnlyDictionary<string, int>(_attributes);
     }
 
     public CharacterId Id { get; }
     public string Name { get; }
-    public IReadOnlyDictionary<string, int> Attributes => _attributes;
+    public IReadOnlyDictionary<string, int> Attributes => _attributesView;
 
     public int AttributeModifier(string attribute)
     {
