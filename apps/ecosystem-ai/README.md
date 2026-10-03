@@ -36,3 +36,8 @@ dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests
 ```
 
 Requer .NET SDK 10+. Não há provedor de modelo real, rede nem segredo: o R1 prova o runtime com provedores determinísticos.
+
+## Coordenação local candidata
+
+A prova de equipes, isolamento e integração está descrita em [docs-r2.md](docs-r2.md).
+Autoridade do escopo: P6-3 no ROADMAP; contrato candidato: ADR-0020.
