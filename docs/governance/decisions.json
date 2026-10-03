@@ -1013,7 +1013,7 @@
     },
     {
       "id": "DEC-0029",
-      "status": "pending",
+      "status": "decided",
       "component": "hub",
       "blocking": true,
       "title": "Com que chave assinar o APK do Hub",
@@ -1045,7 +1045,11 @@
         "docs/architecture/distribution.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-03"
+      "raisedAt": "2026-10-03",
+      "decision": "Alternativa A — A — Chave de desenvolvimento pública e estável no repositório (mesmo padrão do Lunet2D), só para o canal de desenvolvimento (pré-lançamento), com o certificado conferido no CI (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/88).",
+      "decidedAt": "2026-10-03",
+      "record": "docs/governance/responses/DEC-0029.md",
+      "consequencesApplied": false
     }
   ]
 }
