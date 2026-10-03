@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "codex/p4-5-hub-release-dispatch",
   "base_commit": "5d2f7eed9a3dca168ee873e7043eda40b1a3acad",
-  "commit": null,
-  "pr": null,
+  "commit": "b9cc467f429521ed079c9cc1570a2ca6bd0e4e3b",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/104",
   "files_changed": [
     ".github/integrator/integrate.sh",
     ".github/integrator/simulate.sh",
