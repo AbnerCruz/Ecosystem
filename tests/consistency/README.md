@@ -36,6 +36,30 @@ Requer .NET SDK 10+. Execute a partir de qualquer diretório dentro do repositó
 
 A lista de NN por check é informativa; a autoridade é [`docs/governance/enforcement-matrix.json`](../../docs/governance/enforcement-matrix.json).
 
+## Rastreabilidade e escopo no integrador (P3-14)
+
+`--integration-gates` usa as regras da **main**, os arquivos do diff real e os handoffs alterados pelo PR. `ChangeReview` bloqueia mudanças em `ARCHITECTURE.md`, `docs/contracts/**` ou com achados `architecture`/`compatibility` sem um ADR **Aceito/Aprovado** em `normative_sources` de um desses handoffs. O caminho qualifica o ADR do Ecosystem ou do Product; arquivo inexistente ou ADR proposto não serve. A revisão ainda precisa conferir se a decisão citada sustenta a mudança.
+
+Migração e refatoração declaram `change_scope` no handoff (schema do handoff). Exemplo de metadados, a preencher com evidência real:
+
+```json
+{
+  "change_scope": {
+    "kind": "refactor",
+    "product": "urbe",
+    "exceptions": [],
+    "before_check": "Testes do Urbe antes",
+    "after_check": "Testes do Urbe depois"
+  }
+}
+```
+
+Cada nome aponta para uma verificação única `automated/passed`, com evidência e `tested_commit`: antes identifica `base_commit`; depois identifica o estado testado diferente da base. `CHK-HANDOFFS` confere a existência dos commits no histórico. O CI do Product continua obrigatório no estado combinado.
+
+O diff fica no Product declarado, no próprio handoff e no ROADMAP. Arquivo externo só passa como exceção com caminho **exato** presente no diff e justificativa técnica; outro Product nunca é exceção. Não se mistura `migration` e `refactor`, nem dois Products, no mesmo PR. A passagem `not-migrated` → `active` exige declaração `migration` automaticamente. Para refatorações e outras migrações, a intenção é declarada pelo agente e conferida na revisão; o checker não deduz preservação de comportamento pelo nome de um arquivo. Uma necessidade funcional deve ser tarefa própria (NN-013).
+
+O self-test cobre passagem de rotina, ADR ausente/proposto, importação sem declaração, mistura de trilhos/Products, exceções inválidas, path traversal e evidências ausentes/reprovadas/reutilizadas. Estas regras não substituem auditoria de histórico, revisão das exceções ou testes do Product.
+
 ## Adicionar um check
 
 1. Implementar em `Check.cs` com novo ID `CHK-...` e adicioná-lo a `Checks.Ids`.

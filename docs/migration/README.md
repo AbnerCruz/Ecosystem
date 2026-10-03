@@ -47,6 +47,8 @@ Permitido apenas o mínimo técnico inevitável para funcionar no novo path (ex.
 
 ## 5. Depois da migração — prova (MANIFEST §44.3)
 
+**Verificação de escopo no PR (P3-14):** declare `change_scope.kind = migration` e o Product no handoff; `before_check` e `after_check` apontam para testes aprovados com evidência e `tested_commit` antes/depois. O integrador da main compara a declaração com o diff real. Arquivos fora do Product, do próprio handoff e do ROADMAP exigem exceção de caminho exato com justificativa técnica; outro Product e refatoração no mesmo PR são recusados. A transição `not-migrated` → `active` sem declaração também é recusada. Formato e limites: [`tests/consistency/README.md`](../../tests/consistency/README.md). A declaração não permite mudanças funcionais nem dispensa a auditoria abaixo.
+
 Cada produto precisa provar, comparando com a linha de base do inventário: build, testes, workflows, release, documentação, paths, dados, links e processo de desenvolvimento. Mais:
 
 - auditoria de histórico: número de commits e conjunto de tags da origem presentes no monorepo (P1-8);
@@ -108,4 +110,3 @@ O gate adicional **não pode ser marcado como concluído antes da auditoria pós
 **Urbe Web (DEC-0009-A).** O Urbe Web **continua sendo servido por `AbnerCruz/Urbe`** (Pages): o pipeline do monorepo publica o **site estático** gerado de `apps/urbe/` no Pages desse repositório. URL, escopo do service worker e PWAs instalados **não mudam**. O mecanismo exato é detalhado em [`import-plan.md`](import-plan.md) §7.4 (proposta: a `main` da origem passa a ser um espelho de `apps/urbe`, sem trocar a fonte do Pages); o conteúdo publicado é artefato **gerado** e declara sua fonte no commit (NN-001).
 
 **O que esta seção não decide:** filtros de caminho dos workflows e a adaptação mínima dos checks do Urbe que leem `.github/workflows` (R-URB-3). São itens do plano P1-3.
-
