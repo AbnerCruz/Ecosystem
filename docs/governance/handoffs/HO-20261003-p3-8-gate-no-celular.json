@@ -1,0 +1,113 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p3-8-gate-no-celular",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T09:00:56Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P3-8",
+  "component": "hub",
+  "state": "review",
+  "branch": "codex/p3-1-closeout-p3-8",
+  "base_commit": "40e6afb62f799572e8d86a1827422f5d971d7567",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/95",
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261003-p3-1-releases-do-hub.json",
+    "docs/governance/handoffs/HO-20261003-p3-8-gate-no-celular.json",
+    "docs/validation/hub/hub-v0.0.1-dev.2.md",
+    "tests/consistency/Check.cs"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: P3-1 integrado e publicado; release hub-v0.0.1-dev.2 disponível com APK e SHA-256.",
+    "Roteiro de validação criado para instalação, leitura dos Products, Passado/Agora/Próximo, legibilidade/toque e cache offline; pendência humana crítica com objeto no portal.",
+    "ROADMAP P3-8 [~] e gate aguardando; Issue #94 aberta. Nenhuma validação em aparelho declarada.",
+    "CI expôs self-test desatualizado: mutação buscava texto phase=3/state=não iniciado e virava no-op quando o gate passou a aguardando. Corrigido para escolher um gate da projeção e trocar seu estado por outro; não depende de número de fase, formatação nem estado vivo. O check CHK-PORTAL permanece inalterado."
+  ],
+  "verification": [
+    {
+      "check": "Release e integridade do APK candidato",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Release hub-v0.0.1-dev.2 e assets observados no canal público; workflow de release 37105620991 verde, conforme handoff P3-7. Download do APK e sha256sum nesta sessão: 147f42d433ded78b59545fa64adb44cd31613e5af76361813f714f9e04a93731."
+    },
+    {
+      "check": "Consistência e projeção da pendência P3-8",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Nesta branch: dotnet run tests/consistency/Check.cs passou 22/22; geração online com GenerateStatus.cs --ref main --releases online passou; checks repetidos sobre a projeção passaram 22/22. pendingValidations contém P3-8 critical=true, link do roteiro e ações Aprovar/Reprovar com hash 166e1aa80bb5. SDK 10.0.401 instalado nesta sessão."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução local completa nesta branch com SDK 10.0.401: todos os checks provaram detectar suas violações, incluindo a mutação de estado do gate em aguardando e os nove casos de releases. Exit code 0; log local /tmp/ecosystem-gate-selftest.log. A falha anterior do CI foi uma mutação literal que não correspondia mais ao estado atual, corrigida sem alterar CHK-PORTAL."
+    },
+    {
+      "check": "Gate P3-8: instalar o Hub e compreender no celular o estado de Lunet2D e Urbe sem abrir GitHub manualmente",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "docs/validation/hub/hub-v0.0.1-dev.2.md",
+      "evidence": "Somente o proprietário pode validar instalação, toque/layout e compreensão em aparelho (NN-017). Roteiro e APK são o objeto, com resposta Aprovar/Reprovar no portal."
+    }
+  ],
+  "known_issues": [
+    "API pública do GitHub possui limite por IP; o roteiro distingue ausência explicada de estado inventado.",
+    "Build de desenvolvimento depurável e assinada com chave pública estável (DEC-0029-A); não é canal estável."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar e publicar este roteiro/pendência pelo integrador automático.",
+    "Proprietário executa roteiro e registra Aprovar/Reprovar pelo portal.",
+    "Após a resposta, um agente atualiza handoff/ROADMAP e registra o estado de validação do build; só aprovar o gate com evidência humana."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/hub/README.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Resultado humano possui uma autoridade: verificação deste handoff; roteiro aponta para ela, sem duplicar aprovação."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #94, branch, base_commit e handoff identificam tarefa e pendência."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana pending e critical; P3-8 [~], gate aguardando, sem inventar resultado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Gate só encerra após evidência humana e integração; estado review."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Roteiro e download disponíveis no portal sem executar o Hub; nenhum Product ganha dependência."
+    }
+  ],
+  "cost": null,
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Correção necessária em tests/consistency/Check.cs: self-test do gate era acoplado ao texto phase=3/state=não iniciado e não injetava violação quando o gate passou a aguardando. Nova mutação altera o estado real de um gate por JSON; mantém a fiscalização. Zona tests/consistency/** requer autorização do proprietário."
+  }
+}
