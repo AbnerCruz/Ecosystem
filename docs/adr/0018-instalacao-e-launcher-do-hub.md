@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — DEC-0030 pendente. Não autoriza implementação nem concede permissões.
+Aceito — DEC-0030-A, escolhida pelo proprietário no portal (Issue #112, 2026-10-03; registro em `docs/governance/responses/DEC-0030.md`). A política aceita não concede permissões Android nem aprova integração de implementação por si só.
 
 ## Contexto
 
@@ -24,7 +24,7 @@ Definir em que condições o usuário pode instalar/atualizar e abrir um pacote 
 
 ## Decisão
 
-Recomenda-se A, sujeita à DEC-0030. A decisão do proprietário deve ser persistida antes de marcar este ADR Aceito. Registrar a proposta não ativa APIs, muda catálogo de permissões, contratos, chaves ou canais.
+Adotada a opção A pelo proprietário na DEC-0030, registrada pela automação após a Issue #112. Conferir identidade canônica e certificado/linhagem previamente aprovados é requisito antes de instalar/atualizar. Sem identidade ou certificado aprovado, oferecer o canal independente; não cair para B. Esta aplicação da decisão não ativa instalador, altera chaves/canais ou aprova fingerprints ainda não registrados.
 
 O modelo comum às opções A/B está detalhado em [modelo-de-instalacao.md](../../apps/hub/docs/modelo-de-instalacao.md). A alternativa escolhida deve orientar os requisitos e a validação de P4-3; A não pode cair silenciosamente para B na ausência de certificado aprovado.
 
@@ -36,7 +36,7 @@ Nenhuma opção exige inventariar todos os aplicativos (`QUERY_ALL_PACKAGES`), p
 
 ## Alternativas rejeitadas
 
-Nenhuma opção foi rejeitada pelo proprietário até a DEC-0030. Instalação silenciosa, confiar apenas no nome do asset/hash e extrair um Service de instalação sem consumidor real estão excluídos da proposta por NN-001, NN-016, NN-020 e NN-022.
+As opções B e C não foram escolhidas pelo proprietário na DEC-0030-A. Instalação silenciosa, confiar apenas no nome do asset/hash e extrair um Service de instalação sem consumidor real estão excluídos da proposta por NN-001, NN-016, NN-020 e NN-022.
 
 ## Referências
 
