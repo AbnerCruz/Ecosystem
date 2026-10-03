@@ -1,0 +1,167 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "b2ccb60",
+  "commit": null,
+  "pr": null,
+  "blockers": [
+    "DEC-0026: o lugar e o momento do primeiro slice do Agent Runtime dependem do proprietário (NN-011); nenhum slice é implementado antes dela."
+  ],
+  "cost": null,
+  "component": "ecosystem",
+  "state": "review",
+  "message_id": "HO-20261003-agent-runtime-plano",
+  "timestamp": "2026-10-03T02:30:00Z",
+  "task_id": "P6-1",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "Registra a diretiva do proprietário (ADD-0013) e abre decisão do proprietário (DEC-0026), em zonas críticas (docs/governance/addenda/**, decisions.json, ADR). Propõe fronteiras arquiteturais cross-cutting sem implementá-las."
+  },
+  "files_changed": [
+    "docs/governance/addenda/ADD-0013-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/governance/handoffs/HO-20261003-agent-runtime-plano.json"
+  ],
+  "work_completed": [
+    "FATO: diretiva do proprietário recebida como arquivo (ecosystem-agent-runtime-prompt.md, 1 683 linhas) e persistida integralmente como ADD-0013 (NN-009); nenhuma decisão crítica foi tomada por ela.",
+    "Auditoria do estado real da main (fontes normativas lidas diretamente, NN-010): o MANIFEST já classifica Agent Runtime como Service (§6.5) e Agent Workspace como Workspace (§6.7), com estratégia de convergência (§20, §39); contratos da Fase 2 (Context, Capability, permissões `fs.read`/`fs.write`/`network.access`/`execute.code`/`agent.act`, Registry) prontos; nenhuma capability real; IA do Urbe em `apps/urbe/src/ai/` (5 arquivos, 1 168 linhas, JS, congelado por DEC-0025-C, porte em UC-21/M3); spec do Agentic Workspace do Lunet2D (SPEC §16, Fase 8); política de escalonamento rotina × crítico em produção (`integration-policy.json`).",
+    "docs/architecture/agent-runtime.md: auditoria, 10 conflitos com resolução (C1–C10), cinco fronteiras (Agent Runtime × Execution Runtime × Agent Workspace × Product de IA × Hub), conceitos e as relações pedidas pelo ADD §46, organizações (composição, não departamentos; menor equipe suficiente), Execution Runtime/Workers/24-7/Deployment, orçamento, segredos, observabilidade sem raciocínio privado, loop de falha com limite, escalonamento generalizado da política existente, mapa do fluxo atual para conceitos universais e trilha de dogfooding D0–D3, contratos propostos, fatiamento R1–R6 com avaliação crítica do slice sugerido (5 ajustes), 16 testes de enforcement (T-1..T-16), checklist do §46 respondido item a item, non-goals e riscos.",
+    "ADR-0017 `Proposto` (fronteiras D1–D9, NN-022 em avaliação prévia, alternativas rejeitadas) e DEC-0026 no portal: quando e onde nasce o R1 (A ordem do ROADMAP · B Service compartilhado · C dentro de um Product de IA com fronteira de extração · D não aceitar), com recomendação do agente (C) e o aceite do ADR embutido.",
+    "ROADMAP: itens P6-1..P6-5 na Fase 6 (`[~]` só no P6-1, entregue e aguardando a decisão do proprietário) e bloco não-vigente de Fases 8 e 9 propostas, sem gate nem IDs; ARCHITECTURE §8.1 recebe só um ponteiro (sem estado copiado, ADR-0010).",
+    "Achado de sequência: o anfitrião do R3 não pode ser escolhido hoje por critério — o Urbe JS está congelado e a IA em C# (UC-21) está no marco M3; o Lunet2D só chega ao Agentic Workspace na Fase 8. O plano propõe provar o contrato com um Host de teste e fixa o critério de escolha do anfitrião real.",
+    "DECISÃO NÃO TOMADA, de propósito: sem implementação estrutural (nenhum diretório, componente em ecosystem.json, schema ou permissão) antes da DEC-0026 (NN-011, NN-022)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs (CHK-DECISIONS: DEC-0026 com objeto; CHK-ROADMAP; CHK-STATE-CONSISTENCY: P6-1 [~] com Issue aberta; CHK-HANDOFFS; CHK-SECRETS; CHK-PORTAL)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks; ver evidência do PR."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os checks provaram detectar suas violações."
+    },
+    {
+      "check": "Classificação pelo classificador da main (--integration-gates)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "critical [constitution]: zona crítica docs/governance/addenda/** e decisions.json; espera a autorização do proprietário (label integrar, posta por ele)."
+    }
+  ],
+  "known_issues": [
+    "O plano é desenho: contratos são tabelas conceituais, não schemas; cada um nasce por ADR no slice que o exigir (D9). Nenhuma permissão nova foi criada.",
+    "O mapeamento das IAs existentes é por módulo e conceito (somente leitura). A matriz de paridade comportamental do Urbe é de UC-1/UC-2 e o mapeamento profundo do Lunet2D é da Fase 8 dele.",
+    "DEC-0026 e a autorização deste PR crítico são duas pendências do proprietário (a segunda só registra o texto dele e o ADR `Proposto`); podem ser respondidas na mesma visita ao portal.",
+    "Numeração de ADR/DEC/P-IDs pode colidir com trabalho concorrente (já ocorreu com P3-11); o integrador devolve conflito e a reconciliação é semântica."
+  ],
+  "next_actions": [
+    "Proprietário: responder a DEC-0026 no portal e autorizar o PR crítico.",
+    "Depois da resposta: aplicar as consequências (ADR-0017 Aceito/revisão; reordenar P6-*; abrir, só então, a decisão curta de id/nome do Product se a escolha for C).",
+    "Só depois: R1 (P6-2) em PR próprio, com testes T-1..T-15, `reuse_assessment` e as aprovações críticas que ele exigir (entrada em ecosystem.json ou diretório compartilhado)."
+  ],
+  "decisions_required": [
+    "DEC-0026"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/governance/addenda/ADD-0013-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/architecture/local-first.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/candidates.md",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/contracts/permissions.json",
+    "apps/urbe/src/ai/agent.js",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma autoridade de ledger de orçamento por organização; memória nunca substitui estado canônico; ADR e DEC como autoridades do status, não copiadas (agent-runtime.md §5.4, §8.1)."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Sem dependência Product→Product: o Runtime é consumido por contrato; o plano proíbe importar Product (§4)."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Agent Runtime não é requisito de nenhum Product; o Hub só observa (§3 C6, §4)."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Tools de agente são capabilities versionadas (§5.2)."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Diretiva do proprietário persistida integralmente como ADD-0013."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas lidas diretamente e listadas em normative_sources (MANIFEST §6, §20, §30, §39, ADRs, contratos)."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança de fronteira vira ADR-0017 `Proposto` + DEC-0026; nada estrutural implementado antes."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Git/GitHub só como adapter fora do Core; conceitos universais extraídos (§9)."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Ferramentas disponíveis = interseção Host ∩ org ∩ projeto ∩ agente; deny-by-default; permissões novas por slice, em zona crítica (§5.5, §10)."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "`Completed` exige verificação aprovada; nada marcado concluído (P6-1 é [~])."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "O id do Product de IA é tratado como estável e decidido à parte (§13)."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhum componente, diretório ou abstração criado; fronteira de extração desde o R1."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Cinco respostas em avaliação prévia no ADR-0017; Extraction Review com evidência na promoção."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Hub e sua distribuição nunca são requisito do Runtime nem dos Products."
+    }
+  ]
+}

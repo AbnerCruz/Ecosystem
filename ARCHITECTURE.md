@@ -150,6 +150,7 @@ Este documento descreve a arquitetura **atual** nas seções anteriores. Aqui fi
 - plataforma first-party como distribuição principal dos Products (DEC-0021-C): **progressiva** — até ela existir valem DEC-0008/DEC-0009 (repositórios de origem); depois, cada Product migra em item próprio, com ponte de atualização, redirecionamento e recuperação, e os repositórios antigos viram canal alternativo, sem serem apagados. Nenhum Service de distribuição antes de haver consumidor real (NN-020, NN-022);
 - Hub read-only **Android nativo em C#** (`net10.0-android`), com a leitura de dados em biblioteca independente de UI (Fase 3; ADR-0013, DEC-0022-A);
 - estrutura de `platform/`, `workspaces/`, `tools/` e `services/`: os diretórios só nascem quando tiverem conteúdo com função (ADR-0004); `apps/` existe e contém Lunet2D e Urbe.
+- Agent Runtime (Service), Execution Runtime, Agent Workspace, Product de IA e organizações de agentes (diretiva ADD-0013): plano, fronteiras e contratos **propostos** em [`docs/architecture/agent-runtime.md`](docs/architecture/agent-runtime.md); o status do ADR-0017 e a sequência do primeiro slice são do ADR e da DEC-0026 (autoridades; não copiados aqui). Nada implementado.
 
 ### 8.2 Não decidido (nenhum agente deve tratar como decidido)
 
