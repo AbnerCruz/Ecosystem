@@ -62,10 +62,10 @@
     {
       "check": "Conferência visual do catálogo no celular",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/hub/docs/catalogo-de-releases.md",
-      "evidence": "Texto/rolagem/legibilidade da seção nova em aparelho ainda não conferidos. Validação não crítica visível no portal, sem bloquear integração (ADD-0012). Não substitui o gate futuro da Fase 4."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/105); registro em docs/governance/responses/VAL-HO-20261003-p4-1-catalogo-de-releases-9190e538e0d8.md."
     }
   ],
   "known_issues": [
