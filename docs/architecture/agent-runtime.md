@@ -1,7 +1,7 @@
 # Agent Runtime, Execution Runtime e organizações de agentes — plano arquitetural
 
-> **Autoridade:** documento de arquitetura (nível "ARCHITECTURE e contracts", MANIFEST §24), subordinado ao `MANIFEST.md` (§20 e §39 já tratam do Agent Runtime), ao [ADD-0013](../governance/addenda/ADD-0013-agent-runtime-execution-runtime-e-organizacoes.md) (a diretiva do proprietário, texto integral) e ao [ADR-0017](../adr/0017-agent-runtime-execution-runtime-e-organizacoes.md) (`Proposto`).
-> **Status: PROPOSTA.** Nada aqui cria código, diretório, componente em `ecosystem.json`, schema, permissão ou fase vigente (NN-011, NN-020, NN-022). O que o proprietário precisa decidir está em **DEC-0026** ([`decisions.json`](../governance/decisions.json)); o que vem depois está em §13. Estado de andamento: ROADMAP (itens P6-1..P6-5) e Issues, nunca copiado aqui (ADR-0010).
+> **Autoridade:** documento de arquitetura (nível "ARCHITECTURE e contracts", MANIFEST §24), subordinado ao `MANIFEST.md` (§20 e §39 já tratam do Agent Runtime), ao [ADD-0013](../governance/addenda/ADD-0013-agent-runtime-execution-runtime-e-organizacoes.md) (a diretiva do proprietário, texto integral) e ao [ADR-0017](../adr/0017-agent-runtime-execution-runtime-e-organizacoes.md).
+> **Status: plano de arquitetura.** O aceite do ADR-0017 e a sequência do primeiro slice são do ADR e da **DEC-0026** ([`decisions.json`](../governance/decisions.json)), as autoridades (não copiadas aqui, ADR-0010); o que vem depois está em §13. Contratos e fases abaixo são **propostas** até o ADR de cada contrato ser aceito: nada aqui cria código, diretório, componente em `ecosystem.json`, schema, permissão ou fase vigente (NN-011, NN-020, NN-022). Estado de andamento: ROADMAP (itens P6-1..P6-5) e Issues.
 > Convenção do MANIFEST §53: **FATO** = verificado no repositório nesta tarefa; **INFERÊNCIA** = dedução; **PROPOSTA** = sugestão sujeita a decisão; **DECISÃO** = já registrada pelo proprietário.
 
 ## 1. Resumo
@@ -14,7 +14,7 @@ Conclusões principais:
 2. **Cinco fronteiras** separam o que o ADD pede para não misturar (§4): Agent Runtime × Execution Runtime × Agent Workspace × Product de IA × Hub.
 3. **O que existe hoje é matéria-prima, não ponto de partida:** a IA do Urbe (`apps/urbe/src/ai/`, 1 168 linhas, JS, congelado por DEC-0025-C) e o spec do Lunet (§16, Fase 8) descrevem o mesmo tipo de sistema com vocabulário próprio; o fluxo multiagente que desenvolve o Ecosystem (branch, PR, integrador, handoff) é a evidência prática de quase todos os conceitos de organização e verificação (§9).
 4. **O primeiro slice proposto é bom, com cinco ajustes** (§11): a avaliação crítica pedida está em §11.2.
-5. **Há exatamente uma decisão crítica agora (DEC-0026):** *quando e onde* nasce o primeiro slice. As demais decisões críticas são **previstas e abertas no momento certo** (§13), para não transformar o proprietário em fila de perguntas (ADD-0012).
+5. **A decisão crítica inicial foi a DEC-0026:** *quando e onde* nasce o primeiro slice (registro em `decisions.json`). As demais são **previstas e abertas no momento certo** (§13), para não transformar o proprietário em fila de perguntas (ADD-0012).
 
 ## 2. Auditoria: o que já existe (FATOS)
 
@@ -39,7 +39,7 @@ Conclusões principais:
 | # | Conflito | Resolução proposta | Quem decide |
 |---|---|---|---|
 | C1 | ADD quer o runtime "nativo do Ecosystem", sem dono; o MANIFEST já o classifica como Service | **Sem conflito**: Agent Runtime = Service; Agent Workspace = Workspace; Product de IA = consumidor. | — |
-| C2 | **ADR-0011** (nasce no Product; extrai com 2º consumidor real) × "infraestrutura universal desde já" | Nascer **com fronteira de extração desde o dia 1**: biblioteca `Core` sem referência a Product/UI/provedor, testada por regras de arquitetura (precedente `Hub.Core`). A *casa* inicial (Product novo × Service direto × esperar a Fase 6) é a **DEC-0026**. | proprietário |
+| C2 | **ADR-0011** (nasce no Product; extrai com 2º consumidor real) × "infraestrutura universal desde já" | Nascer **com fronteira de extração desde o dia 1**: biblioteca `Core` sem referência a Product/UI/provedor, testada por regras de arquitetura (precedente `Hub.Core`). A *casa* inicial (Product novo × Service direto × esperar a Fase 6) foi decidida na **DEC-0026** (ver o registro). | proprietário |
 | C3 | Ordem das fases: Agent Runtime está na **Fase 6**, depois da Fase 5 (Capability Runtime) | Slice 1 é **em processo** (biblioteca): depende só dos contratos da Fase 2 (prontos), não de IPC/Host API. Antecipá-lo é sequenciamento, não pular fase — mas é decisão de direção (**DEC-0026**). Tudo que cruza processos (Workers, Tools hospedadas) continua **depois** da Fase 5. | proprietário |
 | C4 | **NN-022**: nenhum componente compartilhado sem consumidor real e saldo positivo | Consumidores reais **previstos** (não ainda existentes): Product de IA, Urbe C# (UC-21), Lunet2D (Fase 8). Saldo: 3 implementações paralelas de provedores+loop viram 1. Evidência de consumidor real: teste de contrato com 2 implementações de provedor e o 1º consumidor concreto (§11). A extração só ocorre pela Extraction Review. | ADR (agente) com a DEC-0026 |
 | C5 | **DEC-0024-B / DEC-0025-C**: Urbe reescrito em C#; JS congelado | A IA do Urbe JS **não é tocada**. O UC-21 passa a ter uma pergunta própria: portar a IA isoladamente ou **consumir o Agent Runtime compartilhado**? Muda o escopo de um programa que o proprietário aprovou ⇒ **decisão futura (§13), aberta depois da DEC-0026**. A paridade continua medida pelo oráculo atual (`tests/ai-agent.mjs`, UC-2). | proprietário (futura) |
@@ -272,13 +272,13 @@ AgentRuntime.Tools.Files       files.read / files.write presos à raiz do Contex
 AgentRuntime.Tests             contrato, comportamento e arquitetura
 ```
 
-Onde isto mora (Product novo, `services/` direto ou esperar a Fase 6) é a **DEC-0026**.
+Onde isto mora foi decidido na **DEC-0026** (ver o registro): dentro do Product novo de IA, cujo id e nome são a **DEC-0027**.
 
 ## 12. Fases no ROADMAP
 
 | Capacidade | Fase | Observação |
 |---|---|---|
-| Plano, auditoria, contratos propostos | **Fase 6** (P6-1) | entregue por este PR; aguarda DEC-0026 e aceite do ADR-0017 |
+| Plano, auditoria, contratos propostos | **Fase 6** (P6-1) | entregue; o aceite do ADR-0017 e a sequência são do ADR e da DEC-0026 |
 | Agent Runtime (R1), organização efêmera (R2) | **Fase 6** (P6-2, P6-3) | R1 pode ser antecipado (DEC-0026); depende só dos contratos da Fase 2 |
 | Agent Workspace hospedado (R3) | **Fase 6** (P6-4) | anfitrião por critério (§11.1) |
 | Product de IA (R4) | **Fase 6** (P6-5) | prova Runtime ≠ Product |
@@ -290,14 +290,13 @@ As fases 8 e 9 são **propostas**: aparecem no ROADMAP como bloco não-vigente, 
 
 ## 13. Decisões críticas e ADRs
 
-**Agora:** **DEC-0026** — quando e onde nasce o R1 (alternativas A/B/C/D, com recomendação), que ao mesmo tempo ratifica (ou rejeita) o ADR-0017.
+**Já decidida:** **DEC-0026** — quando e onde nasce o R1 (ratifica o ADR-0017; ver o registro). **Em seguida:** **DEC-0027** — id e nome do Product de IA (bloqueia só o R1).
 
 **Previstas** (cada uma é aberta **no momento em que a anterior a torna necessária**, nunca antes):
 
 | Decisão futura | Gatilho |
 |---|---|
 | DEC — UC-21 consome o Agent Runtime compartilhado? | depois da DEC-0026; antes de UC-21 |
-| DEC — id e nome do Product de IA (provisório: "Ecosystem AI"; o **id** é estável, NN-019) | antes de criá-lo |
 | DEC — política de orçamento (valores, classes de gasto) | antes de qualquer capability que gaste dinheiro real |
 | DEC — armazenamento de segredos por plataforma | antes do primeiro segredo real |
 | DEC — modelo de confiança do Remote Worker | antes do R5 |

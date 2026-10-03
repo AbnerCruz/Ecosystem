@@ -95,7 +95,7 @@
           "minLength": 1
         },
         "gates": {
-          "description": "Estado do gate de cada fase, derivado do ROADMAP (a autoridade); CHK-PORTAL recusa divergência.",
+          "description": "Estado do gate de cada fase, derivado do ROADMAP (a autoridade); opcionalmente o nome da fase e a contagem dos itens por caixa ([x] concluídos, [~] aguardando validação/revisão, [ ] abertos). CHK-PORTAL recusa divergência.",
           "type": "array",
           "items": {
             "type": "object",
@@ -114,6 +114,23 @@
                   "aguardando",
                   "não iniciado"
                 ]
+              },
+              "name": {
+                "description": "Título da fase no ROADMAP (\"## Fase N — <nome>\").",
+                "type": "string",
+                "minLength": 1
+              },
+              "done": {
+                "description": "Itens [x] da fase.",
+                "type": "integer"
+              },
+              "inProgress": {
+                "description": "Itens [~] da fase.",
+                "type": "integer"
+              },
+              "todo": {
+                "description": "Itens [ ] da fase.",
+                "type": "integer"
               }
             }
           }

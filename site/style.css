@@ -391,10 +391,9 @@ a.chip:hover { color: var(--ink); text-decoration: none; border-color: var(--axi
 
 /* ---------- roadmap ---------- */
 .phases { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
-@media (min-width: 1100px) { .phases { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .phases { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .phase { position: relative; padding: 14px; border-radius: var(--r-2); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 6px; min-height: 124px; }
 .phase .n { font-size: 0.72rem; font-weight: 700; color: var(--ink-3); letter-spacing: 0.06em; text-transform: uppercase; }
-.phase .pill { white-space: normal; align-self: flex-start; }
 .phase .nm { font-weight: 640; font-size: 0.9rem; line-height: 1.3; }
 .phase .bar-track { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; display: flex; gap: 2px; margin-top: auto; }
 .phase .bar-track b { background: var(--series-1); }
@@ -402,14 +401,6 @@ a.chip:hover { color: var(--ink); text-decoration: none; border-color: var(--axi
 .phase .cnt { font-size: 0.75rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .phase.done { background: linear-gradient(180deg, var(--good-wash), transparent 70%), var(--surface); }
 .phase.current { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash), var(--shadow-1); }
-@media (max-width: 520px) {
-  .phases { grid-template-columns: 1fr; gap: 8px; }
-  .phase { min-height: 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 12px; }
-  .phase .n { grid-column: 1; }
-  .phase .nm { grid-column: 2; }
-  .phase .pill { grid-column: 3; grid-row: 1; }
-  .phase .bar-track, .phase .cnt { grid-column: 1 / -1; }
-}
 
 /* ---------- distribution, reuse, docs ---------- */
 .rows { display: grid; gap: 0; }
@@ -495,7 +486,12 @@ svg .s2 { fill: var(--series-2); }
 svg .s3 { fill: var(--series-3); }
 svg .ok { fill: var(--good); }
 svg .ko { fill: var(--bad); }
-.phase .gate { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
-@media (max-width: 520px) { .phase .gate { grid-column: 3; grid-row: 1; flex-direction: row; align-items: center; gap: 6px; } }
+.phase .gate { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 520px) {
+  .phases { grid-template-columns: 1fr; gap: 8px; }
+  .phase { min-height: 0; display: grid; grid-template-columns: 1fr auto; grid-template-areas: "n gate" "nm nm" "bar bar" "cnt cnt"; gap: 4px 10px; align-items: center; }
+  .phase .n { grid-area: n; } .phase .nm { grid-area: nm; } .phase .gate { grid-area: gate; }
+  .phase .bar-track { grid-area: bar; margin-top: 6px; } .phase .cnt { grid-area: cnt; }
+}
 .btn.obj { white-space: normal; max-width: 100%; min-width: 0; text-align: left; justify-content: flex-start; padding-block: 8px; }
 .btn.obj span { overflow-wrap: anywhere; min-width: 0; }
