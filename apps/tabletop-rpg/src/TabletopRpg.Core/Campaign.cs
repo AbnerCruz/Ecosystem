@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace TabletopRpg.Core;
 
 public sealed record GameEvent(
@@ -118,10 +120,11 @@ public sealed class Campaign
                 return new CharacterView(
                     character.Id,
                     character.Name,
-                    character.Attributes.ToDictionary(
-                        pair => pair.Key,
-                        pair => pair.Value,
-                        StringComparer.OrdinalIgnoreCase),
+                    new ReadOnlyDictionary<string, int>(
+                        character.Attributes.ToDictionary(
+                            pair => pair.Key,
+                            pair => pair.Value,
+                            StringComparer.OrdinalIgnoreCase)),
                     perspective.Knowledge.ToArray(),
                     perspective.Memories.ToArray());
             })
