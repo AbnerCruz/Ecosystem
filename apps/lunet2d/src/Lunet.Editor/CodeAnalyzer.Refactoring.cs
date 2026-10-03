@@ -132,7 +132,7 @@ public sealed partial class CodeAnalyzer
                 case "CS8019" or "CS0105" or "CS8933":
                 {
                     var directive = root.FindNode(span).AncestorsAndSelf().OfType<UsingDirectiveSyntax>().FirstOrDefault();
-                    if (directive is not null) fixes.Add(new CodeFix("Remover using desnecessário", path, [RemoveLine(text, directive.FullSpan)]));
+                    if (directive is not null) fixes.Add(new CodeFix("Remover using desnecessário", path, [RemoveUsing(directive)]));
                     break;
                 }
                 case "CS1002" when diagnostic.GetMessage().Contains(';'):
@@ -149,7 +149,7 @@ public sealed partial class CodeAnalyzer
         if (unused.Count > 1)
         {
             var removals = unused.Select(d => root.FindNode(d.Location.SourceSpan).AncestorsAndSelf().OfType<UsingDirectiveSyntax>().FirstOrDefault())
-                .Where(u => u is not null).Select(u => RemoveLine(text, u!.FullSpan)).ToList();
+                .Where(u => u is not null).Select(u => RemoveUsing(u!)).ToList();
             if (removals.Count > 1) fixes.Add(new CodeFix($"Remover todos os {removals.Count} usings desnecessários", path, removals));
         }
 
@@ -173,27 +173,49 @@ public sealed partial class CodeAnalyzer
         return new TextChange(Math.Min(text.Length, lineEnd.EndIncludingLineBreak), 0, line);
     }
 
-    private static TextChange RemoveLine(SourceText text, TextSpan span)
-    {
-        var startLine = text.Lines.GetLineFromPosition(span.Start);
-        var endLine = text.Lines.GetLineFromPosition(Math.Max(span.Start, span.End - 1));
-        return new TextChange(startLine.Start, endLine.EndIncludingLineBreak - startLine.Start, "");
-    }
+    // Remove only the syntax owned by the directive. A using can share a line with
+    // another using, a namespace or game code; comments are not disposable either.
+    private static TextChange RemoveUsing(UsingDirectiveSyntax directive) =>
+        new(directive.SpanStart, directive.Span.Length, "");
 
     private static TextChange? SortUsings(CompilationUnitSyntax root, SourceText text)
     {
         var usings = root.Usings.Where(u => u.Alias is null && u.StaticKeyword == default && u.Name is not null).ToList();
         if (usings.Count < 2) return null;
-        // Só se forem linhas consecutivas.
         var first = text.Lines.GetLineFromPosition(usings[0].SpanStart).LineNumber;
         var last = text.Lines.GetLineFromPosition(usings[^1].SpanStart).LineNumber;
         if (last - first + 1 != usings.Count) return null;
+
+        // Move complete, standalone lines instead of reconstructing directives.
+        // This preserves global, comments and CRLF. Do not reorder across directives
+        // or leading comments whose ownership is ambiguous (e.g. #if / #endif).
+        foreach (var directive in usings)
+        {
+            if (directive.GetLeadingTrivia().Any(t => !t.IsKind(SyntaxKind.WhitespaceTrivia) && !t.IsKind(SyntaxKind.EndOfLineTrivia)))
+                return null;
+            var line = text.Lines.GetLineFromPosition(directive.SpanStart);
+            if (!string.IsNullOrWhiteSpace(text.ToString(TextSpan.FromBounds(line.Start, directive.SpanStart)))) return null;
+            if (directive.Span.End > line.End) return null;
+            var tail = text.ToString(TextSpan.FromBounds(directive.Span.End, line.End)).Trim();
+            if (tail.Length > 0 && !tail.StartsWith("//", StringComparison.Ordinal)) return null;
+        }
         static int Group(string n) => n == "System" || n.StartsWith("System.", StringComparison.Ordinal) ? 0 : 1;
-        var ordered = usings.Select(u => u.Name!.ToString()).OrderBy(Group).ThenBy(n => n, StringComparer.Ordinal).ToList();
-        if (ordered.SequenceEqual(usings.Select(u => u.Name!.ToString()))) return null;
+        var ordered = usings.OrderBy(u => u.GlobalKeyword == default ? 1 : 0)
+            .ThenBy(u => Group(u.Name!.ToString())).ThenBy(u => u.Name!.ToString(), StringComparer.Ordinal).ToList();
+        if (ordered.SequenceEqual(usings)) return null;
+
+        // Keep terminators at their line positions, including EOF without a newline.
+        var replacement = new System.Text.StringBuilder();
+        for (var i = 0; i < ordered.Count; i++)
+        {
+            var originalLine = text.Lines.GetLineFromPosition(ordered[i].SpanStart);
+            var targetLine = text.Lines[first + i];
+            replacement.Append(text.ToString(originalLine.Span));
+            replacement.Append(text.ToString(TextSpan.FromBounds(targetLine.End, targetLine.EndIncludingLineBreak)));
+        }
         var start = text.Lines[first].Start;
         var end = text.Lines[last].EndIncludingLineBreak;
-        return new TextChange(start, end - start, string.Concat(ordered.Select(n => $"using {n};\n")));
+        return new TextChange(start, end - start, replacement.ToString());
     }
 
     private IEnumerable<CodeFix> DidYouMean(SemanticModel model, SyntaxTree tree, TextSpan span, string name, string path)

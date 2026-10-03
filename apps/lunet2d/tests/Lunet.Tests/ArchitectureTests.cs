@@ -43,6 +43,23 @@ public class ArchitectureTests
     [Fact]
     public void Editor_DependsOnlyOnCompiler() => Assert.Equal(["Lunet.Compiler"], Graph()["Lunet.Editor"]);
 
+    [Theory]
+    [InlineData("Lunet.Framework")]
+    [InlineData("Lunet.Compiler")]
+    [InlineData("Lunet.Runtime")]
+    public void GameLayersCannotReachVisualToolingEvenTransitively(string project)
+    {
+        var graph = Graph();
+        var visited = new HashSet<string>();
+        void Visit(string name)
+        {
+            if (!visited.Add(name)) return;
+            Assert.DoesNotContain(name, new[] { "Lunet.Studio", "Lunet.Editor", "Lunet.Editor.SDK", "Lunet.PluginHost", "Lunet.Android" });
+            foreach (var dependency in graph.GetValueOrDefault(name) ?? []) Visit(dependency);
+        }
+        Visit(project);
+    }
+
     [Fact]
     public void FrameworkHasNoPackageReferences()
     {

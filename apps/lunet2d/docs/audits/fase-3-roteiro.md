@@ -37,6 +37,15 @@ Este roteiro valida a IDE do Lunet. Cada passo tem um código (ex.: **C3**). Ao 
 - **C4 Estrutura do arquivo:** **⋯ → Navegar → Estrutura do arquivo** lista classes e membros; tocar num item leva até ele.
 - **C5 Informações do símbolo:** **⋯ → Símbolo → Informações do símbolo** num tipo seu e num tipo do framework mostra acesso, tipo, herança e membros.
 
+### C6. Preservação de código em correções rápidas (LUNET-302)
+
+1. Faça backup do projeto de teste. Crie `UsingTest.cs` com `using System.Text; class UsingTest { public int Score = 7; } // preservar`.
+2. Cursor no using → **⋯ → Símbolo → Correções rápidas → Remover using desnecessário**. A classe, `Score = 7` e comentário devem permanecer; desfazer deve restaurar tudo.
+3. Troque o arquivo por três linhas: `global using System.Text; // builder`, `global using System; // action`, `class UsingTest { }`.
+4. Em outro arquivo, use `class UsingConsumer { public StringBuilder Label = new(); public Action? Hit; }`.
+5. **Ordenar usings**: System deve vir antes de System.Text, ambos continuam `global` com os respectivos comentários; o outro arquivo continua sem erro. Desfazer restaura a ordem anterior.
+6. Com código de classe na mesma linha do using, **Ordenar usings** não deve ser oferecido; a ferramenta preserva estruturas que não consegue reordenar com segurança.
+
 ## D. Edição avançada
 
 - **D1 Dobrar código:** toque na setinha (▾) ao lado do número de uma linha de método/classe. O trecho some e aparece `{ … }` ao lado; toque em `{ … }` ou na setinha (▸) para abrir. Editar o texto abre tudo.

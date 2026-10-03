@@ -75,3 +75,13 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação: roadmap-status --pending e diff --check sem erro; dotnet test e consistency não puderam executar (SDK ausente). CI do PR pendente; nenhuma aprovação de aparelho inventada.
 - Handoff: docs/governance/handoffs/HO-20261003-lunet-import-zip.json. Fase 3 continua aberta.
 - Próximo passo: acompanhar CI e integrador, confirmar sincronização/release e validar roteiro docs/guides/importar-projeto.md no aparelho.
+
+
+### 20261003-codex-code-first — Codex → próximos agentes — review
+- Task LUNET-302, Issue #149; base `c024c0876b09721e7868c4b14c97ee71e4088746`; branch `codex/lunet-code-first-safe-fixes`.
+- Direção do proprietário persistida em ADR 0007 e SPEC: um Product, Framework/IDE/Studio, código como autoridade, Studio opcional. Nenhum csproj vazio ou mudança de namespace.
+- Correção real Fase 3: remoção de usings não apaga classe inline; ordenação preserva global/comment/CRLF/EOF e recusa código misto/condicionais. Tests RefactoringTests e ArchitectureTests.
+- Documentos: README raiz/local, SPEC, ROADMAP, CHANGELOG, ADR, auditoria e roteiro C6.
+- Build portátil verde; testes/checks/CI finais no handoff `HO-20261003-lunet-code-first-safe-fixes`. Sem validação humana inventada.
+- #121 passou; #111 permanece review; reconciliador de governança separado, não repetir o teste ZIP.
+- Gate da Fase 3 aberto; próximo: CI/integração pelo integrador, APK direto e C6/J1/roteiro integral no aparelho.
