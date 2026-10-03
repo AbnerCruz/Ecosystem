@@ -14,12 +14,19 @@ mutável e privado ao produtor. Paths são relativos, sem traversal, barras inve
 unidades ou caracteres de controle. Isso não é uma sandbox de disco: o adapter de
 filesystem futuro deve ainda validar symlinks, nomes e colisões por plataforma.
 
-Execute `dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests`.
+Dentro de `apps/ecosystem-ai`, execute `dotnet test --project tests/AgentRuntime.Tests`
+(o `global.json` local seleciona Microsoft.Testing.Platform).
 `TeamIntegrationTests` prova dois agentes com providers roteirizados: um produz
 por capability de escrita limitada; outro lê o combinado e verifica o resultado.
 Outros cenários recusam autorrevisão, evidência antiga, conflitos, ciclos,
 autorização de ator errado e cancelamento antes da publicação. Não requer teste
 em aparelho: este slice não contém UI ou lifecycle Android.
+
+O cancelamento é conferido entre cada porta confiável: revisão, verificação,
+classificação e autorização. Uma porta que cancela a execução impede chamadas
+às portas seguintes, inclusive pedidos de autorização. Exceções preservam o
+snapshot canônico, não consomem o ID da mudança e liberam o integrador para retry.
+Os testes exercitam cancelamento e exceções nas quatro etapas.
 
 Não há protocolo público/JSON, armazenamento durável ou adapter Git neste slice.
 A política deve vir do Host; jamais classificar por uma declaração de risco do

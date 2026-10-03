@@ -135,6 +135,7 @@ public sealed class ChangeIntegrator(WorkspaceSnapshot initial, IChangeReviewer 
         await _gate.WaitAsync(cancellationToken);
         try
         {
+            cancellationToken.ThrowIfCancellationRequested();
             IntegrationReceipt Result(IntegrationStatus status, string candidateId = "", string reviewerId = "", string evidence = "", IReadOnlyList<string>? conflicts = null) =>
                 new(change.Id, change.TaskId, change.ProducerId, status, Current.Revision, candidateId, reviewerId, evidence, conflicts ?? []);
             if (_integrated.Contains(change.Id)) return Result(IntegrationStatus.AlreadyIntegrated);
@@ -147,20 +148,24 @@ public sealed class ChangeIntegrator(WorkspaceSnapshot initial, IChangeReviewer 
             var candidate = new IntegrationCandidate($"candidate-{checked(++_attempt)}", change, current,
                 new WorkspaceSnapshot(checked(current.Revision + 1), combined));
             var review = await reviewer.ReviewAsync(candidate, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             if (!review.Passed || !ReferenceEquals(review.Candidate, candidate) || string.IsNullOrWhiteSpace(review.ReviewerId)
                 || review.ReviewerId == change.ProducerId || string.IsNullOrWhiteSpace(review.Evidence))
                 return Result(IntegrationStatus.ReviewFailed, candidate.Id, review.ReviewerId);
             var verification = await verifier.VerifyAsync(candidate, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
             if (!verification.Passed || verification.TaskId != change.TaskId || string.IsNullOrWhiteSpace(verification.Evidence))
                 return Result(IntegrationStatus.VerificationFailed, candidate.Id, review.ReviewerId);
             var classified = policy.Classify(candidate);
             var classification = classified with { Classes = Array.AsReadOnly(classified.Classes.ToArray()) };
+            cancellationToken.ThrowIfCancellationRequested();
             if (!Enum.IsDefined(classification.Disposition) || classification.Disposition == ChangeDisposition.Deny)
                 return Result(IntegrationStatus.Denied, candidate.Id, review.ReviewerId);
             if (classification.Disposition == ChangeDisposition.OwnerAuthorization)
             {
                 if (authorizer is null || string.IsNullOrWhiteSpace(ownerId)) return Result(IntegrationStatus.Escalated, candidate.Id, review.ReviewerId);
                 var authorization = await authorizer.AuthorizeAsync(candidate, classification, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
                 if (!authorization.Approved || !ReferenceEquals(authorization.Candidate, candidate) || authorization.AuthorizedBy != ownerId)
                     return Result(IntegrationStatus.Escalated, candidate.Id, review.ReviewerId);
                 // A política é lida novamente; uma autorização nunca contorna uma revogação.

@@ -9,7 +9,7 @@
   },
   "task_id": "P4-3",
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p4-3-install-launch",
   "base_commit": "2201dc59df8260d5de0c45b59c544572a2895050",
   "commit": null,
@@ -41,7 +41,8 @@
     "UI de instalação/atualização/abertura e consulta real de versão; PackageInstaller exige ação, callbacks vinculados à operação, recuperação e cancelamento da sessão própria.",
     "Permissões package.install/package.open separadas, REQUEST_INSTALL_PACKAGES e queries alvo único; nenhuma tool de agente ou concessão herdada.",
     "Metadata de confiança fica em docs/architecture/hub-android-products.json, de responsabilidade do Hub; runtime não contém IDs de outros Products nem referencia seu código. Queries limitadas separadamente, nunca são aprovação.",
-    "Download/instalador e Products estão no mesmo scroll; header/Atualizar permanece fixo, evitando painel fixo ocupar a tela em horizontal. DEVICE segue pendente."
+    "Download/instalador e Products estão no mesmo scroll; header/Atualizar permanece fixo, evitando painel fixo ocupar a tela em horizontal. DEVICE segue pendente.",
+    "DEC-0032-A registrada em #134; validação aprovada em #135; PR #133 integrado em 26678efa5a414a99f0596ccedf3ad47ab3f55f03. Release hub-v0.0.1-dev.7 publicada."
   ],
   "verification": [
     {
@@ -61,8 +62,9 @@
     {
       "check": "Consistency, self-test e Android",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "CI do PR e integrador verificarão compilação, checks e estado combinado; não alegada execução local."
+      "result": "passed",
+      "evidence": "Integrador 37141403035 no candidato final, consistency e hub-ci na main 26678ef (runs 37142559937/37142559940) e release 37142559955 verdes.",
+      "tested_commit": "26678efa5a414a99f0596ccedf3ad47ab3f55f03"
     },
     {
       "check": "Instalar, atualizar, cancelar, recuperar e abrir no Android",
@@ -74,22 +76,17 @@
     }
   ],
   "known_issues": [
-    "Somente candidato Lunet no catálogo de confiança; aprovação específica DEC-0032 pendente. Urbe mantém canal independente.",
+    "Somente Lunet aprovado por DEC-0032-A; Urbe mantém canal independente sem certificado aprovado no Hub.",
     "Chave pública de desenvolvimento não prova autoria. Rotação/múltiplos signatários não aprovados são recusados.",
     "Sem consulta atual da aprovação/canal, ações do Hub bloqueadas; Products standalone intactos.",
     "Resultado perdido após processo morto não é apresentado como sucesso. Nenhuma retomada automática.",
     "Hub CI e release usam contadores versionCode independentes; candidato somente em ambiente descartável. No aparelho diário, testar a release após integração, evitando downgrade involuntário. Correção de versionamento entre workflows é item próprio."
   ],
-  "blockers": [
-    "DEC-0032: aprovação específica de pacote/canal/certificado antes de habilitar ações."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Corrigir CI e deixar PR crítico verde ao integrador.",
-    "Após aprovação específica e integração, publicar APK e registrar DEVICE; P4-4 permanece gate separado."
+    "P4-4: gate separado, incluindo uso standalone e caminhos reais do Urbe."
   ],
-  "decisions_required": [
-    "DEC-0032"
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",
@@ -117,7 +114,7 @@
     },
     {
       "id": "NN-011",
-      "evidence": "ADR-0018 aprovado; DEC-0032 pendente. Integração crítica pelo integrador."
+      "evidence": "ADR-0018 e DEC-0032-A aprovados; PR #133 integrado pelo proprietário."
     },
     {
       "id": "NN-016",
@@ -125,7 +122,7 @@
     },
     {
       "id": "NN-017",
-      "evidence": "CI não aprova instalação/lifecycle; DEVICE pendente."
+      "evidence": "Validação DEVICE aprovada pelo proprietário na Issue #135, distinta de CI."
     },
     {
       "id": "NN-023",

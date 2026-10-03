@@ -96,6 +96,46 @@ public class TeamIntegrationTests
         Assert.All(results, r => Assert.Equal(IntegrationStatus.Integrated, r.Status));
         Assert.Equal(2, i.Current.Revision); Assert.Equal(2, i.Current.Files.Count);
     }
+    [Theory]
+    [InlineData("review")][InlineData("verify")][InlineData("policy")][InlineData("authorize")]
+    public async Task Cancelamento_em_cada_porta_interrompe_as_portas_seguintes_e_permite_retry(string stage)
+    {
+        using var ct = new CancellationTokenSource();
+        var calls = new List<string>();
+        void Enter(string gate) { calls.Add(gate); if (gate == stage) ct.Cancel(); }
+        var g = new Gates
+        {
+            Review = c => { Enter("review"); return new(c, "reviewer", true, "e"); },
+            Verify = c => { Enter("verify"); return VerificationResult.Pass(c.Change.TaskId, "e"); },
+            Policy = _ => { Enter("policy"); return new(ChangeDisposition.OwnerAuthorization, ["security"]); },
+            Authorize = c => { Enter("authorize"); return new(c, true, "owner"); }
+        };
+        var i = g.Integrator(true); var change = Change(i.Current);
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await i.IntegrateAsync(change, ct.Token));
+        var gates = new[] { "review", "verify", "policy", "authorize" };
+        Assert.Equal(gates.Take(Array.IndexOf(gates, stage) + 1), calls);
+        Assert.Equal(0, i.Current.Revision); Assert.Equal("base", i.Current.Files["a.txt"]);
+        Assert.Equal(IntegrationStatus.Integrated, (await i.IntegrateAsync(change, default)).Status);
+    }
+    [Theory]
+    [InlineData("review")][InlineData("verify")][InlineData("policy")][InlineData("authorize")]
+    public async Task Excecao_em_porta_preserva_canonico_id_e_libera_integrador(string stage)
+    {
+        var fail = true;
+        void Enter(string gate) { if (fail && gate == stage) throw new InvalidOperationException("falha do adapter"); }
+        var g = new Gates
+        {
+            Review = c => { Enter("review"); return new(c, "reviewer", true, "e"); },
+            Verify = c => { Enter("verify"); return VerificationResult.Pass(c.Change.TaskId, "e"); },
+            Policy = _ => { Enter("policy"); return new(ChangeDisposition.OwnerAuthorization, ["security"]); },
+            Authorize = c => { Enter("authorize"); return new(c, true, "owner"); }
+        };
+        var i = g.Integrator(true); var change = Change(i.Current);
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await i.IntegrateAsync(change, default));
+        Assert.Equal(0, i.Current.Revision); Assert.Equal("base", i.Current.Files["a.txt"]);
+        fail = false;
+        Assert.Equal(IntegrationStatus.Integrated, (await i.IntegrateAsync(change, default)).Status);
+    }
     private static TeamAssignment Assignment(string id, params string[] dependencies) => new(new(id, "produzir", ["conteúdo"]), "team", "writer", "reviewer", dependencies);
     [Fact]
     public void Plano_recusa_ciclo_dependencia_ausente_e_autorrevisao()
