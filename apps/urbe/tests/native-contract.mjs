@@ -155,6 +155,7 @@ await test('Android updater: feed direto filtra Product, APK exato e ignora late
     {tag_name:'hub-v99.0.0',assets:[{name:'ecosystem-hub.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v99.0.0/ecosystem-hub.apk'}]},
     {tag_name:'lunet2d-v99.0.0',assets:[{name:'Lunet.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/lunet2d-v99.0.0/Lunet.apk'}]},
     {tag_name:'urbe-v9.9.9',assets:[{name:'Outro.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v9.9.9/Outro.apk'}]},
+    {tag_name:'urbe-v99.0.0garbage',assets:[{name:'Urbe-99.0.0garbage.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v99.0.0garbage/Urbe-99.0.0garbage.apk'}]},
     {tag_name:'urbe-v1.8.2-beta',body:'antiga',assets:[{name:'Urbe-1.8.2-beta.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.2-beta/Urbe-1.8.2-beta.apk'}]},
     {tag_name:'urbe-v1.8.3-beta',body:'ponte direta',assets:[{name:'Urbe-1.8.3-beta.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.3-beta/Urbe-1.8.3-beta.apk'}]},
     {tag_name:'urbe-v1.8.4-beta',draft:true,assets:[{name:'Urbe-1.8.4-beta.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk'}]},
