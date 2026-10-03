@@ -10,7 +10,7 @@
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "7320741",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/82",
   "blockers": [],
   "cost": null,
   "component": "hub",
@@ -40,7 +40,8 @@
     "A UI só desenha: a decisão do que mostrar vem do Hub.Core. Para manter a regra testável sem aparelho, SnapshotPolicy (Hub.Core) decide o que mostrar e o que guardar: leitura com Products é mostrada e gravada no cache; leitura sem Products nunca sobrescreve o último estado bom e cai para ele marcado como Stale; sem estado anterior mostra a leitura com as notas, nunca esconde a falha.",
     "Cache do último estado: um arquivo no armazenamento privado do app; falha de leitura ou escrita do cache não derruba o app. Nada é gravado no repositório; nenhum token é embutido.",
     "hub-ci.yml ganhou o job `android`: instala o workload, compila Hub.Android em Debug e publica o APK de depuração como artefato (para a validação humana do P3-8). A solution Hub.slnx não inclui o projeto Android de propósito: os testes do núcleo não devem exigir o workload.",
-    "Correção do CHK-ARCH-REFS (tests/consistency/Check.cs): o check tratava o nome do próprio Hub ('Ecosystem Hub', 'ecosystem.hub') como referência ao Hub e reprovava o Hub ao ganhar um app com nome e identificador próprios. Agora a regra 'referenciar o Hub' vale só para os outros Products; a cobertura da correção é a própria execução do check sobre o Hub real, que passa a conter o nome. Self-test continua provando que o check detecta Lunet2D/Urbe referenciando o Hub."
+    "Correção do CHK-ARCH-REFS (tests/consistency/Check.cs): o check tratava o nome do próprio Hub ('Ecosystem Hub', 'ecosystem.hub') como referência ao Hub e reprovava o Hub ao ganhar um app com nome e identificador próprios. Agora a regra 'referenciar o Hub' vale só para os outros Products; a cobertura da correção é a própria execução do check sobre o Hub real, que passa a conter o nome. Self-test continua provando que o check detecta Lunet2D/Urbe referenciando o Hub.",
+    "Primeira execução do job android no CI achou um erro de compilação real (OperationCanceledException ambíguo entre Android.OS e System); corrigido qualificando o tipo."
   ],
   "verification": [
     {

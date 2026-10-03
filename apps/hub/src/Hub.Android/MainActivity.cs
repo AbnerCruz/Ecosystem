@@ -78,7 +78,7 @@ public sealed class MainActivity : Activity
 
         HubSnapshot? fresh = null;
         try { fresh = await Task.Run(() => new HubLoader(Http, Options).LoadAsync(ct), ct); }
-        catch (OperationCanceledException) { return; }
+        catch (System.OperationCanceledException) { return; }
         catch (Exception) { /* falha isolada: a política cai para o último estado bom */ }
 
         var choice = SnapshotPolicy.Choose(fresh, ReadCache());
