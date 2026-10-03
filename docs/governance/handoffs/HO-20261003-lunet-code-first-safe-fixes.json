@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-lunet-code-first-safe-fixes",
   "category": "RESULT",
-  "timestamp": "2026-10-03T19:47:38.019110Z",
+  "timestamp": "2026-10-03T19:49:10.816Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
@@ -53,14 +53,13 @@
       "check": "Consistency checks",
       "kind": "automated",
       "result": "passed",
-      "evidence": "22 checks passaram no estado combinado com main 3f99f9b. Instantâneo de Issues ausente; ROADMAP global não alterado.",
-      "tested_commit": "162c5b0483ffda5f911b7e0112bffb43fea2917e"
+      "evidence": "22 checks passaram no estado combinado com main 3f99f9b. Instantâneo de Issues ausente; ROADMAP global não alterado."
     },
     {
       "check": "Consistency self-test",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Em execução com PATH incluindo SDK para subprocessos."
+      "result": "passed",
+      "evidence": "Self-test completo: todos os checks provaram detectar suas violações. PATH=/tmp/urbe-dotnet:$PATH; MSBuildEnableWorkloadResolver=false."
     },
     {
       "check": "CI do PR e APK",
