@@ -48,14 +48,14 @@
     {
       "check": "dotnet test --project apps/lunet2d/tests/Lunet.Tests",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Tentativa local: dotnet: command not found. CI do Product deve executar."
+      "result": "passed",
+      "evidence": "CI lunet2d-ci: 310 testes, zero falhas. https://github.com/AbnerCruz/Ecosystem/actions/runs/37129842628"
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Tentativa local: dotnet: command not found. CI do PR deve executar."
+      "result": "passed",
+      "evidence": "Step Consistency checks passou em https://github.com/AbnerCruz/Ecosystem/actions/runs/37129842611; self-test/simulação ainda em execução."
     },
     {
       "check": "Roteiro importar projeto ZIP em Android",
@@ -63,6 +63,12 @@
       "result": "pending",
       "object": "apps/lunet2d/docs/guides/importar-projeto.md",
       "critical": false
+    },
+    {
+      "check": "Build APK e integração combinada",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Integrador e pipeline de distribuição ainda em andamento."
     }
   ],
   "known_issues": [
