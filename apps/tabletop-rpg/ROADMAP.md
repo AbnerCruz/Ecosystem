@@ -51,8 +51,8 @@ Objetivo: provar o modelo de mesa sem UI e sem provedor real.
 
 - [ ] RPG-040 — Rules packages e homebrew.
 - [ ] RPG-041 — Compêndios e import/export com proveniência.
-- [ ] RPG-042 — Avaliar integração por capabilities com Urbe.
-- [ ] RPG-043 — Avaliar consumo de Agent Runtime compartilhado apenas quando houver contrato/extração aprovada.
+- [ ] RPG-042 — Avaliar integração por capabilities com workspaces de conhecimento do Ecosystem.
+- [ ] RPG-043 — Avaliar consumo de runtime de agentes compartilhado apenas quando houver contrato/extração aprovada.
 - [ ] RPG-044 — Avaliar Tools do Ecosystem sem dependência direta entre Products.
 
 ## R5 — Multiplayer
