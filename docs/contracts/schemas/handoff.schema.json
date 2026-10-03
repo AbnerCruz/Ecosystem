@@ -291,17 +291,87 @@
       "description": "Escalada declarada pelo agente (ADD-0012): 'critical' torna a mudança crítica mesmo fora das zonas da política (ex.: muda formato de dados num arquivo comum); 'routine' não rebaixa nada. Julgada pela mudança do PR: handoff novo crítico escala; handoff já existente na main só escala se passar a crítico ou ganhar classe nova — fechar o registro de um trabalho crítico já integrado não herda a criticidade (o histórico fica). A classificação efetiva é derivada pelo integrador com a política da main e fica no PR (status ecosystem/integration) e no commit de integração (trailers Integration-*).",
       "type": "object",
       "additionalProperties": false,
-      "required": ["declared"],
+      "required": [
+        "declared"
+      ],
       "properties": {
-        "declared": { "enum": ["routine", "critical"] },
-        "classes": { "description": "IDs de classes de docs/governance/integration-policy.json.", "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" } },
-        "reason": { "type": "string", "minLength": 1 }
+        "declared": {
+          "enum": [
+            "routine",
+            "critical"
+          ]
+        },
+        "classes": {
+          "description": "IDs de classes de docs/governance/integration-policy.json.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+          }
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
     "base_commit": {
       "description": "BASE (ADR-0014): SHA do commit de onde o agente partiu (normalmente a main lida no início). Obrigatório para handoffs a partir de 2026-10-01T19:00Z (CHK-HANDOFFS). Verificado contra o histórico quando há git completo.",
       "type": "string",
       "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "change_scope": {
+      "description": "Escopo declarado de MIGRATION ou REFACTOR (NN-013). O integrador da main compara com o diff real; exceções são caminhos exatos justificados, nunca outro Product. Testes antes/depois referenciam verification com tested_commit.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "product",
+        "exceptions",
+        "before_check",
+        "after_check"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "migration",
+            "refactor"
+          ]
+        },
+        "product": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "path",
+              "reason"
+            ],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "before_check": {
+          "type": "string",
+          "minLength": 1
+        },
+        "after_check": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     }
   }
 }

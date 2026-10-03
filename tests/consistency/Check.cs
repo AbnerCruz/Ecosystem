@@ -1063,6 +1063,9 @@ static class Checks
     {
         const string id = "CHK-INTEGRATION";
         c.R.Ran(id);
+        foreach (var (file, doc) in c.Handoffs())
+            foreach (var error in ChangeReview.MetadataErrors(doc.RootElement))
+                c.R.Fail(id, $"{file}: {error}");
         var pol = c.Json.FirstOrDefault(j => j.File == IntegrationQueue.PolicyFile).Doc?.RootElement;
         if (pol is not { ValueKind: JsonValueKind.Object } p) c.R.Fail(id, $"{IntegrationQueue.PolicyFile} ausente ou inválido: a política de integração precisa de uma autoridade (ADD-0012)");
         else
@@ -2097,6 +2100,11 @@ static class IntegrationQueue
             }
             catch (JsonException) { ok = false; reason = $"{h}: JSON inválido"; }
         }
+        List<string> reviewErrors;
+        try { reviewErrors = ChangeReview.Errors(baseRoot, combinedRoot, changed, handoffs, findings); }
+        catch (Exception e) when (e is JsonException or InvalidOperationException or KeyNotFoundException or IOException)
+        { reviewErrors = [$"revisão da mudança não pôde ser analisada ({e.GetType().Name}; falha fechada)"]; }
+        if (reviewErrors.Count > 0) { ok = false; reason = string.Join("; ", reviewErrors); }
         var criticality = findings.Count > 0 ? "critical" : "routine";
         var requiresOwner = criticality == "critical" || routinePolicy != "automatic";
         return new GateResult(ok, reason, [.. touched], products, criticality, requiresOwner, [.. findings], [.. handoffs]);
@@ -2223,6 +2231,109 @@ static class IntegrationQueue
         w.WriteLine($"critical_reason={Line(why.Length > 1500 ? why[..1500] + " …" : why)}");
         w.WriteLine($"handoffs={J(g.Handoffs)}");
         return 0;
+    }
+}
+
+// NN-011/NN-013: usa o diff real do integrador e os handoffs que ESTE PR altera.
+// A declaração não substitui a revisão semântica de comportamento ou da pertinência do ADR.
+static class ChangeReview
+{
+    static bool SafePath(string p) => p.Length > 0 && !p.StartsWith('/') && !p.Contains('\\')
+        && !p.Contains(':') && !p.Contains('*') && !p.Split('/').Any(s => s is "" or "." or "..");
+
+    public static List<string> MetadataErrors(JsonElement h)
+    {
+        var errors = new List<string>();
+        if (!h.TryGetProperty("change_scope", out var s)) return errors;
+        if (s.ValueKind != JsonValueKind.Object) return ["change_scope precisa ser objeto"];
+        if (s.Str("kind") is not ("migration" or "refactor")) errors.Add("change_scope.kind deve separar migration de refactor");
+        if (string.IsNullOrWhiteSpace(s.Str("product"))) errors.Add("change_scope.product ausente");
+        foreach (var ex in s.Arr("exceptions"))
+            if (!SafePath(ex.Str("path") ?? "") || string.IsNullOrWhiteSpace(ex.Str("reason")))
+                errors.Add("exceção de escopo exige caminho relativo exato e justificativa");
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var which in new[] { "before_check", "after_check" })
+        {
+            var name = s.Str(which);
+            var matches = h.Arr("verification").Where(v => v.Str("check") == name).ToList();
+            if (string.IsNullOrWhiteSpace(name) || !used.Add(name) || matches.Count != 1)
+            { errors.Add($"{which}: referencie uma verificação única, distinta da outra"); continue; }
+            var v = matches[0]; var commit = v.Str("tested_commit");
+            if (v.Str("kind") != "automated" || v.Str("result") != "passed" || string.IsNullOrWhiteSpace(v.Str("evidence"))
+                || !Regex.IsMatch(commit ?? "", "^[0-9a-f]{7,40}$"))
+                errors.Add($"{which}: testes exigem automated/passed, evidência e tested_commit");
+            if (which == "before_check" && commit != h.Str("base_commit")) errors.Add("testes antes devem identificar base_commit");
+            if (which == "after_check" && commit is { Length: > 0 } && h.Str("base_commit") is { Length: > 0 } baseSha
+                && (commit.StartsWith(baseSha, StringComparison.Ordinal) || baseSha.StartsWith(commit, StringComparison.Ordinal)))
+                errors.Add("testes depois não podem citar apenas a base");
+        }
+        return errors;
+    }
+
+    static Dictionary<string, JsonElement> Components(string root)
+    {
+        var file = Path.Combine(root, "ecosystem.json");
+        if (!File.Exists(file)) return [];
+        using var d = JsonDocument.Parse(File.ReadAllText(file));
+        return d.RootElement.GetProperty("components").EnumerateObject().ToDictionary(p => p.Name, p => p.Value.Clone());
+    }
+
+    static bool AcceptedAdr(string root, string path)
+    {
+        if (!SafePath(path) || !Regex.IsMatch(path, @"^(docs/adr|apps/[a-z0-9-]+/docs/(v2/)?adr)/[0-9]{4}-[^/]+\.md$")) return false;
+        var file = Path.Combine(root, path);
+        return File.Exists(file) && Regex.IsMatch(File.ReadAllText(file), @"(?m)^## Status\r?\n\s*\r?\n(?:Aceito|Aprovado)\b", RegexOptions.IgnoreCase);
+    }
+
+    public static List<string> Errors(string baseRoot, string combinedRoot, IReadOnlyList<string> changed,
+        IReadOnlyList<string> handoffs, IReadOnlyList<IntegrationQueue.Finding> findings)
+    {
+        var errors = new List<string>(); var records = new List<(string Path, JsonElement H)>();
+        foreach (var path in handoffs)
+        {
+            try { using var d = JsonDocument.Parse(File.ReadAllText(Path.Combine(combinedRoot, path))); records.Add((path, d.RootElement.Clone())); }
+            catch (JsonException) { errors.Add($"{path}: JSON inválido para revisão da mudança"); }
+        }
+        var structural = findings.Any(f => f.Class is "architecture" or "compatibility")
+            || changed.Any(f => f == "ARCHITECTURE.md" || f.StartsWith("docs/contracts/", StringComparison.Ordinal));
+        var scopes = records.Where(r => r.H.TryGetProperty("change_scope", out _)).ToList();
+        if ((structural || scopes.Count > 0) && !records.Any(r => r.H.Arr("normative_sources")
+            .Any(x => AcceptedAdr(combinedRoot, x.GetString() ?? ""))))
+            errors.Add("NN-011: mudança estrutural exige ADR aceito em normative_sources do handoff deste PR");
+
+        var before = Components(baseRoot); var after = Components(combinedRoot);
+        var products = after.Concat(before).Where(c => c.Value.Str("type") == "product")
+            .GroupBy(c => c.Key).ToDictionary(g => g.Key, g => g.First().Value.Str("path") ?? "");
+        foreach (var (id, c) in after.Where(c => c.Value.Str("type") == "product"))
+            if (before.TryGetValue(id, out var old) && old.Str("status") == "not-migrated" && c.Str("status") == "active"
+                && !scopes.Any(r => r.H.GetProperty("change_scope").Str("kind") == "migration"
+                    && r.H.GetProperty("change_scope").Str("product") == id))
+                errors.Add($"NN-013: importação de {id} exige change_scope.kind=migration");
+
+        if (scopes.Select(r => r.H.GetProperty("change_scope").Str("kind")).Distinct().Count() > 1)
+            errors.Add("NN-013: migração e refatoração precisam de PRs separados");
+        if (scopes.Select(r => r.H.GetProperty("change_scope").Str("product")).Distinct().Count() > 1)
+            errors.Add("NN-013: um PR de migração/refatoração por produto");
+        foreach (var (path, h) in scopes)
+        {
+            errors.AddRange(MetadataErrors(h).Select(e => $"{path}: {e}"));
+            var scope = h.GetProperty("change_scope"); var product = scope.Str("product") ?? "";
+            if (!products.TryGetValue(product, out var productPath) || !SafePath(productPath))
+            { errors.Add($"{path}: produto de change_scope não existe ou não possui path válido"); continue; }
+            var exceptions = scope.Arr("exceptions").Select(e => e.Str("path") ?? "").ToList();
+            if (exceptions.Count != exceptions.Distinct(StringComparer.Ordinal).Count()) errors.Add($"{path}: exceção duplicada");
+            foreach (var ex in exceptions.Where(e => !changed.Contains(e))) errors.Add($"{path}: exceção '{ex}' não pertence ao diff");
+            foreach (var file in changed)
+            {
+                // Nenhuma exceção autoriza misturar outro Product.
+                if (products.Any(p => p.Key != product && p.Value.Length > 0 && (file == p.Value || file.StartsWith(p.Value + "/", StringComparison.Ordinal))))
+                    errors.Add($"NN-013: '{file}' altera outro produto no PR de {product}");
+                else if (file != path && file != "ROADMAP.md" && file != productPath
+                    && !file.StartsWith(productPath + "/", StringComparison.Ordinal) && !exceptions.Contains(file))
+                    errors.Add($"NN-013: '{file}' fora do escopo de {product}, sem exceção técnica justificada");
+            }
+        }
+        return errors;
     }
 }
 
@@ -2581,7 +2692,11 @@ static class SelfTest
         new("ARCHITECTURE apresenta decisão já decidida como não decidida", "CHK-STATE-CONSISTENCY",
             r => { Replace(r, "docs/governance/decisions.json", "\"decisions\": [", PendingDecision(withObject: true).Replace("\"status\": \"pending\"", "\"status\": \"decided\"")); CiteInArchitecture(r, "DEC-9999"); }),
         new("matriz com mecanismo planned de fase já aprovada", "CHK-STATE-CONSISTENCY",
-            r => Replace(r, "docs/governance/enforcement-matrix.json", "\"phase\": \"phase-3\"", "\"phase\": \"phase-1\"")),
+            r => { var f = Path.Combine(r, "docs/governance/enforcement-matrix.json");
+                   var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(f))!;
+                   var m = n["invariants"]!.AsArray().SelectMany(i => i!["mechanisms"]!.AsArray())
+                       .First(m => m!["status"]!.GetValue<string>() == "planned");
+                   m!["phase"] = "phase-1"; File.WriteAllText(f, n.ToJsonString()); }),
         new("produto importado sem registro de importação", "CHK-MIGRATION-HISTORY",
             r => File.Delete(Path.Combine(r, "docs", "migration", "import-urbe.json"))),
         new("portal mostra gate com estado diferente do ROADMAP", "CHK-PORTAL",
@@ -2661,6 +2776,11 @@ static class SelfTest
             r => Replace(r, ".github/integrator/integrate.sh", "git push -q origin \"${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}\"", "git push -q origin \"+${COMBINED}:refs/heads/${DEFAULT_BRANCH:-main}\"")),
         new("texto do PR interpolado em script do integrador", "CHK-INTEGRATION",
             r => Replace(r, ".github/workflows/integrate.yml", "        run: bash .github/integrator/integrate.sh prepare\n", "        run: echo \"${{ github.event.pull_request.title }}\" && bash .github/integrator/integrate.sh prepare\n")),
+        new("escopo de refatoração sem evidência antes/depois", "CHK-INTEGRATION",
+            r => { var f = Path.Combine(r, "docs/governance/handoffs/HO-20261003-p3-8-gate-no-celular.json");
+                   var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(f))!;
+                   n["change_scope"] = System.Text.Json.Nodes.JsonNode.Parse("""{"kind":"refactor","product":"hub","exceptions":[],"before_check":"testes antes ausentes","after_check":"testes depois ausentes"}""");
+                   File.WriteAllText(f, n.ToJsonString()); }),
         new("segredo commitado", "CHK-SECRETS",
             r => File.WriteAllText(Path.Combine(r, "leak.txt"), "token=" + "gh" + "p_" + new string('a', 36))),
     ];
@@ -2703,6 +2823,7 @@ static class SelfTest
         failures += MigrationHistoryTests(repoRoot);
         failures += IntegrationTests();
         failures += IntegrationQueueTests(repoRoot);
+        failures += ChangeReviewTests(repoRoot);
         failures += ReleaseProjectionTests(repoRoot);
 
         foreach (var id in Checks.Ids.Where(i => !covered.Contains(i)))
@@ -2714,6 +2835,71 @@ static class SelfTest
         Console.WriteLine();
         Console.WriteLine(failures == 0 ? "Self-test: todos os checks provaram detectar suas violações." : $"Self-test: {failures} falha(s).");
         return failures == 0 ? 0 : 1;
+    }
+
+    static int ChangeReviewTests(string repoRoot)
+    {
+        var failures = 0;
+        void Test(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  revisão do diff: {name}"); if (!ok) failures++; }
+        var tmp = Path.Combine(Path.GetTempPath(), "ecosystem-review-" + Guid.NewGuid().ToString("N"));
+        const string ho = "docs/governance/handoffs/HO-scope.json";
+        const string adr = "docs/adr/0014-fluxo-multiagente-minimo.md";
+        try
+        {
+            var b = Path.Combine(tmp, "base"); var c = Path.Combine(tmp, "combined");
+            void Put(string root, string path, string text) { var f = Path.Combine(root, path); Directory.CreateDirectory(Path.GetDirectoryName(f)!); File.WriteAllText(f, text); }
+            foreach (var root in new[] { b, c })
+            {
+                Put(root, "ecosystem.json", File.ReadAllText(Path.Combine(repoRoot, "ecosystem.json")));
+                Put(root, IntegrationQueue.PolicyFile, File.ReadAllText(Path.Combine(repoRoot, IntegrationQueue.PolicyFile)));
+                Put(root, adr, File.ReadAllText(Path.Combine(repoRoot, adr)));
+            }
+            var json = """
+                {"state":"review","base_commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                 "normative_sources":["docs/adr/0014-fluxo-multiagente-minimo.md"],
+                 "change_scope":{"kind":"refactor","product":"urbe","exceptions":[],"before_check":"before","after_check":"after"},
+                 "verification":[
+                  {"check":"before","kind":"automated","result":"passed","evidence":"baseline test log","tested_commit":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+                  {"check":"after","kind":"automated","result":"passed","evidence":"candidate test log","tested_commit":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}]}
+                """;
+            System.Text.Json.Nodes.JsonNode Node() => System.Text.Json.Nodes.JsonNode.Parse(json)!;
+            IntegrationQueue.GateResult Gate(System.Text.Json.Nodes.JsonNode h, params string[] files)
+            { Put(c, ho, h.ToJsonString()); return IntegrationQueue.Gates(b, c, [ho, .. files]); }
+            var good = Gate(Node(), "apps/urbe/src/editor.js");
+            Test(good.Ok && good.Products.SequenceEqual(["urbe"]) && !good.RequiresOwner, "refatoração restrita com testes e ADR continua rotina");
+            Test(!Gate(Node(), "apps/urbe/src/editor.js", "site/app.js").Ok, "arquivo externo não declarado bloqueia integração");
+            var ex = Node(); ex["change_scope"]!["exceptions"]!.AsArray().Add(System.Text.Json.Nodes.JsonNode.Parse("""{"path":"site/app.js","reason":"ajuste técnico necessário de caminho"}"""));
+            Test(Gate(ex, "apps/urbe/src/editor.js", "site/app.js").Ok, "exceção exata justificada no diff passa");
+            Test(!Gate(ex, "apps/urbe/src/editor.js").Ok, "exceção que não pertence ao diff falha");
+            ex["change_scope"]!["exceptions"]![0]!["path"] = "apps/lunet2d/src/Editor.cs";
+            Test(!Gate(ex, "apps/urbe/src/editor.js", "apps/lunet2d/src/Editor.cs").Ok, "exceção não autoriza segundo produto");
+            ex["change_scope"]!["exceptions"]![0]!["path"] = "../site/app.js";
+            Test(!Gate(ex, "apps/urbe/src/editor.js", "../site/app.js").Ok, "path traversal não vale como exceção");
+            var bad = Node(); bad["verification"]![0]!["result"] = "failed";
+            Test(!Gate(bad, "apps/urbe/src/editor.js").Ok, "baseline reprovada bloqueia");
+            bad = Node(); bad["verification"]![1]!["tested_commit"] = new string('a', 40);
+            Test(!Gate(bad, "apps/urbe/src/editor.js").Ok, "teste depois não pode reutilizar SHA da base");
+            bad = Node(); bad["change_scope"]!["after_check"] = "before";
+            Test(!Gate(bad, "apps/urbe/src/editor.js").Ok, "antes e depois precisam de evidências distintas");
+            bad = Node(); bad["normative_sources"] = new System.Text.Json.Nodes.JsonArray();
+            Test(!Gate(bad, "apps/urbe/src/editor.js").Ok, "refatoração sem ADR falha");
+            var ordinary = System.Text.Json.Nodes.JsonNode.Parse("""{"state":"review"}""")!;
+            Test(Gate(ordinary, "site/app.js").Ok, "feature local não exige declaração de migração");
+            Test(!Gate(ordinary, "docs/contracts/schemas/context.schema.json").Ok, "mudança de contrato sem ADR bloqueia");
+            Put(c, adr, "# ADR\n\n## Status\n\nProposto\n");
+            Test(!Gate(Node(), "apps/urbe/src/editor.js").Ok, "ADR proposto não autoriza implementação");
+            Put(c, adr, File.ReadAllText(Path.Combine(repoRoot, adr)));
+            var old = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(b, "ecosystem.json")))!;
+            old["components"]!["urbe"]!["status"] = "not-migrated"; Put(b, "ecosystem.json", old.ToJsonString());
+            Test(!Gate(ordinary, "ecosystem.json", "apps/urbe/src/editor.js").Ok, "transição not-migrated para active exige escopo de migração");
+            var migration = Node(); migration["change_scope"]!["kind"] = "migration";
+            migration["change_scope"]!["exceptions"]!.AsArray().Add(System.Text.Json.Nodes.JsonNode.Parse("""{"path":"ecosystem.json","reason":"registrar produto importado como active"}"""));
+            Test(Gate(migration, "ecosystem.json", "apps/urbe/src/editor.js").Ok, "importação declarada e restrita passa");
+            Put(c, "docs/governance/handoffs/HO-other.json", json);
+            Test(!Gate(migration, "ecosystem.json", "apps/urbe/src/editor.js", "docs/governance/handoffs/HO-other.json").Ok, "não mistura migração e refatoração no mesmo PR");
+        }
+        finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }
+        return failures;
     }
 
     /// <summary>Exercita o gerador real com respostas gravadas, sem rede nem releases fictícias publicadas.</summary>
@@ -3165,7 +3351,7 @@ static class SelfTest
             {
                 var c = Path.Combine(tmp, "c" + n++);
                 Copy(b, c);
-                Put(c, "docs/governance/handoffs/HO-x.json", "{\"state\": \"review\"}");
+                Put(c, "docs/governance/handoffs/HO-x.json", "{\"state\": \"review\", \"normative_sources\": [\"docs/adr/0014-fluxo-multiagente-minimo.md\"]}");
                 change(c);
                 return (IntegrationQueue.Gates(b, c, [.. files, "docs/governance/handoffs/HO-x.json"]), c);
             }

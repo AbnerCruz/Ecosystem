@@ -182,13 +182,13 @@ Cada tarefa traz: *saída verificável* · *depende de* · *evidência*. O gate 
   - Roteiro: [`hub-v0.0.1-dev.2`](docs/validation/hub/hub-v0.0.1-dev.2.md); handoff `HO-20261003-p3-8-gate-no-celular`, Issue #94. Aprovação registrada pela automação em `docs/governance/responses/VAL-HO-20261003-p3-8-gate-no-celular-166e1aa80bb5.md`, integrada em `0b59547`; roteiro integrado no PR #95. Estado do build: [`VALIDATED`](docs/validation/hub/hub-v0.0.1-dev.2.json).
   - Saída: handoff do gate com `object` da validação. Depende de: P3-2..P3-7, P3-9, P3-10, P3-12. **Não** é autoaprovável (NN-017).
 
-- [ ] P3-14 — **Reconciliar fiscalização antes do fechamento da Fase 3**: implementar a exigência automática de ADR em mudanças estruturais (NN-011/CI) e a verificação automática de escopo restrito de migração/refatoração (NN-013/TEST), ainda `planned` para `phase-3`; conferir e registrar a implementação entregue de Hub/Past/Now/Next (NN-021/RUNTIME).
-  - Saída: mecanismos na matriz sustentados por implementação, casos que detectem violações e evidências do Hub; sem adiar silenciosamente os compromissos da fase. Depende de: P3-8. A aprovação humana do Hub não elimina esta dívida de fiscalização.
+- [~] P3-14 — **Reconciliar fiscalização antes do fechamento da Fase 3**: implementar a exigência automática de ADR em mudanças estruturais (NN-011/CI) e a verificação automática de escopo restrito de migração/refatoração (NN-013/TEST), ainda `planned` para `phase-3`; conferir e registrar a implementação entregue de Hub/Past/Now/Next (NN-021/RUNTIME).
+  - Saída: mecanismos na matriz sustentados por implementação, casos que detectem violações e evidências do Hub; sem adiar silenciosamente os compromissos da fase. Depende de: P3-8. Issue [#98](https://github.com/AbnerCruz/Ecosystem/issues/98), handoff `HO-20261003-p3-14-fiscalizacao`. Implementação em revisão: ADR aceito referenciado pelo PR, escopo declarado comparado ao diff e testes antes/depois; matriz reconciliada com a evidência do Hub. Gate global só fecha após CI e integração.
 
 **Gate:** no celular, o proprietário abre o Hub e compreende o estado atual dos dois produtos sem abrir GitHub manualmente. *(requer validação humana em aparelho)*
 *Estado do gate:* **aguardando**
 
-Validação humana aprovada (P3-8, Issue #96). O fechamento global aguarda P3-14: a matriz ainda contém mecanismos planejados para esta fase; não se declara fiscalização implementada sem evidência (NN-018).
+Validação humana aprovada (P3-8, Issue #96). O fechamento global aguarda CI e integração de P3-14: a fiscalização antes pendente está implementada nesta branch e a matriz foi reconciliada; a fase só encerra com a mudança integrada (NN-018).
 
 ## Fase 4 — Launcher e Updates
 

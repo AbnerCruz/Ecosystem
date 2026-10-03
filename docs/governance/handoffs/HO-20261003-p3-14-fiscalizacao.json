@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p3-14-fiscalizacao",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T10:08:52Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P3-14",
+  "component": "consistency-checks",
+  "state": "review",
+  "branch": "codex/p3-14-enforcement",
+  "base_commit": "d535217dc518c5b69ee7f377191b2a6e14e34645",
+  "commit": "a5e23c3e8ef0a438dace7367eca17e99b91ccbd6",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/99",
+  "files_changed": [
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/enforcement-matrix.json",
+    "docs/architecture/refactoring.md",
+    "docs/migration/README.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261003-p3-14-fiscalizacao.json"
+  ],
+  "work_completed": [
+    "ChangeReview acoplado aos gates do checker confiável da main: mudança estrutural detectável exige ADR aceito qualificado no handoff alterado pelo PR. Nenhuma nova autoridade de classificação.",
+    "Escopo MIGRATION/REFACTOR declarado em change_scope e comparado ao diff real: um Product, trilhos separados, exceção técnica por caminho exato, testes antes/depois aprovados com evidência e tested_commit. Importação not-migrated -> active sem declaração é recusada.",
+    "Self-test inclui casos de passagem de rotina e rejeição de ADR/escopo/evidência; mutação da matriz escolhe mecanismo realmente planned, independente do fechamento da Fase 3.",
+    "Matriz NN-011/CI e NN-013/TEST reconciliada com a implementação. NN-021/RUNTIME reconciliado com Hub.Core, testes, PRs integrados e aprovação humana P3-8 (Issue #96).",
+    "P3-14 em revisão (Issue #98); gate global da Fase 3 continua aguardando até CI e integração."
+  ],
+  "verification": [
+    {
+      "check": "Consistência",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs passou 22/22 sobre código e documentação finais. Instantâneo de Issues e estado combinado também serão conferidos no CI."
+    },
+    {
+      "check": "Self-test completo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução local com SDK 10.0.401 terminou em exit 0 (/tmp/p3-14-selftest.log): todos os checks detectaram suas violações; 16 casos novos de ChangeReview passaram e os casos de fila/classificação/autorização e releases continuam verdes. Fixture corrigida para JSON explícito, compatível com reflexão desabilitada no runtime de file-based apps."
+    },
+    {
+      "check": "Simulação do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PATH com SDK 10.0.401 bash .github/integrator/simulate.sh: todos os cenários passaram; git real e gh simulado, sem atuar no GitHub. Log /tmp/p3-14-simulation.log. Rotina entra sozinha; crítico aguarda autorização; corridas e conflitos impedem integração indevida."
+    }
+  ],
+  "known_issues": [
+    "O checker não infere toda intenção de migração/refatoração nem preservação de comportamento: declaração, revisão semântica, auditoria de histórico e testes reais do Product continuam obrigatórios.",
+    "A pertinência do ADR e a necessidade técnica das exceções são matéria de revisão; referência aceita e caminho exato são os aspectos verificáveis automaticamente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI confere estado combinado e versão confiável da main; agente acompanha e corrige eventual falha.",
+    "Integrador aguarda autorização do proprietário, por mudar checker/schema/matriz (control-plane). Agente nunca aplica label integrar.",
+    "Após integração, fechar Issue #98, P3-14 e gate da Fase 3 com evidências; publicar projeção e planejar Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/migration/README.md",
+    "docs/architecture/refactoring.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/enforcement-matrix.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Regras de gates da main e política existente; change_scope é declaração do trabalho, não política concorrente."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #98, branch, base e handoff registram execução e próximos passos."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas acima consultadas diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADR aceito referenciado nos handoffs do PR para achados architecture/compatibility e mudanças em arquitetura/contracts; sem concluir pertinência só pela referência."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Diff real, separação de trilhos/Products e evidência de testes antes/depois; exceção técnica não admite outro Product."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana do Hub vem da Issue #96; testes automáticos não substituem resultado humano."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review e gate aguardando até integração; nenhum mecanismo adiado ou fiscalização declarada sem implementação."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "NN-021/RUNTIME sustentado pela implementação do Hub já integrada e validada."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Adiciona portões de rastreabilidade/escopo ao checker confiável e campo opcional ao schema do handoff; reconcilia matriz. Pode bloquear integrações futuras, portanto exige autorização do proprietário conforme política da main."
+  },
+  "cost": null
+}

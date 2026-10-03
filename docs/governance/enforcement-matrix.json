@@ -277,9 +277,9 @@
         },
         {
           "mechanism": "CI",
-          "status": "planned",
-          "how": "ADR check automático: mudanças em ecosystem.json/boundaries/contracts exigem ADR referenciado no PR. Re-faseado ao fechar a Fase 2: na Fase 2 as mudanças de contrato foram cobertas por ADR-0012 e revisão; a automação no PR fica para a Fase 3.",
-          "phase": "phase-3"
+          "status": "implemented",
+          "how": "ChangeReview no checker confiável do integrador exige ADR aceito em normative_sources do handoff alterado pelo PR quando o diff toca ARCHITECTURE, contracts ou recebe achado architecture/compatibility. A referência é qualificada por caminho; ADR proposto/ausente não autoriza. Casos do self-test exercitam rejeição e passagem. Pertinência semântica do ADR continua REVIEW.",
+          "check": "CHK-INTEGRATION"
         },
         {
           "mechanism": "TEST",
@@ -327,9 +327,9 @@
         },
         {
           "mechanism": "TEST",
-          "status": "planned",
-          "how": "Passo 10 (refatoração): testes do produto antes/depois exigidos no PR (CI por produto já os executa; ADR-0009) e verificação automática de escopo restrito (diff fora de apps/<id>). Para a importação, a evidência está nos handoffs de P1-4 e P1-5 (árvore idêntica; 286/286 e 56/56). Re-faseado ao fechar a Fase 2: só tem objeto quando começar a primeira refatoração (U-R1/L-R2), que não ocorreu na Fase 2; implementar antes do primeiro PR delas.",
-          "phase": "phase-3"
+          "status": "implemented",
+          "how": "ChangeReview compara o diff real com change_scope (migration/refactor, um Product por PR), recusa mistura de trilhos/produtos, arquivos externos sem exceção exata justificada e testes antes/depois sem evidência automated/passed e tested_commit distintos. Detecta importação not-migrated -> active sem declaração. Schema e self-test cobrem metadados e violações do diff. Intenção de refatoração/migração e preservação de comportamento continuam revisão; testes e CI de Product não são substituídos.",
+          "check": "CHK-INTEGRATION"
         }
       ]
     },
@@ -538,9 +538,8 @@
         },
         {
           "mechanism": "RUNTIME",
-          "status": "planned",
-          "how": "Hub consome essas fontes (Past/Now/Next) em vez de inventar estado.",
-          "phase": "phase-3"
+          "status": "implemented",
+          "how": "Hub.Core EcosystemReader, RoadmapReader, Timeline e GitHubReader consomem fontes canônicas e marcam indisponibilidade; HubLoader e SnapshotPolicy preservam último estado bom. Evidências integradas em P3-4..P3-6/P3-10/P3-12/P3-9; 90 testes do Hub e gate humano P3-8 aprovado pelo proprietário (Issue #96), build hub-v0.0.1-dev.2 VALIDATED."
         }
       ]
     },
