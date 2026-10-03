@@ -10,7 +10,7 @@ public sealed record ArtifactChoice(string ProductId, string ProductName, Releas
 public enum ArtifactDownloadState { Verified, Failed, Cancelled }
 public enum ArtifactDownloadError
 {
-    None, InvalidMetadata, MissingChecksum, TooLarge, Http, SizeMismatch, ChecksumMismatch, Network, Timeout, Storage
+    None, InvalidMetadata, MissingChecksum, TooLarge, Http, SizeMismatch, ChecksumMismatch, Network, Timeout, Storage, BackgroundUnavailable, Interrupted
 }
 
 /// <summary>LocalPath só existe após tamanho e SHA-256 dos bytes serem conferidos; não prova assinatura/compatibilidade.</summary>

@@ -209,7 +209,10 @@ Objetivo: detectar versões, listar releases, baixar artefatos, validar integrid
   - Saída: correção de control plane com simulação da seletividade e guardas, sem nova permissão/canal/assinatura. Issue [#103](https://github.com/AbnerCruz/Ecosystem/issues/103), handoff `HO-20261003-p4-5-dispatch-release`. PR [#104](https://github.com/AbnerCruz/Ecosystem/pull/104) integrado pelo proprietário em `5c9e23f`; CI main verde, 44 verificações da simulação passaram. Depende de: P3-7. Canal normal publicou P4-1 em `hub-v0.0.1-dev.3`.
 
 - [~] P4-6 — **Modelo seguro de instalação/launcher antes do P4-3**: identidade canônica, assinatura/canal, consentimento Android e limites de permissões.
-  - Saída: ADR-0018 Proposto, modelo de segurança e DEC-0030 pendente; nenhuma permissão ou runtime ativado. Issue [#109](https://github.com/AbnerCruz/Ecosystem/issues/109), handoff `HO-20261003-p4-6-modelo-instalacao`. Depende de: implementação integrada P4-2. A escolha do proprietário precede implementação de P4-3.
+  - Saída: ADR-0018 Aceito e modelo A conforme DEC-0030, escolhida na Issue #112; nenhuma permissão de instalação ou runtime do instalador ativado. Issue [#109](https://github.com/AbnerCruz/Ecosystem/issues/109), handoff `HO-20261003-p4-6-modelo-instalacao`. Depende de: implementação integrada P4-2. Escolha A registrada; aplicação documental em revisão antes de P4-3.
+
+- [~] P4-7 — **Download em segundo plano com notificação**: pedido do proprietário para estender P4-2 além da Activity; serviço Android dataSync interno, reconexão da UI e cancelamento na notificação.
+  - Saída: serviço/estado por operação, permissões mínimas documentadas, sem retomada silenciosa após processo morto; CI e conferência em aparelho. Issue [#113](https://github.com/AbnerCruz/Ecosystem/issues/113), handoff `HO-20261003-p4-7-download-segundo-plano`. Depende de: implementação integrada P4-2. Mudança crítica por novas permissões Android; direção explicitamente solicitada, sem DEC adicional.
 
 **Gate:** o usuário utiliza o Hub como entrada para instalar/atualizar/abrir Lunet2D e Urbe dentro dos limites da plataforma, **e** cada Product é instalado, atualizado e usado em seu domínio essencial sem o Hub presente (NN-023). *(requer validação humana em aparelho — DEVICE)*
 
