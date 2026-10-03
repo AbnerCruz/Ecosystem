@@ -64,10 +64,10 @@
     {
       "check": "Conferência do download, cancelamento e primeiro plano no celular",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/hub/docs/download-e-integridade.md",
-      "evidence": "Conferência de seleção/progresso/legibilidade e cancelamento por botão/OnStop no aparelho pendente para build contendo P4-2. Não crítica: fica visível no portal e não bloqueia integração. Não é o gate de instalação/launcher P4-4."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/117); registro em docs/governance/responses/VAL-HO-20261003-p4-2-download-integridade-ece28d5af0ee.md."
     },
     {
       "check": "Release pública P4-2 e integridade do APK",
