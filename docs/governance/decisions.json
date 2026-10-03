@@ -1142,7 +1142,7 @@
       "manifestCompatibility": "NN-001/009: build do Product continua autoridade; mapeamento aprovado local do Hub é política, não identidade paralela. NN-011/016: aprovação e consentimento separados, deny by default. NN-017/023: DEVICE separado e produtos standalone intactos.",
       "recommendation": "A para o desenvolvimento atual, com o limite explícito de chave pública. Urbe continua independente até certificado confirmado e aprovação específica.",
       "related": [
-        "apps/hub/config/android-products.json",
+        "docs/architecture/hub-android-products.json",
         "apps/hub/docs/instalar-e-abrir.md",
         "docs/adr/0018-instalacao-e-launcher-do-hub.md"
       ],

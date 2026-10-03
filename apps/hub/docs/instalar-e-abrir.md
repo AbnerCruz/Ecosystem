@@ -1,11 +1,11 @@
 # Instalar, atualizar e abrir pelo Hub — P4-3
 
 Autoridades: ADR-0018 / DEC-0030-A. Mapeamento candidato local e explícito em
-`apps/hub/config/android-products.json`; não substitui a identidade de build do
+`docs/architecture/hub-android-products.json`; não substitui a identidade de build do
 Product. Pacote do Lunet vem de seu csproj; fingerprint é conferido por seu pipeline.
 **DEC-0032 está pendente:** a política A exige aprovar esses valores específicos.
 Sem o registro canônico da alternativa A exata, o fluxo permanece bloqueado.
-O Urbe não tem certificado confirmado neste mapeamento e usa seu canal independente.
+O Product sem pin não tem certificado confirmado neste mapeamento e usa seu canal independente.
 
 ## Fluxo e limites
 
@@ -57,7 +57,7 @@ Chave pública de desenvolvimento limita substituições acidentais, mas **não 
    retomada automática. Volte e confira sessão/versão reais; cancele sessão pendente.
 7. Toque Abrir; confirme Lunet. Offline/assinante incompatível/pin pendente bloqueiam
    ações do Hub. O app instalado continua funcionando standalone sem Hub.
-8. Urbe sem pin continua sem instalação/abertura via Hub; canal independente acessível.
+8. Product sem pin continua sem instalação/abertura via Hub; canal independente acessível.
 
 P4-3 fica em review até evidência em aparelho. P4-4 é gate separado por Product e
-caminho realmente disponível; esta implementação não aprova o corte do Urbe.
+caminho realmente disponível; esta implementação não aprova o corte do Product sem pin.

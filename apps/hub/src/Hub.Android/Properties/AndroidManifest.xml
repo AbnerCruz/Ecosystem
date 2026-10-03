@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-  <!-- Only the proposed allowlisted package, identity source recorded in android-products.json.
+  <!-- Only the proposed allowlisted package, identity source recorded in hub-android-products.json.
        Visibility is not trust; runtime still denies actions until DEC-0032-A is actually registered. -->
   <queries><package android:name="io.lunet.studio" /></queries>
 </manifest>

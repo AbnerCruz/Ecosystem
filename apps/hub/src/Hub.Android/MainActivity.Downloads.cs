@@ -63,6 +63,7 @@ public sealed partial class MainActivity
         var choice = SelectedArtifact();
         var invalid = choice is null ? null : ArtifactDownloader.Ineligible(choice);
         bool busy = HubDownloads.Session.Status.Active || HubInstaller.Preparing || _checkingInstall || _installConfirmation is not null || HubInstaller.Operation(this) is not null;
+        _refresh!.Enabled = !busy && !_refreshing;
         _artifact!.Enabled = !busy && !_refreshing && _choices.Count > 0;
         _startDownload!.Enabled = !busy && !_refreshing && choice is not null && invalid is null;
         _cancelDownload!.Enabled = HubDownloads.Session.Status.Active && !HubDownloads.Session.Status.Cancelling;

@@ -36,7 +36,7 @@ internal static class HubInstaller
     static AndroidPackageEvidence? Evidence(PackageInfo? info)
     {
         if (info?.PackageName is null) return null;
-        var signers = info.SigningInfo?.ApkContentsSigners;
+        var signers = info.SigningInfo?.GetApkContentsSigners();
         if (signers is null) return null;
         return new(info.PackageName, info.LongVersionCode, info.VersionName,
             signers.Select(s => Convert.ToHexString(SHA256.HashData(s.ToByteArray()!))).ToArray());
@@ -74,12 +74,13 @@ internal static class HubInstaller
         ArtifactDownloadResult download, CancellationToken ct, Func<CancellationToken, Task<AndroidProductTrust?>> revalidateTrust)
     {
         var c = context.ApplicationContext!;
-        if (!await Gate.WaitAsync(0, ct)) return;
+        if (!Gate.Wait(0)) return;
         string? privateCopy = null;
         int sessionId = -1;
         bool committed = false;
         try
         {
+            ct.ThrowIfCancellationRequested();
             if (Operation(c) is not null || HubDownloads.Session.Status.Active) throw new InvalidOperationException("Outra operação está ativa.");
             Preparing = true;
             SetMessage("Reconferindo bytes, pacote, assinatura e versão…");

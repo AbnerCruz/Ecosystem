@@ -16,13 +16,8 @@ public sealed partial class MainActivity
     bool _checkingInstall;
     AlertDialog? _installConfirmation;
     readonly Dictionary<string, AndroidProductTrust> _approvedPackages = new();
-    static readonly AndroidProductTrust[] Candidates = ReadCandidates();
-
-    static AndroidProductTrust[] ReadCandidates()
-    {
-        using var stream = typeof(MainActivity).Assembly.GetManifestResourceStream("hub.android-products.json");
-        return stream is null ? [] : JsonSerializer.Deserialize<AndroidProductTrust[]>(stream) ?? [];
-    }
+    // Scope of Android queries, not trust: the metadata/approval remains external and must match.
+    static readonly HashSet<string> VisiblePackages = ["io.lunet.studio"];
 
     void AddInstallationControls(LinearLayout panel)
     {
@@ -42,13 +37,16 @@ public sealed partial class MainActivity
 
     async Task<AndroidProductTrust?> LoadTrust(ArtifactChoice choice, CancellationToken ct)
     {
-        var candidate = Candidates.SingleOrDefault(x => x.ProductId == choice.ProductId);
-        if (candidate is null) return null;
         var source = new RepositoryFileSource(Http, Options.Repository, Options.Branch, Options.Token);
+        var catalogTask = source.ReadTextAsync("docs/architecture/hub-android-products.json", ct);
         var decisionTask = source.ReadTextAsync("docs/governance/decisions.json", ct);
         var ecoTask = source.ReadTextAsync("ecosystem.json", ct);
         var profileTask = source.ReadTextAsync(DistributionReader.ProfilePath, ct);
-        await Task.WhenAll(decisionTask, ecoTask, profileTask);
+        await Task.WhenAll(decisionTask, ecoTask, profileTask, catalogTask);
+        if (catalogTask.Result.Availability != Availability.Derived || catalogTask.Result.Value is null) return null;
+        var candidates = JsonSerializer.Deserialize<AndroidProductTrust[]>(catalogTask.Result.Value) ?? [];
+        var candidate = candidates.SingleOrDefault(x => x.ProductId == choice.ProductId);
+        if (candidate is null || !VisiblePackages.Contains(candidate.PackageId)) return null;
         if (ecoTask.Result.Availability != Availability.Derived || profileTask.Result.Availability != Availability.Derived || ecoTask.Result.Value is null) return null;
         var product = EcosystemReader.ReadProducts(ecoTask.Result.Value, _ => null).SingleOrDefault(p => p.Id == choice.ProductId);
         if (product is null) return null;
@@ -60,12 +58,10 @@ public sealed partial class MainActivity
     async Task RefreshInstallationTrust(CancellationToken ct)
     {
         _approvedPackages.Clear();
-        // Only first APK of each Product; at most the number of declared, compiled candidates.
-        foreach (var candidate in Candidates)
+        // Only packages declared in Android queries can be used; metadata alone never expands visibility.
+        foreach (var choice in _choices.DistinctBy(x => x.ProductId).Take(8))
         {
-            var choice = _choices.FirstOrDefault(x => x.ProductId == candidate.ProductId);
-            if (choice is null) continue;
-            try { if (await LoadTrust(choice, ct) is { } approved) _approvedPackages[candidate.ProductId] = approved; }
+            try { if (await LoadTrust(choice, ct) is { } approved) _approvedPackages[choice.ProductId] = approved; }
             catch (OperationCanceledException) { throw; }
             catch (Exception) { /* no permission fallback or cached approval */ }
         }

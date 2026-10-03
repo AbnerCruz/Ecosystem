@@ -128,7 +128,7 @@ public sealed partial class MainActivity : Activity
         _refresh.Enabled = true;
         _refreshing = false;
         UpdateDownloadControls();
-        try { await RefreshInstallationTrust(ct); } catch (OperationCanceledException) { }
+        try { await RefreshInstallationTrust(ct); } catch (System.OperationCanceledException) { }
     }
 
     string? ReadCache()

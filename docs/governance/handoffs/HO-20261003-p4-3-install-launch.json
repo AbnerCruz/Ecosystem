@@ -24,28 +24,29 @@
     "docs/contracts/permissions.json",
     "docs/governance/decisions.json",
     "ecosystem.json",
-    "apps/hub/config/android-products.json",
     "apps/hub/docs/instalar-e-abrir.md",
     "apps/hub/src/Hub.Android/HubInstaller.cs",
     "apps/hub/src/Hub.Android/MainActivity.Installation.cs",
     "apps/hub/src/Hub.Android/Properties/AndroidManifest.xml",
     "apps/hub/src/Hub.Core/InstallationPolicy.cs",
     "apps/hub/tests/Hub.Tests/InstallationPolicyTests.cs",
-    "docs/governance/handoffs/HO-20261003-p4-3-install-launch.json"
+    "docs/governance/handoffs/HO-20261003-p4-3-install-launch.json",
+    "docs/architecture/hub-android-products.json"
   ],
   "work_completed": [
     "FATO OBSERVADO: ADR-0018-A/DEC-0030 já aprovados; confiança específica ainda não registrada. DEC-0032 proposta com objeto completo, sem impersonação.",
     "Política local testável: aprovação atual/exata, pacote/canal/signatário, versionCode monotônico e consentimento; cache não concede permissão.",
     "Cópia limitada e reconferida antes de analisar APK e ao entregar bytes à sessão Android; fonte revogada/alteração de instalado/aprovação indisponível abandona.",
     "UI de instalação/atualização/abertura e consulta real de versão; PackageInstaller exige ação, callbacks vinculados à operação, recuperação e cancelamento da sessão própria.",
-    "Permissões package.install/package.open separadas, REQUEST_INSTALL_PACKAGES e queries alvo único; nenhuma tool de agente ou concessão herdada."
+    "Permissões package.install/package.open separadas, REQUEST_INSTALL_PACKAGES e queries alvo único; nenhuma tool de agente ou concessão herdada.",
+    "Metadata de confiança fica em docs/architecture/hub-android-products.json, de responsabilidade do Hub; runtime não contém IDs de outros Products nem referencia seu código. Queries limitadas separadamente, nunca são aprovação."
   ],
   "verification": [
     {
       "check": "Política, bytes e resultados de instalação",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Suíte InstallationPolicyTests criada; SDK .NET ausente localmente, CI executará testes Core."
+      "result": "passed",
+      "evidence": "CI Hub test run 37140255661 job 111253032382: 219/219 testes aprovados (194 anteriores + 25 novos). Inclui confiança/bytes/downgrade/callback/evidência instalada."
     },
     {
       "check": "Consistency, self-test e Android",
