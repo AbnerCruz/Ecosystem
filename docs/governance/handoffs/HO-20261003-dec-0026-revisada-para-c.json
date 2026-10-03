@@ -1,0 +1,111 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "df88852",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "ecosystem",
+  "state": "done",
+  "message_id": "HO-20261003-dec-0026-revisada-para-c",
+  "timestamp": "2026-10-03T02:32:36Z",
+  "task_id": "P6-1",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "Revoga a escolha registrada de uma decisão do proprietário (DEC-0026: A → C), registra o texto dele como adendo (ADD-0014), aceita o ADR-0017 e abre uma decisão (DEC-0027), em zonas críticas (docs/governance/addenda/**, responses/**, decisions.json, ADR)."
+  },
+  "files_changed": [
+    "docs/governance/addenda/ADD-0014-dec-0026-revogada-a-escolhida-c.md",
+    "docs/governance/decisions.json",
+    "docs/governance/responses/DEC-0026.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/README.md",
+    "docs/architecture/agent-runtime.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261003-agent-runtime-plano.json",
+    "docs/governance/handoffs/HO-20261003-dec-0026-revisada-para-c.json"
+  ],
+  "work_completed": [
+    "FATO (repositório e API do GitHub): a DEC-0026 foi registrada como A (Issue #73, 2026-10-03T02:24:04Z, commit df88852); a Issue #74 (alternativa C), 65 s depois, foi recusada pelo registrador de propósito porque 'DEC-0026 já está decidida com outra alternativa; o registro não é sobrescrito por esta Issue' (ADR-0007). Nenhuma consequência da A havia sido aplicada.",
+    "O proprietário informou, em conversa, que a escolha A foi um erro e que quer a C. A mensagem foi persistida integralmente como ADD-0014 (NN-009), pelo mesmo caminho da DEC-0023 (decisão do proprietário registrada em adendo, sem clique no portal). Nenhum agente respondeu a decisão por ele: o PR é crítico e só entra com a label dele.",
+    "decisions.json: DEC-0026 passa a 'Alternativa C', record = ADD-0014, consequencesApplied = true; a escolha A e as Issues #73 e #74 ficam como histórico (responses/DEC-0026.md ganha só uma seção 'Revisão', sem alterar o conteúdo anterior).",
+    "Consequências aplicadas: ADR-0017 Aceito (DEC-0026-C) e índice; plano (agent-runtime.md) sem afirmar status volátil; ROADMAP: P6-1 [x], P6-2 inclui a criação do Product e depende da DEC-0027, P6-5 vira a experiência do Product; Issue #69 fechada.",
+    "DEC-0027 aberta no portal (id e nome do Product de IA; bloqueia só o R1), como o texto da alternativa C prometia: id é identidade estável (NN-019); convenção do Hub ('Ecosystem Hub' = hub) sustenta a recomendação A (id ai).",
+    "Nada estrutural foi implementado: nenhum diretório, componente em ecosystem.json, schema ou permissão."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs (CHK-DECISIONS, CHK-DECISION-FLOW, CHK-ADR, CHK-ROADMAP, CHK-STATE-CONSISTENCY, CHK-HANDOFFS, CHK-PORTAL)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os checks provaram detectar suas violações."
+    },
+    {
+      "check": "Classificação pelo classificador da main (--integration-gates)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "critical [constitution] (adendo, responses, decisions.json, ADR); espera a label integrar do proprietário."
+    }
+  ],
+  "known_issues": [
+    "A interpretação 'a decisão errada é a escolha A da DEC-0026' é inferência com base verificável (única decisão respondida no intervalo; a substituta é a Issue #74). Se estiver errada, o proprietário corrige com novo adendo (ADD-0014 diz isso).",
+    "O registrador recusou a Issue #74 corretamente; não há mecanismo de 'reabrir' uma decisão registrada: o caminho usado é o registro explícito (adendo), como na DEC-0023. Melhoria possível (item crítico à parte): um fluxo canônico de revisão de decisão pelo portal."
+  ],
+  "next_actions": [
+    "Proprietário: autorizar o PR crítico e responder a DEC-0027 no portal.",
+    "Depois: R1 (P6-2) em PR próprio, criando o Product de IA (entrada em ecosystem.json: crítica)."
+  ],
+  "decisions_required": [
+    "DEC-0027"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/adr/0007-resposta-a-decisoes-pelo-portal.md",
+    "docs/governance/communication.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/addenda/ADD-0013-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/governance/integration-policy.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/governance/responses/DEC-0026.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma autoridade por decisão: decisions.json (com record = ADD-0014); status do ADR no próprio ADR; o histórico da escolha A fica em responses/DEC-0026.md, sem segunda fonte vigente."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A mensagem do proprietário foi persistida integralmente (ADD-0014) antes de sustentar a decisão."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Decisão de direção revogada e refeita pelo proprietário; o PR é crítico e espera a label dele."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "O id do Product de IA é tratado como identidade estável e vira a DEC-0027."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nada criado: nenhum diretório, componente, schema ou permissão."
+    }
+  ]
+}

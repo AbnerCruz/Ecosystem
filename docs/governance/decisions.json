@@ -915,14 +915,53 @@
         "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
         "docs/architecture/agent-runtime.md",
         "docs/governance/addenda/ADD-0013-agent-runtime-execution-runtime-e-organizacoes.md",
-        "ROADMAP.md"
+        "ROADMAP.md",
+        "docs/governance/responses/DEC-0026.md"
       ],
       "raisedBy": "claude-code",
       "raisedAt": "2026-10-03",
-      "decision": "Alternativa A — A — Ordem do ROADMAP: o R1 só começa na Fase 6 (depois do Capability Runtime). O plano, o ADR-0017 (aceito) e os itens P6-1 a P6-5 ficam registrados; nada é antecipado (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/73).",
+      "decision": "Alternativa C — C — Antecipar o R1 dentro de um Product novo de IA (nome de exibição provisório \"Ecosystem AI\"), com fronteira de extração desde o primeiro dia (Core sem referência a Product, UI ou provedor, provada por testes de arquitetura; mesmo precedente do Hub.Core) e promoção a Service por Extraction Review quando houver um segundo consumidor real (escolhida pelo proprietário em conversa, que revogou a escolha A registrada antes por engano; ver ADD-0014. Nenhum clique no portal foi registrado para a C: a Issue #74 foi recusada pelo registrador porque a decisão já constava como A; a escolha A e as Issues #73 e #74 permanecem como histórico em docs/governance/responses/DEC-0026.md.)",
       "decidedAt": "2026-10-03",
-      "record": "docs/governance/responses/DEC-0026.md",
-      "consequencesApplied": false
+      "record": "docs/governance/addenda/ADD-0014-dec-0026-revogada-a-escolhida-c.md",
+      "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0027",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Id e nome do Product de IA (primeiro consumidor do Agent Runtime)",
+      "context": "FATO: a DEC-0026 foi decidida com a alternativa C (ADD-0014): o primeiro slice do Agent Runtime (R1) nasce dentro de um Product novo de IA, com o Core sem dependência de Product, UI ou provedor. FATO: o id de um componente é identidade estável (NN-019) — não muda sem migração explícita — e vira o diretório apps/<id> e a chave em ecosystem.json; o nome de exibição pode mudar depois. FATO: o proprietário pediu que o nome definitivo não seja assumido sem processo de decisão adequado (ADD-0013 §6); \"Ecosystem AI\" é só provisório. FATO: a convenção existente é nome de exibição \"Ecosystem Hub\" com id hub. INFERÊNCIA: o Product vai abrigar chat, projetos, agentes, equipes, organizações, tarefas, artefatos, memórias e execuções; \"IA\" descreve a tecnologia, \"agentes\" descreve a experiência principal. Esta decisão bloqueia só o R1 (P6-2); nada mais.",
+      "question": "Qual id e qual nome de exibição o Product de IA deve ter?",
+      "alternatives": [
+        {
+          "option": "A — id ai, nome de exibição \"Ecosystem AI\" (diretório apps/ai), seguindo a convenção do Hub (\"Ecosystem Hub\" = hub)",
+          "consequences": "Curto e consistente com o Hub; o nome já é o provisório usado nos documentos. Descreve a tecnologia, não a experiência (agentes e organizações). O id fica estável; o nome de exibição pode ser refinado depois sem migração."
+        },
+        {
+          "option": "B — id ecosystem-ai, nome de exibição \"Ecosystem AI\" (diretório apps/ecosystem-ai)",
+          "consequences": "Mais explícito, mas foge da convenção do Hub e repete o prefixo \"ecosystem\" que o repositório inteiro já carrega. Mesmo nome de exibição; id mais longo em caminhos, comandos e CI."
+        },
+        {
+          "option": "C — id agents, nome de exibição \"Ecosystem Agents\" (diretório apps/agents)",
+          "consequences": "Nomeia a experiência principal (agentes, equipes, organizações) em vez da tecnologia, e envelhece melhor se o Product crescer além de \"IA\". Muda o nome provisório usado nos documentos (as referências são atualizadas no mesmo PR da criação do Product)."
+        },
+        {
+          "option": "D — Outro nome: o agente abre uma nova decisão com a sua proposta",
+          "consequences": "Nada é criado até lá; o R1 continua bloqueado. Escolher D não perde nada: apenas devolve o nome para você propor."
+        }
+      ],
+      "consequences": "Depois da escolha, o agente aplica o nome nos documentos (plano, ADR, ROADMAP) e o R1 (P6-2) passa a poder começar em PR próprio, que cria apps/<id> com a entrada em ecosystem.json (mudança crítica: espera a sua autorização), a fronteira de extração (Core sem Product, UI ou provedor) e os testes T-1..T-15 do plano. Nenhum código existe antes disso.",
+      "manifestCompatibility": "Respeita NN-019 (identidade estável decidida uma vez, com processo), NN-011 (nome e id de um Product novo são decisão do proprietário), NN-020 e NN-022 (o Product nasce local; extração só por Extraction Review) e a convenção de ids já em uso (hub, urbe, lunet2d).",
+      "recommendation": "A: segue a convenção do Hub e o nome que você já viu nos documentos; o nome de exibição pode ser refinado depois sem custo, enquanto o id fica. A recomendação é do agente; qualquer alternativa é compatível com o MANIFEST.",
+      "related": [
+        "docs/governance/addenda/ADD-0014-dec-0026-revogada-a-escolhida-c.md",
+        "docs/architecture/agent-runtime.md",
+        "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+        "ecosystem.json"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-03"
     }
   ]
 }

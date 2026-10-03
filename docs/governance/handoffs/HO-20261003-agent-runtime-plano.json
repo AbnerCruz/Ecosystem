@@ -10,13 +10,11 @@
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "b2ccb60",
   "commit": null,
-  "pr": null,
-  "blockers": [
-    "DEC-0026: o lugar e o momento do primeiro slice do Agent Runtime dependem do proprietário (NN-011); nenhum slice é implementado antes dela."
-  ],
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/70",
+  "blockers": [],
   "cost": null,
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261003-agent-runtime-plano",
   "timestamp": "2026-10-03T02:30:00Z",
   "task_id": "P6-1",
@@ -73,13 +71,9 @@
     "Numeração de ADR/DEC/P-IDs pode colidir com trabalho concorrente (já ocorreu com P3-11); o integrador devolve conflito e a reconciliação é semântica."
   ],
   "next_actions": [
-    "Proprietário: responder a DEC-0026 no portal e autorizar o PR crítico.",
-    "Depois da resposta: aplicar as consequências (ADR-0017 Aceito/revisão; reordenar P6-*; abrir, só então, a decisão curta de id/nome do Product se a escolha for C).",
-    "Só depois: R1 (P6-2) em PR próprio, com testes T-1..T-15, `reuse_assessment` e as aprovações críticas que ele exigir (entrada em ecosystem.json ou diretório compartilhado)."
+    "Nenhuma pendência. A DEC-0026 foi decidida (alternativa C; ver HO-20261003-dec-0026-revisada-para-c). Próximo: DEC-0027 (id e nome do Product de IA) e, depois, o R1 (P6-2) em PR próprio."
   ],
-  "decisions_required": [
-    "DEC-0026"
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",
