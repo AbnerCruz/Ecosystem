@@ -14,7 +14,7 @@
   "branch": "codex/p3-1-releases-hub",
   "base_commit": "0636b233e2613e0ddff2ca28bc549b762730dc40",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/93",
   "criticality": {
     "declared": "critical",
     "classes": [
