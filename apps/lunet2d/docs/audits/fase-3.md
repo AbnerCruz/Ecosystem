@@ -103,3 +103,18 @@ Legenda: código (projeto), testes automáticos (T), docs (D), integração no a
 ## Decisão
 
 Fase concluída? **Não** — falta a validação do usuário no aparelho e a decisão sobre virtualização do editor (medição J1).
+
+
+## Auditoria incremental — LUNET-302 (2026-10-03)
+
+Achado real: remover using apagava linhas inteiras (inclusive classe inline);
+ordenar usings reconstruía texto e perdia `global`, comentários e CRLF.
+Correção na camada Editor: remoção pelo Span da diretiva e ordenação de linhas
+standalone preservadas; recusa de condicionais/conteúdo misto. Regressões cobrem
+código inline, remoções múltiplas, escopo global em outro arquivo, CRLF, EOF sem
+newline e blocos ambíguos. C6 do roteiro cobre integração Android.
+
+ADR 0007 formaliza Framework/IDE/Studio; boundary atual preservado. O gate
+continua pendente; aprovação da importação ZIP (#121) não aprova a Fase 3 inteira.
+Resultados automáticos e CI são registrados no handoff LUNET-302; não substituir
+com essa auditoria a evidência humana existente nem a reconciliação de #111.

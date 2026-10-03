@@ -111,9 +111,11 @@ Auditoria
 
 Itens movidos para outras fases, com motivo: baixa latência com Oboe/AAudio → Fase 14 (só se a medição de desempenho exigir); contador de audio underruns → Fase 4 (Profiler); recriar texturas quando o contexto GL é perdido e conferir o idioma do aparelho na `Localization` → Fase 13.
 
-## Fase 3 — IDE (§9, §11, §12, §15)
+## Fase 3 — Lunet IDE (§9, §11, §12, §15)
 
 Gate: experiência de IDE real.
+
+- [ ] LUNET-302 — Formalizar Framework/IDE/Studio code-first (ADR 0007) e corrigir code actions que removiam código inline/global usings/comentários; implementado e testado localmente; CI, integração e C6 no aparelho pendentes. Issue #149.
 
 - [ ] Importar projeto ZIP na tela de projetos (§5, §22; pedido do usuário): compatível com a exportação, sem sobrescrever projetos, validação e publicação atômica. Task `LUNET-301`; implementação e CI em andamento; validação em aparelho pendente.
 
@@ -182,9 +184,9 @@ Gate: jogos 2D substanciais apenas com APIs oficiais.
 - [ ] Profiler básico do framework (FPS, frame time, update/render time, draw calls, triângulos, memória, GC, audio underruns) (§23), com o painel Profiler no workspace (movido da Fase 3).
 - [ ] Auditoria de fechamento da Fase 4 registrada em `docs/audits/`.
 
-## Fase 5 — Studio Tools (§13)
+## Fase 5 — Lunet Studio (§13)
 
-Gate: a maior parte dos assets/dados necessários pode ser produzida dentro do Lunet. As ferramentas usam o `Lunet.Editor.SDK` (criado na Fase 6 ou antes, ver ADR).
+Gate: a maior parte dos assets/dados necessários pode ser produzida dentro do Lunet, com fonte inspecionável e editável fora do Studio (§13). As ferramentas usam o `Lunet.Editor.SDK` (criado na Fase 6 ou antes, ver ADR).
 
 - [ ] Painel Assets no workspace: lista os arquivos de `Content/` com prévia e uso (movido da Fase 3).
 - [ ] Sprite Studio: pixel art, layers, frames, timeline, onion skin, paletas, lápis, borracha, balde, conta-gotas, linhas, formas, seleção, laço, transformar, flip, rotate, simetria, grade, zoom, spritesheet, preview de animação, importar/exportar PNG, transparência, toque e stylus.
@@ -231,11 +233,11 @@ Gate: dois clientes jogam demonstração realtime com latência simulada.
 Gate: modelo configurado altera código, compila, detecta erro, corrige e executa. IA é opcional; nada depende dela.
 
 - [ ] Painel Agent no workspace (movido da Fase 3).
-- [ ] Model Gateway, Provider Adapters (OpenAI, Anthropic, Gemini, OpenRouter, OpenAI-compatible, custom), Capability Discovery.
+- [ ] Adaptar Model Gateway, Provider Adapters e Capability Discovery do Agent Runtime compartilhado do Ecosystem; nenhum sistema de providers paralelo no Lunet.
 - [ ] Tool API interna própria (mesmas operações usadas por humano e plugin) e depois bridge MCP.
 - [ ] Ferramentas tipadas: Project, Code, Compiler, Runtime, Testing, Assets, Documentation, Build, Versioning/checkpoints.
 - [ ] Context Engine por relevância (árvore, símbolos, referências, diagnósticos, arquivos relacionados, logs, histórico, docs, diffs, memória do projeto).
-- [ ] Agent Runtime com loop Understand → Plan → Inspect → Act → Compile → Run/Test → Verify → Repair → Finish; não concluir só por ter escrito arquivos.
+- [ ] Integrar Agent Runtime compartilhado do Ecosystem com capabilities Lunet de código, build, execução, inspeção e testes; sem loop, memória ou orquestração próprios.
 - [ ] Permissões, observabilidade e custo.
 - [ ] Chaves de API no Android Keystore; nunca no projeto, Git ou APK exportado.
 - [ ] Edits com checkpoint → mudanças → diff → verificação → aceitar/reverter; modos Ask, Edit, Agent.
@@ -354,3 +356,20 @@ Entrega (§24, §25):
 - [ ] Agent.
 - [ ] Plugin.
 - [ ] Multiplayer.
+
+## Evolução code-first — backlog classificado (§37)
+
+Registro de escopo futuro; não autoriza avanço além do gate atual.
+
+| Capacidade | Destino | Condição / evidência futura |
+| --- | --- | --- |
+| Debugger: breakpoints, watches, call stack, step in/out/over | Evolução da IDE após gate da Fase 3 | ADR de protocolo/backend; sessão real no Android |
+| Frame debugger, grafo de dependências de assets, profiler avançado | Evolução das Fases 4/5 | Métricas reais e fontes de assets documentadas |
+| Package manifest, SemVer, dependencies, lockfile, restore, pacotes locais | Extensão futura do planejamento de dependências, antes da 1.0 | ADR de formato/restore; offline, resolução determinística; registry posterior |
+| Playtest Agent | Evolução da Fase 8 | Runtime compartilhado; compilar, executar, observar, reproduzir e verificar correções |
+| Release Cockpit: id, versão, ícones, orientação, permissões, assinatura, APK/AAB, metadados, screenshots, notas | Evolução das Fases 9/10/12 | Mesmo projeto, assinatura/empacotamento verificados |
+| Game services: achievements, leaderboards, saves, contas, analytics, crashes, remote config, monetização | Pós-1.0 | Adapters substituíveis e opcionais; sem fornecedor obrigatório |
+| Replay determinístico, time-travel debugging, visual diff, Game Doctor, test matrix | Pós-1.0 | Captura/reprodução verificáveis; sem promessa de determinismo universal |
+| Remote Device Preview local | Investigação pós-1.0 | Pareamento autorizado, transporte e segurança por ADR; sem implementação agora |
+
+Scene Studio e shader tooling são expansões futuras do Lunet Studio, sem criar cenas obrigatórias.

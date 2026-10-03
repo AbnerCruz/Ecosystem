@@ -2,7 +2,7 @@
 
 Plataforma modular para desenvolver, executar, observar, combinar e evoluir aplicativos, ferramentas, workspaces, agentes e serviços sob uma arquitetura comum — preservando a independência de cada produto.
 
-Produtos principais: **Lunet2D** (desenvolvimento de jogos 2D: framework, runtime e tooling), **Urbe** (workspace de conhecimento, documentos e organização) e o **Ecosystem Hub** (Control Plane, Host geral, Registry e Launcher). Cada um mantém lifecycle e versão próprios.
+Produtos principais: **Lunet2D** (Product Lunet, desenvolvimento 2D code-first em C#: Lunet Framework, Lunet IDE e Lunet Studio opcional, sobre o mesmo projeto), **Urbe** (workspace de conhecimento, documentos e organização) e o **Ecosystem Hub** (Control Plane, Host geral, Registry e Launcher). Cada um mantém lifecycle e versão próprios.
 
 > **Estado vivo não mora aqui.** Este README é navegação e explicação estável: ele **não** declara fase, status de componente nem andamento. Fontes (uma por pergunta):
 >
