@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AgentRuntime.Core/AgentRuntime.Core.csproj" />
+    <Project Path="src/AgentRuntime.Testing/AgentRuntime.Testing.csproj" />
+    <Project Path="src/AgentRuntime.Tools.Files/AgentRuntime.Tools.Files.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AgentRuntime.Tests/AgentRuntime.Tests.csproj" />
+  </Folder>
+</Solution>
