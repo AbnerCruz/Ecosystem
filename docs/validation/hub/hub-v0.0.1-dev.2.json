@@ -1,0 +1,53 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-hub-hub-v0.0.1-dev.2",
+  "component": "hub",
+  "build": "hub-v0.0.1-dev.2",
+  "recorded_at": "2026-10-03",
+  "state": "VALIDATED",
+  "objective": "Gate P3-8: instalar o Hub e compreender no celular o estado de Lunet2D e Urbe sem abrir GitHub manualmente.",
+  "preconditions": [
+    "Android 10 ou posterior, arm64.",
+    "Internet para a primeira carga; permissão para instalar o APK pelo navegador."
+  ],
+  "steps": [
+    "Baixar e instalar o APK do Hub.",
+    "Abrir com internet e atualizar; conferir Lunet2D e Urbe, versões, estado e release ou ausência explicada.",
+    "Ler Passado / Agora / Próximo e avisos sem precisar abrir o GitHub.",
+    "Conferir rolagem, legibilidade, toque e barras do Android.",
+    "Depois de uma carga bem-sucedida, ativar modo avião, reabrir e atualizar sem perder a cópia marcada como antiga/offline; reconectar e atualizar."
+  ],
+  "expected": "O Hub instala e abre; permite compreender os dois produtos e explica falhas de rede e dados ausentes. Cache offline preserva o último estado conhecido.",
+  "known_issues": [
+    "API pública do GitHub possui limite por IP; o roteiro distingue ausência explicada de estado inventado.",
+    "Build de desenvolvimento depurável e assinada com chave pública estável (DEC-0029-A); não é canal estável."
+  ],
+  "artifact": {
+    "name": "ecosystem-hub-0.0.1-dev.2.apk",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v0.0.1-dev.2/ecosystem-hub-0.0.1-dev.2.apk",
+    "sha256": "147f42d433ded78b59545fa64adb44cd31613e5af76361813f714f9e04a93731"
+  },
+  "traceability": {
+    "task": "P3-8",
+    "commit": "0b59547b8c6074bdd8e6acc5741cd1ea048414bc",
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/95",
+    "handoff": "HO-20261003-p3-8-gate-no-celular"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Release e integridade do APK candidato",
+      "result": "passed",
+      "evidence": "Release hub-v0.0.1-dev.2 e assets observados no canal público; workflow de release 37105620991 verde, conforme handoff P3-7. Download do APK e sha256sum nesta sessão: 147f42d433ded78b59545fa64adb44cd31613e5af76361813f714f9e04a93731.",
+      "handoff": "HO-20261003-p3-8-gate-no-celular"
+    },
+    {
+      "kind": "human",
+      "check": "Gate P3-8: instalar o Hub e compreender no celular o estado de Lunet2D e Urbe sem abrir GitHub manualmente",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/96); registro em docs/governance/responses/VAL-HO-20261003-p3-8-gate-no-celular-166e1aa80bb5.md.",
+      "handoff": "HO-20261003-p3-8-gate-no-celular"
+    }
+  ]
+}
