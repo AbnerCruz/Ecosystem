@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { ROOT, parseRequirements, parseSpec, parseRoadmap } from './v2-docs.mjs';
 import { makeVaultCases, makeRestoreCases } from './parity-vault.mjs';
 import { makeStorageCases } from './parity-storage.mjs';
+import { makeDomainCases } from './parity-domain.mjs';
 
 export const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 export const json = (p) => JSON.parse(read(p));
@@ -18,7 +19,7 @@ const lineOf = (p, text) => `${p}:${read(p).split('\n').findIndex((s) => s.inclu
 
 // Inventário inclui arquivos ocultos das fixtures: .urbe e .pasta fazem parte do contrato.
 export function oraclePaths() {
-  return [...files('tests').filter((p) => !['tests/csharp-parity.mjs', 'tests/csharp-vault-parity.mjs', 'tests/csharp-vault-contract.mjs', 'tests/csharp-storage-parity.mjs'].includes(p)),
+  return [...files('tests').filter((p) => !['tests/csharp-parity.mjs', 'tests/csharp-vault-parity.mjs', 'tests/csharp-vault-contract.mjs', 'tests/csharp-storage-parity.mjs', 'tests/csharp-domain-parity.mjs'].includes(p)),
     ...files('docs/v2/contracts'), ...files('tutorial'),
     'docs/v2/REQUIREMENTS.md', 'docs/v2/SPEC.md', 'docs/v2/ROADMAP.md',
     'docs/v2/discovery/DATA-CATALOG.md', 'docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md'].sort();
@@ -114,7 +115,7 @@ export function makeCorpus() {
     ...visual.map((g, i) => ({ id: `visual-${String(i + 1).padStart(3, '0')}`, operation: 'visual.serialize',
       requirements: ['REQ-027'], source: `tests/fixtures/visual-golden.json#/${i}`,
       input: { html: g.html, bodyEditor: g.bodyEditor }, expected: { markdown: g.md } })),
-    ...makeVaultCases(), ...makeRestoreCases(), ...makeStorageCases()] };
+    ...makeVaultCases(), ...makeRestoreCases(), ...makeStorageCases(), ...makeDomainCases()] };
 }
 export function validateCorpus(corpus) {
   if (corpus.schemaVersion !== 1 || corpus.product !== 'urbe') throw new Error('corpus inválido');

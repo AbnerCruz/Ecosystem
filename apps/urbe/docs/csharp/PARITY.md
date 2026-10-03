@@ -133,6 +133,7 @@ O inventário abaixo inclui todos os testes atuais de comportamento e todos os t
 | tests/composition.mjs:1 | tests/composition.mjs | Node/contrato simulado; não prova aparelho |
 | tests/consistency.mjs:1 | Todo arquivo do app está onde precisa: carregado no index.html, guardado pelo  service worker (para funcionar offline) e conferido pelo CI. Um arquivo esquecido  em qualquer um desses lugares é um bug silencioso. | Node/contrato simulado; não prova aparelho |
 | tests/core.mjs:1 | tests/core.mjs | Node/contrato simulado; não prova aparelho |
+| tests/csharp-domain-parity.mjs:1 | tests/csharp-domain-parity.mjs | Node/contrato simulado; não prova aparelho |
 | tests/csharp-parity.mjs:1 | UC-1/UC-2: corpus não pode encolher ou virar verde com resultados ausentes/fabricados pelo runner.  Runner deve falhar por timeout/processo inválido/JSON inválido/cliente que não implementa a operação. | Node/contrato simulado; não prova aparelho |
 | tests/csharp-storage-parity.mjs:1 | tests/csharp-storage-parity.mjs | Node/contrato simulado; não prova aparelho |
 | tests/csharp-vault-contract.mjs:1 | tests/csharp-vault-contract.mjs | Node/contrato simulado; não prova aparelho |
@@ -295,6 +296,10 @@ Sem escolher a implementação C#, estas são as operações e saídas obrigató
 | vault.scenario | 12 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | vault.restore | 3 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | storage.scenario | 9 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| identity.text | 9 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| identity.parse | 6 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| identity.pair | 5 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| gc.plan | 6 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 
 ## Lacunas e ligação com o Ecosystem
 
