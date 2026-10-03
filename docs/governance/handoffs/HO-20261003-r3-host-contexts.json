@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T19:31:33.334579Z",
+  "agent": {
+    "id": "codex-host-contexts",
+    "kind": "ai-agent"
+  },
+  "component": "ecosystem-ai",
+  "branch": "codex/p6-4-host-contexts",
+  "base_commit": "c024c0876b09721e7868c4b14c97ee71e4088746",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0020-r2-workspace-changes-e-integracao-local.md",
+    "docs/adr/0021-r3-sessao-local-do-agent-workspace.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/architecture/local-first.md",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/contracts/permissions.json",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "message_id": "HO-20261003-r3-host-contexts",
+  "task_id": "P6-4",
+  "state": "review",
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/ecosystem-ai/EcosystemAI.slnx",
+    "apps/ecosystem-ai/README.md",
+    "apps/ecosystem-ai/docs-r3.md",
+    "apps/ecosystem-ai/src/AgentWorkspace/AgentWorkspace.csproj",
+    "apps/ecosystem-ai/src/AgentWorkspace/WorkspaceSession.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/AgentRuntime.Tests.csproj",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/ArchitectureTests.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/WorkspaceSessionTests.cs",
+    "docs/adr/0021-r3-sessao-local-do-agent-workspace.md",
+    "docs/adr/README.md",
+    "docs/governance/handoffs/HO-20261003-r2-encerramento.json",
+    "docs/governance/handoffs/HO-20261003-r3-host-contexts.json"
+  ],
+  "work_completed": [
+    "Slice autorizado pelo ADR-0017/plano §11.1: biblioteca de sessão local separada do Core, mesmo AgentRunner existente.",
+    "Context, grants e escopos do Host capturados; coleção original não altera execução; orçamento e eventos permanecem no Runtime.",
+    "Mesma sessão/runner em dois contextos e capabilities diferentes; deny-by-default, escopo, cancelamento, sobreposição e retry testados.",
+    "ADR-0021 Proposto documenta API experimental local sem Host API transversal nem extração."
+  ],
+  "verification": [
+    {
+      "check": "Build e AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "SDK 10.0.100: build serial sem warnings/erros; 130/130 testes passam, incluindo arquitetura do Workspace."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks passaram no conjunto final; comparação com Issues será verificada no CI com snapshot remoto."
+    },
+    {
+      "check": "CI e integração",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR do slice dispara CI do Product e consistency; integrador verifica estado combinado."
+    }
+  ],
+  "known_issues": [
+    "P6-4 completo depende de Host real/Fase 5; este slice prova apenas sessão em Host simulado, sem UI.",
+    "Sem sessão persistente, retomada de sessão, revogação dinâmica ou provider remoto; nenhum Product externo integrado."
+  ],
+  "next_actions": [
+    "Verificar CI e integrar slice local pelo processo existente.",
+    "Continuar Host API/Fase 5 e sessão visual do Product no item apropriado, sem pular dependências."
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Sem ledger, log ou estado de run paralelos no Workspace."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Workspace não conhece nomes/implementações dos Products; prova com dois contextos."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Permissões existentes do Runtime; nenhuma permissão nova; cópias capturam escopo do Host."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "130 testes; slice em review, item completo não declarado done."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Biblioteca local com único consumidor; não extrai Service/Workspace compartilhado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "agent-workspace-session",
+      "status": "possible-candidate",
+      "rationale": "Só ecosystem-ai consome; dois contextos simulados não são segundo consumidor real."
+    }
+  ]
+}
