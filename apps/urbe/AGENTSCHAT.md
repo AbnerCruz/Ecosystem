@@ -1,3 +1,10 @@
+### 2026-10-03 — codex — UC-3/UC-4 (REQ-007/023/035/038/042)
+- Estado: revisão, Issues #146/#147.
+- Feito: contrato gerado das autoridades de dados, manifesto integral das 12 fixtures e gate contra divergência; inventário de dependências com fontes primárias e riscos por plataforma.
+- Decisões: nenhuma pilha escolhida; vault/formato e runtime preservados (ADR-0016, DEC-0025-C).
+- Pendências: UC-2 parcial, UC-7 crítico, UC-5/6 requerem decisões; C# ainda sem implementação.
+- Próximos passos: UC-2/7 e, depois dos fundamentos, UC-5/6.
+
 ### 2026-10-03 — codex — UC-1 / UC-2 (REQ-002/004/007/016/027/037)
 
 ## 2026-10-03 — codex — UC-2: vault e restauração

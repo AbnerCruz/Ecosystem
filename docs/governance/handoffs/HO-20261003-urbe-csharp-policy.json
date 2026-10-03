@@ -31,7 +31,8 @@
   "work_completed": [
     "UC-7 (#148): zonas críticas de dados, segurança e distribuição sob apps/urbe/csharp; raízes/nomes protegidos antes de código.",
     "Nenhuma proteção existente removida, regra enfraquecida ou autorizador alterado. Root de fonte documentado sem escolher stack/UI/host.",
-    "Teste CLI real de 25 caminhos: novos C#, JS atuais e rotina de UI/docs."
+    "Teste CLI real de 25 caminhos: novos C#, JS atuais e rotina de UI/docs.",
+    "Correção de CI: preserva a formatação original das regras JSON exigida pelo self-test de mutação; conteúdo lógico idêntico e 25 classificações reexecutadas."
   ],
   "verification": [
     {
