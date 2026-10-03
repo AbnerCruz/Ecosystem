@@ -33,4 +33,4 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Testar Core
-        run: dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests
+        run: dotnet test apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj
