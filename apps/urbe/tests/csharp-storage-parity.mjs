@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {makeStorageCases,runStorageCase} from '../tools/lib/parity-storage.mjs';
+import {compareResults} from '../tools/lib/csharp-parity.mjs';
+const cases=makeStorageCases(),results=[];for(const c of cases)results.push({id:c.id,output:await runStorageCase(c.input)});
+compareResults(cases,results);assert.equal(cases.length,9);
+const bad=structuredClone(results);bad.find(r=>r.id==='storage-binary').output.values[1][1]=0;assert.throws(()=>compareResults(cases,bad));
+const lost=structuredClone(results);lost.find(r=>r.id==='storage-remove').output.values[5]='';assert.throws(()=>compareResults(cases,lost));
+const denied=structuredClone(results);denied.find(r=>r.id==='storage-denied').output.values[0]={rejected:false};assert.throws(()=>compareResults(cases,denied));
+await assert.rejects(()=>runStorageCase({backend:'fsa-native',permission:'granted',steps:[{method:'noop',args:[]}]}));
+await assert.rejects(()=>runStorageCase({...cases[0].input,backend:'idb'}));
+console.log('csharp-storage-parity: 9 casos, bytes/Unicode/ocultos/recusa e mutações ok');

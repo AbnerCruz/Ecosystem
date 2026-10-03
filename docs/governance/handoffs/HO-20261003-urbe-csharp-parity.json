@@ -10,11 +10,11 @@
   },
   "task_id": "UC-1",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "codex/urbe-csharp-parity",
   "base_commit": "2e4cfa902c86d2eb2441bacfa6b29267f7e46c9e",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/142",
   "files_changed": [
     "apps/urbe/docs/csharp/PARITY.md",
     "apps/urbe/docs/csharp/acceptance/README.md",
@@ -38,7 +38,8 @@
     "FATO OBSERVADO: main 2e4cfa9; Fase 5 sem runtime implementado; R1 do Agent Runtime entregue; DEC-0024-B autoriza cliente C# com paridade antes do corte; DEC-0025-C congela JS salvo bugs críticos. Urbe distribuído ainda 1.8.2-beta. Nenhuma integração runtime com outro Product foi inventada.",
     "UC-1: matriz gerada de 101 REQ IMPLEMENTAR com fonte/linha, superfície e evidência de teste/aceite de cada item JS; inventário de testes/tutorial e operações dos quatro contratos. Lacunas e C# não verificado explícitos. Issue #138; matriz em revisão até integração.",
     "UC-2 (parcial; Issue #139): 150 casos JSON dos goldens (40 Markdown, 110 Visual); oráculo por SHA-256 incluindo sidecars .urbe, binários e cenários de vault. Runner de cliente JSON falha em resultados ausentes, duplicados, desconhecidos, erro e diferença; adapter JS calcula as saídas reais de Markdown em VM.",
-    "npm run check ganha o gate de corpus/projeção. Sem alterar src, native, versão ou workflows. Fontes congeladas não são autoridade concorrente: documentam uma base específica por SHA."
+    "npm run check ganha o gate de corpus/projeção. Sem alterar src, native, versão ou workflows. Fontes congeladas não são autoridade concorrente: documentam uma base específica por SHA.",
+    "Reconciliação: entrega integrada na main pelo integrador (commit 9c99059); CI verde. Estado done vale para UC-1, não conclui UC-2 ou G-C0."
   ],
   "verification": [
     {
