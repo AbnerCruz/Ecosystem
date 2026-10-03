@@ -21,7 +21,10 @@
   "criticality": {
     "declared": "critical",
     "classes": [
-      "control-plane"
+      "control-plane",
+      "security",
+      "distribution",
+      "architecture"
     ],
     "reason": "Cria o workflow .github/workflows/hub-release.yml (publica releases com permissão contents: write) e altera hub-ci.yml (zona .github/workflows/**); também declara o canal do Hub em ecosystem.json e no perfil de distribuição e adiciona uma chave de assinatura PÚBLICA de desenvolvimento ao repositório (exceção ao §30.2 decidida pelo proprietário na DEC-0029-A)."
   },
