@@ -1,0 +1,132 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p3-1-releases-do-hub",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T08:09:17Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P3-1",
+  "component": "portal",
+  "state": "review",
+  "branch": "codex/p3-1-releases-hub",
+  "base_commit": "0636b233e2613e0ddff2ca28bc549b762730dc40",
+  "commit": null,
+  "pr": null,
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Altera site/generator/GenerateStatus.cs e tests/consistency/Check.cs, zonas de control plane da política vigente. Aplica canal já decidido; integração pelo integrador com autorização do proprietário, sem merge manual."
+  },
+  "files_changed": [
+    "site/generator/GenerateStatus.cs",
+    "tests/consistency/Check.cs",
+    "docs/architecture/portal.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261003-p3-1-releases-do-hub.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: main 0636b233 contém P3-7 done e release hub-v0.0.1-dev.2; P3-1 aberto. Nenhum PR aberto foi encontrado ao assumir. Tarefa registrada na Issue #92.",
+    "FATO OBSERVADO: gerador anterior dependia exclusivamente de source.repository; Hub não declara origem, mas seu canal github-release aponta para publicUrl. O appCard já renderiza todos os Products, portanto a correção está na projeção.",
+    "Gerador resolve canal de releases a partir do perfil current e ecosystem.json; preserva origens legadas, não usa canal de releases como versão Web, filtra tags <component-id>-v no monorepo e seleciona por published_at, incluindo pré-lançamento e ignorando draft.",
+    "Resposta inválida é isolada como not-available; link de recuperação permanece offline. Artefatos usam o contrato existente: tipo, nome, URL, tamanho e SHA-256, sem dado digitado na UI.",
+    "Self-test do checker executa o gerador real com respostas gravadas offline, exercitando seleção, rascunho, pré-lançamento, APK/digest, sidecar, canais legados/Web, ausência de release, resposta inválida e offline. Opção de fixtures é recusada em geração online e identifica proveniência de teste.",
+    "Documentação e ROADMAP atualizados; P3-1 permanece aberto até haver CI e integração."
+  ],
+  "verification": [
+    {
+      "check": "node --check site/app.js",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Executado no snapshot consultado; sem alteração da UI JavaScript."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Tentativa local retornou dotnet: command not found. Ambiente sem SDK .NET; verificar CI do PR."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "SDK .NET ausente; casos novos serão executados pelo workflow consistency do PR."
+    },
+    {
+      "check": "Projeção publicada com a release real do Hub",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Validar geração online e publicação pelo pages após integração; o workflow de publicação não foi alterado."
+    }
+  ],
+  "known_issues": [
+    "Consulta limitada às últimas 100 releases do canal; ausência nesse recorte é explícita e mantém o link de releases.",
+    "Snapshot de arquivos recuperado via integração GitHub; clonagem local impossível porque proxy:8080 está indisponível. Nenhum histórico foi reescrito.",
+    "Não declara instalação nem validação em aparelho: gate separado P3-8."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI do PR e corrigir falhas.",
+    "Após CI verde, autorização crítica do proprietário pelo fluxo vigente e integração automática.",
+    "Confirmar projeção publicada; encerrar Issue #92, ROADMAP P3-1 [x] e handoff done somente após evidência. Depois preparar P3-8."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0005-portal-web-github-pages.md",
+    "docs/governance/addenda/ADD-0001-portal-github-pages.md",
+    "docs/architecture/portal.md",
+    "docs/architecture/distribution.md",
+    "docs/distribution/current.profile.json",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Canal derivado do perfil e manifest; versão, URL do APK e checksum vêm das autoridades existentes."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #92, branch, base_commit e handoff identificam trabalho e evidência."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente; limitações documentadas."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Filtro de tags por componente impede misturar releases de produtos no monorepo; não altera versões ou pipelines."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegar validação humana; P3-8 permanece gate separado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Handoff review e ROADMAP aberto; checks e publicação pendentes explicitamente."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Portal e links dos Products independentes do Hub; sem dependência de runtime nova."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "release-channel-projection",
+      "status": "product-specific",
+      "rationale": "A projeção já pertence ao portal; amplia leitura dos canais existentes sem criar abstração compartilhada ou consumidor fictício."
+    }
+  ],
+  "cost": null
+}

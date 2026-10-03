@@ -130,7 +130,9 @@ python3 -m http.server -d site 8000   # qualquer servidor estático
 - **Urbe Web (P1-10):** rota previsível para abrir o Urbe Web, decidida durante a auditoria/migração do Urbe sem quebrar sua publicação atual. Não presumida agora.
 - **Lunet2D:** o GitHub Pages não executa o Lunet2D; o portal oferece estado, release, APK, checksum, release notes, roteiro de teste, documentação e validações pendentes. Nenhuma versão web falsa.
 - **Páginas de validação (P1-11, implementado):** `/testing/<componente>/<build>/`, geradas de registros canônicos de validação, com versão/build, objetivo, pré-condições, passos numerados, resultado esperado, problemas conhecidos, link para o artefato e tarefa/roadmap/commit/PR. Persistência de PASS/FAIL não é objetivo inicial. O gerador (`site/generator/GenerateStatus.cs`) escreve as páginas em `site/testing/` (não versionado, como `site/data/`) a partir de `docs/validation/**/*.json`; o estado de validação de cada componente na projeção é o do registro mais recente, e `CHK-PORTAL` recusa divergência.
-- **Hub (P3-x):** o portal passa a listar as releases do Hub para instalação e recuperação.
+- **Hub (P3-1):** a release e o APK são derivados do canal `github-release` do perfil `current`, cuja localização vem de `publicUrl` em `ecosystem.json`. O link desse canal aparece em Releases e na recuperação; não é apresentado como versão Web. A última release publicada do componente (inclusive pré-lançamento) é escolhida por `published_at`, ignorando rascunhos. No próprio monorepo, as tags são filtradas por `<component-id>-v` (convenção do canal do Hub, DEC-0028), para não oferecer a release de outro produto. A consulta cobre as últimas 100 releases do canal; ausência nesse recorte, resposta inválida, geração offline ou falha da API ⇒ "não disponível", mantendo o link de recuperação. APK, tamanho e SHA-256 usam o mesmo contrato de artefatos dos demais Products. Nenhuma release, URL de APK, versão ou checksum é digitado no portal.
+
+Testes de releases: `dotnet run tests/consistency/Check.cs -- --self-test` executa o gerador com respostas gravadas (`--release-fixtures <arquivo>`, mapa de URL de repositório para resposta da API, permitido somente offline). Esse modo declara a origem como resposta gravada e não é usado pelo workflow de publicação. Os testes cobrem tags de outros componentes, rascunhos, pré-lançamento, data publicada, APK/checksum, preservação do Urbe Web, ausência de release, resposta inválida e recuperação offline.
 
 ## 8. Interface e indicadores ao vivo (P3-11)
 
@@ -163,4 +165,3 @@ Lidos **pelo navegador do visitante** da API pública do GitHub, sem token, some
 As cores de dados usam uma paleta categórica validada para daltonismo nos dois temas (rotina = azul, crítico = laranja); cores de status (bom, atenção, crítico) são reservadas e sempre acompanhadas de ícone e rótulo. Todo gráfico tem legenda, detalhe ao passar o mouse ou focar pelo teclado e uma visão em tabela.
 
 Estes indicadores são do **desenvolvimento** (portal humano de desenvolvimento, ADD-0001); não reproduzem o Past / Now / Next nem o control plane do Hub (§1).
-

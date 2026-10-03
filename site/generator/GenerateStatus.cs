@@ -7,8 +7,9 @@
 // Lê apenas fontes canônicas (ecosystem.json, handoffs, documentos normativos) e escreve
 // site/data/ecosystem-status.json, validado por docs/contracts/schemas/ecosystem-status.schema.json.
 // O resultado é projeção, nunca autoridade: todo dado sem fonte automática sai como "not-available".
-// --releases online consulta a API pública do GitHub (releases dos repositórios de origem, P1-9); o padrão é offline, para que
+// --releases online consulta a API pública do GitHub (canais do perfil current); o padrão é offline, para que
 // verificações locais e testes não dependam de rede. Falha de rede nunca derruba o gerador: o dado sai "not-available".
+// --release-fixtures <arquivo> (somente offline) injeta respostas gravadas por URL de repositório nos self-tests.
 
 #:property Nullable=enable
 
@@ -35,6 +36,7 @@ JsonNode Load(string rel) { sources.Add(rel); return JsonNode.Parse(File.ReadAll
 string? S(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : null;
 
 var eco = Load("ecosystem.json");
+var currentProfile = File.Exists(P("docs/distribution/current.profile.json")) ? Load("docs/distribution/current.profile.json") : null;
 var repo = S(eco["ecosystem"]?["repository"]) ?? throw new InvalidOperationException("ecosystem.repository ausente");
 var gitRef = opt.GetValueOrDefault("ref", "HEAD");
 var commit = opt.GetValueOrDefault("commit");
@@ -60,6 +62,9 @@ var checksDatum = Datum(checks,
 var online = opt.GetValueOrDefault("releases", "offline") == "online";
 if (opt.GetValueOrDefault("releases", "offline") is not ("online" or "offline")) { Console.Error.WriteLine("--releases deve ser online|offline"); return 2; }
 HttpClient? http = null;
+var fixturePath = opt.GetValueOrDefault("release-fixtures");
+if (fixturePath is not null && online) { Console.Error.WriteLine("--release-fixtures só pode ser usado em geração offline."); return 2; }
+var releaseFixtures = fixturePath is null ? null : JsonNode.Parse(File.ReadAllText(fixturePath))!.AsObject();
 string? Fetch(string url)
 {
     try
@@ -76,17 +81,23 @@ string? Fetch(string url)
 }
 
 // Retorna a release mais recente publicada (não rascunho) e seus artefatos instaláveis, ou (null, []) se indisponível.
-(JsonObject? Rel, JsonArray Artifacts, string Note) LatestRelease(string sourceRepo)
+(JsonObject? Rel, JsonArray Artifacts, string Note) LatestRelease(string sourceRepo, string? tagPrefix)
 {
     var artifacts = new JsonArray();
     var m = System.Text.RegularExpressions.Regex.Match(sourceRepo, @"^https://github\.com/([^/]+)/([^/]+?)/?$");
-    if (!online) return (null, artifacts, "Releases não consultadas (geração offline).");
+    if (!online && releaseFixtures is null) return (null, artifacts, "Releases não consultadas (geração offline).");
     if (!m.Success) return (null, artifacts, "Repositório de origem não é um repositório GitHub reconhecido.");
-    var json = Fetch($"https://api.github.com/repos/{m.Groups[1].Value}/{m.Groups[2].Value}/releases?per_page=10");
+    var json = releaseFixtures is null
+        ? Fetch($"https://api.github.com/repos/{m.Groups[1].Value}/{m.Groups[2].Value}/releases?per_page=100")
+        : releaseFixtures[sourceRepo]?.ToJsonString();
     if (json is null) return (null, artifacts, "API de releases do GitHub indisponível na geração; use o link de releases.");
+    try
+    {
     var list = JsonNode.Parse(json)?.AsArray();
-    var r = list?.FirstOrDefault(x => x?["draft"]?.GetValue<bool>() == false)?.AsObject();
-    if (r is null) return (null, artifacts, "O repositório de origem ainda não tem releases publicadas.");
+    var r = list?.Where(x => x?["draft"]?.GetValue<bool>() == false
+            && (tagPrefix is null || S(x?["tag_name"])?.StartsWith(tagPrefix, StringComparison.Ordinal) == true))
+        .OrderByDescending(x => S(x?["published_at"]), StringComparer.Ordinal).FirstOrDefault()?.AsObject();
+    if (r is null) return (null, artifacts, "Nenhuma release publicada deste componente entre as últimas 100 releases do canal.");
 
     string? sums = null;
     foreach (var a in r["assets"]?.AsArray() ?? [])
@@ -106,7 +117,12 @@ string? Fetch(string url)
             }
         artifacts.Add(new JsonObject { ["kind"] = kind, ["name"] = name, ["url"] = url, ["sizeBytes"] = a?["size"]?.GetValue<long>(), ["sha256"] = sha });
     }
-    return (r, artifacts, "API de releases do GitHub (lida na geração).");
+    return (r, artifacts, releaseFixtures is null ? "API de releases do GitHub (lida na geração)." : "Resposta gravada de releases (self-test offline).");
+    }
+    catch
+    {
+        return (null, new JsonArray(), "Resposta de releases inválida; use o link de releases.");
+    }
 }
 
 // --- registros canônicos de validação por build (P1-11): estado de validação por componente e páginas /testing/ ---
@@ -162,7 +178,20 @@ foreach (var (id, c) in eco["components"]!.AsObject())
     var inMonorepo = status is "active" or "migrating" or "deprecated";
 
     var repoLink = sourceRepo ?? (inMonorepo ? Tree(path) : null);
-    var releases = sourceRepo is not null ? $"{sourceRepo}/releases" : null;
+    var channels = currentProfile?["entries"]?.AsArray().FirstOrDefault(e => S(e?["component"]) == id)?["channels"]?.AsArray();
+    var releaseChannel = channels?.FirstOrDefault(ch => S(ch?["kind"]) == "github-release");
+    var locationFrom = S(releaseChannel?["locationFrom"]);
+    var releaseLocation = locationFrom == "source.repository" ? sourceRepo
+        : locationFrom is not null ? S(c[locationFrom]) : null;
+    var releaseRepo = releaseLocation?.TrimEnd('/');
+    if (releaseRepo?.EndsWith("/releases", StringComparison.Ordinal) == true) releaseRepo = releaseRepo[..^9];
+    // As origens legadas continuam disponíveis quando não há perfil; um canal explícito prevalece sobre a origem.
+    if (releaseChannel is null) releaseRepo = sourceRepo;
+    var releases = releaseRepo is not null ? $"{releaseRepo}/releases" : null;
+    // Tags de releases no próprio monorepo são <component-id>-v..., conforme o canal de desenvolvimento do Hub.
+    var tagPrefix = releaseRepo == repo.TrimEnd('/') ? id + "-v" : null;
+    var publicUrl = S(c["publicUrl"]);
+    var web = locationFrom == "publicUrl" ? null : publicUrl;
 
     var authority = S(c["version"]?["authority"]);
     var versionFile = S(c["version"]?["file"]);
@@ -192,11 +221,11 @@ foreach (var (id, c) in eco["components"]!.AsObject())
             ["source"] = $"Árvore de {path} neste commit do Ecosystem; a origem é conferida ao vivo pelo navegador (último commit com Ecosystem-Tree).",
         };
 
-    var (latest, artifacts, relNote) = sourceRepo is not null ? LatestRelease(sourceRepo) : (null, new JsonArray(), "Sem releases projetadas.");
+    var (latest, artifacts, relNote) = releaseRepo is not null ? LatestRelease(releaseRepo, tagPrefix) : (null, new JsonArray(), "Sem releases projetadas.");
     var release = latest is null
         ? Datum(null, relNote)
         : Datum($"{S(latest["tag_name"])} ({(S(latest["published_at"]) ?? "")[..Math.Min(10, (S(latest["published_at"]) ?? "").Length)]}{(latest["prerelease"]?.GetValue<bool>() == true ? ", pré-lançamento" : "")})",
-            $"{relNote} Repositório de origem: canal de distribuição durante a migração (DEC-0008).", S(latest["html_url"]));
+            $"{relNote} Canal: {releases}; localização derivada de ecosystem.json e docs/distribution/current.profile.json.", S(latest["html_url"]));
     var ci = Datum(null,
         inMonorepo ? "CI por componente ainda não projetado; veja os checks do Ecosystem."
         : sourceRepo is not null ? "CI do produto vive no repositório de origem enquanto não migrado."
@@ -209,7 +238,7 @@ foreach (var (id, c) in eco["components"]!.AsObject())
         ["type"] = S(c["type"]),
         ["status"] = status,
         ["description"] = S(c["description"]),
-        ["links"] = new JsonObject { ["repository"] = repoLink, ["releases"] = releases, ["web"] = S(c["publicUrl"]) },
+        ["links"] = new JsonObject { ["repository"] = repoLink, ["releases"] = releases, ["web"] = web },
         ["version"] = version,
         ["release"] = release,
         ["artifacts"] = artifacts,
@@ -352,9 +381,9 @@ if (Directory.Exists(hdir))
     }
 // Distribuição atual (P2-12/P2-13): derivada do perfil `current`; as localizações vêm do próprio componente (nada digitado).
 JsonObject? distribution = null;
-if (File.Exists(P("docs/distribution/current.profile.json")))
+if (currentProfile is not null)
 {
-    var prof = Load("docs/distribution/current.profile.json");
+    var prof = currentProfile;
     var chRows = new JsonArray();
     foreach (var e in prof["entries"]!.AsArray())
     {

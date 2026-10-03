@@ -2410,10 +2410,15 @@ static class SelfTest
           "raisedBy": "self-test", "raisedAt": "2026-01-01" },
         """;
 
-    static void RunGenerator(string root)
+    static void RunGenerator(string root, params string[] options)
     {
         var psi = new ProcessStartInfo("dotnet") { WorkingDirectory = root, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var a in new[] { "run", "site/generator/GenerateStatus.cs" }) psi.ArgumentList.Add(a);
+        if (options.Length > 0)
+        {
+            psi.ArgumentList.Add("--");
+            foreach (var a in options) psi.ArgumentList.Add(a);
+        }
         using var proc = Process.Start(psi)!;
         proc.StandardOutput.ReadToEnd(); proc.StandardError.ReadToEnd();
         proc.WaitForExit();
@@ -2693,6 +2698,7 @@ static class SelfTest
         failures += MigrationHistoryTests(repoRoot);
         failures += IntegrationTests();
         failures += IntegrationQueueTests(repoRoot);
+        failures += ReleaseProjectionTests(repoRoot);
 
         foreach (var id in Checks.Ids.Where(i => !covered.Contains(i)))
         {
@@ -2703,6 +2709,84 @@ static class SelfTest
         Console.WriteLine();
         Console.WriteLine(failures == 0 ? "Self-test: todos os checks provaram detectar suas violações." : $"Self-test: {failures} falha(s).");
         return failures == 0 ? 0 : 1;
+    }
+
+    /// <summary>Exercita o gerador real com respostas gravadas, sem rede nem releases fictícias publicadas.</summary>
+    static int ReleaseProjectionTests(string repoRoot)
+    {
+        var failures = 0;
+        void Report(bool ok, string name) { Console.WriteLine($"{(ok ? "PASS" : "FAIL")}  releases do portal: {name}"); if (!ok) failures++; }
+        var tmp = Path.Combine(Path.GetTempPath(), "ecosystem-releases-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Copy(repoRoot, tmp);
+            var eco = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(tmp, "ecosystem.json")))!;
+            var repo = eco["ecosystem"]!["repository"]!.GetValue<string>();
+            var fixture = Path.Combine(tmp, "release-fixtures.json");
+            var responses = new System.Text.Json.Nodes.JsonObject();
+            responses[repo] = System.Text.Json.Nodes.JsonNode.Parse("""
+                [
+                  {"draft":false,"tag_name":"another-v9.0.0","published_at":"2026-10-04T12:00:00Z","assets":[]},
+                  {"draft":true,"tag_name":"hub-v9.0.0","published_at":"2026-10-04T11:00:00Z","assets":[]},
+                  {"draft":false,"tag_name":"hub-v0.0.1-dev.1","published_at":"2026-10-01T12:00:00Z","assets":[]},
+                  {"draft":false,"prerelease":true,"tag_name":"hub-v0.0.1-dev.2","published_at":"2026-10-03T12:00:00Z",
+                   "html_url":"https://github.com/example/project/releases/tag/hub-v0.0.1-dev.2",
+                   "assets":[{"name":"hub.apk","browser_download_url":"https://github.com/example/project/releases/download/hub.apk",
+                              "size":1234,"digest":"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+                             {"name":"hub.apk.sha256","browser_download_url":"https://github.com/example/project/releases/download/hub.apk.sha256"}]}
+                ]
+                """);
+            var origin = eco["components"]!["urbe"]!["source"]!["repository"]!.GetValue<string>();
+            responses[origin] = System.Text.Json.Nodes.JsonNode.Parse("""
+                [{"draft":false,"tag_name":"v2.0.0","published_at":"2026-10-02T12:00:00Z","assets":[]}]
+                """);
+            File.WriteAllText(fixture, responses.ToJsonString());
+            RunGenerator(tmp, "--release-fixtures", fixture);
+            using (var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site/data/ecosystem-status.json"))))
+            {
+                var hub = doc.RootElement.Arr("components").First(c => c.Str("id") == "hub");
+                var urbe = doc.RootElement.Arr("components").First(c => c.Str("id") == "urbe");
+                Report(hub.GetProperty("release").Str("value")?.StartsWith("hub-v0.0.1-dev.2") == true,
+                    "seleciona o Hub por tag e data publicada; ignora outro componente e rascunho");
+                Report(hub.GetProperty("release").Str("value")?.Contains("pré-lançamento") == true,
+                    "inclui e identifica pré-lançamento");
+                Report(hub.GetProperty("links").Str("releases") == repo + "/releases"
+                    && hub.GetProperty("links").Str("web") is null, "publicUrl é canal de releases, não versão Web");
+                var apk = hub.Arr("artifacts").Single();
+                Report(apk.Str("kind") == "apk" && apk.Str("sha256") == new string('a', 64)
+                    && apk.GetProperty("sizeBytes").GetInt64() == 1234, "APK com tamanho e SHA-256 da API; sidecar não vira instalador");
+                Report(urbe.GetProperty("links").Str("releases") == origin + "/releases"
+                    && urbe.GetProperty("links").Str("web") == eco["components"]!["urbe"]!["publicUrl"]!.GetValue<string>()
+                    && urbe.GetProperty("release").Str("value")?.StartsWith("v2.0.0") == true,
+                    "preserva release do espelho e versão Web do produto");
+            }
+            Report(!Checks.RunAll(tmp).Failed, "projeção com canal e artefato passa no schema e nos checks");
+
+            responses[repo] = System.Text.Json.Nodes.JsonNode.Parse("""[{"draft":false,"tag_name":"another-v9.0.0","assets":[]}]""");
+            responses[origin] = "resposta inválida";
+            File.WriteAllText(fixture, responses.ToJsonString());
+            RunGenerator(tmp, "--release-fixtures", fixture);
+            using (var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site/data/ecosystem-status.json"))))
+            {
+                var hub = doc.RootElement.Arr("components").First(c => c.Str("id") == "hub");
+                var urbe = doc.RootElement.Arr("components").First(c => c.Str("id") == "urbe");
+                Report(hub.GetProperty("release").Str("availability") == "not-available" && !hub.Arr("artifacts").Any(),
+                    "sem release do componente não oferece APK de outro produto");
+                Report(urbe.GetProperty("release").Str("availability") == "not-available",
+                    "resposta inválida fica indisponível sem derrubar geração");
+            }
+            RunGenerator(tmp);
+            using (var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site/data/ecosystem-status.json"))))
+            {
+                var hub = doc.RootElement.Arr("components").First(c => c.Str("id") == "hub");
+                Report(hub.GetProperty("release").Str("availability") == "not-available" && !hub.Arr("artifacts").Any()
+                    && hub.GetProperty("links").Str("releases") == repo + "/releases",
+                    "offline preserva recuperação pelo canal sem inventar release");
+            }
+        }
+        catch (Exception e) { Report(false, e.Message); }
+        finally { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); }
+        return failures;
     }
 
     static (int Code, string Result, string Outcome) RunApplier(string root, string author, string association, string title, string body)
