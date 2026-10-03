@@ -927,7 +927,7 @@
     },
     {
       "id": "DEC-0027",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": true,
       "title": "Id e nome do Product de IA (primeiro consumidor do Agent Runtime)",
@@ -961,7 +961,11 @@
         "ecosystem.json"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-03"
+      "raisedAt": "2026-10-03",
+      "decision": "Alternativa B — B — id ecosystem-ai, nome de exibição \"Ecosystem AI\" (diretório apps/ecosystem-ai) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/77).",
+      "decidedAt": "2026-10-03",
+      "record": "docs/governance/responses/DEC-0027.md",
+      "consequencesApplied": false
     }
   ]
 }
