@@ -63,6 +63,19 @@ public sealed class CoreDomainTests
     }
 
     [Fact]
+    public void Character_attributes_cannot_be_mutated_through_public_views()
+    {
+        var fixture = Fixture.Create(heroStrength: 3);
+        var canonicalAttributes = (IDictionary<string, int>)fixture.Hero.Attributes;
+        var playerAttributes = (IDictionary<string, int>)
+            fixture.Campaign.CreatePlayerView(fixture.Human.Id).Characters.Single().Attributes;
+
+        Assert.Throws<NotSupportedException>(() => canonicalAttributes["strength"] = 99);
+        Assert.Throws<NotSupportedException>(() => playerAttributes["strength"] = 99);
+        Assert.Equal(3, fixture.Hero.AttributeModifier("strength"));
+    }
+
+    [Fact]
     public void Human_and_agent_intents_use_the_same_session_engine()
     {
         var fixture = Fixture.Create();
