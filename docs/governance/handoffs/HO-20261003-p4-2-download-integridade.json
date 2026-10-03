@@ -1,0 +1,148 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p4-2-download-integridade",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T13:24:34Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-2",
+  "component": "hub",
+  "state": "review",
+  "branch": "codex/p4-2-artifact-download",
+  "base_commit": "7ff0ba05510731595605f445b1ec15c07ad5d690",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/hub/README.md",
+    "apps/hub/docs/download-e-integridade.md",
+    "apps/hub/src/Hub.Android/MainActivity.Downloads.cs",
+    "apps/hub/src/Hub.Android/MainActivity.cs",
+    "apps/hub/src/Hub.Core/ArtifactDownloads.cs",
+    "apps/hub/src/Hub.Core/GitHubModels.cs",
+    "apps/hub/src/Hub.Core/Hub.Core.csproj",
+    "apps/hub/tests/Hub.Tests/ArtifactCatalogTests.cs",
+    "apps/hub/tests/Hub.Tests/ArtifactDownloadTests.cs",
+    "docs/governance/handoffs/HO-20261003-p4-2-download-integridade.json"
+  ],
+  "work_completed": [
+    "Seleção derivada dos Products/canais/releases do catálogo: três releases e quatro APKs por release, com proveniência Stale. Sem canal/release disponível não fabrica escolha.",
+    "Download foreground do APK em cache privado do Hub, HTTPS público sem credencial herdada, repositório/tag/asset conferidos e SHA-256 obrigatório válido.",
+    "Streaming com buffer de 64 KiB e leitura limitada ao tamanho declarado + 1 byte; limite de 128 MiB e prazo de 5 minutos incluindo corpo. HTTP/tamanho/bytes/hash/timeout/cancelamento/armazenamento viram resultados explícitos.",
+    "SHA-256 incremental e tamanho conferidos antes de renomear parte única para hub-verified.apk. Cancelamento/falha descarta parcial e não devolve cópia anterior como resultado; partes abandonadas são limpas na próxima tentativa.",
+    "Painel Android seleciona APK e solicita Baixar e conferir/Cancelar. Bloqueia troca/refresh durante transferência; OnStop/OnDestroy cancelam. Sem instalador, exportação, assinatura ou nova permissão Android.",
+    "Documentação registra limites, armazenamento, ausência de acesso a projeto/vault, semântica do checksum e conferência em aparelho."
+  ],
+  "verification": [
+    {
+      "check": "Testes do Hub Core e seleção de artefatos",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet test --project tests/Hub.Tests em apps/hub, SDK 10.0.401: 149/149. Log /tmp/p4-2-tests.log. Casos: bytes corrompidos/truncados/excessivos, Content-Length ausente/divergente, digest inválido, HTTP/rede/IO, cancelamento e prazo no corpo, descarte/preservação/limite de cópias, URL/repo/tag/asset/prefixo, token/HTTPS/compressão, cache antigo/Stale/canais ausentes."
+    },
+    {
+      "check": "Smoke do downloader com APK real no canal público",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Harness temporário /tmp/ecosystem-p4-2-smoke referencia o Core desta branch. DownloadAsync de hub-v0.0.1-dev.3 retornou Verified, 21805381 bytes, SHA-256 29979d73076b8e216093d2196e166c9a77ea200f1c887fa4e7359c67b8e1870e; arquivo /tmp/ecosystem-p4-2-smoke-download/hub-verified.apk. Log /tmp/p4-2-smoke.log. Fonte do APK de payload: 5c9e23f; downloader é a árvore de P4-2 testada localmente."
+    },
+    {
+      "check": "Consistência do Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 com documentação/handoff; git diff --check passou. Log /tmp/p4-2-consistency-final.log; snapshot real de Issues será conferido no CI."
+    },
+    {
+      "check": "Build Android e CI no estado combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI hub-ci e integrador confirmarão compilação Android; workload android não está instalado localmente."
+    },
+    {
+      "check": "Conferência do download, cancelamento e primeiro plano no celular",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/hub/docs/download-e-integridade.md",
+      "evidence": "Conferência de seleção/progresso/legibilidade e cancelamento por botão/OnStop no aparelho pendente para build contendo P4-2. Não crítica: fica visível no portal e não bloqueia integração. Não é o gate de instalação/launcher P4-4."
+    }
+  ],
+  "known_issues": [
+    "Hash confere bytes contra o valor do canal, não assinatura/identidade do pacote/compatibilidade. Instalador fica em P4-3.",
+    "APK sem SHA-256 válido ou acima de 128 MiB não é baixado; limite de cinco minutos pode exigir tentar novamente em rede lenta.",
+    "Sem retomada/exportação/background; sair do primeiro plano cancela. Cache é privado e pode ser limpo pelo Android; não reusa aprovação de checksum depois de reiniciar o processo.",
+    "Falha do filesystem que impeça remover a parte incompleta fica explícita; app não declara sucesso nesse caso."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI/integrador, corrigir falhas, conferir publicação pelo hub-release e registrar build real.",
+    "Conferência em aparelho quando proprietário a realizar, mantendo review enquanto faltar essa evidência; não interromper por validação não crítica.",
+    "Continuar preparação de P4-3: ADR e modelo de permissões/identidade/assinatura/consentimento antes de implementar instalador/launcher."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/contracts/permissions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "apps/hub/README.md",
+    "apps/hub/docs/catalogo-de-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Seleção deriva do catálogo/canal; resultado Verified corresponde a bytes desta transferência, sem inventar versão/estado do Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum Product depende do Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #107, branch/base, arquivos e evidências registrados."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Somente Hub muda; versão/canais dos demais Products permanecem nas autoridades declaradas."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "GET explícito em primeiro plano, cliente público separado, destino exclusivamente CacheDir/hub-artifacts; não acessa projeto/vault nem armazenamento compartilhado. network.access/ui.display já declaradas; fs.read/write do catálogo cobrem projeto/vault, não cache interno. Sem nova permissão Android."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes/smoke de Core não provam UI/OnStop em aparelho; validação separada pending/critical=false."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review; build Android, integração e conferência visual aguardam evidência."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Ausências, erros, limite, cancelamento, cópia Stale e integridade dos bytes são explícitos."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhum Product ganha requisito de distribuição via Hub; canais existentes permanecem como recuperação independente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "artifact-download-integrity",
+      "status": "possible-candidate",
+      "rationale": "Download/verificação pode ter outro consumidor futuro; atualmente só o Hub usa esta implementação e a política de cache/foreground é específica dele. Não extrair para platform/services antes de consumidor real, contrato e Extraction Review."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  },
+  "cost": null
+}

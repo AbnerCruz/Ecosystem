@@ -8,5 +8,6 @@ Control Plane do ecossistema (MANIFEST §5.3). As leituras são **somente leitur
 - **Release (P3-7):** canal de desenvolvimento em GitHub Releases públicas deste repositório, tag `hub-vX.Y.Z-dev.N`, como pré-lançamento (DEC-0028-A), publicado pelo workflow `hub-release`. O APK é assinado com a chave de desenvolvimento **pública** e estável de `tools/` (DEC-0029-A): ver [`docs/assinatura-de-desenvolvimento.md`](docs/assinatura-de-desenvolvimento.md) — o que ela garante e o que não garante.
 - `tests/Hub.Tests`: testes do núcleo — `dotnet test --project tests/Hub.Tests` (a partir deste diretório).
 - Catálogo de releases e artefatos (P4-1): canais do perfil `current`, tags por componente no monorepo, metadados de APK e cache compatível. [Formato, limites e conferência visual](docs/catalogo-de-releases.md). SHA-256 informado pelo canal não significa bytes verificados.
+- Download de APK (P4-2): solicitação em primeiro plano, cancelamento, limite e comparação de tamanho/SHA-256 dos bytes; cache privado, erros e descarte explícitos. [Comportamento e conferência em aparelho](docs/download-e-integridade.md). Instalação/launcher seguem itens próprios.
 - Versão: arquivo `VERSION` (autoridade declarada em `ecosystem.json`).
 - Escopo, tarefas e gates: [`ROADMAP.md`](../../ROADMAP.md).

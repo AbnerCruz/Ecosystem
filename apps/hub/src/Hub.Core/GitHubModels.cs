@@ -22,7 +22,7 @@ public sealed record BranchInfo(string Name);
 /// <summary>Metadados informados pelo canal. SHA-256 informado não significa que os bytes foram baixados/verificados.</summary>
 public sealed record ReleaseAssetInfo(string Name, string Url, long Size, string? Sha256)
 {
-    public bool IsAndroidApk => Name.EndsWith(".apk", StringComparison.OrdinalIgnoreCase);
+    public bool IsAndroidApk => Name?.EndsWith(".apk", StringComparison.OrdinalIgnoreCase) == true;
 }
 
 // Campos opcionais preservam a leitura de caches da Fase 3.
