@@ -969,7 +969,7 @@
     },
     {
       "id": "DEC-0028",
-      "status": "pending",
+      "status": "decided",
       "component": "hub",
       "blocking": true,
       "title": "Onde o Hub publica as suas releases (canal e visibilidade)",
@@ -1005,7 +1005,11 @@
         "docs/adr/0013-hub-read-only-fase-3.md"
       ],
       "raisedBy": "claude-code",
-      "raisedAt": "2026-10-03"
+      "raisedAt": "2026-10-03",
+      "decision": "Alternativa A — A — GitHub Releases do próprio repositório Ecosystem, públicas, com tag própria do Hub (`hub-vX.Y.Z`; as de desenvolvimento como pré-lançamento) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/87).",
+      "decidedAt": "2026-10-03",
+      "record": "docs/governance/responses/DEC-0028.md",
+      "consequencesApplied": false
     },
     {
       "id": "DEC-0029",
