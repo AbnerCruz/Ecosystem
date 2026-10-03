@@ -10,7 +10,7 @@
   "branch": "codex/p6-4-host-contexts",
   "base_commit": "c024c0876b09721e7868c4b14c97ee71e4088746",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/145",
   "blockers": [],
   "decisions_required": [],
   "normative_sources": [
@@ -60,13 +60,15 @@
       "check": "Build e AgentRuntime.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "SDK 10.0.100: build serial sem warnings/erros; 130/130 testes passam, incluindo arquitetura do Workspace."
+      "evidence": "SDK 10.0.100: build serial sem warnings/erros; 130/130 testes passam, incluindo arquitetura do Workspace.",
+      "tested_commit": "231f16f59abc18f807d06c3532fa3d9246faa90c"
     },
     {
       "check": "Consistency",
       "kind": "automated",
       "result": "passed",
-      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks passaram no conjunto final; comparação com Issues será verificada no CI com snapshot remoto."
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks passaram no conjunto final; comparação com Issues será verificada no CI com snapshot remoto.",
+      "tested_commit": "231f16f59abc18f807d06c3532fa3d9246faa90c"
     },
     {
       "check": "CI e integração",
