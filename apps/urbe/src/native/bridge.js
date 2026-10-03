@@ -262,7 +262,7 @@
     /* atualização: feed direto do Product no monorepo. O repositório possui releases de vários
        Products, então NUNCA usamos /releases/latest global: filtramos urbe-v<versão> e exigimos
        o APK com nome exato. A versão-ponte é entregue pelo canal antigo; depois dela, futuras
-       atualizações vêm do Ecosystem sem depender do Hub. */
+       atualizações vêm do canal direto do Product, sem depender de launcher externo. */
     var UPDATE_REPO='AbnerCruz/Ecosystem',UPDATE_TAG='urbe-v',last={state:'none'},subs=[];
     function emit(st){last=st;subs.forEach(function(f){try{f(st)}catch(_){}})}
     function parts(v){var m=/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(String(v||''));return m?[+m[1],+m[2],+m[3],m[4]||'']:null}
