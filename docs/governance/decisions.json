@@ -966,6 +966,82 @@
       "decidedAt": "2026-10-03",
       "record": "docs/governance/responses/DEC-0027.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0028",
+      "status": "pending",
+      "component": "hub",
+      "blocking": true,
+      "title": "Onde o Hub publica as suas releases (canal e visibilidade)",
+      "context": "FATO: o P3-9 entregou o app Android do Hub e o CI já gera o APK de depuração. O P3-7 (empacotar e publicar a release) é o que destrava o P3-1 (portal listar as releases do Hub) e o gate P3-8 (você instalar o Hub no celular). FATO: Lunet2D e Urbe publicam as releases nos repositórios de origem (DEC-0008-A; perfil `current.profile.json`); o Hub não tem repositório de origem (`ecosystem.json` não declara `source` para ele) e o Hub.Core descobre as releases de um Product pelo `source.repository` declarado. FATO: o portal é público e lê o GitHub sem token (DEC-0012-A), então só enxerga releases públicas. FATO: o MANIFEST e a NN-023 permitem que o Hub seja privado/interno e nunca distribuído, desde que isso não impeça a distribuição dos Products; o Hub nunca é dependência dos produtos (NN-003). FATO: o próprio Ecosystem já é um repositório público. INFERÊNCIA: o Hub só lê dados públicos e não guarda nada sensível; publicar o APK não expõe segredo, mas é uma escolha de distribuição, e canal e visibilidade de um Product são direção (NN-011), não detalhe de implementação.",
+      "question": "Onde as releases do Hub devem ser publicadas, e elas são públicas?",
+      "alternatives": [
+        {
+          "option": "A — GitHub Releases do próprio repositório Ecosystem, públicas, com tag própria do Hub (`hub-vX.Y.Z`; as de desenvolvimento como pré-lançamento)",
+          "consequences": "Sem repositório novo nem espelho. O portal lista as releases sem token (P3-1) e o Hub declara `source` apontando para este repositório. O APK do Hub fica baixável por qualquer pessoa; como o app é só leitura de dados já públicos, nada sensível é exposto. NN-023 respeitada (o Hub não é requisito de nenhum Product). As tags do Hub convivem com as demais tags do repositório por prefixo."
+        },
+        {
+          "option": "B — Repositório de origem novo só para distribuir o Hub (espelho, como Urbe e Lunet2D), público",
+          "consequences": "Segue o arranjo atual dos outros Products e isola releases e tags. Custa um repositório, secrets e um workflow de sincronização novos, justamente quando a plataforma first-party (DEC-0021-C) deve substituir esse modelo; o ganho é só separar o histórico de releases."
+        },
+        {
+          "option": "C — Sem release pública: o APK fica como artefato privado do CI e você o instala manualmente",
+          "consequences": "Hub 100% interno, como NN-023 permite. O portal não lista nada (P3-1 mostra \"não disponível\"), o artefato do CI exige login e expira, e cada instalação depende de você baixá-lo. O gate P3-8 continua possível, com mais atrito e sem canal de atualização."
+        },
+        {
+          "option": "D — Outro arranjo: o agente abre uma nova decisão com a sua proposta",
+          "consequences": "Nada é publicado até lá; o P3-7, o P3-1 e o gate P3-8 continuam bloqueados. Escolher D não perde nada: devolve o desenho para você propor."
+        }
+      ],
+      "consequences": "Depois da escolha, o agente implementa o P3-7 conforme a alternativa (workflow de release do Hub, `source` em `ecosystem.json` quando houver canal, perfil de distribuição atualizado) em PR próprio — mudança crítica, que espera a sua autorização — e segue para o P3-1 e para a preparação do gate P3-8. A assinatura do APK é a DEC-0029. Nenhum canal é criado antes disso.",
+      "manifestCompatibility": "Respeita NN-003 e NN-023 (o Hub nunca é requisito de distribuição dos Products), NN-014 (versão e release independentes do Hub), NN-015 (GitHub como registro e distribuição, não IPC), NN-001 (a lista de releases do portal é projeção da fonte), NN-011 (canal e visibilidade decididos por você) e DEC-0008/DEC-0021-C (arranjo atual dos Products não é alterado).",
+      "recommendation": "A: é o caminho com menos peças novas, deixa o portal listar as releases (P3-1) e mantém o Hub fora da dependência dos Products. O app só lê dados públicos, então a visibilidade pública não expõe nada. A recomendação é do agente; qualquer alternativa é compatível com o MANIFEST.",
+      "related": [
+        "ROADMAP.md",
+        "ecosystem.json",
+        "apps/hub/README.md",
+        "docs/architecture/distribution.md",
+        "docs/distribution/current.profile.json",
+        "docs/adr/0013-hub-read-only-fase-3.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-03"
+    },
+    {
+      "id": "DEC-0029",
+      "status": "pending",
+      "component": "hub",
+      "blocking": true,
+      "title": "Com que chave assinar o APK do Hub",
+      "context": "FATO: o APK de depuração do Hub que o CI gera é assinado com uma chave de depuração criada de novo em cada build; o Android recusa atualizar um app por cima de outro com assinatura diferente, então cada build exigiria desinstalar o anterior. Para a release do P3-7 e para você instalar e atualizar o Hub no celular (gate P3-8), a assinatura precisa ser estável. FATO: o Lunet2D resolveu isso com uma chave de DESENVOLVIMENTO pública e estável versionada no repositório (ADR 0004 do Lunet2D, `tools/lunet-dev.keystore`), com conferência do certificado no CI, e registrou que a release estável usará uma chave privada guardada como segredo do CI, decidida antes do canal Stable. FATO: o MANIFEST §30.2 diz que signing keys nunca devem ser commitadas; uma chave pública de desenvolvimento é uma exceção explícita, não o padrão. FATO: trocar a chave depois obriga desinstalar o app uma vez (o Hub não guarda dados do usuário: só lê e mantém cache). INFERÊNCIA: o Hub é hoje só leitura e de uso seu, então o risco de falsificação de um APK assinado com uma chave pública é baixo, mas real se o app for distribuído a outras pessoas. O agente não consegue criar segredos no GitHub; só você pode.",
+      "question": "Como o APK do Hub deve ser assinado nas releases?",
+      "alternatives": [
+        {
+          "option": "A — Chave de desenvolvimento pública e estável no repositório (mesmo padrão do Lunet2D), só para o canal de desenvolvimento (pré-lançamento), com o certificado conferido no CI",
+          "consequences": "Não pede nada de você agora e não há segredo para perder: o Hub se atualiza por cima de si mesmo desde já. Quem quiser pode assinar um APK com a mesma chave, então isso protege contra conflito de atualização e não contra falsificação. É uma exceção declarada ao §30.2, limitada ao canal de desenvolvimento. Antes de qualquer canal estável ou distribuição a outras pessoas é preciso uma nova decisão (migrar para chave privada), com uma desinstalação única."
+        },
+        {
+          "option": "B — Chave de release privada, guardada como segredo do GitHub Actions (você gera e cadastra; o agente nunca vê o valor)",
+          "consequences": "Release assinada de verdade e atualizações seguras desde o início, sem exceção ao §30.2. Exige uma ação sua fora do repositório (gerar o keystore e cadastrar os segredos) e um backup da chave: se ela for perdida, ninguém consegue atualizar o app, só reinstalar. O workflow falha fechado sem o segredo; builds de PR/forks não assinam a release. Atrasa o P3-7 até o segredo existir."
+        },
+        {
+          "option": "C — Outro arranjo: o agente abre uma nova decisão com a sua proposta",
+          "consequences": "A assinatura não é definida e o P3-7 continua bloqueado. Escolher C não perde nada: devolve o desenho para você propor."
+        }
+      ],
+      "consequences": "Depois da escolha, o agente implementa a assinatura no job de release do Hub (P3-7) em PR próprio — mudança crítica, que espera a sua autorização — e documenta a exceção ou o segredo exigido. Se for B, o PR lista exatamente os segredos que você precisa cadastrar e falha fechado até existirem. Nenhuma chave é criada, commitada ou lida pelo agente.",
+      "manifestCompatibility": "Respeita MANIFEST §30.2 e NN-016 (nenhum segredo commitado; a alternativa A é exceção explícita e limitada a chave pública de desenvolvimento, como no ADR 0004 do Lunet2D), NN-011 (assinatura e canal são decisão sua), NN-017 (instalar e atualizar em aparelho é validação humana) e NN-018 (release só concluída com evidência).",
+      "recommendation": "A: destrava o P3-7 e o gate P3-8 sem depender de nenhuma ação sua, usa um padrão já adotado no Lunet2D e é suficiente enquanto o Hub é só leitura e de uso seu. Passe para a B antes de distribuir o Hub a outras pessoas (nova decisão, uma reinstalação). A recomendação é do agente; qualquer alternativa é compatível com o MANIFEST.",
+      "related": [
+        "apps/lunet2d/docs/adr/0004-assinatura-de-desenvolvimento-estavel.md",
+        ".github/workflows/hub-ci.yml",
+        "MANIFEST.md",
+        "apps/hub/src/Hub.Android/Hub.Android.csproj",
+        "ROADMAP.md",
+        "docs/architecture/distribution.md"
+      ],
+      "raisedBy": "claude-code",
+      "raisedAt": "2026-10-03"
     }
   ]
 }

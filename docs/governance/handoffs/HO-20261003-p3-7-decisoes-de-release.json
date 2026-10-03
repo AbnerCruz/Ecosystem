@@ -1,0 +1,90 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "5d10be3",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "hub",
+  "state": "waiting",
+  "message_id": "HO-20261003-p3-7-decisoes-de-release",
+  "timestamp": "2026-10-03T05:26:49Z",
+  "task_id": "P3-7",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "Abre duas decisões do proprietário (DEC-0028, DEC-0029) em docs/governance/decisions.json (zona crítica de registro de decisões). Nenhum canal, chave ou código de release é criado."
+  },
+  "files_changed": [
+    "docs/governance/decisions.json",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261003-p3-7-decisoes-de-release.json"
+  ],
+  "work_completed": [
+    "FATO: o P3-7 (empacotar o Hub e publicar a release) é o que destrava o P3-1 (portal listar as releases do Hub) e o gate P3-8 (instalar o Hub no celular), e depende de duas escolhas de direção que não são detalhe de implementação (NN-011): onde o Hub publica as releases e se são públicas; e com que chave o APK é assinado.",
+    "Pesquisa nas fontes normativas (NN-010): DEC-0008-A e `current.profile.json` (releases dos outros Products nos repositórios de origem), DEC-0012-A (portal público, lê sem token), NN-023 (o Hub pode ser privado/interno), MANIFEST §30.2 (signing keys nunca commitadas) e o ADR 0004 do Lunet2D (chave de desenvolvimento pública e estável como exceção declarada, com chave privada antes do canal estável). O Hub não declara `source` em ecosystem.json, e o Hub.Core descobre releases por `source.repository`.",
+    "DEC-0028 (canal e visibilidade) e DEC-0029 (assinatura do APK) abertas no portal, cada uma com objetos a revisar, alternativas com consequências, compatibilidade com o MANIFEST e recomendação do agente (A nas duas). ROADMAP P3-7 passa a [~] com a dependência explícita e a Issue #84 (state:waiting)."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs (CHK-DECISIONS: decisões pendentes com objeto; CHK-ROADMAP; CHK-STATE-CONSISTENCY: P3-7 [~] com Issue aberta; CHK-HANDOFFS; CHK-PORTAL)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Ver evidência do PR."
+    }
+  ],
+  "known_issues": [
+    "Sem resposta às decisões, o P3-7, o P3-1 e o gate P3-8 não avançam; o resto da Fase 3 já está concluído (P3-9 integrado)."
+  ],
+  "next_actions": [
+    "O proprietário responde DEC-0028 e DEC-0029 no portal. Depois o agente implementa o P3-7 conforme as alternativas escolhidas (PR crítico, que espera a autorização), e segue para o P3-1 e a preparação do gate P3-8."
+  ],
+  "decisions_required": [
+    "DEC-0028",
+    "DEC-0029"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/architecture/distribution.md",
+    "docs/distribution/current.profile.json",
+    "docs/governance/communication.md",
+    "apps/lunet2d/docs/adr/0004-assinatura-de-desenvolvimento-estavel.md",
+    "apps/hub/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "As duas escolhas ficam persistidas como decisões pendentes em decisions.json antes de qualquer implementação; nada decidido só em chat."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Canal, visibilidade e assinatura de um Product são direção: o agente propõe com recomendação e não decide por conta própria nem responde pelo proprietário."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Nenhuma chave é criada, lida ou commitada; a DEC-0029 trata a assinatura de forma explícita (exceção declarada ou segredo de CI cadastrado por você)."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "As alternativas mantêm o Hub fora da dependência de distribuição dos Products; a alternativa C da DEC-0028 cobre o Hub privado/interno."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "A dependência do P3-7 em DEC-0028/DEC-0029 está explícita no ROADMAP e na Issue #84; a decisão pendente aparece no portal com o objeto."
+    }
+  ]
+}
