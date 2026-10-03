@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-tabletop-rpg-foundation",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T21:31:09Z",
+  "timestamp": "2026-10-03T21:39:25Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "RPG-001",
   "component": "tabletop-rpg",
-  "state": "verifying",
+  "state": "review",
   "branch": "chatgpt/tabletop-rpg-foundation",
   "base_commit": "615f001df548af192b494be4efe468c4671d5f5b",
   "commit": null,
@@ -59,20 +59,23 @@
     "PlayerView não expõe World State; fatos não viram conhecimento automaticamente e conhecimento não é propagado entre personagens.",
     "AgentTurnRunner é dirigido por wake signal explícito e recebe apenas a visão filtrada do participante; não existe polling nem SDK de modelo.",
     "Testes cobrem isolamento cognitivo, memória subjetiva, autorização de personagem, humano/agente no mesmo motor, resolução de d20 determinística e limites do AgentTurnRunner.",
-    "CI seletivo tabletop-rpg-ci criado e ligado ao estado combinado do integrador."
+    "CI seletivo tabletop-rpg-ci criado e ligado ao estado combinado do integrador.",
+    "Estado canônico e snapshots públicos de atributos foram encapsulados com ReadOnlyDictionary; teste dedicado prova que casts para IDictionary não permitem mutação externa."
   ],
   "verification": [
     {
       "check": "cd apps/tabletop-rpg && dotnet test --project tests/TabletopRpg.Core.Tests",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Dois runs iniciais falharam antes dos testes: primeiro por `--project` sem o novo test runner; depois porque xunit.v3/Microsoft.Testing.Platform requer opt-in no SDK .NET 10. O Product agora possui global.json com runner Microsoft.Testing.Platform e o CI executa no diretório do Product; novo run pendente."
+      "result": "passed",
+      "evidence": "tabletop-rpg-ci run 37155647780 no head caeacb91f8a00466a872de7120823a830de25ea3: Test run summary Passed; 10 testes, 0 falhas. Os avisos xUnit1051 foram eliminados; restaram apenas avisos de depreciação das actions/Node do GitHub.",
+      "tested_commit": "caeacb91f8a00466a872de7120823a830de25ea3"
     },
     {
-      "check": "dotnet run tests/consistency/Check.cs",
+      "check": "dotnet run tests/consistency/Check.cs + self-test + simulação do integrador",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "O ambiente local desta sessão não possui .NET SDK; consistency.yml e o integrador executarão os checks no estado combinado."
+      "result": "passed",
+      "evidence": "consistency run 37155647794 no head caeacb91f8a00466a872de7120823a830de25ea3: consistency checks, self-test de violações e .github/integrator/simulate.sh concluíram com sucesso.",
+      "tested_commit": "caeacb91f8a00466a872de7120823a830de25ea3"
     }
   ],
   "known_issues": [
@@ -81,10 +84,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Abrir PR para main e observar os checks do Product, consistência e integrador.",
-    "Corrigir qualquer falha detectada pelos gates do estado combinado.",
-    "Quando o integrador marcar o PR crítico como pronto, aguardar a autorização do proprietário pela label integrar; o agente não adiciona essa label.",
-    "Após integração e evidência, atualizar RPG-001 para done e iniciar RPG-002 conforme o ROADMAP."
+    "Deixar o integrador reavaliar este handoff final no estado combinado com a main atual.",
+    "Após os gates do PR #157 ficarem verdes, o proprietário adiciona a label integrar para autorizar a mudança crítica; o agente não adiciona essa label.",
+    "Depois da integração na main, fechar RPG-001 com evidência e iniciar RPG-002 conforme o ROADMAP."
   ],
   "decisions_required": [],
   "normative_sources": [
