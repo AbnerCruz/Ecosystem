@@ -43,6 +43,7 @@ case "$*" in
     elif grep -qx "$lbl" "$S/labels/$n"; then grep -vx "$lbl" "$S/labels/$n" > "$S/labels/$n.tmp" || true; mv "$S/labels/$n.tmp" "$S/labels/$n"
     else exit 0; fi
     printf '{"event":"%s","label":{"name":"%s"},"actor":{"login":"github-actions[bot]"},"created_at":"%s"}\n' "$op" "$lbl" "$(tick)" >> "$S/events/$n.jsonl" ;;
+  "workflow run hub-release.yml"*) [ "${FAIL_HUB_DISPATCH:-false}" != true ] || exit 1 ;;
   "label create"*|"workflow run"*) ;;
   "api -X POST repos/"*"/statuses/"*)
     sha="${4##*/}"; desc="$(arg description "$@")"; st="$(arg state "$@")"
@@ -80,7 +81,7 @@ finish_eval() { # finish_eval <pr> <head> [R_URBE] [R_HUB] — termina a avalia�
   env GITHUB_OUTPUT=/dev/null ACTION=evaluate PR="$1" HEAD_SHA="$2" MAIN="$(out main_tested)" COMBINED="$(out combined)" CRITICALITY="$(out criticality)" \
     REQUIRES_OWNER="$(out requires_owner)" CRITICAL_CLASSES="$(out critical_classes)" CRITICAL_REASON="$(out critical_reason)" HANDOFFS="$(out handoffs)" \
     TRUSTED="$(out trusted)" TRUSTED_FAILURES="$(out trusted_failures)" AUTHORIZED="$(grep -qx integrar "$T/gh/labels/$1" && echo true || echo false)" MORE=false \
-    R_CONSISTENCY=success R_URBE="${3:-skipped}" R_LUNET2D=skipped R_HUB="${4:-skipped}" bash .github/integrator/integrate.sh finish >/dev/null 2>&1
+    R_CONSISTENCY=success R_URBE="${3:-skipped}" R_LUNET2D=skipped R_HUB="${4:-skipped}" bash .github/integrator/integrate.sh finish >"$T/finish.log" 2>&1
 }
 finish_land() { # finish_land <pr> — execução 'land' decidida pela fila real
   : > "$GHLOG"; plan "$1"
@@ -113,6 +114,7 @@ check "estado combinado montado e publicado em integration/pr-41 (commit exato n
 finish_eval 41 "$A"
 check "rotina verde: a main vira EXATAMENTE o commit testado, sem label nem proprietário" 'main_is "$CA" && in_main "$A" && last_status "$A" | grep -q "^integrado .*combined=$CA routine"'
 check "depois de integrar: pages, consistency e a fila são redisparados" 'logged "workflow run pages.yml" && logged "workflow run consistency.yml" && logged "workflow run integrate.yml"'
+check "rotina fora do Hub: não dispara release do Hub" '! logged "workflow run hub-release.yml"'
 
 # 2. Rotina Urbe: bug normal em apps/urbe → CI do Urbe no estado combinado → integra sozinha.
 U="$(branch urbe 'echo "// botão corrigido" >> apps/urbe/src/app.js')"; open_pr 42 "$U"
@@ -120,6 +122,7 @@ prep 42 "$U"; CU="$(out combined)"
 check "rotina Urbe: CI do Urbe exigido e nenhuma autorização" '[ "$(out products)" = "[\"urbe\"]" ] && [ "$(out criticality)" = routine ]'
 finish_eval 42 "$U" success
 check "rotina Urbe verde: integrada automaticamente" 'main_is "$CU" && in_main "$U"'
+check "Urbe integrado: não cria release artificial do Hub" '! logged "workflow run hub-release.yml"'
 
 # 3. Crítico (control plane): PR que muda o integrador → verde, mas NÃO entra sozinho.
 C="$(branch critico 'echo "# comentário" >> .github/workflows/integrate.yml')"; open_pr 43 "$C"
@@ -195,8 +198,10 @@ check "Hub: identificado como Product tocado (hub-ci exigido) e classificado pel
 HF="$(branch hub-vermelho 'echo "// quebra" >> apps/hub/src/Hub.Core/Datum.cs')"; open_pr 52 "$HF"
 prep 52 "$HF"; M13="$(git --git-dir="$T/origin.git" rev-parse main)"; finish_eval 52 "$HF" skipped failure
 check "hub-ci vermelho no estado combinado: 'falhou' citando hub-ci, main intocada" 'main_is "$M13" && last_status "$HF" | grep -q "^falhou" && last_status "$HF" | grep -q "hub-ci"'
+check "hub-ci vermelho: nenhum dispatch de release" '! logged "workflow run hub-release.yml"'
 prep 51 "$H"; CH="$(out combined)"; finish_eval 51 "$H" skipped success
 check "hub-ci verde: integrada automaticamente (rotina), a main vira o commit testado" 'main_is "$CH" && in_main "$H"'
+check "Hub integrado: dispara release existente na main" 'logged "workflow run hub-release.yml --repo sim/sim --ref main"'
 
 # 14. Fechamento de handoff de trabalho crítico JÁ integrado (o caso do PR #46): a criticidade é da mudança atual, não do histórico.
 #     O PR só muda estado/PR do handoff antigo (que continua declarando 'critical') → rotina → integra sozinho, sem label; as labels de
@@ -217,7 +222,45 @@ check "fechamento de handoff crítico já integrado: rotina (o histórico 'criti
 finish_eval 53 "$K14"
 check "fechamento integrado sozinho, sem label 'integrar'; labels antigas de crítico removidas" 'main_is "$C14" && in_main "$K14" && ! grep -qx critico "$T/gh/labels/53" && ! grep -qx pronto-para-integrar "$T/gh/labels/53" && ! grep -qx integrar "$T/gh/labels/53"'
 
-check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$CU" "$CC" "$CB" "$M2" "$CR" "$CH" "$C14"; do in_main "$x" || exit 1; done )'
+# 15. Seleção: mesma autoridade de push.paths; todos os caminhos positivos e docs/testes/outra app negativos.
+if python3 - <<'PYSEL'
+import re
+from pathlib import Path
+script = Path('.github/integrator/integrate.sh').read_text().split('HUB_RELEASE_PATHS=(', 1)[1].split(')', 1)[0]
+workflow = Path('.github/workflows/hub-release.yml').read_text().split('    paths:', 1)[1].split('  workflow_dispatch:', 1)[0]
+a = re.findall(r"'([^']+)'", script)
+b = re.findall(r"- '([^']+)'", workflow)
+assert a and a == b, (a, b)
+PYSEL
+then check "filtro do integrador é projeção exata do push.paths de hub-release" true
+else check "filtro do integrador divergiu do workflow de release" false; fi
+sed '/^case "${1:-}" in/,$d' .github/integrator/integrate.sh > "$T/library.sh"
+SELECT_MAIN="$(git --git-dir="$T/origin.git" rev-parse main)"
+for path in apps/hub/src/Hub.Core/Datum.cs apps/hub/VERSION apps/hub/Directory.Build.props apps/hub/tools/dispatch-fixture.md .github/workflows/hub-release.yml apps/hub/README.md apps/hub/tests/dispatch-fixture.md apps/urbe/dispatch-fixture.md; do
+  git checkout -q --detach "$SELECT_MAIN"
+  printf '\n' >> "$path"; G add "$path"; G commit -qm "seletividade $path"
+  : > "$GHLOG"
+  env MAIN="$SELECT_MAIN" COMBINED="$(git rev-parse HEAD)" bash -c '. "$1"; dispatch_hub_release' bash "$T/library.sh" >"$T/selection.log" 2>&1
+  case "$path" in
+    apps/hub/README.md|apps/hub/tests/*|apps/urbe/*) check "$path: não cria release" '! logged "workflow run hub-release.yml"' ;;
+    *) check "$path: dispatch de release" 'logged "workflow run hub-release.yml --repo sim/sim --ref main"' ;;
+  esac
+done
+
+# 16. Head do Hub muda depois do teste: não publica; depois retesta, integra e torna falha de dispatch observável.
+HD="$(branch hub-dispatch 'echo "// dispatch" >> apps/hub/src/Hub.Core/Datum.cs')"; open_pr 54 "$HD"
+prep 54 "$HD"; M16="$(git --git-dir="$T/origin.git" rev-parse main)"
+git checkout -q hub-dispatch; echo "// head novo" >> apps/hub/src/Hub.Core/Datum.cs; G commit -qam "head novo"; HD2="$(git rev-parse HEAD)"; open_pr 54 "$HD2"
+finish_eval 54 "$HD" skipped success
+check "head do Hub mudou após teste: nada integra/publica" 'main_is "$M16" && ! logged "workflow run hub-release.yml" && last_status "$HD" | grep -q "^obsoleto"'
+prep 54 "$HD2"; C16="$(out combined)"
+export FAIL_HUB_DISPATCH=true
+if finish_eval 54 "$HD2" skipped success; then check "dispatch recusado precisa reprovar o job" false
+else check "dispatch recusado reprova o job" true; fi
+unset FAIL_HUB_DISPATCH
+check "dispatch recusado: código continua integrado, falha de publicação explícita, fila continua" 'main_is "$C16" && last_status "$HD2" | grep -q "^integrado" && grep -q "::error::Código integrado" "$T/finish.log" && logged "Publicação do APK pendente" && logged "workflow run integrate.yml"'
+
+check "a main só avançou por fast-forward (nenhum force)" '( for x in "$MAIN" "$CA" "$CU" "$CC" "$CB" "$M2" "$CR" "$CH" "$C14" "$C16"; do in_main "$x" || exit 1; done )'
 
 echo
 if [ "$fails" -eq 0 ]; then echo "Simulação do integrador: todos os cenários passaram."; else echo "Simulação do integrador: $fails falha(s)."; exit 1; fi

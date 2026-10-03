@@ -1,0 +1,132 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p4-5-dispatch-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T12:29:13Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-5",
+  "component": "integrator",
+  "state": "review",
+  "branch": "codex/p4-5-hub-release-dispatch",
+  "base_commit": "5d2f7eed9a3dca168ee873e7043eda40b1a3acad",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/integrator/integrate.sh",
+    ".github/integrator/simulate.sh",
+    ".github/workflows/hub-release.yml",
+    "ROADMAP.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/handoffs/HO-20261003-p4-5-dispatch-release.json",
+    "tests/consistency/README.md",
+    "docs/governance/handoffs/HO-20261003-p4-1-catalogo-de-releases.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: integrador da main fazia push via GITHUB_TOKEN sem disparar hub-release; P4-1 integrado no PR #102 sem release nova.",
+    "Dispatch seletivo do workflow existente após o push aprovado, pelo diff main testada → combinado exato. Mesmos caminhos do filtro push do workflow, conferidos pela simulação.",
+    "Não muda chave de assinatura, token, permissões, canal, tag, pré-lançamento ou publicação de outros Products.",
+    "Falha de dispatch deixa código integrado e publicação pendente explícitos no PR, reprova job e mantém redisparo da fila.",
+    "Reconciliado com PR #102 integrado em 23b69a3."
+  ],
+  "verification": [
+    {
+      "check": "Simulação ponta a ponta do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PATH=/tmp/ecosystem-dotnet:$PATH bash .github/integrator/simulate.sh: 44 verificações passaram; log /tmp/p4-5-sim.log. Git real/gh com estado: seletores positivos/negativos, Hub verde/vermelho, corrida do head, autorização, dispatch recusado e fila continuando."
+    },
+    {
+      "check": "Consistência do Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22; git diff --check passou. Logs /tmp/p4-5-consistency.log; local sem snapshot de Issues, CI confere snapshot real."
+    },
+    {
+      "check": "CI do PR e integrador",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR crítico de control plane; checker confiável e candidato devem passar antes da autorização."
+    }
+  ],
+  "known_issues": [
+    "A própria integração deste fix ainda usa integrate.sh antigo da main; não prova publicação do catálogo já integrado. Depois de autorizado, execução manual de hub-release na main ou próxima mudança real em caminho de release do Hub dispara o canal normal.",
+    "Dispatch aceito não prova release publicada; conferir a execução e artefato público antes de registrar build.",
+    "P4-1 permanece review pela conferência visual não crítica; sem APK novo ainda não há essa evidência."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR, acompanhar CI e corrigir falhas.",
+    "Quando crítico verde, proprietário autoriza com label integrar; agente nunca adiciona essa label.",
+    "Após integração, acompanhar próxima execução do canal normal e registrar a release pública; não declarar APK publicado só por build CI."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/architecture/distribution.md",
+    ".github/workflows/hub-release.yml",
+    ".github/workflows/integrate.yml"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "push.paths de hub-release é autoridade; projeção do integrador conferida por teste de igualdade."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #103, branch, base, arquivos e logs registrados."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Normas consultadas diretamente; ADR-0015 documenta push via GITHUB_TOKEN e agora o fallback seletivo."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Detalhe da implementação da direção aceita ADR-0015; execução crítica aguarda autorização pela política anterior da main."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Docs/testes isolados, Urbe e outros caminhos não publicam Hub; testes positivos/negativos."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Reutiliza actions:write já existente no finish; nenhum token/segredo/permissão novo."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Simulação/CI não conferem aparelho; nenhuma aprovação humana ou build VALIDATED inventada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review; integração e publicação precisam de evidências externas."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Dispatch recusado fica explícito no PR e no job, sem fingir release publicada."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Não altera distribuição standalone dos Products, apenas publicação do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane",
+      "distribution"
+    ],
+    "reason": "Altera cola do integrador e dispatch de workflow de release; exige autorização após testes pelo control plane da main."
+  },
+  "cost": null
+}

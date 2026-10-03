@@ -102,3 +102,5 @@ O self-test (`IntegrationQueueTests`) cobre fila, classificação (rotina e cada
 - só fast-forward.
 
 O CI roda os dois.
+
+A simulação também confere o dispatch seletivo de `hub-release.yml` depois de integrar o Hub: mesmos caminhos do filtro `push.paths`, nenhum APK por documentação/testes isolados ou outros Products, nenhuma publicação quando checks/guardas impedem integração. Falha de dispatch deixa o código integrado, sinaliza publicação pendente no PR e reprova o job sem parar o redisparo da fila.
