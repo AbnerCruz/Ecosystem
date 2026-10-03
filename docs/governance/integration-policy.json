@@ -7,7 +7,9 @@
   "critical": "owner-authorization",
   "authorization": {
     "label": "integrar",
-    "authorizers": ["@repository-owner"]
+    "authorizers": [
+      "@repository-owner"
+    ]
   },
   "classes": [
     {
@@ -23,8 +25,20 @@
         "docs/governance/responses/**"
       ],
       "rules": [
-        { "rule": "decision-record", "paths": ["docs/governance/decisions.json"] },
-        { "rule": "adr-decision", "paths": ["docs/adr/0*.md", "apps/urbe/docs/v2/adr/0*.md", "apps/lunet2d/docs/adr/0*.md"] }
+        {
+          "rule": "decision-record",
+          "paths": [
+            "docs/governance/decisions.json"
+          ]
+        },
+        {
+          "rule": "adr-decision",
+          "paths": [
+            "docs/adr/0*.md",
+            "apps/urbe/docs/v2/adr/0*.md",
+            "apps/lunet2d/docs/adr/0*.md"
+          ]
+        }
       ]
     },
     {
@@ -47,7 +61,13 @@
         "docs/contracts/schemas/validation-record.schema.json"
       ],
       "rules": [
-        { "rule": "trust-weakening", "paths": ["tests/consistency/Check.cs", "docs/governance/integration-policy.json"] }
+        {
+          "rule": "trust-weakening",
+          "paths": [
+            "tests/consistency/Check.cs",
+            "docs/governance/integration-policy.json"
+          ]
+        }
       ]
     },
     {
@@ -64,7 +84,12 @@
         "apps/urbe/native/android/app/src/main/AndroidManifest.xml",
         "apps/urbe/src/customize/plugins.js",
         "apps/urbe/src/ai/store.js",
-        "apps/lunet2d/src/Lunet.Core/GitAccount.cs"
+        "apps/lunet2d/src/Lunet.Core/GitAccount.cs",
+        "apps/urbe/csharp/**/Security/**",
+        "apps/urbe/csharp/**/Credentials/**",
+        "apps/urbe/csharp/**/Plugins/**",
+        "apps/urbe/csharp/**/Interop/**",
+        "apps/urbe/csharp/**/Native/**"
       ],
       "rules": []
     },
@@ -78,7 +103,14 @@
         "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
         "apps/lunet2d/src/Lunet.Core/AtomicFile.cs",
         "apps/lunet2d/src/Lunet.Core/AutosaveJournal.cs",
-        "apps/lunet2d/src/Lunet.Framework/Storage/**"
+        "apps/lunet2d/src/Lunet.Framework/Storage/**",
+        "apps/urbe/csharp/**/Persistence/**",
+        "apps/urbe/csharp/**/Storage/**",
+        "apps/urbe/csharp/**/Migration/**",
+        "apps/urbe/csharp/**/Backup/**",
+        "apps/urbe/csharp/**/Identity/**",
+        "apps/urbe/csharp/**/*Vault*.cs",
+        "apps/urbe/csharp/**/*Store*.cs"
       ],
       "rules": []
     },
@@ -92,11 +124,38 @@
         "apps/*/.github/**",
         "apps/urbe/capacitor.config.json",
         "apps/urbe/native/android/app/build.gradle",
-        "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj"
+        "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+        "apps/urbe/csharp/**/*.csproj",
+        "apps/urbe/csharp/**/*.props",
+        "apps/urbe/csharp/**/*.targets",
+        "apps/urbe/csharp/**/Packaging/**",
+        "apps/urbe/csharp/**/Platforms/**",
+        "apps/urbe/csharp/**/Updates/**",
+        "apps/urbe/csharp/**/Distribution/**"
       ],
       "rules": [
-        { "rule": "json-keys", "paths": ["apps/urbe/package.json"], "keys": ["/name", "/build/appId", "/build/publish"] },
-        { "rule": "json-keys", "paths": ["apps/urbe/manifest.webmanifest"], "keys": ["/id", "/start_url", "/scope"] }
+        {
+          "rule": "json-keys",
+          "paths": [
+            "apps/urbe/package.json"
+          ],
+          "keys": [
+            "/name",
+            "/build/appId",
+            "/build/publish"
+          ]
+        },
+        {
+          "rule": "json-keys",
+          "paths": [
+            "apps/urbe/manifest.webmanifest"
+          ],
+          "keys": [
+            "/id",
+            "/start_url",
+            "/scope"
+          ]
+        }
       ]
     },
     {
@@ -105,8 +164,18 @@
       "consequence": "Quebra um contrato público ou formato já estabilizado: quem depende dele pode parar de funcionar.",
       "paths": [],
       "rules": [
-        { "rule": "schema-breaking", "paths": ["docs/contracts/schemas/*.json"] },
-        { "rule": "capability-breaking", "paths": ["docs/contracts/capabilities/*.json"] }
+        {
+          "rule": "schema-breaking",
+          "paths": [
+            "docs/contracts/schemas/*.json"
+          ]
+        },
+        {
+          "rule": "capability-breaking",
+          "paths": [
+            "docs/contracts/capabilities/*.json"
+          ]
+        }
       ]
     },
     {
@@ -120,7 +189,12 @@
         "services/**"
       ],
       "rules": [
-        { "rule": "manifest-structure", "paths": ["ecosystem.json"] }
+        {
+          "rule": "manifest-structure",
+          "paths": [
+            "ecosystem.json"
+          ]
+        }
       ]
     },
     {
@@ -132,7 +206,15 @@
         "apps/*/LICENSE*"
       ],
       "rules": [
-        { "rule": "json-keys", "paths": ["apps/urbe/package.json"], "keys": ["/license"] }
+        {
+          "rule": "json-keys",
+          "paths": [
+            "apps/urbe/package.json"
+          ],
+          "keys": [
+            "/license"
+          ]
+        }
       ]
     }
   ]

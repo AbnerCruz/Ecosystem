@@ -1,0 +1,131 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-urbe-csharp-policy",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T19:45:42.529188Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-7",
+  "component": "urbe",
+  "state": "review",
+  "branch": "codex/urbe-csharp-policy",
+  "base_commit": "3f99f9bbf048dac84e86b003c36fc86bf1876f22",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/governance/integration-policy.json",
+    "apps/urbe/docs/csharp/INTEGRATION.md",
+    "tests/consistency/UrbeCsharpPolicy.mjs",
+    "docs/governance/handoffs/HO-20261003-urbe-csharp-policy.json"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Estende política de integração ao código C# do Urbe. Controle do sistema; exige autorização do proprietário, sem agente adicionar integrar."
+  },
+  "work_completed": [
+    "UC-7 (#148): zonas críticas de dados, segurança e distribuição sob apps/urbe/csharp; raízes/nomes protegidos antes de código.",
+    "Nenhuma proteção existente removida, regra enfraquecida ou autorizador alterado. Root de fonte documentado sem escolher stack/UI/host.",
+    "Teste CLI real de 25 caminhos: novos C#, JS atuais e rotina de UI/docs."
+  ],
+  "verification": [
+    {
+      "check": "URBE_DOTNET=dotnet node tests/consistency/UrbeCsharpPolicy.mjs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "25 classificações reais e preservação de paths/rules/autorizadores."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks; revalidar CI no estado final."
+    }
+  ],
+  "known_issues": [
+    "Classificação por glob exige revisão semântica e declaração crítica se área sensível estiver fora dos caminhos.",
+    "UC-7 só concluído depois da integração autorizada; G-C0 exige UC-1..7 e decisões UC-5/6."
+  ],
+  "blockers": [
+    "Autorização crítica do proprietário para integrar este PR."
+  ],
+  "next_actions": [
+    "Integrador testa head combinado; proprietário autoriza o PR crítico após avaliação. Agente não adiciona integrar.",
+    "Nenhum código de produto C# antes da política integrada e G-C0."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+    "apps/urbe/docs/v2/contracts/persistence-adapter.md",
+    "apps/urbe/docs/v2/contracts/native.md",
+    "apps/urbe/docs/v2/contracts/editor-markdown.md",
+    "apps/urbe/docs/v2/contracts/editor-visual.md",
+    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/architecture/local-first.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/state-drift.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-005",
+      "evidence": "UC-7 autorizado no escopo ADR-0016; nenhum código de produto antes de G-C0."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #148, handoff com base e testes; PR crítico explícito."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Nenhuma decisão do proprietário inferida; autorização de integração permanece pendente."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente; política antiga e proposed comparadas."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Política isolada do runtime e das entregas UC-3/4/2."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Simulação de classificação não é validação humana nem autorização."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-7 em revisão, não concluído antes da integração autorizada."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "UC-7 preservado; IDs das classes existentes mantidos."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-csharp-integration-zones",
+      "status": "product-specific",
+      "rationale": "Proteção do produto antes da reescrita; nenhuma abstração compartilhada."
+    }
+  ],
+  "cost": null
+}
