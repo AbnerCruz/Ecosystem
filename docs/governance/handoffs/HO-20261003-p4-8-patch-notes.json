@@ -10,7 +10,7 @@
   },
   "task_id": "P4-8",
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "branch": "codex/hub-release-notes",
   "base_commit": "4161bbac0d4b186fa8ce9b4464ad15793f587daa",
   "commit": "fd186567e8e56c60ca8f4714aa234ba8587b74d4",
@@ -43,7 +43,8 @@
     "SOURCE/instalada/latest explícitos e separados; instalada desconhecida. Boundary e agregação SemVer determinística desde versão explicitamente fornecida, sem inventar update/PR/resumo.",
     "Fallback no SnapshotCache existente: falha parcial preserva histórico stale do mesmo canal; vazio válido/troca de canal não reutilizam releases antigas.",
     "Reconciliada main com P4-7 e aprovações reais #117/#118; download em segundo plano preservado, sem editar outro Product.",
-    "PR #122 integrado automaticamente como routine, CI verde e release dev.6 publicada/baixada/hash conferido. Portal publicou check humano 9ace6f262de6; validação mobile continua pending, sem segunda fonte do resultado humano."
+    "PR #122 integrado automaticamente como routine, CI verde e release dev.6 publicada/baixada/hash conferido. Portal publicou check humano 9ace6f262de6; validação mobile continua pending, sem segunda fonte do resultado humano.",
+    "Reconciliação posterior: integração e evidências humanas/canônicas conferidas; encerramento documental sem nova aprovação."
   ],
   "verification": [
     {
@@ -89,13 +90,11 @@
     "Versão instalada não é conhecida; UI não infere do SOURCE. Agregação só habilita quando futura leitura fornece versão explícita.",
     "Histórico limitado às 100 últimas releases do canal, filtrado por prefixo. Datas ausentes usam SemVer/tag; tags desconhecidas continuam visíveis, sem agregação inferida.",
     "Sem HTML executável/imagem remota; links não HTTPS/relativos não são executados. Release original acessível.",
-    "Falha parcial usa cache somente se o canal corrente puder ser resolvido e for o mesmo; sem canal confiável não cruza fontes antigas.",
-    "Mobile/lifecycle ainda depende de conferência humana real."
+    "Falha parcial usa cache somente se o canal corrente puder ser resolvido e for o mesmo; sem canal confiável não cruza fontes antigas."
   ],
   "blockers": [],
   "next_actions": [
-    "Validar no celular usando apps/hub/docs/patch-notes.md e Hub dev.6; registrar resultado pelo portal (check 9ace6f262de6).",
-    "Somente após resposta humana real e registrada, reconciliar tarefa/roadmap/registro por build; não marcar P4-8 done antes disso."
+    "Continuar P4-3 conforme ADR-0018-A; P4-4 exige validação independente de instalação/atualização/standalone."
   ],
   "decisions_required": [],
   "normative_sources": [

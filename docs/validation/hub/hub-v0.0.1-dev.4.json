@@ -5,7 +5,7 @@
   "component": "hub",
   "build": "hub-v0.0.1-dev.4",
   "recorded_at": "2026-10-03",
-  "state": "AUTOMATED_VERIFIED",
+  "state": "VALIDATED",
   "objective": "P4-2: download conferido, progresso, cancelamento e primeiro plano em aparelho.",
   "preconditions": [
     "Android 10 ou posterior, arm64; APK de desenvolvimento do Hub.",
@@ -18,7 +18,6 @@
   ],
   "expected": "Resultado Verified apenas com bytes completos e SHA-256 correto; cancelamento/saída de primeiro plano não declaram sucesso.",
   "known_issues": [
-    "Conferência humana P4-2 tem autoridade única no handoff HO-20261003-p4-2-download-integridade. A Issue #114 foi enviada pelo proprietário, mas a automação não a gravou por divergência com evidência pending duplicada neste VR. Este registro declara somente verificação automática até a resposta real ser reprocessada e refletida por evidência.",
     "Hash confere bytes contra o valor do canal, não assinatura/identidade do pacote/compatibilidade. Instalador fica em P4-3.",
     "APK sem SHA-256 válido ou acima de 128 MiB não é baixado; limite de cinco minutos pode exigir tentar novamente em rede lenta.",
     "Sem retomada/exportação/background; sair do primeiro plano cancela. Cache é privado e pode ser limpo pelo Android; não reusa aprovação de checksum depois de reiniciar o processo.",
@@ -41,6 +40,13 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "hub-v0.0.1-dev.4, fonte 3d9e05c, APK ecosystem-hub-0.0.1-dev.4.apk baixado publicamente para /tmp/ecosystem-hub-dev4.apk: 21821765 bytes; SHA-256 abfadbf2efec3b42b7afed70ad8ae61b64e92e93cd23d1a5901106fec32daf21 coincide com API e sidecar público. Publicação automática confirma P4-5 em operação.",
+      "handoff": "HO-20261003-p4-2-download-integridade"
+    },
+    {
+      "check": "Conferência do download, cancelamento e primeiro plano no celular",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/117); registro em docs/governance/responses/VAL-HO-20261003-p4-2-download-integridade-ece28d5af0ee.md.",
       "handoff": "HO-20261003-p4-2-download-integridade"
     }
   ]

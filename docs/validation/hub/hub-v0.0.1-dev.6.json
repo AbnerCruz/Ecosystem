@@ -5,8 +5,8 @@
   "component": "hub",
   "build": "hub-v0.0.1-dev.6",
   "recorded_at": "2026-10-03",
-  "state": "AUTOMATED_VERIFIED",
-  "objective": "P4-8: histórico e Patch Notes nativos como projeção das releases canônicas. Evidência automatizada deste build; validação humana permanece exclusivamente no handoff.",
+  "state": "VALIDATED",
+  "objective": "P4-8: histórico e Patch Notes nativos; CI e APK dev.6 conferidos e validação humana registrada na Issue #125.",
   "preconditions": [
     "Android compatível, instalar APK publicado pela release dev.6.",
     "Products com canal canônico disponível; repetir offline após atualização/cache."
@@ -21,8 +21,7 @@
     "Versão instalada não é conhecida; UI não infere do SOURCE. Agregação só habilita quando futura leitura fornece versão explícita.",
     "Histórico limitado às 100 últimas releases do canal, filtrado por prefixo. Datas ausentes usam SemVer/tag; tags desconhecidas continuam visíveis, sem agregação inferida.",
     "Sem HTML executável/imagem remota; links não HTTPS/relativos não são executados. Release original acessível.",
-    "Falha parcial usa cache somente se o canal corrente puder ser resolvido e for o mesmo; sem canal confiável não cruza fontes antigas.",
-    "Mobile/lifecycle ainda depende de conferência humana real."
+    "Falha parcial usa cache somente se o canal corrente puder ser resolvido e for o mesmo; sem canal confiável não cruza fontes antigas."
   ],
   "artifact": {
     "name": "ecosystem-hub-0.0.1-dev.6.apk",
@@ -69,6 +68,13 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "Release hub-v0.0.1-dev.6, source 58138560fdd287b51e25b98031279f7a83266823, 22051219 bytes. Download público real /tmp/ecosystem-hub-0.0.1-dev.6.apk e sidecar: sha256sum -c passou; SHA256 1f0b2d5588ececfa26a02fbe168755ddab8dc7b9382d688a048a7f4d699da678 coincide com digest da API. Publicação https://github.com/AbnerCruz/Ecosystem/actions/runs/37132295671.",
+      "handoff": "HO-20261003-p4-8-patch-notes"
+    },
+    {
+      "check": "Patch Notes e histórico no celular",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/125); registro em docs/governance/responses/VAL-HO-20261003-p4-8-patch-notes-9ace6f262de6.md.",
       "handoff": "HO-20261003-p4-8-patch-notes"
     }
   ]
