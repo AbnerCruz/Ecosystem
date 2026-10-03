@@ -18,9 +18,11 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 ## Estrutura inicial
 
 - `src/TabletopRpg.Core`: domínio e runtime headless, sem UI, rede ou SDK de provedor.
-- `tests/TabletopRpg.Core.Tests`: testes do primeiro slice.
+- `src/TabletopRpg.Persistence`: codec versionado e store local com save atômico, backup e recuperação.
+- `tests/TabletopRpg.Core.Tests`: testes de domínio e persistência.
 - `SPEC.md`: requisitos do Product.
 - `ROADMAP.md`: fases e gates próprios.
+- `docs/persistence-v1.md`: formato local/exportável e política de recuperação.
 
 ## Teste
 
@@ -29,4 +31,4 @@ cd apps/tabletop-rpg
 dotnet test --project tests/TabletopRpg.Core.Tests
 ```
 
-Requer .NET SDK 10+. O primeiro slice não faz chamadas de rede e não contém provedor LLM real.
+Requer .NET SDK 10+. O Product ainda não faz chamadas de rede nem contém provedor LLM real.

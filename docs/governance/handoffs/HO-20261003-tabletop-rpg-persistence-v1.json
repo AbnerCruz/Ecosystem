@@ -1,0 +1,162 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-tabletop-rpg-persistence-v1",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T23:16:18Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-002",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "chatgpt/tabletop-rpg-persistence-v1",
+  "base_commit": "36707a312a241449b5cac17760b38f23b5d764d2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/governance/integration-policy.json",
+    "docs/governance/handoffs/HO-20261003-tabletop-rpg-persistence-v1.json",
+    "apps/tabletop-rpg/README.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/docs/persistence-v1.md",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Identity.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Campaign.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Campaign.Persistence.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/CampaignState.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/TabletopRpg.Core.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.Persistence/CampaignCodec.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Persistence/CampaignDocument.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Persistence/FileCampaignStore.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Persistence/TabletopRpg.Persistence.csproj",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/PersistenceTestFixture.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/PersistenceRoundTripTests.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/PersistenceRecoveryTests.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/PersistenceFormatTests.cs"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data",
+      "control-plane"
+    ],
+    "reason": "RPG-002 introduz o primeiro formato persistente de dados do usuário do Product e adiciona seus caminhos à classe user-data da política de integração."
+  },
+  "work_completed": [
+    "Campaign e Session passam a ser conceitos persistíveis distintos; SessionId, histórico de sessões e sessão ativa sobrevivem ao round-trip.",
+    "CampaignState captura e restaura IDs, relógio lógico, personagens, participantes, World Facts, Knowledge, Memory, eventos e sessões sem regenerar identidade.",
+    "Snapshot e restore foram isolados em Campaign.Persistence.cs/CampaignState.cs e expostos somente ao assembly TabletopRpg.Persistence por InternalsVisibleTo.",
+    "CampaignCodec implementa envelope tabletop-rpg-campaign schemaVersion 1, timestamp, payload JSON, checksum SHA-256, enum estrito e rejeição fail-closed de versão futura.",
+    "Payload persistido é tratado como entrada não confiável: campos obrigatórios, colisões case-insensitive, referências, tempos lógicos, sessões e controles duplicados são validados.",
+    "FileCampaignStore implementa escrita temporária no mesmo diretório, flush, rename sobre primário, backup do último primário válido e recuperação automática por backup.",
+    "Primário corrompido nunca substitui backup válido; primário e backup inválidos produzem CampaignRecoveryException em vez de campanha vazia.",
+    "I/O é serializado por diretório entre instâncias de FileCampaignStore no mesmo processo para impedir corrida entre autosaves.",
+    "Export/import reutilizam o mesmo formato versionado e import pode opcionalmente salvar no store local.",
+    "SPEC e documentação operacional definem compatibilidade, integridade, recuperação, ausência de segredos e limites do formato v1.",
+    "integration-policy.json protege TabletopRpg.Persistence, Campaign.Persistence.cs e CampaignState.cs como user-data crítico."
+  ],
+  "verification": [
+    {
+      "check": "cd apps/tabletop-rpg && dotnet test --project tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "tabletop-rpg-ci run 37160999103 no head 2acb449965bcc713b4832d325269cfe5c0afedd6: 22 testes, 0 falhas.",
+      "tested_commit": "2acb449965bcc713b4832d325269cfe5c0afedd6"
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs + self-test + simulação do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency run 37161061108 no head 84d427fd33c4dfd37fe180d3bde21d79dd557e19: consistency checks, self-test de violações e simulação do integrador concluíram com sucesso.",
+      "tested_commit": "84d427fd33c4dfd37fe180d3bde21d79dd557e19"
+    }
+  ],
+  "known_issues": [
+    "Persistência v1 cobre estado textual da campanha; mapas, imagens, áudio e outros assets binários terão estratégia própria quando esses domínios existirem.",
+    "payloadSha256 detecta corrupção/alteração acidental, mas não é assinatura de autenticidade contra atacante capaz de reescrever payload e checksum.",
+    "FileCampaignStore serializa I/O entre instâncias no mesmo processo; não é um banco de dados multi-processo nem mecanismo de sincronização multiplayer."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR de RPG-002 para main e observar o estado combinado do integrador.",
+    "Após os gates combinados ficarem verdes, o proprietário adiciona a label integrar para autorizar a mudança crítica de user-data/control-plane; o agente não adiciona essa label.",
+    "Após integração, fechar RPG-002 e iniciar RPG-003 conforme o ROADMAP."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "docs/architecture/local-first.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "SPEC define requisitos; persistence-v1.md descreve o formato implementado; ROADMAP conserva apenas estado de fase/tarefa."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Persistência permanece dentro de tabletop-rpg e não referencia outro Product."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Core, codec, store e testes são C#/.NET 10."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #159, branch dedicada, commits, testes e este handoff tornam RPG-002 observável."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas e regras locais foram consultadas diretamente antes da implementação."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "O CI existente do Product testa Core e Persistence juntos sem criar lifecycle compartilhado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Arquivos de campanha não incluem segredo/token e a persistência não introduz rede, conta ou SDK de provedor."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Round-trip, recuperação, formato inválido e concorrência são verificados por testes automatizados; nenhuma validação humana de UI é necessária nesta tarefa headless."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-002 permanece verifying e ROADMAP [~] até testes finais e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "A feature nasce local ao Product e não cria serviço/plataforma compartilhada especulativa."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Persistência não foi extraída; não existe segundo consumidor real."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Save/load/export/import funcionam sem Hub e sem backend."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "campaign-persistence",
+      "status": "product-specific",
+      "rationale": "Formato, invariantes e recuperação pertencem ao domínio tabletop-rpg e não possuem consumidor externo."
+    }
+  ],
+  "cost": null
+}
