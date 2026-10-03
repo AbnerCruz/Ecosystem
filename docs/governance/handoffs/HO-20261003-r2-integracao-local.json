@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-r2-integracao-local",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T18:28:15.968214Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-3",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "codex/p6-3-team-integration",
+  "base_commit": "2e4cfa902c86d2eb2441bacfa6b29267f7e46c9e",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/140",
+  "files_changed": [
+    "apps/ecosystem-ai/src/AgentRuntime.Core/ChangeIntegration.cs",
+    "apps/ecosystem-ai/src/AgentRuntime.Core/TeamPlan.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/TeamIntegrationTests.cs",
+    "apps/ecosystem-ai/README.md",
+    "apps/ecosystem-ai/docs-r2.md",
+    "docs/adr/0020-r2-workspace-changes-e-integracao-local.md",
+    "docs/adr/README.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261003-r2-integracao-local.json"
+  ],
+  "work_completed": [
+    "Implementação candidata local: overlay, proposta imutável, integração serial, revisão independente vinculada ao candidato e verificação do combinado.",
+    "Plano efêmero com dependências e ciclo recusado; tarefas só liberam depois de integração.",
+    "Testes de dois AgentRunner reais com providers determinísticos e capabilities limitadas, conflito/retrabalho, cancelamento, autorização vinculada e concorrência.",
+    "ADR-0020 Proposto registra detalhes; ADR-0017 é a direção aprovada. Não extrai Service nem estabiliza protocolo transversal."
+  ],
+  "verification": [
+    {
+      "check": "git diff --check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sem erro de whitespace no diff local."
+    },
+    {
+      "check": "Runtime e arquitetura candidato inicial",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "ecosystem-ai-ci 37144357657: 111/111 testes, zero falhas. Revisão seguinte endurece vínculo de autorização por identidade do objeto; novo CI obrigatório.",
+      "tested_commit": "824eeae2c063e70e4bae8adb8a506a1c5cfe1fc5"
+    },
+    {
+      "check": "Runtime, arquitetura e consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "SDK .NET ausente nesta sessão; executar no CI do PR e no integrador."
+    }
+  ],
+  "known_issues": [
+    "Snapshots/receipts efêmeros; persistência e replay de coordenação não implementados.",
+    "Adapter filesystem/Git e protocolo JSON compartilhado exigem contrato próprio; nada escreve no repositório real.",
+    "R2 é candidato; ADR proposto e integração crítica aguardam processo existente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir CI do candidato e preparar PR crítico verde.",
+    "Depois de integrar R2, continuar P6-4 com Host de teste; anfitrião real depende de contratos da Fase 5."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/adr/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Único estado canônico privado no integrador; snapshots imutáveis e overlay separado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #136, branch, handoff e receipts com proveniência."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Direção ADR-0017/DEC-0026-C; detalhes candidatos ADR-0020, sem fingir aprovação."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Core sem fornecedor, rede, processo ou disco; arquitetura por IL no CI."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Produção isolada e portas confiáveis, autorrevisão recusada, aprovação por identidade e candidato."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não declarado done; CI e integração ainda pendentes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código local ao único consumidor, sem extração."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security"
+    ],
+    "reason": "Fronteira nova de publicação do estado canônico e autorização crítica em runtime, fora dos paths da política."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "local-change-integration",
+      "status": "possible-candidate",
+      "rationale": "Somente ecosystem-ai consome; extração futura exige evidência e ADR."
+    }
+  ],
+  "cost": null
+}

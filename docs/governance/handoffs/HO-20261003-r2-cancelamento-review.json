@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-r2-cancelamento-review",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T18:50:12.291188Z",
+  "agent": {
+    "id": "codex-r2-review",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-3",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "codex/p6-3-team-integration",
+  "base_commit": "49a94db5454b8c84f544977c71e7c2903cdf155f",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/140",
+  "files_changed": [
+    "apps/ecosystem-ai/src/AgentRuntime.Core/ChangeIntegration.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/TeamIntegrationTests.cs",
+    "apps/ecosystem-ai/docs-r2.md",
+    "docs/governance/handoffs/HO-20261003-r2-cancelamento-review.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: revisão do candidato a233aec encontrou callbacks posteriores a cancelamento, inclusive autorização.",
+    "Correção local com checkpoints entre revisão, verificação, classificação e autorização; sem alterar API, boundaries ou política.",
+    "Oito casos de regressão para cancelamento e exceções nas quatro portas; retry preserva ID e estado canônico."
+  ],
+  "verification": [
+    {
+      "check": "Regressão contra implementação anterior",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "119 casos executados com a implementação a233aec: quatro novos casos de cancelamento falham, comprovando chamadas indevidas; fonte corrigida restaurada depois."
+    },
+    {
+      "check": "AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "SDK 10.0.100; build serial sem warnings/erros; 119/119 testes passaram na implementação corrigida."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks passaram; comparação com snapshot de Issues não disponível localmente."
+    },
+    {
+      "check": "CI atualizado do PR",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Executar novamente no commit enviado e no estado combinado com main pelo integrador."
+    }
+  ],
+  "known_issues": [
+    "R2 permanece candidato no PR crítico #140; não integrado nem declarado concluído.",
+    "Receipts e snapshots efêmeros; sem provider remoto, adapter Git ou UI."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar CI atualizado; integração crítica pelo processo existente.",
+    "Depois de integrar P6-3, continuar P6-4 com Host de teste."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0020-r2-workspace-changes-e-integracao-local.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Resultado próprio registrado em novo handoff, vinculado a P6-3 e PR #140."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Cancelamento interrompe pedidos de autorização posteriores; política e identidade de proprietário preservadas."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Reprodução negativa, suíte verde e consistency; CI e integração permanecem pendentes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Correção local ao Product sem nova abstração ou extração."
+    }
+  ]
+}
