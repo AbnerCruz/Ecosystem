@@ -265,7 +265,7 @@
        atualizações vêm do Ecosystem sem depender do Hub. */
     var UPDATE_REPO='AbnerCruz/Ecosystem',UPDATE_TAG='urbe-v',last={state:'none'},subs=[];
     function emit(st){last=st;subs.forEach(function(f){try{f(st)}catch(_){}})}
-    function parts(v){var m=/^v?(\d+)\.(\d+)\.(\d+)(?:-([\w.]+))?/.exec(String(v||''));return m?[+m[1],+m[2],+m[3],m[4]||'']:null}
+    function parts(v){var m=/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(String(v||''));return m?[+m[1],+m[2],+m[3],m[4]||'']:null}
     function newer(a,b){a=parts(a);b=parts(b);if(!a||!b)return false;for(var i=0;i<3;i++)if(a[i]!==b[i])return a[i]>b[i];if(a[3]===b[3])return false;if(!a[3])return true;if(!b[3])return false;return a[3].localeCompare(b[3],undefined,{numeric:true})>0}
     function directRelease(list){
       var best=null;
