@@ -28,6 +28,8 @@ public sealed partial class MainActivity : Activity
 {
     private const int ExportRequestCode = 4101;
     private const int ImportRequestCode = 4102;
+    private const int ImportProjectRequestCode = 4103;
+    private bool _importingProject;
     private const int MaxConsoleLines = 300;
     private static readonly Lazy<GameCompiler> SharedCompiler = new(() =>
         new GameCompiler(new LoadedAssembliesReferenceProvider(typeof(Game).Assembly)));
@@ -119,6 +121,7 @@ public sealed partial class MainActivity : Activity
         root.AddView(new TextView(this) { Text = "Lunet", TextSize = 28 });
         root.AddView(new TextView(this) { Text = "Projetos" , TextSize = 16 });
         root.AddView(MakeButton("Novo projeto", AskForProjectName));
+        root.AddView(MakeButton("Importar ZIP", ImportProject));
         root.AddView(MakeButton("Clonar do Git", AskClone));
         root.AddView(MakeButton("Configurações", ShowSettings));
 
@@ -135,7 +138,7 @@ public sealed partial class MainActivity : Activity
             list.AddView(row);
         }
         if (list.ChildCount == 0)
-            list.AddView(new TextView(this) { Text = "Nenhum projeto ainda. Crie o primeiro." });
+            list.AddView(new TextView(this) { Text = "Nenhum projeto ainda. Crie ou importe o primeiro." });
         var scroll = new ScrollView(this);
         scroll.AddView(list);
         root.AddView(scroll, Fill(1));
@@ -1029,6 +1032,49 @@ public sealed partial class MainActivity : Activity
         StartActivityForResult(intent, ImportRequestCode);
     }
 
+    private void ImportProject()
+    {
+        if (_importingProject)
+        {
+            Toast.MakeText(this, "Aguarde a importação em andamento.", ToastLength.Short)?.Show();
+            return;
+        }
+        var intent = new Intent(Intent.ActionOpenDocument);
+        intent.AddCategory(Intent.CategoryOpenable);
+        // Alguns provedores identificam ZIP como octet-stream; o Core valida o conteúdo.
+        intent.SetType("*/*");
+        intent.PutExtra(Intent.ExtraMimeTypes, new[] { "application/zip", "application/x-zip-compressed", "application/octet-stream" });
+        StartActivityForResult(intent, ImportProjectRequestCode);
+    }
+
+    private async void CompleteProjectImport(AndroidUri uri)
+    {
+        if (_importingProject) return;
+        _importingProject = true;
+        Toast.MakeText(this, "Importando projeto…", ToastLength.Short)?.Show();
+        try
+        {
+            var project = await Task.Run(() =>
+            {
+                using var stream = ContentResolver?.OpenInputStream(uri)
+                    ?? throw new IOException("Não foi possível abrir o ZIP.");
+                return _store.ImportZip(stream);
+            });
+            if (IsFinishing || IsDestroyed) return;
+            var folder = System.IO.Path.GetFileName(project.Directory);
+            // Atualiza a lista sem trocar um projeto que o usuário abriu enquanto aguardava.
+            if (_project is null) ShowProjects();
+            Toast.MakeText(this, $"Projeto importado: {folder}", ToastLength.Long)?.Show();
+        }
+        catch (Exception ex) when (ex is IOException or ProjectException or UnauthorizedAccessException or global::Java.Lang.SecurityException)
+        {
+            if (!IsFinishing && !IsDestroyed)
+                new AlertDialog.Builder(this)!.SetTitle("Falha ao importar ZIP")!
+                    .SetMessage(ex.Message)!.SetPositiveButton("Ok", (_, _) => { })!.Show();
+        }
+        finally { _importingProject = false; }
+    }
+
     private void CompleteImport(AndroidUri uri)
     {
         if (_project is null) return;
@@ -1056,6 +1102,11 @@ public sealed partial class MainActivity : Activity
     protected override void OnActivityResult(int requestCode, Result resultCode, Intent? data)
     {
         base.OnActivityResult(requestCode, resultCode, data);
+        if (requestCode == ImportProjectRequestCode)
+        {
+            if (resultCode == Result.Ok && data?.Data is AndroidUri projectUri) CompleteProjectImport(projectUri);
+            return;
+        }
         if (requestCode == ImportRequestCode)
         {
             if (resultCode == Result.Ok && data?.Data is AndroidUri picked) CompleteImport(picked);

@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-lunet-import-zip",
+  "category": "RESULT",
+  "timestamp": "2026-10-03T14:08:21Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-301",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "codex/lunet-import-zip",
+  "base_commit": "3d9e05cf72fc67b299a3f55a8fd0181e6d6356c8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectZipImporter.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ProjectZipImportTests.cs",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/guides/importar-projeto.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261003-lunet-import-zip.json"
+  ],
+  "work_completed": [
+    "ImportZip compatível com ExportZip e ZIP com manifesto na raiz; publicação por Directory.Move após validação.",
+    "Botão Importar ZIP e seletor Android, cópia em background, cancelamento e erros visíveis.",
+    "Cópias numeradas preservam original e GameId; limites, caminhos, duplicatas, symlinks e arquivo de entrada validados.",
+    "Testes de roundtrip, conflito, stream não seekable, limites e falhas; SPEC, guia, ROADMAP e changelog atualizados."
+  ],
+  "verification": [
+    {
+      "check": "bash apps/lunet2d/tools/roadmap-status.sh --pending",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Executado no snapshot local; Fase 3 segue aberta."
+    },
+    {
+      "check": "git diff --check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sem erros de whitespace no snapshot local; checkout Git completo indisponível por falha de conexão ao proxy."
+    },
+    {
+      "check": "dotnet test --project apps/lunet2d/tests/Lunet.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Tentativa local: dotnet: command not found. CI do Product deve executar."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Tentativa local: dotnet: command not found. CI do PR deve executar."
+    },
+    {
+      "check": "Roteiro importar projeto ZIP em Android",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/importar-projeto.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Android ainda não validado em aparelho; não fecha gate da Fase 3."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI do PR e corrigir falhas.",
+    "Integrador automático testa combinação com main e integra conforme política.",
+    "Após integração, sincronizar espelho de distribuição Lunet2D e confirmar APK.",
+    "Executar roteiro no aparelho; manter ROADMAP pendente até validação."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/decisions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/architecture/local-first.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Projeto e manifesto continuam sendo arquivos canônicos."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Implementação apenas em Lunet; nenhum acoplamento a Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Importação offline e standalone, sem Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #111, item LUNET-301, branch e handoff observáveis."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Documentos normativos consultados diretamente e listados."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Formato exportado preservado; nenhuma mudança de boundary, ownership ou lifecycle."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação Android explicitamente pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Resultado em review; testes não executados localmente não declarados verdes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Importação de projeto permanece local no Product."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-project-zip-import",
+      "status": "product-specific",
+      "rationale": "Formato e manifesto de projeto Lunet; sem consumidor externo concreto."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature autorizada, sem sobrescrita nem mudança de formato ou dados existentes."
+  }
+}
