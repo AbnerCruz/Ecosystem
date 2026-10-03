@@ -77,7 +77,8 @@
     "Somente candidato Lunet no catálogo de confiança; aprovação específica DEC-0032 pendente. Urbe mantém canal independente.",
     "Chave pública de desenvolvimento não prova autoria. Rotação/múltiplos signatários não aprovados são recusados.",
     "Sem consulta atual da aprovação/canal, ações do Hub bloqueadas; Products standalone intactos.",
-    "Resultado perdido após processo morto não é apresentado como sucesso. Nenhuma retomada automática."
+    "Resultado perdido após processo morto não é apresentado como sucesso. Nenhuma retomada automática.",
+    "Hub CI e release usam contadores versionCode independentes; candidato somente em ambiente descartável. No aparelho diário, testar a release após integração, evitando downgrade involuntário. Correção de versionamento entre workflows é item próprio."
   ],
   "blockers": [
     "DEC-0032: aprovação específica de pacote/canal/certificado antes de habilitar ações."

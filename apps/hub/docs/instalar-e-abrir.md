@@ -43,8 +43,11 @@ Chave pública de desenvolvimento limita substituições acidentais, mas **não 
 
 ## Conferência em aparelho (após aprovação específica e integração)
 
-1. Instale o APK Hub candidato (artifact hub-debug-apk do CI do PR; depois release
-   de desenvolvimento). Preserve um projeto de teste/backup do Lunet.
+1. Para teste no aparelho de uso diário, use a release Hub publicada após integrar
+   o PR. Artifact hub-debug-apk é candidato para ambiente de teste descartável:
+   CI e release usam contadores versionCode independentes, portanto o candidato
+   pode impedir voltar por atualização à release. Não o instale sobre o Hub do
+   dia a dia. Preserve um projeto de teste/backup do Lunet.
 2. Antes de DEC-0032-A, confirme bloqueio de instalar/abrir, com download independente
    preservado. Aprovar essa decisão não aprova esta validação DEVICE.
 3. Após aprovação, atualize o Hub com rede; selecione Lunet. Consulte a versão real.
