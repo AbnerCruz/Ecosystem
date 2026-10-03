@@ -42,3 +42,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0018](0018-instalacao-e-launcher-do-hub.md) | Instalação e launcher do Hub | Aceito (DEC-0030-A) |
 
 | [0019](0019-releases-diretas-dos-products.md) | Releases diretas dos Products no Ecosystem | Aceito (DEC-0031; ADD-0015) |
+| [0020](0020-r2-workspace-changes-e-integracao-local.md) | R2: workspace, revisão e integração local | Proposto |
