@@ -3,17 +3,17 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-p3-1-releases-do-hub",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T08:25:52Z",
+  "timestamp": "2026-10-03T09:00:56Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
   },
   "task_id": "P3-1",
   "component": "portal",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p3-1-releases-hub",
   "base_commit": "0636b233e2613e0ddff2ca28bc549b762730dc40",
-  "commit": null,
+  "commit": "1b63fb5f576b51676ae1f44c58ddc6873485f89d",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/93",
   "criticality": {
     "declared": "critical",
@@ -35,7 +35,8 @@
     "Gerador resolve canal de releases a partir do perfil current e ecosystem.json; preserva origens legadas, não usa canal de releases como versão Web, filtra tags <component-id>-v no monorepo e seleciona por published_at, incluindo pré-lançamento e ignorando draft.",
     "Resposta inválida é isolada como not-available; link de recuperação permanece offline. Artefatos usam o contrato existente: tipo, nome, URL, tamanho e SHA-256, sem dado digitado na UI.",
     "Self-test do checker executa o gerador real com respostas gravadas offline, exercitando seleção, rascunho, pré-lançamento, APK/digest, sidecar, canais legados/Web, ausência de release, resposta inválida e offline. Opção de fixtures é recusada em geração online e identifica proveniência de teste.",
-    "Documentação e ROADMAP atualizados; P3-1 permanece aberto até haver CI e integração."
+    "Documentação e ROADMAP atualizados; P3-1 permanece aberto até haver CI e integração.",
+    "FATO OBSERVADO: PR #93 integrado pelo proprietário; consistência e pages verdes na main. Projeção pública e SHA-256 do APK baixado conferidos. Issue #92 encerrada com state:done; fechamento do ROADMAP e handoff neste PR de documentação."
   ],
   "verification": [
     {
@@ -59,8 +60,9 @@
     {
       "check": "Projeção publicada com a release real do Hub",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Validar geração online e publicação pelo pages após integração; o workflow de publicação não foi alterado."
+      "result": "passed",
+      "evidence": "PR #93 integrado (40e6afb). Pages verde: https://github.com/AbnerCruz/Ecosystem/actions/runs/37110753829. GET da projeção pública confirmou source.commit=40e6afb, release hub-v0.0.1-dev.2, APK (21801285 bytes), digest 147f42d433ded78b59545fa64adb44cd31613e5af76361813f714f9e04a93731, links.releases e links.web=null. APK baixado e sha256sum conferido com esse digest.",
+      "tested_commit": "40e6afb62f799572e8d86a1827422f5d971d7567"
     }
   ],
   "known_issues": [
@@ -71,8 +73,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Autorizar integração crítica pelo fluxo do proprietário (label integrar no PR #93); o integrador revalida o head atualizado.",
-    "Confirmar projeção publicada; encerrar Issue #92, ROADMAP P3-1 [x] e handoff done somente após evidência. Depois preparar P3-8."
+    "P3-1 sem pendências. P3-8: validação humana no celular, com roteiro e APK publicados."
   ],
   "decisions_required": [],
   "normative_sources": [

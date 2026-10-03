@@ -2584,8 +2584,13 @@ static class SelfTest
             r => Replace(r, "docs/governance/enforcement-matrix.json", "\"phase\": \"phase-3\"", "\"phase\": \"phase-1\"")),
         new("produto importado sem registro de importação", "CHK-MIGRATION-HISTORY",
             r => File.Delete(Path.Combine(r, "docs", "migration", "import-urbe.json"))),
-        new("portal mostra gate não aprovado como aprovado", "CHK-PORTAL",
-            r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"phase\": 3,\n        \"state\": \"não iniciado\"", "\"phase\": 3,\n        \"state\": \"aprovado\"")); }),
+        new("portal mostra gate com estado diferente do ROADMAP", "CHK-PORTAL",
+            r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json");
+                   var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(f))!;
+                   var gates = n["ecosystem"]!["gates"]!.AsArray();
+                   var g = gates.FirstOrDefault(x => x?["state"]?.GetValue<string>() != "aprovado") ?? gates.First();
+                   g!["state"] = g["state"]!.GetValue<string>() == "aprovado" ? "não iniciado" : "aprovado";
+                   File.WriteAllText(f, n.ToJsonString()); }),
         new("portal mostra progresso de fase que o ROADMAP não tem", "CHK-PORTAL",
             r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(f))!;
                    var g0 = n["ecosystem"]!["gates"]![0]!; g0["done"] = g0["done"]!.GetValue<int>() + 1; File.WriteAllText(f, n.ToJsonString()); }),
