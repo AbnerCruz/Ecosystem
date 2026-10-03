@@ -1,0 +1,1072 @@
+{
+  "schemaVersion": 1,
+  "product": "urbe",
+  "baseCommit": "2e4cfa902c86d2eb2441bacfa6b29267f7e46c9e",
+  "files": [
+    {
+      "path": "docs/v2/REQUIREMENTS.md",
+      "bytes": 27165,
+      "sha256": "b40b58769efe5f394a127ea9b01a8c1b900d272f5cdef28d2a19d4be5d6c8dd2"
+    },
+    {
+      "path": "docs/v2/ROADMAP.md",
+      "bytes": 93880,
+      "sha256": "b5553653445a795b27b7c4862b61814ac2bea864af9cd9172f38d25f60919e15"
+    },
+    {
+      "path": "docs/v2/SPEC.md",
+      "bytes": 33696,
+      "sha256": "567933aeba2c3a182f101416da3050a664dbb654c6deead0ce4393e366adb5c3"
+    },
+    {
+      "path": "docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+      "bytes": 2505,
+      "sha256": "9e2e92578dbb52ac82fd4b23a36ceaff206dd5d1ccbc259de980f12bafd0e4b2"
+    },
+    {
+      "path": "docs/v2/contracts/editor-markdown.md",
+      "bytes": 2581,
+      "sha256": "3d257230dddfb92e9dfce5f7761b26443764ef6d04e1c7dcaa81c73957f61501"
+    },
+    {
+      "path": "docs/v2/contracts/editor-visual.md",
+      "bytes": 1490,
+      "sha256": "1ca2caa8ebc4f9dfda9a3c9a0ccd96c50fa43559c75108d7805c4e51d26f80d4"
+    },
+    {
+      "path": "docs/v2/contracts/native.md",
+      "bytes": 7081,
+      "sha256": "8db013d5259c6d6f1cc8dac188c2acc9e25f21ff676194d8805a4439a5639f15"
+    },
+    {
+      "path": "docs/v2/contracts/persistence-adapter.md",
+      "bytes": 1996,
+      "sha256": "ced2709a43b4010e073c6297023b02ded90904e9b416325aacd4706021fe6d66"
+    },
+    {
+      "path": "docs/v2/discovery/DATA-CATALOG.md",
+      "bytes": 26906,
+      "sha256": "ca5b05bc528b55831666662452bc4762933dd4e59a1e986eeec4d973d2a6b213"
+    },
+    {
+      "path": "tests/adapter-contract.mjs",
+      "bytes": 3006,
+      "sha256": "f22b80c2ee1c4ae55587e7c765ff57f557163c258659499b4ca759fd13774082"
+    },
+    {
+      "path": "tests/ai-agent.mjs",
+      "bytes": 22216,
+      "sha256": "64f429b3d1a9b39146f86b1519a310d2f5fc25941656f6468c2018afd9345fb5"
+    },
+    {
+      "path": "tests/app-loader.mjs",
+      "bytes": 2205,
+      "sha256": "33e5f180ed6e10bd5ae1202a01121def2f757d03d91ab9330ea1d467473d2d90"
+    },
+    {
+      "path": "tests/artifacts.mjs",
+      "bytes": 4001,
+      "sha256": "4d89d8853f19baa0e10947728a0405fbabb22687a81c4b757d58d022a9204dbe"
+    },
+    {
+      "path": "tests/boundaries.mjs",
+      "bytes": 1641,
+      "sha256": "e09092a60f74ae5b234d0e7ceddf93b8549c31d3018bfc2ef65e3bcbc8ac1c34"
+    },
+    {
+      "path": "tests/catalog.mjs",
+      "bytes": 1263,
+      "sha256": "648e2202442870e32ed2d5bd0d7d52eb1501cbee5134aec487999871bb5fe556"
+    },
+    {
+      "path": "tests/city.mjs",
+      "bytes": 3073,
+      "sha256": "5744b6f5492a2c5f6c85576e0e947d114a56bf3b24f43f95effcdf10ce023d09"
+    },
+    {
+      "path": "tests/composition-regression.mjs",
+      "bytes": 1440,
+      "sha256": "655fc48ac80ed03ac7d19f13229dfddf711d8c661c2a185afac05eb9dd7f18a5"
+    },
+    {
+      "path": "tests/composition.mjs",
+      "bytes": 1638,
+      "sha256": "416c55172e1ea115e5559b37b76624e7d2f5b4f1b639fec29268155453a69c81"
+    },
+    {
+      "path": "tests/consistency.mjs",
+      "bytes": 2573,
+      "sha256": "b6c7ebedbb35777f9e634db3f498381df20e1b87036f1da2554e0b5e7d2c8480"
+    },
+    {
+      "path": "tests/core.mjs",
+      "bytes": 1538,
+      "sha256": "ceb25dd9d6694b66d8390fda9f5e35d6cd7c48357f6ae995b7036c53de5fb1d3"
+    },
+    {
+      "path": "tests/customize.mjs",
+      "bytes": 9240,
+      "sha256": "c8bd0b820e3352a05199d850f2066adff2fb9d98f6e954dfb3a0770c7ccc2cab"
+    },
+    {
+      "path": "tests/debt.mjs",
+      "bytes": 1497,
+      "sha256": "56f31a12d10d89cb731c421ebc484083355b7c372abed73ffce35fc17be51aef"
+    },
+    {
+      "path": "tests/desktop-main.mjs",
+      "bytes": 23566,
+      "sha256": "7997401e32139218622461c9d7397d0e9d443b6390388bcf85a2d754c3253472"
+    },
+    {
+      "path": "tests/desktop-preload.mjs",
+      "bytes": 6647,
+      "sha256": "4bfb65d4bc437e3a72b5b7cd2d114afde560e070455e89db39bcf7384784fc50"
+    },
+    {
+      "path": "tests/documents.mjs",
+      "bytes": 1646,
+      "sha256": "dcd01b7ffb977540add001fc6d01303cc516f8d847d3f94acf91c56da110a732"
+    },
+    {
+      "path": "tests/e2e/adapters.e2e.mjs",
+      "bytes": 1333,
+      "sha256": "baa76506d641b8afc871caf207fe8e93f9da541a078ff0b6d66ab2e82375bfcd"
+    },
+    {
+      "path": "tests/e2e/app-runtime-visual.e2e.mjs",
+      "bytes": 2935,
+      "sha256": "443ee574f684d55f965ffad9933aa5f59f6ab6af70f16e1d30be1a12c9e70028"
+    },
+    {
+      "path": "tests/e2e/app-runtime.e2e.mjs",
+      "bytes": 3158,
+      "sha256": "f6fdb66aa093f853a2f1750c39e9a6de78c93ca017b737306666fcf7785f3737"
+    },
+    {
+      "path": "tests/e2e/app-runtime.mjs",
+      "bytes": 4505,
+      "sha256": "d2799bce2e705e300d6445eaceb25abbef47c1fd0c33e896c329e7ef967c4e1c"
+    },
+    {
+      "path": "tests/e2e/fixtures.e2e.mjs",
+      "bytes": 5565,
+      "sha256": "16a872c6def14d053f5c90be73c7e394a1d7cbfd3239f2dac9aad66e913e03d1"
+    },
+    {
+      "path": "tests/e2e/gc.e2e.mjs",
+      "bytes": 2764,
+      "sha256": "d40a0645c881b2f2705039f942ef57a3415c0d222a47c71bcb6aaa393d0d8f34"
+    },
+    {
+      "path": "tests/e2e/identity.e2e.mjs",
+      "bytes": 5791,
+      "sha256": "183441c6020f0a8bac143f2d562b57fac6f014bd065f9910b8ae502a99214610"
+    },
+    {
+      "path": "tests/e2e/layout.e2e.mjs",
+      "bytes": 5729,
+      "sha256": "77d2c2e89ec4bfdd35aed7ce46d783ef0374e4b7b4c90fb31983fcffdfa1a036"
+    },
+    {
+      "path": "tests/e2e/lifecycle.e2e.mjs",
+      "bytes": 4648,
+      "sha256": "0440198edee7f6149d82dc38aa66a8ba1dfd67e78368182ab327064a7a043472"
+    },
+    {
+      "path": "tests/e2e/map-writer.e2e.mjs",
+      "bytes": 2816,
+      "sha256": "13403371a1b8f301d468a5746786a893aa43272a4c0b94559e513db83578996a"
+    },
+    {
+      "path": "tests/e2e/multi-city.e2e.mjs",
+      "bytes": 4143,
+      "sha256": "cd56f151379caab1dc802c278d7f71b94c89a2791a72052a868b12991f12d9de"
+    },
+    {
+      "path": "tests/e2e/routing.e2e.mjs",
+      "bytes": 2139,
+      "sha256": "1a54f3a128e6250d5bac1a1501564fdb7a34d186841a258409b71ef0c06e25ed"
+    },
+    {
+      "path": "tests/e2e/smoke.e2e.mjs",
+      "bytes": 1378,
+      "sha256": "0d7c91701e643d1ce0c6d1c574e6d45079e80558de62e277e260bd9148c1911a"
+    },
+    {
+      "path": "tests/e2e/stable-ids.e2e.mjs",
+      "bytes": 3060,
+      "sha256": "3274393300555eddaaf9489bf31306d37bdb9e1aac70f5f94baefd5a1af05d4d"
+    },
+    {
+      "path": "tests/e2e/zip.e2e.mjs",
+      "bytes": 6910,
+      "sha256": "3850707f4cb3260f634c3fae1f59e63c1a642a545d5315b89977c45c258c620d"
+    },
+    {
+      "path": "tests/editor-persistence.mjs",
+      "bytes": 2852,
+      "sha256": "31d222a34026a50ba5c85b85c3e7270a526de8b68c389d6872450210223eced7"
+    },
+    {
+      "path": "tests/editor-workspace.mjs",
+      "bytes": 1915,
+      "sha256": "5490abe0c5abcc524b097c3619571d22dd8582c3f45248dceb6a394dd9732bf5"
+    },
+    {
+      "path": "tests/editor.mjs",
+      "bytes": 1513,
+      "sha256": "a26a1de206331d9dd1a55f66adcb717df521e9d533581a00f14f152bc51192ff"
+    },
+    {
+      "path": "tests/explorer.mjs",
+      "bytes": 2563,
+      "sha256": "9ec379f03bb4e1ffbd201c98f32ded860f885b1d359d5b3041e0a18f35a386a8"
+    },
+    {
+      "path": "tests/export-manifest.mjs",
+      "bytes": 4103,
+      "sha256": "30cfb2649b9b17d78e4cb31d678d06a5c1a7f5b21ac9a6d08173e11daa871312"
+    },
+    {
+      "path": "tests/fixtures/markdown-golden.json",
+      "bytes": 10740,
+      "sha256": "16ecaf4c415f00c8a39c9435bbf64e485daf4d83c71e0f93fbddc5abed2be264"
+    },
+    {
+      "path": "tests/fixtures/vaults/README.md",
+      "bytes": 1408,
+      "sha256": "9163d3f6957b2930d8dfa5f2c34ea34a27df255071d5159b3ee624df6ddf111d"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-desconhecido/.urbe/compositions.json",
+      "bytes": 58,
+      "sha256": "8ca2500e4a6501d0a2d2f3b2f63b2aaf782f91dd36a36703b6d69479cbd54b10"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-desconhecido/.urbe/history.json",
+      "bytes": 144,
+      "sha256": "83ccdf6db6de0fab3eeabc06c9c33e8adde7451b52c02ab80c194500be6195e7"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-desconhecido/.urbe/journal.json",
+      "bytes": 187,
+      "sha256": "9b2e799e6fd8c2840574a493463085398afeeefaf89f690562448c8e94e8ee04"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-desconhecido/.urbe/mapa.json",
+      "bytes": 1592,
+      "sha256": "0c5c9f73695cb1fa6ef3ece7916b6e630294d062bf7d9965def9a7d1f4e27e59"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-desconhecido/.urbe/trash.json",
+      "bytes": 54,
+      "sha256": "d261cd9596380af8b1d99077132978adce334321f85d8388696fa302c8f2b432"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-desconhecido/Alfa.md",
+      "bytes": 44,
+      "sha256": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-desconhecido/Personalização/tema.json",
+      "bytes": 207,
+      "sha256": "18f3afcb56544bee9db7ec61879b5fc91014f777602441a2be8c95ecea38dfc3"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-desconhecido/Páginas/Futura.page.json",
+      "bytes": 356,
+      "sha256": "7eb995d242ebbd9fb62656b5a4a6dfd108a4783ac1006202ff5e6f3f7c8f18f2"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-desconhecido/expect.json",
+      "bytes": 1329,
+      "sha256": "433d85f0f5f42f76da909ebfbfb5fbd06ab9e4ab2db050cd3eec3b55ac804ead"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-v2/.urbe/compositions.v2.json",
+      "bytes": 43,
+      "sha256": "8edc22bd268fa432e7371052dc8cbbe8b0ef5e2d248527c6f6aa934f789b2ade"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-v2/.urbe/history.v2.json",
+      "bytes": 47,
+      "sha256": "ee6d705335c5a71746d710387487bd8c0be2d08697d130f95eccda6f372ade56"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-v2/.urbe/journal.v2.json",
+      "bytes": 167,
+      "sha256": "ee9e2bdf55cf9266a80f36764b31d28531ed5d690f911b32044862acd103d4b0"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-v2/.urbe/mapa.json",
+      "bytes": 1591,
+      "sha256": "8ae72756740470af3b1a7f48f6eedd12eb84c869a1942a10ed8f0158ebf0141d"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-v2/.urbe/trash.v2.json",
+      "bytes": 53,
+      "sha256": "2ef6b0a77ca94fb65afbf631c2e9e4b639aa64770bdbb66bfd683cc4192931b3"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-v2/.urbe/vault.json",
+      "bytes": 153,
+      "sha256": "2b46c7f39a0f5d4df36a4c5da2ffc68f02f841f8d7132abcb6ef3e11801e9197"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-v2/Alfa.md",
+      "bytes": 44,
+      "sha256": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-v2/Beta.md",
+      "bytes": 43,
+      "sha256": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+    },
+    {
+      "path": "tests/fixtures/vaults/futuro-v2/expect.json",
+      "bytes": 913,
+      "sha256": "9185cf416c729fa5a32b34e1d31fe18571e6bbf46dabf71d9d66732e5f892af3"
+    },
+    {
+      "path": "tests/fixtures/vaults/idb-legado-kv-cidade.json",
+      "bytes": 601,
+      "sha256": "6afa575f8ffe23c955e8e29750fbf3758980a4d61558ec41343cc6d6fa0fb045"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-cidades-mescladas/.urbe/mapa.json",
+      "bytes": 1384,
+      "sha256": "72580c1ae6d9bdbcd081a0858e4eb57cd7e7bed775562060eff864016e262339"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-cidades-mescladas/.urbe/merged-v1.json",
+      "bytes": 174,
+      "sha256": "b44153fd5ef3ff561096add15079730b8509bb132b42abdbe0b2c1c957ceea03"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-cidades-mescladas/.urbe/origens/Norte.json",
+      "bytes": 25,
+      "sha256": "2f0d289a616e6e0129b13992cf71a360cb260037aa2117d3c7f7fd7078e93771"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-cidades-mescladas/.urbe/origens/Sul.json",
+      "bytes": 25,
+      "sha256": "2f0d289a616e6e0129b13992cf71a360cb260037aa2117d3c7f7fd7078e93771"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-cidades-mescladas/Cidades/Norte/Um.md",
+      "bytes": 5,
+      "sha256": "c372fa8f7542c0a819ec578b70105604d8870b279b8d42462a89c71ea3250e44"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-cidades-mescladas/Cidades/Sul/Dois.md",
+      "bytes": 7,
+      "sha256": "c2a7c2498f5a357769fc05b3a2295ff06fcbac3ee15d3cb21c91f0926a3242fc"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-cidades-mescladas/expect.json",
+      "bytes": 748,
+      "sha256": "3f6729ee65f320d67f2fc8a54e8fa99c36c4c84499b0717e2cac2fa6618366b3"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-journal-pendente/.urbe/journal.json",
+      "bytes": 1615,
+      "sha256": "23c9b7e906ea90192af3100099ed9b748386c1de8c89957a37eba630bb1c7f76"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-journal-pendente/.urbe/mapa.json",
+      "bytes": 1591,
+      "sha256": "8ae72756740470af3b1a7f48f6eedd12eb84c869a1942a10ed8f0158ebf0141d"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-journal-pendente/Alfa.md",
+      "bytes": 26,
+      "sha256": "b9df429a28b352a9061131bbec35318b9c70205d811a81df0720f26ca888a0dc"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-journal-pendente/expect.json",
+      "bytes": 391,
+      "sha256": "be0ad0614ec6081d43c9017e522494a4de1f724e7fb843d0e660d2d9063e0a0d"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v2/.urbe/mapa.json",
+      "bytes": 439,
+      "sha256": "c4225094f7ab5784f321c1f64154ce21d9ba27681398f1fea5379a4c334414c9"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v2/Alfa.md",
+      "bytes": 44,
+      "sha256": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v2/Beta.md",
+      "bytes": 43,
+      "sha256": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v2/expect.json",
+      "bytes": 400,
+      "sha256": "f4c6e7e609eaa4cc90915c4c17dd6aaebc608110704d5f444ea241272d4b698c"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v4/.urbe/compositions.json",
+      "bytes": 396,
+      "sha256": "c5d778acc0bd007ae8a74a20388a0aa079f3b25e0d068662de411d22f8da4f1f"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v4/.urbe/history.json",
+      "bytes": 156,
+      "sha256": "1bedeeabdcaf044b5d8803f8f97cd498e5ac0a191f133336d9dbd5dd3e9ea0b7"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v4/.urbe/mapa.json",
+      "bytes": 1591,
+      "sha256": "8ae72756740470af3b1a7f48f6eedd12eb84c869a1942a10ed8f0158ebf0141d"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v4/.urbe/trash.json",
+      "bytes": 385,
+      "sha256": "26baedf2c67a2033614143f7efba64056dc9e0b2068c1032657e24166fe19c41"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v4/Alfa.md",
+      "bytes": 44,
+      "sha256": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v4/Beta.md",
+      "bytes": 43,
+      "sha256": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v4/Pasta/Gama.md",
+      "bytes": 25,
+      "sha256": "2e2c23aa8895912aa37ea9bc86b26504c2b6245b69d657ca3e6c23daec5554cd"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v4/Pasta/logo.png",
+      "bytes": 9,
+      "sha256": "19ebbebd7eaf12d4fb59e09368b966517c1f3bc5f29a2fc054157eb02a3f3b91"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mapa-v4/expect.json",
+      "bytes": 842,
+      "sha256": "b81a4e55fdcda251cbe75243aa7b70c77b6919dd216e021251e6ea3fb28e9f14"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mundo-antigo/.urbe/mapa.json",
+      "bytes": 1591,
+      "sha256": "8e8409bc012c27ba571049666109c34ea6be4f612abc97455e5a38bb9360c744"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mundo-antigo/Alfa.md",
+      "bytes": 44,
+      "sha256": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mundo-antigo/Beta.md",
+      "bytes": 43,
+      "sha256": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-mundo-antigo/expect.json",
+      "bytes": 436,
+      "sha256": "5d6483725b6e6e9238c89125688eaede5ad9decec727d3991aea3857b5db72e8"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-notas-sem-id/.urbe/mapa.json",
+      "bytes": 1432,
+      "sha256": "0c7c7d9210a20e97294450e2c5514122c19372e02eea5a4e76b37d93d4e53452"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-notas-sem-id/Alfa.md",
+      "bytes": 44,
+      "sha256": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-notas-sem-id/Beta.md",
+      "bytes": 43,
+      "sha256": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-notas-sem-id/expect.json",
+      "bytes": 381,
+      "sha256": "9c59625a82d390df82df27b77fbd3d82a524530d858bb9aa79da1646f8389724"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-orfaos/.urbe/compositions.json",
+      "bytes": 482,
+      "sha256": "042d76cd0baa016e28a76bd8ddcee0563b31c8f86ec7e6788192251cabf3092f"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-orfaos/.urbe/history.json",
+      "bytes": 450,
+      "sha256": "2694fa8900f15379d77a963e3e9d3dbf05802bdd1b3f40fc7da59a45796d2678"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-orfaos/.urbe/mapa.json",
+      "bytes": 405,
+      "sha256": "f8edbd1c28572bdb7359bcf5c171539b3cd63f74e288bb6193e580e272673a2b"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-orfaos/.urbe/trash.json",
+      "bytes": 385,
+      "sha256": "26baedf2c67a2033614143f7efba64056dc9e0b2068c1032657e24166fe19c41"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-orfaos/Alfa.md",
+      "bytes": 44,
+      "sha256": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-orfaos/Beta.md",
+      "bytes": 43,
+      "sha256": "44ad52dce63b26e26f948636ca198c86e544de4c21c54e31da57d877db2d1ce9"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-orfaos/expect.json",
+      "bytes": 796,
+      "sha256": "d3e06bbaf2e1e564d8329c817937939819a1ec60c1fe0589c25bbb6e9c0d298b"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-paginas/.urbe/mapa.json",
+      "bytes": 1591,
+      "sha256": "8ae72756740470af3b1a7f48f6eedd12eb84c869a1942a10ed8f0158ebf0141d"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-paginas/Páginas/Blocos/Rodape.block.json",
+      "bytes": 141,
+      "sha256": "e5f57707a354050bcab44d069672400848e3b3bfc42e08ae17794a06c2b1e1cd"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-paginas/Páginas/Inicio.page.json",
+      "bytes": 322,
+      "sha256": "9c4b30ecc670aff8833e6ecb76e9f71514a438d10aa6c3d9b3bd549f01fafd51"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-paginas/Páginas/Modelos/Blog.template.json",
+      "bytes": 389,
+      "sha256": "705fe4de912a02a71cf004120d3060abb2152e3a95b22322d551db6ea07fb12b"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-paginas/expect.json",
+      "bytes": 522,
+      "sha256": "6b8477b1b4b8de34166427405adf6781e186b511671470b0a27c1f3648e7fc6a"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-personalizacao/.urbe/mapa.json",
+      "bytes": 1591,
+      "sha256": "8ae72756740470af3b1a7f48f6eedd12eb84c869a1942a10ed8f0158ebf0141d"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-personalizacao/Alfa.md",
+      "bytes": 44,
+      "sha256": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-personalizacao/Personalização/estilos/meu.css",
+      "bytes": 12,
+      "sha256": "0f98632f4e25c4b97fd6eabde57b03a55009351e1ef7a88ba143b1d62671076c"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-personalizacao/Personalização/plugins/ola.js",
+      "bytes": 124,
+      "sha256": "5d9ce684dc6ebe3ce5608c2a66a61959f1f89ace13db86eddfc3bf0664f72ece"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-personalizacao/Personalização/tema.json",
+      "bytes": 184,
+      "sha256": "6e01cc934d3801448cf01cb284c085ec5d484d4277a9b4f3f9e43fd31aaaeac5"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-personalizacao/Personalização/temas/noite.json",
+      "bytes": 97,
+      "sha256": "c602e095b9a1eb838177d6a0603d2d4c66e62e55e4239430199ca0b2355cc2fb"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-personalizacao/Personalização/texturas/grama.json",
+      "bytes": 56,
+      "sha256": "b230b443fc14dedfe68ad4f42bd8d71c24c08b85bc458bb25daf63b8e17476fd"
+    },
+    {
+      "path": "tests/fixtures/vaults/v1-personalizacao/expect.json",
+      "bytes": 937,
+      "sha256": "75343bf28385030eb982537cdad6b93c8c286686039210f0db7b86ac3b6052b7"
+    },
+    {
+      "path": "tests/fixtures/vaults/vault-futuro/.urbe/mapa.json",
+      "bytes": 1591,
+      "sha256": "8ae72756740470af3b1a7f48f6eedd12eb84c869a1942a10ed8f0158ebf0141d"
+    },
+    {
+      "path": "tests/fixtures/vaults/vault-futuro/.urbe/vault.json",
+      "bytes": 118,
+      "sha256": "022fe707e4ae2402ddccb82371d1b05342fb6d4abebe0a155c810c18fd82b790"
+    },
+    {
+      "path": "tests/fixtures/vaults/vault-futuro/Alfa.md",
+      "bytes": 44,
+      "sha256": "0894ec7986dc7646f476bb242e1d6440b65af3726a01043a7d28cd1199536eef"
+    },
+    {
+      "path": "tests/fixtures/vaults/vault-futuro/expect.json",
+      "bytes": 531,
+      "sha256": "3cbfc2d342411bc096d05614aac9f870ce4e2adc5c3c4619c9e0d4d878dcfb85"
+    },
+    {
+      "path": "tests/fixtures/visual-golden.json",
+      "bytes": 50670,
+      "sha256": "ae59874a26005b53b7494d9da156fc3c002c42f74fcecbc00f737701223de7f7"
+    },
+    {
+      "path": "tests/gc.mjs",
+      "bytes": 3733,
+      "sha256": "f5dd51c9834398ffb92ac3f90505096466f64fe5d024615830950f2d3dc0d5f6"
+    },
+    {
+      "path": "tests/helpers/vault-env.mjs",
+      "bytes": 2617,
+      "sha256": "1ce24b61844698bbf40901980689ae3c6559067c88a8a9dbf911df07c58ba3e8"
+    },
+    {
+      "path": "tests/hotspots.mjs",
+      "bytes": 1616,
+      "sha256": "4e0e8e7a7a932877f1d6b3a66b180aac1911459a3aee335c65a630b6ab2f74c4"
+    },
+    {
+      "path": "tests/identity.mjs",
+      "bytes": 7269,
+      "sha256": "6f57b0f7b813ccb66f7d43f1de4b4ebbb2b31a23351a0ffcbc928e172e83dc79"
+    },
+    {
+      "path": "tests/integration-runtime.mjs",
+      "bytes": 4918,
+      "sha256": "c83d70de196142e7a05de2a6e44a72a1396c538a596d6305c555702876ac115f"
+    },
+    {
+      "path": "tests/layout-guard.mjs",
+      "bytes": 3191,
+      "sha256": "0e818dea03337b42ecd6046ea99f6a610816154f638c75a0e90b03df45c79581"
+    },
+    {
+      "path": "tests/legacy-ui-residue.mjs",
+      "bytes": 1673,
+      "sha256": "edec808de4824adc994163751944cea4a3a6befc436fbe594cdbc678e2ba3c0d"
+    },
+    {
+      "path": "tests/lib/adapter-contract-suite.mjs",
+      "bytes": 4658,
+      "sha256": "5b14ae81460f43d98569144f0b36cc278ba0780aefaed394e1a7a9750b7dab07"
+    },
+    {
+      "path": "tests/lib/fake-capacitor.mjs",
+      "bytes": 4614,
+      "sha256": "fc3fe6fede5b607af8afa668db335a467ebb8ced78636d15aef82b39a88dd62b"
+    },
+    {
+      "path": "tests/lib/fake-electron.mjs",
+      "bytes": 5539,
+      "sha256": "54dd4135b9f18b3522b6f9f26280c50388e73409c87b1e1bbe2669b0e4be64d2"
+    },
+    {
+      "path": "tests/license.mjs",
+      "bytes": 1644,
+      "sha256": "0c8b507ec139146200e89e10c2ddb71c9292bea8528e69e60d22561be8e8aa85"
+    },
+    {
+      "path": "tests/markdown.mjs",
+      "bytes": 4305,
+      "sha256": "9d196a7d7e0e6d62e471b8be6e04d80618a89a6d77cc6021b1ea3893ee7798f3"
+    },
+    {
+      "path": "tests/math.mjs",
+      "bytes": 3545,
+      "sha256": "0386d7a7f93ba9e5d113ee75e295c2bcfea567ed474937ff042da7631de1f93b"
+    },
+    {
+      "path": "tests/modules.mjs",
+      "bytes": 2847,
+      "sha256": "12602c31f9aba6e3a336e834871900463f233ee1de70fd4ff91e561def04112b"
+    },
+    {
+      "path": "tests/multi-city.mjs",
+      "bytes": 6222,
+      "sha256": "ec784d44ca44bed1dfca719903d19a18869d22464cf47ff8ebea675e84441074"
+    },
+    {
+      "path": "tests/native-android.mjs",
+      "bytes": 6673,
+      "sha256": "ab8bd77677b34c9a12c95a3c9564150bd11304ddba54591f731b6a2f33d9ba56"
+    },
+    {
+      "path": "tests/native-bridge.mjs",
+      "bytes": 9148,
+      "sha256": "4368997a427f4acd42f87be083d7f84c47c957f9ce0f0f754d10c46f834d72ba"
+    },
+    {
+      "path": "tests/native-contract.mjs",
+      "bytes": 13986,
+      "sha256": "059ab97bcac32f8d86bccc243cb1cbf224f1c8a097ee4b9ed65686f43b375f6b"
+    },
+    {
+      "path": "tests/pages-free.mjs",
+      "bytes": 7750,
+      "sha256": "8e72d5871e9d6c903726159589ac3768d39a3c69f16342bcb3458aff616a4cf1"
+    },
+    {
+      "path": "tests/pages.mjs",
+      "bytes": 12086,
+      "sha256": "63a9c819fb2b890e88d3f5ad24395e2781e02d96b61253a9d8d5e57b996f593b"
+    },
+    {
+      "path": "tests/perf-vault.mjs",
+      "bytes": 1022,
+      "sha256": "5e496c5ef8d2d91d00e0a042eafbadd2986b5408624b6c88b1f009cbcad66ec7"
+    },
+    {
+      "path": "tests/persistence-world.mjs",
+      "bytes": 2544,
+      "sha256": "4e25eb943972c8e34a85bbe2dee0c8307974eb334a4511a5ff878c12719af790"
+    },
+    {
+      "path": "tests/production-order.mjs",
+      "bytes": 1412,
+      "sha256": "83b52011a23c32796720a07ec94a2d915545c5deb3fa4eb4169d09b1a151dc53"
+    },
+    {
+      "path": "tests/recovery-history.mjs",
+      "bytes": 1630,
+      "sha256": "0cfe86fc106e0ba0e4039d54a56919df99543be34052761a3b13a5556962bd43"
+    },
+    {
+      "path": "tests/run-tests.mjs",
+      "bytes": 1364,
+      "sha256": "5b91a75181f3c9f7cc70c4ba541d9413056fc132c3917b64f06bf9bfb125e572"
+    },
+    {
+      "path": "tests/runtime-adapters.mjs",
+      "bytes": 1064,
+      "sha256": "16c095dadb1235e9e83a9ec9427849606d5d282e3d3c891e1dafb65d8162d64a"
+    },
+    {
+      "path": "tests/search-editor.mjs",
+      "bytes": 3160,
+      "sha256": "cdcec78cd9f75635f76303f1d52626bb75a8d6ab52aafba89cb5dcd64c4eaafe"
+    },
+    {
+      "path": "tests/security/links.mjs",
+      "bytes": 7146,
+      "sha256": "2c79b5d890610b2475a083b15d18963ed5a75068291a8a23bd8187b381830e04"
+    },
+    {
+      "path": "tests/stable-ids.mjs",
+      "bytes": 2935,
+      "sha256": "e9b41d304d5d527e3f37a10a518f397775e8f4c728be0916fda8fbcce3f6ad76"
+    },
+    {
+      "path": "tests/static.mjs",
+      "bytes": 7982,
+      "sha256": "c7e520b0beb3c72e402813b009286e789267135bfe55f4b8fe429338801e9c00"
+    },
+    {
+      "path": "tests/traceability.mjs",
+      "bytes": 1803,
+      "sha256": "7d52c38ae7247319fc432b14c0e1698330e4b31e46007757b4650884ea82a5d2"
+    },
+    {
+      "path": "tests/trash.mjs",
+      "bytes": 1048,
+      "sha256": "5fc6136e31edd0a26b23ec04a6e5e2b5f2fe2ecb35281a06e541220940c79b92"
+    },
+    {
+      "path": "tests/tutorial.mjs",
+      "bytes": 4726,
+      "sha256": "11d9995d9403a59fa0eb78fe0ef05de7f4cc085793172686197382366e85fde2"
+    },
+    {
+      "path": "tests/ui-shell.mjs",
+      "bytes": 6267,
+      "sha256": "45c5750088cf53d8e2194e0d5fb578fcf18c7e063bae5de76bba1e66b136e80e"
+    },
+    {
+      "path": "tests/vault-format.mjs",
+      "bytes": 9120,
+      "sha256": "31c79e52b10b407ceb65989e6f55d56d2636d7b672abbff4e87fbc130bcdbf96"
+    },
+    {
+      "path": "tests/vault-migration.mjs",
+      "bytes": 5087,
+      "sha256": "af76c9ed24c0e054dfd9837fbef7af564a600e5edd1870f83a6ee09d6836faa6"
+    },
+    {
+      "path": "tests/vault-notices.mjs",
+      "bytes": 1431,
+      "sha256": "4c1ed165e8c0998b1db4f10b6a925b5d19483ea0a11803bb63c98710aea184c4"
+    },
+    {
+      "path": "tests/version.mjs",
+      "bytes": 2200,
+      "sha256": "0cbf621b0447b89b15905bafd011a20f5d0d84b9685d56f0db1789a9447bd3e0"
+    },
+    {
+      "path": "tests/workflows.mjs",
+      "bytes": 2853,
+      "sha256": "26ede6fbb8a7fcdee1d3bcb068b33b369774a6d213aee7e96d7569368be38d9b"
+    },
+    {
+      "path": "tests/world-life.mjs",
+      "bytes": 6790,
+      "sha256": "0be1af0dc9f32f04cc3653bba39204cb6ef81470166d7ab091b61923015e9723"
+    },
+    {
+      "path": "tests/world-system.mjs",
+      "bytes": 1244,
+      "sha256": "222504907588e87827ee210abeae5f80a5d95660c81d89f7e7638149119f2e2c"
+    },
+    {
+      "path": "tests/world-terrain.mjs",
+      "bytes": 7774,
+      "sha256": "1e667ad1aa3fbf73cf1ed51fe3569aea35e41d30f6c92a25f998454ae7a3d602"
+    },
+    {
+      "path": "tutorial/Arquivos e segurança/Importar e exportar.md",
+      "bytes": 1993,
+      "sha256": "af196e2feb4ebe263e585c1ea6c11c27a42e035cbad98ecd194d851b70be4183"
+    },
+    {
+      "path": "tutorial/Arquivos e segurança/Onde ficam seus arquivos.md",
+      "bytes": 2926,
+      "sha256": "d3d8a744d4e2dfceda5afe8d1abf524de54e413877cae19874928550e03c97d9"
+    },
+    {
+      "path": "tutorial/Arquivos e segurança/Salvamento e recuperação.md",
+      "bytes": 2572,
+      "sha256": "4f7c63941ca3c7f014b0016abd4ce3bb0456fc6031ccb8f3ae88ef5947218624"
+    },
+    {
+      "path": "tutorial/Assistente/Agentes e modos.md",
+      "bytes": 1819,
+      "sha256": "e697e1a558ff98735abdb36614e626a1c0951f21a04d0d734b6d4ec32de6adac"
+    },
+    {
+      "path": "tutorial/Assistente/Conectar um modelo.md",
+      "bytes": 1634,
+      "sha256": "3c10e1a7053a9fdf28cb265199aee2eedd5577583bcbc40435a077970b2c2256"
+    },
+    {
+      "path": "tutorial/Assistente/Conhecendo o Assistente.md",
+      "bytes": 2522,
+      "sha256": "9b69eb21cc1163b7eab3ee391a0fc354b2006dc8ea8e9699e1ddc078bf6e537e"
+    },
+    {
+      "path": "tutorial/Assistente/O que o Assistente sabe fazer.md",
+      "bytes": 2182,
+      "sha256": "1b0f8689c81dac7ef1e46cf0959ed128400cb431e55b29ca441026922e9f3cfd"
+    },
+    {
+      "path": "tutorial/Assistente/Pedidos que funcionam bem.md",
+      "bytes": 1512,
+      "sha256": "b2800383bd0de6598f2fce967183bc6cf12dc66131523f5728effccb68e6f76b"
+    },
+    {
+      "path": "tutorial/Celular e computador/Atalhos de teclado.md",
+      "bytes": 1093,
+      "sha256": "8a93704855d743a8313cd252bb27609c7e0763b775dd6849082814b6beb65c50"
+    },
+    {
+      "path": "tutorial/Celular e computador/Diagnóstico de toques.md",
+      "bytes": 826,
+      "sha256": "9464b61b712a10d79af6ad2cc3806a9aaf0bba01a0e6798f3b743ad3e18c303f"
+    },
+    {
+      "path": "tutorial/Celular e computador/Gestos no celular.md",
+      "bytes": 1161,
+      "sha256": "205c35645b808ac7c3b6682dfda830b36d365cb2002d01b1ed0eaae746e703ab"
+    },
+    {
+      "path": "tutorial/Celular e computador/Instalar como aplicativo.md",
+      "bytes": 2488,
+      "sha256": "5dbba0148355b6a36e14ef86bec71bffc60ca405a455f546dae6ab6fe1fc1651"
+    },
+    {
+      "path": "tutorial/Cidade/Andar pela cidade.md",
+      "bytes": 1632,
+      "sha256": "0d4d18b6e7183dff6cbb80df1c865d7302b7207a501b76d9ac510bebca99fbee"
+    },
+    {
+      "path": "tutorial/Cidade/Bairros.md",
+      "bytes": 2396,
+      "sha256": "c69b0ee3e1c5593250845a5c89b017f6bdf6ddf17bb5c8bb1363d343fd9e504d"
+    },
+    {
+      "path": "tutorial/Cidade/Casas e construções.md",
+      "bytes": 1106,
+      "sha256": "86c232c6b78e49d336e1b09c3f8d54c4a2026e73bdf41c497a318883f6279e76"
+    },
+    {
+      "path": "tutorial/Cidade/Como a cidade funciona.md",
+      "bytes": 2485,
+      "sha256": "b12bc70b20a09b0b15a51927a390a96e6412ef098333c9f46d793fac12fc2e44"
+    },
+    {
+      "path": "tutorial/Cidade/Moradores, animais e clima.md",
+      "bytes": 3238,
+      "sha256": "5dffcd112e4ca64e577dff2539e5450c2c9d964a369330d07d80a27accd8067a"
+    },
+    {
+      "path": "tutorial/Cidade/O mapa.md",
+      "bytes": 852,
+      "sha256": "f47acf81ddf90c80942d50f0bf46322cc78400482c992dbd5316863bdd1aadb9"
+    },
+    {
+      "path": "tutorial/Comece aqui.md",
+      "bytes": 4470,
+      "sha256": "f670d9a5f58419f032d712169516e2c664b4510ccf27f4a3e8ccec52e5c50070"
+    },
+    {
+      "path": "tutorial/Glossário.md",
+      "bytes": 2891,
+      "sha256": "e6d70671d66904dcc1a32c7788efcfe595eb628299503ae1685d04c983823be9"
+    },
+    {
+      "path": "tutorial/Matemática/Fórmulas em qualquer nota.md",
+      "bytes": 2127,
+      "sha256": "32ec1ea0087d5a87e1b779a44f89c826ed541f7eb98df7b90f76d5dd8f53a1be"
+    },
+    {
+      "path": "tutorial/Matemática/Galeria de fórmulas.md",
+      "bytes": 1579,
+      "sha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52"
+    },
+    {
+      "path": "tutorial/Notas/A aba Notas.md",
+      "bytes": 1860,
+      "sha256": "cfe6d0d3045813cea4f6a56f050723ec4c7a279796487aaea6668fcaba0e6426"
+    },
+    {
+      "path": "tutorial/Notas/Abas, painel dividido e navegação.md",
+      "bytes": 1199,
+      "sha256": "d15d988f72c359303de9eca42e1c9eb4cf7af689dee737615dac725e49bb568d"
+    },
+    {
+      "path": "tutorial/Notas/Buscar e comandos.md",
+      "bytes": 2273,
+      "sha256": "ad1e45c4e562b79cec615ea7325b96e135876fc4af91f7218e5c6830ab918560"
+    },
+    {
+      "path": "tutorial/Notas/Criar notas e pastas.md",
+      "bytes": 1546,
+      "sha256": "5c71c42ab35f3d5b7f29856008989ac8a8d6b0901ed01ae4f5c33ece5d020788"
+    },
+    {
+      "path": "tutorial/Notas/Escrever no editor.md",
+      "bytes": 2313,
+      "sha256": "cd601d5a37ec28348b82bbee96e3e37778e7d1e0f79b250910e982f9964905d4"
+    },
+    {
+      "path": "tutorial/Notas/Links entre notas.md",
+      "bytes": 1344,
+      "sha256": "de7f36fe31ef64f6ae55f912e565658417199264f7d9942ada4ae65691742098"
+    },
+    {
+      "path": "tutorial/Notas/Lixeira, versões e desfazer.md",
+      "bytes": 1366,
+      "sha256": "bd4b0d862392f92abdfd54101f95c5c38e490ad4f099cae0c76475c894c6ef89"
+    },
+    {
+      "path": "tutorial/Notas/Markdown sem medo.md",
+      "bytes": 2278,
+      "sha256": "18336f9c46449ebab5c04d671146a9f51a0daac9efbe0896a612e4ef5c17ff88"
+    },
+    {
+      "path": "tutorial/Notas/Outros tipos de arquivo.md",
+      "bytes": 1523,
+      "sha256": "f8659f4130dfbc78a66dfa6feee476c600502e71ce68d69eb1e59c25425d265a"
+    },
+    {
+      "path": "tutorial/Notas/Tags e propriedades.md",
+      "bytes": 916,
+      "sha256": "93baec69f29cef73cd97dca12703678ac62290da40d3ad466b8ae69ae2acc02b"
+    },
+    {
+      "path": "tutorial/Personalização/Cidade e texturas.md",
+      "bytes": 2715,
+      "sha256": "744165cfdf39fcee98c7b9064d3cb14a4ac55952ca012d089e90f1bd15d03978"
+    },
+    {
+      "path": "tutorial/Personalização/Estilos CSS.md",
+      "bytes": 1918,
+      "sha256": "4b3dee4a8dd812044df0df8ae9382b419438aeaf38a9fa462db84353b7c74d88"
+    },
+    {
+      "path": "tutorial/Personalização/Plugins.md",
+      "bytes": 2884,
+      "sha256": "590683518403e39870b3d12383b42c6af0e6e482a05a4a06d373f0e924a45e48"
+    },
+    {
+      "path": "tutorial/Personalização/Referência de plugins.md",
+      "bytes": 4081,
+      "sha256": "8fc0fa7898afc9259e8e18e3ebf7731005ff7359ca86e73a2a33d1a0f63a48ca"
+    },
+    {
+      "path": "tutorial/Personalização/Referência do tema.json.md",
+      "bytes": 2685,
+      "sha256": "b293d884b4ce3b906a828dcb60863a79357c34b8b41d8c253a8d46b8369cf8b9"
+    },
+    {
+      "path": "tutorial/Personalização/Temas, cores e fontes.md",
+      "bytes": 2133,
+      "sha256": "7d9f0778f07a8b0fee16b2045f7984585458eba56eca472d4b94099274d7ef4e"
+    },
+    {
+      "path": "tutorial/Personalização/Visão geral da personalização.md",
+      "bytes": 2097,
+      "sha256": "0fb03048df4799b6ce713ab2c824737cdc6fd37392a61ca78f35e57275e1fdbf"
+    },
+    {
+      "path": "tutorial/Páginas/Blocos das páginas.md",
+      "bytes": 3525,
+      "sha256": "49066b8a78fe14ca2ce6528c85167a642728e355a98b509460141d4648768cb7"
+    },
+    {
+      "path": "tutorial/Páginas/Composições.md",
+      "bytes": 1362,
+      "sha256": "5fc7e5354cc09876b149f95f30105a9144c049ab41b85632db89b4c5afa73918"
+    },
+    {
+      "path": "tutorial/Páginas/Estúdio, atalhos e exportação.md",
+      "bytes": 1774,
+      "sha256": "950e12dfa024340f6cc04dbc4f933715452c56e97fcb89e59bbe816ce5d00f87"
+    },
+    {
+      "path": "tutorial/Páginas/Layout livre.md",
+      "bytes": 4565,
+      "sha256": "9e267ad86fc3039bb176a5fe825debeab8931754c3ce95e4bdd91ad6ddd0bb54"
+    },
+    {
+      "path": "tutorial/Páginas/Livros.md",
+      "bytes": 3911,
+      "sha256": "52b42abb3bbf12c8a005ba161f6d8a9b54c3049e804ed4c085c3bf276f19118b"
+    },
+    {
+      "path": "tutorial/Páginas/Modelos e temas.md",
+      "bytes": 3975,
+      "sha256": "25e60745d7fcf0370f2c630aaed3360aa84329c92719562034e80c20121b7043"
+    },
+    {
+      "path": "tutorial/Páginas/O que são páginas.md",
+      "bytes": 3086,
+      "sha256": "4dd55330e1c8f7159c3cf10fe756ea3cdbf9d1dbe9d752b65fd200bd1d87b61b"
+    },
+    {
+      "path": "tutorial/Páginas/Página de exemplo.page.json",
+      "bytes": 3694,
+      "sha256": "9e936895eea1b9d5d201ec65a02124bca03c96c45a5da7efaaaee4a6bb613e84"
+    },
+    {
+      "path": "tutorial/Solução de problemas.md",
+      "bytes": 2437,
+      "sha256": "044011eadf9fb2021237253f8752c789137e2859ebd426a46a885bb8d0429203"
+    }
+  ]
+}

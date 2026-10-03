@@ -27,3 +27,7 @@ Reescrita completa do Urbe em C#: um **novo cliente**, trocando o produto distri
 ## Relação com a Urbe 2.0
 
 A documentação de [`../v2/`](../v2/) descreve o programa de 2.0 em JavaScript, aprovado antes desta decisão; ela **continua válida para o produto atual** e é a fonte dos requisitos (REQ), dos formatos de dados e das fixtures que alimentam a paridade. O que o programa 2.0 ainda tem em aberto fica sujeito à DEC-0025.
+
+## Prova de paridade
+
+A matriz verificável está em [`PARITY.md`](PARITY.md). O corpus, seu protocolo e limites estão em [`acceptance/README.md`](acceptance/README.md). `npm run check` verifica hashes, cobertura e a projeção. O estado das tarefas continua no ROADMAP/Issues; corpus intacto não significa cliente C# aprovado.
