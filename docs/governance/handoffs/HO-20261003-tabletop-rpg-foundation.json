@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-tabletop-rpg-foundation",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T21:26:44Z",
+  "timestamp": "2026-10-03T21:27:53Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "chatgpt/tabletop-rpg-foundation",
   "base_commit": "615f001df548af192b494be4efe468c4671d5f5b",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/157",
   "files_changed": [
     ".github/integrator/integrate.sh",
     ".github/workflows/integrate.yml",
