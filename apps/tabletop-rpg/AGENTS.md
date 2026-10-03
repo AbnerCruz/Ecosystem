@@ -22,7 +22,7 @@ Antes de alterar este Product, ler:
 - **RPG-I06 — Regras são substituíveis.** O Product não é D&D. Implementações de referência não podem virar dependência conceitual do domínio.
 - **RPG-I07 — Solo-first, multiplayer-ready.** O MVP não cria rede, conta ou servidor; decisões internas não podem assumir que sempre existe exatamente um processo no produto final.
 - **RPG-I08 — Mobile-first sem contaminar o Core.** UI, lifecycle Android e input não entram em `TabletopRpg.Core`.
-- **RPG-I09 — Product independente.** Nenhuma dependência direta de Urbe, Lunet2D, Hub ou Ecosystem AI. Integração futura somente por capability/contract aprovado.
+- **RPG-I09 — Product independente.** Nenhuma dependência direta de outro Product. Integração futura somente por capability/contract aprovado.
 - **RPG-I10 — Dados da campanha pertencem ao usuário.** Persistência futura deve ser local-first, exportável e sem conta obrigatória.
 
 ## Primeiro slice
