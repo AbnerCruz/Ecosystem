@@ -1,0 +1,2256 @@
+{
+  "schemaVersion": 1,
+  "product": "urbe",
+  "cases": [
+    {
+      "id": "markdown-001",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/0",
+      "input": {
+        "markdown": "# Título\n\nParágrafo com **negrito**, *itálico*, ~~riscado~~, `código [[x]]` e _ênfase_."
+      },
+      "expected": {
+        "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código [[x]]</code> e <em>ênfase</em>.</p>"
+      }
+    },
+    {
+      "id": "markdown-002",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/1",
+      "input": {
+        "markdown": "###### H6\n#### H4 com [link](https://exemplo.com \"t\")"
+      },
+      "expected": {
+        "html": "<h6>H6</h6><h4>H4 com [link](https://exemplo.com &quot;t&quot;)</h4>"
+      }
+    },
+    {
+      "id": "markdown-003",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/2",
+      "input": {
+        "markdown": "#\n\n##   \n\ntexto"
+      },
+      "expected": {
+        "html": "<h1><br></h1><h2><br></h2><p>texto</p>"
+      }
+    },
+    {
+      "id": "markdown-004",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/3",
+      "input": {
+        "markdown": "```js\nconst a = 1 < 2;\n```\n\ntexto depois\n```\nsem linguagem\n```"
+      },
+      "expected": {
+        "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;</code></pre><p>texto depois</p><pre><code>sem linguagem</code></pre>"
+      }
+    },
+    {
+      "id": "markdown-005",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/4",
+      "input": {
+        "markdown": "```\nbloco não fechado\nainda código"
+      },
+      "expected": {
+        "html": "<pre><code>bloco não fechado\nainda código</code></pre>"
+      }
+    },
+    {
+      "id": "markdown-006",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/5",
+      "input": {
+        "markdown": "- a\n- b\n  - b1\n  - b2\n    - b21\n- c\n\n1. um\n2. dois\n   1. dois-um\n3) três"
+      },
+      "expected": {
+        "html": "<ul><li>a</li><li>b<ul><li>b1</li><li>b2<ul><li>b21</li></ul></li></ul></li><li>c</li></ul><ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li><li>três</li></ol>"
+      }
+    },
+    {
+      "id": "markdown-007",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/6",
+      "input": {
+        "markdown": "- [ ] tarefa\n- [x] feita\n- [X] também\n  - [ ] filha"
+      },
+      "expected": {
+        "html": "<ul><li class=\"task\"><input type=\"checkbox\">tarefa</li><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\" checked>também<ul><li class=\"task\"><input type=\"checkbox\">filha</li></ul></li></ul>"
+      }
+    },
+    {
+      "id": "markdown-008",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/7",
+      "input": {
+        "markdown": "| a | b | c |\n|:--|:-:|--:|\n| 1 | 2 | 3 |\n| x \\| y | | z |\n\nfim"
+      },
+      "expected": {
+        "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th style=\"text-align:left\">a</th><th style=\"text-align:center\">b</th><th style=\"text-align:right\">c</th></tr></thead><tbody><tr><td style=\"text-align:left\">1</td><td style=\"text-align:center\">2</td><td style=\"text-align:right\">3</td></tr><tr><td style=\"text-align:left\">x | y</td><td style=\"text-align:center\"><br></td><td style=\"text-align:right\">z</td></tr></tbody></table><p>fim</p>"
+      }
+    },
+    {
+      "id": "markdown-009",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/8",
+      "input": {
+        "markdown": "cabeça | outra\n--- | ---\nl1 | l2"
+      },
+      "expected": {
+        "html": "<table data-md-table=\"1\" data-align=\",\"><thead><tr><th>cabeça</th><th>outra</th></tr></thead><tbody><tr><td>l1</td><td>l2</td></tr></tbody></table>"
+      }
+    },
+    {
+      "id": "markdown-010",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/9",
+      "input": {
+        "markdown": "> citação simples\n> segunda linha\n\n> [!tip] Dica\n> corpo da dica\n> mais\n\n> [!warning]\n> sem título\n\n> [!custom] Tipo livre\n> x"
+      },
+      "expected": {
+        "html": "<blockquote>citação simples<br>segunda linha</blockquote><div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Dica</div><div class=\"callout-body\">corpo da dica<br>mais</div></div><div class=\"callout callout-warning\" data-callout=\"warning\"><div class=\"callout-title\" data-default=\"Atenção\"><br></div><div class=\"callout-body\">sem título</div></div><div class=\"callout callout-custom\" data-callout=\"custom\"><div class=\"callout-title\" data-default=\"custom\">Tipo livre</div><div class=\"callout-body\">x</div></div>"
+      }
+    },
+    {
+      "id": "markdown-011",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/10",
+      "input": {
+        "markdown": "> [!note]+ Dobrável\n> conteúdo\n\n> [!danger]- Fechado\n> perigo"
+      },
+      "expected": {
+        "html": "<div class=\"callout callout-note\" data-callout=\"note\"><div class=\"callout-title\" data-default=\"Nota\">Dobrável</div><div class=\"callout-body\">conteúdo</div></div><div class=\"callout callout-danger\" data-callout=\"danger\"><div class=\"callout-title\" data-default=\"Perigo\">Fechado</div><div class=\"callout-body\">perigo</div></div>"
+      }
+    },
+    {
+      "id": "markdown-012",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/11",
+      "input": {
+        "markdown": "---\ntitle: Nota\ntags: [a, b, \"c d\"]\naliases:\n  - um\n  - dois\nautor: Ana **Souza**\n---\n\n# Corpo\ntexto"
+      },
+      "expected": {
+        "html": "<section class=\"frontmatterCard\" contenteditable=\"false\" data-frontmatter-card=\"1\"><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">title</span><span class=\"frontmatterValue\">Nota</span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">tags</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">a</span><span class=\"frontmatterChip\">b</span><span class=\"frontmatterChip\">c d</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">aliases</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">um</span><span class=\"frontmatterChip\">dois</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">autor</span><span class=\"frontmatterValue\">Ana <strong>Souza</strong></span></div></section><h1>Corpo</h1><p>texto</p>"
+      }
+    },
+    {
+      "id": "markdown-013",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/12",
+      "input": {
+        "markdown": "---\nsem fim\ntexto"
+      },
+      "expected": {
+        "html": "<hr><p>sem fim</p><p>texto</p>"
+      }
+    },
+    {
+      "id": "markdown-014",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/13",
+      "input": {
+        "markdown": "---\n---\ncorpo"
+      },
+      "expected": {
+        "html": "<hr><hr><p>corpo</p>"
+      }
+    },
+    {
+      "id": "markdown-015",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/14",
+      "input": {
+        "markdown": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`."
+      },
+      "expected": {
+        "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>[[não]]</code>.</p>"
+      }
+    },
+    {
+      "id": "markdown-016",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/15",
+      "input": {
+        "markdown": "[x](javascript:alert(1)) [y](JaVaScRiPt:alert(1)) [z](vbscript:x) [w](file:///etc/passwd) [ok](https://a.b/c_d_e)"
+      },
+      "expected": {
+        "html": "<p><a href=\"#\" target=\"_blank\" rel=\"noopener\">x</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">y</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">z</a> <a href=\"#\" target=\"_blank\" rel=\"noopener\">w</a> <a href=\"https://a.b/c_d_e\" target=\"_blank\" rel=\"noopener\">ok</a></p>"
+      }
+    },
+    {
+      "id": "markdown-017",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/16",
+      "input": {
+        "markdown": "![img](https://a.b/i.png) ![x](data:image/png;base64,AAAA) ![evil](data:text/html;base64,AAAA) ![j](javascript:alert(1))"
+      },
+      "expected": {
+        "html": "<p><img src=\"https://a.b/i.png\" alt=\"img\"> <img src=\"data:image/png;base64,AAAA\" alt=\"x\"> <img src=\"#\" alt=\"evil\"> <img src=\"#\" alt=\"j\">)</p>"
+      }
+    },
+    {
+      "id": "markdown-018",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/17",
+      "input": {
+        "markdown": "[a](https://x.y/_blank_) e [b](https://x.y/_blank_) com _itálico_ depois e __negrito__"
+      },
+      "expected": {
+        "html": "<p><a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">a</a> e <a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">b</a> com <em>itálico</em> depois e <strong>negrito</strong></p>"
+      }
+    },
+    {
+      "id": "markdown-019",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/18",
+      "input": {
+        "markdown": "<script>alert(1)</script> & <b>tag</b> \"aspas\" 'simples'"
+      },
+      "expected": {
+        "html": "<p>&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;b&gt;tag&lt;/b&gt; &quot;aspas&quot; &#39;simples&#39;</p>"
+      }
+    },
+    {
+      "id": "markdown-020",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/19",
+      "input": {
+        "markdown": "linha 1\nlinha 2\n\n\n\nlinha 3"
+      },
+      "expected": {
+        "html": "<p>linha 1</p><p>linha 2</p><p>linha 3</p>"
+      }
+    },
+    {
+      "id": "markdown-021",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/20",
+      "input": {
+        "markdown": "***\n---\n___\n* * *\n- - -"
+      },
+      "expected": {
+        "html": "<hr><hr><hr><hr><hr>"
+      }
+    },
+    {
+      "id": "markdown-022",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/21",
+      "input": {
+        "markdown": "Fórmula inline $a^2+b^2=c^2$ e bloco:\n\n$$\n\\int_0^1 x\\,dx\n$$\n\ne \\(x\\) com \\[y\\]."
+      },
+      "expected": {
+        "html": "<p>Fórmula inline <span class=\"umath\" data-tex=\"a^2+b^2=c^2\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><code class=\"umath-raw\">a^2+b^2=c^2</code></span> e bloco:</p><div class=\"umath umath-block\" data-tex=\"\\int_0^1 x\\,dx\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><code class=\"umath-raw\">\\int_0^1 x\\,dx</code></div><p>e <span class=\"umath\" data-tex=\"x\" data-open=\"\\(\" data-close=\"\\)\" contenteditable=\"false\"><code class=\"umath-raw\">x</code></span> com <span class=\"umath umath-display\" data-tex=\"y\" data-open=\"\\[\" data-close=\"\\]\" contenteditable=\"false\"><code class=\"umath-raw\">y</code></span>.</p>"
+      }
+    },
+    {
+      "id": "markdown-023",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/22",
+      "input": {
+        "markdown": "$$\nA = B\n$$\n\n# Depois\n- item $x$"
+      },
+      "expected": {
+        "html": "<div class=\"umath umath-block\" data-tex=\"A = B\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><code class=\"umath-raw\">A = B</code></div><h1>Depois</h1><ul><li>item <span class=\"umath\" data-tex=\"x\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><code class=\"umath-raw\">x</code></span></li></ul>"
+      }
+    },
+    {
+      "id": "markdown-024",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/23",
+      "input": {
+        "markdown": "Preço R$ 5 e R$ 10 sem fórmula; 100$ também."
+      },
+      "expected": {
+        "html": "<p>Preço R$ 5 e R$ 10 sem fórmula; 100$ também.</p>"
+      }
+    },
+    {
+      "id": "markdown-025",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/24",
+      "input": {
+        "markdown": ""
+      },
+      "expected": {
+        "html": "<p><br></p>"
+      }
+    },
+    {
+      "id": "markdown-026",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/25",
+      "input": {
+        "markdown": "   "
+      },
+      "expected": {
+        "html": "<p><br></p>"
+      }
+    },
+    {
+      "id": "markdown-027",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/26",
+      "input": {
+        "markdown": "\r\n# CRLF\r\n\r\n- a\r\n- b\r\n"
+      },
+      "expected": {
+        "html": "<h1>CRLF</h1><ul><li>a</li><li>b</li></ul>"
+      }
+    },
+    {
+      "id": "markdown-028",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/27",
+      "input": {
+        "markdown": "texto *sem fechar e **negrito sem fechar e `crase sem fechar"
+      },
+      "expected": {
+        "html": "<p>texto *sem fechar e **negrito sem fechar e `crase sem fechar</p>"
+      }
+    },
+    {
+      "id": "markdown-029",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/28",
+      "input": {
+        "markdown": "1. a\n- b\n2. c\n   - d"
+      },
+      "expected": {
+        "html": "<ol><li>a</li></ol><ul><li>b</li></ul><ol><li>c<ul><li>d</li></ul></li></ol>"
+      }
+    },
+    {
+      "id": "markdown-030",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/29",
+      "input": {
+        "markdown": "|solta|\ntexto| com pipe\n\n|a|\n|-|\n|1|"
+      },
+      "expected": {
+        "html": "<p>|solta|</p><p>texto| com pipe</p><table data-md-table=\"1\" data-align=\"\"><thead><tr><th>a</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>"
+      }
+    },
+    {
+      "id": "markdown-031",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/30",
+      "input": {
+        "markdown": "> # título em citação\n> - lista em citação\n> | t | u |\n> |---|---|"
+      },
+      "expected": {
+        "html": "<blockquote># título em citação<br>- lista em citação<br>| t | u |<br>|---|---|</blockquote>"
+      }
+    },
+    {
+      "id": "markdown-032",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/31",
+      "input": {
+        "markdown": "Texto com emoji 😀 e acentuação: ação, coração, açaí.\n\n## Seção ✓"
+      },
+      "expected": {
+        "html": "<p>Texto com emoji 😀 e acentuação: ação, coração, açaí.</p><h2>Seção ✓</h2>"
+      }
+    },
+    {
+      "id": "markdown-033",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/32",
+      "input": {
+        "markdown": "# Nota longa\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\n"
+      },
+      "expected": {
+        "html": "<h1>Nota longa</h1><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p>"
+      }
+    },
+    {
+      "id": "markdown-034",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/33",
+      "input": {
+        "markdown": "`código [[x]]` fim"
+      },
+      "expected": {
+        "html": "<p><code>código [[x]]</code> fim</p>"
+      }
+    },
+    {
+      "id": "markdown-035",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/34",
+      "input": {
+        "markdown": "[`a`](https://x.y) e `b`"
+      },
+      "expected": {
+        "html": "<p><a href=\"https://x.y\" target=\"_blank\" rel=\"noopener\"><code>a</code></a> e <code>b</code></p>"
+      }
+    },
+    {
+      "id": "markdown-036",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/35",
+      "input": {
+        "markdown": "[x `c` y](u)"
+      },
+      "expected": {
+        "html": "<p><a href=\"u\" target=\"_blank\" rel=\"noopener\">x <code>c</code> y</a></p>"
+      }
+    },
+    {
+      "id": "markdown-037",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/36",
+      "input": {
+        "markdown": "![a `c` b](https://x.y/i.png)"
+      },
+      "expected": {
+        "html": "<p><img src=\"https://x.y/i.png\" alt=\"a `c` b\"></p>"
+      }
+    },
+    {
+      "id": "markdown-038",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/37",
+      "input": {
+        "markdown": "**a `c` b** e *x `y` z*"
+      },
+      "expected": {
+        "html": "<p><strong>a <code>c</code> b</strong> e <em>x <code>y</code> z</em></p>"
+      }
+    },
+    {
+      "id": "markdown-039",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/38",
+      "input": {
+        "markdown": "`**não negrito** e _x_ e [l](u)`"
+      },
+      "expected": {
+        "html": "<p><code>**não negrito** e _x_ e [l](u)</code></p>"
+      }
+    },
+    {
+      "id": "markdown-040",
+      "operation": "markdown.render",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "tests/fixtures/markdown-golden.json#/39",
+      "input": {
+        "markdown": "[[Nota]] e `[[Nota]]` juntas"
+      },
+      "expected": {
+        "html": "<p><span class=\"wikilink\" data-note-name=\"Nota\">Nota</span> e <code>[[Nota]]</code> juntas</p>"
+      }
+    },
+    {
+      "id": "visual-001",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/0",
+      "input": {
+        "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código [[x]]</code> e <em>ênfase</em>.</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "# Título\n\nParágrafo com **negrito**, _itálico_, ~~riscado~~, `código [[x]]` e _ênfase_.\n"
+      }
+    },
+    {
+      "id": "visual-002",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/1",
+      "input": {
+        "html": "<h1>Título</h1><p>Parágrafo com <strong>negrito</strong>, <em>itálico</em>, <del>riscado</del>, <code>código [[x]]</code> e <em>ênfase</em>.</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n# Título\n\nParágrafo com **negrito**, _itálico_, ~~riscado~~, `código [[x]]` e _ênfase_.\n"
+      }
+    },
+    {
+      "id": "visual-003",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/2",
+      "input": {
+        "html": "<h6>H6</h6><h4>H4 com [link](https://exemplo.com &quot;t&quot;)</h4>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "###### H6\n\n#### H4 com [link](https://exemplo.com \"t\")\n"
+      }
+    },
+    {
+      "id": "visual-004",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/3",
+      "input": {
+        "html": "<h6>H6</h6><h4>H4 com [link](https://exemplo.com &quot;t&quot;)</h4>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n###### H6\n\n#### H4 com [link](https://exemplo.com \"t\")\n"
+      }
+    },
+    {
+      "id": "visual-005",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/4",
+      "input": {
+        "html": "<h1><br></h1><h2><br></h2><p>texto</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "# \n\n## \n\ntexto\n"
+      }
+    },
+    {
+      "id": "visual-006",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/5",
+      "input": {
+        "html": "<h1><br></h1><h2><br></h2><p>texto</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n# \n\n## \n\ntexto\n"
+      }
+    },
+    {
+      "id": "visual-007",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/6",
+      "input": {
+        "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;</code></pre><p>texto depois</p><pre><code>sem linguagem</code></pre>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "```js\nconst a = 1 < 2;\n```\n\ntexto depois\n\n```\nsem linguagem\n```\n"
+      }
+    },
+    {
+      "id": "visual-008",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/7",
+      "input": {
+        "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;</code></pre><p>texto depois</p><pre><code>sem linguagem</code></pre>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n```js\nconst a = 1 < 2;\n```\n\ntexto depois\n\n```\nsem linguagem\n```\n"
+      }
+    },
+    {
+      "id": "visual-009",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/8",
+      "input": {
+        "html": "<pre><code>bloco não fechado\nainda código</code></pre>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "```\nbloco não fechado\nainda código\n```\n"
+      }
+    },
+    {
+      "id": "visual-010",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/9",
+      "input": {
+        "html": "<pre><code>bloco não fechado\nainda código</code></pre>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n```\nbloco não fechado\nainda código\n```\n"
+      }
+    },
+    {
+      "id": "visual-011",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/10",
+      "input": {
+        "html": "<ul><li>a</li><li>b<ul><li>b1</li><li>b2<ul><li>b21</li></ul></li></ul></li><li>c</li></ul><ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li><li>três</li></ol>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "- a\n- b\n  - b1\n  - b2\n    - b21\n- c\n\n1. um\n2. dois\n   1. dois-um\n3. três\n"
+      }
+    },
+    {
+      "id": "visual-012",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/11",
+      "input": {
+        "html": "<ul><li>a</li><li>b<ul><li>b1</li><li>b2<ul><li>b21</li></ul></li></ul></li><li>c</li></ul><ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li><li>três</li></ol>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n- a\n- b\n  - b1\n  - b2\n    - b21\n- c\n\n1. um\n2. dois\n   1. dois-um\n3. três\n"
+      }
+    },
+    {
+      "id": "visual-013",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/12",
+      "input": {
+        "html": "<ul><li class=\"task\"><input type=\"checkbox\">tarefa</li><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\" checked>também<ul><li class=\"task\"><input type=\"checkbox\">filha</li></ul></li></ul>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "- [ ] tarefa\n- [x] feita\n- [x] também\n  - [ ] filha\n"
+      }
+    },
+    {
+      "id": "visual-014",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/13",
+      "input": {
+        "html": "<ul><li class=\"task\"><input type=\"checkbox\">tarefa</li><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\" checked>também<ul><li class=\"task\"><input type=\"checkbox\">filha</li></ul></li></ul>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n- [ ] tarefa\n- [x] feita\n- [x] também\n  - [ ] filha\n"
+      }
+    },
+    {
+      "id": "visual-015",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/14",
+      "input": {
+        "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th style=\"text-align:left\">a</th><th style=\"text-align:center\">b</th><th style=\"text-align:right\">c</th></tr></thead><tbody><tr><td style=\"text-align:left\">1</td><td style=\"text-align:center\">2</td><td style=\"text-align:right\">3</td></tr><tr><td style=\"text-align:left\">x | y</td><td style=\"text-align:center\"><br></td><td style=\"text-align:right\">z</td></tr></tbody></table><p>fim</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "| a | b | c |\n| :--- | :---: | ---: |\n| 1 | 2 | 3 |\n| x \\| y |  | z |\n\nfim\n"
+      }
+    },
+    {
+      "id": "visual-016",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/15",
+      "input": {
+        "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th style=\"text-align:left\">a</th><th style=\"text-align:center\">b</th><th style=\"text-align:right\">c</th></tr></thead><tbody><tr><td style=\"text-align:left\">1</td><td style=\"text-align:center\">2</td><td style=\"text-align:right\">3</td></tr><tr><td style=\"text-align:left\">x | y</td><td style=\"text-align:center\"><br></td><td style=\"text-align:right\">z</td></tr></tbody></table><p>fim</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n| a | b | c |\n| :--- | :---: | ---: |\n| 1 | 2 | 3 |\n| x \\| y |  | z |\n\nfim\n"
+      }
+    },
+    {
+      "id": "visual-017",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/16",
+      "input": {
+        "html": "<table data-md-table=\"1\" data-align=\",\"><thead><tr><th>cabeça</th><th>outra</th></tr></thead><tbody><tr><td>l1</td><td>l2</td></tr></tbody></table>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "| cabeça | outra |\n| --- | --- |\n| l1 | l2 |\n"
+      }
+    },
+    {
+      "id": "visual-018",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/17",
+      "input": {
+        "html": "<table data-md-table=\"1\" data-align=\",\"><thead><tr><th>cabeça</th><th>outra</th></tr></thead><tbody><tr><td>l1</td><td>l2</td></tr></tbody></table>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n| cabeça | outra |\n| --- | --- |\n| l1 | l2 |\n"
+      }
+    },
+    {
+      "id": "visual-019",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/18",
+      "input": {
+        "html": "<blockquote>citação simples<br>segunda linha</blockquote><div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Dica</div><div class=\"callout-body\">corpo da dica<br>mais</div></div><div class=\"callout callout-warning\" data-callout=\"warning\"><div class=\"callout-title\" data-default=\"Atenção\"><br></div><div class=\"callout-body\">sem título</div></div><div class=\"callout callout-custom\" data-callout=\"custom\"><div class=\"callout-title\" data-default=\"custom\">Tipo livre</div><div class=\"callout-body\">x</div></div>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "> citação simples\n> segunda linha\n\n> [!tip] Dica\n> corpo da dica\n> mais\n\n> [!warning]\n> sem título\n\n> [!custom] Tipo livre\n> x\n"
+      }
+    },
+    {
+      "id": "visual-020",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/19",
+      "input": {
+        "html": "<blockquote>citação simples<br>segunda linha</blockquote><div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Dica</div><div class=\"callout-body\">corpo da dica<br>mais</div></div><div class=\"callout callout-warning\" data-callout=\"warning\"><div class=\"callout-title\" data-default=\"Atenção\"><br></div><div class=\"callout-body\">sem título</div></div><div class=\"callout callout-custom\" data-callout=\"custom\"><div class=\"callout-title\" data-default=\"custom\">Tipo livre</div><div class=\"callout-body\">x</div></div>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n> citação simples\n> segunda linha\n\n> [!tip] Dica\n> corpo da dica\n> mais\n\n> [!warning]\n> sem título\n\n> [!custom] Tipo livre\n> x\n"
+      }
+    },
+    {
+      "id": "visual-021",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/20",
+      "input": {
+        "html": "<div class=\"callout callout-note\" data-callout=\"note\"><div class=\"callout-title\" data-default=\"Nota\">Dobrável</div><div class=\"callout-body\">conteúdo</div></div><div class=\"callout callout-danger\" data-callout=\"danger\"><div class=\"callout-title\" data-default=\"Perigo\">Fechado</div><div class=\"callout-body\">perigo</div></div>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "> [!note] Dobrável\n> conteúdo\n\n> [!danger] Fechado\n> perigo\n"
+      }
+    },
+    {
+      "id": "visual-022",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/21",
+      "input": {
+        "html": "<div class=\"callout callout-note\" data-callout=\"note\"><div class=\"callout-title\" data-default=\"Nota\">Dobrável</div><div class=\"callout-body\">conteúdo</div></div><div class=\"callout callout-danger\" data-callout=\"danger\"><div class=\"callout-title\" data-default=\"Perigo\">Fechado</div><div class=\"callout-body\">perigo</div></div>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n> [!note] Dobrável\n> conteúdo\n\n> [!danger] Fechado\n> perigo\n"
+      }
+    },
+    {
+      "id": "visual-023",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/22",
+      "input": {
+        "html": "<section class=\"frontmatterCard\" contenteditable=\"false\" data-frontmatter-card=\"1\"><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">title</span><span class=\"frontmatterValue\">Nota</span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">tags</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">a</span><span class=\"frontmatterChip\">b</span><span class=\"frontmatterChip\">c d</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">aliases</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">um</span><span class=\"frontmatterChip\">dois</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">autor</span><span class=\"frontmatterValue\">Ana <strong>Souza</strong></span></div></section><h1>Corpo</h1><p>texto</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "# Corpo\n\ntexto\n"
+      }
+    },
+    {
+      "id": "visual-024",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/23",
+      "input": {
+        "html": "<section class=\"frontmatterCard\" contenteditable=\"false\" data-frontmatter-card=\"1\"><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">title</span><span class=\"frontmatterValue\">Nota</span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">tags</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">a</span><span class=\"frontmatterChip\">b</span><span class=\"frontmatterChip\">c d</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">aliases</span><span class=\"frontmatterValue\"><span class=\"frontmatterChip\">um</span><span class=\"frontmatterChip\">dois</span></span></div><div class=\"frontmatterRow\"><span class=\"frontmatterKey\">autor</span><span class=\"frontmatterValue\">Ana <strong>Souza</strong></span></div></section><h1>Corpo</h1><p>texto</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n# Corpo\n\ntexto\n"
+      }
+    },
+    {
+      "id": "visual-025",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/24",
+      "input": {
+        "html": "<hr><p>sem fim</p><p>texto</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "---\n\nsem fim\n\ntexto\n"
+      }
+    },
+    {
+      "id": "visual-026",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/25",
+      "input": {
+        "html": "<hr><p>sem fim</p><p>texto</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n---\n\nsem fim\n\ntexto\n"
+      }
+    },
+    {
+      "id": "visual-027",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/26",
+      "input": {
+        "html": "<hr><hr><p>corpo</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "---\n\n---\n\ncorpo\n"
+      }
+    },
+    {
+      "id": "visual-028",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/27",
+      "input": {
+        "html": "<hr><hr><p>corpo</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n---\n\n---\n\ncorpo\n"
+      }
+    },
+    {
+      "id": "visual-029",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/28",
+      "input": {
+        "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>[[não]]</code>.</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "Ver [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.\n"
+      }
+    },
+    {
+      "id": "visual-030",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/29",
+      "input": {
+        "html": "<p>Ver <span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span>, <span class=\"wikilink\" data-note-name=\"Nota B\">rótulo</span> e [[Com #hash]] no texto <code>[[não]]</code>.</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\nVer [[Nota A]], [[Nota B|rótulo]] e [[Com #hash]] no texto `[[não]]`.\n"
+      }
+    },
+    {
+      "id": "visual-031",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/30",
+      "input": {
+        "html": "<p><a href=\"#\" target=\"_blank\" rel=\"noopener\">x</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">y</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">z</a> <a href=\"#\" target=\"_blank\" rel=\"noopener\">w</a> <a href=\"https://a.b/c_d_e\" target=\"_blank\" rel=\"noopener\">ok</a></p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "[x](#)) [y](#)) [z](#) [w](#) [ok](https://a.b/c_d_e)\n"
+      }
+    },
+    {
+      "id": "visual-032",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/31",
+      "input": {
+        "html": "<p><a href=\"#\" target=\"_blank\" rel=\"noopener\">x</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">y</a>) <a href=\"#\" target=\"_blank\" rel=\"noopener\">z</a> <a href=\"#\" target=\"_blank\" rel=\"noopener\">w</a> <a href=\"https://a.b/c_d_e\" target=\"_blank\" rel=\"noopener\">ok</a></p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n[x](#)) [y](#)) [z](#) [w](#) [ok](https://a.b/c_d_e)\n"
+      }
+    },
+    {
+      "id": "visual-033",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/32",
+      "input": {
+        "html": "<p><img src=\"https://a.b/i.png\" alt=\"img\"> <img src=\"data:image/png;base64,AAAA\" alt=\"x\"> <img src=\"#\" alt=\"evil\"> <img src=\"#\" alt=\"j\">)</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "![img](https://a.b/i.png) ![x](data:image/png;base64,AAAA) ![evil](#) ![j](#))\n"
+      }
+    },
+    {
+      "id": "visual-034",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/33",
+      "input": {
+        "html": "<p><img src=\"https://a.b/i.png\" alt=\"img\"> <img src=\"data:image/png;base64,AAAA\" alt=\"x\"> <img src=\"#\" alt=\"evil\"> <img src=\"#\" alt=\"j\">)</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n![img](https://a.b/i.png) ![x](data:image/png;base64,AAAA) ![evil](#) ![j](#))\n"
+      }
+    },
+    {
+      "id": "visual-035",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/34",
+      "input": {
+        "html": "<p><a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">a</a> e <a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">b</a> com <em>itálico</em> depois e <strong>negrito</strong></p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "[a](https://x.y/_blank_) e [b](https://x.y/_blank_) com _itálico_ depois e **negrito**\n"
+      }
+    },
+    {
+      "id": "visual-036",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/35",
+      "input": {
+        "html": "<p><a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">a</a> e <a href=\"https://x.y/_blank_\" target=\"_blank\" rel=\"noopener\">b</a> com <em>itálico</em> depois e <strong>negrito</strong></p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n[a](https://x.y/_blank_) e [b](https://x.y/_blank_) com _itálico_ depois e **negrito**\n"
+      }
+    },
+    {
+      "id": "visual-037",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/36",
+      "input": {
+        "html": "<p>&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;b&gt;tag&lt;/b&gt; &quot;aspas&quot; &#39;simples&#39;</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "<script>alert(1)</script> & <b>tag</b> \"aspas\" 'simples'\n"
+      }
+    },
+    {
+      "id": "visual-038",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/37",
+      "input": {
+        "html": "<p>&lt;script&gt;alert(1)&lt;/script&gt; &amp; &lt;b&gt;tag&lt;/b&gt; &quot;aspas&quot; &#39;simples&#39;</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n<script>alert(1)</script> & <b>tag</b> \"aspas\" 'simples'\n"
+      }
+    },
+    {
+      "id": "visual-039",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/38",
+      "input": {
+        "html": "<p>linha 1</p><p>linha 2</p><p>linha 3</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "linha 1\n\nlinha 2\n\nlinha 3\n"
+      }
+    },
+    {
+      "id": "visual-040",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/39",
+      "input": {
+        "html": "<p>linha 1</p><p>linha 2</p><p>linha 3</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\nlinha 1\n\nlinha 2\n\nlinha 3\n"
+      }
+    },
+    {
+      "id": "visual-041",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/40",
+      "input": {
+        "html": "<hr><hr><hr><hr><hr>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "---\n\n---\n\n---\n\n---\n\n---\n"
+      }
+    },
+    {
+      "id": "visual-042",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/41",
+      "input": {
+        "html": "<hr><hr><hr><hr><hr>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n---\n\n---\n\n---\n\n---\n\n---\n"
+      }
+    },
+    {
+      "id": "visual-043",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/42",
+      "input": {
+        "html": "<p>Fórmula inline <span class=\"umath\" data-tex=\"a^2+b^2=c^2\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2+b^2=c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> e bloco:</p><div class=\"umath umath-block\" data-tex=\"\\int_0^1 x\\,dx\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><mi>x</mi><mtext> </mtext><mi>d</mi><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x\\,dx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span></span></span></span></span></div><p>e <span class=\"umath\" data-tex=\"x\" data-open=\"\\(\" data-close=\"\\)\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span> com <span class=\"umath umath-display\" data-tex=\"y\" data-open=\"\\[\" data-close=\"\\]\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></span>.</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "Fórmula inline $a^2+b^2=c^2$ e bloco:\n\n$$\n\\int_0^1 x\\,dx\n$$\n\ne \\(x\\) com \\[y\\].\n"
+      }
+    },
+    {
+      "id": "visual-044",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/43",
+      "input": {
+        "html": "<p>Fórmula inline <span class=\"umath\" data-tex=\"a^2+b^2=c^2\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>a</mi><mn>2</mn></msup><mo>+</mo><msup><mi>b</mi><mn>2</mn></msup><mo>=</mo><msup><mi>c</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">a^2+b^2=c^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">a</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">b</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">c</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span></span> e bloco:</p><div class=\"umath umath-block\" data-tex=\"\\int_0^1 x\\,dx\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><msubsup><mo>∫</mo><mn>0</mn><mn>1</mn></msubsup><mi>x</mi><mtext> </mtext><mi>d</mi><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">\\int_0^1 x\\,dx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:2.476em;vertical-align:-0.9119em;\"></span><span class=\"mop\"><span class=\"mop op-symbol large-op\" style=\"margin-right:0.4445em;position:relative;top:-0.0011em;\">∫</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.564em;\"><span style=\"top:-1.7881em;margin-left:-0.4445em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">0</span></span></span><span style=\"top:-3.8129em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9119em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mord mathnormal\">x</span></span></span></span></span></div><p>e <span class=\"umath\" data-tex=\"x\" data-open=\"\\(\" data-close=\"\\)\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span> com <span class=\"umath umath-display\" data-tex=\"y\" data-open=\"\\[\" data-close=\"\\]\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>y</mi></mrow><annotation encoding=\"application/x-tex\">y</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span></span></span></span></span></span>.</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\nFórmula inline $a^2+b^2=c^2$ e bloco:\n\n$$\n\\int_0^1 x\\,dx\n$$\n\ne \\(x\\) com \\[y\\].\n"
+      }
+    },
+    {
+      "id": "visual-045",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/44",
+      "input": {
+        "html": "<div class=\"umath umath-block\" data-tex=\"A = B\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>A</mi><mo>=</mo><mi>B</mi></mrow><annotation encoding=\"application/x-tex\">A = B</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\">A</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0502em;\">B</span></span></span></span></span></div><h1>Depois</h1><ul><li>item <span class=\"umath\" data-tex=\"x\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span></li></ul>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "$$\nA = B\n$$\n\n# Depois\n\n- item $x$\n"
+      }
+    },
+    {
+      "id": "visual-046",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/45",
+      "input": {
+        "html": "<div class=\"umath umath-block\" data-tex=\"A = B\" data-open=\"$$\n\" data-close=\"\n$$\" contenteditable=\"false\"><span class=\"katex-display\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\" display=\"block\"><semantics><mrow><mi>A</mi><mo>=</mo><mi>B</mi></mrow><annotation encoding=\"application/x-tex\">A = B</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\">A</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"base\"><span class=\"strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0502em;\">B</span></span></span></span></span></div><h1>Depois</h1><ul><li>item <span class=\"umath\" data-tex=\"x\" data-open=\"$\" data-close=\"$\" contenteditable=\"false\"><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\"><span class=\"strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span></span></li></ul>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n$$\nA = B\n$$\n\n# Depois\n\n- item $x$\n"
+      }
+    },
+    {
+      "id": "visual-047",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/46",
+      "input": {
+        "html": "<p>Preço R$ 5 e R$ 10 sem fórmula; 100$ também.</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "Preço R$ 5 e R$ 10 sem fórmula; 100$ também.\n"
+      }
+    },
+    {
+      "id": "visual-048",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/47",
+      "input": {
+        "html": "<p>Preço R$ 5 e R$ 10 sem fórmula; 100$ também.</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\nPreço R$ 5 e R$ 10 sem fórmula; 100$ também.\n"
+      }
+    },
+    {
+      "id": "visual-049",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/48",
+      "input": {
+        "html": "<p><br></p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": ""
+      }
+    },
+    {
+      "id": "visual-050",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/49",
+      "input": {
+        "html": "<p><br></p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---"
+      }
+    },
+    {
+      "id": "visual-051",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/50",
+      "input": {
+        "html": "<p><br></p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": ""
+      }
+    },
+    {
+      "id": "visual-052",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/51",
+      "input": {
+        "html": "<p><br></p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---"
+      }
+    },
+    {
+      "id": "visual-053",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/52",
+      "input": {
+        "html": "<h1>CRLF</h1><ul><li>a</li><li>b</li></ul>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "# CRLF\n\n- a\n- b\n"
+      }
+    },
+    {
+      "id": "visual-054",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/53",
+      "input": {
+        "html": "<h1>CRLF</h1><ul><li>a</li><li>b</li></ul>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n# CRLF\n\n- a\n- b\n"
+      }
+    },
+    {
+      "id": "visual-055",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/54",
+      "input": {
+        "html": "<p>texto *sem fechar e **negrito sem fechar e `crase sem fechar</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "texto *sem fechar e **negrito sem fechar e `crase sem fechar\n"
+      }
+    },
+    {
+      "id": "visual-056",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/55",
+      "input": {
+        "html": "<p>texto *sem fechar e **negrito sem fechar e `crase sem fechar</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\ntexto *sem fechar e **negrito sem fechar e `crase sem fechar\n"
+      }
+    },
+    {
+      "id": "visual-057",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/56",
+      "input": {
+        "html": "<ol><li>a</li></ol><ul><li>b</li></ul><ol><li>c<ul><li>d</li></ul></li></ol>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "1. a\n\n- b\n\n1. c\n   - d\n"
+      }
+    },
+    {
+      "id": "visual-058",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/57",
+      "input": {
+        "html": "<ol><li>a</li></ol><ul><li>b</li></ul><ol><li>c<ul><li>d</li></ul></li></ol>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n1. a\n\n- b\n\n1. c\n   - d\n"
+      }
+    },
+    {
+      "id": "visual-059",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/58",
+      "input": {
+        "html": "<p>|solta|</p><p>texto| com pipe</p><table data-md-table=\"1\" data-align=\"\"><thead><tr><th>a</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "|solta|\n\ntexto| com pipe\n\n| a |\n| --- |\n| 1 |\n"
+      }
+    },
+    {
+      "id": "visual-060",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/59",
+      "input": {
+        "html": "<p>|solta|</p><p>texto| com pipe</p><table data-md-table=\"1\" data-align=\"\"><thead><tr><th>a</th></tr></thead><tbody><tr><td>1</td></tr></tbody></table>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n|solta|\n\ntexto| com pipe\n\n| a |\n| --- |\n| 1 |\n"
+      }
+    },
+    {
+      "id": "visual-061",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/60",
+      "input": {
+        "html": "<blockquote># título em citação<br>- lista em citação<br>| t | u |<br>|---|---|</blockquote>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "> # título em citação\n> - lista em citação\n> | t | u |\n> |---|---|\n"
+      }
+    },
+    {
+      "id": "visual-062",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/61",
+      "input": {
+        "html": "<blockquote># título em citação<br>- lista em citação<br>| t | u |<br>|---|---|</blockquote>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n> # título em citação\n> - lista em citação\n> | t | u |\n> |---|---|\n"
+      }
+    },
+    {
+      "id": "visual-063",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/62",
+      "input": {
+        "html": "<p>Texto com emoji 😀 e acentuação: ação, coração, açaí.</p><h2>Seção ✓</h2>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "Texto com emoji 😀 e acentuação: ação, coração, açaí.\n\n## Seção ✓\n"
+      }
+    },
+    {
+      "id": "visual-064",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/63",
+      "input": {
+        "html": "<p>Texto com emoji 😀 e acentuação: ação, coração, açaí.</p><h2>Seção ✓</h2>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\nTexto com emoji 😀 e acentuação: ação, coração, açaí.\n\n## Seção ✓\n"
+      }
+    },
+    {
+      "id": "visual-065",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/64",
+      "input": {
+        "html": "<h1>Nota longa</h1><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "# Nota longa\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n"
+      }
+    },
+    {
+      "id": "visual-066",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/65",
+      "input": {
+        "html": "<h1>Nota longa</h1><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p><p>parágrafo repetido com <span class=\"wikilink\" data-note-name=\"link\">link</span> e <strong>forte</strong>.</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n# Nota longa\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n\nparágrafo repetido com [[link]] e **forte**.\n"
+      }
+    },
+    {
+      "id": "visual-067",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/66",
+      "input": {
+        "html": "<div>texto<br></div>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "texto\n"
+      }
+    },
+    {
+      "id": "visual-068",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/67",
+      "input": {
+        "html": "<div>texto<br></div>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\ntexto\n"
+      }
+    },
+    {
+      "id": "visual-069",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/68",
+      "input": {
+        "html": "<p>a</p><p><br></p><p>b</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "a\n\nb\n"
+      }
+    },
+    {
+      "id": "visual-070",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/69",
+      "input": {
+        "html": "<p>a</p><p><br></p><p>b</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\na\n\nb\n"
+      }
+    },
+    {
+      "id": "visual-071",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/70",
+      "input": {
+        "html": "<b>x</b> <i>y</i> <strong>z</strong> <em>w</em>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "x\n\ny\n\nz\n\nw\n"
+      }
+    },
+    {
+      "id": "visual-072",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/71",
+      "input": {
+        "html": "<b>x</b> <i>y</i> <strong>z</strong> <em>w</em>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\nx\n\ny\n\nz\n\nw\n"
+      }
+    },
+    {
+      "id": "visual-073",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/72",
+      "input": {
+        "html": "<span style=\"font-weight:700\">negrito</span> <span style=\"font-style:italic\">it</span>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "negrito\n\nit\n"
+      }
+    },
+    {
+      "id": "visual-074",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/73",
+      "input": {
+        "html": "<span style=\"font-weight:700\">negrito</span> <span style=\"font-style:italic\">it</span>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\nnegrito\n\nit\n"
+      }
+    },
+    {
+      "id": "visual-075",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/74",
+      "input": {
+        "html": "<h1><br></h1><h2>t​</h2>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "# \n\n## t\n"
+      }
+    },
+    {
+      "id": "visual-076",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/75",
+      "input": {
+        "html": "<h1><br></h1><h2>t​</h2>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n# \n\n## t\n"
+      }
+    },
+    {
+      "id": "visual-077",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/76",
+      "input": {
+        "html": "<h3>título <b>forte</b></h3><p>depois</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "### título **forte**\n\ndepois\n"
+      }
+    },
+    {
+      "id": "visual-078",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/77",
+      "input": {
+        "html": "<h3>título <b>forte</b></h3><p>depois</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n### título **forte**\n\ndepois\n"
+      }
+    },
+    {
+      "id": "visual-079",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/78",
+      "input": {
+        "html": "<ul><li>a<ul><li>b<ul><li>c</li></ul></li></ul></li><li>d</li></ul>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "- a\n  - b\n    - c\n- d\n"
+      }
+    },
+    {
+      "id": "visual-080",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/79",
+      "input": {
+        "html": "<ul><li>a<ul><li>b<ul><li>c</li></ul></li></ul></li><li>d</li></ul>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n- a\n  - b\n    - c\n- d\n"
+      }
+    },
+    {
+      "id": "visual-081",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/80",
+      "input": {
+        "html": "<ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li></ol>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "1. um\n2. dois\n   1. dois-um\n"
+      }
+    },
+    {
+      "id": "visual-082",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/81",
+      "input": {
+        "html": "<ol><li>um</li><li>dois<ol><li>dois-um</li></ol></li></ol>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n1. um\n2. dois\n   1. dois-um\n"
+      }
+    },
+    {
+      "id": "visual-083",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/82",
+      "input": {
+        "html": "<ul><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\">aberta</li></ul>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "- [x] feita\n- [ ] aberta\n"
+      }
+    },
+    {
+      "id": "visual-084",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/83",
+      "input": {
+        "html": "<ul><li class=\"task\"><input type=\"checkbox\" checked>feita</li><li class=\"task\"><input type=\"checkbox\">aberta</li></ul>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n- [x] feita\n- [ ] aberta\n"
+      }
+    },
+    {
+      "id": "visual-085",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/84",
+      "input": {
+        "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th>a</th><th>b</th><th>c</th></tr></thead><tbody><tr><td>1</td><td>x | y</td><td><br></td></tr></tbody></table>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "| a | b | c |\n| :--- | :---: | ---: |\n| 1 | x \\| y |  |\n"
+      }
+    },
+    {
+      "id": "visual-086",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/85",
+      "input": {
+        "html": "<table data-md-table=\"1\" data-align=\"left,center,right\"><thead><tr><th>a</th><th>b</th><th>c</th></tr></thead><tbody><tr><td>1</td><td>x | y</td><td><br></td></tr></tbody></table>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n| a | b | c |\n| :--- | :---: | ---: |\n| 1 | x \\| y |  |\n"
+      }
+    },
+    {
+      "id": "visual-087",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/86",
+      "input": {
+        "html": "<div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Título</div><div class=\"callout-body\"><p>corpo</p><p>mais</p></div></div>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "> [!tip] Título\n> corpomais\n"
+      }
+    },
+    {
+      "id": "visual-088",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/87",
+      "input": {
+        "html": "<div class=\"callout callout-tip\" data-callout=\"tip\"><div class=\"callout-title\" data-default=\"Dica\">Título</div><div class=\"callout-body\"><p>corpo</p><p>mais</p></div></div>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n> [!tip] Título\n> corpomais\n"
+      }
+    },
+    {
+      "id": "visual-089",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/88",
+      "input": {
+        "html": "<blockquote>citação<br>segunda</blockquote>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "> citação\n> segunda\n"
+      }
+    },
+    {
+      "id": "visual-090",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/89",
+      "input": {
+        "html": "<blockquote>citação<br>segunda</blockquote>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n> citação\n> segunda\n"
+      }
+    },
+    {
+      "id": "visual-091",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/90",
+      "input": {
+        "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;\nfim</code></pre><pre><code>sem lang</code></pre>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "```js\nconst a = 1 < 2;\nfim\n```\n\n```\nsem lang\n```\n"
+      }
+    },
+    {
+      "id": "visual-092",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/91",
+      "input": {
+        "html": "<pre data-lang=\"js\"><code>const a = 1 &lt; 2;\nfim</code></pre><pre><code>sem lang</code></pre>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n```js\nconst a = 1 < 2;\nfim\n```\n\n```\nsem lang\n```\n"
+      }
+    },
+    {
+      "id": "visual-093",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/92",
+      "input": {
+        "html": "<p><a href=\"https://a.b/c\">rótulo</a> e <img src=\"https://a.b/i.png\" alt=\"alt\"> e <code>cod</code></p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "[rótulo](https://a.b/c) e ![alt](https://a.b/i.png) e `cod`\n"
+      }
+    },
+    {
+      "id": "visual-094",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/93",
+      "input": {
+        "html": "<p><a href=\"https://a.b/c\">rótulo</a> e <img src=\"https://a.b/i.png\" alt=\"alt\"> e <code>cod</code></p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n[rótulo](https://a.b/c) e ![alt](https://a.b/i.png) e `cod`\n"
+      }
+    },
+    {
+      "id": "visual-095",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/94",
+      "input": {
+        "html": "<p><span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span> e <span class=\"wikilink\" data-note-name=\"Alvo\">rótulo</span></p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "[[Nota A]] e [[Alvo|rótulo]]\n"
+      }
+    },
+    {
+      "id": "visual-096",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/95",
+      "input": {
+        "html": "<p><span class=\"wikilink\" data-note-name=\"Nota A\">Nota A</span> e <span class=\"wikilink\" data-note-name=\"Alvo\">rótulo</span></p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n[[Nota A]] e [[Alvo|rótulo]]\n"
+      }
+    },
+    {
+      "id": "visual-097",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/96",
+      "input": {
+        "html": "<hr><p>após hr</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "---\n\napós hr\n"
+      }
+    },
+    {
+      "id": "visual-098",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/97",
+      "input": {
+        "html": "<hr><p>após hr</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n---\n\napós hr\n"
+      }
+    },
+    {
+      "id": "visual-099",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/98",
+      "input": {
+        "html": "<div>solto</div><div>outro<br></div><div><br></div>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "solto\n\noutro\n"
+      }
+    },
+    {
+      "id": "visual-100",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/99",
+      "input": {
+        "html": "<div>solto</div><div>outro<br></div><div><br></div>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\nsolto\n\noutro\n"
+      }
+    },
+    {
+      "id": "visual-101",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/100",
+      "input": {
+        "html": "<p>a&nbsp;b &amp; &lt;tag&gt;</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "a b & <tag>\n"
+      }
+    },
+    {
+      "id": "visual-102",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/101",
+      "input": {
+        "html": "<p>a&nbsp;b &amp; &lt;tag&gt;</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\na b & <tag>\n"
+      }
+    },
+    {
+      "id": "visual-103",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/102",
+      "input": {
+        "html": "<section><p>dentro de section</p></section>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "dentro de section\n"
+      }
+    },
+    {
+      "id": "visual-104",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/103",
+      "input": {
+        "html": "<section><p>dentro de section</p></section>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\ndentro de section\n"
+      }
+    },
+    {
+      "id": "visual-105",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/104",
+      "input": {
+        "html": "<p>​</p><p>a​b</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "\n\nab\n"
+      }
+    },
+    {
+      "id": "visual-106",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/105",
+      "input": {
+        "html": "<p>​</p><p>a​b</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\n\n\nab\n"
+      }
+    },
+    {
+      "id": "visual-107",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/106",
+      "input": {
+        "html": "<div data-frontmatter-card=\"1\" contenteditable=\"false\"><div class=\"frontmatterRow\"><span>k</span><span>v</span></div></div><p>corpo</p>",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": "corpo\n"
+      }
+    },
+    {
+      "id": "visual-108",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/107",
+      "input": {
+        "html": "<div data-frontmatter-card=\"1\" contenteditable=\"false\"><div class=\"frontmatterRow\"><span>k</span><span>v</span></div></div><p>corpo</p>",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---\ncorpo\n"
+      }
+    },
+    {
+      "id": "visual-109",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/108",
+      "input": {
+        "html": "",
+        "bodyEditor": ""
+      },
+      "expected": {
+        "markdown": ""
+      }
+    },
+    {
+      "id": "visual-110",
+      "operation": "visual.serialize",
+      "requirements": [
+        "REQ-027"
+      ],
+      "source": "tests/fixtures/visual-golden.json#/109",
+      "input": {
+        "html": "",
+        "bodyEditor": "---\ntitle: X\ntags: [a]\n---\n\ncorpo antigo"
+      },
+      "expected": {
+        "markdown": "---\ntitle: X\ntags: [a]\n---"
+      }
+    }
+  ]
+}

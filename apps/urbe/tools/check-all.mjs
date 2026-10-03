@@ -16,6 +16,7 @@ const steps = [
   ['catálogo de dados', 'tools/check-catalog.mjs'],
   ['fixtures de vaults em dia', 'tools/make-fixtures.mjs', '--check'],
   ['tutorial em dia', 'tools/build-tutorial.mjs', '--check'],
+  ['paridade C# e oráculo congelado', 'tools/csharp-parity.mjs', 'check'],
   ['testes (tests/*.mjs)', 'tools/run-tests.mjs'],
 ];
 const only = process.argv.slice(2).filter((a) => !a.startsWith('-'));

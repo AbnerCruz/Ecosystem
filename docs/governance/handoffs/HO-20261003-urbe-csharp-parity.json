@@ -1,0 +1,165 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-urbe-csharp-parity",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T18:33:38Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-1",
+  "component": "urbe",
+  "state": "review",
+  "branch": "codex/urbe-csharp-parity",
+  "base_commit": "2e4cfa902c86d2eb2441bacfa6b29267f7e46c9e",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/docs/csharp/PARITY.md",
+    "apps/urbe/docs/csharp/acceptance/README.md",
+    "apps/urbe/docs/csharp/acceptance/cases.json",
+    "apps/urbe/docs/csharp/acceptance/oracle.json",
+    "apps/urbe/tests/csharp-parity.mjs",
+    "apps/urbe/tools/csharp-parity.mjs",
+    "apps/urbe/tools/lib/csharp-parity.mjs",
+    "apps/urbe/tools/parity-js-client.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/tools/check-all.mjs",
+    "docs/governance/handoffs/HO-20261003-urbe-csharp-parity.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UC-1 e primeira fatia de UC-2 autorizados por ADR-0016: documentação, corpus e tooling de teste local. Não altera runtime JS congelado, dados, stack de produto, permissões, assinatura, distribuição ou política de integração."
+  },
+  "work_completed": [
+    "FATO OBSERVADO: main 2e4cfa9; Fase 5 sem runtime implementado; R1 do Agent Runtime entregue; DEC-0024-B autoriza cliente C# com paridade antes do corte; DEC-0025-C congela JS salvo bugs críticos. Urbe distribuído ainda 1.8.2-beta. Nenhuma integração runtime com outro Product foi inventada.",
+    "UC-1: matriz gerada de 101 REQ IMPLEMENTAR com fonte/linha, superfície e evidência de teste/aceite de cada item JS; inventário de testes/tutorial e operações dos quatro contratos. Lacunas e C# não verificado explícitos. Issue #138; matriz em revisão até integração.",
+    "UC-2 (parcial; Issue #139): 150 casos JSON dos goldens (40 Markdown, 110 Visual); oráculo por SHA-256 incluindo sidecars .urbe, binários e cenários de vault. Runner de cliente JSON falha em resultados ausentes, duplicados, desconhecidos, erro e diferença; adapter JS calcula as saídas reais de Markdown em VM.",
+    "npm run check ganha o gate de corpus/projeção. Sem alterar src, native, versão ou workflows. Fontes congeladas não são autoridade concorrente: documentam uma base específica por SHA."
+  ],
+  "verification": [
+    {
+      "check": "npm run check (apps/urbe)",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "60/60 arquivos de teste; versão, módulos, dívida, traceability, workflows, licença, catálogo, fixtures, tutorial e gate de paridade passaram. Teste world-terrain levou vários minutos nesta máquina; concluído sem alterar teste."
+    },
+    {
+      "check": "node tests/csharp-parity.mjs + tools/csharp-parity.mjs check e run markdown.render",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "40/40 saídas calculadas pelo renderer JS iguais; mutações de hash/tamanho/inventário/expectativa/ID e resultados incompletos recusadas. Processo inexistente, JSON inválido e execução all sem suporte Visual falham. Reexecutado após ajustes finais na projeção."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks no estado final; .NET SDK 10.0.100. Primeiro ensaio sinalizou referência textual a Products em prosa; projeção usa conceitos e permanece sem imports/referências. Checks não foram enfraquecidos."
+    }
+  ],
+  "known_issues": [
+    "Cliente C# não existe; nenhum resultado prova paridade C#, aparelho físico ou instalação.",
+    "UC-2 continua aberto: converter cenários vault/adapter/UI para casos portáveis. O adapter JS fornecido calcula somente Markdown; Visual depende da suíte Chromium existente, não executada localmente nesta tarefa sem mudança de runtime.",
+    "UC-3/4/5/6/7 e G-C0 seguem abertos; pilha/hosts e transição requerem propostas/decisão antes de código C# de produto.",
+    "P4-9 depende da mesma chave de assinatura e ponte de atualização; nenhuma publicação ou corte nesta tarefa."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrador: rotina; testar estado combinado e integrar automaticamente se verde.",
+    "Após integração: reconciliar UC-1 (#138) com evidência e encerrar; UC-2 (#139) permanece aberto com restante explícito.",
+    "UC-2: converter vault/contratos/E2E; UC-3 contrato único de dados; UC-4 inventário de dependências; UC-7 política antes de código C#; depois propostas UC-5/6."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+    "apps/urbe/docs/v2/contracts/persistence-adapter.md",
+    "apps/urbe/docs/v2/contracts/native.md",
+    "apps/urbe/docs/v2/contracts/editor-markdown.md",
+    "apps/urbe/docs/v2/contracts/editor-visual.md",
+    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/architecture/local-first.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/state-drift.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "PARITY gerada das fontes; oracle declara snapshot/base e não copia estado vivo."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência runtime Product→Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Urbe continua standalone; nenhuma mudança de runtime."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Programa C# autorizado por DEC-0024-B; somente M0, sem código C# de produto antes do gate."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issues #138/#139 e handoff com base, verificações e limites."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "DEC-0024/25 e ADR-0016 consultados; nenhuma inferência virou decisão."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Documentos normativos consultados diretamente e listados."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Sem refatoração do runtime junto da preparação de migração."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não há prova humana alegada nem gate aprovado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-1 em revisão; UC-2 parcial, nunca marcado concluído."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs UC/REQ preservados e IDs de casos documentados como estáveis."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Tooling permanece local ao Product; sem nova abstração compartilhada."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição/independência do produto atual preservadas."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-csharp-parity-corpus",
+      "status": "product-specific",
+      "rationale": "Critérios e goldens específicos do Urbe; nenhum consumidor externo."
+    }
+  ],
+  "cost": null
+}
