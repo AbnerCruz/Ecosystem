@@ -2,6 +2,7 @@ name: hub-release
 
 # Release de DESENVOLVIMENTO do Hub (P3-7; DEC-0028-A: GitHub Releases públicas deste repositório, tag `hub-vX.Y.Z-dev.N`, como
 # pré-lançamento; DEC-0029-A: assinatura com a chave de desenvolvimento pública e estável de apps/hub/tools).
+# O integrador redispara este workflow na main após mudanças nos caminhos abaixo (GITHUB_TOKEN não dispara push).
 # Roda só na `main`, só quando o Hub muda (NN-014) e nunca depende de segredo. Os Products continuam funcionando sem o Hub (NN-003, NN-023).
 
 on:

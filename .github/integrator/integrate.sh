@@ -126,6 +126,27 @@ prepare() {
   { echo "action=evaluate"; echo "main_tested=${MAIN}"; echo "combined=${combined}"; echo "trusted=${trusted_result}"; echo "trusted_failures=${failures}"; } >> "$out"
 }
 
+# Projeção do filtro push de hub-release.yml; a simulação confere igualdade com a autoridade.
+HUB_RELEASE_PATHS=(
+  'apps/hub/src/**'
+  'apps/hub/VERSION'
+  'apps/hub/Directory.Build.props'
+  'apps/hub/tools/**'
+  '.github/workflows/hub-release.yml'
+)
+
+dispatch_hub_release() {
+  local paths=() path result=0
+  for path in "${HUB_RELEASE_PATHS[@]}"; do paths+=(":(glob)$path"); done
+  # O diff é do estado EXATO testado, inclusive na execução land com checkout separado do prepare.
+  git diff --quiet "$MAIN" "$COMBINED" -- "${paths[@]}" || result=$?
+  case "$result" in
+    0) return 0 ;;  # docs/testes isolados e outros Products não criam release do Hub (NN-014)
+    1) gh workflow run hub-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" ;;
+    *) echo "Não foi possível verificar os arquivos do Hub no estado integrado." >&2; return 1 ;;
+  esac
+}
+
 redispatch() { gh workflow run integrate.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" >/dev/null || true; }
 
 # --- guardas: a main só avança para o commit EXATO testado, do head ainda atual do PR, sobre a main ainda atual -----------------
@@ -188,7 +209,16 @@ land() {
   git push -q origin --delete "integration/pr-${PR}" || true
   gh workflow run pages.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" >/dev/null || true
   gh workflow run consistency.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" >/dev/null || true
-  redispatch  # a main mudou: os outros PRs precisam ser reavaliados contra ela
+  local publication_result=0
+  if ! dispatch_hub_release; then
+    publication_result=1
+    echo "::error::Código integrado, mas dispatch de hub-release falhou; publicação do APK pendente."
+    echo >> "$body"
+    echo "**Publicação do APK pendente:** falhou o dispatch de hub-release. O código foi integrado; execute o workflow na main e confira a release antes de declarar publicação." >> "$body"
+    comment "$PR" "$body"
+  fi
+  redispatch  # a main mudou: os outros PRs precisam ser reavaliados contra ela, mesmo se publicação falhar
+  return "$publication_result"
 }
 
 critical_explanation() { # o que o proprietário precisa decidir — em termos da decisão, não do código

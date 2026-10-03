@@ -197,13 +197,16 @@ Direção de distribuição decidida (DEC-0021-C): plataforma first-party como d
 Objetivo: detectar versões, listar releases, baixar artefatos, validar integridade, conduzir instalação/atualização respeitando o modelo de segurança da plataforma, abrir produto instalado. Packaging e distribuição de cada Product **sem** o Hub (NN-023): o Hub é conveniência do proprietário, não requisito de distribuição; o Hub pode permanecer privado.
 
 - [~] P4-1 — **Catálogo de releases e artefatos pelo canal declarado**: perfil `current`, releases publicadas por componente, APK/nome/tamanho/URL/SHA-256 informado e compatibilidade do cache.
-  - Saída: leitores e modelo no Hub.Core, seção Releases e artefatos; não baixa, verifica bytes ou instala. Issue [#101](https://github.com/AbnerCruz/Ecosystem/issues/101), handoff `HO-20261003-p4-1-catalogo-de-releases`. Depende de: P3-14. 111 testes locais do Hub passaram; CI e integração em revisão. Conferência visual em aparelho pendente, não crítica (NN-017).
+  - Saída: leitores e modelo no Hub.Core, seção Releases e artefatos; não baixa, verifica bytes ou instala. Issue [#101](https://github.com/AbnerCruz/Ecosystem/issues/101), handoff `HO-20261003-p4-1-catalogo-de-releases`. Depende de: P3-14. 111 testes do Hub e build Android passaram no estado combinado; PR [#102](https://github.com/AbnerCruz/Ecosystem/pull/102) integrado automaticamente em `23b69a3`. Publicação do APK depende de P4-5. Conferência visual em aparelho pendente, não crítica (NN-017).
 - [ ] P4-2 — **Download e integridade do artefato**: selecionar APK do catálogo, baixar em área privada do app com cancelamento e limite, comparar tamanho e SHA-256 antes de oferecer instalação; sem checksum, não declarar integridade verificada.
   - Saída: fluxo de download com falhas explícitas, testes de bytes divergentes/interrupção e descarte de arquivo incompleto. Depende de: implementação integrada de P4-1. Permissões e instalação ficam em item próprio.
 - [ ] P4-3 — **Launcher e instalação/atualização pelo Android**: versão instalada e entrada para abrir o Product; conduzir o instalador do sistema com consentimento, identidade do app e assinatura compatível.
   - Saída: ADR e modelo explícito de permissões/segurança antes de implementação; testes e validação em aparelho. Depende de: P4-2. Cada Product continua instalável e utilizável sem o Hub (NN-023); canais atuais permanecem.
 - [ ] P4-4 — **Gate da Fase 4**: validar em aparelho instalar/atualizar/abrir Lunet2D e Urbe pelos caminhos realmente disponíveis, e instalação/uso standalone sem o Hub.
   - Saída: roteiro e evidência humana por build, com limites de plataforma e canal explícitos. Depende de: P4-1..P4-3. Não é autoaprovável (NN-017).
+
+- [~] P4-5 — **Publicação do Hub após integração automática**: redisparar o hub-release existente apenas para mudanças nos caminhos de release do Hub; falhas de dispatch ficam explícitas.
+  - Saída: correção de control plane com simulação da seletividade e guardas, sem nova permissão/canal/assinatura. Issue [#103](https://github.com/AbnerCruz/Ecosystem/issues/103), handoff `HO-20261003-p4-5-dispatch-release`. PR crítico exige autorização pelo integrador (ADD-0012). Depende de: P3-7; publica a implementação integrada de P4-1 pelo canal já aprovado.
 
 **Gate:** o usuário utiliza o Hub como entrada para instalar/atualizar/abrir Lunet2D e Urbe dentro dos limites da plataforma, **e** cada Product é instalado, atualizado e usado em seu domínio essencial sem o Hub presente (NN-023). *(requer validação humana em aparelho — DEVICE)*
 

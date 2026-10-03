@@ -125,6 +125,8 @@ Na rotina, o checker confiável vermelho reprova. No crítico, a divergência vi
 
 Depois disso, push **sem force** de exatamente esse commit. Em seguida o integrador dispara `pages`, `consistency` e a si mesmo.
 
+Para o Hub, dispara também o `hub-release.yml` existente **somente** quando o diff entre a main testada e o estado combinado altera um caminho do filtro `push.paths` desse workflow. O push via `GITHUB_TOKEN` não aciona releases sozinho. A lista do integrador é projeção desse filtro, conferida pela simulação. Documentação/testes isolados e mudanças em outros Products não criam release do Hub (NN-014). Nenhuma permissão, chave, canal ou política de pré-lançamento é alterada. Falha no dispatch fica explícita no comentário do PR e faz o job falhar; a integração do código continua registrada como fato, a publicação permanece pendente e a fila continua redisparada. Dispatch aceito também não prova publicação: conferir a execução e a release pública.
+
 ### Identidade e visibilidade (NN-008, NN-021)
 
 O status `ecosystem/integration` no head do PR tem o formato `<resultado> main=<sha> combined=<sha|-> <routine|critical|->[: detalhe]`. O `combined` é o commit **exato** testado.
