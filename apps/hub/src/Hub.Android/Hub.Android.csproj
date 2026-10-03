@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Camada de UI Android do Hub (ADR-0013 / DEC-0022-A). Só desenha o que o Hub.Core entrega: nenhuma regra de estado mora aqui.
+    Fica fora de Hub.slnx de propósito: compilar exige o workload `android` (instalado no CI), e os testes do núcleo não devem exigi-lo.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+    <RootNamespace>HubApp</RootNamespace>
+    <SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+    <AndroidApplication>true</AndroidApplication>
+    <ApplicationId>io.ecosystem.hub</ApplicationId>
+    <ApplicationTitle>Ecosystem Hub</ApplicationTitle>
+    <ApplicationDisplayVersion>$(HubVersion)</ApplicationDisplayVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' != ''">$(GITHUB_RUN_NUMBER)</ApplicationVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' == ''">1</ApplicationVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <AndroidUseAapt2>true</AndroidUseAapt2>
+    <!-- APK autônomo (sem fast deployment) para poder ser instalado a partir de um arquivo. -->
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <!-- Avisos de anotação de nulidade dos bindings Android não devem quebrar o build. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hub.Core\Hub.Core.csproj" />
+  </ItemGroup>
+</Project>
