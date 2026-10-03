@@ -12,4 +12,4 @@ Offline continua mostrando o último snapshot marcado como antigo; releases e ca
 
 Depois de publicada a build contendo P4-1, instale o APK de desenvolvimento do [canal do Hub](https://github.com/AbnerCruz/Ecosystem/releases), abra com internet e toque **Atualizar**. Confira **Releases e artefatos**, legibilidade de nomes/tamanhos/URLs/checksums e rolagem em tela estreita. Um Product sem canal ou APK deve explicar isso. Depois de uma carga boa, reabra offline: o aviso de último estado conhecido deve permanecer.
 
-Esta conferência visual não crítica está pendente no handoff de P4-1; a implementação e os testes do Core não a substituem (NN-017). O gate de instalar/atualizar/abrir Products continua sendo o gate da Fase 4 no ROADMAP.
+A evidência desta conferência está no [handoff de P4-1](../../../docs/governance/handoffs/HO-20261003-p4-1-catalogo-de-releases.json); implementação e testes do Core não a substituem (NN-017). O gate de instalar/atualizar/abrir Products continua sendo o gate da Fase 4 no ROADMAP.

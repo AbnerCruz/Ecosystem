@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-p4-5-dispatch-release",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T12:29:13Z",
+  "timestamp": "2026-10-03T12:42:59Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
   },
   "task_id": "P4-5",
   "component": "integrator",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p4-5-hub-release-dispatch",
   "base_commit": "5d2f7eed9a3dca168ee873e7043eda40b1a3acad",
   "commit": "b9cc467f429521ed079c9cc1570a2ca6bd0e4e3b",
@@ -30,7 +30,8 @@
     "Dispatch seletivo do workflow existente após o push aprovado, pelo diff main testada → combinado exato. Mesmos caminhos do filtro push do workflow, conferidos pela simulação.",
     "Não muda chave de assinatura, token, permissões, canal, tag, pré-lançamento ou publicação de outros Products.",
     "Falha de dispatch deixa código integrado e publicação pendente explícitos no PR, reprova job e mantém redisparo da fila.",
-    "Reconciliado com PR #102 integrado em 23b69a3."
+    "Reconciliado com PR #102 integrado em 23b69a3.",
+    "FATO OBSERVADO: proprietário AbnerCruz integrou PR #104 em 5c9e23f às 12:36:52Z. Não foi merge do integrador; avaliação do head final terminou verde no run 37123100815. Main consistency 37123442290 e Pages 37123442297 verdes."
   ],
   "verification": [
     {
@@ -48,20 +49,24 @@
     {
       "check": "CI do PR e integrador",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "PR crítico de control plane; checker confiável e candidato devem passar antes da autorização."
+      "result": "passed",
+      "evidence": "Integrador 37123100815: checker confiável e candidato, self-test e simulação verdes; head cdfaa11d258bd7ce25aac9a53698fd1d919d8b8b, combinado 34266941520fda8bb3ecad776a0c6016755cd487. Proprietário mergeou #104 em 5c9e23f; CI consistency main 37123442290 e Pages 37123442297 passaram.",
+      "tested_commit": "5c9e23f73f0279c7ef32d1c7891dea8b4d3fd273"
+    },
+    {
+      "check": "Publicação do catálogo pelo canal normal",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "5c9e23f73f0279c7ef32d1c7891dea8b4d3fd273",
+      "evidence": "hub-release 37123442289 após merge pelo proprietário, hub-v0.0.1-dev.3 publicada. APK público conferido, SHA-256 29979d73076b8e216093d2196e166c9a77ea200f1c887fa4e7359c67b8e1870e. Prova publicação pelo workflow existente; seletividade do novo dispatch provada na simulação, não atribuída a esta publicação por push do proprietário."
     }
   ],
   "known_issues": [
-    "A própria integração deste fix ainda usa integrate.sh antigo da main; não prova publicação do catálogo já integrado. Depois de autorizado, execução manual de hub-release na main ou próxima mudança real em caminho de release do Hub dispara o canal normal.",
-    "Dispatch aceito não prova release publicada; conferir a execução e artefato público antes de registrar build.",
-    "P4-1 permanece review pela conferência visual não crítica; sem APK novo ainda não há essa evidência."
+    "Dispatch aceito não prova release publicada; conferir execução e artefato público em cada entrega."
   ],
   "blockers": [],
   "next_actions": [
-    "Abrir PR, acompanhar CI e corrigir falhas.",
-    "Quando crítico verde, proprietário autoriza com label integrar; agente nunca adiciona essa label.",
-    "Após integração, acompanhar próxima execução do canal normal e registrar a release pública; não declarar APK publicado só por build CI."
+    "Continuar P4-2; próxima mudança real nos caminhos de release do Hub integrada automaticamente deve chamar o workflow existente."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -109,7 +114,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "Estado review; integração e publicação precisam de evidências externas."
+      "evidence": "PR #104 integrado pelo proprietário; CI de candidato/main e simulação passaram; release dev.3 publicada e conferida."
     },
     {
       "id": "NN-021",
