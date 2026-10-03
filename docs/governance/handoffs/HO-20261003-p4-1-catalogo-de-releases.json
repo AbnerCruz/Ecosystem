@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "codex/p4-1-release-catalog",
   "base_commit": "503bbdb894f0c3ef644d714de5aae4cc7b6424f8",
-  "commit": null,
-  "pr": null,
+  "commit": "6230cb42b54c22a599da6f6f290bd214e5534e01",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/102",
   "files_changed": [
     "ROADMAP.md",
     "apps/hub/README.md",
@@ -69,11 +69,12 @@
   "known_issues": [
     "A API pública sem token limita requisições por IP; falha aparece com o canal de recuperação, sem fabricar release.",
     "Consulta até 100 releases recentes do repositório; ausência no recorte não prova ausência no histórico completo.",
-    "SHA-256 informado não prova integridade dos bytes, assinatura ou compatibilidade do APK. Não há ação de baixar/instalar neste slice."
+    "SHA-256 informado não prova integridade dos bytes, assinatura ou compatibilidade do APK. Não há ação de baixar/instalar neste slice.",
+    "O integrador não dispara hub-release após push com GITHUB_TOKEN; a publicação do APK depende de correção separada de control plane ou execução manual do workflow. CI de build não prova release publicada."
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI/integrador e corrigir qualquer falha; publicar a build normal pelo hub-release depois de integrado.",
+    "Acompanhar CI/integrador e corrigir qualquer falha. Corrigir dispatch seletivo de hub-release em PR separado antes de afirmar publicação automática.",
     "Registrar evidência do build publicado e conferência visual quando o proprietário a realizar; manter estado review enquanto essa validação não existir.",
     "P4-2: download com cancelamento/limite e verificação de tamanho/SHA-256; P4-3 exige modelo explícito de permissões e segurança antes do instalador/launcher."
   ],
