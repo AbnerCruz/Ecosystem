@@ -25,6 +25,9 @@ jobs:
   checks:
     name: Tabletop RPG Core
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/tabletop-rpg
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,4 +36,4 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Testar Core
-        run: dotnet test apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj
+        run: dotnet test --project tests/TabletopRpg.Core.Tests
