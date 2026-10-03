@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
-    <RootNamespace>TabletopRpg.Core</RootNamespace>
+    <RootNamespace>TabletopRpg.Persistence</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <InternalsVisibleTo Include="TabletopRpg.Persistence" />
+    <ProjectReference Include="../TabletopRpg.Core/TabletopRpg.Core.csproj" />
   </ItemGroup>
 </Project>

@@ -9,13 +9,15 @@ public sealed record GameEvent(
     CharacterId? CharacterId,
     string Text);
 
-public sealed class Campaign
+public sealed partial class Campaign
 {
     private readonly Dictionary<CharacterId, Character> _characters = [];
     private readonly Dictionary<ParticipantId, Participant> _participants = [];
     private readonly Dictionary<FactId, WorldFact> _worldFacts = [];
     private readonly Dictionary<CharacterId, CharacterPerspective> _perspectives = [];
     private readonly List<GameEvent> _events = [];
+    private readonly List<CampaignSession> _sessions = [];
+    private SessionId? _activeSessionId;
     private long _clock;
 
     public Campaign(CampaignId id, string name)
@@ -31,6 +33,8 @@ public sealed class Campaign
     public string Name { get; }
     public long Clock => _clock;
     public IReadOnlyList<GameEvent> Events => _events.AsReadOnly();
+    public IReadOnlyList<CampaignSession> Sessions => _sessions.AsReadOnly();
+    public SessionId? ActiveSessionId => _activeSessionId;
 
     public void AddCharacter(Character character)
     {
@@ -99,6 +103,35 @@ public sealed class Campaign
             throw new ArgumentException("Memory summary is required.", nameof(summary));
 
         GetPerspective(characterId).Remember(new MemoryEntry(summary.Trim(), NextClock()));
+    }
+
+    public CampaignSession StartSession(SessionId id, string name)
+    {
+        if (id.Value == Guid.Empty) throw new ArgumentException("Session id cannot be empty.", nameof(id));
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Session name is required.", nameof(name));
+        if (_activeSessionId is not null) throw new InvalidOperationException("A campaign session is already active.");
+        if (_sessions.Any(session => session.Id == id))
+            throw new InvalidOperationException($"Session {id} already exists.");
+
+        var session = new CampaignSession(id, name.Trim(), NextClock(), null);
+        _sessions.Add(session);
+        _activeSessionId = id;
+        return session;
+    }
+
+    public CampaignSession EndActiveSession()
+    {
+        if (_activeSessionId is not { } activeId)
+            throw new InvalidOperationException("There is no active campaign session.");
+
+        var index = _sessions.FindIndex(session => session.Id == activeId);
+        if (index < 0)
+            throw new InvalidOperationException("Active session state is inconsistent.");
+
+        var ended = _sessions[index] with { EndedAt = NextClock() };
+        _sessions[index] = ended;
+        _activeSessionId = null;
+        return ended;
     }
 
     public bool TryGetCharacter(CharacterId id, out Character character) =>

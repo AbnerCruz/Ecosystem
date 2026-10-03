@@ -23,3 +23,9 @@ public readonly record struct FactId(Guid Value)
     public static FactId New() => new(Guid.NewGuid());
     public override string ToString() => Value.ToString("N");
 }
+
+public readonly record struct SessionId(Guid Value)
+{
+    public static SessionId New() => new(Guid.NewGuid());
+    public override string ToString() => Value.ToString("N");
+}
