@@ -806,7 +806,8 @@ function renderActivity() {
 function renderRoadmap() {
   const { s } = state;
   const gates = s.ecosystem.gates || [];
-  const detail = s.roadmap && Array.isArray(s.roadmap.phases) ? new Map(s.roadmap.phases.map((p) => [p.phase, p])) : new Map();
+  // Nome e progresso de cada fase vêm da projeção (derivados do ROADMAP pelo gerador; CHK-PORTAL compara), quando presentes.
+  const detail = new Map(gates.filter((g) => Number.isInteger(g.done)).map((g) => [g.phase, g]));
   const focus = gates.find((g) => g.state !== "aprovado");
   const doc = s.docs.find((d) => d.path === "ROADMAP.md");
   const rl = $("roadmap-link");

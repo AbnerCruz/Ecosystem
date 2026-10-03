@@ -875,7 +875,7 @@ static class Checks
     // Fontes: linhas de formato fixo do ROADMAP (itens `- [x] P1-3 —` e `*Estado do gate:* **aprovado**`), ecosystem.json,
     // decisions.json, matriz de enforcement e (quando existe) o instantâneo das Issues em site/data/issues-snapshot.json
     // (gerado pelo CI com `gh issue list --json number,title,state,labels`; ausente = "não verificado", nunca aprovado em silêncio).
-    sealed record RoadmapPhase(int Number, string Gate, List<(string Id, char Mark)> Items);
+    sealed record RoadmapPhase(int Number, string Gate, List<(string Id, char Mark)> Items, string Name = "");
 
     static List<RoadmapPhase> ParseRoadmap(string text)
     {
@@ -889,7 +889,7 @@ static class Checks
             var body = text[heads[i].Index..end];
             var gate = Regex.Match(body, @"^\*Estado do gate:\* \*\*(aprovado|aguardando|não iniciado)\*\*", RegexOptions.Multiline) is { Success: true } g ? g.Groups[1].Value : "não iniciado";
             var items = Regex.Matches(body, @"^- \[( |~|x)\] (P\d+-\d+) ", RegexOptions.Multiline).Select(x => (x.Groups[2].Value, x.Groups[1].Value[0])).ToList();
-            phases.Add(new RoadmapPhase(int.Parse(m.Groups[1].Value), gate, items));
+            phases.Add(new RoadmapPhase(int.Parse(m.Groups[1].Value), gate, items, heads[i].Groups[1].Value[m.Length..].Trim()));
         }
         return phases;
     }
@@ -1204,6 +1204,17 @@ static class Checks
             var projectedGates = p.GetProperty("ecosystem").Arr("gates").Select(x => $"{x.GetProperty("phase").GetInt32()}:{x.Str("state")}").Order().ToList();
             if (!expectedGates.SequenceEqual(projectedGates))
                 c.R.Fail(id, $"{rel}: os gates projetados divergem do ROADMAP (ROADMAP: {string.Join(" ", expectedGates)}; projeção: {string.Join(" ", projectedGates)})");
+            // Nome e progresso da fase, quando projetados, são os do ROADMAP (nunca digitados nem estimados).
+            var byPhase = ParseRoadmap(File.ReadAllText(c.P("ROADMAP.md"))).ToDictionary(x => x.Number);
+            foreach (var g in p.GetProperty("ecosystem").Arr("gates"))
+            {
+                if (!byPhase.TryGetValue(g.GetProperty("phase").GetInt32(), out var ph)) continue;
+                int? N(string k) => g.TryGetProperty(k, out var v) && v.ValueKind == JsonValueKind.Number ? v.GetInt32() : null;
+                var want = (ph.Name, ph.Items.Count(x => x.Mark == 'x'), ph.Items.Count(x => x.Mark == '~'), ph.Items.Count(x => x.Mark == ' '));
+                if ((g.Str("name") is { } nm && nm != want.Name) || (N("done") is { } d1 && d1 != want.Item2)
+                    || (N("inProgress") is { } d2 && d2 != want.Item3) || (N("todo") is { } d3 && d3 != want.Item4))
+                    c.R.Fail(id, $"{rel}: Fase {ph.Number}: nome ou progresso projetado diverge do ROADMAP ('{want.Name}', [x] {want.Item2}, [~] {want.Item3}, [ ] {want.Item4})");
+            }
         }
 
         var canonical = new Dictionary<string, JsonElement>();
@@ -2569,6 +2580,9 @@ static class SelfTest
             r => File.Delete(Path.Combine(r, "docs", "migration", "import-urbe.json"))),
         new("portal mostra gate não aprovado como aprovado", "CHK-PORTAL",
             r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); File.WriteAllText(f, File.ReadAllText(f).Replace("\"phase\": 3,\n        \"state\": \"não iniciado\"", "\"phase\": 3,\n        \"state\": \"aprovado\"")); }),
+        new("portal mostra progresso de fase que o ROADMAP não tem", "CHK-PORTAL",
+            r => { RunGenerator(r); var f = Path.Combine(r, "site", "data", "ecosystem-status.json"); var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(f))!;
+                   var g0 = n["ecosystem"]!["gates"]![0]!; g0["done"] = g0["done"]!.GetValue<int>() + 1; File.WriteAllText(f, n.ToJsonString()); }),
         new("portal mostra canal de distribuição que o perfil não declara", "CHK-PORTAL",
             r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"channel\": \"urbe-github-pages\"", "\"channel\": \"urbe-inventado\""); }),
         new("portal mostra capability que nenhum manifest declara", "CHK-PORTAL",

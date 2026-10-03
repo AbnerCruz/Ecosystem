@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "category": "HANDOFF",
+  "agent": {
+    "id": "claude-code",
+    "kind": "ai-agent",
+    "session": "https://claude.ai/code/session_01TndepZoLiR5jQbg9gTYGKp"
+  },
+  "branch": "claude/new-session-vfwhkv",
+  "base_commit": "8e0ff79",
+  "commit": null,
+  "pr": null,
+  "blockers": [],
+  "cost": null,
+  "component": "portal",
+  "state": "review",
+  "message_id": "HO-20261003-portal-roadmap-por-fase",
+  "timestamp": "2026-10-03T02:23:50Z",
+  "task_id": "P3-13",
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Altera o gerador da projeção (site/generator/**), o checker (tests/consistency/Check.cs) e o schema da projeção: control plane. Pela política da main, só entra com a autorização do proprietário."
+  },
+  "files_changed": [
+    "site/generator/GenerateStatus.cs",
+    "docs/contracts/schemas/ecosystem-status.schema.json",
+    "tests/consistency/Check.cs",
+    "site/app.js",
+    "site/style.css",
+    "docs/architecture/portal.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261002-portal-v2.json",
+    "docs/governance/handoffs/HO-20261003-portal-roadmap-por-fase.json"
+  ],
+  "work_completed": [
+    "Fechamento do P3-11 (Portal v2): a validação humana foi aprovada pelo proprietário no portal em 2026-10-03 (Issue #71, registro VAL-HO-20261002-portal-v2-aa707a81a5fb); ROADMAP [x], Issue #64 fechada com state:done, handoff HO-20261002-portal-v2 em done (pr #66).",
+    "Gerador: cada gate de ecosystem.gates[] passa a trazer name (título '## Fase N — <nome>'), done, inProgress e todo, contados das mesmas linhas de formato fixo que CHK-STATE-CONSISTENCY lê (itens '- [x|~| ] P<n>-<m> ').",
+    "Schema da projeção estendido (campos opcionais, sem 'minimum' porque o validador do repositório não o suporta).",
+    "CHK-PORTAL: nome e progresso projetados, quando presentes, precisam ser iguais aos do ROADMAP; caso novo no self-test ('portal mostra progresso de fase que o ROADMAP não tem').",
+    "Portal: o Roadmap mostra o nome da fase, o gate e uma barra de progresso (concluído / em andamento / aberto) por fase; layout validado no Chromium a 1440 px e 390 px nos dois temas.",
+    "Mudança de estado volátil só em fonte única: o portal lê a projeção, que lê o ROADMAP (NN-001); nada digitado."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks (CHK-PORTAL valida nome e progresso contra o ROADMAP)."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os checks provaram detectar suas violações, inclusive o caso novo de progresso de fase inventado."
+    },
+    {
+      "check": "Renderização real no Chromium (Playwright), 1440 px claro e 390 px escuro",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Fases com nome, gate e barra de progresso; sem rolagem horizontal; nenhuma falha de JavaScript."
+    }
+  ],
+  "known_issues": [
+    "Fases 8 e 9 (propostas no ROADMAP) não aparecem no portal: ficam fora do parser de fases até o ADR-0017 ser aceito (por desenho)."
+  ],
+  "next_actions": [
+    "Proprietário: autorizar o PR crítico (label integrar). Depois: fechamento pós-integração (P3-13 [x], Issue fechada, handoff done)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "docs/architecture/portal.md",
+    "docs/adr/0005-portal-web-github-pages.md",
+    "docs/governance/addenda/ADD-0001-portal-github-pages.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/ecosystem-status.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Nome e progresso de fase têm uma autoridade (ROADMAP); a projeção só deriva; CHK-PORTAL compara."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem validação de aparelho nova; a do portal v2 foi aprovada pelo proprietário e registrada."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Sem dependência nova; campos opcionais no contrato existente."
+    }
+  ]
+}
