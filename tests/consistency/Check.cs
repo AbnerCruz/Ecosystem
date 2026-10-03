@@ -337,7 +337,8 @@ static class Checks
                 var alt = string.Join("|", words.Where(w => w.Length >= 3).Select(Regex.Escape));
                 terms.Add((oid, new Regex($@"\b(?:{alt})\b|apps/{Regex.Escape(oid)}\b", RegexOptions.IgnoreCase)));
             }
-            if (!declared.Contains("hub"))
+            // O próprio Hub pode citar o próprio nome (rótulo, identificador do app): "referenciar o Hub" só vale para os outros Products.
+            if (cid != "hub" && !declared.Contains("hub"))
                 terms.Add(("hub", new Regex(@"ecosystem[ _.-]?hub|apps/hub\b", RegexOptions.IgnoreCase)));
 
             // NN-014: pipelines seletivos — todo produto ativo tem um workflow na raiz com filtro de caminho para o próprio diretório.
