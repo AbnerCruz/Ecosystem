@@ -118,7 +118,10 @@ public sealed class Campaign
                 return new CharacterView(
                     character.Id,
                     character.Name,
-                    new Dictionary<string, int>(character.Attributes, StringComparer.OrdinalIgnoreCase),
+                    character.Attributes.ToDictionary(
+                        pair => pair.Key,
+                        pair => pair.Value,
+                        StringComparer.OrdinalIgnoreCase),
                     perspective.Knowledge.ToArray(),
                     perspective.Memories.ToArray());
             })
