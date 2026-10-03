@@ -1119,6 +1119,35 @@
       "decidedAt": "2026-10-03",
       "record": "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
       "consequencesApplied": false
+    },
+    {
+      "id": "DEC-0032",
+      "status": "pending",
+      "component": "hub",
+      "blocking": true,
+      "title": "Aprovar identidade e certificado do Lunet no instalador do Hub",
+      "context": "FATO: DEC-0030-A exige aprovação específica do pacote/certificado antes de habilitar instalação. io.lunet.studio vem do csproj; fingerprint público é conferido pelo pipeline lunet2d-release e registrado no ADR local 0004. Não há fingerprint confirmado da chave privada do Urbe. PROPOSTA: permitir somente esse pacote/canal do Lunet; nenhuma confiança descoberta no próprio APK. O certificado de desenvolvimento é público e não autentica autoria.",
+      "question": "Aprovar o pacote, canal e certificado do Lunet detalhados no objeto para instalação/abertura pelo Hub?",
+      "alternatives": [
+        {
+          "option": "A — Aprovar lunet2d, io.lunet.studio, AbnerCruz/Ecosystem, lunet2d-v, certificado 4807F9080BF5535D20734476E3E3BC9FE6446C70E384771486E6AC333EDD9207 (desenvolvimento público); configuração SHA-256 8D9AE31CBB8E82FED8DE6E635811A7E8395243EE897262F5564BFCAAD51EC216",
+          "consequences": "Permite o fluxo para Lunet com consulta atual da aprovação, consentimento explícito e confirmação do instalador Android; hash, identidade, assinante e versionCode reconferidos. Não autoriza instalação automática nem o Urbe, não aprova o gate DEVICE."
+        },
+        {
+          "option": "B — Manter instalação e launcher bloqueados até outro certificado/canal",
+          "consequences": "Download e canal independente continuam disponíveis. Não há fallback para confiança sem pin; esta configuração permanece inativa."
+        }
+      ],
+      "consequences": "O runtime só reconhece a alternativa A exata associada a esse pacote/canal/fingerprint e registro canônico. Alterar esses valores exige nova aprovação. Implementação crítica no PR; P4-4 exige validação separada.",
+      "manifestCompatibility": "NN-001/009: build do Product continua autoridade; mapeamento aprovado local do Hub é política, não identidade paralela. NN-011/016: aprovação e consentimento separados, deny by default. NN-017/023: DEVICE separado e produtos standalone intactos.",
+      "recommendation": "A para o desenvolvimento atual, com o limite explícito de chave pública. Urbe continua independente até certificado confirmado e aprovação específica.",
+      "related": [
+        "docs/architecture/hub-android-products.json",
+        "apps/hub/docs/instalar-e-abrir.md",
+        "docs/adr/0018-instalacao-e-launcher-do-hub.md"
+      ],
+      "raisedBy": "codex",
+      "raisedAt": "2026-10-03"
     }
   ]
 }

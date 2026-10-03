@@ -6,3 +6,6 @@ using Android.App;
 [assembly: UsesPermission(Android.Manifest.Permission.ForegroundServiceDataSync)]
 // Android 13+: solicitada pela UI; recusa não impede FGS, exibido pelo painel de apps ativos do sistema.
 [assembly: UsesPermission(Android.Manifest.Permission.PostNotifications)]
+
+// P4-3: UI-only request, never a permission inherited by agents/plugins.
+[assembly: UsesPermission(Android.Manifest.Permission.RequestInstallPackages)]

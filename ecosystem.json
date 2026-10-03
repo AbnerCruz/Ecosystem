@@ -51,7 +51,7 @@
       "description": "Control Plane, Host geral, Registry e Launcher do ecossistema (MANIFEST §5.3). Nunca dependência essencial dos produtos (NN-003).",
       "owners": ["AbnerCruz"],
       "version": { "authority": "version-file", "file": "apps/hub/VERSION" },
-      "permissions": { "requests": ["network.access", "ui.display"] },
+      "permissions": { "requests": ["network.access", "ui.display", "package.install", "package.open"] },
       "commands": { "test": "dotnet test --project apps/hub/tests/Hub.Tests" },
       "dependencies": []
     },

@@ -2,11 +2,45 @@
   "$schema": "schemas/permissions-catalog.schema.json",
   "schemaVersion": 1,
   "permissions": [
-    { "id": "fs.read", "description": "Ler arquivos do projeto/vault do Context atual.", "sensitive": true },
-    { "id": "fs.write", "description": "Criar, alterar ou apagar arquivos do projeto/vault do Context atual.", "sensitive": true },
-    { "id": "network.access", "description": "Acessar a rede (HTTP/HTTPS) em nome do usuário.", "sensitive": true },
-    { "id": "execute.code", "description": "Compilar ou executar código do usuário.", "sensitive": true },
-    { "id": "agent.act", "description": "Um agente agir (ler e alterar estado) em nome do usuário; nunca herdado por padrão.", "sensitive": true },
-    { "id": "ui.display", "description": "Mostrar interface própria dentro de um Host.", "sensitive": false }
+    {
+      "id": "fs.read",
+      "description": "Ler arquivos do projeto/vault do Context atual.",
+      "sensitive": true
+    },
+    {
+      "id": "fs.write",
+      "description": "Criar, alterar ou apagar arquivos do projeto/vault do Context atual.",
+      "sensitive": true
+    },
+    {
+      "id": "network.access",
+      "description": "Acessar a rede (HTTP/HTTPS) em nome do usuário.",
+      "sensitive": true
+    },
+    {
+      "id": "execute.code",
+      "description": "Compilar ou executar código do usuário.",
+      "sensitive": true
+    },
+    {
+      "id": "agent.act",
+      "description": "Um agente agir (ler e alterar estado) em nome do usuário; nunca herdado por padrão.",
+      "sensitive": true
+    },
+    {
+      "id": "ui.display",
+      "description": "Mostrar interface própria dentro de um Host.",
+      "sensitive": false
+    },
+    {
+      "id": "package.install",
+      "description": "Conduzir instalação/atualização de pacote aprovado por ação explícita da UI e consentimento do sistema; não herdada por agentes/plugins.",
+      "sensitive": true
+    },
+    {
+      "id": "package.open",
+      "description": "Abrir entrada de launcher do pacote aprovado e instalado após ação explícita da UI; não executar comando/URL arbitrário.",
+      "sensitive": true
+    }
   ]
 }
