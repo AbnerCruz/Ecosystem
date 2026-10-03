@@ -67,10 +67,10 @@
     {
       "check": "Download em segundo plano, notificação e reconexão no aparelho",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/hub/docs/download-em-segundo-plano.md",
-      "evidence": "Roteiro P4-7: sair/voltar, completar/cancelar por notificação, recriar Activity, recusar/autorizar notificações, interromper processo, rede/storage. Não autoaprovável; pendência de UI/lifecycle separada do PR crítico de permissões."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/118); registro em docs/governance/responses/VAL-HO-20261003-p4-7-download-segundo-plano-3c0dd415be4c.md."
     },
     {
       "check": "Download real com observador da tela desconectado",
