@@ -1,0 +1,144 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p4-1-catalogo-de-releases",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T12:15:27Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-1",
+  "component": "hub",
+  "state": "review",
+  "branch": "codex/p4-1-release-catalog",
+  "base_commit": "503bbdb894f0c3ef644d714de5aae4cc7b6424f8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/hub/README.md",
+    "apps/hub/docs/catalogo-de-releases.md",
+    "apps/hub/src/Hub.Core/DistributionReader.cs",
+    "apps/hub/src/Hub.Core/GitHubModels.cs",
+    "apps/hub/src/Hub.Core/GitHubReader.cs",
+    "apps/hub/src/Hub.Core/HubLoader.cs",
+    "apps/hub/src/Hub.Core/HubScreen.cs",
+    "apps/hub/tests/Hub.Tests/DistributionReaderTests.cs",
+    "apps/hub/tests/Hub.Tests/GitHubReaderTests.cs",
+    "apps/hub/tests/Hub.Tests/HubLoaderTests.cs",
+    "apps/hub/tests/Hub.Tests/HubScreenTests.cs",
+    "docs/governance/handoffs/HO-20261003-p4-1-catalogo-de-releases.json"
+  ],
+  "work_completed": [
+    "Primeiro slice da Fase 4: catálogo pelo perfil current e locationFrom, sem trocar canais, permissões, assinatura ou mecanismo de atualização.",
+    "GitHubReader lê até 100 releases, ignora drafts, ordena publicação, inclui pré-lançamentos identificados e lê metadados válidos de artefatos HTTPS/tamanho/SHA-256 informado.",
+    "HubLoader resolve canais declarados e filtra tags do próprio monorepo por component-id-v; reutiliza a leitura do monorepo. Perfil ausente/target/Web/ambiguidade ficam indisponíveis, sem presumir o canal da origem.",
+    "Modelo de tela mostra até 3 releases por Product e 4 APKs por release, com motivos de falha e canal de recuperação. Sidecars não viram APK. Nenhum download, verificação de bytes ou instalação declarado.",
+    "Cache da Fase 3 continua carregando; cache novo preserva releases e canais marcados como Stale.",
+    "Main reconciliada por fast-forward com fechamento da Fase 3 (PR #100, fb71b21). ROADMAP inicia P4-1 em revisão e planeja download/integridade, launcher/instalador e gate independente do Hub."
+  ],
+  "verification": [
+    {
+      "check": "Testes do Hub.Core e modelo de tela",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet test --project tests/Hub.Tests a partir de apps/hub, SDK 10.0.401: 111/111. Logs /tmp/p4-1-tests.log. Cobertura inclui seleção de canal e tag, rascunho/pré-lançamento, digest inválido, metadados parciais, cache antigo/novo e apresentação sem afirmar integridade verificada."
+    },
+    {
+      "check": "Consistência do Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22; git diff --check passou. Verificação final com documentação/handoff e snapshot de Issues no CI."
+    },
+    {
+      "check": "Build Android e CI no estado combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do PR e integrador executarão hub-ci (Core e Android) sobre o estado combinado; ambiente local não possui workload android."
+    },
+    {
+      "check": "Conferência visual do catálogo no celular",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/hub/docs/catalogo-de-releases.md",
+      "evidence": "Texto/rolagem/legibilidade da seção nova em aparelho ainda não conferidos. Validação não crítica visível no portal, sem bloquear integração (ADD-0012). Não substitui o gate futuro da Fase 4."
+    }
+  ],
+  "known_issues": [
+    "A API pública sem token limita requisições por IP; falha aparece com o canal de recuperação, sem fabricar release.",
+    "Consulta até 100 releases recentes do repositório; ausência no recorte não prova ausência no histórico completo.",
+    "SHA-256 informado não prova integridade dos bytes, assinatura ou compatibilidade do APK. Não há ação de baixar/instalar neste slice."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI/integrador e corrigir qualquer falha; publicar a build normal pelo hub-release depois de integrado.",
+    "Registrar evidência do build publicado e conferência visual quando o proprietário a realizar; manter estado review enquanto essa validação não existir.",
+    "P4-2: download com cancelamento/limite e verificação de tamanho/SHA-256; P4-3 exige modelo explícito de permissões e segurança antes do instalador/launcher."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/architecture/distribution.md",
+    "docs/distribution/current.profile.json",
+    "docs/contracts/schemas/distribution-profile.schema.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/communication.md",
+    "apps/hub/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Perfil current e manifest continuam autoridades dos canais/localizações; catálogo e cache declaram fontes."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum Product depende do Hub para funcionamento."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #101, branch, base, arquivos e evidências no handoff."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Tags por componente no monorepo; release normal do Hub não cria release de outro Product."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Somente HTTP de leitura já autorizado; sem token embutido, novas permissões ou instalação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Conferência visual pending/critical=false; CI não é teste no aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review; build Android e integração precisam de evidência do CI."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Falhas e ausência são explícitas; cache é Stale; checksum descrito como informado."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Canal de distribuição/recovery continua fora do Hub; nenhum Product ganha dependência de distribuição."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "release-catalog",
+      "status": "possible-candidate",
+      "rationale": "O portal também projeta releases, mas tem DTO/proveniência e lifecycle de geração diferentes. Hoje nenhum outro componente consome este módulo do Hub; avaliar redução real de complexidade antes de propor parser comum e Extraction Review. Não criar dependência entre Products."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  },
+  "cost": null
+}

@@ -17,6 +17,11 @@ public class HubLoaderTests
     """;
 
     const string Roadmap = "## Fase 1 — Base\n\n- [x] P1-1 — **Feito**.\n  - Depende de: —.\n- [ ] P1-2 — **Falta**.\n  - Depende de: P1-1.\n\n**Gate:** ok.\n*Estado do gate:* **aguardando**\n";
+    const string Profile = """
+    {"status":"current","entries":[
+      {"component":"alpha","channels":[{"kind":"github-release","role":"primary","locationFrom":"source.repository"}]},
+      {"component":"beta","channels":[{"kind":"github-pages","role":"primary","locationFrom":"publicUrl"}]}]}
+    """;
     const string Decisions = """{ "decisions": [ { "id": "DEC-1", "status": "pending", "title": "Pendente", "blocking": true } ] }""";
     const string HandoffDone = """{ "message_id": "HO-1", "task_id": "P1-1", "state": "done" }""";
     const string HandoffReview = """{ "message_id": "HO-2", "task_id": "P1-2", "state": "review", "verification": [ { "check": "Abrir no aparelho", "kind": "human", "result": "pending" } ] }""";
@@ -41,6 +46,7 @@ public class HubLoaderTests
             return u.AbsolutePath switch
             {
                 "/acme/hubrepo/main/ecosystem.json" => Ok(Eco),
+                "/acme/hubrepo/main/docs/distribution/current.profile.json" => Ok(Profile),
                 "/acme/hubrepo/main/ROADMAP.md" => Ok(Roadmap),
                 "/acme/hubrepo/main/docs/governance/decisions.json" => Ok(Decisions),
                 "/acme/hubrepo/main/apps/alpha/VERSION" => Ok("1.2.3\n"),
@@ -89,7 +95,9 @@ public class HubLoaderTests
         Assert.Empty(s.Timeline.Notes);
 
         Assert.Equal("v1.2.3", s.ProductReleases["alpha"].Value!.Single().Tag);              // repositório de origem declarado em ecosystem.json
-        Assert.DoesNotContain("beta", s.ProductReleases.Keys);                               // sem repositório declarado: nada a consultar
+        Assert.Equal(Availability.NotAvailable, s.ProductReleases["beta"].Availability);      // Web não vira GitHub Releases
+        Assert.Contains("primário não declarado", s.ProductReleases["beta"].Note);
+        Assert.Equal("acme/alpha-origin", s.ReleaseChannels!["alpha"].Value!.Repository.FullName);
     }
 
     [Fact]
@@ -143,6 +151,41 @@ public class HubLoaderTests
     }
 
     [Fact]
+    public async Task DeclaredPublicUrlChannelUsesMonorepoTagsAndReusesItsRead()
+    {
+        var eco = Eco.Replace("\"name\": \"Alpha\"", "\"publicUrl\":\"https://github.com/acme/hubrepo/releases\",\"name\": \"Alpha\"");
+        var (loader, fake) = Make(r => r.RequestUri!.AbsolutePath switch
+        {
+            "/acme/hubrepo/main/ecosystem.json" => Ok(eco),
+            "/acme/hubrepo/main/docs/distribution/current.profile.json" => Ok(Profile.Replace("source.repository", "publicUrl")),
+            "/repos/acme/hubrepo/releases" => Ok("""
+            [{"tag_name":"beta-v99","published_at":"2026-10-03T12:00:00Z"},
+             {"tag_name":"alpha-v1","published_at":"2026-10-01T12:00:00Z"},
+             {"tag_name":"alpha-v3","draft":true,"published_at":"2026-10-04T12:00:00Z"},
+             {"tag_name":"alpha-v2","prerelease":true,"published_at":"2026-10-02T12:00:00Z"}]
+            """),
+            _ => Route(r),
+        });
+        var s = await loader.LoadAsync(T);
+        Assert.Equal(["alpha-v2", "alpha-v1"], s.ProductReleases["alpha"].Value!.Select(x => x.Tag));
+        Assert.Equal("alpha-v", s.ReleaseChannels!["alpha"].Value!.TagPrefix);
+        Assert.Single(fake.Urls, u => new Uri(u).AbsolutePath == "/repos/acme/hubrepo/releases");
+        Assert.DoesNotContain(fake.Urls, u => u.Contains("/repos/acme/alpha-origin/releases"));
+    }
+
+    [Fact]
+    public async Task MissingProfileDoesNotGuessAChannelFromTheOrigin()
+    {
+        var (loader, fake) = Make(r => r.RequestUri!.AbsolutePath.EndsWith(DistributionReader.ProfilePath)
+            ? Status(HttpStatusCode.NotFound) : Route(r));
+        var s = await loader.LoadAsync(T);
+        Assert.Equal(Availability.NotAvailable, s.ProductReleases["alpha"].Availability);
+        Assert.Contains("HTTP 404", s.ProductReleases["alpha"].Note);
+        Assert.DoesNotContain(fake.Urls, u => u.Contains("/repos/acme/alpha-origin/releases"));
+        Assert.Contains(s.Timeline.Notes, n => n.Contains("perfil de distribuição indisponível"));
+    }
+
+    [Fact]
     public async Task CacheRoundTripComesBackStaleWithTheSameContent()
     {
         var live = await Make().Item1.LoadAsync(T);
@@ -156,6 +199,23 @@ public class HubLoaderTests
         Assert.Equal(live.Timeline.Now.Select(e => e.Kind), cached.Timeline.Now.Select(e => e.Kind));
         Assert.Equal(live.Timeline.Notes, cached.Timeline.Notes);
         Assert.Equal("v1.2.3", cached.ProductReleases["alpha"].Value!.Single().Tag);
+        Assert.Equal(Availability.Stale, cached.ProductReleases["alpha"].Availability);
+        Assert.Equal(Availability.Stale, cached.ReleaseChannels!["alpha"].Availability);
+    }
+
+    [Fact]
+    public async Task Phase3CacheWithoutChannelOrArtifactFieldsStillLoads()
+    {
+        var live = await Make().Item1.LoadAsync(T);
+        var n = System.Text.Json.Nodes.JsonNode.Parse(SnapshotCache.Serialize(live))!;
+        n.AsObject().Remove("ReleaseChannels");
+        foreach (var r in n["ProductReleases"]!["alpha"]!["Value"]!.AsArray())
+        { r!.AsObject().Remove("Artifacts"); r.AsObject().Remove("ArtifactNote"); }
+        var cached = SnapshotCache.Load(n.ToJsonString());
+        Assert.NotNull(cached);
+        Assert.True(cached.Stale);
+        Assert.Null(cached.ReleaseChannels);
+        Assert.Null(cached.ProductReleases["alpha"].Value!.Single().Artifacts);
     }
 
     [Theory]
@@ -163,6 +223,8 @@ public class HubLoaderTests
     [InlineData("")]
     [InlineData("{ quebrado")]
     [InlineData("[]")]
+    [InlineData("{}")]
+    [InlineData("null")]
     public void BrokenOrEmptyCacheMeansNoPreviousState(string? cached) => Assert.Null(SnapshotCache.Load(cached));
 
     [Fact]

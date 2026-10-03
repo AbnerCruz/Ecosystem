@@ -92,6 +92,34 @@ public class GitHubReaderTests
     }
 
     [Fact]
+    public async Task PublishedReleasesAreSortedDraftsSkippedAndAssetsValidated()
+    {
+        var sha = new string('a', 64);
+        var json = $$"""
+        [{"tag_name":"v1","published_at":"2026-10-01T10:00:00Z","assets":[]},
+         {"tag_name":"v3","draft":true,"published_at":"2026-10-03T10:00:00Z","assets":[]},
+         {"tag_name":"v2","prerelease":true,"published_at":"2026-10-02T10:00:00Z","assets":[
+          {"name":"app.apk","browser_download_url":"https://example.invalid/app.apk","size":123,"digest":"sha256:{{sha}}"},
+          {"name":"SHA256SUMS.txt","browser_download_url":"https://example.invalid/SHA256SUMS.txt","size":70},
+          {"name":"wrong.apk","browser_download_url":"http://example.invalid/wrong.apk","size":1},
+          {"name":"negative.apk","browser_download_url":"https://example.invalid/negative.apk","size":-1},
+          {"name":"no-size.apk","browser_download_url":"https://example.invalid/no-size.apk"},
+          {"name":"no-digest.apk","browser_download_url":"https://example.invalid/no-digest.apk","size":8,"digest":"sha256:invalid"}]}]
+        """;
+        var data = await Make(_ => Ok(json)).Reader.ReadReleasesAsync(T);
+        Assert.Equal(["v2", "v1"], data.Value!.Select(r => r.Tag));
+        Assert.True(data.Value![0].Prerelease);
+        var assets = data.Value![0].Artifacts!;
+        Assert.Equal(["app.apk", "SHA256SUMS.txt", "no-digest.apk"], assets.Select(a => a.Name));
+        Assert.Equal(123, assets[0].Size);
+        Assert.Equal(sha, assets[0].Sha256);
+        Assert.False(assets[1].IsAndroidApk);
+        Assert.Null(assets[2].Sha256);
+        Assert.Contains("incompletos", data.Value![0].ArtifactNote);
+        Assert.EndsWith("per_page=100", data.Source);
+    }
+
+    [Fact]
     public async Task ReadsBranchesReleasesAndCiRuns()
     {
         var (r, h) = Make();
