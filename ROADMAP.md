@@ -219,8 +219,10 @@ Objetivo: detectar versões, listar releases, baixar artefatos, validar integrid
 
 **Gate:** o usuário utiliza o Hub como entrada para instalar/atualizar/abrir Lunet2D e Urbe dentro dos limites da plataforma, **e** cada Product é instalado, atualizado e usado em seu domínio essencial sem o Hub presente (NN-023). *(requer validação humana em aparelho — DEVICE)*
 
-- [~] P4-8 — **Builds e releases diretos no Ecosystem** (pedido do proprietário, ADD-0015/DEC-0031): pipelines seletivos Lunet/Urbe, mesma assinatura, tags por Product e dispatch do Lunet após integração; Hub já direto. Issue #120; handoff HO-20261003-releases-diretas. CI e primeira publicação pendentes.
-- [ ] P4-9 — **Corte de distribuição do Urbe**: configurar a mesma chave privada no Ecosystem, versão-ponte dos updaters por Product, publicação e conferência de instalação/atualização; depois mudar current e desligar espelho. URL/PWA antiga permanece até migração própria. Depende de P4-8; sem secrets recuperáveis pela API, não publicar com chave de teste.
+- [~] P4-10 — **Builds e releases diretos no Ecosystem** (pedido do proprietário, ADD-0015/DEC-0031): pipelines seletivos Lunet/Urbe, mesma assinatura, tags por Product e dispatch do Lunet após integração; Hub já direto. Issue #120; handoff HO-20261003-releases-diretas. CI e primeira publicação pendentes.
+- [ ] P4-9 — **Corte de distribuição do Urbe**: configurar a mesma chave privada no Ecosystem, versão-ponte dos updaters por Product, publicação e conferência de instalação/atualização; depois mudar current e desligar espelho. URL/PWA antiga permanece até migração própria. Depende de P4-10; sem secrets recuperáveis pela API, não publicar com chave de teste.
+
+- [~] P4-11 — **Corrigir validações humanas e identidade de tarefas**: projeções de evidência convergem transacionalmente; aprovação/reprovação/idempotência têm veredito coerente; IDs duplicados falham no checker. Issue #128; handoff `HO-20261003-governanca-validacoes-identidade`. Preserva P4-8 Patch Notes e migra releases diretas para P4-10; reconciliação posterior usa #114/#125 sem novo clique.
 
 ## Fase 5 — Capability Runtime
 

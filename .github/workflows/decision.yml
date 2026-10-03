@@ -62,7 +62,7 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
           if [ "$code" != "0" ]; then
             git checkout -- .
-            git clean -fdq docs/governance/responses
+            git clean -fdq docs/governance/responses docs/validation
             {
               echo '**Registro não efetuado.** O repositório ficaria inconsistente com esta decisão; nada foi alterado.'
               echo
@@ -81,8 +81,12 @@ jobs:
           set +e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/governance
-          git commit -q -m "${COMMIT_MESSAGE}"
+          git add docs/governance docs/validation
+          if ! git commit -q -m "${COMMIT_MESSAGE}"; then
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+            echo '**Registro não efetuado.** A criação do commit falhou.' > /tmp/decision-result.md
+            exit 0
+          fi
           pushed=false
           for i in 1 2 3; do
             if git push origin "HEAD:${DEFAULT_BRANCH}"; then pushed=true; break; fi
@@ -94,7 +98,7 @@ jobs:
           fi
 
       - name: Republicar o portal
-        if: steps.push.outputs.pushed == 'true'
+        if: steps.push.outputs.pushed == 'true' || (steps.apply.outputs.code == '0' && steps.apply.outputs.outcome == 'already-registered')
         run: gh workflow run pages.yml --repo "$GITHUB_REPOSITORY" --ref "$DEFAULT_BRANCH"
 
       # Veredito: o workflow só termina verde quando o resultado desejado existe no repositório (registrado agora, ou já
@@ -119,7 +123,7 @@ jobs:
           if [ "$verdict_code" != "0" ]; then
             {
               echo
-              echo "**Esta decisão NÃO foi registrada** e a execução do workflow termina em falha de propósito. Corrija a causa acima (ou reabra a escolha no portal) e envie de novo. Execução: $RUN_URL"
+              echo "**Esta resposta NÃO foi registrada** e a execução do workflow termina em falha de propósito. Corrija a causa acima (ou reabra a escolha no portal) e envie de novo. Execução: $RUN_URL"
             } >> /tmp/decision-result.md
           fi
           gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file /tmp/decision-result.md

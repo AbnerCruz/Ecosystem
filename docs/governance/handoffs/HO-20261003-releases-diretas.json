@@ -7,7 +7,7 @@
     "id": "codex",
     "kind": "ai-agent"
   },
-  "task_id": "P4-8",
+  "task_id": "P4-10",
   "component": "ecosystem",
   "state": "review",
   "branch": "codex/direct-product-releases",

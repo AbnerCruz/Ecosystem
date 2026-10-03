@@ -170,12 +170,40 @@ int ApplyValidation()
     var date = Regex.IsMatch(created, @"^\d{4}-\d{2}-\d{2}") ? created[..10] : DateTime.UtcNow.ToString("yyyy-MM-dd");
     entry["result"] = approve ? "passed" : "failed";
     entry["evidence"] = $"{(approve ? "Aprovada" : "Reprovada")} pelo proprietário pelo portal em {date} (Issue {issueRef}); registro em {recordRel}.";
-    // Gravação em duas etapas com desfazer (nunca fica registro parcial).
-    var handoffBefore = File.ReadAllText(target.File);
-    var recordExisted = File.Exists(recordPath);
-    File.WriteAllText(recordPath, sb.ToString());
-    try { File.WriteAllText(target.File, target.Node.ToJsonString(new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }) + "\n"); }
-    catch { if (!recordExisted) File.Delete(recordPath); File.WriteAllText(target.File, handoffBefore); throw; }
+    // Evidências por build são projeções do mesmo fato humano. Atualize apenas
+    // referências já existentes ao handoff/check; não invente escopo nem aprovação.
+    // A transição não promove o build para VALIDATED: a DoD ainda será reconciliada.
+    var options = new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+    var writes = new Dictionary<string, string> {
+        [recordPath] = sb.ToString(), [target.File] = target.Node.ToJsonString(options) + "\n"
+    };
+    var validationDir = Path.Combine(root, "docs", "validation");
+    foreach (var file in Directory.Exists(validationDir) ? Directory.EnumerateFiles(validationDir, "*.json", SearchOption.AllDirectories) : [])
+    {
+        var build = JsonNode.Parse(File.ReadAllText(file))!;
+        var changed = false;
+        foreach (var e in build["evidence"]!.AsArray())
+            if (e?["handoff"]?.GetValue<string>() == bHandoff && e["check"]?.GetValue<string>() == checkText)
+            {
+                if (e["kind"]?.GetValue<string>() != "human") return Error("Evidência de build com kind incompatível com a validação humana.");
+                e["result"] = entry["result"]!.DeepClone(); e["evidence"] = entry["evidence"]!.DeepClone(); changed = true;
+            }
+        if (!changed) continue;
+        var evidence = build["evidence"]!.AsArray();
+        var hasFailure = evidence.Any(e => e?["result"]?.GetValue<string>() == "failed");
+        var hasPendingHuman = evidence.Any(e => e?["kind"]?.GetValue<string>() == "human" && e["result"]?.GetValue<string>() == "pending");
+        var hasPassedAuto = evidence.Any(e => e?["kind"]?.GetValue<string>() == "automated" && e["result"]?.GetValue<string>() == "passed");
+        if (hasFailure) build["state"] = "IMPLEMENTED";
+        else if (build["state"]?.GetValue<string>() == "HUMAN_VALIDATION_PENDING" && !hasPendingHuman)
+            build["state"] = hasPassedAuto ? "AUTOMATED_VERIFIED" : "IMPLEMENTED";
+        writes[file] = build.ToJsonString(options) + "\n";
+    }
+    var before = writes.Keys.ToDictionary(f => f, f => File.Exists(f) ? File.ReadAllText(f) : null);
+    try { foreach (var (file, text) in writes) File.WriteAllText(file, text); }
+    catch {
+        foreach (var (file, text) in before) { if (text is null) File.Delete(file); else File.WriteAllText(file, text); }
+        throw;
+    }
 
     File.WriteAllText(resultFile,
         $"**Validação registrada.** {taskId}: **{verb}**\n\n" +

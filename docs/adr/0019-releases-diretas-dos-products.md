@@ -67,3 +67,9 @@ ou apontar atualizadores para releases/latest global quebraria compatibilidade.
 
 ADD-0015; DEC-0031; MANIFEST NN-001/011/014/016/017/018/023; ADR-0015;
 docs/distribution/direct-releases.md; REQ-006/019/066/081 do Urbe.
+
+Rastreabilidade da tarefa: **P4-10**, Issue #120, handoff
+`HO-20261003-releases-diretas`. O ID P4-8 foi usado por engano na
+implementação/PR #123 e na resposta #126; esses registros históricos
+permanecem preservados. P4-8 identifica Patch Notes (Issue #119).
+Reconciliação: P4-11, Issue #128. P4-9 depende de P4-10.

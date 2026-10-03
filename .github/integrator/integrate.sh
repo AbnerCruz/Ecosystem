@@ -147,7 +147,7 @@ dispatch_hub_release() {
   esac
 }
 
-# P4-8: GITHUB_TOKEN pushes do not trigger Product publication. Only Lunet auto-releases;
+# P4-10: GITHUB_TOKEN pushes do not trigger Product publication. Only Lunet auto-releases;
 # Urbe release remains an explicitly approved tag, independent of integration (REQ-006/066).
 dispatch_lunet_release() {
   local changed

@@ -19,3 +19,9 @@ exportada pela API do GitHub; sua configuração no Ecosystem é pré-requisito.
 
 Esta direção atualiza o arranjo transitório de DEC-0008/DEC-0014/DEC-0017 e
 DEC-0021-C para builds; não cancela a direção futura da plataforma first-party.
+
+Rastreabilidade da tarefa: **P4-10**, Issue #120, handoff
+`HO-20261003-releases-diretas`. O ID P4-8 foi usado por engano na
+implementação/PR #123 e na resposta #126; esses registros históricos
+permanecem preservados. P4-8 identifica Patch Notes (Issue #119).
+Reconciliação: P4-11, Issue #128. P4-9 depende de P4-10.

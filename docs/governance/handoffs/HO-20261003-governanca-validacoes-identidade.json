@@ -1,0 +1,121 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-governanca-validacoes-identidade",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T16:26:29Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-11",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "codex/governance-validation-fix",
+  "base_commit": "d629af882cd9580adc6e2fc0174c96a1d7754db0",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/integrator/integrate.sh",
+    ".github/integrator/simulate.sh",
+    ".github/scripts/apply-decision.cs",
+    ".github/workflows/decision.yml",
+    ".github/workflows/pages.yml",
+    "ROADMAP.md",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/architecture/distribution.md",
+    "docs/architecture/governance-validation-reconciliation.md",
+    "docs/distribution/direct-releases.md",
+    "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
+    "docs/governance/handoffs/HO-20261003-governanca-validacoes-identidade.json",
+    "docs/governance/handoffs/HO-20261003-releases-diretas.json",
+    "docs/migration/import-plan.md",
+    "tests/consistency/Check.cs",
+    "tests/consistency/README.md"
+  ],
+  "work_completed": [
+    "Causas reais #114/#125 investigadas; veredito correto preservado, sem alegar bug inexistente de outcome.",
+    "Projeção transacional de evidências humanas já vinculadas e workflow grava docs/validation; repetição válida republica Pages.",
+    "P4-8 histórico Patch Notes preservado; releases diretas renumeradas P4-10, P4-9 depende dele; resposta #126 imutável.",
+    "CHK-ROADMAP detecta duplicate task id em qualquer fase; regressões de fluxo/recusas/reprovação/idempotência/VR.",
+    "Auditoria Fase 4 e recuperação sem novo clique documentadas; estado não fechado antes do mecanismo corrigido."
+  ],
+  "verification": [
+    {
+      "check": "Consistency, self-test completo e simulação integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 consistency; self-test completo passou (inclui aprovação/reprovação/idempotência/conflito/VR/actor/hash/objeto/handoff e IDs duplicados P0/P4); 55 cenários da simulação integrador passaram. Logs /tmp/governance-check-final.log, /tmp/governance-self-test-final.log, /tmp/governance-simulation-trace.log. actionlint 1.7.7 e bash -n sem erros."
+    },
+    {
+      "check": "Eventos reais #114/#125 em fixtures isoladas",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Fixtures isoladas com corpo/autor/hash das Issues reais: #114 → already-registered (registro #117 existente preservado), #125 → registered após migração P4-10; ambos verdict=success. /tmp/governance-real-replay.log. Não executado na main, não fabricada aprovação."
+    }
+  ],
+  "known_issues": [
+    "Correção muda control plane e depende de integração crítica autorizada pelo proprietário; agente não adiciona integrar.",
+    "P4-2/P4-8 e demais fechamentos serão reconciliados após integração usando respostas reais, sem novo clique."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Completar testes/CI, abrir PR e deixar classificação/integração ao integrador.",
+    "Após integrar, reprocessar execuções originais #114/#125 e abrir reconciliação documental; nenhuma validação nova."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/decisions.json",
+    "docs/governance/integration-policy.json",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
+    "docs/contracts/schemas/validation-record.schema.json",
+    "docs/governance/responses/VAL-HO-20261003-p4-2-download-integridade-ece28d5af0ee.md",
+    "docs/governance/responses/VAL-HO-20261003-releases-diretas-1093808f3a06.md",
+    "tests/consistency/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Handoff autoridade do resultado humano; evidências vinculadas convergem."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #128, branch/base/handoff e auditabilidade do incidente."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Respostas históricas preservadas; nenhuma aprovação fabricada."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Guarda owner/association/hash/objeto e conflito preservados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE não autoaprovado; build não promovido automaticamente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Tarefas continuam review até DoD e integração."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Unicidade global de task IDs, migração mínima rastreável."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Altera aplicador, workflow e checker do mecanismo canônico de validação. Nenhuma direção nova ou DEC necessária."
+  },
+  "cost": null
+}
