@@ -13,6 +13,13 @@ public sealed class ProjectStore
 
     public string RootDirectory { get; }
 
+    /// <summary>
+    /// Importa um ZIP exportado pelo Lunet (ou com lunet.json na raiz).
+    /// Mantém o stream aberto e cria uma cópia com sufixo se o nome já existir.
+    /// Nenhum projeto fica visível antes de todos os arquivos serem validados.
+    /// </summary>
+    public LunetProject ImportZip(Stream source) => ProjectZipImporter.Import(this, source);
+
     /// <summary>Nomes de pastas que contêm um <c>lunet.json</c>, em ordem alfabética.</summary>
     public IReadOnlyList<string> List() => Directory.EnumerateDirectories(RootDirectory)
         .Where(d => File.Exists(Path.Combine(d, ManifestFileName)))

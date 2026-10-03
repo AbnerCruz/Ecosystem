@@ -4,6 +4,8 @@
 
 ### Added
 
+- Importar ZIP na tela de projetos: restaura projetos exportados pelo Lunet, aceita lunet.json na raiz, cria cópia numerada quando o nome já existe e rejeita ZIP inválido sem deixar projeto parcial.
+
 - Ferramentas → "Medir o editor com arquivos grandes" (tempos no aparelho para decidir sobre virtualização) e auditoria técnica da Fase 3 com roteiro de teste.
 - Preview isolado (opção em Configurações): o jogo roda em processo separado, e travas ou falta de memória não derrubam o IDE (ADR 0006).
 - API do framework com exemplo em cada tipo, parâmetros e retornos descritos; testes garantem a cobertura e que os exemplos compilam.

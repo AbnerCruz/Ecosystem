@@ -115,6 +115,8 @@ Itens movidos para outras fases, com motivo: baixa latência com Oboe/AAudio →
 
 Gate: experiência de IDE real.
 
+- [ ] Importar projeto ZIP na tela de projetos (§5, §22; pedido do usuário): compatível com a exportação, sem sobrescrever projetos, validação e publicação atômica. Task `LUNET-301`; implementação e CI em andamento; validação em aparelho pendente.
+
 Editor de código (§9)
 - [ ] Realce, números de linha, desfazer/refazer, indentação, autocompletar, definição, referências, dica, localizar/substituir, diagnósticos ao vivo **(feito, sem validação em aparelho)**.
 - [ ] Multi-cursor / multi-seleção. (feito, sem validação em aparelho; `MultiCursor` testado; próxima ocorrência, todas, cursor acima/abaixo, digitação replicada)
