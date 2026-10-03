@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-urbe-idb-parity",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T22:35:00Z",
+  "timestamp": "2026-10-03T23:14:00Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "UC-2",
   "component": "urbe",
-  "state": "verifying",
+  "state": "review",
   "branch": "chatgpt/urbe-uc2-idb-parity",
   "base_commit": "7087dff4394297ef30342245f759bc9947c0962a",
   "commit": null,
@@ -39,28 +39,22 @@
   ],
   "verification": [
     {
-      "check": "node tests/csharp-storage-parity.mjs",
+      "check": "node tests/csharp-storage-parity.mjs / npm run check",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando execução após reconciliação com a main atual."
-    },
-    {
-      "check": "npm run check",
-      "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando CI do Product após reconciliação com a main atual."
+      "result": "passed",
+      "evidence": "PR #161 urbe-checks run 37160643052, job checks 111313180697: npm run check concluído com sucesso no head 10f2163."
     },
     {
       "check": "node tools/run-e2e.mjs app-runtime zip smoke",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Executou verde no head anterior do PR #161; será repetido após reconciliação."
+      "result": "passed",
+      "evidence": "PR #161 urbe-checks run 37160643052, job e2e 111313180813: Chromium concluído com sucesso no head 10f2163."
     },
     {
-      "check": "dotnet run tests/consistency/Check.cs",
+      "check": "dotnet run tests/consistency/Check.cs + self-test + integrator simulation",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Falha anterior era externa (P4-10/DEC-0031); PR #162 corrigiu a main e o gate será repetido."
+      "result": "passed",
+      "evidence": "PR #161 consistency run 37160643085, job 111313180487 concluído com sucesso no head 10f2163 após integração do PR #162."
     }
   ],
   "known_issues": [
