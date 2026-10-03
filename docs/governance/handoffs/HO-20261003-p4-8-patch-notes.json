@@ -73,10 +73,10 @@
     {
       "check": "Patch Notes e histórico no celular",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/hub/docs/patch-notes.md",
-      "evidence": "Roteiro mobile com navegação, textos/categorias/técnico, datas/prereleases/assets, scroll/expansão10/offline/cache/refresh e coexistência com download. CI não prova DEVICE; manter review até resultado humano. Não é gate de instalação P4-4."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-03 (Issue https://github.com/AbnerCruz/Ecosystem/issues/125); registro em docs/governance/responses/VAL-HO-20261003-p4-8-patch-notes-9ace6f262de6.md."
     },
     {
       "check": "APK publicado e SHA256 confirmado",
