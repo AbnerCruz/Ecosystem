@@ -745,6 +745,11 @@ static class Checks
         for (var i = 0; i <= 7; i++)
             if (!Regex.IsMatch(text, $@"^## Fase {i} — ", RegexOptions.Multiline))
                 c.R.Fail(id, $"ROADMAP.md: fase {i} (MANIFEST §46) ausente");
+        // NN-019: identidade global da tarefa, independentemente da fase/estado.
+        var taskIds = Regex.Matches(text, @"^\s*- \[[ x~]\] (P[0-9]+-[0-9]+)(?=\s)", RegexOptions.Multiline)
+            .Cast<Match>().Select(m => m.Groups[1].Value);
+        foreach (var duplicate in taskIds.GroupBy(x => x, StringComparer.Ordinal).Where(g => g.Count() > 1))
+            c.R.Fail(id, $"ROADMAP.md: duplicate task id: {duplicate.Key}");
         // Item concluído ([x]) não pode depender de validação humana pendente (NN-017).
         foreach (Match m in Regex.Matches(text, @"^\s*- \[x\].*$", RegexOptions.Multiline))
             if (m.Value.Contains("human validation pending", StringComparison.OrdinalIgnoreCase) || m.Value.Contains("validação humana pendente", StringComparison.OrdinalIgnoreCase))
@@ -2615,6 +2620,8 @@ static class SelfTest
                   "normative_sources": ["MANIFEST.md"], "invariants": []
                 }
                 """)),
+        new("ID de tarefa duplicado em P0", "CHK-ROADMAP", r => File.AppendAllText(Path.Combine(r, "ROADMAP.md"), "\n- [ ] P0-1 — duplicado\n")),
+        new("ID de tarefa duplicado em P4", "CHK-ROADMAP", r => File.AppendAllText(Path.Combine(r, "ROADMAP.md"), "\n- [~] P4-8 — duplicado\n")),
         new("fase ausente do ROADMAP", "CHK-ROADMAP", r => Replace(r, "ROADMAP.md", "## Fase 7 — ", "## Fase sete — ")),
         new("dependência de um componente no portal", "CHK-BOUNDARIES",
             r => Replace(r, "ecosystem.json", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"dependencies\": []",
@@ -3105,12 +3112,30 @@ static class SelfTest
             string title = approve.Str("issueTitle")!, body = approve.Str("issueBody")!;
             var path = Path.Combine(hdir, "HO-99990101-teste-validacao.json");
             var before = File.ReadAllText(path);
+            // Regressão #114: evidência pending do build já referencia o handoff.
+            var buildPath = Path.Combine(tmp, "docs/validation/hub/validation-flow-test.json");
+            var build = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(tmp, "docs/validation/hub/hub-v0.0.1-dev.4.json")))!;
+            build["build"] = "validation-flow-test"; build["record_id"] = "VR-hub-validation-flow-test";
+            build["state"] = "HUMAN_VALIDATION_PENDING";
+            build["evidence"]!.AsArray().Add(new System.Text.Json.Nodes.JsonObject {
+                ["check"] = "Validação de teste", ["kind"] = "human", ["result"] = "pending", ["evidence"] = "x", ["handoff"] = "HO-99990101-teste-validacao"
+            });
+            File.WriteAllText(buildPath, build.ToJsonString());
+            int WorkflowVerdict((int Code, string Result, string Outcome) result, string verify = "", string pushed = "") =>
+                Sh(tmp, "bash", [".github/scripts/decision-verdict.sh"], new() {
+                    ["APPLY_CODE"] = result.Code.ToString(), ["OUTCOME"] = result.Outcome, ["VERIFY_CODE"] = verify, ["PUSHED"] = pushed
+                }).Code;
 
             Report(RunApplier(tmp, "intruso", "NONE", title, body).Code == 3, "recusa autor que não é o proprietário");
             Report(RunApplier(tmp, "AbnerCruz", "OWNER", "Validação P9-9", body).Code == 3, "recusa título fora do formato");
             Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body.Replace("check-hash: ", "check-hash: 0")).Code == 3, "recusa hash adulterado");
             Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body.Replace("result: passed", "result: failed")).Code == 3, "recusa título e corpo que discordam");
             Report(RunApplier(tmp, "AbnerCruz", "OWNER", "Validação P9-8: aprovada", body.Replace("validation: P9-9", "validation: P9-8")).Code == 3, "recusa handoff que não é da tarefa informada");
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body.Replace("handoff: HO-99990101-teste-validacao", "handoff: HO-99990101-inexistente")).Code == 3, "recusa handoff inexistente");
+            var tampered = System.Text.Json.Nodes.JsonNode.Parse(before)!;
+            tampered["verification"]![0]!["object"] = "docs/objeto-adulterado.md"; File.WriteAllText(path, tampered.ToJsonString());
+            Report(RunApplier(tmp, "AbnerCruz", "OWNER", title, body).Code == 3, "recusa objeto adulterado mesmo com hash original válido");
+            File.WriteAllText(path, before);
             Report(File.ReadAllText(path) == before, "recusas não alteram o handoff");
 
             var ok = RunApplier(tmp, "AbnerCruz", "OWNER", title, body + "ficou ótimo `x`\n");
@@ -3125,11 +3150,30 @@ static class SelfTest
             var consistent = Checks.RunAll(tmp);
             if (consistent.Failed) consistent.Print(Console.Out);
             Report(!consistent.Failed, "o repositório continua consistente depois do registro");
+            var buildRegistered = File.ReadAllText(buildPath);
+            using var registeredBuild = JsonDocument.Parse(buildRegistered);
+            var projectedHuman = registeredBuild.RootElement.Arr("evidence").First(e => e.Str("handoff") == "HO-99990101-teste-validacao");
+            Report(projectedHuman.Str("result") == "passed" && projectedHuman.Str("evidence") == entry.Str("evidence")
+                && registeredBuild.RootElement.Str("state") == "AUTOMATED_VERIFIED", "sincroniza evidência vinculada sem promover build a VALIDATED");
+            Report(WorkflowVerdict(ok, consistent.Failed ? "1" : "0", "true") == 0, "primeira aprovação persistida e consistente termina workflow verde");
             var handoffRegistered = File.ReadAllText(path);
             var replayVal = RunApplier(tmp, "AbnerCruz", "OWNER", title, body);
             Report(replayVal.Code == 0 && replayVal.Outcome == "already-registered" && File.ReadAllText(path) == handoffRegistered, "reprocessar a mesma validação é idempotente (nada alterado)");
+            Report(WorkflowVerdict(replayVal) == 0 && File.ReadAllText(buildPath) == buildRegistered, "repetição idempotente sem commit permanece verde e sem divergência de build");
             var opposite = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
             Report(opposite.Code == 3 && opposite.Outcome == "rejected" && File.ReadAllText(path) == handoffRegistered, "resposta oposta a uma validação já respondida é recusada e não sobrescreve");
+
+            Report(WorkflowVerdict(opposite) != 0, "resposta conflitante termina workflow vermelho");
+            // Restaura SOMENTE a fixture isolada para exercitar pending → failed.
+            File.WriteAllText(path, before); build["state"] = "HUMAN_VALIDATION_PENDING"; File.WriteAllText(buildPath, build.ToJsonString());
+            var rejectedValidation = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
+            RunGenerator(tmp); var negativeConsistent = Checks.RunAll(tmp);
+            if (negativeConsistent.Failed) negativeConsistent.Print(Console.Out);
+            Report(rejectedValidation.Code == 0 && rejectedValidation.Outcome == "registered" && !negativeConsistent.Failed
+                && WorkflowVerdict(rejectedValidation, "0", "true") == 0, "reprovação válida registra failed, conserva consistência e termina workflow verde");
+            Report(File.ReadAllText(buildPath).Contains("IMPLEMENTED"), "build reprovado não permanece validado nem verificado automaticamente");
+            var negativeReplay = RunApplier(tmp, "AbnerCruz", "OWNER", reject.Str("issueTitle")!, reject.Str("issueBody")!);
+            Report(negativeReplay.Outcome == "already-registered" && WorkflowVerdict(negativeReplay) == 0, "reprovação repetida também é idempotente e verde");
 
             // Reprovação e handoff substituído por um mais recente da mesma tarefa.
             using var proj2 = JsonDocument.Parse(File.ReadAllText(Path.Combine(tmp, "site", "data", "ecosystem-status.json")));

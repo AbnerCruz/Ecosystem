@@ -248,7 +248,7 @@ for path in apps/hub/src/Hub.Core/Datum.cs apps/hub/VERSION apps/hub/Directory.B
   esac
 done
 
-# P4-8: direct Lunet release selection and observable dispatch failure.
+# P4-10: direct Lunet release selection and observable dispatch failure.
 SELECT_MAIN="$(git rev-parse HEAD)"
 for path in apps/lunet2d/README.md apps/lunet2d/src/Lunet.Core/dispatch-fixture.cs .github/workflows/lunet2d-release.yml apps/urbe/dispatch-fixture.md apps/hub/README.md; do
   git checkout -q -B "select-direct-${RANDOM}" "$SELECT_MAIN"
