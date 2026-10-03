@@ -1,0 +1,13 @@
+[
+  {
+    "ProductId": "lunet2d",
+    "PackageId": "io.lunet.studio",
+    "Repository": "AbnerCruz/Ecosystem",
+    "TagPrefix": "lunet2d-v",
+    "CertificateSha256": "4807F9080BF5535D20734476E3E3BC9FE6446C70E384771486E6AC333EDD9207",
+    "ApprovalDecision": "DEC-0032",
+    "ApprovalOption": "A — Aprovar lunet2d, io.lunet.studio, AbnerCruz/Ecosystem, lunet2d-v, certificado 4807F9080BF5535D20734476E3E3BC9FE6446C70E384771486E6AC333EDD9207 (desenvolvimento público); configuração SHA-256 8D9AE31CBB8E82FED8DE6E635811A7E8395243EE897262F5564BFCAAD51EC216",
+    "IdentitySource": "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "PublicDevelopmentKey": true
+  }
+]

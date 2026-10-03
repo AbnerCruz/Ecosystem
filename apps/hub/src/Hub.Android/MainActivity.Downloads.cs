@@ -39,6 +39,7 @@ public sealed partial class MainActivity
         panel.AddView(actions);
         _downloadStatus = new TextView(this) { TextSize = 13 };
         panel.AddView(_downloadStatus);
+        AddInstallationControls(panel);
         root.AddView(panel);
     }
 
@@ -61,16 +62,18 @@ public sealed partial class MainActivity
     {
         var choice = SelectedArtifact();
         var invalid = choice is null ? null : ArtifactDownloader.Ineligible(choice);
-        bool busy = HubDownloads.Session.Status.Active;
+        bool busy = HubDownloads.Session.Status.Active || HubInstaller.Preparing || _checkingInstall || _installConfirmation is not null || HubInstaller.HasOperation(this);
+        _refresh!.Enabled = !busy && !_refreshing;
         _artifact!.Enabled = !busy && !_refreshing && _choices.Count > 0;
         _startDownload!.Enabled = !busy && !_refreshing && choice is not null && invalid is null;
-        _cancelDownload!.Enabled = busy && !HubDownloads.Session.Status.Cancelling;
+        _cancelDownload!.Enabled = HubDownloads.Session.Status.Active && !HubDownloads.Session.Status.Cancelling;
         if (showSelection && !busy)
             _downloadStatus!.Text = choice is null ? "Nenhum APK com metadados disponível; atualize ou consulte o canal do Product."
                 : invalid?.Message ?? $"{choice.Asset.Size:N0} bytes · limite de {ArtifactDownloader.DefaultMaxBytes / 1024 / 1024} MiB."
                     + (choice.Stale ? " Metadados do último estado conhecido." : "");
         if (showSelection && !busy && HubDownloads.Session.Status is { Result: { } prior } previous)
             _downloadStatus!.Text += $"\nÚltima tentativa: {previous.Choice?.Asset.Name ?? "interrompida"} · {prior.Message}";
+        UpdateInstallationControls();
     }
 
     void ObserveDownloads()
@@ -112,7 +115,7 @@ public sealed partial class MainActivity
 
     void DownloadSelected()
     {
-        if (_destroyed || _refreshing || HubDownloads.Session.Status.Active || SelectedArtifact() is not { } choice) return;
+        if (_destroyed || _refreshing || HubInstaller.Preparing || _checkingInstall || _installConfirmation is not null || HubInstaller.HasOperation(this) || HubDownloads.Session.Status.Active || SelectedArtifact() is not { } choice) return;
         if (OperatingSystem.IsAndroidVersionAtLeast(33) && !_notificationPermissionRequested &&
             CheckSelfPermission(Android.Manifest.Permission.PostNotifications) != Permission.Granted)
         {
