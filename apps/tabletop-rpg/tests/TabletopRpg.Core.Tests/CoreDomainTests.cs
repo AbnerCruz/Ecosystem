@@ -140,7 +140,8 @@ public sealed class CoreDomainTests
 
         var result = await runner.ReactAsync(
             fixture.Agent.Id,
-            new AgentWakeSignal("turn-started", "agent turn"));
+            new AgentWakeSignal("turn-started", "agent turn"),
+            TestContext.Current.CancellationToken);
 
         Assert.Equal(1, source.Calls);
         Assert.NotNull(source.LastView);
@@ -162,7 +163,8 @@ public sealed class CoreDomainTests
 
         var result = await runner.ReactAsync(
             fixture.Agent.Id,
-            new AgentWakeSignal("turn-started"));
+            new AgentWakeSignal("turn-started"),
+            TestContext.Current.CancellationToken);
 
         Assert.NotNull(result);
         Assert.False(result!.Accepted);
