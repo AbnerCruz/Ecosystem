@@ -138,3 +138,10 @@ O proprietário escolheu **C**: a plataforma first-party é a distribuição pri
 | Custo | latência de 10–15 min do espelho; dois repositórios vivos | mudança de produto e risco de quebra | construir a plataforma (Services especulativos são proibidos sem consumidor, NN-020/NN-022) |
 
 **Invariante de todos os cenários:** nenhum repositório antigo é apagado ou arquivado, nenhum Pages é desligado e nenhuma release é removida por esta decisão; qualquer aposentadoria é item próprio, com plano de migração e evidência. A direção de longo prazo (Ecosystem como fonte; plataforma first-party como possível distribuição principal; repositórios antigos como espelho/canal alternativo/legado) é a de [§7](#7-plataforma-first-party-própria-decisão), sem prazo.
+
+## 11. Atualização decidida: builds diretos (DEC-0031)
+
+ADD-0015 autoriza substituir o requisito de espelho por pipelines diretos por Product.
+A seção 10 registra o arranjo anterior; o corte operacional é gradual, em P4-8/P4-9.
+Enquanto não publicados e conferidos, os canais de current continuam os reais.
+Detalhes e bloqueios: [direct-releases.md](../distribution/direct-releases.md).

@@ -147,6 +147,15 @@ dispatch_hub_release() {
   esac
 }
 
+# P4-8: GITHUB_TOKEN pushes do not trigger Product publication. Only Lunet auto-releases;
+# Urbe release remains an explicitly approved tag, independent of integration (REQ-006/066).
+dispatch_lunet_release() {
+  local changed
+  changed="$(git diff --name-only "$MAIN" "$COMBINED" -- apps/lunet2d .github/workflows/lunet2d-release.yml)" || return 1
+  [ -n "$changed" ] || return 0
+  gh workflow run lunet2d-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}"
+}
+
 redispatch() { gh workflow run integrate.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" >/dev/null || true; }
 
 # --- guardas: a main só avança para o commit EXATO testado, do head ainda atual do PR, sobre a main ainda atual -----------------
@@ -215,6 +224,12 @@ land() {
     echo "::error::Código integrado, mas dispatch de hub-release falhou; publicação do APK pendente."
     echo >> "$body"
     echo "**Publicação do APK pendente:** falhou o dispatch de hub-release. O código foi integrado; execute o workflow na main e confira a release antes de declarar publicação." >> "$body"
+    comment "$PR" "$body"
+  fi
+  if ! dispatch_lunet_release; then
+    publication_result=1
+    echo "::error::Código integrado, mas dispatch de lunet2d-release falhou."
+    echo "**Publicação do Lunet pendente:** execute lunet2d-release na main e confira a release." >> "$body"
     comment "$PR" "$body"
   fi
   redispatch  # a main mudou: os outros PRs precisam ser reavaliados contra ela, mesmo se publicação falhar

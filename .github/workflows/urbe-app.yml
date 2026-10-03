@@ -1,0 +1,50 @@
+name: urbe-app
+
+# Só valida que o instalador do Windows e o APK continuam compilando.
+# NUNCA publica: a publicação é do release.yml (tag v*), separada da integração em main (REQ-006).
+
+on:
+  pull_request:
+    paths:
+      - 'apps/urbe/native/**'
+      - 'apps/urbe/src/native/**'
+      - 'apps/urbe/package.json'
+      - 'apps/urbe/package-lock.json'
+      - 'apps/urbe/capacitor.config.json'
+      - 'apps/urbe/tools/build-www.mjs'
+      - '.github/workflows/urbe-app.yml'
+      - '.github/workflows/urbe-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  versao:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    defaults:
+      run:
+        working-directory: apps/urbe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: v
+        run: |
+          set -e
+          node tools/version.mjs check   # fonte única: package.json
+          echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: versao
+    uses: ./.github/workflows/urbe-build.yml
+    with:
+      version: ${{ needs.versao.outputs.version }}
+      release: false

@@ -1127,7 +1127,9 @@ static class Checks
         {
             var path = comp.Str("path") ?? "";
             var product = Directory.Exists(wfDir) ? Directory.EnumerateFiles(wfDir, "*.yml").Select(Path.GetFileName).FirstOrDefault(f =>
-                f != "integrate.yml" && File.ReadAllText(Path.Combine(wfDir, f!)) is var t && Regex.IsMatch(t, @"(?m)^\s*paths:") && t.Contains($"'{path}/**'")) : null;
+                f != "integrate.yml" && File.ReadAllText(Path.Combine(wfDir, f!)) is var t
+                && (t.Contains("workflow_call:") || f == cid + "-ci.yml" || f == cid + "-checks.yml")
+                && Regex.IsMatch(t, @"(?m)^\s*paths:") && t.Contains($"'{path}/**'")) : null;
             if (product is not null) required.Add((cid, product));
         }
         foreach (var (who, file) in required)
