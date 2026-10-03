@@ -214,6 +214,9 @@ Objetivo: detectar versões, listar releases, baixar artefatos, validar integrid
 - [~] P4-7 — **Download em segundo plano com notificação**: pedido do proprietário para estender P4-2 além da Activity; serviço Android dataSync interno, reconexão da UI e cancelamento na notificação.
   - Saída: serviço/estado por operação, permissões mínimas documentadas, sem retomada silenciosa após processo morto; CI e conferência em aparelho. Issue [#113](https://github.com/AbnerCruz/Ecosystem/issues/113), handoff `HO-20261003-p4-7-download-segundo-plano`. Depende de: implementação integrada P4-2. Mudança crítica por novas permissões Android; direção explicitamente solicitada, sem DEC adicional.
 
+- [~] P4-8 — **Patch Notes e histórico nativo de versões por Product**: extensão do catálogo P4-1; body da release canônica, Markdown/categorias tolerantes, detalhes técnicos expansíveis, histórico limitado, provider local e fallback de cache por canal.
+  - Saída: Core e UI Android, agregação determinística desde uma versão instalada explicitamente fornecida; instalada ainda desconhecida na UI, sem updates/instalador ou fonte manual paralela. Issue [#119](https://github.com/AbnerCruz/Ecosystem/issues/119), handoff `HO-20261003-p4-8-patch-notes`. Depende de: implementação integrada P4-1 e leitores/cache P3-6/P3-10. CI/integração e conferência mobile em revisão; rotina dentro do Hub, distribuição/contratos compartilhados intactos.
+
 **Gate:** o usuário utiliza o Hub como entrada para instalar/atualizar/abrir Lunet2D e Urbe dentro dos limites da plataforma, **e** cada Product é instalado, atualizado e usado em seu domínio essencial sem o Hub presente (NN-023). *(requer validação humana em aparelho — DEVICE)*
 
 ## Fase 5 — Capability Runtime

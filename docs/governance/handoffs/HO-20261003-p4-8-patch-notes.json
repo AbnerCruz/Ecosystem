@@ -1,0 +1,164 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p4-8-patch-notes",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T15:00:00Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-8",
+  "component": "hub",
+  "state": "review",
+  "branch": "codex/hub-release-notes",
+  "base_commit": "4161bbac0d4b186fa8ce9b4464ad15793f587daa",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/hub/README.md",
+    "apps/hub/docs/patch-notes.md",
+    "apps/hub/src/Hub.Android/ReleaseNotesDialogs.cs",
+    "apps/hub/src/Hub.Android/MainActivity.cs",
+    "apps/hub/src/Hub.Android/ScreenRenderer.cs",
+    "apps/hub/src/Hub.Core/GitHubModels.cs",
+    "apps/hub/src/Hub.Core/GitHubReader.cs",
+    "apps/hub/src/Hub.Core/Hub.Core.csproj",
+    "apps/hub/src/Hub.Core/HubLoader.cs",
+    "apps/hub/src/Hub.Core/HubScreen.cs",
+    "apps/hub/src/Hub.Core/SnapshotPolicy.cs",
+    "apps/hub/src/Hub.Core/ReleaseHistory.cs",
+    "apps/hub/src/Hub.Core/ReleaseNotes.cs",
+    "apps/hub/tests/Hub.Tests/ReleaseNotesTests.cs",
+    "apps/hub/tests/Hub.Tests/ReleaseHistoryTests.cs",
+    "apps/hub/tests/Hub.Tests/HubLoaderTests.cs",
+    "docs/governance/handoffs/HO-20261003-p4-8-patch-notes.json"
+  ],
+  "work_completed": [
+    "Leitura da main atual, normas, canais atuais/pipelines e infraestrutura de releases/cache existente; feature local na Fase 4, sem segunda autoridade.",
+    "ReleaseInfo ganha BodyMarkdown opcional; IReleaseProvider/adapter atual e injeção no loader isolam transporte sem contrato transversal ou infraestrutura duplicada.",
+    "Histórico por Product com data/versão, fonte/assets, drafts filtrados, prereleases preservados, limite 100 e expansão visual de 10 em 10.",
+    "Markdig com projeção nativa testável: Markdown livre, categorias tolerantes, technical expansível, HTML literal/imagens sem recurso remoto; notas originais intactas.",
+    "SOURCE/instalada/latest explícitos e separados; instalada desconhecida. Boundary e agregação SemVer determinística desde versão explicitamente fornecida, sem inventar update/PR/resumo.",
+    "Fallback no SnapshotCache existente: falha parcial preserva histórico stale do mesmo canal; vazio válido/troca de canal não reutilizam releases antigas.",
+    "Reconciliada main com P4-7 e aprovações reais #117/#118; download em segundo plano preservado, sem editar outro Product."
+  ],
+  "verification": [
+    {
+      "check": "Testes de Patch Notes, provider, cache e regressão Hub",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "194/194 testes: 159 anteriores + 35 novos. Markdown/categorias/body ausente/texto livre/múltiplas/datas-SemVer/prerelease/drafts/indisponibilidade/JSON e estrutura inválidos/limite100/cache parcial/canal diferente/vazio/cache antigo/agregação/provider alternativo sem mudar UI. /tmp/patchnotes-tests.log."
+    },
+    {
+      "check": "Smoke de releases reais pelos canais atuais",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Harness /tmp/ecosystem-patchnotes-smoke referencia Core desta branch. Provider público leu 28 releases do canal Lunet2D, mais recente v0.0.1-dev.108 (9332 caracteres, 5 seções, 5 assets), e 6 do Urbe, v1.8.2-beta (818 caracteres, 1 seção, 4 assets). Fonte API/canal conservada e body idêntico no roundtrip JSON. /tmp/patchnotes-smoke.log. Nenhum Product/pipeline mudou."
+    },
+    {
+      "check": "Consistência e diff-check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22; git diff --check passou. /tmp/patchnotes-consistency.log. CI ainda confere snapshot real de Issues e estado combinado."
+    },
+    {
+      "check": "CI Hub e Android no estado combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do PR e integrador confirmarão bindings/compilação do renderer nativo e estado combinado; sem workload Android local."
+    },
+    {
+      "check": "Patch Notes e histórico no celular",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/hub/docs/patch-notes.md",
+      "evidence": "Roteiro mobile com navegação, textos/categorias/técnico, datas/prereleases/assets, scroll/expansão10/offline/cache/refresh e coexistência com download. CI não prova DEVICE; manter review até resultado humano. Não é gate de instalação P4-4."
+    }
+  ],
+  "known_issues": [
+    "Versão instalada não é conhecida; UI não infere do SOURCE. Agregação só habilita quando futura leitura fornece versão explícita.",
+    "Histórico limitado às 100 últimas releases do canal, filtrado por prefixo. Datas ausentes usam SemVer/tag; tags desconhecidas continuam visíveis, sem agregação inferida.",
+    "Sem HTML executável/imagem remota; links não HTTPS/relativos não são executados. Release original acessível.",
+    "Falha parcial usa cache somente se o canal corrente puder ser resolvido e for o mesmo; sem canal confiável não cruza fontes antigas.",
+    "Mobile/lifecycle ainda depende de conferência humana real."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR pronto, acompanhar CI e classificação real, corrigir falhas/reconciliar main e deixar integração ao integrador.",
+    "Conferir release efetiva e publicar evidência; manter validação mobile pending sem fabricar aprovação."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/architecture/distribution.md",
+    "docs/distribution/current.profile.json",
+    "docs/distribution/target.profile.json",
+    "docs/contracts/README.md",
+    "docs/contracts/permissions.json",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "apps/hub/README.md",
+    "apps/hub/docs/catalogo-de-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Notas da release/body, fonte e snapshot descartável; sem patchnotes.json manual nem autoridade paralela."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Somente Hub consome metadata; nenhum Product depende dele."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #119, branch/base/handoff e evidências explícitas."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Sem versão/release de outro Product criada ou alterada."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "GET/read-only e UI com permissões existentes; HTML não executado, recursos remotos não buscados, sem credencial/instalação/new grant."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "194 testes e smoke não aprovam layout/toque/lifecycle; validação humana pending não crítica."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reusa ReleaseInfo, provider/reader, loader/canais/cache/UI; parser mantido substitui parser Markdown ad hoc."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Normalização local no consumidor; não extrai contrato/shared/runtime/Service por antecipação."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Product/release continua publicável e utilizável independentemente; SOURCE e DISTRIBUTION intactos."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "release-notes-projection",
+      "status": "possible-candidate",
+      "rationale": "Hoje único consumidor desta apresentação é Hub. Outra superfície poderá precisar depois; provider/parser seguem locais até evidência real e Extraction Review, sem abstração transversal."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature UI/read-only local dentro de contratos/canais/permissões existentes. Não muda autoridade/distribuição/control plane/arquitetura compartilhada ou instalação."
+  },
+  "cost": null
+}

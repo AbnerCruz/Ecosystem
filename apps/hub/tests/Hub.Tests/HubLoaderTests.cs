@@ -78,6 +78,43 @@ public class HubLoaderTests
     }
 
     [Fact]
+    public async Task InjectedReleaseProviderReplacesTransportWithoutChangingDomainOrUi()
+    {
+        var transport = new Fake(Route);
+        var provider = new ReleaseFixture();
+        var snapshot = await new HubLoader(new HttpClient(transport), Options, _ => provider).LoadAsync(T);
+        var history = ReleaseHistoryBuilder.Build(snapshot, "alpha");
+        Assert.Equal("source://alpha/releases", history.Source);
+        Assert.Equal("## Added\n- Editor", Assert.Single(history.Releases).Release.BodyMarkdown);
+        Assert.DoesNotContain(transport.Urls, u => u.Contains("alpha-origin/releases"));
+        Assert.Equal(1, provider.Calls);
+    }
+
+    [Fact]
+    public async Task ProviderExceptionIsIsolatedAndNeverBreaksProductsOrTimeline()
+    {
+        var snapshot = await new HubLoader(new HttpClient(new Fake(Route)), Options, _ => new FailedReleaseProvider()).LoadAsync(T);
+        Assert.Equal(2, snapshot.Products.Count);
+        Assert.Contains(snapshot.Timeline.Past, entry => entry.Id == "P1-1");
+        Assert.Equal(Availability.NotAvailable, snapshot.ProductReleases["alpha"].Availability);
+        Assert.Contains("provider", snapshot.ProductReleases["alpha"].Note);
+    }
+    sealed class FailedReleaseProvider : IReleaseProvider
+    { public Task<Datum<IReadOnlyList<ReleaseInfo>>> ReadReleasesAsync(CancellationToken ct = default) => throw new HttpRequestException("offline"); }
+
+    sealed class ReleaseFixture : IReleaseProvider
+    {
+        public int Calls;
+        public Task<Datum<IReadOnlyList<ReleaseInfo>>> ReadReleasesAsync(CancellationToken ct = default)
+        {
+            ct.ThrowIfCancellationRequested(); Calls++;
+            return Task.FromResult(Datum<IReadOnlyList<ReleaseInfo>>.From(
+                [new("1.0.0", "Release", false, "2026-10-03", "https://example.invalid/release", 0, [], BodyMarkdown: "## Added\n- Editor")],
+                "source://alpha/releases"));
+        }
+    }
+
+    [Fact]
     public async Task LoadsProductsVersionsTimelineAndReleasesFromTheRepository()
     {
         var s = await Make().Item1.LoadAsync(T);

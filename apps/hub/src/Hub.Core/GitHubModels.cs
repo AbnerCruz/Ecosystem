@@ -27,7 +27,7 @@ public sealed record ReleaseAssetInfo(string Name, string Url, long Size, string
 
 // Campos opcionais preservam a leitura de caches da Fase 3.
 public sealed record ReleaseInfo(string Tag, string? Name, bool Prerelease, string? PublishedAt, string Url, int Assets,
-    IReadOnlyList<ReleaseAssetInfo>? Artifacts = null, string? ArtifactNote = null);
+    IReadOnlyList<ReleaseAssetInfo>? Artifacts = null, string? ArtifactNote = null, string? BodyMarkdown = null);
 
 public sealed record ReleaseChannel(RepositoryRef Repository, string ReleasesUrl, string? TagPrefix);
 

@@ -20,6 +20,8 @@ public sealed partial class MainActivity : Activity
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(20) };
 
     ScreenRenderer? _renderer;
+    HubSnapshot? _snapshot;
+    ReleaseNotesDialogs? _releaseNotes;
     Button? _refresh;
     TextView? _status;
     CancellationTokenSource? _load;
@@ -57,10 +59,12 @@ public sealed partial class MainActivity : Activity
         root.AddView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1f));
         SetContentView(root);
 
-        _renderer = new ScreenRenderer(this, content);
+        _releaseNotes = new ReleaseNotesDialogs(this);
+        _renderer = new ScreenRenderer(this, content, id => _releaseNotes.ShowHistory(ReleaseHistoryBuilder.Build(_snapshot, id, loading: _refreshing)));
 
         // Mostra já o último estado conhecido (marcado como tal) e só então tenta a leitura atual.
         var cached = SnapshotPolicy.Choose(null, ReadCache());
+        _snapshot = cached.Show;
         _renderer.Render(HubScreenBuilder.Build(cached.Show));
         ShowDownloadChoices(cached.Show);
         Refresh();
@@ -69,6 +73,7 @@ public sealed partial class MainActivity : Activity
     protected override void OnDestroy()
     {
         UnobserveDownloads();
+        _releaseNotes?.Dismiss();
         _destroyed = true;
         _load?.Cancel();
         base.OnDestroy();
@@ -96,6 +101,7 @@ public sealed partial class MainActivity : Activity
         _refresh!.Enabled = false;
         UpdateDownloadControls();
         _status!.Text = "Atualizando…";
+        _releaseNotes?.Refresh(_snapshot, true);
 
         HubSnapshot? fresh = null;
         try { fresh = await Task.Run(() => new HubLoader(Http, Options).LoadAsync(ct), ct); }
@@ -106,7 +112,9 @@ public sealed partial class MainActivity : Activity
 
         var choice = SnapshotPolicy.Choose(fresh, ReadCache());
         if (choice.ToCache is { } json) WriteCache(json);
+        _snapshot = choice.Show;
         _renderer!.Render(HubScreenBuilder.Build(choice.Show));
+        _releaseNotes?.Refresh(_snapshot, false);
         ShowDownloadChoices(choice.Show);
         _status.Text = choice.Show is null ? "Nada para mostrar."
             : choice.Show.Stale ? "Último estado conhecido — a leitura atual falhou."
