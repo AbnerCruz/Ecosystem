@@ -31,7 +31,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
       - name: Testes do núcleo (Hub.Core)
-        run: dotnet test --project apps/hub/tests/Hub.Tests
+        # O runner de testes é configurado no global.json de apps/hub: `dotnet test --project` só vale a partir dali.
+        working-directory: apps/hub
+        run: dotnet test --project tests/Hub.Tests
       - name: Install Android workload
         run: dotnet workload install android
       - name: Build APK
