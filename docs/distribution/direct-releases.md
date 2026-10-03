@@ -71,3 +71,7 @@ com teste; pipelines por tag não recebem dispatch de publicação em main.
 Baixar APK direto do Lunet, conferir versão e assinatura, atualizar por cima do
 Lunet existente sem desinstalar; reabrir um projeto, editar, executar e importar ZIP.
 Esta validação humana está pendente e não é substituída pelo CI.
+
+O perfil current declara o pipeline/canal direto do Lunet habilitado por este PR;
+sem release publicada, portal e Hub mostram indisponibilidade. Isso não afirma
+que um APK já foi publicado ou validado. Urbe permanece no canal antigo até P4-9.

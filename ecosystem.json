@@ -22,6 +22,7 @@
       "path": "apps/lunet2d",
       "status": "active",
       "description": "Ambiente de desenvolvimento de jogos 2D: framework, runtime e tooling (MANIFEST §5.1).",
+      "publicUrl": "https://github.com/AbnerCruz/Ecosystem/releases",
       "owners": ["AbnerCruz"],
       "source": { "repository": "https://github.com/AbnerCruz/Lunet2D", "confirmed": true },
       "version": { "authority": "version-file", "file": "apps/lunet2d/VERSION" },

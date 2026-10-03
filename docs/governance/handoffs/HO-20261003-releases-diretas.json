@@ -31,14 +31,18 @@
     "docs/adr/0019-releases-diretas-dos-products.md",
     "docs/distribution/direct-releases.md",
     "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
-    "docs/governance/handoffs/HO-20261003-releases-diretas.json"
+    "docs/governance/handoffs/HO-20261003-releases-diretas.json",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/distribution/current.profile.json"
   ],
   "work_completed": [
     "ADD-0015/DEC-0031/ADR-0019 persistem a autorização de builds diretos.",
     "Lunet: pipeline direto com teste/APK/release, mesma chave, versionCode acima da origem e tags prefixadas; dispatch seletivo após integração.",
     "Urbe: pipelines diretos Windows/Android, PR sem secrets, release só por tag; chave privada obrigatória e corte de updater em P4-9.",
     "Pages prepara Urbe Web diretamente em /Ecosystem/urbe/, preservando URL/PWA antigas.",
-    "Checker distingue CI combinado de pipeline de publicação; simulação estendida para seletividade e falha de dispatch."
+    "Checker distingue CI combinado de pipeline de publicação; simulação estendida para seletividade e falha de dispatch.",
+    "Perfil current declara canal direto do Lunet, origem alternativa, enquanto Urbe continua no canal real antigo."
   ],
   "verification": [
     {
@@ -50,26 +54,20 @@
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "passed",
-      "evidence": "22 checks passaram no estado final; /tmp/distribution-consistency-final.log."
+      "result": "pending",
+      "evidence": "22 checks passaram antes da correção de descoberta; reexecutar estado final."
     },
     {
       "check": "self-test e simulação integrador",
       "kind": "automated",
-      "result": "passed",
-      "evidence": "Self-test completo passou; todos os cenários da simulação, inclusive dispatch seletivo/falha, passaram."
-    },
-    {
-      "check": "dotnet test Lunet",
-      "kind": "automated",
-      "result": "failed",
-      "evidence": "Local SDK 10.0.401: 309/310 passaram; FrameworkHotPath_DoesNotAllocatePerFrame_WithTouchAndGestures reportou 1 byte/frame em três execuções. Baseline 4161bba: 310/310 passaram. Nenhum código/teste do Lunet alterado; verificar CI e não desabilitar teste."
+      "result": "pending",
+      "evidence": "Em execução após corrigir seleção de CI versus publicação."
     },
     {
       "check": "npm run check Urbe",
       "kind": "automated",
-      "result": "passed",
-      "evidence": "59/59 arquivos de teste passaram; todas as checagens passaram."
+      "result": "pending",
+      "evidence": "Em execução; world-terrain é longo."
     },
     {
       "check": "Build APK direto e primeira publicação",
@@ -83,6 +81,12 @@
       "result": "pending",
       "object": "docs/distribution/direct-releases.md",
       "critical": true
+    },
+    {
+      "check": "dotnet test Lunet",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "CI do PR run 37132241431 job test passou. Localmente teste de alocação falhou; baseline local passou; nenhum código do Product foi alterado."
     }
   ],
   "known_issues": [
