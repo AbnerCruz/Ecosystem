@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261003-p3-14-fiscalizacao",
   "category": "HANDOFF",
-  "timestamp": "2026-10-03T10:08:52Z",
+  "timestamp": "2026-10-03T11:54:18Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
   },
   "task_id": "P3-14",
   "component": "consistency-checks",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p3-14-enforcement",
   "base_commit": "d535217dc518c5b69ee7f377191b2a6e14e34645",
   "commit": "a5e23c3e8ef0a438dace7367eca17e99b91ccbd6",
@@ -30,7 +30,7 @@
     "Escopo MIGRATION/REFACTOR declarado em change_scope e comparado ao diff real: um Product, trilhos separados, exceção técnica por caminho exato, testes antes/depois aprovados com evidência e tested_commit. Importação not-migrated -> active sem declaração é recusada.",
     "Self-test inclui casos de passagem de rotina e rejeição de ADR/escopo/evidência; mutação da matriz escolhe mecanismo realmente planned, independente do fechamento da Fase 3.",
     "Matriz NN-011/CI e NN-013/TEST reconciliada com a implementação. NN-021/RUNTIME reconciliado com Hub.Core, testes, PRs integrados e aprovação humana P3-8 (Issue #96).",
-    "P3-14 em revisão (Issue #98); gate global da Fase 3 continua aguardando até CI e integração."
+    "P3-14 integrado pelo proprietário no GitHub (PR #99), em 503bbdb894f0c3ef644d714de5aae4cc7b6424f8. Fiscalização verificada no estado combinado; ROADMAP P3-14 [x] e gate global da Fase 3 aprovado com a validação humana já registrada em P3-8 (Issue #96)."
   ],
   "verification": [
     {
@@ -50,6 +50,13 @@
       "kind": "automated",
       "result": "passed",
       "evidence": "PATH com SDK 10.0.401 bash .github/integrator/simulate.sh: todos os cenários passaram; git real e gh simulado, sem atuar no GitHub. Log /tmp/p3-14-simulation.log. Rotina entra sozinha; crítico aguarda autorização; corridas e conflitos impedem integração indevida."
+    },
+    {
+      "check": "CI e checker confiável no estado combinado do PR #99",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Integrador 37115680855: consistency=success e checker confiável(main)=success; self-test e simulação verdes no estado combinado a05a91388390c56ecad17c238c25db57f61f1d3e. PR #99 integrado pelo proprietário; CI posterior da main 37118316078 passou e Pages 37118316061 publicou o mesmo commit.",
+      "tested_commit": "503bbdb894f0c3ef644d714de5aae4cc7b6424f8"
     }
   ],
   "known_issues": [
@@ -58,9 +65,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "CI confere estado combinado e versão confiável da main; agente acompanha e corrige eventual falha.",
-    "Integrador aguarda autorização do proprietário, por mudar checker/schema/matriz (control-plane). Agente nunca aplica label integrar.",
-    "Após integração, fechar Issue #98, P3-14 e gate da Fase 3 com evidências; publicar projeção e planejar Fase 4."
+    "Planejar Fase 4 — Launcher e Updates, respeitando DEC-0021-C, permissões explícitas e distribuição standalone dos Products (NN-023)."
   ],
   "decisions_required": [],
   "normative_sources": [
