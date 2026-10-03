@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261003-p4-6-modelo-instalacao",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-03T13:50:00Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-6",
+  "component": "hub",
+  "state": "review",
+  "branch": "codex/p4-6-installation-model",
+  "base_commit": "3d9e05cf72fc67b299a3f55a8fd0181e6d6356c8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/adr/README.md",
+    "docs/adr/0018-instalacao-e-launcher-do-hub.md",
+    "docs/governance/decisions.json",
+    "apps/hub/docs/modelo-de-instalacao.md",
+    "docs/governance/handoffs/HO-20261003-p4-6-modelo-instalacao.json",
+    "docs/governance/handoffs/HO-20261003-p4-2-download-integridade.json",
+    "docs/validation/hub/hub-v0.0.1-dev.4.json"
+  ],
+  "work_completed": [
+    "Proposta de ADR e modelo de segurança, sem código, chaves, canais ou permissões efetivas.",
+    "DEC-0030 pendente com três alternativas e consequências explícitas; recomendação A não aceita pelo agente.",
+    "Evidência real P4-2: integração/CI/build/publicação/hash; conferência humana permanece pendente."
+  ],
+  "verification": [
+    {
+      "check": "Consistência da proposta e evidências",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks; git diff --check passou. Log /tmp/p4-6-consistency.log. CI/integrador confirmarão estado combinado e snapshot real de Issues."
+    }
+  ],
+  "known_issues": [
+    "Certificado de chave de desenvolvimento pública não prova autoria.",
+    "Sem DEC-0030 persistida, modelo permanece Proposto e não autoriza instalação."
+  ],
+  "blockers": [
+    "DEC-0030: escolha do proprietário para implementar P4-3."
+  ],
+  "next_actions": [
+    "Integrar proposta de rotina, publicar pergunta no portal e acompanhar resposta real.",
+    "Aplicar consequências da DEC-0030 e implementar P4-3 em mudança crítica rastreável; não criar resposta em nome do proprietário."
+  ],
+  "decisions_required": [
+    "DEC-0030"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/README.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/contracts/permissions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-011",
+      "evidence": "ADR Proposto e DEC-0030 pending; sem aceitação inventada."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Modelo/concessões propostos somente; catálogo de permissões e manifest Android intactos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Dev.4 HUMAN_VALIDATION_PENDING; gate não autoaprovado."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Canal independente permanece alternativa de recuperação em todas as políticas."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "installation-policy",
+      "status": "product-specific",
+      "rationale": "Modelo do Hub, sem consumidor real que justifique extrair Service/plataforma."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  },
+  "cost": null
+}

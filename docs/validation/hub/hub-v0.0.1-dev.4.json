@@ -1,0 +1,53 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-hub-hub-v0.0.1-dev.4",
+  "component": "hub",
+  "build": "hub-v0.0.1-dev.4",
+  "recorded_at": "2026-10-03",
+  "state": "HUMAN_VALIDATION_PENDING",
+  "objective": "P4-2: download conferido, progresso, cancelamento e primeiro plano em aparelho.",
+  "preconditions": [
+    "Android 10 ou posterior, arm64; APK de desenvolvimento do Hub.",
+    "Internet para a carga inicial; dados antigos identificados offline."
+  ],
+  "steps": [
+    "Instalar o Hub dev.4, atualizar catálogo e selecionar APK com checksum.",
+    "Baixar/conferir e observar progresso/resultado; cancelar pelo botão e sair do primeiro plano durante outro download.",
+    "Confirmar ausência de instalação e estados de erro/ausência/checksum inválido conforme guia."
+  ],
+  "expected": "Resultado Verified apenas com bytes completos e SHA-256 correto; cancelamento/saída de primeiro plano não declaram sucesso.",
+  "known_issues": [
+    "Hash confere bytes contra o valor do canal, não assinatura/identidade do pacote/compatibilidade. Instalador fica em P4-3.",
+    "APK sem SHA-256 válido ou acima de 128 MiB não é baixado; limite de cinco minutos pode exigir tentar novamente em rede lenta.",
+    "Sem retomada/exportação/background; sair do primeiro plano cancela. Cache é privado e pode ser limpo pelo Android; não reusa aprovação de checksum depois de reiniciar o processo.",
+    "Falha do filesystem que impeça remover a parte incompleta fica explícita; app não declara sucesso nesse caso."
+  ],
+  "artifact": {
+    "name": "ecosystem-hub-0.0.1-dev.4.apk",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/hub-v0.0.1-dev.4/ecosystem-hub-0.0.1-dev.4.apk",
+    "sha256": "abfadbf2efec3b42b7afed70ad8ae61b64e92e93cd23d1a5901106fec32daf21"
+  },
+  "traceability": {
+    "task": "P4-2",
+    "commit": "3d9e05cf72fc67b299a3f55a8fd0181e6d6356c8",
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/108",
+    "handoff": "HO-20261003-p4-2-download-integridade"
+  },
+  "evidence": [
+    {
+      "check": "Conferência do download, cancelamento e primeiro plano no celular",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Conferência de seleção/progresso/legibilidade e cancelamento por botão/OnStop no aparelho pendente para build contendo P4-2. Não crítica: fica visível no portal e não bloqueia integração. Não é o gate de instalação/launcher P4-4.",
+      "handoff": "HO-20261003-p4-2-download-integridade"
+    },
+    {
+      "check": "Release pública P4-2 e integridade do APK",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "hub-v0.0.1-dev.4, fonte 3d9e05c, APK ecosystem-hub-0.0.1-dev.4.apk baixado publicamente para /tmp/ecosystem-hub-dev4.apk: 21821765 bytes; SHA-256 abfadbf2efec3b42b7afed70ad8ae61b64e92e93cd23d1a5901106fec32daf21 coincide com API e sidecar público. Publicação automática confirma P4-5 em operação.",
+      "handoff": "HO-20261003-p4-2-download-integridade"
+    }
+  ]
+}
