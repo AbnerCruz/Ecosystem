@@ -14,7 +14,7 @@
   "blockers": [],
   "cost": null,
   "component": "hub",
-  "state": "verifying",
+  "state": "review",
   "message_id": "HO-20261003-p3-9-ui-android-do-hub",
   "timestamp": "2026-10-03T05:03:28Z",
   "task_id": "P3-9",
@@ -53,8 +53,8 @@
     {
       "check": "Compilação do Hub.Android e geração do APK (job android do hub-ci)",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "O ambiente do agente não alcança o SDK do Android (dl.google.com bloqueado), então esta verificação só existe no CI; o handoff vai a review quando o job estiver verde."
+      "result": "passed",
+      "evidence": "Job android do hub-ci verde no head 65d16fb do PR #82: o workload instala, o Hub.Android compila e o APK de depuração é gerado e publicado como artefato hub-debug-apk. A primeira rodada (458a464) falhou por um erro real de compilação (OperationCanceledException ambíguo), corrigido em 65d16fb."
     },
     {
       "check": "Abrir o Hub no aparelho e conferir a tela",
@@ -64,12 +64,12 @@
     }
   ],
   "known_issues": [
-    "Compilação Android não verificada localmente (sem SDK); o CI é a única prova até aqui.",
+    "A compilação Android não pôde ser feita localmente (sem SDK); a prova é o job android do CI, verde no head 65d16fb.",
     "O APK de depuração é assinado com a chave de depuração gerada em cada build: não atualiza uma versão instalada sobre a outra. Assinatura estável e release são o P3-7.",
     "A tela é deliberadamente simples (views por código, sem layout XML): serve ao gate de leitura. Refinar o desenho é item futuro, não escopo da Fase 3."
   ],
   "next_actions": [
-    "Esperar o job android verde; depois P3-7 (empacotar e publicar), P3-1 e o gate P3-8 (validação humana em aparelho)."
+    "Autorização do proprietário para integrar o PR crítico (label integrar). Depois: P3-7 (empacotar e publicar, com assinatura estável), P3-1 e o gate P3-8 (validação humana em aparelho). O item P3-9 só vai a [x] depois da integração."
   ],
   "decisions_required": [],
   "normative_sources": [
