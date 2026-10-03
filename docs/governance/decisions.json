@@ -1152,6 +1152,45 @@
       "decidedAt": "2026-10-03",
       "record": "docs/governance/responses/DEC-0032.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0033",
+      "status": "decided",
+      "component": "tabletop-rpg",
+      "blocking": false,
+      "title": "Criar Tabletop RPG como Product C# solo-first com agentes de IA",
+      "context": "O proprietário decidiu em conversa criar no Ecosystem uma plataforma completa de RPG de mesa em que agentes de IA possam ocupar assentos de jogadores ou Mestre e jogadores reais usem a mesma mesa. Em seguida fixou C# para o código novo, mobile-first para a experiência inicial e MVP totalmente solo, sem multiplayer; multiplayer permanece requisito do produto final. O proprietário autorizou este agente a verificar as diretrizes do repositório e iniciar a implementação. ADD-0016 persiste a decisão antes de ela sustentar a fundação durável.",
+      "question": "Como o novo RPG de mesa deve nascer no Ecosystem?",
+      "alternatives": [
+        {
+          "option": "A — Product independente tabletop-rpg, C#, mobile-first e local-first; MVP solo com agentes, multiplayer posterior",
+          "consequences": "Mantém lifecycle próprio e prova primeiro a experiência solo. O motor C# é autoridade de estado/regras; humanos e agentes usam intents comuns. Integrações futuras usam capabilities/contracts, sem dependência direta de outro Product."
+        },
+        {
+          "option": "B — Feature dentro do Ecosystem AI",
+          "consequences": "Reutilizaria a identidade do Product de IA, mas acoplaria domínio, lifecycle e distribuição do jogo a outro Product e enfraqueceria a independência exigida pelo Ecosystem."
+        },
+        {
+          "option": "C — VTT multiplayer-first com servidor desde o início",
+          "consequences": "Anteciparia rede, conta e sincronização antes de provar o diferencial central da experiência solo e aumentaria a complexidade do MVP."
+        }
+      ],
+      "consequences": "A alternativa A cria um novo Product ativo em apps/tabletop-rpg, com versão, SPEC, ROADMAP, regras locais e testes próprios. Multiplayer, UI mobile, persistência e provedor de IA evoluem em tarefas separadas. A entrada em ecosystem.json e os documentos de autoridade são mudança crítica e passam pelo integrador.",
+      "manifestCompatibility": "Compatível com NN-002/003/023 (Product independente do Hub e dos demais), NN-005 (C#), NN-009/011 (decisão persistida e ADR), NN-014/019 (lifecycle e identidade próprios), NN-020/022 (Core nasce local; nenhuma abstração compartilhada prematura) e MANIFEST §§40–41 (local-first e dados do usuário).",
+      "recommendation": "A, porque preserva boundaries e reduz complexidade inicial sem fechar a porta para multiplayer ou integrações futuras.",
+      "related": [
+        "docs/governance/addenda/ADD-0016-tabletop-rpg-solo-first.md",
+        "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+        "apps/tabletop-rpg/SPEC.md",
+        "apps/tabletop-rpg/ROADMAP.md",
+        "ecosystem.json"
+      ],
+      "raisedBy": "chatgpt",
+      "raisedAt": "2026-10-03",
+      "decision": "Alternativa A — decisão do proprietário registrada na conversa: novo Product C#, mobile-first, MVP solo sem multiplayer e produto final com multiplayer; agentes de IA e humanos são participantes de primeira classe. A implementação usa o ID técnico estável tabletop-rpg e nome de exibição provisório Tabletop RPG.",
+      "decidedAt": "2026-10-03",
+      "record": "docs/governance/addenda/ADD-0016-tabletop-rpg-solo-first.md",
+      "consequencesApplied": true
     }
   ]
 }
