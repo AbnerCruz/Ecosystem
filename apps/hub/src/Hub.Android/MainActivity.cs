@@ -8,7 +8,7 @@ using Hub.Core;
 namespace HubApp;
 
 /// <summary>
-/// Tela única do Hub: lê o estado (Hub.Core), escolhe o que mostrar (SnapshotPolicy) e desenha o HubScreen. Somente leitura:
+/// Tela única do Hub: lê o estado (Hub.Core), escolhe o que mostrar (SnapshotPolicy) e desenha o HubScreen. Leituras do repositório são somente leitura:
 /// nada é gravado no repositório; cache e APKs conferidos ficam na área privada do app.
 /// </summary>
 [Activity(Label = "Ecosystem Hub", MainLauncher = true, Exported = true,
@@ -52,16 +52,18 @@ public sealed partial class MainActivity : Activity
         _status = new TextView(this) { TextSize = 13, Alpha = 0.7f };
         _status.SetPadding(ScreenRenderer.Dp(this, 16), 0, ScreenRenderer.Dp(this, 16), ScreenRenderer.Dp(this, 8));
         root.AddView(_status);
-        AddDownloads(root);
 
         var content = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        AddDownloads(content);
+        var productsContent = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        content.AddView(productsContent);
         var scroll = new ScrollView(this);
         scroll.AddView(content);
         root.AddView(scroll, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, 0, 1f));
         SetContentView(root);
 
         _releaseNotes = new ReleaseNotesDialogs(this);
-        _renderer = new ScreenRenderer(this, content, id => _releaseNotes.ShowHistory(ReleaseHistoryBuilder.Build(_snapshot, id, loading: _refreshing)));
+        _renderer = new ScreenRenderer(this, productsContent, id => _releaseNotes.ShowHistory(ReleaseHistoryBuilder.Build(_snapshot, id, loading: _refreshing)));
 
         // Mostra já o último estado conhecido (marcado como tal) e só então tenta a leitura atual.
         var cached = SnapshotPolicy.Choose(null, ReadCache());

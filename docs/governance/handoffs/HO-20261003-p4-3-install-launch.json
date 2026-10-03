@@ -13,7 +13,7 @@
   "branch": "codex/p4-3-install-launch",
   "base_commit": "2201dc59df8260d5de0c45b59c544572a2895050",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/133",
   "files_changed": [
     "ROADMAP.md",
     "apps/hub/README.md",
@@ -31,7 +31,8 @@
     "apps/hub/src/Hub.Core/InstallationPolicy.cs",
     "apps/hub/tests/Hub.Tests/InstallationPolicyTests.cs",
     "docs/governance/handoffs/HO-20261003-p4-3-install-launch.json",
-    "docs/architecture/hub-android-products.json"
+    "docs/architecture/hub-android-products.json",
+    "apps/hub/src/Hub.Core/ArtifactDownloads.cs"
   ],
   "work_completed": [
     "FATO OBSERVADO: ADR-0018-A/DEC-0030 já aprovados; confiança específica ainda não registrada. DEC-0032 proposta com objeto completo, sem impersonação.",
@@ -39,14 +40,23 @@
     "Cópia limitada e reconferida antes de analisar APK e ao entregar bytes à sessão Android; fonte revogada/alteração de instalado/aprovação indisponível abandona.",
     "UI de instalação/atualização/abertura e consulta real de versão; PackageInstaller exige ação, callbacks vinculados à operação, recuperação e cancelamento da sessão própria.",
     "Permissões package.install/package.open separadas, REQUEST_INSTALL_PACKAGES e queries alvo único; nenhuma tool de agente ou concessão herdada.",
-    "Metadata de confiança fica em docs/architecture/hub-android-products.json, de responsabilidade do Hub; runtime não contém IDs de outros Products nem referencia seu código. Queries limitadas separadamente, nunca são aprovação."
+    "Metadata de confiança fica em docs/architecture/hub-android-products.json, de responsabilidade do Hub; runtime não contém IDs de outros Products nem referencia seu código. Queries limitadas separadamente, nunca são aprovação.",
+    "Download/instalador e Products estão no mesmo scroll; header/Atualizar permanece fixo, evitando painel fixo ocupar a tela em horizontal. DEVICE segue pendente."
   ],
   "verification": [
     {
       "check": "Política, bytes e resultados de instalação",
       "kind": "automated",
       "result": "passed",
-      "evidence": "CI Hub test run 37140255661 job 111253032382: 219/219 testes aprovados (194 anteriores + 25 novos). Inclui confiança/bytes/downgrade/callback/evidência instalada."
+      "evidence": "CI https://github.com/AbnerCruz/Ecosystem/actions/runs/37140936814, job test: 221/221 testes aprovados (194 anteriores + 27 novos), incluindo binding da configuração completa e metadata publicada.",
+      "tested_commit": "c5a680a0bf2c7ef41b4c1045f5881be77d1e44b2"
+    },
+    {
+      "check": "Compilação Android e APK candidato",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "c5a680a0bf2c7ef41b4c1045f5881be77d1e44b2",
+      "evidence": "hub-ci 37140936814, Android compilou e verificou assinatura estável. Artifact hub-debug-apk id 11280088588, digest do ZIP sha256:5d5d7e17f4f0d3aea91bcbadf8908b48cf3fc1aa4eb28d959b373b254344d56b (não é digest do APK interno)."
     },
     {
       "check": "Consistency, self-test e Android",

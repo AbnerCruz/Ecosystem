@@ -161,7 +161,7 @@ public sealed class ArtifactDownloader(HttpClient http, string privateDirectory,
         var verified = Path.Combine(privateDirectory, "hub-verified.apk");
         File.Move(partial, verified, overwrite: true);
         return new(ArtifactDownloadState.Verified, ArtifactDownloadError.None,
-            "APK baixado: tamanho e SHA-256 conferidos. Instalação ainda não disponível.", verified, bytes, choice.Asset.Sha256!.ToLowerInvariant());
+            "APK baixado: tamanho e SHA-256 conferidos. Instalação exige confiança e confirmação próprias.", verified, bytes, choice.Asset.Sha256!.ToLowerInvariant());
     }
 
     static ArtifactDownloadResult Failed(ArtifactDownloadError error, string message) => new(ArtifactDownloadState.Failed, error, message);
