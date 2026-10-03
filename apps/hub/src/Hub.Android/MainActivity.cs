@@ -9,11 +9,11 @@ namespace HubApp;
 
 /// <summary>
 /// Tela única do Hub: lê o estado (Hub.Core), escolhe o que mostrar (SnapshotPolicy) e desenha o HubScreen. Somente leitura:
-/// nada é gravado no repositório; o único arquivo local é o cache do último estado bom.
+/// nada é gravado no repositório; cache e APKs conferidos ficam na área privada do app.
 /// </summary>
 [Activity(Label = "Ecosystem Hub", MainLauncher = true, Exported = true,
     ConfigurationChanges = ConfigChanges.Orientation | ConfigChanges.ScreenSize | ConfigChanges.KeyboardHidden | ConfigChanges.ScreenLayout)]
-public sealed class MainActivity : Activity
+public sealed partial class MainActivity : Activity
 {
     // Ponto de partida do app: o repositório do Ecosystem é a única coisa que o Hub não descobre sozinho (HubOptions).
     static readonly HubOptions Options = new(new RepositoryRef("AbnerCruz", "Ecosystem"));
@@ -23,6 +23,8 @@ public sealed class MainActivity : Activity
     Button? _refresh;
     TextView? _status;
     CancellationTokenSource? _load;
+    bool _refreshing;
+    bool _destroyed;
 
     string CacheFile => System.IO.Path.Combine(FilesDir!.AbsolutePath, "hub-snapshot.json");
 
@@ -47,6 +49,7 @@ public sealed class MainActivity : Activity
         _status = new TextView(this) { TextSize = 13, Alpha = 0.7f };
         _status.SetPadding(ScreenRenderer.Dp(this, 16), 0, ScreenRenderer.Dp(this, 16), ScreenRenderer.Dp(this, 8));
         root.AddView(_status);
+        AddDownloads(root);
 
         var content = new LinearLayout(this) { Orientation = Orientation.Vertical };
         var scroll = new ScrollView(this);
@@ -59,21 +62,34 @@ public sealed class MainActivity : Activity
         // Mostra já o último estado conhecido (marcado como tal) e só então tenta a leitura atual.
         var cached = SnapshotPolicy.Choose(null, ReadCache());
         _renderer.Render(HubScreenBuilder.Build(cached.Show));
+        ShowDownloadChoices(cached.Show);
         Refresh();
     }
 
     protected override void OnDestroy()
     {
+        _destroyed = true;
         _load?.Cancel();
+        _download?.Cancel();
         base.OnDestroy();
+    }
+
+    protected override void OnStop()
+    {
+        // Downloads são solicitados em primeiro plano; sair do app cancela, sem serviço/permissão adicional.
+        _download?.Cancel();
+        base.OnStop();
     }
 
     async void Refresh()
     {
+        if (_download is not null || _destroyed) return;
         _load?.Cancel();
         _load = new CancellationTokenSource();
         var ct = _load.Token;
+        _refreshing = true;
         _refresh!.Enabled = false;
+        UpdateDownloadControls();
         _status!.Text = "Atualizando…";
 
         HubSnapshot? fresh = null;
@@ -81,13 +97,18 @@ public sealed class MainActivity : Activity
         catch (System.OperationCanceledException) { return; }
         catch (Exception) { /* falha isolada: a política cai para o último estado bom */ }
 
+        if (ct.IsCancellationRequested || _destroyed) return;
+
         var choice = SnapshotPolicy.Choose(fresh, ReadCache());
         if (choice.ToCache is { } json) WriteCache(json);
         _renderer!.Render(HubScreenBuilder.Build(choice.Show));
+        ShowDownloadChoices(choice.Show);
         _status.Text = choice.Show is null ? "Nada para mostrar."
             : choice.Show.Stale ? "Último estado conhecido — a leitura atual falhou."
             : $"Atualizado às {DateTime.Now:HH:mm}.";
         _refresh.Enabled = true;
+        _refreshing = false;
+        UpdateDownloadControls();
     }
 
     string? ReadCache()
