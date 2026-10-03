@@ -75,3 +75,9 @@ Esta validação humana está pendente e não é substituída pelo CI.
 O perfil current declara o pipeline/canal direto do Lunet habilitado por este PR;
 sem release publicada, portal e Hub mostram indisponibilidade. Isso não afirma
 que um APK já foi publicado ou validado. Urbe permanece no canal antigo até P4-9.
+
+Rastreabilidade da tarefa: **P4-10**, Issue #120, handoff
+`HO-20261003-releases-diretas`. O ID P4-8 foi usado por engano na
+implementação/PR #123 e na resposta #126; esses registros históricos
+permanecem preservados. P4-8 identifica Patch Notes (Issue #119).
+Reconciliação: P4-11, Issue #128. P4-9 depende de P4-10.

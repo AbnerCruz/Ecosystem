@@ -178,5 +178,5 @@ Não extrai Editor, Sprite Studio ou Agent Workspace; não cria Store, Product S
 
 ADD-0015/ADR-0019 autorizam pipelines diretos no Ecosystem. O protocolo §7 é
 legado para Products já cortados; continua necessário para os ainda não migrados.
-P4-8 prepara builds; P4-9 trata da assinatura/ponte do Urbe. Não desativar espelho
+P4-10 prepara builds; P4-9 trata da assinatura/ponte do Urbe. Não desativar espelho
 antes de publicar e conferir o canal direto correspondente. Ver direct-releases.md.

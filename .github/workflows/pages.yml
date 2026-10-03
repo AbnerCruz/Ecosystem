@@ -91,7 +91,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Prepare standalone Urbe Web from canonical source (P4-8)
+      - name: Prepare standalone Urbe Web from canonical source (P4-10)
         working-directory: apps/urbe
         run: |
           npm run check

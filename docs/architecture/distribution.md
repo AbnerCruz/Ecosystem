@@ -142,6 +142,6 @@ O proprietário escolheu **C**: a plataforma first-party é a distribuição pri
 ## 11. Atualização decidida: builds diretos (DEC-0031)
 
 ADD-0015 autoriza substituir o requisito de espelho por pipelines diretos por Product.
-A seção 10 registra o arranjo anterior; o corte operacional é gradual, em P4-8/P4-9.
+A seção 10 registra o arranjo anterior; o corte operacional é gradual, em P4-10/P4-9.
 Enquanto não publicados e conferidos, os canais de current continuam os reais.
 Detalhes e bloqueios: [direct-releases.md](../distribution/direct-releases.md).
