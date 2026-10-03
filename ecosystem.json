@@ -223,7 +223,7 @@
         "agents": "apps/tabletop-rpg/AGENTS.md"
       },
       "commands": {
-        "test": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests"
+        "test": "dotnet test apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj"
       },
       "dependencies": []
     }
