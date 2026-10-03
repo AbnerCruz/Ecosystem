@@ -9,12 +9,12 @@
   },
   "branch": "claude/new-session-vfwhkv",
   "base_commit": "cdb4f66",
-  "commit": "a2abfa8",
+  "commit": "133d940",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/89",
   "blockers": [],
   "cost": null,
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "message_id": "HO-20261003-p3-7-release-de-desenvolvimento",
   "timestamp": "2026-10-03T05:45:29Z",
   "task_id": "P3-7",
@@ -48,7 +48,8 @@
     "hub-ci.yml: o job android passa a falhar se o APK sair com outro certificado. hub-release.yml (novo): só na main e só quando o Hub muda (src, VERSION, Directory.Build.props, tools, o próprio workflow), roda os testes do núcleo, compila, confere o certificado, calcula o SHA-256 e publica a release de desenvolvimento como pré-lançamento com notas que dizem o que a chave garante e o que não garante; idempotente por tag; nenhum segredo; permissão contents: write só neste workflow.",
     "Canal declarado como dado: ecosystem.json do Hub ganha publicUrl (a página de releases deste repositório; `source` não serve, é o repositório de origem pré-migração e exigiria registro de importação) e o perfil `current` ganha a entrada do Hub (availability optional, nunca bundled — NN-023; canal github-release primário; sem atualização automática). A projeção do portal e o CHK-PORTAL refletem o canal.",
     "Documentação da exceção: apps/hub/docs/assinatura-de-desenvolvimento.md (o que a chave garante e NÃO garante, limites do canal e o caminho para a chave privada). Consequências das DEC-0028 e DEC-0029 aplicadas (consequencesApplied true). ROADMAP: P3-7 com a evidência e a frase velha do cabeçalho (\"próxima tarefa é P3-9\") corrigida; Issue #84 em state:review.",
-    "Integrado pelo PR #89 (merge a2abfa8) com a autorização do proprietário. A primeira execução do hub-release na main FALHOU no primeiro passo (testes do núcleo): `dotnet test --project` foi chamado na raiz, mas o runner de testes é configurado no global.json de apps/hub (o hub-ci já usa working-directory: apps/hub). Reproduzido localmente (da raiz, a opção --project não é aceita) e corrigido com working-directory: apps/hub no passo. O restante do script do workflow foi exercitado localmente com um APK falso assinado pela chave do Hub: certificado conferido, nomes, SHA-256, notas e variáveis de ambiente corretos. Nenhuma release foi publicada pela execução com falha."
+    "Integrado pelo PR #89 (merge a2abfa8) com a autorização do proprietário. A primeira execução do hub-release na main FALHOU no primeiro passo (testes do núcleo): `dotnet test --project` foi chamado na raiz, mas o runner de testes é configurado no global.json de apps/hub (o hub-ci já usa working-directory: apps/hub). Reproduzido localmente (da raiz, a opção --project não é aceita) e corrigido com working-directory: apps/hub no passo. O restante do script do workflow foi exercitado localmente com um APK falso assinado pela chave do Hub: certificado conferido, nomes, SHA-256, notas e variáveis de ambiente corretos. Nenhuma release foi publicada pela execução com falha.",
+    "Fechamento: a primeira release de desenvolvimento existe (hub-v0.0.1-dev.2) e a Issue #84 foi encerrada com state:done; ROADMAP P3-7 [x]."
   ],
   "verification": [
     {
@@ -72,8 +73,8 @@
     {
       "check": "Primeira release de desenvolvimento publicada pelo hub-release na main",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "A execução do hub-release no merge do PR #89 falhou (diretório do passo de testes); correção em PR próprio. Continua pendente até a release existir."
+      "result": "passed",
+      "evidence": "Release hub-v0.0.1-dev.2 publicada pelo workflow hub-release na main (merge 133d940, execução 37105620991): testes do núcleo, build do APK, conferência do certificado e publicação passaram; assets ecosystem-hub-0.0.1-dev.2.apk (21 801 285 bytes) e .sha256; pré-lançamento. A execução anterior (merge a2abfa8) falhou por diretório do passo de testes e foi corrigida no PR #90."
     },
     {
       "check": "Instalar o APK da release no celular e abrir o Hub",
@@ -84,11 +85,10 @@
   ],
   "known_issues": [
     "O APK sai do build Debug (modelo já usado pelo outro app Android do repositório), então é depurável; aceitável no canal de desenvolvimento, a revisar antes de qualquer canal estável.",
-    "A chave é pública por decisão (DEC-0029-A): protege contra conflito de atualização, não contra falsificação. Antes de distribuir o Hub a outras pessoas é preciso nova decisão (chave privada em segredo do CI) e uma desinstalação única.",
-    "A primeira release ainda não existe: depende de o hub-release rodar verde na main depois da correção do diretório dos testes (PR próprio, crítico por tocar workflow). O P3-7 só vai a [x] com a release existindo."
+    "A chave é pública por decisão (DEC-0029-A): protege contra conflito de atualização, não contra falsificação. Antes de distribuir o Hub a outras pessoas é preciso nova decisão (chave privada em segredo do CI) e uma desinstalação única."
   ],
   "next_actions": [
-    "Depois da integração e da primeira release: fechar o P3-7 com a evidência, depois P3-1 (portal lista as releases do Hub com a chave `publicUrl`) e preparar o gate P3-8 (validação humana em aparelho, com o APK da release como objeto)."
+    "Nenhuma pendência deste item. Próximos da Fase 3: P3-1 (portal lista as releases do Hub, a partir do canal publicUrl) e o gate P3-8 (validação humana em aparelho, com o APK da release como objeto)."
   ],
   "decisions_required": [],
   "normative_sources": [
