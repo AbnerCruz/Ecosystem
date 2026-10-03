@@ -19,12 +19,14 @@
     "ROADMAP.md",
     "docs/governance/handoffs/HO-20261003-p3-1-releases-do-hub.json",
     "docs/governance/handoffs/HO-20261003-p3-8-gate-no-celular.json",
-    "docs/validation/hub/hub-v0.0.1-dev.2.md"
+    "docs/validation/hub/hub-v0.0.1-dev.2.md",
+    "tests/consistency/Check.cs"
   ],
   "work_completed": [
     "FATO OBSERVADO: P3-1 integrado e publicado; release hub-v0.0.1-dev.2 disponível com APK e SHA-256.",
     "Roteiro de validação criado para instalação, leitura dos Products, Passado/Agora/Próximo, legibilidade/toque e cache offline; pendência humana crítica com objeto no portal.",
-    "ROADMAP P3-8 [~] e gate aguardando; Issue #94 aberta. Nenhuma validação em aparelho declarada."
+    "ROADMAP P3-8 [~] e gate aguardando; Issue #94 aberta. Nenhuma validação em aparelho declarada.",
+    "CI expôs self-test desatualizado: mutação buscava texto phase=3/state=não iniciado e virava no-op quando o gate passou a aguardando. Corrigido para escolher um gate da projeção e trocar seu estado por outro; não depende de número de fase, formatação nem estado vivo. O check CHK-PORTAL permanece inalterado."
   ],
   "verification": [
     {
@@ -69,7 +71,8 @@
     "docs/governance/definition-of-done.md",
     "docs/governance/addenda/ADD-0005-aprovacao-p0-15-e-validacao-pelo-portal.md",
     "docs/contracts/schemas/handoff.schema.json",
-    "apps/hub/README.md"
+    "apps/hub/README.md",
+    "docs/governance/integration-policy.json"
   ],
   "invariants": [
     {
@@ -93,5 +96,12 @@
       "evidence": "Roteiro e download disponíveis no portal sem executar o Hub; nenhum Product ganha dependência."
     }
   ],
-  "cost": null
+  "cost": null,
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Correção necessária em tests/consistency/Check.cs: self-test do gate era acoplado ao texto phase=3/state=não iniciado e não injetava violação quando o gate passou a aguardando. Nova mutação altera o estado real de um gate por JSON; mantém a fiscalização. Zona tests/consistency/** requer autorização do proprietário."
+  }
 }
