@@ -1324,6 +1324,47 @@
       "decidedAt": "2026-10-04",
       "record": "docs/governance/responses/DEC-0036.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0037",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Transporte e modelo de confiança do primeiro IPC local do Capability Runtime",
+      "context": "P5-3 estabilizou a Host API v1 neutra de transporte. LUNET-303 foi aprovado pelo proprietário na Issue #204, portanto o Lunet agora é um Product Shell Android real apto ao primeiro ensaio cross-process. A avaliação P5-4 já comparou chamada em processo, Bound Service/Binder, Unix socket e TCP loopback e definiu IPC-01..IPC-18. A decisão agora é material: escolhe boundary de transporte e confiança. O ensaio será opcional e não pode tornar o Hub dependência essencial do Lunet.",
+      "question": "Qual transporte e modelo de confiança devem ser usados no primeiro ensaio IPC real entre Hub e Lunet?",
+      "alternatives": [
+        {
+          "option": "A — Android Bound Service/Binder + identidade do SO + pareamento por instalação em Keystore (recomendada)",
+          "consequences": "Hub expõe um serviço Android opcional e Lunet atua como primeiro caller. UID/pacote/signer são verificados bilateralmente; payload nunca escolhe identidade. Quando o signer de desenvolvimento não for confiança suficiente, cada instalação gera chave assimétrica no Android Keystore, o primeiro pareamento exige confirmação humana e a sessão prova posse por challenge. É o caminho com menor superfície extra no Android e lifecycle nativo de bind/death/unbind. Não define binding Web/Windows."
+        },
+        {
+          "option": "B — Unix local socket + credenciais do peer + pareamento criptográfico por instalação",
+          "consequences": "Mantém protocolo fora de Binder e pode inspirar outros hosts nativos, mas em Android precisa provar alcance entre sandboxes/SELinux, ownership de endpoint, framing, backpressure e lifecycle manual. Continua exigindo autenticação de aplicação; maior risco de criar abstração antes da necessidade."
+        },
+        {
+          "option": "C — TCP loopback + autenticação mútua por chaves pareadas",
+          "consequences": "É conceitualmente portável e desacopla do Binder, porém localhost não autentica ninguém. Exige porta/descoberta, framing, proteção de credenciais, rate limits e autenticação bilateral próprios; aumenta significativamente a superfície de ataque e o custo operacional do primeiro ensaio."
+        },
+        {
+          "option": "D — Adiar IPC e provar o Lunet apenas com adapter em processo",
+          "consequences": "Reduz risco imediato e ainda permite P5-5 parcial, mas P5-4 permanece bloqueado e a Fase 5 não prova autenticação/desconexão entre processos. Deve ser escolhida apenas se o proprietário preferir postergar deliberadamente o objetivo IPC do roadmap."
+        }
+      ],
+      "consequences": "A decisão autoriza somente o primeiro binding/ensaio P5-4 e sua política de confiança. Não promove Hub.Core a dependência, não concede grants por instalação, não compartilha runtime automaticamente e não escolhe transportes futuros para Web/Windows. Depois da decisão, ADR-0027 é aplicada, o adapter é implementado localmente aos Products responsáveis, IPC-01..IPC-18 são executados em processos reais e P5-5 continua exigindo a mesma Tool em dois Hosts e Extraction Review antes de extração.",
+      "manifestCompatibility": "A/B/C podem respeitar NN-003/006/007/015/016/022/023 se a integração for opcional, identidade for Host-owned, grants deny-by-default e nenhum Product depender de Hub.Core. A minimiza complexidade total no primeiro alvo Android (NN-020) e usa identidade/lifecycle fornecidos pelo SO. D preserva boundaries, mas deliberadamente adia P5-4.",
+      "recommendation": "A — Bound Service/Binder com identidade do Android e pareamento criptográfico por instalação quando o signer não bastar. É o menor caminho para provar IPC real sem fingir que localhost autentica peer e sem re-assinar Products por conveniência.",
+      "related": [
+        "docs/adr/0027-primeiro-ipc-local-android.md",
+        "docs/architecture/ipc-transport-readiness.md",
+        "docs/architecture/capability-runtime.md",
+        "docs/adr/0024-host-api-publica-product-shell.md",
+        "docs/contracts/host-api.v1.json",
+        "docs/contracts/capabilities/text.inspect.json",
+        "ROADMAP.md"
+      ],
+      "raisedBy": "chatgpt-p5-4-ipc-decision",
+      "raisedAt": "2026-10-04"
     }
   ]
 }
