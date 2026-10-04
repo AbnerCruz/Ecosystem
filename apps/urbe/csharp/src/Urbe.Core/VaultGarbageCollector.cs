@@ -248,7 +248,7 @@ public static class VaultGarbageCollector
         var maintenance = new JsonObject
         {
             ["kind"] = "gc",
-            ["at"] = now.UtcDateTime.ToString("O"),
+            ["at"] = UtcIso(now),
             ["removed"] = new JsonObject
             {
                 ["history"] = plan.HistoryCount,
@@ -331,6 +331,9 @@ public static class VaultGarbageCollector
             return null;
         }
     }
+
+    private static string UtcIso(DateTimeOffset value) =>
+        value.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
 
     private static int? OptionalInt(JsonNode? node)
     {
