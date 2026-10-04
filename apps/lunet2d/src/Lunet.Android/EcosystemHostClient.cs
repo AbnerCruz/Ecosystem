@@ -302,22 +302,31 @@ internal sealed class EcosystemHostClient : IDisposable
         catch (Exception) { }
     }
 
-    internal void ResetTrust()
+    internal bool ResetTrust()
     {
-        TryClose();
-        Unbind();
-        foreach (var file in new[] { TrustFile, PendingTrustFile })
+        if (!_operation.Wait(0)) return false;
+        try
         {
-            try
+            TryClose();
+            Unbind();
+            foreach (var file in new[] { TrustFile, PendingTrustFile })
             {
-                var path = Path.Combine(_context.FilesDir!.AbsolutePath, file);
-                if (File.Exists(path)) File.Delete(path);
+                try
+                {
+                    var path = Path.Combine(_context.FilesDir!.AbsolutePath, file);
+                    if (File.Exists(path)) File.Delete(path);
+                }
+                catch (Exception) { }
             }
-            catch (Exception) { }
+            _key.Rotate();
+            _pair = null;
+            _candidate = null;
+            return true;
         }
-        _key.Rotate();
-        _pair = null;
-        _candidate = null;
+        finally
+        {
+            _operation.Release();
+        }
     }
 
     public void Dispose()
