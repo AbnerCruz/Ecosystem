@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261004-urbe-uc8-foundation",
   "category": "RESULT",
-  "timestamp": "2026-10-04T13:08:59.364669Z",
+  "timestamp": "2026-10-04T13:12:34.055537Z",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "feat/urbe-uc8-csharp-foundation",
   "base_commit": "da80358551e0e51ab713ab97fda070983530a6bf",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/196",
   "files_changed": [
     "apps/urbe/csharp/.gitignore",
     "apps/urbe/csharp/Directory.Build.props",
@@ -76,7 +76,8 @@
     "Core C# puro, RCL compartilhada, Web WASM/PWA e MAUI Hybrid Windows/Android, sem implementação de vault.",
     "Soluções portátil e nativa separadas, 8 testes de identidade/boundary/composição e smoke Chromium publicado em raiz/subpasta/offline.",
     "urbe-checks estendido com build/testes/publish portátil e build Android/Windows usando inputs.ref combinado.",
-    "Documentação de comandos, teste manual e identidade nativa privada de build; nenhum canal/release alterado."
+    "Documentação de comandos, teste manual e identidade nativa privada de build; nenhum canal/release alterado.",
+    "Corrigida propagação global de TargetFrameworks: UrbeBuildTarget seleciona apenas o TFM do host; Core/UI permanecem net10.0."
   ],
   "verification": [
     {
@@ -107,13 +108,13 @@
       "check": "Web publish + Chromium",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Publish Release .NET10 + smoke real online/offline em raiz/subpasta, identidade da RCL e caches por escopo. Runtime IPC do MSBuild é restrito neste ambiente; tarefas oficiais WASM/ILLink executadas in-process por targets temporários externos ao checkout. Nenhuma alteração de SDK ou workaround entrou no código/CI."
+      "evidence": "Publish Release .NET10 + smoke real online/offline em raiz/subpasta, identidade da RCL e caches por escopo. Runtime IPC do MSBuild é restrito neste ambiente; tarefas oficiais WASM/ILLink executadas in-process por targets temporários externos ao checkout. Nenhuma alteração de SDK ou workaround entrou no código/CI. CI csharp-portable também passou com comandos padrão: run 37204675570, job 111443278482."
     },
     {
       "check": "Native Windows/Android + CI combinado",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Builds Android/Windows e CI combinado serão verificados no PR; envio explicitamente autorizado pelo proprietário."
+      "evidence": "Primeiro CI Android falhou em NETSDK1005 pela propagação de TargetFrameworks; corrigido via UrbeBuildTarget local ao host. Reexecutar Windows/Android no novo head."
     }
   ],
   "known_issues": [

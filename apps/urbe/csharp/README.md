@@ -41,14 +41,14 @@ Android (JDK/SDK Android compatíveis com o workload):
 
 ```sh
 dotnet workload install maui-android
-dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-android -p:TargetFrameworks=net10.0-android
+dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-android -p:UrbeBuildTarget=net10.0-android
 ```
 
 Windows (Windows + WebView2 + workload):
 
 ```powershell
 dotnet workload install maui-windows
-dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-windows10.0.19041.0 -p:TargetFrameworks=net10.0-windows10.0.19041.0
+dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-windows10.0.19041.0 -p:UrbeBuildTarget=net10.0-windows10.0.19041.0
 ```
 
 `urbe-checks` executa os checks JS existentes, a solução portátil, testes, publish

@@ -120,4 +120,4 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: dotnet workload install ${{ matrix.workload }}
-      - run: dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f ${{ matrix.framework }} -p:TargetFrameworks=${{ matrix.framework }}
+      - run: dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f ${{ matrix.framework }} -p:UrbeBuildTarget=${{ matrix.framework }}
