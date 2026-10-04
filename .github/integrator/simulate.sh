@@ -14,9 +14,10 @@ check() { if eval "$2"; then echo "PASS  $1"; else echo "FAIL  $1"; fails=$((fai
 
 # Origin com o histórico REAL (HEAD + tags): o checker confiável confere SHAs dos handoffs e o histórico migrado (exige fetch-depth: 0).
 git init -q --bare "$T/origin.git"
-git -C "$ROOT" push -q "$T/origin.git" "HEAD:refs/heads/main" "refs/tags/*:refs/tags/*" 2>/dev/null
+# Diagnósticos do git ficam visíveis: falha de bootstrap não é cenário aprovado.
+git -C "$ROOT" push -q "$T/origin.git" "HEAD:refs/heads/main" "refs/tags/*:refs/tags/*"
 git --git-dir="$T/origin.git" symbolic-ref HEAD refs/heads/main
-git clone -q "$T/origin.git" "$T/trusted" 2>/dev/null
+git clone -q "$T/origin.git" "$T/trusted"
 cd "$T/trusted"
 G() { git -c user.name=sim -c user.email=sim@example.invalid "$@"; }
 # A main simulada = a árvore em teste (inclui o que ainda não foi commitado), por cima do histórico real.
@@ -76,7 +77,18 @@ plan() { # plan <pr> — a fila real (C#) decide sobre o estado simulado; export
   PLAN_CRIT="$(sed -n 's/^tested_criticality=//p' "$T/plan.txt")"; PLAN_AUTH="$(sed -n 's/^authorized=//p' "$T/plan.txt")"
 }
 out() { sed -n "s/^$1=//p" "$O"; }
-prep() { : > "$O"; git fetch -q origin main; git checkout -q --detach origin/main; env GITHUB_OUTPUT="$O" PR="$1" HEAD_SHA="$2" MAIN="$(git rev-parse origin/main)" bash .github/integrator/integrate.sh prepare >/dev/null 2>&1; }
+prep() {
+  : > "$O"; git fetch -q origin main; git checkout -q --detach origin/main
+  if env GITHUB_OUTPUT="$O" PR="$1" HEAD_SHA="$2" MAIN="$(git rev-parse origin/main)" \
+      bash .github/integrator/integrate.sh prepare >"$T/prepare.log" 2>&1; then
+    return 0
+  else
+    local code=$?
+    echo "Falha ao preparar PR simulado $1 (exit $code):" >&2
+    cat "$T/prepare.log" >&2
+    return "$code"
+  fi
+}
 finish_eval() { # finish_eval <pr> <head> [R_URBE] [R_HUB] — termina a avaliação com os checks do candidato verdes (ou o resultado dado)
   : > "$GHLOG"
   env GITHUB_OUTPUT=/dev/null ACTION=evaluate PR="$1" HEAD_SHA="$2" MAIN="$(out main_tested)" COMBINED="$(out combined)" CRITICALITY="$(out criticality)" \

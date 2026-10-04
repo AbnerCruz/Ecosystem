@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-runtime-local",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T06:38:41.161468Z",
+  "agent": {
+    "id": "codex-p5-runtime-local",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-2",
+  "component": "hub",
+  "state": "review",
+  "branch": "codex/ecosystem-next-stages",
+  "base_commit": "093ef4fe6ef6eadcd97fa6686fdd68d291892990",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/integrator/simulate.sh",
+    "ROADMAP.md",
+    "apps/hub/src/Hub.Android/MainActivity.cs",
+    "apps/hub/src/Hub.Android/LocalToolsDialog.cs",
+    "apps/hub/src/Hub.Core/Capabilities/LocalContracts.cs",
+    "apps/hub/src/Hub.Core/Capabilities/LocalCapabilityHost.cs",
+    "apps/hub/src/Hub.Core/Capabilities/TextInspectionTool.cs",
+    "apps/hub/tests/Hub.Tests/LocalCapabilityHostTests.cs",
+    "docs/adr/README.md",
+    "docs/adr/0023-capability-runtime-local-no-hub.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/governance/handoffs/HO-20261004-p5-runtime-local.json"
+  ],
+  "work_completed": [
+    "Plano P5-1..P5-7 com critérios e dependências reais; P5-2 em revisão, gates preservados.",
+    "Runtime local experimental: discovery contextual, grants capturados, compatibilidade, envelope, request/command/response/event/error/progress, cancelamento e lifecycle; Tool de análise de texto sem IO.",
+    "Adapter Android no Hub com consentimento por ação, input limitado, execução fora da UI e descarte no fechamento/OnStop/OnDestroy.",
+    "Diagnóstico do integrador: bootstrap do git e prepare deixam stderr/erro visível. A falha remota exit 128 não foi reproduzida localmente; nenhuma causa é declarada resolvida."
+  ],
+  "verification": [
+    {
+      "check": "Hub.Core e runtime local",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "SDK 10.0.100: dotnet run --project tests/Hub.Tests --no-restore, 244 testes, zero falhas/erros/skip. dotnet test compilou mas o runner IPC local encontrou SocketException(13); execução direta do mesmo runner xUnit prova a suíte."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "SDK 10.0.100: todos os 22 checks passaram com este handoff. Self-test final ainda em execução; resultado será atualizado depois de terminar."
+    },
+    {
+      "check": "Self-test dos checks",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Em execução local; não declara resultado antes de terminar."
+    },
+    {
+      "check": "Simulação do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "bash .github/integrator/simulate.sh: todos os cenários passaram, incluindo corridas, autorização do proprietário e publicação seletiva; não modifica integração/criticidade."
+    },
+    {
+      "check": "CI remoto e build Android",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Build Android requer workload; hub-ci deve testar o commit do PR. Não declara APK compilado ou integração."
+    },
+    {
+      "check": "Uso e lifecycle da análise de texto no Hub",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "docs/architecture/capability-runtime.md",
+      "evidence": "Roteiro Android neste objeto: Unicode/vazio, fechar durante execução, fundo/retorno/Activity, teclado/toque/layout. Não é aprovação do gate de dois Hosts."
+    }
+  ],
+  "known_issues": [
+    "API em processo experimental 0: não é protocolo IPC público nem implementa isolamento de processo/autenticação de caller externo.",
+    "Cancelamento é cooperativo em código confiável; handler não cooperativo não é interrompido à força, mas resultado tardio não é aceito.",
+    "Dois contextos em testes não representam dois Hosts reais. Extração e contrato público dependem de consumidor real, ADR/decisão e Extraction Review.",
+    "P4-9 continua dependendo da release-ponte no canal legado, chave histórica e DEVICE; fases posteriores não recebem aprovação implícita."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar CI combinado e integrar pelo mecanismo canônico; autorização do proprietário para mudança crítica de enforcement/control-plane.",
+    "Executar validação Android do primeiro Host; não marcar P5-2 concluído antes de integração/evidência necessária.",
+    "Auditar prontidão do segundo Host e registrar contrato/ADR/decisão em P5-3 antes de expor IPC/Host API; seguir P5-4..P5-7.",
+    "P6-4 depende de Host real; P6-5 vem depois. Fase 7 exige consumidor e Extraction Review."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0004-estrutura-inicial-do-repositorio.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0021-r3-sessao-local-do-agent-workspace.md",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/contracts/schemas/capability-contract.schema.json",
+    "docs/contracts/permissions.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Registry local derivado de definições; contratos/manifest/roadmap mantêm autoridade, nenhum catálogo persistente paralelo."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum Product depende do Hub ou é modificado neste slice."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Algoritmo da Tool usa somente input/Context/progress; widgets e nome do Host ficam no adapter."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #170, branch, PR e handoff tornam o trabalho rastreável."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Não escolhe transporte nem aceita contrato compartilhado; detalhe experimental local registrado em ADR-0023 Proposto."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Runtime não usa GitHub ou rede como transporte."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Grants fixos, explícitos, interseção com declaração; deny-by-default em discover/dispatch e revogação no fechamento."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "UI/Android continua com validação humana pendente separada de testes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-2 em revisão, gates não aprovados e nenhuma integração/DEVICE simulada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código permanece no Hub; dois contextos simulados não autorizam extração."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição/execução standalone dos Products não recebe dependência de Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security",
+      "control-plane"
+    ],
+    "reason": "Introduz enforcement de permissões/lifecycle no Host local; melhora diagnóstico do simulador do integrador. Não relaxa checks, política ou autorização."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "local-capability-runtime",
+      "status": "possible-candidate",
+      "rationale": "Primeiro consumidor Hub. Segundo contexto é teste; aguardar Host real e Extraction Review antes de compartilhar."
+    },
+    {
+      "subject": "text-inspection-tool",
+      "status": "possible-candidate",
+      "rationale": "Tool sem IO nem Host concreto; segundo consumidor real ainda não existe."
+    }
+  ],
+  "cost": null
+}
