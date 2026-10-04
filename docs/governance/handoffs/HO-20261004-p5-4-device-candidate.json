@@ -10,7 +10,7 @@
   },
   "task_id": "P5-4",
   "component": "ecosystem",
-  "state": "working",
+  "state": "review",
   "branch": "chatgpt/p5-4-device-candidate",
   "base_commit": "1d69d5e055238d602283abe1c508743f3378020c",
   "commit": null,
