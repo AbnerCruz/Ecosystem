@@ -1,0 +1,113 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc12-documents-knowledge",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T18:23:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-12",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc12-documents-knowledge",
+  "base_commit": "76ad67e7c4d25ff378333cc3ca766c148a43252c",
+  "commit": "31bace9b19fb78eb711a4fde369515e3991ad79c",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/218",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/ArtifactModel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/DocumentModel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/KnowledgeIndex.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/DocumentKnowledgeTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc12-documents-knowledge.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UC-12 adiciona domínio puro em memória e testes; não muda formato persistido, filesystem, migração, segurança, distribuição ou release."
+  },
+  "work_completed": [
+    "ArtifactModel porta a taxonomia canônica de artefatos, flags textual/editable/note/system, linkable, extensão, safeName e roteamento puro.",
+    "DocumentModel porta normalização de path, IDs doc_, frontmatter, wikilinks e tags ignorando blocos/trechos de código.",
+    "DocumentStore porta make/upsert/get/remove/list/clear/replaceAll, índice de path case-insensitive, revisões e eventos de lifecycle.",
+    "DocumentStore.ReplaceFromVault projeta VaultSnapshot.Documents preservando IDs resolvidos pela camada do vault.",
+    "KnowledgeIndex porta aliases, outgoing/incoming, backlinks, tags, tokens, search, stats e reindex automático.",
+    "Testes de paridade e negativos foram adicionados para classificação, parsing, lifecycle, aliases, busca e reindex.",
+    "Revisão de paridade corrigiu expectativas dos testes para safeName/tag ordering observados no JS e alinhou fallbacks falsy de id/title/created/modified ao documents.js."
+  ],
+  "verification": [
+    {
+      "check": "Build/test UC-12",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37225693553 no head 31bace9b: build Release e 114/114 testes C# passaram, 0 falhas/0 skips."
+    },
+    {
+      "check": "Regressão completa Urbe",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks 37225693553: checks, csharp-portable, MAUI Android, MAUI Windows e E2E concluíram success."
+    },
+    {
+      "check": "Governança/consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency run 37225693548 concluído success no mesmo head."
+    }
+  ],
+  "known_issues": [
+    "UC-12 não otimiza quick-open/REQ-073; a busca aqui preserva o comportamento do knowledge-index legado, enquanto UI/performance pertencem a etapas posteriores.",
+    "Mundo, Markdown Visual e páginas/composições permanecem fora deste PR."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrador automático reconfirma o estado combinado e integra a mudança rotineira.",
+    "Após integração, encerrar Issue #216 e iniciar UC-13 — projeção do mundo e bairros com IDs estáveis."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/PARITY.md",
+    "apps/urbe/src/core/artifacts.js",
+    "apps/urbe/src/core/documents.js",
+    "apps/urbe/src/core/knowledge-index.js",
+    "apps/urbe/tests/artifacts.mjs",
+    "apps/urbe/tests/documents.mjs",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece em Urbe.Core e usa somente BCL."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Domínio não depende de UI, hosts, filesystem, rede ou plano de controle."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #216, branch própria e handoff específico; PR será registrado após abertura."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação física/UI alegada; escopo é biblioteca .NET."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-12 em review após regressão completa verde; integração é rotineira e automática."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Documentos e índice permanecem standalone no Core."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "document-knowledge-domain",
+      "status": "product-specific",
+      "rationale": "Taxonomia, wikilinks, artefatos e semântica do índice são contratos específicos do Urbe; nenhum consumidor externo concreto foi identificado."
+    }
+  ]
+}
