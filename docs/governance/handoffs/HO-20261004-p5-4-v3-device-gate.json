@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "chatgpt/p5-4-v3-device-gate",
   "base_commit": "48782858d75e75ec71337345e054a7b38235aa7d",
-  "commit": null,
-  "pr": null,
+  "commit": "43c744913bcd3f58d835277d865356729f96332d",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/226",
   "files_changed": [
     "ROADMAP.md",
     "apps/lunet2d/ROADMAP.md",
