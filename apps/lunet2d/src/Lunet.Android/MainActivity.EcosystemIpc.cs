@@ -31,7 +31,7 @@ public sealed partial class MainActivity
                 "", _ecosystemIpcLifetime.Token, TimeSpan.FromSeconds(60),
                 () => RunOnUiThread(() =>
                     Toast.MakeText(this,
-                        "Sessão IPC aberta por 60 s. Abra o aplicativo provider para ver Sessões ativas: 1 ou force a parada deste Product.",
+                        "Sessão IPC aberta por 60 s. Abra o provider para ver Sessões IPC abertas agora: 1 ou force a parada deste Product.",
                         ToastLength.Long)?.Show()));
             if (_ecosystemIpcLifetime.IsCancellationRequested) return;
             RunOnUiThread(() =>
