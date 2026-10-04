@@ -1,6 +1,6 @@
 // UC-2: identidade/region/asset/layout como fatos observáveis, sem IDs aleatórios no golden.
 import {encodedFixture} from './parity-browser-vault.mjs';
-import {waitCityLoaded} from './browser.mjs';
+import {launchApp,openApp,readVault,seedVault,waitCityLoaded,waitSaved} from './browser.mjs';
 const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const decode=files=>new Map(files.map(f=>[f.path,f.encoding==='base64'?new Uint8Array(Buffer.from(f.content,'base64')):f.content]));
 const definitions=[
@@ -10,7 +10,8 @@ const definitions=[
   ['layout-command','v1-mapa-v4',['REQ-043'],{undoEnabledBefore:false,positionRestored:true,backupCount:1,backupReason:'reorganizar',persistedPosition:true,positionAfterReorganizePresent:true}],
   ['external-identity','v1-mapa-v4',['REQ-041','REQ-042'],{closedNoteIdentity:true,closedHouseStable:true,closedFolderNoteStable:true,regionStable:true,assetStable:true,binaryMoved:true,sidecarPathCorrect:true,oldPathsAbsent:true,newPathsPresent:true,openNoteIdentity:true,openOneHouse:true,openMovePersisted:true,openMapIdentity:true}]
 ];
-export function makeBrowserWorldCases(){return definitions.map(([scenario,fixture,requirements,expected])=>({id:'browser-world-'+scenario,operation:'browser.world',requirements,source:'tests/e2e/'+({'stable-ids':'stable-ids','external-identity':'identity'}[scenario]||'layout')+'.e2e.mjs',input:{scenario,files:encodedFixture(fixture),docs:fixture==='v1-mapa-v4'?3:fixture==='v1-mundo-antigo'?2:1},expected}))}
+const multiCityCase={id:'browser-world-multi-city',operation:'browser.world',requirements:['REQ-045'],source:'tests/e2e/multi-city.e2e.mjs',input:{scenario:'multi-city',cities:[{name:'Norte',files:[{path:'Bairro/Um.md',encoding:'utf8',content:'# Um\n'},{path:'.urbe/mapa.json',encoding:'utf8',content:JSON.stringify({v:4,mundo:'placas-1',regioes:[{caminho:'Bairro',nome:'Bairro',cor:'#4aa3ff',x:30,y:30,w:12,h:10,cells:null}],notas:{'Bairro/Um.md':{id:'doc_norte_1',x:32,y:32,sprite:'house1'}},construcoes:[]})}]},{name:'Sul',files:[{path:'Dois.md',encoding:'utf8',content:'# Dois\n'}]}],docs:2},expected:{originIdPreserved:true,southPresent:true,geometryMerged:true,mapIdPreserved:true,migrationOnce:true,migrationSources:['Norte'],boot2Stable:true,boot3Stable:true,mapWritesPresent:true,mapWriterOnly:true,archived:['Norte','Sul'],stores:['Norte','Sul','Urbe']}};
+export function makeBrowserWorldCases(){return [...definitions.map(([scenario,fixture,requirements,expected])=>({id:'browser-world-'+scenario,operation:'browser.world',requirements,source:'tests/e2e/'+({'stable-ids':'stable-ids','external-identity':'identity'}[scenario]||'layout')+'.e2e.mjs',input:{scenario,files:encodedFixture(fixture),docs:fixture==='v1-mapa-v4'?3:fixture==='v1-mundo-antigo'?2:1},expected})),multiCityCase]}
 async function save(a){await a.save();return a.vault()}
 const mapa=v=>JSON.parse(v['.urbe/mapa.json']);
 const layouts=v=>Object.keys(v).filter(p=>/^\.urbe\/backup\/[^/]+-layout-layout[^/]*\/manifest\.json$/.test(p)).map(p=>({dir:p.slice(0,-'/manifest.json'.length),manifest:JSON.parse(v[p])}));
@@ -18,7 +19,28 @@ const house=(a,path)=>a.page.evaluate(path=>{const d=UrbeCore.service('documents
 const pos=async(a,p)=>{const b=await house(a,p);if(!b||b.count!==1)throw new Error('casa única ausente');return[b.x,b.y]};
 async function action(a,name){await a.page.evaluate(name=>{window.__parityAction=UrbeCore.commands.execute(name)},name);await a.page.waitForSelector('.udlg [data-primary]');await a.page.click('.udlg [data-primary]');await a.page.evaluate(()=>window.__parityAction)}
 async function move(a,moves){await a.page.evaluate(async moves=>{const db=await new Promise((ok,err)=>{const r=indexedDB.open('knowledge-city',3);r.onsuccess=()=>ok(r.result);r.onerror=()=>err(r.error)});try{await new Promise((ok,err)=>{const t=db.transaction('fs','readwrite'),s=t.objectStore('fs');for(const [from,to] of moves){const r=s.get('Urbe/'+from);r.onsuccess=()=>{if(r.result===undefined)return;s.put(r.result,'Urbe/'+to);s.delete('Urbe/'+from)}}t.oncomplete=ok;t.onerror=()=>err(t.error||new Error('falha ao mover arquivo'))})}finally{db.close()}},moves)}
+async function runMultiCity(input){
+  const app=await launchApp();
+  try{
+    const h=await app.newPage(),{page}=h;
+    await page.goto(h.url+'/manifest.webmanifest');
+    for(const city of input.cities)await seedVault(page,decode(city.files),city.name);
+    await page.addInitScript(()=>{window.__mapaWrites=[];const put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(v,k){if(String(k)==='Urbe/.urbe/mapa.json')window.__mapaWrites.push(new Error('mapa').stack);return put.apply(this,arguments)}});
+    const snapshot=async()=>{const v=await readVault(page);return JSON.stringify(Object.keys(v).filter(k=>!k.startsWith('.urbe/backup/')&&!k.startsWith('Tutorial/')).sort().map(k=>[k,k==='.urbe/vault.json'?JSON.parse(v[k]).migrations.map(m=>m.id):k.endsWith('.md')?v[k]:k==='.urbe/mapa.json'?JSON.parse(v[k]).regioes.map(r=>r.caminho).sort():1]))};
+    const boot=async first=>{if(first)await openApp(h,{docs:input.docs});else{await page.reload();await page.waitForFunction(n=>window.UrbeCore&&UrbeCore.state.select('ready')&&UrbeCore.service('documents').list().length>=n,input.docs,{timeout:60000});await waitCityLoaded(page)}await page.evaluate(()=>UrbeMultiCity.finishing);await waitSaved(page);return snapshot()};
+    const s1=await boot(true);
+    const docs=Object.fromEntries(await page.evaluate(()=>UrbeCore.service('documents').list().filter(d=>d.path.startsWith('Cidades/')).map(d=>[d.path,d.id])));
+    const v1=await readVault(page),mapa1=JSON.parse(v1['.urbe/mapa.json']),mig=JSON.parse(v1['.urbe/vault.json']).migrations.filter(m=>m.id==='multi-city');
+    const s2=await boot(false),s3=await boot(false),writes=await page.evaluate(()=>window.__mapaWrites);
+    await page.evaluate(()=>UrbeCore.commands.execute('workspace.archiveOldCities'));
+    const archived=await page.evaluate(()=>[...UrbeMultiCity.archived(UrbeCore.service('persistence'))].sort());
+    const stores=await page.evaluate(async()=>{const db=await new Promise((ok,err)=>{const r=indexedDB.open('knowledge-city',3);r.onsuccess=()=>ok(r.result);r.onerror=()=>err(r.error)});try{return await new Promise((ok,err)=>{const t=db.transaction('fs'),q=t.objectStore('fs').getAllKeys();q.onsuccess=()=>ok([...new Set(q.result.map(k=>String(k).split('/')[0]))].sort());q.onerror=()=>err(q.error)})}finally{db.close()}});
+    if(h.errors.length)throw new Error('erros no app: '+h.errors.join(' | '));
+    return{originIdPreserved:docs['Cidades/Norte/Bairro/Um.md']==='doc_norte_1',southPresent:Object.hasOwn(docs,'Cidades/Sul/Dois.md'),geometryMerged:mapa1.regioes.some(r=>r.caminho==='Cidades/Norte/Bairro'),mapIdPreserved:mapa1.notas['Cidades/Norte/Bairro/Um.md']?.id==='doc_norte_1',migrationOnce:mig.length===1,migrationSources:mig[0]?.sources||null,boot2Stable:s2===s1,boot3Stable:s3===s1,mapWritesPresent:writes.length>=1,mapWriterOnly:writes.every(s=>/persistence\/workspace\.js/.test(s)),archived,stores};
+  }finally{await app.close()}
+}
 export async function runBrowserWorld(rt,input){
+  if(input.scenario==='multi-city')return runMultiCity(input);
   if(!definitions.some(d=>d[0]===input.scenario))throw new Error('cenário de mundo desconhecido');
   const seed=decode(input.files),a=await rt.open({seed,docs:input.docs});
   try{
