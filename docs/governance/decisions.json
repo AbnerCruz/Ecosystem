@@ -1327,7 +1327,7 @@
     },
     {
       "id": "DEC-0037",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": true,
       "title": "Transporte e modelo de confiança do primeiro IPC local do Capability Runtime",
@@ -1364,7 +1364,11 @@
         "ROADMAP.md"
       ],
       "raisedBy": "chatgpt-p5-4-ipc-decision",
-      "raisedAt": "2026-10-04"
+      "raisedAt": "2026-10-04",
+      "decision": "Alternativa A — A — Android Bound Service/Binder + identidade do SO + pareamento por instalação em Keystore (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/206).",
+      "decidedAt": "2026-10-04",
+      "record": "docs/governance/responses/DEC-0037.md",
+      "consequencesApplied": false
     }
   ]
 }
