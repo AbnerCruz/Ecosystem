@@ -1,0 +1,94 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-gc0-decisions-applied",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T12:08:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-5",
+  "component": "urbe",
+  "state": "review",
+  "branch": "chatgpt/urbe-gc0-apply-decisions",
+  "base_commit": "8163417117e160b0ed550146d02210b337ae7a03",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/191",
+  "files_changed": [
+    "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+    "docs/adr/0026-urbe-transicao-cliente-csharp.md",
+    "docs/governance/decisions.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-gc0-decisions-applied.json"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Aplica decisões do proprietário e muda ADRs consolidados/decisions.json; zona constitution/adr-decision da integration-policy."
+  },
+  "work_completed": [
+    "DEC-0035-A aplicada: Blazor WebAssembly PWA + .NET MAUI Blazor Hybrid + Razor Class Library compartilhada.",
+    "DEC-0036-C aplicada: reinstalação deliberada com backup/export/import obrigatório; sem dependência de upgrade in-place JS→C#.",
+    "ADR-0025 e ADR-0026 passam de Proposto para Aceito.",
+    "UC-5 e UC-6 concluídas; Issues #182/#183 encerradas state:done.",
+    "G-C0 marcado aprovado; próxima tarefa do roadmap passa a ser UC-8."
+  ],
+  "verification": [
+    {
+      "check": "owner decision records",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "DEC-0035 alternativa A e DEC-0036 alternativa C registradas pelo portal em docs/governance/responses/DEC-0035.md e DEC-0036.md."
+    },
+    {
+      "check": "consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Executar no PR/estado combinado antes da integração."
+    }
+  ],
+  "known_issues": [
+    "UC-8 ainda não começou; nenhum código C# entra neste PR.",
+    "DEC-0036-C aumenta atrito de migração por escolha explícita do proprietário; UC-26 deve provar export/import e recuperação em cada superfície."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Após integração/autorização deste PR crítico, abrir UC-8 em branch própria.",
+    "Criar esqueleto Urbe.Core, Urbe.UI (RCL), Urbe.Web (Blazor WASM PWA) e Urbe.App (MAUI Hybrid) com testes e CI."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/responses/DEC-0035.md",
+    "docs/governance/responses/DEC-0036.md",
+    "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+    "docs/adr/0026-urbe-transicao-cliente-csharp.md",
+    "docs/governance/integration-policy.json",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-009",
+      "evidence": "As escolhas vêm dos registros canônicos do portal, não do chat."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "ADRs são atualizados explicitamente conforme as decisões do proprietário."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação de dispositivo é inventada nesta etapa."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "G-C0 só é aprovado após UC-1..UC-7 e decisões 0035/0036 estarem consolidadas."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "A estratégia escolhida continua sem tornar o Hub requisito para uso/migração do Urbe."
+    }
+  ]
+}

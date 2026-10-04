@@ -1275,7 +1275,7 @@
       "decision": "Alternativa A — A — Blazor WebAssembly PWA no Web + .NET MAUI Blazor Hybrid em Windows/Android, com UI compartilhada em Razor Class Library (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/189).",
       "decidedAt": "2026-10-04",
       "record": "docs/governance/responses/DEC-0035.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     },
     {
       "id": "DEC-0036",
@@ -1320,7 +1320,7 @@
       "decision": "Alternativa C — C — Reinstalação deliberada com backup/export/import obrigatório (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/190).",
       "decidedAt": "2026-10-04",
       "record": "docs/governance/responses/DEC-0036.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }
