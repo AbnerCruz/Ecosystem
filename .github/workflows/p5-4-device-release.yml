@@ -41,6 +41,7 @@ jobs:
       - name: Publicar pre-release DEVICE com APK direto
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           TAG: p5-4-device-b001eafd
           TARGET: b001eafda4baa16868d626eff402a2f7f57f6918
         run: |
