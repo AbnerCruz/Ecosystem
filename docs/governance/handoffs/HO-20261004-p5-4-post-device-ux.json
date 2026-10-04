@@ -1,0 +1,148 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-4-post-device-ux",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T20:12:00Z",
+  "agent": {
+    "id": "chatgpt-p5-4-post-device-ux",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-4",
+  "component": "ecosystem",
+  "state": "verifying",
+  "branch": "chatgpt/p5-4-post-device-ux",
+  "base_commit": "f440c1097743c3d8f0fbdc631ddf3612641df380",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/hub/src/Hub.Android/MainActivity.Ipc.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.EcosystemIpc.cs",
+    "docs/validation/P5-4-binder-ipc.md",
+    "docs/governance/handoffs/HO-20261004-p5-4-post-device-ux.json"
+  ],
+  "work_completed": [
+    "Reconciliado o estado pós-integração do PR crítico #222: implementação Binder v2 já está na main.",
+    "Confirmado no aparelho que pareamento + sessão + discovery + text.inspect funcionam no candidato v2.",
+    "Diagnosticado o indicador 0 como semântica correta de sessão transitória: Conectar e testar fecha a sessão no finally, mantendo o pareamento persistente.",
+    "Hub agora mostra separadamente instalações pareadas e sessões IPC abertas agora, explicando que zero é normal quando ocioso.",
+    "Lunet e roteiro DEVICE usam a mesma terminologia para o teste de lifecycle.",
+    "Roadmaps e validação foram atualizados para deixar somente C/D como gates DEVICE restantes."
+  ],
+  "verification": [
+    {
+      "check": "Compilação/testes após correção de UX",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR de continuação."
+    },
+    {
+      "check": "Pareamento + sessão + discovery + text.inspect no aparelho",
+      "kind": "human",
+      "result": "passed",
+      "critical": false,
+      "object": "docs/validation/P5-4-binder-ipc.md",
+      "evidence": "Proprietário confirmou que o fluxo v2 está funcionando no aparelho; a única observação foi o indicador 0, explicado como sessão já encerrada."
+    },
+    {
+      "check": "C/D — revogação/rotação e process death/LinkToDeath",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "docs/validation/P5-4-binder-ipc.md",
+      "evidence": "Roteiro atualizado; ainda requer execução física antes do fechamento integral de P5-4."
+    }
+  ],
+  "known_issues": [
+    "P5-4 ainda não pode ser marcado done antes dos passos físicos C/D.",
+    "P5-5 permanece bloqueado até o fechamento canônico de P5-4."
+  ],
+  "blockers": [
+    "Validação física C/D."
+  ],
+  "next_actions": [
+    "Concluir CI desta correção de UX.",
+    "Publicar candidato atualizado para o teste final C/D se os builds permanecerem verdes.",
+    "Após C/D verdes, registrar validação crítica canônica e fechar P5-4.",
+    "Em seguida iniciar P5-5 com Extraction Review antes de qualquer extração compartilhada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0027-primeiro-ipc-local-android.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/bindings/android-binder-v1.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Nenhuma nova autoridade criada; pareamento e sessão continuam conceitos distintos do mesmo binding aprovado."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Lunet continua funcional sem provider; mudança é apenas de apresentação/observabilidade."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Host API v1 e text.inspect@1.0.0 não mudaram."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Tool continua sem conhecer Binder ou Product concreto."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Roadmaps, ADR, contrato Binder e roteiro DEVICE foram reconciliados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma decisão arquitetural nova; DEC-0037-A permanece intacta."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Não houve mudança em autenticação, grants ou Context; somente UI e documentação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não substitui C/D em aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-4 permanece em andamento até o gate físico restante."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Binding continua Android-específico."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração compartilhada foi feita."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Hub continua opcional para o domínio essencial do Lunet."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "connection-status-presentation",
+      "status": "local-only",
+      "rationale": "A correção é específica da UI Android atual e não justifica abstração compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "A implementação crítica já foi integrada no PR #222. Este follow-up não altera autenticação, protocolo, assinatura, grants, Context ou fronteira de confiança; apenas corrige rótulos/observabilidade e reconcilia evidência."
+  },
+  "cost": null
+}
