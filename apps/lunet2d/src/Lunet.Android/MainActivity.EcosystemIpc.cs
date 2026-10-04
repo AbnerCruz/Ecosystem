@@ -19,10 +19,30 @@ public sealed partial class MainActivity
         input.SetMinLines(3);
         input.ImeOptions = global::Android.Views.InputMethods.ImeAction.Done;
 
+        var panel = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        panel.SetPadding(Dp(16), 0, Dp(16), 0);
+        panel.AddView(input);
+        var lifecycle = new Button(this) { Text = "Abrir sessão por 60 s (teste de lifecycle)" };
+        lifecycle.SetAllCaps(false);
+        lifecycle.Click += async (_, _) =>
+        {
+            _ecosystemHostClient ??= new EcosystemHostClient(this);
+            var result = await _ecosystemHostClient.ConnectAndInspectAsync(
+                "", _ecosystemIpcLifetime.Token, TimeSpan.FromSeconds(60),
+                () => RunOnUiThread(() =>
+                    Toast.MakeText(this,
+                        "Sessão IPC aberta por 60 s. Abra o Hub para ver Sessões ativas: 1 ou force a parada do Lunet.",
+                        ToastLength.Long)?.Show()));
+            if (_ecosystemIpcLifetime.IsCancellationRequested) return;
+            RunOnUiThread(() =>
+                Toast.MakeText(this, result.Message, ToastLength.Long)?.Show());
+        };
+        panel.AddView(lifecycle);
+
         new AlertDialog.Builder(this)
             .SetTitle("Conexão local do Ecosystem")
             .SetMessage("O Product continua funcionando sem provider. No primeiro uso, compare o código de 6 dígitos e aprove a conexão no aplicativo provider.")
-            .SetView(input)
+            .SetView(panel)
             .SetNegativeButton("Cancelar", (_, _) => { })
             .SetNeutralButton("Esquecer conexão", (_, _) =>
             {
