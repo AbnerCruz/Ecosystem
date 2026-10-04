@@ -1,0 +1,10 @@
+html, body { margin: 0; background: #121a19; color: #edf5ee; font-family: system-ui, sans-serif; }
+* { box-sizing: border-box; }
+.foundation { max-width: 48rem; margin: auto; padding: max(2rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)); }
+h1 { font-size: clamp(2.5rem, 8vw, 4rem); margin: .5rem 0; }
+p { line-height: 1.6; }
+.eyebrow { color: #a9dabb; }
+aside { padding: 1rem; border: 1px solid #698574; border-radius: .75rem; line-height: 1.5; margin-top: 2rem; }
+a { color: #b6efcd; }
+a:focus-visible { outline: 3px solid #b6efcd; outline-offset: 4px; }
+#blazor-error-ui { display: none; padding: 1rem; background: #4d2424; }

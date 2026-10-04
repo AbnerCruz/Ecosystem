@@ -31,3 +31,11 @@ Este arquivo é verificado por `tools/check-license.mjs` (toda dependência decl
 ## Ferramentas de desenvolvimento (não distribuídas)
 
 `electron-builder` (MIT), `@capacitor/cli` (MIT), `playwright` (Apache-2.0).
+
+## Cliente C# em construção (`csharp/`, UC-8)
+
+.NET / ASP.NET Core / Blazor / .NET MAUI (Microsoft e contribuidores, MIT),
+com referências Microsoft fixadas no projeto ou fornecidas pelo workload .NET;
+xUnit.net v3 (Apache-2.0), somente nos testes. Bootstrap e service workers derivados
+do template Blazor WASM PWA do SDK .NET 10 (MIT). Este cliente não é distribuído
+pelos canais públicos até UC-31; os avisos de runtime acompanham os futuros builds.

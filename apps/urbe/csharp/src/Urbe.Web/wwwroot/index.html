@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Urbe — cliente em construção</title>
+    <base href="/" />
+    <link rel="preload" id="webassembly" />
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="_content/Urbe.UI/urbe.css" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <meta name="theme-color" content="#121a19" />
+    <link rel="icon" href="favicon.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+</head>
+<body>
+    <div id="app"><p role="status">Abrindo Urbe…</p></div>
+    <div id="blazor-error-ui" role="alert">Não foi possível abrir o Urbe. <a href=".">Recarregar</a></div>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <script src="register-worker.js"></script>
+</body>
+</html>

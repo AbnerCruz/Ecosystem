@@ -87,6 +87,8 @@ export async function createBrowserReference(){
           }
           case 'gc': {
             const [decision,old,keep]=args;if(!['cancel','apply'].includes(decision))throw new Error('decisão GC inválida');
+            // A fixture 1.x deve concluir sua primeira gravação/migração antes da ação de manutenção.
+            await a.save();
             const palette=await a.page.evaluate(()=>UrbeCore.commands.list().filter(c=>c.enabled({source:'palette'})).map(c=>c.id));
             await a.page.evaluate(()=>{window.__parityGc=UrbeCore.commands.execute('workspace.cleanOrphans',{source:'palette'})});
             await a.page.waitForSelector('.udlg [data-primary]');const msg=await a.page.textContent('.udlg-msg');
