@@ -14,7 +14,7 @@
   "branch": "chatgpt/p5-4-binder-ipc",
   "base_commit": "d5630340e445377697c7b51edbe0e70522950512",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/210",
   "files_changed": [
     "ROADMAP.md",
     "apps/lunet2d/ROADMAP.md",
@@ -28,7 +28,10 @@
     "DEC-0037-A aplicada: ADR-0027 aceita e P5-4/LUNET-401 marcados em andamento.",
     "Gateway externo local ao Hub criado para adaptar Host API a peer já autenticado, sem aceitar identidade/grants do payload.",
     "Sessões externas são vinculadas ao peer, limitadas, canceláveis, fecháveis e possuem deadline finito.",
-    "Testes adicionados para fluxo válido, roubo de sessão, budget, replay, cancelamento, deadline e recuperação."
+    "Testes adicionados para fluxo válido, roubo de sessão, budget, replay, cancelamento, deadline e recuperação.",
+    "Primeiro gate DEVICE contradisse a aprovação anterior: Hub exibiu peer io.lunet.studio aprovado com 0 sessões ativas; Lunet falhou após o pareamento com mensagem genérica de provider/protocolo.",
+    "Resultado DEVICE foi tratado como falha do candidato b001eafd; integração continua bloqueada.",
+    "Assinatura Keystore alterada para KeyStore.PrivateKeyEntry em Hub e Lunet; Lunet ganhou self-test ECDSA e diagnóstico sanitizado por etapa."
   ],
   "verification": [
     {
@@ -40,22 +43,23 @@
     {
       "check": "Android Binder/Keystore real",
       "kind": "human",
-      "result": "pending",
+      "result": "failed",
       "object": "docs/validation/P5-4-binder-ipc.md",
       "critical": true,
-      "evidence": "Objeto será criado antes de sair de working; validação DEVICE só depois dos APKs candidatos."
+      "evidence": "Evidência DEVICE posterior à Issue #217: pareamento aprovado no Hub, porém sessão não abriu (0 sessões ativas) e Lunet retornou provider indisponível/protocolo recusado. Aprovação anterior não fecha mais P5-4."
     }
   ],
   "known_issues": [
-    "Binder/Keystore e UI de pareamento ainda estão em implementação; nenhuma alegação de IPC real nesta etapa.",
-    "IPC-01..IPC-18 só poderão ser fechados quando os casos aplicáveis tiverem evidência Android/processos distintos."
+    "Falha DEVICE após pareamento aprovado no primeiro candidato: sessão não abre; causa em investigação entre assinatura/challenge/open.",
+    "A Issue #217 registrou passed antes da evidência física posterior; esse resultado foi superseded pela falha DEVICE e não autoriza integração.",
+    "PR #210 permanece draft/critical e P5-5 continua bloqueado."
   ],
   "blockers": [],
   "next_actions": [
-    "Definir binding Android v1 e budgets.",
-    "Implementar Service/Binder + identidade/Keystore/pairing no Hub.",
-    "Implementar client Binder/pairing no Lunet sem referência a Hub.Core.",
-    "Rodar CI combinado, corrigir bindings .NET Android e preparar roteiro DEVICE."
+    "Executar CI do novo head com PrivateKeyEntry e diagnóstico por etapa.",
+    "Publicar novo APK candidato somente se Hub/Lunet/consistency estiverem verdes.",
+    "Repetir DEVICE a partir de B; se ainda falhar, registrar a etapa/tipo exato exibido pelo Lunet.",
+    "Somente após A-D passarem novamente reconciliar a validação e pedir autorização crítica."
   ],
   "decisions_required": [],
   "normative_sources": [
