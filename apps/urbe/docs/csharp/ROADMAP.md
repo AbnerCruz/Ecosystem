@@ -41,7 +41,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 ## M2 — Domínio do conhecimento e do mundo
 
 - [x] UC-12 — Documentos, artefatos e índice de conhecimento. PR #218 integrado automaticamente em `79c5be01`; 114/114 testes C#, Web/Android/Windows/E2E/checks e consistency verdes. Issue #216 encerrada.
-- [ ] UC-13 — Projeção do mundo e bairros, com IDs estáveis.
+- [ ] UC-13 — Projeção do mundo e bairros, com IDs estáveis. Em implementação na Issue #221 / PR #223; Core puro, sem terreno/simulação/renderização.
 - [ ] UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens.
 - [ ] UC-15 — Páginas e composições.
 - [ ] UC-16 — Matemática (decisão da biblioteca em UC-4/UC-5).
