@@ -5,7 +5,7 @@ namespace Hub.Core.Capabilities;
 
 /// <summary>
 /// Adapta a Host API pública a uma identidade já autenticada pelo binding externo.
-/// Não autentica Android/Binder: o adapter de plataforma entrega <paramref name="peer"/> e não existe
+/// Não autentica Android/Binder: o adapter de plataforma entrega a identidade do peer e não existe
 /// caminho para payload sobrescrever essa identidade.
 /// </summary>
 public sealed class AuthenticatedHostGateway : IDisposable
