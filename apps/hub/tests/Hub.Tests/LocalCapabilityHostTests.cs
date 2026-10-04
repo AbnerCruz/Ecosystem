@@ -15,9 +15,9 @@ public class LocalCapabilityHostTests
         new([tool ?? TextInspectionTool.Definition(Root())], declared.Length == 0 ? ["ui.display"] : declared);
     static LocalCapability Tool(Func<LocalInvocation, CancellationToken, Task<JsonElement>> handler,
         LocalContext? scope = null, Version? version = null, Func<JsonElement, bool>? validateOutput = null,
-        IEnumerable<string>? permissions = null)
+        IEnumerable<string>? permissions = null, Func<JsonElement, bool>? validateInput = null)
         => new(TextInspectionTool.CapabilityId, "test-provider", version ?? new(1, 0, 0), "inspect",
-            scope ?? Root(), permissions ?? ["ui.display"], "stateless", _ => true, validateOutput ?? (_ => true), handler);
+            scope ?? Root(), permissions ?? ["ui.display"], "stateless", validateInput ?? (_ => true), validateOutput ?? (_ => true), handler);
 
     [Fact]
     public async Task OneToolRunsInTwoContextsWithoutConcreteHostNames()
@@ -311,6 +311,68 @@ public class LocalCapabilityHostTests
         cancellation.Cancel();
         Assert.Equal("CANCELLED", (await running).Error);
         Assert.True((await session.DispatchAsync(Request("two"), TestContext.Current.CancellationToken)).Succeeded);
+    }
+
+    [Theory]
+    [InlineData("close", "SESSION_CLOSED")]
+    [InlineData("revoke", "CAPABILITY_UNAVAILABLE")]
+    [InlineData("cancel", "CANCELLED")]
+    public async Task StateChangedDuringInputValidationNeverReachesTheHandler(string change, string error)
+    {
+        var calls = 0;
+        LocalHostSession? session = null;
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var tool = Tool((_, _) => { calls++; return Task.FromResult(Input()); }, validateInput: _ =>
+        {
+            if (change == "close") session!.Dispose();
+            else if (change == "revoke") session!.Revoke(["ui.display"]);
+            else cancellation.Cancel();
+            return true;
+        });
+        using (session = Host(tool).Open("user", Context(), ["ui.display"]))
+        {
+            var response = await session.DispatchAsync(Request(), cancellation.Token);
+            Assert.Equal(0, calls);
+            Assert.Equal(error, response.Error);
+            Assert.DoesNotContain(session.Frames, f => f.Kind is "request" or "command" or "response" or "progress");
+        }
+    }
+
+    [Theory]
+    [InlineData(false, "DUPLICATE_REQUEST")]
+    [InlineData(true, "SESSION_BUSY")]
+    public async Task NestedValidationCannotBypassRequestReservation(bool pending, string error)
+    {
+        var calls = 0;
+        var entered = false;
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        LocalHostSession? session = null;
+        Task<LocalResponse>? nested = null;
+        var tool = Tool(async (_, _) =>
+        {
+            calls++;
+            if (pending) await gate.Task;
+            return Input();
+        }, validateInput: _ =>
+        {
+            if (!entered)
+            {
+                entered = true;
+                nested = session!.DispatchAsync(Request(), TestContext.Current.CancellationToken);
+            }
+            return true;
+        });
+        using (session = Host(tool).Open("user", Context(), ["ui.display"]))
+        {
+            // Release the inner operation even if the outer dispatch incorrectly starts a second one.
+            var outer = session.DispatchAsync(Request(), TestContext.Current.CancellationToken);
+            gate.SetResult();
+            Assert.Equal(error, (await outer).Error);
+            Assert.True((await nested!).Succeeded);
+            Assert.Equal(1, calls);
+            Assert.Single(session.Frames, f => f.Kind == "request");
+            Assert.Single(session.Frames, f => f.Kind == "response");
+        }
     }
 
     [Fact]

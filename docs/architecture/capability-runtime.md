@@ -44,6 +44,8 @@ Fontes verificadas: `apps/lunet2d/src/Lunet.Android/MainActivity.cs`, `MainActiv
 
 `LocalCapabilityHostTests` cobre dois contextos, grants negados/indeclarados/imutáveis, scope entre projetos, versões, impersonação, operação/protocolo/kind inválidos, schema/limite do input, repetição, journal/identidades limitados, busy, fechamento idempotente, cancelamento, resultado/progresso tardios e exceção sanitizada. `TextInspectionTool` usa Unicode scalar values (emoji simples conta um caractere), palavras como tokens de whitespace e linhas LF; não é análise linguística nem contador de graphemes.
 
+Validators também são callbacks de código confiável local. Como o lock da sessão é reentrante, o Host revalida fechamento, grants, cancelamento, sessão ocupada, identidade duplicada e orçamento depois de validar input, antes de reservar a invocação e executar o handler. Fechamento/revogação durante validação e dispatch aninhado têm regressões determinísticas; código confiável não dispensa essas garantias.
+
 Handlers são código confiável local: cancellation é cooperativa. Isolamento, timeout obrigatório de código não confiável, persistência e autenticação interprocessos são critérios de P5-4, não promessas deste slice.
 
 ## Slice P5-3 — contrato draft e conformance local
