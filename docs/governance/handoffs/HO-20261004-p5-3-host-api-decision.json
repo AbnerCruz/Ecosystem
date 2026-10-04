@@ -27,7 +27,8 @@
     "FATO OBSERVADO: auditoria de readiness mantém Lunet2D como menor caminho técnico para segundo Host, mas a Fase 3 local permanece aberta; Urbe C# ainda não possui Shell pronto e Ecosystem AI headless não é segundo Product Shell visual.",
     "PROPOSTA: ADR-0024 define Host API v1 como contrato semântico neutro de transporte, reutilizando Capability/Context/permissions/Registry existentes e mantendo ecosystem-local/0 experimental.",
     "PROPOSTA: DEC-0034 oferece três alternativas ao proprietário e recomenda separar Host API de IPC; nenhuma implementação pública, transporte ou extração foi criada.",
-    "ROADMAP e capability-runtime foram atualizados para tornar a decisão bloqueante e impedir avanço silencioso para IPC/segundo Host."
+    "ROADMAP e capability-runtime foram atualizados para tornar a decisão bloqueante e impedir avanço silencioso para IPC/segundo Host.",
+    "Correção após CI: o handoff arquitetural não registra reuse_assessment da Tool, pois este slice não cria nem consome a feature; isso evita fabricar um segundo consumidor."
   ],
   "verification": [
     {
@@ -129,12 +130,5 @@
     "declared": "routine",
     "reason": "Este PR apenas registra uma proposta arquitetural e uma decisão pendente; não aceita a Host API, não muda protocolo/runtime, não adiciona permissão, IPC, dependency ou distribuição. A implementação posterior será classificada pelo diff real."
   },
-  "reuse_assessment": [
-    {
-      "subject": "text-inspection-tool",
-      "status": "possible-candidate",
-      "rationale": "Existe contrato draft e primeiro consumidor Hub, mas ainda não há segundo Host real; permanece local até consumidor concreto e Extraction Review."
-    }
-  ],
   "cost": null
 }
