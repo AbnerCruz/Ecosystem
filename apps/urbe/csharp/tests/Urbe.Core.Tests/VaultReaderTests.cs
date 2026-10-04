@@ -67,8 +67,10 @@ public sealed class VaultReaderTests
                 var document = Assert.Single(snapshot.Documents, item =>
                     string.Equals(item.Path, property.Name, StringComparison.OrdinalIgnoreCase));
                 var pair = property.Value.EnumerateArray().Select(item => item.GetDouble()).ToArray();
-                Assert.Equal(pair[0], document.X);
-                Assert.Equal(pair[1], document.Y);
+                Assert.NotNull(document.X);
+                Assert.NotNull(document.Y);
+                Assert.Equal(pair[0], document.X.Value);
+                Assert.Equal(pair[1], document.Y.Value);
             }
         }
 
@@ -77,7 +79,7 @@ public sealed class VaultReaderTests
             Assert.All(snapshot.Documents, document =>
             {
                 Assert.True(document.IdGenerated);
-                Assert.StartsWith("doc_", document.Id, StringComparison.Ordinal);
+                Assert.True(document.Id.StartsWith("doc_", StringComparison.Ordinal));
             });
             Assert.Equal(snapshot.Documents.Count, snapshot.Documents.Select(document => document.Id).Distinct().Count());
         }
@@ -177,8 +179,8 @@ public sealed class VaultReaderTests
         var a = Assert.Single(snapshot.Documents, document => document.Path == "A.md");
         Assert.Equal("recovered", a.Text);
         Assert.Equal("doc_fixed", a.Id);
-        Assert.Equal(7, a.X);
-        Assert.Equal(9, a.Y);
+        Assert.Equal(7d, a.X);
+        Assert.Equal(9d, a.Y);
         Assert.Equal(Hash(original), Hash(snapshot.Files["A.md"].Bytes.Span));
         Assert.True(snapshot.Files.ContainsKey(".urbe/journal.json"));
         Assert.True(snapshot.RecoveredFromJournal);
@@ -229,8 +231,8 @@ public sealed class VaultReaderTests
         Assert.True(snapshot.IsMapReadOnly);
         Assert.False(snapshot.IsReadOnly);
         Assert.Equal("doc_a", document.Id);
-        Assert.Equal(12, document.X);
-        Assert.Equal(13, document.Y);
+        Assert.Equal(12d, document.X);
+        Assert.Equal(13d, document.Y);
         Assert.Equal("future", snapshot.Mundo);
         Assert.DoesNotContain(".urbe/mapa.json", snapshot.FutureFiles);
     }
