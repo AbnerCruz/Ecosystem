@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p4-9-cutover-workflow",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T09:13:00Z",
+  "agent": {
+    "id": "chatgpt-p4-9-cutover-workflow",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-9",
+  "component": "ecosystem",
+  "state": "verifying",
+  "branch": "chatgpt/p4-9-cutover-workflow",
+  "base_commit": "dcb5e056730c67e8931725e8dc66e1e63a70a18a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/188",
+  "files_changed": [
+    ".github/workflows/urbe-cutover.yml",
+    "docs/distribution/urbe-cutover-runbook.md",
+    "docs/governance/handoffs/HO-20261004-p4-9-cutover-workflow.json"
+  ],
+  "work_completed": [
+    "Adicionado workflow manual urbe-cutover para criar tags P4-9 sem exigir git local nem criação manual de tags no celular.",
+    "Modo legacy-bridge aceita exclusivamente 1.8.3-beta, valida package.json/CHANGELOG/feed aprovado e cria urbe/v1.8.3-beta; não publica automaticamente no repositório de origem.",
+    "Modo direct exige versão canônica posterior à ponte, cria urbe-v<versão> e dispara explicitamente urbe-release.yml sobre a tag, pois pushes com GITHUB_TOKEN não disparam outro workflow automaticamente.",
+    "Workflow usa main canônica, recusa versão/tag divergente, não move tag existente e não possui fallback de assinatura.",
+    "Runbook registra a ordem obrigatória ponte legada → release direto → DEVICE → alteração do current profile → fechamento da Fase 4."
+  ],
+  "verification": [
+    {
+      "check": "Consistency e simulação do integrador",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI/integrador do PR deste slice."
+    },
+    {
+      "check": "Execução real do corte",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "A criação deste helper não é a execução do release nem validação DEVICE. Esses passos permanecem em P4-9 após integração/autorização."
+    }
+  ],
+  "known_issues": [
+    "O helper não possui credencial cross-repo e portanto não dispara sync-from-ecosystem em AbnerCruz/Urbe; após criar a tag legacy-bridge o proprietário ainda precisa executar o workflow de sync na origem (ou aguardar schedule).",
+    "A versão direta ainda não foi criada; primeiro a ponte 1.8.3-beta deve ser publicada pelo canal antigo.",
+    "A disponibilidade da mesma chave privada Android no Ecosystem só pode ser provada pelo primeiro build/release direto; falha deve permanecer fechada.",
+    "DEVICE com atualização encadeada e preservação do vault continua obrigatório."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar este workflow crítico somente após checks e autorização do proprietário.",
+    "Executar legacy-bridge 1.8.3-beta e depois sync-from-ecosystem na origem; verificar release legado e assinatura.",
+    "Bumpar o Urbe para versão posterior, integrar e executar stage direct; verificar release direto.",
+    "Criar validação DEVICE P4-9; após aprovação, atualizar current profile e fechar P4-9/Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
+    "docs/distribution/direct-releases.md",
+    ".github/workflows/urbe-release.yml",
+    ".github/origin-sync/sync-from-ecosystem.sh",
+    "docs/migration/import-plan.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão vem de apps/urbe/package.json; o helper não mantém versão paralela."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Fluxo deriva de DEC-0031/ADR-0019 e é persistido em workflow/runbook/handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mecanismo de release é mudança crítica explícita e passa por autorização do proprietário."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Tags continuam namespaced: urbe/v para ponte legada e urbe-v para releases diretos do Product."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Criar tag/release não equivale a DEVICE; o runbook mantém validação física separada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P4-9 permanece aberto até releases reais e DEVICE."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Fluxo preserva canal legado e standalone; Hub não participa do updater nem do release."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane",
+      "distribution"
+    ],
+    "reason": "Adiciona workflow com contents/actions write capaz de criar tags e iniciar release do Urbe; integração exige autorização explícita do proprietário."
+  },
+  "cost": null
+}
