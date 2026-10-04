@@ -439,7 +439,7 @@ public static class VaultWriter
             root["formatVersion"] = 2;
             root["createdBy"] = writer;
             root["lastWriter"] = writer;
-            root["created"] = now.UtcDateTime.ToString("O");
+            root["created"] = UtcIso(now);
             var migrations = new JsonArray();
             if (migrated && backupDirectory is not null)
             {
@@ -448,7 +448,7 @@ public static class VaultWriter
                     ["id"] = "1-to-2",
                     ["from"] = 1,
                     ["to"] = 2,
-                    ["at"] = now.UtcDateTime.ToString("O"),
+                    ["at"] = UtcIso(now),
                     ["backup"] = backupDirectory
                 });
             }
@@ -496,7 +496,7 @@ public static class VaultWriter
             ["from"] = 1,
             ["to"] = 2,
             ["reason"] = "migration",
-            ["at"] = now.UtcDateTime.ToString("O"),
+            ["at"] = UtcIso(now),
             ["files"] = files,
             ["absent"] = new JsonArray()
         };
@@ -642,6 +642,9 @@ public static class VaultWriter
             return false;
         }
     }
+
+    private static string UtcIso(DateTimeOffset value) =>
+        value.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
 
     private static int? GetOptionalInt(JsonNode? node)
     {
