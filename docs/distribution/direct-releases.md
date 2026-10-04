@@ -74,9 +74,7 @@ Baixar APK direto do Lunet, conferir versão e assinatura, atualizar por cima do
 Lunet existente sem desinstalar; reabrir um projeto, editar, executar e importar ZIP.
 Esta validação humana está pendente e não é substituída pelo CI.
 
-O perfil current declara o pipeline/canal direto do Lunet habilitado por este PR;
-sem release publicada, portal e Hub mostram indisponibilidade. Isso não afirma
-que um APK já foi publicado ou validado. Urbe permanece no canal antigo até P4-9.
+O perfil `current` usa `locationFrom: ecosystem.repository` para os canais GitHub Releases já reais do Lunet e do Hub, derivando a localização de `ecosystem.repository` em `ecosystem.json` sem copiar URL. O mesmo locator será usado pelo canal de releases do Urbe somente depois que uma release `urbe-v*` existir e for validada. Urbe permanece no canal antigo até P4-9.
 
 Rastreabilidade da tarefa: **P4-10**, Issue #120, handoff
 `HO-20261003-releases-diretas`. O ID P4-8 foi usado por engano na

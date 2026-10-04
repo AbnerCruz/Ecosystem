@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "ecosystem/contracts/distribution-profile/1",
   "title": "Distribution Profile — schemaVersion 1",
-  "description": "Descreve quais componentes formam uma edição/distribuição e em que condições (ADD-0002 §7-§8, distribution.md; ADR-0012). Arquitetura ≠ distribuição. Três eixos independentes por entrada (visibility, distribution, commercialModel), mais availability; NOMES E VALORES CONGELADOS em P2-9 (2026-10-01, depois de DEC-0020-B e DEC-0021-C): mudar um nome exige ADR e migração dos perfis. SOURCE ≠ DISTRIBUTION: a fonte de desenvolvimento de um componente é o seu `path` em ecosystem.json (apps/<id> no Ecosystem); `channels` descrevem POR ONDE builds/releases/web chegam ao usuário e nunca copiam URLs: apontam para o campo do componente (`locationFrom`). `status`: `example` (ilustrativo), `current` (o arranjo REAL vigente; só descreve canais que existem) ou `target` (direção decidida pelo proprietário, ainda NÃO operacional; precisa citar a decisão). NN-023: nenhum perfil que inclua um Product público pode ter o Hub como 'bundled'.",
+  "description": "Descreve quais componentes formam uma edição/distribuição e em que condições (ADD-0002 §7-§8, distribution.md; ADR-0012). Arquitetura ≠ distribuição. Três eixos independentes por entrada (visibility, distribution, commercialModel), mais availability; NOMES E VALORES CONGELADOS em P2-9 (2026-10-01, depois de DEC-0020-B e DEC-0021-C): mudar um nome exige ADR e migração dos perfis. SOURCE ≠ DISTRIBUTION: a fonte de desenvolvimento de um componente é o seu `path` em ecosystem.json (apps/<id> no Ecosystem); `channels` descrevem POR ONDE builds/releases/web chegam ao usuário e nunca copiam URLs: `locationFrom` aponta para uma autoridade já existente (`source.repository`, `publicUrl` ou `ecosystem.repository` para releases hospedadas no monorepo). `status`: `example` (ilustrativo), `current` (o arranjo REAL vigente; só descreve canais que existem) ou `target` (direção decidida pelo proprietário, ainda NÃO operacional; precisa citar a decisão). NN-023: nenhum perfil que inclua um Product público pode ter o Hub como 'bundled'.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -119,10 +119,11 @@
                   ]
                 },
                 "locationFrom": {
-                  "description": "Campo do componente em ecosystem.json de onde vem a localização (sem copiar a URL; NN-001): source.repository = repositório de ORIGEM (nome histórico do campo: é o repositório que distribui e espelha, não onde se desenvolve) ou publicUrl. Obrigatório em canais existentes; ausente apenas no canal first-party-platform de um perfil target (a plataforma ainda não tem localização).",
+                  "description": "Autoridade de onde vem a localização, sem copiar URL (NN-001): source.repository = repositório histórico/origem do Product; publicUrl = URL pública própria do componente; ecosystem.repository = repositório canônico do Ecosystem, usado por canais GitHub Releases publicados diretamente pelo monorepo. Obrigatório em canais existentes; ausente apenas no canal first-party-platform de um perfil target.",
                   "enum": [
                     "source.repository",
-                    "publicUrl"
+                    "publicUrl",
+                    "ecosystem.repository"
                   ]
                 },
                 "artifacts": {
