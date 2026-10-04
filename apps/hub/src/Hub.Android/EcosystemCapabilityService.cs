@@ -99,8 +99,9 @@ public sealed class EcosystemCapabilityService : Service
 
     internal IpcResponse Open(AndroidPeerIdentity peer, IpcRequest request, IBinder? lifecycleToken)
     {
-        if (!TrustPolicy.AllowsCaller(peer)) return Error("PEER_UNTRUSTED");
-        if (request.Op != "session.open" || request.Signature is null || request.ContextJson is null
+        var callerPolicy = TrustPolicy.Caller(peer);
+        if (callerPolicy is null) return Error("PEER_UNTRUSTED");
+        if (request.Op != "session.open" || request.Signature is null || request.ContextJson is not null
             || !EcosystemIpcProtocol.ValidId(request.ChallengeId))
             return Error("PROTOCOL_UNSUPPORTED");
         var approved = Pairings.Approved(peer, request.PairId);
@@ -112,11 +113,18 @@ public sealed class EcosystemCapabilityService : Service
         if (!AndroidInstallationKey.Verify(approved.PublicKey, EcosystemIpcProtocol.SignBytes(request), request.Signature))
             return Error("SIGNATURE_INVALID");
 
-        var context = ParseContext(request.ContextJson);
-        if (context is null) return Error("PROTOCOL_UNSUPPORTED");
+        LocalContext context;
+        try
+        {
+            context = new LocalContext(callerPolicy.Context.Select(x => new ContextStep(x.Level, x.Id)));
+        }
+        catch (ArgumentException)
+        {
+            return Error("PEER_UNTRUSTED");
+        }
         var actor = $"android:{peer.PackageName}:{approved.KeyHash[..Math.Min(12, approved.KeyHash.Length)]}";
         if (lifecycleToken is null) return Error("PROTOCOL_UNSUPPORTED");
-        var opened = Gateway.Open(approved.KeyHash, actor, context, []);
+        var opened = Gateway.Open(approved.KeyHash, actor, context, callerPolicy.Grants);
         if (!opened.Succeeded) return new(false, HostError: opened.Error);
         if (!RegisterDeathWatch(opened.SessionId!, approved.KeyHash, lifecycleToken))
         {
@@ -199,14 +207,6 @@ public sealed class EcosystemCapabilityService : Service
         if (!AndroidInstallationKey.Verify(approved.PublicKey, EcosystemIpcProtocol.SignBytes(request), request.Signature))
         { error = Error("SIGNATURE_INVALID"); return false; }
         return true;
-    }
-
-    static LocalContext? ParseContext(string json)
-    {
-        var context = EcosystemIpcProtocol.Deserialize<IpcContext>(json);
-        if (context?.Steps is not { Length: > 0 and <= 5 }) return null;
-        try { return new LocalContext(context.Steps.Select(x => new ContextStep(x.Level, x.Id))); }
-        catch (ArgumentException) { return null; }
     }
 
     void CleanupChallenges()
