@@ -11,7 +11,26 @@
     {
       "packageId": "io.lunet.studio",
       "certificateSha256": "4807F9080BF5535D20734476E3E3BC9FE6446C70E384771486E6AC333EDD9207",
-      "publicDevelopmentKey": true
+      "publicDevelopmentKey": true,
+      "context": [
+        {
+          "level": "ecosystem",
+          "id": "ecosystem"
+        },
+        {
+          "level": "product",
+          "id": "lunet2d"
+        },
+        {
+          "level": "workspace",
+          "id": "ide"
+        },
+        {
+          "level": "tool",
+          "id": "text-inspect"
+        }
+      ],
+      "grants": []
     }
   ]
 }
