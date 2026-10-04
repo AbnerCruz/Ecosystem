@@ -1,4 +1,4 @@
-# Cliente C# do Urbe — UC-8 + UC-9
+# Cliente C# do Urbe — UC-8 + UC-9 + UC-10
 
 Base de composição aprovada por DEC-0035-A / ADR-0025. O roadmap e os gates
 continuam em [`../docs/csharp/ROADMAP.md`](../docs/csharp/ROADMAP.md).
@@ -23,8 +23,10 @@ Formato futuro do vault torna o snapshot globalmente somente leitura. Formato fu
 de mapa, sidecar, tema ou página protege apenas o artefato correspondente. Journal
 v2 futuro não cai para v1. A suíte `VaultReaderTests` executa as 12 fixtures canônicas
 de `tests/fixtures/vaults/` e casos negativos de paths inseguros, duplicatas,
-precedência, corrupção e recuperação. Escrita, remoção de journal, backup e migração
-continuam exclusivamente em UC-10.
+precedência, corrupção e recuperação. UC-10 adiciona o caminho inverso como **plano puro de mutações**: backup 1→2,
+sidecars v2, journal transitório, identidade, vault.json, restauração e GC. O Core
+ainda não executa IO; hosts futuros aplicarão a sequência ordenada de operações,
+permitindo testar estado final e atomicidade antes de tocar arquivos reais.
 
 `Urbe.Portable.slnx` compila em qualquer SO com .NET 10; `Urbe.Native.slnx`
 exige workloads MAUI. Interfaces de plataforma serão adicionadas quando houver

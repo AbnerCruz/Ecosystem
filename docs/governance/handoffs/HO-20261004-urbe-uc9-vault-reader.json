@@ -10,10 +10,10 @@
   },
   "task_id": "UC-9",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "feat/urbe-uc9-vault-reader",
   "base_commit": "d2e0f01916f4570fad1e56e7efc6d609a3427f0f",
-  "commit": null,
+  "commit": "8aa72c2d2ab893190b8e80bb82e34d677588359b",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/203",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/VaultReader.cs",
@@ -32,7 +32,8 @@
     "Precedência v2 sobre v1; arquivo v2 futuro ou corrupto é preservado e não provoca fallback destrutivo.",
     "Journal v1/v2 suportado projeta o estado efetivo recuperável sem remover nem alterar os bytes físicos; journal futuro/corrupto é preservado e ignorado.",
     "Proteção forward global para vault futuro e por artefato para mapa, sidecars, tema, página e identity.",
-    "Testes cobrem as 12 fixtures canônicas e negativos de path traversal, duplicatas normalizadas, corrupção, precedência e recuperação."
+    "Testes cobrem as 12 fixtures canônicas e negativos de path traversal, duplicatas normalizadas, corrupção, precedência e recuperação.",
+    "Fechamento factual: PR #203 integrado em 8aa72c2 após head final com urbe-checks 37214179413 e consistency 37214179366 verdes; Issue #199 encerrada state:done."
   ],
   "verification": [
     {
@@ -64,13 +65,9 @@
     "UC-9 não escreve, migra, cria backup, remove journal nem conecta o leitor aos hosts; isso pertence a UC-10 e etapas posteriores.",
     "Gate G-C1 continua aberto porque escrita e migração ainda não existem no cliente C#."
   ],
-  "blockers": [
-    "Integração crítica depende de autorização canônica do proprietário."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Proprietário autoriza a integração crítica do PR #203 pelo mecanismo canônico.",
-    "Integrador reconfirma o estado combinado e integra conforme a política.",
-    "Após UC-9 integrado, iniciar UC-10."
+    "UC-10 / Issue #208 / PR #209 implementa a escrita segura do vault."
   ],
   "decisions_required": [],
   "normative_sources": [

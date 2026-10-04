@@ -341,7 +341,7 @@ public static class VaultReader
             if (!TryParseObject(file, out var json))
             {
                 future.Add(candidate.Path);
-                return JournalProjection.Foreign(candidate.Path);
+                continue;
             }
 
             using (json)
@@ -353,7 +353,7 @@ public static class VaultReader
                     docs.ValueKind != JsonValueKind.Array)
                 {
                     future.Add(candidate.Path);
-                    return JournalProjection.Foreign(candidate.Path);
+                    continue;
                 }
 
                 var projected = new List<JournalDocument>();
@@ -385,7 +385,7 @@ public static class VaultReader
                 catch (InvalidDataException)
                 {
                     future.Add(candidate.Path);
-                    return JournalProjection.Foreign(candidate.Path);
+                    continue;
                 }
 
                 JsonElement? metadata = null;

@@ -243,3 +243,18 @@
 - Verificação: urbe-checks 37213623887 verde em C# portátil (33/33), Android, Windows, E2E e npm checks; consistency 37213623896 verde.
 - Revisão adversarial adicional corrigiu duas divergências antes da integração: IDs não persistidos voltam a ser UUIDs novos por abertura, como no 1.x; decodificação textual segue UTF-8 tolerante do navegador, preservando os bytes físicos originais.
 - Bloqueio único: autorização canônica do proprietário para integrar mudança classificada como user-data. UC-10 não começa antes da integração de UC-9.
+
+
+### 2026-10-04 — ChatGPT — UC-10 / Issue #208 / PR #209
+- Estado: escrita segura do vault em implementação na branch `feat/urbe-uc10-vault-writer`; UC-9 integrada pelo PR #203 e Issue #199 encerrada.
+- Feito: motor puro de mutações, backup restaurável 1→2, migração idempotente, sidecars v2 preservando v1, journal multi-arquivo, vault.json, identidade documental e restauração; GC usa o mesmo escritor, com dry-run/retenção/maintenance.
+- Paridade: fingerprint FNV/normalização/`seen` seguem `identity.js`; ordem e proteção forward seguem `workspace.js`; backup segue `backup.js`; GC segue `gc.js`.
+- Testes: nova suíte cobre fixtures `v1-mapa-v4`, `futuro-v2`, `vault-futuro` e `v1-orfaos`, além de journal e identidade. CI do PR é a autoridade de compilação/regressão.
+- Limites: nenhum adapter Web/MAUI/filesystem conectado; UC-11 (ZIP) não foi antecipada. Integração continua crítica por dados do usuário.
+
+
+### 2026-10-04 — ChatGPT — UC-10 verificada
+- Estado: PR #209 no head `83ed0c77` tecnicamente concluído e movido para review crítico.
+- Evidência: `urbe-checks` 37217933358 verde em checks, C# portátil, MAUI Windows, MAUI Android e E2E; 43/43 `Urbe.Core.Tests` passaram. `consistency` 37217933366 verde.
+- Gate: G-C1 agora está aguardando exclusivamente a integração crítica autorizada do PR #209; nenhuma nova implementação do Core é necessária antes disso.
+- Próximo passo após integração: fechar Issue #208, marcar UC-10 concluída, aprovar G-C1 e iniciar UC-11 (ZIP + manifesto).
