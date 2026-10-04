@@ -2,7 +2,7 @@
 
 ## Status
 
-Aceito — **DEC-0037-A** escolhida pelo proprietário em 2026-10-04 (Issue #206). O primeiro binding IPC é Android Bound Service/Binder com identidade do SO e pareamento por instalação em Keystore; a escolha não se estende automaticamente a Web/Windows.
+Proposto — aguarda **DEC-0037**. Nenhum transporte, endpoint, permissão Android ou política de confiança desta ADR entra em vigor antes da decisão do proprietário.
 
 ## Contexto
 
@@ -57,9 +57,11 @@ Permite avançar parcialmente na hospedagem da mesma Tool dentro do Lunet sem tr
 
 ## Decisão
 
-**DEC-0037-A aceita:** Android Bound Service/Binder + identidade do SO + pareamento por instalação em Keystore.
+**Pendente — DEC-0037.**
 
-A escolha é específica ao primeiro alvo Android. Não significa que Binder será usado por Urbe Web, Windows ou futuros Hosts.
+Recomendação técnica atual: **Opção A**.
+
+A recomendação é específica ao primeiro alvo Android. Não significa que Binder será usado por Urbe Web, Windows ou futuros Hosts.
 
 ## Consequências
 
@@ -92,7 +94,7 @@ Cancelamento precisa de caminho de controle independente da fila de trabalho. De
 
 ## Alternativas rejeitadas
 
-DEC-0037 rejeitou B (Unix local socket), C (TCP loopback) e D (adiar IPC). B/C adicionariam framing, autenticação e lifecycle próprios sem evidência de redução de complexidade no primeiro alvo Android; D adiaria explicitamente o objetivo de P5-4.
+Nenhuma enquanto DEC-0037 estiver pendente. A decisão do proprietário preencherá esta seção e mudará o status para Aceito se aplicável.
 
 ## Referências
 
