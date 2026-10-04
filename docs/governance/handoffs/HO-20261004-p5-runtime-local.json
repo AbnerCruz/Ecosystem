@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261004-p5-runtime-local",
   "category": "HANDOFF",
-  "timestamp": "2026-10-04T06:44:18.684960Z",
+  "timestamp": "2026-10-04T06:45:31.117825Z",
   "agent": {
     "id": "codex-p5-runtime-local",
     "kind": "ai-agent"
@@ -46,8 +46,7 @@
       "check": "Consistency",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Todos os 22 checks locais passaram. CI consistency 37183425517 também passou, incluindo ROADMAP × Issues, self-test e simulação.",
-      "tested_commit": "427667bcb56fd548a169f3fd5e6458e34c211960"
+      "evidence": "Todos os 22 checks locais passaram. CI consistency 37183425517 também passou, incluindo ROADMAP × Issues, self-test e simulação. Estado testado: merge temporário GitHub 427667bcb56fd548a169f3fd5e6458e34c211960 (mesma árvore do resultado bdd33d2; não é ancestral persistente da branch)."
     },
     {
       "check": "Self-test dos checks",
@@ -65,8 +64,7 @@
       "check": "CI remoto e build Android",
       "kind": "automated",
       "result": "passed",
-      "evidence": "hub-ci 37183425596: 244 testes verdes; build Android, certificado de desenvolvimento estável e upload do APK passaram. consistency 37183425517 verde. Integração combinada pelo integrador ainda pendente.",
-      "tested_commit": "427667bcb56fd548a169f3fd5e6458e34c211960"
+      "evidence": "hub-ci 37183425596: 244 testes verdes; build Android, certificado de desenvolvimento estável e upload do APK passaram. consistency 37183425517 verde. Integração combinada pelo integrador ainda pendente. Estado testado: merge temporário GitHub 427667bcb56fd548a169f3fd5e6458e34c211960 (mesma árvore do resultado bdd33d2; não é ancestral persistente da branch)."
     },
     {
       "check": "Uso e lifecycle da análise de texto no Hub",
