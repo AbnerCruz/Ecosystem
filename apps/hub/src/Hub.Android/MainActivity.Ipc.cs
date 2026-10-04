@@ -40,9 +40,9 @@ public sealed partial class MainActivity
                     return;
                 }
 
-                var signer = approved.SignerSha256.Length > 16 ? approved.SignerSha256[..16] + "…" : approved.SignerSha256;
+                var approvedSigner = approved.SignerSha256.Length > 16 ? approved.SignerSha256[..16] + "…" : approved.SignerSha256;
                 new AlertDialog.Builder(this).SetTitle("Conexão local aprovada")
-                    .SetMessage($"Aplicativo: {approved.PackageName}\nAssinante observado: {signer}\nA revogação remove a confiança desta instalação. O próximo uso exigirá novo pareamento.")
+                    .SetMessage($"Aplicativo: {approved.PackageName}\nAssinante observado: {approvedSigner}\nA revogação remove a confiança desta instalação. O próximo uso exigirá novo pareamento.")
                     .SetNegativeButton("Fechar", (_, _) => { })
                     .SetPositiveButton("Revogar", (_, _) => store.Revoke(approved.PairId))
                     .Show();
