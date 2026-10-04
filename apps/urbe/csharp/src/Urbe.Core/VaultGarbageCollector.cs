@@ -265,7 +265,7 @@ public static class VaultGarbageCollector
             now,
             maintenance);
         final[".urbe/vault.json"] = new VaultFile(".urbe/vault.json", vaultBytes);
-        operations.Add(CreateWriteOperation(".urbe/vault.json", vaultBytes));
+        operations.Add(new VaultOperation(VaultOperationKind.Write, ".urbe/vault.json", vaultBytes));
 
         var result = new VaultWriteResult(
             true,
@@ -276,16 +276,6 @@ public static class VaultGarbageCollector
             write.JournalUsed);
 
         return new VaultGcResult(false, plan, result);
-    }
-
-    private static VaultOperation CreateWriteOperation(string path, byte[] bytes)
-    {
-        var constructor = typeof(VaultOperation).GetConstructor(
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
-            binder: null,
-            [typeof(VaultOperationKind), typeof(string), typeof(byte[])],
-            modifiers: null);
-        return (VaultOperation)constructor!.Invoke([VaultOperationKind.Write, path, bytes]);
     }
 
     private static JsonObject ReadSidecar(
@@ -310,8 +300,9 @@ public static class VaultGarbageCollector
         if (files.TryGetValue(v1, out var v1File))
         {
             var parsed = Parse(v1File.Bytes);
+            var parsedVersion = OptionalInt(parsed?["version"]);
             var versionAccepted = parsed is not null &&
-                                  (parsed["version"]?.GetValue<int?>() == 1 ||
+                                  (parsedVersion == 1 ||
                                    (key == "trash" && parsed["version"] is null));
             if (versionAccepted)
                 return parsed!;
@@ -339,6 +330,13 @@ public static class VaultGarbageCollector
         {
             return null;
         }
+    }
+
+    private static int? OptionalInt(JsonNode? node)
+    {
+        if (node is not JsonValue value)
+            return null;
+        return value.TryGetValue<int>(out var number) ? number : null;
     }
 
     private static bool TryTrashId(JsonNode? node, out string id)
