@@ -31,6 +31,9 @@
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <AndroidAsset Include="..\..\..\..\docs\contracts\bindings\android-binder-v1.trust.json" Link="Assets\ecosystem\android-binder-v1.trust.json" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Hub.Core\Hub.Core.csproj" />
   </ItemGroup>
 </Project>
