@@ -154,6 +154,14 @@ public sealed class AuthenticatedHostGateway : IDisposable
         }
     }
 
+    public bool Revoke(string peer, string sessionId, IEnumerable<string> permissions)
+    {
+        ArgumentNullException.ThrowIfNull(permissions);
+        if (!TryOwned(peer, sessionId, out var entry)) return false;
+        lock (entry.Sync) entry.LastActivityUtc = _clock.GetUtcNow();
+        return entry.Session.Revoke(permissions);
+    }
+
     public bool Cancel(string peer, string sessionId, string requestId)
     {
         if (!TryOwned(peer, sessionId, out var entry)) return false;
