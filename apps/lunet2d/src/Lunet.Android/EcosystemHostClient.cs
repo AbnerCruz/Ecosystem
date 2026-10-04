@@ -63,7 +63,7 @@ internal sealed class EcosystemHostClient : IDisposable
             var pair = Rpc(EcosystemIpcProtocol.PairBegin, new IpcRequest(
                 Op: "pair.begin", PublicKey: _key.PublicKey, ClientNonce: nonce));
             if (!pair.Ok || pair.PairId is null || pair.ProviderPublicKey is null)
-                return Error(pair);
+                return Error(pair, stage);
 
             _candidate = candidate;
             _pair = new PairCandidate(pair.PairId, pair.ProviderPublicKey);
@@ -104,7 +104,7 @@ internal sealed class EcosystemHostClient : IDisposable
             var challenge = Rpc(EcosystemIpcProtocol.Challenge, challengeRequest);
             if (!challenge.Ok || challenge.ChallengeId is null || challenge.Challenge is null
                 || challenge.ProviderSignature is null || challenge.ProviderPublicKey != pair.ProviderPublicKey)
-                return Error(challenge);
+                return Error(challenge, stage);
 
             stage = "provider.proof";
             // Provider uses SHA-256 of raw public-key bytes. Compute the same lowercase hex value.
@@ -125,7 +125,7 @@ internal sealed class EcosystemHostClient : IDisposable
                 Challenge: challenge.Challenge));
             stage = "session.open.rpc";
             var opened = Rpc(EcosystemIpcProtocol.Open, open, _lifecycleToken);
-            if (!opened.Ok || opened.SessionId is null) return Error(opened);
+            if (!opened.Ok || opened.SessionId is null) return Error(opened, stage);
             _sessionId = opened.SessionId;
 
             stage = "discover";
@@ -151,7 +151,7 @@ internal sealed class EcosystemHostClient : IDisposable
                 Op: "invoke", PairId: pair.PairId, SessionId: _sessionId, RequestId: requestId,
                 Capability: "text.inspect", CapabilityOperation: "inspect", MinimumVersion: "1.0.0",
                 DeadlineMs: 10_000, InputJson: input)));
-            if (!invoke.Ok || invoke.OutputJson is null) return Error(invoke);
+            if (!invoke.Ok || invoke.OutputJson is null) return Error(invoke, stage);
 
             stage = "result.parse";
             using var output = JsonDocument.Parse(invoke.OutputJson);
@@ -172,8 +172,8 @@ internal sealed class EcosystemHostClient : IDisposable
     IpcRequest Signed(IpcRequest request) =>
         request with { Signature = _key.Sign(EcosystemIpcProtocol.SignBytes(request)) };
 
-    static HostTestResult Error(IpcResponse response) => new(false,
-        $"Falha: {response.TransportError ?? response.HostError ?? "resposta inválida"}.");
+    static HostTestResult Error(IpcResponse response, string stage) => new(false,
+        $"IPC falhou em {stage}: {response.TransportError ?? response.HostError ?? "resposta inválida"}.");
 
     IpcResponse Rpc(int code, IpcRequest request, IBinder? lifecycleToken = null)
     {
