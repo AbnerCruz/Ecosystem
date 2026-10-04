@@ -18,6 +18,7 @@
     "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/docs/csharp/PARITY.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/acceptance/E2E-COVERAGE.md",
     "apps/urbe/docs/csharp/acceptance/README.md",
     "apps/urbe/docs/csharp/acceptance/cases.json",
     "apps/urbe/docs/csharp/acceptance/ui-cases.json",
@@ -40,7 +41,8 @@
     "FATO OBSERVADO: PR #169 integrado em 197cee91; base inclui a versão-ponte #167.",
     "19 casos JSON atualização Android/Windows: seleção do Product, versões, eventos/replay, instalação/reinício e erros/recuperação; hosts e rede simulados.",
     "Sete cenários UI portáveis e cliente unificado: primeira abertura, edição/roteamento, lifecycle documental e GC com diálogo cancelar/aplicar; teste E2E no filtro app-runtime.",
-    "Corpus aditivo 233 → 259, sem alterar runtime, goldens, hashes do oráculo ou IDs anteriores."
+    "Corpus aditivo 233 → 259, sem alterar runtime, goldens, hashes do oráculo ou IDs anteriores.",
+    "Inventário dos 14 E2E com critérios ainda a transcrever, sem converter cobertura parcial em conclusão de UC-2."
   ],
   "verification": [
     {
