@@ -258,3 +258,10 @@
 - Evidência: `urbe-checks` 37217933358 verde em checks, C# portátil, MAUI Windows, MAUI Android e E2E; 43/43 `Urbe.Core.Tests` passaram. `consistency` 37217933366 verde.
 - Gate: G-C1 agora está aguardando exclusivamente a integração crítica autorizada do PR #209; nenhuma nova implementação do Core é necessária antes disso.
 - Próximo passo após integração: fechar Issue #208, marcar UC-10 concluída, aprovar G-C1 e iniciar UC-11 (ZIP + manifesto).
+
+
+### 2026-10-04 — ChatGPT — UC-10 integrada / G-C1 aprovado
+- PR #209 autorizado pelo proprietário via label canônica `integrar` e integrado pelo integrador em `590c9328`.
+- O estado combinado testado passou 43/43 testes C#, Web/portable, Android, Windows, E2E, checks e consistency.
+- UC-10 encerrada; G-C1 aprovado. O Core agora possui leitura e escrita do vault com migração/backup/identidade/GC sob o contrato histórico.
+- Próxima tarefa: UC-11 — export/import ZIP + manifesto, ainda sem acoplar filesystem/hosts.
