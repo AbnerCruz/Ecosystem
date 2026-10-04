@@ -16,6 +16,7 @@ internal static class EcosystemIpcProtocol
     internal const int Cancel = global::Android.OS.IBinder.FirstCallTransaction + 5;
     internal const int Close = global::Android.OS.IBinder.FirstCallTransaction + 6;
     internal const int MaxFrameBytes = 256 * 1024;
+    internal const int MaxParcelBytes = 640 * 1024;
     internal const int MaxEncodedKeyBytes = 2048;
     internal const int MaxEncodedSignatureBytes = 2048;
     internal const int MaxIdLength = 128;
