@@ -131,7 +131,7 @@ public sealed class EcosystemCapabilityService : Service
         try { using var doc = JsonDocument.Parse(request.InputJson); input = doc.RootElement.Clone(); }
         catch (JsonException) { return Error("PROTOCOL_UNSUPPORTED"); }
 
-        var deadline = request.DeadlineMs is null ? null : TimeSpan.FromMilliseconds(request.DeadlineMs.Value);
+        TimeSpan? deadline = request.DeadlineMs is null ? null : TimeSpan.FromMilliseconds(request.DeadlineMs.Value);
         var result = Gateway.InvokeAsync(approved!.KeyHash, request.SessionId!, request.RequestId!,
             request.Capability!, request.CapabilityOperation!, minimum!, input, deadline)
             .GetAwaiter().GetResult();
