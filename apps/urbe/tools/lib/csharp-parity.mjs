@@ -134,7 +134,7 @@ export function compareResults(cases, results) {
     const c = cases.find((c) => c.id === r.id);
     if (!c || seen.has(r.id)) throw new Error('ID de resultado desconhecido/duplicado');
     seen.add(r.id);
-    if (r.error || !deepEqual(c.expected, r.output)) throw new Error(`paridade falhou: ${r.id}`);
+    if (r.error || !deepEqual(c.expected, r.output)) throw new Error(`paridade falhou: ${r.id}; esperado ${JSON.stringify(c.expected)}; observado ${JSON.stringify(r.output)}${r.error ? '; erro '+r.error : ''}`);
   }
 }
 function deepEqual(a, b) {
