@@ -37,7 +37,8 @@
     "Explicitamente recusada a promoção prematura de LocalCapabilityHost, AuthenticatedHostGateway, Binder ou ecosystem-local/0.",
     "Issue #194 de P5-4 encerrada após a aprovação canônica e o closeout documental.",
     "Issue #227 de P5-5 movida para state:waiting enquanto DEC-0038 está pendente.",
-    "Issue #194 corrigida para state:done, alinhando o estado vivo terminal ao ROADMAP [x]."
+    "Issue #194 corrigida para state:done, alinhando o estado vivo terminal ao ROADMAP [x].",
+    "Coordenação de fila: Issue #194 foi reaberta temporariamente em state:review para manter a main atual consistente enquanto o PR #223, anterior na fila, integra; o fechamento state:done será reaplicado quando #228 for o próximo candidato."
   ],
   "verification": [
     {
