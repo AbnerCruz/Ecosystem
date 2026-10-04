@@ -1235,7 +1235,7 @@
     },
     {
       "id": "DEC-0035",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": true,
       "title": "Pilha de UI e hosts do novo cliente C# do Urbe",
@@ -1271,7 +1271,11 @@
         "apps/urbe/docs/csharp/acceptance/surface-protocol.json"
       ],
       "raisedBy": "chatgpt",
-      "raisedAt": "2026-10-04"
+      "raisedAt": "2026-10-04",
+      "decision": "Alternativa A — A — Blazor WebAssembly PWA no Web + .NET MAUI Blazor Hybrid em Windows/Android, com UI compartilhada em Razor Class Library (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/189).",
+      "decidedAt": "2026-10-04",
+      "record": "docs/governance/responses/DEC-0035.md",
+      "consequencesApplied": false
     },
     {
       "id": "DEC-0036",
