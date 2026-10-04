@@ -14,7 +14,7 @@
   "branch": "chatgpt/urbe-uc2-close",
   "base_commit": "f5a254a04de8c7ac5f92c07eb6023710e74f782f",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/180",
   "files_changed": [
     "apps/urbe/docs/csharp/ROADMAP.md",
     "apps/urbe/AGENTSCHAT.md",
