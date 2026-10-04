@@ -13,7 +13,7 @@
   "branch": "chatgpt/p5-3-host-api-decision",
   "base_commit": "f5a254a04de8c7ac5f92c07eb6023710e74f782f",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/179",
   "files_changed": [
     "ROADMAP.md",
     "docs/adr/0024-host-api-publica-product-shell.md",
