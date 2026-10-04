@@ -13,7 +13,7 @@
   "branch": "chatgpt/p5-4-transport-readiness",
   "base_commit": "da80358551e0e51ab713ab97fda070983530a6bf",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/195",
   "files_changed": [
     "ROADMAP.md",
     "docs/architecture/ipc-transport-readiness.md",
