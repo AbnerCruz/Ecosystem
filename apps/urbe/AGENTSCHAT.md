@@ -1,3 +1,10 @@
+### 2026-10-04 — ChatGPT — UC-5/UC-6: propostas para decisão
+
+- UC-5: ADR-0025 + DEC-0035. Recomendação A: Blazor WebAssembly PWA no Web e .NET MAUI Blazor Hybrid em Windows/Android, UI compartilhada em Razor Class Library; Avalonia 12, Uno e UI separada permanecem alternativas reais.
+- Motivo técnico principal: o Urbe é editor-first e mobile-first; DOM/IME/teclado/acessibilidade pesam mais que a elegância de um renderer único. C# total = autoridade de produto em C#, não negar service worker/bootstrap/interoperabilidade inevitáveis do browser.
+- UC-6: ADR-0026 + DEC-0036. Recomendação A: preservar package/assinatura/origem e usar ponte de atualização; separar troca tecnológica da futura migração first-party.
+- Nenhum código C# nem corte foi autorizado. Issues #182/#183 ficam waiting até as escolhas no portal.
+
 ### 2026-10-04 — ChatGPT — UC-2 concluído
 
 - FATO OBSERVADO: PR #174 foi integrado automaticamente em `2e088e7` após estado combinado verde; head `b732c957` também passou `urbe-checks` e consistency.
