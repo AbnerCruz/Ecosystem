@@ -21,21 +21,23 @@
     "docs/contracts/README.md",
     "docs/distribution/direct-releases.md",
     "docs/architecture/distribution.md",
-    "docs/governance/handoffs/HO-20261004-p4-9-distribution-locator.json"
+    "docs/governance/handoffs/HO-20261004-p4-9-distribution-locator.json",
+    "site/generator/GenerateStatus.cs"
   ],
   "work_completed": [
     "Identificado o bloqueio canônico do corte P4-9: source.repository deve continuar apontando para AbnerCruz/Urbe e publicUrl deve continuar apontando para a PWA antiga, portanto nenhum dos dois representa corretamente releases diretas no monorepo.",
     "Distribution Profile passa a admitir locationFrom=ecosystem.repository, derivando a localização de ecosystem.repository sem copiar URL e sem alterar os eixos congelados de distribuição.",
     "CHK-REGISTRY resolve ecosystem.repository tanto em perfis current quanto target e possui self-test que prova falha quando a autoridade do repositório do Ecosystem está ausente.",
     "O perfil current passa a usar ecosystem.repository somente nos canais já reais do Lunet2D e Hub; Urbe permanece no canal legado até existir release urbe-v* publicada e validada.",
-    "Documentação registra que o mesmo locator será usado no corte final do Urbe após publicação/DEVICE, removendo o bloqueio de modelagem sem fabricar um canal ainda inexistente."
+    "Documentação registra que o mesmo locator será usado no corte final do Urbe após publicação/DEVICE, removendo o bloqueio de modelagem sem fabricar um canal ainda inexistente.",
+    "Após o primeiro CI, corrigida a projeção do portal: GenerateStatus resolve locationFrom=ecosystem.repository para o repositório canônico do Ecosystem, alinhando portal e CHK-REGISTRY sem criar segunda interpretação do perfil."
   ],
   "verification": [
     {
       "check": "Consistency + schema + CHK-REGISTRY",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Aguardando CI do PR; deve validar o schema aditivo, os perfis current/target e o novo self-test."
+      "evidence": "Primeiro run 37190516501: todos os checks principais e o novo self-test de ecosystem.repository passaram; self-test do portal revelou resolver antigo no generator. Generator corrigido no commit 5847e372; aguardando revalidação do novo head."
     },
     {
       "check": "DEVICE deste slice de contrato",
