@@ -15,6 +15,16 @@ namespace HubApp;
 [IntentFilter([EcosystemIpcProtocol.ServiceAction])]
 public sealed class EcosystemCapabilityService : Service
 {
+    static WeakReference<EcosystemCapabilityService>? _current;
+
+    internal static int ActiveSessionCount
+    {
+        get
+        {
+            if (_current is null || !_current.TryGetTarget(out var service) || service._gateway is null) return 0;
+            return service._gateway.ActiveSessionCount;
+        }
+    }
     private sealed record ChallengeState(
         string Id, string PairId, string PeerKeyHash, string Challenge, DateTimeOffset ExpiresAt);
 
@@ -34,6 +44,7 @@ public sealed class EcosystemCapabilityService : Service
     public override void OnCreate()
     {
         base.OnCreate();
+        _current = new WeakReference<EcosystemCapabilityService>(this);
         _key = new AndroidInstallationKey("ecosystem.ipc.provider.v1");
         _trustPolicy = AndroidBindingTrustPolicy.Load(this);
         _pairings = new EcosystemPairingStore(this, _key);
@@ -54,6 +65,7 @@ public sealed class EcosystemCapabilityService : Service
             if (_deathWatches.TryRemove(pair.Key, out var watch)) watch.Dispose();
         _gateway?.Dispose();
         _challenges.Clear();
+        _current = null;
         base.OnDestroy();
     }
 
