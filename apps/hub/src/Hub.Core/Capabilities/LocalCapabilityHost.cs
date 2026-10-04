@@ -37,10 +37,12 @@ public sealed class LocalHostSession : IDisposable
     private readonly string _actor;
     private readonly LocalContext _context;
     private readonly IReadOnlyList<LocalCapability> _definitions;
-    private readonly IReadOnlySet<string> _permissions;
+    private readonly HashSet<string> _permissions;
     private readonly HashSet<string> _seen = new(StringComparer.Ordinal);
     private readonly Queue<LocalFrame> _frames = new();
     private CancellationTokenSource? _active;
+    private LocalCapability? _activeCapability;
+    private bool _activeRevoked;
     private bool _closed;
     private long _sequence;
     public const int RequestLimit = 256;
@@ -49,7 +51,8 @@ public sealed class LocalHostSession : IDisposable
     internal LocalHostSession(string actor, LocalContext context, IReadOnlyList<LocalCapability> definitions,
         IReadOnlySet<string> permissions)
     {
-        (_actor, _context, _definitions, _permissions) = (actor, context, definitions, permissions);
+        (_actor, _context, _definitions) = (actor, context, definitions);
+        _permissions = new HashSet<string>(permissions, StringComparer.Ordinal);
         Lifecycle("session.opened");
     }
 
@@ -68,6 +71,30 @@ public sealed class LocalHostSession : IDisposable
     public IReadOnlyList<LocalFrame> Frames
     {
         get { lock (_sync) return Array.AsReadOnly(_frames.ToArray()); }
+    }
+
+    /// <summary>Reduz grants capturados pela sessão. Nunca adiciona privilégio.</summary>
+    public bool Revoke(IEnumerable<string> permissions)
+    {
+        ArgumentNullException.ThrowIfNull(permissions);
+        CancellationTokenSource? active = null;
+        var revoked = new HashSet<string>(StringComparer.Ordinal);
+        lock (_sync)
+        {
+            if (_closed) return false;
+            foreach (var permission in permissions.Where(p => !string.IsNullOrWhiteSpace(p)))
+                if (_permissions.Remove(permission)) revoked.Add(permission);
+            if (revoked.Count == 0) return false;
+            Lifecycle("session.grants-revoked");
+            if (_active is not null && _activeCapability is not null
+                && _activeCapability.RequiredPermissions.Any(revoked.Contains))
+            {
+                _activeRevoked = true;
+                active = _active;
+            }
+        }
+        try { active?.Cancel(); } catch (ObjectDisposedException) { } catch (AggregateException) { }
+        return true;
     }
 
     private bool Allowed(LocalCapability capability) => capability.Scope.Contains(_context)
@@ -122,6 +149,8 @@ public sealed class LocalHostSession : IDisposable
             catch (Exception) { return Failure(request, "INVALID_INPUT"); }
             _seen.Add(request.Id);
             _active = run = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _activeCapability = capability;
+            _activeRevoked = false;
             Record(request, request.Kind);
         }
         try
@@ -146,18 +175,33 @@ public sealed class LocalHostSession : IDisposable
             }
             lock (_sync)
             {
-                if (_closed || run.IsCancellationRequested) return Failure(request, "CANCELLED");
-                if (!validOutput) return Failure(request, "INVALID_OUTPUT");
+                if (_closed) return Failure(request, "CANCELLED");
+                if (run.IsCancellationRequested) return Failure(request, _activeRevoked ? "REVOKED" : "CANCELLED");
+                if (!validOutput) return Failure(request, "PROVIDER_CONTRACT_VIOLATION");
                 Record(request, "response");
                 return new(request.Id, copy, null);
             }
         }
-        catch (OperationCanceledException) when (run.IsCancellationRequested) { return Failure(request, "CANCELLED"); }
+        catch (OperationCanceledException) when (run.IsCancellationRequested)
+        {
+            bool revoked;
+            lock (_sync) revoked = ReferenceEquals(_active, run) && _activeRevoked;
+            return Failure(request, revoked ? "REVOKED" : "CANCELLED");
+        }
         // Mensagem arbitrária do handler nunca entra no journal/UI (pode conter segredo/texto).
         catch (Exception) { return Failure(request, "EXECUTION_FAILED"); }
         finally
         {
-            lock (_sync) { _active = null; run.Dispose(); }
+            lock (_sync)
+            {
+                if (ReferenceEquals(_active, run))
+                {
+                    _active = null;
+                    _activeCapability = null;
+                    _activeRevoked = false;
+                }
+                run.Dispose();
+            }
         }
     }
 
