@@ -9,14 +9,14 @@ const historical=['v1-mapa-v2','v1-mapa-v4','v1-orfaos','v1-notas-sem-id','v1-ci
 const forward=['futuro-desconhecido','futuro-v2','vault-futuro'];
 const text=p=>/\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$/i.test(p);
 const hash=s=>createHash('sha256').update(s).digest('hex');
-function files(name){
+export function encodedFixture(name){
   const base=path.join(ROOT,DIR,name),out=[];
   function walk(dir,pre){for(const e of fs.readdirSync(dir,{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))){const p=pre+e.name;if(e.isDirectory())walk(path.join(dir,e.name),p+'/');else if(e.name!=='expect.json'){const b=fs.readFileSync(path.join(dir,e.name));out.push({path:p,encoding:text(p)?'utf8':'base64',content:b.toString(text(p)?'utf8':'base64')})}}}
   walk(base,'');return out;
 }
 export function makeBrowserVaultCases(){
   return[...historical,...forward].map(name=>{
-    const initial=files(name),ex=JSON.parse(fs.readFileSync(path.join(ROOT,DIR,name,'expect.json'),'utf8')),future=forward.includes(name);
+    const initial=encodedFixture(name),ex=JSON.parse(fs.readFileSync(path.join(ROOT,DIR,name,'expect.json'),'utf8')),future=forward.includes(name);
     const notes=future?['Alfa.md']:ex.notes;
     const hashes=future?ex.futureHashes:Object.fromEntries([...Object.entries(ex.noteHashes).filter(([p])=>text(p)&&!p.startsWith('.urbe/')),...Object.entries(ex.keepHashes)]);
     const legacy=['.urbe/history.json','.urbe/trash.json','.urbe/compositions.json'].filter(p=>initial.some(f=>f.path===p));

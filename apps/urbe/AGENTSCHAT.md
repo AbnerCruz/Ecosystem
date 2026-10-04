@@ -1,7 +1,7 @@
 ### 2026-10-04 — Codex — UC-2: fixtures no navegador
 
 - FATO OBSERVADO: head 9c4d297 do PR #171 passou consistency/urbe: 260/260 casos e 5/5 E2E. Integrado automaticamente em a8e53ed0.
-- Feito: 11 casos browser.vault derivados das fixtures congeladas, incluindo abertura/salvamento, backup original, sidecars e versões futuras/readonly no app real. Corpus aditivo 288; runtime intocado.
+- Feito: 11 casos browser.vault derivados das fixtures congeladas, incluindo abertura/salvamento, backup original, sidecars e versões futuras/readonly no app real. Corpus aditivo 293; runtime intocado.
 - Verificação: corpus/oráculo/projeção e testes Node focados verdes; 272/272 no CI (5f38b0b); expansão com 16 browser.storage exige nova rodada.
 - Próximos passos: integrar PR #171, verificar esta fatia e seguir com migração IDB pelo boot, identidade/layout e ZIP. Handoff HO-20261004-urbe-browser-fixtures-parity.
 

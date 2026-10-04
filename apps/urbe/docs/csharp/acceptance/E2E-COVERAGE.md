@@ -11,10 +11,10 @@ Inventário de trabalho sobre os 14 cenários congelados em `oracle.json`. Esta 
 | `lifecycle.e2e.mjs` | `ui-document-lifecycle` | Execução com vault de escala S; os critérios documentais atuais têm dados portáveis |
 | `gc.e2e.mjs` | `ui-gc-cancel`, `ui-gc-apply`; `gc.plan` | Nenhum dos critérios atuais de confirmação/cancelamento e registro; execução C# futura permanece aberta |
 | `fixtures.e2e.mjs` | `vault.scenario`, 11 `browser.vault`, `idb.legacy-city` | Nenhum dos critérios atuais: oito vaults históricos, três futuros e `browser.idb-legacy` transcrevem abertura/salvamento, backup, sidecars, readonly e boot legado; execução C# futura permanece aberta |
-| `identity.e2e.mjs` | `identity.text/parse/pair`; fixtures de vault | Rename/move externos no IDB, reabertura/sync, uma casa por documento, geometria de região/asset e vínculo preservados |
-| `stable-ids.e2e.mjs` | Fixtures de vault | IDs region/asset, campos de compatibilidade e vínculo mantidos ao recarregar/renomear pasta pelo app |
+| `identity.e2e.mjs` | `identity.text/parse/pair`, `browser-world-external-identity` | Nenhum dos critérios atuais de rename/move externo, casas, região/asset e vínculo; execução C# futura permanece aberta |
+| `stable-ids.e2e.mjs` | `browser-world-stable-ids` | Nenhum dos critérios atuais de IDs/vínculos/campos/reload/rename; execução C# futura permanece aberta |
 | `adapters.e2e.mjs` | `storage.scenario`, 16 `browser.storage` | Nenhum dos critérios atuais de IDB/OPFS: cidades, texto, ausentes, unicode, blobs, pastas, remoção e lote têm passos portáveis; execução C# futura permanece aberta |
-| `layout.e2e.mjs` | Fixtures de vault | Reorganização, diálogo manter/desfazer, backup byte a byte, registro e reabertura sem nova reorganização |
+| `layout.e2e.mjs` | `browser-world-layout-old/keep/command` | Nenhum dos critérios atuais de reorganização/diálogo/backup/registro/desfazer/reabertura; execução C# futura permanece aberta |
 | `multi-city.e2e.mjs` | Fixture mesclada e `idb.legacy-city` cobrem partes do domínio | Stores Norte/Sul, três boots idempotentes, IDs/geometria de origem, arquivar sem apagar stores |
 | `map-writer.e2e.mjs` | `ui-create-save-reload` cobre persistência explícita | Persistência automática de documento/mundo. O critério de escritor único exige instrumentação própria da pilha C#; não portar regex de stack JS como regra de produto |
 | `zip.e2e.mjs` | Testes JS congelados; ainda sem operação portável ZIP | Export/import, manifesto/hashes, binários, preferências sem chaves, adulteração cancelada e versão futura recusada |
