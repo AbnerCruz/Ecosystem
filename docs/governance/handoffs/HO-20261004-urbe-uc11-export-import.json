@@ -10,10 +10,10 @@
   },
   "task_id": "UC-11",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "feat/urbe-uc11-export-import",
   "base_commit": "affe0253c5df3fccf52c1e1117c8b1341e93f7e5",
-  "commit": "52a57747c3383ad540778555a4c618fa2ce2bbd4",
+  "commit": "4b572d4fa41c5716e70cdc27ff38598fdae41c1d",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/213",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/VaultExportManifest.cs",
@@ -36,39 +36,42 @@
     "VaultArchive exporta/importa ZIP em memória com System.IO.Compression, preserva bytes e .urbe, exclui journals v1/v2 e suporta pasta-raiz única.",
     "Proteção de caminhos valida o nome bruto antes do strip de prefixo e rejeita traversal, absoluto Windows/Unix e duplicatas normalizadas.",
     "Manifesto de nome reservado inválido é tratado como arquivo comum e não ganha autoridade.",
-    "Ancestry reconciliado: a branch UC-11 nasceu de docs/urbe-uc10-closeout@affe0253 imediatamente antes de esse head ser integrado à main em 1d69d5e0; portanto affe0253 é a base real da branch."
+    "Ancestry reconciliado: a branch UC-11 nasceu de docs/urbe-uc10-closeout@affe0253 imediatamente antes de esse head ser integrado à main em 1d69d5e0; portanto affe0253 é a base real da branch.",
+    "PR #213 foi integrado manualmente pela conta proprietária AbnerCruz em 4b572d4f; o head final foi depois reconfirmado por urbe-checks 37222912657 e consistency 37222912663, ambos verdes."
   ],
   "verification": [
     {
       "check": "Urbe.Core.Tests UC-11",
       "kind": "automated",
       "result": "passed",
-      "evidence": "urbe-checks run 37220827485 no head 52a57747: build Release e 63/63 testes C# passaram, 0 falhas/0 skips."
+      "evidence": "Head final 31b1f492: csharp-portable em urbe-checks 37222912657 passou; a suíte mantém 63/63 testes C# verdes."
     },
     {
       "check": "Regressão completa Urbe",
       "kind": "automated",
       "result": "passed",
-      "evidence": "urbe-checks 37220827485: checks, csharp-portable, MAUI Android, MAUI Windows e E2E concluíram success."
+      "evidence": "urbe-checks 37222912657 no head final: checks, C# portátil, MAUI Android, MAUI Windows e E2E concluíram success; Windows build 0 warnings/0 errors."
     },
     {
       "check": "Governança/consistency",
       "kind": "automated",
       "result": "passed",
-      "evidence": "consistency run 37220827469 concluído success no mesmo head."
+      "evidence": "consistency 37222912663 passou no head final após correção factual do ancestry do handoff."
+    },
+    {
+      "check": "Integração crítica humana",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "GitHub registra merge manual do PR #213 pela conta proprietária AbnerCruz em 2026-10-04T18:10:22Z, commit 4b572d4f."
     }
   ],
   "known_issues": [
     "O Core não aplica arquivos importados ao filesystem nem decide UX para manifesto com hashes divergentes; isso pertence aos hosts/superfícies posteriores.",
     "UC-11 não implementa domínio de documentos/mundo da M2."
   ],
-  "blockers": [
-    "Integração crítica do PR #213 exige autorização canônica do proprietário."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Proprietário autoriza a integração crítica do PR #213 pelo mecanismo canônico.",
-    "Integrador reconfirma estado combinado e integra.",
-    "Após integração, encerrar Issue #212 e iniciar UC-12."
+    "Iniciar UC-12: documentos, artefatos e índice de conhecimento no Core, conforme matriz de paridade e contratos existentes."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -98,7 +101,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "UC-11 em review após regressão completa verde; integração crítica ainda pendente."
+      "evidence": "UC-11 concluída após merge humano do proprietário e regressão final totalmente verde."
     },
     {
       "id": "NN-023",
