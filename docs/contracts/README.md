@@ -13,6 +13,8 @@ Contratos da fundação (ADR-0002), da projeção do portal (ADR-0005) e **da Fa
 | [`permissions-catalog.schema.json`](schemas/permissions-catalog.schema.json) · [`permissions.json`](permissions.json) | catálogo de permissões (deny-by-default) | `ecosystem/contracts/permissions-catalog/1` |
 | [`context.schema.json`](schemas/context.schema.json) | Context hierárquico (exemplos em [`examples/context/`](examples/context/)) | `ecosystem/contracts/context/1` |
 | [`distribution-profile.schema.json`](schemas/distribution-profile.schema.json) | Distribution Profile (nomes dos eixos congelados em P2-9; exemplo em [`examples/distribution/`](examples/distribution/); arranjo real em [`current.profile.json`](../distribution/current.profile.json) e direção decidida em [`target.profile.json`](../distribution/target.profile.json)) | `ecosystem/contracts/distribution-profile/1` |
+
+No `Distribution Profile`, `locationFrom` nunca copia uma URL: `source.repository` e `publicUrl` resolvem campos do Product; `ecosystem.repository` resolve o repositório canônico do monorepo para canais de GitHub Releases publicados diretamente pelo Ecosystem. Isso permite que o Product preserve simultaneamente seu repositório histórico e sua URL pública própria.
 | [`handoff.schema.json`](schemas/handoff.schema.json) | handoffs de agentes (inclui `reuse_assessment` opcional, ADR-0011) | `ecosystem/contracts/handoff/1` |
 | [`decisions.schema.json`](schemas/decisions.schema.json) | decisões do proprietário | `ecosystem/contracts/decisions/1` |
 | [`validation-record.schema.json`](schemas/validation-record.schema.json) | registro de validação por build | `ecosystem/contracts/validation-record/1` |

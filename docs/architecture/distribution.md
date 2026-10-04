@@ -139,6 +139,12 @@ O proprietário escolheu **C**: a plataforma first-party é a distribuição pri
 
 **Invariante de todos os cenários:** nenhum repositório antigo é apagado ou arquivado, nenhum Pages é desligado e nenhuma release é removida por esta decisão; qualquer aposentadoria é item próprio, com plano de migração e evidência. A direção de longo prazo (Ecosystem como fonte; plataforma first-party como possível distribuição principal; repositórios antigos como espelho/canal alternativo/legado) é a de [§7](#7-plataforma-first-party-própria-decisão), sem prazo.
 
+## 10.1 Localização canônica de canais no próprio Ecosystem [Derivado de DEC-0031]
+
+Quando um Product continua tendo `source.repository` histórico e `publicUrl` próprio, mas passa a publicar GitHub Releases diretamente no monorepo, nenhum desses dois campos representa corretamente o novo canal. O Distribution Profile resolve isso sem duplicar URL: `locationFrom: ecosystem.repository` aponta para `ecosystem.repository`, enquanto `kind: github-release` define que o canal é a área de Releases daquele repositório.
+
+Esse valor não cria um quarto eixo de distribuição e não altera os valores congelados em P2-9; é apenas uma origem de localização para `channels[]`. Lunet e Hub já exercitam o locator em canais reais. O Urbe só muda seu perfil `current` para esse locator depois da publicação e validação do primeiro `urbe-v*` em P4-9; até lá `source.repository` continua sendo seu canal de release primário e `publicUrl` continua sendo a PWA antiga.
+
 ## 11. Atualização decidida: builds diretos (DEC-0031)
 
 ADD-0015 autoriza substituir o requisito de espelho por pipelines diretos por Product.

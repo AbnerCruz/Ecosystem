@@ -819,7 +819,7 @@ static class Checks
             {
                 var inReal = c.Rel(f).StartsWith("docs/distribution/");
                 if (inReal && doc.RootElement.Str("status") is not ("current" or "target")) c.R.Fail(id, $"{c.Rel(f)}: perfil em docs/distribution/ precisa ter status 'current' ou 'target'");
-                foreach (var e in RegistryFiles.ProfileErrors(doc.RootElement, compMap, decisionIds)) c.R.Fail(id, $"{c.Rel(f)}: {e}");
+                foreach (var e in RegistryFiles.ProfileErrors(doc.RootElement, compMap, decisionIds, c.Ecosystem!.Value)) c.R.Fail(id, $"{c.Rel(f)}: {e}");
             }
         if (!profileFiles.Any(f => c.Rel(f) == "docs/distribution/current.profile.json")) c.R.Fail(id, "docs/distribution/current.profile.json ausente: a distribuição atual dos Products precisa estar descrita como dado (P2-12)");
     }
@@ -1613,9 +1613,17 @@ static class RegistryFiles
 
     /// <summary>Regras de Distribution Profile além do schema: componentes existem, sem duplicata, NN-023 (Hub nunca bundled com Product público) e,
     /// em perfis `current`, canais resolvíveis a partir do próprio componente (sem URL copiada), todo componente com canal e decisões existentes.</summary>
-    public static List<string> ProfileErrors(JsonElement prof, IReadOnlyDictionary<string, JsonElement> components, ISet<string> decisionIds)
+    public static List<string> ProfileErrors(JsonElement prof, IReadOnlyDictionary<string, JsonElement> components, ISet<string> decisionIds, JsonElement ecosystemRoot)
     {
         var errors = new List<string>(); var entries = prof.Arr("entries").ToList();
+        string? ResolveLocation(JsonElement component, string from)
+        {
+            if (from == "source.repository")
+                return component.TryGetProperty("source", out var source) ? source.Str("repository") : null;
+            if (from == "ecosystem.repository")
+                return ecosystemRoot.TryGetProperty("ecosystem", out var ecosystem) ? ecosystem.Str("repository") : null;
+            return component.Str(from);
+        }
         foreach (var e in entries.Where(e => !components.ContainsKey(e.Str("component") ?? ""))) errors.Add($"componente '{e.Str("component")}' não existe em ecosystem.json");
         foreach (var g in entries.GroupBy(e => e.Str("component")).Where(g => g.Count() > 1)) errors.Add($"componente '{g.Key}' repetido");
         var publicProduct = entries.Any(e => e.Str("component") is { } cid && cid != "hub" && e.Str("visibility") == "public" && e.Str("availability") is "bundled" or "optional" or "marketplace");
@@ -1632,8 +1640,8 @@ static class RegistryFiles
                     var from = ch.Str("locationFrom");
                     if (ch.Str("kind") != "first-party-platform" && from is null) errors.Add($"canal '{ch.Str("id")}': canal existente sem 'locationFrom'");
                     if (from is not null && components.TryGetValue(e.Str("component") ?? "", out var tc)
-                        && string.IsNullOrEmpty(from == "source.repository" ? (tc.TryGetProperty("source", out var ts) ? ts.Str("repository") : null) : tc.Str(from)))
-                        errors.Add($"canal '{ch.Str("id")}': '{e.Str("component")}' não declara '{from}' em ecosystem.json");
+                        && string.IsNullOrEmpty(ResolveLocation(tc, from)))
+                        errors.Add($"canal '{ch.Str("id")}': ecosystem.json não resolve '{from}' para '{e.Str("component")}'");
                 }
             return errors;
         }
@@ -1649,8 +1657,8 @@ static class RegistryFiles
             {
                 var from = ch.Str("locationFrom") ?? "";
                 if (from.Length == 0) { errors.Add($"canal '{ch.Str("id")}': perfil 'current' exige 'locationFrom'"); continue; }
-                var resolved = from == "source.repository" ? (comp.TryGetProperty("source", out var s) ? s.Str("repository") : null) : comp.Str(from);
-                if (string.IsNullOrEmpty(resolved)) errors.Add($"canal '{ch.Str("id")}': '{cid}' não declara '{from}' em ecosystem.json (a localização não pode ser inventada no perfil)");
+                var resolved = ResolveLocation(comp, from);
+                if (string.IsNullOrEmpty(resolved)) errors.Add($"canal '{ch.Str("id")}': ecosystem.json não resolve '{from}' para '{cid}' (a localização não pode ser inventada no perfil)");
                 if (ch.Str("kind") is "first-party-platform" or "external-store") errors.Add($"canal '{ch.Str("id")}': o tipo '{ch.Str("kind")}' não existe hoje; um perfil 'current' só descreve canais reais");
             }
         }
@@ -2688,6 +2696,8 @@ static class SelfTest
             r => Replace(r, "docs/distribution/target.profile.json", "\"decisions\": [\n    \"DEC-0021\"\n  ],", "\"decisions\": [],")),
         new("perfil de distribuição alvo com canal existente sem localização", "CHK-REGISTRY",
             r => Replace(r, "docs/distribution/target.profile.json", "\"locationFrom\": \"publicUrl\",", "")),
+        new("perfil de distribuição com ecosystem.repository sem autoridade", "CHK-REGISTRY",
+            r => Replace(r, "ecosystem.json", "\"repository\": \"https://github.com/AbnerCruz/Ecosystem\",", "\"repository\": \"\",")),
         new("perfil de distribuição atual removido", "CHK-REGISTRY",
             r => File.Delete(Path.Combine(r, "docs", "distribution", "current.profile.json"))),
         new("Caso A: ROADMAP [x] com Issue em state:review", "CHK-STATE-CONSISTENCY",
