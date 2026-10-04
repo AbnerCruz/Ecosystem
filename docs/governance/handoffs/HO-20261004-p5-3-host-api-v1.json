@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-3-host-api-v1",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T12:06:00Z",
+  "agent": {
+    "id": "chatgpt-p5-3-host-api-v1",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-3",
+  "component": "ecosystem",
+  "state": "verifying",
+  "branch": "chatgpt/p5-3-host-api-v1",
+  "base_commit": "8163417117e160b0ed550146d02210b337ae7a03",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/hub/src/Hub.Core/Capabilities/LocalCapabilityHost.cs",
+    "apps/hub/src/Hub.Core/Capabilities/TextInspectionTool.cs",
+    "apps/hub/tests/Hub.Tests/HostApiConformanceTests.cs",
+    "apps/hub/tests/Hub.Tests/LocalCapabilityHostTests.cs",
+    "apps/hub/tests/Hub.Tests/TextInspectionContractTests.cs",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/adr/README.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/README.md",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/schemas/host-api.schema.json",
+    "docs/contracts/schemas/host-api-conformance.schema.json",
+    "docs/contracts/examples/host-api/conformance.v1.json",
+    "docs/governance/decisions.json",
+    "tests/consistency/Check.cs",
+    "docs/governance/handoffs/HO-20261004-p5-3-host-api-v1.json"
+  ],
+  "work_completed": [
+    "DEC-0034-A foi aplicada: ADR-0024 passa a Aceito e a Host API v1 torna-se contrato semântico estável e neutro de transporte.",
+    "Criados host-api.schema.json e host-api.v1.json com seis operações públicas: open-session, discover, invoke, cancel, revoke e close-session; Context, capability contracts, permissions e Registry permanecem autoridades existentes.",
+    "Criados schema e fixture de conformance independentes de Host com 13 cenários mínimos: sucesso, Context/identidade inválidos, capability desconhecida, versão incompatível, permissão ausente, elevação de grant, input/output inválidos, cancelamento, revogação, sessão fechada e falha sanitizada do provider.",
+    "text.inspect 1.0.0 passa de draft para stable. Como recebe texto integralmente em memória, requiredPermissions passa a vazio; ui.display era detalhe do primeiro adapter e não requisito da capability.",
+    "INVALID_OUTPUT deixa o contrato de text.inspect e vira PROVIDER_CONTRACT_VIOLATION da Host API, separando erro de domínio de violação do provider.",
+    "LocalHostSession ganhou revogação real e somente redutora de grants. Revogar permissão usada por chamada ativa cancela a chamada como REVOKED; discovery/futuras invocações não recuperam o privilégio.",
+    "HostApiConformanceTests executa a matriz pública contra o binding local do Hub sem transformar Hub.Core em SDK público.",
+    "CHK-REGISTRY passa a carregar/validar Host API + fixtures e rejeita deriva do conjunto de operações, hostErrors, invariantes e cenários mínimos; self-tests cobrem remoção de revoke e de sua fixture.",
+    "ROADMAP marca P5-3 concluído neste candidato; P5-4 continua separado para transporte IPC/autenticação e P5-5 para segundo Host real/Extraction Review."
+  ],
+  "verification": [
+    {
+      "check": "Hub tests + Host API conformance",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando hub-ci do PR; deve compilar o runtime alterado e executar HostApiConformanceTests, LocalCapabilityHostTests e TextInspectionContractTests."
+    },
+    {
+      "check": "Consistency + schema + self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR; deve validar os dois schemas novos, contrato, fixtures, DEC-0034 aplicada e novos self-tests de CHK-REGISTRY."
+    },
+    {
+      "check": "DEVICE deste slice",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Este slice não muda UI, layout, toque, instalação ou canal Android. A semântica runtime é coberta por testes; DEVICE de dois Hosts permanece no gate P5-7."
+    }
+  ],
+  "known_issues": [
+    "ecosystem-local/0 continua experimental e não recebe compatibilidade pública por P5-3.",
+    "Nenhum provider de text.inspect é anunciado em ecosystem.json; o código permanece local ao Hub até existir segundo consumidor real e Extraction Review positiva.",
+    "P5-4 ainda precisa decidir transporte IPC, autenticação de caller interprocesso, timeout/disconnect e limites de wire.",
+    "P5-5 continua dependente da prontidão de um Product Shell real; nenhum Product referencia Hub.Core.",
+    "P4-9/Fase 4 continua independente: o workflow urbe-cutover foi integrado, mas ainda não houve execução do stage legacy-bridge nem publicação/DEVICE."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI/integrador deste PR e corrigir qualquer divergência.",
+    "Após integração, fechar Issue #175 e iniciar P5-4 com comparação explícita de transports preservando Host API v1.",
+    "Não extrair runtime/Tool nem integrar Lunet/Urbe como segundo Host antes do consumidor real e Extraction Review.",
+    "Em paralelo, executar urbe-cutover legacy-bridge 1.8.3-beta para destravar P4-9 e a Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0023-capability-runtime-local-no-hub.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/governance/decisions.json",
+    "docs/governance/responses/DEC-0034.md",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/contracts/schemas/capability-contract.schema.json",
+    "docs/contracts/permissions.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Host API referencia Context/capability/permissions/Registry canônicos em vez de duplicá-los; checker fiscaliza a fonte normativa."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum Product passa a depender do Hub; Host API é contrato de dados/semântica e Hub.Core continua implementação local."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "text.inspect é versionado, estável e testável; input/output/erros/lifecycle permanecem no contrato de capability."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Tool não recebe nome/tipo do Host; fixtures são independentes de Host e o segundo Product Shell poderá adaptar sem Hub.Core."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST, ADRs, schemas, decisão e contratos foram consultados diretamente antes de estabilizar a fronteira."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Fronteira pública só foi implementada depois da decisão explícita DEC-0034-A; ADR-0024 e consequências são atualizados no mesmo slice."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Nenhum GitHub/HTTP/socket/Binder foi escolhido como transporte runtime; P5-4 continua separado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Grants são Host-owned e redutíveis; tentativa de elevação não altera sessão; missing grant torna capability indisponível."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Somente P5-3 é marcado concluído; IPC, segundo Host, Connections e gate P5-7 permanecem abertos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhum package/platform compartilhado foi criado; text-inspection-tool permanece possible-candidate até segundo consumidor e Extraction Review."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "A Host API não torna Hub requisito de execução ou distribuição de nenhum Product."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution",
+      "control-plane",
+      "compatibility"
+    ],
+    "reason": "O PR aceita ADR transversal, aplica decisão do proprietário, cria contrato/schema público estável e altera o checker canônico; compatibilidade futura depende desta fronteira."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "text-inspection-tool",
+      "status": "possible-candidate",
+      "rationale": "A fronteira estável agora permite segundo Host, mas só existe implementação real no Hub; extração continua proibida até consumidor adicional e Extraction Review."
+    }
+  ],
+  "cost": null
+}
