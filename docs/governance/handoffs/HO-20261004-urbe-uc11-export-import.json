@@ -10,10 +10,10 @@
   },
   "task_id": "UC-11",
   "component": "urbe",
-  "state": "working",
+  "state": "review",
   "branch": "feat/urbe-uc11-export-import",
   "base_commit": "1d69d5e055238d602283abe1c508743f3378020c",
-  "commit": null,
+  "commit": "52a57747c3383ad540778555a4c618fa2ce2bbd4",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/213",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/VaultExportManifest.cs",
@@ -42,13 +42,19 @@
       "check": "Urbe.Core.Tests UC-11",
       "kind": "automated",
       "result": "passed",
-      "evidence": "urbe-checks run 37220350132: build Release passou; 61/61 testes C# passaram, 0 falhas e 0 skips."
+      "evidence": "urbe-checks run 37220827485 no head 52a57747: build Release e 63/63 testes C# passaram, 0 falhas/0 skips."
     },
     {
       "check": "Regressão completa Urbe",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Run 37220350132 ainda executava checks/E2E/Windows quando o handoff foi registrado; nova rodada será disparada por este head documental."
+      "result": "passed",
+      "evidence": "urbe-checks 37220827485: checks, csharp-portable, MAUI Android, MAUI Windows e E2E concluíram success."
+    },
+    {
+      "check": "Governança/consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency run 37220827469 concluído success no mesmo head."
     }
   ],
   "known_issues": [
@@ -56,13 +62,12 @@
     "UC-11 não implementa domínio de documentos/mundo da M2."
   ],
   "blockers": [
-    "CI completo verde no head final.",
-    "Após verificação, integração crítica exige nova autorização canônica do proprietário."
+    "Integração crítica do PR #213 exige autorização canônica do proprietário."
   ],
   "next_actions": [
-    "Executar regressão completa no head final e corrigir qualquer divergência sem afrouxar os testes.",
-    "Quando verde, mover Issue #212 e handoff para review.",
-    "Aguardar autorização crítica antes da integração e só então iniciar UC-12."
+    "Proprietário autoriza a integração crítica do PR #213 pelo mecanismo canônico.",
+    "Integrador reconfirma estado combinado e integra.",
+    "Após integração, encerrar Issue #212 e iniciar UC-12."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -92,7 +97,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "UC-11 permanece working até regressão completa e integração crítica."
+      "evidence": "UC-11 em review após regressão completa verde; integração crítica ainda pendente."
     },
     {
       "id": "NN-023",
