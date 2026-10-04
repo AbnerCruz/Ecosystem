@@ -20,7 +20,8 @@
     "docs/governance/decisions.json",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "apps/urbe/AGENTSCHAT.md",
-    "docs/governance/handoffs/HO-20261004-urbe-uc6-proposta.json"
+    "docs/governance/handoffs/HO-20261004-urbe-uc6-proposta.json",
+    "docs/adr/README.md"
   ],
   "criticality": {
     "declared": "routine",
