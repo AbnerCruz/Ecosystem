@@ -51,6 +51,8 @@ public sealed class VaultWriterTests
         Assert.Equal(1, migrations[0].GetProperty("from").GetInt32());
         Assert.Equal(2, migrations[0].GetProperty("to").GetInt32());
         Assert.Equal(result.BackupDirectory, migrations[0].GetProperty("backup").GetString());
+        Assert.Equal("2026-10-04T12:00:00.000Z", migrations[0].GetProperty("at").GetString());
+        Assert.Equal("2026-10-04T12:00:00.000Z", vault.RootElement.GetProperty("created").GetString());
 
         foreach (var path in new[]
                  {
@@ -239,6 +241,7 @@ public sealed class VaultWriterTests
         Assert.False(firstFuture);
         Assert.NotNull(firstIdentity);
         var seen = firstIdentity!.Documents["doc_fixed"].Seen;
+        Assert.Equal("2026-10-04T15:00:00.000Z", seen);
 
         var second = VaultWriter.Plan(new VaultWriteRequest
         {
