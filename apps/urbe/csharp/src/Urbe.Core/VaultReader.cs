@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -112,7 +111,6 @@ public static class VaultReader
     private const int CurrentVaultVersion = 2;
     private const int CurrentMapVersion = 4;
 
-    private static readonly UTF8Encoding StrictUtf8 = new(false, true);
     private static readonly HashSet<string> TextExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".md", ".markdown", ".txt", ".html", ".htm", ".js", ".mjs", ".css",
@@ -572,11 +570,8 @@ public static class VaultReader
         return dot >= 0 && TextExtensions.Contains(path[dot..]);
     }
 
-    private static string? TryDecode(byte[] bytes)
-    {
-        try { return StrictUtf8.GetString(bytes); }
-        catch (DecoderFallbackException) { return null; }
-    }
+    private static string TryDecode(byte[] bytes) =>
+        Encoding.UTF8.GetString(bytes);
 
     private static bool TryParseObject(VaultFile file, out JsonDocument json)
     {
@@ -613,11 +608,8 @@ public static class VaultReader
 
     private static string GenerateDocumentId(string path)
     {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(path.ToLowerInvariant()));
-        var bytes = hash[..16];
-        bytes[6] = (byte)((bytes[6] & 0x0F) | 0x40);
-        bytes[8] = (byte)((bytes[8] & 0x3F) | 0x80);
-        return "doc_" + new Guid(bytes).ToString("D");
+        _ = path;
+        return "doc_" + Guid.NewGuid().ToString("D");
     }
 
     private sealed record NoteMetadata(string? Id, double? X, double? Y);
