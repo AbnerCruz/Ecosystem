@@ -345,7 +345,7 @@ public sealed class VaultWriterTests
         return Directory.EnumerateFiles(fixture, "*", SearchOption.AllDirectories)
             .Where(path => !string.Equals(Path.GetFileName(path), "expect.json", StringComparison.Ordinal))
             .Select(path => new VaultFile(
-                Path.GetRelativePath(fixture, path).Replace('\', '/'),
+                Path.GetRelativePath(fixture, path).Replace('\\', '/'),
                 File.ReadAllBytes(path)))
             .ToArray();
     }
