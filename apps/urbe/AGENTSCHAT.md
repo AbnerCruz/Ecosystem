@@ -1,3 +1,10 @@
+### 2026-10-04 — ChatGPT — UC-5/UC-6 consolidadas e G-C0 aprovado
+
+- DEC-0035-A aplicada: Blazor WebAssembly PWA + .NET MAUI Blazor Hybrid com RCL compartilhada.
+- DEC-0036-C aplicada: reinstalação deliberada com backup/export/import obrigatório; sem ponte de upgrade in-place.
+- ADR-0025/0026 passam a Aceito; UC-5/UC-6 concluídas; G-C0 aprovado.
+- Próxima tarefa autorizada pelo roadmap: UC-8 — esqueleto C# e CI.
+
 ### 2026-10-04 — ChatGPT — hardening do aceite GC
 
 - O mesmo head do PR #187 passou 297/297 em `urbe-checks`, mas o estado combinado falhou apenas em `ui-gc-apply`: o sidecar de GC já estava persistido e o `maintenance` de `.urbe/vault.json` ainda não.

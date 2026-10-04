@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — decisão pendente **DEC-0036**. Nenhuma opção autoriza o corte; UC-31/G-C5 continuam sendo a decisão crítica final.
+Aceito — **DEC-0036-C** escolhida pelo proprietário em 2026-10-04. O corte continua proibido até UC-31/G-C5.
 
 ## Contexto
 
@@ -31,46 +31,41 @@ Como levar instalações existentes do Urbe JavaScript ao cliente C# preservando
 
 ## Decisão
 
-Pendente de DEC-0036.
+**DEC-0036-C aceita:** reinstalação deliberada com backup/export/import obrigatório.
 
-A recomendação técnica é **A**. O Urbe continua sendo o mesmo Product; trocar a implementação não é motivo para criar um segundo produto ou abandonar a origem que contém os dados do navegador. O rollout pode ser sequencial depois do gate de paridade total, mas nenhuma superfície entra em produção antes de G-C5.
-
-A estratégia A fixa apenas invariantes. O mecanismo exato é provado em UC-26:
+O novo cliente C# não tentará substituir silenciosamente a instalação JavaScript existente. A transição aprovada é explícita e orientada a dados: antes da troca, o usuário gera um backup/export verificável; instala o novo cliente; importa o backup; valida o vault; e só então remove o cliente anterior se desejar. O produto antigo continua disponível como recuperação durante a janela definida por UC-26/UC-31.
 
 ### Android
 
-- manter package id `app.urbe`;
-- assinar o APK C# com a mesma chave privada do canal existente;
-- `versionCode` sempre maior que qualquer build JS distribuída;
-- validar upgrade por cima da instalação real sem desinstalar e com vault/estado sentinela;
-- se assinatura ou identidade divergirem, **não publicar** um “substituto” incompatível.
+- não depender de upgrade in-place do APK JavaScript para o APK C#;
+- exigir export/backup antes da troca;
+- instalar o novo APK pelo canal aprovado quando G-C5 autorizar;
+- importar e validar o vault antes de considerar a migração concluída.
 
 ### Windows
 
-- preservar identidade do produto e localização/descoberta do vault;
-- uma versão JS de ponte deve conseguir direcionar o usuário/updater ao instalador C#;
-- o ensaio deve provar instalação/atualização/rollback e não presumir que um instalador .NET pode simplesmente substituir arquivos do Electron;
-- se upgrade in-place seguro não puder ser provado, o fallback é paralelo **temporário e explícito**, com backup e migração, nunca destruição do cliente antigo.
+- não depender de substituição automática Electron → .NET;
+- exportar/backup, instalar o cliente C# como instalação nova e importar;
+- manter o instalador anterior disponível para recuperação durante a janela definida.
 
 ### Web/PWA
 
-- o primeiro corte tecnológico mantém a origem e o escopo do PWA existente;
-- o cliente C# deve ler/migrar o IndexedDB da instalação JS antes de gravar qualquer formato novo;
-- service worker/caches antigos precisam de estratégia de ativação e rollback;
-- mover de `/Urbe/` para rota do Ecosystem ou domínio first-party é outro item de distribuição, com migração própria. Não esconder essa mudança dentro de UC-26.
+- a transição pode envolver uma nova implementação/origem, desde que o fluxo de export/import preserve integralmente os dados;
+- IndexedDB/origem antiga não é assumido como canal de migração;
+- a instalação PWA antiga só é removida depois de backup/export e validação no cliente novo.
 
 ## Consequências
 
 - P4-9 pode continuar movendo o **feed do JS** para releases diretas; isso não é o corte C#.
-- UC-26 implementa e ensaia a ponte, mas UC-31 continua sendo quem autoriza trocar o produto distribuído.
-- Os repositórios/canais antigos não são apagados; continuam recuperação e histórico, coerente com DEC-0021-C.
+- UC-26 implementa e ensaia o fluxo export → instalação nova → import → validação; UC-31 continua sendo quem autoriza o corte.
+- O cliente JS e seus canais permanecem disponíveis como recuperação durante a janela definida pelo plano de corte.
 - Todo ensaio usa backup restaurável e `surface-protocol.json`; Android/Windows exigem aparelho/instalação real.
-- Nenhum backend, conta, Hub ou plataforma first-party é pré-requisito da atualização (NN-003/NN-023).
-- A mesma origem Web é uma restrição de migração de dados, não uma decisão de distribuição eterna.
+- Nenhum backend, conta, Hub ou plataforma first-party é pré-requisito da migração (NN-003/NN-023).
+- A compatibilidade do ZIP/manifesto passa a ser requisito central da transição entre clientes.
 
 ## Alternativas rejeitadas
 
-Nenhuma até a decisão do proprietário. Depois da DEC-0036, esta seção será atualizada preservando o histórico.
+Rejeitadas por DEC-0036: A (ponte preservando identidade/origem), B (cliente paralelo permanente) e D (big-bang simultâneo). Permanecem documentadas acima como histórico.
 
 ## Referências
 

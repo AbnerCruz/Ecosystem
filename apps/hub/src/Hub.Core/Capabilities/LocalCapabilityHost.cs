@@ -77,12 +77,15 @@ public sealed class LocalHostSession : IDisposable
     public bool Revoke(IEnumerable<string> permissions)
     {
         ArgumentNullException.ThrowIfNull(permissions);
+        // Leia a coleção inteira antes de mudar grants: um iterator pode falhar.
+        var requested = permissions.Where(p => !string.IsNullOrWhiteSpace(p))
+            .ToHashSet(StringComparer.Ordinal);
         CancellationTokenSource? active = null;
         var revoked = new HashSet<string>(StringComparer.Ordinal);
         lock (_sync)
         {
             if (_closed) return false;
-            foreach (var permission in permissions.Where(p => !string.IsNullOrWhiteSpace(p)))
+            foreach (var permission in requested)
                 if (_permissions.Remove(permission)) revoked.Add(permission);
             if (revoked.Count == 0) return false;
             Lifecycle("session.grants-revoked");
@@ -158,7 +161,7 @@ public sealed class LocalHostSession : IDisposable
             var invocation = new LocalInvocation(_context, input, p =>
             {
                 lock (_sync)
-                    if (!_closed && ReferenceEquals(_active, run) && !run.IsCancellationRequested)
+                    if (!_closed && !_activeRevoked && ReferenceEquals(_active, run) && !run.IsCancellationRequested)
                         Record(request, "progress", percent: p);
             });
             var output = await capability.Handler(invocation, run.Token).ConfigureAwait(false);
@@ -176,7 +179,8 @@ public sealed class LocalHostSession : IDisposable
             lock (_sync)
             {
                 if (_closed) return Failure(request, "CANCELLED");
-                if (run.IsCancellationRequested) return Failure(request, _activeRevoked ? "REVOKED" : "CANCELLED");
+                if (_activeRevoked) return Failure(request, "REVOKED");
+                if (run.IsCancellationRequested) return Failure(request, "CANCELLED");
                 if (!validOutput) return Failure(request, "PROVIDER_CONTRACT_VIOLATION");
                 Record(request, "response");
                 return new(request.Id, copy, null);
@@ -189,7 +193,16 @@ public sealed class LocalHostSession : IDisposable
             return Failure(request, revoked ? "REVOKED" : "CANCELLED");
         }
         // Mensagem arbitrária do handler nunca entra no journal/UI (pode conter segredo/texto).
-        catch (Exception) { return Failure(request, "EXECUTION_FAILED"); }
+        catch (Exception)
+        {
+            lock (_sync)
+            {
+                if (_closed) return Failure(request, "CANCELLED");
+                if (_activeRevoked) return Failure(request, "REVOKED");
+                if (run.IsCancellationRequested) return Failure(request, "CANCELLED");
+                return Failure(request, "EXECUTION_FAILED");
+            }
+        }
         finally
         {
             lock (_sync)

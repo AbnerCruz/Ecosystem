@@ -80,3 +80,20 @@ O primeiro binding continua local ao Hub e experimental em transporte (`ecosyste
 
 P5-3 termina aqui. P5-4 escolhe transporte/autenticação/timeout/disconnect preservando esta semântica. P5-5 continua responsável pelo segundo Product Shell real; nenhum Product deve referenciar `Hub.Core`, e qualquer extração de runtime/Tool exige segundo consumidor e Extraction Review positiva (NN-022).
 
+
+## P5-3 — reconciliação e revogação atômica
+
+O índice de ADRs deve preservar uma única linha por decisão, com o status canônico
+registrado: um merge textual de linhas antigas/novas não pode reintroduzir
+`Proposto` para uma decisão já aceita. `CHK-ADR` fiscaliza essa condição.
+
+No binding local, `Revoke` materializa toda a coleção solicitada antes de alterar
+grants. Se a enumeração falhar, grants/discovery/journal continuam intactos. Uma
+revogação efetiva invalida publicação de progresso e sucesso assim que registrada
+sob o lock, mesmo antes da sinalização cooperativa do token. Falha tardia do
+provider não substitui `REVOKED` por `EXECUTION_FAILED`; fechamento ou cancelamento
+também prevalecem sobre falhas tardias. Nenhuma exceção arbitrária entra no journal.
+
+Regressões em `LocalCapabilityHostTests`: coleção que lança após o primeiro grant
+e provider que lança depois da revogação. A matriz pública de conformance continua
+usando o contrato v1; nenhum transporte IPC ou segundo Host é declarado por isso.

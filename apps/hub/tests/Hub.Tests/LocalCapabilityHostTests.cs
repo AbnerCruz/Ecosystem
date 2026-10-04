@@ -223,6 +223,47 @@ public class LocalCapabilityHostTests
     }
 
     [Fact]
+    public async Task FaultingRevocationEnumerationCannotPartiallyChangeGrants()
+    {
+        static IEnumerable<string> FaultingPermissions()
+        {
+            yield return "ui.display";
+            throw new InvalidOperationException("Enumeration failed");
+        }
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var session = Host(Tool(async (_, _) => { await gate.Task; return Input(); }))
+            .Open("user", Context(), ["ui.display"]);
+        var running = session.DispatchAsync(Request(), TestContext.Current.CancellationToken);
+        try
+        {
+            Assert.Throws<InvalidOperationException>(() => session.Revoke(FaultingPermissions()));
+            Assert.Single(session.Discover());
+            Assert.DoesNotContain(session.Frames, f => f.Event == "session.grants-revoked");
+        }
+        finally { gate.SetResult(); }
+        Assert.True((await running).Succeeded);
+        Assert.True(session.Revoke(["ui.display"]));
+        Assert.Empty(session.Discover());
+    }
+
+    [Fact]
+    public async Task ProviderFailureAfterRevocationKeepsRevokedOutcome()
+    {
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var session = Host(Tool(async (_, _) =>
+        {
+            await gate.Task;
+            throw new InvalidOperationException("SECRET late failure");
+        })).Open("user", Context(), ["ui.display"]);
+        var running = session.DispatchAsync(Request(), TestContext.Current.CancellationToken);
+        Assert.True(session.Revoke(["ui.display"]));
+        gate.SetResult();
+        Assert.Equal("REVOKED", (await running).Error);
+        Assert.DoesNotContain(session.Frames, f => f.Kind == "response");
+        Assert.DoesNotContain("SECRET", JsonSerializer.Serialize(session.Frames));
+    }
+
+    [Fact]
     public async Task HandlerErrorDoesNotLeakItsMessageAndSessionRecovers()
     {
         var calls = 0;
