@@ -66,7 +66,8 @@
     "apps/urbe/THIRD-PARTY-NOTICES.md",
     "apps/urbe/docs/csharp/README.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
-    "docs/governance/handoffs/HO-20261004-urbe-uc8-foundation.json"
+    "docs/governance/handoffs/HO-20261004-urbe-uc8-foundation.json",
+    "ROADMAP.md"
   ],
   "criticality": {
     "declared": "critical",
@@ -77,7 +78,8 @@
     "Soluções portátil e nativa separadas, 8 testes de identidade/boundary/composição e smoke Chromium publicado em raiz/subpasta/offline.",
     "urbe-checks estendido com build/testes/publish portátil e build Android/Windows usando inputs.ref combinado.",
     "Documentação de comandos, teste manual e identidade nativa privada de build; nenhum canal/release alterado.",
-    "Corrigida propagação global de TargetFrameworks: UrbeBuildTarget seleciona apenas o TFM do host; Core/UI permanecem net10.0."
+    "Corrigida propagação global de TargetFrameworks: UrbeBuildTarget seleciona apenas o TFM do host; Core/UI permanecem net10.0.",
+    "Reconciliado P5-3 com integração observada PR #193 e Issue #175 closed/state:done; mesma linha de closeout proposta no PR #195, sem incorporar seu escopo P5-4."
   ],
   "verification": [
     {
@@ -115,6 +117,12 @@
       "kind": "automated",
       "result": "pending",
       "evidence": "Primeiro CI Android falhou em NETSDK1005 pela propagação de TargetFrameworks; corrigido via UrbeBuildTarget local ao host. Reexecutar Windows/Android no novo head."
+    },
+    {
+      "check": "CI Urbe parcial",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Head 40f6cdd; run 37204817864: portable (8 testes/publish/Chromium), Android e E2E aprovados. Windows e checks em andamento; consistency bloqueado por P5-3 já integrado ainda marcado [~], reconciliado neste commit."
     }
   ],
   "known_issues": [
@@ -124,8 +132,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Autorização explícita de envio recebida em 2026-10-04; enviar pelo conector GitHub (git HTTPS local sem credencial).",
-    "Executar CI padrão e builds nativos, corrigir falhas e entregar PR crítico verde ao integrador.",
+    "Concluir CI Windows/checks e consistency; entregar PR crítico verde ao integrador.",
     "Após integração UC-8, iniciar UC-9 contra fixtures históricas e futuras."
   ],
   "decisions_required": [],
