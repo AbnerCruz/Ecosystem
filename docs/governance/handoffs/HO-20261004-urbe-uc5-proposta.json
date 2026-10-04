@@ -1,0 +1,118 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc5-proposta",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T08:42:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-5",
+  "component": "urbe",
+  "state": "review",
+  "branch": "chatgpt/urbe-uc5-uc6-proposals-v3",
+  "base_commit": "dcb5e056730c67e8931725e8dc66e1e63a70a18a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+    "docs/governance/decisions.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc5-proposta.json",
+    "docs/adr/README.md"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "A mudança registra alternativas e uma decisão pendente; não escolhe pilha, não cria código, não altera runtime ou boundary efetivo."
+  },
+  "work_completed": [
+    "Comparadas quatro estratégias de UI/hosts para Web/PWA, Windows e Android.",
+    "ADR-0025 registra fatos, tradeoffs, política de C# total e fronteiras propostas sem implementar nenhuma alternativa.",
+    "DEC-0035 é criada como decisão pendente e bloqueante; recomendação técnica é Blazor WebAssembly PWA + .NET MAUI Blazor Hybrid com RCL compartilhada.",
+    "Issue #182 e ROADMAP passam a waiting/[~] até decisão do proprietário."
+  ],
+  "verification": [
+    {
+      "check": "fontes oficiais atuais de plataforma",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Microsoft Learn .NET 10 consultado para Blazor PWA/MAUI Hybrid; docs atuais de Avalonia 12 e Uno consultadas para targets e limitações."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Executar no PR/estado combinado."
+    }
+  ],
+  "known_issues": [
+    "Nenhuma opção foi provada no Urbe ainda; a decisão escolhe a pilha, mas UC-17..UC-25/UC-29 continuam responsáveis pela prova real."
+  ],
+  "blockers": [
+    "DEC-0035 pendente do proprietário."
+  ],
+  "next_actions": [
+    "Após DEC-0035, atualizar ADR-0025 para Aceito, aplicar consequências no ROADMAP e concluir UC-5."
+  ],
+  "decisions_required": [
+    "DEC-0035"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/csharp/DEPENDENCIES.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/acceptance/surface-protocol.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-005",
+      "evidence": "Reescrita C# segue DEC-0024-B e roadmap próprio; nenhuma implementação antes da decisão de pilha."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A direção não é inferida do chat; foi aberta como DEC-0035 pendente."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas do programa e do Product foram consultadas diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Pilha/hosts são tratados como decisão arquitetural do proprietário."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Suporte declarado por framework não é tratado como validação de aparelho/editor."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Alternativas são julgadas por redução de duplicação e custo total, não por elegância."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Toda a pilha nasce local ao Urbe; nenhuma extração compartilhada é proposta."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma alternativa torna o Hub requisito do Product."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-csharp-ui-hosts",
+      "status": "product-specific",
+      "rationale": "Pilha de UI/hosts é responsabilidade do Product Urbe; não há segundo consumidor que justifique extração."
+    }
+  ]
+}
