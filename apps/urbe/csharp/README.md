@@ -1,4 +1,4 @@
-# Cliente C# do Urbe — UC-8 + UC-9 + UC-10
+# Cliente C# do Urbe — UC-8 a UC-11
 
 Base de composição aprovada por DEC-0035-A / ADR-0025. O roadmap e os gates
 continuam em [`../docs/csharp/ROADMAP.md`](../docs/csharp/ROADMAP.md).
@@ -89,3 +89,12 @@ release nesta etapa. UC-24/25/29 ainda precisam de instalação e aparelho reais
 Bootstrap e worker PWA derivam do template Microsoft .NET 10 (MIT); o worker usa
 o próprio escopo como namespace do cache. JavaScript aqui só conecta APIs Web,
 sem regras de domínio ou autoridade de dados.
+
+
+## UC-11 — export/import portátil
+
+UC-11 mantém o boundary do Core: `VaultExportManifest` define o contrato
+`urbe-export.json` v1, hashes SHA-256, verificação e política do estado portátil;
+`VaultArchive` empacota/inspeciona ZIP com `System.IO.Compression`, exclui journals
+transitórios e rejeita traversal, caminhos absolutos e duplicatas normalizadas.
+Nenhum download, picker, filesystem, localStorage ou host é acessado pelo Core.
