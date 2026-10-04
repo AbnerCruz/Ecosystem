@@ -10,6 +10,7 @@ import { makeUiCases } from './parity-browser.mjs';
 import { makeBrowserVaultCases, makeBrowserLegacyCases } from './parity-browser-vault.mjs';
 import { makeBrowserStorageCases } from './parity-browser-storage.mjs';
 import { makeBrowserWorldCases } from './parity-browser-world.mjs';
+import { makeBrowserZipCases } from './parity-browser-zip.mjs';
 import { makeUpdateCases } from './parity-update.mjs';
 import { makeNativeCases } from './parity-native.mjs';
 
@@ -121,7 +122,7 @@ export function makeCorpus() {
     ...visual.map((g, i) => ({ id: `visual-${String(i + 1).padStart(3, '0')}`, operation: 'visual.serialize',
       requirements: ['REQ-027'], source: `tests/fixtures/visual-golden.json#/${i}`,
       input: { html: g.html, bodyEditor: g.bodyEditor }, expected: { markdown: g.md } })),
-    ...makeVaultCases(), ...makeRestoreCases(), ...makeCrashCases(), ...makeStorageCases(), ...makeLegacyIdbCases(), ...makeDomainCases(), ...makeNativeCases(), ...makeUpdateCases(), ...makeUiCases(), ...makeBrowserVaultCases(), ...makeBrowserLegacyCases(), ...makeBrowserStorageCases(), ...makeBrowserWorldCases()] };
+    ...makeVaultCases(), ...makeRestoreCases(), ...makeCrashCases(), ...makeStorageCases(), ...makeLegacyIdbCases(), ...makeDomainCases(), ...makeNativeCases(), ...makeUpdateCases(), ...makeUiCases(), ...makeBrowserVaultCases(), ...makeBrowserLegacyCases(), ...makeBrowserStorageCases(), ...makeBrowserWorldCases(), ...makeBrowserZipCases()] };
 }
 export function validateCorpus(corpus) {
   if (corpus.schemaVersion !== 1 || corpus.product !== 'urbe') throw new Error('corpus inválido');
