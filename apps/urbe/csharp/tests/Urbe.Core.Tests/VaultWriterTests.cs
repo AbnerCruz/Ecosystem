@@ -130,6 +130,82 @@ public sealed class VaultWriterTests
     }
 
     [Fact]
+    public void RecoveryCommitsJournalMetadataAndSidecarsBeforeRemovingJournal()
+    {
+        var journal = """
+        {
+          "version": 2,
+          "timestamp": 1,
+          "documents": [
+            {"id":"doc_a","path":"A.md","content":"recuperado\n"},
+            {"id":"doc_b","path":"B.md","content":"novo\n"}
+          ],
+          "metadata": {"v":4,"mundo":"journal","notas":{"A.md":{"id":"doc_a"},"B.md":{"id":"doc_b"}}},
+          "history": {"version":1,"documents":{"doc_a":[{"timestamp":1,"path":"A.md","content":"antigo"}]}},
+          "trash": {"version":1,"items":[]},
+          "compositions": {"version":1,"items":[{"id":"cmp_1","name":"J","sources":["doc_a","doc_b"]}]}
+        }
+        """;
+        var files = new[]
+        {
+            TextFile("A.md", "disco\n"),
+            TextFile(".urbe/mapa.json", """{"v":4,"mundo":"disco","notas":{"A.md":{"id":"doc_a"}}}"""),
+            TextFile(".urbe/journal.v2.json", journal),
+            TextFile(".urbe/history.json", """{"version":1,"documents":{}}""")
+        };
+        var snapshot = VaultReader.Read(files);
+        Assert.True(snapshot.RecoveredFromJournal);
+
+        var result = VaultWriter.Plan(new VaultWriteRequest
+        {
+            Files = files,
+            Documents = ToWriteDocuments(snapshot),
+            AppVersion = "1.8.3-beta",
+            Now = new DateTimeOffset(2026, 10, 4, 12, 30, 0, TimeSpan.Zero)
+        });
+
+        Assert.False(result.Files.ContainsKey(".urbe/journal.v2.json"));
+        Assert.Equal("recuperado\n", Encoding.UTF8.GetString(result.Files["A.md"].Bytes.Span));
+        Assert.Equal("novo\n", Encoding.UTF8.GetString(result.Files["B.md"].Bytes.Span));
+
+        using var map = JsonDocument.Parse(result.Files[".urbe/mapa.json"].Bytes);
+        Assert.Equal("journal", map.RootElement.GetProperty("mundo").GetString());
+
+        using var history = JsonDocument.Parse(result.Files[".urbe/history.v2.json"].Bytes);
+        Assert.True(history.RootElement.GetProperty("documents").TryGetProperty("doc_a", out _));
+
+        using var compositions = JsonDocument.Parse(result.Files[".urbe/compositions.v2.json"].Bytes);
+        Assert.Equal("cmp_1", compositions.RootElement.GetProperty("items")[0].GetProperty("id").GetString());
+    }
+
+    [Fact]
+    public void FutureV2JournalDoesNotHideSupportedLegacyJournal()
+    {
+        var files = new[]
+        {
+            TextFile("A.md", "disco\n"),
+            TextFile(".urbe/journal.v2.json", """{"version":9,"documents":[{"id":"bad","path":"Bad.md","content":"bad"}]}"""),
+            TextFile(".urbe/journal.json", """{"version":1,"documents":[{"id":"doc_a","path":"A.md","content":"v1\n"}]}""")
+        };
+
+        var snapshot = VaultReader.Read(files);
+        Assert.True(snapshot.RecoveredFromJournal);
+        Assert.Equal(".urbe/journal.json", snapshot.RecoveryJournalPath);
+        Assert.Equal("v1\n", Assert.Single(snapshot.Documents).Text);
+        Assert.Contains(".urbe/journal.v2.json", snapshot.FutureFiles);
+
+        var result = VaultWriter.Plan(new VaultWriteRequest
+        {
+            Files = files,
+            Documents = ToWriteDocuments(snapshot),
+            AppVersion = "1.8.3-beta"
+        });
+
+        Assert.True(result.Files.ContainsKey(".urbe/journal.v2.json"));
+        Assert.False(result.Files.ContainsKey(".urbe/journal.json"));
+    }
+
+    [Fact]
     public void FutureArtifactsStayByteIdenticalWhileOrdinaryNotesCanBeWritten()
     {
         var files = LoadFixture("futuro-v2");
