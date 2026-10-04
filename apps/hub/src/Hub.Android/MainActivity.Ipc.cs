@@ -17,7 +17,7 @@ public sealed partial class MainActivity
 
     void PromptPendingIpcPairing()
     {
-        if (_destroyed || HasWindowFocus == false) return;
+        if (_destroyed) return;
         ShowPendingPairings(automatic: true);
     }
 
@@ -25,7 +25,7 @@ public sealed partial class MainActivity
     {
         try
         {
-            using var key = new AndroidInstallationKey("ecosystem.ipc.provider.v1");
+            var key = new AndroidInstallationKey("ecosystem.ipc.provider.v1");
             var store = new EcosystemPairingStore(this, key);
             var pending = store.Pending().FirstOrDefault();
             if (pending is null)
