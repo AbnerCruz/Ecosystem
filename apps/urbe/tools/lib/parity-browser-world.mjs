@@ -1,6 +1,7 @@
 // UC-2: identidade/region/asset/layout como fatos observáveis, sem IDs aleatórios no golden.
 import {encodedFixture} from './parity-browser-vault.mjs';
 import {launchApp,openApp,readVault,seedVault,waitCityLoaded,waitSaved} from './browser.mjs';
+import {makeVault} from '../perf/make-vault.mjs';
 const equal=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const decode=files=>new Map(files.map(f=>[f.path,f.encoding==='base64'?new Uint8Array(Buffer.from(f.content,'base64')):f.content]));
 const definitions=[
@@ -11,8 +12,11 @@ const definitions=[
   ['external-identity','v1-mapa-v4',['REQ-041','REQ-042'],{closedNoteIdentity:true,closedHouseStable:true,closedFolderNoteStable:true,regionStable:true,assetStable:true,binaryMoved:true,sidecarPathCorrect:true,oldPathsAbsent:true,newPathsPresent:true,openNoteIdentity:true,openOneHouse:true,openMovePersisted:true,openMapIdentity:true}],
   ['map-writer','v1-mapa-v4',['REQ-040'],{createdInMap:true,idStable:true,reorganized:true,mapVersion:4,mapWritesAtLeast2:true,mapWriterOnly:true}]
 ];
+const encodeFiles=files=>[...files].map(([path,content])=>({path,encoding:typeof content==='string'?'utf8':'base64',content:typeof content==='string'?content:Buffer.from(content).toString('base64')}));
+const scale=makeVault('S');
+const scaleCase={id:'browser-world-scale-s',operation:'browser.world',requirements:['REQ-070'],source:'tests/e2e/app-runtime.e2e.mjs',input:{scenario:'scale-s',files:encodeFiles(scale.files),docs:scale.notes,assets:scale.assets},expected:{documentsAtLeast:true,worldBuildingsAtLeast:true,assetCount:scale.assets,titleMatches:true}};
 const multiCityCase={id:'browser-world-multi-city',operation:'browser.world',requirements:['REQ-045'],source:'tests/e2e/multi-city.e2e.mjs',input:{scenario:'multi-city',cities:[{name:'Norte',files:[{path:'Bairro/Um.md',encoding:'utf8',content:'# Um\n'},{path:'.urbe/mapa.json',encoding:'utf8',content:JSON.stringify({v:4,mundo:'placas-1',regioes:[{caminho:'Bairro',nome:'Bairro',cor:'#4aa3ff',x:30,y:30,w:12,h:10,cells:null}],notas:{'Bairro/Um.md':{id:'doc_norte_1',x:32,y:32,sprite:'house1'}},construcoes:[]})}]},{name:'Sul',files:[{path:'Dois.md',encoding:'utf8',content:'# Dois\n'}]}],docs:2},expected:{originIdPreserved:true,southPresent:true,geometryMerged:true,mapIdPreserved:true,migrationOnce:true,migrationSources:['Norte'],boot2Stable:true,boot3Stable:true,mapWritesPresent:true,mapWriterOnly:true,archived:['Norte','Sul'],stores:['Norte','Sul','Urbe']}};
-export function makeBrowserWorldCases(){return [...definitions.map(([scenario,fixture,requirements,expected])=>({id:'browser-world-'+scenario,operation:'browser.world',requirements,source:'tests/e2e/'+({'stable-ids':'stable-ids','external-identity':'identity','map-writer':'map-writer'}[scenario]||'layout')+'.e2e.mjs',input:{scenario,files:encodedFixture(fixture),docs:fixture==='v1-mapa-v4'?3:fixture==='v1-mundo-antigo'?2:1},expected})),multiCityCase]}
+export function makeBrowserWorldCases(){return [...definitions.map(([scenario,fixture,requirements,expected])=>({id:'browser-world-'+scenario,operation:'browser.world',requirements,source:'tests/e2e/'+({'stable-ids':'stable-ids','external-identity':'identity','map-writer':'map-writer'}[scenario]||'layout')+'.e2e.mjs',input:{scenario,files:encodedFixture(fixture),docs:fixture==='v1-mapa-v4'?3:fixture==='v1-mundo-antigo'?2:1},expected})),scaleCase,multiCityCase]}
 async function save(a){await a.save();return a.vault()}
 const mapa=v=>JSON.parse(v['.urbe/mapa.json']);
 const layouts=v=>Object.keys(v).filter(p=>/^\.urbe\/backup\/[^/]+-layout-layout[^/]*\/manifest\.json$/.test(p)).map(p=>({dir:p.slice(0,-'/manifest.json'.length),manifest:JSON.parse(v[p])}));
@@ -42,6 +46,14 @@ async function runMultiCity(input){
 }
 export async function runBrowserWorld(rt,input){
   if(input.scenario==='multi-city')return runMultiCity(input);
+  if(input.scenario==='scale-s'){
+    const seed=decode(input.files),a=await rt.open({seed,docs:input.docs});
+    try{
+      const notes=await a.notes(),world=await a.world(),vault=await a.vault(),version=await a.version();
+      const output={documentsAtLeast:Object.keys(notes).filter(p=>!p.startsWith('Tutorial/')).length>=input.docs,worldBuildingsAtLeast:world.buildings.filter(b=>!b.path.startsWith('Tutorial/')).length>=input.docs,assetCount:Object.keys(vault).filter(p=>p.startsWith('Anexos/')&&vault[p]?.blob===true).length,titleMatches:await a.page.title()==='Urbe v'+version};
+      a.expectNoErrors();return output;
+    }finally{await a.page.context().close()}
+  }
   if(!definitions.some(d=>d[0]===input.scenario))throw new Error('cenário de mundo desconhecido');
   const seed=decode(input.files),a=await rt.open({seed,docs:input.docs});
   try{
