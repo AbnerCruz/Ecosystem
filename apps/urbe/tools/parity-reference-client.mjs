@@ -18,8 +18,8 @@ try{
   for(const c of req.cases){
     let output;
     if(c.operation==='markdown.render')output={html:ctx.window.UrbeMarkdown.render(c.input.markdown)};
-    else if(c.operation==='visual.serialize'||c.operation==='ui.scenario'){
-      browser ||= await createBrowserReference();output=await browser[c.operation==='ui.scenario'?'ui':'visual'](c.input);
+    else if(['visual.serialize','ui.scenario','browser.vault','browser.idb-legacy'].includes(c.operation)){
+      browser ||= await createBrowserReference();output=await browser[{'ui.scenario':'ui','visual.serialize':'visual','browser.vault':'vault','browser.idb-legacy':'legacy'}[c.operation]](c.input);
     }else if(operations[c.operation])output=await operations[c.operation](c.input);
     else output=await runDomainCase(c.operation,c.input);
     results.push({id:c.id,output});
