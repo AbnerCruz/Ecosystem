@@ -1232,6 +1232,87 @@
       "decidedAt": "2026-10-04",
       "record": "docs/governance/responses/DEC-0034.md",
       "consequencesApplied": false
+    },
+    {
+      "id": "DEC-0035",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": true,
+      "title": "Pilha de UI e hosts do novo cliente C# do Urbe",
+      "context": "DEC-0024-B determinou reescrita completa em C# com corte só após paridade total. UC-1..UC-4 e UC-7 estão concluídos; UC-2 fechou o corpus independente de linguagem e mostrou que editor/DOM/IME, PWA offline, IndexedDB, Android e Windows são requisitos simultâneos. FATO atual: .NET 10 suporta Blazor WebAssembly PWA e compartilhamento de Razor Components entre Web e .NET MAUI Blazor Hybrid; Avalonia 12 e Uno também cobrem Windows/Android/WebAssembly. FATO: a documentação do Avalonia registra IME parcial em WebAssembly, risco importante para um editor mobile-first. Nenhuma opção foi validada no Urbe e nenhum código C# pode começar antes desta decisão e de G-C0. 'C# total' significa lógica/estado/domínio do Urbe em C#; infraestrutura inevitável do navegador (service worker/bootstrap/interoperabilidade estreita) não vira regra de produto em JavaScript.",
+      "question": "Qual pilha deve implementar UI e hosts do novo Urbe C# em Web/PWA, Windows e Android?",
+      "alternatives": [
+        {
+          "option": "A — Blazor WebAssembly PWA no Web + .NET MAUI Blazor Hybrid em Windows/Android, com UI compartilhada em Razor Class Library (recomendada)",
+          "consequences": "Core C# puro e a maior parte da UI compartilhada; DOM real preserva o caminho de menor risco para editor, IME, teclado móvel e acessibilidade; PWA continua estática/offline; hosts MAUI fornecem capacidades nativas por interfaces. Aceita WebView nos hosts nativos e adapters mínimos de browser quando não existir API .NET equivalente. Nenhuma lógica canônica do Urbe fica em JavaScript."
+        },
+        {
+          "option": "B — Avalonia 12 como UI C#/XAML única em Windows, Android e WebAssembly",
+          "consequences": "Uma única árvore visual e bom desenho 2D. Em troca, o editor deixa de aproveitar diretamente o DOM e o suporte IME em WebAssembly é oficialmente parcial; exige prova forte de teclado/seleção/acessibilidade/PWA antes de adotar."
+        },
+        {
+          "option": "C — Uno Platform como UI C#/XAML única em Windows, Android e WebAssembly",
+          "consequences": "Alta reutilização e targets declarados para as três superfícies. Introduz uma dependência estrutural adicional e exige spikes do editor, PWA/offline, storage legado e mundo 2D antes de qualquer confiança em paridade."
+        },
+        {
+          "option": "D — UI separada por superfície: Blazor WebAssembly no Web e UI nativa C# distinta em Windows/Android, compartilhando apenas Core",
+          "consequences": "Maior liberdade por host e melhor acesso aos recursos específicos, mas duplica UI e testes e aumenta muito o risco/custo de manter editor e mundo semanticamente idênticos."
+        }
+      ],
+      "consequences": "A escolha define apenas a pilha e suas fronteiras. Depois de decidida, ADR-0025 passa a Aceito e UC-5 pode ser concluído. UC-8 cria o esqueleto em PR próprio depois de UC-6 e G-C0; bibliotecas de matemática/PDF/plugins continuam decisões posteriores. Nenhuma opção autoriza corte, mudança de formato de vault ou extração compartilhada.",
+      "manifestCompatibility": "Todas as alternativas preservam NN-002/003/005/014/017/023. A e D usam contratos de plataforma locais ao Product; B/C também permanecem locais. NN-020/022 proíbem extrair a UI/hosts por antecipação. A interpretação explícita de C# total evita declarar falsamente que browser/PWA funcionam sem runtime/interop próprios.",
+      "recommendation": "A — Blazor WebAssembly PWA + .NET MAUI Blazor Hybrid + RCL compartilhada. Para o Urbe, editor/IME e paridade Web pesam mais que a elegância de uma única superfície desenhada. É a opção com menor risco para texto e ainda mantém domínio e comportamento em C#.",
+      "related": [
+        "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+        "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+        "apps/urbe/docs/csharp/DEPENDENCIES.md",
+        "apps/urbe/docs/csharp/PARITY.md",
+        "apps/urbe/docs/csharp/ROADMAP.md",
+        "apps/urbe/docs/csharp/acceptance/surface-protocol.json"
+      ],
+      "raisedBy": "chatgpt",
+      "raisedAt": "2026-10-04"
+    },
+    {
+      "id": "DEC-0036",
+      "status": "pending",
+      "component": "urbe",
+      "blocking": true,
+      "title": "Transição das instalações e canais do Urbe JS para o cliente C#",
+      "context": "DEC-0024-B exige que o Urbe JavaScript continue distribuído até paridade total; UC-31/G-C5 é a decisão de corte. Android depende de package id, mesma chave e versionCode monotônico; Windows hoje usa Electron/NSIS/updater; Web/PWA depende de origem e escopo para manter IndexedDB e instalação. DEC-0031/ADR-0019 migra os builds do JS ao Ecosystem por versão-ponte, e DEC-0021-C mantém uma plataforma first-party futura. Misturar troca de linguagem, troca de canal e troca de origem Web no mesmo evento aumentaria o risco de perda de dados e regressão.",
+      "question": "Como as instalações existentes devem migrar do cliente JavaScript para o cliente C# quando G-C5 autorizar o corte?",
+      "alternatives": [
+        {
+          "option": "A — Ponte preservando identidade/origem, com rollout por superfície somente após G-C5 (recomendada)",
+          "consequences": "Android mantém app.urbe, a mesma chave privada e versão crescente; Windows recebe uma ponte explícita do updater/instalador para o novo cliente e preserva o vault; Web troca a implementação primeiro na mesma origem/escopo para manter IndexedDB/PWA. Canais antigos ficam como recuperação. Mover para plataforma first-party/origem nova vira migração separada."
+        },
+        {
+          "option": "B — Cliente C# paralelo com identidades/canais próprios e migração explícita de vault",
+          "consequences": "Evita updater cruzando tecnologias e facilita rollback por coexistência, mas duplica aplicativos/configurações e cria uma segunda identidade do mesmo Product; no Web uma origem nova não enxerga automaticamente o IndexedDB antigo."
+        },
+        {
+          "option": "C — Reinstalação deliberada com backup/export/import obrigatório",
+          "consequences": "Simplifica o mecanismo técnico: remover cliente antigo, instalar o novo e importar. Sacrifica continuidade, aumenta atrito e risco humano e não atende bem à expectativa normal de atualização."
+        },
+        {
+          "option": "D — Big-bang simultâneo nas três superfícies preservando identidade",
+          "consequences": "Uma única data de corte, mas blast radius máximo: um problema em Android, Windows ou PWA bloqueia ou força rollback coordenado das três superfícies."
+        }
+      ],
+      "consequences": "Depois da escolha, ADR-0026 passa a Aceito e UC-6 pode ser concluído. A implementação/ensaio real da ponte pertence a UC-26 e exige DEVICE/instalação; o corte continua proibido até UC-31/G-C5. P4-9 continua sendo somente a ponte do cliente JS para releases diretas e não deve ser confundido com o corte C#.",
+      "manifestCompatibility": "A preserva NN-001/003/014/017/019/023 e separa migração tecnológica de distribuição futura. B/C/D podem ser implementadas sem violar o MANIFEST se explicitamente escolhidas, mas aumentam identidade paralela, atrito ou risco operacional. Nenhuma alternativa apaga repositórios/canais históricos nem torna o Hub obrigatório.",
+      "recommendation": "A — preservar identidade e origem durante a troca tecnológica, com rollout controlado após G-C5. Trocar linguagem já é uma cirurgia grande; trocar assinatura, produto, updater e origem Web junto seria pedir para apanhar de graça.",
+      "related": [
+        "docs/adr/0026-urbe-transicao-cliente-csharp.md",
+        "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+        "docs/adr/0019-releases-diretas-dos-products.md",
+        "docs/distribution/direct-releases.md",
+        "docs/architecture/distribution.md",
+        "apps/urbe/docs/csharp/ROADMAP.md",
+        "apps/urbe/docs/csharp/acceptance/surface-protocol.json"
+      ],
+      "raisedBy": "chatgpt",
+      "raisedAt": "2026-10-04"
     }
   ]
 }
