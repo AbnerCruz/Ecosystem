@@ -21,17 +21,20 @@ public sealed class EcosystemCapabilityService : Service
     readonly ConcurrentDictionary<string, ChallengeState> _challenges = new(StringComparer.Ordinal);
     AndroidInstallationKey? _key;
     EcosystemPairingStore? _pairings;
+    AndroidBindingTrustPolicy? _trustPolicy;
     AuthenticatedHostGateway? _gateway;
     EcosystemCapabilityBinder? _binder;
 
     internal AndroidInstallationKey Key => _key ?? throw new InvalidOperationException();
     internal EcosystemPairingStore Pairings => _pairings ?? throw new InvalidOperationException();
+    internal AndroidBindingTrustPolicy TrustPolicy => _trustPolicy ?? throw new InvalidOperationException();
     internal AuthenticatedHostGateway Gateway => _gateway ?? throw new InvalidOperationException();
 
     public override void OnCreate()
     {
         base.OnCreate();
         _key = new AndroidInstallationKey("ecosystem.ipc.provider.v1");
+        _trustPolicy = AndroidBindingTrustPolicy.Load(this);
         _pairings = new EcosystemPairingStore(this, _key);
         var root = new LocalContext([new ContextStep("ecosystem", "ecosystem")]);
         _gateway = new AuthenticatedHostGateway(new LocalCapabilityHost(
@@ -40,7 +43,7 @@ public sealed class EcosystemCapabilityService : Service
     }
 
     public override IBinder? OnBind(Intent? intent) =>
-        intent?.Action == EcosystemIpcProtocol.ServiceAction ? _binder : null;
+        intent?.Action == EcosystemIpcProtocol.ServiceAction && _trustPolicy is not null ? _binder : null;
 
     public override void OnDestroy()
     {
@@ -51,6 +54,7 @@ public sealed class EcosystemCapabilityService : Service
 
     internal IpcResponse PairBegin(AndroidPeerIdentity peer, IpcRequest request)
     {
+        if (!TrustPolicy.AllowsCaller(peer)) return Error("PEER_UNTRUSTED");
         if (request.Op != "pair.begin" || string.IsNullOrWhiteSpace(request.PublicKey)
             || string.IsNullOrWhiteSpace(request.ClientNonce))
             return Error("PROTOCOL_UNSUPPORTED");
@@ -68,6 +72,7 @@ public sealed class EcosystemCapabilityService : Service
 
     internal IpcResponse Challenge(AndroidPeerIdentity peer, IpcRequest request)
     {
+        if (!TrustPolicy.AllowsCaller(peer)) return Error("PEER_UNTRUSTED");
         if (request.Op != "session.challenge" || request.Signature is null) return Error("PROTOCOL_UNSUPPORTED");
         var approved = Pairings.Approved(peer, request.PairId);
         if (approved is null) return Error("PAIRING_REQUIRED");
@@ -89,6 +94,7 @@ public sealed class EcosystemCapabilityService : Service
 
     internal IpcResponse Open(AndroidPeerIdentity peer, IpcRequest request)
     {
+        if (!TrustPolicy.AllowsCaller(peer)) return Error("PEER_UNTRUSTED");
         if (request.Op != "session.open" || request.Signature is null || request.ContextJson is null
             || !EcosystemIpcProtocol.ValidId(request.ChallengeId))
             return Error("PROTOCOL_UNSUPPORTED");
@@ -161,6 +167,8 @@ public sealed class EcosystemCapabilityService : Service
         out ApprovedPeer? approved, out IpcResponse? error)
     {
         approved = null; error = null;
+        if (!TrustPolicy.AllowsCaller(peer))
+        { error = Error("PEER_UNTRUSTED"); return false; }
         if (request.Op != operation || request.Signature is null
             || !EcosystemIpcProtocol.ValidId(request.PairId) || !EcosystemIpcProtocol.ValidId(request.SessionId))
         { error = Error("PROTOCOL_UNSUPPORTED"); return false; }
