@@ -14,7 +14,7 @@
   "branch": "chatgpt/urbe-uc5-uc6-proposals-v2",
   "base_commit": "e2c2e37d33b45f55c861bb2586183f1594171fa3",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/185",
   "files_changed": [
     "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
     "docs/governance/decisions.json",
