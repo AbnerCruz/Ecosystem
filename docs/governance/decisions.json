@@ -1194,7 +1194,7 @@
     },
     {
       "id": "DEC-0034",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": true,
       "title": "Fronteira pública da Host API do Capability Runtime",
@@ -1227,7 +1227,11 @@
         "ROADMAP.md"
       ],
       "raisedBy": "chatgpt-p5-3-host-api-decision",
-      "raisedAt": "2026-10-04"
+      "raisedAt": "2026-10-04",
+      "decision": "Alternativa A — A — Host API semântica e neutra de transporte (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/184).",
+      "decidedAt": "2026-10-04",
+      "record": "docs/governance/responses/DEC-0034.md",
+      "consequencesApplied": false
     }
   ]
 }
