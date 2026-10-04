@@ -45,10 +45,17 @@
       "evidence": "SDK 10.0.100: todos os 22 checks passaram no estado combinado com main@46c295a."
     },
     {
-      "check": "Suíte completa e self-test",
+      "check": "Suíte completa Urbe e self-test Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "npm run check: 64/64 arquivos passaram e todas as checagens passaram. PATH do SDK configurado: Check.cs --self-test terminou com exit 0 e todos os checks provaram detectar suas violações.",
+      "tested_commit": "389d557f81c8c5a011a9500c38eb504fe7d5e43f"
+    },
+    {
+      "check": "CI e integração remotos",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Execuções locais em andamento; CI remoto ainda deve conferir o estado combinado."
+      "evidence": "PR #167 head 389d557: urbe-app 37180545577, urbe-checks 37180545472 e consistency 37180545465 iniciados. Não declara integração nem DEVICE."
     }
   ],
   "known_issues": [
