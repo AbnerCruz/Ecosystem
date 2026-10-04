@@ -10,11 +10,11 @@
   },
   "task_id": "RPG-002",
   "component": "tabletop-rpg",
-  "state": "review",
+  "state": "done",
   "branch": "chatgpt/tabletop-rpg-persistence-v1",
   "base_commit": "36707a312a241449b5cac17760b38f23b5d764d2",
-  "commit": null,
-  "pr": null,
+  "commit": "ed825cc0c63e78d1a5ba92aca42e71b09e563fa6",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/168",
   "files_changed": [
     "docs/governance/integration-policy.json",
     "docs/governance/handoffs/HO-20261003-tabletop-rpg-persistence-v1.json",
@@ -56,7 +56,8 @@
     "I/O é serializado por diretório entre instâncias de FileCampaignStore no mesmo processo para impedir corrida entre autosaves.",
     "Export/import reutilizam o mesmo formato versionado e import pode opcionalmente salvar no store local.",
     "SPEC e documentação operacional definem compatibilidade, integridade, recuperação, ausência de segredos e limites do formato v1.",
-    "integration-policy.json protege TabletopRpg.Persistence, Campaign.Persistence.cs e CampaignState.cs como user-data crítico."
+    "integration-policy.json protege TabletopRpg.Persistence, Campaign.Persistence.cs e CampaignState.cs como user-data crítico.",
+    "Integração crítica autorizada pelo proprietário e concluída no PR #168; merge commit 46c295a466d22c1374ca09ac68493e388ce7d014."
   ],
   "verification": [
     {
@@ -81,9 +82,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Abrir PR de RPG-002 para main e observar o estado combinado do integrador.",
-    "Após os gates combinados ficarem verdes, o proprietário adiciona a label integrar para autorizar a mudança crítica de user-data/control-plane; o agente não adiciona essa label.",
-    "Após integração, fechar RPG-002 e iniciar RPG-003 conforme o ROADMAP."
+    "RPG-003 — implementar cena, relógio de campanha, quests, inventário, condições e recursos no Core.",
+    "Preservar compatibilidade da persistência v1; qualquer extensão persistente exige versão/migração explícita ou extensão retrocompatível comprovada."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -136,7 +136,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "RPG-002 permanece verifying e ROADMAP [~] até testes finais e integração."
+      "evidence": "Implementação, verificação e integração crítica foram concluídas; PR #168 mergeado após autorização canônica do proprietário."
     },
     {
       "id": "NN-020",
