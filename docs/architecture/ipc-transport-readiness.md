@@ -83,3 +83,32 @@ Este slice não exige uma escolha do proprietário antes de existir o consumidor
 - [Android: PackageManager](https://developer.android.com/reference/android/content/pm/PackageManager) — resolução e verificação de certificados; política runtime ainda depende de ADR próprio.
 
 As fontes externas sustentam as propriedades das APIs; a recomendação de adequação é inferência técnica deste documento. As autoridades do Ecosystem continuam MANIFEST, decisões/ADRs e contratos canônicos.
+
+
+## Reauditoria após LUNET-303 — 2026-10-04
+
+A condição que bloqueava a escolha deixou de existir:
+
+- **Lunet Fase 3:** gate integral LUNET-303 aprovado pelo proprietário na Issue #204; candidato 0.0.1-dev.1000008 permanece a evidência de Product Shell Android utilizável.
+- **Host API:** P5-3 e ADR-0024 estão integrados; a semântica pública continua neutra de transporte.
+- **Uso standalone:** P4-4 já possui validação própria; qualquer integração IPC será opcional e indisponibilidade do Hub não pode impedir o domínio essencial do Lunet (NN-003/023).
+- **Operação concreta do ensaio:** execução remota opcional da capability estável `text.inspect@1.0.0` entre dois APKs/processos distintos, usando a mesma semântica Host API. O objetivo é provar hospedagem de capability fora de processo, autenticação, lifecycle e negativas IPC-01..IPC-18 — não transformar `text.inspect` em dependência funcional do Lunet.
+
+Com consumidor real e operação interprocessos definidos, a decisão de transporte já não é prematura. A escolha foi elevada à **DEC-0037** porque altera boundary, confiança e política de identidade (NN-011/016).
+
+### Proposta preferida
+
+Primeiro binding: **Android Bound Service/Binder**, com endpoint opcional hospedado pelo Hub e caller inicial no Lunet.
+
+A autenticação proposta não confia em dados enviados pelo payload e não trata um certificado de desenvolvimento público como autoria suficiente. O adapter deve:
+
+1. capturar UID do caller dentro da transação Binder antes de qualquer trabalho assíncrono;
+2. resolver pacote(s) associados ao UID e verificar package id + signer contra política local;
+3. manter pareamento explícito por instalação quando o signer não fornecer confiança suficiente: chave assimétrica gerada no Android Keystore, confirmação humana no primeiro pareamento e desafio de posse ao abrir sessão;
+4. fazer o cliente verificar também a identidade/chave do provider antes de enviar input;
+5. vincular sessão, callbacks, grants e cancelamentos à identidade autenticada; reconexão nunca ressuscita grants;
+6. permanecer fail-closed se PackageManager, signer, pareamento, versão ou challenge não puderem ser verificados.
+
+O pareamento é responsabilidade do adapter Android do primeiro ensaio; não vira automaticamente protocolo compartilhado ou requisito de outros bindings. A Host API continua independente de Binder.
+
+Alternativas continuam tecnicamente possíveis e são apresentadas na DEC-0037: Unix socket com autenticação de aplicação, TCP loopback com autenticação mútua e adiar IPC mantendo apenas adapter em processo. A recomendação por Binder é de custo/adequação Android, não regra universal para Web/Windows.
