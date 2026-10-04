@@ -14,7 +14,7 @@
   "branch": "chatgpt/urbe-gc0-apply-decisions",
   "base_commit": "8163417117e160b0ed550146d02210b337ae7a03",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/191",
   "files_changed": [
     "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
     "docs/adr/0026-urbe-transicao-cliente-csharp.md",
