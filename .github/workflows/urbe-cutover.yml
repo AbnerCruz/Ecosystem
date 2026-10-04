@@ -54,37 +54,45 @@ jobs:
             ''|*[!0-9A-Za-z.-]*) echo "::error::Versão inválida"; exit 1 ;;
           esac
 
-          current="$(node -p "require('./apps/urbe/package.json').version")"
-          [ "$REQUESTED_VERSION" = "$current" ] || {
-            echo "::error::Versão solicitada $REQUESTED_VERSION difere de apps/urbe/package.json ($current)"
-            exit 1
-          }
-
-          node <<'NODE'
-          const p = require('./apps/urbe/package.json');
-          const cfg = p.build?.publish?.[0];
-          if (!cfg || cfg.provider !== 'github' || cfg.owner !== 'AbnerCruz' || cfg.repo !== 'Ecosystem' || cfg.tagNamePrefix !== 'urbe-v') {
-            throw new Error('package.json não contém a configuração de ponte aprovada para releases diretas');
-          }
-          NODE
-
           case "$STAGE" in
             legacy-bridge)
               [ "$REQUESTED_VERSION" = "1.8.3-beta" ] || {
                 echo "::error::A ponte legada P4-9 é exclusivamente 1.8.3-beta"
                 exit 1
               }
-              grep -Fq "Ponte para releases diretas do Ecosystem" apps/urbe/CHANGELOG.md || {
-                echo "::error::CHANGELOG não contém as notas da ponte P4-9"
+              # Commit já sincronizado e observado no espelho; pin evita que avanço posterior da main altere a ponte.
+              target="dcb5e056730c67e8931725e8dc66e1e63a70a18a"
+              git cat-file -e "$target^{commit}"
+              git show "$target:apps/urbe/package.json" > /tmp/urbe-package.json
+              current="$(node -p "require('/tmp/urbe-package.json').version")"
+              [ "$current" = "$REQUESTED_VERSION" ] || {
+                echo "::error::Commit da ponte contém versão inesperada: $current"
+                exit 1
+              }
+              git show "$target:apps/urbe/CHANGELOG.md" | grep -Fq "Ponte para releases diretas do Ecosystem" || {
+                echo "::error::Commit da ponte não contém as notas P4-9"
                 exit 1
               }
               tag="urbe/v$REQUESTED_VERSION"
               ;;
             direct)
+              target="$(git rev-parse HEAD)"
+              current="$(node -p "require('./apps/urbe/package.json').version")"
+              [ "$REQUESTED_VERSION" = "$current" ] || {
+                echo "::error::Versão solicitada $REQUESTED_VERSION difere de apps/urbe/package.json ($current)"
+                exit 1
+              }
               [ "$REQUESTED_VERSION" != "1.8.3-beta" ] || {
                 echo "::error::1.8.3-beta é a ponte entregue pelo canal antigo; o primeiro release direto precisa ser posterior"
                 exit 1
               }
+              node <<'NODE'
+              const p = require('./apps/urbe/package.json');
+              const cfg = p.build?.publish?.[0];
+              if (!cfg || cfg.provider !== 'github' || cfg.owner !== 'AbnerCruz' || cfg.repo !== 'Ecosystem' || cfg.tagNamePrefix !== 'urbe-v') {
+                throw new Error('package.json não contém a configuração aprovada para releases diretas');
+              }
+              NODE
               tag="urbe-v$REQUESTED_VERSION"
               ;;
             *)
@@ -95,8 +103,7 @@ jobs:
 
           if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/tmp/existing-tag 2>/dev/null; then
             remote_sha="$(cut -f1 /tmp/existing-tag | head -n1)"
-            current_sha="$(git rev-parse HEAD)"
-            [ "$remote_sha" = "$current_sha" ] || {
+            [ "$remote_sha" = "$target" ] || {
               echo "::error::Tag $tag já existe em outro commit ($remote_sha)"
               exit 1
             }
@@ -105,7 +112,7 @@ jobs:
             echo "already=false" >> "$GITHUB_OUTPUT"
           fi
           echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "sha=$target" >> "$GITHUB_OUTPUT"
 
       - name: Criar tag imutável no commit canônico
         if: steps.prepare.outputs.already != 'true'
@@ -115,7 +122,8 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag "$TAG" HEAD
+          TARGET="${{ steps.prepare.outputs.sha }}"
+          git tag "$TAG" "$TARGET"
           git push origin "refs/tags/$TAG"
 
       - name: Disparar release direto
