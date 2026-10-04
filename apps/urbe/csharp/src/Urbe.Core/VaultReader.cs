@@ -154,7 +154,7 @@ public static class VaultReader
         MarkForwardTextArtifacts(files, future);
 
         var effectiveMap = journal.IsRecovered && journal.Metadata is not null
-            ? ReadMap(journal.Metadata)
+            ? ReadMap(journal.Metadata.Value)
             : physicalMap;
 
         var documents = journal.IsRecovered
