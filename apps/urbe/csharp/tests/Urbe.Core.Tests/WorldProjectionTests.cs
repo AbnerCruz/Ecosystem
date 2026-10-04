@@ -87,6 +87,29 @@ public sealed class WorldStableIdsTests
     }
 
     [Fact]
+    public void EmptyFilesArrayDoesNotFallBackToAttachments()
+    {
+        var map = JsonNode.Parse(
+            """
+            {
+              "construcoes":[
+                {
+                  "caminho":"Pasta",
+                  "name":"logo.png",
+                  "files":[],
+                  "anexos":[{"relPath":"Outro/nao-usar.png"}]
+                }
+              ]
+            }
+            """)!.AsObject();
+
+        WorldStableIds.Assign(map);
+
+        var id = map["construcoes"]!.AsArray()[0]!["id"]!.GetValue<string>();
+        Assert.Equal("ast_1n5z61x", id);
+    }
+
+    [Fact]
     public void RegionForUsesDeterministicIdsAndOptionalCollisionSet()
     {
         Assert.Equal("reg_qfce2k", WorldStableIds.RegionFor("Pasta"));
