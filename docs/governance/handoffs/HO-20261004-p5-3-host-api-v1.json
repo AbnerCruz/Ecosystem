@@ -8,7 +8,7 @@
     "kind": "ai-agent"
   },
   "task_id": "P5-3",
-  "component": "ecosystem",
+  "component": "hub",
   "state": "verifying",
   "branch": "chatgpt/p5-3-host-api-v1",
   "base_commit": "8163417117e160b0ed550146d02210b337ae7a03",
@@ -43,7 +43,7 @@
     "LocalHostSession ganhou revogação real e somente redutora de grants. Revogar permissão usada por chamada ativa cancela a chamada como REVOKED; discovery/futuras invocações não recuperam o privilégio.",
     "HostApiConformanceTests executa a matriz pública contra o binding local do Hub sem transformar Hub.Core em SDK público.",
     "CHK-REGISTRY passa a carregar/validar Host API + fixtures e rejeita deriva do conjunto de operações, hostErrors, invariantes e cenários mínimos; self-tests cobrem remoção de revoke e de sua fixture.",
-    "ROADMAP marca P5-3 concluído neste candidato; P5-4 continua separado para transporte IPC/autenticação e P5-5 para segundo Host real/Extraction Review."
+    "ROADMAP mantém P5-3 em andamento neste candidato; a conclusão canônica ocorre somente depois de integração e fechamento da Issue #175."
   ],
   "verification": [
     {
@@ -56,7 +56,7 @@
       "check": "Consistency + schema + self-test",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Aguardando CI do PR; deve validar os dois schemas novos, contrato, fixtures, DEC-0034 aplicada e novos self-tests de CHK-REGISTRY."
+      "evidence": "Primeiro run 37201778269: schema/CHK-REGISTRY passaram; governança detectou corretamente P5-3 [x] antes da Issue fechar e reuse_assessment atribuído ao componente errado. Corrigido sem relaxar checks; aguardando novo run."
     },
     {
       "check": "DEVICE deste slice",
