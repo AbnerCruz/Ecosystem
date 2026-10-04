@@ -1368,7 +1368,7 @@
       "decision": "Alternativa A — A — Android Bound Service/Binder + identidade do SO + pareamento por instalação em Keystore (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/206).",
       "decidedAt": "2026-10-04",
       "record": "docs/governance/responses/DEC-0037.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }
