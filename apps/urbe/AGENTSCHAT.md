@@ -324,3 +324,9 @@
 - `urbe-checks` #37230492613: Core C# 134/134 testes, Web smoke, Android, Windows, checks e E2E todos verdes.
 - `consistency` #37230492604: verde.
 - Issue #221 movida para `state:review`; PR #223 segue rotina automática de integração.
+
+
+### 2026-10-04 — ChatGPT — desbloqueio da fila durante UC-13
+- O integrador do PR #223 detectou `CHK-STATE-CONSISTENCY` fora do escopo da UC-13: P5-4 permanecia `[~]` no ROADMAP raiz embora a tarefa #194 já estivesse `state:done` e a validação #225 aprovada.
+- Para evitar reabrir artificialmente uma tarefa concluída e quebrar a fila serial antes do PR #228, o PR #223 reconcilia somente esse fato para `[x]`, usando evidência já integrada: PRs #222/#224/#226 + Issue #225.
+- Nenhum código da UC-13 foi alterado por esse desbloqueio.
