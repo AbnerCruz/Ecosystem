@@ -30,7 +30,6 @@ public static class VaultIdentity
         value = TrailingSpaces.Replace(value, string.Empty);
         return TrailingNewlines.Replace(value, string.Empty);
     }
-    }
 
     public static string Fingerprint(string? text)
     {
