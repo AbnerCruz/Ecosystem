@@ -6,6 +6,7 @@ namespace Lunet.Android;
 
 public sealed partial class MainActivity
 {
+    readonly CancellationTokenSource _ecosystemIpcLifetime = new();
     EcosystemHostClient? _ecosystemHostClient;
 
     void ShowEcosystemConnection()
@@ -28,8 +29,8 @@ public sealed partial class MainActivity
             {
                 _ecosystemHostClient ??= new EcosystemHostClient(this);
                 var result = await _ecosystemHostClient.ConnectAndInspectAsync(
-                    input.Text ?? "", _lifetime.Token);
-                if (_destroyed) return;
+                    input.Text ?? "", _ecosystemIpcLifetime.Token);
+                if (_ecosystemIpcLifetime.IsCancellationRequested) return;
                 new AlertDialog.Builder(this)
                     .SetTitle(result.Success ? "Conexão autenticada" :
                         result.PairCode is null ? "Conexão indisponível" : "Confirme o pareamento")
@@ -38,5 +39,13 @@ public sealed partial class MainActivity
                     .Show();
             })
             .Show();
+    }
+
+    void DisposeEcosystemConnection()
+    {
+        _ecosystemIpcLifetime.Cancel();
+        _ecosystemHostClient?.Dispose();
+        _ecosystemHostClient = null;
+        _ecosystemIpcLifetime.Dispose();
     }
 }
