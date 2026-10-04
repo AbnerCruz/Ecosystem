@@ -28,14 +28,16 @@
     "PROPOSTA: ADR-0024 define Host API v1 como contrato semântico neutro de transporte, reutilizando Capability/Context/permissions/Registry existentes e mantendo ecosystem-local/0 experimental.",
     "PROPOSTA: DEC-0034 oferece três alternativas ao proprietário e recomenda separar Host API de IPC; nenhuma implementação pública, transporte ou extração foi criada.",
     "ROADMAP e capability-runtime foram atualizados para tornar a decisão bloqueante e impedir avanço silencioso para IPC/segundo Host.",
-    "Correção após CI: o handoff arquitetural não registra reuse_assessment da Tool, pois este slice não cria nem consome a feature; isso evita fabricar um segundo consumidor."
+    "Correção após CI: o handoff arquitetural não registra reuse_assessment da Tool, pois este slice não cria nem consome a feature; isso evita fabricar um segundo consumidor.",
+    "PR #179 integrado automaticamente na main em 6625fe9ecb68d81e2394084ad8ecbe28c13f1875; DEC-0034 agora existe canonicamente como pending e bloqueante."
   ],
   "verification": [
     {
       "check": "Consistência da proposta ADR/DEC e projeção de estado",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando CI do PR deste slice; nenhuma conclusão automática é alegada antes dos checks."
+      "result": "passed",
+      "tested_commit": "c1d917021cdd324318b539a50b69215050819b36",
+      "evidence": "CI consistency 37189148552 passou; integrador canônico 37189144359 validou o estado combinado, classificou routine e integrou o PR #179 em 6625fe9ecb68d81e2394084ad8ecbe28c13f1875."
     },
     {
       "check": "DEVICE deste slice documental",
@@ -52,7 +54,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Integrar esta proposta pelo integrador canônico e apresentar DEC-0034 no portal.",
+    "Aguardar a escolha do proprietário para DEC-0034 pelo portal; não implementar Host API pública nem IPC antes do registro canônico da decisão.",
     "Após DEC-0034, aplicar a alternativa escolhida no ADR-0024 e nos contratos dependentes; se A for aprovada, criar Host API normativa e fixtures de conformance sem escolher transporte.",
     "Somente depois concluir P5-3 e então iniciar comparação de transporte/autenticação em P5-4.",
     "Reavaliar o segundo Host em P5-5 quando a governança do Product candidato permitir integração."
