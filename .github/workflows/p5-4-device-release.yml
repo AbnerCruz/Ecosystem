@@ -14,42 +14,49 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar artifacts exatos do candidato congelado
+      - uses: actions/checkout@v4
+        with:
+          ref: b001eafda4baa16868d626eff402a2f7f57f6918
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Baixar Hub exato do candidato congelado
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/11310570442/zip" > hub.zip
-          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/11310540558/zip" > lunet.zip
-          mkdir hub lunet out
+          mkdir hub out
           unzip -q hub.zip -d hub
-          unzip -q lunet.zip -d lunet
-
           hub_apk=$(find hub -type f -name '*.apk' | head -n1)
-          lunet_apk=$(find lunet -type f -name '*.apk' | head -n1)
           test -n "$hub_apk"
-          test -n "$lunet_apk"
-
           cp "$hub_apk" out/Ecosystem-Hub-P5-4-b001eafd.apk
-          cp "$lunet_apk" out/Lunet-P5-4-b001eafd-arm64.apk
-
           echo "ebd38055c50871298071f79e379f3364741d594fb05b1f6f2378d307473e40c4  out/Ecosystem-Hub-P5-4-b001eafd.apk" | sha256sum -c -
-          echo "17e9913e569890f254c9074a2960e4002238c886c81690d1ff1eceed600c3422  out/Lunet-P5-4-b001eafd-arm64.apk" | sha256sum -c -
+
+      - name: Recompilar Lunet candidato sem downgrade
+        run: |
+          set -euo pipefail
+          dotnet workload install android
+          dotnet build apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj -c Debug             -p:AndroidSdkDirectory="$ANDROID_HOME"             -p:GITHUB_RUN_NUMBER=1000081
+          apk=$(find apps/lunet2d/src/Lunet.Android/bin -name '*-Signed.apk' | head -n1)
+          test -n "$apk"
+          cp "$apk" out/Lunet-P5-4-b001eafd-arm64.apk
+
+          expected="48:07:F9:08:0B:F5:53:5D:20:73:44:76:E3:E3:BC:9F:E6:44:6C:70:E3:84:77:14:86:E6:AC:33:3E:DD:92:07"
+          keytool -printcert -jarfile out/Lunet-P5-4-b001eafd-arm64.apk | grep -q "SHA256: $expected"
 
           sha256sum out/*.apk > out/SHA256SUMS.txt
 
-      - name: Publicar pre-release DEVICE com APK direto
+      - name: Atualizar pre-release DEVICE com APKs diretos
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: p5-4-device-b001eafd
-          TARGET: b001eafda4baa16868d626eff402a2f7f57f6918
         run: |
           set -euo pipefail
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG já existe."
-            exit 0
-          fi
+          gh release upload "$TAG"             out/Ecosystem-Hub-P5-4-b001eafd.apk             out/Lunet-P5-4-b001eafd-arm64.apk             out/SHA256SUMS.txt             --clobber
 
           cat > notes.md <<'EOF'
           # P5-4 DEVICE — APKs candidatos
@@ -58,11 +65,13 @@ jobs:
 
           Código candidato congelado: `b001eafda4baa16868d626eff402a2f7f57f6918` (PR #210).
 
-          Estes APKs são exatamente os artifacts que passaram pelo CI:
-          - Hub: artifact 11310570442 — SHA-256 `ebd38055c50871298071f79e379f3364741d594fb05b1f6f2378d307473e40c4`
-          - Lunet: artifact 11310540558 — SHA-256 `17e9913e569890f254c9074a2960e4002238c886c81690d1ff1eceed600c3422`
+          O Hub é exatamente o artifact aprovado pelo CI.
+
+          O Lunet usa exatamente o mesmo código candidato e a mesma chave de assinatura do CI, recompilado somente com `versionCode 1000081` para permitir instalação por cima da release `lunet2d-v0.0.1-dev.1000081`. O artifact original tinha `versionCode 1000073` e o Android o recusava como downgrade.
+
+          A próxima release oficial do Lunet terá contador de workflow posterior e poderá atualizar este candidato normalmente.
 
           Esta pre-release não significa aprovação nem integração do P5-4. Serve apenas para instalar os APKs pelo navegador e executar o gate DEVICE.
           EOF
 
-          gh release create "$TAG"             out/Ecosystem-Hub-P5-4-b001eafd.apk             out/Lunet-P5-4-b001eafd-arm64.apk             out/SHA256SUMS.txt             --target "$TARGET"             --prerelease             --latest=false             --title "P5-4 DEVICE — Hub + Lunet b001eafd"             --notes-file notes.md
+          gh release edit "$TAG" --notes-file notes.md
