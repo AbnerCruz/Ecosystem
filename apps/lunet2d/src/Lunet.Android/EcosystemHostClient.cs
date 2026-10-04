@@ -134,7 +134,7 @@ internal sealed class EcosystemHostClient : IDisposable
             return new(true,
                 $"IPC autenticado: {root.GetProperty("characters").GetInt32()} caracteres, {root.GetProperty("words").GetInt32()} palavras, {root.GetProperty("lines").GetInt32()} linhas.");
         }
-        catch (OperationCanceledException) { return new(false, "Operação cancelada."); }
+        catch (System.OperationCanceledException) { return new(false, "Operação cancelada."); }
         catch (Exception) { return new(false, "Provider indisponível ou protocolo recusado."); }
         finally
         {
