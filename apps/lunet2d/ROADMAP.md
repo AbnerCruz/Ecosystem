@@ -163,7 +163,7 @@ Git, autosave e recovery (§22)
 - [x] Git progressivo: status, diff, commit, history, branches, revert, push, pull. A integração Git local/real é automatizada; H7–H8 com GitHub permaneceram opcionais no roteiro de aparelho e não são requisito para o gate offline-first.
 
 Auditoria
-- [x] LUNET-303 — Auditoria de fechamento da Fase 3 em `docs/audits/fase-3.md`; candidato/roteiro A–J/J1 em `docs/audits/fase-3-candidata.md`; validação humana aprovada no portal pela Issue #204. Issue #200; handoff `HO-20261004-lunet-f3-candidate`.
+- [x] LUNET-303 — Auditoria de fechamento da Fase 3 registrada em `docs/audits/fase-3.md`; candidato/roteiro A–J/J1 em `docs/audits/fase-3-candidata.md`; validação humana aprovada no portal pela Issue #204. Issue #200; handoff `HO-20261004-lunet-f3-candidate`.
 
 ## Fase 4 — Framework Advanced (§7)
 
