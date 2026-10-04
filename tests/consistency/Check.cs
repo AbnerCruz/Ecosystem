@@ -186,7 +186,9 @@ static class Checks
         _ when file.StartsWith("docs/governance/handoffs/") => "docs/contracts/schemas/handoff.schema.json",
         _ when file.StartsWith("docs/validation/") => "docs/contracts/schemas/validation-record.schema.json",
         "docs/contracts/permissions.json" => "docs/contracts/schemas/permissions-catalog.schema.json",
+        "docs/contracts/host-api.v1.json" => "docs/contracts/schemas/host-api.schema.json",
         _ when file.StartsWith("docs/contracts/") && file.Contains("/capabilities/") && file.EndsWith(".json") => "docs/contracts/schemas/capability-contract.schema.json",
+        _ when file.StartsWith("docs/contracts/examples/host-api/") => "docs/contracts/schemas/host-api-conformance.schema.json",
         _ when file.StartsWith("docs/contracts/examples/context/") => "docs/contracts/schemas/context.schema.json",
         _ when file.StartsWith("docs/contracts/examples/distribution/") || (file.StartsWith("docs/distribution/") && file.EndsWith(".profile.json")) => "docs/contracts/schemas/distribution-profile.schema.json",
         _ => null,
@@ -1352,10 +1354,12 @@ sealed class Context(string root, Report r)
         if (Directory.Exists(hdir))
             files.AddRange(Directory.EnumerateFiles(hdir, "*.json").Order().Select(Rel));
         if (File.Exists(P("docs/contracts/permissions.json"))) files.Add("docs/contracts/permissions.json");
+        if (File.Exists(P("docs/contracts/host-api.v1.json"))) files.Add("docs/contracts/host-api.v1.json");
         foreach (var d in new[] { "docs/contracts/capabilities", "docs/contracts/examples" })
             if (Directory.Exists(P(d)))
                 files.AddRange(Directory.EnumerateFiles(P(d), "*.json", SearchOption.AllDirectories).Order().Select(Rel)
-                    .Where(f => f.Contains("/capabilities/") || f.Contains("/examples/context/") || f.Contains("/examples/distribution/")));
+                    .Where(f => f.Contains("/capabilities/") || f.Contains("/examples/context/") || f.Contains("/examples/distribution/")
+                        || f.Contains("/examples/host-api/")));
         if (Directory.Exists(P("docs/distribution")))
             files.AddRange(Directory.EnumerateFiles(P("docs/distribution"), "*.profile.json").Order().Select(Rel));
         var vdir = P("docs/validation");
