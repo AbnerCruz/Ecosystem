@@ -1,0 +1,120 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc6-proposta",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T08:42:30Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-6",
+  "component": "urbe",
+  "state": "waiting",
+  "branch": "chatgpt/urbe-uc5-uc6-proposals-v2",
+  "base_commit": "e2c2e37d33b45f55c861bb2586183f1594171fa3",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/adr/0026-urbe-transicao-cliente-csharp.md",
+    "docs/governance/decisions.json",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc6-proposta.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "A mudança documenta opções e abre decisão; não altera canal, assinatura, identidade, origem Web ou mecanismo de atualização."
+  },
+  "work_completed": [
+    "ADR-0026 separa a troca tecnológica C# da migração futura de distribuição/first-party.",
+    "DEC-0036 oferece quatro estratégias de transição e recomenda ponte que preserve package, assinatura, origem Web e canais de recuperação.",
+    "A recomendação fixa invariantes por superfície, mas deixa o mecanismo exato para UC-26 e mantém UC-31/G-C5 como única autorização de corte.",
+    "Issue #183 e ROADMAP passam a waiting/[~] até decisão do proprietário."
+  ],
+  "verification": [
+    {
+      "check": "compatibilidade com distribuição atual",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Proposta reconciliada com DEC-0021-C, DEC-0031/ADR-0019, P4-9 e direct-releases.md; nenhum canal efetivo é modificado."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Executar no PR/estado combinado."
+    }
+  ],
+  "known_issues": [
+    "O mecanismo Windows de upgrade Electron→.NET precisa ser provado por UC-26; a proposta não presume substituição segura de instalador."
+  ],
+  "blockers": [
+    "DEC-0036 pendente do proprietário."
+  ],
+  "next_actions": [
+    "Após DEC-0036, atualizar ADR-0026 para Aceito, aplicar consequências no ROADMAP e concluir UC-6."
+  ],
+  "decisions_required": [
+    "DEC-0036"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/csharp/DEPENDENCIES.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/acceptance/surface-protocol.json",
+    "docs/architecture/distribution.md",
+    "docs/distribution/direct-releases.md",
+    "docs/adr/0019-releases-diretas-dos-products.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Identidade/canal atuais permanecem autoridades até uma transição explicitamente executada."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhuma estratégia exige Hub para atualizar ou usar o Urbe."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A transição é aberta como DEC-0036 em vez de ser inferida."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Identidade, canal e corte permanecem decisões explícitas."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Urbe conserva lifecycle e versão próprios."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Upgrade real Android/Windows e PWA continuam exigindo validação humana posterior."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "A recomendação preserva a identidade do mesmo Product em vez de criar um Urbe paralelo."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição standalone continua independente do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-csharp-transition",
+      "status": "product-specific",
+      "rationale": "A transição é específica às identidades, dados e canais do Urbe; nenhuma infraestrutura transversal é criada."
+    }
+  ]
+}
