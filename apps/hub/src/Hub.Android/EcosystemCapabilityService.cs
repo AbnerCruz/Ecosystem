@@ -19,6 +19,7 @@ public sealed class EcosystemCapabilityService : Service
         string Id, string PairId, string PeerKeyHash, string Challenge, DateTimeOffset ExpiresAt);
 
     readonly ConcurrentDictionary<string, ChallengeState> _challenges = new(StringComparer.Ordinal);
+    readonly ConcurrentDictionary<string, DeathWatch> _deathWatches = new(StringComparer.Ordinal);
     AndroidInstallationKey? _key;
     EcosystemPairingStore? _pairings;
     AndroidBindingTrustPolicy? _trustPolicy;
@@ -39,6 +40,7 @@ public sealed class EcosystemCapabilityService : Service
         var root = new LocalContext([new ContextStep("ecosystem", "ecosystem")]);
         _gateway = new AuthenticatedHostGateway(new LocalCapabilityHost(
             [TextInspectionTool.Definition(root)], []));
+        _gateway.SessionClosed += RemoveDeathWatch;
         _binder = new EcosystemCapabilityBinder(this);
     }
 
@@ -47,6 +49,9 @@ public sealed class EcosystemCapabilityService : Service
 
     public override void OnDestroy()
     {
+        if (_gateway is not null) _gateway.SessionClosed -= RemoveDeathWatch;
+        foreach (var pair in _deathWatches.ToArray())
+            if (_deathWatches.TryRemove(pair.Key, out var watch)) watch.Dispose();
         _gateway?.Dispose();
         _challenges.Clear();
         base.OnDestroy();
@@ -92,7 +97,7 @@ public sealed class EcosystemCapabilityService : Service
                 approved.PairId, id, challenge, approved.KeyHash)));
     }
 
-    internal IpcResponse Open(AndroidPeerIdentity peer, IpcRequest request)
+    internal IpcResponse Open(AndroidPeerIdentity peer, IpcRequest request, IBinder? lifecycleToken)
     {
         if (!TrustPolicy.AllowsCaller(peer)) return Error("PEER_UNTRUSTED");
         if (request.Op != "session.open" || request.Signature is null || request.ContextJson is null
@@ -110,10 +115,15 @@ public sealed class EcosystemCapabilityService : Service
         var context = ParseContext(request.ContextJson);
         if (context is null) return Error("PROTOCOL_UNSUPPORTED");
         var actor = $"android:{peer.PackageName}:{approved.KeyHash[..Math.Min(12, approved.KeyHash.Length)]}";
+        if (lifecycleToken is null) return Error("PROTOCOL_UNSUPPORTED");
         var opened = Gateway.Open(approved.KeyHash, actor, context, []);
-        return opened.Succeeded
-            ? new(true, State: "open", PairId: approved.PairId, SessionId: opened.SessionId)
-            : new(false, HostError: opened.Error);
+        if (!opened.Succeeded) return new(false, HostError: opened.Error);
+        if (!RegisterDeathWatch(opened.SessionId!, approved.KeyHash, lifecycleToken))
+        {
+            Gateway.Close(approved.KeyHash, opened.SessionId!);
+            return Error("PEER_DISCONNECTED");
+        }
+        return new(true, State: "open", PairId: approved.PairId, SessionId: opened.SessionId);
     }
 
     internal IpcResponse Discover(AndroidPeerIdentity peer, IpcRequest request)
@@ -194,7 +204,60 @@ public sealed class EcosystemCapabilityService : Service
             if (pair.Value.ExpiresAt <= now) _challenges.TryRemove(pair.Key, out _);
     }
 
+    bool RegisterDeathWatch(string sessionId, string peerKeyHash, IBinder lifecycleToken)
+    {
+        var recipient = new PeerDeathRecipient(() => Gateway.Close(peerKeyHash, sessionId));
+        var watch = new DeathWatch(lifecycleToken, recipient);
+        if (!_deathWatches.TryAdd(sessionId, watch))
+        {
+            watch.Dispose();
+            return false;
+        }
+        try
+        {
+            lifecycleToken.LinkToDeath(recipient, 0);
+            if (!lifecycleToken.PingBinder() || !_deathWatches.ContainsKey(sessionId))
+            {
+                RemoveDeathWatch(sessionId);
+                return false;
+            }
+            return true;
+        }
+        catch (RemoteException)
+        {
+            RemoveDeathWatch(sessionId);
+            return false;
+        }
+    }
+
+    void RemoveDeathWatch(string sessionId)
+    {
+        if (_deathWatches.TryRemove(sessionId, out var watch)) watch.Dispose();
+    }
+
     internal static IpcResponse Error(string code) => new(false, TransportError: code);
+
+    private sealed class PeerDeathRecipient(Action died) : Java.Lang.Object, IBinderDeathRecipient
+    {
+        int _called;
+        public void BinderDied()
+        {
+            if (Interlocked.Exchange(ref _called, 1) == 0) died();
+        }
+    }
+
+    private sealed class DeathWatch(IBinder binder, PeerDeathRecipient recipient) : IDisposable
+    {
+        int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+            try { binder.UnlinkToDeath(recipient, 0); }
+            catch (Exception) { }
+            recipient.Dispose();
+        }
+    }
 
     private sealed class EcosystemCapabilityBinder(EcosystemCapabilityService owner) : Binder
     {
@@ -212,17 +275,21 @@ public sealed class EcosystemCapabilityService : Service
                     response = Error("PROTOCOL_UNSUPPORTED");
                 else if (AndroidPeerIdentityResolver.Resolve(owner, Binder.CallingUid) is not { } peer)
                     response = Error("PEER_UNTRUSTED");
-                else response = code switch
+                else
                 {
+                    var lifecycleToken = code == EcosystemIpcProtocol.Open ? data.ReadStrongBinder() : null;
+                    response = code switch
+                    {
                     EcosystemIpcProtocol.PairBegin => owner.PairBegin(peer, request),
                     EcosystemIpcProtocol.Challenge => owner.Challenge(peer, request),
-                    EcosystemIpcProtocol.Open => owner.Open(peer, request),
+                    EcosystemIpcProtocol.Open => owner.Open(peer, request, lifecycleToken),
                     EcosystemIpcProtocol.Discover => owner.Discover(peer, request),
                     EcosystemIpcProtocol.Invoke => owner.Invoke(peer, request),
                     EcosystemIpcProtocol.Cancel => owner.Cancel(peer, request),
                     EcosystemIpcProtocol.Close => owner.Close(peer, request),
                     _ => Error("PROTOCOL_UNSUPPORTED")
-                };
+                    };
+                }
             }
             catch (Exception)
             {
