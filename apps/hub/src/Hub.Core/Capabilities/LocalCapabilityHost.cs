@@ -150,6 +150,14 @@ public sealed class LocalHostSession : IDisposable
                 if (!capability.ValidateInput(input)) return Failure(request, "INVALID_INPUT");
             }
             catch (Exception) { return Failure(request, "INVALID_INPUT"); }
+            // Monitor é reentrante: o validator pode alterar a sessão ou despachar outra chamada.
+            // Reconfira autorização e reserva depois do callback, antes de qualquer efeito do handler.
+            if (_closed) return Failure(request, "SESSION_CLOSED");
+            if (_active is not null) return Failure(request, "SESSION_BUSY");
+            if (_seen.Contains(request.Id)) return Failure(request, "DUPLICATE_REQUEST");
+            if (_seen.Count >= RequestLimit) return Failure(request, "SESSION_LIMIT");
+            if (cancellationToken.IsCancellationRequested) return Failure(request, "CANCELLED");
+            if (!Allowed(capability)) return Failure(request, "CAPABILITY_UNAVAILABLE");
             _seen.Add(request.Id);
             _active = run = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             _activeCapability = capability;
