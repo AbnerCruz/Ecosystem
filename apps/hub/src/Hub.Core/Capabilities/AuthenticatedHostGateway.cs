@@ -19,10 +19,16 @@ public sealed class AuthenticatedHostGateway : IDisposable
         internal CancellationTokenSource? ActiveCancellation;
         internal string? ActiveRequestId;
         internal bool ActiveExplicitCancel;
+        internal DateTimeOffset LastActivityUtc;
         internal bool Closed;
 
-        internal Entry(string peer, string actor, LocalHostSession session)
-            => (Peer, Actor, Session) = (peer, actor, session);
+        internal Entry(string peer, string actor, LocalHostSession session, DateTimeOffset now)
+        {
+            Peer = peer;
+            Actor = actor;
+            Session = session;
+            LastActivityUtc = now;
+        }
 
         public void Dispose()
         {
@@ -39,15 +45,21 @@ public sealed class AuthenticatedHostGateway : IDisposable
     }
 
     private readonly LocalCapabilityHost _host;
+    private readonly TimeProvider _clock;
+    private readonly object _openSync = new();
     private readonly ConcurrentDictionary<string, Entry> _sessions = new(StringComparer.Ordinal);
     private bool _disposed;
 
     public const int MaxSessions = 4;
     public static readonly TimeSpan DefaultDeadline = TimeSpan.FromSeconds(10);
     public static readonly TimeSpan MaximumDeadline = TimeSpan.FromSeconds(30);
+    public static readonly TimeSpan SessionIdleTimeout = TimeSpan.FromMinutes(2);
 
-    public AuthenticatedHostGateway(LocalCapabilityHost host)
-        => _host = host ?? throw new ArgumentNullException(nameof(host));
+    public AuthenticatedHostGateway(LocalCapabilityHost host, TimeProvider? clock = null)
+    {
+        _host = host ?? throw new ArgumentNullException(nameof(host));
+        _clock = clock ?? TimeProvider.System;
+    }
 
     public GatewayOpenResult Open(string peer, string actor, LocalContext context, IEnumerable<string> grants)
     {
@@ -57,22 +69,26 @@ public sealed class AuthenticatedHostGateway : IDisposable
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(grants);
 
-        if (_sessions.Values.Count(entry => !entry.Closed) >= MaxSessions)
-            return new(null, "SESSION_LIMIT");
-
-        LocalHostSession local;
-        try { local = _host.Open(actor, context, grants); }
-        catch (ArgumentException) { return new(null, "INVALID_CONTEXT"); }
-
-        for (var attempt = 0; attempt < 4; attempt++)
+        lock (_openSync)
         {
-            var id = Convert.ToHexString(Guid.NewGuid().ToByteArray()).ToLowerInvariant();
-            var entry = new Entry(peer, actor, local);
-            if (_sessions.TryAdd(id, entry)) return new(id, null);
-        }
+            ExpireIdle();
+            if (_sessions.Values.Count(entry => !entry.Closed) >= MaxSessions)
+                return new(null, "SESSION_LIMIT");
 
-        local.Dispose();
-        return new(null, "SESSION_LIMIT");
+            LocalHostSession local;
+            try { local = _host.Open(actor, context, grants); }
+            catch (ArgumentException) { return new(null, "INVALID_CONTEXT"); }
+
+            for (var attempt = 0; attempt < 4; attempt++)
+            {
+                var id = Convert.ToHexString(Guid.NewGuid().ToByteArray()).ToLowerInvariant();
+                var entry = new Entry(peer, actor, local, _clock.GetUtcNow());
+                if (_sessions.TryAdd(id, entry)) return new(id, null);
+            }
+
+            local.Dispose();
+            return new(null, "SESSION_LIMIT");
+        }
     }
 
     public GatewayDiscoveryResult Discover(string peer, string sessionId)
@@ -96,44 +112,43 @@ public sealed class AuthenticatedHostGateway : IDisposable
             return new(requestId, null, null, "DEADLINE_INVALID");
 
         CancellationTokenSource run;
+        CancellationTokenSource deadlineCancellation;
         lock (entry.Sync)
         {
             if (entry.Closed) return new(requestId, null, "SESSION_CLOSED", null);
             if (entry.ActiveCancellation is not null)
                 return new(requestId, null, null, "SESSION_BUSY");
-            run = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            run.CancelAfter(effectiveDeadline);
+            deadlineCancellation = new CancellationTokenSource(effectiveDeadline);
+            run = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadlineCancellation.Token);
             entry.ActiveCancellation = run;
             entry.ActiveRequestId = requestId;
             entry.ActiveExplicitCancel = false;
+            entry.LastActivityUtc = _clock.GetUtcNow();
+        }
+
+        var dispatch = entry.Session.DispatchAsync(new LocalEnvelope(
+            LocalProtocol.Id, requestId, entry.Actor, "request", capability, operation, minimumVersion, input), run.Token);
+        var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var registration = run.Token.Register(() => cancelled.TrySetResult());
+
+        var winner = await Task.WhenAny(dispatch, cancelled.Task).ConfigureAwait(false);
+        if (winner != dispatch)
+        {
+            var early = CancellationOutcome(entry, requestId, run, deadlineCancellation, cancellationToken);
+            _ = ObserveLateAsync(dispatch, entry, run, deadlineCancellation);
+            return early;
         }
 
         try
         {
-            var response = await entry.Session.DispatchAsync(new LocalEnvelope(
-                LocalProtocol.Id, requestId, entry.Actor, "request", capability, operation, minimumVersion, input), run.Token)
-                .ConfigureAwait(false);
-
-            bool explicitCancel;
-            lock (entry.Sync) explicitCancel = ReferenceEquals(entry.ActiveCancellation, run) && entry.ActiveExplicitCancel;
-            if (run.IsCancellationRequested && !cancellationToken.IsCancellationRequested
-                && !explicitCancel && response.Error == "CANCELLED")
-                return new(requestId, null, null, "DEADLINE_EXCEEDED");
-
+            var response = await dispatch.ConfigureAwait(false);
+            if (run.IsCancellationRequested && response.Error == "CANCELLED")
+                return CancellationOutcome(entry, requestId, run, deadlineCancellation, cancellationToken);
             return new(response.RequestId, response.Output, response.Error, null);
         }
         finally
         {
-            lock (entry.Sync)
-            {
-                if (ReferenceEquals(entry.ActiveCancellation, run))
-                {
-                    entry.ActiveCancellation = null;
-                    entry.ActiveRequestId = null;
-                    entry.ActiveExplicitCancel = false;
-                }
-            }
-            run.Dispose();
+            Cleanup(entry, run, deadlineCancellation);
         }
     }
 
@@ -146,6 +161,7 @@ public sealed class AuthenticatedHostGateway : IDisposable
             if (!entry.Closed && entry.ActiveRequestId == requestId)
             {
                 entry.ActiveExplicitCancel = true;
+                entry.LastActivityUtc = _clock.GetUtcNow();
                 cancellation = entry.ActiveCancellation;
             }
         }
@@ -157,6 +173,7 @@ public sealed class AuthenticatedHostGateway : IDisposable
 
     public bool Close(string peer, string sessionId)
     {
+        ExpireIdle();
         if (!_sessions.TryGetValue(sessionId, out var entry) || entry.Peer != peer) return false;
         if (!_sessions.TryRemove(sessionId, out entry)) return false;
         entry.Dispose();
@@ -181,9 +198,78 @@ public sealed class AuthenticatedHostGateway : IDisposable
     {
         entry = null!;
         if (_disposed || string.IsNullOrWhiteSpace(peer) || string.IsNullOrWhiteSpace(sessionId)) return false;
-        if (!_sessions.TryGetValue(sessionId, out var found) || found.Peer != peer || found.Closed) return false;
+        ExpireIdle();
+        if (!_sessions.TryGetValue(sessionId, out var found) || found.Peer != peer) return false;
+        lock (found.Sync)
+        {
+            if (found.Closed) return false;
+            found.LastActivityUtc = _clock.GetUtcNow();
+        }
         entry = found;
         return true;
+    }
+
+    private void ExpireIdle()
+    {
+        if (_disposed) return;
+        var now = _clock.GetUtcNow();
+        foreach (var pair in _sessions.ToArray())
+        {
+            var expire = false;
+            lock (pair.Value.Sync)
+            {
+                expire = !pair.Value.Closed && pair.Value.ActiveCancellation is null
+                    && now - pair.Value.LastActivityUtc >= SessionIdleTimeout;
+            }
+            if (!expire) continue;
+            if (_sessions.TryGetValue(pair.Key, out var current) &&
+                ReferenceEquals(current, pair.Value) &&
+                _sessions.TryRemove(pair.Key, out var removed))
+                removed.Dispose();
+        }
+    }
+
+    private GatewayInvokeResult CancellationOutcome(Entry entry, string requestId,
+        CancellationTokenSource run, CancellationTokenSource deadlineCancellation,
+        CancellationToken callerCancellation)
+    {
+        bool explicitCancel;
+        bool closed;
+        lock (entry.Sync)
+        {
+            explicitCancel = ReferenceEquals(entry.ActiveCancellation, run) && entry.ActiveExplicitCancel;
+            closed = entry.Closed;
+        }
+
+        if (callerCancellation.IsCancellationRequested || explicitCancel || closed)
+            return new(requestId, null, "CANCELLED", null);
+        if (deadlineCancellation.IsCancellationRequested)
+            return new(requestId, null, null, "DEADLINE_EXCEEDED");
+        return new(requestId, null, "CANCELLED", null);
+    }
+
+    private async Task ObserveLateAsync(Task<LocalResponse> dispatch, Entry entry,
+        CancellationTokenSource run, CancellationTokenSource deadlineCancellation)
+    {
+        try { _ = await dispatch.ConfigureAwait(false); }
+        catch (Exception) { /* late failure is intentionally not surfaced after terminal cancellation */ }
+        finally { Cleanup(entry, run, deadlineCancellation); }
+    }
+
+    private void Cleanup(Entry entry, CancellationTokenSource run, CancellationTokenSource deadlineCancellation)
+    {
+        lock (entry.Sync)
+        {
+            if (ReferenceEquals(entry.ActiveCancellation, run))
+            {
+                entry.ActiveCancellation = null;
+                entry.ActiveRequestId = null;
+                entry.ActiveExplicitCancel = false;
+                entry.LastActivityUtc = _clock.GetUtcNow();
+            }
+        }
+        run.Dispose();
+        deadlineCancellation.Dispose();
     }
 
     public void Dispose()
