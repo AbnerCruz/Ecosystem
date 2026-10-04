@@ -32,11 +32,11 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 - [x] UC-8 — Esqueleto C# e CI integrado pelo PR #196 em 13fc285. Core/RCL/Web, MAUI Hybrid Windows/Android, testes e smoke publicado; CI combinado 37206895634 verde e autorização canônica do proprietário. Issue #192 encerrada; handoff `HO-20261004-urbe-uc8-closeout`.
 - [x] UC-9 — Vault: leitura de todos os formatos 1.x/2.x com proteção forward, provada contra as fixtures. PR #203 integrado em `8aa72c2`; head final com `urbe-checks` 37214179413 e consistency 37214179366 verdes. Issue #199 encerrada `state:done`.
-- [ ] UC-10 — Vault: escrita, backup restaurável, migração idempotente, identidade e GC, provados contra as fixtures. Em implementação na Issue #208 / PR #209; mudança crítica `user-data`.
+- [~] UC-10 — Vault: escrita, backup restaurável, migração idempotente, identidade e GC, provados contra as fixtures. PR #209 verificado: 43/43 testes C#, Web/Android/Windows/E2E/checks e consistency verdes; integração crítica aguarda autorização canônica do proprietário.
 - [ ] UC-11 — Exportar/importar ZIP e manifesto.
 
 **Gate G-C1 (crítico: dados do usuário):** leitura e escrita idênticas às do JS em todas as fixtures; autorização do proprietário no PR.
-*Estado do gate:* **não iniciado**
+*Estado do gate:* **aguardando**
 
 ## M2 — Domínio do conhecimento e do mundo
 
