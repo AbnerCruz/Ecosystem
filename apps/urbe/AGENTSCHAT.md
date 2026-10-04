@@ -1,3 +1,10 @@
+### 2026-10-04 — ChatGPT — UC-2 concluído
+
+- FATO OBSERVADO: PR #174 foi integrado automaticamente em `2e088e7` após estado combinado verde; head `b732c957` também passou `urbe-checks` e consistency.
+- Feito: UC-2 encerra M0 de paridade com 297 casos portáveis, os 14 E2E funcionais representados e 11 protocolos físicos Web/Windows/Android explicitamente `not-executed` até as fases de host/validação.
+- Limite preservado: nenhum cliente C# foi iniciado e nenhuma pilha/estratégia de transição foi escolhida implicitamente.
+- Próximo: UC-5 e UC-6 — preparar ADRs e decisões do proprietário para pilha de UI/hosts e transição de canais.
+
 ### 2026-10-04 — Codex — UC-2: fixtures no navegador
 
 - FATO OBSERVADO: head 9c4d297 do PR #171 passou consistency/urbe: 260/260 casos e 5/5 E2E. Integrado automaticamente em a8e53ed0.

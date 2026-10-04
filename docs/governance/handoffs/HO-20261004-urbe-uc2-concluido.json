@@ -1,0 +1,122 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc2-concluido",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T08:29:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-2",
+  "component": "urbe",
+  "state": "done",
+  "branch": "chatgpt/urbe-uc2-close",
+  "base_commit": "f5a254a04de8c7ac5f92c07eb6023710e74f782f",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/180",
+  "files_changed": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc2-concluido.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Sincronização de estado após integração já concluída do trabalho UC-2; não altera runtime, arquitetura, dados, contratos públicos nem distribuição."
+  },
+  "work_completed": [
+    "PR #174 integrado automaticamente no commit combinado 2e088e74252a317b3347eb3258a524af4abde672.",
+    "Corpus UC-2 encerrado em 297 casos portáveis com oráculo congelado e protocolo independente de linguagem.",
+    "Os 14 cenários E2E funcionais congelados possuem representação portável no corpus.",
+    "Onze critérios de lifecycle/permissões/instalação por superfície foram separados em surface-protocol.json com status not-executed; execução física pertence a UC-23/24/25/29.",
+    "ROADMAP atualizado para refletir UC-2 concluído sem antecipar UC-5, UC-6 ou qualquer código C#."
+  ],
+  "verification": [
+    {
+      "check": "urbe-checks",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Run 37186764669 verde no head b732c95799d7dbb64f2b5f4473c9f52e7dedcfc9.",
+      "tested_commit": "b732c95799d7dbb64f2b5f4473c9f52e7dedcfc9"
+    },
+    {
+      "check": "consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Run 37186764699 verde no head b732c95799d7dbb64f2b5f4473c9f52e7dedcfc9.",
+      "tested_commit": "b732c95799d7dbb64f2b5f4473c9f52e7dedcfc9"
+    },
+    {
+      "check": "ecosystem integration combined state",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Integrator run 37186822956 testou main d816e535 + PR #174 e integrou exatamente o estado combinado 2e088e74252a317b3347eb3258a524af4abde672.",
+      "tested_commit": "2e088e74252a317b3347eb3258a524af4abde672"
+    },
+    {
+      "check": "physical surface protocol execution",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "UC-2 apenas define o protocolo. Execução humana real é requisito posterior de UC-23/24/25/29, portanto não é validação pendente de UC-2."
+    }
+  ],
+  "known_issues": [
+    "Nenhum cliente C# existe ainda; implementação começa somente após UC-5/UC-6 e gate G-C0.",
+    "Os protocolos físicos continuam not-executed por design até as fases de host e validação humana."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Preparar UC-5 com alternativas reais de pilha UI/hosts e decisão pendente no portal.",
+    "Preparar UC-6 com estratégia de transição de APK, Windows e Web/PWA e decisão pendente no portal."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/state-drift.md",
+    "docs/governance/multi-agent.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/acceptance/README.md",
+    "apps/urbe/docs/csharp/acceptance/E2E-COVERAGE.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ROADMAP/Issue/handoff são sincronizados; corpus e protocolo continuam autoridades distintas por responsabilidade."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Resultado, branch, PR integrado, verificações e próximas ações estão registrados."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Nenhuma decisão arquitetural foi inferida do trabalho de paridade."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas foram consultadas diretamente para o encerramento."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Protocolo físico permanece explicitamente não executado; CI não é tratado como validação de aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Conclusão sustentada por PR integrado e checks verdes."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs dos casos e UC-2 permanecem estáveis."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma dependência de distribuição do Hub foi introduzida."
+    }
+  ]
+}
