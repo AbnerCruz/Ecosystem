@@ -1,3 +1,10 @@
+### 2026-10-04 — Codex — UC-2: contrato nativo portável
+- Estado: revisão; Issue #139; branch `chatgpt/urbe-uc2-native-parity`.
+- Feito: 24 casos JSON por superfície com bridge/preload/main reais sobre hosts simulados; corpus 233. Capacidades/APIs, vault, bytes, caminhos inválidos, recusas de escrita/exportação, cancelamento, links, impressão, armazenamento/voltar e atualização Android offline.
+- Decisões (fontes): ADR-0016/DEC-0024-B e DEC-0025-C; apenas tooling UC-2, runtime congelado e oráculo intactos.
+- Pendências: UI/E2E portáveis; atualização/lifecycle/permissões reais; C# não iniciado. G-C0 não encerrado. Windows simulado usa filesystem local; não prova Windows instalado; Android simulado não prova aparelho.
+- Próximos passos: continuar UC-2 com UI/E2E e atualização. Handoff `HO-20261004-urbe-native-parity`.
+
 ### 2026-10-03 — ChatGPT — UC-2: crash recovery portável (REQ-007/038/046)
 - Estado: review no PR #165, baseado diretamente em `main` após integração do PR #161; gates finais em execução.
 - Feito: quatro casos `vault.crash-recovery` injetam falha na criação do journal, no segundo arquivo, na remoção de nota e na remoção final do journal. O corpus passa de 205 para 209 casos.

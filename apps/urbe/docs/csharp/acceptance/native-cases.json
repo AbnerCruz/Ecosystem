@@ -1,0 +1,1337 @@
+{
+  "schemaVersion": 1,
+  "product": "urbe",
+  "cases": [
+    {
+      "id": "native-web-contract",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "web",
+        "steps": [
+          {
+            "method": "contract",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "version": 1,
+            "capabilities": [],
+            "unsupported": [
+              "fs",
+              "vault",
+              "openExternal",
+              "saveFile",
+              "print",
+              "update",
+              "back",
+              "storageStatus"
+            ],
+            "api": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-windows-contract",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "contract",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "version": 1,
+            "capabilities": [
+              "fs",
+              "vault",
+              "openExternal",
+              "saveFile",
+              "print",
+              "update"
+            ],
+            "unsupported": [
+              "back",
+              "storageStatus"
+            ],
+            "api": [
+              "fs",
+              "vault",
+              "openExternal",
+              "saveFile",
+              "print",
+              "update"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-android-contract",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "contract",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "version": 1,
+            "capabilities": [
+              "fs",
+              "vault",
+              "openExternal",
+              "saveFile",
+              "print",
+              "update",
+              "back",
+              "storageStatus"
+            ],
+            "unsupported": [],
+            "api": [
+              "fs",
+              "vault",
+              "openExternal",
+              "saveFile",
+              "print",
+              "update",
+              "back",
+              "storageStatus"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-windows-vault",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "vault",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "labelPresent": true,
+            "pathPresent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-windows-bytes",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "Diário/ação.bin",
+              [
+                0,
+                255,
+                195,
+                167,
+                240,
+                159,
+                153,
+                130
+              ]
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "Diário/ação.bin"
+            ]
+          },
+          {
+            "method": "stat",
+            "args": [
+              "Diário/ação.bin"
+            ]
+          },
+          {
+            "method": "stat",
+            "args": [
+              "ausente.md"
+            ]
+          },
+          {
+            "method": "list",
+            "args": [
+              "Diário"
+            ]
+          },
+          {
+            "method": "mkdir",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "mkdir",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "remove",
+            "args": [
+              "Diário",
+              true
+            ]
+          },
+          {
+            "method": "stat",
+            "args": [
+              "Diário"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          [
+            0,
+            255,
+            195,
+            167,
+            240,
+            159,
+            153,
+            130
+          ],
+          {
+            "kind": "file"
+          },
+          null,
+          [
+            {
+              "name": "ação.bin",
+              "kind": "file"
+            }
+          ],
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "id": "native-windows-escape",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "../fora.md",
+              [
+                1
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "write",
+            "args": [
+              "a/../../fora.md",
+              [
+                1
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "write",
+            "args": [
+              "a/./b.md",
+              [
+                1
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "write",
+            "args": [
+              "a\u0000b.md",
+              [
+                1
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "list",
+            "args": [
+              ""
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "rejected": true
+          },
+          {
+            "rejected": true
+          },
+          {
+            "rejected": true
+          },
+          {
+            "rejected": true
+          },
+          []
+        ]
+      }
+    },
+    {
+      "id": "native-windows-denied-write",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "recusada.md",
+              [
+                1,
+                2
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "stat",
+            "args": [
+              "recusada.md"
+            ]
+          }
+        ],
+        "deny": "write"
+      },
+      "expected": {
+        "values": [
+          {
+            "rejected": true
+          },
+          null
+        ]
+      }
+    },
+    {
+      "id": "native-windows-save",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "save",
+            "args": [
+              "livro.zip",
+              [
+                0,
+                255,
+                80,
+                75,
+                3,
+                4,
+                195,
+                167
+              ],
+              "application/zip"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "canceled": false,
+            "wherePresent": true,
+            "bytes": [
+              0,
+              255,
+              80,
+              75,
+              3,
+              4,
+              195,
+              167
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-windows-denied-save",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "save",
+            "args": [
+              "livro.zip",
+              [
+                1,
+                2
+              ],
+              "application/zip"
+            ],
+            "expectError": true
+          }
+        ],
+        "deny": "save"
+      },
+      "expected": {
+        "values": [
+          {
+            "rejected": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-windows-links",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "open",
+            "args": [
+              "https://example.com/a?b=1"
+            ]
+          },
+          {
+            "method": "open",
+            "args": [
+              "http://example.com/"
+            ]
+          },
+          {
+            "method": "open",
+            "args": [
+              "mailto:a@b.com"
+            ]
+          },
+          {
+            "method": "open",
+            "args": [
+              "tel:+5511999999999"
+            ]
+          },
+          {
+            "method": "open",
+            "args": [
+              "javascript:alert(1)"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "file:///etc/passwd"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "data:text/html,<script>1</script>"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "intent://x"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "app://urbe/index.html"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              " https://example.com"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "JAVASCRIPT:alert(1)"
+            ],
+            "blocked": true
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "opened": [
+              "https://example.com/a?b=1"
+            ]
+          },
+          {
+            "opened": [
+              "http://example.com/"
+            ]
+          },
+          {
+            "opened": [
+              "mailto:a@b.com"
+            ]
+          },
+          {
+            "opened": [
+              "tel:+5511999999999"
+            ]
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-android-vault",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "vault",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "labelPresent": true,
+            "pathPresent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-android-bytes",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "Diário/ação.bin",
+              [
+                0,
+                255,
+                195,
+                167,
+                240,
+                159,
+                153,
+                130
+              ]
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "Diário/ação.bin"
+            ]
+          },
+          {
+            "method": "stat",
+            "args": [
+              "Diário/ação.bin"
+            ]
+          },
+          {
+            "method": "stat",
+            "args": [
+              "ausente.md"
+            ]
+          },
+          {
+            "method": "list",
+            "args": [
+              "Diário"
+            ]
+          },
+          {
+            "method": "mkdir",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "mkdir",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "remove",
+            "args": [
+              "Diário",
+              true
+            ]
+          },
+          {
+            "method": "stat",
+            "args": [
+              "Diário"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          [
+            0,
+            255,
+            195,
+            167,
+            240,
+            159,
+            153,
+            130
+          ],
+          {
+            "kind": "file"
+          },
+          null,
+          [
+            {
+              "name": "ação.bin",
+              "kind": "file"
+            }
+          ],
+          null,
+          null,
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "id": "native-android-escape",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "../fora.md",
+              [
+                1
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "write",
+            "args": [
+              "a/../../fora.md",
+              [
+                1
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "write",
+            "args": [
+              "a/./b.md",
+              [
+                1
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "write",
+            "args": [
+              "a\\b.md",
+              [
+                1
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "write",
+            "args": [
+              "a\u0000b.md",
+              [
+                1
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "list",
+            "args": [
+              ""
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "rejected": true
+          },
+          {
+            "rejected": true
+          },
+          {
+            "rejected": true
+          },
+          {
+            "rejected": true
+          },
+          {
+            "rejected": true
+          },
+          []
+        ]
+      }
+    },
+    {
+      "id": "native-android-denied-write",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "recusada.md",
+              [
+                1,
+                2
+              ]
+            ],
+            "expectError": true
+          },
+          {
+            "method": "stat",
+            "args": [
+              "recusada.md"
+            ]
+          }
+        ],
+        "deny": "write"
+      },
+      "expected": {
+        "values": [
+          {
+            "rejected": true
+          },
+          null
+        ]
+      }
+    },
+    {
+      "id": "native-android-save",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "save",
+            "args": [
+              "livro.zip",
+              [
+                0,
+                255,
+                80,
+                75,
+                3,
+                4,
+                195,
+                167
+              ],
+              "application/zip"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "canceled": false,
+            "wherePresent": true,
+            "bytes": [
+              0,
+              255,
+              80,
+              75,
+              3,
+              4,
+              195,
+              167
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-android-denied-save",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "save",
+            "args": [
+              "livro.zip",
+              [
+                1,
+                2
+              ],
+              "application/zip"
+            ],
+            "expectError": true
+          }
+        ],
+        "deny": "save"
+      },
+      "expected": {
+        "values": [
+          {
+            "rejected": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-android-links",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "open",
+            "args": [
+              "https://example.com/a?b=1"
+            ]
+          },
+          {
+            "method": "open",
+            "args": [
+              "http://example.com/"
+            ]
+          },
+          {
+            "method": "open",
+            "args": [
+              "mailto:a@b.com"
+            ]
+          },
+          {
+            "method": "open",
+            "args": [
+              "tel:+5511999999999"
+            ]
+          },
+          {
+            "method": "open",
+            "args": [
+              "javascript:alert(1)"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "file:///etc/passwd"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "data:text/html,<script>1</script>"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "intent://x"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "app://urbe/index.html"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              " https://example.com"
+            ],
+            "blocked": true
+          },
+          {
+            "method": "open",
+            "args": [
+              "JAVASCRIPT:alert(1)"
+            ],
+            "blocked": true
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "opened": [
+              "https://example.com/a?b=1"
+            ]
+          },
+          {
+            "opened": [
+              "http://example.com/"
+            ]
+          },
+          {
+            "opened": [
+              "mailto:a@b.com"
+            ]
+          },
+          {
+            "opened": [
+              "tel:+5511999999999"
+            ]
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          },
+          {
+            "opened": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-windows-save-cancel",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "save",
+            "args": [
+              "livro.zip",
+              [
+                1,
+                2
+              ],
+              "application/zip"
+            ],
+            "cancel": true
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "canceled": true,
+            "wherePresent": false,
+            "bytes": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-windows-print",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "print",
+            "args": [
+              "<h1>Livro</h1>",
+              "Meu livro"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "canceled": false,
+            "savedPresent": true,
+            "pdfWritten": true,
+            "isolated": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-windows-print-cancel",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "windows",
+        "steps": [
+          {
+            "method": "print",
+            "args": [
+              "<h1>Livro</h1>",
+              "Meu livro"
+            ],
+            "cancel": true
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "canceled": true,
+            "savedPresent": false,
+            "pdfWritten": false,
+            "isolated": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-android-print",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "print",
+            "args": [
+              "<h1>Livro</h1>",
+              "Meu livro"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "printing": true,
+            "submitted": [
+              {
+                "html": "<h1>Livro</h1>",
+                "name": "Meu livro"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-android-storage-status",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "storage",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "sdk": 34,
+            "needsAllFiles": true,
+            "allFiles": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-android-back",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "back",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "minimized": true,
+            "listenerPresent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "native-android-update-offline",
+      "operation": "native.scenario",
+      "requirements": [
+        "REQ-008",
+        "REQ-010",
+        "REQ-062",
+        "REQ-064"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "surface": "android",
+        "steps": [
+          {
+            "method": "update",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "error"
+          }
+        ]
+      }
+    }
+  ]
+}
