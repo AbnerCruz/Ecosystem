@@ -25,7 +25,7 @@
     "Matriz IPC-01..IPC-18 com negativas de autenticação, callback/session cruzados, scope/grants, malformed/flood, cancel/revoke/deadline/disconnect e standalone. Casos planejados, não executados.",
     "PROPOSTA condicionada: avaliar serviço Android primeiro se existir consumidor/necessidade real; nenhuma escolha, DEC prematura, endpoint, SDK, wire ou extração implementada.",
     "Issue #194 aberta para estado vivo; ROADMAP aponta para a avaliação sem concluir P5-4.",
-    "PR #193 atualizado e todos os checks no estado combinado a992dc1 passaram: integrador run 37203332093, consistency 37203333122 e hub-ci 37203333205; permanece aberto aguardando autorização crítica canônica."
+    "PR #193 integrado na main em 93d7279d910f36854d90c7818bedf0b3f0398353; Issue #175 encerrada state:done. Histórico anterior preservado."
   ],
   "verification": [
     {
@@ -48,13 +48,12 @@
     }
   ],
   "known_issues": [
-    "P5-3/PR #193 depende de CI combinado e autorização canônica crítica antes da integração.",
     "P5-4 completo depende de consumidor pronto, necessidade interprocessos e ADR/decisão do transporte; esta comparação não seleciona alternativa.",
     "Não existem budgets do wire nem processo não cooperativo isolado testados; valores/executor pertencem ao ensaio após decisão."
   ],
   "blockers": [],
   "next_actions": [
-    "Integrar o slice preparatório pelo processo automático de rotina.",
+    "Integrar o slice preparatório após aprovação crítica da correção do bootstrap registrada em handoff separado.",
     "Após P5-3 integrado e consumidor liberado, preparar ADR da escolha com operação real, política bilateral de confiança e ensaio limitado.",
     "Não exportar Service, adicionar dependência de Hub ou extrair Tool por inferência."
   ],

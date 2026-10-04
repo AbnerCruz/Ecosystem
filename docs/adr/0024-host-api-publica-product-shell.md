@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — aguarda decisão do proprietário em DEC-0034. Nenhuma Host API pública, transporte IPC ou extração compartilhada é autorizada por este ADR enquanto a decisão estiver pendente.
+Aceito — DEC-0034-A (2026-10-04). A Host API v1 é semântica e neutra de transporte; P5-4 continua responsável por escolher IPC/autenticação. Esta decisão não autoriza extração compartilhada nem integração antecipada em outro Product.
 
 ## Contexto
 
@@ -32,7 +32,7 @@ A Host API precisa dar aos Product Shells uma semântica comum para discovery e 
 
 ## Decisão
 
-**Proposta recomendada: opção 1.** Esta seção descreve a proposta submetida à DEC-0034; ela não está aceita enquanto a decisão permanecer pendente.
+**Opção 1 escolhida pelo proprietário em DEC-0034-A.**
 
 A Host API v1 deve ser um **contrato semântico**, não um transporte e não uma biblioteca obrigatória. A fonte normativa deve reutilizar os contratos aceitos da Fase 2 em vez de copiá-los.
 
@@ -45,7 +45,7 @@ A fronteira proposta possui estas operações conceituais:
 - **revogar**: o Host pode reduzir grants/encerrar acesso; revogação nunca eleva privilégio;
 - **fechar sessão**: invalida discovery e novas chamadas e impede resultado tardio de virar sucesso.
 
-Invariantes propostas:
+Invariantes:
 
 - `Context` continua usando `context.schema.json`; a Host API não cria outro modelo de scope;
 - capability/version/inputs/outputs/errors/lifecycle continuam vindo de `docs/contracts/capabilities/*.json`;
@@ -61,28 +61,28 @@ Invariantes propostas:
 - o segundo Host pode implementar/adaptar o contrato sem depender do Hub;
 - compartilhamento de runtime/Tool só ocorre depois de consumidor real e Extraction Review positiva (NN-022). A decisão desta API, sozinha, não cria `platform/`, SDK ou package compartilhado.
 
-A implementação normativa após aprovação deve incluir fixtures de conformance independentes de Host cobrindo pelo menos: Context inválido, capability desconhecida, incompatibilidade de versão, permissão ausente, tentativa de elevação de grant, input/output inválidos, cancelamento, revogação, sessão fechada e falha sanitizada do provider.
+A implementação normativa está em `docs/contracts/host-api.v1.json`, validada por `host-api.schema.json`. As fixtures independentes de Host em `docs/contracts/examples/host-api/conformance.v1.json` cobrem Context/identidade inválidos, capability desconhecida, versão incompatível, permissão ausente, tentativa de elevação de grant, input/output inválidos, cancelamento, revogação, sessão fechada e falha sanitizada do provider.
 
 ## Consequências
 
-Se a opção 1 for aprovada:
+Com a opção 1 aprovada:
 
-- P5-3 pode estabilizar a Host API sem escolher prematuramente o wire protocol;
+- P5-3 estabiliza a Host API sem escolher prematuramente o wire protocol;
 - P5-4 compara transportes usando a mesma semântica e adiciona autenticação de caller, timeout/disconnect e limites;
 - P5-5 pode adaptar um Product Shell real quando sua própria governança permitir;
 - Hub e Products continuam independentes; nenhum Product depende de `Hub.Core`;
 - haverá algum custo de adaptar a implementação experimental do Hub à API pública após a decisão, em vez de declarar a implementação atual como contrato;
 - a Extraction Review continua obrigatória antes de mover runtime/Tool para componente compartilhado.
 
-Enquanto DEC-0034 estiver pendente, P5-3 não congela Host API pública e P5-4 não escolhe transporte.
+P5-4 só pode escolher transporte depois desta semântica e deve preservar integralmente a separação de Context, identidade, grants, erros e cancelamento definida aqui.
 
 ## Alternativas rejeitadas
 
-Ainda não há alternativa rejeitada pelo proprietário. A recomendação rejeita tecnicamente, mas não normativamente, as opções 2 e 3:
+DEC-0034-A rejeitou as opções 2 e 3:
 
 - **Opção 2:** congela detalhes do primeiro experimento e transforma conveniência local do Hub em compromisso transversal sem segundo Host.
 - **Opção 3:** mistura semântica, autenticação e transporte, invertendo a sequência P5-3 → P5-4 e tornando multiplataforma mais cara.
 
 ## Referências
 
-MANIFEST §6, §14–§16, §29; NN-001, NN-003, NN-006, NN-007, NN-010, NN-011, NN-015, NN-016, NN-018, NN-022, NN-023; ADR-0006, ADR-0011, ADR-0012, ADR-0023; docs/architecture/product-model.md; docs/architecture/capability-runtime.md; docs/contracts/schemas/context.schema.json; docs/contracts/schemas/capability-contract.schema.json; docs/contracts/permissions.json; ROADMAP P5-3..P5-5; Issue #175; DEC-0034.
+MANIFEST §6, §14–§16, §29; NN-001, NN-003, NN-006, NN-007, NN-010, NN-011, NN-015, NN-016, NN-018, NN-022, NN-023; ADR-0006, ADR-0011, ADR-0012, ADR-0023; docs/architecture/product-model.md; docs/architecture/capability-runtime.md; docs/contracts/host-api.v1.json; docs/contracts/schemas/host-api.schema.json; docs/contracts/schemas/host-api-conformance.schema.json; docs/contracts/examples/host-api/conformance.v1.json; docs/contracts/schemas/context.schema.json; docs/contracts/schemas/capability-contract.schema.json; docs/contracts/permissions.json; ROADMAP P5-3..P5-5; Issue #175; DEC-0034.

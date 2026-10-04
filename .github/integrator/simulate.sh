@@ -17,7 +17,8 @@ git init -q --bare "$T/origin.git"
 # Diagnósticos do git ficam visíveis: falha de bootstrap não é cenário aprovado.
 git -C "$ROOT" push -q "$T/origin.git" "HEAD:refs/heads/main" "refs/tags/*:refs/tags/*"
 git --git-dir="$T/origin.git" symbolic-ref HEAD refs/heads/main
-git clone -q "$T/origin.git" "$T/trusted"
+# Transporte Git evita copiar/hardlinkar metadados mutáveis de manutenção do origin local.
+git clone --no-local -q "$T/origin.git" "$T/trusted"
 cd "$T/trusted"
 G() { git -c user.name=sim -c user.email=sim@example.invalid "$@"; }
 # A main simulada = a árvore em teste (inclui o que ainda não foi commitado), por cima do histórico real.

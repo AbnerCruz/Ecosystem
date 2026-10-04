@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-integrator-clone-bootstrap",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T13:03:00Z",
+  "agent": {
+    "id": "chatgpt-p5-runtime-continue",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-4",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p5-4-transport-readiness",
+  "base_commit": "93d7279d910f36854d90c7818bedf0b3f0398353",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/195",
+  "files_changed": [
+    ".github/integrator/simulate.sh",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261004-integrator-clone-bootstrap.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: CI do PR #195 run 37203710393 falhou antes dos cenários: hardlink different from source em objects/info/commit-graphs/commit-graph-chain.lock.",
+    "Bootstrap usa git clone --no-local: transporte Git transfere objetos/referências, evitando copiar arquivos internos de manutenção concorrente. Nenhum cenário, checker, autorização ou fail-fast foi enfraquecido.",
+    "Merge sem force com main reconciliou ROADMAP: P5-3 concluído pelo PR #193; Issue #175 closed/state:done. P5-4 permanece aberto e comparação preparatória preservada."
+  ],
+  "verification": [
+    {
+      "check": "Consistency, self-test e simulação",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks de consistência, git diff --check e self-test completo passaram. Todos os checks provaram detectar suas violações. Simulação ponta a ponta passou. ROADMAP × Issues será conferido no CI com instantâneo."
+    },
+    {
+      "check": "Regressão focada do bootstrap",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Clone --no-local preserva HEAD, contagem do histórico e tags; arquivo sentinela objects/info/maintenance-fixture.lock não é copiado."
+    },
+    {
+      "check": "Simulação ponta a ponta",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os cenários passaram incluindo autorização crítica, corrida do head, dispatch recusado e fast-forward sem force."
+    }
+  ],
+  "known_issues": [
+    "Mudança em .github/integrator é crítica control-plane e exige autorização canônica do proprietário após CI combinado.",
+    "P5-4 depende de consumidor real pronto e decisão do transporte."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar checks completos e publicar atualização do PR #195.",
+    "Aguardar CI combinado e autorização canônica do proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/permissions.json",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/integration-policy.json",
+    "tests/consistency/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Estado/IDs continuam no ROADMAP/Issue; comparação não cria Registry paralelo."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "IPC não exige Hub para o domínio essencial dos Products."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Caller/package pertence ao adapter; Tool não conhece Host."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Documentos e APIs primárias consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum transporte/fronteira selecionado; implementação exige ADR/decisão própria."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "GitHub não é transporte runtime."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Identidade bilateral e grants deny-by-default são critérios, sem privilégio ativado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Matriz não executada/DEVICE não é confundida com provas headless."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-4 permanece aberto."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração antes de consumidor e Extraction Review."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Standalone inclui distribuição sem Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Correção do bootstrap da simulação do integrador, sem alterar critérios ou autorização."
+  },
+  "cost": null
+}

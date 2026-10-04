@@ -9,7 +9,7 @@ public static class TextInspectionTool
     public const int MaximumLength = 100_000;
 
     public static LocalCapability Definition(LocalContext scope) => new(CapabilityId, "local-text-tool",
-        new Version(1, 0, 0), "inspect", scope, ["ui.display"], "stateless", ValidInput, ValidOutput, Inspect);
+        new Version(1, 0, 0), "inspect", scope, [], "stateless", ValidInput, ValidOutput, Inspect);
 
     private static bool ValidInput(JsonElement value) => value.ValueKind == JsonValueKind.Object
         && value.EnumerateObject().Count() == 1
