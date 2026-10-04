@@ -25,6 +25,12 @@ public sealed partial class MainActivity
             .SetMessage("O Product continua funcionando sem provider. No primeiro uso, compare o código de 6 dígitos e aprove a conexão no aplicativo provider.")
             .SetView(input)
             .SetNegativeButton("Cancelar", (_, _) => { })
+            .SetNeutralButton("Esquecer conexão", (_, _) =>
+            {
+                _ecosystemHostClient ??= new EcosystemHostClient(this);
+                _ecosystemHostClient.ResetTrust();
+                Toast.MakeText(this, "Confiança local apagada. O próximo uso exigirá novo pareamento.", ToastLength.Long)?.Show();
+            })
             .SetPositiveButton("Conectar e testar", async (_, _) =>
             {
                 _ecosystemHostClient ??= new EcosystemHostClient(this);
