@@ -13,6 +13,7 @@ internal sealed class EcosystemHostClient : IDisposable
 {
     const string KeyAlias = "ecosystem.ipc.caller.v1";
     const string TrustFile = "ecosystem-ipc-provider-v1.json";
+    const string PendingTrustFile = "ecosystem-ipc-provider-pending-v1.json";
     readonly Context _context;
     readonly AndroidInstallationKey _key = new(KeyAlias);
     HostServiceConnection? _connection;
@@ -46,10 +47,27 @@ internal sealed class EcosystemHostClient : IDisposable
 
             _candidate = candidate;
             _pair = new PairCandidate(pair.PairId, pair.ProviderPublicKey);
+
+            var pendingTrust = ReadPendingTrust();
             if (pair.State == "pending")
+            {
+                if (pair.PairCode is null)
+                    return new(false, "Provider não apresentou código de pareamento.");
+                var proposed = new PendingProviderTrust(
+                    candidate.PackageName, candidate.SignerSha256, pair.ProviderPublicKey, pair.PairId, pair.PairCode);
+                if (pendingTrust is not null && pendingTrust != proposed)
+                    return new(false, "O provider mudou durante o pareamento. A conexão foi recusada; reinicie o pareamento.");
+                WritePendingTrust(proposed);
                 return new(false, $"Pareamento aguardando aprovação. Compare o código {pair.PairCode} no provider e aprove; depois toque novamente.", pair.PairCode);
+            }
 
             if (pair.State != "approved") return new(false, "Estado de pareamento inválido.");
+            if (pendingTrust is null ||
+                pendingTrust.PackageName != candidate.PackageName ||
+                pendingTrust.SignerSha256 != candidate.SignerSha256 ||
+                pendingTrust.PublicKey != pair.ProviderPublicKey ||
+                pendingTrust.PairId != pair.PairId)
+                return new(false, "A aprovação não corresponde ao provider/código previamente exibido. Pareamento recusado.");
 
             var challengeRequest = Signed(new IpcRequest(Op: "session.challenge", PairId: pair.PairId));
             var challenge = Rpc(EcosystemIpcProtocol.Challenge, challengeRequest);
@@ -57,16 +75,16 @@ internal sealed class EcosystemHostClient : IDisposable
                 || challenge.ProviderSignature is null || challenge.ProviderPublicKey != pair.ProviderPublicKey)
                 return Error(challenge);
 
-            var clientKeyHash = EcosystemIpcProtocol.Hash(Convert.ToHexString(
-                SHA256.HashData(Convert.FromBase64String(_key.PublicKey))).ToLowerInvariant());
             // Provider uses SHA-256 of raw public-key bytes. Compute the same lowercase hex value.
-            clientKeyHash = Convert.ToHexString(SHA256.HashData(Convert.FromBase64String(_key.PublicKey))).ToLowerInvariant();
+            var clientKeyHash = Convert.ToHexString(
+                SHA256.HashData(Convert.FromBase64String(_key.PublicKey))).ToLowerInvariant();
             if (!AndroidInstallationKey.Verify(pair.ProviderPublicKey,
                 EcosystemIpcProtocol.ProviderProof(pair.PairId, challenge.ChallengeId, challenge.Challenge, clientKeyHash),
                 challenge.ProviderSignature))
                 return new(false, "Prova criptográfica do provider inválida.");
 
             WriteTrust(new ProviderTrust(candidate.PackageName, candidate.SignerSha256, pair.ProviderPublicKey, pair.PairId));
+            ClearPendingTrust();
 
             var contextJson = EcosystemIpcProtocol.Serialize(new IpcContext([
                 new("ecosystem", "ecosystem"),
@@ -212,6 +230,36 @@ internal sealed class EcosystemHostClient : IDisposable
         File.Move(temp, path, true);
     }
 
+    PendingProviderTrust? ReadPendingTrust()
+    {
+        try
+        {
+            var path = Path.Combine(_context.FilesDir!.AbsolutePath, PendingTrustFile);
+            return File.Exists(path)
+                ? JsonSerializer.Deserialize<PendingProviderTrust>(File.ReadAllText(path), EcosystemIpcProtocol.Json)
+                : null;
+        }
+        catch (Exception) { return null; }
+    }
+
+    void WritePendingTrust(PendingProviderTrust trust)
+    {
+        var path = Path.Combine(_context.FilesDir!.AbsolutePath, PendingTrustFile);
+        var temp = path + ".tmp";
+        File.WriteAllText(temp, JsonSerializer.Serialize(trust, EcosystemIpcProtocol.Json));
+        File.Move(temp, path, true);
+    }
+
+    void ClearPendingTrust()
+    {
+        try
+        {
+            var path = Path.Combine(_context.FilesDir!.AbsolutePath, PendingTrustFile);
+            if (File.Exists(path)) File.Delete(path);
+        }
+        catch (Exception) { }
+    }
+
     public void Dispose()
     {
         if (_disposed) return;
@@ -239,6 +287,8 @@ internal sealed class EcosystemHostClient : IDisposable
     private sealed record ProviderCandidate(string PackageName, string ServiceName, string SignerSha256);
     private sealed record PairCandidate(string PairId, string ProviderPublicKey);
     private sealed record ProviderTrust(string PackageName, string SignerSha256, string PublicKey, string PairId);
+    private sealed record PendingProviderTrust(
+        string PackageName, string SignerSha256, string PublicKey, string PairId, string PairCode);
 }
 
 internal sealed record HostTestResult(bool Success, string Message, string? PairCode = null);
