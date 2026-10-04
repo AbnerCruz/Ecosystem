@@ -140,6 +140,19 @@ public static class VaultWriter
         }
 
         var desired = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+        var recovery = ReadRecoveryJournal(working);
+        var metadataJson = request.MetadataJson
+                           ?? RecoveryObjectJson(recovery, "metadata")
+                           ?? CurrentObjectJson(working, MapPath);
+        var historyJson = request.HistoryJson
+                          ?? RecoveryObjectJson(recovery, "history")
+                          ?? CurrentLogicalSidecarJson(working, "history");
+        var trashJson = request.TrashJson
+                        ?? RecoveryObjectJson(recovery, "trash")
+                        ?? CurrentLogicalSidecarJson(working, "trash");
+        var compositionsJson = request.CompositionsJson
+                               ?? RecoveryObjectJson(recovery, "compositions")
+                               ?? CurrentLogicalSidecarJson(working, "compositions");
 
         foreach (var document in documents)
         {
@@ -148,12 +161,12 @@ public static class VaultWriter
             desired[document.Path] = Encoding.UTF8.GetBytes(document.Content);
         }
 
-        if (!snapshot.IsMapReadOnly && request.MetadataJson is not null)
-            desired[MapPath] = ValidateJsonObject(request.MetadataJson, MapPath);
+        if (!snapshot.IsMapReadOnly && metadataJson is not null)
+            desired[MapPath] = ValidateJsonObject(metadataJson, MapPath);
 
-        WriteSidecarDesired(working, desired, future, "history", request.HistoryJson);
-        WriteSidecarDesired(working, desired, future, "trash", request.TrashJson);
-        WriteSidecarDesired(working, desired, future, "compositions", request.CompositionsJson);
+        WriteSidecarDesired(working, desired, future, "history", historyJson);
+        WriteSidecarDesired(working, desired, future, "trash", trashJson);
+        WriteSidecarDesired(working, desired, future, "compositions", compositionsJson);
 
         if (!future.Contains(VaultIdentity.Path))
         {
@@ -188,7 +201,13 @@ public static class VaultWriter
         var journalUsed = !journalIsFuture && changedUserPaths.Count + removedUserPaths.Count > 1;
         if (journalUsed)
         {
-            var journalBytes = BuildJournal(request, documents, now);
+            var journalBytes = BuildJournal(
+                documents,
+                now,
+                metadataJson,
+                historyJson,
+                trashJson,
+                compositionsJson);
             ApplyWrite(working, operations, JournalV2, journalBytes);
         }
 
@@ -505,9 +524,12 @@ public static class VaultWriter
     }
 
     private static byte[] BuildJournal(
-        VaultWriteRequest request,
         IReadOnlyList<VaultWriteDocument> documents,
-        DateTimeOffset now)
+        DateTimeOffset now,
+        string? metadataJson,
+        string? historyJson,
+        string? trashJson,
+        string? compositionsJson)
     {
         var array = new JsonArray();
         foreach (var document in documents)
@@ -527,16 +549,81 @@ public static class VaultWriter
             ["documents"] = array
         };
 
-        if (request.MetadataJson is not null)
-            root["metadata"] = JsonNode.Parse(request.MetadataJson);
-        if (request.TrashJson is not null)
-            root["trash"] = JsonNode.Parse(request.TrashJson);
-        if (request.HistoryJson is not null)
-            root["history"] = JsonNode.Parse(request.HistoryJson);
-        if (request.CompositionsJson is not null)
-            root["compositions"] = JsonNode.Parse(request.CompositionsJson);
+        if (metadataJson is not null)
+            root["metadata"] = JsonNode.Parse(metadataJson);
+        if (trashJson is not null)
+            root["trash"] = JsonNode.Parse(trashJson);
+        if (historyJson is not null)
+            root["history"] = JsonNode.Parse(historyJson);
+        if (compositionsJson is not null)
+            root["compositions"] = JsonNode.Parse(compositionsJson);
 
         return Serialize(root, indented: false);
+    }
+
+    private sealed record RecoveryJournal(string Path, JsonObject Root);
+
+    private static RecoveryJournal? ReadRecoveryJournal(
+        IReadOnlyDictionary<string, VaultFile> files)
+    {
+        foreach (var candidate in new[]
+                 {
+                     (Path: JournalV2, Version: 2),
+                     (Path: JournalV1, Version: 1)
+                 })
+        {
+            if (!files.TryGetValue(candidate.Path, out var file) ||
+                !TryParseObject(file.Bytes, out var root))
+                continue;
+
+            if (GetOptionalInt(root["version"]) != candidate.Version ||
+                root["documents"] is not JsonArray)
+                continue;
+
+            return new RecoveryJournal(candidate.Path, root);
+        }
+
+        return null;
+    }
+
+    private static string? RecoveryObjectJson(RecoveryJournal? recovery, string property)
+    {
+        if (recovery?.Root[property] is not JsonObject obj)
+            return null;
+        return obj.ToJsonString();
+    }
+
+    private static string? CurrentObjectJson(
+        IReadOnlyDictionary<string, VaultFile> files,
+        string path)
+    {
+        if (!files.TryGetValue(path, out var file) ||
+            !TryParseObject(file.Bytes, out var obj))
+            return null;
+        return obj.ToJsonString();
+    }
+
+    private static string? CurrentLogicalSidecarJson(
+        IReadOnlyDictionary<string, VaultFile> files,
+        string key)
+    {
+        var v2 = $".urbe/{key}.v2.json";
+        var v1 = $".urbe/{key}.json";
+
+        if (files.TryGetValue(v2, out var currentV2) &&
+            TryParseObject(currentV2.Bytes, out var parsedV2) &&
+            GetOptionalInt(parsedV2["version"]) == 2)
+        {
+            parsedV2["version"] = 1;
+            return parsedV2.ToJsonString();
+        }
+
+        if (files.TryGetValue(v1, out var currentV1) &&
+            TryParseObject(currentV1.Bytes, out var parsedV1) &&
+            IsAcceptedLegacySidecar(parsedV1, key))
+            return parsedV1.ToJsonString();
+
+        return null;
     }
 
     private static bool IsSupportedJournal(VaultFile file)
