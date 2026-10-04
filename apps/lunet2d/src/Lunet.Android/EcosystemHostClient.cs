@@ -102,15 +102,9 @@ internal sealed class EcosystemHostClient : IDisposable
             WriteTrust(new ProviderTrust(candidate.PackageName, candidate.SignerSha256, pair.ProviderPublicKey, pair.PairId));
             ClearPendingTrust();
 
-            var contextJson = EcosystemIpcProtocol.Serialize(new IpcContext([
-                new("ecosystem", "ecosystem"),
-                new("product", "lunet2d"),
-                new("workspace", "ide"),
-                new("tool", "text-inspect")
-            ]));
             var open = Signed(new IpcRequest(
                 Op: "session.open", PairId: pair.PairId, ChallengeId: challenge.ChallengeId,
-                Challenge: challenge.Challenge, ContextJson: contextJson));
+                Challenge: challenge.Challenge));
             var opened = Rpc(EcosystemIpcProtocol.Open, open, _lifecycleToken);
             if (!opened.Ok || opened.SessionId is null) return Error(opened);
             _sessionId = opened.SessionId;
