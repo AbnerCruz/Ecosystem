@@ -13,7 +13,7 @@
   "branch": "chatgpt/p5-4-ipc-decision",
   "base_commit": "ed8bfe36c4d076ea20a2c9229805f83c27f10ff6",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/205",
   "files_changed": [
     "ROADMAP.md",
     "apps/lunet2d/ROADMAP.md",
@@ -30,22 +30,15 @@
     "Reauditado P5-4 com o Lunet agora disponível como primeiro Product Shell Android real.",
     "Definida operação concreta do ensaio: text.inspect@1.0.0 remota opcional entre Hub e Lunet, sem tornar Hub dependência essencial.",
     "Preparada DEC-0037 com quatro alternativas de transporte/confiança e recomendação de Bound Service/Binder + identidade do SO + pareamento por instalação em Keystore.",
-    "Criada ADR-0027 em estado Proposto; nenhuma escolha aplicada antes da decisão."
+    "Criada ADR-0027 em estado Proposto; nenhuma escolha aplicada antes da decisão.",
+    "Correção de autoridade: decisão arquitetural permanece somente em DEC-0037; o handoff não cria validação humana paralela para aprovar/reprovar o mesmo objeto."
   ],
   "verification": [
     {
-      "check": "Coerência documental e schema",
+      "check": "Coerência documental, schemas e estado combinado",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Será verificada pelo consistency CI e integrador do PR; nenhuma alegação de CI local nesta sessão."
-    },
-    {
-      "check": "Escolha do transporte e modelo de confiança",
-      "kind": "human",
-      "result": "pending",
-      "critical": true,
-      "object": "docs/adr/0027-primeiro-ipc-local-android.md",
-      "evidence": "DEC-0037 deve ser escolhida pelo proprietário; transporte/segurança não podem ser aceitos pelo próprio agente."
+      "evidence": "Aguardar consistency CI/integrador do PR #205; nenhuma alegação de teste local nesta sessão."
     }
   ],
   "known_issues": [
@@ -84,6 +77,10 @@
     "docs/contracts/schemas/handoff.schema.json"
   ],
   "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "DEC-0037 é a única autoridade da escolha de transporte/confiança; nenhuma validação humana paralela foi criada no handoff."
+    },
     {
       "id": "NN-003",
       "evidence": "IPC proposto é opcional; Lunet continua funcional e distribuível sem Hub."
