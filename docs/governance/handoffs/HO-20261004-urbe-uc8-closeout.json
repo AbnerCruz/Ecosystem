@@ -1,0 +1,54 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc8-closeout",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T14:38:14.729868+00:00",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-8",
+  "component": "urbe",
+  "state": "done",
+  "branch": "docs/urbe-uc8-closeout",
+  "base_commit": "a1fbb9c972367cf784595450089264f0f7e7baab",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc8-closeout.json"
+  ],
+  "work_completed": [
+    "Implementação UC-8 integrada pelo PR #196 em 13fc285 após autorização canônica. Registro de escopo e Issue reconciliados."
+  ],
+  "verification": [
+    {
+      "check": "CI combinado e integração UC-8",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Integrador run 37206895634: consistency/self-test/simulação e Urbe checks/E2E/Web/Android/Windows verdes no combinado 92dbc3a8; PR #196 merged em 13fc285, observado via API e git fetch."
+    }
+  ],
+  "known_issues": [
+    "Cliente apenas de composição; leitura/escrita e validação física pertencem etapas próprias."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar UC-9, Issue #199."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-018",
+      "evidence": "Conclusão só após integração e CI combinado observado."
+    }
+  ]
+}
