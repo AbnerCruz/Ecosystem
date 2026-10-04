@@ -28,6 +28,18 @@ Auditar Urbe C# e Lunet2D: Shell executável, modelo de Context real, APIs próp
 
 Comparar chamada em processo, serviço Android autenticado e socket local autenticado segundo plataformas efetivas, caller identity, ownership, desconexão e custo. Não escolher transporte antes do consumidor nem expor localhost sem autenticação. Novo contrato/IPC transversal exige ADR/decisão pelo processo existente; GitHub nunca é transporte de execução.
 
+## Auditoria do segundo Host (base 093ef4f, somente leitura)
+
+| Candidato | Fato observado | Lacuna para consumir a mesma Tool |
+|---|---|---|
+| Lunet2D | Activity Android e editor reais; `ProjectManifest.GameId` persistido identifica projeto; `LunetProject` lê texto de projeto | Ainda não expõe Host API/capability/grants contextual. Leitura de arquivo não será concedida à Tool por conveniência; adapter pode fornecer texto já selecionado |
+| Urbe | Aplicativo JS/Android existente; reescrita C# com paridade tem processo próprio | JS está congelado por DEC-0025-C; não inserir integração nova para contornar o marco da migração |
+| Ecosystem AI | `WorkspaceSession` captura Context/grants e encaminha ao `AgentRunner`; bibliotecas e testes executáveis | Sessão experimental não é Shell/UX de Product nem segundo Host visual real |
+
+Fontes verificadas: `apps/lunet2d/src/Lunet.Android/MainActivity.cs`, `MainActivity.Ide.cs`, `apps/lunet2d/src/Lunet.Core/ProjectManifest.cs`, `LunetProject.cs`, `apps/ecosystem-ai/src/AgentWorkspace/WorkspaceSession.cs` e inventário de `apps/urbe` nesta base. Esta auditoria não declara escolha de Host/transporte nem necessidade comprovada de extração.
+
+**Inferência:** Lunet oferece o menor caminho para uma prova Android porque já tem editor/projeto. **Proposta para P5-3:** provar um consumidor que fornece texto selecionado, com Context baseado no GameId, antes de revisar extração/contrato. Nada é integrado no Lunet por esta proposta. Host API/IPC e componentes compartilhados exigem a decisão correspondente pelo processo canônico antes da implementação transversal.
+
 ## Matriz do slice local
 
 `LocalCapabilityHostTests` cobre dois contextos, grants negados/indeclarados/imutáveis, scope entre projetos, versões, impersonação, operação/protocolo/kind inválidos, schema/limite do input, repetição, journal/identidades limitados, busy, fechamento idempotente, cancelamento, resultado/progresso tardios e exceção sanitizada. `TextInspectionTool` usa Unicode scalar values (emoji simples conta um caractere), palavras como tokens de whitespace e linhas LF; não é análise linguística nem contador de graphemes.
