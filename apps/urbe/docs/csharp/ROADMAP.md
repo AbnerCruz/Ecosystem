@@ -30,7 +30,7 @@ Objetivo: saber exatamente o que é «paridade», ter como provar, e decidir com
 
 Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
-- [ ] UC-8 — Esqueleto do projeto C# do Urbe e CI (build e testes no estado combinado; `urbe-checks` estendido).
+- [~] UC-8 — Esqueleto do projeto C# do Urbe e CI: Core puro, RCL compartilhada, Web WASM/PWA e MAUI Hybrid Windows/Android. `urbe-checks` estendido ao build/testes/publish/smoke e builds nativos no ref combinado. Issue #192; handoff `HO-20261004-urbe-uc8-foundation`. Builds Web/Android/Windows e consistency/self-test passaram no CI; PR #196 em revisão, aguarda CI final do harness E2E e integração crítica; comandos em `../../csharp/README.md`.
 - [ ] UC-9 — Vault: leitura de todos os formatos 1.x/2.x com proteção forward, provada contra as fixtures.
 - [ ] UC-10 — Vault: escrita, backup restaurável, migração idempotente, identidade e GC, provados contra as fixtures.
 - [ ] UC-11 — Exportar/importar ZIP e manifesto.
