@@ -303,3 +303,9 @@
 - Evidência: `urbe-checks` 37225693553 verde em checks, C# portátil, MAUI Windows, MAUI Android e E2E; 114/114 `Urbe.Core.Tests` passaram, 0 falhas/0 skips. `consistency` 37225693548 verde.
 - Revisão de paridade: testes corrigidos para refletir a ordem real de tags e a sanitização real do JS; `DocumentStore` agora replica também o fallback falsy para id/title/created/modified vazios.
 - Próximo passo: integração automática rotineira; depois UC-13 — projeção do mundo e bairros com IDs estáveis.
+
+
+### 2026-10-04 — ChatGPT — UC-12 integrada
+- PR #218 integrado automaticamente em `79c5be01`; o estado combinado testado tornou-se a `main`.
+- UC-12 encerrada com 114/114 testes C#, checks, Android, Windows, E2E e consistency verdes.
+- M2 continua com UC-13: projeção do mundo e bairros, com IDs estáveis; terreno, vida/simulação e renderização permanecem fora deste passo.
