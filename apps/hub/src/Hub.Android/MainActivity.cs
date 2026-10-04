@@ -59,6 +59,7 @@ public sealed partial class MainActivity : Activity
         var tools = new Button(this) { Text = "Analisar texto" };
         tools.Click += (_, _) => _tools.Show();
         content.AddView(tools);
+        AddIpcControls(content);
         AddDownloads(content);
         var productsContent = new LinearLayout(this) { Orientation = Orientation.Vertical };
         content.AddView(productsContent);
@@ -97,6 +98,7 @@ public sealed partial class MainActivity : Activity
         ObserveDownloads();
         HubInstaller.Recover(this);
         UpdateInstallationControls();
+        PromptPendingIpcPairing();
     }
 
     protected override void OnStop()
