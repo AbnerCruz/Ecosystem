@@ -165,6 +165,18 @@ public sealed class EcosystemCapabilityService : Service
             : new(false, HostError: "CANCELLED");
     }
 
+    internal IpcResponse Revoke(AndroidPeerIdentity peer, IpcRequest request)
+    {
+        if (!Authenticated(peer, request, "revoke", out var approved, out var error)) return error!;
+        if (request.Permissions is null || request.Permissions.Length == 0 ||
+            request.Permissions.Length > 32 ||
+            request.Permissions.Any(x => string.IsNullOrWhiteSpace(x) || x.Length > 128))
+            return Error("PROTOCOL_UNSUPPORTED");
+        return Gateway.Revoke(approved!.KeyHash, request.SessionId!, request.Permissions)
+            ? new(true, State: "revoked")
+            : new(false, HostError: "REVOKED");
+    }
+
     internal IpcResponse Close(AndroidPeerIdentity peer, IpcRequest request)
     {
         if (!Authenticated(peer, request, "close", out var approved, out var error)) return error!;
