@@ -11902,6 +11902,87 @@
           "Urbe"
         ]
       }
+    },
+    {
+      "id": "browser-zip-roundtrip",
+      "operation": "browser.zip",
+      "requirements": [
+        "REQ-044",
+        "REQ-058",
+        "REQ-061"
+      ],
+      "source": "tests/e2e/zip.e2e.mjs",
+      "input": {
+        "files": [
+          {
+            "path": ".urbe/compositions.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000002-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}"
+          },
+          {
+            "path": ".urbe/history.json",
+            "encoding": "utf8",
+            "content": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"# Alfa\\n\\nversão antiga\\n\"}]}}"
+          },
+          {
+            "path": ".urbe/mapa.json",
+            "encoding": "utf8",
+            "content": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [\n  {\n   \"caminho\": \"Pasta\",\n   \"nome\": \"Pasta\",\n   \"cor\": \"#4aa3ff\",\n   \"x\": 30,\n   \"y\": 30,\n   \"w\": 12,\n   \"h\": 10,\n   \"cells\": null,\n   \"descricao\": \"\"\n  }\n ],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 33,\n   \"sprite\": \"house1\",\n   \"tags\": [],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  },\n  \"Pasta/Gama.md\": {\n   \"id\": \"doc_00000003-0000-4000-8000-000000000000\",\n   \"x\": 34,\n   \"y\": 36,\n   \"sprite\": \"house1\",\n   \"tags\": [\n    \"pasta\"\n   ],\n   \"anexos\": [],\n   \"criado\": \"2026-09-01\",\n   \"modificado\": \"2026-09-02\",\n   \"aiLocal\": null\n  }\n },\n \"construcoes\": [\n  {\n   \"tipo\": \"arquivo\",\n   \"fileClass\": \"image\",\n   \"name\": \"logo.png\",\n   \"fileName\": \"logo.png\",\n   \"caminho\": \"Pasta\",\n   \"x\": 38,\n   \"y\": 32,\n   \"w\": 3,\n   \"h\": 3,\n   \"description\": \"\",\n   \"sprite\": \"file-image\",\n   \"parentNoteName\": \"Alfa\",\n   \"files\": [\n    {\n     \"nome\": \"logo.png\",\n     \"tipo\": \"png\",\n     \"mime\": \"image/png\",\n     \"relPath\": \"Pasta/logo.png\",\n     \"folderPath\": \"Pasta\",\n     \"tamanho\": 8\n    }\n   ],\n   \"anexos\": [],\n   \"created\": \"2026-09-01\",\n   \"modified\": \"2026-09-01\"\n  }\n ]\n}"
+          },
+          {
+            "path": ".urbe/trash.json",
+            "encoding": "utf8",
+            "content": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}"
+          },
+          {
+            "path": "Alfa.md",
+            "encoding": "utf8",
+            "content": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n"
+          },
+          {
+            "path": "Beta.md",
+            "encoding": "utf8",
+            "content": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n"
+          },
+          {
+            "path": "Pasta/Gama.md",
+            "encoding": "utf8",
+            "content": "# Gama\n\nNota numa pasta.\n"
+          },
+          {
+            "path": "Pasta/logo.png",
+            "encoding": "base64",
+            "content": "wolQTkcNChoK"
+          }
+        ],
+        "docs": 3,
+        "preference": {
+          "key": "urbe.tip.parity",
+          "value": "1"
+        },
+        "secret": {
+          "key": "urbe.ai.apiKey",
+          "value": "sk-PARITY-NOT-A-REAL-SECRET"
+        }
+      },
+      "expected": {
+        "zipFilename": true,
+        "notesIncluded": true,
+        "mapIncluded": true,
+        "journalExcluded": true,
+        "assetIncluded": true,
+        "manifestValid": true,
+        "manifestCoversAll": true,
+        "preferenceExported": true,
+        "secretExcluded": true,
+        "importedContentEqual": true,
+        "preferenceImported": true,
+        "secretNotImported": true,
+        "tamperedWarned": true,
+        "tamperedCancelled": true,
+        "futureWarned": true,
+        "futureRefused": true
+      }
     }
   ]
 }
