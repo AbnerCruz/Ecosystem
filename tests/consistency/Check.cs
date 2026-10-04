@@ -186,7 +186,9 @@ static class Checks
         _ when file.StartsWith("docs/governance/handoffs/") => "docs/contracts/schemas/handoff.schema.json",
         _ when file.StartsWith("docs/validation/") => "docs/contracts/schemas/validation-record.schema.json",
         "docs/contracts/permissions.json" => "docs/contracts/schemas/permissions-catalog.schema.json",
+        "docs/contracts/host-api.v1.json" => "docs/contracts/schemas/host-api.schema.json",
         _ when file.StartsWith("docs/contracts/") && file.Contains("/capabilities/") && file.EndsWith(".json") => "docs/contracts/schemas/capability-contract.schema.json",
+        _ when file.StartsWith("docs/contracts/examples/host-api/") => "docs/contracts/schemas/host-api-conformance.schema.json",
         _ when file.StartsWith("docs/contracts/examples/context/") => "docs/contracts/schemas/context.schema.json",
         _ when file.StartsWith("docs/contracts/examples/distribution/") || (file.StartsWith("docs/distribution/") && file.EndsWith(".profile.json")) => "docs/contracts/schemas/distribution-profile.schema.json",
         _ => null,
@@ -804,6 +806,19 @@ static class Checks
         foreach (var required in new[] { "positive.json", "negative-incompatible.json" })
             if (!seen.Contains(required)) c.R.Fail(id, $"vertical slice sem {required}");
 
+        var hostApiPath = c.P("docs/contracts/host-api.v1.json");
+        var hostFixturesPath = c.P("docs/contracts/examples/host-api/conformance.v1.json");
+        if (!File.Exists(hostApiPath) || !File.Exists(hostFixturesPath))
+            c.R.Fail(id, "Host API v1 ou fixtures de conformance ausentes (P5-3)");
+        else
+        {
+            using var hostApi = JsonDocument.Parse(File.ReadAllText(hostApiPath));
+            using var hostFixtures = JsonDocument.Parse(File.ReadAllText(hostFixturesPath));
+            var capabilityContracts = RegistryFiles.LoadContracts(c.P("docs/contracts/capabilities"));
+            foreach (var e in RegistryFiles.HostApiErrors(hostApi.RootElement, hostFixtures.RootElement, capabilityContracts))
+                c.R.Fail(id, $"Host API v1: {e}");
+        }
+
         var products = c.Components().Where(x => x.El.Str("type") == "product").Select(x => x.Id).ToHashSet();
         var ids = c.Components().Select(x => x.Id).ToHashSet();
         foreach (var f in (Directory.Exists(c.P("docs/contracts/examples/context")) ? Directory.EnumerateFiles(c.P("docs/contracts/examples/context"), "*.json") : []).Order())
@@ -1352,10 +1367,12 @@ sealed class Context(string root, Report r)
         if (Directory.Exists(hdir))
             files.AddRange(Directory.EnumerateFiles(hdir, "*.json").Order().Select(Rel));
         if (File.Exists(P("docs/contracts/permissions.json"))) files.Add("docs/contracts/permissions.json");
+        if (File.Exists(P("docs/contracts/host-api.v1.json"))) files.Add("docs/contracts/host-api.v1.json");
         foreach (var d in new[] { "docs/contracts/capabilities", "docs/contracts/examples" })
             if (Directory.Exists(P(d)))
                 files.AddRange(Directory.EnumerateFiles(P(d), "*.json", SearchOption.AllDirectories).Order().Select(Rel)
-                    .Where(f => f.Contains("/capabilities/") || f.Contains("/examples/context/") || f.Contains("/examples/distribution/")));
+                    .Where(f => f.Contains("/capabilities/") || f.Contains("/examples/context/") || f.Contains("/examples/distribution/")
+                        || f.Contains("/examples/host-api/")));
         if (Directory.Exists(P("docs/distribution")))
             files.AddRange(Directory.EnumerateFiles(P("docs/distribution"), "*.profile.json").Order().Select(Rel));
         var vdir = P("docs/validation");
@@ -1607,6 +1624,63 @@ static class RegistryFiles
             if (i <= last) errors.Add($"nível '{seg.Str("level")}' fora de ordem (ecosystem → product → project → workspace → tool, sem repetir)");
             last = Math.Max(last, i);
             if (seg.Str("level") == "product" && !products.Contains(seg.Str("id") ?? "")) errors.Add($"product '{seg.Str("id")}' não existe em ecosystem.json");
+        }
+        return errors;
+    }
+
+    /// <summary>Semântica congelada da Host API v1 (DEC-0034-A): operações, erros, invariantes e fixtures não podem divergir silenciosamente.</summary>
+    public static List<string> HostApiErrors(JsonElement api, JsonElement fixtures,
+        Dictionary<string, Dictionary<string, JsonElement>> capabilityContracts)
+    {
+        var errors = new List<string>();
+        var expectedOperations = new HashSet<string>(["open-session", "discover", "invoke", "cancel", "revoke", "close-session"], StringComparer.Ordinal);
+        var operations = api.Arr("operations").Select(x => x.Str("id") ?? "").ToList();
+        if (operations.Count != operations.Distinct(StringComparer.Ordinal).Count()) errors.Add("operações duplicadas");
+        if (!operations.ToHashSet(StringComparer.Ordinal).SetEquals(expectedOperations))
+            errors.Add($"operações devem ser [{string.Join(", ", expectedOperations.Order())}]");
+
+        var expectedHostErrors = new HashSet<string>([
+            "INVALID_CONTEXT", "IDENTITY_REQUIRED", "SESSION_CLOSED", "CAPABILITY_UNAVAILABLE",
+            "VERSION_UNSUPPORTED", "CANCELLED", "REVOKED", "PROVIDER_CONTRACT_VIOLATION"
+        ], StringComparer.Ordinal);
+        var hostErrors = api.Arr("hostErrors").Select(x => x.Str("code") ?? "").ToList();
+        if (hostErrors.Count != hostErrors.Distinct(StringComparer.Ordinal).Count()) errors.Add("hostErrors duplicados");
+        if (!hostErrors.ToHashSet(StringComparer.Ordinal).SetEquals(expectedHostErrors))
+            errors.Add("taxonomia de hostErrors diverge da Host API v1");
+
+        var expectedInvariants = Enumerable.Range(1, 10).Select(i => $"HAPI-{i:000}").ToHashSet(StringComparer.Ordinal);
+        var invariants = api.Arr("invariants").Select(x => x.Str("id") ?? "").ToList();
+        if (invariants.Count != invariants.Distinct(StringComparer.Ordinal).Count()) errors.Add("invariantes HAPI duplicadas");
+        if (!invariants.ToHashSet(StringComparer.Ordinal).SetEquals(expectedInvariants))
+            errors.Add("conjunto HAPI-001..HAPI-010 incompleto ou divergente");
+
+        if (api.Str("id") != "ecosystem-host-api" || api.Str("version") != "1.0.0"
+            || api.Str("status") != "stable" || api.Str("transport") != "neutral")
+            errors.Add("identidade/status/transporte da Host API v1 divergente");
+
+        var expectedScenarios = new HashSet<string>([
+            "valid-invoke", "invalid-context", "unknown-capability", "incompatible-version", "missing-permission",
+            "grant-escalation", "invalid-input", "invalid-output", "cancellation", "revocation", "session-closed",
+            "provider-failure", "identity-missing"
+        ], StringComparer.Ordinal);
+        var cases = fixtures.Arr("cases").ToList();
+        var scenarios = cases.Select(x => x.Str("scenario") ?? "").ToList();
+        if (scenarios.Count != scenarios.Distinct(StringComparer.Ordinal).Count()) errors.Add("fixtures têm scenario duplicado");
+        if (!scenarios.ToHashSet(StringComparer.Ordinal).SetEquals(expectedScenarios))
+            errors.Add("fixtures não cobrem exatamente a matriz mínima aprovada");
+
+        var capabilityErrors = capabilityContracts.Values.SelectMany(v => v.Values)
+            .SelectMany(v => v.Arr("errors")).Select(e => e.Str("code") ?? "").ToHashSet(StringComparer.Ordinal);
+        foreach (var test in cases)
+        {
+            var layer = test.Str("expectedLayer");
+            var code = test.TryGetProperty("expectedCode", out var codeNode) && codeNode.ValueKind == JsonValueKind.String
+                ? codeNode.GetString() : null;
+            if (layer == "success" && code is not null) errors.Add($"{test.Str("id")}: sucesso não pode ter expectedCode");
+            if (layer == "host" && (code is null || !expectedHostErrors.Contains(code)))
+                errors.Add($"{test.Str("id")}: expectedCode '{code}' não pertence a hostErrors");
+            if (layer == "capability" && (code is null || !capabilityErrors.Contains(code)))
+                errors.Add($"{test.Str("id")}: expectedCode '{code}' não existe em contrato de capability");
         }
         return errors;
     }
@@ -2684,6 +2758,10 @@ static class SelfTest
             r => Replace(r, "ecosystem.json", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"requires\": [{ \"capability\": \"nao.existe\", \"range\": \"^1.0.0\" }],")),
         new("Context fora de ordem", "CHK-REGISTRY",
             r => Replace(r, "docs/contracts/examples/context/lunet-editor.json", "\"level\": \"tool\"", "\"level\": \"project\"")),
+        new("Host API v1 sem revogação", "CHK-REGISTRY",
+            r => Replace(r, "docs/contracts/host-api.v1.json", "\"id\": \"revoke\"", "\"id\": \"cancel\"")),
+        new("fixtures Host API sem cenário de revogação", "CHK-REGISTRY",
+            r => Replace(r, "docs/contracts/examples/host-api/conformance.v1.json", "\"scenario\": \"revocation\"", "\"scenario\": \"cancellation\"")),
         new("Distribution Profile com o Hub bundled (NN-023)", "CHK-REGISTRY",
             r => Replace(r, "docs/contracts/examples/distribution/lunet-public.example.json", "\"availability\": \"optional\"", "\"availability\": \"bundled\"")),
         new("perfil de distribuição atual com canal que o componente não declara", "CHK-REGISTRY",

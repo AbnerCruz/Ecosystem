@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ecosystem/contracts/host-api/1",
+  "title": "Host API semântica — schemaVersion 1",
+  "description": "Contrato normativo da Host API v1 decidido em DEC-0034-A / ADR-0024. Define semântica comum para Product Shells sem escolher transporte, IPC ou biblioteca.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "id",
+    "version",
+    "status",
+    "transport",
+    "authorities",
+    "operations",
+    "hostErrors",
+    "invariants",
+    "nonGoals"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "const": "ecosystem-host-api"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^1\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+    },
+    "status": {
+      "enum": [
+        "stable",
+        "deprecated"
+      ]
+    },
+    "transport": {
+      "const": "neutral"
+    },
+    "authorities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context",
+        "capabilities",
+        "permissions",
+        "registry"
+      ],
+      "properties": {
+        "context": {
+          "const": "schemas/context.schema.json"
+        },
+        "capabilities": {
+          "const": "capabilities/*.json"
+        },
+        "permissions": {
+          "const": "permissions.json"
+        },
+        "registry": {
+          "const": "../../ecosystem.json"
+        }
+      }
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "authority",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "enum": [
+              "open-session",
+              "discover",
+              "invoke",
+              "cancel",
+              "revoke",
+              "close-session"
+            ]
+          },
+          "authority": {
+            "enum": [
+              "host",
+              "caller"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "hostErrors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "code",
+          "description"
+        ],
+        "properties": {
+          "code": {
+            "enum": [
+              "INVALID_CONTEXT",
+              "IDENTITY_REQUIRED",
+              "SESSION_CLOSED",
+              "CAPABILITY_UNAVAILABLE",
+              "VERSION_UNSUPPORTED",
+              "CANCELLED",
+              "REVOKED",
+              "PROVIDER_CONTRACT_VIOLATION"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "invariants": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "pattern": "^HAPI-[0-9]{3}$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "nonGoals": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

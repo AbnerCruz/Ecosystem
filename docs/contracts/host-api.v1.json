@@ -1,0 +1,128 @@
+{
+  "$schema": "schemas/host-api.schema.json",
+  "schemaVersion": 1,
+  "id": "ecosystem-host-api",
+  "version": "1.0.0",
+  "status": "stable",
+  "transport": "neutral",
+  "authorities": {
+    "context": "schemas/context.schema.json",
+    "capabilities": "capabilities/*.json",
+    "permissions": "permissions.json",
+    "registry": "../../ecosystem.json"
+  },
+  "operations": [
+    {
+      "id": "open-session",
+      "authority": "host",
+      "description": "Captura um Context válido, identidade do caller determinada pelo Host e o conjunto efetivo de grants. Payload da Tool nunca escolhe identidade nem grants."
+    },
+    {
+      "id": "discover",
+      "authority": "caller",
+      "description": "Consulta o Registry dentro da sessão e retorna somente capabilities/providers/versões compatíveis com Context e grants efetivos; itens proibidos ou fora de scope não são revelados."
+    },
+    {
+      "id": "invoke",
+      "authority": "caller",
+      "description": "Invoca uma capability descoberta usando versão/provider compatíveis e input validado pelo contrato da capability. Erros da capability permanecem separados de hostErrors."
+    },
+    {
+      "id": "cancel",
+      "authority": "caller",
+      "description": "Solicita cancelamento de uma invocação identificada. O Host impede resultado/progresso tardio de virar sucesso após cancelamento."
+    },
+    {
+      "id": "revoke",
+      "authority": "host",
+      "description": "Reduz grants ou encerra acesso. Revogação nunca adiciona privilégio e invalida descoberta/execução que dependa do grant removido."
+    },
+    {
+      "id": "close-session",
+      "authority": "caller",
+      "description": "Fecha a sessão de forma idempotente; discovery e novas invocações deixam de ser válidos e resultados tardios não viram sucesso."
+    }
+  ],
+  "hostErrors": [
+    {
+      "code": "INVALID_CONTEXT",
+      "description": "O Host recusou abrir a sessão porque o Context não satisfaz o contrato canônico."
+    },
+    {
+      "code": "IDENTITY_REQUIRED",
+      "description": "O Host não possui identidade autenticada/atribuída para o caller da sessão."
+    },
+    {
+      "code": "SESSION_CLOSED",
+      "description": "A operação tentou usar uma sessão já encerrada."
+    },
+    {
+      "code": "CAPABILITY_UNAVAILABLE",
+      "description": "A capability não está disponível no Context/grants da sessão. O erro não revela se a causa foi ausência, scope ou permissão."
+    },
+    {
+      "code": "VERSION_UNSUPPORTED",
+      "description": "Não existe versão/provider compatível com a seleção feita a partir do Registry."
+    },
+    {
+      "code": "CANCELLED",
+      "description": "A invocação foi cancelada pelo caller, lifecycle ou transporte/binding antes de produzir sucesso."
+    },
+    {
+      "code": "REVOKED",
+      "description": "Uma invocação ou acesso deixou de ser válido porque o Host reduziu grants durante a sessão."
+    },
+    {
+      "code": "PROVIDER_CONTRACT_VIOLATION",
+      "description": "O provider produziu resultado incompatível com o contrato da capability; o Host nunca o publica como sucesso."
+    }
+  ],
+  "invariants": [
+    {
+      "id": "HAPI-001",
+      "description": "Context usa exclusivamente context.schema.json; a Host API não cria modelo paralelo de scope."
+    },
+    {
+      "id": "HAPI-002",
+      "description": "Capability, versão, input, output, erros de domínio, permissões requeridas e lifecycle vêm exclusivamente dos contratos de capability e do Registry."
+    },
+    {
+      "id": "HAPI-003",
+      "description": "Permissões são deny-by-default. Grants são capturados e reduzidos pelo Host; Tool/input não podem elevar privilégios."
+    },
+    {
+      "id": "HAPI-004",
+      "description": "Identidade do caller é Host-owned e não pode ser sobrescrita por payload de Tool ou invoke."
+    },
+    {
+      "id": "HAPI-005",
+      "description": "Discovery não revela capabilities proibidas ou fora de scope e não cria resolvedor paralelo ao Registry."
+    },
+    {
+      "id": "HAPI-006",
+      "description": "Erros da Host API e erros declarados pela capability são canais semânticos distintos; exceções internas e conteúdo sensível não vazam."
+    },
+    {
+      "id": "HAPI-007",
+      "description": "Cancelamento, revogação e fechamento impedem progresso/resultado tardio de virar sucesso."
+    },
+    {
+      "id": "HAPI-008",
+      "description": "Payloads públicos são dados de contrato; nenhum nome/tipo de Hub, Activity, Product Shell ou UI concreta é exposto à Tool."
+    },
+    {
+      "id": "HAPI-009",
+      "description": "A Host API não define transporte. Binding in-process, Binder/Service, socket ou outro wire futuro deve preservar esta semântica."
+    },
+    {
+      "id": "HAPI-010",
+      "description": "Um Product Shell implementa/adapta a Host API sem depender do Hub ou de Hub.Core."
+    }
+  ],
+  "nonGoals": [
+    "Definir envelope ou wire protocol IPC.",
+    "Escolher autenticação interprocessos, socket, localhost, Binder/Service Android ou timeout de transporte.",
+    "Criar SDK/package compartilhado antes de segundo consumidor real e Extraction Review.",
+    "Promover ecosystem-local/0 a protocolo público."
+  ]
+}
