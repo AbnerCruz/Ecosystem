@@ -113,11 +113,11 @@ Itens movidos para outras fases, com motivo: baixa latência com Oboe/AAudio →
 
 ## Fase 3 — Lunet IDE (§9, §11, §12, §15)
 
-Gate: experiência de IDE real.
+Gate: experiência de IDE real. Validação integral: **LUNET-303**, Issue #200, [candidato e instruções](docs/audits/fase-3-candidata.md). Estado: aguardando resultados do roteiro A–J, medição J1 e aprovação explícita.
 
-- [ ] LUNET-302 — Formalizar Framework/IDE/Studio code-first (ADR 0007) e corrigir code actions que removiam código inline/global usings/comentários; implementado e testado localmente; CI, integração e C6 no aparelho pendentes. Issue #149.
+- [x] LUNET-302 — Framework/IDE/Studio code-first (ADR 0007) e correções rápidas sem perda de código: PR #152 integrado, CI verde e C6 aprovado no portal pela Issue #155. Issue #149 encerrada; handoff `HO-20261003-lunet-code-first-safe-fixes`.
 
-- [ ] Importar projeto ZIP na tela de projetos (§5, §22; pedido do usuário): compatível com a exportação, sem sobrescrever projetos, validação e publicação atômica. Task `LUNET-301`; implementação e CI em andamento; validação em aparelho pendente.
+- [x] LUNET-301 — Importar projeto ZIP (§5, §22): PR #116 integrado, CI verde e roteiro Android aprovado no portal pela Issue #121; sem sobrescrever projetos. Issue #111 encerrada; handoff `HO-20261003-lunet-import-zip`.
 
 Editor de código (§9)
 - [ ] Realce, números de linha, desfazer/refazer, indentação, autocompletar, definição, referências, dica, localizar/substituir, diagnósticos ao vivo **(feito, sem validação em aparelho)**.
@@ -164,7 +164,7 @@ Git, autosave e recovery (§22)
 - [ ] Git progressivo: status, diff, commit, history, branches, revert, push, pull. (feito, sem validação em aparelho; `Lunet.Git` em C# puro, ADR 0005; testado contra o `git` de verdade; falta validar push/pull no GitHub real)
 
 Auditoria
-- [ ] Auditoria de fechamento da Fase 3 registrada em `docs/audits/`. (auditoria técnica em `docs/audits/fase-3.md` e roteiro do usuário em `docs/audits/fase-3-roteiro.md` prontos; falta o retorno e a aprovação do usuário)
+- [ ] LUNET-303 — Auditoria de fechamento da Fase 3 registrada em `docs/audits/` e validação integral (§24, §28): candidato, roteiro A–J e J1 em `docs/audits/fase-3-candidata.md`; pendente retorno e aprovação explícita do usuário. Issue #200; handoff `HO-20261004-lunet-f3-candidate`.
 
 ## Fase 4 — Framework Advanced (§7)
 

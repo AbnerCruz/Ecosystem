@@ -9,7 +9,7 @@
   },
   "task_id": "LUNET-301",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "codex/lunet-import-zip",
   "base_commit": "3d9e05cf72fc67b299a3f55a8fd0181e6d6356c8",
   "commit": null,
@@ -30,7 +30,8 @@
     "ImportZip compatível com ExportZip e ZIP com manifesto na raiz; publicação por Directory.Move após validação.",
     "Botão Importar ZIP e seletor Android, cópia em background, cancelamento e erros visíveis.",
     "Cópias numeradas preservam original e GameId; limites, caminhos, duplicatas, symlinks e arquivo de entrada validados.",
-    "Testes de roundtrip, conflito, stream não seekable, limites e falhas; SPEC, guia, ROADMAP e changelog atualizados."
+    "Testes de roundtrip, conflito, stream não seekable, limites e falhas; SPEC, guia, ROADMAP e changelog atualizados.",
+    "Encerramento factual 2026-10-04: PR #116 integrado, CI verde, aprovação humana específica preservada sem alterar texto/fonte; não aprova gate Fase 3."
   ],
   "verification": [
     {
@@ -68,19 +69,16 @@
     {
       "check": "Build APK e integração combinada",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Integrador e pipeline de distribuição ainda em andamento."
+      "result": "passed",
+      "evidence": "PR #116 merged em 4161bbac0d4b186fa8ce9b4464ad15793f587daa; lunet2d-ci run 37129910418 success. Release lunet2d-v0.0.1-dev.1000008 publicada no commit 1ff4386; inclui ambas as implementações (ancestralidade Git conferida)."
     }
   ],
   "known_issues": [
-    "Android ainda não validado em aparelho; não fecha gate da Fase 3."
+    "Gate integral da Fase 3 permanece pendente (LUNET-303/Issue #200); aprovações específicas não equivalem à fase inteira."
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI do PR e corrigir falhas.",
-    "Integrador automático testa combinação com main e integra conforme política.",
-    "Após integração, sincronizar espelho de distribuição Lunet2D e confirmar APK.",
-    "Executar roteiro no aparelho; manter ROADMAP pendente até validação."
+    "Validar roteiro integral da Fase 3 e medição J1 em LUNET-303."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -127,11 +125,11 @@
     },
     {
       "id": "NN-017",
-      "evidence": "Validação Android explicitamente pendente."
+      "evidence": "Aprovação humana específica preservada com fonte (#121 ZIP ou #155 C6); gate integral da Fase 3 permanece LUNET-303 pendente."
     },
     {
       "id": "NN-018",
-      "evidence": "Resultado em review; testes não executados localmente não declarados verdes."
+      "evidence": "Done sustentado por PR integrado, CI verde e aprovação humana específica; nenhuma aprovação da fase inteira inferida."
     },
     {
       "id": "NN-022",

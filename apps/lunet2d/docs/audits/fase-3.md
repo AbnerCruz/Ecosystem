@@ -118,3 +118,7 @@ ADR 0007 formaliza Framework/IDE/Studio; boundary atual preservado. O gate
 continua pendente; aprovação da importação ZIP (#121) não aprova a Fase 3 inteira.
 Resultados automáticos e CI são registrados no handoff LUNET-302; não substituir
 com essa auditoria a evidência humana existente nem a reconciliação de #111.
+
+## Entrega canônica — LUNET-303 (2026-10-04)
+
+Candidato fixado: `lunet2d-v0.0.1-dev.1000008`, commit `1ff4386bae93edf027db81c8de6579640d2e58ed`. [APK, digest, instruções e resposta por bloco](fase-3-candidata.md). O roteiro A–J e a medição J1 permanecem pendentes; registro humano no handoff `HO-20261004-lunet-f3-candidate`, Issue #200. Aprovações específicas #121 (ZIP), #155 (C6) e #163 (P4-4) preservadas, sem estendê-las ao gate inteiro. Nenhum item dependente de validação integral foi marcado concluído.
