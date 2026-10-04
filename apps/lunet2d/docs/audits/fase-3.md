@@ -1,15 +1,15 @@
 # Auditoria da Fase 3 — IDE
 
 - Data da auditoria técnica: 2026-09-30
-- Versão testada (release): **aguardando release candidata** (a release da `main` após o PR do Preview isolado)
+- Versão testada (release): **0.0.1-dev.1000008** (`1ff4386bae93edf027db81c8de6579640d2e58ed`)
 - Responsável: Claude (continuação do trabalho do Codex; ver `AgentsChat.md`)
 - Release candidata (link do APK): informado ao usuário junto com o roteiro
-- Estado: **🟡 aguardando validação do usuário no aparelho**
+- Estado: **✅ concluída e aprovada no aparelho — LUNET-303 / Issue #204**
 
 ## 1. Gate (§28)
 
 Critério do spec: experiência de IDE real.
-Resultado: **pendente.** A implementação e os testes automáticos estão prontos; o gate só é aprovado depois que o usuário executar o roteiro [`fase-3-roteiro.md`](fase-3-roteiro.md) no aparelho e aprovar explicitamente. Nada da Fase 3 além das Fases 1–2 foi validado em aparelho até aqui, exceto a lista de projetos, o editor básico, exportação em ZIP e a versão inicial da documentação (usuário relatou que "funcionou tudo normal" na v0.0.1-dev.63/68).
+Resultado: **aprovado.** O proprietário aprovou explicitamente o gate integral LUNET-303 pelo portal na Issue #204, sobre o objeto `fase-3-candidata.md`, que referencia o roteiro A–J e J1. A automação registrou o resultado no handoff canônico. Os tempos brutos de J1 não foram persistidos no formulário; como o gate foi aprovado e nenhuma falha bloqueante foi registrada, a auditoria não inventa números nem ativa a `PieceTable` por antecipação.
 
 ## 2. Itens do ROADMAP
 
@@ -94,15 +94,15 @@ Legenda: código (projeto), testes automáticos (T), docs (D), integração no a
 ## 11. Roteiro e validação do usuário
 
 - Roteiro detalhado entregue: [`docs/audits/fase-3-roteiro.md`](fase-3-roteiro.md) (versão da release candidata, preparo, 40+ passos por funcionalidade, regressão, como relatar).
-- Data de envio: (a preencher ao enviar)
-- Resultado por item (passou / falhou / não testado): **aguardando**
-- Modelo do aparelho e versão do Android: —
-- Falhas, correções e versão de reteste: —
-- Aprovação explícita do gate pelo usuário: **aguardando validação**
+- Data de envio: 2026-10-04
+- Resultado por item (passou / falhou / não testado): **gate integral aprovado via portal; relatório bruto por passo não foi persistido**
+- Modelo do aparelho e versão do Android: não persistidos no formulário canônico de validação
+- Falhas, correções e versão de reteste: nenhuma falha bloqueante registrada na aprovação
+- Aprovação explícita do gate pelo usuário: **aprovada — Issue #204 / commit `ed8bfe36c4d076ea20a2c9229805f83c27f10ff6`**
 
 ## Decisão
 
-Fase concluída? **Não** — falta a validação do usuário no aparelho e a decisão sobre virtualização do editor (medição J1).
+Fase concluída? **Sim.** O gate integral foi aprovado pelo proprietário e registrado canonicamente. J1 não deixou tempos brutos persistidos, portanto não há base para uma troca estrutural do editor nesta fase; `PieceTable` permanece implementação testada disponível, e qualquer ativação futura exige evidência própria.
 
 
 ## Auditoria incremental — LUNET-302 (2026-10-03)
@@ -121,4 +121,14 @@ com essa auditoria a evidência humana existente nem a reconciliação de #111.
 
 ## Entrega canônica — LUNET-303 (2026-10-04)
 
-Candidato fixado: `lunet2d-v0.0.1-dev.1000008`, commit `1ff4386bae93edf027db81c8de6579640d2e58ed`. [APK, digest, instruções e resposta por bloco](fase-3-candidata.md). O roteiro A–J e a medição J1 permanecem pendentes; registro humano no handoff `HO-20261004-lunet-f3-candidate`, Issue #200. Aprovações específicas #121 (ZIP), #155 (C6) e #163 (P4-4) preservadas, sem estendê-las ao gate inteiro. Nenhum item dependente de validação integral foi marcado concluído.
+Candidato fixado: `lunet2d-v0.0.1-dev.1000008`, commit `1ff4386bae93edf027db81c8de6579640d2e58ed`. [APK, digest, instruções e resposta por bloco](fase-3-candidata.md). O roteiro A–J e a medição J1 compõem o objeto integral aprovado pelo proprietário no portal pela Issue #204; o resultado foi registrado no handoff `HO-20261004-lunet-f3-candidate`. Aprovações específicas #121 (ZIP), #155 (C6) e #163 (P4-4) permanecem rastreáveis e distintas. Os tempos brutos de J1 não foram preservados no formulário, portanto esta auditoria registra a lacuna sem fabricar métricas.
+
+
+## Fechamento canônico — 2026-10-04
+
+- Candidato: `lunet2d-v0.0.1-dev.1000008`, commit `1ff4386bae93edf027db81c8de6579640d2e58ed`.
+- Gate humano integral: **passed**, Issue #204; commit de registro `ed8bfe36c4d076ea20a2c9229805f83c27f10ff6`.
+- Evidência automatizada anterior permanece válida: 321 testes Lunet, build portátil sem warnings/erros e CI da candidata verde.
+- J1: a aprovação cobre o passo, mas o texto bruto com tempos não foi persistido. Nenhuma métrica é inferida.
+- Decisão sobre `PieceTable`: **não ativar sem necessidade demonstrada**. A estrutura permanece pronta/testada e pode ser retomada se o Profiler/Fase 4 ou uso real revelar regressão.
+- A Fase 4 do Lunet fica liberada pela governança local; isso não autoriza automaticamente IPC/Host API do Ecosystem, que possuem decisão e gates próprios.
