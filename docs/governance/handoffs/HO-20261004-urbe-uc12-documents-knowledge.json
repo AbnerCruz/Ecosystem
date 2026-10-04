@@ -10,10 +10,10 @@
   },
   "task_id": "UC-12",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "feat/urbe-uc12-documents-knowledge",
   "base_commit": "76ad67e7c4d25ff378333cc3ca766c148a43252c",
-  "commit": "31bace9b19fb78eb711a4fde369515e3991ad79c",
+  "commit": "79c5be012237459898ab082a5ca96ed18b382654",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/218",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/ArtifactModel.cs",
@@ -36,7 +36,8 @@
     "DocumentStore.ReplaceFromVault projeta VaultSnapshot.Documents preservando IDs resolvidos pela camada do vault.",
     "KnowledgeIndex porta aliases, outgoing/incoming, backlinks, tags, tokens, search, stats e reindex automático.",
     "Testes de paridade e negativos foram adicionados para classificação, parsing, lifecycle, aliases, busca e reindex.",
-    "Revisão de paridade corrigiu expectativas dos testes para safeName/tag ordering observados no JS e alinhou fallbacks falsy de id/title/created/modified ao documents.js."
+    "Revisão de paridade corrigiu expectativas dos testes para safeName/tag ordering observados no JS e alinhou fallbacks falsy de id/title/created/modified ao documents.js.",
+    "PR #218 integrado automaticamente como mudança rotineira em 79c5be01; estado combinado testado virou a main."
   ],
   "verification": [
     {
@@ -64,8 +65,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Integrador automático reconfirma o estado combinado e integra a mudança rotineira.",
-    "Após integração, encerrar Issue #216 e iniciar UC-13 — projeção do mundo e bairros com IDs estáveis."
+    "Iniciar UC-13 — projeção do mundo e bairros com IDs estáveis, em Core puro."
   ],
   "decisions_required": [],
   "normative_sources": [
