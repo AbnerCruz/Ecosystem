@@ -286,4 +286,30 @@ public class AuthenticatedHostGatewayTests
     }
 
 
+    [Fact]
+    public void ActiveSessionCountAndCloseEventTrackLifecycleOnce()
+    {
+        var clock = new ManualTimeProvider(new DateTimeOffset(2026, 10, 4, 12, 0, 0, TimeSpan.Zero));
+        using var gateway = Gateway(clock: clock);
+        var closed = new List<string>();
+        gateway.SessionClosed += closed.Add;
+
+        var first = gateway.Open("peer", "actor", Context(), []).SessionId!;
+        var second = gateway.Open("peer", "actor", Context(), []).SessionId!;
+        Assert.Equal(2, gateway.ActiveSessionCount);
+
+        Assert.True(gateway.Close("peer", first));
+        Assert.Equal(1, gateway.ActiveSessionCount);
+        Assert.Equal([first], closed);
+
+        Assert.Equal(1, gateway.Disconnect("peer"));
+        Assert.Equal(0, gateway.ActiveSessionCount);
+        Assert.Equal(2, closed.Count);
+        Assert.Contains(second, closed);
+
+        Assert.False(gateway.Close("peer", first));
+        Assert.Equal(2, closed.Count);
+    }
+
+
 }
