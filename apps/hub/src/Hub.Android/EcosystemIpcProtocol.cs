@@ -15,6 +15,7 @@ internal static class EcosystemIpcProtocol
     internal const int Invoke = global::Android.OS.IBinder.FirstCallTransaction + 4;
     internal const int Cancel = global::Android.OS.IBinder.FirstCallTransaction + 5;
     internal const int Close = global::Android.OS.IBinder.FirstCallTransaction + 6;
+    internal const int Revoke = global::Android.OS.IBinder.FirstCallTransaction + 7;
     internal const int MaxFrameBytes = 256 * 1024;
     internal const int MaxParcelBytes = 640 * 1024;
     internal const int MaxEncodedKeyBytes = 2048;
@@ -41,7 +42,8 @@ internal static class EcosystemIpcProtocol
         {
             "ecosystem-binder/1", r.Op ?? "", r.PairId ?? "", r.SessionId ?? "", r.RequestId ?? "",
             r.ChallengeId ?? "", H(r.Challenge), H(r.ContextJson), r.Capability ?? "",
-            r.CapabilityOperation ?? "", r.MinimumVersion ?? "", r.DeadlineMs?.ToString() ?? "", H(r.InputJson)
+            r.CapabilityOperation ?? "", r.MinimumVersion ?? "", r.DeadlineMs?.ToString() ?? "", H(r.InputJson),
+            H(r.Permissions is null ? "" : string.Join("\n", r.Permissions.Order(StringComparer.Ordinal)))
         });
         return Encoding.UTF8.GetBytes(canonical);
     }
@@ -76,6 +78,7 @@ internal sealed record IpcRequest(
     string? MinimumVersion = null,
     int? DeadlineMs = null,
     string? InputJson = null,
+    string[]? Permissions = null,
     string? Signature = null);
 
 internal sealed record IpcResponse(
