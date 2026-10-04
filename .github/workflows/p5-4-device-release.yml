@@ -1,0 +1,67 @@
+name: p5-4-device-release
+
+on:
+  push:
+    branches: [chatgpt/p5-4-publish-browser-apks]
+    paths:
+      - '.github/workflows/p5-4-device-release.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar artifacts exatos do candidato congelado
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/11310570442/zip" > hub.zip
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/11310540558/zip" > lunet.zip
+          mkdir hub lunet out
+          unzip -q hub.zip -d hub
+          unzip -q lunet.zip -d lunet
+
+          hub_apk=$(find hub -type f -name '*.apk' | head -n1)
+          lunet_apk=$(find lunet -type f -name '*.apk' | head -n1)
+          test -n "$hub_apk"
+          test -n "$lunet_apk"
+
+          cp "$hub_apk" out/Ecosystem-Hub-P5-4-b001eafd.apk
+          cp "$lunet_apk" out/Lunet-P5-4-b001eafd-arm64.apk
+
+          echo "ebd38055c50871298071f79e379f3364741d594fb05b1f6f2378d307473e40c4  out/Ecosystem-Hub-P5-4-b001eafd.apk" | sha256sum -c -
+          echo "17e9913e569890f254c9074a2960e4002238c886c81690d1ff1eceed600c3422  out/Lunet-P5-4-b001eafd-arm64.apk" | sha256sum -c -
+
+          sha256sum out/*.apk > out/SHA256SUMS.txt
+
+      - name: Publicar pre-release DEVICE com APK direto
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: p5-4-device-b001eafd
+          TARGET: b001eafda4baa16868d626eff402a2f7f57f6918
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG já existe."
+            exit 0
+          fi
+
+          cat > notes.md <<'EOF'
+          # P5-4 DEVICE — APKs candidatos
+
+          Pre-release exclusiva para validação física do primeiro IPC Android Binder autenticado entre Hub e Lunet.
+
+          Código candidato congelado: `b001eafda4baa16868d626eff402a2f7f57f6918` (PR #210).
+
+          Estes APKs são exatamente os artifacts que passaram pelo CI:
+          - Hub: artifact 11310570442 — SHA-256 `ebd38055c50871298071f79e379f3364741d594fb05b1f6f2378d307473e40c4`
+          - Lunet: artifact 11310540558 — SHA-256 `17e9913e569890f254c9074a2960e4002238c886c81690d1ff1eceed600c3422`
+
+          Esta pre-release não significa aprovação nem integração do P5-4. Serve apenas para instalar os APKs pelo navegador e executar o gate DEVICE.
+          EOF
+
+          gh release create "$TAG"             out/Ecosystem-Hub-P5-4-b001eafd.apk             out/Lunet-P5-4-b001eafd-arm64.apk             out/SHA256SUMS.txt             --target "$TARGET"             --prerelease             --latest=false             --title "P5-4 DEVICE — Hub + Lunet b001eafd"             --notes-file notes.md
