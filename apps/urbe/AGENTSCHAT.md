@@ -265,3 +265,19 @@
 - O estado combinado testado passou 43/43 testes C#, Web/portable, Android, Windows, E2E, checks e consistency.
 - UC-10 encerrada; G-C1 aprovado. O Core agora possui leitura e escrita do vault com migração/backup/identidade/GC sob o contrato histórico.
 - Próxima tarefa: UC-11 — export/import ZIP + manifesto, ainda sem acoplar filesystem/hosts.
+
+
+### 2026-10-04 — ChatGPT — UC-11 / Issue #212 / PR #213
+- Estado: export/import ZIP + manifesto em implementação na branch `feat/urbe-uc11-export-import`.
+- Feito: `VaultExportManifest` v1 com size/SHA-256, parse current/corrupt/future, verificação de adulterados/faltantes/extras, allowlist de estado portátil e remapeamento de aprovações de plugins; `VaultArchive` usa apenas BCL/System.IO.Compression.
+- Segurança: journals v1/v2 ficam fora do export; `.urbe/**` e binários preservam bytes; import valida caminhos brutos antes de remover prefixo raiz, rejeitando traversal/absolutos/duplicatas case-insensitive; manifesto futuro é recusado e manifesto inválido não ganha autoridade.
+- Verificação parcial: csharp-portable do run 37220350132 compilou Release e passou 61/61 testes, 0 falhas/0 skips; Android também verde. Regressão completa do head ainda em andamento e será repetida após documentação/handoff.
+- Limites: sem filesystem, UI, download, picker ou localStorage no Core; hosts continuam fora do escopo da UC-11.
+
+
+### 2026-10-04 — ChatGPT — UC-11 verificada
+- Estado: PR #213 no head `52a57747` tecnicamente concluído e movido para review crítico.
+- Evidência: `urbe-checks` 37220827485 verde em checks, C# portátil, MAUI Windows, MAUI Android e E2E; 63/63 `Urbe.Core.Tests` passaram, 0 falhas/0 skips. `consistency` 37220827469 verde.
+- Revisão adversarial final: o import preserva `.urbe/` quando ela é a própria raiz do vault e classifica o envelope de manifesto futuro como future antes de interpretar o schema interno, evitando downgrade perigoso para corrupt.
+- Bloqueio único: autorização canônica do proprietário para integrar mudança crítica de dados do usuário.
+- Próximo passo após integração: encerrar Issue #212 e iniciar UC-12 — documentos, artefatos e índice de conhecimento.
