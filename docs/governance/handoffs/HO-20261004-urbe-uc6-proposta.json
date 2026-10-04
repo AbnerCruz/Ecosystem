@@ -10,7 +10,7 @@
   },
   "task_id": "UC-6",
   "component": "urbe",
-  "state": "waiting",
+  "state": "review",
   "branch": "chatgpt/urbe-uc5-uc6-proposals-v2",
   "base_commit": "e2c2e37d33b45f55c861bb2586183f1594171fa3",
   "commit": null,
