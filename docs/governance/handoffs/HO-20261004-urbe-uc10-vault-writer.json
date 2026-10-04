@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc10-vault-writer",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T16:30:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-10",
+  "component": "urbe",
+  "state": "working",
+  "branch": "feat/urbe-uc10-vault-writer",
+  "base_commit": "d5630340e445377697c7b51edbe0e70522950512",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/209",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VaultIdentity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultWriter.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultGarbageCollector.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultWriterTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc9-vault-reader.json",
+    "docs/governance/handoffs/HO-20261004-urbe-uc10-vault-writer.json"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "UC-10 define escrita, migração, backup/restauração e manutenção de dados persistidos do usuário."
+  },
+  "work_completed": [
+    "VaultWriter produz plano puro e ordenado de writes/removes e snapshot final, sem filesystem ou host.",
+    "Primeira gravação 1.x cria backup restaurável com manifesto/hash e vault.json; gravações seguintes não repetem a migração.",
+    "Sidecars v2 são escritos em paralelo preservando v1; artefatos futuros são preservados e vault futuro recusa mutação.",
+    "Operações multi-documento usam journal v2 transitório antes das mutações e o removem somente ao final.",
+    "VaultIdentity porta normalização, fingerprint FNV e seen do identity.js sem inserir metadados nas notas.",
+    "VaultGarbageCollector porta dry-run, retenção, proteção de vivos/lixeira, limpeza de referências e maintenance usando o mesmo writer.",
+    "RestoreBackup verifica hash quando disponível e restaura os arquivos declarados pelo manifesto."
+  ],
+  "verification": [
+    {
+      "check": "Build/test UC-10",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "PR #209 aberto; primeiro ciclo identificou escapes C# corrompidos pela criação via API e foi corrigido. Novo head aguarda CI."
+    },
+    {
+      "check": "Regressão completa Urbe",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "urbe-checks executará Core/Web/Android/Windows/E2E/checks no estado combinado."
+    }
+  ],
+  "known_issues": [
+    "Nenhum adapter de filesystem/Web/MAUI aplica ainda o plano; integração a hosts pertence às etapas posteriores.",
+    "UC-11 export/import ZIP não faz parte desta mudança."
+  ],
+  "blockers": [
+    "CI verde do PR #209.",
+    "Após verificação, integração crítica exige autorização canônica do proprietário."
+  ],
+  "next_actions": [
+    "Corrigir falhas de compilação/teste encontradas pelo CI sem enfraquecer as fixtures.",
+    "Quando verde, mover Issue #208 para state:review e registrar evidência final.",
+    "Aguardar autorização crítica do proprietário antes da integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "apps/urbe/src/persistence/workspace.js",
+    "apps/urbe/src/persistence/backup.js",
+    "apps/urbe/src/persistence/identity.js",
+    "apps/urbe/src/persistence/gc.js",
+    "apps/urbe/tests/vault-format.mjs",
+    "apps/urbe/tests/identity.mjs",
+    "apps/urbe/tests/gc.mjs",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece no Urbe.Core e usa BCL/System.Text.Json."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Writer/GC não dependem de Hub, hosts ou plano de controle."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #208, branch própria, PR #209 e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação física alegada; escopo é biblioteca .NET."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-10 permanece working até CI e integração crítica."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Core permanece standalone."
+    }
+  ]
+}
