@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-4-transport-readiness",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T12:51:43.194728Z",
+  "agent": {
+    "id": "chatgpt-p5-runtime-continue",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-4",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p5-4-transport-readiness",
+  "base_commit": "da80358551e0e51ab713ab97fda070983530a6bf",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/architecture/ipc-transport-readiness.md",
+    "docs/governance/handoffs/HO-20261004-p5-4-transport-readiness.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: prontidão auditada em Hub/Lunet Android, Urbe C# e Ecosystem AI; nenhuma prova local é promovida a segundo Host real.",
+    "Comparação de quatro alternativas: chamada em processo, bound Service/Binder Android, socket Unix e TCP loopback; identidade bilateral, lifecycle, custo e limitações de plataforma explicitados.",
+    "Matriz IPC-01..IPC-18 com negativas de autenticação, callback/session cruzados, scope/grants, malformed/flood, cancel/revoke/deadline/disconnect e standalone. Casos planejados, não executados.",
+    "PROPOSTA condicionada: avaliar serviço Android primeiro se existir consumidor/necessidade real; nenhuma escolha, DEC prematura, endpoint, SDK, wire ou extração implementada.",
+    "Issue #194 aberta para estado vivo; ROADMAP aponta para a avaliação sem concluir P5-4.",
+    "PR #193 atualizado e todos os checks no estado combinado a992dc1 passaram: integrador run 37203332093, consistency 37203333122 e hub-ci 37203333205; permanece aberto aguardando autorização crítica canônica."
+  ],
+  "verification": [
+    {
+      "check": "Consistency + diff",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks de consistência e git diff --check passaram localmente; sem mudança de código/checker. CI verificará snapshot de Issues e self-test no estado combinado."
+    },
+    {
+      "check": "IPC-01..IPC-18",
+      "kind": "automated",
+      "result": "not-applicable",
+      "evidence": "Este slice define critérios, sem implementar transporte; não há evidência de execução interprocessos."
+    },
+    {
+      "check": "DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Nenhuma UI, runtime, APK ou distribuição alterada; validação real permanece em P5-7."
+    }
+  ],
+  "known_issues": [
+    "P5-3/PR #193 depende de CI combinado e autorização canônica crítica antes da integração.",
+    "P5-4 completo depende de consumidor pronto, necessidade interprocessos e ADR/decisão do transporte; esta comparação não seleciona alternativa.",
+    "Não existem budgets do wire nem processo não cooperativo isolado testados; valores/executor pertencem ao ensaio após decisão."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar o slice preparatório pelo processo automático de rotina.",
+    "Após P5-3 integrado e consumidor liberado, preparar ADR da escolha com operação real, política bilateral de confiança e ensaio limitado.",
+    "Não exportar Service, adicionar dependência de Hub ou extrair Tool por inferência."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/permissions.json",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Estado/IDs continuam no ROADMAP/Issue; comparação não cria Registry paralelo."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "IPC não exige Hub para o domínio essencial dos Products."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Caller/package pertence ao adapter; Tool não conhece Host."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Documentos e APIs primárias consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum transporte/fronteira selecionado; implementação exige ADR/decisão própria."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "GitHub não é transporte runtime."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Identidade bilateral e grants deny-by-default são critérios, sem privilégio ativado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Matriz não executada/DEVICE não é confundida com provas headless."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-4 permanece aberto."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração antes de consumidor e Extraction Review."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Standalone inclui distribuição sem Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Somente comparação preparatória, critérios de aceite e link de escopo; não aceita ADR, cria decisão do proprietário, contrato, transporte, permissão ou componente."
+  },
+  "cost": null
+}
