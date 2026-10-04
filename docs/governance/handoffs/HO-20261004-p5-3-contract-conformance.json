@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-3-contract-conformance",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T07:17:00Z",
+  "agent": {
+    "id": "chatgpt-p5-3-contract-conformance",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-3",
+  "component": "hub",
+  "state": "verifying",
+  "branch": "chatgpt/p5-3-contract-conformance",
+  "base_commit": "f7adbd225653492f28a90b8d7d2c37d1b693b739",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/hub/src/Hub.Core/Capabilities/LocalCapabilityHost.cs",
+    "apps/hub/src/Hub.Core/Capabilities/LocalContracts.cs",
+    "apps/hub/src/Hub.Core/Capabilities/TextInspectionTool.cs",
+    "apps/hub/tests/Hub.Tests/LocalCapabilityHostTests.cs",
+    "apps/hub/tests/Hub.Tests/TextInspectionContractTests.cs",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/README.md",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/governance/handoffs/HO-20261004-p5-3-contract-conformance.json"
+  ],
+  "work_completed": [
+    "Criado contrato versionado draft text.inspect 1.0.0 conforme capability-contract.schema.json, sem registrar provider público no ecosystem.json.",
+    "A definição local agora declara lifecycle e validador de output além do input; output inválido recebe INVALID_OUTPUT antes de qualquer response de sucesso.",
+    "Falha arbitrária do provider é normalizada como EXECUTION_FAILED e continua sem expor mensagem interna.",
+    "Adicionados testes que leem o contrato normativo e verificam versão, input, output, erros, requiredPermissions e lifecycle contra a definição executável do Hub.",
+    "ROADMAP e capability-runtime registram explicitamente que este é apenas o primeiro slice de P5-3; Host API pública, IPC, segundo consumidor e decisão arquitetural continuam pendentes."
+  ],
+  "verification": [
+    {
+      "check": "Hub.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando execução no PR."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando execução no PR."
+    },
+    {
+      "check": "Self-test dos checks",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando execução no PR."
+    },
+    {
+      "check": "DEVICE deste slice",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Nenhuma UI, layout, toque, instalação ou lifecycle Android foi alterado; a validação humana pendente de P5-2 permanece separada."
+    }
+  ],
+  "known_issues": [
+    "P5-3 completo ainda depende da Host API de Product Shell, consumidor real e ADR/decisão antes de exposição pública.",
+    "ecosystem-local/0 continua experimental; o contrato draft text.inspect não congela envelope, transporte, erros globais ou autenticação IPC.",
+    "ui.display reflete o grant exigido pelo adapter local atual e deverá ser reavaliado junto da política pública de grants em P5-3 completo.",
+    "P5-2 permanece em review aguardando validação Android; P4-9 continua independente e aberto."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI do PR e corrigir qualquer falha de build, schema, conformance ou consistency.",
+    "Após evidência verde, mover a Issue #175 para review e integrar pelo mecanismo canônico.",
+    "Em seguida auditar o segundo Host real e preparar a decisão/ADR da Host API antes de avançar para IPC."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md §§6.2, 6.3, 8, 9, 14, 15, 24, 28, 30, 48, 52",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0023-capability-runtime-local-no-hub.md",
+    "docs/contracts/README.md",
+    "docs/contracts/schemas/capability-contract.schema.json",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/contracts/permissions.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/architecture/capability-runtime.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O contrato normativo vive em docs/contracts/capabilities; provider continua derivado de ecosystem.json e não foi duplicado."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "text.inspect declara ID, versão, inputs, outputs, erros, permissões, lifecycle e semver em schema validável."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "A Tool continua sem conhecer Activity, Hub concreto ou outro Host; conformance opera por contrato/contexto."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST, ADR-0012, schemas e documentos normativos foram consultados diretamente antes da alteração de contrato."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Nenhuma permissão nova foi criada; requiredPermissions permanece explícita e a execução continua deny-by-default."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-3 permanece aberto e o handoff fica verifying até CI; nenhuma conclusão ou gate é fabricado."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código continua local ao Hub; contrato draft não cria componente compartilhado nem extraction."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhum Product passa a depender do Hub e nenhum canal standalone foi alterado."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Contrato novo em status draft e hardening local de validação; não muda provider público, schema, permissões, decisão, transporte, distribuição nem política do integrador."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "text-inspection-tool",
+      "status": "possible-candidate",
+      "rationale": "Contrato draft torna a fronteira explícita, mas ainda existe apenas um consumidor real; sem Extraction Review até segundo consumidor."
+    }
+  ],
+  "cost": null
+}
