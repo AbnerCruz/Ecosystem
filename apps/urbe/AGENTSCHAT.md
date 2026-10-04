@@ -1,7 +1,7 @@
 ### 2026-10-04 — Codex — UC-2: atualização e cliente unificado
 
 - FATO OBSERVADO: PR #169 integrado; trabalho sobre 093ef4f inclui a versão-ponte #167.
-- Feito: 19 casos portáveis Android/Windows e quatro UI, corpus aditivo 256; cliente de referência unificado executa todas as famílias, DOM Visual/UI em Chromium real.
+- Feito: 19 casos portáveis Android/Windows e sete UI, corpus aditivo 259; cliente de referência unificado executa todas as famílias, DOM Visual/UI em Chromium real.
 - Limites: UC-2 segue aberto; nenhuma escolha de UI/host nem código C#. Download local Chromium falhou, casos UI aguardam CI; atualização usa hosts/rede simulados, não valida instalação.
 - Próximos passos: executar CI e corrigir divergências; continuar transcrição UI/E2E e lifecycle. Handoff `HO-20261004-urbe-update-ui-parity`.
 
@@ -14,7 +14,7 @@
 
 ### 2026-10-03 — ChatGPT — UC-2: crash recovery portável (REQ-007/038/046)
 - Estado: review no PR #165, baseado diretamente em `main` após integração do PR #161; gates finais em execução.
-- Feito: quatro casos `vault.crash-recovery` injetam falha na criação do journal, no segundo arquivo, na remoção de nota e na remoção final do journal. O corpus passa de 205 para 209 casos.
+- Feito: sete casos `vault.crash-recovery` injetam falha na criação do journal, no segundo arquivo, na remoção de nota e na remoção final do journal. O corpus passa de 205 para 209 casos.
 - Invariante: nenhum arquivo de runtime congelado foi alterado; somente tooling, testes e documentação do corpus UC-2.
 - Restante após esta fatia: capacidades nativas portáveis e UI/E2E por superfície. Rollback atômico de restore pode ser hardening futuro, não bloqueio do REQ-038/046.
 
@@ -51,7 +51,7 @@
 12 fixtures convertidas para casos JSON portáveis e três casos de restauração válida/corrompida/ausente. Adapter calcula saídas do domínio JS em memória; verifica hashes, IDs, proteção forward, recuperação e backup. Baseline congelado preservado. UC-2 (#139) continua parcial; nenhum runtime ou formato alterado.
 
 - Estado: revisão, Issues Ecosystem #138/#139; base 2e4cfa902c86d2eb2441bacfa6b29267f7e46c9e.
-- Feito: matriz dos 101 REQ IMPLEMENTAR com fontes/aceite e inventário de testes/tutorial; oráculo SHA-256 incluindo .urbe; 40 casos Markdown e 110 Visual como JSON portável; protocolo de cliente e runner que recusam resultados incompletos/divergentes; adapter JS calcula Markdown real.
+- Feito: matriz dos 101 REQ IMPLEMENTAR com fontes/aceite e inventário de testes/tutorial; oráculo SHA-259 incluindo .urbe; 40 casos Markdown e 110 Visual como JSON portável; protocolo de cliente e runner que recusam resultados incompletos/divergentes; adapter JS calcula Markdown real.
 - Decisões (fonte): DEC-0024-B / ADR-0016 e DEC-0025-C; runtime JS congelado. Sem escolha de pilha, mudança de vault/canal, ou código C# de produto.
 - Pendências: UC-2 não encerrado: converter cenários de vault, adapters e UI; C# não existe e nenhuma paridade em aparelho foi alegada. G-C0 segue não iniciado.
 - Próximos passos: restante de UC-2; UC-3/4/7; propostas UC-5/6 depois da evidência. Handoff: docs/governance/handoffs/HO-20261003-urbe-csharp-parity.json (raiz Ecosystem).

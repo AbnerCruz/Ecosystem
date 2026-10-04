@@ -13,7 +13,7 @@
   "branch": "chatgpt/urbe-uc2-acceptance-complete",
   "base_commit": "093ef4fe6ef6eadcd97fa6686fdd68d291892990",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/171",
   "files_changed": [
     "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/docs/csharp/PARITY.md",
@@ -39,8 +39,8 @@
   "work_completed": [
     "FATO OBSERVADO: PR #169 integrado em 197cee91; base inclui a versão-ponte #167.",
     "19 casos JSON atualização Android/Windows: seleção do Product, versões, eventos/replay, instalação/reinício e erros/recuperação; hosts e rede simulados.",
-    "Quatro cenários UI portáveis e cliente unificado para todas as famílias; teste E2E no filtro app-runtime existente.",
-    "Corpus aditivo 233 → 256, sem alterar runtime, goldens, hashes do oráculo ou IDs anteriores."
+    "Sete cenários UI portáveis e cliente unificado: primeira abertura, edição/roteamento, lifecycle documental e GC com diálogo cancelar/aplicar; teste E2E no filtro app-runtime.",
+    "Corpus aditivo 233 → 259, sem alterar runtime, goldens, hashes do oráculo ou IDs anteriores."
   ],
   "verification": [
     {
@@ -64,20 +64,22 @@
     {
       "check": "npm run check",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Rodada local em execução; world-terrain é demorado."
+      "result": "passed",
+      "evidence": "Rodada local 66/66 arquivos; checks de versão, módulos, dívida, rastreabilidade, tutorial, fixtures e UC-3 verdes. Última expansão só mudou tooling UI/docs; testes focados de corpus/nativo/updater novamente verdes."
     },
     {
       "check": "node tests/e2e/app-runtime-parity.e2e.mjs",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Chromium não instalado localmente; download terminou com arquivo inválido. Execução requerida no CI, sem skip."
+      "evidence": "Commit 8693684: CI run 37182892861/job 111378840726 executou 256/256 iguais, cinco E2E verdes. Três casos adicionais requerem nova rodada CI.",
+      "tested_commit": "869368463a04c1ee0365ae2ced9fed6cf1ebcc31"
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "SDK local ausente; requerido no CI."
+      "result": "passed",
+      "evidence": "CI run 37182892825/job 111378840362: consistency, self-test e simulação integrador verdes.",
+      "tested_commit": "869368463a04c1ee0365ae2ced9fed6cf1ebcc31"
     },
     {
       "check": "git diff --check",
@@ -90,7 +92,7 @@
     "UC-2 continua aberto: demais transcrições UI/E2E, lifecycle e permissões reais.",
     "Nenhum cliente C# nem escolha UC-5/6; G-C0 não concluído.",
     "Host/rede simulados não validam instalação, assinatura, download, Android físico ou Windows instalado.",
-    "Quatro casos UI novos aguardam execução Chromium no CI."
+    "Três novos casos UI adicionais aguardam CI; os quatro iniciais foram provados em Chromium (256/256)."
   ],
   "blockers": [],
   "next_actions": [
@@ -149,7 +151,7 @@
     },
     {
       "id": "NN-019",
-      "evidence": "233 IDs anteriores preservados; 23 casos aditivos."
+      "evidence": "233 IDs anteriores preservados; 26 casos aditivos."
     },
     {
       "id": "NN-022",

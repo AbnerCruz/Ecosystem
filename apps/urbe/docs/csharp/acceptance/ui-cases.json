@@ -220,6 +220,229 @@
           }
         ]
       }
+    },
+    {
+      "id": "ui-document-lifecycle",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-040",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/4",
+      "input": {
+        "files": {
+          "Base.md": "# Base\n"
+        },
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Projetos/Minha nota.md",
+              "# Minha nota\n\nOlá [[Base]] #e2e\n"
+            ]
+          },
+          {
+            "method": "rename",
+            "args": [
+              "Projetos/Minha nota.md",
+              "Nota renomeada"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "reload",
+            "args": []
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "delete",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "restore",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "editHistory",
+            "args": [
+              "Projetos/Nota renomeada.md",
+              "# Minha nota\n\nOlá [[Base]] #e2e\n\nsegunda versão"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          {
+            "path": "Projetos/Nota renomeada.md"
+          },
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false,
+            "positionStable": true
+          },
+          null,
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false,
+            "positionStable": true
+          },
+          null,
+          {
+            "content": null,
+            "saved": null,
+            "idStable": false,
+            "inTrash": true,
+            "positionStable": false
+          },
+          null,
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false,
+            "positionStable": true
+          },
+          {
+            "historyPresent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-gc-cancel",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/5",
+      "input": {
+        "files": {
+          "Alfa.md": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n",
+          "Beta.md": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n",
+          ".urbe/trash.json": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}",
+          ".urbe/compositions.json": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}",
+          ".urbe/history.json": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"v0\"}],\"doc_00000007-0000-4000-8000-000000000000\":[{\"timestamp\":1780000000000,\"path\":\"Sumida.md\",\"content\":\"x\"}],\"doc_00000008-0000-4000-8000-000000000000\":[{\"timestamp\":1790500000000,\"path\":\"Recente.md\",\"content\":\"y\"}],\"doc_00000009-0000-4000-8000-000000000000\":[{\"timestamp\":1788000000000,\"path\":\"Velha.md\",\"content\":\"z\"}]}}",
+          ".urbe/mapa.json": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 32\n  }\n },\n \"construcoes\": []\n}"
+        },
+        "docs": 2,
+        "now": 1791072000000,
+        "steps": [
+          {
+            "method": "gc",
+            "args": [
+              "cancel",
+              "doc_00000007-0000-4000-8000-000000000000",
+              [
+                "doc_00000001-0000-4000-8000-000000000000",
+                "doc_00000009-0000-4000-8000-000000000000"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "oldPresent": true,
+            "kept": [
+              true,
+              true
+            ],
+            "sources": [
+              "doc_00000001-0000-4000-8000-000000000000",
+              "doc_00000007-0000-4000-8000-000000000000",
+              "doc_00000009-0000-4000-8000-000000000000"
+            ],
+            "confirmationExplains": true,
+            "paletteSafe": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-gc-apply",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/6",
+      "input": {
+        "files": {
+          "Alfa.md": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n",
+          "Beta.md": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n",
+          ".urbe/trash.json": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}",
+          ".urbe/compositions.json": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}",
+          ".urbe/history.json": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"v0\"}],\"doc_00000007-0000-4000-8000-000000000000\":[{\"timestamp\":1780000000000,\"path\":\"Sumida.md\",\"content\":\"x\"}],\"doc_00000008-0000-4000-8000-000000000000\":[{\"timestamp\":1790500000000,\"path\":\"Recente.md\",\"content\":\"y\"}],\"doc_00000009-0000-4000-8000-000000000000\":[{\"timestamp\":1788000000000,\"path\":\"Velha.md\",\"content\":\"z\"}]}}",
+          ".urbe/mapa.json": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 32\n  }\n },\n \"construcoes\": []\n}"
+        },
+        "docs": 2,
+        "now": 1791072000000,
+        "steps": [
+          {
+            "method": "gc",
+            "args": [
+              "apply",
+              "doc_00000007-0000-4000-8000-000000000000",
+              [
+                "doc_00000001-0000-4000-8000-000000000000",
+                "doc_00000009-0000-4000-8000-000000000000"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "oldPresent": false,
+            "kept": [
+              true,
+              true
+            ],
+            "sources": [
+              "doc_00000001-0000-4000-8000-000000000000",
+              "doc_00000009-0000-4000-8000-000000000000"
+            ],
+            "confirmationExplains": true,
+            "paletteSafe": true
+          }
+        ]
+      }
     }
   ]
 }
