@@ -40,24 +40,23 @@
     {
       "check": "IPC Android real — standalone, pairing, pin/revogação/rotação e process death",
       "kind": "human",
-      "result": "passed",
+      "result": "failed",
       "critical": true,
       "object": "docs/validation/P5-4-binder-ipc.md",
-      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-04 (Issue https://github.com/AbnerCruz/Ecosystem/issues/217); registro em docs/governance/responses/VAL-HO-20261004-p5-4-device-candidate-ca3277b37af7.md."
+      "evidence": "Issue #217 registrou aprovação no portal antes do teste físico completo. Evidência DEVICE posterior do proprietário mostrou o Hub com io.lunet.studio aprovado e 0 sessões IPC ativas, enquanto o Lunet retornou “Provider indisponível ou protocolo recusado.” após o pareamento. O resultado anterior fica superseded e não fecha P5-4."
     }
   ],
   "known_issues": [
-    "P5-4 ainda não está concluído: propriedades DEVICE e aprovação do proprietário permanecem pendentes.",
-    "PR #210 permanece draft/critical e não deve ser integrado antes do resultado DEVICE.",
-    "ADR-0027 continua Proposto e DEC-0037 consequencesApplied=false na main; sua aplicação pertence ao PR crítico #210, não a este registro documental.",
-    "P5-5/extração continuam bloqueados; este candidato não autoriza mover runtime/Tool para componente compartilhado."
+    "Falha DEVICE posterior à Issue #217: pareamento foi aprovado, mas nenhuma sessão IPC abriu e o Lunet falhou após a aprovação.",
+    "A aprovação histórica da Issue #217 está superseded por evidência posterior e não autoriza integração do PR #210.",
+    "PR #210 voltou a working/draft com correção de Keystore e diagnóstico por etapa; P5-5 continua bloqueado."
   ],
   "blockers": [],
   "next_actions": [
-    "Integrar este registro documental rotineiro para projetar a validação P5-4 no portal.",
-    "Proprietário instala os dois APKs candidatos e executa A-D.",
-    "Se aprovado, reconciliar o handoff, aplicar/integrar as consequências críticas no PR #210 e só depois fechar P5-4.",
-    "Depois de P5-4 integrado, iniciar P5-5 com Extraction Review antes de qualquer shared extraction."
+    "Aguardar CI do novo head do PR #210 com PrivateKeyEntry e diagnóstico por etapa.",
+    "Publicar novo candidato somente após CI verde.",
+    "Repetir o gate DEVICE; se falhar, usar a etapa/tipo exibidos pelo Lunet para localizar a quebra exata.",
+    "Somente após A-D passarem registrar nova validação canônica e autorizar a integração crítica."
   ],
   "decisions_required": [],
   "normative_sources": [
