@@ -181,8 +181,13 @@ foreach (var (id, c) in eco["components"]!.AsObject())
     var channels = currentProfile?["entries"]?.AsArray().FirstOrDefault(e => S(e?["component"]) == id)?["channels"]?.AsArray();
     var releaseChannel = channels?.FirstOrDefault(ch => S(ch?["kind"]) == "github-release");
     var locationFrom = S(releaseChannel?["locationFrom"]);
-    var releaseLocation = locationFrom == "source.repository" ? sourceRepo
-        : locationFrom is not null ? S(c[locationFrom]) : null;
+    var releaseLocation = locationFrom switch
+    {
+        "source.repository" => sourceRepo,
+        "ecosystem.repository" => repo,
+        not null => S(c[locationFrom]),
+        _ => null,
+    };
     var releaseRepo = releaseLocation?.TrimEnd('/');
     if (releaseRepo?.EndsWith("/releases", StringComparison.Ordinal) == true) releaseRepo = releaseRepo[..^9];
     // As origens legadas continuam disponíveis quando não há perfil; um canal explícito prevalece sobre a origem.
