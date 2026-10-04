@@ -42,6 +42,12 @@ Tabletop RPG é uma plataforma completa para RPG de mesa em que humanos e agente
 - **RPG-REQ-040 — Persistência.** O MVP deve salvar e retomar campanha localmente quando a fase de persistência começar.
 - **RPG-REQ-041 — Sessões.** Campanha e sessão são conceitos distintos; campanha sobrevive a sessões.
 - **RPG-REQ-042 — Conteúdo incremental.** Mundo pode crescer durante o jogo sem exigir geração completa antecipada.
+- **RPG-REQ-043 — Formato versionado.** Persistência de campanha usa envelope com identidade de formato e schemaVersion independente da versão do aplicativo.
+- **RPG-REQ-044 — Save resistente a falha.** O store local grava por arquivo temporário no mesmo diretório, preserva o último primário válido como backup e nunca substitui backup bom por primário reconhecidamente corrompido.
+- **RPG-REQ-045 — Recuperação fail-closed.** Primário inválido tenta backup válido e repara o primário; primário e backup inválidos geram erro explícito, nunca campanha vazia inventada.
+- **RPG-REQ-046 — Integridade.** Documento persistido possui checksum do payload; schema futuro, checksum divergente e estado estruturalmente inválido são recusados.
+- **RPG-REQ-047 — Portabilidade.** Export e import usam o mesmo formato versionado da persistência local e preservam IDs, sessões, eventos, conhecimento e memória.
+- **RPG-REQ-048 — Sem segredos.** Arquivo de campanha não contém credenciais, tokens ou configuração secreta de provedor de IA.
 
 ### Produto final
 
