@@ -19,16 +19,13 @@
     "ROADMAP.md",
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/AgentsChat.md",
-    "docs/adr/0027-primeiro-ipc-local-android.md",
-    "docs/adr/README.md",
-    "docs/governance/decisions.json",
     "docs/validation/P5-4-binder-ipc.md",
     "docs/governance/handoffs/HO-20261004-p5-4-device-candidate.json"
   ],
   "work_completed": [
-    "DEC-0037-A reconciliada nos documentos canônicos; ADR-0027 passa a Aceito e consequencesApplied=true.",
-    "Candidato técnico externo a este PR documental congelado no PR #210, head b001eafd; nenhum código crítico foi copiado para este branch.",
-    "CI testou o estado combinado c69f909 (b001eafd sobre main 1d69d5e): Hub 270/270, Lunet 321/321, ambos APKs verdes e consistency completo verde.",
+    "Candidato técnico crítico permanece isolado no PR #210, head b001eafda4baa16868d626eff402a2f7f57f6918; nenhum código Binder/Keystore foi copiado para este PR documental.",
+    "DEC-0037-A já consta como decisão canônica tomada pelo proprietário na main; este PR não altera ADR, decisão nem consequencesApplied.",
+    "CI testou o estado combinado c69f909 (b001eafd sobre main 1d69d5e): Hub 270/270, Lunet 321/321, APKs dos dois Products e consistency completo verde.",
     "Hub artifact 11310570442: ZIP sha256 4e81f3477ac6e3b95b0d91e7833af383b8200a28933051ffdaa0ce229f8a4d11; APK sha256 ebd38055c50871298071f79e379f3364741d594fb05b1f6f2378d307473e40c4.",
     "Lunet artifact 11310540558: ZIP sha256 9bdc1b4be8a7dc7cacd94034fc35b0f12e1166e4ab08aa660ac2998a125eb357; APK sha256 17e9913e569890f254c9074a2960e4002238c886c81690d1ff1eceed600c3422.",
     "Matriz IPC-01..IPC-18 separa propriedades já provadas em CI das que exigem Android real; roteiro DEVICE A-D publicado."
@@ -52,13 +49,14 @@
   "known_issues": [
     "P5-4 ainda não está concluído: propriedades DEVICE e aprovação do proprietário permanecem pendentes.",
     "PR #210 permanece draft/critical e não deve ser integrado antes do resultado DEVICE.",
+    "ADR-0027 continua Proposto e DEC-0037 consequencesApplied=false na main; sua aplicação pertence ao PR crítico #210, não a este registro documental.",
     "P5-5/extração continuam bloqueados; este candidato não autoriza mover runtime/Tool para componente compartilhado."
   ],
   "blockers": [],
   "next_actions": [
     "Integrar este registro documental rotineiro para projetar a validação P5-4 no portal.",
     "Proprietário instala os dois APKs candidatos e executa A-D.",
-    "Se aprovado, reconciliar o handoff, autorizar integração crítica do PR #210 e só depois fechar P5-4.",
+    "Se aprovado, reconciliar o handoff, aplicar/integrar as consequências críticas no PR #210 e só depois fechar P5-4.",
     "Depois de P5-4 integrado, iniciar P5-5 com Extraction Review antes de qualquer shared extraction."
   ],
   "decisions_required": [],
@@ -140,7 +138,7 @@
   ],
   "criticality": {
     "declared": "routine",
-    "reason": "Este PR somente reconcilia decisão já tomada e publica evidência/objeto de validação; não integra o código IPC crítico. A verificação humana do gate continua critical=true."
+    "reason": "Este PR somente publica estado/evidência/objeto de validação e comunicação de continuidade. Não altera ADR, decisão, consequencesApplied, política de segurança nem código runtime; a implementação crítica permanece exclusivamente no PR #210."
   },
   "cost": null
 }
