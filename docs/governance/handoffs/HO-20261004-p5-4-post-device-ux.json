@@ -135,7 +135,7 @@
   "reuse_assessment": [
     {
       "subject": "connection-status-presentation",
-      "status": "local-only",
+      "status": "product-specific",
       "rationale": "A correção é específica da UI Android atual e não justifica abstração compartilhada."
     }
   ],
