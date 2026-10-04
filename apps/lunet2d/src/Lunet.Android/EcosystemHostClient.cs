@@ -17,6 +17,7 @@ internal sealed class EcosystemHostClient : IDisposable
     readonly Context _context;
     readonly AndroidInstallationKey _key = new(KeyAlias);
     readonly AndroidBindingTrustPolicy? _trustPolicy;
+    readonly LifecycleToken _lifecycleToken = new();
     HostServiceConnection? _connection;
     IBinder? _binder;
     ProviderCandidate? _candidate;
@@ -107,7 +108,7 @@ internal sealed class EcosystemHostClient : IDisposable
             var open = Signed(new IpcRequest(
                 Op: "session.open", PairId: pair.PairId, ChallengeId: challenge.ChallengeId,
                 Challenge: challenge.Challenge, ContextJson: contextJson));
-            var opened = Rpc(EcosystemIpcProtocol.Open, open);
+            var opened = Rpc(EcosystemIpcProtocol.Open, open, _lifecycleToken);
             if (!opened.Ok || opened.SessionId is null) return Error(opened);
             _sessionId = opened.SessionId;
 
@@ -145,7 +146,7 @@ internal sealed class EcosystemHostClient : IDisposable
     static HostTestResult Error(IpcResponse response) => new(false,
         $"Falha: {response.TransportError ?? response.HostError ?? "resposta inválida"}.");
 
-    IpcResponse Rpc(int code, IpcRequest request)
+    IpcResponse Rpc(int code, IpcRequest request, IBinder? lifecycleToken = null)
     {
         if (_binder is null) return new(false, TransportError: "PROVIDER_UNAVAILABLE");
         using var data = Parcel.Obtain();
@@ -155,6 +156,7 @@ internal sealed class EcosystemHostClient : IDisposable
         if (System.Text.Encoding.UTF8.GetByteCount(json) > EcosystemIpcProtocol.MaxFrameBytes)
             return new(false, TransportError: "FRAME_TOO_LARGE");
         data.WriteString(json);
+        if (lifecycleToken is not null) data.WriteStrongBinder(lifecycleToken);
         if (!_binder.Transact(code, data, reply, TransactionFlags.None))
             return new(false, TransportError: "PROVIDER_UNAVAILABLE");
         reply.ReadException();
@@ -296,7 +298,10 @@ internal sealed class EcosystemHostClient : IDisposable
         _disposed = true;
         TryClose();
         Unbind();
+        _lifecycleToken.Dispose();
     }
+
+    private sealed class LifecycleToken : Binder { }
 
     private sealed class HostServiceConnection(TaskCompletionSource<IBinder> completion)
         : Java.Lang.Object, IServiceConnection
