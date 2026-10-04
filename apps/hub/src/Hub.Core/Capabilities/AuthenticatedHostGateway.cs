@@ -18,6 +18,7 @@ public sealed class AuthenticatedHostGateway : IDisposable
         internal readonly LocalHostSession Session;
         internal CancellationTokenSource? ActiveCancellation;
         internal string? ActiveRequestId;
+        internal bool ActiveExplicitCancel;
         internal bool Closed;
 
         internal Entry(string peer, string actor, LocalHostSession session)
@@ -104,6 +105,7 @@ public sealed class AuthenticatedHostGateway : IDisposable
             run.CancelAfter(effectiveDeadline);
             entry.ActiveCancellation = run;
             entry.ActiveRequestId = requestId;
+            entry.ActiveExplicitCancel = false;
         }
 
         try
@@ -112,8 +114,10 @@ public sealed class AuthenticatedHostGateway : IDisposable
                 LocalProtocol.Id, requestId, entry.Actor, "request", capability, operation, minimumVersion, input), run.Token)
                 .ConfigureAwait(false);
 
+            bool explicitCancel;
+            lock (entry.Sync) explicitCancel = ReferenceEquals(entry.ActiveCancellation, run) && entry.ActiveExplicitCancel;
             if (run.IsCancellationRequested && !cancellationToken.IsCancellationRequested
-                && response.Error == "CANCELLED")
+                && !explicitCancel && response.Error == "CANCELLED")
                 return new(requestId, null, null, "DEADLINE_EXCEEDED");
 
             return new(response.RequestId, response.Output, response.Error, null);
@@ -126,6 +130,7 @@ public sealed class AuthenticatedHostGateway : IDisposable
                 {
                     entry.ActiveCancellation = null;
                     entry.ActiveRequestId = null;
+                    entry.ActiveExplicitCancel = false;
                 }
             }
             run.Dispose();
@@ -139,7 +144,10 @@ public sealed class AuthenticatedHostGateway : IDisposable
         lock (entry.Sync)
         {
             if (!entry.Closed && entry.ActiveRequestId == requestId)
+            {
+                entry.ActiveExplicitCancel = true;
                 cancellation = entry.ActiveCancellation;
+            }
         }
         if (cancellation is null) return false;
         try { cancellation.Cancel(); return true; }
