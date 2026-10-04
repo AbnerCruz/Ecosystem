@@ -14,7 +14,7 @@
   "branch": "chatgpt/p5-4-device-candidate",
   "base_commit": "1d69d5e055238d602283abe1c508743f3378020c",
   "commit": null,
-  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/210",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/214",
   "files_changed": [
     "ROADMAP.md",
     "apps/lunet2d/ROADMAP.md",
@@ -23,7 +23,7 @@
     "docs/governance/handoffs/HO-20261004-p5-4-device-candidate.json"
   ],
   "work_completed": [
-    "Candidato técnico crítico permanece isolado no PR #210, head b001eafda4baa16868d626eff402a2f7f57f6918; nenhum código Binder/Keystore foi copiado para este PR documental.",
+    "Candidato técnico crítico permanece isolado no PR #210, head b001eafda4baa16868d626eff402a2f7f57f6918; este handoff pertence ao PR documental #214 e nenhum código Binder/Keystore foi copiado para ele.",
     "DEC-0037-A já consta como decisão canônica tomada pelo proprietário na main; este PR não altera ADR, decisão nem consequencesApplied.",
     "CI testou o estado combinado c69f909 (b001eafd sobre main 1d69d5e): Hub 270/270, Lunet 321/321, APKs dos dois Products e consistency completo verde.",
     "Hub artifact 11310570442: ZIP sha256 4e81f3477ac6e3b95b0d91e7833af383b8200a28933051ffdaa0ce229f8a4d11; APK sha256 ebd38055c50871298071f79e379f3364741d594fb05b1f6f2378d307473e40c4.",
