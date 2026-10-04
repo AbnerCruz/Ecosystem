@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-4-ipc-decision",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T15:26:00Z",
+  "agent": {
+    "id": "chatgpt-p5-4-ipc-decision",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-4",
+  "component": "ecosystem",
+  "state": "waiting",
+  "branch": "chatgpt/p5-4-ipc-decision",
+  "base_commit": "ed8bfe36c4d076ea20a2c9229805f83c27f10ff6",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/audits/fase-3.md",
+    "docs/governance/handoffs/HO-20261004-lunet-f3-candidate.json",
+    "docs/architecture/ipc-transport-readiness.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0027-primeiro-ipc-local-android.md",
+    "docs/adr/README.md",
+    "docs/governance/handoffs/HO-20261004-p5-4-ipc-decision.json"
+  ],
+  "work_completed": [
+    "LUNET-303 reconciliado após validação humana aprovada na Issue #204; Fase 3 do Lunet liberada sem inventar métricas J1 ausentes.",
+    "Reauditado P5-4 com o Lunet agora disponível como primeiro Product Shell Android real.",
+    "Definida operação concreta do ensaio: text.inspect@1.0.0 remota opcional entre Hub e Lunet, sem tornar Hub dependência essencial.",
+    "Preparada DEC-0037 com quatro alternativas de transporte/confiança e recomendação de Bound Service/Binder + identidade do SO + pareamento por instalação em Keystore.",
+    "Criada ADR-0027 em estado Proposto; nenhuma escolha aplicada antes da decisão."
+  ],
+  "verification": [
+    {
+      "check": "Coerência documental e schema",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Será verificada pelo consistency CI e integrador do PR; nenhuma alegação de CI local nesta sessão."
+    },
+    {
+      "check": "Escolha do transporte e modelo de confiança",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "docs/adr/0027-primeiro-ipc-local-android.md",
+      "evidence": "DEC-0037 deve ser escolhida pelo proprietário; transporte/segurança não podem ser aceitos pelo próprio agente."
+    }
+  ],
+  "known_issues": [
+    "Tempos brutos de J1 do gate Lunet não foram persistidos; nenhuma falha bloqueante foi registrada e PieceTable não foi ativada por inferência.",
+    "Nenhum adapter IPC foi implementado; P5-4 permanece incompleto até DEC-0037 e execução de IPC-01..IPC-18.",
+    "A primeira proposta é Android-específica; Web/Windows continuam sem transporte escolhido."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar esta proposta de rotina após CI verde para expor DEC-0037 no portal.",
+    "Proprietário escolhe DEC-0037.",
+    "Aplicar a decisão na ADR-0027 e implementar o primeiro adapter IPC sem dependência Product -> Hub.Core.",
+    "Executar IPC-01..IPC-18 em processos reais e só então avaliar P5-5/Extraction Review."
+  ],
+  "decisions_required": [
+    "DEC-0037"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/definition-of-done.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/ipc-transport-readiness.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/contracts/permissions.json",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/audits/fase-3.md",
+    "docs/contracts/schemas/decisions.schema.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-003",
+      "evidence": "IPC proposto é opcional; Lunet continua funcional e distribuível sem Hub."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "O ensaio reutiliza Host API v1 e text.inspect@1.0.0; transporte não redefine a capability."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Tool não recebe nome/tipo do Host; identidade e transporte pertencem ao adapter/Host."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST, ADR-0024, contratos e readiness foram consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Transporte e confiança foram elevados a ADR-0027 + DEC-0037 em vez de escolhidos silenciosamente."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "GitHub continua fora do runtime; alternativas são transportes locais próprios."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Trust do peer antecede sessão/grants; instalação sozinha não concede capability."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "LUNET-303 só foi fechado após validação humana canônica #204; P5-7 continuará DEVICE separado."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Binder é recomendado por reduzir a superfície do primeiro alvo Android; transportes genéricos não são antecipados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhum runtime/Tool foi extraído; Extraction Review continua obrigatória antes de compartilhamento."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição e uso standalone do Lunet permanecem independentes do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Fecha evidência já aprovada e propõe decisão/ADR sem aplicar transporte, confiança, código runtime ou segurança. A decisão efetiva será crítica e exige o proprietário."
+  },
+  "cost": null
+}
