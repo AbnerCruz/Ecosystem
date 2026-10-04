@@ -13,7 +13,7 @@ Inventário de trabalho sobre os 14 cenários congelados em `oracle.json`. Esta 
 | `fixtures.e2e.mjs` | `vault.scenario`, 11 `browser.vault`, `idb.legacy-city` | Nenhum dos critérios atuais: oito vaults históricos, três futuros e `browser.idb-legacy` transcrevem abertura/salvamento, backup, sidecars, readonly e boot legado; execução C# futura permanece aberta |
 | `identity.e2e.mjs` | `identity.text/parse/pair`; fixtures de vault | Rename/move externos no IDB, reabertura/sync, uma casa por documento, geometria de região/asset e vínculo preservados |
 | `stable-ids.e2e.mjs` | Fixtures de vault | IDs region/asset, campos de compatibilidade e vínculo mantidos ao recarregar/renomear pasta pelo app |
-| `adapters.e2e.mjs` | `storage.scenario` | IndexedDB real: persistência, isolamento de vaults e operações observadas pelo navegador |
+| `adapters.e2e.mjs` | `storage.scenario`, 16 `browser.storage` | Nenhum dos critérios atuais de IDB/OPFS: cidades, texto, ausentes, unicode, blobs, pastas, remoção e lote têm passos portáveis; execução C# futura permanece aberta |
 | `layout.e2e.mjs` | Fixtures de vault | Reorganização, diálogo manter/desfazer, backup byte a byte, registro e reabertura sem nova reorganização |
 | `multi-city.e2e.mjs` | Fixture mesclada e `idb.legacy-city` cobrem partes do domínio | Stores Norte/Sul, três boots idempotentes, IDs/geometria de origem, arquivar sem apagar stores |
 | `map-writer.e2e.mjs` | `ui-create-save-reload` cobre persistência explícita | Persistência automática de documento/mundo. O critério de escritor único exige instrumentação própria da pilha C#; não portar regex de stack JS como regra de produto |

@@ -9683,6 +9683,1804 @@
         "alphaContent": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n",
         "legacyKeyRemoved": true
       }
+    },
+    {
+      "id": "browser-storage-text",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-opfs",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "olá\n"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "nova versão"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "ausente.md"
+            ]
+          }
+        ],
+        "dbName": "browser-storage-text",
+        "vault": "Vault"
+      },
+      "expected": {
+        "values": [
+          null,
+          "olá\n",
+          null,
+          "nova versão",
+          null
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-nested",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-opfs",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "Pasta/Sub/b.md",
+              "# b"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              ".urbe/mapa.json",
+              "{\"v\":4}"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          },
+          {
+            "method": "read",
+            "args": [
+              ".urbe/mapa.json"
+            ]
+          }
+        ],
+        "dbName": "browser-storage-nested",
+        "vault": "Vault"
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          [
+            ".urbe/mapa.json",
+            "Pasta/Sub/b.md"
+          ],
+          "{\"v\":4}"
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-unicode",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-opfs",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "Diário de bordo/Ação ✔.md",
+              "coração 🌊 — ção"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "Diário de bordo/Ação ✔.md"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ],
+        "dbName": "browser-storage-unicode",
+        "vault": "Vault"
+      },
+      "expected": {
+        "values": [
+          null,
+          "coração 🌊 — ção",
+          [
+            "Diário de bordo/Ação ✔.md"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-binary",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-opfs",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "writeBlob",
+            "args": [
+              "Anexos/x.bin",
+              [
+                0,
+                255,
+                1,
+                2,
+                128,
+                10,
+                13,
+                0
+              ]
+            ]
+          },
+          {
+            "method": "readBlob",
+            "args": [
+              "Anexos/x.bin"
+            ]
+          },
+          {
+            "method": "readBlob",
+            "args": [
+              "Anexos/ausente.bin"
+            ]
+          }
+        ],
+        "dbName": "browser-storage-binary",
+        "vault": "Vault"
+      },
+      "expected": {
+        "values": [
+          null,
+          [
+            0,
+            255,
+            1,
+            2,
+            128,
+            10,
+            13,
+            0
+          ],
+          null
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-remove",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-opfs",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "a"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "b.md",
+              "b"
+            ]
+          },
+          {
+            "method": "remove",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "remove",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "b.md"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ],
+        "dbName": "browser-storage-remove",
+        "vault": "Vault"
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          "b",
+          [
+            "b.md"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-folders",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-opfs",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "createFolder",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "createFolder",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Vazia/Filha/c.md",
+              "c"
+            ]
+          },
+          {
+            "method": "removeFolder",
+            "args": [
+              "Vazia/Filha"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "Vazia/Filha/c.md"
+            ]
+          },
+          {
+            "method": "remove",
+            "args": [
+              "Vazia/Filha/c.md"
+            ]
+          },
+          {
+            "method": "removeFolder",
+            "args": [
+              "Vazia/Filha"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "Vazia/Filha/c.md"
+            ]
+          }
+        ],
+        "dbName": "browser-storage-folders",
+        "vault": "Vault"
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          null,
+          "c",
+          null,
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-hidden",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "docs/v2/contracts/persistence-adapter.md",
+      "input": {
+        "backend": "fsa-opfs",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              ".urbe/history.v2.json",
+              "{\"version\":2}"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              ".oculta/a.md",
+              "oculto"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "A.md",
+              "visível"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ],
+        "dbName": "browser-storage-hidden",
+        "vault": "Vault"
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          [
+            ".urbe/history.v2.json",
+            "A.md"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-escape",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "tests/native-contract.mjs",
+      "input": {
+        "backend": "fsa-opfs",
+        "permission": "granted",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "../escape.md",
+              "não pode"
+            ],
+            "expectError": true
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ],
+        "dbName": "browser-storage-escape",
+        "vault": "Vault"
+      },
+      "expected": {
+        "values": [
+          {
+            "rejected": true
+          },
+          []
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-idb-existing",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "src/persistence/adapters/idb.js",
+      "input": {
+        "backend": "idb-real",
+        "permission": "granted",
+        "dbName": "browser-storage-idb-existing",
+        "vault": "Cidade Antiga",
+        "seed": {
+          "fs": [
+            [
+              "Cidade Antiga/Nota.md",
+              "legado"
+            ],
+            [
+              "Cidade Antiga/.urbe/mapa.json",
+              "{\"v\":3}"
+            ],
+            [
+              "Outra/Outra.md",
+              "x"
+            ]
+          ]
+        },
+        "steps": [
+          {
+            "method": "cities",
+            "args": []
+          },
+          {
+            "method": "list",
+            "args": []
+          },
+          {
+            "method": "read",
+            "args": [
+              "Nota.md"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              ".urbe/mapa.json"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          [
+            "Cidade Antiga",
+            "Outra"
+          ],
+          [
+            ".urbe/mapa.json",
+            "Nota.md"
+          ],
+          "legado",
+          "{\"v\":3}"
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-idb-vaults",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "src/persistence/adapters/idb.js",
+      "input": {
+        "backend": "idb-real",
+        "permission": "granted",
+        "dbName": "browser-storage-idb-vaults",
+        "vault": "Alpha",
+        "seed": {},
+        "steps": [
+          {
+            "method": "createCity",
+            "args": [
+              "Alpha"
+            ]
+          },
+          {
+            "method": "createCity",
+            "args": [
+              "Alpha"
+            ]
+          },
+          {
+            "method": "createCity",
+            "args": [
+              "Beta"
+            ]
+          },
+          {
+            "method": "cities",
+            "args": []
+          },
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "A"
+            ],
+            "vault": "Alpha"
+          },
+          {
+            "method": "write",
+            "args": [
+              "b.md",
+              "B"
+            ],
+            "vault": "Beta"
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ],
+            "vault": "Alpha"
+          },
+          {
+            "method": "read",
+            "args": [
+              "b.md"
+            ],
+            "vault": "Beta"
+          },
+          {
+            "method": "removeCity",
+            "args": [
+              "Alpha"
+            ]
+          },
+          {
+            "method": "cities",
+            "args": []
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ],
+            "vault": "Alpha"
+          },
+          {
+            "method": "list",
+            "args": [],
+            "vault": "Beta"
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          [
+            "Alpha",
+            "Beta"
+          ],
+          null,
+          null,
+          "A",
+          "B",
+          null,
+          [
+            "Beta"
+          ],
+          null,
+          [
+            ".urbe/mapa.json",
+            "b.md"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-idb-folders",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "src/persistence/adapters/idb.js",
+      "input": {
+        "backend": "idb-real",
+        "permission": "granted",
+        "dbName": "browser-storage-idb-folders",
+        "vault": "Pastas",
+        "seed": {},
+        "steps": [
+          {
+            "method": "createCity",
+            "args": [
+              "Pastas"
+            ]
+          },
+          {
+            "method": "createFolder",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "createFolder",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "createFolder",
+            "args": [
+              "Vazia/Filha"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          },
+          {
+            "method": "removeFolder",
+            "args": [
+              "Vazia/Filha"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          },
+          {
+            "method": "write",
+            "args": [
+              "Vazia/c.md",
+              "c"
+            ]
+          },
+          {
+            "method": "read",
+            "args": [
+              "Vazia/c.md"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          },
+          {
+            "method": "remove",
+            "args": [
+              "Vazia/c.md"
+            ]
+          },
+          {
+            "method": "removeFolder",
+            "args": [
+              "Vazia"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          null,
+          [
+            ".urbe/mapa.json",
+            "Vazia/.pasta",
+            "Vazia/Filha/.pasta"
+          ],
+          null,
+          [
+            ".urbe/mapa.json",
+            "Vazia/.pasta"
+          ],
+          null,
+          "c",
+          [
+            ".urbe/mapa.json",
+            "Vazia/.pasta",
+            "Vazia/c.md"
+          ],
+          null,
+          null,
+          [
+            ".urbe/mapa.json"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-idb-binary",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "src/persistence/adapters/idb.js",
+      "input": {
+        "backend": "idb-real",
+        "permission": "granted",
+        "dbName": "browser-storage-idb-binary",
+        "vault": "Binário",
+        "seed": {},
+        "steps": [
+          {
+            "method": "createCity",
+            "args": [
+              "Binário"
+            ]
+          },
+          {
+            "method": "writeBlob",
+            "args": [
+              "Anexos/x.bin",
+              [
+                0,
+                255,
+                1,
+                2,
+                128,
+                10,
+                13,
+                0
+              ]
+            ]
+          },
+          {
+            "method": "readBlob",
+            "args": [
+              "Anexos/x.bin"
+            ]
+          },
+          {
+            "method": "readBlob",
+            "args": [
+              "Anexos/ausente.bin"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          [
+            0,
+            255,
+            1,
+            2,
+            128,
+            10,
+            13,
+            0
+          ],
+          null,
+          [
+            ".urbe/mapa.json",
+            "Anexos/x.bin"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-idb-real-cities",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "idb-real",
+        "dbName": "idb-real-cities",
+        "vault": "Alpha",
+        "steps": [
+          {
+            "method": "createCity",
+            "args": [
+              "Alpha"
+            ]
+          },
+          {
+            "method": "createCity",
+            "args": [
+              "Beta"
+            ]
+          },
+          {
+            "method": "cities",
+            "args": []
+          },
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "A"
+            ],
+            "vault": "Alpha"
+          },
+          {
+            "method": "write",
+            "args": [
+              "b.md",
+              "B"
+            ],
+            "vault": "Beta"
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ],
+            "vault": "Alpha"
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ],
+            "vault": "Beta"
+          },
+          {
+            "method": "removeCity",
+            "args": [
+              "Alpha"
+            ]
+          },
+          {
+            "method": "cities",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          [
+            "Alpha",
+            "Beta"
+          ],
+          null,
+          null,
+          "A",
+          null,
+          null,
+          [
+            "Beta"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-idb-real-batch",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-028"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "idb-real",
+        "dbName": "idb-real-batch",
+        "vault": "Batch",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "Lote/n0.md",
+              "n0"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n1.md",
+              "n1"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n2.md",
+              "n2"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n3.md",
+              "n3"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n4.md",
+              "n4"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n5.md",
+              "n5"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n6.md",
+              "n6"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n7.md",
+              "n7"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n8.md",
+              "n8"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n9.md",
+              "n9"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n10.md",
+              "n10"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n11.md",
+              "n11"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n12.md",
+              "n12"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n13.md",
+              "n13"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n14.md",
+              "n14"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n15.md",
+              "n15"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n16.md",
+              "n16"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n17.md",
+              "n17"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n18.md",
+              "n18"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n19.md",
+              "n19"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n20.md",
+              "n20"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n21.md",
+              "n21"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n22.md",
+              "n22"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n23.md",
+              "n23"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n24.md",
+              "n24"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n25.md",
+              "n25"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n26.md",
+              "n26"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n27.md",
+              "n27"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n28.md",
+              "n28"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n29.md",
+              "n29"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n30.md",
+              "n30"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n31.md",
+              "n31"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n32.md",
+              "n32"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n33.md",
+              "n33"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n34.md",
+              "n34"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n35.md",
+              "n35"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n36.md",
+              "n36"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n37.md",
+              "n37"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n38.md",
+              "n38"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n39.md",
+              "n39"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          [
+            ".urbe/mapa.json",
+            "Lote/n0.md",
+            "Lote/n1.md",
+            "Lote/n10.md",
+            "Lote/n11.md",
+            "Lote/n12.md",
+            "Lote/n13.md",
+            "Lote/n14.md",
+            "Lote/n15.md",
+            "Lote/n16.md",
+            "Lote/n17.md",
+            "Lote/n18.md",
+            "Lote/n19.md",
+            "Lote/n2.md",
+            "Lote/n20.md",
+            "Lote/n21.md",
+            "Lote/n22.md",
+            "Lote/n23.md",
+            "Lote/n24.md",
+            "Lote/n25.md",
+            "Lote/n26.md",
+            "Lote/n27.md",
+            "Lote/n28.md",
+            "Lote/n29.md",
+            "Lote/n3.md",
+            "Lote/n30.md",
+            "Lote/n31.md",
+            "Lote/n32.md",
+            "Lote/n33.md",
+            "Lote/n34.md",
+            "Lote/n35.md",
+            "Lote/n36.md",
+            "Lote/n37.md",
+            "Lote/n38.md",
+            "Lote/n39.md",
+            "Lote/n4.md",
+            "Lote/n5.md",
+            "Lote/n6.md",
+            "Lote/n7.md",
+            "Lote/n8.md",
+            "Lote/n9.md"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-fsa-opfs-cities",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-007",
+        "REQ-028",
+        "REQ-046"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-opfs",
+        "dbName": "fsa-opfs-cities",
+        "vault": "Alpha",
+        "steps": [
+          {
+            "method": "createCity",
+            "args": [
+              "Alpha"
+            ]
+          },
+          {
+            "method": "createCity",
+            "args": [
+              "Beta"
+            ]
+          },
+          {
+            "method": "cities",
+            "args": []
+          },
+          {
+            "method": "write",
+            "args": [
+              "a.md",
+              "A"
+            ],
+            "vault": "Alpha"
+          },
+          {
+            "method": "write",
+            "args": [
+              "b.md",
+              "B"
+            ],
+            "vault": "Beta"
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ],
+            "vault": "Alpha"
+          },
+          {
+            "method": "read",
+            "args": [
+              "a.md"
+            ],
+            "vault": "Beta"
+          },
+          {
+            "method": "removeCity",
+            "args": [
+              "Alpha"
+            ]
+          },
+          {
+            "method": "cities",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          [
+            "Alpha",
+            "Beta"
+          ],
+          null,
+          null,
+          "A",
+          null,
+          null,
+          [
+            "Beta"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "browser-storage-fsa-opfs-batch",
+      "operation": "browser.storage",
+      "requirements": [
+        "REQ-028"
+      ],
+      "source": "tests/lib/adapter-contract-suite.mjs",
+      "input": {
+        "backend": "fsa-opfs",
+        "dbName": "fsa-opfs-batch",
+        "vault": "Batch",
+        "steps": [
+          {
+            "method": "write",
+            "args": [
+              "Lote/n0.md",
+              "n0"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n1.md",
+              "n1"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n2.md",
+              "n2"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n3.md",
+              "n3"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n4.md",
+              "n4"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n5.md",
+              "n5"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n6.md",
+              "n6"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n7.md",
+              "n7"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n8.md",
+              "n8"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n9.md",
+              "n9"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n10.md",
+              "n10"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n11.md",
+              "n11"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n12.md",
+              "n12"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n13.md",
+              "n13"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n14.md",
+              "n14"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n15.md",
+              "n15"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n16.md",
+              "n16"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n17.md",
+              "n17"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n18.md",
+              "n18"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n19.md",
+              "n19"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n20.md",
+              "n20"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n21.md",
+              "n21"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n22.md",
+              "n22"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n23.md",
+              "n23"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n24.md",
+              "n24"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n25.md",
+              "n25"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n26.md",
+              "n26"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n27.md",
+              "n27"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n28.md",
+              "n28"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n29.md",
+              "n29"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n30.md",
+              "n30"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n31.md",
+              "n31"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n32.md",
+              "n32"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n33.md",
+              "n33"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n34.md",
+              "n34"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n35.md",
+              "n35"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n36.md",
+              "n36"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n37.md",
+              "n37"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n38.md",
+              "n38"
+            ]
+          },
+          {
+            "method": "write",
+            "args": [
+              "Lote/n39.md",
+              "n39"
+            ]
+          },
+          {
+            "method": "list",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          [
+            "Lote/n0.md",
+            "Lote/n1.md",
+            "Lote/n10.md",
+            "Lote/n11.md",
+            "Lote/n12.md",
+            "Lote/n13.md",
+            "Lote/n14.md",
+            "Lote/n15.md",
+            "Lote/n16.md",
+            "Lote/n17.md",
+            "Lote/n18.md",
+            "Lote/n19.md",
+            "Lote/n2.md",
+            "Lote/n20.md",
+            "Lote/n21.md",
+            "Lote/n22.md",
+            "Lote/n23.md",
+            "Lote/n24.md",
+            "Lote/n25.md",
+            "Lote/n26.md",
+            "Lote/n27.md",
+            "Lote/n28.md",
+            "Lote/n29.md",
+            "Lote/n3.md",
+            "Lote/n30.md",
+            "Lote/n31.md",
+            "Lote/n32.md",
+            "Lote/n33.md",
+            "Lote/n34.md",
+            "Lote/n35.md",
+            "Lote/n36.md",
+            "Lote/n37.md",
+            "Lote/n38.md",
+            "Lote/n39.md",
+            "Lote/n4.md",
+            "Lote/n5.md",
+            "Lote/n6.md",
+            "Lote/n7.md",
+            "Lote/n8.md",
+            "Lote/n9.md"
+          ]
+        ]
+      }
     }
   ]
 }

@@ -13,7 +13,7 @@
   "branch": "chatgpt/urbe-uc2-browser-fixtures",
   "base_commit": "a8e53ed0c8ec5058be6514514749b3215ca09e71",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/174",
   "files_changed": [
     "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/docs/csharp/PARITY.md",
@@ -22,7 +22,10 @@
     "apps/urbe/docs/csharp/acceptance/README.md",
     "apps/urbe/docs/csharp/acceptance/cases.json",
     "apps/urbe/tests/csharp-native-parity.mjs",
+    "apps/urbe/tests/e2e/app-runtime-parity.e2e.mjs",
+    "apps/urbe/tools/csharp-parity.mjs",
     "apps/urbe/tools/lib/csharp-parity.mjs",
+    "apps/urbe/tools/lib/parity-browser-storage.mjs",
     "apps/urbe/tools/lib/parity-browser-vault.mjs",
     "apps/urbe/tools/lib/parity-browser.mjs",
     "apps/urbe/tools/parity-reference-client.mjs",
@@ -37,26 +40,28 @@
     "FATO OBSERVADO: PR #171 integrado automaticamente em a8e53ed0, consistency/urbe verdes, corpus 260.",
     "11 browser.vault e um browser.idb-legacy transcrevem fixtures.e2e como dados: oito vaults históricos, três futuros e migração kv cidade pelo boot real.",
     "Históricos verificam documentos, hashes, vault v2, sidecars v1 e backup byte a byte do mapa original. Futuros verificam hashes, edição de notas, mapa futuro e readonly sem novos arquivos.",
-    "Corpus aditivo 260 → 272; cliente unificado e projeções atualizados; nenhum runtime/oráculo/caso anterior alterado."
+    "Corpus aditivo 260 → 288; cliente unificado e projeções atualizados; nenhum runtime/oráculo/caso anterior alterado.",
+    "16 browser.storage reutilizam passos portáveis em IndexedDB/OPFS reais; gestão/isolamento de vaults e lote de 40 arquivos completam o contrato original. Prazo all explícito de 300s, mantendo falha em timeout."
   ],
   "verification": [
     {
       "check": "node tests/csharp-parity.mjs",
       "kind": "automated",
       "result": "passed",
-      "evidence": "272 casos canônicos, oráculo/projeção intactos; protocolo/mutações verdes."
+      "evidence": "288 casos canônicos, oráculo/projeção intactos; protocolo/mutações verdes."
     },
     {
       "check": "node tests/csharp-native-parity.mjs",
       "kind": "automated",
       "result": "passed",
-      "evidence": "24 casos nativos, mutações recusadas e corpus 272 validado."
+      "evidence": "24 casos nativos, mutações recusadas e corpus 288 validado."
     },
     {
       "check": "node tests/e2e/app-runtime-parity.e2e.mjs",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Chromium local indisponível; CI obrigatório para as 12 novas transcrições, sem skip."
+      "evidence": "5f38b0b: CI run 37184296075/job 111382927784 executou 272/272 e 5/5 E2E. Expansão browser.storage exige nova rodada CI.",
+      "tested_commit": "5f38b0b4cdbcb263acaae355893a634c3d5c06c1"
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
@@ -72,7 +77,7 @@
     }
   ],
   "known_issues": [
-    "UC-2 aberto para identidade/layout, IDB real, multi-city, ZIP e escala S; ver E2E-COVERAGE.md.",
+    "UC-2 aberto para identidade/layout, multi-city, ZIP e escala S; ver E2E-COVERAGE.md.",
     "Chromium não disponível localmente; novas transcrições dependem de CI.",
     "Não há cliente C#, escolha UC-5/6 ou validação física."
   ],
