@@ -19,7 +19,7 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 | 0 Foundation | ✅ concluída (auditoria em `docs/audits/fase-0.md`) |
 | 1 Vertical Slice | ✅ concluída (auditoria em `docs/audits/fase-1.md`) |
 | 2 Framework Core | ✅ concluída e aprovada (auditoria em `docs/audits/fase-2.md`) |
-| 3 IDE | 🟡 IDE, documentação, Inspector, layouts e Git implementados em parte; validação em aparelho e demais pendências abaixo |
+| 3 IDE | ✅ concluída e aprovada (LUNET-303 / Issue #204; auditoria em `docs/audits/fase-3.md`) |
 | 4–15 | ⬜ |
 
 ---
@@ -113,58 +113,57 @@ Itens movidos para outras fases, com motivo: baixa latência com Oboe/AAudio →
 
 ## Fase 3 — Lunet IDE (§9, §11, §12, §15)
 
-Gate: experiência de IDE real. Validação integral: **LUNET-303**, Issue #200, [candidato e instruções](docs/audits/fase-3-candidata.md). Estado: aguardando resultados do roteiro A–J, medição J1 e aprovação explícita.
+Gate: experiência de IDE real. **Atingido e aprovado** em **LUNET-303**, Issue #200, candidato `lunet2d-v0.0.1-dev.1000008`. A validação humana integral foi aprovada pelo proprietário no portal pela Issue #204; registro canônico no handoff `HO-20261004-lunet-f3-candidate`.
 
 - [x] LUNET-302 — Framework/IDE/Studio code-first (ADR 0007) e correções rápidas sem perda de código: PR #152 integrado, CI verde e C6 aprovado no portal pela Issue #155. Issue #149 encerrada; handoff `HO-20261003-lunet-code-first-safe-fixes`.
-
 - [x] LUNET-301 — Importar projeto ZIP (§5, §22): PR #116 integrado, CI verde e roteiro Android aprovado no portal pela Issue #121; sem sobrescrever projetos. Issue #111 encerrada; handoff `HO-20261003-lunet-import-zip`.
 
 Editor de código (§9)
-- [ ] Realce, números de linha, desfazer/refazer, indentação, autocompletar, definição, referências, dica, localizar/substituir, diagnósticos ao vivo **(feito, sem validação em aparelho)**.
-- [ ] Multi-cursor / multi-seleção. (feito, sem validação em aparelho; `MultiCursor` testado; próxima ocorrência, todas, cursor acima/abaixo, digitação replicada)
-- [ ] Code folding. (feito, sem validação em aparelho; marcador no número da linha e menu Edição; regiões vindas do Roslyn)
-- [ ] Atalhos de teclado (teclado físico). (feito, sem validação em aparelho; mapa testado, ajuda em Ferramentas → Atalhos)
-- [ ] Minimap opcional. (feito, sem validação em aparelho; liga/desliga em Configurações)
-- [ ] Documentos grandes e virtualização (medir; ADR 0003 prevê view própria se necessário).
-- [ ] Estrutura de texto eficiente (piece table/rope) se a medição justificar. (`PieceTable` pronta e testada; medição no host: 500 edições em 200 mil linhas < 2 s; integração ao editor depende da medição em aparelho)
+- [x] Realce, números de linha, desfazer/refazer, indentação, autocompletar, definição, referências, dica, localizar/substituir e diagnósticos ao vivo.
+- [x] Multi-cursor / multi-seleção (`MultiCursor`: próxima ocorrência, todas, cursor acima/abaixo, digitação replicada).
+- [x] Code folding por regiões Roslyn.
+- [x] Atalhos de teclado; teclado físico continua opcional no roteiro.
+- [x] Minimap opcional.
+- [x] Documentos grandes / virtualização: J1 pertenceu ao gate integral aprovado. Os tempos brutos não foram persistidos no formulário do portal e nenhuma falha bloqueante foi registrada; portanto não há evidência para substituir o editor atual apenas por antecipação.
+- [x] Estrutura de texto eficiente: `PieceTable` permanece pronta/testada e deliberadamente não integrada enquanto medição/uso real não demonstrar necessidade; eventual ativação será mudança própria, não dívida escondida.
 
 Roslyn (§9)
-- [ ] Renomear símbolo. (feito, sem validação em aparelho; recusa conflitos e símbolos do framework)
-- [ ] Formatação de código. (feito, sem validação em aparelho; opção "formatar ao executar")
-- [ ] Quick fixes e code actions. (feito, sem validação em aparelho; using faltando/sobrando, ";", "você quis dizer", ordenar usings)
-- [x] Compilação incremental (reaproveitar compilação entre Runs). (árvores reaproveitadas e resultado em cache quando nada mudou; testado)
-- [ ] Inspeção de símbolos. (feito, sem validação em aparelho; Informações do símbolo e Estrutura do arquivo)
+- [x] Renomear símbolo.
+- [x] Formatação de código.
+- [x] Quick fixes e code actions.
+- [x] Compilação incremental (reaproveitar compilação entre Runs).
+- [x] Inspeção de símbolos.
 
 IDE mobile (§11)
 - [x] Explorer (ver Fase 1).
-- [ ] Painéis: Preview, Inspector, Console, Problems, Search, Documentation e Explorer (feito, sem validação em aparelho). Movidos com motivo: Assets → Fase 5 (nasce com os Studios), Profiler → Fase 4 (depende das métricas do framework), Agent → Fase 8.
-- [ ] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes. (feito, sem validação em aparelho; painel encaixa embaixo/à direita, divisória arrastável, layouts salvos e predefinidos)
-- [ ] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles. (feito, sem validação em aparelho; em paisagem o painel vai para a direita; rótulos e botões não são selecionáveis)
-- [ ] Busca no projeto inteiro. (feito, sem validação em aparelho; menu ⋯ → Buscar no projeto)
-- [ ] Console e Problems com logs exportáveis (§23). (feito, sem validação em aparelho; Ferramentas → Exportar logs)
-- [ ] Settings. (feito, sem validação em aparelho; fonte, números de linha, minimapa, formatar ao executar, tela ligada, taxa de atualização)
+- [x] Painéis: Preview, Inspector, Console, Problems, Search, Documentation e Explorer. Assets → Fase 5, Profiler → Fase 4 e Agent → Fase 8 foram transferidos formalmente.
+- [x] Reorganizar, redimensionar, esconder painéis; salvar layouts persistentes.
+- [x] Landscape prioritário, portrait utilizável; evitar seleção acidental nos controles.
+- [x] Busca no projeto inteiro.
+- [x] Console e Problems com logs exportáveis (§23).
+- [x] Settings.
 
 Inspector (§12)
-- [ ] Inspector padrão por reflexão; atributos Range, ReadOnly, Hidden, Multiline, Color, File, Asset, Group, Tooltip. (feito, sem validação em aparelho; testado por reflexão, ainda falta a bateria no aparelho)
-- [ ] `Inspector<T>` customizado. (feito, sem validação em aparelho)
-- [ ] Inspecionar variáveis do jogo em execução (fluxo principal §29). (feito, sem validação em aparelho; botão 🔍 no Preview, edição ao vivo na thread do jogo)
+- [x] Inspector padrão por reflexão; atributos Range, ReadOnly, Hidden, Multiline, Color, File, Asset, Group, Tooltip.
+- [x] `Inspector<T>` customizado.
+- [x] Inspecionar variáveis do jogo em execução (fluxo principal §29).
 
 Documentação (§15)
-- [ ] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33). (feito, sem validação em aparelho; `Lunet.Docs`, `docs/api/lunet-framework.json` com teste de deriva, guias em `docs/guides`)
-- [x] Cada API com descrição, assinatura, parâmetros, retorno, exemplos, remarks, relacionadas e versão de introdução. (teste `DocumentationCoverageTests` exige resumo, assinatura, versão, cada parâmetro e retorno descritos; `DocumentedExamplesTests` exige um exemplo por tipo e o compila; remarks e relacionadas onde fazem sentido)
-- [ ] Integração com o editor: "Explain in Documentation". (feito, sem validação em aparelho; botão na Dica do símbolo)
-- [ ] Documentação apontando para trechos dos jogos oficiais (depende da Fase 11).
+- [x] Documentação offline gerada de XML docs, Markdown e metadata da API, dentro do app, como painel Documentation do workspace (§33).
+- [x] Cada API com descrição, assinatura, parâmetros, retorno, exemplos, remarks, relacionadas e versão de introdução.
+- [x] Integração com o editor: "Explain in Documentation".
+- Documentação apontando para trechos dos jogos oficiais foi transferida para a Fase 11, onde os jogos passam a existir; não é pendência do gate da Fase 3.
 
 Preview e hot reload (§10)
-- [x] Classificação de mudanças: hot reload possível × restart required. (a cada Run o status diz o que mudou; o jogo sempre reinicia — sem hot reload mágico)
-- [ ] Fast Preview × Isolated Preview. (feito, sem validação em aparelho; ADR 0006; opção "Preview isolado" em Configurações roda o jogo em outro processo)
+- [x] Classificação de mudanças: hot reload possível × restart required.
+- [x] Fast Preview × Isolated Preview (ADR 0006).
 
 Git, autosave e recovery (§22)
-- [ ] Autosave com journal (ver Fase 1) e recuperação. (histórico limitado a cinco versões por arquivo, escolha da versão na recuperação e acesso pelo menu Ferramentas implementados; testes no CI e validação no aparelho pendentes)
-- [ ] Git progressivo: status, diff, commit, history, branches, revert, push, pull. (feito, sem validação em aparelho; `Lunet.Git` em C# puro, ADR 0005; testado contra o `git` de verdade; falta validar push/pull no GitHub real)
+- [x] Autosave com journal e recuperação.
+- [x] Git progressivo: status, diff, commit, history, branches, revert, push, pull. A integração Git local/real é automatizada; H7–H8 com GitHub permaneceram opcionais no roteiro de aparelho e não são requisito para o gate offline-first.
 
 Auditoria
-- [ ] LUNET-303 — Auditoria de fechamento da Fase 3 registrada em `docs/audits/` e validação integral (§24, §28): candidato, roteiro A–J e J1 em `docs/audits/fase-3-candidata.md`; pendente retorno e aprovação explícita do usuário. Issue #200; handoff `HO-20261004-lunet-f3-candidate`.
+- [x] LUNET-303 — Auditoria de fechamento da Fase 3 registrada em `docs/audits/fase-3.md`; candidato/roteiro A–J/J1 em `docs/audits/fase-3-candidata.md`; validação humana aprovada no portal pela Issue #204. Issue #200; handoff `HO-20261004-lunet-f3-candidate`.
 
 ## Fase 4 — Framework Advanced (§7)
 

@@ -9,11 +9,11 @@
   },
   "task_id": "LUNET-303",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "chatgpt/runtime-closeout-lunet-gate",
   "base_commit": "a1fbb9c972367cf784595450089264f0f7e7baab",
-  "commit": null,
-  "pr": null,
+  "commit": "ed8bfe36c4d076ea20a2c9229805f83c27f10ff6",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/202",
   "files_changed": [
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/CHANGELOG.md",
@@ -31,7 +31,9 @@
     "FATO OBSERVADO: PRs #116/#152 integrados, CI verde; aprovações específicas ZIP (#121) e C6 (#155) já presentes nos handoffs. LUNET-301/302/Issues #111/#149 reconciliadas para done, preservando resultados/fontes humanos.",
     "FATO OBSERVADO: só havia verificações específicas, sem pendência humana crítica do gate integral da Fase 3 no portal. Registra LUNET-303/Issue #200 com objeto concreto, versão/artefato/roteiro e J1.",
     "Candidato exato lunet2d-v0.0.1-dev.1000008 no commit 1ff4386; inclui PR #116 por ancestralidade. Digest informado pelo canal conferido; nenhum byte do APK foi afirmado reconferido.",
-    "Nenhuma fase posterior, Host API no Lunet, IPC, UI/código runtime ou fronteira foi implementada."
+    "Nenhuma fase posterior, Host API no Lunet, IPC, UI/código runtime ou fronteira foi implementada.",
+    "FATO OBSERVADO: validação humana integral LUNET-303 aprovada pelo proprietário no portal pela Issue #204 e registrada na main no commit ed8bfe36.",
+    "Fechamento: Fase 3 liberada. J1 foi coberto pelo objeto aprovado, mas os tempos brutos não foram persistidos; nenhuma métrica foi inventada e PieceTable não foi ativada sem evidência."
   ],
   "verification": [
     {
@@ -56,15 +58,13 @@
     }
   ],
   "known_issues": [
-    "Virtualização do editor depende de medição J1/análise; relatório e falhas precisam de resolução antes de encerrar a fase.",
-    "Registro VALIDATED do build 1000008 continua relativo ao objetivo P4-4; não promove IDE inteira a validada.",
-    "P4-9 e prontidão/decisão do segundo Host permanecem independentes."
+    "Os tempos brutos de J1 não foram persistidos no formulário de validação; a aprovação canônica não registrou falha bloqueante. Reavaliar virtualização somente com nova evidência de desempenho.",
+    "P4-9 e a decisão/implementação de IPC do Ecosystem permanecem independentes da aprovação da IDE."
   ],
   "blockers": [],
   "next_actions": [
-    "Publicar PR de rotina e verificar CI/portal.",
-    "Proprietário executa roteiro no candidato e relata resultados; aprovação crítica via portal após pendências obrigatórias resolvidas.",
-    "Analisar J1, corrigir/retestar falhas e reconciliar auditoria por item antes de concluir Fase 3."
+    "Lunet pode iniciar sua Fase 4 conforme o roadmap local.",
+    "Ecosystem P5-4 deve decidir transporte e confiança em decisão própria; a aprovação da Fase 3 não escolhe IPC nem concede grants."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -114,11 +114,11 @@
     },
     {
       "id": "NN-017",
-      "evidence": "Gate A–J/J1 pendente; aprovações específicas não generalizadas."
+      "evidence": "Gate A–J/J1 aprovado pelo proprietário na Issue #204; CI não foi usado como substituto da validação humana."
     },
     {
       "id": "NN-018",
-      "evidence": "Fechamentos só com integração+CI+aprovação específica; LUNET-303 review."
+      "evidence": "Implementação/CI já integrados, validação humana registrada na main e fechamento documental reconciliado."
     },
     {
       "id": "NN-022",
