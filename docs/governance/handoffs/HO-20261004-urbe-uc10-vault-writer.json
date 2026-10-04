@@ -10,10 +10,10 @@
   },
   "task_id": "UC-10",
   "component": "urbe",
-  "state": "working",
+  "state": "review",
   "branch": "feat/urbe-uc10-vault-writer",
   "base_commit": "d5630340e445377697c7b51edbe0e70522950512",
-  "commit": null,
+  "commit": "83ed0c77c5709e3ac1e02e8aedf328b2b0d66fe7",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/209",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/VaultIdentity.cs",
@@ -43,14 +43,20 @@
     {
       "check": "Build/test UC-10",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "PR #209 aberto; primeiro ciclo identificou escapes C# corrompidos pela criação via API e foi corrigido. Novo head aguarda CI."
+      "result": "passed",
+      "evidence": "urbe-checks run 37217933358 no head 83ed0c77: csharp-portable verde; 43/43 Urbe.Core.Tests passaram, 0 falhas/0 skips."
     },
     {
       "check": "Regressão completa Urbe",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "urbe-checks executará Core/Web/Android/Windows/E2E/checks no estado combinado."
+      "result": "passed",
+      "evidence": "urbe-checks 37217933358: checks, Web/portable, MAUI Windows, MAUI Android e E2E concluíram success."
+    },
+    {
+      "check": "Governança/consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency run 37217933366 concluído success no mesmo head."
     }
   ],
   "known_issues": [
@@ -58,13 +64,12 @@
     "UC-11 export/import ZIP não faz parte desta mudança."
   ],
   "blockers": [
-    "CI verde do PR #209.",
-    "Após verificação, integração crítica exige autorização canônica do proprietário."
+    "Integração crítica do PR #209 exige autorização canônica do proprietário."
   ],
   "next_actions": [
-    "Corrigir falhas de compilação/teste encontradas pelo CI sem enfraquecer as fixtures.",
-    "Quando verde, mover Issue #208 para state:review e registrar evidência final.",
-    "Aguardar autorização crítica do proprietário antes da integração."
+    "Proprietário autoriza a integração crítica do PR #209 pelo mecanismo canônico.",
+    "Integrador reconfirma estado combinado e integra.",
+    "Após integração, encerrar Issue #208, aprovar G-C1 e iniciar UC-11."
   ],
   "decisions_required": [],
   "normative_sources": [
