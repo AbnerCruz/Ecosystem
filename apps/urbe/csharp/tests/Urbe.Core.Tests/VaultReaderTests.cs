@@ -79,7 +79,7 @@ public sealed class VaultReaderTests
             Assert.All(snapshot.Documents, document =>
             {
                 Assert.True(document.IdGenerated);
-                Assert.True(document.Id.StartsWith("doc_", StringComparison.Ordinal));
+                Assert.StartsWith("doc_", document.Id);
             });
             Assert.Equal(snapshot.Documents.Count, snapshot.Documents.Select(document => document.Id).Distinct().Count());
         }
