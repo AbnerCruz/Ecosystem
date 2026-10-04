@@ -13,8 +13,8 @@
   "state": "verifying",
   "branch": "chatgpt/p5-4-post-device-ux",
   "base_commit": "f440c1097743c3d8f0fbdc631ddf3612641df380",
-  "commit": null,
-  "pr": null,
+  "commit": "6b6846a21d74cf6fb6b8d3d071baebbfd33863bb",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/224",
   "files_changed": [
     "ROADMAP.md",
     "apps/hub/src/Hub.Android/MainActivity.Ipc.cs",
