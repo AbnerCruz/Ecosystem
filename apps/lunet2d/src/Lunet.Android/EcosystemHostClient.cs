@@ -62,8 +62,11 @@ internal sealed class EcosystemHostClient : IDisposable
                     return new(false, "Provider não apresentou código de pareamento.");
                 var proposed = new PendingProviderTrust(
                     candidate.PackageName, candidate.SignerSha256, pair.ProviderPublicKey, pair.PairId, pair.PairCode);
-                if (pendingTrust is not null && pendingTrust != proposed)
-                    return new(false, "O provider mudou durante o pareamento. A conexão foi recusada; reinicie o pareamento.");
+                if (pendingTrust is not null &&
+                    (pendingTrust.PackageName != proposed.PackageName ||
+                     pendingTrust.SignerSha256 != proposed.SignerSha256 ||
+                     pendingTrust.PublicKey != proposed.PublicKey))
+                    return new(false, "O provider mudou durante o pareamento. A conexão foi recusada; use Esquecer conexão para reiniciar.");
                 WritePendingTrust(proposed);
                 return new(false, $"Pareamento aguardando aprovação. Compare o código {pair.PairCode} no provider e aprove; depois toque novamente.", pair.PairCode);
             }
