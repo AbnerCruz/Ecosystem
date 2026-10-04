@@ -145,6 +145,21 @@ public sealed class VaultReaderTests
     }
 
     [Fact]
+    public void LegacyDocumentWithoutPersistedIdentityGetsFreshIdOnEachRead()
+    {
+        var first = VaultReader.Read([Text("A.md", "A")]);
+        var second = VaultReader.Read([Text("A.md", "A")]);
+
+        var firstDocument = Assert.Single(first.Documents);
+        var secondDocument = Assert.Single(second.Documents);
+        Assert.True(firstDocument.IdGenerated);
+        Assert.True(secondDocument.IdGenerated);
+        Assert.NotEqual(firstDocument.Id, secondDocument.Id);
+        Assert.StartsWith("doc_", firstDocument.Id);
+        Assert.StartsWith("doc_", secondDocument.Id);
+    }
+
+    [Fact]
     public void V2SidecarTakesPrecedenceOverLegacyV1()
     {
         var snapshot = VaultReader.Read(
