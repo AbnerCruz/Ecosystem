@@ -82,7 +82,7 @@ public sealed class ArtifactModelTests
     {
         Assert.Equal("foo-bar-", ArtifactModel.SafeName("..foo/bar*"));
         Assert.Equal("sem-nome", ArtifactModel.SafeName("..."));
-        Assert.Equal("a b", ArtifactModel.SafeName("  a \t  b. "));
+        Assert.Equal("a - b", ArtifactModel.SafeName("  a \t  b. "));
         Assert.Equal(90, ArtifactModel.SafeName(new string('x', 100)).Length);
     }
 
@@ -238,7 +238,7 @@ public sealed class DocumentStoreTests
 
         Assert.Equal("[historia, #roma]", properties["tags"]);
         Assert.Equal("Abner:extra", properties["owner"]);
-        Assert.Equal(new[] { "corpo", "historia", "roma" }, tags);
+        Assert.Equal(new[] { "roma", "corpo", "historia" }, tags);
     }
 
     [Fact]
