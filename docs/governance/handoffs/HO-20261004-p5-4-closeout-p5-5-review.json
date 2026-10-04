@@ -36,7 +36,8 @@
     "DEC-0038 aberta como única autoridade pendente antes de qualquer extração compartilhada.",
     "Explicitamente recusada a promoção prematura de LocalCapabilityHost, AuthenticatedHostGateway, Binder ou ecosystem-local/0.",
     "Issue #194 de P5-4 encerrada após a aprovação canônica e o closeout documental.",
-    "Issue #227 de P5-5 movida para state:waiting enquanto DEC-0038 está pendente."
+    "Issue #227 de P5-5 movida para state:waiting enquanto DEC-0038 está pendente.",
+    "Issue #194 corrigida para state:done, alinhando o estado vivo terminal ao ROADMAP [x]."
   ],
   "verification": [
     {
@@ -57,7 +58,7 @@
       "check": "Checks do PR de transição",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Primeiro consistency do PR #228 falhou apenas porque o snapshot foi tirado antes do fechamento da Issue #194; todos os demais checks passaram. Issue #194 já está fechada e este commit força nova avaliação com o estado vivo correto."
+      "evidence": "Segundo consistency do PR #228 confirmou que ADR/DEC/handoffs/roadmap passam; a única falha era a label residual state:review da Issue #194. Issue corrigida para state:done; este commit dispara a avaliação final."
     }
   ],
   "known_issues": [
