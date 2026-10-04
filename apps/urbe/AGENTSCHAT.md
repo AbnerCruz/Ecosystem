@@ -317,3 +317,10 @@
 - Segurança de dados: mapas futuros/corruptos não recebem IDs gerados e não podem produzir metadata para persistência; helper de VaultSnapshot recusa snapshot recuperado por journal enquanto o JSON efetivo completo de regiões não estiver disponível.
 - Paridade revisada: lookup espacial/região continua case-sensitive como `Map` do JS; ID documental permanece case-insensitive via DocumentStore; `files:[]` mantém a semântica truthy do JavaScript e não cai para `anexos`.
 - Limites: terreno/biomas, layout/reorganização, AquariumWorld, ruas, NPCs/vida e UI estão fora da UC-13.
+
+
+### 2026-10-04 — ChatGPT — UC-13 verificada
+- Head de código verificado: `281f5234`.
+- `urbe-checks` #37230492613: Core C# 134/134 testes, Web smoke, Android, Windows, checks e E2E todos verdes.
+- `consistency` #37230492604: verde.
+- Issue #221 movida para `state:review`; PR #223 segue rotina automática de integração.
