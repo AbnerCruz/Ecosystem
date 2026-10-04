@@ -220,15 +220,19 @@ public sealed class DocumentStore
         var links = input.Links ?? DocumentModel.ParseLinks(content);
 
         return new UrbeDocument(
-            input.Id ?? DocumentModel.CreateDocumentId(),
+            string.IsNullOrEmpty(input.Id)
+                ? DocumentModel.CreateDocumentId()
+                : input.Id,
             path,
-            input.Title ?? ArtifactModel.TitleFromPath(path),
+            string.IsNullOrEmpty(input.Title)
+                ? ArtifactModel.TitleFromPath(path)
+                : input.Title,
             content,
             propertyCopy,
             Array.AsReadOnly(tags.ToArray()),
             Array.AsReadOnly(links.ToArray()),
-            input.Created,
-            input.Modified,
+            string.IsNullOrEmpty(input.Created) ? null : input.Created,
+            string.IsNullOrEmpty(input.Modified) ? null : input.Modified,
             input.Revision ?? 0);
     }
 
@@ -240,7 +244,9 @@ public sealed class DocumentStore
 
         var path = DocumentModel.NormalizePath(input.Path);
         _pathIndex.TryGetValue(path, out var existingId);
-        var id = input.Id ?? existingId ?? DocumentModel.CreateDocumentId();
+        var id = !string.IsNullOrEmpty(input.Id)
+            ? input.Id
+            : existingId ?? DocumentModel.CreateDocumentId();
         _documents.TryGetValue(id, out var previous);
 
         IReadOnlyDictionary<string, string>? properties = input.Properties;
