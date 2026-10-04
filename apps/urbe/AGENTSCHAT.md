@@ -281,3 +281,10 @@
 - Revisão adversarial final: o import preserva `.urbe/` quando ela é a própria raiz do vault e classifica o envelope de manifesto futuro como future antes de interpretar o schema interno, evitando downgrade perigoso para corrupt.
 - Bloqueio único: autorização canônica do proprietário para integrar mudança crítica de dados do usuário.
 - Próximo passo após integração: encerrar Issue #212 e iniciar UC-12 — documentos, artefatos e índice de conhecimento.
+
+
+### 2026-10-04 — ChatGPT — UC-11 integrada / M1 concluído
+- PR #213 integrado manualmente pela conta proprietária `AbnerCruz` em `4b572d4f`.
+- Após o merge, o head final foi reconfirmado: `urbe-checks` 37222912657 e `consistency` 37222912663 verdes; C# portátil, Android, Windows, E2E e checks passaram, com 63/63 testes C#.
+- UC-11 encerrada. M1 — Núcleo de dados — está completo: leitura, escrita, migração/backup/identidade/GC e export/import ZIP estão no Core C#.
+- Próxima tarefa: UC-12 — documentos, artefatos e índice de conhecimento.
