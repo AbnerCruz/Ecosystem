@@ -1,0 +1,143 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-4-binder-ipc",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T16:25:00Z",
+  "agent": {
+    "id": "chatgpt-p5-4-binder-ipc",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-4",
+  "component": "ecosystem",
+  "state": "working",
+  "branch": "chatgpt/p5-4-binder-ipc",
+  "base_commit": "d5630340e445377697c7b51edbe0e70522950512",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/adr/0027-primeiro-ipc-local-android.md",
+    "docs/governance/decisions.json",
+    "apps/hub/src/Hub.Core/Capabilities/AuthenticatedHostGateway.cs",
+    "apps/hub/tests/Hub.Tests/AuthenticatedHostGatewayTests.cs",
+    "docs/governance/handoffs/HO-20261004-p5-4-binder-ipc.json"
+  ],
+  "work_completed": [
+    "DEC-0037-A aplicada: ADR-0027 aceita e P5-4/LUNET-401 marcados em andamento.",
+    "Gateway externo local ao Hub criado para adaptar Host API a peer já autenticado, sem aceitar identidade/grants do payload.",
+    "Sessões externas são vinculadas ao peer, limitadas, canceláveis, fecháveis e possuem deadline finito.",
+    "Testes adicionados para fluxo válido, roubo de sessão, budget, replay, cancelamento, deadline e recuperação."
+  ],
+  "verification": [
+    {
+      "check": "Hub.Core gateway tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando hub-ci do PR em rascunho."
+    },
+    {
+      "check": "Android Binder/Keystore real",
+      "kind": "human",
+      "result": "pending",
+      "object": "docs/validation/P5-4-binder-ipc.md",
+      "critical": true,
+      "evidence": "Objeto será criado antes de sair de working; validação DEVICE só depois dos APKs candidatos."
+    }
+  ],
+  "known_issues": [
+    "Binder/Keystore e UI de pareamento ainda estão em implementação; nenhuma alegação de IPC real nesta etapa.",
+    "IPC-01..IPC-18 só poderão ser fechados quando os casos aplicáveis tiverem evidência Android/processos distintos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Definir binding Android v1 e budgets.",
+    "Implementar Service/Binder + identidade/Keystore/pairing no Hub.",
+    "Implementar client Binder/pairing no Lunet sem referência a Hub.Core.",
+    "Rodar CI combinado, corrigir bindings .NET Android e preparar roteiro DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/adr/0027-primeiro-ipc-local-android.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/ipc-transport-readiness.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/multi-agent.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "DEC-0037 é a autoridade da escolha; binding não cria Registry/Context paralelo."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Integração permanece opcional; Lunet não depende de Hub para domínio essencial."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "text.inspect@1.0.0 e Host API v1 existentes continuam contratos canônicos."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Tool continua em Hub.Core sem conhecer Binder, Hub Activity ou Lunet."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas e contratos foram lidos diretamente antes da implementação."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Transporte/confiança só começaram após DEC-0037-A e ADR-0027."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Runtime usa Binder local; GitHub não participa do IPC."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Gateway recebe peer autenticado do adapter e não permite identidade/grants vindos do payload."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI da fundação será separado da futura validação DEVICE de Binder/Keystore."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Primeiro binding é Android-específico conforme evidência de consumidor real."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Gateway permanece local ao Hub; nenhum package compartilhado foi extraído."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "LUNET-401 é opcional e ausência do Hub não afeta IDE/framework."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "authenticated-host-gateway",
+      "status": "possible-candidate",
+      "rationale": "Há um segundo consumidor real da semântica Host API, mas a implementação permanece local até P5-5/Extraction Review; este slice não autoriza extração."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security"
+    ],
+    "reason": "P5-4 cria a primeira fronteira de confiança IPC e autenticação entre aplicativos; integração exige autorização do proprietário após todos os checks."
+  },
+  "cost": null
+}
