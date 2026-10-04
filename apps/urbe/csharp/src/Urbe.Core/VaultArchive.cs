@@ -233,7 +233,10 @@ public static class VaultArchive
             return null;
 
         var root = candidates[0][0];
+        // Diretórios de sistema/ocultos pertencem ao vault; nunca são apenas
+        // uma embalagem descartável do ZIP (ex.: ".urbe/").
         if (root.Length == 0 ||
+            root[0] == '.' ||
             candidates.Any(parts =>
                 !string.Equals(parts[0], root, StringComparison.Ordinal)))
             return null;
