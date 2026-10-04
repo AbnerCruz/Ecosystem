@@ -96,6 +96,44 @@ public sealed class VaultArchiveTests
     }
 
     [Fact]
+    public void FutureEnvelopeIsRefusedEvenWhenItsInnerSchemaChanged()
+    {
+        var changedSchema = VaultExportManifestCodec.Parse(
+            """
+            {
+              "format":"urbe-export",
+              "formatVersion":9,
+              "files":[{"newShape":{"path":"A.md"}}],
+              "state":{"v9":{"unknown":true}}
+            }
+            """);
+        Assert.Equal(VaultExportManifestState.Future, changedSchema.State);
+        Assert.Equal(9d, changedSchema.DetectedFormatVersion);
+
+        var fractionalFuture = VaultExportManifestCodec.Parse(
+            """{"format":"urbe-export","formatVersion":1.5,"files":[]}""");
+        Assert.Equal(VaultExportManifestState.Future, fractionalFuture.State);
+        Assert.Equal(1.5d, fractionalFuture.DetectedFormatVersion);
+
+        var zip = BuildZip(
+            [
+                (
+                    VaultExportManifest.FileName,
+                    Encoding.UTF8.GetBytes(
+                        """
+                        {
+                          "format":"urbe-export",
+                          "formatVersion":9,
+                          "files":[{"v9path":"A.md"}]
+                        }
+                        """)),
+                ("A.md", Encoding.UTF8.GetBytes("a"))
+            ]);
+
+        Assert.Throws<InvalidDataException>(() => VaultArchive.Import(zip));
+    }
+
+    [Fact]
     public void PortableStateAllowsOnlyExpectedKeysAndNeverAiSecrets()
     {
         var storage = new Dictionary<string, string>(StringComparer.Ordinal)
