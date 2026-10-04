@@ -13,7 +13,7 @@
   "branch": "chatgpt/p5-3-host-api-v1",
   "base_commit": "8163417117e160b0ed550146d02210b337ae7a03",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/193",
   "files_changed": [
     "ROADMAP.md",
     "apps/hub/src/Hub.Core/Capabilities/LocalCapabilityHost.cs",
