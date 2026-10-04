@@ -16,9 +16,9 @@ Inventário de trabalho sobre os 14 cenários congelados em `oracle.json`. Esta 
 | `adapters.e2e.mjs` | `storage.scenario`, 16 `browser.storage` | Nenhum dos critérios atuais de IDB/OPFS: cidades, texto, ausentes, unicode, blobs, pastas, remoção e lote têm passos portáveis; execução C# futura permanece aberta |
 | `layout.e2e.mjs` | `browser-world-layout-old/keep/command` | Nenhum dos critérios atuais de reorganização/diálogo/backup/registro/desfazer/reabertura; execução C# futura permanece aberta |
 | `multi-city.e2e.mjs` | `browser-world-multi-city` | Nenhum dos critérios atuais: stores Norte/Sul, três boots idempotentes, IDs/geometria de origem, escritor único e arquivar sem apagar stores estão em dados portáveis; execução C# futura permanece aberta |
-| `map-writer.e2e.mjs` | `ui-create-save-reload` cobre persistência explícita | Persistência automática de documento/mundo. O critério de escritor único exige instrumentação própria da pilha C#; não portar regex de stack JS como regra de produto |
+| `map-writer.e2e.mjs` | `browser-world-map-writer` | Nenhum dos critérios funcionais atuais: criação só pela API chega ao mapa, reorganização persiste e o cliente de referência prova escritor único; o cliente C# futuro deve instrumentar sua própria pilha, sem copiar regex de stack JS |
 | `zip.e2e.mjs` | Testes JS congelados; ainda sem operação portável ZIP | Export/import, manifesto/hashes, binários, preferências sem chaves, adulteração cancelada e versão futura recusada |
 
-Próxima fatia: fechar `map-writer`, escala S e ZIP; depois consolidar lifecycle/permissões por superfície sem fabricar execução física. Cenários físicos e permissões do SO são aceite de UC-23/24/25/29; seus protocolos devem ser definidos sem fabricar execução humana.
+Próxima fatia: fechar escala S e ZIP; depois consolidar lifecycle/permissões por superfície sem fabricar execução física. Cenários físicos e permissões do SO são aceite de UC-23/24/25/29; seus protocolos devem ser definidos sem fabricar execução humana.
 
 Os caminhos e IDs dos testes permanecem no inventário congelado. O cliente C# poderá usar seus próprios comandos e seletores para produzir os mesmos resultados; equivalência de resultado não exige copiar Electron, Capacitor, IndexedDB ou nomes de módulos JS.
