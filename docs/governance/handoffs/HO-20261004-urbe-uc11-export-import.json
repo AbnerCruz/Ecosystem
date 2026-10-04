@@ -1,0 +1,102 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc11-export-import",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T17:24:38Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-11",
+  "component": "urbe",
+  "state": "working",
+  "branch": "feat/urbe-uc11-export-import",
+  "base_commit": "1d69d5e055238d602283abe1c508743f3378020c",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/213",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VaultExportManifest.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultArchive.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultArchiveTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc11-export-import.json"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "UC-11 define import/export integral de dados do usuário, valida integridade e interpreta arquivos que depois serão gravados pelos hosts."
+  },
+  "work_completed": [
+    "Manifesto urbe-export.json v1 portado para C# com metadados, size em bytes e SHA-256 ordenado por path.",
+    "Parser diferencia current/corrupt/future; export futuro é recusado pelo importador.",
+    "Verificação detecta conteúdo adulterado, arquivo faltante e arquivo extra sem escrever nada.",
+    "Política de estado portátil replica allowlist do JS e rejeita chaves de IA/segredos; aprovações de plugins são filtradas pelo vault e remapeadas no destino.",
+    "VaultArchive exporta/importa ZIP em memória com System.IO.Compression, preserva bytes e .urbe, exclui journals v1/v2 e suporta pasta-raiz única.",
+    "Proteção de caminhos valida o nome bruto antes do strip de prefixo e rejeita traversal, absoluto Windows/Unix e duplicatas normalizadas.",
+    "Manifesto de nome reservado inválido é tratado como arquivo comum e não ganha autoridade."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests UC-11",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37220350132: build Release passou; 61/61 testes C# passaram, 0 falhas e 0 skips."
+    },
+    {
+      "check": "Regressão completa Urbe",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Run 37220350132 ainda executava checks/E2E/Windows quando o handoff foi registrado; nova rodada será disparada por este head documental."
+    }
+  ],
+  "known_issues": [
+    "O Core não aplica arquivos importados ao filesystem nem decide UX para manifesto com hashes divergentes; isso pertence aos hosts/superfícies posteriores.",
+    "UC-11 não implementa domínio de documentos/mundo da M2."
+  ],
+  "blockers": [
+    "CI completo verde no head final.",
+    "Após verificação, integração crítica exige nova autorização canônica do proprietário."
+  ],
+  "next_actions": [
+    "Executar regressão completa no head final e corrigir qualquer divergência sem afrouxar os testes.",
+    "Quando verde, mover Issue #212 e handoff para review.",
+    "Aguardar autorização crítica antes da integração e só então iniciar UC-12."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/src/persistence/export-manifest.js",
+    "apps/urbe/src/app.js",
+    "apps/urbe/tests/export-manifest.mjs",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece em Urbe.Core e usa somente BCL/System.IO.Compression/System.Text.Json."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhuma dependência de Hub, filesystem, MAUI, Blazor, browser storage ou rede."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #212, branch própria, PR #213 e handoff específico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação física/UI alegada; escopo é biblioteca .NET."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-11 permanece working até regressão completa e integração crítica."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Export/import permanece utilizável sem plano de controle do Ecosystem."
+    }
+  ]
+}
