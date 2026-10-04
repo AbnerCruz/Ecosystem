@@ -87,7 +87,7 @@ jobs:
           find _site -maxdepth 2 -type f -printf '%P\n' | sort
           grep -Fq '<title>Ecosystem — Portal</title>' _site/index.html
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
 
