@@ -122,7 +122,17 @@ public sealed class VaultReaderTests
                 snapshot.FutureFiles.Order(StringComparer.Ordinal));
         }
 
-        AssertHashes(expected, "noteHashes", snapshot, preferDocument: true);
+        if (expected.TryGetProperty("contents", out var contents))
+        {
+            foreach (var property in contents.EnumerateObject())
+            {
+                var document = Assert.Single(snapshot.Documents, item =>
+                    string.Equals(item.Path, property.Name, StringComparison.OrdinalIgnoreCase));
+                Assert.Equal(property.Value.GetString(), document.Text);
+            }
+        }
+
+        AssertHashes(expected, "noteHashes", snapshot, preferDocument: false);
         AssertHashes(expected, "futureHashes", snapshot, preferDocument: false);
         AssertHashes(expected, "keepHashes", snapshot, preferDocument: false);
 
