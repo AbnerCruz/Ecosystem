@@ -256,4 +256,34 @@ public class AuthenticatedHostGatewayTests
         Assert.DoesNotContain("SECRET", JsonSerializer.Serialize(failed));
     }
 
+    [Fact]
+    public async Task RevokeDuringExecutionCancelsAndRemovesCapability()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var capability = new LocalCapability(
+            "secure.inspect", "test", new Version(1, 0, 0), "inspect", Root(), ["content.read"],
+            "stateless", _ => true, _ => true, async (_, token) =>
+            {
+                started.TrySetResult();
+                await Task.Delay(Timeout.Infinite, token);
+                return JsonSerializer.SerializeToElement(new { ok = true });
+            });
+        using var gateway = new AuthenticatedHostGateway(
+            new LocalCapabilityHost([capability], ["content.read"]));
+        var session = gateway.Open("peer", "actor", Context(), ["content.read"]).SessionId!;
+        Assert.Contains(gateway.Discover("peer", session).Capabilities, x => x.Id == "secure.inspect");
+
+        var running = gateway.InvokeAsync("peer", session, "secure-1", "secure.inspect", "inspect",
+            new Version(1, 0, 0), Input(), TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+        await started.Task.WaitAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(gateway.Revoke("peer", session, ["content.read"]));
+        var response = await running.WaitAsync(TimeSpan.FromSeconds(1), TestContext.Current.CancellationToken);
+        Assert.Equal("REVOKED", response.HostError);
+        Assert.Null(response.Output);
+        Assert.DoesNotContain(gateway.Discover("peer", session).Capabilities, x => x.Id == "secure.inspect");
+        Assert.False(gateway.Revoke("peer", session, ["content.read"]));
+    }
+
+
 }
