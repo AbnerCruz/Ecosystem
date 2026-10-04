@@ -215,6 +215,28 @@ internal sealed class EcosystemPairingStore
         }
     }
 
+    internal ApprovedPeer[] ApprovedPeers()
+    {
+        lock (_sync)
+        {
+            var state = Clean(Load(), DateTimeOffset.UtcNow);
+            Save(state);
+            return state.Approved;
+        }
+    }
+
+    internal bool RevokeApproved(string pairId)
+    {
+        lock (_sync)
+        {
+            var state = Clean(Load(), DateTimeOffset.UtcNow);
+            var next = state.Approved.Where(x => x.PairId != pairId).ToArray();
+            if (next.Length == state.Approved.Length) { Save(state); return false; }
+            Save(state with { Approved = next });
+            return true;
+        }
+    }
+
     internal bool Reject(string pairId)
     {
         lock (Sync)
