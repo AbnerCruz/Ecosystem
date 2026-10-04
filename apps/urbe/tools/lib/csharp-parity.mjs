@@ -6,6 +6,8 @@ import { ROOT, parseRequirements, parseSpec, parseRoadmap } from './v2-docs.mjs'
 import { makeVaultCases, makeRestoreCases, makeCrashCases } from './parity-vault.mjs';
 import { makeStorageCases, makeLegacyIdbCases } from './parity-storage.mjs';
 import { makeDomainCases } from './parity-domain.mjs';
+import { makeUiCases } from './parity-browser.mjs';
+import { makeUpdateCases } from './parity-update.mjs';
 import { makeNativeCases } from './parity-native.mjs';
 
 export const read = (p) => readFileSync(join(ROOT, p), 'utf8');
@@ -20,7 +22,7 @@ const lineOf = (p, text) => `${p}:${read(p).split('\n').findIndex((s) => s.inclu
 
 // Inventário inclui arquivos ocultos das fixtures: .urbe e .pasta fazem parte do contrato.
 export function oraclePaths() {
-  return [...files('tests').filter((p) => !['tests/csharp-parity.mjs', 'tests/csharp-vault-parity.mjs', 'tests/csharp-vault-contract.mjs', 'tests/csharp-storage-parity.mjs', 'tests/csharp-domain-parity.mjs', 'tests/csharp-native-parity.mjs'].includes(p)),
+  return [...files('tests').filter((p) => !['tests/csharp-parity.mjs', 'tests/csharp-vault-parity.mjs', 'tests/csharp-vault-contract.mjs', 'tests/csharp-storage-parity.mjs', 'tests/csharp-domain-parity.mjs', 'tests/csharp-native-parity.mjs', 'tests/csharp-update-parity.mjs', 'tests/e2e/app-runtime-parity.e2e.mjs'].includes(p)),
     ...files('docs/v2/contracts'), ...files('tutorial'),
     'docs/v2/REQUIREMENTS.md', 'docs/v2/SPEC.md', 'docs/v2/ROADMAP.md',
     'docs/v2/discovery/DATA-CATALOG.md', 'docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md'].sort();
@@ -97,7 +99,7 @@ export function renderParity(corpus) {
     out.push(`| ${op} | ${corpus.cases.filter((c) => c.operation === op).length} | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |`);
   }
   out.push('', '## Lacunas e ligação com o Ecosystem', '',
-    '- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; quatro casos injetam crash antes/durante/depois de gravação multi-arquivo; 13 casos de storage verificam FSA sobre ponte nativa e o adapter IDB/browser, e um caso próprio cobre a migração histórica `kv["cidade"]` para o vault único sem confundi-la com a loja `fs` atual. 24 casos nativos verificam capacidades/APIs presentes e ausentes por superfície, bytes, links, exportação/cancelamento, impressão e recusas injetadas. Ainda faltam atualização completa, lifecycle/permissões reais e UI. A execução no C# integra UC-9/10/18/23/24/25.',
+    '- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; quatro casos injetam crash antes/durante/depois de gravação multi-arquivo; 13 casos de storage verificam FSA sobre ponte nativa e o adapter IDB/browser, e um caso próprio cobre a migração histórica `kv["cidade"]` para o vault único sem confundi-la com a loja `fs` atual. 24 casos nativos verificam capacidades/APIs presentes e ausentes por superfície, bytes, links, exportação/cancelamento, impressão e recusas injetadas. 19 casos de atualização Android/Windows verificam seleção do feed por Product, versões, eventos/replay, instalação manual/reinício e recuperação após erro. Oito casos UI cobrem primeira abertura, criação/salvamento/reabertura, edição Visual, roteamento, lifecycle documental, preview integrado e GC com cancelamento/confirmação em Chromium. Restam outras transcrições UI, lifecycle/permissões reais e aceite físico por superfície. A execução no C# integra UC-9/10/18/23/24/25.',
     '- REQ aceito ainda não entregue no JS continua como obrigação do C#, com o teste/aceite do ROADMAP acima; um golden de comportamento antigo nunca fecha esse requisito.',
     '- Android físico, Windows instalado e PWA offline ainda precisam de evidência própria. Simulações e Chromium não os validam.',
     '- Context/capabilities do Ecosystem têm contrato na Fase 2; transporte/Host API da Fase 5 ainda não implementados. Urbe fornece seu domínio por adapter quando esses contratos estiverem prontos; nunca depende do plano de controle nem diretamente de outro Product.',
@@ -116,7 +118,7 @@ export function makeCorpus() {
     ...visual.map((g, i) => ({ id: `visual-${String(i + 1).padStart(3, '0')}`, operation: 'visual.serialize',
       requirements: ['REQ-027'], source: `tests/fixtures/visual-golden.json#/${i}`,
       input: { html: g.html, bodyEditor: g.bodyEditor }, expected: { markdown: g.md } })),
-    ...makeVaultCases(), ...makeRestoreCases(), ...makeCrashCases(), ...makeStorageCases(), ...makeLegacyIdbCases(), ...makeDomainCases(), ...makeNativeCases()] };
+    ...makeVaultCases(), ...makeRestoreCases(), ...makeCrashCases(), ...makeStorageCases(), ...makeLegacyIdbCases(), ...makeDomainCases(), ...makeNativeCases(), ...makeUpdateCases(), ...makeUiCases()] };
 }
 export function validateCorpus(corpus) {
   if (corpus.schemaVersion !== 1 || corpus.product !== 'urbe') throw new Error('corpus inválido');
@@ -132,7 +134,7 @@ export function compareResults(cases, results) {
     const c = cases.find((c) => c.id === r.id);
     if (!c || seen.has(r.id)) throw new Error('ID de resultado desconhecido/duplicado');
     seen.add(r.id);
-    if (r.error || !deepEqual(c.expected, r.output)) throw new Error(`paridade falhou: ${r.id}`);
+    if (r.error || !deepEqual(c.expected, r.output)) throw new Error(`paridade falhou: ${r.id}; esperado ${JSON.stringify(c.expected)}; observado ${JSON.stringify(r.output)}${r.error ? '; erro '+r.error : ''}`);
   }
 }
 function deepEqual(a, b) {

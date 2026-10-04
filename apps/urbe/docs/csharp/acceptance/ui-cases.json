@@ -1,0 +1,521 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "ui-first-boot",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/0",
+      "input": {
+        "steps": [
+          {
+            "method": "boot",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "titleMatches": true,
+            "tutorialPresent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-create-save-reload",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/1",
+      "input": {
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Pasta/Nota.md",
+              "# Nota\n\nTexto com acento e emoji 🏙️.\n"
+            ]
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          },
+          {
+            "method": "reload",
+            "args": []
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          }
+        ],
+        "files": {
+          "Base.md": "# Base\n"
+        }
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "saved": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ],
+          null,
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "saved": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ui-visual-save-reload",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/2",
+      "input": {
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Pasta/Nota.md",
+              "# Nota\n"
+            ]
+          },
+          {
+            "method": "visualAppend",
+            "args": [
+              "linha nova <strong>forte</strong>",
+              "linha nova"
+            ]
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          },
+          {
+            "method": "reload",
+            "args": []
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          }
+        ],
+        "files": {
+          "Base.md": "# Base\n"
+        }
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          null,
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nlinha nova **forte**\n",
+              "saved": "# Nota\n\nlinha nova **forte**\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ],
+          null,
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nlinha nova **forte**\n",
+              "saved": "# Nota\n\nlinha nova **forte**\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ui-artifact-routing",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/3",
+      "input": {
+        "steps": [
+          {
+            "method": "route",
+            "args": [
+              "Páginas/Inicio.page.json",
+              "{\n  \"version\": 1,\n  \"kind\": \"urbe-page\",\n  \"meta\": {\n    \"title\": \"Início\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Início\"\n      },\n      \"style\": {}\n    }\n  ]\n}",
+              false
+            ]
+          },
+          {
+            "method": "route",
+            "args": [
+              "Cronometro.md",
+              "# Cronometro\n",
+              false
+            ]
+          },
+          {
+            "method": "route",
+            "args": [
+              "Páginas/Inicio.page.json",
+              "{\n  \"version\": 1,\n  \"kind\": \"urbe-page\",\n  \"meta\": {\n    \"title\": \"Início\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Início\"\n      },\n      \"style\": {}\n    }\n  ]\n}",
+              true
+            ]
+          },
+          {
+            "method": "linkTargets",
+            "args": [
+              "cronometro",
+              "Personalização/plugins/cronometro.js",
+              "urbe.plugin({nome:'Cronômetro',versao:'1',ligar:function(){}});\n"
+            ]
+          }
+        ],
+        "files": {
+          "Base.md": "# Base\n"
+        }
+      },
+      "expected": {
+        "values": [
+          {
+            "studioVisible": true
+          },
+          {
+            "studioVisible": false
+          },
+          {
+            "studioVisible": false
+          },
+          {
+            "paths": [
+              "Cronometro.md"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-document-lifecycle",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-040",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/4",
+      "input": {
+        "files": {
+          "Base.md": "# Base\n"
+        },
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Projetos/Minha nota.md",
+              "# Minha nota\n\nOlá [[Base]] #e2e\n"
+            ]
+          },
+          {
+            "method": "rename",
+            "args": [
+              "Projetos/Minha nota.md",
+              "Nota renomeada"
+            ]
+          },
+          {
+            "method": "rememberPosition",
+            "args": [
+              "Projetos/Nota renomeada.md",
+              "Projetos/Minha nota.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "reload",
+            "args": []
+          },
+          {
+            "method": "positionStable",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "delete",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "restore",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "editHistory",
+            "args": [
+              "Projetos/Nota renomeada.md",
+              "# Minha nota\n\nOlá [[Base]] #e2e\n\nsegunda versão"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          {
+            "path": "Projetos/Nota renomeada.md"
+          },
+          {
+            "positionPresent": true,
+            "mapIdStable": true,
+            "oldAbsent": true
+          },
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false
+          },
+          null,
+          {
+            "stable": true
+          },
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false
+          },
+          null,
+          {
+            "content": null,
+            "saved": null,
+            "idStable": false,
+            "inTrash": true
+          },
+          null,
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false
+          },
+          {
+            "historyPresent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-gc-cancel",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/5",
+      "input": {
+        "files": {
+          "Alfa.md": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n",
+          "Beta.md": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n",
+          ".urbe/trash.json": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}",
+          ".urbe/compositions.json": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}",
+          ".urbe/history.json": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"v0\"}],\"doc_00000007-0000-4000-8000-000000000000\":[{\"timestamp\":1780000000000,\"path\":\"Sumida.md\",\"content\":\"x\"}],\"doc_00000008-0000-4000-8000-000000000000\":[{\"timestamp\":1790500000000,\"path\":\"Recente.md\",\"content\":\"y\"}],\"doc_00000009-0000-4000-8000-000000000000\":[{\"timestamp\":1788000000000,\"path\":\"Velha.md\",\"content\":\"z\"}]}}",
+          ".urbe/mapa.json": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 32\n  }\n },\n \"construcoes\": []\n}"
+        },
+        "docs": 2,
+        "now": 1791072000000,
+        "steps": [
+          {
+            "method": "gc",
+            "args": [
+              "cancel",
+              "doc_00000007-0000-4000-8000-000000000000",
+              [
+                "doc_00000001-0000-4000-8000-000000000000",
+                "doc_00000009-0000-4000-8000-000000000000"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "oldPresent": true,
+            "kept": [
+              true,
+              true
+            ],
+            "sources": [
+              "doc_00000001-0000-4000-8000-000000000000",
+              "doc_00000007-0000-4000-8000-000000000000",
+              "doc_00000009-0000-4000-8000-000000000000"
+            ],
+            "confirmationExplains": true,
+            "paletteSafe": true,
+            "maintenanceRecorded": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-gc-apply",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/6",
+      "input": {
+        "files": {
+          "Alfa.md": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n",
+          "Beta.md": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n",
+          ".urbe/trash.json": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}",
+          ".urbe/compositions.json": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}",
+          ".urbe/history.json": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"v0\"}],\"doc_00000007-0000-4000-8000-000000000000\":[{\"timestamp\":1780000000000,\"path\":\"Sumida.md\",\"content\":\"x\"}],\"doc_00000008-0000-4000-8000-000000000000\":[{\"timestamp\":1790500000000,\"path\":\"Recente.md\",\"content\":\"y\"}],\"doc_00000009-0000-4000-8000-000000000000\":[{\"timestamp\":1788000000000,\"path\":\"Velha.md\",\"content\":\"z\"}]}}",
+          ".urbe/mapa.json": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 32\n  }\n },\n \"construcoes\": []\n}"
+        },
+        "docs": 2,
+        "now": 1791072000000,
+        "steps": [
+          {
+            "method": "gc",
+            "args": [
+              "apply",
+              "doc_00000007-0000-4000-8000-000000000000",
+              [
+                "doc_00000001-0000-4000-8000-000000000000",
+                "doc_00000009-0000-4000-8000-000000000000"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "oldPresent": false,
+            "kept": [
+              true,
+              true
+            ],
+            "sources": [
+              "doc_00000001-0000-4000-8000-000000000000",
+              "doc_00000009-0000-4000-8000-000000000000"
+            ],
+            "confirmationExplains": true,
+            "paletteSafe": true,
+            "maintenanceRecorded": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-integrated-preview",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/7",
+      "input": {
+        "files": {
+          "Base.md": "# Base\n"
+        },
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Harness/Preview.md",
+              "# Preview\n\n| a | b |\n|:--|--:|\n| 1 | 2 |\n\n> [!tip] Dica\n> corpo\n\n[[Nota nova]] e [x](javascript:alert(1)) e [ok](https://exemplo.com)\n"
+            ]
+          },
+          {
+            "method": "preview",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          {
+            "table": true,
+            "callout": "tip",
+            "wikilink": "Nota nova",
+            "unsafeHref": false,
+            "safeHref": "https://exemplo.com"
+          }
+        ]
+      }
+    }
+  ]
+}

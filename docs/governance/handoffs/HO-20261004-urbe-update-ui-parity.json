@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-update-ui-parity",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T06:27:36Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-2",
+  "component": "urbe",
+  "state": "review",
+  "branch": "chatgpt/urbe-uc2-acceptance-complete",
+  "base_commit": "093ef4fe6ef6eadcd97fa6686fdd68d291892990",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/171",
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/docs/csharp/PARITY.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/acceptance/E2E-COVERAGE.md",
+    "apps/urbe/docs/csharp/acceptance/README.md",
+    "apps/urbe/docs/csharp/acceptance/cases.json",
+    "apps/urbe/docs/csharp/acceptance/ui-cases.json",
+    "apps/urbe/docs/csharp/acceptance/update-cases.json",
+    "apps/urbe/tests/csharp-native-parity.mjs",
+    "apps/urbe/tests/csharp-update-parity.mjs",
+    "apps/urbe/tests/e2e/app-runtime-parity.e2e.mjs",
+    "apps/urbe/tools/lib/csharp-parity.mjs",
+    "apps/urbe/tools/lib/parity-browser.mjs",
+    "apps/urbe/tools/lib/parity-update.mjs",
+    "apps/urbe/tools/parity-reference-client.mjs",
+    "apps/urbe/tools/parity-update-client.mjs",
+    "docs/governance/handoffs/HO-20261004-urbe-update-ui-parity.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Tooling/testes/docs do programa UC-2 aprovado; sem runtime, segurança, dados, contrato público ou canal alterados."
+  },
+  "work_completed": [
+    "FATO OBSERVADO: PR #169 integrado em 197cee91; base inclui a versão-ponte #167.",
+    "19 casos JSON atualização Android/Windows: seleção do Product, versões, eventos/replay, instalação/reinício e erros/recuperação; hosts e rede simulados.",
+    "Oito cenários UI portáveis e cliente unificado: primeira abertura, edição/roteamento, lifecycle documental e GC com diálogo cancelar/aplicar; teste E2E no filtro app-runtime.",
+    "Corpus aditivo 233 → 260, sem alterar runtime, goldens, hashes do oráculo ou IDs anteriores.",
+    "Inventário dos 14 E2E com critérios ainda a transcrever, sem converter cobertura parcial em conclusão de UC-2.",
+    "Correção rastreável do adapter lifecycle: posição capturada do mapa após rename, como tests/e2e/lifecycle.e2e.mjs; caminho antigo ausente e ID no mapa agora explícitos. Roteamento inclui exclusão de plugin homônimo como alvo de wikilink.",
+    "Preview integrado: tabela/callout/wikilink, href inseguro sanitizado e https preservado; GC verifica maintenance persistido."
+  ],
+  "verification": [
+    {
+      "check": "node tests/csharp-update-parity.mjs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "19 casos, nove mutações rejeitadas e saída recalculada com entrada diferente."
+    },
+    {
+      "check": "node tools/csharp-parity.mjs run update.scenario node tools/parity-reference-client.mjs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "19/19 saídas iguais pelo protocolo JSON unificado."
+    },
+    {
+      "check": "node tests/csharp-parity.mjs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Oráculo intacto, projeção atualizada, corpus 256, 40 resultados Markdown calculados e omissões/mutações rejeitadas."
+    },
+    {
+      "check": "npm run check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Rodada local 66/66 arquivos; checks de versão, módulos, dívida, rastreabilidade, tutorial, fixtures e UC-3 verdes. Última expansão só mudou tooling UI/docs; testes focados de corpus/nativo/updater novamente verdes."
+    },
+    {
+      "check": "node tests/e2e/app-runtime-parity.e2e.mjs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "8693684: 256/256 iguais e 5/5 E2E no CI. b2b3d46 identificou divergência de posição em ui-document-lifecycle: adapter capturava projeção em memória na criação, em vez do mapa persistido após rename como a fonte original. Captura corrigida para mapa após rename → projeção após reabertura; posição após restaurar lixeira não é critério do E2E original. Head corrigido aguarda CI.",
+      "tested_commit": "869368463a04c1ee0365ae2ced9fed6cf1ebcc31"
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "CI run 37182892825/job 111378840362: consistency, self-test e simulação integrador verdes.",
+      "tested_commit": "869368463a04c1ee0365ae2ced9fed6cf1ebcc31"
+    },
+    {
+      "check": "git diff --check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sem erro de whitespace."
+    }
+  ],
+  "known_issues": [
+    "UC-2 continua aberto: demais transcrições UI/E2E, lifecycle e permissões reais.",
+    "Nenhum cliente C# nem escolha UC-5/6; G-C0 não concluído.",
+    "Host/rede simulados não validam instalação, assinatura, download, Android físico ou Windows instalado.",
+    "Casos UI ampliados/corrigidos aguardam nova execução CI; quatro iniciais foram provados em Chromium (256/256)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI e corrigir quaisquer divergências; integração somente pelo integrador automático.",
+    "Continuar transcrição UI/E2E e lifecycle antes de fechar UC-2."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/v2/contracts/native.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "apps/urbe/docs/csharp/acceptance/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "cases.json/PARITY permanecem projeções do corpus; não criou schema de vault."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #139, branch, PR e handoff registram escopo/estado/evidência."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "DEC-0024-B e DEC-0025-C preservadas; nenhuma escolha de pilha."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente."
+    },
+    {
+      "id": "NN-013",
+      "evidence": "Runtime JS congelado intocado; só preparação de paridade."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Simulações explícitas, sem fabricar validação humana."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-2 aberto, verificação Chromium e consistency pendentes explícitas."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "233 IDs anteriores preservados; 27 casos aditivos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Tooling específico do Product; nenhuma extração."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência do Hub nem mudança de distribuição."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "update-ui-parity-corpus",
+      "status": "product-specific",
+      "rationale": "Corpus e clientes específicos dos contratos Urbe; nenhum segundo consumidor."
+    }
+  ]
+}

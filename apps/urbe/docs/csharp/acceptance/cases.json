@@ -6961,6 +6961,1772 @@
           }
         ]
       }
+    },
+    {
+      "id": "update-android-available-install",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/0",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "urbe-v1.8.4-beta",
+                "body": "Notas 1.8.4-beta",
+                "assets": [
+                  {
+                    "name": "Urbe-1.8.4-beta.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check",
+          "subscribe",
+          "install"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.4-beta",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk",
+            "notes": "Notas 1.8.4-beta"
+          },
+          null,
+          null
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.4-beta",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk",
+            "notes": "Notas 1.8.4-beta"
+          }
+        ],
+        "late": [
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.4-beta",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk",
+            "notes": "Notas 1.8.4-beta"
+          }
+        ],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": [
+          "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk"
+        ]
+      }
+    },
+    {
+      "id": "update-android-same-version",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/1",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "urbe-v1.8.3-beta",
+                "body": "Notas 1.8.3-beta",
+                "assets": [
+                  {
+                    "name": "Urbe-1.8.3-beta.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.3-beta/Urbe-1.8.3-beta.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check",
+          "subscribe",
+          "install"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          },
+          null,
+          null
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-older-version",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/2",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "urbe-v1.7.9",
+                "body": "Notas 1.7.9",
+                "assets": [
+                  {
+                    "name": "Urbe-1.7.9.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.7.9/Urbe-1.7.9.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-stable-over-beta",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/3",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "urbe-v1.8.3",
+                "body": "Notas 1.8.3",
+                "assets": [
+                  {
+                    "name": "Urbe-1.8.3.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.3/Urbe-1.8.3.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.3",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.3/Urbe-1.8.3.apk",
+            "notes": "Notas 1.8.3"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.3",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.3/Urbe-1.8.3.apk",
+            "notes": "Notas 1.8.3"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-beta-below-stable",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/4",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.4",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "urbe-v1.8.4-beta",
+                "body": "Notas 1.8.4-beta",
+                "assets": [
+                  {
+                    "name": "Urbe-1.8.4-beta.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "none",
+            "version": "1.8.4"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "none",
+            "version": "1.8.4"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-numeric-prerelease",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/5",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "urbe-v1.9.0-beta.2",
+                "body": "Notas 1.9.0-beta.2",
+                "assets": [
+                  {
+                    "name": "Urbe-1.9.0-beta.2.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.9.0-beta.2/Urbe-1.9.0-beta.2.apk"
+                  }
+                ]
+              },
+              {
+                "tag_name": "urbe-v1.9.0-beta.10",
+                "body": "Notas 1.9.0-beta.10",
+                "assets": [
+                  {
+                    "name": "Urbe-1.9.0-beta.10.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.9.0-beta.10/Urbe-1.9.0-beta.10.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.9.0-beta.10",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.9.0-beta.10/Urbe-1.9.0-beta.10.apk",
+            "notes": "Notas 1.9.0-beta.10"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.9.0-beta.10",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.9.0-beta.10/Urbe-1.9.0-beta.10.apk",
+            "notes": "Notas 1.9.0-beta.10"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-mixed-products",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/6",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "another-v99.0.0",
+                "body": "Notas 99.0.0",
+                "assets": [
+                  {
+                    "name": "Urbe-99.0.0.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v99.0.0/Urbe-99.0.0.apk"
+                  }
+                ]
+              },
+              {
+                "tag_name": "urbe-v1.8.4-beta",
+                "body": "Notas 1.8.4-beta",
+                "assets": [
+                  {
+                    "name": "Urbe-1.8.4-beta.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk"
+                  }
+                ]
+              },
+              {
+                "tag_name": "urbe-v1.8.5-beta",
+                "body": "Notas 1.8.5-beta",
+                "assets": [
+                  {
+                    "name": "Urbe-1.8.5-beta.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.5-beta/Urbe-1.8.5-beta.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.5-beta",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.5-beta/Urbe-1.8.5-beta.apk",
+            "notes": "Notas 1.8.5-beta"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.5-beta",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.5-beta/Urbe-1.8.5-beta.apk",
+            "notes": "Notas 1.8.5-beta"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-invalid-releases",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/7",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "urbe-v99.0.0",
+                "body": "Notas 99.0.0",
+                "assets": [
+                  {
+                    "name": "Urbe-99.0.0.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v99.0.0/Urbe-99.0.0.apk"
+                  }
+                ],
+                "draft": true
+              },
+              {
+                "tag_name": "urbe-v98.0.0",
+                "body": "Notas 98.0.0",
+                "assets": []
+              },
+              {
+                "tag_name": "urbe-v97.0.0",
+                "body": "Notas 97.0.0",
+                "assets": [
+                  {
+                    "name": "Urbe-97.0.0.apk",
+                    "browser_download_url": "https://evil.example/Urbe-97.0.0.apk"
+                  }
+                ]
+              },
+              {
+                "tag_name": "urbe-v96.0.0",
+                "body": "Notas 96.0.0",
+                "assets": [
+                  {
+                    "name": "Other.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v96.0.0/Urbe-96.0.0.apk"
+                  }
+                ]
+              },
+              {
+                "tag_name": "urbe-vinvalid",
+                "body": "Notas invalid",
+                "assets": [
+                  {
+                    "name": "Urbe-invalid.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-vinvalid/Urbe-invalid.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-http-denied",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/8",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 403,
+            "releases": []
+          }
+        ],
+        "steps": [
+          "check",
+          "subscribe",
+          "install"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "error",
+            "message": "GitHub respondeu 403"
+          },
+          null,
+          null
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "error",
+            "message": "GitHub respondeu 403"
+          }
+        ],
+        "late": [
+          {
+            "state": "error",
+            "message": "GitHub respondeu 403"
+          }
+        ],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-offline",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/9",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [],
+            "reject": "offline"
+          }
+        ],
+        "steps": [
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "error",
+            "message": "offline"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "error",
+            "message": "offline"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-json-error",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/10",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [],
+            "jsonError": "JSON inválido"
+          }
+        ],
+        "steps": [
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "error",
+            "message": "JSON inválido"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "error",
+            "message": "JSON inválido"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-install-before-check",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/11",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "urbe-v1.8.4-beta",
+                "body": "Notas 1.8.4-beta",
+                "assets": [
+                  {
+                    "name": "Urbe-1.8.4-beta.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "install",
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          null,
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.4-beta",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk",
+            "notes": "Notas 1.8.4-beta"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.4-beta",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk",
+            "notes": "Notas 1.8.4-beta"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": []
+      }
+    },
+    {
+      "id": "update-android-recovery",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/12",
+      "input": {
+        "surface": "android",
+        "currentVersion": "1.8.3-beta",
+        "responses": [
+          {
+            "reject": "offline"
+          },
+          {
+            "status": 200,
+            "releases": [
+              {
+                "tag_name": "urbe-v1.8.4-beta",
+                "body": "Notas 1.8.4-beta",
+                "assets": [
+                  {
+                    "name": "Urbe-1.8.4-beta.apk",
+                    "browser_download_url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check",
+          "check",
+          "install"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "error",
+            "message": "offline"
+          },
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.4-beta",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk",
+            "notes": "Notas 1.8.4-beta"
+          },
+          null
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "error",
+            "message": "offline"
+          },
+          {
+            "state": "checking"
+          },
+          {
+            "state": "available",
+            "manualInstall": true,
+            "version": "1.8.4-beta",
+            "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk",
+            "notes": "Notas 1.8.4-beta"
+          }
+        ],
+        "late": [],
+        "requests": [
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          },
+          {
+            "url": "https://api.github.com/repos/AbnerCruz/Ecosystem/releases?per_page=100",
+            "cache": "no-store",
+            "accept": "application/vnd.github+json"
+          }
+        ],
+        "opened": [
+          "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk"
+        ]
+      }
+    },
+    {
+      "id": "update-windows-ready-install",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/13",
+      "input": {
+        "surface": "windows",
+        "packaged": true,
+        "responses": [
+          {
+            "events": [
+              {
+                "name": "checking-for-update",
+                "data": {}
+              },
+              {
+                "name": "update-available",
+                "data": {
+                  "version": "1.8.4-beta"
+                }
+              },
+              {
+                "name": "download-progress",
+                "data": {
+                  "percent": 57.5
+                }
+              },
+              {
+                "name": "update-downloaded",
+                "data": {
+                  "version": "1.8.4-beta"
+                }
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check",
+          "subscribe",
+          "check",
+          "install"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "ready",
+            "version": "1.8.4-beta"
+          },
+          null,
+          {
+            "state": "ready",
+            "version": "1.8.4-beta"
+          },
+          null
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "downloading",
+            "version": "1.8.4-beta",
+            "percent": 0
+          },
+          {
+            "state": "downloading",
+            "version": "1.8.4-beta",
+            "percent": 57.5
+          },
+          {
+            "state": "ready",
+            "version": "1.8.4-beta"
+          }
+        ],
+        "late": [
+          {
+            "state": "ready",
+            "version": "1.8.4-beta"
+          }
+        ],
+        "installed": [
+          [
+            false,
+            true
+          ]
+        ],
+        "checks": 1,
+        "automatic": true
+      }
+    },
+    {
+      "id": "update-windows-downloading",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/14",
+      "input": {
+        "surface": "windows",
+        "packaged": true,
+        "responses": [
+          {
+            "events": [
+              {
+                "name": "checking-for-update",
+                "data": {}
+              },
+              {
+                "name": "update-available",
+                "data": {
+                  "version": "1.8.4-beta"
+                }
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check",
+          "check",
+          "install"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "downloading",
+            "version": "1.8.4-beta",
+            "percent": 0
+          },
+          {
+            "state": "downloading",
+            "version": "1.8.4-beta",
+            "percent": 0
+          },
+          null
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "downloading",
+            "version": "1.8.4-beta",
+            "percent": 0
+          }
+        ],
+        "late": [],
+        "installed": [],
+        "checks": 1,
+        "automatic": true
+      }
+    },
+    {
+      "id": "update-windows-none",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/15",
+      "input": {
+        "surface": "windows",
+        "packaged": true,
+        "responses": [
+          {
+            "events": [
+              {
+                "name": "checking-for-update",
+                "data": {}
+              },
+              {
+                "name": "update-not-available",
+                "data": {
+                  "version": "1.8.3-beta"
+                }
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check",
+          "subscribe",
+          "install"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          },
+          null,
+          null
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          }
+        ],
+        "late": [],
+        "installed": [],
+        "checks": 1,
+        "automatic": true
+      }
+    },
+    {
+      "id": "update-windows-rejected-recovery",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/16",
+      "input": {
+        "surface": "windows",
+        "packaged": true,
+        "responses": [
+          {
+            "reject": "offline\ndetalhe privado"
+          },
+          {
+            "events": [
+              {
+                "name": "checking-for-update",
+                "data": {}
+              },
+              {
+                "name": "update-not-available",
+                "data": {
+                  "version": "1.8.3-beta"
+                }
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check",
+          "subscribe",
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "error",
+            "message": "offline"
+          },
+          null,
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          }
+        ],
+        "events": [
+          {
+            "state": "error",
+            "message": "offline"
+          },
+          {
+            "state": "checking"
+          },
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          }
+        ],
+        "late": [
+          {
+            "state": "error",
+            "message": "offline"
+          },
+          {
+            "state": "checking"
+          },
+          {
+            "state": "none",
+            "version": "1.8.3-beta"
+          }
+        ],
+        "installed": [],
+        "checks": 2,
+        "automatic": true
+      }
+    },
+    {
+      "id": "update-windows-event-error",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/17",
+      "input": {
+        "surface": "windows",
+        "packaged": true,
+        "responses": [
+          {
+            "events": [
+              {
+                "name": "checking-for-update",
+                "data": {}
+              },
+              {
+                "name": "error",
+                "data": {
+                  "message": "rede\nstack"
+                }
+              }
+            ]
+          }
+        ],
+        "steps": [
+          "check"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "error",
+            "message": "rede"
+          }
+        ],
+        "events": [
+          {
+            "state": "checking"
+          },
+          {
+            "state": "error",
+            "message": "rede"
+          }
+        ],
+        "late": [],
+        "installed": [],
+        "checks": 1,
+        "automatic": true
+      }
+    },
+    {
+      "id": "update-windows-unpackaged",
+      "operation": "update.scenario",
+      "requirements": [
+        "REQ-082"
+      ],
+      "source": "docs/csharp/acceptance/update-cases.json#/cases/18",
+      "input": {
+        "surface": "windows",
+        "packaged": false,
+        "responses": [],
+        "steps": [
+          "check",
+          "install"
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "state": "none",
+            "message": "Atualização automática só no app instalado."
+          },
+          null
+        ],
+        "events": [],
+        "late": [],
+        "installed": [],
+        "checks": 0,
+        "automatic": false
+      }
+    },
+    {
+      "id": "ui-first-boot",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/0",
+      "input": {
+        "steps": [
+          {
+            "method": "boot",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "titleMatches": true,
+            "tutorialPresent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-create-save-reload",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/1",
+      "input": {
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Pasta/Nota.md",
+              "# Nota\n\nTexto com acento e emoji 🏙️.\n"
+            ]
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          },
+          {
+            "method": "reload",
+            "args": []
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          }
+        ],
+        "files": {
+          "Base.md": "# Base\n"
+        }
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "saved": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ],
+          null,
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "saved": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ui-visual-save-reload",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/2",
+      "input": {
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Pasta/Nota.md",
+              "# Nota\n"
+            ]
+          },
+          {
+            "method": "visualAppend",
+            "args": [
+              "linha nova <strong>forte</strong>",
+              "linha nova"
+            ]
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          },
+          {
+            "method": "reload",
+            "args": []
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          }
+        ],
+        "files": {
+          "Base.md": "# Base\n"
+        }
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          null,
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nlinha nova **forte**\n",
+              "saved": "# Nota\n\nlinha nova **forte**\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ],
+          null,
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nlinha nova **forte**\n",
+              "saved": "# Nota\n\nlinha nova **forte**\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ui-artifact-routing",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/3",
+      "input": {
+        "steps": [
+          {
+            "method": "route",
+            "args": [
+              "Páginas/Inicio.page.json",
+              "{\n  \"version\": 1,\n  \"kind\": \"urbe-page\",\n  \"meta\": {\n    \"title\": \"Início\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Início\"\n      },\n      \"style\": {}\n    }\n  ]\n}",
+              false
+            ]
+          },
+          {
+            "method": "route",
+            "args": [
+              "Cronometro.md",
+              "# Cronometro\n",
+              false
+            ]
+          },
+          {
+            "method": "route",
+            "args": [
+              "Páginas/Inicio.page.json",
+              "{\n  \"version\": 1,\n  \"kind\": \"urbe-page\",\n  \"meta\": {\n    \"title\": \"Início\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Início\"\n      },\n      \"style\": {}\n    }\n  ]\n}",
+              true
+            ]
+          },
+          {
+            "method": "linkTargets",
+            "args": [
+              "cronometro",
+              "Personalização/plugins/cronometro.js",
+              "urbe.plugin({nome:'Cronômetro',versao:'1',ligar:function(){}});\n"
+            ]
+          }
+        ],
+        "files": {
+          "Base.md": "# Base\n"
+        }
+      },
+      "expected": {
+        "values": [
+          {
+            "studioVisible": true
+          },
+          {
+            "studioVisible": false
+          },
+          {
+            "studioVisible": false
+          },
+          {
+            "paths": [
+              "Cronometro.md"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-document-lifecycle",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-040",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/4",
+      "input": {
+        "files": {
+          "Base.md": "# Base\n"
+        },
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Projetos/Minha nota.md",
+              "# Minha nota\n\nOlá [[Base]] #e2e\n"
+            ]
+          },
+          {
+            "method": "rename",
+            "args": [
+              "Projetos/Minha nota.md",
+              "Nota renomeada"
+            ]
+          },
+          {
+            "method": "rememberPosition",
+            "args": [
+              "Projetos/Nota renomeada.md",
+              "Projetos/Minha nota.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "reload",
+            "args": []
+          },
+          {
+            "method": "positionStable",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "delete",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "restore",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "lifecycleObserve",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
+          },
+          {
+            "method": "editHistory",
+            "args": [
+              "Projetos/Nota renomeada.md",
+              "# Minha nota\n\nOlá [[Base]] #e2e\n\nsegunda versão"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          {
+            "path": "Projetos/Nota renomeada.md"
+          },
+          {
+            "positionPresent": true,
+            "mapIdStable": true,
+            "oldAbsent": true
+          },
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false
+          },
+          null,
+          {
+            "stable": true
+          },
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false
+          },
+          null,
+          {
+            "content": null,
+            "saved": null,
+            "idStable": false,
+            "inTrash": true
+          },
+          null,
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false
+          },
+          {
+            "historyPresent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-gc-cancel",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/5",
+      "input": {
+        "files": {
+          "Alfa.md": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n",
+          "Beta.md": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n",
+          ".urbe/trash.json": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}",
+          ".urbe/compositions.json": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}",
+          ".urbe/history.json": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"v0\"}],\"doc_00000007-0000-4000-8000-000000000000\":[{\"timestamp\":1780000000000,\"path\":\"Sumida.md\",\"content\":\"x\"}],\"doc_00000008-0000-4000-8000-000000000000\":[{\"timestamp\":1790500000000,\"path\":\"Recente.md\",\"content\":\"y\"}],\"doc_00000009-0000-4000-8000-000000000000\":[{\"timestamp\":1788000000000,\"path\":\"Velha.md\",\"content\":\"z\"}]}}",
+          ".urbe/mapa.json": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 32\n  }\n },\n \"construcoes\": []\n}"
+        },
+        "docs": 2,
+        "now": 1791072000000,
+        "steps": [
+          {
+            "method": "gc",
+            "args": [
+              "cancel",
+              "doc_00000007-0000-4000-8000-000000000000",
+              [
+                "doc_00000001-0000-4000-8000-000000000000",
+                "doc_00000009-0000-4000-8000-000000000000"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "oldPresent": true,
+            "kept": [
+              true,
+              true
+            ],
+            "sources": [
+              "doc_00000001-0000-4000-8000-000000000000",
+              "doc_00000007-0000-4000-8000-000000000000",
+              "doc_00000009-0000-4000-8000-000000000000"
+            ],
+            "confirmationExplains": true,
+            "paletteSafe": true,
+            "maintenanceRecorded": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-gc-apply",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/6",
+      "input": {
+        "files": {
+          "Alfa.md": "# Alfa\n\nPrimeira nota com [[Beta]] e #tag1.\n",
+          "Beta.md": "# Beta\n\nSegunda nota, volta para [[Alfa]].\n",
+          ".urbe/trash.json": "{\n \"version\": 1,\n \"items\": [\n  {\n   \"document\": {\n    \"id\": \"doc_00000009-0000-4000-8000-000000000000\",\n    \"path\": \"Velha.md\",\n    \"title\": \"Velha\",\n    \"content\": \"# Velha\\n\",\n    \"properties\": {},\n    \"tags\": [],\n    \"links\": [],\n    \"created\": \"2026-08-01\",\n    \"modified\": \"2026-08-02\",\n    \"revision\": 1\n   },\n   \"deletedAt\": 1789000000000,\n   \"originalPath\": \"Velha.md\"\n  }\n ]\n}",
+          ".urbe/compositions.json": "{\"version\":1,\"items\":[{\"id\":\"cmp_00000001\",\"name\":\"Junção\",\"type\":\"document\",\"sources\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"theme\":\"claro\",\"styles\":{},\"overrides\":{},\"customCSS\":\"\",\"htmlSource\":\"\",\"order\":[\"doc_00000001-0000-4000-8000-000000000000\",\"doc_00000007-0000-4000-8000-000000000000\",\"doc_00000009-0000-4000-8000-000000000000\"],\"created\":\"2026-09-01\",\"modified\":\"2026-09-02\"}]}",
+          ".urbe/history.json": "{\"version\":1,\"documents\":{\"doc_00000001-0000-4000-8000-000000000000\":[{\"timestamp\":1790000000000,\"path\":\"Alfa.md\",\"content\":\"v0\"}],\"doc_00000007-0000-4000-8000-000000000000\":[{\"timestamp\":1780000000000,\"path\":\"Sumida.md\",\"content\":\"x\"}],\"doc_00000008-0000-4000-8000-000000000000\":[{\"timestamp\":1790500000000,\"path\":\"Recente.md\",\"content\":\"y\"}],\"doc_00000009-0000-4000-8000-000000000000\":[{\"timestamp\":1788000000000,\"path\":\"Velha.md\",\"content\":\"z\"}]}}",
+          ".urbe/mapa.json": "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"version\": \"1.8.2-beta\",\n \"mundo\": \"placas-1\",\n \"salvo\": \"2026-09-02T10:00:00.000Z\",\n \"camera\": {\n  \"x\": 120,\n  \"y\": 90,\n  \"z\": 1\n },\n \"regioes\": [],\n \"notas\": {\n  \"Alfa.md\": {\n   \"id\": \"doc_00000001-0000-4000-8000-000000000000\",\n   \"x\": 32,\n   \"y\": 32\n  },\n  \"Beta.md\": {\n   \"id\": \"doc_00000002-0000-4000-8000-000000000000\",\n   \"x\": 36,\n   \"y\": 32\n  }\n },\n \"construcoes\": []\n}"
+        },
+        "docs": 2,
+        "now": 1791072000000,
+        "steps": [
+          {
+            "method": "gc",
+            "args": [
+              "apply",
+              "doc_00000007-0000-4000-8000-000000000000",
+              [
+                "doc_00000001-0000-4000-8000-000000000000",
+                "doc_00000009-0000-4000-8000-000000000000"
+              ]
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "oldPresent": false,
+            "kept": [
+              true,
+              true
+            ],
+            "sources": [
+              "doc_00000001-0000-4000-8000-000000000000",
+              "doc_00000009-0000-4000-8000-000000000000"
+            ],
+            "confirmationExplains": true,
+            "paletteSafe": true,
+            "maintenanceRecorded": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-integrated-preview",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/7",
+      "input": {
+        "files": {
+          "Base.md": "# Base\n"
+        },
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Harness/Preview.md",
+              "# Preview\n\n| a | b |\n|:--|--:|\n| 1 | 2 |\n\n> [!tip] Dica\n> corpo\n\n[[Nota nova]] e [x](javascript:alert(1)) e [ok](https://exemplo.com)\n"
+            ]
+          },
+          {
+            "method": "preview",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          {
+            "table": true,
+            "callout": "tip",
+            "wikilink": "Nota nova",
+            "unsafeHref": false,
+            "safeHref": "https://exemplo.com"
+          }
+        ]
+      }
     }
   ]
 }
