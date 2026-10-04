@@ -28,22 +28,23 @@ public sealed partial class MainActivity
             var key = new AndroidInstallationKey("ecosystem.ipc.provider.v1");
             var store = new EcosystemPairingStore(this, key);
             var pending = store.Pending().FirstOrDefault();
+            var approvedPeers = store.Approved().ToArray();
             var activeSessions = EcosystemCapabilityService.ActiveSessionCount;
             if (pending is null)
             {
                 if (automatic) return;
-                var approved = store.Approved().FirstOrDefault();
+                var approved = approvedPeers.FirstOrDefault();
                 if (approved is null)
                 {
                     new AlertDialog.Builder(this).SetTitle("Conexões locais")
-                        .SetMessage($"Nenhum pareamento aguardando aprovação e nenhuma instalação está conectada.\nSessões IPC ativas: {activeSessions}.")
+                        .SetMessage($"Instalações pareadas: 0\nSessões IPC abertas agora: {activeSessions}.\n\nSessões são temporárias e só permanecem abertas enquanto há uma operação ou teste de lifecycle em andamento.")
                         .SetPositiveButton("OK", (_, _) => { }).Show();
                     return;
                 }
 
                 var approvedSigner = approved.SignerSha256.Length > 16 ? approved.SignerSha256[..16] + "…" : approved.SignerSha256;
-                new AlertDialog.Builder(this).SetTitle("Conexão local aprovada")
-                    .SetMessage($"Aplicativo: {approved.PackageName}\nAssinante observado: {approvedSigner}\nSessões IPC ativas: {activeSessions}\n\nA revogação remove a confiança desta instalação. O próximo uso exigirá novo pareamento.")
+                new AlertDialog.Builder(this).SetTitle("Instalação pareada")
+                    .SetMessage($"Aplicativo: {approved.PackageName}\nAssinante observado: {approvedSigner}\nInstalações pareadas: {approvedPeers.Length}\nSessões IPC abertas agora: {activeSessions}\n\nZero sessões é normal quando nenhum comando está em execução. O pareamento continua válido. A revogação remove a confiança desta instalação e o próximo uso exigirá novo pareamento.")
                     .SetNegativeButton("Fechar", (_, _) => { })
                     .SetPositiveButton("Revogar", (_, _) => store.Revoke(approved.PairId))
                     .Show();
