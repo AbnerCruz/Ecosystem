@@ -9,6 +9,8 @@
 
 ### Added
 
+- Candidato exato e entrega do roteiro integral da Fase 3 no portal (LUNET-303); aprovações ZIP/C6 reconciliadas sem aprovar o gate inteiro.
+
 - Identidade Framework / IDE / Studio code-first, um Product e um projeto, política Visual ↔ Source e backlog classificado (ADR 0007).
 
 - Importar ZIP na tela de projetos: restaura projetos exportados pelo Lunet, aceita lunet.json na raiz, cria cópia numerada quando o nome já existe e rejeita ZIP inválido sem deixar projeto parcial.

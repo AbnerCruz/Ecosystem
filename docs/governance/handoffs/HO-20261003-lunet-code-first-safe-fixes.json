@@ -9,7 +9,7 @@
   },
   "task_id": "LUNET-302",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "codex/lunet-code-first-safe-fixes",
   "base_commit": "c024c0876b09721e7868c4b14c97ee71e4088746",
   "commit": null,
@@ -34,7 +34,8 @@
     "Framework/IDE/Studio sobre o mesmo projeto; Studio opcional, fonte inspecionável, SDK comum e backlog classificado. Agent Runtime compartilhado (primeiro consumidor ecosystem-ai), sem runtime paralelo.",
     "FATO OBSERVADO: remoção de using apagava classe inline; ordenação perdia global/comentários. Correção preserva source, CRLF e EOF; casos ambíguos recusados.",
     "ArchitectureTests protegem independência transitiva contra Studio e ferramentas; roteiro C6 e auditoria atualizados.",
-    "FATO OBSERVADO: #121 aprovada; #111 ainda state:review; nenhuma segunda reconciliação concorrente criada."
+    "FATO OBSERVADO: #121 aprovada; #111 ainda state:review; nenhuma segunda reconciliação concorrente criada.",
+    "Encerramento factual 2026-10-04: PR #152 integrado, CI verde, aprovação humana específica preservada sem alterar texto/fonte; não aprova gate Fase 3."
   ],
   "verification": [
     {
@@ -64,8 +65,8 @@
     {
       "check": "CI do PR e APK",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "PR será aberto; integrador testa main atual + PR. Sem APK candidato antes da integração."
+      "result": "passed",
+      "evidence": "PR #152 merged em 1ff4386bae93edf027db81c8de6579640d2e58ed; lunet2d-ci run 37149331446 success. Release lunet2d-v0.0.1-dev.1000008 publicada no commit 1ff4386; inclui ambas as implementações (ancestralidade Git conferida)."
     },
     {
       "check": "C6 correções rápidas no Android",
@@ -77,13 +78,11 @@
     }
   ],
   "known_issues": [
-    "Gate da Fase 3 permanece pendente; não começou Fase 4.",
-    "Roteiro da Fase 3 não possui aprovação integral; medição J1 permanece necessária."
+    "Gate integral da Fase 3 permanece pendente (LUNET-303/Issue #200); aprovações específicas não equivalem à fase inteira."
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI e classificação crítica do ADR pelo integrador; não integrar manualmente nem aplicar label integrar.",
-    "Confirmar APK pela distribuição direta após integração; entregar C6 e roteiro completo da Fase 3."
+    "Validar roteiro integral da Fase 3 e medição J1 em LUNET-303."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -140,11 +139,11 @@
     },
     {
       "id": "NN-017",
-      "evidence": "C6 Android pendente; gate aberto."
+      "evidence": "Aprovação humana específica preservada com fonte (#121 ZIP ou #155 C6); gate integral da Fase 3 permanece LUNET-303 pendente."
     },
     {
       "id": "NN-018",
-      "evidence": "Review até integração/CI/evidência humana aplicável."
+      "evidence": "Done sustentado por PR integrado, CI verde e aprovação humana específica; nenhuma aprovação da fase inteira inferida."
     },
     {
       "id": "NN-022",

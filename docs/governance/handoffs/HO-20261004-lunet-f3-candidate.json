@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-lunet-f3-candidate",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T14:39:00Z",
+  "agent": {
+    "id": "chatgpt-p5-runtime-continue",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-303",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "chatgpt/runtime-closeout-lunet-gate",
+  "base_commit": "a1fbb9c972367cf784595450089264f0f7e7baab",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/audits/fase-3.md",
+    "apps/lunet2d/docs/audits/fase-3-candidata.md",
+    "docs/governance/handoffs/HO-20261004-lunet-f3-candidate.json",
+    "docs/governance/handoffs/HO-20261003-lunet-import-zip.json",
+    "docs/governance/handoffs/HO-20261003-lunet-code-first-safe-fixes.json",
+    "docs/governance/handoffs/HO-20261004-hub-input-validation-reentrancy.json",
+    "ROADMAP.md"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: PR #198 integrado, HUB-201/Issue #197 encerrada com 257 testes e CI combinado 37206661106 success.",
+    "FATO OBSERVADO: PRs #116/#152 integrados, CI verde; aprovações específicas ZIP (#121) e C6 (#155) já presentes nos handoffs. LUNET-301/302/Issues #111/#149 reconciliadas para done, preservando resultados/fontes humanos.",
+    "FATO OBSERVADO: só havia verificações específicas, sem pendência humana crítica do gate integral da Fase 3 no portal. Registra LUNET-303/Issue #200 com objeto concreto, versão/artefato/roteiro e J1.",
+    "Candidato exato lunet2d-v0.0.1-dev.1000008 no commit 1ff4386; inclui PR #116 por ancestralidade. Digest informado pelo canal conferido; nenhum byte do APK foi afirmado reconferido.",
+    "Nenhuma fase posterior, Host API no Lunet, IPC, UI/código runtime ou fronteira foi implementada."
+  ],
+  "verification": [
+    {
+      "check": "Release candidata e CI existente",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Release publicada e asset arm64/digest; lunet2d-ci 37149331446 e APK 37149331442 success. Commit 1ff4386 contém PRs #116/#152."
+    },
+    {
+      "check": "Consistency e diff",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks de consistência e git diff --check passaram; build portátil Lunet zero warnings/erros e 321 testes passaram. Projeção local do portal confirma exatamente uma validação pending/critical=true com objeto e botões Aprovar/Reprovar. CI testa estado combinado."
+    },
+    {
+      "check": "Gate integral da Fase 3 do Lunet em aparelho (A–J e medição J1)",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/lunet2d/docs/audits/fase-3-candidata.md",
+      "evidence": "Aguardar resultados do roteiro A–J, relatório J1 e aprovação explícita do proprietário. ZIP/C6/P4-4 não equivalem ao gate inteiro."
+    }
+  ],
+  "known_issues": [
+    "Virtualização do editor depende de medição J1/análise; relatório e falhas precisam de resolução antes de encerrar a fase.",
+    "Registro VALIDATED do build 1000008 continua relativo ao objetivo P4-4; não promove IDE inteira a validada.",
+    "P4-9 e prontidão/decisão do segundo Host permanecem independentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Publicar PR de rotina e verificar CI/portal.",
+    "Proprietário executa roteiro no candidato e relata resultados; aprovação crítica via portal após pendências obrigatórias resolvidas.",
+    "Analisar J1, corrigir/retestar falhas e reconciliar auditoria por item antes de concluir Fase 3."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/permissions.json",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/integration-policy.json",
+    "tests/consistency/README.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/audits/fase-3.md",
+    "apps/lunet2d/docs/audits/fase-3-roteiro.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/validation/lunet2d/0.0.1-dev.1000008.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ROADMAP escopo, Issue #200 estado, handoff resposta humana; registro P4-4 de build preservado no escopo próprio."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Resultado e objeto pendente observáveis no portal."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "SPEC/DEVELOPMENT/auditoria e fontes canônicas consultadas diretamente."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Gate A–J/J1 pendente; aprovações específicas não generalizadas."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Fechamentos só com integração+CI+aprovação específica; LUNET-303 review."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem código/abstração compartilhada nem segundo Host fabricado."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Registro de candidato/gate e fechamento factual de tarefas aprovadas; sem nova decisão, aprovação pelo agente, runtime ou política. Verificação humana é crítica por ser gate, distinta da classificação documental."
+  },
+  "cost": null
+}
