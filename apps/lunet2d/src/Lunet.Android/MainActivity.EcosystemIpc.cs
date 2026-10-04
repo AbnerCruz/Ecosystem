@@ -1,5 +1,4 @@
 using Android.App;
-using Android.Text.InputMethods;
 using Android.Widget;
 
 namespace Lunet.Android;
@@ -18,7 +17,7 @@ public sealed partial class MainActivity
         };
         input.SetSingleLine(false);
         input.SetMinLines(3);
-        input.ImeOptions = ImeAction.Done;
+        input.ImeOptions = global::Android.Views.InputMethods.ImeAction.Done;
 
         new AlertDialog.Builder(this)
             .SetTitle("Conexão local do Ecosystem")
