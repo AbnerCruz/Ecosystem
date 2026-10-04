@@ -14,7 +14,7 @@
   "branch": "feat/urbe-uc12-documents-knowledge",
   "base_commit": "76ad67e7c4d25ff378333cc3ca766c148a43252c",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/218",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/ArtifactModel.cs",
     "apps/urbe/csharp/src/Urbe.Core/DocumentModel.cs",
