@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "ui-first-boot",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/0",
+      "input": {
+        "steps": [
+          {
+            "method": "boot",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "titleMatches": true,
+            "tutorialPresent": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-create-save-reload",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/1",
+      "input": {
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Pasta/Nota.md",
+              "# Nota\n\nTexto com acento e emoji 🏙️.\n"
+            ]
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          },
+          {
+            "method": "reload",
+            "args": []
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          }
+        ],
+        "files": {
+          "Base.md": "# Base\n"
+        }
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "saved": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ],
+          null,
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "saved": "# Nota\n\nTexto com acento e emoji 🏙️.\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ui-visual-save-reload",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/2",
+      "input": {
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Pasta/Nota.md",
+              "# Nota\n"
+            ]
+          },
+          {
+            "method": "visualAppend",
+            "args": [
+              "linha nova <strong>forte</strong>",
+              "linha nova"
+            ]
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          },
+          {
+            "method": "reload",
+            "args": []
+          },
+          {
+            "method": "observe",
+            "args": [
+              "Pasta/Nota.md"
+            ]
+          }
+        ],
+        "files": {
+          "Base.md": "# Base\n"
+        }
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          null,
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nlinha nova **forte**\n",
+              "saved": "# Nota\n\nlinha nova **forte**\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ],
+          null,
+          [
+            {
+              "path": "Pasta/Nota.md",
+              "content": "# Nota\n\nlinha nova **forte**\n",
+              "saved": "# Nota\n\nlinha nova **forte**\n",
+              "idStable": true,
+              "inWorld": true
+            }
+          ]
+        ]
+      }
+    },
+    {
+      "id": "ui-artifact-routing",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-039",
+        "REQ-042"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/3",
+      "input": {
+        "steps": [
+          {
+            "method": "route",
+            "args": [
+              "Páginas/Inicio.page.json",
+              "{\n  \"version\": 1,\n  \"kind\": \"urbe-page\",\n  \"meta\": {\n    \"title\": \"Início\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Início\"\n      },\n      \"style\": {}\n    }\n  ]\n}",
+              false
+            ]
+          },
+          {
+            "method": "route",
+            "args": [
+              "Cronometro.md",
+              "# Cronometro\n",
+              false
+            ]
+          },
+          {
+            "method": "route",
+            "args": [
+              "Páginas/Inicio.page.json",
+              "{\n  \"version\": 1,\n  \"kind\": \"urbe-page\",\n  \"meta\": {\n    \"title\": \"Início\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Início\"\n      },\n      \"style\": {}\n    }\n  ]\n}",
+              true
+            ]
+          }
+        ],
+        "files": {
+          "Base.md": "# Base\n"
+        }
+      },
+      "expected": {
+        "values": [
+          {
+            "studioVisible": true
+          },
+          {
+            "studioVisible": false
+          },
+          {
+            "studioVisible": false
+          }
+        ]
+      }
+    }
+  ]
+}
