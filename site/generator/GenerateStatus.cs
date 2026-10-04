@@ -196,7 +196,9 @@ foreach (var (id, c) in eco["components"]!.AsObject())
     // Tags de releases no próprio monorepo são <component-id>-v..., conforme o canal de desenvolvimento do Hub.
     var tagPrefix = releaseRepo == repo.TrimEnd('/') ? id + "-v" : null;
     var publicUrl = S(c["publicUrl"]);
-    var web = locationFrom == "publicUrl" ? null : publicUrl;
+    // publicUrl pode ser a URL de Web/PWA ou o próprio canal de Releases. Não projetar um canal de release como versão Web.
+    var web = publicUrl is not null && releases is not null
+        && publicUrl.TrimEnd('/') == releases.TrimEnd('/') ? null : publicUrl;
 
     var authority = S(c["version"]?["authority"]);
     var versionFile = S(c["version"]?["file"]);
