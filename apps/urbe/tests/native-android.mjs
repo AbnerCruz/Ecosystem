@@ -30,7 +30,7 @@ await test('Android: links abrem no navegador, downloads vão para Downloads/Urb
   ok((listeners.urbeBack||[]).length===1,'escuta o voltar do Android');
 });
 await test('Android: atualização compara com o último lançamento e oferece o APK',async()=>{
-  const rel=tag=>async()=>({ok:true,json:async()=>({tag_name:tag,body:'notas',assets:[{name:'Urbe-Setup.exe',browser_download_url:'x'},{name:'Urbe-'+tag.slice(1)+'.apk',browser_download_url:'https://github.com/AbnerCruz/Urbe/releases/download/'+tag+'/Urbe.apk'}]})});
+  const rel=tag=>async()=>({ok:true,json:async()=>[{tag_name:'urbe-'+tag,body:'notas',assets:[{name:'Urbe-Setup.exe',browser_download_url:'x'},{name:'Urbe-'+tag.slice(1)+'.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-'+tag+'/Urbe-'+tag.slice(1)+'.apk'}]}]});
   let f=fakeCapacitor(),{W}=load(f,rel('v1.7.1-beta'));const seen=[];W.UrbeNative.update.onStatus(s=>seen.push(s.state));
   let s=await W.UrbeNative.update.check();ok(s.state==='available'&&s.manualInstall&&s.version==='1.7.1-beta'&&/\.apk$/.test(s.url),JSON.stringify(s));
   await W.UrbeNative.update.install();ok(f.calls.some(c=>c.startsWith('open https://github.com/')),'abre o download do APK');

@@ -259,27 +259,42 @@
       remove:async function(rel,recursive){var s=await fsA.stat(rel);if(!s)return;if(s.kind==='directory')await call('Filesystem','rmdir',{path:path(rel),directory:DIR,recursive:!!recursive});else await call('Filesystem','deleteFile',{path:path(rel),directory:DIR})}
     };
     var info=null;
-    /* atualização: compara com o último lançamento do GitHub e baixa o APK pelo navegador
-       (o Android mostra "Instalar" quando o download termina) */
-    var REPO='AbnerCruz/Urbe',last={state:'none'},subs=[];
+    /* atualização: feed direto do Product no monorepo. O repositório possui releases de vários
+       Products, então NUNCA usamos /releases/latest global: filtramos urbe-v<versão> e exigimos
+       o APK com nome exato. A versão-ponte é entregue pelo canal antigo; depois dela, futuras
+       atualizações vêm do canal direto do Product, sem depender de launcher externo. */
+    var UPDATE_REPO='AbnerCruz/Ecosystem',UPDATE_TAG='urbe-v',last={state:'none'},subs=[];
     function emit(st){last=st;subs.forEach(function(f){try{f(st)}catch(_){}})}
-    function parts(v){var m=/^v?(\d+)\.(\d+)\.(\d+)(?:-([\w.]+))?/.exec(String(v||''));return m?[+m[1],+m[2],+m[3],m[4]||'']:null}
+    function parts(v){var m=/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(String(v||''));return m?[+m[1],+m[2],+m[3],m[4]||'']:null}
     function newer(a,b){a=parts(a);b=parts(b);if(!a||!b)return false;for(var i=0;i<3;i++)if(a[i]!==b[i])return a[i]>b[i];if(a[3]===b[3])return false;if(!a[3])return true;if(!b[3])return false;return a[3].localeCompare(b[3],undefined,{numeric:true})>0}
+    function directRelease(list){
+      var best=null;
+      (Array.isArray(list)?list:[]).forEach(function(rel){
+        if(!rel||rel.draft)return;
+        var tag=String(rel.tag_name||'');if(tag.indexOf(UPDATE_TAG)!==0)return;
+        var ver=tag.slice(UPDATE_TAG.length);if(!parts(ver))return;
+        var expected='Urbe-'+ver+'.apk';
+        var apk=(rel.assets||[]).filter(function(a){return a&&a.name===expected&&/^https:\/\/github\.com\/AbnerCruz\/Ecosystem\/releases\/download\//.test(String(a.browser_download_url||''))})[0];
+        if(!apk)return;
+        if(!best||newer(ver,best.version))best={version:ver,url:apk.browser_download_url,notes:rel.body||''};
+      });
+      return best;
+    }
     var update={
       check:async function(){
         try{emit({state:'checking'});
           var cur=(await (info?Promise.resolve(info):call('UrbeAndroid','getInfo').then(function(r){info=r;return r}))).version;
-          var r=await fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});
+          var r=await fetch('https://api.github.com/repos/'+UPDATE_REPO+'/releases?per_page=100',{cache:'no-store',headers:{Accept:'application/vnd.github+json'}});
           if(!r.ok)throw new Error('GitHub respondeu '+r.status);
-          var rel=await r.json(),apk=(rel.assets||[]).filter(function(a){return /\.apk$/i.test(a.name)})[0],ver=String(rel.tag_name||'').replace(/^v/,'');
-          if(apk&&newer(ver,cur))emit({state:'available',manualInstall:true,version:ver,url:apk.browser_download_url,notes:rel.body||''});
+          var rel=directRelease(await r.json());
+          if(rel&&newer(rel.version,cur))emit({state:'available',manualInstall:true,version:rel.version,url:rel.url,notes:rel.notes});
           else emit({state:'none',version:cur});
         }catch(e){emit({state:'error',message:String(e&&e.message||e)})}
         return last;
       },
       install:function(){if(last.url&&extOk(last.url))return call('UrbeAndroid','openUrl',{url:last.url})},
       onStatus:function(fn){if(typeof fn==='function'){subs.push(fn);if(last.state!=='none')fn(last)}},
-      _newer:newer
+      _newer:newer,_selectRelease:directRelease
     };
     return{
       shell:'capacitor',platform:'android',

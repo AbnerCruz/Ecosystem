@@ -1,7 +1,7 @@
 {
   "name": "urbe",
   "productName": "Urbe",
-  "version": "1.8.2-beta",
+  "version": "1.8.3-beta",
   "description": "Suas notas como uma cidade: markdown, páginas, livros e assistente.",
   "author": "Abner P. S. Cruz",
   "license": "SEE LICENSE IN LICENSE",
@@ -79,7 +79,8 @@
       {
         "provider": "github",
         "owner": "AbnerCruz",
-        "repo": "Urbe",
+        "repo": "Ecosystem",
+        "tagNamePrefix": "urbe-v",
         "releaseType": "release"
       }
     ]

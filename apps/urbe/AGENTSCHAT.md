@@ -168,3 +168,10 @@
 - **Pendências / bloqueios:** texto da `LICENSE` (OD-03) bloqueia o gate G4 (RM-F4-12 `[!]`); budgets absolutos de performance dependem do baseline (RM-F5-02); atualização do checklist da issue #33 e criação de PR dependem do proprietário/ferramentas GitHub.
 - **Próximos passos:** proprietário revisa e aprova SPEC/ROADMAP (responder OD-05/10/11/03); depois iniciar F0 (RM-F0-03…18). Nada da 2.0 é implementado antes disso.
 - **Branches:** 31 branches `claude/*` remotas aguardam verificação (RM-F0-16); esta sessão não removeu nenhuma.
+
+### 2026-10-04 — Codex — P4-9 / RM-F4-10 / REQ-006/066/081
+- Estado: verificando correção do PR #167 no estado combinado com main@46c295a.
+- Feito: corrigido parêntese excedente no teste de feed, fixture Android alinhada ao feed direto e revisão explícita de dois hashes do baseline autorizada pela mudança de distribuição.
+- Decisões (com fonte): ADD-0015/DEC-0031/ADR-0019; nenhuma mudança de dados ou de assinatura.
+- Pendências: CI combinado, autorização crítica e chave histórica/release/DEVICE para corte final.
+- Próximos passos: integrador reavalia o PR; P4-9 continua aberto.
