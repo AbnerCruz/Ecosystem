@@ -14,8 +14,9 @@ public class LocalCapabilityHostTests
     static LocalCapabilityHost Host(LocalCapability? tool = null, params string[] declared) =>
         new([tool ?? TextInspectionTool.Definition(Root())], declared.Length == 0 ? ["ui.display"] : declared);
     static LocalCapability Tool(Func<LocalInvocation, CancellationToken, Task<JsonElement>> handler,
-        LocalContext? scope = null, Version? version = null) => new(TextInspectionTool.CapabilityId, "test-provider",
-            version ?? new(1, 0, 0), "inspect", scope ?? Root(), ["ui.display"], _ => true, handler);
+        LocalContext? scope = null, Version? version = null, Func<JsonElement, bool>? validateOutput = null)
+        => new(TextInspectionTool.CapabilityId, "test-provider", version ?? new(1, 0, 0), "inspect",
+            scope ?? Root(), ["ui.display"], "stateless", _ => true, validateOutput ?? (_ => true), handler);
 
     [Fact]
     public async Task OneToolRunsInTwoContextsWithoutConcreteHostNames()
@@ -178,12 +179,31 @@ public class LocalCapabilityHostTests
     }
 
     [Fact]
+    public async Task InvalidOutputDoesNotBecomeSuccessAndSessionRecovers()
+    {
+        var calls = 0;
+        static bool Valid(JsonElement value) => value.ValueKind == JsonValueKind.Object
+            && value.EnumerateObject().Count() == 1
+            && value.TryGetProperty("value", out var number) && number.TryGetInt32(out _);
+        using var session = Host(Tool((_, _) => Task.FromResult(++calls == 1
+                ? JsonSerializer.SerializeToElement(new { wrong = true })
+                : JsonSerializer.SerializeToElement(new { value = 7 })),
+            validateOutput: Valid)).Open("user", Context(), ["ui.display"]);
+
+        Assert.Equal("INVALID_OUTPUT", (await session.DispatchAsync(Request(), TestContext.Current.CancellationToken)).Error);
+        Assert.DoesNotContain(session.Frames, frame => frame.Kind == "response");
+        var recovered = await session.DispatchAsync(Request("two"), TestContext.Current.CancellationToken);
+        Assert.True(recovered.Succeeded);
+        Assert.Equal(7, recovered.Output!.Value.GetProperty("value").GetInt32());
+    }
+
+    [Fact]
     public async Task HandlerErrorDoesNotLeakItsMessageAndSessionRecovers()
     {
         var calls = 0;
         using var session = Host(Tool((_, _) => { if (++calls == 1) throw new Exception("SECRET-should-never-be-logged"); return Task.FromResult(Input()); }))
             .Open("user", Context(), ["ui.display"]);
-        Assert.Equal("HANDLER_FAILED", (await session.DispatchAsync(Request(), TestContext.Current.CancellationToken)).Error);
+        Assert.Equal("EXECUTION_FAILED", (await session.DispatchAsync(Request(), TestContext.Current.CancellationToken)).Error);
         Assert.DoesNotContain("SECRET", JsonSerializer.Serialize(session.Frames));
         Assert.True((await session.DispatchAsync(Request("two") with { Kind = "command" }, TestContext.Current.CancellationToken)).Succeeded);
     }
@@ -225,6 +245,14 @@ public class LocalCapabilityHostTests
         cancellation.Cancel();
         Assert.Equal("CANCELLED", (await running).Error);
         Assert.True((await session.DispatchAsync(Request("two"), TestContext.Current.CancellationToken)).Succeeded);
+    }
+
+    [Fact]
+    public void InvalidCapabilityLifecycleIsRejected()
+    {
+        Assert.Throws<ArgumentException>(() => new LocalCapability(TextInspectionTool.CapabilityId, "test-provider",
+            new Version(1, 0, 0), "inspect", Root(), ["ui.display"], "forever", _ => true, _ => true,
+            (_, _) => Task.FromResult(Input())));
     }
 
     [Fact]

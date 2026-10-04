@@ -1,0 +1,59 @@
+{
+  "$schema": "../schemas/capability-contract.schema.json",
+  "schemaVersion": 1,
+  "capability": "text.inspect",
+  "description": "Contrato draft da Tool local de inspeção de texto. A capability opera apenas sobre texto fornecido pelo chamador; o protocolo ecosystem-local/0 e seus erros de envelope/lifecycle continuam experimentais e não são congelados por este contrato.",
+  "compatibility": "semver",
+  "versions": [
+    {
+      "version": "1.0.0",
+      "status": "draft",
+      "inputs": [
+        {
+          "name": "text",
+          "type": "string",
+          "required": true,
+          "description": "Texto em memória a inspecionar; limite local atual de 100.000 unidades UTF-16."
+        }
+      ],
+      "outputs": [
+        {
+          "name": "characters",
+          "type": "integer",
+          "required": true,
+          "description": "Quantidade de Unicode scalar values."
+        },
+        {
+          "name": "words",
+          "type": "integer",
+          "required": true,
+          "description": "Quantidade de tokens separados por whitespace."
+        },
+        {
+          "name": "lines",
+          "type": "integer",
+          "required": true,
+          "description": "Quantidade de linhas delimitadas por LF; texto vazio produz zero."
+        }
+      ],
+      "errors": [
+        {
+          "code": "INVALID_INPUT",
+          "description": "A entrada não satisfaz o formato ou os limites da versão."
+        },
+        {
+          "code": "INVALID_OUTPUT",
+          "description": "O provider produziu saída fora do contrato; o Host não reporta sucesso."
+        },
+        {
+          "code": "EXECUTION_FAILED",
+          "description": "A execução local falhou sem expor mensagem arbitrária do provider."
+        }
+      ],
+      "requiredPermissions": [
+        "ui.display"
+      ],
+      "lifecycle": "stateless"
+    }
+  ]
+}

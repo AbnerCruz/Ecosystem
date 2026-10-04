@@ -133,17 +133,28 @@ public sealed class LocalHostSession : IDisposable
                         Record(request, "progress", percent: p);
             });
             var output = await capability.Handler(invocation, run.Token).ConfigureAwait(false);
+            var validOutput = false;
+            var copy = default(JsonElement);
+            try
+            {
+                validOutput = capability.ValidateOutput(output);
+                if (validOutput) copy = output.Clone();
+            }
+            catch (Exception)
+            {
+                validOutput = false;
+            }
             lock (_sync)
             {
                 if (_closed || run.IsCancellationRequested) return Failure(request, "CANCELLED");
-                var copy = output.Clone();
+                if (!validOutput) return Failure(request, "INVALID_OUTPUT");
                 Record(request, "response");
                 return new(request.Id, copy, null);
             }
         }
         catch (OperationCanceledException) when (run.IsCancellationRequested) { return Failure(request, "CANCELLED"); }
         // Mensagem arbitrária do handler nunca entra no journal/UI (pode conter segredo/texto).
-        catch (Exception) { return Failure(request, "HANDLER_FAILED"); }
+        catch (Exception) { return Failure(request, "EXECUTION_FAILED"); }
         finally
         {
             lock (_sync) { _active = null; run.Dispose(); }

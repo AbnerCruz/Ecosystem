@@ -46,6 +46,14 @@ Fontes verificadas: `apps/lunet2d/src/Lunet.Android/MainActivity.cs`, `MainActiv
 
 Handlers são código confiável local: cancellation é cooperativa. Isolamento, timeout obrigatório de código não confiável, persistência e autenticação interprocessos são critérios de P5-4, não promessas deste slice.
 
+## Slice P5-3 — contrato draft e conformance local
+
+A Issue #175 inicia P5-3 sem declarar a Host API pronta. `docs/contracts/capabilities/text.inspect.json` é o primeiro contrato real em estado `draft`: versão 1.0.0, input `text`, outputs `characters/words/lines`, erros de execução da capability, `ui.display` como grant exigido pelo adapter local atual e lifecycle `stateless`. O Hub ainda **não** declara `provides: text.inspect` em `ecosystem.json`; portanto o Registry público/estático não anuncia provider e nenhum Product ganha dependência nova.
+
+A definição local passa a carregar lifecycle e validador de output. Um handler que devolva JSON fora do formato recebe `INVALID_OUTPUT` e não produz frame `response`; exceção vira `EXECUTION_FAILED` sem mensagem arbitrária. Testes de conformance leem o contrato versionado e o comparam com a definição executável do Hub.
+
+Isso é evidência para P5-3, não sua conclusão. Envelope público, Host API de Product Shell, política final de erros/grants/revogação, segundo consumidor real e a decisão arquitetural continuam pendentes. O protocolo `ecosystem-local/0` permanece experimental.
+
 ## Validação Android do primeiro Host
 
 1. Abrir Hub e tocar **Analisar texto**; digitar `Olá mundo`, uma nova linha e `🙂`. Esperado: 11 caracteres, 3 palavras, 2 linhas.

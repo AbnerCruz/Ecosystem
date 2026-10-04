@@ -56,11 +56,14 @@ public sealed class LocalCapability
     public string Operation { get; }
     public LocalContext Scope { get; }
     public IReadOnlySet<string> RequiredPermissions { get; }
+    public string Lifecycle { get; }
     internal Func<JsonElement, bool> ValidateInput { get; }
+    internal Func<JsonElement, bool> ValidateOutput { get; }
     internal Func<LocalInvocation, CancellationToken, Task<JsonElement>> Handler { get; }
 
     public LocalCapability(string id, string provider, Version version, string operation,
-        LocalContext scope, IEnumerable<string> permissions, Func<JsonElement, bool> validateInput,
+        LocalContext scope, IEnumerable<string> permissions, string lifecycle,
+        Func<JsonElement, bool> validateInput, Func<JsonElement, bool> validateOutput,
         Func<LocalInvocation, CancellationToken, Task<JsonElement>> handler)
     {
         ArgumentNullException.ThrowIfNull(version);
@@ -70,10 +73,14 @@ public sealed class LocalCapability
             throw new ArgumentException("Capability inválida.");
         ArgumentNullException.ThrowIfNull(scope);
         ArgumentNullException.ThrowIfNull(validateInput);
+        ArgumentNullException.ThrowIfNull(validateOutput);
         ArgumentNullException.ThrowIfNull(handler);
+        if (lifecycle is not ("stateless" or "session" or "long-running"))
+            throw new ArgumentException("Lifecycle inválido.", nameof(lifecycle));
         Id = id; Provider = provider; Version = version; Operation = operation; Scope = scope;
         RequiredPermissions = permissions.ToFrozenSet(StringComparer.Ordinal);
-        ValidateInput = validateInput; Handler = handler;
+        Lifecycle = lifecycle;
+        ValidateInput = validateInput; ValidateOutput = validateOutput; Handler = handler;
     }
 }
 
