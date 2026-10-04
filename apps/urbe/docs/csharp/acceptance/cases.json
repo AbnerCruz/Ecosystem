@@ -11821,6 +11821,27 @@
       }
     },
     {
+      "id": "browser-world-scale-s",
+      "operation": "browser.world",
+      "requirements": [
+        "REQ-070"
+      ],
+      "source": "tests/e2e/app-runtime.e2e.mjs",
+      "input": {
+        "scenario": "scale-s",
+        "size": "S",
+        "seed": 1,
+        "docs": 50,
+        "assets": 2
+      },
+      "expected": {
+        "documentsAtLeast": true,
+        "worldBuildingsAtLeast": true,
+        "assetCount": 2,
+        "titleMatches": true
+      }
+    },
+    {
       "id": "browser-world-multi-city",
       "operation": "browser.world",
       "requirements": [
