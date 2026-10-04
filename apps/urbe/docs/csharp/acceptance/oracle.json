@@ -695,8 +695,8 @@
     },
     {
       "path": "tests/native-android.mjs",
-      "bytes": 6673,
-      "sha256": "ab8bd77677b34c9a12c95a3c9564150bd11304ddba54591f731b6a2f33d9ba56"
+      "bytes": 6708,
+      "sha256": "a0f24eefeb0d9307e96fde79cf79aa655c59beefa2313260ad147948394ba462"
     },
     {
       "path": "tests/native-bridge.mjs",
@@ -705,8 +705,8 @@
     },
     {
       "path": "tests/native-contract.mjs",
-      "bytes": 13986,
-      "sha256": "059ab97bcac32f8d86bccc243cb1cbf224f1c8a097ee4b9ed65686f43b375f6b"
+      "bytes": 17283,
+      "sha256": "f718262de90abeb4cad1a96113d8112023b43557ec2d2f5b90a8fc4ec66382ba"
     },
     {
       "path": "tests/pages-free.mjs",

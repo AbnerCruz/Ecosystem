@@ -33,6 +33,10 @@ Menor mudança; publicação continua atrelada ao merge.
 
 Recomendação: **A**. Fonte única de versão em `package.json`; `tools/version.mjs check|sync` valida e sincroniza `core.js`, `index.html`, `sw.js`, CHANGELOG e testes; `V21_VERSION` deixa de ser atribuída em camadas. O workflow de release roda em tag `v*` ou `workflow_dispatch`, depende de testes e gates de dados verdes, usa `permissions` mínimas e actions fixadas por SHA; Dependabot ativo. SemVer com canal (`2.0.0-beta.N`, `2.0.0`). Rollback: marcar Release como pre-release/removê-lo e republicar o `latest.yml` anterior; dados por backup de migração.
 
+## Aditamento de distribuição no monorepo (2026-10-03)
+
+ADD-0015 / DEC-0031 / ADR-0019 do Ecosystem, decisão posterior e explícita do proprietário, preserva esta decisão e especializa o nome da tag no monorepo: o canal legado continua usando `v<versão>` para a versão-ponte; releases diretas do Product no repositório Ecosystem usam `urbe-v<versão>`. A publicação continua deliberada e separada da integração. O updater nunca usa o `latest` global do monorepo e a assinatura Android não pode mudar.
+
 ## Consequências positivas
 
 - publicação deliberada e rastreável

@@ -40,6 +40,8 @@ urbe-v<package.version> e workflow urbe-release.yml. Nunca tag genérica v* no m
 O `latest` do repo é global: as releases diretas usam make_latest:false e precisam
 de consumidor que filtre o Product. Os leitores antigos não são alterados aqui.
 
+P4-9 usa `1.8.3-beta` como versão-ponte: o canal legado a entrega primeiro; Windows passa a embutir `AbnerCruz/Ecosystem` com `tagNamePrefix=urbe-v`, e Android filtra a lista de releases do Ecosystem por tag/asset exatos. O `latest` global permanece proibido.
+
 Antes do primeiro release/corte (P4-9):
 
 1. Configurar no Ecosystem os secrets ANDROID_KEYSTORE_BASE64 e

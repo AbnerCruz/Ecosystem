@@ -4,7 +4,7 @@
 
 Cada nota vira uma casa, cada pasta um bairro e cada `[[link]]` uma rua. Moradores andam entre as notas ligadas, o mundo é um continente formado por placas tectônicas, com serras, clima e rios que descem até o mar, e tudo continua sendo arquivo `.md` comum, que abre em qualquer outro programa.
 
-> **Versão 1.8.2 beta.** App de verdade para **Windows** e **Android**, que guarda as notas numa pasta real e se atualiza sozinho. Também abre no navegador.
+> **Versão 1.8.3 beta.** App de verdade para **Windows** e **Android**, que guarda as notas numa pasta real e se atualiza sozinho. Também abre no navegador.
 
 ## Instalar
 
