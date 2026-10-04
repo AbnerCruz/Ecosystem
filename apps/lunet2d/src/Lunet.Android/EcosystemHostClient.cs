@@ -210,6 +210,18 @@ internal sealed class EcosystemHostClient : IDisposable
         _binder = await completion.Task.WaitAsync(TimeSpan.FromSeconds(5), ct);
     }
 
+    internal bool Revoke(params string[] permissions)
+    {
+        if (_binder is null || _pair is null || _sessionId is null || permissions is not { Length: > 0 }) return false;
+        try
+        {
+            var response = Rpc(EcosystemIpcProtocol.Revoke, Signed(new IpcRequest(
+                Op: "revoke", PairId: _pair.PairId, SessionId: _sessionId, Permissions: permissions)));
+            return response.Ok;
+        }
+        catch (Exception) { return false; }
+    }
+
     void TryClose()
     {
         if (_binder is null || _pair is null || _sessionId is null) return;
