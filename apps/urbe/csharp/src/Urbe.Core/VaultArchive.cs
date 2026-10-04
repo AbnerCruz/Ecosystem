@@ -140,6 +140,12 @@ public static class VaultArchive
             .Select(entry => NormalizeZipEntryName(entry.FullName))
             .ToArray();
 
+        // Valide o caminho bruto antes de remover um possível diretório-raiz.
+        // Caso contrário "../evil.md" poderia ser confundido com um ZIP
+        // embrulhado na pasta ".." e escapar da proteção de traversal.
+        foreach (var rawName in rawNames)
+            _ = NormalizeArchivePath(rawName);
+
         var rootPrefix = DetectRootPrefix(rawNames);
         var files = new Dictionary<string, VaultFile>(StringComparer.OrdinalIgnoreCase);
 
