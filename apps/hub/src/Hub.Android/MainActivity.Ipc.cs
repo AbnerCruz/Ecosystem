@@ -28,6 +28,7 @@ public sealed partial class MainActivity
             var key = new AndroidInstallationKey("ecosystem.ipc.provider.v1");
             var store = new EcosystemPairingStore(this, key);
             var pending = store.Pending().FirstOrDefault();
+            var activeSessions = EcosystemCapabilityService.ActiveSessionCount;
             if (pending is null)
             {
                 if (automatic) return;
@@ -35,14 +36,14 @@ public sealed partial class MainActivity
                 if (approved is null)
                 {
                     new AlertDialog.Builder(this).SetTitle("Conexões locais")
-                        .SetMessage("Nenhum pareamento aguardando aprovação e nenhuma instalação está conectada.")
+                        .SetMessage($"Nenhum pareamento aguardando aprovação e nenhuma instalação está conectada.\nSessões IPC ativas: {activeSessions}.")
                         .SetPositiveButton("OK", (_, _) => { }).Show();
                     return;
                 }
 
                 var approvedSigner = approved.SignerSha256.Length > 16 ? approved.SignerSha256[..16] + "…" : approved.SignerSha256;
                 new AlertDialog.Builder(this).SetTitle("Conexão local aprovada")
-                    .SetMessage($"Aplicativo: {approved.PackageName}\nAssinante observado: {approvedSigner}\nA revogação remove a confiança desta instalação. O próximo uso exigirá novo pareamento.")
+                    .SetMessage($"Aplicativo: {approved.PackageName}\nAssinante observado: {approvedSigner}\nSessões IPC ativas: {activeSessions}\n\nA revogação remove a confiança desta instalação. O próximo uso exigirá novo pareamento.")
                     .SetNegativeButton("Fechar", (_, _) => { })
                     .SetPositiveButton("Revogar", (_, _) => store.Revoke(approved.PairId))
                     .Show();
