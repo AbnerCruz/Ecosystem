@@ -76,11 +76,11 @@ internal sealed class AndroidInstallationKey
     internal string Sign(byte[] data)
     {
         using var store = Store();
-        var key = store.GetKey(_alias, null) as IPrivateKey
+        using var entry = store.GetEntry(_alias, null) as KeyStore.PrivateKeyEntry
             ?? throw new InvalidOperationException("Chave privada indisponível.");
         using var signature = Java.Security.Signature.GetInstance("SHA256withECDSA")
             ?? throw new InvalidOperationException("ECDSA indisponível.");
-        signature.InitSign(key);
+        signature.InitSign(entry.PrivateKey);
         signature.Update(data);
         return Convert.ToBase64String(signature.Sign()!);
     }
