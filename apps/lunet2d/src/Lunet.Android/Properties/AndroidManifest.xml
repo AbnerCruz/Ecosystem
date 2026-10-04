@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <queries>
+    <intent>
+      <action android:name="org.ecosystem.capability.HOST_V1" />
+    </intent>
+  </queries>
+</manifest>

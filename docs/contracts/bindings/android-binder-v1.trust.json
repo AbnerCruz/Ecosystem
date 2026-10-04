@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "binding": "android-binder-v1",
+  "serviceAction": "org.ecosystem.capability.HOST_V1",
+  "provider": {
+    "packageId": "io.ecosystem.hub",
+    "certificateSha256": "71000BAC4BEFECDE53087225D6C604A9B15C066B3E70A1696AA14565F5D80C7A",
+    "publicDevelopmentKey": true
+  },
+  "callers": [
+    {
+      "packageId": "io.lunet.studio",
+      "certificateSha256": "4807F9080BF5535D20734476E3E3BC9FE6446C70E384771486E6AC333EDD9207",
+      "publicDevelopmentKey": true,
+      "context": [
+        {
+          "level": "ecosystem",
+          "id": "ecosystem"
+        },
+        {
+          "level": "product",
+          "id": "lunet2d"
+        },
+        {
+          "level": "workspace",
+          "id": "ide"
+        },
+        {
+          "level": "tool",
+          "id": "text-inspect"
+        }
+      ],
+      "grants": []
+    }
+  ]
+}

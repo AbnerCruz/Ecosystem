@@ -1,0 +1,160 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-4-binder-ipc-v2",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T19:46:00Z",
+  "agent": {
+    "id": "chatgpt-p5-4-binder-ipc-v2",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-4",
+  "component": "ecosystem",
+  "state": "verifying",
+  "branch": "chatgpt/p5-4-binder-ipc-v2",
+  "base_commit": "79c5be012237459898ab082a5ca96ed18b382654",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/hub/src/Hub.Android/AndroidBindingTrustPolicy.cs",
+    "apps/hub/src/Hub.Android/AndroidIpcIdentity.cs",
+    "apps/hub/src/Hub.Android/EcosystemCapabilityService.cs",
+    "apps/hub/src/Hub.Android/EcosystemIpcProtocol.cs",
+    "apps/hub/src/Hub.Android/MainActivity.Ipc.cs",
+    "apps/hub/src/Hub.Android/Hub.Android.csproj",
+    "apps/hub/src/Hub.Android/MainActivity.cs",
+    "apps/hub/src/Hub.Core/Capabilities/AuthenticatedHostGateway.cs",
+    "apps/hub/tests/Hub.Tests/AuthenticatedHostGatewayTests.cs",
+    "apps/lunet2d/src/Lunet.Android/AndroidBindingTrustPolicy.cs",
+    "apps/lunet2d/src/Lunet.Android/EcosystemHostClient.cs",
+    "apps/lunet2d/src/Lunet.Android/EcosystemIpcProtocol.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.EcosystemIpc.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Android/Lunet.Android.csproj",
+    "apps/lunet2d/src/Lunet.Android/Properties/AndroidManifest.xml",
+    "docs/contracts/bindings/android-binder-v1.md",
+    "docs/contracts/bindings/android-binder-v1.trust.json",
+    "docs/adr/0027-primeiro-ipc-local-android.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261004-p5-4-binder-ipc-v2.json"
+  ],
+  "work_completed": [
+    "Recriada a implementação P5-4 sobre a main atual, sem reaplicar os 86 commits históricos do PR #210.",
+    "Preservada a Host API v1 e o binding Binder aprovado por DEC-0037-A: peer Binder real, allowlist bilateral, Context/grants Host-owned, pairing por instalação, challenge ECDSA, budgets, revoke, deadline e LinkToDeath.",
+    "Falha DEVICE do candidato b001eafd tratada como válida: aprovação anterior não fecha P5-4.",
+    "Assinatura Android Keystore alterada para KeyStore.PrivateKeyEntry em caller e provider.",
+    "Lunet ganhou self-test ECDSA local e diagnóstico sanitizado por etapa para localizar qualquer nova falha sem stack trace ou dados privados."
+  ],
+  "verification": [
+    {
+      "check": "Estado combinado + Hub/Lunet/consistency do PR limpo",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando integrador/CI do novo PR sobre a main atual."
+    },
+    {
+      "check": "IPC Android real — pairing até invoke, revogação/rotação e process death",
+      "kind": "human",
+      "result": "failed",
+      "critical": true,
+      "object": "docs/validation/P5-4-binder-ipc.md",
+      "evidence": "Primeiro candidato falhou após pairing: provider aprovado, 0 sessões IPC ativas e Lunet exibiu provider indisponível/protocolo recusado. Novo DEVICE obrigatório."
+    }
+  ],
+  "known_issues": [
+    "A causa exata do primeiro B8 ainda não foi observada; o novo diagnóstico separa keystore/challenge/open/discover/invoke.",
+    "P5-4 permanece aberto e P5-5 continua bloqueado.",
+    "PR #210 é histórico e deve ser superseded pelo PR limpo após verificação."
+  ],
+  "blockers": [
+    "Novo gate DEVICE após CI verde."
+  ],
+  "next_actions": [
+    "Rodar integrador e CI no estado combinado atual.",
+    "Se verde, publicar Hub/Lunet candidatos instaláveis por navegador com versionCode não inferior ao canal instalado.",
+    "Repetir gate B; se falhar, registrar stage + exception type exibidos pelo Lunet.",
+    "Só após A-D passarem solicitar nova autorização crítica e fechar P5-4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/adr/0027-primeiro-ipc-local-android.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/ipc-transport-readiness.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/contracts/bindings/android-binder-v1.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/lunet2d/AGENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "DEC-0037-A permanece autoridade única da escolha; a falha DEVICE supersede somente o resultado do gate, não a decisão."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Provider continua opcional e Lunet permanece funcional sem ele."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Host API v1 e text.inspect@1.0.0 permanecem contratos canônicos."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Tool não conhece Binder ou Product concreto."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Binding segue ADR-0027/DEC-0037-A; nenhuma nova escolha arquitetural foi introduzida pela correção."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Binder é transporte runtime; GitHub não participa do IPC."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "UID/package/signer + pairing precedem sessão; Context/grants são Host-owned."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI será separado do novo DEVICE; build verde não fecha propriedades Android físicas."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-4 não é marcado done após a falha física."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Binding permanece Android-específico."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração compartilhada antes de P5-5/Extraction Review."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma dependência de distribuição ou domínio essencial no provider."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "authenticated-host-gateway",
+      "status": "possible-candidate",
+      "rationale": "Permanece local ao Hub até P5-5 provar segundo Host e Extraction Review."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security"
+    ],
+    "reason": "Primeira fronteira IPC autenticada entre apps; integração requer novo DEVICE e autorização canônica após checks."
+  },
+  "cost": null
+}

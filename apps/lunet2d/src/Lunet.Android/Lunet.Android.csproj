@@ -32,6 +32,7 @@
   <ItemGroup>
     <AndroidAsset Include="..\..\docs\api\lunet-framework.json" Link="Assets\docs\lunet-framework.json" />
     <AndroidAsset Include="..\..\docs\guides\*.md" Link="Assets\docs\guides\%(Filename)%(Extension)" />
+    <AndroidAsset Include="..\..\..\..\docs\contracts\bindings\android-binder-v1.trust.json" Link="Assets\ecosystem\android-binder-v1.trust.json" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Lunet.Core\Lunet.Core.csproj" />
