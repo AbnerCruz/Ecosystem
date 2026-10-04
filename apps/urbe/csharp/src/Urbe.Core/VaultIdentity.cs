@@ -113,7 +113,7 @@ public static class VaultIdentity
         DateTimeOffset now)
     {
         ArgumentNullException.ThrowIfNull(documents);
-        var timestamp = now.UtcDateTime.ToString("O");
+        var timestamp = UtcIso(now);
         var result = new Dictionary<string, VaultIdentityEntry>(StringComparer.Ordinal);
         var previousDocs = previous?.Documents;
 
@@ -163,6 +163,9 @@ public static class VaultIdentity
 
         return stream.ToArray();
     }
+
+    private static string UtcIso(DateTimeOffset value) =>
+        value.UtcDateTime.ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", System.Globalization.CultureInfo.InvariantCulture);
 
     private static string ToBase36(int value)
     {
