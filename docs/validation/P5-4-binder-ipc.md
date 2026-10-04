@@ -133,4 +133,11 @@ P5-4 só pode virar `[x]` depois de:
 
 ## Resultado
 
-**Pendente de DEVICE.**
+**Falhou no DEVICE — candidato b001eafd.**
+
+Evidência posterior à Issue #217:
+- o Hub mostrou `io.lunet.studio` como conexão local aprovada;
+- o Hub mostrou `Sessões IPC ativas: 0`;
+- o Lunet retornou `Provider indisponível ou protocolo recusado.` após a aprovação.
+
+A aprovação registrada anteriormente pelo portal fica **superseded** para fins de fechamento de P5-4. O gate volta a pendente até um novo candidato passar A–D integralmente.
