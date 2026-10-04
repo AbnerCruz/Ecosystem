@@ -13,7 +13,7 @@
   "branch": "chatgpt/urbe-uc2-native-parity",
   "base_commit": "46c295a466d22c1374ca09ac68493e388ce7d014",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/169",
   "files_changed": [
     "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/docs/csharp/PARITY.md",
@@ -53,14 +53,15 @@
     {
       "check": "npm run check",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Rodada local final em execução; checks de oráculo/233 casos e teste novo passaram."
+      "result": "passed",
+      "evidence": "Rodada local final: 65/65 arquivos de teste passaram; checks de versão, módulos, dívida, rastreabilidade, tutorial, fixtures, paridade 233 e contrato UC-3 verdes."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Tentado localmente: SDK dotnet indisponível. Verificação obrigatória permanece no CI/integrador antes da integração."
+      "result": "passed",
+      "evidence": "PR #169, Actions run 37180775657/job 111372737390: etapa Consistency checks concluída com success. SDK local ausente; a execução foi no CI.",
+      "tested_commit": "8495bca87a6cf68a72d173d2f7045f9ce9724e83"
     },
     {
       "check": "git diff --check",
