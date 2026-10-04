@@ -11757,6 +11757,68 @@
         "openMovePersisted": true,
         "openMapIdentity": true
       }
+    },
+    {
+      "id": "browser-world-multi-city",
+      "operation": "browser.world",
+      "requirements": [
+        "REQ-045"
+      ],
+      "source": "tests/e2e/multi-city.e2e.mjs",
+      "input": {
+        "scenario": "multi-city",
+        "cities": [
+          {
+            "name": "Norte",
+            "files": [
+              {
+                "path": "Bairro/Um.md",
+                "encoding": "utf8",
+                "content": "# Um\n"
+              },
+              {
+                "path": ".urbe/mapa.json",
+                "encoding": "utf8",
+                "content": "{\"v\":4,\"mundo\":\"placas-1\",\"regioes\":[{\"caminho\":\"Bairro\",\"nome\":\"Bairro\",\"cor\":\"#4aa3ff\",\"x\":30,\"y\":30,\"w\":12,\"h\":10,\"cells\":null}],\"notas\":{\"Bairro/Um.md\":{\"id\":\"doc_norte_1\",\"x\":32,\"y\":32,\"sprite\":\"house1\"}},\"construcoes\":[]}"
+              }
+            ]
+          },
+          {
+            "name": "Sul",
+            "files": [
+              {
+                "path": "Dois.md",
+                "encoding": "utf8",
+                "content": "# Dois\n"
+              }
+            ]
+          }
+        ],
+        "docs": 2
+      },
+      "expected": {
+        "originIdPreserved": true,
+        "southPresent": true,
+        "geometryMerged": true,
+        "mapIdPreserved": true,
+        "migrationOnce": true,
+        "migrationSources": [
+          "Norte"
+        ],
+        "boot2Stable": true,
+        "boot3Stable": true,
+        "mapWritesPresent": true,
+        "mapWriterOnly": true,
+        "archived": [
+          "Norte",
+          "Sul"
+        ],
+        "stores": [
+          "Norte",
+          "Sul",
+          "Urbe"
+        ]
+      }
     }
   ]
 }
