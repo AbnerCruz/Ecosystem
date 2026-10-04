@@ -27,8 +27,9 @@ Transações síncronas, a partir de `IBinder.FirstCallTransaction`:
 | 4 | `invoke` |
 | 5 | `cancel` |
 | 6 | `close` |
+| 7 | `revoke` |
 
-Cada Parcel contém `WriteInterfaceToken(descriptor)` seguido da string JSON. Em `session.open`, o caller acrescenta um `IBinder` de lifecycle com `WriteStrongBinder`; o provider registra `LinkToDeath` nesse token e fecha/cancela a sessão se o processo do caller desaparecer. O reply usa `WriteNoException()` + JSON. Payload nunca escolhe UID, pacote, signatário, actor efetivo ou grants.
+Cada Parcel contém `WriteInterfaceToken(descriptor)` seguido da string JSON. Em `session.open`, o caller acrescenta um `IBinder` de lifecycle com `WriteStrongBinder`; o provider registra `LinkToDeath` nesse token e fecha/cancela a sessão se o processo do caller desaparecer. O reply usa `WriteNoException()` + JSON. Payload nunca escolhe UID, pacote, signatário, actor efetivo ou concede grants. `revoke` só reduz permissions já capturadas pela sessão; a lista de permissions participa da assinatura do request.
 
 ## Política de confiança do primeiro ensaio
 
