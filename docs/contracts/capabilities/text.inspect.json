@@ -2,12 +2,12 @@
   "$schema": "../schemas/capability-contract.schema.json",
   "schemaVersion": 1,
   "capability": "text.inspect",
-  "description": "Contrato draft da Tool local de inspeção de texto. A capability opera apenas sobre texto fornecido pelo chamador; o protocolo ecosystem-local/0 e seus erros de envelope/lifecycle continuam experimentais e não são congelados por este contrato.",
+  "description": "Contrato estável da capability de inspeção de texto em memória. A capability recebe todo o texto no input e não precisa de arquivo, rede ou UI; lifecycle/identidade/grants e falhas do Host pertencem à Host API v1.",
   "compatibility": "semver",
   "versions": [
     {
       "version": "1.0.0",
-      "status": "draft",
+      "status": "stable",
       "inputs": [
         {
           "name": "text",
@@ -42,17 +42,11 @@
           "description": "A entrada não satisfaz o formato ou os limites da versão."
         },
         {
-          "code": "INVALID_OUTPUT",
-          "description": "O provider produziu saída fora do contrato; o Host não reporta sucesso."
-        },
-        {
           "code": "EXECUTION_FAILED",
           "description": "A execução local falhou sem expor mensagem arbitrária do provider."
         }
       ],
-      "requiredPermissions": [
-        "ui.display"
-      ],
+      "requiredPermissions": [],
       "lifecycle": "stateless"
     }
   ]
