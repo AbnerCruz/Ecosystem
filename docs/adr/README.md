@@ -49,4 +49,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0024](0024-host-api-publica-product-shell.md) | Host API pública e neutra de transporte para Product Shells | Aceito (DEC-0034-A) |
 | [0025](0025-urbe-pilha-ui-hosts-csharp.md) | Pilha de UI e hosts do Urbe em C# | Aceito (DEC-0035-A) |
 | [0026](0026-urbe-transicao-cliente-csharp.md) | Transição do Urbe JavaScript para o cliente C# | Aceito (DEC-0036-C) |
-| [0027](0027-primeiro-ipc-local-android.md) | Primeiro IPC local autenticado entre Hub e Lunet | Aceito (DEC-0037-A) |
+| [0027](0027-primeiro-ipc-local-android.md) | Primeiro IPC local autenticado entre Hub e Lunet | Proposto (aguarda DEC-0037) |
