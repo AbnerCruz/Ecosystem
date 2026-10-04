@@ -9,7 +9,7 @@
   },
   "task_id": "P5-2",
   "component": "hub",
-  "state": "review",
+  "state": "done",
   "branch": "codex/ecosystem-next-stages",
   "base_commit": "093ef4fe6ef6eadcd97fa6686fdd68d291892990",
   "commit": null,
@@ -33,7 +33,10 @@
     "Runtime local experimental: discovery contextual, grants capturados, compatibilidade, envelope, request/command/response/event/error/progress, cancelamento e lifecycle; Tool de análise de texto sem IO.",
     "Adapter Android no Hub com consentimento por ação, input limitado, execução fora da UI e descarte no fechamento/OnStop/OnDestroy.",
     "Diagnóstico do integrador: bootstrap do git e prepare deixam stderr/erro visível. A falha remota exit 128 não foi reproduzida localmente; nenhuma causa é declarada resolvida.",
-    "Auditoria somente leitura do segundo Host: Lunet tem Activity/editor e GameId; Urbe JS congelado; Ecosystem AI tem sessão headless. Evidências e inferência separadas no plano; nenhuma escolha transversal implantada."
+    "Auditoria somente leitura do segundo Host: Lunet tem Activity/editor e GameId; Urbe JS congelado; Ecosystem AI tem sessão headless. Evidências e inferência separadas no plano; nenhuma escolha transversal implantada.",
+    "PR #172 integrado na main; P5-1 (plano/critérios) e P5-2 (runtime local/Tool) possuem implementação e documentação canônicas.",
+    "Validação humana de uso/lifecycle Android do P5-2 aprovada pelo proprietário pelo portal na Issue #177; nenhum resultado humano foi inferido pelo agente.",
+    "Fechamento limita-se a P5-1/P5-2: contrato público, Host API, IPC, segundo Host real e gate da Fase 5 permanecem em P5-3..P5-7."
   ],
   "verification": [
     {
@@ -85,14 +88,13 @@
     "API em processo experimental 0: não é protocolo IPC público nem implementa isolamento de processo/autenticação de caller externo.",
     "Cancelamento é cooperativo em código confiável; handler não cooperativo não é interrompido à força, mas resultado tardio não é aceito.",
     "Dois contextos em testes não representam dois Hosts reais. Extração e contrato público dependem de consumidor real, ADR/decisão e Extraction Review.",
-    "P4-9 continua dependendo da release-ponte no canal legado, chave histórica e DEVICE; fases posteriores não recebem aprovação implícita."
+    "P4-9 continua independente deste fechamento; fases posteriores não recebem aprovação implícita."
   ],
   "blockers": [],
   "next_actions": [
-    "Revisar CI combinado e integrar pelo mecanismo canônico; autorização do proprietário para mudança crítica de enforcement/control-plane.",
-    "Executar validação Android do primeiro Host; não marcar P5-2 concluído antes de integração/evidência necessária.",
-    "Auditar prontidão do segundo Host e registrar contrato/ADR/decisão em P5-3 antes de expor IPC/Host API; seguir P5-4..P5-7.",
-    "P6-4 depende de Host real; P6-5 vem depois. Fase 7 exige consumidor e Extraction Review."
+    "Continuar P5-3 pela Issue #175: contrato/Host API e decisão arquitetural antes de exposição pública.",
+    "Respeitar a prontidão do segundo Host: Lunet continua candidato preferencial observado, mas sua Fase 3 local deve fechar antes da integração transversal.",
+    "Não iniciar IPC P5-4 antes da decisão da Host API e do desenho de identidade/autenticação do caller."
   ],
   "decisions_required": [],
   "normative_sources": [
