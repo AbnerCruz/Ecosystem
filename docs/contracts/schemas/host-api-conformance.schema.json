@@ -54,7 +54,7 @@
               "revocation",
               "session-closed",
               "provider-failure",
-              "identity-forgery"
+              "identity-missing"
             ]
           },
           "operation": {
