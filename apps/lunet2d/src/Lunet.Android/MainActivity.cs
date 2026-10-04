@@ -124,6 +124,7 @@ public sealed partial class MainActivity : Activity
         root.AddView(MakeButton("Importar ZIP", ImportProject));
         root.AddView(MakeButton("Clonar do Git", AskClone));
         root.AddView(MakeButton("Configurações", ShowSettings));
+        root.AddView(MakeButton("Conexões", ShowEcosystemConnection));
 
         var list = Vertical();
         foreach (var name in _store.List())
@@ -1152,6 +1153,7 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnDestroy()
     {
+        DisposeEcosystemConnection();
         DisposePreview();
         base.OnDestroy();
     }
