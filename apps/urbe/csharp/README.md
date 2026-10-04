@@ -1,16 +1,30 @@
-# Cliente C# do Urbe — UC-8
+# Cliente C# do Urbe — UC-8 + UC-9
 
 Base de composição aprovada por DEC-0035-A / ADR-0025. O roadmap e os gates
 continuam em [`../docs/csharp/ROADMAP.md`](../docs/csharp/ROADMAP.md).
-A tela inicial identifica um cliente em construção; ainda não abre nem grava vaults.
+A tela inicial identifica um cliente em construção; os hosts ainda não abrem nem gravam vaults. UC-9 adiciona ao Core apenas a leitura pura, em memória, dos bytes de um vault.
 
 | Projeto | Responsabilidade | Dependências locais |
 |---|---|---|
-| Urbe.Core | Domínio puro .NET; identidade estável, dados nos próximos itens | nenhuma |
+| Urbe.Core | Domínio puro .NET; identidade estável e leitor de vault UC-9 | nenhuma |
 | Urbe.UI | Componentes Razor e estilos usados pelos dois hosts | Core |
 | Urbe.Web | Bootstrap WASM/PWA estático | UI |
 | Urbe.App | Composição MAUI Blazor Hybrid Windows/Android | UI |
 | Urbe.Core.Tests | Identidade, limites arquiteturais e composição | Core |
+
+## Leitor de vault — UC-9
+
+`VaultReader.Read` recebe um conjunto de `VaultFile` em memória e devolve um snapshot
+sem acessar filesystem nem escrever, apagar, migrar ou criar backup. Ele lê mapas 1.x,
+sidecars v1/v2 com precedência v2, identidade e journal recuperável; bytes físicos
+continuam disponíveis sem mutação mesmo quando o journal projeta um estado efetivo.
+
+Formato futuro do vault torna o snapshot globalmente somente leitura. Formato futuro
+de mapa, sidecar, tema ou página protege apenas o artefato correspondente. Journal
+v2 futuro não cai para v1. A suíte `VaultReaderTests` executa as 12 fixtures canônicas
+de `tests/fixtures/vaults/` e casos negativos de paths inseguros, duplicatas,
+precedência, corrupção e recuperação. Escrita, remoção de journal, backup e migração
+continuam exclusivamente em UC-10.
 
 `Urbe.Portable.slnx` compila em qualquer SO com .NET 10; `Urbe.Native.slnx`
 exige workloads MAUI. Interfaces de plataforma serão adicionadas quando houver
@@ -62,7 +76,7 @@ integrador. Nenhum job publica, assina ou cria release.
 3. Em viewport horizontal de celular, confirme leitura sem rolagem horizontal.
 4. Para experimentar offline, use o build **publicado** servido por HTTP local;
    o service worker de desenvolvimento deliberadamente não oferece offline.
-5. Não use esta base para notas reais: leitura/escrita são UC-9/UC-10.
+5. Não use esta base para notas reais: o leitor UC-9 ainda não está ligado aos hosts e escrita/migração pertencem a UC-10.
 
 Os metadados `app.urbe.csharp.dev` / `Urbe Dev` / `0.0.0` são privados do build
 de desenvolvimento; não alteram a identidade ou versão pública, assinatura ou
