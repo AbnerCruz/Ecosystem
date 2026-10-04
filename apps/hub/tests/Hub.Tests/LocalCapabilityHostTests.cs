@@ -14,9 +14,10 @@ public class LocalCapabilityHostTests
     static LocalCapabilityHost Host(LocalCapability? tool = null, params string[] declared) =>
         new([tool ?? TextInspectionTool.Definition(Root())], declared.Length == 0 ? ["ui.display"] : declared);
     static LocalCapability Tool(Func<LocalInvocation, CancellationToken, Task<JsonElement>> handler,
-        LocalContext? scope = null, Version? version = null, Func<JsonElement, bool>? validateOutput = null)
+        LocalContext? scope = null, Version? version = null, Func<JsonElement, bool>? validateOutput = null,
+        IEnumerable<string>? permissions = null)
         => new(TextInspectionTool.CapabilityId, "test-provider", version ?? new(1, 0, 0), "inspect",
-            scope ?? Root(), ["ui.display"], "stateless", _ => true, validateOutput ?? (_ => true), handler);
+            scope ?? Root(), permissions ?? ["ui.display"], "stateless", _ => true, validateOutput ?? (_ => true), handler);
 
     [Fact]
     public async Task OneToolRunsInTwoContextsWithoutConcreteHostNames()
@@ -40,8 +41,8 @@ public class LocalCapabilityHostTests
     [Fact]
     public async Task UndeclaredOrUngrantedPermissionIsNeverInherited()
     {
-        using var noGrant = Host().Open("user", Context(), []);
-        using var notDeclared = Host(null, "fs.read").Open("user", Context(), ["ui.display"]);
+        using var noGrant = Host(Tool((_, _) => Task.FromResult(Input()))).Open("user", Context(), []);
+        using var notDeclared = Host(Tool((_, _) => Task.FromResult(Input())), "fs.read").Open("user", Context(), ["ui.display"]);
         foreach (var session in new[] { noGrant, notDeclared })
         {
             Assert.Empty(session.Discover());
@@ -104,7 +105,7 @@ public class LocalCapabilityHostTests
     public async Task MutatingGrantCollectionCannotEscalateTheSession()
     {
         var grants = new List<string>();
-        using var session = Host().Open("user", Context(), grants);
+        using var session = Host(Tool((_, _) => Task.FromResult(Input()))).Open("user", Context(), grants);
         grants.Add("ui.display");
         Assert.Empty(session.Discover());
         Assert.Equal("CAPABILITY_UNAVAILABLE", (await session.DispatchAsync(Request(), TestContext.Current.CancellationToken)).Error);
@@ -190,11 +191,35 @@ public class LocalCapabilityHostTests
                 : JsonSerializer.SerializeToElement(new { value = 7 })),
             validateOutput: Valid)).Open("user", Context(), ["ui.display"]);
 
-        Assert.Equal("INVALID_OUTPUT", (await session.DispatchAsync(Request(), TestContext.Current.CancellationToken)).Error);
+        Assert.Equal("PROVIDER_CONTRACT_VIOLATION", (await session.DispatchAsync(Request(), TestContext.Current.CancellationToken)).Error);
         Assert.DoesNotContain(session.Frames, frame => frame.Kind == "response");
         var recovered = await session.DispatchAsync(Request("two"), TestContext.Current.CancellationToken);
         Assert.True(recovered.Succeeded);
         Assert.Equal(7, recovered.Output!.Value.GetProperty("value").GetInt32());
+    }
+
+    [Fact]
+    public async Task RevokingGrantCancelsActiveCallAndCannotRestorePrivilege()
+    {
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var protectedTool = Tool(async (_, token) =>
+        {
+            started.SetResult();
+            await Task.Delay(Timeout.Infinite, token);
+            return Input();
+        });
+        using var session = Host(protectedTool).Open("user", Context(), ["ui.display"]);
+        Assert.Single(session.Discover());
+        var running = session.DispatchAsync(Request(), TestContext.Current.CancellationToken);
+        await started.Task.WaitAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(session.Revoke(["ui.display"]));
+        Assert.Equal("REVOKED", (await running).Error);
+        Assert.Empty(session.Discover());
+        Assert.Equal("CAPABILITY_UNAVAILABLE",
+            (await session.DispatchAsync(Request("after-revoke"), TestContext.Current.CancellationToken)).Error);
+        Assert.Contains(session.Frames, frame => frame.Event == "session.grants-revoked");
+        Assert.False(session.Revoke(["ui.display"]));
     }
 
     [Fact]
