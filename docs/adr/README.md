@@ -47,3 +47,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0022](0022-tabletop-rpg-product-solo-first.md) | Tabletop RPG como Product C# solo-first | Aceito (DEC-0033; ADD-0016) |
 | [0023](0023-capability-runtime-local-no-hub.md) | Capability Runtime experimental local no Hub | Proposto |
 | [0024](0024-host-api-publica-product-shell.md) | Host API pública e neutra de transporte para Product Shells | Proposto (aguarda DEC-0034) |
+| [0025](0025-urbe-pilha-ui-hosts-csharp.md) | Pilha de UI e hosts do Urbe em C# | Proposto (aguarda DEC-0035) |
+| [0026](0026-urbe-transicao-cliente-csharp.md) | Transição do Urbe JavaScript para o cliente C# | Proposto (aguarda DEC-0036) |

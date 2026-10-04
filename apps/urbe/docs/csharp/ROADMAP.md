@@ -7,7 +7,7 @@
 
 ## Próxima tarefa
 
-**M0 — Fundamentos de paridade.** UC-1 a UC-4 e UC-7 estão concluídos. UC-2 fechou com 297 casos portáveis, 14/14 E2E funcionais representados e 11 protocolos físicos declarados como `not-executed` para execução posterior em UC-23/24/25/29; PR #174 integrado automaticamente com `urbe-checks` e consistency verdes. Próximos itens: UC-5 (pilha de UI/hosts) e UC-6 (transição de instalações/canais), ambos exigindo decisão explícita do proprietário antes de G-C0.
+**M0 — Fundamentos de paridade.** UC-1 a UC-4 e UC-7 estão concluídos. UC-2 fechou com 297 casos portáveis, 14/14 E2E funcionais representados e 11 protocolos físicos declarados como `not-executed` para execução posterior em UC-23/24/25/29. UC-5 e UC-6 estão propostos e aguardam DEC-0035/DEC-0036; depois das duas escolhas, aplicar as consequências, concluir M0 e avaliar G-C0. Nenhum código C# de produto começa antes disso.
 
 ---
 
@@ -19,8 +19,8 @@ Objetivo: saber exatamente o que é «paridade», ter como provar, e decidir com
 - [x] UC-2 — **Suíte de aceite independente de linguagem:** corpus final M0 com 297 casos portáveis, oráculo congelado, protocolo de execução, 14/14 E2E funcionais representados e `surface-protocol.json` separado para lifecycle/permissões/instalação reais, deliberadamente `not-executed` até UC-23/24/25/29. PR #174 integrado automaticamente em `2e088e7`; `urbe-checks` e consistency verdes no estado combinado. Issue #139 encerrada; handoff `HO-20261004-urbe-uc2-concluido`.
 - [x] UC-3 — **Contrato do vault:** `DATA-CATALOG.md` + Urbe ADR-0004 como contrato único legível pelos dois clientes (versões, proteção forward, backup restaurável, identidade, GC), com manifesto das fixtures. Projeção verificável em `VAULT-CONTRACT.md` e `acceptance/vault-manifest.json`; Issue #146, handoff `HO-20261003-urbe-m0-contracts`. Integrado pelo PR #150, commit 4f89efe.
 - [x] UC-4 — **Inventário de dependências sem equivalente direto:** KaTeX, JSZip, PDF.js, providers de IA, plugins JS full-trust, File System Access/OPFS/IndexedDB, Electron, Capacitor. Para cada uma: uso real, opções em C#/WASM/nativo, risco. Inventário em `DEPENDENCIES.md`; Issue #147, mesmo handoff; nenhuma opção foi escolhida. Integrado pelo PR #150, commit 4f89efe.
-- [ ] UC-5 — **Proposta de pilha de UI e de hosts** por superfície: ADR do Ecosystem `Proposto` + decisão pendente no portal, com alternativas reais e consequências. Depende de UC-1 a UC-4.
-- [ ] UC-6 — **Estratégia de transição das instalações e dos canais** (APK, instalador Windows com atualização, Urbe Web/PWA; DEC-0021-C): ADR `Proposto` + decisão no portal. O Urbe JS continua publicando até o corte.
+- [~] UC-5 — **Proposta de pilha de UI e de hosts** por superfície: ADR-0025 `Proposto` + DEC-0035 pendente no portal. Alternativas: Blazor WASM PWA + MAUI Hybrid/RCL (recomendada), Avalonia 12, Uno ou UI separada por superfície. Issue #182; nenhum código C# antes da decisão e de G-C0.
+- [~] UC-6 — **Estratégia de transição das instalações e dos canais** (APK, instalador Windows com atualização, Urbe Web/PWA; DEC-0021-C): ADR-0026 `Proposto` + DEC-0036 pendente no portal. Recomendação: ponte que preserva identidade/origem e separa o corte C# da migração futura de distribuição. Issue #183; o Urbe JS continua publicando até UC-31/G-C5.
 - [x] UC-7 — **Política de integração para o código novo:** estender `docs/governance/integration-policy.json` às zonas críticas do código C# do Urbe (dados do usuário, segurança, distribuição) **antes** de qualquer PR de código C#. PR crítico (controle do sistema). Concluído: PR #151 autorizado e integrado, commit 584fe73; Issue #148 e handoff `HO-20261003-urbe-csharp-policy`.
 
 **Gate G-C0:** UC-1 a UC-7 concluídos e a pilha (UC-5) e a transição (UC-6) decididas pelo proprietário.
