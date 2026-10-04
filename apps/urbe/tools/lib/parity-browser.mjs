@@ -3,10 +3,19 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {ROOT} from './v2-docs.mjs';
 import {startRuntime} from '../../tests/e2e/app-runtime.mjs';
+import {runBrowserVault,runBrowserLegacy} from './parity-browser-vault.mjs';
+import {runBrowserStorage} from './parity-browser-storage.mjs';
+import {runBrowserWorld} from './parity-browser-world.mjs';
+import {runBrowserZip} from './parity-browser-zip.mjs';
 export function makeUiCases(){return JSON.parse(fs.readFileSync(path.join(ROOT,'docs/csharp/acceptance/ui-cases.json'),'utf8')).cases}
 export async function createBrowserReference(){
   const rt=await startRuntime();let visualApp;
   return{
+    vault:input=>runBrowserVault(rt,input),
+    world:input=>runBrowserWorld(rt,input),
+    zip:runBrowserZip,
+    legacy:runBrowserLegacy,
+    async storage(input){visualApp ||= await rt.open({docs:40});return runBrowserStorage(visualApp,input)},
     async visual(input){
       visualApp ||= await rt.open({docs:40});
       return visualApp.page.evaluate(input=>{

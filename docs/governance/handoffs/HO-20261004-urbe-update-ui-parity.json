@@ -9,10 +9,10 @@
   },
   "task_id": "UC-2",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "chatgpt/urbe-uc2-acceptance-complete",
   "base_commit": "093ef4fe6ef6eadcd97fa6686fdd68d291892990",
-  "commit": null,
+  "commit": "9c4d29703a2d5816ea657e704c1a99a1babcdf4f",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/171",
   "files_changed": [
     "apps/urbe/AGENTSCHAT.md",
@@ -74,9 +74,9 @@
     {
       "check": "node tests/e2e/app-runtime-parity.e2e.mjs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "8693684: 256/256 iguais e 5/5 E2E no CI. b2b3d46 identificou divergência de posição em ui-document-lifecycle: adapter capturava projeção em memória na criação, em vez do mapa persistido após rename como a fonte original. Captura corrigida para mapa após rename → projeção após reabertura; posição após restaurar lixeira não é critério do E2E original. Head corrigido aguarda CI.",
-      "tested_commit": "869368463a04c1ee0365ae2ced9fed6cf1ebcc31"
+      "result": "passed",
+      "evidence": "CI run 37183669702/job 111381197719: 260/260 iguais e 5/5 E2E. Integrador run 37183835655 também testou estado combinado e integrou automaticamente.",
+      "tested_commit": "9c4d29703a2d5816ea657e704c1a99a1babcdf4f"
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
@@ -96,12 +96,11 @@
     "UC-2 continua aberto: demais transcrições UI/E2E, lifecycle e permissões reais.",
     "Nenhum cliente C# nem escolha UC-5/6; G-C0 não concluído.",
     "Host/rede simulados não validam instalação, assinatura, download, Android físico ou Windows instalado.",
-    "Casos UI ampliados/corrigidos aguardam nova execução CI; quatro iniciais foram provados em Chromium (256/256)."
+    "260/260 casos e 5/5 E2E provados; UC-2 continua aberto para critérios restantes de E2E-COVERAGE.md."
   ],
   "blockers": [],
   "next_actions": [
-    "Executar CI e corrigir quaisquer divergências; integração somente pelo integrador automático.",
-    "Continuar transcrição UI/E2E e lifecycle antes de fechar UC-2."
+    "Continuar as transcrições UC-2 restantes."
   ],
   "decisions_required": [],
   "normative_sources": [

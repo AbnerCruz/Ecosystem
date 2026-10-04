@@ -6,7 +6,7 @@ const cases=makeNativeCases(),results=[];
 for(const c of cases)results.push({id:c.id,output:await runNativeCase(c.input)});
 compareResults(cases,results);
 assert.equal(cases.length,24);
-assert.equal(makeCorpus().cases.length,260);
+assert.equal(makeCorpus().cases.length,297);
 validateCorpus(makeCorpus());
 for(const [id,change] of [
   ['native-web-contract',o=>o.values[0].capabilities.push('fs')],

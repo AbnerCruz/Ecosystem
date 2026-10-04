@@ -5,20 +5,20 @@ Inventário de trabalho sobre os 14 cenários congelados em `oracle.json`. Esta 
 | Fonte em `tests/e2e/` | Corpus portável relacionado | Critérios ainda a transcrever |
 |---|---|---|
 | `app-runtime-visual.e2e.mjs` | `visual-001` a `visual-110`, `ui-visual-save-reload` | Nenhum dos critérios atuais de serialização/edição; execução C# futura permanece aberta |
-| `app-runtime.e2e.mjs` | `ui-first-boot`, `ui-create-save-reload`; Markdown/Visual | Boot da fixture e vault de escala S; preview integrado coberto por `ui-integrated-preview` |
-| `smoke.e2e.mjs` | `ui-first-boot` | Boot do vault de escala S e contagem documental |
+| `app-runtime.e2e.mjs` | `ui-first-boot`, `ui-create-save-reload`, `browser-world-scale-s`; Markdown/Visual | Nenhum dos critérios atuais de boot/fixture/escala S/preview integrado; execução C# futura permanece aberta |
+| `smoke.e2e.mjs` | `ui-first-boot`, `browser-world-scale-s` | Nenhum dos critérios atuais de primeira abertura e vault S; execução C# futura permanece aberta |
 | `routing.e2e.mjs` | `ui-artifact-routing` | Nenhum dos critérios atuais de abertura e resolução; execução C# futura permanece aberta |
-| `lifecycle.e2e.mjs` | `ui-document-lifecycle` | Execução com vault de escala S; os critérios documentais atuais têm dados portáveis |
+| `lifecycle.e2e.mjs` | `ui-document-lifecycle`, `browser-world-scale-s` | Nenhum: lifecycle documental e escala S foram decompostos em casos ortogonais; execução C# futura deve satisfazer ambos |
 | `gc.e2e.mjs` | `ui-gc-cancel`, `ui-gc-apply`; `gc.plan` | Nenhum dos critérios atuais de confirmação/cancelamento e registro; execução C# futura permanece aberta |
-| `fixtures.e2e.mjs` | `vault.scenario`, `idb.legacy-city` | Executar abertura/salvamento pelo app e migração IDB pelo boot, incluindo proteção forward/readonly, backup e sidecars originais |
-| `identity.e2e.mjs` | `identity.text/parse/pair`; fixtures de vault | Rename/move externos no IDB, reabertura/sync, uma casa por documento, geometria de região/asset e vínculo preservados |
-| `stable-ids.e2e.mjs` | Fixtures de vault | IDs region/asset, campos de compatibilidade e vínculo mantidos ao recarregar/renomear pasta pelo app |
-| `adapters.e2e.mjs` | `storage.scenario` | IndexedDB real: persistência, isolamento de vaults e operações observadas pelo navegador |
-| `layout.e2e.mjs` | Fixtures de vault | Reorganização, diálogo manter/desfazer, backup byte a byte, registro e reabertura sem nova reorganização |
-| `multi-city.e2e.mjs` | Fixture mesclada e `idb.legacy-city` cobrem partes do domínio | Stores Norte/Sul, três boots idempotentes, IDs/geometria de origem, arquivar sem apagar stores |
-| `map-writer.e2e.mjs` | `ui-create-save-reload` cobre persistência explícita | Persistência automática de documento/mundo. O critério de escritor único exige instrumentação própria da pilha C#; não portar regex de stack JS como regra de produto |
-| `zip.e2e.mjs` | Testes JS congelados; ainda sem operação portável ZIP | Export/import, manifesto/hashes, binários, preferências sem chaves, adulteração cancelada e versão futura recusada |
+| `fixtures.e2e.mjs` | `vault.scenario`, 11 `browser.vault`, `idb.legacy-city` | Nenhum dos critérios atuais: oito vaults históricos, três futuros e `browser.idb-legacy` transcrevem abertura/salvamento, backup, sidecars, readonly e boot legado; execução C# futura permanece aberta |
+| `identity.e2e.mjs` | `identity.text/parse/pair`, `browser-world-external-identity` | Nenhum dos critérios atuais de rename/move externo, casas, região/asset e vínculo; execução C# futura permanece aberta |
+| `stable-ids.e2e.mjs` | `browser-world-stable-ids` | Nenhum dos critérios atuais de IDs/vínculos/campos/reload/rename; execução C# futura permanece aberta |
+| `adapters.e2e.mjs` | `storage.scenario`, 16 `browser.storage` | Nenhum dos critérios atuais de IDB/OPFS: cidades, texto, ausentes, unicode, blobs, pastas, remoção e lote têm passos portáveis; execução C# futura permanece aberta |
+| `layout.e2e.mjs` | `browser-world-layout-old/keep/command` | Nenhum dos critérios atuais de reorganização/diálogo/backup/registro/desfazer/reabertura; execução C# futura permanece aberta |
+| `multi-city.e2e.mjs` | `browser-world-multi-city` | Nenhum dos critérios atuais: stores Norte/Sul, três boots idempotentes, IDs/geometria de origem, escritor único e arquivar sem apagar stores estão em dados portáveis; execução C# futura permanece aberta |
+| `map-writer.e2e.mjs` | `browser-world-map-writer` | Nenhum dos critérios funcionais atuais: criação só pela API chega ao mapa, reorganização persiste e o cliente de referência prova escritor único; o cliente C# futuro deve instrumentar sua própria pilha, sem copiar regex de stack JS |
+| `zip.e2e.mjs` | `browser-zip-roundtrip` | Nenhum dos critérios funcionais atuais: export/import, manifesto/hashes, binários, preferências sem chaves, adulteração cancelada e formato futuro recusado estão em dados/saídas portáveis; execução C# futura permanece aberta |
 
-Próxima fatia: fechar os critérios restantes dos cenários já transcritos antes de acrescentar famílias maiores. Depois, fixtures/identidade/layout, adapters/multi-city e ZIP. Cenários físicos e permissões do SO são aceite de UC-23/24/25/29; seus protocolos devem ser definidos sem fabricar execução humana.
+Os 14 E2E congelados não têm critérios funcionais atuais restantes sem representação portável. Lifecycle/permissões de SO e instalação real estão definidos em `surface-protocol.json` e permanecem deliberadamente `not-executed` até UC-23/24/25/29; nenhuma simulação conta como execução humana.
 
 Os caminhos e IDs dos testes permanecem no inventário congelado. O cliente C# poderá usar seus próprios comandos e seletores para produzir os mesmos resultados; equivalência de resultado não exige copiar Electron, Capacitor, IndexedDB ou nomes de módulos JS.
