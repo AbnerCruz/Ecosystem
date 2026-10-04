@@ -186,8 +186,8 @@ public sealed class VaultWriterTests
     {
         var files = new[]
         {
-            File("A.md", "a\n"),
-            File("B.md", "b\n")
+            TextFile("A.md", "a\n"),
+            TextFile("B.md", "b\n")
         };
         var initial = VaultReader.Read(files);
         var documents = ToWriteDocuments(initial)
@@ -354,7 +354,7 @@ public sealed class VaultWriterTests
         Encoding.UTF8.GetString(files.Single(file =>
             string.Equals(file.Path, path, StringComparison.OrdinalIgnoreCase)).Bytes.Span);
 
-    private static VaultFile File(string path, string content) =>
+    private static VaultFile TextFile(string path, string content) =>
         new(path, Encoding.UTF8.GetBytes(content));
 
     private static string Hash(ReadOnlySpan<byte> bytes) =>
