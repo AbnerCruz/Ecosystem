@@ -30,10 +30,22 @@ public sealed partial class MainActivity
             var pending = store.Pending().FirstOrDefault();
             if (pending is null)
             {
-                if (!automatic)
+                if (automatic) return;
+                var approved = store.Approved().FirstOrDefault();
+                if (approved is null)
+                {
                     new AlertDialog.Builder(this).SetTitle("Conexões locais")
-                        .SetMessage("Nenhum pareamento aguardando aprovação. Inicie a conexão no Product caller.")
+                        .SetMessage("Nenhum pareamento aguardando aprovação e nenhuma instalação está conectada.")
                         .SetPositiveButton("OK", (_, _) => { }).Show();
+                    return;
+                }
+
+                var signer = approved.SignerSha256.Length > 16 ? approved.SignerSha256[..16] + "…" : approved.SignerSha256;
+                new AlertDialog.Builder(this).SetTitle("Conexão local aprovada")
+                    .SetMessage($"Aplicativo: {approved.PackageName}\nAssinante observado: {signer}\nA revogação remove a confiança desta instalação. O próximo uso exigirá novo pareamento.")
+                    .SetNegativeButton("Fechar", (_, _) => { })
+                    .SetPositiveButton("Revogar", (_, _) => store.Revoke(approved.PairId))
+                    .Show();
                 return;
             }
 
