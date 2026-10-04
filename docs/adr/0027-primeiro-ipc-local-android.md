@@ -63,7 +63,9 @@ Recomendação técnica atual: **Opção A**.
 
 A recomendação é específica ao primeiro alvo Android. Não significa que Binder será usado por Urbe Web, Windows ou futuros Hosts.
 
-## Consequências se A for escolhida
+## Consequências
+
+### Se a opção A for escolhida
 
 - primeiro provider IPC: endpoint opcional do Hub Android;
 - primeiro caller: Lunet Android;
