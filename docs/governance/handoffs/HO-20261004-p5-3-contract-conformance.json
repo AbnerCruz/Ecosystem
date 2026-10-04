@@ -13,7 +13,7 @@
   "branch": "chatgpt/p5-3-contract-conformance",
   "base_commit": "f7adbd225653492f28a90b8d7d2c37d1b693b739",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/176",
   "files_changed": [
     "ROADMAP.md",
     "apps/hub/src/Hub.Core/Capabilities/LocalCapabilityHost.cs",
