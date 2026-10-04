@@ -68,13 +68,15 @@ CI verde não substitui esta validação. O gate de dois Hosts precisa de outra 
 
 P6-4 já possui prova local do Workspace, mas precisa do Host real/Fase 5; somente então P6-5 entrega a experiência do Product de IA sem duplicar loop/ledger/provider. Fase 7 exige auditoria e consumidor real antes de extrair Tool. Remote Workers/organizações e deployment têm decisões próprias de confiança, privacidade, orçamento e segredos; não se implementam por inferência a partir do pedido de continuar.
 
-## P5-3 — proposta de Host API pública (DEC-0034 pendente)
+## P5-3 — Host API v1 aceita e implementada
 
-FATO OBSERVADO: P5-1/P5-2 estão concluídos; o PR #176 integrou o contrato `text.inspect` 1.0.0 `draft` e a conformance do primeiro Host sem tornar `ecosystem-local/0` público. A validação humana do primeiro Host foi aprovada na Issue #177.
+DEC-0034-A aceitou a alternativa semântica e neutra de transporte. A fonte normativa é `docs/contracts/host-api.v1.json`, validada por `host-api.schema.json`; a matriz independente de Host está em `examples/host-api/conformance.v1.json`.
 
-FATO OBSERVADO: Lunet2D continua sendo o candidato mais curto para o segundo Host Android, mas sua Fase 3 permanece aberta e sua governança local impede avançar autonomamente para a integração transversal. Urbe C# ainda não possui Shell pronto. Portanto não existe hoje segundo Product Shell apto que justifique implementação/extraction antecipada.
+A API pública v1 possui seis operações semânticas: `open-session`, `discover`, `invoke`, `cancel`, `revoke` e `close-session`. Context continua vindo de `context.schema.json`; capability/version/input/output/erros de domínio/lifecycle continuam vindo dos contratos de capability; permissões continuam deny-by-default e Registry continua sendo a autoridade de descoberta/compatibilidade. Identidade e grants são capturados pelo Host e nunca aceitos como elevação no payload.
 
-PROPOSTA: ADR-0024/DEC-0034 separa a **Host API semântica** do **transporte IPC**. A API proposta captura sessão, Context, caller/ator, grants, discovery, invoke, cancelamento, revogação e fechamento; reutiliza os contratos canônicos da Fase 2 e não expõe nome/tipo do Host à Tool. `ecosystem-local/0` permanece experimental.
+A taxonomia de `hostErrors` é separada dos erros da capability. Em especial, output inválido do provider é `PROVIDER_CONTRACT_VIOLATION`; `text.inspect` mantém somente `INVALID_INPUT` e `EXECUTION_FAILED` como erros de domínio. Como recebe o texto integralmente em memória, `text.inspect` 1.0.0 não requer `ui.display` nem outro grant externo e passa a `stable`.
 
-A DEC-0034 é bloqueante para estabilizar essa fronteira. Enquanto pendente, não criar schema/API pública, SDK, package compartilhado nem transporte. Se a opção recomendada for aprovada, o próximo slice de P5-3 transforma a proposta em contrato normativo + fixtures de conformance; P5-4 só então compara transportes e autenticação de caller. P5-5 continua dependente da prontidão de um segundo Host e de Extraction Review antes de qualquer extração.
+O primeiro binding continua local ao Hub e experimental em transporte (`ecosystem-local/0`). Ele agora suporta revogação real de grants, cancela invocação ativa que perdeu permissão e impede resultado tardio. `HostApiConformanceTests` executa todas as fixtures públicas contra esse binding. Isso prova a semântica do primeiro Host sem tornar `Hub.Core` SDK público.
+
+P5-3 termina aqui. P5-4 escolhe transporte/autenticação/timeout/disconnect preservando esta semântica. P5-5 continua responsável pelo segundo Product Shell real; nenhum Product deve referenciar `Hub.Core`, e qualquer extração de runtime/Tool exige segundo consumidor e Extraction Review positiva (NN-022).
 
