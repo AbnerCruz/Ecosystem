@@ -1153,8 +1153,7 @@ public sealed partial class MainActivity : Activity
 
     protected override void OnDestroy()
     {
-        _ecosystemHostClient?.Dispose();
-        _ecosystemHostClient = null;
+        DisposeEcosystemConnection();
         DisposePreview();
         base.OnDestroy();
     }
