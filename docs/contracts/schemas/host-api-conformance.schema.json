@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ecosystem/contracts/host-api-conformance/1",
+  "title": "Fixtures de conformance da Host API v1",
+  "description": "Formato de casos independentes de Host usados para provar a semântica pública aprovada em DEC-0034-A.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schemaVersion",
+    "api",
+    "cases"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "api": {
+      "const": "ecosystem-host-api/1.0.0"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "scenario",
+          "operation",
+          "expectedLayer",
+          "expectedCode",
+          "description"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]+$"
+          },
+          "scenario": {
+            "enum": [
+              "valid-invoke",
+              "invalid-context",
+              "unknown-capability",
+              "incompatible-version",
+              "missing-permission",
+              "grant-escalation",
+              "invalid-input",
+              "invalid-output",
+              "cancellation",
+              "revocation",
+              "session-closed",
+              "provider-failure",
+              "identity-missing"
+            ]
+          },
+          "operation": {
+            "enum": [
+              "open-session",
+              "discover",
+              "invoke",
+              "cancel",
+              "revoke",
+              "close-session"
+            ]
+          },
+          "expectedLayer": {
+            "enum": [
+              "success",
+              "host",
+              "capability"
+            ]
+          },
+          "expectedCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

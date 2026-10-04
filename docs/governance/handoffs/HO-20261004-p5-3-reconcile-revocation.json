@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-3-reconcile-revocation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T12:34:04.309600Z",
+  "agent": {
+    "id": "chatgpt-p5-runtime-continue",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-3",
+  "component": "hub",
+  "state": "review",
+  "branch": "chatgpt/p5-3-host-api-v1",
+  "base_commit": "da80358551e0e51ab713ab97fda070983530a6bf",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/193",
+  "files_changed": [
+    "docs/adr/README.md",
+    "apps/hub/src/Hub.Core/Capabilities/LocalCapabilityHost.cs",
+    "apps/hub/tests/Hub.Tests/LocalCapabilityHostTests.cs",
+    "docs/architecture/capability-runtime.md",
+    "docs/governance/handoffs/HO-20261004-p5-3-reconcile-revocation.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: PR #193 falhou CHK-ADR no estado combinado; ADRs 0024/0025/0026 estavam duplicados no índice com status obsoletos.",
+    "Reconciliação semântica preserva uma linha Aceito por ADR, conforme DEC-0034-A/0035-A/0036-C; nenhum documento de decisão foi reescrito.",
+    "Regressões reproduziram grants parcialmente removidos por iterator que lança e EXECUTION_FAILED mascarando REVOKED após revogação.",
+    "Revoke materializa pedido antes de mutação; flag de revogação bloqueia progresso/resultado sem depender da janela de Cancel fora do lock; outcomes de revogação/fechamento/cancelamento prevalecem sobre exceções tardias.",
+    "main atual e branch do PR reconciliadas sem force, mantendo trabalho anterior e handoff original.",
+    "Proprietário autorizou explicitamente em 2026-10-04 o envio dos commits ao PR #193; bloqueio de autorização do push resolvido. A autorização de push não é aprovação da integração crítica."
+  ],
+  "verification": [
+    {
+      "check": "Regressões antes da correção",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Runner xUnit local: 252 testes, 2 falhas esperadas nos novos cenários; REVOKED obtinha EXECUTION_FAILED e iterator deixava discovery vazio."
+    },
+    {
+      "check": "Hub tests depois da correção",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Runner xUnit direto (.NET 10.0.100): 252 testes passaram, incluindo 13 fixtures públicas e as duas regressões que falharam antes da correção."
+    },
+    {
+      "check": "Consistency + git diff --check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks de consistência passaram; git diff --check passou. ROADMAP × Issues será conferido com instantâneo no CI."
+    },
+    {
+      "check": "Self-test e simulação do integrador",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Self-test completo passou: todos os checks provaram detectar violações. Simulação do integrador passou em todos os cenários. SDK 10.0.100 no PATH."
+    },
+    {
+      "check": "DEVICE deste slice",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Sem mudança de UI, toque, instalação ou canal; gate de dois Hosts continua em P5-7."
+    }
+  ],
+  "known_issues": [
+    "P5-3 continua aberto até integração e encerramento da Issue #175.",
+    "PR #193 é crítico: contrato público/checker do slice anterior e correção de fronteira de grants; autorização canônica cabe ao proprietário.",
+    "P4-9 permanece independente, sem run urbe-cutover observado nesta retomada."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar CI/integrador do PR #193 atualizado; corrigir falhas reais antes da integração.",
+    "Após integração, reconciliar P5-3/Issue #175 e prosseguir a comparação P5-4 conforme prontidão do segundo Host."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/permissions.json",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/architecture/capability-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Índice reconciliado com status das decisões canônicas; grants pertencem à sessão."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff novo com reprodução/verificação/PR; registro anterior preservado."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas lidas diretamente antes da reconciliação."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Revogação redutora atômica e resultados tardios não restauram acesso."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-3 não encerrado antes de CI/integração."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração/SDK/segundo consumidor fabricado."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security"
+    ],
+    "reason": "Correção de fronteira de revogação de grants do Host; não pode se autoautorizar como rotina."
+  },
+  "cost": null
+}
