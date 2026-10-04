@@ -298,8 +298,9 @@ public sealed class VaultWriterTests
 
         using var vault = JsonDocument.Parse(result.Files[".urbe/vault.json"].Bytes);
         var maintenance = vault.RootElement.GetProperty("maintenance");
-        Assert.Equal("gc", maintenance[^1].GetProperty("kind").GetString());
-        Assert.Equal(1, maintenance[^1].GetProperty("removed").GetProperty("history").GetInt32());
+        var lastMaintenance = maintenance[maintenance.GetArrayLength() - 1];
+        Assert.Equal("gc", lastMaintenance.GetProperty("kind").GetString());
+        Assert.Equal(1, lastMaintenance.GetProperty("removed").GetProperty("history").GetInt32());
         Assert.Equal(1, vault.RootElement.GetProperty("migrations").GetArrayLength());
         Assert.False(string.IsNullOrWhiteSpace(vault.RootElement.GetProperty("migrations")[0].GetProperty("backup").GetString()));
 
