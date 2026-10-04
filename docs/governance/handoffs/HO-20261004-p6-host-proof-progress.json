@@ -1,0 +1,94 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p6-host-proof-progress",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T06:48:41.595656Z",
+  "agent": {
+    "id": "codex-phase6-progress",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-4",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "codex/p6-4-state-evidence",
+  "base_commit": "093ef4fe6ef6eadcd97fa6686fdd68d291892990",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261004-p6-host-proof-progress.json"
+  ],
+  "work_completed": [
+    "Conferido PR #145 integrado em 3f99f9b; corrigida a alegação desatualizada de CI/integração pendentes no roadmap.",
+    "Revalidada a implementação existente: build sem warnings/erros e 130 testes verdes. Nenhum código do Runtime/Workspace foi alterado.",
+    "P6-4 mantém [~]: sessão em dois contextos simulados não é Host real nem aprovação do gate; P6-5 depende da conclusão correspondente."
+  ],
+  "verification": [
+    {
+      "check": "Integração da prova local R3",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #145 merged em 2026-10-03T19:39:29Z, commit 3f99f9bbf048dac84e86b003c36fc86bf1876f22; é ancestral da base 093ef4f. Trailer Integration-Criticality routine; nenhuma nova integração é simulada."
+    },
+    {
+      "check": "AgentRuntime/Workspace.Tests existente",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "093ef4fe6ef6eadcd97fa6686fdd68d291892990",
+      "evidence": "SDK 10.0.100: dotnet build tests/AgentRuntime.Tests --disable-build-servers -m:1, zero warnings/erros; execução direta AgentRuntime.Tests.dll, 130 testes, zero erros/falhas/skip. Código deste Product na árvore testada é idêntico à base."
+    },
+    {
+      "check": "Consistency da atualização documental",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: todos os 22 checks passaram; ROADMAP × Issues será verificado no CI com o instantâneo remoto."
+    },
+    {
+      "check": "DEVICE deste patch documental",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Nenhuma UI/Android foi alterada; Host real e gate continuam por validar no item completo."
+    }
+  ],
+  "known_issues": [
+    "P6-4 completo ainda precisa de Host API/Host real da Fase 5; a Issue #144 fica aberta aguardando esse pré-requisito.",
+    "Não entrega Product de IA visual nem conclui P6-5, extração, IPC ou gate humano."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar a correção documental pelo integrador; não marcar P6-4 done.",
+    "Retomar o adapter do Host real após a superfície aprovada da Fase 5; depois avançar P6-5."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0021-r3-sessao-local-do-agent-workspace.md",
+    "docs/governance/handoffs/HO-20261003-r3-host-contexts.json",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Issue #144 permanece aberta, branch/PR/handoff próprios para este resultado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não converte teste de Host simulado em validação de Host real ou gate humano."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "R3 local integrado e revalidado; P6-4 completo não é declarado done."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Roadmap passa a refletir a integração real e a dependência que permanece."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção de evidência/estado documental, sem alterar código, direção, contrato ou gate."
+  },
+  "cost": null
+}
