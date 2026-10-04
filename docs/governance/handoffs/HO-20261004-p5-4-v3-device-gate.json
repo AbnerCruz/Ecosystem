@@ -1,0 +1,155 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-4-v3-device-gate",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T20:25:00Z",
+  "agent": {
+    "id": "chatgpt-p5-4-v3-device-gate",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-4",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p5-4-v3-device-gate",
+  "base_commit": "48782858d75e75ec71337345e054a7b38235aa7d",
+  "commit": "43c744913bcd3f58d835277d865356729f96332d",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/226",
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/validation/P5-4-binder-ipc.md",
+    "docs/governance/handoffs/HO-20261004-p5-4-v3-device-gate.json"
+  ],
+  "work_completed": [
+    "Fixado o candidato DEVICE final p5-4-device-v3-2e397ce3 para C/D, com APKs versionados acima dos candidatos já instalados.",
+    "Candidato v3 deriva do head 2e397ce3 testado no PR #224 e do mesmo estado integrado na main como 48782858.",
+    "Hub v3 versionCode 114 e Lunet v3 versionCode 1000087 preservam atualização in-place e o estado de pareamento.",
+    "Fluxo B já possui evidência física positiva no candidato v2: pareamento, sessão, discovery e text.inspect funcionando.",
+    "UI integrada na main distingue pareamento persistente de sessão IPC transitória; idle 0 não é desconexão."
+  ],
+  "verification": [
+    {
+      "check": "Candidato v3 — código, testes e APKs",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #224: Hub CI run 114 verde; Lunet CI verde; Lunet release PR run 87 verde; consistency completo e integrador combinados verdes. Release p5-4-device-v3-2e397ce3 publicada com hashes fixados no roteiro."
+    },
+    {
+      "check": "B — pareamento + sessão + discovery + text.inspect",
+      "kind": "human",
+      "result": "passed",
+      "critical": false,
+      "object": "docs/validation/P5-4-binder-ipc.md",
+      "evidence": "Proprietário confirmou no aparelho que o fluxo está funcionando; indicador 0 foi diagnosticado como sessão já encerrada, não perda de pareamento."
+    },
+    {
+      "check": "C/D — persistência/revogação/rotação + LinkToDeath/process death",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "docs/validation/P5-4-binder-ipc.md",
+      "evidence": "Executar com a pre-release p5-4-device-v3-2e397ce3. Este é o único gate DEVICE restante para P5-4."
+    }
+  ],
+  "known_issues": [
+    "P5-4 permanece aberto até C/D passarem no aparelho e a validação crítica ser registrada.",
+    "P5-5 não inicia implementação antes do fechamento de P5-4; Extraction Review já foi mapeada mas não aplicada."
+  ],
+  "blockers": [
+    "Validação física C/D pelo proprietário."
+  ],
+  "next_actions": [
+    "Instalar Hub/Lunet v3 por cima dos candidatos atuais, sem limpar dados.",
+    "Executar C e D exatamente conforme docs/validation/P5-4-binder-ipc.md.",
+    "Registrar a validação crítica no portal somente se C/D passarem.",
+    "Após fechamento P5-4, iniciar P5-5 por Extraction Review conforme ADR-0011/NN-022."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0027-primeiro-ipc-local-android.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/contracts/bindings/android-binder-v1.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/lunet2d/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Há um único gate humano final C/D neste handoff; aprovações históricas não são reutilizadas."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Lunet permanece funcional sem Hub/provider."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Host API v1 e text.inspect@1.0.0 continuam contratos canônicos e inalterados."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Tool continua sem conhecer Binder ou Product concreto."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Candidato e roteiro estão registrados em fontes normativas rastreáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma nova decisão arquitetural; DEC-0037-A já está aplicada."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Binder continua transporte runtime; GitHub apenas distribui e registra evidência."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Autenticação/grants não foram alterados por este registro."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI/APKs verdes não substituem C/D em Android real."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-4 segue aberto até o gate físico restante."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhuma abstração genérica adicional foi criada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "P5-5/shared extraction continua bloqueado até Extraction Review após P5-4."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição e domínio essencial do Lunet continuam independentes do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "text-inspect-host-neutral-tool",
+      "status": "external-consumer-exists",
+      "rationale": "Hub é o provider atual e Lunet já é consumidor real da mesma capability via Host API. Isso dispara Extraction Review em P5-5, mas não autoriza extração antes do fechamento de P5-4.",
+      "consumers": [
+        "hub",
+        "lunet2d"
+      ],
+      "extraction_review": "pending"
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Este PR somente fixa o objeto de validação e a evidência do candidato v3; não altera código runtime, fronteira de confiança, assinatura ou decisão."
+  },
+  "cost": null
+}

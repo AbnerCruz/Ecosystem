@@ -70,6 +70,18 @@ Run `37221326838`: **verde completo** — foundation checks, self-test de cada c
 | IPC-17 | CI | Falha/output inválido não vazam exceção, path ou conteúdo privado. |
 | IPC-18 | DEVICE | Caller permanece utilizável sem provider instalado/rodando. |
 
+## Candidato DEVICE final — v3
+
+Use somente a pre-release `p5-4-device-v3-2e397ce3` para os gates C/D.
+
+- estado-fonte dos APKs: `2e397ce33fb2df1241770a599c2ad1aefe13f678`;
+- mesmo estado integrado na `main`: `48782858d75e75ec71337345e054a7b38235aa7d`;
+- Hub: `Ecosystem-Hub-P5-4-v3-2e397ce3.apk`, versionCode **114**, SHA-256 `84f249470d3ebf89449d9819f0d26a7bcc3648518b9bf787327f4b5937570c2b`;
+- Lunet: `Lunet-P5-4-v3-2e397ce3-arm64.apk`, versionCode **1000087**, SHA-256 `19ff0cd491ae3f5e383c2938f8e2a4b714851481a070b255aa5c96662d1ac8e0`;
+- release: `https://github.com/AbnerCruz/Ecosystem/releases/tag/p5-4-device-v3-2e397ce3`.
+
+Instale ambos **por cima** dos candidatos atuais. Não limpe dados nem desinstale: C/D precisam observar persistência, rotação e lifecycle reais. O v2 fica como evidência histórica do fluxo B, mas está superseded como candidato final.
+
 ## Roteiro físico
 
 ### A — Standalone / IPC-18
@@ -133,7 +145,7 @@ P5-4 só pode virar `[x]` depois de:
 
 ## Resultado
 
-**DEVICE parcial verde no candidato v2 integrado.**
+**DEVICE parcial verde; candidato final v3 publicado para C/D.**
 
 O proprietário confirmou no aparelho que o fluxo real está funcionando: o pareamento existente é reconhecido, a sessão autentica, `discover` encontra a capability e `text.inspect@1.0.0` executa corretamente.
 
