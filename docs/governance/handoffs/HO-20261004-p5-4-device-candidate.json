@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "chatgpt/p5-4-device-candidate",
   "base_commit": "1d69d5e055238d602283abe1c508743f3378020c",
-  "commit": "b001eafda4baa16868d626eff402a2f7f57f6918",
+  "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/210",
   "files_changed": [
     "ROADMAP.md",
@@ -27,7 +27,7 @@
   ],
   "work_completed": [
     "DEC-0037-A reconciliada nos documentos canônicos; ADR-0027 passa a Aceito e consequencesApplied=true.",
-    "Candidato técnico congelado no PR #210, head b001eafd; nenhum código crítico foi copiado para este PR documental.",
+    "Candidato técnico externo a este PR documental congelado no PR #210, head b001eafd; nenhum código crítico foi copiado para este branch.",
     "CI testou o estado combinado c69f909 (b001eafd sobre main 1d69d5e): Hub 270/270, Lunet 321/321, ambos APKs verdes e consistency completo verde.",
     "Hub artifact 11310570442: ZIP sha256 4e81f3477ac6e3b95b0d91e7833af383b8200a28933051ffdaa0ce229f8a4d11; APK sha256 ebd38055c50871298071f79e379f3364741d594fb05b1f6f2378d307473e40c4.",
     "Lunet artifact 11310540558: ZIP sha256 9bdc1b4be8a7dc7cacd94034fc35b0f12e1166e4ab08aa660ac2998a125eb357; APK sha256 17e9913e569890f254c9074a2960e4002238c886c81690d1ff1eceed600c3422.",
