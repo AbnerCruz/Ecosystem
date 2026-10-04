@@ -1,0 +1,144 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-4-device-candidate",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T17:20:00Z",
+  "agent": {
+    "id": "chatgpt-p5-4-device-candidate",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-4",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p5-4-device-candidate",
+  "base_commit": "1d69d5e055238d602283abe1c508743f3378020c",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/214",
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/validation/P5-4-binder-ipc.md",
+    "docs/governance/handoffs/HO-20261004-p5-4-device-candidate.json"
+  ],
+  "work_completed": [
+    "Candidato técnico crítico permanece isolado no PR #210, head b001eafda4baa16868d626eff402a2f7f57f6918; este handoff pertence ao PR documental #214 e nenhum código Binder/Keystore foi copiado para ele.",
+    "DEC-0037-A já consta como decisão canônica tomada pelo proprietário na main; este PR não altera ADR, decisão nem consequencesApplied.",
+    "CI testou o estado combinado c69f909 (b001eafd sobre main 1d69d5e): Hub 270/270, Lunet 321/321, APKs dos dois Products e consistency completo verde.",
+    "Hub artifact 11310570442: ZIP sha256 4e81f3477ac6e3b95b0d91e7833af383b8200a28933051ffdaa0ce229f8a4d11; APK sha256 ebd38055c50871298071f79e379f3364741d594fb05b1f6f2378d307473e40c4.",
+    "Lunet artifact 11310540558: ZIP sha256 9bdc1b4be8a7dc7cacd94034fc35b0f12e1166e4ab08aa660ac2998a125eb357; APK sha256 17e9913e569890f254c9074a2960e4002238c886c81690d1ff1eceed600c3422.",
+    "Matriz IPC-01..IPC-18 separa propriedades já provadas em CI das que exigem Android real; roteiro DEVICE A-D publicado."
+  ],
+  "verification": [
+    {
+      "check": "Estado combinado, testes e APKs do candidato P5-4",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "merge-ref c69f909; hub-ci 37221326822: 270/270 + APK verde; lunet2d-ci 37221326904: 321/321; lunet2d-release 37221326943: APK verde; consistency 37221326838: checks+self-test+simulação do integrador verdes."
+    },
+    {
+      "check": "IPC Android real — standalone, pairing, pin/revogação/rotação e process death",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "docs/validation/P5-4-binder-ipc.md",
+      "evidence": "Executar roteiro A-D com os APKs exatos do head b001eafd. CI não substitui UID/signatário/Keystore/Binder/LinkToDeath em aparelho."
+    }
+  ],
+  "known_issues": [
+    "P5-4 ainda não está concluído: propriedades DEVICE e aprovação do proprietário permanecem pendentes.",
+    "PR #210 permanece draft/critical e não deve ser integrado antes do resultado DEVICE.",
+    "ADR-0027 continua Proposto e DEC-0037 consequencesApplied=false na main; sua aplicação pertence ao PR crítico #210, não a este registro documental.",
+    "P5-5/extração continuam bloqueados; este candidato não autoriza mover runtime/Tool para componente compartilhado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar este registro documental rotineiro para projetar a validação P5-4 no portal.",
+    "Proprietário instala os dois APKs candidatos e executa A-D.",
+    "Se aprovado, reconciliar o handoff, aplicar/integrar as consequências críticas no PR #210 e só depois fechar P5-4.",
+    "Depois de P5-4 integrado, iniciar P5-5 com Extraction Review antes de qualquer shared extraction."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/adr/0027-primeiro-ipc-local-android.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/ipc-transport-readiness.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "DEC-0037 continua autoridade única da escolha; há uma única verificação humana P5-4 neste handoff."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Roteiro A prova standalone; integração é opcional e provider ausente não pode quebrar o Lunet."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Host API v1 e text.inspect@1.0.0 permanecem contratos canônicos do ensaio."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "A Tool não conhece Binder nem Product concreto; adapter fica fora da Tool."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "ADR, runtime plan, contracts, ROADMAP e política de integração foram consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Implementação segue DEC-0037-A/ADR-0027, sem decisão arquitetural silenciosa."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Binder local é o runtime transport; GitHub só armazena código/evidência."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "UID/pacote/signatário + pairing precedem sessão; Context/grants são Host-owned e deny-by-default."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e build estão verdes, mas propriedades Android reais permanecem explicitamente em DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não há marcação done antes de DEVICE, autorização crítica e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Binding permanece Android-específico; não foi generalizado para Web/Windows."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração compartilhada em P5-4; P5-5 exige Extraction Review."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição e domínio essencial do Lunet continuam independentes do provider."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "authenticated-host-gateway",
+      "status": "possible-candidate",
+      "rationale": "O candidato prova um segundo consumidor da semântica Host API, mas shared extraction permanece proibida até P5-5 e Extraction Review positiva."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Este PR somente publica estado/evidência/objeto de validação e comunicação de continuidade. Não altera ADR, decisão, consequencesApplied, política de segurança nem código runtime; a implementação crítica permanece exclusivamente no PR #210."
+  },
+  "cost": null
+}
