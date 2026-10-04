@@ -107,10 +107,10 @@ Run `37221326838`: **verde completo** — foundation checks, self-test de cada c
 
 1. Com o pareamento válido, Lunet → **Conexões** → **Abrir sessão por 60 s (teste de lifecycle)**.
 2. Assim que aparecer a mensagem de sessão aberta, abra o provider → **Conexões locais**.
-3. Esperado: **Sessões IPC ativas: 1**.
+3. Esperado: **Sessões IPC abertas agora: 1**. Fora dessa janela, ver **0** é normal: o fluxo **Conectar e testar** fecha a sessão ao terminar e o pareamento continua válido.
 4. Volte às configurações do Android e **force a parada do Lunet** antes dos 60 s.
 5. Abra/atualize **Conexões locais** no provider.
-6. Esperado: **Sessões IPC ativas: 0**. O death-recipient deve ter encerrado a sessão.
+6. Esperado: **Sessões IPC abertas agora: 0**. O death-recipient deve ter encerrado a sessão; a instalação continua pareada.
 7. Reabra o Lunet e confirme que o app continua funcional; a sessão antiga não reaparece.
 8. Por fim, force a parada do provider e tente **Conectar e testar** no Lunet.
 9. Esperado: indisponibilidade/erro sanitizado, sem crash e sem afetar o restante da IDE.
@@ -133,4 +133,12 @@ P5-4 só pode virar `[x]` depois de:
 
 ## Resultado
 
-**Pendente de DEVICE.**
+**DEVICE parcial verde no candidato v2.**
+
+O proprietário confirmou no aparelho que o candidato corrigido voltou a operar: pareamento aprovado e execução autenticada de `text.inspect` funcionando. O indicador observado como `0` após o comando não representa desconexão: o cliente fecha a sessão transitória no `finally`, mantendo o pareamento persistente.
+
+A UI foi corrigida para distinguir:
+- **instalações pareadas** — confiança persistente entre as instalações;
+- **sessões IPC abertas agora** — sessões transitórias abertas apenas durante uma operação ou teste de lifecycle.
+
+P5-4 permanece aberto até concluir **C** (revogação/rotação) e **D** (process death / `LinkToDeath`) no aparelho e registrar a validação crítica final.
