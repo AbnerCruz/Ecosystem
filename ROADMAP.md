@@ -230,7 +230,18 @@ Objetivo: detectar versões, listar releases, baixar artefatos, validar integrid
 
 Objetivo: IPC; command/event/request; capability discovery local; lifecycle; permissions; Host API; Tool hosting. Por ADR (ADD-0002): Host API de Product Shell; Context em discovery e permissões; Connections implementada sobre o Capability Registry (UX, sem registro paralelo).
 
+Plano de execução: [`capability-runtime.md`](docs/architecture/capability-runtime.md). Contratos da Fase 2 continuam canônicos; o primeiro slice é local ao Hub (ADR-0011), sem extração antecipada.
+
+- [ ] P5-1 — **Plano e critérios do Capability Runtime**: fronteiras, sequência, matriz de evidência e critérios de escolha do segundo Host/IPC. Saída: `docs/architecture/capability-runtime.md`; depende de P2-9 e P4-10. Plano preparado junto ao slice de P5-2; integração pendente.
+- [~] P5-2 — **Runtime experimental local e primeira Tool no Hub**: discovery contextual, versões, grants explícitos, request/command/response/event/error/progress, cancelamento e lifecycle. Tool de análise de texto em memória, sem IO; API local 0, sem contrato público/IPC. Issue #170; ADR-0023 Proposto; handoff `HO-20261004-p5-runtime-local`. Depende de P5-1; provas em dois contextos são simuladas, não o gate de dois Hosts reais.
+- [ ] P5-3 — **Contrato público e Host API de Product Shell**: estabilizar envelope, identidade, discovery, Context, erros, compatibilidade, permissões e revogação a partir dos consumidores reais; ADR/decisão antes da exposição pública. Depende de P5-2 e auditoria de prontidão do segundo Host.
+- [ ] P5-4 — **IPC local autenticado**: selecionar transporte por comparação, verificar identidade/permissões do chamador e provar desconexão, cancelamento, timeout e limites. Sem GitHub como transporte runtime. Depende de P5-3 e decisão do transporte.
+- [ ] P5-5 — **Segundo Host real**: adapter do Product Shell escolhido, executando a mesma Tool; não duplicar implementação nem exigir Hub no domínio essencial do Product. Depende de P5-3/P5-4 e prontidão do Product anfitrião; extração exige Extraction Review (NN-022).
+- [ ] P5-6 — **Connections como UX do Registry**: mostrar capabilities disponíveis/indisponíveis no Context e grants explícitos; nenhuma segunda autoridade de registro. Depende de P5-3/P5-5.
+- [ ] P5-7 — **Gate da Fase 5**: mesma Tool standalone no Hub e embutida no segundo Host, compatibilidade e negativas de segurança verdes; validar lifecycle/toque/layout em aparelho. Depende de P5-1..P5-6; aprovação humana registrada antes de concluir.
+
 **Gate:** uma Tool simples funciona standalone no Hub e embutida em outro Host sem código específico para aquele Host.
+*Estado do gate:* **aguardando**
 
 ## Fase 6 — Agent Workspace compartilhado
 
