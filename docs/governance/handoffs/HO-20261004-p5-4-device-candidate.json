@@ -40,10 +40,10 @@
     {
       "check": "IPC Android real — standalone, pairing, pin/revogação/rotação e process death",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "docs/validation/P5-4-binder-ipc.md",
-      "evidence": "Executar roteiro A-D com os APKs exatos do head b001eafd. CI não substitui UID/signatário/Keystore/Binder/LinkToDeath em aparelho."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-04 (Issue https://github.com/AbnerCruz/Ecosystem/issues/217); registro em docs/governance/responses/VAL-HO-20261004-p5-4-device-candidate-ca3277b37af7.md."
     }
   ],
   "known_issues": [
