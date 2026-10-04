@@ -206,7 +206,8 @@ internal sealed class EcosystemPairingStore
                 pending.PackageName, pending.SignerSha256, DateTimeOffset.UtcNow);
             state = state with
             {
-                Approved = [.. state.Approved.Where(x => x.KeyHash != pending.KeyHash), approved],
+                Approved = [.. state.Approved.Where(x =>
+                    !(x.PackageName == pending.PackageName && x.SignerSha256 == pending.SignerSha256)), approved],
                 Pending = state.Pending.Where(x => x.PairId != pairId).ToArray()
             };
             Save(state);
@@ -235,6 +236,28 @@ internal sealed class EcosystemPairingStore
             Save(state);
             return state.Approved.SingleOrDefault(x =>
                 x.PairId == pairId && x.PackageName == identity.PackageName && x.SignerSha256 == identity.SignerSha256);
+        }
+    }
+
+    internal ApprovedPeer[] Approved()
+    {
+        lock (_sync)
+        {
+            var state = Clean(Load(), DateTimeOffset.UtcNow);
+            Save(state);
+            return state.Approved;
+        }
+    }
+
+    internal bool Revoke(string pairId)
+    {
+        lock (_sync)
+        {
+            var state = Clean(Load(), DateTimeOffset.UtcNow);
+            var next = state.Approved.Where(x => x.PairId != pairId).ToArray();
+            if (next.Length == state.Approved.Length) { Save(state); return false; }
+            Save(state with { Approved = next });
+            return true;
         }
     }
 }
