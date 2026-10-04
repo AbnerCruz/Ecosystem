@@ -16,6 +16,7 @@ internal sealed class EcosystemHostClient : IDisposable
     const string PendingTrustFile = "ecosystem-ipc-provider-pending-v1.json";
     readonly Context _context;
     readonly AndroidInstallationKey _key = new(KeyAlias);
+    readonly AndroidBindingTrustPolicy? _trustPolicy;
     HostServiceConnection? _connection;
     IBinder? _binder;
     ProviderCandidate? _candidate;
@@ -23,7 +24,11 @@ internal sealed class EcosystemHostClient : IDisposable
     string? _sessionId;
     bool _disposed;
 
-    internal EcosystemHostClient(Context context) => _context = context.ApplicationContext!;
+    internal EcosystemHostClient(Context context)
+    {
+        _context = context.ApplicationContext!;
+        _trustPolicy = AndroidBindingTrustPolicy.Load(_context);
+    }
 
     internal async Task<HostTestResult> ConnectAndInspectAsync(string text, CancellationToken ct)
     {
@@ -33,10 +38,11 @@ internal sealed class EcosystemHostClient : IDisposable
         try
         {
             var candidate = ResolveProvider();
-            if (candidate is null) return new(false, "Nenhum provider compatível foi encontrado.");
-            if (ReadTrust() is { } trust &&
-                (trust.PackageName != candidate.PackageName || trust.SignerSha256 != candidate.SignerSha256))
-                return new(false, "A identidade do provider mudou. Pareamento antigo foi recusado.");
+            if (candidate is null) return new(false, "Nenhum provider confiável e compatível foi encontrado.");
+            var savedTrust = ReadTrust();
+            if (savedTrust is not null &&
+                (savedTrust.PackageName != candidate.PackageName || savedTrust.SignerSha256 != candidate.SignerSha256))
+                return new(false, "A identidade do provider mudou. Pareamento antigo foi recusado; use Esquecer conexão para parear novamente.");
 
             await BindAsync(candidate, ct);
             var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
@@ -62,12 +68,18 @@ internal sealed class EcosystemHostClient : IDisposable
             }
 
             if (pair.State != "approved") return new(false, "Estado de pareamento inválido.");
-            if (pendingTrust is null ||
-                pendingTrust.PackageName != candidate.PackageName ||
-                pendingTrust.SignerSha256 != candidate.SignerSha256 ||
-                pendingTrust.PublicKey != pair.ProviderPublicKey ||
-                pendingTrust.PairId != pair.PairId)
-                return new(false, "A aprovação não corresponde ao provider/código previamente exibido. Pareamento recusado.");
+            var alreadyTrusted = savedTrust is not null &&
+                savedTrust.PackageName == candidate.PackageName &&
+                savedTrust.SignerSha256 == candidate.SignerSha256 &&
+                savedTrust.PublicKey == pair.ProviderPublicKey &&
+                savedTrust.PairId == pair.PairId;
+            var matchesPending = pendingTrust is not null &&
+                pendingTrust.PackageName == candidate.PackageName &&
+                pendingTrust.SignerSha256 == candidate.SignerSha256 &&
+                pendingTrust.PublicKey == pair.ProviderPublicKey &&
+                pendingTrust.PairId == pair.PairId;
+            if (!alreadyTrusted && !matchesPending)
+                return new(false, "A aprovação não corresponde ao provider/código previamente exibido. Pareamento recusado; use Esquecer conexão para reiniciar.");
 
             var challengeRequest = Signed(new IpcRequest(Op: "session.challenge", PairId: pair.PairId));
             var challenge = Rpc(EcosystemIpcProtocol.Challenge, challengeRequest);
@@ -162,7 +174,8 @@ internal sealed class EcosystemHostClient : IDisposable
         var package = service.PackageName;
         if (string.IsNullOrWhiteSpace(package) || string.IsNullOrWhiteSpace(service.Name)) return null;
         var signer = Signer(package);
-        return signer is null ? null : new ProviderCandidate(package, service.Name!, signer);
+        return signer is null || _trustPolicy?.AllowsProvider(package, signer) != true
+            ? null : new ProviderCandidate(package, service.Name!, signer);
     }
 
     string? Signer(string package)
@@ -258,6 +271,23 @@ internal sealed class EcosystemHostClient : IDisposable
             if (File.Exists(path)) File.Delete(path);
         }
         catch (Exception) { }
+    }
+
+    internal void ResetTrust()
+    {
+        TryClose();
+        Unbind();
+        foreach (var file in new[] { TrustFile, PendingTrustFile })
+        {
+            try
+            {
+                var path = Path.Combine(_context.FilesDir!.AbsolutePath, file);
+                if (File.Exists(path)) File.Delete(path);
+            }
+            catch (Exception) { }
+        }
+        _pair = null;
+        _candidate = null;
     }
 
     public void Dispose()
