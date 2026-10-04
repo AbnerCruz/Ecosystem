@@ -40,19 +40,19 @@
     {
       "check": "Core C# + Web smoke",
       "kind": "automated",
-      "result": "pass",
+      "result": "passed",
       "evidence": "urbe-checks run 37230492613: csharp-portable success; build sem erros; 134/134 testes C# passaram; publish Web e smoke passaram."
     },
     {
       "check": "Hosts nativos e regressão",
       "kind": "automated",
-      "result": "pass",
+      "result": "passed",
       "evidence": "urbe-checks run 37230492613: Android, Windows, checks e E2E todos success."
     },
     {
       "check": "Governança e consistência",
       "kind": "automated",
-      "result": "pass",
+      "result": "passed",
       "evidence": "consistency run 37230492604: Foundation consistency checks success."
     }
   ],
