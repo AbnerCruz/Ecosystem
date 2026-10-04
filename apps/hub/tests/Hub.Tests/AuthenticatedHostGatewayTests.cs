@@ -7,7 +7,7 @@ public class AuthenticatedHostGatewayTests
 {
     static LocalContext Root() => new([new("ecosystem", "ecosystem")]);
     static LocalContext Context() => new([
-        new("ecosystem", "ecosystem"), new("product", "lunet2d"), new("workspace", "ide"),
+        new("ecosystem", "ecosystem"), new("product", "consumer"), new("workspace", "ide"),
         new("tool", "text-inspect")]);
 
     static AuthenticatedHostGateway Gateway(LocalCapability? tool = null) =>
