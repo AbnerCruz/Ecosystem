@@ -271,6 +271,51 @@ public sealed class DocumentStoreTests
     }
 
     [Fact]
+    public void EmptyOptionalStringsFollowJavascriptTruthyFallbacks()
+    {
+        var store = new DocumentStore();
+        var first = store.Upsert(
+            new DocumentInput
+            {
+                Path = "A.md",
+                Content = "a"
+            });
+
+        var updated = store.Upsert(
+            new DocumentInput
+            {
+                Id = string.Empty,
+                Path = "A.md",
+                Title = string.Empty,
+                Content = "a",
+                Created = string.Empty,
+                Modified = string.Empty
+            });
+
+        Assert.Equal(first.Id, updated.Id);
+        Assert.StartsWith("doc_", updated.Id);
+        Assert.Equal("A", updated.Title);
+        Assert.Null(updated.Created);
+        Assert.Null(updated.Modified);
+        Assert.Single(store.List());
+
+        var made = store.Make(
+            new DocumentInput
+            {
+                Id = string.Empty,
+                Path = "B.md",
+                Title = string.Empty,
+                Created = string.Empty,
+                Modified = string.Empty
+            });
+
+        Assert.StartsWith("doc_", made.Id);
+        Assert.Equal("B", made.Title);
+        Assert.Null(made.Created);
+        Assert.Null(made.Modified);
+    }
+
+    [Fact]
     public void RenameWithExplicitIdPreservesIdentityAndRemovesOldPathIndex()
     {
         var store = new DocumentStore();
