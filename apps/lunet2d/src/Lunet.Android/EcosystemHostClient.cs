@@ -157,6 +157,8 @@ internal sealed class EcosystemHostClient : IDisposable
             return new(false, TransportError: "FRAME_TOO_LARGE");
         data.WriteString(json);
         if (lifecycleToken is not null) data.WriteStrongBinder(lifecycleToken);
+        if (data.DataSize() > EcosystemIpcProtocol.MaxParcelBytes)
+            return new(false, TransportError: "FRAME_TOO_LARGE");
         if (!_binder.Transact(code, data, reply, TransactionFlags.None))
             return new(false, TransportError: "PROVIDER_UNAVAILABLE");
         reply.ReadException();
