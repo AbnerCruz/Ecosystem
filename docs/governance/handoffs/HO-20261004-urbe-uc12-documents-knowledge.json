@@ -10,10 +10,10 @@
   },
   "task_id": "UC-12",
   "component": "urbe",
-  "state": "working",
+  "state": "review",
   "branch": "feat/urbe-uc12-documents-knowledge",
   "base_commit": "76ad67e7c4d25ff378333cc3ca766c148a43252c",
-  "commit": null,
+  "commit": "31bace9b19fb78eb711a4fde369515e3991ad79c",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/218",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/ArtifactModel.cs",
@@ -35,33 +35,37 @@
     "DocumentStore porta make/upsert/get/remove/list/clear/replaceAll, índice de path case-insensitive, revisões e eventos de lifecycle.",
     "DocumentStore.ReplaceFromVault projeta VaultSnapshot.Documents preservando IDs resolvidos pela camada do vault.",
     "KnowledgeIndex porta aliases, outgoing/incoming, backlinks, tags, tokens, search, stats e reindex automático.",
-    "Testes de paridade e negativos foram adicionados para classificação, parsing, lifecycle, aliases, busca e reindex."
+    "Testes de paridade e negativos foram adicionados para classificação, parsing, lifecycle, aliases, busca e reindex.",
+    "Revisão de paridade corrigiu expectativas dos testes para safeName/tag ordering observados no JS e alinhou fallbacks falsy de id/title/created/modified ao documents.js."
   ],
   "verification": [
     {
       "check": "Build/test UC-12",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando CI do PR; esta sessão usa o workflow como autoridade de compilação .NET."
+      "result": "passed",
+      "evidence": "urbe-checks run 37225693553 no head 31bace9b: build Release e 114/114 testes C# passaram, 0 falhas/0 skips."
     },
     {
       "check": "Regressão completa Urbe",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando urbe-checks e consistency no estado combinado."
+      "result": "passed",
+      "evidence": "urbe-checks 37225693553: checks, csharp-portable, MAUI Android, MAUI Windows e E2E concluíram success."
+    },
+    {
+      "check": "Governança/consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency run 37225693548 concluído success no mesmo head."
     }
   ],
   "known_issues": [
     "UC-12 não otimiza quick-open/REQ-073; a busca aqui preserva o comportamento do knowledge-index legado, enquanto UI/performance pertencem a etapas posteriores.",
     "Mundo, Markdown Visual e páginas/composições permanecem fora deste PR."
   ],
-  "blockers": [
-    "CI do PR e revisão de paridade do estado combinado."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Abrir PR da UC-12 e corrigir diferenças detectadas pelo CI sem afrouxar os testes.",
-    "Quando verde, mover Issue #216 e handoff para review.",
-    "Após integração, iniciar UC-13 — projeção do mundo e bairros com IDs estáveis."
+    "Integrador automático reconfirma o estado combinado e integra a mudança rotineira.",
+    "Após integração, encerrar Issue #216 e iniciar UC-13 — projeção do mundo e bairros com IDs estáveis."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -92,7 +96,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "UC-12 permanece working até CI e integração."
+      "evidence": "UC-12 em review após regressão completa verde; integração é rotineira e automática."
     },
     {
       "id": "NN-023",
