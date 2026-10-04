@@ -94,9 +94,10 @@ public sealed class WorldAsset
         _raw = WorldRegion.CloneObject(raw);
         Id = WorldRegion.StringValue(_raw["id"]);
         Folder = WorldRegion.StringValue(_raw["caminho"]) ?? string.Empty;
-        Name = WorldRegion.StringValue(_raw["fileName"]);
-        if (string.IsNullOrEmpty(Name))
-            Name = WorldRegion.StringValue(_raw["name"]) ?? string.Empty;
+        var name = WorldRegion.StringValue(_raw["fileName"]);
+        if (string.IsNullOrEmpty(name))
+            name = WorldRegion.StringValue(_raw["name"]);
+        Name = name ?? string.Empty;
         ParentId = WorldRegion.StringValue(_raw["parentId"]);
         ParentNoteName = WorldRegion.StringValue(_raw["parentNoteName"]);
         X = WorldRegion.FiniteNumber(_raw["x"]);
