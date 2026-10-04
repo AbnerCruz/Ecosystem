@@ -63,6 +63,15 @@ public sealed class AuthenticatedHostGateway : IDisposable
         _clock = clock ?? TimeProvider.System;
     }
 
+    public int ActiveSessionCount
+    {
+        get
+        {
+            ExpireIdle();
+            return _sessions.Values.Count(entry => !entry.Closed);
+        }
+    }
+
     public GatewayOpenResult Open(string peer, string actor, LocalContext context, IEnumerable<string> grants)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
