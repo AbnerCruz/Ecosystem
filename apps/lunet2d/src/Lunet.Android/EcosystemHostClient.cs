@@ -42,8 +42,13 @@ internal sealed class EcosystemHostClient : IDisposable
         if (text.Length > 100_000) return new(false, "Texto excede o limite de text.inspect.");
         if (!await _operation.WaitAsync(0, ct)) return new(false, "Já existe uma operação de conexão em andamento.");
 
+        var stage = "keystore.self-test";
         try
         {
+            if (!_key.SelfTest())
+                return new(false, "Keystore local não conseguiu assinar/verificar ECDSA.");
+
+            stage = "provider.resolve";
             var candidate = ResolveProvider();
             if (candidate is null) return new(false, "Nenhum provider confiável e compatível foi encontrado.");
             var savedTrust = ReadTrust();
@@ -51,7 +56,9 @@ internal sealed class EcosystemHostClient : IDisposable
                 (savedTrust.PackageName != candidate.PackageName || savedTrust.SignerSha256 != candidate.SignerSha256))
                 return new(false, "A identidade do provider mudou. Pareamento antigo foi recusado; use Esquecer conexão para parear novamente.");
 
+            stage = "provider.bind";
             await BindAsync(candidate, ct);
+            stage = "pair.begin";
             var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
             var pair = Rpc(EcosystemIpcProtocol.PairBegin, new IpcRequest(
                 Op: "pair.begin", PublicKey: _key.PublicKey, ClientNonce: nonce));
@@ -91,12 +98,15 @@ internal sealed class EcosystemHostClient : IDisposable
             if (!alreadyTrusted && !matchesPending)
                 return new(false, "A aprovação não corresponde ao provider/código previamente exibido. Pareamento recusado; use Esquecer conexão para reiniciar.");
 
+            stage = "challenge.sign";
             var challengeRequest = Signed(new IpcRequest(Op: "session.challenge", PairId: pair.PairId));
+            stage = "challenge.rpc";
             var challenge = Rpc(EcosystemIpcProtocol.Challenge, challengeRequest);
             if (!challenge.Ok || challenge.ChallengeId is null || challenge.Challenge is null
                 || challenge.ProviderSignature is null || challenge.ProviderPublicKey != pair.ProviderPublicKey)
                 return Error(challenge);
 
+            stage = "provider.proof";
             // Provider uses SHA-256 of raw public-key bytes. Compute the same lowercase hex value.
             var clientKeyHash = Convert.ToHexString(
                 SHA256.HashData(Convert.FromBase64String(_key.PublicKey))).ToLowerInvariant();
@@ -105,16 +115,20 @@ internal sealed class EcosystemHostClient : IDisposable
                 challenge.ProviderSignature))
                 return new(false, "Prova criptográfica do provider inválida.");
 
+            stage = "trust.persist";
             WriteTrust(new ProviderTrust(candidate.PackageName, candidate.SignerSha256, pair.ProviderPublicKey, pair.PairId));
             ClearPendingTrust();
 
+            stage = "session.open.sign";
             var open = Signed(new IpcRequest(
                 Op: "session.open", PairId: pair.PairId, ChallengeId: challenge.ChallengeId,
                 Challenge: challenge.Challenge));
+            stage = "session.open.rpc";
             var opened = Rpc(EcosystemIpcProtocol.Open, open, _lifecycleToken);
             if (!opened.Ok || opened.SessionId is null) return Error(opened);
             _sessionId = opened.SessionId;
 
+            stage = "discover";
             var discovery = Rpc(EcosystemIpcProtocol.Discover, Signed(new IpcRequest(
                 Op: "discover", PairId: pair.PairId, SessionId: _sessionId)));
             if (!discovery.Ok || discovery.Capabilities?.Any(x =>
@@ -130,6 +144,7 @@ internal sealed class EcosystemHostClient : IDisposable
                 return new(true, $"Sessão autenticada permaneceu aberta por {Math.Round(hold.TotalSeconds)} s.");
             }
 
+            stage = "invoke";
             var input = JsonSerializer.Serialize(new { text });
             var requestId = Convert.ToHexString(RandomNumberGenerator.GetBytes(12)).ToLowerInvariant();
             var invoke = Rpc(EcosystemIpcProtocol.Invoke, Signed(new IpcRequest(
@@ -138,13 +153,14 @@ internal sealed class EcosystemHostClient : IDisposable
                 DeadlineMs: 10_000, InputJson: input)));
             if (!invoke.Ok || invoke.OutputJson is null) return Error(invoke);
 
+            stage = "result.parse";
             using var output = JsonDocument.Parse(invoke.OutputJson);
             var root = output.RootElement;
             return new(true,
                 $"IPC autenticado: {root.GetProperty("characters").GetInt32()} caracteres, {root.GetProperty("words").GetInt32()} palavras, {root.GetProperty("lines").GetInt32()} linhas.");
         }
-        catch (System.OperationCanceledException) { return new(false, "Operação cancelada."); }
-        catch (Exception) { return new(false, "Provider indisponível ou protocolo recusado."); }
+        catch (System.OperationCanceledException) { return new(false, $"Operação cancelada em {stage}."); }
+        catch (Exception ex) { return new(false, $"IPC falhou em {stage} ({ex.GetType().Name})."); }
         finally
         {
             TryClose();
@@ -416,11 +432,27 @@ internal sealed class AndroidInstallationKey
     internal string Sign(byte[] data)
     {
         using var store = Store();
-        var key = store.GetKey(_alias, null) as IPrivateKey ?? throw new InvalidOperationException();
-        using var signature = Java.Security.Signature.GetInstance("SHA256withECDSA") ?? throw new InvalidOperationException();
-        signature.InitSign(key);
+        using var entry = store.GetEntry(_alias, null) as KeyStore.PrivateKeyEntry
+            ?? throw new InvalidOperationException("KEYSTORE_ENTRY_UNAVAILABLE");
+        using var signature = Java.Security.Signature.GetInstance("SHA256withECDSA")
+            ?? throw new InvalidOperationException("ECDSA_UNAVAILABLE");
+        signature.InitSign(entry.PrivateKey);
         signature.Update(data);
         return Convert.ToBase64String(signature.Sign()!);
+    }
+
+    internal bool SelfTest()
+    {
+        try
+        {
+            var payload = System.Text.Encoding.UTF8.GetBytes("ecosystem-keystore-self-test-v1");
+            var signed = Sign(payload);
+            return Verify(PublicKey, payload, signed);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     internal static bool Verify(string publicKey, byte[] data, string encodedSignature)
