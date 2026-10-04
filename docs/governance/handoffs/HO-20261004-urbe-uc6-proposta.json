@@ -21,7 +21,8 @@
     "apps/urbe/docs/csharp/ROADMAP.md",
     "apps/urbe/AGENTSCHAT.md",
     "docs/governance/handoffs/HO-20261004-urbe-uc6-proposta.json",
-    "docs/adr/README.md"
+    "docs/adr/README.md",
+    "apps/urbe/tools/lib/parity-browser.mjs"
   ],
   "criticality": {
     "declared": "routine",
@@ -31,7 +32,8 @@
     "ADR-0026 separa a troca tecnológica C# da migração futura de distribuição/first-party.",
     "DEC-0036 oferece quatro estratégias de transição e recomenda ponte que preserve package, assinatura, origem Web e canais de recuperação.",
     "A recomendação fixa invariantes por superfície, mas deixa o mecanismo exato para UC-26 e mantém UC-31/G-C5 como única autorização de corte.",
-    "Issue #183 e ROADMAP passam a waiting/[~] até decisão do proprietário."
+    "Issue #183 e ROADMAP passam a waiting/[~] até decisão do proprietário.",
+    "Hardening de teste: ui-gc-apply agora espera por até 3s o registro maintenance realmente persistido no vault, eliminando corrida de leitura sem relaxar o critério."
   ],
   "verification": [
     {
@@ -45,6 +47,12 @@
       "kind": "automated",
       "result": "pending",
       "evidence": "Executar no PR/estado combinado."
+    },
+    {
+      "check": "ui-gc-apply persisted maintenance wait",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Reexecução CI necessária após commit 18cb2386; uma execução paralela anterior falhou por leitura antes da persistência, enquanto o mesmo head passou 297/297 em outra execução."
     }
   ],
   "known_issues": [
