@@ -9,7 +9,7 @@
   },
   "task_id": "P5-3",
   "component": "hub",
-  "state": "verifying",
+  "state": "review",
   "branch": "chatgpt/p5-3-contract-conformance",
   "base_commit": "f7adbd225653492f28a90b8d7d2c37d1b693b739",
   "commit": null,
@@ -35,22 +35,25 @@
   ],
   "verification": [
     {
-      "check": "Hub.Tests",
+      "check": "Hub.Core e conformance do contrato draft",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando execução no PR."
+      "result": "passed",
+      "tested_commit": "98a8b2510ecf3f84591337f848d3b1e7cfe5d463",
+      "evidence": "hub-ci run 37186037518: 248/248 testes passaram, incluindo conformance do text.inspect e rejeição de output inválido; job Android também compilou o APK e verificou o certificado de desenvolvimento."
     },
     {
       "check": "Consistency",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando execução no PR."
+      "result": "passed",
+      "tested_commit": "98a8b2510ecf3f84591337f848d3b1e7cfe5d463",
+      "evidence": "consistency run 37186037505: todos os checks passaram com snapshot remoto de Issues."
     },
     {
-      "check": "Self-test dos checks",
+      "check": "Self-test dos checks e simulação do integrador",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando execução no PR."
+      "result": "passed",
+      "tested_commit": "98a8b2510ecf3f84591337f848d3b1e7cfe5d463",
+      "evidence": "consistency run 37186037505: self-test e simulação do integrador concluíram com sucesso."
     },
     {
       "check": "DEVICE deste slice",
@@ -67,9 +70,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Executar CI do PR e corrigir qualquer falha de build, schema, conformance ou consistency.",
-    "Após evidência verde, mover a Issue #175 para review e integrar pelo mecanismo canônico.",
-    "Em seguida auditar o segundo Host real e preparar a decisão/ADR da Host API antes de avançar para IPC."
+    "Integrar o PR #176 pelo mecanismo canônico; este slice é rotina e não exige autorização crítica.",
+    "Após integração, reconciliar o estado P5-1/P5-2 sem confundir CI com a validação Android pendente.",
+    "Depois da evidência DEVICE de P5-2, auditar o segundo Host real e preparar ADR/decisão da Host API antes de avançar para IPC."
   ],
   "decisions_required": [],
   "normative_sources": [
