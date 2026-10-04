@@ -38,7 +38,7 @@ public sealed class VaultWriteRequest
     public string? HistoryJson { get; init; }
     public string? TrashJson { get; init; }
     public string? CompositionsJson { get; init; }
-    public string AppVersion { get; init; } = ProductIdentity.Version;
+    public string AppVersion { get; init; } = "?";
     public DateTimeOffset Now { get; init; } = DateTimeOffset.UtcNow;
 }
 
@@ -417,7 +417,7 @@ public static class VaultWriter
 
         if (current is not null && TryParseObject(current.Value, out var parsed))
         {
-            var version = parsed["formatVersion"]?.GetValue<int?>();
+            var version = GetOptionalInt(parsed["formatVersion"]);
             if (version is not null && version <= 2)
             {
                 root = parsed;
@@ -543,7 +543,7 @@ public static class VaultWriter
     {
         if (!TryParseObject(file.Bytes, out var obj))
             return false;
-        var version = obj["version"]?.GetValue<int?>();
+        var version = GetOptionalInt(obj["version"]);
         if (version is not 1 and not 2)
             return false;
         return obj["documents"] is JsonArray;
@@ -641,6 +641,13 @@ public static class VaultWriter
             obj = null!;
             return false;
         }
+    }
+
+    private static int? GetOptionalInt(JsonNode? node)
+    {
+        if (node is not JsonValue value)
+            return null;
+        return value.TryGetValue<int>(out var number) ? number : null;
     }
 
     private static byte[] Serialize(JsonNode node, bool indented) =>
