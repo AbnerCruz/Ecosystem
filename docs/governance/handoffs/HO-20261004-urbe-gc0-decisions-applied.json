@@ -8,7 +8,7 @@
     "id": "chatgpt",
     "kind": "ai-agent"
   },
-  "task_id": "UC-5/UC-6/G-C0",
+  "task_id": "UC-5",
   "component": "urbe",
   "state": "review",
   "branch": "chatgpt/urbe-gc0-apply-decisions",
