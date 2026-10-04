@@ -7,7 +7,7 @@
 
 ## Próxima tarefa
 
-**M1 — Núcleo de dados.** M0 foi concluído: DEC-0035-A definiu Blazor WebAssembly PWA + .NET MAUI Blazor Hybrid/RCL e DEC-0036-C definiu reinstalação deliberada com backup/export/import. G-C0 aprovado. Próxima tarefa: UC-12 — documentos, artefatos e índice de conhecimento.
+**M2 — Domínio do conhecimento e do mundo.** M1 foi concluído com leitura/escrita do vault, migração/backup/identidade/GC e export/import ZIP no Core C#. G-C1 aprovado. Próxima tarefa: UC-12 — documentos, artefatos e índice de conhecimento.
 
 ---
 
@@ -40,7 +40,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 ## M2 — Domínio do conhecimento e do mundo
 
-- [ ] UC-12 — Documentos, artefatos e índice de conhecimento.
+- [ ] UC-12 — Documentos, artefatos e índice de conhecimento. Em implementação na Issue #216; Core puro, sem UI/mundo/hosts.
 - [ ] UC-13 — Projeção do mundo e bairros, com IDs estáveis.
 - [ ] UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens.
 - [ ] UC-15 — Páginas e composições.
