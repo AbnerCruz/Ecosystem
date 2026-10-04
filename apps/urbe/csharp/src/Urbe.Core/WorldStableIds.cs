@@ -169,16 +169,22 @@ public static class WorldStableIds
     {
         JsonObject? first = null;
 
-        // JS usa (g.files || g.anexos || [])[0]. Array vazio é truthy,
-        // portanto "files":[] impede fallback para anexos.
-        if (asset["files"] is not null)
+        // JS usa (g.files || g.anexos || [])[0]. Arrays/objetos vazios
+        // são truthy; false, 0 e "" não são. Reproduza isso inclusive em mapas
+        // estranhos/corrompidos para não derivar outro ID.
+        var filesNode = asset["files"];
+        if (JsTruthy(filesNode))
         {
-            if (asset["files"] is JsonArray files && files.Count > 0)
+            if (filesNode is JsonArray files && files.Count > 0)
                 first = files[0] as JsonObject;
         }
-        else if (asset["anexos"] is JsonArray attachments && attachments.Count > 0)
+        else
         {
-            first = attachments[0] as JsonObject;
+            var attachmentsNode = asset["anexos"];
+            if (JsTruthy(attachmentsNode) &&
+                attachmentsNode is JsonArray attachments &&
+                attachments.Count > 0)
+                first = attachments[0] as JsonObject;
         }
 
         var relPath = first is null ? null : StringValue(first["relPath"]);
@@ -203,6 +209,31 @@ public static class WorldStableIds
 
         used.Add(id);
         return id;
+    }
+
+    private static bool JsTruthy(JsonNode? node)
+    {
+        if (node is null)
+            return false;
+
+        if (node is JsonObject or JsonArray)
+            return true;
+
+        if (node is not JsonValue value)
+            return true;
+
+        if (value.TryGetValue<bool>(out var boolean))
+            return boolean;
+        if (value.TryGetValue<string>(out var text))
+            return text.Length > 0;
+        if (value.TryGetValue<double>(out var number))
+            return number != 0 && !double.IsNaN(number);
+        if (value.TryGetValue<long>(out var integer))
+            return integer != 0;
+        if (value.TryGetValue<decimal>(out var decimalNumber))
+            return decimalNumber != 0;
+
+        return true;
     }
 
     private static string? StringValue(JsonNode? node)
