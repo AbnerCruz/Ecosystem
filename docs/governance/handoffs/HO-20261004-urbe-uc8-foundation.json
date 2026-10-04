@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261004-urbe-uc8-foundation",
   "category": "RESULT",
-  "timestamp": "2026-10-04T13:12:34.055537Z",
+  "timestamp": "2026-10-04T13:34:25.629923+00:00",
   "agent": {
     "id": "codex",
     "kind": "ai-agent"
   },
   "task_id": "UC-8",
   "component": "urbe",
-  "state": "verifying",
+  "state": "review",
   "branch": "feat/urbe-uc8-csharp-foundation",
   "base_commit": "da80358551e0e51ab713ab97fda070983530a6bf",
   "commit": null,
@@ -67,7 +67,8 @@
     "apps/urbe/docs/csharp/README.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "docs/governance/handoffs/HO-20261004-urbe-uc8-foundation.json",
-    "ROADMAP.md"
+    "ROADMAP.md",
+    "apps/urbe/tools/lib/parity-browser.mjs"
   ],
   "criticality": {
     "declared": "critical",
@@ -79,7 +80,8 @@
     "urbe-checks estendido com build/testes/publish portátil e build Android/Windows usando inputs.ref combinado.",
     "Documentação de comandos, teste manual e identidade nativa privada de build; nenhum canal/release alterado.",
     "Corrigida propagação global de TargetFrameworks: UrbeBuildTarget seleciona apenas o TFM do host; Core/UI permanecem net10.0.",
-    "Reconciliado P5-3 com integração observada PR #193 e Issue #175 closed/state:done; mesma linha de closeout proposta no PR #195, sem incorporar seu escopo P5-4."
+    "Reconciliado P5-3 com integração observada PR #193 e Issue #175 closed/state:done; mesma linha de closeout proposta no PR #195, sem incorporar seu escopo P5-4.",
+    "Harness GC aguarda primeira gravação/migração da fixture legado antes de iniciar manutenção; mantém todas as asserções, sem alteração de código do cliente JS."
   ],
   "verification": [
     {
@@ -113,16 +115,16 @@
       "evidence": "Publish Release .NET10 + smoke real online/offline em raiz/subpasta, identidade da RCL e caches por escopo. Runtime IPC do MSBuild é restrito neste ambiente; tarefas oficiais WASM/ILLink executadas in-process por targets temporários externos ao checkout. Nenhuma alteração de SDK ou workaround entrou no código/CI. CI csharp-portable também passou com comandos padrão: run 37204675570, job 111443278482."
     },
     {
-      "check": "Native Windows/Android + CI combinado",
-      "kind": "automated",
-      "result": "pending",
-      "evidence": "Primeiro CI Android falhou em NETSDK1005 pela propagação de TargetFrameworks; corrigido via UrbeBuildTarget local ao host. Reexecutar Windows/Android no novo head."
-    },
-    {
-      "check": "CI Urbe parcial",
+      "check": "CI Web/Android/Windows + consistency",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Head 40f6cdd; run 37204817864: portable (8 testes/publish/Chromium), Android e E2E aprovados. Windows e checks em andamento; consistency bloqueado por P5-3 já integrado ainda marcado [~], reconciliado neste commit."
+      "evidence": "Head 1363e9b; run 37205207213: portable/8 testes/publish/Chromium, Android, Windows e checks verdes. Consistency/self-test run 37205207376 passou. E2E GC falhou duas vezes por registro ausente; harness agora serializa primeira gravação antes da ação, CI fresco deve validar correção."
+    },
+    {
+      "check": "E2E no head final",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI obrigatório do PR #196 valida espera da primeira gravação antes do GC. Tentativas locais tiveram ERR_EMPTY_RESPONSE neste ambiente; outros 4 cenários locais passaram."
     }
   ],
   "known_issues": [
@@ -132,7 +134,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Concluir CI Windows/checks e consistency; entregar PR crítico verde ao integrador.",
+    "Confirmar CI final e PR pronto; aguardar integração automática com autorização canônica do proprietário para mudança crítica.",
     "Após integração UC-8, iniciar UC-9 contra fixtures históricas e futuras."
   ],
   "decisions_required": [],
