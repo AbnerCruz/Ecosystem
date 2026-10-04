@@ -169,6 +169,9 @@ Auditoria
 
 Gate: jogos 2D substanciais apenas com APIs oficiais.
 
+Integração transversal autorizada pelo Ecosystem (não altera o gate de Framework Advanced):
+- [~] **LUNET-401 — Adapter opcional da Host API do Ecosystem via Android Binder** (P5-4 / DEC-0037-A): candidato crítico PR #210 em `b001eafd`, sem referência do Product ao provider concreto e com ausência do provider preservando IDE/framework. CI e APK verdes; validação DEVICE do binding continua pendente.
+
 - [ ] Camada simples de colisão: AABB, Rectangle, Circle, Point, Ray, overlap, intersection, distance, SAT.
 - [ ] Física completa (`PhysicsWorld`, `RigidBody2D`, `Collider2D`, `Fixture2D`, `Joint2D`, `Contact`, `Raycast`) sobre backend maduro (Box2D ou equivalente) sem expor tipos internos; ADR da escolha.
 - [ ] `Camera2D`.

@@ -102,3 +102,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação: evidência humana canônica #204; CI da mudança documental segue pelo PR Ecosystem #205. Nenhum código/runtime do Lunet foi alterado neste closeout.
 - Limite: a aprovação da Fase 3 não escolhe IPC, não concede grants e não integra Host API no Lunet. A decisão transversal está em DEC-0037/ADR-0027.
 - Próximo passo local do Lunet: Fase 4 está liberada pelo roadmap. Trabalho de Ecosystem P5-4 segue separado e não deve ser confundido com a Fase 4 do produto.
+
+
+### 20261004-chatgpt-p5-4-binder-candidate — 2026-10-04 — ChatGPT → próximos agentes — pronto para validação
+- Item: LUNET-401 / Ecosystem P5-4, primeiro caller Android da Host API por Binder.
+- Base técnica: PR Ecosystem #210, head `b001eafda4baa16868d626eff402a2f7f57f6918`; CI testou merge-ref `c69f909cffccc1369ee611e883fb8dbae0b8050b` sobre `main` `1d69d5e055238d602283abe1c508743f3378020c`.
+- Trabalho: caller descobre provider por action do contrato, valida package/signatário, pareia por código humano e chave EC no Android Keystore, verifica challenge ECDSA, abre sessão Host-owned, executa `text.inspect@1.0.0` e mantém modo observável de 60 s para testar process death. Não há referência Lunet → código/nome de provider concreto.
+- Verificação automatizada: Lunet 321/321; APK arm64 verde no run 37221326943, artifact 11310540558; APK SHA-256 `17e9913e569890f254c9074a2960e4002238c886c81690d1ff1eceed600c3422`. Provider Android e consistency também verdes no mesmo candidato.
+- Limite: isto NÃO é validação em aparelho. Pairing visual, Keystore real, Binder entre APKs/processos, LinkToDeath e funcionamento standalone ainda exigem o roteiro `docs/validation/P5-4-binder-ipc.md`.
+- Próximo passo: proprietário executa o gate DEVICE; PR #210 permanece draft/critical e não deve ser integrado antes da aprovação canônica.
