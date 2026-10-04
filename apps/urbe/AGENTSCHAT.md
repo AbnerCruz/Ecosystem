@@ -1,7 +1,7 @@
 ### 2026-10-04 — Codex — UC-2: atualização e cliente unificado
 
 - FATO OBSERVADO: PR #169 integrado; trabalho sobre 093ef4f inclui a versão-ponte #167.
-- Feito: 19 casos portáveis Android/Windows e sete UI, corpus aditivo 259; cliente de referência unificado executa todas as famílias, DOM Visual/UI em Chromium real.
+- Feito: 19 casos portáveis Android/Windows e oito UI, corpus aditivo 260; cliente de referência unificado executa todas as famílias, DOM Visual/UI em Chromium real.
 - Limites: UC-2 segue aberto; nenhuma escolha de UI/host nem código C#. Download local Chromium falhou, casos UI aguardam CI; atualização usa hosts/rede simulados, não valida instalação.
 - Próximos passos: executar CI e corrigir divergências; continuar transcrição UI/E2E e lifecycle. Handoff `HO-20261004-urbe-update-ui-parity`.
 

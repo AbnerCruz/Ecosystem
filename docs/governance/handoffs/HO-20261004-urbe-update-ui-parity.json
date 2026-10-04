@@ -40,10 +40,11 @@
   "work_completed": [
     "FATO OBSERVADO: PR #169 integrado em 197cee91; base inclui a versão-ponte #167.",
     "19 casos JSON atualização Android/Windows: seleção do Product, versões, eventos/replay, instalação/reinício e erros/recuperação; hosts e rede simulados.",
-    "Sete cenários UI portáveis e cliente unificado: primeira abertura, edição/roteamento, lifecycle documental e GC com diálogo cancelar/aplicar; teste E2E no filtro app-runtime.",
-    "Corpus aditivo 233 → 259, sem alterar runtime, goldens, hashes do oráculo ou IDs anteriores.",
+    "Oito cenários UI portáveis e cliente unificado: primeira abertura, edição/roteamento, lifecycle documental e GC com diálogo cancelar/aplicar; teste E2E no filtro app-runtime.",
+    "Corpus aditivo 233 → 260, sem alterar runtime, goldens, hashes do oráculo ou IDs anteriores.",
     "Inventário dos 14 E2E com critérios ainda a transcrever, sem converter cobertura parcial em conclusão de UC-2.",
-    "Correção rastreável do adapter lifecycle: posição capturada do mapa após rename, como tests/e2e/lifecycle.e2e.mjs; caminho antigo ausente e ID no mapa agora explícitos. Roteamento inclui exclusão de plugin homônimo como alvo de wikilink."
+    "Correção rastreável do adapter lifecycle: posição capturada do mapa após rename, como tests/e2e/lifecycle.e2e.mjs; caminho antigo ausente e ID no mapa agora explícitos. Roteamento inclui exclusão de plugin homônimo como alvo de wikilink.",
+    "Preview integrado: tabela/callout/wikilink, href inseguro sanitizado e https preservado; GC verifica maintenance persistido."
   ],
   "verification": [
     {
@@ -95,7 +96,7 @@
     "UC-2 continua aberto: demais transcrições UI/E2E, lifecycle e permissões reais.",
     "Nenhum cliente C# nem escolha UC-5/6; G-C0 não concluído.",
     "Host/rede simulados não validam instalação, assinatura, download, Android físico ou Windows instalado.",
-    "Três novos casos UI adicionais aguardam CI; os quatro iniciais foram provados em Chromium (256/256)."
+    "Casos UI ampliados/corrigidos aguardam nova execução CI; quatro iniciais foram provados em Chromium (256/256)."
   ],
   "blockers": [],
   "next_actions": [
@@ -154,7 +155,7 @@
     },
     {
       "id": "NN-019",
-      "evidence": "233 IDs anteriores preservados; 26 casos aditivos."
+      "evidence": "233 IDs anteriores preservados; 27 casos aditivos."
     },
     {
       "id": "NN-022",

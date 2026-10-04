@@ -419,7 +419,8 @@
               "doc_00000009-0000-4000-8000-000000000000"
             ],
             "confirmationExplains": true,
-            "paletteSafe": true
+            "paletteSafe": true,
+            "maintenanceRecorded": false
           }
         ]
       }
@@ -469,7 +470,49 @@
               "doc_00000009-0000-4000-8000-000000000000"
             ],
             "confirmationExplains": true,
-            "paletteSafe": true
+            "paletteSafe": true,
+            "maintenanceRecorded": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "ui-integrated-preview",
+      "operation": "ui.scenario",
+      "requirements": [
+        "REQ-027",
+        "REQ-057"
+      ],
+      "source": "docs/csharp/acceptance/ui-cases.json#/cases/7",
+      "input": {
+        "files": {
+          "Base.md": "# Base\n"
+        },
+        "steps": [
+          {
+            "method": "create",
+            "args": [
+              "Harness/Preview.md",
+              "# Preview\n\n| a | b |\n|:--|--:|\n| 1 | 2 |\n\n> [!tip] Dica\n> corpo\n\n[[Nota nova]] e [x](javascript:alert(1)) e [ok](https://exemplo.com)\n"
+            ]
+          },
+          {
+            "method": "preview",
+            "args": []
+          }
+        ]
+      },
+      "expected": {
+        "values": [
+          {
+            "idPresent": true
+          },
+          {
+            "table": true,
+            "callout": "tip",
+            "wikilink": "Nota nova",
+            "unsafeHref": false,
+            "safeHref": "https://exemplo.com"
           }
         ]
       }

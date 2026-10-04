@@ -35,6 +35,11 @@ export async function createBrowserReference(){
             await a.page.evaluate(html=>{const p=document.createElement('p');p.innerHTML=html;const el=document.getElementById('renderedPreview');el.appendChild(p);el.dispatchEvent(new Event('input',{bubbles:true}))},args[0]);
             await a.page.waitForFunction(text=>document.getElementById('bodyEditor').value.includes(text),args[1]);await a.save();value=null;break;
           }
+          case 'preview': {
+            await a.page.evaluate(()=>document.getElementById('viewModeBtn').click());
+            await a.page.waitForFunction(()=>document.getElementById('renderedPreview').querySelector('table'));
+            value=await a.page.evaluate(()=>{const root=document.getElementById('renderedPreview');return{table:!!root.querySelector('table[data-md-table="1"][data-align="left,right"]'),callout:root.querySelector('[data-callout]')?.getAttribute('data-callout'),wikilink:root.querySelector('.wikilink')?.getAttribute('data-note-name'),unsafeHref:!!root.querySelector('[href^="javascript:"]'),safeHref:root.querySelector('a[href^="https:"]')?.getAttribute('href')}});break;
+          }
           case 'route': {
             value=await a.page.evaluate(([path,content,raw])=>{const d=UrbeCore.service('documents').upsert({path,content});UrbeCore.commands.execute('document.open',{id:d.id,raw:!!raw});const el=document.getElementById('pageStudio');return{studioVisible:!!el&&!el.hidden}},args);break;
           }
@@ -78,7 +83,8 @@ export async function createBrowserReference(){
             await a.page.waitForSelector('.udlg [data-primary]');const msg=await a.page.textContent('.udlg-msg');
             await a.page.click(decision==='apply'?'.udlg [data-primary]':'.udlg [data-cancel].ui-btn');await a.page.evaluate(()=>window.__parityGc);await a.save();
             value=await a.page.evaluate(([old,keep])=>{const hist=UrbeCore.service('history').export().documents,cmp=UrbeCore.service('compositions').export();return{oldPresent:Object.hasOwn(hist,old),kept:keep.map(id=>Object.hasOwn(hist,id)),sources:cmp.items[0].sources}},[old,keep]);
-            value={...value,confirmationExplains:msg.includes('histórico')&&msg.includes('composição'),paletteSafe:palette.includes('workspace.cleanOrphans')&&!palette.includes('workspace.gc')};break;
+            const vault=await a.vault();const maintenance=JSON.parse(vault['.urbe/vault.json']).maintenance||[];
+            value={...value,maintenanceRecorded:maintenance.some(m=>m.kind==='gc'),confirmationExplains:msg.includes('histórico')&&msg.includes('composição'),paletteSafe:palette.includes('workspace.cleanOrphans')&&!palette.includes('workspace.gc')};break;
           }
           default:throw new Error('ação UI desconhecida');
         }
