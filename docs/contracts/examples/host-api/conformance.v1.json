@@ -1,0 +1,111 @@
+{
+  "$schema": "../../schemas/host-api-conformance.schema.json",
+  "schemaVersion": 1,
+  "api": "ecosystem-host-api/1.0.0",
+  "cases": [
+    {
+      "id": "valid-invoke",
+      "scenario": "valid-invoke",
+      "operation": "invoke",
+      "expectedLayer": "success",
+      "expectedCode": null,
+      "description": "Capability permitida executa e produz output contratual."
+    },
+    {
+      "id": "invalid-context",
+      "scenario": "invalid-context",
+      "operation": "open-session",
+      "expectedLayer": "host",
+      "expectedCode": "INVALID_CONTEXT",
+      "description": "Context inválido é recusado antes de criar sessão."
+    },
+    {
+      "id": "unknown-capability",
+      "scenario": "unknown-capability",
+      "operation": "invoke",
+      "expectedLayer": "host",
+      "expectedCode": "CAPABILITY_UNAVAILABLE",
+      "description": "Capability desconhecida não alcança provider."
+    },
+    {
+      "id": "incompatible-version",
+      "scenario": "incompatible-version",
+      "operation": "invoke",
+      "expectedLayer": "host",
+      "expectedCode": "VERSION_UNSUPPORTED",
+      "description": "Versão incompatível é recusada segundo compatibilidade do Registry."
+    },
+    {
+      "id": "missing-permission",
+      "scenario": "missing-permission",
+      "operation": "discover",
+      "expectedLayer": "host",
+      "expectedCode": "CAPABILITY_UNAVAILABLE",
+      "description": "Capability que exige grant ausente não aparece e não é invocável."
+    },
+    {
+      "id": "grant-escalation",
+      "scenario": "grant-escalation",
+      "operation": "discover",
+      "expectedLayer": "host",
+      "expectedCode": "CAPABILITY_UNAVAILABLE",
+      "description": "Alterar coleção externa ou payload não eleva grants capturados pela sessão."
+    },
+    {
+      "id": "invalid-input",
+      "scenario": "invalid-input",
+      "operation": "invoke",
+      "expectedLayer": "capability",
+      "expectedCode": "INVALID_INPUT",
+      "description": "Input fora do contrato retorna erro declarado pela capability."
+    },
+    {
+      "id": "invalid-output",
+      "scenario": "invalid-output",
+      "operation": "invoke",
+      "expectedLayer": "host",
+      "expectedCode": "PROVIDER_CONTRACT_VIOLATION",
+      "description": "Output inválido do provider nunca vira sucesso."
+    },
+    {
+      "id": "cancellation",
+      "scenario": "cancellation",
+      "operation": "cancel",
+      "expectedLayer": "host",
+      "expectedCode": "CANCELLED",
+      "description": "Cancelamento impede resultado tardio de virar sucesso."
+    },
+    {
+      "id": "revocation",
+      "scenario": "revocation",
+      "operation": "revoke",
+      "expectedLayer": "host",
+      "expectedCode": "REVOKED",
+      "description": "Revogar grant durante execução cancela acesso e a sessão não recupera o privilégio."
+    },
+    {
+      "id": "session-closed",
+      "scenario": "session-closed",
+      "operation": "close-session",
+      "expectedLayer": "host",
+      "expectedCode": "SESSION_CLOSED",
+      "description": "Sessão fechada rejeita discovery/invoke posteriores."
+    },
+    {
+      "id": "provider-failure",
+      "scenario": "provider-failure",
+      "operation": "invoke",
+      "expectedLayer": "capability",
+      "expectedCode": "EXECUTION_FAILED",
+      "description": "Falha do provider usa código do contrato sem vazar mensagem interna."
+    },
+    {
+      "id": "identity-forgery",
+      "scenario": "identity-forgery",
+      "operation": "invoke",
+      "expectedLayer": "host",
+      "expectedCode": "CAPABILITY_UNAVAILABLE",
+      "description": "Binding local rejeita tentativa de trocar caller da sessão; a API pública não aceita identidade no payload."
+    }
+  ]
+}
