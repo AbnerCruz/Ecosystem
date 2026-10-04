@@ -138,7 +138,7 @@
         "fechar e reabrir"
       ],
       "expected": [
-        "instalação e abertura completam sem Hub",
+        "instalação e abertura completam sem depender de outro produto",
         "vault carrega sem conversão destrutiva",
         "edição persiste após reinício",
         "capabilities declaradas correspondem ao host"
@@ -245,7 +245,7 @@
         "vault fixture ou diretório de teste"
       ],
       "steps": [
-        "instalar sem Hub",
+        "instalar sem depender de outro produto",
         "abrir",
         "conceder somente permissões necessárias",
         "abrir/criar vault",
@@ -435,7 +435,7 @@
       ],
       "preconditions": [
         "produto instalado/carregado em cada alvo",
-        "Hub ausente",
+        "nenhum outro produto disponível",
         "rede desabilitável"
       ],
       "steps": [
@@ -446,13 +446,13 @@
         "reabrir"
       ],
       "expected": [
-        "domínio essencial funciona sem Hub e sem rede",
+        "domínio essencial funciona sem depender de outro produto e sem rede",
         "dados permanecem locais",
         "falhas de recursos online são explícitas e não bloqueiam editor/vault"
       ],
       "evidence": [
         "versão/superfície",
-        "captura do app iniciado sem Hub",
+        "captura do app iniciado sem depender de outro produto",
         "conteúdo antes/depois"
       ]
     }
