@@ -113,3 +113,13 @@ O domínio pode ser preenchido diretamente por `VaultSnapshot`, preservando os
 IDs já resolvidos pela camada do vault. Mundo/bairros, Markdown Visual,
 páginas/composições, quick-open/UI e integração de hosts permanecem nas UCs
 seguintes.
+
+
+## UC-13 — projeção do mundo e bairros
+
+UC-13 porta para o Core a camada puramente semântica do mundo: `WorldStableIds`
+reproduz os IDs determinísticos `reg_*`/`ast_*` da 1.x e
+`WorldProjection` separa documentos canônicos de posição, sprite e regiões do
+`mapa.json`. Campos desconhecidos são preservados; mapas futuros/corruptos
+ficam somente leitura. Terreno, ruas, vida, AquariumWorld, câmera, desenho e
+interação continuam fora do Core nesta etapa.

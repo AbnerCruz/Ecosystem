@@ -309,3 +309,18 @@
 - PR #218 integrado automaticamente em `79c5be01`; o estado combinado testado tornou-se a `main`.
 - UC-12 encerrada com 114/114 testes C#, checks, Android, Windows, E2E e consistency verdes.
 - M2 continua com UC-13: projeção do mundo e bairros, com IDs estáveis; terreno, vida/simulação e renderização permanecem fora deste passo.
+
+
+### 2026-10-04 — ChatGPT — UC-13 / Issue #221 / PR #223
+- Estado: projeção do mundo/bairros em implementação na branch `feat/urbe-uc13-world-projection`.
+- Feito: `WorldStableIds` porta FNV-1a/base36, preservação de IDs, colisões, idempotência, `regionFor` e fresh IDs; `WorldMapMetadata` projeta mapa v1/v2/v4 e preserva chaves desconhecidas; `WorldProjection` porta spatial metadata, regiões por caminho, rename por ID estável, revision/events e metadata de volta ao mapa.
+- Segurança de dados: mapas futuros/corruptos não recebem IDs gerados e não podem produzir metadata para persistência; helper de VaultSnapshot recusa snapshot recuperado por journal enquanto o JSON efetivo completo de regiões não estiver disponível.
+- Paridade revisada: lookup espacial/região continua case-sensitive como `Map` do JS; ID documental permanece case-insensitive via DocumentStore; `files:[]` mantém a semântica truthy do JavaScript e não cai para `anexos`.
+- Limites: terreno/biomas, layout/reorganização, AquariumWorld, ruas, NPCs/vida e UI estão fora da UC-13.
+
+
+### 2026-10-04 — ChatGPT — UC-13 verificada
+- Head de código verificado: `281f5234`.
+- `urbe-checks` #37230492613: Core C# 134/134 testes, Web smoke, Android, Windows, checks e E2E todos verdes.
+- `consistency` #37230492604: verde.
+- Issue #221 movida para `state:review`; PR #223 segue rotina automática de integração.

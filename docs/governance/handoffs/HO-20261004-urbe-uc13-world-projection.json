@@ -1,0 +1,107 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc13-world-projection",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T19:54:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-13",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc13-world-projection",
+  "base_commit": "e7f7d0753763bbd70fe6ee3e6c7c6260101a33db",
+  "commit": "281f5234f126726e6cc34a0f278f4359ff38fdd7",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/223",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/WorldStableIds.cs",
+    "apps/urbe/csharp/src/Urbe.Core/WorldProjection.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorldProjectionTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc13-world-projection.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UC-13 adiciona projeção pura em memória e testes; não grava filesystem, não altera formato persistido, migração, backup, segurança ou distribuição."
+  },
+  "work_completed": [
+    "WorldStableIds porta FNV-1a/base36 sobre UTF-16, IDs reg_/ast_, preservação do primeiro ID válido, colisões determinísticas, idempotência, regionFor, fresh e ensure.",
+    "WorldMapMetadata projeta mapa legado v1/v2/v4 para notas, regiões e assets preservando o JSON desconhecido; mapas futuros/corruptos são somente leitura e não recebem IDs gerados.",
+    "WorldProjection porta projectDocument/documents/region/setSpatial/metadata/snapshot/setEnabled e migração espacial ao renomear documento pelo ID estável.",
+    "Lookup de spatial/regiões usa comparação ordinal case-sensitive como Map do JS; DocumentStore mantém resolução de documentos case-insensitive.",
+    "FromVault recusa snapshot recuperado por journal para não misturar regiões físicas antigas com estado efetivo recuperado.",
+    "Testes cobrem fixture v1-mapa-v4, hashes exatos, colisões, idempotência, truthiness de files, rename/case, metadata desconhecida, futuro/corrupto e journal."
+  ],
+  "verification": [
+    {
+      "check": "Core C# + Web smoke",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37230492613: csharp-portable success; build sem erros; 134/134 testes C# passaram; publish Web e smoke passaram."
+    },
+    {
+      "check": "Hosts nativos e regressão",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37230492613: Android, Windows, checks e E2E todos success."
+    },
+    {
+      "check": "Governança e consistência",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency run 37230492604: Foundation consistency checks success."
+    }
+  ],
+  "known_issues": [
+    "VaultSnapshot recuperado por journal não expõe o JSON efetivo completo do mapa; LoadFromVault recusa esse caso em vez de projetar regiões físicas obsoletas.",
+    "Terreno, ruas, AquariumWorld, NPCs/vida, layout/reorganização e renderização permanecem deliberadamente fora da UC-13."
+  ],
+  "blockers": [
+    "Integração rotineira automática do PR #223 após validar este head documental final."
+  ],
+  "next_actions": [
+    "Aguardar apenas os checks do head documental final.",
+    "Integrador automático deve integrar PR #223 por ser mudança rotineira.",
+    "Após integração, reconciliar UC-13 como done e iniciar UC-14."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/world/stable-ids.js",
+    "apps/urbe/src/world/projection.js",
+    "apps/urbe/tests/stable-ids.mjs",
+    "apps/urbe/tests/persistence-world.mjs",
+    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/PARITY.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece em Urbe.Core e usa somente BCL/System.Text.Json."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Projeção não depende de UI, filesystem, rede, hosts ou plano de controle."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #221, branch própria, PR #223 e handoff específico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação física/UI alegada; escopo é domínio .NET puro."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-13 permanece working até CI e integração."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Projeção permanece standalone no Core."
+    }
+  ]
+}
