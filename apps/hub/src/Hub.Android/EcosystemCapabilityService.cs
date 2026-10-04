@@ -268,27 +268,32 @@ public sealed class EcosystemCapabilityService : Service
             try
             {
                 data.EnforceInterface(EcosystemIpcProtocol.Descriptor);
-                var json = data.ReadString();
-                if (json is null || Encoding.UTF8.GetByteCount(json) > EcosystemIpcProtocol.MaxFrameBytes)
+                if (data.DataAvail() > EcosystemIpcProtocol.MaxParcelBytes)
                     response = Error("FRAME_TOO_LARGE");
-                else if (EcosystemIpcProtocol.Deserialize<IpcRequest>(json) is not { } request)
-                    response = Error("PROTOCOL_UNSUPPORTED");
-                else if (AndroidPeerIdentityResolver.Resolve(owner, Binder.CallingUid) is not { } peer)
-                    response = Error("PEER_UNTRUSTED");
                 else
                 {
-                    var lifecycleToken = code == EcosystemIpcProtocol.Open ? data.ReadStrongBinder() : null;
-                    response = code switch
+                    var json = data.ReadString();
+                    if (json is null || Encoding.UTF8.GetByteCount(json) > EcosystemIpcProtocol.MaxFrameBytes)
+                        response = Error("FRAME_TOO_LARGE");
+                    else if (EcosystemIpcProtocol.Deserialize<IpcRequest>(json) is not { } request)
+                        response = Error("PROTOCOL_UNSUPPORTED");
+                    else if (AndroidPeerIdentityResolver.Resolve(owner, Binder.CallingUid) is not { } peer)
+                        response = Error("PEER_UNTRUSTED");
+                    else
                     {
-                    EcosystemIpcProtocol.PairBegin => owner.PairBegin(peer, request),
-                    EcosystemIpcProtocol.Challenge => owner.Challenge(peer, request),
-                    EcosystemIpcProtocol.Open => owner.Open(peer, request, lifecycleToken),
-                    EcosystemIpcProtocol.Discover => owner.Discover(peer, request),
-                    EcosystemIpcProtocol.Invoke => owner.Invoke(peer, request),
-                    EcosystemIpcProtocol.Cancel => owner.Cancel(peer, request),
-                    EcosystemIpcProtocol.Close => owner.Close(peer, request),
-                    _ => Error("PROTOCOL_UNSUPPORTED")
-                    };
+                        var lifecycleToken = code == EcosystemIpcProtocol.Open ? data.ReadStrongBinder() : null;
+                        response = code switch
+                        {
+                            EcosystemIpcProtocol.PairBegin => owner.PairBegin(peer, request),
+                            EcosystemIpcProtocol.Challenge => owner.Challenge(peer, request),
+                            EcosystemIpcProtocol.Open => owner.Open(peer, request, lifecycleToken),
+                            EcosystemIpcProtocol.Discover => owner.Discover(peer, request),
+                            EcosystemIpcProtocol.Invoke => owner.Invoke(peer, request),
+                            EcosystemIpcProtocol.Cancel => owner.Cancel(peer, request),
+                            EcosystemIpcProtocol.Close => owner.Close(peer, request),
+                            _ => Error("PROTOCOL_UNSUPPORTED")
+                        };
+                    }
                 }
             }
             catch (Exception)
