@@ -236,3 +236,10 @@
 - Verificação: suíte C# adicionada para as 12 fixtures canônicas e negativos de precedência, formato futuro, corrupção, traversal, duplicata e journal. Execução real fica a cargo do CI porque esta sessão não dispõe de SDK .NET local.
 - Pendências / bloqueios: CI do PR; autorização canônica do proprietário para integração, pois UC-9 é crítico por dados do usuário. Nenhuma gravação, migração, backup ou integração aos hosts foi implementada.
 - Próximos passos: abrir PR, corrigir qualquer falha do estado combinado e, só após UC-9 integrado, avançar para UC-10.
+
+
+### 2026-10-04 — Codex — UC-9 verificado
+- Estado: PR #203 no head 5fa0d115; implementação pronta para revisão crítica, sem integração.
+- Verificação: urbe-checks 37213623887 verde em C# portátil (33/33), Android, Windows, E2E e npm checks; consistency 37213623896 verde.
+- Revisão adversarial adicional corrigiu duas divergências antes da integração: IDs não persistidos voltam a ser UUIDs novos por abertura, como no 1.x; decodificação textual segue UTF-8 tolerante do navegador, preservando os bytes físicos originais.
+- Bloqueio único: autorização canônica do proprietário para integrar mudança classificada como user-data. UC-10 não começa antes da integração de UC-9.
