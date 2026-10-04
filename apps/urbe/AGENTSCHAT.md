@@ -296,3 +296,10 @@
 - Integração: o store aceita projeção de `VaultSnapshot.Documents` preservando IDs; não lê/escreve filesystem nem reinterpreta identidade persistida.
 - Testes: suíte de paridade adicionada a partir de `tests/artifacts.mjs` e `tests/documents.mjs`, com negativos de código, aliases, artefatos não-linkáveis, path case-insensitive, lifecycle/revision e remoção/reindex.
 - Limites: mundo UC-13, Markdown Visual UC-14, páginas/composições UC-15, quick-open/UI UC-18 e hosts permanecem fora do escopo.
+
+
+### 2026-10-04 — ChatGPT — UC-12 verificada
+- Estado: PR #218 no head `31bace9b` tecnicamente concluído e movido para review; mudança classificada como rotineira.
+- Evidência: `urbe-checks` 37225693553 verde em checks, C# portátil, MAUI Windows, MAUI Android e E2E; 114/114 `Urbe.Core.Tests` passaram, 0 falhas/0 skips. `consistency` 37225693548 verde.
+- Revisão de paridade: testes corrigidos para refletir a ordem real de tags e a sanitização real do JS; `DocumentStore` agora replica também o fallback falsy para id/title/created/modified vazios.
+- Próximo passo: integração automática rotineira; depois UC-13 — projeção do mundo e bairros com IDs estáveis.
