@@ -22,8 +22,7 @@
     "apps/urbe/csharp/README.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "apps/urbe/AGENTSCHAT.md",
-    "docs/governance/handoffs/HO-20261004-urbe-uc13-world-projection.json",
-    "ROADMAP.md"
+    "docs/governance/handoffs/HO-20261004-urbe-uc13-world-projection.json"
   ],
   "criticality": {
     "declared": "routine",
@@ -35,8 +34,7 @@
     "WorldProjection porta projectDocument/documents/region/setSpatial/metadata/snapshot/setEnabled e migração espacial ao renomear documento pelo ID estável.",
     "Lookup de spatial/regiões usa comparação ordinal case-sensitive como Map do JS; DocumentStore mantém resolução de documentos case-insensitive.",
     "FromVault recusa snapshot recuperado por journal para não misturar regiões físicas antigas com estado efetivo recuperado.",
-    "Testes cobrem fixture v1-mapa-v4, hashes exatos, colisões, idempotência, truthiness de files, rename/case, metadata desconhecida, futuro/corrupto e journal.",
-    "Reconciliado o estado factual de P5-4 no ROADMAP raiz para [x], porque a implementação/DEVICE/validação já estavam concluídas (PRs #222/#224/#226, Issue #225, tarefa #194 state:done); isso remove o deadlock de CHK-STATE-CONSISTENCY que bloqueava a fila do integrador antes do PR #228."
+    "Testes cobrem fixture v1-mapa-v4, hashes exatos, colisões, idempotência, truthiness de files, rename/case, metadata desconhecida, futuro/corrupto e journal."
   ],
   "verification": [
     {
@@ -63,10 +61,10 @@
     "Terreno, ruas, AquariumWorld, NPCs/vida, layout/reorganização e renderização permanecem deliberadamente fora da UC-13."
   ],
   "blockers": [
-    "Revalidar o estado combinado após a correção factual de P5-4; integração rotineira automática do PR #223."
+    "Integração rotineira automática do PR #223 após validar este head documental final."
   ],
   "next_actions": [
-    "Revalidar checks do head final e o estado combinado do integrador.",
+    "Aguardar apenas os checks do head documental final.",
     "Integrador automático deve integrar PR #223 por ser mudança rotineira.",
     "Após integração, reconciliar UC-13 como done e iniciar UC-14."
   ],
