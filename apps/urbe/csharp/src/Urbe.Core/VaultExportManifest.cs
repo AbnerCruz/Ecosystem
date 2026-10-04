@@ -73,7 +73,8 @@ public sealed class VaultExportManifest
 
 public sealed record VaultExportManifestParseResult(
     VaultExportManifestState State,
-    VaultExportManifest? Manifest);
+    VaultExportManifest? Manifest,
+    double? DetectedFormatVersion = null);
 
 public sealed class VaultExportVerification
 {
@@ -397,25 +398,81 @@ public static class VaultExportManifestCodec
             !string.Equals(format.GetString(), VaultExportManifest.FormatName, StringComparison.Ordinal) ||
             !root.TryGetProperty("formatVersion", out var versionElement) ||
             versionElement.ValueKind != JsonValueKind.Number ||
-            !versionElement.TryGetInt32(out var version) ||
+            !versionElement.TryGetDouble(out var detectedVersion) ||
             !root.TryGetProperty("files", out var filesElement) ||
             filesElement.ValueKind != JsonValueKind.Array)
             return new VaultExportManifestParseResult(
                 VaultExportManifestState.Corrupt,
                 null);
 
-        if (version > VaultExportManifest.CurrentVersion)
+        // Forward protection is decided from the stable envelope only.
+        // A newer format may deliberately change the schema of files/state;
+        // trying to parse those fields with today's schema must never downgrade
+        // "future" to "corrupt" and accidentally remove the hard refusal.
+        if (detectedVersion > VaultExportManifest.CurrentVersion)
         {
-            var future = ParseManifest(root, version);
-            return future is null
-                ? new VaultExportManifestParseResult(VaultExportManifestState.Corrupt, null)
-                : new VaultExportManifestParseResult(VaultExportManifestState.Future, future);
+            VaultExportManifest? future = null;
+            if (versionElement.TryGetInt32(out var futureVersion))
+                future = ParseFutureHeader(root, futureVersion);
+            return new VaultExportManifestParseResult(
+                VaultExportManifestState.Future,
+                future,
+                detectedVersion);
         }
+
+        if (!versionElement.TryGetInt32(out var version))
+            return new VaultExportManifestParseResult(
+                VaultExportManifestState.Corrupt,
+                null,
+                detectedVersion);
 
         var current = ParseManifest(root, version);
         return current is null
-            ? new VaultExportManifestParseResult(VaultExportManifestState.Corrupt, null)
-            : new VaultExportManifestParseResult(VaultExportManifestState.Current, current);
+            ? new VaultExportManifestParseResult(
+                VaultExportManifestState.Corrupt,
+                null,
+                detectedVersion)
+            : new VaultExportManifestParseResult(
+                VaultExportManifestState.Current,
+                current,
+                detectedVersion);
+    }
+
+    private static VaultExportManifest ParseFutureHeader(JsonElement root, int version)
+    {
+        string? appVersion = null;
+        if (root.TryGetProperty("appVersion", out var app) &&
+            app.ValueKind == JsonValueKind.String)
+            appVersion = app.GetString();
+
+        var exportedAt = root.TryGetProperty("exportedAt", out var exported) &&
+                         exported.ValueKind == JsonValueKind.String
+            ? exported.GetString() ?? string.Empty
+            : string.Empty;
+
+        string? vaultName = null;
+        int? vaultFormat = null;
+        if (root.TryGetProperty("vault", out var vault) &&
+            vault.ValueKind == JsonValueKind.Object)
+        {
+            if (vault.TryGetProperty("name", out var name) &&
+                name.ValueKind == JsonValueKind.String)
+                vaultName = name.GetString();
+
+            if (vault.TryGetProperty("formatVersion", out var vaultVersion) &&
+                vaultVersion.ValueKind == JsonValueKind.Number &&
+                vaultVersion.TryGetInt32(out var parsedVaultVersion))
+                vaultFormat = parsedVaultVersion;
+        }
+
+        return new VaultExportManifest(
+            version,
+            appVersion,
+            exportedAt,
+            vaultName,
+            vaultFormat,
+            Array.Empty<VaultExportFileEntry>(),
+            VaultExportState.Empty);
     }
 
     private static VaultExportManifest? ParseManifest(JsonElement root, int version)
