@@ -67,3 +67,14 @@ CI verde não substitui esta validação. O gate de dois Hosts precisa de outra 
 ## Dependências das fases seguintes
 
 P6-4 já possui prova local do Workspace, mas precisa do Host real/Fase 5; somente então P6-5 entrega a experiência do Product de IA sem duplicar loop/ledger/provider. Fase 7 exige auditoria e consumidor real antes de extrair Tool. Remote Workers/organizações e deployment têm decisões próprias de confiança, privacidade, orçamento e segredos; não se implementam por inferência a partir do pedido de continuar.
+
+## P5-3 — proposta de Host API pública (DEC-0034 pendente)
+
+FATO OBSERVADO: P5-1/P5-2 estão concluídos; o PR #176 integrou o contrato `text.inspect` 1.0.0 `draft` e a conformance do primeiro Host sem tornar `ecosystem-local/0` público. A validação humana do primeiro Host foi aprovada na Issue #177.
+
+FATO OBSERVADO: Lunet2D continua sendo o candidato mais curto para o segundo Host Android, mas sua Fase 3 permanece aberta e sua governança local impede avançar autonomamente para a integração transversal. Urbe C# ainda não possui Shell pronto. Portanto não existe hoje segundo Product Shell apto que justifique implementação/extraction antecipada.
+
+PROPOSTA: ADR-0024/DEC-0034 separa a **Host API semântica** do **transporte IPC**. A API proposta captura sessão, Context, caller/ator, grants, discovery, invoke, cancelamento, revogação e fechamento; reutiliza os contratos canônicos da Fase 2 e não expõe nome/tipo do Host à Tool. `ecosystem-local/0` permanece experimental.
+
+A DEC-0034 é bloqueante para estabilizar essa fronteira. Enquanto pendente, não criar schema/API pública, SDK, package compartilhado nem transporte. Se a opção recomendada for aprovada, o próximo slice de P5-3 transforma a proposta em contrato normativo + fixtures de conformance; P5-4 só então compara transportes e autenticação de caller. P5-5 continua dependente da prontidão de um segundo Host e de Extraction Review antes de qualquer extração.
+
