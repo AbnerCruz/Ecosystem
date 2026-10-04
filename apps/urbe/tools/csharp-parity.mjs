@@ -4,13 +4,14 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ROOT } from './lib/v2-docs.mjs';
-import { read, json, verifyOracle, validateCorpus, renderParity, compareResults } from './lib/csharp-parity.mjs';
+import { read, json, verifyOracle, validateCorpus, validateSurfaceProtocol, renderParity, compareResults } from './lib/csharp-parity.mjs';
 
 const mode = process.argv[2] || 'check';
 try {
   const corpus = json('docs/csharp/acceptance/cases.json');
   verifyOracle(json('docs/csharp/acceptance/oracle.json'));
   validateCorpus(corpus);
+  validateSurfaceProtocol(json('docs/csharp/acceptance/surface-protocol.json'));
   const rendered = renderParity(corpus);
   if (mode === 'render') {
     writeFileSync(join(ROOT, 'docs/csharp/PARITY.md'), rendered);
