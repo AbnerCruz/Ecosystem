@@ -42,7 +42,8 @@
     "19 casos JSON atualização Android/Windows: seleção do Product, versões, eventos/replay, instalação/reinício e erros/recuperação; hosts e rede simulados.",
     "Sete cenários UI portáveis e cliente unificado: primeira abertura, edição/roteamento, lifecycle documental e GC com diálogo cancelar/aplicar; teste E2E no filtro app-runtime.",
     "Corpus aditivo 233 → 259, sem alterar runtime, goldens, hashes do oráculo ou IDs anteriores.",
-    "Inventário dos 14 E2E com critérios ainda a transcrever, sem converter cobertura parcial em conclusão de UC-2."
+    "Inventário dos 14 E2E com critérios ainda a transcrever, sem converter cobertura parcial em conclusão de UC-2.",
+    "Correção rastreável do adapter lifecycle: posição capturada do mapa após rename, como tests/e2e/lifecycle.e2e.mjs; caminho antigo ausente e ID no mapa agora explícitos. Roteamento inclui exclusão de plugin homônimo como alvo de wikilink."
   ],
   "verification": [
     {
@@ -73,7 +74,7 @@
       "check": "node tests/e2e/app-runtime-parity.e2e.mjs",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Commit 8693684: CI run 37182892861/job 111378840726 executou 256/256 iguais, cinco E2E verdes. Três casos adicionais requerem nova rodada CI.",
+      "evidence": "8693684: 256/256 iguais e 5/5 E2E no CI. b2b3d46 identificou divergência de posição em ui-document-lifecycle: adapter capturava projeção em memória na criação, em vez do mapa persistido após rename como a fonte original. Captura corrigida para mapa após rename → projeção após reabertura; posição após restaurar lixeira não é critério do E2E original. Head corrigido aguarda CI.",
       "tested_commit": "869368463a04c1ee0365ae2ced9fed6cf1ebcc31"
     },
     {

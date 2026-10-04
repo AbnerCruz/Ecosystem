@@ -8412,6 +8412,14 @@
               "{\n  \"version\": 1,\n  \"kind\": \"urbe-page\",\n  \"meta\": {\n    \"title\": \"Início\",\n    \"lang\": \"pt-BR\"\n  },\n  \"theme\": {\n    \"id\": \"claro\"\n  },\n  \"layout\": {\n    \"format\": \"page\"\n  },\n  \"sections\": [\n    {\n      \"id\": \"s1\",\n      \"type\": \"hero\",\n      \"props\": {\n        \"title\": \"Início\"\n      },\n      \"style\": {}\n    }\n  ]\n}",
               true
             ]
+          },
+          {
+            "method": "linkTargets",
+            "args": [
+              "cronometro",
+              "Personalização/plugins/cronometro.js",
+              "urbe.plugin({nome:'Cronômetro',versao:'1',ligar:function(){}});\n"
+            ]
           }
         ],
         "files": {
@@ -8428,6 +8436,11 @@
           },
           {
             "studioVisible": false
+          },
+          {
+            "paths": [
+              "Cronometro.md"
+            ]
           }
         ]
       }
@@ -8461,6 +8474,13 @@
             ]
           },
           {
+            "method": "rememberPosition",
+            "args": [
+              "Projetos/Nota renomeada.md",
+              "Projetos/Minha nota.md"
+            ]
+          },
+          {
             "method": "lifecycleObserve",
             "args": [
               "Projetos/Nota renomeada.md"
@@ -8469,6 +8489,12 @@
           {
             "method": "reload",
             "args": []
+          },
+          {
+            "method": "positionStable",
+            "args": [
+              "Projetos/Nota renomeada.md"
+            ]
           },
           {
             "method": "lifecycleObserve",
@@ -8518,35 +8544,39 @@
             "path": "Projetos/Nota renomeada.md"
           },
           {
-            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
-            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
-            "idStable": true,
-            "inTrash": false,
-            "positionStable": true
+            "positionPresent": true,
+            "mapIdStable": true,
+            "oldAbsent": true
           },
-          null,
           {
             "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
             "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
             "idStable": true,
-            "inTrash": false,
-            "positionStable": true
+            "inTrash": false
+          },
+          null,
+          {
+            "stable": true
+          },
+          {
+            "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
+            "idStable": true,
+            "inTrash": false
           },
           null,
           {
             "content": null,
             "saved": null,
             "idStable": false,
-            "inTrash": true,
-            "positionStable": false
+            "inTrash": true
           },
           null,
           {
             "content": "# Minha nota\n\nOlá [[Base]] #e2e\n",
             "saved": "# Minha nota\n\nOlá [[Base]] #e2e\n",
             "idStable": true,
-            "inTrash": false,
-            "positionStable": true
+            "inTrash": false
           },
           {
             "historyPresent": true

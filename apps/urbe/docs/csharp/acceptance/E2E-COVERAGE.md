@@ -7,8 +7,8 @@ Inventário de trabalho sobre os 14 cenários congelados em `oracle.json`. Esta 
 | `app-runtime-visual.e2e.mjs` | `visual-001` a `visual-110`, `ui-visual-save-reload` | Nenhum dos critérios atuais de serialização/edição; execução C# futura permanece aberta |
 | `app-runtime.e2e.mjs` | `ui-first-boot`, `ui-create-save-reload`; Markdown/Visual | Preview integrado de tabela/callout/wikilink/URL sanitizada, boot da fixture e vault de escala S |
 | `smoke.e2e.mjs` | `ui-first-boot` | Boot do vault de escala S e contagem documental |
-| `routing.e2e.mjs` | `ui-artifact-routing` | Wikilink homônimo resolve para nota e exclui plugin |
-| `lifecycle.e2e.mjs` | `ui-document-lifecycle` | ID/posição gravados no mapa e remoção do caminho anterior; execução com vault de escala S |
+| `routing.e2e.mjs` | `ui-artifact-routing` | Nenhum dos critérios atuais de abertura e resolução; execução C# futura permanece aberta |
+| `lifecycle.e2e.mjs` | `ui-document-lifecycle` | Execução com vault de escala S; os critérios documentais atuais têm dados portáveis |
 | `gc.e2e.mjs` | `ui-gc-cancel`, `ui-gc-apply`; `gc.plan` | Registro persistido de maintenance `kind: gc` |
 | `fixtures.e2e.mjs` | `vault.scenario`, `idb.legacy-city` | Executar abertura/salvamento pelo app e migração IDB pelo boot, incluindo proteção forward/readonly, backup e sidecars originais |
 | `identity.e2e.mjs` | `identity.text/parse/pair`; fixtures de vault | Rename/move externos no IDB, reabertura/sync, uma casa por documento, geometria de região/asset e vínculo preservados |

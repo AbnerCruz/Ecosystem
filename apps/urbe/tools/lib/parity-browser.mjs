@@ -24,7 +24,7 @@ export async function createBrowserReference(){
         let value;const args=s.args;
         switch(s.method){
           case 'boot': value={titleMatches:await a.page.title()==='Urbe v'+await a.version(),tutorialPresent:Object.keys(await a.notes()).filter(p=>p.startsWith('Tutorial/')).length>=40};break;
-          case 'create': {const id=await a.createNote(...args);ids.set(args[0],id);positions.set(args[0],(await a.world()).buildings.find(b=>b.id===id)?.pos);value={idPresent:typeof id==='string'&&!!id};break}
+          case 'create': {const id=await a.createNote(...args);ids.set(args[0],id);value={idPresent:typeof id==='string'&&!!id};break}
           case 'reload': await a.reload();value=null;break;
           case 'observe': {
             const notes=await a.notes(),world=await a.world(),vault=await a.vault();
@@ -38,20 +38,34 @@ export async function createBrowserReference(){
           case 'route': {
             value=await a.page.evaluate(([path,content,raw])=>{const d=UrbeCore.service('documents').upsert({path,content});UrbeCore.commands.execute('document.open',{id:d.id,raw:!!raw});const el=document.getElementById('pageStudio');return{studioVisible:!!el&&!el.hidden}},args);break;
           }
+          case 'linkTargets': {
+            value=await a.page.evaluate(([title,pluginPath,pluginContent])=>{const docs=UrbeCore.service('documents');docs.upsert({path:pluginPath,content:pluginContent});const k=UrbeCore.service('knowledge');return{paths:[...(k.byTitle.get(title)||[])].map(id=>docs.get(id).path)}},args);break;
+          }
           case 'rename': {
             const id=ids.get(args[0]);if(!id)throw new Error('referência UI desconhecida');
             await a.command('explorer.rename',{id,name:args[1]});await a.save();
             const notes=await a.notes(),newPath=Object.keys(notes).find(p=>notes[p].id===id);
             if(!newPath)throw new Error('rename não encontrou documento');
-            ids.set(newPath,id);positions.set(newPath,positions.get(args[0]));value={path:newPath};break;
+            ids.set(newPath,id);value={path:newPath};break;
           }
           case 'delete': await a.command('explorer.delete',{ids:[ids.get(args[0])]});await a.save();value=null;break;
           case 'restore': await a.command('trash.restore',{id:ids.get(args[0])});await a.save();value=null;break;
           case 'lifecycleObserve': {
             const p=args[0],id=ids.get(p);if(!id)throw new Error('referência UI desconhecida');
-            const notes=await a.notes(),vault=await a.vault(),world=await a.world(),building=world.buildings.find(b=>b.id===id);
+            const notes=await a.notes(),vault=await a.vault();
             const trash=JSON.parse(vault['.urbe/trash.v2.json']||'{"items":[]}');
-            value={content:notes[p]?.content??null,saved:vault[p]??null,idStable:notes[p]?.id===id,inTrash:trash.items.some(i=>i.document.id===id),positionStable:!!building&&JSON.stringify(building.pos)===JSON.stringify(positions.get(p))};break;
+            value={content:notes[p]?.content??null,saved:vault[p]??null,idStable:notes[p]?.id===id,inTrash:trash.items.some(i=>i.document.id===id)};break;
+          }
+          case 'rememberPosition': {
+            const vault=await a.vault(),note=JSON.parse(vault['.urbe/mapa.json']).notas[args[0]];
+            if(!note)throw new Error('posição persistida ausente');
+            positions.set(args[0],{x:note.x,y:note.y});
+            value={positionPresent:Number.isFinite(note.x)&&Number.isFinite(note.y),mapIdStable:note.id===ids.get(args[0]),oldAbsent:!Object.hasOwn(vault,args[1])};break;
+          }
+          case 'positionStable': {
+            if(!positions.has(args[0]))throw new Error('posição de referência ausente');
+            const building=(await a.world()).buildings.find(b=>b.id===ids.get(args[0]));
+            value={stable:!!building&&JSON.stringify(building.pos)===JSON.stringify(positions.get(args[0]))};break;
           }
           case 'editHistory': {
             const id=ids.get(args[0]);if(!id)throw new Error('referência UI desconhecida');
