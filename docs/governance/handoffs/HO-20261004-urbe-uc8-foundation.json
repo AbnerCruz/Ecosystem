@@ -81,7 +81,8 @@
     "Documentação de comandos, teste manual e identidade nativa privada de build; nenhum canal/release alterado.",
     "Corrigida propagação global de TargetFrameworks: UrbeBuildTarget seleciona apenas o TFM do host; Core/UI permanecem net10.0.",
     "Reconciliado P5-3 com integração observada PR #193 e Issue #175 closed/state:done; mesma linha de closeout proposta no PR #195, sem incorporar seu escopo P5-4.",
-    "Harness GC aguarda primeira gravação/migração da fixture legado antes de iniciar manutenção; mantém todas as asserções, sem alteração de código do cliente JS."
+    "Harness GC aguarda primeira gravação/migração da fixture legado antes de iniciar manutenção; mantém todas as asserções, sem alteração de código do cliente JS.",
+    "Reconciliado semanticamente com main@18079caf (PR #195): P5-3 closeout coincide e P5-4 preserva comparação preparatória integrada; todos os arquivos do PR #195 preservados."
   ],
   "verification": [
     {

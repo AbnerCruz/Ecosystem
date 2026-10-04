@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-3-closeout",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T13:04:00Z",
+  "agent": {
+    "id": "chatgpt-p5-runtime-continue",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-3",
+  "component": "ecosystem",
+  "state": "done",
+  "branch": "chatgpt/p5-4-transport-readiness",
+  "base_commit": "93d7279d910f36854d90c7818bedf0b3f0398353",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/195",
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261004-p5-3-closeout.json"
+  ],
+  "work_completed": [
+    "PR #193 integrado em 93d7279d910f36854d90c7818bedf0b3f0398353 após CI combinado aprovado e autorização canônica.",
+    "Issue #175 closed/state:done; ROADMAP P5-3 marcado concluído. API pública v1, schema, 13 fixtures e revogação implementados; IPC e segundo Host permanecem P5-4/P5-5."
+  ],
+  "verification": [
+    {
+      "check": "Integração e testes P5-3",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #193 merged; 252 testes Hub; consistency 37203333122, hub-ci 37203333205 e integrador 37203332093 success."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Prosseguir P5-4 conforme prontidão do consumidor e ADR próprio."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/permissions.json",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/governance/integration-policy.json",
+    "tests/consistency/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Estado/IDs continuam no ROADMAP/Issue; comparação não cria Registry paralelo."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "IPC não exige Hub para o domínio essencial dos Products."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Caller/package pertence ao adapter; Tool não conhece Host."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Documentos e APIs primárias consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum transporte/fronteira selecionado; implementação exige ADR/decisão própria."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "GitHub não é transporte runtime."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Identidade bilateral e grants deny-by-default são critérios, sem privilégio ativado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Matriz não executada/DEVICE não é confundida com provas headless."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-4 permanece aberto."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração antes de consumidor e Extraction Review."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Standalone inclui distribuição sem Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Registro factual de conclusão integrada; nenhuma API, decisão ou autorização nova."
+  },
+  "cost": null
+}
