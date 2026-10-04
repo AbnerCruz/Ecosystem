@@ -1,0 +1,154 @@
+name: urbe-cutover
+
+# P4-9: helper manual para criar as tags de corte com validação forte.
+# Não publica em merge/main. O proprietário inicia explicitamente pelo workflow_dispatch.
+# legacy-bridge cria a tag canônica urbe/v<versão>; o espelho AbnerCruz/Urbe a consome no sync.
+# direct cria urbe-v<versão> e dispara urbe-release.yml explicitamente, porque push feito com GITHUB_TOKEN
+# não dispara outro workflow por si só.
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Etapa do corte P4-9
+        type: choice
+        required: true
+        options:
+          - legacy-bridge
+          - direct
+      version:
+        description: Versão exata de apps/urbe/package.json (ex. 1.8.3-beta)
+        type: string
+        required: true
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: urbe-cutover
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: Validar e criar tag do Urbe
+    runs-on: ubuntu-latest
+    env:
+      STAGE: ${{ inputs.stage }}
+      REQUESTED_VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validar pedido contra o Product canônico
+        id: prepare
+        run: |
+          set -euo pipefail
+          case "$REQUESTED_VERSION" in
+            ''|*[!0-9A-Za-z.-]*) echo "::error::Versão inválida"; exit 1 ;;
+          esac
+
+          case "$STAGE" in
+            legacy-bridge)
+              [ "$REQUESTED_VERSION" = "1.8.3-beta" ] || {
+                echo "::error::A ponte legada P4-9 é exclusivamente 1.8.3-beta"
+                exit 1
+              }
+              # Commit já sincronizado e observado no espelho; pin evita que avanço posterior da main altere a ponte.
+              target="dcb5e056730c67e8931725e8dc66e1e63a70a18a"
+              git cat-file -e "$target^{commit}"
+              git show "$target:apps/urbe/package.json" > /tmp/urbe-package.json
+              current="$(node -p "require('/tmp/urbe-package.json').version")"
+              [ "$current" = "$REQUESTED_VERSION" ] || {
+                echo "::error::Commit da ponte contém versão inesperada: $current"
+                exit 1
+              }
+              git show "$target:apps/urbe/CHANGELOG.md" | grep -Fq "Ponte para releases diretas do Ecosystem" || {
+                echo "::error::Commit da ponte não contém as notas P4-9"
+                exit 1
+              }
+              tag="urbe/v$REQUESTED_VERSION"
+              ;;
+            direct)
+              target="$(git rev-parse HEAD)"
+              current="$(node -p "require('./apps/urbe/package.json').version")"
+              [ "$REQUESTED_VERSION" = "$current" ] || {
+                echo "::error::Versão solicitada $REQUESTED_VERSION difere de apps/urbe/package.json ($current)"
+                exit 1
+              }
+              [ "$REQUESTED_VERSION" != "1.8.3-beta" ] || {
+                echo "::error::1.8.3-beta é a ponte entregue pelo canal antigo; o primeiro release direto precisa ser posterior"
+                exit 1
+              }
+              node <<'NODE'
+              const p = require('./apps/urbe/package.json');
+              const cfg = p.build?.publish?.[0];
+              if (!cfg || cfg.provider !== 'github' || cfg.owner !== 'AbnerCruz' || cfg.repo !== 'Ecosystem' || cfg.tagNamePrefix !== 'urbe-v') {
+                throw new Error('package.json não contém a configuração aprovada para releases diretas');
+              }
+              NODE
+              tag="urbe-v$REQUESTED_VERSION"
+              ;;
+            *)
+              echo "::error::Etapa desconhecida: $STAGE"
+              exit 1
+              ;;
+          esac
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/tmp/existing-tag 2>/dev/null; then
+            remote_sha="$(cut -f1 /tmp/existing-tag | head -n1)"
+            [ "$remote_sha" = "$target" ] || {
+              echo "::error::Tag $tag já existe em outro commit ($remote_sha)"
+              exit 1
+            }
+            echo "already=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "sha=$target" >> "$GITHUB_OUTPUT"
+
+      - name: Criar tag imutável no commit canônico
+        if: steps.prepare.outputs.already != 'true'
+        env:
+          TAG: ${{ steps.prepare.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          TARGET="${{ steps.prepare.outputs.sha }}"
+          git tag "$TAG" "$TARGET"
+          git push origin "refs/tags/$TAG"
+
+      - name: Disparar release direto
+        if: inputs.stage == 'direct'
+        env:
+          TAG: ${{ steps.prepare.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh workflow run urbe-release.yml --ref "$TAG"
+
+      - name: Resumo
+        env:
+          TAG: ${{ steps.prepare.outputs.tag }}
+          SHA: ${{ steps.prepare.outputs.sha }}
+        run: |
+          {
+            echo "## Urbe P4-9"
+            echo
+            echo "- etapa: `$STAGE`"
+            echo "- versão: `$REQUESTED_VERSION`"
+            echo "- tag: `$TAG`"
+            echo "- commit: `$SHA`"
+            if [ "$STAGE" = "legacy-bridge" ]; then
+              echo "- próximo passo: executar `sync-from-ecosystem` em `AbnerCruz/Urbe`; ele cria `v$REQUESTED_VERSION` na origem e dispara o release legado."
+            else
+              echo "- `urbe-release.yml` foi disparado explicitamente sobre a tag direta."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
