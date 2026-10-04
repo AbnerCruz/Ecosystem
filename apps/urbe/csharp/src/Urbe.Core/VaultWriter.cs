@@ -595,7 +595,7 @@ public static class VaultWriter
 
     private static string NormalizePath(string path)
     {
-        var normalized = (path ?? string.Empty).Replace('\', '/');
+        var normalized = (path ?? string.Empty).Replace('\\\\', '/');
         if (normalized.Length == 0 || normalized[0] == '/')
             throw new InvalidDataException("Caminho inválido no vault: " + path);
         var segments = normalized.Split('/');
