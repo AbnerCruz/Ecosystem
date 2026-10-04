@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-hub-input-validation-reentrancy",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T13:42:00Z",
+  "agent": {
+    "id": "chatgpt-p5-runtime-continue",
+    "kind": "ai-agent"
+  },
+  "task_id": "HUB-201",
+  "component": "hub",
+  "state": "review",
+  "branch": "chatgpt/p5-next-readiness",
+  "base_commit": "18079caf0bce3fb3b081d875565084e02d354748",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/hub/src/Hub.Core/Capabilities/LocalCapabilityHost.cs",
+    "apps/hub/tests/Hub.Tests/LocalCapabilityHostTests.cs",
+    "ROADMAP.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/governance/handoffs/HO-20261004-hub-input-validation-reentrancy.json"
+  ],
+  "work_completed": [
+    "PR #195 integrado na main; P5-4 continua dependente de consumidor pronto/ADR, sem escolher transporte por inferência.",
+    "FATO OBSERVADO: validação síncrona reentrante podia fechar/revogar/cancelar a sessão e ainda executar o handler; dispatch aninhado podia executar o mesmo ID duas vezes ou substituir a chamada ativa. Providers/validators são código confiável local; não é alegação de exploração remota/IPC.",
+    "Cinco regressões falharam na implementação anterior: três handlers indevidamente executados e duas reservas violadas.",
+    "Revalidar estado de sessão, chamada ativa, IDs/budget, cancelamento e grants após callback e antes de reservar/handler. Mantém códigos existentes e mesma Host API pública."
+  ],
+  "verification": [
+    {
+      "check": "Regressões antes da correção",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Runner xUnit direto: 257 testes, 5 falhas esperadas; reprodução determinística sem timing/sleep."
+    },
+    {
+      "check": "Hub completo após correção",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "257 testes passaram, incluindo 13 fixtures públicas e cinco regressões novas."
+    },
+    {
+      "check": "Consistency e diff",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22 checks de consistência e git diff --check passaram; CI verificará snapshot de Issues e self-test no estado combinado."
+    },
+    {
+      "check": "DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Correção do Core com validators confiáveis locais; sem UI, transporte, permissão nova ou alteração de instalação. Gate DEVICE dos Products/Fase 5 preservado."
+    }
+  ],
+  "known_issues": [
+    "P5-4/5 continuam aguardando prontidão real do segundo Host. Lunet Fase 3 aguarda DEVICE; Urbe UC-8 PR #196 em trabalho de outro agente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar, publicar PR e aguardar CI combinado.",
+    "Aprovação crítica canônica pelo proprietário devido à fronteira de grants; nenhum agente põe integrar."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/contracts/permissions.json",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/architecture/capability-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ROADMAP escopo; Issue #197 estado vivo; nenhum Registry paralelo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff com reprodução, testes e limites."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes canônicas de contrato/ADR consultadas diretamente."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Grant revogado revalidado antes de executar; payload não eleva privilégio."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma evidência de dois Hosts/DEVICE inferida de unit tests."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "HUB-201 em review, sem conclusão antes de integração."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Correção permanece Hub.Core; sem extração antes de consumidor real."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "security"
+    ],
+    "reason": "Impede execução depois de grant revogado/fechamento durante callback reentrante; correção de fronteira de autorização local."
+  },
+  "cost": null
+}
