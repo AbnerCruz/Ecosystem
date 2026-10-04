@@ -13,8 +13,8 @@
   "state": "verifying",
   "branch": "chatgpt/p5-4-binder-ipc-v2",
   "base_commit": "79c5be012237459898ab082a5ca96ed18b382654",
-  "commit": null,
-  "pr": null,
+  "commit": "5235f6bb062f89f2dad9875e88b9afcbf3d5d0c9",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/222",
   "files_changed": [
     "apps/hub/src/Hub.Android/AndroidBindingTrustPolicy.cs",
     "apps/hub/src/Hub.Android/AndroidIpcIdentity.cs",
@@ -44,37 +44,40 @@
     "Preservada a Host API v1 e o binding Binder aprovado por DEC-0037-A: peer Binder real, allowlist bilateral, Context/grants Host-owned, pairing por instalação, challenge ECDSA, budgets, revoke, deadline e LinkToDeath.",
     "Falha DEVICE do candidato b001eafd tratada como válida: aprovação anterior não fecha P5-4.",
     "Assinatura Android Keystore alterada para KeyStore.PrivateKeyEntry em caller e provider.",
-    "Lunet ganhou self-test ECDSA local e diagnóstico sanitizado por etapa para localizar qualquer nova falha sem stack trace ou dados privados."
+    "Lunet ganhou self-test ECDSA local e diagnóstico sanitizado por etapa para localizar qualquer nova falha sem stack trace ou dados privados.",
+    "Candidato v2 passou no aparelho o fluxo real de pareamento + sessão + discover + text.inspect.",
+    "Diagnóstico do indicador '0': não é falha; Conectar e testar fecha a sessão explicitamente ao terminar. UI agora separa instalações pareadas de sessões IPC abertas naquele instante."
   ],
   "verification": [
     {
       "check": "Estado combinado + Hub/Lunet/consistency do PR limpo",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando integrador/CI do novo PR sobre a main atual."
+      "result": "passed",
+      "evidence": "PR #222 no head cca0cd61: Hub CI 37229850579 verde com APK assinado; Lunet CI 37229850687 verde (321/321); lunet2d-release 37229850621 APK verde; consistency 37229850711 completo verde."
     },
     {
       "check": "IPC Android real — pairing até invoke, revogação/rotação e process death",
       "kind": "human",
-      "result": "failed",
+      "result": "pending",
       "critical": true,
       "object": "docs/validation/P5-4-binder-ipc.md",
-      "evidence": "Primeiro candidato falhou após pairing: provider aprovado, 0 sessões IPC ativas e Lunet exibiu provider indisponível/protocolo recusado. Novo DEVICE obrigatório."
+      "evidence": "Candidato v2 corrigido passou no aparelho o pareamento existente e a execução autenticada de text.inspect; o proprietário relatou que tudo está funcionando. A leitura '0 sessões' após Conectar e testar é esperada porque a sessão é fechada no finally. Permanecem os passos físicos C/D (revogação/rotação e LinkToDeath/process death) antes do gate integral."
     }
   ],
   "known_issues": [
-    "A causa exata do primeiro B8 ainda não foi observada; o novo diagnóstico separa keystore/challenge/open/discover/invoke.",
-    "P5-4 permanece aberto e P5-5 continua bloqueado.",
-    "PR #210 é histórico e deve ser superseded pelo PR limpo após verificação."
+    "UI anterior confundia pareamento persistente com sessão transitória e mostrava 'Sessões IPC ativas: 0' sem explicar que isso é normal após o comando; corrigido no head atual.",
+    "P5-4 ainda exige os passos físicos C/D de revogação/rotação e process death/LinkToDeath antes de fechar.",
+    "P5-5 permanece bloqueado até P5-4 fechar e passar pela autorização crítica."
   ],
   "blockers": [
-    "Novo gate DEVICE após CI verde."
+    "Gate DEVICE restante: C (revogação/rotação) e D (LinkToDeath/process death)."
   ],
   "next_actions": [
-    "Rodar integrador e CI no estado combinado atual.",
-    "Se verde, publicar Hub/Lunet candidatos instaláveis por navegador com versionCode não inferior ao canal instalado.",
-    "Repetir gate B; se falhar, registrar stage + exception type exibidos pelo Lunet.",
-    "Só após A-D passarem solicitar nova autorização crítica e fechar P5-4."
+    "Rodar CI novamente após a correção semântica da UI.",
+    "Publicar candidato DEVICE atualizado somente se Hub/Lunet/consistency permanecerem verdes.",
+    "Executar C e D no aparelho; durante o teste de 60 s o Hub deve mostrar 1 sessão aberta, após encerramento/force-stop deve voltar a 0.",
+    "Depois de C/D verdes, registrar nova validação canônica, solicitar autorização crítica e integrar P5-4.",
+    "Só então iniciar P5-5 com Extraction Review antes de qualquer abstração compartilhada."
   ],
   "decisions_required": [],
   "normative_sources": [
