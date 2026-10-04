@@ -73,7 +73,7 @@
   ],
   "decisions_required": [],
   "normative_sources": [
-    "MANIFEST.md §§6.2, 6.3, 8, 9, 14, 15, 24, 28, 30, 48, 52",
+    "MANIFEST.md",
     "AGENTS.md",
     "ecosystem.json",
     "ROADMAP.md",
