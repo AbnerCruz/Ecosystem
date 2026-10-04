@@ -299,6 +299,7 @@ internal sealed class EcosystemHostClient : IDisposable
             }
             catch (Exception) { }
         }
+        _key.Rotate();
         _pair = null;
         _candidate = null;
     }
@@ -378,6 +379,13 @@ internal sealed class AndroidInstallationKey
             return Convert.ToBase64String(store.GetCertificate(_alias)?.PublicKey?.GetEncoded()
                 ?? throw new InvalidOperationException());
         }
+    }
+
+    internal void Rotate()
+    {
+        using var store = Store();
+        if (store.ContainsAlias(_alias)) store.DeleteEntry(_alias);
+        Ensure();
     }
 
     internal string Sign(byte[] data)
