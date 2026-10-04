@@ -192,7 +192,9 @@ public static class VaultArchive
         if (parse.State == VaultExportManifestState.Future)
             throw new InvalidDataException(
                 "Export de versão mais nova: formatVersion=" +
-                parse.Manifest!.FormatVersion + ".");
+                (parse.DetectedFormatVersion?.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture) ?? "?") +
+                ".");
 
         var manifest = parse.Manifest!;
         foreach (var listed in manifest.Files)
