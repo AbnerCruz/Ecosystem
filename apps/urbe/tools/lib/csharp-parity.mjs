@@ -7,6 +7,10 @@ import { makeVaultCases, makeRestoreCases, makeCrashCases } from './parity-vault
 import { makeStorageCases, makeLegacyIdbCases } from './parity-storage.mjs';
 import { makeDomainCases } from './parity-domain.mjs';
 import { makeUiCases } from './parity-browser.mjs';
+import { makeBrowserVaultCases, makeBrowserLegacyCases } from './parity-browser-vault.mjs';
+import { makeBrowserStorageCases } from './parity-browser-storage.mjs';
+import { makeBrowserWorldCases } from './parity-browser-world.mjs';
+import { makeBrowserZipCases } from './parity-browser-zip.mjs';
 import { makeUpdateCases } from './parity-update.mjs';
 import { makeNativeCases } from './parity-native.mjs';
 
@@ -99,7 +103,7 @@ export function renderParity(corpus) {
     out.push(`| ${op} | ${corpus.cases.filter((c) => c.operation === op).length} | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |`);
   }
   out.push('', '## Lacunas e ligação com o Ecosystem', '',
-    '- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; quatro casos injetam crash antes/durante/depois de gravação multi-arquivo; 13 casos de storage verificam FSA sobre ponte nativa e o adapter IDB/browser, e um caso próprio cobre a migração histórica `kv["cidade"]` para o vault único sem confundi-la com a loja `fs` atual. 24 casos nativos verificam capacidades/APIs presentes e ausentes por superfície, bytes, links, exportação/cancelamento, impressão e recusas injetadas. 19 casos de atualização Android/Windows verificam seleção do feed por Product, versões, eventos/replay, instalação manual/reinício e recuperação após erro. Oito casos UI cobrem primeira abertura, criação/salvamento/reabertura, edição Visual, roteamento, lifecycle documental, preview integrado e GC com cancelamento/confirmação em Chromium. Restam outras transcrições UI, lifecycle/permissões reais e aceite físico por superfície. A execução no C# integra UC-9/10/18/23/24/25.',
+    '- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; quatro casos injetam crash antes/durante/depois de gravação multi-arquivo; 13 casos de storage verificam FSA sobre ponte nativa e o adapter IDB/browser, e um caso próprio cobre a migração histórica `kv["cidade"]` para o vault único sem confundi-la com a loja `fs` atual. 24 casos nativos verificam capacidades/APIs presentes e ausentes por superfície, bytes, links, exportação/cancelamento, impressão e recusas injetadas. 19 casos de atualização Android/Windows verificam seleção do feed por Product, versões, eventos/replay, instalação manual/reinício e recuperação após erro. Oito casos UI cobrem primeira abertura, criação/salvamento/reabertura, edição Visual, roteamento, lifecycle documental, preview integrado e GC com cancelamento/confirmação em Chromium. 11 casos browser.vault transcrevem abertura/salvamento das oito fixtures históricas e três futuras no app real. 16 casos browser.storage executam o contrato em IDB/OPFS reais. Oito browser.world transcrevem identidade externa, região/asset, proteção/desfazer de layout, persistência automática/escritor único do mapa, abertura do vault sintético S (50 notas/2 assets) e migração multi-city com três boots, IDs/geometria preservados e arquivamento sem apagar stores. Um browser.zip transcreve export/import, manifesto e hashes, binários, preferências sem chaves, adulteração cancelada e recusa de formato futuro. Onze protocolos físicos cobrem lifecycle/permissões/offline/instalação e compatibilidade cruzada em Web/Windows/Android, com estado obrigatório `not-executed` até UC-23/24/25/29. A execução no C# integra UC-9/10/18/23/24/25.',
     '- REQ aceito ainda não entregue no JS continua como obrigação do C#, com o teste/aceite do ROADMAP acima; um golden de comportamento antigo nunca fecha esse requisito.',
     '- Android físico, Windows instalado e PWA offline ainda precisam de evidência própria. Simulações e Chromium não os validam.',
     '- Context/capabilities do Ecosystem têm contrato na Fase 2; transporte/Host API da Fase 5 ainda não implementados. Urbe fornece seu domínio por adapter quando esses contratos estiverem prontos; nunca depende do plano de controle nem diretamente de outro Product.',
@@ -118,7 +122,23 @@ export function makeCorpus() {
     ...visual.map((g, i) => ({ id: `visual-${String(i + 1).padStart(3, '0')}`, operation: 'visual.serialize',
       requirements: ['REQ-027'], source: `tests/fixtures/visual-golden.json#/${i}`,
       input: { html: g.html, bodyEditor: g.bodyEditor }, expected: { markdown: g.md } })),
-    ...makeVaultCases(), ...makeRestoreCases(), ...makeCrashCases(), ...makeStorageCases(), ...makeLegacyIdbCases(), ...makeDomainCases(), ...makeNativeCases(), ...makeUpdateCases(), ...makeUiCases()] };
+    ...makeVaultCases(), ...makeRestoreCases(), ...makeCrashCases(), ...makeStorageCases(), ...makeLegacyIdbCases(), ...makeDomainCases(), ...makeNativeCases(), ...makeUpdateCases(), ...makeUiCases(), ...makeBrowserVaultCases(), ...makeBrowserLegacyCases(), ...makeBrowserStorageCases(), ...makeBrowserWorldCases(), ...makeBrowserZipCases()] };
+}
+export function validateSurfaceProtocol(protocol) {
+  if (protocol.schemaVersion !== 1 || protocol.product !== 'urbe' || protocol.kind !== 'surface-acceptance-protocol' || protocol.execution !== 'human-device-or-installed-host' || protocol.status !== 'not-executed' || !Array.isArray(protocol.cases) || !protocol.cases.length)
+    throw new Error('protocolo físico inválido');
+  const ids=new Set(),surfaces=new Set(),allowed=new Set(['web','windows','android']);
+  for(const c of protocol.cases){
+    if(typeof c.id!=='string'||!/^surface-(web|windows|android|cross)-[a-z0-9-]+$/.test(c.id)||ids.has(c.id))throw new Error('ID físico inválido/duplicado');
+    ids.add(c.id);
+    if('result' in c||'passed' in c||'conclusion' in c)throw new Error('UC-2 não pode fabricar resultado físico');
+    if(!Array.isArray(c.surfaces)||!c.surfaces.length||c.surfaces.some(s=>!allowed.has(s)))throw new Error('superfície física inválida');
+    c.surfaces.forEach(s=>surfaces.add(s));
+    if(!Array.isArray(c.requirements)||!c.requirements.length||c.requirements.some(r=>!/^REQ-\d{3}$/.test(r)))throw new Error('REQ físico inválido');
+    if(!Array.isArray(c.stages)||!c.stages.length||c.stages.some(s=>!/^UC-\d+$/.test(s)))throw new Error('fase física inválida');
+    for(const field of ['preconditions','steps','expected','evidence'])if(!Array.isArray(c[field])||!c[field].length||c[field].some(v=>typeof v!=='string'||!v.trim()))throw new Error('passos/evidência física inválidos');
+  }
+  if([...allowed].some(s=>!surfaces.has(s)))throw new Error('protocolo não cobre todas as superfícies');
 }
 export function validateCorpus(corpus) {
   if (corpus.schemaVersion !== 1 || corpus.product !== 'urbe') throw new Error('corpus inválido');

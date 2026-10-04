@@ -4,13 +4,14 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { ROOT } from './lib/v2-docs.mjs';
-import { read, json, verifyOracle, validateCorpus, renderParity, compareResults } from './lib/csharp-parity.mjs';
+import { read, json, verifyOracle, validateCorpus, validateSurfaceProtocol, renderParity, compareResults } from './lib/csharp-parity.mjs';
 
 const mode = process.argv[2] || 'check';
 try {
   const corpus = json('docs/csharp/acceptance/cases.json');
   verifyOracle(json('docs/csharp/acceptance/oracle.json'));
   validateCorpus(corpus);
+  validateSurfaceProtocol(json('docs/csharp/acceptance/surface-protocol.json'));
   const rendered = renderParity(corpus);
   if (mode === 'render') {
     writeFileSync(join(ROOT, 'docs/csharp/PARITY.md'), rendered);
@@ -24,7 +25,7 @@ try {
     const cases = op === 'all' ? corpus.cases : corpus.cases.filter((c) => c.operation === op);
     if (!cases.length || !command) throw new Error('uso: run <all|operação> <executável> [argumentos]');
     const r = spawnSync(command, args, { cwd: ROOT, input: JSON.stringify({ schemaVersion: 1, cases }),
-      encoding: 'utf8', timeout: 120000, maxBuffer: 8 * 1024 * 1024 });
+      encoding: 'utf8', timeout: op === 'all' ? 300000 : 120000, maxBuffer: 8 * 1024 * 1024 });
     if (r.error || r.status !== 0) throw new Error(`cliente falhou: ${r.error?.message || r.stderr || r.status}`);
     const results = JSON.parse(r.stdout);
     if (results.schemaVersion !== 1) throw new Error('versão de resultado incompatível');

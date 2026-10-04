@@ -69,10 +69,10 @@
     {
       "check": "Uso e lifecycle da análise de texto no Hub",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "docs/architecture/capability-runtime.md",
-      "evidence": "Roteiro Android neste objeto: Unicode/vazio, fechar durante execução, fundo/retorno/Activity, teclado/toque/layout. Não é aprovação do gate de dois Hosts."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-04 (Issue https://github.com/AbnerCruz/Ecosystem/issues/177); registro em docs/governance/responses/VAL-HO-20261004-p5-runtime-local-882b9fe3a0e8.md."
     },
     {
       "check": "Auditoria da Fase 6 existente",
