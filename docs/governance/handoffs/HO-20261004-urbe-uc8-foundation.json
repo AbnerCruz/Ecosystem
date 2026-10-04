@@ -1,0 +1,192 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc8-foundation",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T13:08:59.364669Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-8",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc8-csharp-foundation",
+  "base_commit": "da80358551e0e51ab713ab97fda070983530a6bf",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/.gitignore",
+    "apps/urbe/csharp/Directory.Build.props",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/csharp/Urbe.Native.slnx",
+    "apps/urbe/csharp/Urbe.Portable.slnx",
+    "apps/urbe/csharp/global.json",
+    "apps/urbe/csharp/src/Urbe.App/App.xaml",
+    "apps/urbe/csharp/src/Urbe.App/App.xaml.cs",
+    "apps/urbe/csharp/src/Urbe.App/MainPage.xaml",
+    "apps/urbe/csharp/src/Urbe.App/MainPage.xaml.cs",
+    "apps/urbe/csharp/src/Urbe.App/MauiProgram.cs",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Android/AndroidManifest.xml",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Android/MainApplication.cs",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Windows/App.xaml",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Windows/App.xaml.cs",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Windows/Package.appxmanifest",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Windows/app.manifest",
+    "apps/urbe/csharp/src/Urbe.App/Resources/AppIcon/appicon.svg",
+    "apps/urbe/csharp/src/Urbe.App/Resources/Splash/splash.svg",
+    "apps/urbe/csharp/src/Urbe.App/Urbe.App.csproj",
+    "apps/urbe/csharp/src/Urbe.App/wwwroot/index.html",
+    "apps/urbe/csharp/src/Urbe.Core/ProductIdentity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Foundation.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Urbe.UI.csproj",
+    "apps/urbe/csharp/src/Urbe.UI/UrbeRoutes.razor",
+    "apps/urbe/csharp/src/Urbe.UI/_Imports.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/src/Urbe.Web/App.razor",
+    "apps/urbe/csharp/src/Urbe.Web/Program.cs",
+    "apps/urbe/csharp/src/Urbe.Web/Properties/launchSettings.json",
+    "apps/urbe/csharp/src/Urbe.Web/Urbe.Web.csproj",
+    "apps/urbe/csharp/src/Urbe.Web/_Imports.razor",
+    "apps/urbe/csharp/src/Urbe.Web/wwwroot/favicon.png",
+    "apps/urbe/csharp/src/Urbe.Web/wwwroot/icon-192.png",
+    "apps/urbe/csharp/src/Urbe.Web/wwwroot/icon-512.png",
+    "apps/urbe/csharp/src/Urbe.Web/wwwroot/index.html",
+    "apps/urbe/csharp/src/Urbe.Web/wwwroot/manifest.webmanifest",
+    "apps/urbe/csharp/src/Urbe.Web/wwwroot/register-worker.js",
+    "apps/urbe/csharp/src/Urbe.Web/wwwroot/service-worker.js",
+    "apps/urbe/csharp/src/Urbe.Web/wwwroot/service-worker.published.js",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ArchitectureTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/Urbe.Core.Tests.csproj",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    ".github/workflows/urbe-checks.yml",
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/THIRD-PARTY-NOTICES.md",
+    "apps/urbe/docs/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc8-foundation.json"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Esqueleto aprovado por DEC-0035-A; csproj/Platforms e workflow são zonas críticas de build/distribution."
+  },
+  "work_completed": [
+    "Core C# puro, RCL compartilhada, Web WASM/PWA e MAUI Hybrid Windows/Android, sem implementação de vault.",
+    "Soluções portátil e nativa separadas, 8 testes de identidade/boundary/composição e smoke Chromium publicado em raiz/subpasta/offline.",
+    "urbe-checks estendido com build/testes/publish portátil e build Android/Windows usando inputs.ref combinado.",
+    "Documentação de comandos, teste manual e identidade nativa privada de build; nenhum canal/release alterado."
+  ],
+  "verification": [
+    {
+      "check": "Core + RCL build Release",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": ".NET SDK 10.0.100 compilou Urbe.Core e Urbe.UI."
+    },
+    {
+      "check": "Architecture/composition tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Urbe.Core.Tests: 8/8 testes, execução direta do runner xUnit; dotnet test IPC indisponível no ambiente."
+    },
+    {
+      "check": "npm run check",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "66/66 arquivos de teste; versão, módulos, dívida, traceability, licença, catálogo, fixtures, tutorial, paridade e vault contract verdes."
+    },
+    {
+      "check": "consistency + self-test",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "22/22 checks verdes no estado final; self-test concluiu que todos os checks detectaram suas violações. PATH do SDK explicitado para subprocessos."
+    },
+    {
+      "check": "Web publish + Chromium",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Publish Release .NET10 + smoke real online/offline em raiz/subpasta, identidade da RCL e caches por escopo. Runtime IPC do MSBuild é restrito neste ambiente; tarefas oficiais WASM/ILLink executadas in-process por targets temporários externos ao checkout. Nenhuma alteração de SDK ou workaround entrou no código/CI."
+    },
+    {
+      "check": "Native Windows/Android + CI combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Builds Android/Windows e CI combinado serão verificados no PR; envio explicitamente autorizado pelo proprietário."
+    }
+  ],
+  "known_issues": [
+    "Tela apenas de composição, não aceita notas reais; UC-9/10 implementam leitura/escrita.",
+    "Metadados nativos são de desenvolvimento; não publica nem substitui instalações antigas.",
+    "Validação física/instalação PWA e atualização pertencem UC-23/24/25/29."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Autorização explícita de envio recebida em 2026-10-04; enviar pelo conector GitHub (git HTTPS local sem credencial).",
+    "Executar CI padrão e builds nativos, corrigir falhas e entregar PR crítico verde ao integrador.",
+    "Após integração UC-8, iniciar UC-9 contra fixtures históricas e futuras."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/INTEGRATION.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+    "docs/adr/0026-urbe-transicao-cliente-csharp.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Referências entre projetos só dentro do Urbe; testes asseguram limites."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Core/UI/hosts funcionam sem Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #192, branch própria e este handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Somente pilha aprovada DEC-0035-A; sem modelo de dados ou corte."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Nenhuma versão/release de outro Product alterada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Build/smoke não são apresentados como validação física."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-8 em verificação, não concluído sem CI/integração."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Projetos locais ao produto; nenhuma extração compartilhada."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Bootstrap standalone e CI independente do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-csharp-composition",
+      "status": "product-specific",
+      "rationale": "Base do cliente Urbe conforme ADR-0025; nenhuma necessidade real de extração."
+    }
+  ]
+}

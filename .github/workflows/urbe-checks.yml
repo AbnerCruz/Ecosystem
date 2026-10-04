@@ -1,7 +1,6 @@
 name: urbe-checks
 
-# Checagens do Urbe no monorepo: só `npm run check`, sem builds de Windows/Android, sem assinatura e sem publicar.
-# Roda apenas quando o produto muda (NN-014). Releases e builds assinados continuam na origem (DEC-0008-A; plano §7).
+# Produto atual + composição C# UC-8. Builds nativos apenas de verificação; sem assinatura/release.
 
 on:
   push:
@@ -63,3 +62,62 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: node tools/run-e2e.mjs app-runtime zip smoke
+
+  csharp-portable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/urbe/csharp
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Urbe.Portable.slnx
+      - run: dotnet build Urbe.Portable.slnx -c Release --no-restore
+      - run: dotnet test --project tests/Urbe.Core.Tests -c Release --no-build
+      - run: dotnet publish src/Urbe.Web -c Release --no-restore -o artifacts/web
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/urbe/package-lock.json
+      - run: npm ci
+        working-directory: apps/urbe
+      - run: npx playwright install --with-deps chromium
+        working-directory: apps/urbe
+      - run: node tests/web-smoke.mjs artifacts/web/wwwroot
+
+  csharp-native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            framework: net10.0-android
+            workload: maui-android
+          - os: windows-latest
+            framework: net10.0-windows10.0.19041.0
+            workload: maui-windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: apps/urbe/csharp
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-java@v4
+        if: runner.os == 'Linux'
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: dotnet workload install ${{ matrix.workload }}
+      - run: dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f ${{ matrix.framework }} -p:TargetFrameworks=${{ matrix.framework }}

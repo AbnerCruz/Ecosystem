@@ -1,0 +1,9 @@
+<Router AppAssembly="@typeof(UrbeRoutes).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <main class="foundation"><h1>Página não encontrada</h1><a href="">Voltar ao início</a></main>
+    </NotFound>
+</Router>

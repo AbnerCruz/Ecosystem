@@ -6,10 +6,15 @@
 
 Reescrita completa do Urbe em C#: um **novo cliente**, trocando o produto distribuído **só quando houver paridade total** com o atual. Sem big-bang: o Urbe em JavaScript continua sendo o produto (Web/PWA, Electron, Capacitor) até o corte.
 
+## Pilha e transição consolidadas
+
+DEC-0035-A / ADR-0025: Blazor WebAssembly PWA + .NET MAUI Blazor Hybrid
+Windows/Android com RCL compartilhada. DEC-0036-C / ADR-0026: troca deliberada
+com backup/export/import obrigatório. A base de composição e os comandos de
+verificação estão em [`../../csharp/README.md`](../../csharp/README.md).
+
 ## O que ainda NÃO foi decidido (e não pode ser presumido)
 
-- **Pilha de UI e de hosts** por superfície. «Blazor WebAssembly + hosts Windows/Android» era só o exemplo da alternativa. Decide-se em UC-5 (ADR do Ecosystem `Proposto` + decisão no portal).
-- **Estratégia de transição** das instalações e dos canais de distribuição (APK, instalador Windows com atualização, Urbe Web/PWA): UC-6.
 - **Modelo de plugins** em C# (hoje JS full-trust, Urbe ADR-0002): UC-20.
 - **O corte** (trocar o produto distribuído): decisão crítica do proprietário (UC-31).
 - ~~O programa de refatoração do Urbe 2.0 em JavaScript durante a migração~~ — **decidido em DEC-0025-C**: o JavaScript fica **congelado, salvo bug crítico**; os itens do 2.0 ficam adiados, nunca removidos (nota no topo de [`../v2/ROADMAP.md`](../v2/ROADMAP.md)).

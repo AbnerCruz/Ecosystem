@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="src/Urbe.Core/Urbe.Core.csproj" />
+  <Project Path="src/Urbe.UI/Urbe.UI.csproj" />
+  <Project Path="src/Urbe.Web/Urbe.Web.csproj" />
+  <Project Path="tests/Urbe.Core.Tests/Urbe.Core.Tests.csproj" />
+</Solution>

@@ -215,3 +215,15 @@
 - Decisões (com fonte): ADD-0015/DEC-0031/ADR-0019; nenhuma mudança de dados ou de assinatura.
 - Pendências: CI combinado, autorização crítica e chave histórica/release/DEVICE para corte final.
 - Próximos passos: integrador reavalia o PR; P4-9 continua aberto.
+
+### 2026-10-04 — Codex — UC-8 / REQ-001/008/016/064
+- Estado: base C# verificada localmente na branch feat/urbe-uc8-csharp-foundation; Issue #192; envio remoto bloqueado pela revisão automática.
+- Feito: Core puro, UI Razor compartilhada, Web WASM/PWA e host MAUI Hybrid Windows/Android; soluções portátil/nativa separadas; testes de boundary/composição e smoke Chromium publicado; urbe-checks estendido.
+- Decisões (com fonte): DEC-0035-A/ADR-0025 e DEC-0036-C/ADR-0026, G-C0 integrado no PR #191. Identidade privada de build nativo dev; versão pública continua package.json.
+- Verificação: 8 testes C#, Core/RCL/Web compilados, publish Release e smoke Chromium online/offline em raiz/subpasta, npm check 66/66 e consistency 22/22. MSBuild WASM/ILLink executado in-process por targets temporários externos ao checkout devido ao IPC restrito local.
+- Pendências / bloqueios: revisão automática rejeitou git push por autorização explícita de publicação ausente; sem alternativa indireta. CI/builds nativos e integração crítica por csproj/Platforms/workflow continuam pendentes; nenhuma validação física alegada.
+- Próximos passos: verificar CI e corrigir; após integração UC-8, UC-9 (leitura do vault contra fixtures com proteção forward).
+
+### 2026-10-04 — Codex — UC-8 envio autorizado
+- Estado: proprietário autorizou explicitamente envio da branch e abertura de PR; CI em verificação.
+- Bloqueio anterior de autorização resolvido. Git HTTPS local não tem credencial; envio via conector GitHub.
