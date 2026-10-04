@@ -28,7 +28,7 @@ Transações síncronas, a partir de `IBinder.FirstCallTransaction`:
 | 5 | `cancel` |
 | 6 | `close` |
 
-Cada Parcel contém `WriteInterfaceToken(descriptor)` seguido de uma única string JSON. O reply usa `WriteNoException()` + JSON. Payload nunca escolhe UID, pacote, signatário, actor efetivo ou grants.
+Cada Parcel contém `WriteInterfaceToken(descriptor)` seguido da string JSON. Em `session.open`, o caller acrescenta um `IBinder` de lifecycle com `WriteStrongBinder`; o provider registra `LinkToDeath` nesse token e fecha/cancela a sessão se o processo do caller desaparecer. O reply usa `WriteNoException()` + JSON. Payload nunca escolhe UID, pacote, signatário, actor efetivo ou grants.
 
 ## Política de confiança do primeiro ensaio
 
@@ -58,6 +58,7 @@ Instalação, assinatura do APK, pareamento e grants são camadas distintas. Nen
 - Pending pairings: máximo **4**, expiração **2 min**.
 - Challenges: máximo **8**, expiração **30 s**, uso único.
 - Sessões no provider: máximo **4**.
+- Sessão ociosa: expira após **2 min**; death-recipient do caller encerra antes disso quando o processo morre.
 - Uma invoke ativa por sessão.
 - Deadline padrão: **10 s**; máximo **30 s**.
 - IDs/nonces: máximo **128 caracteres**.
@@ -72,6 +73,7 @@ Erros de transporte são separados dos erros Host API/capability:
 - `PROTOCOL_UNSUPPORTED`
 - `FRAME_TOO_LARGE`
 - `PEER_UNTRUSTED`
+- `PEER_DISCONNECTED`
 - `PAIRING_REQUIRED`
 - `PAIRING_PENDING`
 - `PAIRING_REJECTED`
