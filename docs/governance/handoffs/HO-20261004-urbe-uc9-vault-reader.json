@@ -14,7 +14,7 @@
   "branch": "feat/urbe-uc9-vault-reader",
   "base_commit": "d2e0f01916f4570fad1e56e7efc6d609a3427f0f",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/203",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/VaultReader.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultReaderTests.cs",
@@ -38,14 +38,26 @@
     {
       "check": "Urbe.Core.Tests / 12 fixtures + negativos UC-9",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Suite adicionada; esta sessão não possui SDK .NET local. O workflow urbe-checks executará dotnet build/test no PR e no estado combinado."
+      "result": "passed",
+      "evidence": "urbe-checks run 37213623887, csharp-portable: build Release 0 warnings/0 errors; 33/33 Urbe.Core.Tests passaram, incluindo 12 fixtures, proteção forward, journal, paths e semântica de ID legado."
     },
     {
-      "check": "Pureza do leitor",
+      "check": "Pureza do leitor e bytes físicos preservados",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Testes comparam SHA-256 de todos os arquivos físicos antes/depois da leitura; CI pendente."
+      "result": "passed",
+      "evidence": "A suíte compara SHA-256 de todos os arquivos físicos antes/depois e separa estado efetivo recuperado do journal dos bytes em disco; 33/33 passaram."
+    },
+    {
+      "check": "Regressão Urbe Web/Android/Windows/E2E/checks",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37213623887: csharp-portable, Android, Windows, E2E e npm checks concluíram com success."
+    },
+    {
+      "check": "Consistency + integrator simulation",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency run 37213623896 concluído com success no head 5fa0d1157a173e2d9e80d16c77e60809975ec589."
     }
   ],
   "known_issues": [
@@ -53,12 +65,12 @@
     "Gate G-C1 continua aberto porque escrita e migração ainda não existem no cliente C#."
   ],
   "blockers": [
-    "Integração crítica depende de CI verde e autorização canônica do proprietário."
+    "Integração crítica depende de autorização canônica do proprietário."
   ],
   "next_actions": [
-    "Abrir PR da UC-9 e observar o CI do estado combinado.",
-    "Corrigir qualquer falha sem ampliar o escopo para escrita.",
-    "Após integração autorizada, iniciar UC-10."
+    "Proprietário autoriza a integração crítica do PR #203 pelo mecanismo canônico.",
+    "Integrador reconfirma o estado combinado e integra conforme a política.",
+    "Após UC-9 integrado, iniciar UC-10."
   ],
   "decisions_required": [],
   "normative_sources": [
