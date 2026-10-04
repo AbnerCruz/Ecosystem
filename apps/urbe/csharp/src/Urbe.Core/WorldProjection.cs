@@ -80,6 +80,14 @@ public sealed class WorldRegion
 
         if (value.TryGetValue<double>(out var number) && double.IsFinite(number))
             return number;
+        if (value.TryGetValue<int>(out var integer))
+            return integer;
+        if (value.TryGetValue<long>(out var longInteger))
+            return longInteger;
+        if (value.TryGetValue<float>(out var single) && float.IsFinite(single))
+            return single;
+        if (value.TryGetValue<decimal>(out var decimalNumber))
+            return (double)decimalNumber;
 
         return null;
     }
