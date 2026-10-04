@@ -1,0 +1,460 @@
+{
+  "schemaVersion": 1,
+  "product": "urbe",
+  "kind": "surface-acceptance-protocol",
+  "execution": "human-device-or-installed-host",
+  "status": "not-executed",
+  "note": "UC-2 define critérios e evidência; execução pertence a UC-23/24/25/29. Resultado ausente não significa aprovação.",
+  "cases": [
+    {
+      "id": "surface-web-offline-reopen",
+      "surfaces": [
+        "web"
+      ],
+      "requirements": [
+        "REQ-007",
+        "REQ-061",
+        "REQ-062"
+      ],
+      "stages": [
+        "UC-23",
+        "UC-29"
+      ],
+      "preconditions": [
+        "PWA carregada ao menos uma vez",
+        "vault com nota identificável salvo"
+      ],
+      "steps": [
+        "recarregar online e confirmar o vault",
+        "desabilitar rede",
+        "fechar e reabrir a PWA",
+        "editar a nota e recarregar ainda offline"
+      ],
+      "expected": [
+        "a aplicação abre offline",
+        "o mesmo vault e a mesma nota permanecem",
+        "a edição persiste localmente",
+        "nenhum dado é substituído por tutorial ou vault vazio"
+      ],
+      "evidence": [
+        "vídeo ou sequência de screenshots",
+        "versão/build",
+        "browser e SO",
+        "identificador não sensível do vault antes/depois"
+      ]
+    },
+    {
+      "id": "surface-web-file-permission-cycle",
+      "surfaces": [
+        "web"
+      ],
+      "requirements": [
+        "REQ-007",
+        "REQ-028"
+      ],
+      "stages": [
+        "UC-23",
+        "UC-29"
+      ],
+      "preconditions": [
+        "browser com picker de diretório quando suportado",
+        "vault de teste em pasta externa"
+      ],
+      "steps": [
+        "abrir a pasta e conceder acesso",
+        "cancelar uma nova seleção sem trocar de vault",
+        "revogar a permissão no browser/SO",
+        "retornar ao Urbe e tentar acessar o vault"
+      ],
+      "expected": [
+        "cancelamento não troca nem apaga o vault",
+        "revogação é tratada como indisponibilidade, não como vault vazio",
+        "o app solicita nova autorização ou oferece caminho seguro",
+        "nenhum arquivo externo é escrito fora da pasta escolhida"
+      ],
+      "evidence": [
+        "browser/SO",
+        "captura do estado antes/depois",
+        "resultado de cancelamento e revogação"
+      ]
+    },
+    {
+      "id": "surface-web-update-preserves-data",
+      "surfaces": [
+        "web"
+      ],
+      "requirements": [
+        "REQ-007",
+        "REQ-061"
+      ],
+      "stages": [
+        "UC-23",
+        "UC-26",
+        "UC-29"
+      ],
+      "preconditions": [
+        "versão anterior instalada como PWA",
+        "vault local com alteração não trivial"
+      ],
+      "steps": [
+        "confirmar versão e conteúdo",
+        "publicar/instalar build de atualização do canal de teste",
+        "reabrir até o novo service worker assumir"
+      ],
+      "expected": [
+        "nova versão é carregada",
+        "vault e preferências permitidas permanecem",
+        "não existe reset silencioso de IndexedDB/storage"
+      ],
+      "evidence": [
+        "versão antes/depois",
+        "conteúdo sentinela antes/depois"
+      ]
+    },
+    {
+      "id": "surface-windows-install-open-vault",
+      "surfaces": [
+        "windows"
+      ],
+      "requirements": [
+        "REQ-007",
+        "REQ-069",
+        "REQ-076"
+      ],
+      "stages": [
+        "UC-24",
+        "UC-29"
+      ],
+      "preconditions": [
+        "Windows suportado limpo ou sandbox",
+        "instalador assinado/conforme canal alvo",
+        "vault fixture disponível"
+      ],
+      "steps": [
+        "instalar",
+        "abrir o aplicativo",
+        "selecionar/abrir o vault fixture",
+        "editar e salvar uma nota",
+        "fechar e reabrir"
+      ],
+      "expected": [
+        "instalação e abertura completam sem Hub",
+        "vault carrega sem conversão destrutiva",
+        "edição persiste após reinício",
+        "capabilities declaradas correspondem ao host"
+      ],
+      "evidence": [
+        "versão instalada",
+        "log de smoke",
+        "capturas da nota antes/depois"
+      ]
+    },
+    {
+      "id": "surface-windows-update-preserves-vault",
+      "surfaces": [
+        "windows"
+      ],
+      "requirements": [
+        "REQ-007",
+        "REQ-069"
+      ],
+      "stages": [
+        "UC-24",
+        "UC-26",
+        "UC-29"
+      ],
+      "preconditions": [
+        "versão anterior instalada",
+        "vault realista de teste com sentinela"
+      ],
+      "steps": [
+        "abrir e registrar versão/conteúdo",
+        "executar atualização pelo caminho previsto",
+        "reiniciar quando solicitado",
+        "abrir o mesmo vault"
+      ],
+      "expected": [
+        "identidade da instalação permanece válida",
+        "versão muda para a esperada",
+        "vault e sentinela permanecem",
+        "rollback/erro de update não apaga dados"
+      ],
+      "evidence": [
+        "versão antes/depois",
+        "resultado do updater",
+        "hash ou conteúdo sentinela"
+      ]
+    },
+    {
+      "id": "surface-windows-save-print-lifecycle",
+      "surfaces": [
+        "windows"
+      ],
+      "requirements": [
+        "REQ-055",
+        "REQ-062",
+        "REQ-076",
+        "REQ-079"
+      ],
+      "stages": [
+        "UC-24",
+        "UC-29"
+      ],
+      "preconditions": [
+        "app instalado",
+        "documento de teste aberto"
+      ],
+      "steps": [
+        "cancelar um Save As",
+        "salvar um arquivo binário",
+        "cancelar impressão/PDF quando o host permitir",
+        "gerar PDF",
+        "fechar e reabrir o app"
+      ],
+      "expected": [
+        "cancelamento não cria arquivo",
+        "bytes salvos são idênticos",
+        "impressão não executa script nem ganha acesso ao vault",
+        "reabertura restaura dados persistidos sem erro"
+      ],
+      "evidence": [
+        "hash do arquivo salvo",
+        "PDF gerado",
+        "captura do cancelamento",
+        "log de reabertura"
+      ]
+    },
+    {
+      "id": "surface-android-install-open-vault",
+      "surfaces": [
+        "android"
+      ],
+      "requirements": [
+        "REQ-007",
+        "REQ-056",
+        "REQ-069",
+        "REQ-076"
+      ],
+      "stages": [
+        "UC-25",
+        "UC-29"
+      ],
+      "preconditions": [
+        "aparelho Android real suportado",
+        "APK do canal alvo",
+        "vault fixture ou diretório de teste"
+      ],
+      "steps": [
+        "instalar sem Hub",
+        "abrir",
+        "conceder somente permissões necessárias",
+        "abrir/criar vault",
+        "editar e salvar nota",
+        "forçar fechamento e reabrir"
+      ],
+      "expected": [
+        "app abre no aparelho",
+        "vault persiste",
+        "backup do app não é oferecido para dados excluídos por política",
+        "capabilities declaradas correspondem ao host"
+      ],
+      "evidence": [
+        "modelo/Android SDK",
+        "versão APK",
+        "capturas antes/depois",
+        "estado de permissão"
+      ]
+    },
+    {
+      "id": "surface-android-storage-permission-cycle",
+      "surfaces": [
+        "android"
+      ],
+      "requirements": [
+        "REQ-056",
+        "REQ-076"
+      ],
+      "stages": [
+        "UC-25",
+        "UC-29"
+      ],
+      "preconditions": [
+        "aparelho Android real",
+        "vault de teste persistido"
+      ],
+      "steps": [
+        "negar a permissão solicitada",
+        "tentar operação que exige storage",
+        "conceder a permissão",
+        "repetir a operação",
+        "revogar a permissão nas configurações",
+        "retornar ao app"
+      ],
+      "expected": [
+        "negação/revogação não apagam nem recriam vault",
+        "estado de permissão é refletido no app",
+        "após concessão a operação funciona",
+        "nenhuma operação escapa do diretório autorizado"
+      ],
+      "evidence": [
+        "estado Android da permissão em cada etapa",
+        "resultado da mesma operação em deny/grant/revoke"
+      ]
+    },
+    {
+      "id": "surface-android-back-resume",
+      "surfaces": [
+        "android"
+      ],
+      "requirements": [
+        "REQ-062",
+        "REQ-076"
+      ],
+      "stages": [
+        "UC-25",
+        "UC-29"
+      ],
+      "preconditions": [
+        "aparelho Android real",
+        "app na cidade com uma sobreposição aberta"
+      ],
+      "steps": [
+        "pressionar Voltar com overlay aberto",
+        "pressionar Voltar novamente na cidade",
+        "retomar o app pelo launcher/recentes",
+        "editar nota",
+        "mandar app ao background e retornar"
+      ],
+      "expected": [
+        "primeiro Voltar fecha a camada superior",
+        "Voltar na cidade minimiza sem matar dados",
+        "retorno preserva estado persistido",
+        "pause/resume não duplica handlers nem perde edição salva"
+      ],
+      "evidence": [
+        "vídeo curto do fluxo",
+        "log sem exceções",
+        "conteúdo da nota após resume"
+      ]
+    },
+    {
+      "id": "surface-android-save-print-update",
+      "surfaces": [
+        "android"
+      ],
+      "requirements": [
+        "REQ-056",
+        "REQ-076",
+        "REQ-079"
+      ],
+      "stages": [
+        "UC-25",
+        "UC-26",
+        "UC-29"
+      ],
+      "preconditions": [
+        "aparelho Android real",
+        "build anterior instalado quando testar atualização"
+      ],
+      "steps": [
+        "salvar arquivo em destino permitido",
+        "imprimir/gerar compartilhamento PDF",
+        "acionar atualização pelo fluxo definido",
+        "instalar a atualização",
+        "reabrir o vault"
+      ],
+      "expected": [
+        "arquivo exportado tem bytes corretos",
+        "impressão não executa JavaScript do conteúdo",
+        "atualização preserva package identity/assinatura exigida",
+        "vault permanece intacto"
+      ],
+      "evidence": [
+        "hash do arquivo exportado",
+        "artefato PDF",
+        "versão antes/depois",
+        "conteúdo sentinela"
+      ]
+    },
+    {
+      "id": "surface-cross-zip-compatibility",
+      "surfaces": [
+        "web",
+        "windows",
+        "android"
+      ],
+      "requirements": [
+        "REQ-044",
+        "REQ-058",
+        "REQ-079"
+      ],
+      "stages": [
+        "UC-23",
+        "UC-24",
+        "UC-25",
+        "UC-29"
+      ],
+      "preconditions": [
+        "uma build candidata em cada superfície",
+        "vault fixture comum"
+      ],
+      "steps": [
+        "exportar o mesmo vault em cada superfície",
+        "validar manifesto/hashes",
+        "importar cada ZIP nas outras superfícies",
+        "tentar ZIP adulterado e ZIP de versão futura"
+      ],
+      "expected": [
+        "conteúdo e binários equivalentes após round-trip",
+        "chaves de IA nunca aparecem no export",
+        "adulteração é detectada antes de importar",
+        "formato futuro incompatível é recusado sem alteração parcial"
+      ],
+      "evidence": [
+        "hashes dos ZIPs/manifestos",
+        "matriz origem→destino",
+        "conteúdo sentinela após cada import"
+      ]
+    },
+    {
+      "id": "surface-cross-offline-standalone",
+      "surfaces": [
+        "web",
+        "windows",
+        "android"
+      ],
+      "requirements": [
+        "REQ-007",
+        "REQ-008"
+      ],
+      "stages": [
+        "UC-23",
+        "UC-24",
+        "UC-25",
+        "UC-29"
+      ],
+      "preconditions": [
+        "produto instalado/carregado em cada alvo",
+        "Hub ausente",
+        "rede desabilitável"
+      ],
+      "steps": [
+        "desabilitar rede",
+        "iniciar Urbe diretamente",
+        "abrir vault existente",
+        "editar/salvar",
+        "reabrir"
+      ],
+      "expected": [
+        "domínio essencial funciona sem Hub e sem rede",
+        "dados permanecem locais",
+        "falhas de recursos online são explícitas e não bloqueiam editor/vault"
+      ],
+      "evidence": [
+        "versão/superfície",
+        "captura do app iniciado sem Hub",
+        "conteúdo antes/depois"
+      ]
+    }
+  ]
+}
