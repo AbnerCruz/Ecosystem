@@ -18,6 +18,7 @@ internal sealed class EcosystemHostClient : IDisposable
     readonly AndroidInstallationKey _key = new(KeyAlias);
     readonly AndroidBindingTrustPolicy? _trustPolicy;
     readonly LifecycleToken _lifecycleToken = new();
+    readonly SemaphoreSlim _operation = new(1, 1);
     HostServiceConnection? _connection;
     IBinder? _binder;
     ProviderCandidate? _candidate;
@@ -31,10 +32,15 @@ internal sealed class EcosystemHostClient : IDisposable
         _trustPolicy = AndroidBindingTrustPolicy.Load(_context);
     }
 
-    internal async Task<HostTestResult> ConnectAndInspectAsync(string text, CancellationToken ct)
+    internal async Task<HostTestResult> ConnectAndInspectAsync(
+        string text,
+        CancellationToken ct,
+        TimeSpan? holdOpen = null,
+        Action? onSessionOpened = null)
     {
         if (_disposed) return new(false, "Cliente encerrado.");
         if (text.Length > 100_000) return new(false, "Texto excede o limite de text.inspect.");
+        if (!await _operation.WaitAsync(0, ct)) return new(false, "Já existe uma operação de conexão em andamento.");
 
         try
         {
@@ -115,6 +121,15 @@ internal sealed class EcosystemHostClient : IDisposable
                 x.Id == "text.inspect" && x.Version == "1.0.0" && x.Operation == "inspect") != true)
                 return new(false, "Capability text.inspect@1.0.0 não está disponível neste Context.");
 
+            if (holdOpen is { } hold)
+            {
+                if (hold <= TimeSpan.Zero || hold > TimeSpan.FromMinutes(2))
+                    return new(false, "Janela de observabilidade inválida.");
+                onSessionOpened?.Invoke();
+                await Task.Delay(hold, ct);
+                return new(true, $"Sessão autenticada permaneceu aberta por {Math.Round(hold.TotalSeconds)} s.");
+            }
+
             var input = JsonSerializer.Serialize(new { text });
             var requestId = Convert.ToHexString(RandomNumberGenerator.GetBytes(12)).ToLowerInvariant();
             var invoke = Rpc(EcosystemIpcProtocol.Invoke, Signed(new IpcRequest(
@@ -134,6 +149,7 @@ internal sealed class EcosystemHostClient : IDisposable
         {
             TryClose();
             Unbind();
+            _operation.Release();
         }
     }
 
