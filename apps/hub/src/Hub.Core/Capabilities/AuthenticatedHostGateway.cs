@@ -55,6 +55,8 @@ public sealed class AuthenticatedHostGateway : IDisposable
     public static readonly TimeSpan MaximumDeadline = TimeSpan.FromSeconds(30);
     public static readonly TimeSpan SessionIdleTimeout = TimeSpan.FromMinutes(2);
 
+    public event Action<string>? SessionClosed;
+
     public AuthenticatedHostGateway(LocalCapabilityHost host, TimeProvider? clock = null)
     {
         _host = host ?? throw new ArgumentNullException(nameof(host));
@@ -177,6 +179,7 @@ public sealed class AuthenticatedHostGateway : IDisposable
         if (!_sessions.TryGetValue(sessionId, out var entry) || entry.Peer != peer) return false;
         if (!_sessions.TryRemove(sessionId, out entry)) return false;
         entry.Dispose();
+        NotifySessionClosed(sessionId);
         return true;
     }
 
@@ -189,6 +192,7 @@ public sealed class AuthenticatedHostGateway : IDisposable
         {
             if (pair.Value.Peer != peer || !_sessions.TryRemove(pair.Key, out var entry)) continue;
             entry.Dispose();
+            NotifySessionClosed(pair.Key);
             closed++;
         }
         return closed;
@@ -225,7 +229,10 @@ public sealed class AuthenticatedHostGateway : IDisposable
             if (_sessions.TryGetValue(pair.Key, out var current) &&
                 ReferenceEquals(current, pair.Value) &&
                 _sessions.TryRemove(pair.Key, out var removed))
+            {
                 removed.Dispose();
+                NotifySessionClosed(pair.Key);
+            }
         }
     }
 
@@ -272,12 +279,22 @@ public sealed class AuthenticatedHostGateway : IDisposable
         deadlineCancellation.Dispose();
     }
 
+    private void NotifySessionClosed(string sessionId)
+    {
+        try { SessionClosed?.Invoke(sessionId); }
+        catch (Exception) { /* observability hook cannot weaken lifecycle enforcement */ }
+    }
+
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
         foreach (var pair in _sessions.ToArray())
-            if (_sessions.TryRemove(pair.Key, out var entry)) entry.Dispose();
+        {
+            if (!_sessions.TryRemove(pair.Key, out var entry)) continue;
+            entry.Dispose();
+            NotifySessionClosed(pair.Key);
+        }
     }
 }
 
