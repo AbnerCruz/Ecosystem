@@ -1279,7 +1279,7 @@
     },
     {
       "id": "DEC-0036",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": true,
       "title": "Transição das instalações e canais do Urbe JS para o cliente C#",
@@ -1316,7 +1316,11 @@
         "apps/urbe/docs/csharp/acceptance/surface-protocol.json"
       ],
       "raisedBy": "chatgpt",
-      "raisedAt": "2026-10-04"
+      "raisedAt": "2026-10-04",
+      "decision": "Alternativa C — C — Reinstalação deliberada com backup/export/import obrigatório (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/190).",
+      "decidedAt": "2026-10-04",
+      "record": "docs/governance/responses/DEC-0036.md",
+      "consequencesApplied": false
     }
   ]
 }
