@@ -118,7 +118,7 @@ internal sealed class EcosystemPairingStore
 {
     const int PendingLimit = 4;
     static readonly TimeSpan PendingLifetime = TimeSpan.FromMinutes(2);
-    readonly object _sync = new();
+    static readonly object Sync = new();
     readonly string _path;
     readonly AndroidInstallationKey _providerKey;
 
@@ -159,7 +159,7 @@ internal sealed class EcosystemPairingStore
         var keyHash = Convert.ToHexString(SHA256.HashData(publicBytes)).ToLowerInvariant();
         var now = DateTimeOffset.UtcNow;
 
-        lock (_sync)
+        lock (Sync)
         {
             var state = Clean(Load(), now);
             var approved = state.Approved.SingleOrDefault(x =>
@@ -187,7 +187,7 @@ internal sealed class EcosystemPairingStore
 
     internal PendingPeer[] Pending()
     {
-        lock (_sync)
+        lock (Sync)
         {
             var state = Clean(Load(), DateTimeOffset.UtcNow);
             Save(state);
@@ -197,7 +197,7 @@ internal sealed class EcosystemPairingStore
 
     internal bool Approve(string pairId)
     {
-        lock (_sync)
+        lock (Sync)
         {
             var state = Clean(Load(), DateTimeOffset.UtcNow);
             var pending = state.Pending.SingleOrDefault(x => x.PairId == pairId);
@@ -217,7 +217,7 @@ internal sealed class EcosystemPairingStore
 
     internal bool Reject(string pairId)
     {
-        lock (_sync)
+        lock (Sync)
         {
             var state = Clean(Load(), DateTimeOffset.UtcNow);
             var next = state.Pending.Where(x => x.PairId != pairId).ToArray();
@@ -230,7 +230,7 @@ internal sealed class EcosystemPairingStore
     internal ApprovedPeer? Approved(AndroidPeerIdentity identity, string? pairId)
     {
         if (!EcosystemIpcProtocol.ValidId(pairId)) return null;
-        lock (_sync)
+        lock (Sync)
         {
             var state = Clean(Load(), DateTimeOffset.UtcNow);
             Save(state);
@@ -241,7 +241,7 @@ internal sealed class EcosystemPairingStore
 
     internal ApprovedPeer[] Approved()
     {
-        lock (_sync)
+        lock (Sync)
         {
             var state = Clean(Load(), DateTimeOffset.UtcNow);
             Save(state);
@@ -251,7 +251,7 @@ internal sealed class EcosystemPairingStore
 
     internal bool Revoke(string pairId)
     {
-        lock (_sync)
+        lock (Sync)
         {
             var state = Clean(Load(), DateTimeOffset.UtcNow);
             var next = state.Approved.Where(x => x.PairId != pairId).ToArray();
