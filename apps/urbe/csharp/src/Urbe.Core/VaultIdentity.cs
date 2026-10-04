@@ -20,19 +20,16 @@ public static class VaultIdentity
     public const int Version = 1;
     public const string Path = ".urbe/identity.json";
 
-    private static readonly Regex TrailingSpaces = new(@"[ 	]+$", RegexOptions.Multiline | RegexOptions.CultureInvariant);
-    private static readonly Regex TrailingNewlines = new(@"
-+$", RegexOptions.CultureInvariant);
+    private static readonly Regex TrailingSpaces = new(@"[ \\t]+$", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+    private static readonly Regex TrailingNewlines = new(@"\\n+$", RegexOptions.CultureInvariant);
 
     public static string Normalize(string? text)
     {
-        var value = (text ?? string.Empty).Replace("
-", "
-", StringComparison.Ordinal)
-            .Replace("", "
-", StringComparison.Ordinal);
+        var value = (text ?? string.Empty).Replace("\\r\\n", "\\n", StringComparison.Ordinal)
+            .Replace("\\r", "\\n", StringComparison.Ordinal);
         value = TrailingSpaces.Replace(value, string.Empty);
         return TrailingNewlines.Replace(value, string.Empty);
+    }
     }
 
     public static string Fingerprint(string? text)
