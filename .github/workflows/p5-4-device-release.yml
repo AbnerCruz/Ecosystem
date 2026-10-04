@@ -14,13 +14,13 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar artifacts exatos do candidato v2
+      - name: Baixar artifacts exatos do candidato v3
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/11312763467/zip" > hub.zip
-          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/11313835032/zip" > lunet.zip
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/11314006888/zip" > hub.zip
+          gh api "/repos/${GITHUB_REPOSITORY}/actions/artifacts/11314061982/zip" > lunet.zip
           mkdir hub lunet out
           unzip -q hub.zip -d hub
           unzip -q lunet.zip -d lunet
@@ -30,53 +30,53 @@ jobs:
           test -n "$hub_apk"
           test -n "$lunet_apk"
 
-          cp "$hub_apk" out/Ecosystem-Hub-P5-4-v2-cca0cd61.apk
-          cp "$lunet_apk" out/Lunet-P5-4-v2-cca0cd61-arm64.apk
+          cp "$hub_apk" out/Ecosystem-Hub-P5-4-v3-2e397ce3.apk
+          cp "$lunet_apk" out/Lunet-P5-4-v3-2e397ce3-arm64.apk
 
-          echo "6d39d6bcdc283c84fc7bc6ea0b6fc83805a0845eefa915740c86422a7fcf7151  out/Ecosystem-Hub-P5-4-v2-cca0cd61.apk" | sha256sum -c -
-          echo "f8d87d05e4e88099282498faa4212cbc0db9ed9272152ed593492cbf0efd06ad  out/Lunet-P5-4-v2-cca0cd61-arm64.apk" | sha256sum -c -
+          echo "84f249470d3ebf89449d9819f0d26a7bcc3648518b9bf787327f4b5937570c2b  out/Ecosystem-Hub-P5-4-v3-2e397ce3.apk" | sha256sum -c -
+          echo "19ff0cd491ae3f5e383c2938f8e2a4b714851481a070b255aa5c96662d1ac8e0  out/Lunet-P5-4-v3-2e397ce3-arm64.apk" | sha256sum -c -
           sha256sum out/*.apk > out/SHA256SUMS.txt
 
-      - name: Publicar pre-release DEVICE v2
+      - name: Publicar pre-release DEVICE v3
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: p5-4-device-v2-cca0cd61
-          TARGET: cca0cd61d3776ae0dc2e4085a3e4488524937939
+          TAG: p5-4-device-v3-2e397ce3
+          TARGET: 2e397ce33fb2df1241770a599c2ad1aefe13f678
         run: |
           set -euo pipefail
 
           cat > notes.md <<'EOF'
-          # P5-4 DEVICE v2 — Hub + Lunet
+          # P5-4 DEVICE v3 — Hub + Lunet
 
-          Candidato corrigido após a falha DEVICE do candidato `b001eafd`.
+          Candidato final para os gates físicos C/D após integração do follow-up de UX no PR #224.
 
-          Commit testado: `cca0cd61d3776ae0dc2e4085a3e4488524937939` (PR #222).
+          Código do artifact: `2e397ce33fb2df1241770a599c2ad1aefe13f678`.
+          O mesmo estado foi integrado na `main` pelo commit combinado `48782858d75e75ec71337345e054a7b38235aa7d`.
 
-          Correções principais:
-          - Android Keystore usa `KeyStore.PrivateKeyEntry` para assinatura;
-          - Lunet executa self-test ECDSA antes da sessão;
-          - falhas agora indicam a etapa sanitizada (`challenge.sign`, `challenge.rpc`, `session.open.*`, `discover`, `invoke`);
-          - nenhuma stack trace, segredo ou conteúdo privado é exposto.
+          Mudança desde v2:
+          - Hub separa **Instalações pareadas** de **Sessões IPC abertas agora**;
+          - zero sessões em idle é explicado como normal;
+          - Lunet usa o mesmo termo no teste de lifecycle;
+          - nenhum byte do protocolo, autenticação, grants ou Keystore foi alterado.
 
-          Evidência CI:
-          - Hub Core + Hub APK: verdes;
-          - Lunet: 321/321 + APK verde;
-          - consistency: checks + self-test + simulação do integrador verdes;
-          - Lunet versionCode: 1000083.
+          Evidência:
+          - Hub CI run 114: Core + APK verdes, versionCode 114;
+          - Lunet CI: 321/321;
+          - Lunet release PR run 87: APK verde, versionCode 1000087;
+          - consistency completo verde no PR #224;
+          - integrador combinou e integrou o estado como rotina.
 
-          IMPORTANTE: instale por cima dos apps atuais. Não revogue, não use “Esquecer conexão”, não limpe dados e não desinstale antes do primeiro reteste; queremos preservar o pareamento que falhou para validar a correção sobre o mesmo estado.
-
-          O candidato anterior `p5-4-device-b001eafd` está superseded e não deve mais ser usado.
+          Instale ambos por cima dos candidatos atuais. Não limpe dados nem desinstale: o objetivo é preservar o pareamento e testar revogação/rotação e lifecycle.
           EOF
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" out/* --clobber
             gh release edit "$TAG" --notes-file notes.md
           else
-            gh release create "$TAG"               out/Ecosystem-Hub-P5-4-v2-cca0cd61.apk               out/Lunet-P5-4-v2-cca0cd61-arm64.apk               out/SHA256SUMS.txt               --target "$TARGET"               --prerelease               --latest=false               --title "P5-4 DEVICE v2 — Hub + Lunet cca0cd61"               --notes-file notes.md
+            gh release create "$TAG"               out/Ecosystem-Hub-P5-4-v3-2e397ce3.apk               out/Lunet-P5-4-v3-2e397ce3-arm64.apk               out/SHA256SUMS.txt               --target "$TARGET"               --prerelease               --latest=false               --title "P5-4 DEVICE v3 — Hub + Lunet 2e397ce3"               --notes-file notes.md
           fi
 
-          if gh release view p5-4-device-b001eafd >/dev/null 2>&1; then
-            gh release edit p5-4-device-b001eafd               --notes "SUPERSEDED — NÃO USAR PARA O RETESTE. O candidato b001eafd falhou no DEVICE após o pareamento. Use a pre-release p5-4-device-v2-cca0cd61."
+          if gh release view p5-4-device-v2-cca0cd61 >/dev/null 2>&1; then
+            gh release edit p5-4-device-v2-cca0cd61               --notes "SUPERSEDED PARA O GATE C/D — use p5-4-device-v3-2e397ce3. O v2 provou pareamento + text.inspect; o v3 corrige a apresentação de pareamento versus sessão sem mudar o protocolo."
           fi
