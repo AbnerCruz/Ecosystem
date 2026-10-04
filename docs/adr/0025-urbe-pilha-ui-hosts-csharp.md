@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — decisão pendente **DEC-0035**. Este ADR não autoriza código de produto antes da escolha do proprietário e do gate G-C0.
+Aceito — **DEC-0035-A** escolhida pelo proprietário em 2026-10-04. O código de produto continua condicionado ao gate G-C0.
 
 ## Contexto
 
@@ -42,9 +42,9 @@ Escolher uma pilha que minimize duplicação entre Web/PWA, Windows e Android se
 
 ## Decisão
 
-Pendente de DEC-0035.
+**DEC-0035-A aceita:** Blazor WebAssembly PWA no Web + .NET MAUI Blazor Hybrid em Windows/Android, com UI compartilhada em Razor Class Library.
 
-A recomendação técnica é **A**. O Urbe é mais parecido com um ambiente de conhecimento/editor que também possui um mundo 2D do que com um jogo que por acaso edita texto. Preservar semântica web para o editor reduz o risco de IME, seleção, teclado móvel e acessibilidade; compartilhar os mesmos Razor Components entre Web e hosts nativos evita a duplicação da opção D. O mundo 2D continua podendo usar uma superfície de desenho encapsulada pelo componente, com implementação validada por benchmark e E2E antes de G-C3.
+A alternativa **A** foi escolhida pelo proprietário. O Urbe é mais parecido com um ambiente de conhecimento/editor que também possui um mundo 2D do que com um jogo que por acaso edita texto. Preservar semântica web para o editor reduz o risco de IME, seleção, teclado móvel e acessibilidade; compartilhar os mesmos Razor Components entre Web e hosts nativos evita a duplicação da opção D. O mundo 2D continua podendo usar uma superfície de desenho encapsulada pelo componente, com implementação validada por benchmark e E2E antes de G-C3.
 
 Se A for escolhida, a fronteira proposta é:
 
@@ -72,7 +72,7 @@ Isto é desenho de responsabilidade, não autorização para extrair componentes
 
 ## Alternativas rejeitadas
 
-Nenhuma até a decisão do proprietário. Depois da DEC-0035, esta seção será atualizada preservando as opções históricas.
+Rejeitadas por DEC-0035: B (Avalonia 12), C (Uno Platform) e D (UI separada por superfície). Permanecem documentadas acima como histórico de tradeoffs.
 
 ## Referências
 
