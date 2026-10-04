@@ -10,10 +10,10 @@
   },
   "task_id": "UC-10",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "feat/urbe-uc10-vault-writer",
   "base_commit": "d5630340e445377697c7b51edbe0e70522950512",
-  "commit": "83ed0c77c5709e3ac1e02e8aedf328b2b0d66fe7",
+  "commit": "590c9328e0bcc6ae690bbfd668863fcfd036f8a9",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/209",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/VaultIdentity.cs",
@@ -37,7 +37,8 @@
     "Operações multi-documento usam journal v2 transitório antes das mutações e o removem somente ao final.",
     "VaultIdentity porta normalização, fingerprint FNV e seen do identity.js sem inserir metadados nas notas.",
     "VaultGarbageCollector porta dry-run, retenção, proteção de vivos/lixeira, limpeza de referências e maintenance usando o mesmo writer.",
-    "RestoreBackup verifica hash quando disponível e restaura os arquivos declarados pelo manifesto."
+    "RestoreBackup verifica hash quando disponível e restaura os arquivos declarados pelo manifesto.",
+    "PR #209 autorizado canonicamente pelo proprietário e integrado em 590c9328; G-C1 aprovado."
   ],
   "verification": [
     {
@@ -63,13 +64,9 @@
     "Nenhum adapter de filesystem/Web/MAUI aplica ainda o plano; integração a hosts pertence às etapas posteriores.",
     "UC-11 export/import ZIP não faz parte desta mudança."
   ],
-  "blockers": [
-    "Integração crítica do PR #209 exige autorização canônica do proprietário."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Proprietário autoriza a integração crítica do PR #209 pelo mecanismo canônico.",
-    "Integrador reconfirma estado combinado e integra.",
-    "Após integração, encerrar Issue #208, aprovar G-C1 e iniciar UC-11."
+    "Iniciar UC-11: exportar/importar ZIP e manifesto em Core puro, sem antecipar integração de hosts."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -104,7 +101,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "UC-10 permanece working até CI e integração crítica."
+      "evidence": "UC-10 concluída após CI verde, autorização canônica e integração pelo integrador."
     },
     {
       "id": "NN-023",
