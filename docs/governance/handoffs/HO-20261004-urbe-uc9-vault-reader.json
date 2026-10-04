@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc9-vault-reader",
+  "category": "RESULT",
+  "timestamp": "2026-10-04T15:20:53Z",
+  "agent": {
+    "id": "codex",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-9",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc9-vault-reader",
+  "base_commit": "d2e0f01916f4570fad1e56e7efc6d609a3427f0f",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VaultReader.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultReaderTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc9-vault-reader.json"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "UC-9 implementa a autoridade de leitura de dados persistidos do usuário; integração exige autorização canônica conforme integration-policy."
+  },
+  "work_completed": [
+    "Leitor puro no Urbe.Core recebe VaultFile em memória e não acessa filesystem, hosts, rede ou APIs de escrita.",
+    "Compatibilidade de leitura para mapa legado/1.x, vault.json v2, sidecars v1/v2, identity v1, páginas/tema e documentos textuais.",
+    "Precedência v2 sobre v1; arquivo v2 futuro ou corrupto é preservado e não provoca fallback destrutivo.",
+    "Journal v1/v2 suportado projeta o estado efetivo recuperável sem remover nem alterar os bytes físicos; journal futuro/corrupto é preservado e ignorado.",
+    "Proteção forward global para vault futuro e por artefato para mapa, sidecars, tema, página e identity.",
+    "Testes cobrem as 12 fixtures canônicas e negativos de path traversal, duplicatas normalizadas, corrupção, precedência e recuperação."
+  ],
+  "verification": [
+    {
+      "check": "Urbe.Core.Tests / 12 fixtures + negativos UC-9",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Suite adicionada; esta sessão não possui SDK .NET local. O workflow urbe-checks executará dotnet build/test no PR e no estado combinado."
+    },
+    {
+      "check": "Pureza do leitor",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Testes comparam SHA-256 de todos os arquivos físicos antes/depois da leitura; CI pendente."
+    }
+  ],
+  "known_issues": [
+    "UC-9 não escreve, migra, cria backup, remove journal nem conecta o leitor aos hosts; isso pertence a UC-10 e etapas posteriores.",
+    "Gate G-C1 continua aberto porque escrita e migração ainda não existem no cliente C#."
+  ],
+  "blockers": [
+    "Integração crítica depende de CI verde e autorização canônica do proprietário."
+  ],
+  "next_actions": [
+    "Abrir PR da UC-9 e observar o CI do estado combinado.",
+    "Corrigir qualquer falha sem ampliar o escopo para escrita.",
+    "Após integração autorizada, iniciar UC-10."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece dentro do Urbe.Core e usa apenas BCL."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Leitor é independente de Hub, MAUI, Blazor e hosts."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #199, branch própria e handoff específico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana ou física é alegada; escopo é biblioteca .NET sem UI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-9 permanece em review até CI e integração crítica."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma abstração compartilhada foi extraída sem necessidade comprovada."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Core continua utilizável sem plano de controle ou outro Product."
+    }
+  ]
+}
