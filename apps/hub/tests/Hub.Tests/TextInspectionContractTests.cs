@@ -13,29 +13,30 @@ public class TextInspectionContractTests
         return directory?.FullName ?? throw new InvalidOperationException("Raiz do Ecosystem não encontrada.");
     }
 
-    private static JsonElement DraftVersion(JsonDocument document)
+    private static JsonElement StableVersion(JsonDocument document)
         => document.RootElement.GetProperty("versions").EnumerateArray()
             .Single(version => version.GetProperty("version").GetString() == "1.0.0");
 
     [Fact]
-    public void LocalDefinitionMatchesDraftContract()
+    public void LocalDefinitionMatchesStableContract()
     {
         using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(
             RepositoryRoot(), "docs", "contracts", "capabilities", "text.inspect.json")));
         var root = document.RootElement;
-        var version = DraftVersion(document);
+        var version = StableVersion(document);
         var scope = new LocalContext([new("ecosystem", "local")]);
         var definition = TextInspectionTool.Definition(scope);
 
         Assert.Equal(TextInspectionTool.CapabilityId, root.GetProperty("capability").GetString());
         Assert.Equal("semver", root.GetProperty("compatibility").GetString());
         Assert.Equal(definition.Version.ToString(3), version.GetProperty("version").GetString());
-        Assert.Equal("draft", version.GetProperty("status").GetString());
+        Assert.Equal("stable", version.GetProperty("status").GetString());
         Assert.Equal(definition.Lifecycle, version.GetProperty("lifecycle").GetString());
 
         var permissions = version.GetProperty("requiredPermissions").EnumerateArray()
             .Select(value => value.GetString()!).Order(StringComparer.Ordinal).ToArray();
-        Assert.Equal(definition.RequiredPermissions.Order(StringComparer.Ordinal), permissions);
+        Assert.Empty(permissions);
+        Assert.Empty(definition.RequiredPermissions);
 
         var input = Assert.Single(version.GetProperty("inputs").EnumerateArray());
         Assert.Equal("text", input.GetProperty("name").GetString());
@@ -53,11 +54,11 @@ public class TextInspectionContractTests
 
         var errors = version.GetProperty("errors").EnumerateArray()
             .Select(error => error.GetProperty("code").GetString()!).Order(StringComparer.Ordinal).ToArray();
-        Assert.Equal(new[] { "EXECUTION_FAILED", "INVALID_INPUT", "INVALID_OUTPUT" }, errors);
+        Assert.Equal(new[] { "EXECUTION_FAILED", "INVALID_INPUT" }, errors);
     }
 
     [Fact]
-    public async Task RuntimeResultSatisfiesDraftOutputShape()
+    public async Task RuntimeResultSatisfiesStableOutputShape()
     {
         var context = new LocalContext([new("ecosystem", "local"), new("product", "hub")]);
         var definition = TextInspectionTool.Definition(new LocalContext([new("ecosystem", "local")]));
