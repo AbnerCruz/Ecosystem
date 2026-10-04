@@ -368,7 +368,7 @@ internal sealed class AndroidInstallationKey
     {
         using var store = Store();
         var key = store.GetKey(_alias, null) as IPrivateKey ?? throw new InvalidOperationException();
-        using var signature = Signature.GetInstance("SHA256withECDSA") ?? throw new InvalidOperationException();
+        using var signature = Java.Security.Signature.GetInstance("SHA256withECDSA") ?? throw new InvalidOperationException();
         signature.InitSign(key);
         signature.Update(data);
         return Convert.ToBase64String(signature.Sign()!);
@@ -385,7 +385,7 @@ internal sealed class AndroidInstallationKey
             using var spec = new X509EncodedKeySpec(keyBytes);
             using var factory = KeyFactory.GetInstance(KeyProperties.KeyAlgorithmEc) ?? throw new InvalidOperationException();
             using var key = factory.GeneratePublic(spec);
-            using var signature = Signature.GetInstance("SHA256withECDSA") ?? throw new InvalidOperationException();
+            using var signature = Java.Security.Signature.GetInstance("SHA256withECDSA") ?? throw new InvalidOperationException();
             signature.InitVerify(key);
             signature.Update(data);
             return signature.Verify(signatureBytes);
