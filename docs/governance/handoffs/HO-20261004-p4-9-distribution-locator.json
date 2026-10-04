@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p4-9-distribution-locator",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T08:55:00Z",
+  "agent": {
+    "id": "chatgpt-p4-9-distribution-locator",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-9",
+  "component": "ecosystem",
+  "state": "verifying",
+  "branch": "chatgpt/p4-9-distribution-locator",
+  "base_commit": "dcb5e056730c67e8931725e8dc66e1e63a70a18a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/contracts/schemas/distribution-profile.schema.json",
+    "docs/distribution/current.profile.json",
+    "tests/consistency/Check.cs",
+    "docs/contracts/README.md",
+    "docs/distribution/direct-releases.md",
+    "docs/architecture/distribution.md",
+    "docs/governance/handoffs/HO-20261004-p4-9-distribution-locator.json"
+  ],
+  "work_completed": [
+    "Identificado o bloqueio canônico do corte P4-9: source.repository deve continuar apontando para AbnerCruz/Urbe e publicUrl deve continuar apontando para a PWA antiga, portanto nenhum dos dois representa corretamente releases diretas no monorepo.",
+    "Distribution Profile passa a admitir locationFrom=ecosystem.repository, derivando a localização de ecosystem.repository sem copiar URL e sem alterar os eixos congelados de distribuição.",
+    "CHK-REGISTRY resolve ecosystem.repository tanto em perfis current quanto target e possui self-test que prova falha quando a autoridade do repositório do Ecosystem está ausente.",
+    "O perfil current passa a usar ecosystem.repository somente nos canais já reais do Lunet2D e Hub; Urbe permanece no canal legado até existir release urbe-v* publicada e validada.",
+    "Documentação registra que o mesmo locator será usado no corte final do Urbe após publicação/DEVICE, removendo o bloqueio de modelagem sem fabricar um canal ainda inexistente."
+  ],
+  "verification": [
+    {
+      "check": "Consistency + schema + CHK-REGISTRY",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR; deve validar o schema aditivo, os perfis current/target e o novo self-test."
+    },
+    {
+      "check": "DEVICE deste slice de contrato",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Este slice só habilita representação canônica do canal e não publica APK, não muda updater em runtime nem altera dados do usuário."
+    }
+  ],
+  "known_issues": [
+    "P4-9 continua aberto: a versão-ponte v1.8.3-beta ainda não foi publicada no repositório legado e ainda não existe release urbe-v* no Ecosystem.",
+    "Os secrets da chave Android histórica não podem ser lidos pelo agente; o primeiro release direto deve falhar fechado se a mesma chave não estiver configurada.",
+    "A validação DEVICE de atualização por cima e preservação do vault continua obrigatória após existirem as releases assinadas.",
+    "O workflow sync-from-ecosystem do repositório legado é o mecanismo canônico do espelho; este slice não escreve manualmente no espelho nem cria tags fora do fluxo de release."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar este slice crítico após CI verde e autorização do proprietário pelo mecanismo canônico.",
+    "Depois, sincronizar apps/urbe 1.8.3-beta ao repositório legado pelo workflow existente e publicar v1.8.3-beta com a chave histórica.",
+    "Publicar uma versão direta superior urbe-v* no Ecosystem com a mesma chave e conferir assinatura/package/versionCode.",
+    "Executar DEVICE de atualização e preservação do vault; somente então trocar o canal primário do Urbe no current.profile para ecosystem.repository, manter o legado como recuperação e fechar P4-9/Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
+    "docs/contracts/schemas/distribution-profile.schema.json",
+    "docs/distribution/current.profile.json",
+    "docs/distribution/direct-releases.md",
+    "docs/architecture/distribution.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O perfil não copia URL; ecosystem.repository permanece a única autoridade para o repositório do monorepo."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum canal do Product depende do Hub; ecosystem.repository identifica o repositório, não o aplicativo Hub."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A mudança deriva de DEC-0031/ADR-0019 já persistidos e fica registrada neste handoff."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Schemas, ADRs de distribuição, current profile e checker foram consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança de contrato/checker é explícita, isolada e passa pelo integrador crítico; nenhum corte de canal é declarado sem evidência."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Tags prefixadas por Product continuam separando lifecycles no mesmo repositório."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma publicação ou DEVICE é inferida a partir de CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P4-9 e o gate da Fase 4 continuam abertos até release e validação reais."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Urbe continua distribuível standalone e sua PWA/repositório legado são preservados durante a transição."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution",
+      "control-plane"
+    ],
+    "reason": "O slice estende o contrato de localização de canais de distribuição e atualiza o checker canônico que valida esse contrato; embora aditivo, ambos são superfícies críticas pela política de integração."
+  },
+  "cost": null
+}
