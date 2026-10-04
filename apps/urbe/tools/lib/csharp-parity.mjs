@@ -124,6 +124,22 @@ export function makeCorpus() {
       input: { html: g.html, bodyEditor: g.bodyEditor }, expected: { markdown: g.md } })),
     ...makeVaultCases(), ...makeRestoreCases(), ...makeCrashCases(), ...makeStorageCases(), ...makeLegacyIdbCases(), ...makeDomainCases(), ...makeNativeCases(), ...makeUpdateCases(), ...makeUiCases(), ...makeBrowserVaultCases(), ...makeBrowserLegacyCases(), ...makeBrowserStorageCases(), ...makeBrowserWorldCases(), ...makeBrowserZipCases()] };
 }
+export function validateSurfaceProtocol(protocol) {
+  if (protocol.schemaVersion !== 1 || protocol.product !== 'urbe' || protocol.kind !== 'surface-acceptance-protocol' || protocol.execution !== 'human-device-or-installed-host' || protocol.status !== 'not-executed' || !Array.isArray(protocol.cases) || !protocol.cases.length)
+    throw new Error('protocolo físico inválido');
+  const ids=new Set(),surfaces=new Set(),allowed=new Set(['web','windows','android']);
+  for(const c of protocol.cases){
+    if(typeof c.id!=='string'||!/^surface-(web|windows|android|cross)-[a-z0-9-]+$/.test(c.id)||ids.has(c.id))throw new Error('ID físico inválido/duplicado');
+    ids.add(c.id);
+    if('result' in c||'passed' in c||'conclusion' in c)throw new Error('UC-2 não pode fabricar resultado físico');
+    if(!Array.isArray(c.surfaces)||!c.surfaces.length||c.surfaces.some(s=>!allowed.has(s)))throw new Error('superfície física inválida');
+    c.surfaces.forEach(s=>surfaces.add(s));
+    if(!Array.isArray(c.requirements)||!c.requirements.length||c.requirements.some(r=>!/^REQ-\d{3}$/.test(r)))throw new Error('REQ físico inválido');
+    if(!Array.isArray(c.stages)||!c.stages.length||c.stages.some(s=>!/^UC-\d+$/.test(s)))throw new Error('fase física inválida');
+    for(const field of ['preconditions','steps','expected','evidence'])if(!Array.isArray(c[field])||!c[field].length||c[field].some(v=>typeof v!=='string'||!v.trim()))throw new Error('passos/evidência física inválidos');
+  }
+  if([...allowed].some(s=>!surfaces.has(s)))throw new Error('protocolo não cobre todas as superfícies');
+}
 export function validateCorpus(corpus) {
   if (corpus.schemaVersion !== 1 || corpus.product !== 'urbe') throw new Error('corpus inválido');
   const canonical = makeCorpus();
