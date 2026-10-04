@@ -22,6 +22,7 @@ public sealed partial class MainActivity : Activity
     ScreenRenderer? _renderer;
     HubSnapshot? _snapshot;
     ReleaseNotesDialogs? _releaseNotes;
+    LocalToolsDialog? _tools;
     Button? _refresh;
     TextView? _status;
     CancellationTokenSource? _load;
@@ -54,6 +55,10 @@ public sealed partial class MainActivity : Activity
         root.AddView(_status);
 
         var content = new LinearLayout(this) { Orientation = Orientation.Vertical };
+        _tools = new LocalToolsDialog(this);
+        var tools = new Button(this) { Text = "Analisar texto" };
+        tools.Click += (_, _) => _tools.Show();
+        content.AddView(tools);
         AddDownloads(content);
         var productsContent = new LinearLayout(this) { Orientation = Orientation.Vertical };
         content.AddView(productsContent);
@@ -80,6 +85,7 @@ public sealed partial class MainActivity : Activity
         _prepareInstall?.Cancel();
         _installConfirmation?.Dismiss();
         _releaseNotes?.Dismiss();
+        _tools?.Dismiss();
         _destroyed = true;
         _load?.Cancel();
         base.OnDestroy();
@@ -96,6 +102,7 @@ public sealed partial class MainActivity : Activity
     protected override void OnStop()
     {
         UnobserveDownloads();
+        _tools?.Dismiss();
         base.OnStop();
     }
 
