@@ -109,6 +109,32 @@ public sealed class WorldStableIdsTests
         Assert.Equal("ast_1n5z61x", id);
     }
 
+    [Theory]
+    [InlineData("false")]
+    [InlineData("0")]
+    [InlineData("\"\"")]
+    public void FalsyFilesFallsBackToAttachmentsLikeJavascript(string filesJson)
+    {
+        var map = JsonNode.Parse(
+            $"""
+            {
+              "construcoes":[
+                {
+                  "caminho":"Pasta",
+                  "name":"fallback.png",
+                  "files":{{filesJson}},
+                  "anexos":[{"relPath":"Pasta/logo.png"}]
+                }
+              ]
+            }
+            """)!.AsObject();
+
+        WorldStableIds.Assign(map);
+
+        var id = map["construcoes"]!.AsArray()[0]!["id"]!.GetValue<string>();
+        Assert.Equal("ast_1n5z61x", id);
+    }
+
     [Fact]
     public void RegionForUsesDeterministicIdsAndOptionalCollisionSet()
     {
