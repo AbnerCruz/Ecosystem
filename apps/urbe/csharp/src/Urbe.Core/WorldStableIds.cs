@@ -169,10 +169,17 @@ public static class WorldStableIds
     {
         JsonObject? first = null;
 
-        if (asset["files"] is JsonArray files && files.Count > 0)
-            first = files[0] as JsonObject;
+        // JS usa (g.files || g.anexos || [])[0]. Array vazio é truthy,
+        // portanto "files":[] impede fallback para anexos.
+        if (asset["files"] is not null)
+        {
+            if (asset["files"] is JsonArray files && files.Count > 0)
+                first = files[0] as JsonObject;
+        }
         else if (asset["anexos"] is JsonArray attachments && attachments.Count > 0)
+        {
             first = attachments[0] as JsonObject;
+        }
 
         var relPath = first is null ? null : StringValue(first["relPath"]);
         if (!string.IsNullOrEmpty(relPath))
