@@ -278,6 +278,20 @@ public sealed class VaultArchiveTests
     }
 
     [Fact]
+    public void HiddenSystemDirectoryIsNeverStrippedAsWrapperRoot()
+    {
+        var imported = VaultArchive.Import(
+            BuildZip(
+                [
+                    (".urbe/mapa.json", Encoding.UTF8.GetBytes("{\"v\":4}"))
+                ]));
+
+        Assert.Null(imported.RootPrefix);
+        Assert.Contains(".urbe/mapa.json", imported.Files.Keys);
+        Assert.DoesNotContain("mapa.json", imported.Files.Keys);
+    }
+
+    [Fact]
     public void CorruptManifestNameIsOrdinaryFileAndGetsNoAuthority()
     {
         var zip = BuildZip(
