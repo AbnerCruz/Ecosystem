@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-3-host-api-decision",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T08:04:40Z",
+  "agent": {
+    "id": "chatgpt-p5-3-host-api-decision",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-3",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p5-3-host-api-decision",
+  "base_commit": "f5a254a04de8c7ac5f92c07eb6023710e74f782f",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/adr/README.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261004-p5-3-host-api-decision.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: P5-1/P5-2 foram reconciliados e integrados antes deste slice; PR #176 já integrou contrato draft/conformance local de text.inspect.",
+    "FATO OBSERVADO: auditoria de readiness mantém Lunet2D como menor caminho técnico para segundo Host, mas a Fase 3 local permanece aberta; Urbe C# ainda não possui Shell pronto e Ecosystem AI headless não é segundo Product Shell visual.",
+    "PROPOSTA: ADR-0024 define Host API v1 como contrato semântico neutro de transporte, reutilizando Capability/Context/permissions/Registry existentes e mantendo ecosystem-local/0 experimental.",
+    "PROPOSTA: DEC-0034 oferece três alternativas ao proprietário e recomenda separar Host API de IPC; nenhuma implementação pública, transporte ou extração foi criada.",
+    "ROADMAP e capability-runtime foram atualizados para tornar a decisão bloqueante e impedir avanço silencioso para IPC/segundo Host."
+  ],
+  "verification": [
+    {
+      "check": "Consistência da proposta ADR/DEC e projeção de estado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR deste slice; nenhuma conclusão automática é alegada antes dos checks."
+    },
+    {
+      "check": "DEVICE deste slice documental",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "O slice altera somente proposta arquitetural, decisão pendente e documentação; não muda UI, APK, lifecycle, toque ou comportamento runtime."
+    }
+  ],
+  "known_issues": [
+    "DEC-0034 permanece pendente; P5-3 não pode estabilizar a Host API pública até a decisão do proprietário.",
+    "Lunet não pode receber integração transversal enquanto sua Fase 3 local permanecer aberta, salvo mudança explícita de roadmap/governança; este slice não cria essa exceção.",
+    "Não existe segundo Host real executando text.inspect; Extraction Review continua inviável antes desse consumidor.",
+    "P5-4 IPC, caller authentication, disconnect/timeout e isolamento continuam fora deste slice."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar esta proposta pelo integrador canônico e apresentar DEC-0034 no portal.",
+    "Após DEC-0034, aplicar a alternativa escolhida no ADR-0024 e nos contratos dependentes; se A for aprovada, criar Host API normativa e fixtures de conformance sem escolher transporte.",
+    "Somente depois concluir P5-3 e então iniciar comparação de transporte/autenticação em P5-4.",
+    "Reavaliar o segundo Host em P5-5 quando a governança do Product candidato permitir integração."
+  ],
+  "decisions_required": [
+    "DEC-0034"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0001-registro-de-decisoes-arquiteturais.md",
+    "docs/adr/0006-product-shell-context-distribuicao-independente.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0012-contratos-da-fase-2.md",
+    "docs/adr/0023-capability-runtime-local-no-hub.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/schemas/context.schema.json",
+    "docs/contracts/schemas/capability-contract.schema.json",
+    "docs/contracts/permissions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A proposta reutiliza Context, Capability, permissions e Registry canônicos; não cria fonte paralela."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "A Host API proposta não torna Hub dependência dos Products nem referencia Hub.Core como contrato público."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Capabilities continuam versionadas por contrato explícito; a proposta adiciona semântica de hosting sem substituir os contratos."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Tool não recebe Host concreto nem branching por Hub/Lunet/Urbe; diferenças devem ser expressas por Context/capability/grants."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST, ADR-0011/0012/0023, schemas e governança local do Lunet foram consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Host API/protocolo não foi alterado silenciosamente: ADR-0024 fica Proposto e DEC-0034 pendente antes de implementação pública."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "Nenhum transporte usa GitHub; P5-4 escolherá transporte runtime separado após decisão."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Permissões permanecem deny-by-default; grants são Host-owned e a sessão proposta não pode autoelevar privilégios."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-3 permanece aberto; decisão, contrato público, segundo Host e gate não são declarados concluídos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhum runtime/Tool foi extraído; Extraction Review continua condicionada a segundo consumidor real."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Product Shells continuam distribuíveis/operáveis sem exigir o Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Este PR apenas registra uma proposta arquitetural e uma decisão pendente; não aceita a Host API, não muda protocolo/runtime, não adiciona permissão, IPC, dependency ou distribuição. A implementação posterior será classificada pelo diff real."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "text-inspection-tool",
+      "status": "possible-candidate",
+      "rationale": "Existe contrato draft e primeiro consumidor Hub, mas ainda não há segundo Host real; permanece local até consumidor concreto e Extraction Review."
+    }
+  ],
+  "cost": null
+}
