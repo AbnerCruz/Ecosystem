@@ -30,6 +30,12 @@ Transações síncronas, a partir de `IBinder.FirstCallTransaction`:
 
 Cada Parcel contém `WriteInterfaceToken(descriptor)` seguido de uma única string JSON. O reply usa `WriteNoException()` + JSON. Payload nunca escolhe UID, pacote, signatário, actor efetivo ou grants.
 
+## Política de confiança do primeiro ensaio
+
+A allowlist bilateral está em `docs/contracts/bindings/android-binder-v1.trust.json` e é empacotada nos dois APKs. Ela fixa pacote + fingerprint do signatário observado para provider e callers autorizados. Chaves de desenvolvimento públicas continuam sem provar autoria: a allowlist reduz superfície de descoberta/abuso, enquanto o pareamento humano + chaves por instalação fornecem a confiança criptográfica da instalação.
+
+Mudança de pacote/signatário falha fechado. Mudança da chave por instalação exige reset explícito e novo pareamento; nunca há aceitação automática por compartilhar o mesmo certificado de desenvolvimento.
+
 ## Identidade e pareamento
 
 1. O provider captura `Binder.CallingUid` dentro da transação, antes de qualquer trabalho assíncrono.
