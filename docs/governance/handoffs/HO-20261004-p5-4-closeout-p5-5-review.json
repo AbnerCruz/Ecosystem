@@ -1,0 +1,160 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p5-4-closeout-p5-5-review",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T20:38:00Z",
+  "agent": {
+    "id": "chatgpt-p5-4-closeout-p5-5-review",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-5",
+  "component": "ecosystem",
+  "state": "waiting",
+  "branch": "chatgpt/p5-4-closeout-p5-5-review",
+  "base_commit": "b5388dd00912d97d21755336a9ae1c068acb0740",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/validation/P5-4-binder-ipc.md",
+    "docs/governance/handoffs/HO-20261004-p5-4-post-device-ux.json",
+    "docs/governance/handoffs/HO-20261004-p5-4-v3-device-gate.json",
+    "docs/architecture/p5-5-text-inspect-extraction-review.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/adr/0028-text-inspect-core-compartilhado.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "docs/governance/handoffs/HO-20261004-p5-4-closeout-p5-5-review.json"
+  ],
+  "work_completed": [
+    "P5-4 reconciliado como concluído após validação canônica Issue #225; roadmaps, roteiro DEVICE e handoffs antigos deixam de declarar bloqueios já resolvidos.",
+    "Issue #227 criada para P5-5 com state:working.",
+    "Extraction Review de NN-022 executada para text.inspect: dois consumidores reais (Hub e Lunet) e saldo positivo somente para o núcleo puro host-neutro.",
+    "ADR-0028 proposto com quatro alternativas; recomendação A extrai somente uma Library C# mínima.",
+    "DEC-0038 aberta como única autoridade pendente antes de qualquer extração compartilhada.",
+    "Explicitamente recusada a promoção prematura de LocalCapabilityHost, AuthenticatedHostGateway, Binder ou ecosystem-local/0."
+  ],
+  "verification": [
+    {
+      "check": "P5-4 — validação humana crítica A–D",
+      "kind": "human",
+      "result": "passed",
+      "critical": true,
+      "object": "docs/validation/P5-4-binder-ipc.md",
+      "evidence": "Issue #225; resposta canônica VAL-HO-20261004-p5-4-post-device-ux-b5942374f719.md; commit 18ea0bf."
+    },
+    {
+      "check": "Extraction Review NN-022 de text.inspect",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "docs/architecture/p5-5-text-inspect-extraction-review.md responde às cinco perguntas e preserva a Fase 7 para Tool standalone."
+    },
+    {
+      "check": "Checks do PR de transição",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando consistency/integrador após abertura do PR."
+    }
+  ],
+  "known_issues": [
+    "P5-5 não pode mover código para componente compartilhado antes de DEC-0038.",
+    "P5-6 e P5-7 continuam dependentes do segundo Host real concluído."
+  ],
+  "blockers": [
+    "DEC-0038 — fronteira compartilhada de text.inspect."
+  ],
+  "next_actions": [
+    "Integrar este closeout/review se checks verdes.",
+    "Proprietário resolve DEC-0038 pelo portal.",
+    "Aplicar ADR-0028 e implementar P5-5 conforme a alternativa escolhida.",
+    "Depois provar conformance de text.inspect nos dois Hosts e independência standalone do Lunet."
+  ],
+  "decisions_required": [
+    "DEC-0038"
+  ],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0009-refatoracao-dos-produtos-pos-migracao.md",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/adr/0027-primeiro-ipc-local-android.md",
+    "docs/adr/0028-text-inspect-core-compartilhado.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/p5-5-text-inspect-extraction-review.md",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/contracts/host-api.v1.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Issue #225 é a evidência única do fechamento P5-4; DEC-0038 é a única autoridade pendente da nova fronteira."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "A recomendação exige que Lunet execute text.inspect localmente sem Hub."
+    },
+    {
+      "id": "NN-004",
+      "evidence": "Qualquer Library compartilhada só existirá com responsabilidade, contrato, consumidores, owner, compatibilidade e motivo declarados."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "text.inspect@1.0.0 continua o contrato funcional canônico."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "O núcleo proposto não conhece Host, Product, Binder ou protocolo."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "A extração estrutural não é executada sem ADR-0028/DEC-0038."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Grants/Context permanecem Host-owned; a Library proposta não autentica nem concede permissões."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A aprovação DEVICE de P5-4 veio de validação humana; CI não a substituiu."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-4 só é fechado após evidência canônica; P5-5 segue não concluído."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "A revisão rejeita promover runtime/SDK inteiro sem redução de complexidade demonstrada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "As cinco perguntas foram respondidas; implementação aguarda decisão da fronteira."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Lunet permanece distribuível e funcional sem Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "text-inspect-host-neutral-tool",
+      "status": "external-consumer-exists",
+      "rationale": "Hub e Lunet são consumidores reais da mesma capability. A Extraction Review concluiu saldo positivo apenas para o núcleo puro como Library; a decisão estrutural é ADR-0028/DEC-0038.",
+      "consumers": [
+        "hub",
+        "lunet2d"
+      ],
+      "extraction_review": "ADR-0028"
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Este PR reconcilia uma aprovação já registrada e propõe ADR/decisão; não aplica a extração, não muda runtime, segurança ou distribuição."
+  },
+  "cost": null
+}
