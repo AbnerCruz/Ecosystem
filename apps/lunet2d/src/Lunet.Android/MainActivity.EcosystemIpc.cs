@@ -47,8 +47,12 @@ public sealed partial class MainActivity
             .SetNeutralButton("Esquecer conexão", (_, _) =>
             {
                 _ecosystemHostClient ??= new EcosystemHostClient(this);
-                _ecosystemHostClient.ResetTrust();
-                Toast.MakeText(this, "Confiança local apagada. O próximo uso exigirá novo pareamento.", ToastLength.Long)?.Show();
+                var reset = _ecosystemHostClient.ResetTrust();
+                Toast.MakeText(this,
+                    reset
+                        ? "Confiança local apagada e chave girada. O próximo uso exigirá novo pareamento."
+                        : "Há uma sessão IPC ativa. Encerre-a antes de esquecer a conexão.",
+                    ToastLength.Long)?.Show();
             })
             .SetPositiveButton("Conectar e testar", async (_, _) =>
             {
