@@ -550,7 +550,7 @@ public static class VaultReader
     private static string NormalizePath(string path)
     {
         var normalized = path.Replace('\\', '/');
-        if (normalized.Length == 0 || normalized.StartsWith('/', StringComparison.Ordinal))
+        if (normalized.Length == 0 || normalized[0] == '/')
             throw new InvalidDataException($"Caminho inválido no vault: {path}");
 
         var segments = normalized.Split('/');
@@ -561,7 +561,7 @@ public static class VaultReader
     }
 
     private static bool IsSystemPath(string path) =>
-        path.Split('/').Any(segment => segment.StartsWith('.', StringComparison.Ordinal));
+        path.Split('/').Any(segment => segment.Length > 0 && segment[0] == '.');
 
     private static bool IsEditableText(string path)
     {
