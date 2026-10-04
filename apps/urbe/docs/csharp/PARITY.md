@@ -295,7 +295,9 @@ Sem escolher a implementação C#, estas são as operações e saídas obrigató
 | visual.serialize | 110 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | vault.scenario | 12 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | vault.restore | 3 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
-| storage.scenario | 9 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| vault.crash-recovery | 4 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| storage.scenario | 13 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
+| idb.legacy-city | 1 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | identity.text | 9 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | identity.parse | 6 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
 | identity.pair | 5 | Igualdade estrutural exata da saída; strings/bytes sem normalização implícita |
@@ -303,7 +305,7 @@ Sem escolher a implementação C#, estas são as operações e saídas obrigató
 
 ## Lacunas e ligação com o Ecosystem
 
-- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; nove casos de storage verificam FSA sobre ponte nativa; ainda faltam IndexedDB legado, operações de vault no IDB, capacidades nativas completas e UI. A execução no C# integra UC-9/10/18/23/24/25.
+- UC-2 contém dados executáveis de Markdown, serialização Visual e 12 cenários de vault (load/edição/flush/reload, hashes, identidade, forward e backup íntegro/idempotente). Contratos nativos/persistência e E2E estão congelados por hash; três casos verificam restauração válida e rejeição de backup corrompido/ausente; quatro casos injetam crash antes/durante/depois de gravação multi-arquivo; 13 casos de storage verificam FSA sobre ponte nativa e o adapter IDB/browser, e um caso próprio cobre a migração histórica `kv["cidade"]` para o vault único sem confundi-la com a loja `fs` atual. Ainda faltam capacidades nativas completas e UI. A execução no C# integra UC-9/10/18/23/24/25.
 - REQ aceito ainda não entregue no JS continua como obrigação do C#, com o teste/aceite do ROADMAP acima; um golden de comportamento antigo nunca fecha esse requisito.
 - Android físico, Windows instalado e PWA offline ainda precisam de evidência própria. Simulações e Chromium não os validam.
 - Context/capabilities do Ecosystem têm contrato na Fase 2; transporte/Host API da Fase 5 ainda não implementados. Urbe fornece seu domínio por adapter quando esses contratos estiverem prontos; nunca depende do plano de controle nem diretamente de outro Product.

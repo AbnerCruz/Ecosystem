@@ -125,3 +125,71 @@ export async function runRestoreCase(input) {
     return { backupCreated: true, restoreRejected, targetHash: hash(env.get(input.target)), restoredPaths };
   } finally { cleanup(env); }
 }
+
+
+const CRASH_JOURNAL='.urbe/journal.v2.json';
+const crashFiles=()=>[
+  {path:'A.md',encoding:'utf8',content:'A0\n'},
+  {path:'B.md',encoding:'utf8',content:'B0\n'},
+  {path:'.urbe/mapa.json',encoding:'utf8',content:'{"v":4,"notas":{},"regioes":[],"construcoes":[]}'},
+  {path:'.urbe/vault.json',encoding:'utf8',content:'{"formatVersion":2,"createdBy":"urbe@2.0.0-beta.1","lastWriter":"urbe@2.0.0-beta.1","created":"2026-10-01T00:00:00.000Z","migrations":[]}'}
+];
+
+export function makeCrashCases(){
+  const defs=[
+    ['journal-write',{edits:{'A.md':'A1\n','B.md':'B1\n'},remove:[],fail:{method:'write',path:CRASH_JOURNAL}},
+      {flushRejected:true,journalAfterFailure:false,afterFailure:{'A.md':'A0\n','B.md':'B0\n'},recovered:false,afterReload:{'A.md':'A0\n','B.md':'B0\n'},journalAfterReload:false}],
+    ['second-note',{edits:{'A.md':'A1\n','B.md':'B1\n'},remove:[],fail:{method:'write',path:'B.md'}},
+      {flushRejected:true,journalAfterFailure:true,afterFailure:{'A.md':'A1\n','B.md':'B0\n'},recovered:true,afterReload:{'A.md':'A1\n','B.md':'B1\n'},journalAfterReload:false}],
+    ['remove-note',{edits:{'A.md':'A1\n'},remove:['B.md'],fail:{method:'remove',path:'B.md'}},
+      {flushRejected:true,journalAfterFailure:true,afterFailure:{'A.md':'A1\n','B.md':'B0\n'},recovered:true,afterReload:{'A.md':'A1\n','B.md':null},journalAfterReload:false}],
+    ['journal-remove',{edits:{'A.md':'A1\n','B.md':'B1\n'},remove:[],fail:{method:'remove',path:CRASH_JOURNAL}},
+      {flushRejected:true,journalAfterFailure:true,afterFailure:{'A.md':'A1\n','B.md':'B1\n'},recovered:true,afterReload:{'A.md':'A1\n','B.md':'B1\n'},journalAfterReload:false}]
+  ];
+  return defs.map(([name,scenario,expected])=>({
+    id:'vault-crash-'+name,
+    operation:'vault.crash-recovery',
+    requirements:['REQ-007','REQ-038','REQ-046'],
+    source:'src/persistence/workspace.js',
+    input:{files:crashFiles(),...scenario},
+    expected
+  }));
+}
+
+export async function runCrashCase(input){
+  if(!input||!Array.isArray(input.files)||!input.fail||!['write','remove'].includes(input.fail.method))throw new Error('cenário de crash inválido');
+  const env=createEnv(decode(input.files));
+  let recovered=false,current=null;
+  try{
+    await env.p.load('V');
+    for(const [path,content] of Object.entries(input.edits||{})){
+      const d=env.docs.get(path);if(!d)throw new Error('documento ausente: '+path);
+      env.docs.upsert({...d,content});
+    }
+    for(const path of input.remove||[]){
+      if(!env.docs.get(path))throw new Error('documento ausente para remoção: '+path);
+      env.docs.remove(path);
+    }
+    const raw=env.adapter;
+    const proxy={
+      list:raw.list.bind(raw),read:raw.read.bind(raw),
+      async write(v,p,c){if(input.fail.method==='write'&&p===input.fail.path)throw new Error('falha injetada: write '+p);return raw.write(v,p,c)},
+      async remove(v,p){if(input.fail.method==='remove'&&p===input.fail.path)throw new Error('falha injetada: remove '+p);return raw.remove(v,p)}
+    };
+    env.p.configure(proxy);
+    let flushRejected=false;
+    try{await env.p.flush()}catch(_){flushRejected=true}
+    const failedDisk=env.disk(),afterFailure={'A.md':failedDisk.get('A.md')??null,'B.md':failedDisk.get('B.md')??null};
+    const journalAfterFailure=failedDisk.has(CRASH_JOURNAL);
+    cleanup(env);
+
+    const again=createEnv(failedDisk);current=again;
+    again.core.events.on('workspace:recovered',()=>{recovered=true});
+    await again.p.load('V');
+    const disk=again.disk(),afterReload={'A.md':disk.get('A.md')??null,'B.md':disk.get('B.md')??null};
+    return{flushRejected,journalAfterFailure,afterFailure,recovered,afterReload,journalAfterReload:disk.has(CRASH_JOURNAL)};
+  }finally{
+    cleanup(env);
+    if(current&&current!==env)cleanup(current);
+  }
+}

@@ -1,3 +1,17 @@
+### 2026-10-03 — ChatGPT — UC-2: crash recovery portável (REQ-007/038/046)
+- Estado: review no PR #165, baseado diretamente em `main` após integração do PR #161; gates finais em execução.
+- Feito: quatro casos `vault.crash-recovery` injetam falha na criação do journal, no segundo arquivo, na remoção de nota e na remoção final do journal. O corpus passa de 205 para 209 casos.
+- Invariante: nenhum arquivo de runtime congelado foi alterado; somente tooling, testes e documentação do corpus UC-2.
+- Restante após esta fatia: capacidades nativas portáveis e UI/E2E por superfície. Rollback atômico de restore pode ser hardening futuro, não bloqueio do REQ-038/046.
+
+
+
+### 2026-10-03 — ChatGPT — UC-2: IndexedDB legado e gestão de vaults (REQ-007/028/046)
+- Estado: integrado na `main` pelo PR #161; Issue #139 continua aberta para as fatias restantes de UC-2.
+- Feito: quatro cenários portáveis IDB/browser adicionados ao `storage.scenario` e um caso separado para a migração v1 `kv["cidade"]`; corpus candidato 205. O `idb.js` real é executado sobre IndexedDB determinístico do tooling, cobrindo chaves legadas `knowledge-city`, gestão/isolamento de vaults, pastas e binários.
+- Limites: runtime JS congelado não foi alterado; o harness determinístico não substitui `tests/e2e/adapters.e2e.mjs` em Chromium nem valida aparelho/permissão do SO. UC-2 segue aberto.
+- Verificação: gates próprios e estado combinado do integrador passaram antes do merge.
+
 ### 2026-10-03 — codex — UC-2: identidade/GC (REQ-042)
 - Estado: revisão parcial, Issue #139; branch codex/urbe-domain-parity.
 - Feito: 26 cenários portáveis; 200 casos, 64/64 testes e 22 checks verdes. UC-7 reconciliado após PR #151.
@@ -147,3 +161,10 @@
 - **Pendências / bloqueios:** texto da `LICENSE` (OD-03) bloqueia o gate G4 (RM-F4-12 `[!]`); budgets absolutos de performance dependem do baseline (RM-F5-02); atualização do checklist da issue #33 e criação de PR dependem do proprietário/ferramentas GitHub.
 - **Próximos passos:** proprietário revisa e aprova SPEC/ROADMAP (responder OD-05/10/11/03); depois iniciar F0 (RM-F0-03…18). Nada da 2.0 é implementado antes disso.
 - **Branches:** 31 branches `claude/*` remotas aguardam verificação (RM-F0-16); esta sessão não removeu nenhuma.
+
+### 2026-10-04 — Codex — P4-9 / RM-F4-10 / REQ-006/066/081
+- Estado: verificando correção do PR #167 no estado combinado com main@46c295a.
+- Feito: corrigido parêntese excedente no teste de feed, fixture Android alinhada ao feed direto e revisão explícita de dois hashes do baseline autorizada pela mudança de distribuição.
+- Decisões (com fonte): ADD-0015/DEC-0031/ADR-0019; nenhuma mudança de dados ou de assinatura.
+- Pendências: CI combinado, autorização crítica e chave histórica/release/DEVICE para corte final.
+- Próximos passos: integrador reavalia o PR; P4-9 continua aberto.

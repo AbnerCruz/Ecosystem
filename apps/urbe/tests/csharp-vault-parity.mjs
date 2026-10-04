@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { ROOT } from '../tools/lib/v2-docs.mjs';
 import { json, compareResults } from '../tools/lib/csharp-parity.mjs';
-import { runVaultCase } from '../tools/lib/parity-vault.mjs';
+import { runVaultCase, runCrashCase } from '../tools/lib/parity-vault.mjs';
 
 const cases = json('docs/csharp/acceptance/cases.json').cases.filter((c) => c.operation.startsWith('vault.'));
 assert.equal(cases.filter((c) => c.operation === 'vault.scenario').length, 12);
 assert.equal(cases.filter((c) => c.operation === 'vault.restore').length, 3);
+assert.equal(cases.filter((c) => c.operation === 'vault.crash-recovery').length, 4);
 const run = spawnSync(process.execPath, ['tools/parity-vault-client.mjs'], {
   cwd: ROOT, input: JSON.stringify({ schemaVersion: 1, cases }), encoding: 'utf8', timeout: 30000 });
 assert.equal(run.status, 0, run.stderr);
@@ -29,4 +30,14 @@ const out = await runVaultCase(changed);
 assert.throws(() => compareResults([binary], [{ id: binary.id, output: out }]), 'asset alterado deve falhar');
 const journal = cases.find((c) => c.id === 'vault-v1-journal-pendente');
 assert.ok(journal.expected.diskHashes['Delta.md'], 'nota recuperada tem prova de conteúdo, não só de presença');
-console.log('csharp-vault-parity: ok (12 ciclos + 3 restaurações, bytes e mutações negativas)');
+
+const crash = cases.find((c) => c.id === 'vault-crash-second-note');
+const crashOut = results.find((r) => r.id === crash.id).output;
+assert.equal(crashOut.journalAfterFailure, true, 'falha no segundo arquivo deixa journal');
+assert.equal(crashOut.recovered, true, 'reabertura recupera pelo journal');
+assert.equal(crashOut.afterReload['B.md'], 'B1\n', 'segundo arquivo chega ao estado desejado após recuperação');
+const crashBad = structuredClone(results);
+crashBad.find((r) => r.id === crash.id).output.afterReload['B.md'] = 'B0\n';
+assert.throws(() => compareResults(cases, crashBad), 'crash recovery alterado deve falhar');
+await assert.rejects(() => runCrashCase({files:[],fail:{method:'noop',path:'x'}}), /inválido/);
+console.log('csharp-vault-parity: ok (12 ciclos + 3 restaurações + 4 crash recovery, bytes e mutações negativas)');

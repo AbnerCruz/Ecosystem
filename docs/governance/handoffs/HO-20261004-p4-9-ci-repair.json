@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-p4-9-ci-repair",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-04T05:38:34.371602Z",
+  "agent": {
+    "id": "codex-p4-9-ci-repair",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-9",
+  "component": "urbe",
+  "state": "review",
+  "branch": "chatgpt/p4-9-urbe-bridge",
+  "base_commit": "46c295a466d22c1374ca09ac68493e388ce7d014",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/167",
+  "files_changed": [
+    "apps/urbe/tests/native-contract.mjs",
+    "apps/urbe/tests/native-android.mjs",
+    "apps/urbe/docs/csharp/acceptance/oracle.json",
+    "apps/urbe/docs/csharp/acceptance/README.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-p4-9-ci-repair.json"
+  ],
+  "work_completed": [
+    "Continuação 2026-10-04: merge semântico da main@46c295a; corrigida sintaxe do native-contract e fixture Android incompatível. Revisão explícita de dois hashes do oráculo, documentada em acceptance/README.md, sem remover expectativas de dados/capacidades."
+  ],
+  "verification": [
+    {
+      "check": "Native Android e native contract",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "node tests/native-android.mjs e node tests/native-contract.mjs passaram; correção cobre fixture do feed e sintaxe."
+    },
+    {
+      "check": "Oráculo e matriz de paridade",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "node tools/csharp-parity.mjs check: 209 casos preservados; revisão explícita dos dois testes de distribuição, sem regeneração do corpus."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "SDK 10.0.100: todos os 22 checks passaram no estado combinado com main@46c295a."
+    },
+    {
+      "check": "Suíte completa e self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Execuções locais em andamento; CI remoto ainda deve conferir o estado combinado."
+    }
+  ],
+  "known_issues": [
+    "Os valores dos secrets ANDROID_KEYSTORE_BASE64 e ANDROID_KEYSTORE_PASSWORD não são recuperáveis pela API; nenhum release Android direto será publicado com chave de debug.",
+    "O schema atual do Distribution Profile só resolve locationFrom=source.repository|publicUrl. Como source.repository deve continuar histórico e publicUrl do Urbe deve continuar a PWA antiga, o corte final precisa de representação canônica para o repositório do Ecosystem antes de alterar current.",
+    "A versão-ponte precisa ser publicada primeiro no canal legado, sincronizado a partir do Ecosystem, e testada antes de desligar o espelho automático.",
+    "Validação DEVICE do updater e preservação do vault só é possível após as releases assinadas existirem."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar este PR crítico após CI verde e autorização do proprietário pelo mecanismo canônico.",
+    "Sincronizar a ponte para AbnerCruz/Urbe e publicar v1.8.3-beta pelo canal legado com a chave histórica.",
+    "Configurar a mesma chave privada no Ecosystem e publicar uma versão direta superior urbe-v* para provar atualização da ponte.",
+    "Executar DEVICE com vault de teste; depois resolver a localização canônica no Distribution Profile, mudar current e desligar somente a sincronização automática do espelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/governance/addenda/ADD-0015-releases-diretas-no-ecosystem.md",
+    "docs/governance/decisions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/distribution/current.profile.json",
+    "docs/distribution/direct-releases.md",
+    "docs/contracts/schemas/distribution-profile.schema.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/RELEASE.md",
+    "apps/urbe/docs/v2/adr/0005-release-e-versao-unica.md",
+    "apps/urbe/docs/csharp/acceptance/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Versão continua canônica em package.json; feed direto identifica Product por prefixo/asset, sem usar latest global."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Updater do Urbe fala diretamente com seu canal GitHub e não requer Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #166, branch, futuro PR e este handoff tornam o trabalho observável."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Mudança de canal deriva da decisão persistida ADD-0015/DEC-0031/ADR-0019, não desta conversa."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "A direção de distribuição direta já foi decidida; a mudança crítica ainda passa por autorização do integrador/pelo proprietário."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Tags urbe-v* isolam o lifecycle do Urbe das releases Hub/Lunet no mesmo repositório."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Release Android falha sem a chave privada; nenhuma credencial foi lida, copiada ou substituída."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação DEVICE é declarada antes de publicar e testar as builds assinadas."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P4-9 permanece aberto; ponte implementada não é tratada como corte concluído."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Urbe mantém instalação/atualização por canal próprio e PWA independente; Hub não entra no caminho."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "distribution"
+    ],
+    "reason": "Muda feed/tag de atualização do Urbe e especializa decisão de release já consolidada; exige autorização do proprietário após testes."
+  },
+  "cost": null
+}

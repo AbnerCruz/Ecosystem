@@ -172,7 +172,7 @@ await test('Android updater: sem release urbe-v válida fica sem atualização, 
   const f=fakeCapacitor({lote:true}),{W}=loadAndroid(f,async()=>({ok:true,json:async()=>[
     {tag_name:'other-a-v9.0.0',assets:[{name:'Urbe-9.0.0.apk',browser_download_url:'https://github.com/AbnerCruz/Ecosystem/releases/download/other-a-v9.0.0/Urbe-9.0.0.apk'}]},
     {tag_name:'urbe-v9.0.0',assets:[{name:'Urbe-9.0.0.apk',browser_download_url:'https://example.com/Urbe-9.0.0.apk'}]}
-  ]})));
+  ]}));
   const s=await W.UrbeNative.update.check();ok(s.state==='none'&&s.version==='1.7.0-beta','nenhum fallback cruzado: '+JSON.stringify(s));
 });
 await test('Windows updater: package aponta para release do Ecosystem com prefixo de Product',()=>{
