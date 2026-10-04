@@ -115,19 +115,20 @@ public sealed class WorldStableIdsTests
     [InlineData("\"\"")]
     public void FalsyFilesFallsBackToAttachmentsLikeJavascript(string filesJson)
     {
-        var map = JsonNode.Parse(
-            $"""
+        var json =
+            """
             {
               "construcoes":[
                 {
                   "caminho":"Pasta",
                   "name":"fallback.png",
-                  "files":{{filesJson}},
+                  "files":@@FILES@@,
                   "anexos":[{"relPath":"Pasta/logo.png"}]
                 }
               ]
             }
-            """)!.AsObject();
+            """.Replace("@@FILES@@", filesJson, StringComparison.Ordinal);
+        var map = JsonNode.Parse(json)!.AsObject();
 
         WorldStableIds.Assign(map);
 
