@@ -303,6 +303,7 @@ public sealed class EcosystemCapabilityService : Service
                             EcosystemIpcProtocol.Invoke => owner.Invoke(peer, request),
                             EcosystemIpcProtocol.Cancel => owner.Cancel(peer, request),
                             EcosystemIpcProtocol.Close => owner.Close(peer, request),
+                            EcosystemIpcProtocol.Revoke => owner.Revoke(peer, request),
                             _ => Error("PROTOCOL_UNSUPPORTED")
                         };
                     }
