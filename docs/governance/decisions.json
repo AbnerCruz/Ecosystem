@@ -1369,6 +1369,46 @@
       "decidedAt": "2026-10-04",
       "record": "docs/governance/responses/DEC-0037.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0038",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Fronteira compartilhada de text.inspect para o segundo Host",
+      "context": "P5-4 foi concluído e aprovado canonicamente na Issue #225. P5-5 exige que Hub e Lunet executem a mesma implementação de text.inspect@1.0.0, sem duplicação e sem tornar Hub dependência essencial do Lunet. A Extraction Review de NN-022 encontrou dois consumidores reais e saldo positivo apenas para o núcleo puro de inspeção; o runtime experimental do Hub não possui segundo consumidor concreto.",
+      "question": "Qual fronteira deve ser compartilhada para que Hub e Lunet executem a mesma implementação de text.inspect em P5-5?",
+      "alternatives": [
+        {
+          "option": "A — Library C# mínima e host-neutra para o núcleo de text.inspect (recomendada)",
+          "consequences": "Extrai somente validação/algoritmo puro para platform/text-inspection. Hub e Lunet mantêm Hosts/adapters próprios; não compartilha lifecycle, identidade, grants, Binder ou ecosystem-local/0. Atende P5-5 sem antecipar a Tool standalone da Fase 7."
+        },
+        {
+          "option": "B — Promover o Capability Runtime/Host SDK do Hub junto com text.inspect",
+          "consequences": "Compartilha LocalCapabilityHost, contratos locais/gateway e sessão. Reduz duplicação de infraestrutura agora, mas congela o primeiro experimento como SDK público sem segundo consumidor real desse runtime e aumenta bastante o custo de versionamento/boundary."
+        },
+        {
+          "option": "C — Duplicar a implementação de text.inspect dentro do Lunet",
+          "consequences": "Evita componente compartilhado neste momento, porém cria duas implementações da mesma capability e risco de drift; contraria explicitamente P5-5 e NN-022 depois que já existem dois consumidores reais."
+        },
+        {
+          "option": "D — Manter text.inspect somente no Hub e o Lunet consumi-lo por Binder",
+          "consequences": "Reutiliza o provider atual, mas Lunet não se torna segundo Host standalone e a capability passa a depender do Hub. Não satisfaz o objetivo de P5-5."
+        }
+      ],
+      "consequences": "A decisão autoriza apenas a fronteira de compartilhamento de P5-5. Nenhuma alternativa altera o contrato text.inspect@1.0.0, o modelo de confiança Binder de P5-4 ou a Host API v1. A opção A cria uma Library compartilhada e exige declaração completa em ecosystem.json; a implementação ainda precisa de testes de consumidor real e conformance nos dois Hosts.",
+      "manifestCompatibility": "A preserva NN-003/004/006/007/020/022/023 com a menor superfície compartilhada. B pode ser compatível em tese, mas não demonstra redução de complexidade total para o runtime concreto e arrisca NN-020/022. C viola o objetivo de implementação única de P5-5. D conflita com a independência do segundo Host e com NN-003.",
+      "recommendation": "A — compartilhar somente o núcleo puro de text.inspect como Library C# host-neutra. É a menor abstração que elimina duplicação real sem congelar o runtime do Hub nem antecipar a Tool standalone da Fase 7.",
+      "related": [
+        "docs/adr/0028-text-inspect-core-compartilhado.md",
+        "docs/architecture/p5-5-text-inspect-extraction-review.md",
+        "docs/architecture/capability-runtime.md",
+        "docs/contracts/capabilities/text.inspect.json",
+        "ROADMAP.md",
+        "apps/lunet2d/ROADMAP.md"
+      ],
+      "raisedBy": "chatgpt-p5-4-closeout-p5-5-review",
+      "raisedAt": "2026-10-04"
     }
   ]
 }

@@ -99,3 +99,17 @@ também prevalecem sobre falhas tardias. Nenhuma exceção arbitrária entra no 
 Regressões em `LocalCapabilityHostTests`: coleção que lança após o primeiro grant
 e provider que lança depois da revogação. A matriz pública de conformance continua
 usando o contrato v1; nenhum transporte IPC ou segundo Host é declarado por isso.
+
+## P5-4 — fechamento aprovado e transição para P5-5
+
+P5-4 foi aprovado canonicamente pelo proprietário na Issue #225 e registrado na `main` em `18ea0bf`. O binding Android/Binder permanece o primeiro transporte real, mas não vira dependência essencial nem SDK geral. O follow-up de UX distinguiu pareamento persistente de sessão IPC transitória; `0` sessões em idle é estado normal.
+
+P5-5 começou na Issue #227. A evidência de segundo consumidor agora é real: Hub e Lunet precisam executar `text.inspect@1.0.0` sem duplicar a implementação e sem o Lunet depender do Hub. A Extraction Review de NN-022 está em `p5-5-text-inspect-extraction-review.md`.
+
+A revisão conclui:
+- compartilhar somente o núcleo puro de inspeção tem saldo positivo;
+- promover `LocalCapabilityHost`, `AuthenticatedHostGateway`, Binder ou `ecosystem-local/0` não tem evidência suficiente e permanece proibido por NN-020/022;
+- a primeira Tool compartilhada standalone continua reservada à Fase 7;
+- P5-5 pode usar uma Library host-neutra se DEC-0038 aprovar ADR-0028.
+
+Até DEC-0038 ser resolvida, P5-5 não move código para `platform/` e não cria dependência Lunet → Hub.

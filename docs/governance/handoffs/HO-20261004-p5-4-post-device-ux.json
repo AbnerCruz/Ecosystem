@@ -10,10 +10,10 @@
   },
   "task_id": "P5-4",
   "component": "ecosystem",
-  "state": "verifying",
+  "state": "done",
   "branch": "chatgpt/p5-4-post-device-ux",
   "base_commit": "f440c1097743c3d8f0fbdc631ddf3612641df380",
-  "commit": "6b6846a21d74cf6fb6b8d3d071baebbfd33863bb",
+  "commit": "48782858d75e75ec71337345e054a7b38235aa7d",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/224",
   "files_changed": [
     "ROADMAP.md",
@@ -35,8 +35,8 @@
     {
       "check": "Compilação/testes após correção de UX",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando CI do PR de continuação."
+      "result": "passed",
+      "evidence": "PR #224 integrado automaticamente como rotina no estado combinado 48782858; Hub, Lunet, APK e consistency completos verdes."
     },
     {
       "check": "Pareamento + sessão + discovery + text.inspect no aparelho",
@@ -52,21 +52,16 @@
       "result": "passed",
       "critical": true,
       "object": "docs/validation/P5-4-binder-ipc.md",
-      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-04 (Issue https://github.com/AbnerCruz/Ecosystem/issues/225); registro em docs/governance/responses/VAL-HO-20261004-p5-4-post-device-ux-b5942374f719.md."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-04 (Issue #225); resposta canônica docs/governance/responses/VAL-HO-20261004-p5-4-post-device-ux-b5942374f719.md; commit 18ea0bf."
     }
   ],
   "known_issues": [
-    "P5-4 ainda não pode ser marcado done antes dos passos físicos C/D.",
-    "P5-5 permanece bloqueado até o fechamento canônico de P5-4."
+    "Nenhum bloqueio remanescente em P5-4. P5-5 tem decisão arquitetural própria para qualquer extração compartilhada."
   ],
-  "blockers": [
-    "Validação física C/D."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Concluir CI desta correção de UX.",
-    "Publicar candidato atualizado para o teste final C/D se os builds permanecerem verdes.",
-    "Após C/D verdes, registrar validação crítica canônica e fechar P5-4.",
-    "Em seguida iniciar P5-5 com Extraction Review antes de qualquer extração compartilhada."
+    "Fechar P5-4 no ROADMAP e a Issue de tarefa após integração deste closeout.",
+    "Executar Extraction Review de P5-5 e resolver DEC-0038 antes de mover código para um componente compartilhado."
   ],
   "decisions_required": [],
   "normative_sources": [
