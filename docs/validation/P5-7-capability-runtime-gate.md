@@ -1,10 +1,10 @@
 # P5-7 — Gate DEVICE da Capability Runtime
 
-> **Candidato fixo:** código integrado na `main` em `0a5a49a802d881fc192b6e9426d4f65b5e7344a5` (P5-6 / PR #236).
+> **Candidato fixo:** Capability Runtime integrado em `0a5a49a802d881fc192b6e9426d4f65b5e7344a5` (P5-6 / PR #236); correção exclusivamente de distribuição do Hub integrada em `d725c2beda0ed4344dd41c68754f0969977b9dd4` (PR #240).
 >
-> **Hub:** `hub-v0.0.1-dev.15` — `ecosystem-hub-0.0.1-dev.15.apk`
+> **Hub:** `hub-v0.0.1-dev.16` — `ecosystem-hub-0.0.1-dev.16.apk`
 >
-> https://github.com/AbnerCruz/Ecosystem/releases/tag/hub-v0.0.1-dev.15
+> https://github.com/AbnerCruz/Ecosystem/releases/tag/hub-v0.0.1-dev.16
 >
 > **Lunet:** `lunet2d-v0.0.1-dev.1000116` — `Lunet-0.0.1-dev.1000116-arm64.apk`
 >
@@ -30,7 +30,7 @@ P5-7 não introduz feature nova. Se alguma etapa falhar, o gate falha e a corre�
 
 ## Pré-condições
 
-1. Instale/atualize **Hub dev.15** e **Lunet dev.1000116** pelos links acima.
+1. Instale/atualize **Hub dev.16** e **Lunet dev.1000116** pelos links acima. O Hub dev.16 substitui o dev.15, que foi revogado após falha DEVICE causada por `versionCode` regressivo.
 2. No Lunet, abra um projeto existente ou crie um projeto simples.
 3. Para o texto de referência, use exatamente:
 
