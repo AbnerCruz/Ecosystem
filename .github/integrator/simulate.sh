@@ -250,7 +250,7 @@ then check "filtro do integrador é projeção exata do push.paths de hub-releas
 else check "filtro do integrador divergiu do workflow de release" false; fi
 sed '/^case "${1:-}" in/,$d' .github/integrator/integrate.sh > "$T/library.sh"
 SELECT_MAIN="$(git --git-dir="$T/origin.git" rev-parse main)"
-for path in apps/hub/src/Hub.Core/Datum.cs apps/hub/VERSION apps/hub/Directory.Build.props apps/hub/tools/dispatch-fixture.md .github/workflows/hub-release.yml apps/hub/README.md apps/hub/tests/dispatch-fixture.md apps/urbe/dispatch-fixture.md; do
+for path in apps/hub/src/Hub.Core/Datum.cs platform/text-inspection/dispatch-fixture.cs apps/hub/VERSION apps/hub/Directory.Build.props apps/hub/tools/dispatch-fixture.md .github/workflows/hub-release.yml apps/hub/README.md apps/hub/tests/dispatch-fixture.md apps/urbe/dispatch-fixture.md; do
   git checkout -q --detach "$SELECT_MAIN"
   printf '\n' >> "$path"; G add "$path"; G commit -qm "seletividade $path"
   : > "$GHLOG"
@@ -262,14 +262,25 @@ for path in apps/hub/src/Hub.Core/Datum.cs apps/hub/VERSION apps/hub/Directory.B
 done
 
 # P4-10: direct Lunet release selection and observable dispatch failure.
+if python3 - <<'PYSEL'
+import re
+from pathlib import Path
+script = Path('.github/integrator/integrate.sh').read_text().split('LUNET_RELEASE_PATHS=(', 1)[1].split(')', 1)[0]
+workflow = Path('.github/workflows/lunet2d-release.yml').read_text().split('  push:', 1)[1].split('  pull_request:', 1)[0]
+a = re.findall(r"'([^']+)'", script)
+b = re.findall(r"'([^']+)'", workflow)
+assert a and a == b, (a, b)
+PYSEL
+then check "filtro do integrador é projeção exata do push.paths de lunet2d-release" true
+else check "filtro Lunet do integrador divergiu do workflow de release" false; fi
 SELECT_MAIN="$(git rev-parse HEAD)"
-for path in apps/lunet2d/README.md apps/lunet2d/src/Lunet.Core/dispatch-fixture.cs .github/workflows/lunet2d-release.yml apps/urbe/dispatch-fixture.md apps/hub/README.md; do
+for path in apps/lunet2d/README.md apps/lunet2d/src/Lunet.Core/dispatch-fixture.cs platform/text-inspection/dispatch-fixture.cs .github/workflows/lunet2d-release.yml apps/urbe/dispatch-fixture.md apps/hub/README.md; do
   git checkout -q -B "select-direct-${RANDOM}" "$SELECT_MAIN"
   mkdir -p "$(dirname "$path")"; echo "# fixture" >> "$path"; G add -A; G commit -qm "direct selection $path"
   : > "$GHLOG"
   env MAIN="$SELECT_MAIN" COMBINED="$(git rev-parse HEAD)" bash -c '. "$1"; dispatch_lunet_release' bash "$T/library.sh" >"$T/direct-selection.log" 2>&1
   case "$path" in
-    apps/lunet2d/*|.github/workflows/lunet2d-release.yml) check "$path: direct Lunet release dispatch" 'logged "workflow run lunet2d-release.yml --repo sim/sim --ref main"' ;;
+    apps/lunet2d/*|platform/text-inspection/*|.github/workflows/lunet2d-release.yml) check "$path: direct Lunet release dispatch" 'logged "workflow run lunet2d-release.yml --repo sim/sim --ref main"' ;;
     *) check "$path: no direct Lunet release" '! logged "workflow run lunet2d-release.yml"' ;;
   esac
   check "$path: never releases Urbe on merge" '! logged "workflow run urbe-release.yml"'

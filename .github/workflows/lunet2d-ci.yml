@@ -7,9 +7,9 @@ name: lunet2d-ci
 on:
   push:
     branches: [main]
-    paths: ['apps/lunet2d/**', '.github/workflows/lunet2d-ci.yml']
+    paths: ['apps/lunet2d/**', 'platform/text-inspection/**', '.github/workflows/lunet2d-ci.yml']
   pull_request:
-    paths: ['apps/lunet2d/**', '.github/workflows/lunet2d-ci.yml']
+    paths: ['apps/lunet2d/**', 'platform/text-inspection/**', '.github/workflows/lunet2d-ci.yml']
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -39,5 +39,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Check Text Inspection projections
+        run: dotnet run ../../platform/text-inspection/tools/Projection.cs -- --check
+      - name: Self-test Text Inspection projection enforcement
+        run: dotnet run ../../platform/text-inspection/tools/Projection.cs -- --self-test
+      - name: Test Text Inspection Core
+        run: cd ../../platform/text-inspection && dotnet test --project tests/Ecosystem.TextInspection.Tests/Ecosystem.TextInspection.Tests.csproj
       - name: Test (framework, compiler, runtime, projects, architecture)
         run: dotnet test --project tests/Lunet.Tests

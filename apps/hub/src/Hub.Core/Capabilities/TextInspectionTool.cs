@@ -1,12 +1,13 @@
 using System.Text.Json;
+using Ecosystem.TextInspection;
 
 namespace Hub.Core.Capabilities;
 
-/// <summary>Tool candidata local, sem acesso a arquivo/rede ou conhecimento do Host concreto.</summary>
+/// <summary>Adapter do Host Hub para text.inspect@1.0.0. O algoritmo vive na autoridade projetada do Text Inspection Core.</summary>
 public static class TextInspectionTool
 {
     public const string CapabilityId = "text.inspect";
-    public const int MaximumLength = 100_000;
+    public const int MaximumLength = TextInspector.MaximumLength;
 
     public static LocalCapability Definition(LocalContext scope) => new(CapabilityId, "local-text-tool",
         new Version(1, 0, 0), "inspect", scope, [], "stateless", ValidInput, ValidOutput, Inspect);
@@ -30,18 +31,13 @@ public static class TextInspectionTool
     {
         token.ThrowIfCancellationRequested();
         call.Progress(0);
-        var text = call.Input.GetProperty("text").GetString()!;
-        var words = 0; var inside = false; var characters = 0; var lines = text.Length == 0 ? 0 : 1;
-        foreach (var rune in text.EnumerateRunes())
-        {
-            token.ThrowIfCancellationRequested();
-            characters++;
-            if (rune.Value == '\n') lines++;
-            var white = System.Text.Rune.IsWhiteSpace(rune);
-            if (!white && !inside) words++;
-            inside = !white;
-        }
+        var result = TextInspector.Inspect(call.Input.GetProperty("text").GetString()!, token);
         call.Progress(100);
-        return Task.FromResult(JsonSerializer.SerializeToElement(new { characters, words, lines }));
+        return Task.FromResult(JsonSerializer.SerializeToElement(new
+        {
+            characters = result.Characters,
+            words = result.Words,
+            lines = result.Lines
+        }));
     }
 }

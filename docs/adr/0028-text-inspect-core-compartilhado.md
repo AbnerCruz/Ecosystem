@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — aguarda DEC-0038.
+Aceito — DEC-0038-A escolhida pelo proprietário no portal (Issue #233).
 
 ## Contexto
 
@@ -38,9 +38,9 @@ Como garantir que Hub e Lunet executem a mesma implementação de `text.inspect@
 
 ## Decisão
 
-Pendente de DEC-0038.
+**DEC-0038-A aceita:** extrair somente o núcleo puro de `text.inspect` para uma Library C# host-neutra.
 
-Recomendação técnica: **A**.
+Para preservar a autocontenção dos Products fiscalizada por CHK-ARCH-REFS, a implementação usa projeção determinística: `platform/text-inspection` é a única autoridade editável e Hub/Lunet compilam arquivos `Generated / DO NOT EDIT` produzidos por `Projection.cs`. Não existe `ProjectReference` externo ao boundary dos Products.
 
 ## Consequências
 
@@ -57,7 +57,9 @@ Se A for escolhida:
 
 ## Alternativas rejeitadas
 
-Nenhuma alternativa está rejeitada até a DEC-0038 ser decidida. A Extraction Review recomenda rejeitar B, C e D pelos custos descritos acima.
+DEC-0038 rejeitou B, C e D. B promove runtime sem segundo consumidor real; C cria duas implementações independentes; D mantém o Lunet dependente do Hub.
+
+A projeção determinística é detalhe de packaging da alternativa A: `--write` regenera; `--check` detecta drift/ausência; o self-test prova regeneração reproduzível. Isso não altera o contrato público nem transforma projeções em autoridades.
 
 ## Referências
 
