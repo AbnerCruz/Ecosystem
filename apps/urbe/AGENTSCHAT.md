@@ -330,3 +330,11 @@
 - PR #223 integrado automaticamente em `ccab4b91`; a `main` passou a conter a projeção pura do mundo/bairros e IDs estáveis.
 - UC-13 encerrada com 134/134 testes C#, Web/Android/Windows/E2E/checks e consistency verdes.
 - Próxima tarefa: UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens.
+
+
+### 2026-10-04 — ChatGPT — UC-14 / Issue #230 / PR #232
+- Estado: Markdown e round-trip Visual em implementação na branch `feat/urbe-uc14-markdown-visual`.
+- Feito: `MarkdownEngine` porta frontmatter, headings, código, listas, tarefas, tabelas, blockquotes/callouts, wikilinks, links/imagens, ênfase, sanitização e átomos matemáticos; `VisualMarkdown` porta HTML Visual → Markdown com parser BCL próprio.
+- Oráculo: testes C# leem diretamente `markdown-golden.json` e `visual-golden.json`; o portátil já compilou e passou a suíte completa no head `3429dd6a`.
+- Correções de port já encontradas pelo CI: escape HTML foi ajustado para o comportamento exato do JS (somente & < > aspas), preservando Unicode literal.
+- Limites: caret, seleção, toolbar, IME, autocomplete e UI ficam para UC-18; KaTeX/UI matemática fica para UC-16.
