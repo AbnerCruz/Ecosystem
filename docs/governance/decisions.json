@@ -1412,7 +1412,7 @@
       "decision": "Alternativa A — A — Library C# mínima e host-neutra para o núcleo de text.inspect (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/233).",
       "decidedAt": "2026-10-05",
       "record": "docs/governance/responses/DEC-0038.md",
-      "consequencesApplied": false
+      "consequencesApplied": true
     }
   ]
 }

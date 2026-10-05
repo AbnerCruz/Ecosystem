@@ -129,6 +129,7 @@ prepare() {
 # Projeção do filtro push de hub-release.yml; a simulação confere igualdade com a autoridade.
 HUB_RELEASE_PATHS=(
   'apps/hub/src/**'
+  'platform/text-inspection/**'
   'apps/hub/VERSION'
   'apps/hub/Directory.Build.props'
   'apps/hub/tools/**'
@@ -149,11 +150,22 @@ dispatch_hub_release() {
 
 # P4-10: GITHUB_TOKEN pushes do not trigger Product publication. Only Lunet auto-releases;
 # Urbe release remains an explicitly approved tag, independent of integration (REQ-006/066).
+LUNET_RELEASE_PATHS=(
+  'apps/lunet2d/**'
+  'platform/text-inspection/**'
+  '.github/workflows/lunet2d-release.yml'
+)
+
 dispatch_lunet_release() {
-  local changed
-  changed="$(git diff --name-only "$MAIN" "$COMBINED" -- apps/lunet2d .github/workflows/lunet2d-release.yml)" || return 1
-  [ -n "$changed" ] || return 0
-  gh workflow run lunet2d-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}"
+  local paths=() path result=0
+  for path in "${LUNET_RELEASE_PATHS[@]}"; do paths+=(":(glob)$path"); done
+  # Mantém a seleção em lockstep com push.paths do workflow; o self-test cobre drift.
+  git diff --quiet "$MAIN" "$COMBINED" -- "${paths[@]}" || result=$?
+  case "$result" in
+    0) return 0 ;;
+    1) gh workflow run lunet2d-release.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" ;;
+    *) echo "Não foi possível verificar os arquivos do Lunet no estado integrado." >&2; return 1 ;;
+  esac
 }
 
 redispatch() { gh workflow run integrate.yml --repo "$repo" --ref "${DEFAULT_BRANCH:-main}" >/dev/null || true; }

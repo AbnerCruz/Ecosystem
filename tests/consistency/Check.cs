@@ -2137,6 +2137,17 @@ static class IntegrationQueue
                 if (File.Exists(wf) && File.ReadAllText(wf).Contains($"'{c.Str("path")}/**'")) touched.Add(cid);
             }
         JsonElement? Find(string t) => combinedComps.TryGetValue(t, out var c) ? c : baseComps.TryGetValue(t, out var b) ? b : null;
+
+        // Uma mudança em componente compartilhado exige verificar todos os consumidores reais declarados.
+        // A propagação vem do manifest, não de nomes hardcoded (NN-004, NN-022).
+        var pendingConsumers = new Queue<string>(touched);
+        while (pendingConsumers.TryDequeue(out var touchedId))
+        {
+            if (Find(touchedId) is not { } component) continue;
+            foreach (var consumer in component.Arr("consumers").Select(x => x.GetString()).Where(x => !string.IsNullOrWhiteSpace(x)))
+                if (touched.Add(consumer!)) pendingConsumers.Enqueue(consumer!);
+        }
+
         var products = touched.Where(t => Find(t) is { } e && e.Str("type") == "product").ToArray();
 
         // Criticidade: política lida da main; sem política legível na main, tudo é crítico (falha fechada).
@@ -2671,8 +2682,19 @@ static class SelfTest
         new("registro de validação fora do caminho", "CHK-VALIDATION",
             r => { var d = Path.Combine(r, "docs", "validation", "urbe"); File.Move(Path.Combine(d, "1.8.2-beta-web.json"), Path.Combine(d, "outro.json")); }),
         new("Hub como dependência obrigatória", "CHK-BOUNDARIES",
-            r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/lunet2d/VERSION\" },\n      \"dependencies\": []",
-                "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/lunet2d/VERSION\" },\n      \"dependencies\": [{ \"component\": \"hub\", \"kind\": \"required\", \"reason\": \"x\" }]")),
+            r =>
+            {
+                var f = Path.Combine(r, "ecosystem.json");
+                var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(f))!;
+                var deps = n["components"]!["lunet2d"]!["dependencies"]!.AsArray();
+                deps.Add(new System.Text.Json.Nodes.JsonObject
+                {
+                    ["component"] = "hub",
+                    ["kind"] = "required",
+                    ["reason"] = "self-test"
+                });
+                File.WriteAllText(f, n.ToJsonString());
+            }),
         new("diretório shared genérico", "CHK-GENERIC-DIRS",
             r => Directory.CreateDirectory(Path.Combine(r, "platform", "shared"))),
         new("componente compartilhado sem declaração", "CHK-SHARED-DECLARATION",
@@ -2809,7 +2831,22 @@ static class SelfTest
         new("portal mostra canal de distribuição que o perfil não declara", "CHK-PORTAL",
             r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"channel\": \"urbe-github-pages\"", "\"channel\": \"urbe-inventado\""); }),
         new("portal mostra capability que nenhum manifest declara", "CHK-PORTAL",
-            r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"capabilities\": []", "\"capabilities\": [ { \"id\": \"inventada.cap\", \"providers\": [\"urbe\"], \"consumers\": [] } ]"); }),
+            r =>
+            {
+                RunGenerator(r);
+                var f = Path.Combine(r, "site", "data", "ecosystem-status.json");
+                var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(f))!;
+                var caps = n["ecosystem"]?["capabilities"]?.AsArray()
+                    ?? n["capabilities"]?.AsArray()
+                    ?? throw new InvalidOperationException("self-test: projeção do portal sem array capabilities");
+                caps.Add(new System.Text.Json.Nodes.JsonObject
+                {
+                    ["id"] = "inventada.cap",
+                    ["providers"] = new System.Text.Json.Nodes.JsonArray("urbe"),
+                    ["consumers"] = new System.Text.Json.Nodes.JsonArray()
+                });
+                File.WriteAllText(f, n.ToJsonString());
+            }),
         new("Caso B: produto active no ecosystem.json, projeção diz not-migrated", "CHK-PORTAL",
             r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"active\"", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"not-migrated\""); }),
         new("Caso C: decisão decided, projeção ainda a mostra pendente", "CHK-PORTAL",
@@ -2981,6 +3018,9 @@ static class SelfTest
             bad = Node(); bad["normative_sources"] = new System.Text.Json.Nodes.JsonArray();
             Test(!Gate(bad, "apps/urbe/src/editor.js").Ok, "refatoração sem ADR falha");
             var ordinary = System.Text.Json.Nodes.JsonNode.Parse("""{"state":"review"}""")!;
+            var sharedCore = Gate(Node(), "platform/text-inspection/src/Ecosystem.TextInspection/TextInspector.cs");
+            Test(sharedCore.Products.SequenceEqual(["hub", "lunet2d"]),
+                "mudança em componente compartilhado exige CI de todos os Products consumidores declarados");
             Test(Gate(ordinary, "site/app.js").Ok, "feature local não exige declaração de migração");
             Test(!Gate(ordinary, "docs/contracts/schemas/context.schema.json").Ok, "mudança de contrato sem ADR bloqueia");
             Put(c, adr, "# ADR\n\n## Status\n\nProposto\n");

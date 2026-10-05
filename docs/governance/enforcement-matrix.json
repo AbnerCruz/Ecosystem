@@ -561,7 +561,7 @@
         {
           "mechanism": "TEST",
           "status": "planned",
-          "how": "Pelo menos um teste de consumidor real por componente compartilhado. Re-faseado ao fechar a Fase 2 (2026-10-01): nenhum componente compartilhado existe (local-first, ADR-0011); o primeiro nasce por promoção com evidência, no máximo na Fase 7.",
+          "how": "P5-5 é o primeiro componente compartilhado real e possui testes específicos nos dois consumidores mais Projection.cs --check/--self-test. Um CHK-* genérico que exija teste de consumidor real para toda futura extração continua planejado; não se declara enforcement genérico inexistente.",
           "phase": "phase-7"
         },
         {

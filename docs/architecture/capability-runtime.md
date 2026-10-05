@@ -113,3 +113,14 @@ A revisão conclui:
 - P5-5 pode usar uma Library host-neutra se DEC-0038 aprovar ADR-0028.
 
 Até DEC-0038 ser resolvida, P5-5 não move código para `platform/` e não cria dependência Lunet → Hub.
+
+## P5-5 — segundo Host real / DEC-0038-A
+
+DEC-0038-A autoriza somente o núcleo puro de `text.inspect@1.0.0` como Library host-neutra. A autoridade editável é `platform/text-inspection/src/Ecosystem.TextInspection/TextInspector.cs`.
+
+Hub e Lunet permanecem autocontidos: ambos compilam uma projeção determinística `Generated / DO NOT EDIT` da autoridade. `Projection.cs --write` regenera; `--check` falha em drift ou arquivo ausente; `--self-test` cobre drift, missing e regeneração byte-estável. Não existe `ProjectReference` de Product para `platform/`.
+
+O Hub mantém `LocalCapabilityHost` e seu adapter. O Lunet implementa Host API v1 em processo próprio, com Context Host-owned `ecosystem → lunet2d → <GameId>`, identidade local atribuída pelo Host, grants deny-by-default, discovery, invoke, cancel explícito, revoke e close. A UI fornece seleção/documento em memória à capability; o Text Inspection Core não recebe filesystem.
+
+`LocalCapabilityHost`, `AuthenticatedHostGateway`, Binder, sessões do Hub e `ecosystem-local/0` não são promovidos. P5-5 não é a Tool standalone da Fase 7.
+

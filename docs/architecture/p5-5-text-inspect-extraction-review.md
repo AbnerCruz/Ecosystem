@@ -64,7 +64,9 @@ Extrair o runtime inteiro teria custo muito maior: congelaria `LocalCapabilityHo
 
 Promover apenas o núcleo host-neutro de `text.inspect` para uma **Library** compartilhada. Hub e Lunet mantêm adapters/Hosts próprios. Isso não cria a Tool standalone da Fase 7 e não promove o runtime experimental.
 
-A execução depende da DEC-0038 e do ADR-0028. Até a decisão ser registrada, nenhum arquivo de runtime/Tool é movido.
+DEC-0038-A foi escolhida pelo proprietário na Issue #233. A execução adota a extração mínima aprovada.
+
+Para preservar a autocontenção dos Products sem criar `ProjectReference` externo, a Library canônica projeta deterministicamente seu único arquivo de algoritmo para `Generated/` dentro de Hub e Lunet. As projeções não são editáveis: `Projection.cs --check` detecta drift/ausência, `--write` regenera e `--self-test` prova drift, missing e regeneração reproduzível. O runtime/Host continua específico de cada Product.
 
 ## Critérios de aceite de P5-5 após a decisão
 
