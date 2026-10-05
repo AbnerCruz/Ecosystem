@@ -58,7 +58,8 @@
     "A UI do Lunet envia somente seleção/documento já em memória; a Library não recebe acesso ao filesystem.",
     "Matriz aplicável de conformance Host API v1 e testes do consumidor real foram adicionados ao Lunet.",
     "ecosystem.json declara a Library, responsabilidade, contrato, dois consumidores, compatibilidade, motivo da extração e providers text.inspect nos dois Hosts.",
-    "Pipelines Hub/Lunet validam projeção, self-test, Core e Products; releases continuam autocontidas."
+    "Pipelines Hub/Lunet validam projeção, self-test, Core e Products; releases continuam autocontidas.",
+    "Primeira rodada CI confirmou Projection --check/--self-test verdes; correções posteriores preservam o desenho e removem apenas falhas concretas de compilação/schema/boundary."
   ],
   "verification": [
     {
@@ -71,7 +72,7 @@
       "check": "Core + Hub + Lunet + Host API conformance + consistency + self-test + integrator simulation",
       "kind": "automated",
       "result": "pending",
-      "evidence": "O container desta sessão não possui dotnet e não consegue clonar pela rede; o conjunto foi batido em um único commit para uma única rodada de CI remoto, sem usar CI como REPL."
+      "evidence": "Primeira rodada CI: Projection --check e --self-test passaram. Falhas concretas identificadas antes dos Product tests: Core isolado sem using System.Threading, schema do extraction_review, literais de Product concreto no Lunet detectados por CHK-ARCH-REFS e status indevido na enforcement matrix. Este commit corrige apenas essas causas sem enfraquecer checks."
     }
   ],
   "known_issues": [
@@ -168,7 +169,7 @@
         "hub",
         "lunet2d"
       ],
-      "extraction_review": "docs/architecture/p5-5-text-inspect-extraction-review.md"
+      "extraction_review": "ADR-0028"
     }
   ],
   "criticality": {

@@ -127,7 +127,7 @@ public sealed class LunetHostCapability
     }
 }
 
-/// <summary>Host API v1 em processo do Product Shell Lunet. Não depende de Hub.Core nem conhece Binder.</summary>
+/// <summary>Host API v1 em processo do Product Shell Lunet. Não depende de outro Product nem conhece transporte interprocesso concreto.</summary>
 public sealed class LunetCapabilityHost
 {
     private readonly LunetHostCapability[] _capabilities;

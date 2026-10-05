@@ -4,6 +4,7 @@
 // Regenerate: dotnet run platform/text-inspection/tools/Projection.cs -- --write
 // </auto-generated>
 using System.Text;
+using System.Threading;
 
 namespace Ecosystem.TextInspection;
 

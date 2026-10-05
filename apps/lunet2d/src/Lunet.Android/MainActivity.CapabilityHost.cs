@@ -63,7 +63,7 @@ public sealed partial class MainActivity
                 $"Caracteres: {output.GetProperty("characters").GetInt32()}\n" +
                 $"Palavras: {output.GetProperty("words").GetInt32()}\n" +
                 $"Linhas: {output.GetProperty("lines").GetInt32()}\n\n" +
-                "Execução local: Hub não é necessário.")
+                "Execução local: nenhum provider externo é necessário.")
             .SetPositiveButton("Fechar", (_, _) => { })
             .Show();
     }

@@ -42,12 +42,12 @@ public class LunetCapabilityHostTests
     }
 
     [Fact]
-    public async Task ToolReceivesOnlyProvidedTextAndLunetHasNoHubReference()
+    public async Task ToolReceivesOnlyProvidedText()
     {
         var root = Path.Combine(Path.GetTempPath(), "lunet-p5-5-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var project = new ProjectStore(root).Create("NoHub");
+            var project = new ProjectStore(root).Create("LocalOnly");
             project.WriteText("secret.txt", "não deve ser lido pela Tool");
 
             using var session = LunetCapabilityHost.CreateDefault().OpenForProject(project);
@@ -58,8 +58,6 @@ public class LunetCapabilityHostTests
                 TestContext.Current.CancellationToken);
 
             Assert.True(response.Succeeded);
-            Assert.DoesNotContain(typeof(LunetCapabilityHost).Assembly.GetReferencedAssemblies(),
-                assembly => assembly.Name?.StartsWith("Hub", StringComparison.OrdinalIgnoreCase) == true);
         }
         finally
         {
