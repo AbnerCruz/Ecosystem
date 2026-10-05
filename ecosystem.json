@@ -23,10 +23,30 @@
       "status": "active",
       "description": "Ambiente de desenvolvimento de jogos 2D: framework, runtime e tooling (MANIFEST §5.1).",
       "publicUrl": "https://github.com/AbnerCruz/Ecosystem/releases",
-      "owners": ["AbnerCruz"],
-      "source": { "repository": "https://github.com/AbnerCruz/Lunet2D", "confirmed": true },
-      "version": { "authority": "version-file", "file": "apps/lunet2d/VERSION" },
-      "dependencies": []
+      "owners": [
+        "AbnerCruz"
+      ],
+      "source": {
+        "repository": "https://github.com/AbnerCruz/Lunet2D",
+        "confirmed": true
+      },
+      "version": {
+        "authority": "version-file",
+        "file": "apps/lunet2d/VERSION"
+      },
+      "dependencies": [
+        {
+          "component": "text-inspection-core",
+          "kind": "required",
+          "reason": "Executa a mesma implementação host-neutra de text.inspect@1.0.0 conforme DEC-0038-A."
+        }
+      ],
+      "provides": [
+        {
+          "capability": "text.inspect",
+          "version": "1.0.0"
+        }
+      ]
     },
     "urbe": {
       "name": "Urbe",
@@ -36,9 +56,17 @@
       "status": "active",
       "description": "Workspace de conhecimento, documentos, vault, páginas, mundo e organização (MANIFEST §5.2).",
       "publicUrl": "https://abnercruz.github.io/Urbe/",
-      "owners": ["AbnerCruz"],
-      "source": { "repository": "https://github.com/AbnerCruz/Urbe", "confirmed": true },
-      "version": { "authority": "version-file", "file": "apps/urbe/package.json" },
+      "owners": [
+        "AbnerCruz"
+      ],
+      "source": {
+        "repository": "https://github.com/AbnerCruz/Urbe",
+        "confirmed": true
+      },
+      "version": {
+        "authority": "version-file",
+        "file": "apps/urbe/package.json"
+      },
       "dependencies": []
     },
     "hub": {
@@ -49,11 +77,37 @@
       "status": "active",
       "publicUrl": "https://github.com/AbnerCruz/Ecosystem/releases",
       "description": "Control Plane, Host geral, Registry e Launcher do ecossistema (MANIFEST §5.3). Nunca dependência essencial dos produtos (NN-003).",
-      "owners": ["AbnerCruz"],
-      "version": { "authority": "version-file", "file": "apps/hub/VERSION" },
-      "permissions": { "requests": ["network.access", "ui.display", "package.install", "package.open"] },
-      "commands": { "test": "dotnet test --project apps/hub/tests/Hub.Tests" },
-      "dependencies": []
+      "owners": [
+        "AbnerCruz"
+      ],
+      "version": {
+        "authority": "version-file",
+        "file": "apps/hub/VERSION"
+      },
+      "permissions": {
+        "requests": [
+          "network.access",
+          "ui.display",
+          "package.install",
+          "package.open"
+        ]
+      },
+      "commands": {
+        "test": "dotnet test --project apps/hub/tests/Hub.Tests"
+      },
+      "dependencies": [
+        {
+          "component": "text-inspection-core",
+          "kind": "required",
+          "reason": "Executa a mesma implementação host-neutra de text.inspect@1.0.0 conforme DEC-0038-A."
+        }
+      ],
+      "provides": [
+        {
+          "capability": "text.inspect",
+          "version": "1.0.0"
+        }
+      ]
     },
     "ecosystem-ai": {
       "name": "Ecosystem AI",
@@ -62,10 +116,23 @@
       "path": "apps/ecosystem-ai",
       "status": "active",
       "description": "AI Product do ecossistema (ADR-0017, DEC-0026-C, DEC-0027-B): consumidor do Agent Runtime. Nasce com o runtime mínimo (R1) dentro dele, com fronteira de extração; promoção só por Extraction Review (NN-022). Não é o Hub e não depende dele.",
-      "owners": ["AbnerCruz"],
-      "version": { "authority": "version-file", "file": "apps/ecosystem-ai/VERSION" },
-      "permissions": { "requests": ["agent.act", "fs.read", "fs.write"] },
-      "commands": { "test": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests" },
+      "owners": [
+        "AbnerCruz"
+      ],
+      "version": {
+        "authority": "version-file",
+        "file": "apps/ecosystem-ai/VERSION"
+      },
+      "permissions": {
+        "requests": [
+          "agent.act",
+          "fs.read",
+          "fs.write"
+        ]
+      },
+      "commands": {
+        "test": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests"
+      },
       "dependencies": []
     },
     "tabletop-rpg": {
@@ -75,15 +142,22 @@
       "path": "apps/tabletop-rpg",
       "status": "active",
       "description": "Plataforma mobile-first de RPG de mesa: MVP solo com humanos e agentes de IA sobre um motor C# determinístico; multiplayer é evolução futura (ADR-0022, DEC-0033).",
-      "owners": ["AbnerCruz"],
-      "version": { "authority": "version-file", "file": "apps/tabletop-rpg/VERSION" },
+      "owners": [
+        "AbnerCruz"
+      ],
+      "version": {
+        "authority": "version-file",
+        "file": "apps/tabletop-rpg/VERSION"
+      },
       "docs": {
         "readme": "apps/tabletop-rpg/README.md",
         "spec": "apps/tabletop-rpg/SPEC.md",
         "roadmap": "apps/tabletop-rpg/ROADMAP.md",
         "agents": "apps/tabletop-rpg/AGENTS.md"
       },
-      "commands": { "test": "cd apps/tabletop-rpg && dotnet test --project tests/TabletopRpg.Core.Tests" },
+      "commands": {
+        "test": "cd apps/tabletop-rpg && dotnet test --project tests/TabletopRpg.Core.Tests"
+      },
       "dependencies": []
     },
     "portal": {
@@ -94,9 +168,15 @@
       "status": "active",
       "description": "Portal humano de desenvolvimento, distribuição, documentação, testes e recuperação. Projeção do estado canônico — nunca fonte de verdade; não é o Hub nem dependência de runtime de nenhum componente (ADD-0001, ADR-0005).",
       "publicUrl": "https://abnercruz.github.io/Ecosystem/",
-      "owners": ["AbnerCruz"],
-      "docs": { "readme": "docs/architecture/portal.md" },
-      "commands": { "build": "dotnet run site/generator/GenerateStatus.cs" },
+      "owners": [
+        "AbnerCruz"
+      ],
+      "docs": {
+        "readme": "docs/architecture/portal.md"
+      },
+      "commands": {
+        "build": "dotnet run site/generator/GenerateStatus.cs"
+      },
       "dependencies": []
     },
     "decision-recorder": {
@@ -106,8 +186,12 @@
       "path": ".github/scripts",
       "status": "active",
       "description": "Automação que registra em decisions.json a decisão que o proprietário escolheu no portal: valida a Issue pré-preenchida, grava o registro persistido e o commit (ADR-0007, DEC-0010). Somente o dono do repositório; nunca executa texto da Issue.",
-      "owners": ["AbnerCruz"],
-      "commands": { "test": "dotnet run tests/consistency/Check.cs -- --self-test" },
+      "owners": [
+        "AbnerCruz"
+      ],
+      "commands": {
+        "test": "dotnet run tests/consistency/Check.cs -- --self-test"
+      },
       "dependencies": []
     },
     "origin-sync": {
@@ -117,8 +201,12 @@
       "path": ".github/origin-sync",
       "status": "active",
       "description": "Espelho de distribuição: script de shell (git plumbing; exceção local ao padrão C# de NN-005, por ser cola de git que roda na origem) e modelo de workflow que mantêm o repositório de origem de cada produto igual a apps/<id> e disparam os pipelines de release que a própria origem já possui (DEC-0008-A, DEC-0014-A). Só usa o GITHUB_TOKEN da origem; nunca escreve no Ecosystem.",
-      "owners": ["AbnerCruz"],
-      "docs": { "readme": "docs/migration/import-plan.md" },
+      "owners": [
+        "AbnerCruz"
+      ],
+      "docs": {
+        "readme": "docs/migration/import-plan.md"
+      },
       "dependencies": []
     },
     "integrator": {
@@ -128,11 +216,21 @@
       "path": ".github/integrator",
       "status": "active",
       "description": "Leva à main o trabalho dos agentes sem verificação manual (ADR-0015; política em docs/governance/integration-policy.json, decidida pelo proprietário em ADD-0012): monta o estado combinado main atual + PR, classifica com a política e as regras da main (rotina × crítico), roda os checks da main e os do candidato + o CI dos Products tocados e avança a main exatamente para o commit testado, sem force — sozinho se for rotina, com a autorização do proprietário se for crítico. As decisões são funções C# testadas em tests/consistency/Check.cs (--integration-plan, --integration-gates); o script de shell é só cola de git/gh (exceção local ao padrão C# de NN-005, como origin-sync). Workflow: .github/workflows/integrate.yml.",
-      "owners": ["AbnerCruz"],
-      "docs": { "readme": "docs/governance/multi-agent.md" },
-      "commands": { "test": "bash .github/integrator/simulate.sh" },
+      "owners": [
+        "AbnerCruz"
+      ],
+      "docs": {
+        "readme": "docs/governance/multi-agent.md"
+      },
+      "commands": {
+        "test": "bash .github/integrator/simulate.sh"
+      },
       "dependencies": [
-        { "component": "consistency-checks", "kind": "required", "reason": "Decide a fila e os portões com --integration-plan e --integration-gates e roda os checks no estado combinado." }
+        {
+          "component": "consistency-checks",
+          "kind": "required",
+          "reason": "Decide a fila e os portões com --integration-plan e --integration-gates e roda os checks no estado combinado."
+        }
       ]
     },
     "consistency-checks": {
@@ -142,9 +240,46 @@
       "path": "tests/consistency",
       "status": "active",
       "description": "Verificações de consistência da fundação: manifest, schemas, boundaries declarados, matriz de enforcement, ADRs, decisões e handoffs (ADR-0003).",
-      "owners": ["AbnerCruz"],
-      "docs": { "readme": "tests/consistency/README.md" },
-      "commands": { "test": "dotnet run tests/consistency/Check.cs" },
+      "owners": [
+        "AbnerCruz"
+      ],
+      "docs": {
+        "readme": "tests/consistency/README.md"
+      },
+      "commands": {
+        "test": "dotnet run tests/consistency/Check.cs"
+      },
+      "dependencies": []
+    },
+    "text-inspection-core": {
+      "name": "Text Inspection Core",
+      "type": "library",
+      "language": "csharp",
+      "path": "platform/text-inspection",
+      "status": "active",
+      "description": "Núcleo C# host-neutro de text.inspect@1.0.0; conta caracteres Unicode, palavras e linhas em texto fornecido em memória.",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "version": {
+        "authority": "version-file",
+        "file": "platform/text-inspection/VERSION"
+      },
+      "docs": {
+        "readme": "platform/text-inspection/README.md"
+      },
+      "commands": {
+        "build": "dotnet build platform/text-inspection/src/Ecosystem.TextInspection/Ecosystem.TextInspection.csproj",
+        "test": "dotnet test --project platform/text-inspection/tests/Ecosystem.TextInspection.Tests/Ecosystem.TextInspection.Tests.csproj"
+      },
+      "responsibility": "Implementar exclusivamente a semântica pura de text.inspect@1.0.0 sobre texto em memória, sem Host, Product, IO, transporte, Context, grants ou UI.",
+      "contract": "docs/contracts/capabilities/text.inspect.json",
+      "consumers": [
+        "hub",
+        "lunet2d"
+      ],
+      "extractionReason": "P5-5 possui dois consumidores reais da mesma capability. ADR-0028/DEC-0038-A aprovam extrair somente o algoritmo/validação host-neutros para eliminar duplicação sem promover o runtime experimental do Hub.",
+      "compatibility": "SemVer da Library; a versão 1.x preserva a semântica pública de text.inspect@1.0.0. Mudanças incompatíveis exigem nova versão e revisão do contrato da capability.",
       "dependencies": []
     }
   }
