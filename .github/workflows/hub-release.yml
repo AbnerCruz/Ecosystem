@@ -10,6 +10,7 @@ on:
     branches: [main]
     paths:
       - 'apps/hub/src/**'
+      - 'platform/text-inspection/**'
       - 'apps/hub/VERSION'
       - 'apps/hub/Directory.Build.props'
       - 'apps/hub/tools/**'
