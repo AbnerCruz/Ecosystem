@@ -123,3 +123,13 @@ reproduz os IDs determinísticos `reg_*`/`ast_*` da 1.x e
 `mapa.json`. Campos desconhecidos são preservados; mapas futuros/corruptos
 ficam somente leitura. Terreno, ruas, vida, AquariumWorld, câmera, desenho e
 interação continuam fora do Core nesta etapa.
+
+
+## UC-14 — Markdown e round-trip Visual
+
+UC-14 porta para o Core os contratos puros de `src/editor/markdown.js` e
+`src/editor/visual.js`. `MarkdownEngine` renderiza Markdown para HTML,
+preserva matemática como átomos `umath` e aplica a mesma sanitização histórica.
+`VisualMarkdown` usa um parser de fragmento HTML próprio, BCL-only, para
+serializar o subconjunto do editor de volta a Markdown sem DOM, WebView ou JS.
+A paridade é exercitada diretamente pelos goldens históricos do cliente legado.
