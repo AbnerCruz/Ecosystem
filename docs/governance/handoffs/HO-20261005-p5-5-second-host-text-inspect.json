@@ -46,7 +46,10 @@
     "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
     "apps/lunet2d/tests/Lunet.Tests/LunetCapabilityHostTests.cs",
     "apps/lunet2d/tests/Lunet.Tests/LunetHostApiConformanceTests.cs",
-    "docs/governance/handoffs/HO-20261005-p5-5-second-host-text-inspect.json"
+    "docs/governance/handoffs/HO-20261005-p5-5-second-host-text-inspect.json",
+    "tests/consistency/Check.cs",
+    ".github/integrator/integrate.sh",
+    ".github/integrator/simulate.sh"
   ],
   "work_completed": [
     "DEC-0038-A aplicada: somente o núcleo puro de text.inspect@1.0.0 é promovido para Library host-neutra.",
@@ -61,7 +64,10 @@
     "Pipelines Hub/Lunet validam projeção, self-test, Core e Products; releases continuam autocontidas.",
     "Primeira rodada CI confirmou Projection --check/--self-test verdes; correções posteriores preservam o desenho e removem apenas falhas concretas de compilação/schema/boundary.",
     "Core/testes deixam de depender de implicit usings herdados: namespaces BCL usados pela Library são explícitos.",
-    "Terceira rodada alcançou a compilação da suíte Lunet; única falha foi import ausente de Lunet.Core no novo teste de consumidor, corrigido sem mudança de comportamento."
+    "Terceira rodada alcançou a compilação da suíte Lunet; única falha foi import ausente de Lunet.Core no novo teste de consumidor, corrigido sem mudança de comportamento.",
+    "Self-tests legados do consistency foram tornados estruturais: mutações de ecosystem.json/portal usam árvore JSON, não strings frágeis.",
+    "Filtros de redispatch de release do integrador foram reconciliados com os workflows: platform/text-inspection/** dispara Hub e Lunet após integração.",
+    "Simulação do integrador agora verifica lockstep exato dos filtros Hub/Lunet e prova que mudança isolada no Text Inspection Core publica os dois consumidores."
   ],
   "verification": [
     {
@@ -74,21 +80,22 @@
       "check": "Core + Hub + Lunet + Host API conformance + consistency + self-test + integrator simulation",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Core, projeções e Hub completos verdes; consistency principal verde. Lunet chegou à compilação dos novos testes e falhou apenas por `ProjectStore` sem `using Lunet.Core`; corrigido neste commit."
+      "evidence": "Rodada anterior: Hub Core/APK, Lunet 321+/APK, projeções e self-test de projeção verdes; consistency principal e self-test gerais verdes. A única falha foi a simulação detectar filtro de release divergente após adicionar platform/text-inspection; integrador/simulação corrigidos e nova rodada disparada."
     }
   ],
   "known_issues": [
-    "Execução local C# completa é indisponível neste ambiente por ausência do SDK .NET; compilação/testes reais permanecem pendentes até o CI do PR.",
-    "P5-5 não é done antes de CI/integrador e integração crítica."
+    "P5-5 não é done antes de consistency + simulação do integrador no head final e autorização crítica do proprietário.",
+    "Nenhuma validação DEVICE específica é exigida em P5-5; o gate DEVICE integral permanece em P5-7."
   ],
   "blockers": [
-    "Checks automatizados do PR e autorização crítica do proprietário após verde, conforme política."
+    "Checks finais do head com control plane reconciliado.",
+    "Autorização crítica do proprietário após o integrador marcar o PR como pronto."
   ],
   "next_actions": [
-    "Criar um único commit com a solução final e abrir PR.",
-    "Executar CI uma vez; corrigir apenas falha concreta caso exista.",
-    "Após todos os checks verdes, aguardar autorização crítica do proprietário; o agente não aplica integrar.",
-    "Depois da integração, fechar Issue #227 state:done e liberar P5-6."
+    "Aguardar Hub, Lunet, APKs, consistency, self-test e simulação do integrador no head final.",
+    "Se todos verdes, atualizar evidência do handoff/Issue #227 para review final.",
+    "Aguardar autorização crítica válida do proprietário; o agente não aplica a label integrar.",
+    "Após integração, fechar P5-5 e iniciar P5-6."
   ],
   "decisions_required": [],
   "normative_sources": [
