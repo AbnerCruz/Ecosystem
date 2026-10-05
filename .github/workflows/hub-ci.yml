@@ -6,9 +6,9 @@ name: hub-ci
 on:
   push:
     branches: [main]
-    paths: ['apps/hub/**', '.github/workflows/hub-ci.yml']
+    paths: ['apps/hub/**', 'platform/text-inspection/**', '.github/workflows/hub-ci.yml']
   pull_request:
-    paths: ['apps/hub/**', '.github/workflows/hub-ci.yml']
+    paths: ['apps/hub/**', 'platform/text-inspection/**', '.github/workflows/hub-ci.yml']
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -38,6 +38,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Test (Text Inspection Core)
+        run: dotnet test --project ../../platform/text-inspection/tests/Ecosystem.TextInspection.Tests/Ecosystem.TextInspection.Tests.csproj
       - name: Test (Hub.Core)
         run: dotnet test --project tests/Hub.Tests
 
