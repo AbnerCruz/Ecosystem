@@ -247,9 +247,9 @@ public static partial class VisualMarkdown
 
     private static void Block(VisualHtmlNode node, List<string> output)
     {
-        if (node is VisualHtmlText text)
+        if (node is VisualHtmlText textNode)
         {
-            var value = text.Value.Trim();
+            var value = textNode.Value.Trim();
             if (value.Length > 0)
                 output.Add(value);
             return;
