@@ -1,0 +1,88 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc14-markdown-visual",
+  "category": "RESULT",
+  "timestamp": "2026-10-05T00:20:00Z",
+  "agent": {"id":"chatgpt","kind":"ai-agent"},
+  "task_id": "UC-14",
+  "component": "urbe",
+  "state": "working",
+  "branch": "feat/urbe-uc14-markdown-visual",
+  "base_commit": "b940b9da20e1fae8860774e36a5975aff6b09c33",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/232",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VisualMarkdown.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MarkdownVisualTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc14-markdown-visual.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Porta transformação pura em memória e testes; não grava vault, não altera migração, segurança, hosts ou distribuição."
+  },
+  "work_completed": [
+    "MarkdownEngine porta o pipeline Markdown→HTML do cliente JS usando apenas BCL.",
+    "Scanner matemático preserva delimitadores históricos e emite átomos umath sem depender de KaTeX.",
+    "VisualMarkdown implementa parser de fragmento HTML limitado ao subconjunto do editor e serialização Visual→Markdown.",
+    "Frontmatter do modo Visual permanece autoridade externa, como no JS.",
+    "Suíte lê diretamente os dois goldens históricos e cobre SafeUrl, código inline, parser Visual e frontmatter."
+  ],
+  "verification": [
+    {
+      "check": "Core C# / goldens",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks 37247026863: csharp-portable build passou e toda a suíte C# passou após corrigir o escape HTML; Android também success."
+    },
+    {
+      "check": "Regressão completa Urbe",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "E2E/checks/Windows ainda estavam executando ao registrar o handoff."
+    },
+    {
+      "check": "Governança/consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "A rodada atual herdou estado P5-4 antigo da branch-base; PR #228 já corrigiu isso na main. O PR #232 será retargetado após o closeout #229."
+    }
+  ],
+  "known_issues": [
+    "A branch nasceu sobre docs/urbe-uc13-closeout; após PR #229 integrar, PR #232 deve apontar para main para eliminar o estado transversal P5 antigo.",
+    "UC-14 não implementa UI do editor nem KaTeX visual."
+  ],
+  "blockers": [
+    "Finalizar E2E/checks/Windows no head atual.",
+    "Integrar PR #229 e retargetar PR #232 para main atual.",
+    "Repetir consistency no estado combinado definitivo."
+  ],
+  "next_actions": [
+    "Concluir regressão dos hosts.",
+    "Retargetar PR #232 para main após o closeout UC-13.",
+    "Corrigir qualquer divergência restante dos goldens sem alterar os oráculos.",
+    "Quando tudo verde, mover Issue #230 e handoff para review."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/editor/markdown.js",
+    "apps/urbe/src/editor/visual.js",
+    "apps/urbe/src/math/core.js",
+    "apps/urbe/src/math/editor.js",
+    "apps/urbe/tests/fixtures/markdown-golden.json",
+    "apps/urbe/tests/fixtures/visual-golden.json",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {"id":"NN-002","evidence":"Implementação permanece no Urbe.Core e usa apenas BCL."},
+    {"id":"NN-003","evidence":"Sem DOM, WebView, filesystem, rede, host ou plano de controle."},
+    {"id":"NN-008","evidence":"Issue #230, branch própria, PR #232 e handoff específico."},
+    {"id":"NN-017","evidence":"Nenhuma validação física/UI alegada; escopo é transformação pura."},
+    {"id":"NN-018","evidence":"UC-14 permanece working até regressão final e integração."},
+    {"id":"NN-023","evidence":"Core permanece standalone."}
+  ]
+}
