@@ -121,6 +121,10 @@ P5-4 continua sendo a evidência canônica do transporte Binder autenticado. P5-
 
 ## Resultado
 
-O gate só pode ser marcado **passed** se A, B, C, D e E passarem no candidato fixado.
+**PASSED / aprovado.**
 
-Se tudo passar, aprove a validação P5-7 no portal/Issue gerada pelo Ecosystem. Se qualquer etapa falhar, registre **qual seção e qual passo**, a mensagem exibida e, se possível, uma captura de tela. A Fase 5 permanece aberta até a aprovação humana canônica.
+- Gate comportamental A–E aprovado canonicamente pelo proprietário na Issue #241; registro `docs/governance/responses/VAL-HO-20261005-p5-7-device-gate-c035eb386921.md`.
+- O Hub dev.15 foi revogado por `versionCode` regressivo antes de servir como candidato final de distribuição. A correção do PR #240 gerou Hub dev.16 e a atualização por cima do Hub já instalado foi aprovada canonicamente na Issue #242; registro `docs/governance/responses/VAL-HO-20261005-p5-7-hub-versioncode-fix-834d182e65b0.md`.
+- A mudança dev.15 → dev.16 não alterou o código funcional da Capability Runtime; somente o `versionCode`/workflow de distribuição do Hub. Por isso as duas evidências são complementares: #241 prova o comportamento da Runtime e #242 prova o candidato corrigido de instalação.
+
+Com essas duas validações registradas, P5-7 e o gate da Fase 5 podem ser encerrados.

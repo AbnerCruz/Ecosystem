@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261005-p5-7-phase5-closeout",
+  "category": "RESULT",
+  "timestamp": "2026-10-05T16:33:00Z",
+  "agent": {
+    "id": "chatgpt-p5-7-phase5-closeout",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-7",
+  "component": "ecosystem",
+  "state": "done",
+  "branch": "chatgpt/p5-7-phase5-closeout",
+  "base_commit": "1db0e985e396da42e36bf728046bf119664ac006",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/validation/P5-7-capability-runtime-gate.md",
+    "docs/governance/handoffs/HO-20261005-p5-7-phase5-closeout.json"
+  ],
+  "work_completed": [
+    "Reconciliadas as duas validações humanas canônicas já registradas para P5-7: comportamento A–E na Issue #241 e instalação corrigida do Hub dev.16 na Issue #242.",
+    "P5-7 marcado como concluído e gate da Fase 5 marcado como aprovado.",
+    "Candidato final documentado como Hub dev.16 + Lunet dev.1000116; dev.15 permanece histórico/revogado por versionCode regressivo.",
+    "Dependência de Host real/Fase 5 removida de P6-4; o bloqueio remanescente é somente o critério de maturidade do Product anfitrião definido em agent-runtime.md §11.1."
+  ],
+  "verification": [
+    {
+      "check": "Gate DEVICE A-E da Capability Runtime",
+      "kind": "human",
+      "result": "passed",
+      "object": "docs/validation/P5-7-capability-runtime-gate.md",
+      "critical": true,
+      "evidence": "Aprovado pelo proprietário pelo portal na Issue #241; registro docs/governance/responses/VAL-HO-20261005-p5-7-device-gate-c035eb386921.md."
+    },
+    {
+      "check": "Atualização corrigida do Hub por cima da instalação existente",
+      "kind": "human",
+      "result": "passed",
+      "object": "docs/validation/P5-7-capability-runtime-gate.md",
+      "critical": true,
+      "evidence": "Aprovada pelo proprietário pelo portal na Issue #242; registro docs/governance/responses/VAL-HO-20261005-p5-7-hub-versioncode-fix-834d182e65b0.md."
+    },
+    {
+      "check": "Separação entre correção de distribuição e código funcional da Capability Runtime",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "d725c2beda0ed4344dd41c68754f0969977b9dd4",
+      "evidence": "PR #240 alterou o workflow/versionCode do Hub; o código funcional da Runtime permanece o integrado por P5-6 em 0a5a49a."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Fechar a Issue #238 após a integração deste closeout.",
+    "P6-4 continua waiting até um Product elegível atingir o marco de roadmap que autoriza hospedar o Agent Workspace; Fase 5 já não é bloqueio.",
+    "P4-9 continua separado e bloqueado pela chave privada/secrets de distribuição do Urbe."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/validation/P5-7-capability-runtime-gate.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/definition-of-done.md",
+    "docs/adr/0008-aprovacao-de-validacoes-pelo-portal.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O closeout usa as respostas canônicas já registradas; não cria segunda fonte de validação."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A aprovação material está persistida nas Issues #241/#242 e nos registros de responses antes da mudança durável do ROADMAP."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A Fase 5 só é encerrada após validação humana canônica; CI não substituiu DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "ROADMAP só passa a [x] após implementação, integração, checks e as duas validações humanas registradas."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "O gate aprovado inclui Lunet standalone sem depender do Hub para a capability local."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Fechamento documental de validações críticas já registradas e integradas; não altera runtime, contratos, segurança ou distribuição."
+  },
+  "cost": null
+}
