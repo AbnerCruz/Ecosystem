@@ -174,7 +174,7 @@ public sealed class LunetHostSession : IDisposable
     private readonly HashSet<string> _grants;
     private bool _closed;
     private CancellationTokenSource? _active;
-    private IReadOnlySet<string> _activePermissions = FrozenSet<string>.Empty;
+    private IReadOnlySet<string> _activePermissions = new HashSet<string>(StringComparer.Ordinal);
     private bool _activeRevoked;
 
     internal LunetHostSession(
@@ -277,7 +277,7 @@ public sealed class LunetHostSession : IDisposable
                 if (ReferenceEquals(_active, operation))
                 {
                     _active = null;
-                    _activePermissions = FrozenSet<string>.Empty;
+                    _activePermissions = new HashSet<string>(StringComparer.Ordinal);
                     _activeRevoked = false;
                 }
             }
