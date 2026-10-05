@@ -3,6 +3,24 @@ using System.Text.Json;
 
 namespace Hub.Core.Capabilities;
 
+/// <summary>
+/// Projeção de UX sobre uma capability já registrada no Host. Não é um segundo Registry:
+/// disponibilidade é recalculada a partir do Context e dos grants capturados pela sessão.
+/// </summary>
+public sealed record LocalConnectionDescriptor(
+    string Capability,
+    string Provider,
+    Version Version,
+    string Operation,
+    string Lifecycle,
+    IReadOnlyList<string> RequiredPermissions,
+    bool ContextMatches,
+    IReadOnlyList<string> MissingPermissions)
+{
+    public bool Available => ContextMatches && MissingPermissions.Count == 0;
+    public string Status => Available ? "available" : ContextMatches ? "grant-required" : "context-mismatch";
+}
+
 /// <summary>Registry derivado das definições locais. Não lê arquivos, rede ou Products.</summary>
 public sealed class LocalCapabilityHost
 {
@@ -60,6 +78,38 @@ public sealed class LocalHostSession : IDisposable
     {
         _frames.Enqueue(new(++_sequence, "event", "", _actor, "", _context, Event: name));
         while (_frames.Count > JournalLimit) _frames.Dequeue();
+    }
+
+    public LocalContext Context => _context;
+
+    public IReadOnlyList<string> Grants
+    {
+        get
+        {
+            lock (_sync)
+                return _closed ? [] : _permissions.OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        }
+    }
+
+    /// <summary>Connections é somente uma visão do Registry da sessão; não mantém cadastro ou estado paralelo.</summary>
+    public IReadOnlyList<LocalConnectionDescriptor> Connections()
+    {
+        lock (_sync)
+        {
+            if (_closed) return [];
+            return _definitions
+                .OrderBy(c => c.Id, StringComparer.Ordinal)
+                .ThenByDescending(c => c.Version)
+                .Select(c =>
+                {
+                    var required = c.RequiredPermissions.OrderBy(p => p, StringComparer.Ordinal).ToArray();
+                    var missing = required.Where(p => !_permissions.Contains(p)).ToArray();
+                    return new LocalConnectionDescriptor(
+                        c.Id, c.Provider, c.Version, c.Operation, c.Lifecycle,
+                        required, c.Scope.Contains(_context), missing);
+                })
+                .ToArray();
+        }
     }
 
     public IReadOnlyList<LocalCapability> Discover()

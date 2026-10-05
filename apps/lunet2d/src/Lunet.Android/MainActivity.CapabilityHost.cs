@@ -7,6 +7,51 @@ namespace Lunet.Android;
 
 public sealed partial class MainActivity
 {
+    private void ShowConnections()
+    {
+        if (_project is null)
+        {
+            new AlertDialog.Builder(this)
+                .SetTitle("Connections")
+                .SetMessage("Abra um projeto para ver as capabilities no Context real do Lunet.")
+                .SetPositiveButton("OK", (_, _) => { })
+                .Show();
+            return;
+        }
+
+        var host = LunetCapabilityHost.CreateDefault();
+        using var session = host.OpenForProject(_project);
+        var context = string.Join(" → ", session.Context.Path.Select(step => $"{step.Level}:{step.Id}"));
+        var grants = session.Grants.Count == 0 ? "nenhum" : string.Join(", ", session.Grants);
+        var lines = new List<string>
+        {
+            $"Context: {context}",
+            $"Grants: {grants}",
+            ""
+        };
+
+        var items = session.Connections();
+        if (items.Count == 0)
+            lines.Add("Nenhuma capability registrada neste Host.");
+        else
+            foreach (var connection in items)
+            {
+                var required = connection.RequiredPermissions.Count == 0 ? "nenhum" : string.Join(", ", connection.RequiredPermissions);
+                lines.Add($"{(connection.Available ? "✓" : "×")} {connection.Capability}@{connection.Version} · {connection.Provider}");
+                lines.Add($"  {connection.Status} · lifecycle {connection.Lifecycle} · grants exigidos: {required}");
+                if (connection.MissingPermissions.Count > 0)
+                    lines.Add($"  grants ausentes: {string.Join(", ", connection.MissingPermissions)}");
+            }
+
+        lines.Add("");
+        lines.Add("Fonte: Registry do Host. Connections não mantém cadastro próprio.");
+        new AlertDialog.Builder(this)
+            .SetTitle("Connections · Registry")
+            .SetMessage(string.Join("\n", lines))
+            .SetPositiveButton("Fechar", (_, _) => { })
+            .Show();
+    }
+
     private async void InspectEditorWithLocalHost()
     {
         if (_project is null || _editor is null)

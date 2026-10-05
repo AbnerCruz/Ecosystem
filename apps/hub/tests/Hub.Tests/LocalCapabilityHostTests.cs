@@ -39,6 +39,39 @@ public class LocalCapabilityHostTests
     }
 
     [Fact]
+    public void ConnectionsExplainsContextAndGrantsWithoutParallelState()
+    {
+        var scoped = new LocalContext([new("ecosystem", "local"), new("product", "alpha"), new("project", "one")]);
+        var host = Host(Tool((_, _) => Task.FromResult(Input()), scope: scoped));
+
+        using var noGrant = host.Open("user", Context("one"), []);
+        var blocked = Assert.Single(noGrant.Connections());
+        Assert.False(blocked.Available);
+        Assert.True(blocked.ContextMatches);
+        Assert.Equal("grant-required", blocked.Status);
+        Assert.Equal(["ui.display"], blocked.RequiredPermissions);
+        Assert.Equal(["ui.display"], blocked.MissingPermissions);
+        Assert.Empty(noGrant.Grants);
+        Assert.Empty(noGrant.Discover());
+
+        using var granted = host.Open("user", Context("one"), ["ui.display"]);
+        Assert.True(Assert.Single(granted.Connections()).Available);
+        Assert.Equal(["ui.display"], granted.Grants);
+        Assert.Single(granted.Discover());
+        Assert.True(granted.Revoke(["ui.display"]));
+        Assert.Equal("grant-required", Assert.Single(granted.Connections()).Status);
+        Assert.Empty(granted.Discover());
+
+        using var wrongContext = host.Open("user", Context("two"), ["ui.display"]);
+        var mismatch = Assert.Single(wrongContext.Connections());
+        Assert.False(mismatch.Available);
+        Assert.False(mismatch.ContextMatches);
+        Assert.Equal("context-mismatch", mismatch.Status);
+        Assert.Empty(mismatch.MissingPermissions);
+        Assert.Empty(wrongContext.Discover());
+    }
+
+    [Fact]
     public async Task UndeclaredOrUngrantedPermissionIsNeverInherited()
     {
         using var noGrant = Host(Tool((_, _) => Task.FromResult(Input()))).Open("user", Context(), []);
