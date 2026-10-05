@@ -26,7 +26,24 @@ public static partial class MarkdownEngine
             ["example"]="Exemplo", ["quote"]="Citação", ["abstract"]="Resumo", ["todo"]="A fazer"
         };
 
-    public static string EscapeHtml(string? value) => WebUtility.HtmlEncode(value ?? string.Empty);
+    public static string EscapeHtml(string? value)
+    {
+        var source = value ?? string.Empty;
+        var output = new StringBuilder(source.Length);
+        foreach (var ch in source)
+        {
+            output.Append(ch switch
+            {
+                '&' => "&amp;",
+                '<' => "&lt;",
+                '>' => "&gt;",
+                '"' => "&quot;",
+                '\'' => "&#39;",
+                _ => ch.ToString()
+            });
+        }
+        return output.ToString();
+    }
 
     public static string SafeUrl(string? url)
     {
