@@ -55,6 +55,7 @@ Permitido:
 
 ```text
 Product → Contract
+Product → Library declarada (NN-004/NN-022; ADR específica)
 Host    → Contract
 Tool    → Contract
 Adapter → Contract
@@ -71,7 +72,7 @@ Tool / componente compartilhado → Product/Host concreto (NN-007, MANIFEST §12
 *       → Portal (qualquer)   (ADD-0001: o portal nunca é dependência)
 ```
 
-**Fiscalização:** o grafo **declarado** em `ecosystem.json` é verificado por `CHK-BOUNDARIES`; as **referências reais de código** dos produtos ativos (referência a outro Product ou ao Hub, `ProjectReference`/`file:`/`link:` para fora do produto) por `CHK-ARCH-REFS`. O mapeamento invariante → mecanismo e seu estado é [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json) (a autoridade; não copiado aqui).
+**Fiscalização:** o grafo **declarado** em `ecosystem.json` é verificado por `CHK-BOUNDARIES`; as **referências reais de código** dos produtos ativos por `CHK-ARCH-REFS`: Product→Product/Hub e referências externas continuam proibidas; `ProjectReference` para uma Library ativa só é aceito quando a dependência está declarada em `ecosystem.json` e a extração possui boundary/ADR próprios. O mapeamento invariante → mecanismo e seu estado é [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json) (a autoridade; não copiado aqui).
 
 Exceções exigem ADR e alteração explícita do check.
 
