@@ -1,0 +1,120 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261005-p5-7-device-gate",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-05T10:36:45Z",
+  "agent": {
+    "id": "chatgpt-p5-7-device-gate",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-7",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p5-7-device-gate",
+  "base_commit": "fb885f2e7e7c811f979fdb1648b7cae45081b462",
+  "commit": "e684a99f1e2a230e112907d2e1a8589ea22e669e",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/239",
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/validation/P5-7-capability-runtime-gate.md",
+    "docs/governance/handoffs/HO-20261005-p5-7-device-gate.json"
+  ],
+  "work_completed": [
+    "Fixado o candidato DEVICE da Fase 5 na main 0a5a49a, que contém P5-1..P5-6 e o merge do PR #236.",
+    "Fixados Hub hub-v0.0.1-dev.15 e Lunet lunet2d-v0.0.1-dev.1000116 como APKs do gate; ambos foram publicados por workflows de release verdes.",
+    "Roteiro A-E separa Hub standalone, Lunet standalone sem Hub/offline, equivalência semântica, lifecycle/toque/layout e independência/segurança.",
+    "A matriz automatizada já cobre deny-by-default, revoke, Context mismatch, cancel, close e conformance; DEVICE não duplica esses testes, valida suas consequências observáveis."
+  ],
+  "verification": [
+    {
+      "check": "P5-6 e Capability Runtime no estado combinado",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "3d1752ceee6c3af743b5c7e627739709fbd65b0d",
+      "evidence": "PR #236: Hub CI/APK, Lunet CI/APK, consistency e integrator combined state verdes antes da integração em 0a5a49a."
+    },
+    {
+      "check": "Publicação dos candidatos Android",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "0a5a49a802d881fc192b6e9426d4f65b5e7344a5",
+      "evidence": "hub-release run 37296908753 publicou hub-v0.0.1-dev.15; lunet2d-release run 37296911382 publicou lunet2d-v0.0.1-dev.1000116."
+    },
+    {
+      "check": "Gate DEVICE A-E — dois Hosts reais, semântica, lifecycle, toque/layout e independência",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "docs/validation/P5-7-capability-runtime-gate.md",
+      "evidence": "Aprovação humana obrigatória pelo ROADMAP; CI não substitui Android real."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [
+    "Gate DEVICE A-E ainda não executado/aprovado pelo proprietário."
+  ],
+  "next_actions": [
+    "Integrar este registro/roteiro routine para que o portal apresente a validação humana crítica.",
+    "Instalar Hub dev.15 e Lunet dev.1000116 e executar A-E no aparelho.",
+    "Se aprovado, registrar a resposta canônica, marcar P5-7 e o gate da Fase 5 como concluídos e liberar os dependentes que exigem Host real."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/product-model.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/contracts/permissions.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Roteiro fixa um candidato e uma verificação humana canônica; não cria segunda autoridade."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Seção B exige Lunet funcional com Hub parado e rede desligada."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Gate usa Host API v1 e text.inspect@1.0.0 sem alterar contratos."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Mesma Tool/semântica é validada nos dois Hosts sem lógica de Host na Tool."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "ROADMAP, contratos, runtime plan, DoD e política foram consultados diretamente."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Negativas automatizadas permanecem deny-by-default; DEVICE não concede grants para fabricar sucesso."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Há verificação DEVICE explícita porque CI não prova lifecycle/toque/layout em Android real."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-7 e a Fase 5 permanecem abertos enquanto a verificação humana crítica está pending."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Candidato prova o Product Lunet sem Hub distribuído/em execução para a capability local."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "PR documental de validação; não altera runtime, contrato, segurança, distribuição ou arquitetura. A validação humana é crítica, mas o registro do gate não muda a fronteira de confiança."
+  },
+  "cost": null
+}
