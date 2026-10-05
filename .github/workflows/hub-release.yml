@@ -44,10 +44,17 @@ jobs:
       - name: Install Android workload
         run: dotnet workload install android
       - name: Build APK
-        run: >
-          dotnet build apps/hub/src/Hub.Android/Hub.Android.csproj -c Debug
-          -p:AndroidSdkDirectory="$ANDROID_HOME"
-          -p:GITHUB_RUN_NUMBER=${{ github.run_number }}
+        # O versionCode Android precisa ser monotônico entre releases. O candidato DEVICE de P5-4
+        # chegou a usar versionCode 108; usar o run_number cru (15, 16, ...) fez o Android tratar
+        # releases posteriores como downgrade e responder "pacote parece ser inválido".
+        # Reservamos a faixa 1_000_000+ para o canal público de desenvolvimento do Hub.
+        run: |
+          version_code=$((1000000 + ${{ github.run_number }}))
+          echo "HUB_VERSION_CODE=$version_code" >> "$GITHUB_ENV"
+          echo "Hub Android versionCode: $version_code"
+          dotnet build apps/hub/src/Hub.Android/Hub.Android.csproj -c Debug \
+            -p:AndroidSdkDirectory="$ANDROID_HOME" \
+            -p:GITHUB_RUN_NUMBER="$version_code"
       - name: Reunir os arquivos da release
         env:
           RUN_NUMBER: ${{ github.run_number }}
@@ -68,6 +75,7 @@ jobs:
             echo
             echo "- Commit: ${COMMIT}"
             echo "- Arquivo: ${name}.apk (Android, arm64)"
+            echo "- Android versionCode: ${HUB_VERSION_CODE}"
             echo "- SHA-256 do APK: $(cut -d' ' -f1 "out/${name}.apk.sha256")"
             echo
             echo "O Hub é só leitura: consulta o repositório e a API pública do GitHub e não grava nada de volta."
