@@ -324,3 +324,9 @@
 - `urbe-checks` #37230492613: Core C# 134/134 testes, Web smoke, Android, Windows, checks e E2E todos verdes.
 - `consistency` #37230492604: verde.
 - Issue #221 movida para `state:review`; PR #223 segue rotina automática de integração.
+
+
+### 2026-10-04 — ChatGPT — UC-13 integrada
+- PR #223 integrado automaticamente em `ccab4b91`; a `main` passou a conter a projeção pura do mundo/bairros e IDs estáveis.
+- UC-13 encerrada com 134/134 testes C#, Web/Android/Windows/E2E/checks e consistency verdes.
+- Próxima tarefa: UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens.
