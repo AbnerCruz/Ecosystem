@@ -7,7 +7,7 @@ public class TextInspectorTests
     [Theory]
     [InlineData("", 0, 0, 0)]
     [InlineData("Olá mundo\n🙂", 11, 3, 2)]
-    [InlineData("  um\tdois\r\ntrês  ", 16, 3, 2)]
+    [InlineData("  um\tdois\r\ntrês  ", 17, 3, 2)]
     [InlineData("🙂🙂", 2, 1, 1)]
     public void CountsContractSemantics(string text, int characters, int words, int lines)
     {
