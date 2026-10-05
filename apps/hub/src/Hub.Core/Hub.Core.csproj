@@ -6,7 +6,4 @@
   <ItemGroup>
     <PackageReference Include="Markdig" Version="1.4.0" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\platform\text-inspection\src\Ecosystem.TextInspection\Ecosystem.TextInspection.csproj" />
-  </ItemGroup>
 </Project>
