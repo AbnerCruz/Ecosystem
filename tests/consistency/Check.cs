@@ -2671,8 +2671,19 @@ static class SelfTest
         new("registro de validação fora do caminho", "CHK-VALIDATION",
             r => { var d = Path.Combine(r, "docs", "validation", "urbe"); File.Move(Path.Combine(d, "1.8.2-beta-web.json"), Path.Combine(d, "outro.json")); }),
         new("Hub como dependência obrigatória", "CHK-BOUNDARIES",
-            r => Replace(r, "ecosystem.json", "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/lunet2d/VERSION\" },\n      \"dependencies\": []",
-                "\"https://github.com/AbnerCruz/Lunet2D\", \"confirmed\": true },\n      \"version\": { \"authority\": \"version-file\", \"file\": \"apps/lunet2d/VERSION\" },\n      \"dependencies\": [{ \"component\": \"hub\", \"kind\": \"required\", \"reason\": \"x\" }]")),
+            r =>
+            {
+                var f = Path.Combine(r, "ecosystem.json");
+                var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(f))!;
+                var deps = n["components"]!["lunet2d"]!["dependencies"]!.AsArray();
+                deps.Add(new System.Text.Json.Nodes.JsonObject
+                {
+                    ["component"] = "hub",
+                    ["kind"] = "required",
+                    ["reason"] = "self-test"
+                });
+                File.WriteAllText(f, n.ToJsonString());
+            }),
         new("diretório shared genérico", "CHK-GENERIC-DIRS",
             r => Directory.CreateDirectory(Path.Combine(r, "platform", "shared"))),
         new("componente compartilhado sem declaração", "CHK-SHARED-DECLARATION",
@@ -2809,7 +2820,22 @@ static class SelfTest
         new("portal mostra canal de distribuição que o perfil não declara", "CHK-PORTAL",
             r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"channel\": \"urbe-github-pages\"", "\"channel\": \"urbe-inventado\""); }),
         new("portal mostra capability que nenhum manifest declara", "CHK-PORTAL",
-            r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"capabilities\": []", "\"capabilities\": [ { \"id\": \"inventada.cap\", \"providers\": [\"urbe\"], \"consumers\": [] } ]"); }),
+            r =>
+            {
+                RunGenerator(r);
+                var f = Path.Combine(r, "site", "data", "ecosystem-status.json");
+                var n = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(f))!;
+                var caps = n["ecosystem"]?["capabilities"]?.AsArray()
+                    ?? n["capabilities"]?.AsArray()
+                    ?? throw new InvalidOperationException("self-test: projeção do portal sem array capabilities");
+                caps.Add(new System.Text.Json.Nodes.JsonObject
+                {
+                    ["id"] = "inventada.cap",
+                    ["providers"] = new System.Text.Json.Nodes.JsonArray("urbe"),
+                    ["consumers"] = new System.Text.Json.Nodes.JsonArray()
+                });
+                File.WriteAllText(f, n.ToJsonString());
+            }),
         new("Caso B: produto active no ecosystem.json, projeção diz not-migrated", "CHK-PORTAL",
             r => { RunGenerator(r); Replace(r, "site/data/ecosystem-status.json", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"active\"", "\"name\": \"Urbe\",\n      \"type\": \"product\",\n      \"status\": \"not-migrated\""); }),
         new("Caso C: decisão decided, projeção ainda a mostra pendente", "CHK-PORTAL",
