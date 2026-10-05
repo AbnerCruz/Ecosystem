@@ -58,6 +58,7 @@ Product → Contract
 Host    → Contract
 Tool    → Contract
 Adapter → Contract
+Product → Library versionada **embutida no próprio Product**, quando aprovada por ADR/NN-022
 ```
 
 Proibido:
@@ -71,7 +72,9 @@ Tool / componente compartilhado → Product/Host concreto (NN-007, MANIFEST §12
 *       → Portal (qualquer)   (ADD-0001: o portal nunca é dependência)
 ```
 
-**Fiscalização:** o grafo **declarado** em `ecosystem.json` é verificado por `CHK-BOUNDARIES`; as **referências reais de código** dos produtos ativos (referência a outro Product ou ao Hub, `ProjectReference`/`file:`/`link:` para fora do produto) por `CHK-ARCH-REFS`. O mapeamento invariante → mecanismo e seu estado é [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json) (a autoridade; não copiado aqui).
+**Fiscalização:** o grafo **declarado** em `ecosystem.json` é verificado por `CHK-BOUNDARIES`; as **referências reais de código** dos produtos ativos (referência a outro Product ou ao Hub, `ProjectReference`/`file:`/`link:` para fora do produto) por `CHK-ARCH-REFS`.
+
+Uma Library compartilhada não autoriza referência de build do Product para caminho externo arbitrário do monorepo. Quando a Library precisa ser incorporada a um Product distribuível, o Product consome uma projeção/package derivado dentro do próprio boundary e a autoridade canônica permanece explícita. Para ADR-0028-A, `platform/text-inspection` é a única fonte editável; Hub e Lunet compilam projeções `Generated / DO NOT EDIT` reproduzíveis, verificadas por `Projection.cs --check`. `CHK-ARCH-REFS` não é enfraquecido. O mapeamento invariante → mecanismo e seu estado é [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json) (a autoridade; não copiado aqui).
 
 Exceções exigem ADR e alteração explícita do check.
 

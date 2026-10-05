@@ -1,0 +1,184 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261005-p5-5-second-host-text-inspect",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-05T00:45:00Z",
+  "agent": {
+    "id": "chatgpt-p5-5-second-host-text-inspect",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-5",
+  "component": "ecosystem",
+  "state": "verifying",
+  "branch": "chatgpt/p5-5-second-host-text-inspect-v2",
+  "base_commit": "fbbb4a230f3468b3075225a9a6bd5474cea04b8d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/adr/0028-text-inspect-core-compartilhado.md",
+    "docs/adr/README.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/p5-5-text-inspect-extraction-review.md",
+    "docs/governance/decisions.json",
+    "docs/governance/enforcement-matrix.json",
+    ".github/workflows/hub-ci.yml",
+    ".github/workflows/hub-release.yml",
+    ".github/workflows/lunet2d-ci.yml",
+    ".github/workflows/lunet2d-release.yml",
+    "platform/text-inspection/VERSION",
+    "platform/text-inspection/README.md",
+    "platform/text-inspection/global.json",
+    "platform/text-inspection/src/Ecosystem.TextInspection/Ecosystem.TextInspection.csproj",
+    "platform/text-inspection/src/Ecosystem.TextInspection/TextInspector.cs",
+    "platform/text-inspection/tests/Ecosystem.TextInspection.Tests/Ecosystem.TextInspection.Tests.csproj",
+    "platform/text-inspection/tests/Ecosystem.TextInspection.Tests/TextInspectorTests.cs",
+    "platform/text-inspection/tools/Projection.cs",
+    "apps/hub/src/Hub.Core/Capabilities/TextInspectionTool.cs",
+    "apps/hub/src/Hub.Core/Generated/Ecosystem.TextInspection/TextInspector.cs",
+    "apps/lunet2d/src/Lunet.Core/Capabilities/LunetCapabilityHost.cs",
+    "apps/lunet2d/src/Lunet.Core/Capabilities/LunetTextInspectionCapability.cs",
+    "apps/lunet2d/src/Lunet.Core/Generated/Ecosystem.TextInspection/TextInspector.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.CapabilityHost.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetCapabilityHostTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetHostApiConformanceTests.cs",
+    "docs/governance/handoffs/HO-20261005-p5-5-second-host-text-inspect.json"
+  ],
+  "work_completed": [
+    "DEC-0038-A aplicada: somente o núcleo puro de text.inspect@1.0.0 é promovido para Library host-neutra.",
+    "A tentativa antiga com cópias sem derivação foi descartada; a implementação final usa uma autoridade editável em platform/text-inspection e projeções determinísticas GENERATED/DO NOT EDIT dentro de Hub e Lunet.",
+    "Projection.cs fornece --write, --check e --self-test; check detecta drift e arquivo ausente e a regeneração é byte-estável.",
+    "CHK-ARCH-REFS não foi afrouxado e não há ProjectReference de Product para platform/ nem Product→Product.",
+    "Hub mantém seu runtime/Host próprio e apenas adapta JSON/Host API ao Text Inspection Core.",
+    "Lunet implementa Host API v1 em processo próprio com Context derivado do GameId real, identidade Host-owned, grants deny-by-default, discovery, invoke, cancel explícito, revoke, erros separados e close.",
+    "A UI do Lunet envia somente seleção/documento já em memória; a Library não recebe acesso ao filesystem.",
+    "Matriz aplicável de conformance Host API v1 e testes do consumidor real foram adicionados ao Lunet.",
+    "ecosystem.json declara a Library, responsabilidade, contrato, dois consumidores, compatibilidade, motivo da extração e providers text.inspect nos dois Hosts.",
+    "Pipelines Hub/Lunet validam projeção, self-test, Core e Products; releases continuam autocontidas."
+  ],
+  "verification": [
+    {
+      "check": "Semântica da projeção determinística em isolamento",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Sandbox local reproduziu geração, igualdade Hub/Lunet, drift, missing e regeneração determinística dos bytes esperados."
+    },
+    {
+      "check": "Core + Hub + Lunet + Host API conformance + consistency + self-test + integrator simulation",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O container desta sessão não possui dotnet e não consegue clonar pela rede; o conjunto foi batido em um único commit para uma única rodada de CI remoto, sem usar CI como REPL."
+    }
+  ],
+  "known_issues": [
+    "Execução local C# completa é indisponível neste ambiente por ausência do SDK .NET; compilação/testes reais permanecem pendentes até o CI do PR.",
+    "P5-5 não é done antes de CI/integrador e integração crítica."
+  ],
+  "blockers": [
+    "Checks automatizados do PR e autorização crítica do proprietário após verde, conforme política."
+  ],
+  "next_actions": [
+    "Criar um único commit com a solução final e abrir PR.",
+    "Executar CI uma vez; corrigir apenas falha concreta caso exista.",
+    "Após todos os checks verdes, aguardar autorização crítica do proprietário; o agente não aplica integrar.",
+    "Depois da integração, fechar Issue #227 state:done e liberar P5-6."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0024-host-api-publica-product-shell.md",
+    "docs/adr/0028-text-inspect-core-compartilhado.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/p5-5-text-inspect-extraction-review.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/governance/integration-policy.json",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/responses/DEC-0038.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "platform/text-inspection/src/Ecosystem.TextInspection/TextInspector.cs é a única autoridade editável; projeções são derivadas e verificadas."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência Product→Product foi criada."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Lunet executa text.inspect localmente sem Hub; Hub também executa sem Lunet."
+    },
+    {
+      "id": "NN-004",
+      "evidence": "text-inspection-core declara responsabilidade, contrato, consumidores, owner, compatibilidade e extractionReason em ecosystem.json."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "text.inspect@1.0.0 e Host API v1 permanecem contratos canônicos inalterados."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Text Inspection Core não conhece Host/Product; adapters ficam em cada Product."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "A fronteira estrutural segue ADR-0028 / DEC-0038-A."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Lunet Host captura grants deny-by-default; text.inspect não requer permissão artificial."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "P5-5 não é marcado concluído antes dos checks; DEVICE permanece para P5-7."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Handoff fica verifying até evidência real do CI/integrador."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Somente o algoritmo puro foi compartilhado; runtime/SDK do Hub não foi promovido."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Extraction Review possui dois consumidores reais; projeção elimina duplicação sem ampliar runtime compartilhado."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Products compilam fontes derivadas dentro do próprio boundary; não dependem da distribuição do Hub nem de path externo em build standalone."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "text-inspection-core",
+      "status": "external-consumer-exists",
+      "rationale": "Hub e Lunet são consumidores reais; DEC-0038-A aprovou a Library mínima. Projeção determinística preserva uma autoridade e a autocontenção.",
+      "consumers": [
+        "hub",
+        "lunet2d"
+      ],
+      "extraction_review": "docs/architecture/p5-5-text-inspect-extraction-review.md"
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "architecture",
+      "control-plane",
+      "constitution"
+    ],
+    "reason": "O diff cria o primeiro componente compartilhado real, altera ecosystem.json/ADR/consequências da decisão e pipelines de enforcement/release; não enfraquece checks."
+  },
+  "cost": null
+}

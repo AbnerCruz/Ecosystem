@@ -1,0 +1,39 @@
+using System.Text;
+
+namespace Ecosystem.TextInspection;
+
+public readonly record struct TextInspectionResult(int Characters, int Words, int Lines);
+
+/// <summary>Núcleo puro de text.inspect@1.0.0. Não conhece Host, Product, IO, transporte, Context ou grants.</summary>
+public static class TextInspector
+{
+    /// <summary>Limite contratual em unidades UTF-16.</summary>
+    public const int MaximumLength = 100_000;
+
+    public static TextInspectionResult Inspect(string text, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        if (text.Length > MaximumLength)
+            throw new ArgumentOutOfRangeException(nameof(text), $"O texto excede {MaximumLength} unidades UTF-16.");
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var characters = 0;
+        var words = 0;
+        var lines = text.Length == 0 ? 0 : 1;
+        var insideWord = false;
+
+        foreach (var rune in text.EnumerateRunes())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            characters++;
+            if (rune.Value == '\n') lines++;
+
+            var whitespace = Rune.IsWhiteSpace(rune);
+            if (!whitespace && !insideWord) words++;
+            insideWord = !whitespace;
+        }
+
+        return new TextInspectionResult(characters, words, lines);
+    }
+}

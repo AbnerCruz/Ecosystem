@@ -560,9 +560,9 @@
         },
         {
           "mechanism": "TEST",
-          "status": "planned",
-          "how": "Pelo menos um teste de consumidor real por componente compartilhado. Re-faseado ao fechar a Fase 2 (2026-10-01): nenhum componente compartilhado existe (local-first, ADR-0011); o primeiro nasce por promoção com evidência, no máximo na Fase 7.",
-          "phase": "phase-7"
+          "status": "implemented",
+          "how": "O primeiro componente compartilhado real nasce em P5-5 por DEC-0038-A: Text Inspection Core tem consumidores Hub e Lunet, testes em ambos e projeções determinísticas verificadas por Projection.cs --check/--self-test. Novas extrações continuam exigindo a mesma evidência por NN-022.",
+          "phase": "phase-5"
         },
         {
           "mechanism": "REVIEW",
