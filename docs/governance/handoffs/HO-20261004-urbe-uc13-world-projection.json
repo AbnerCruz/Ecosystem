@@ -10,10 +10,10 @@
   },
   "task_id": "UC-13",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "feat/urbe-uc13-world-projection",
   "base_commit": "e7f7d0753763bbd70fe6ee3e6c7c6260101a33db",
-  "commit": "281f5234f126726e6cc34a0f278f4359ff38fdd7",
+  "commit": "ccab4b91f40f19776e782f26f460b94d57052756",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/223",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/WorldStableIds.cs",
@@ -34,7 +34,9 @@
     "WorldProjection porta projectDocument/documents/region/setSpatial/metadata/snapshot/setEnabled e migração espacial ao renomear documento pelo ID estável.",
     "Lookup de spatial/regiões usa comparação ordinal case-sensitive como Map do JS; DocumentStore mantém resolução de documentos case-insensitive.",
     "FromVault recusa snapshot recuperado por journal para não misturar regiões físicas antigas com estado efetivo recuperado.",
-    "Testes cobrem fixture v1-mapa-v4, hashes exatos, colisões, idempotência, truthiness de files, rename/case, metadata desconhecida, futuro/corrupto e journal."
+    "Testes cobrem fixture v1-mapa-v4, hashes exatos, colisões, idempotência, truthiness de files, rename/case, metadata desconhecida, futuro/corrupto e journal.",
+    "PR #223 integrado automaticamente como mudança rotineira em ccab4b91; estado combinado testado tornou-se a main.",
+    "Revalidação do closeout deve usar a main atual, onde o PR #228 já reconciliou P5-4; a falha anterior de consistency era exclusivamente estado transversal obsoleto da base."
   ],
   "verification": [
     {
@@ -60,13 +62,9 @@
     "VaultSnapshot recuperado por journal não expõe o JSON efetivo completo do mapa; LoadFromVault recusa esse caso em vez de projetar regiões físicas obsoletas.",
     "Terreno, ruas, AquariumWorld, NPCs/vida, layout/reorganização e renderização permanecem deliberadamente fora da UC-13."
   ],
-  "blockers": [
-    "Integração rotineira automática do PR #223 após validar este head documental final."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Aguardar apenas os checks do head documental final.",
-    "Integrador automático deve integrar PR #223 por ser mudança rotineira.",
-    "Após integração, reconciliar UC-13 como done e iniciar UC-14."
+    "Iniciar UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -97,7 +95,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "UC-13 permanece working até CI e integração."
+      "evidence": "UC-13 concluída após regressão verde e integração automática do PR #223 em ccab4b91."
     },
     {
       "id": "NN-023",
