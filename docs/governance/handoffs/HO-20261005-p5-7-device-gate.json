@@ -44,10 +44,10 @@
     {
       "check": "Gate DEVICE A-E — dois Hosts reais, semântica, lifecycle, toque/layout e independência",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "docs/validation/P5-7-capability-runtime-gate.md",
-      "evidence": "Aprovação humana obrigatória pelo ROADMAP; CI não substitui Android real."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-05 (Issue https://github.com/AbnerCruz/Ecosystem/issues/241); registro em docs/governance/responses/VAL-HO-20261005-p5-7-device-gate-c035eb386921.md."
     }
   ],
   "known_issues": [],
