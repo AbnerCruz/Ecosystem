@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Lunet.Core;
 using Lunet.Core.Capabilities;
 
 namespace Lunet.Tests;

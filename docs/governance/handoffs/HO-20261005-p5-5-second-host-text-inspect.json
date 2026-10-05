@@ -60,7 +60,8 @@
     "ecosystem.json declara a Library, responsabilidade, contrato, dois consumidores, compatibilidade, motivo da extração e providers text.inspect nos dois Hosts.",
     "Pipelines Hub/Lunet validam projeção, self-test, Core e Products; releases continuam autocontidas.",
     "Primeira rodada CI confirmou Projection --check/--self-test verdes; correções posteriores preservam o desenho e removem apenas falhas concretas de compilação/schema/boundary.",
-    "Core/testes deixam de depender de implicit usings herdados: namespaces BCL usados pela Library são explícitos."
+    "Core/testes deixam de depender de implicit usings herdados: namespaces BCL usados pela Library são explícitos.",
+    "Terceira rodada alcançou a compilação da suíte Lunet; única falha foi import ausente de Lunet.Core no novo teste de consumidor, corrigido sem mudança de comportamento."
   ],
   "verification": [
     {
@@ -73,7 +74,7 @@
       "check": "Core + Hub + Lunet + Host API conformance + consistency + self-test + integrator simulation",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Segunda rodada: consistency principal verde e Projection check/self-test verdes. Core isolado avançou até compilação e revelou somente ausência de `using System` para tipos de exceção; este commit torna Core/testes explicitamente autocontidos."
+      "evidence": "Core, projeções e Hub completos verdes; consistency principal verde. Lunet chegou à compilação dos novos testes e falhou apenas por `ProjectStore` sem `using Lunet.Core`; corrigido neste commit."
     }
   ],
   "known_issues": [
