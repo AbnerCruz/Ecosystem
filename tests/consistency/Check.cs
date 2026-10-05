@@ -2137,6 +2137,17 @@ static class IntegrationQueue
                 if (File.Exists(wf) && File.ReadAllText(wf).Contains($"'{c.Str("path")}/**'")) touched.Add(cid);
             }
         JsonElement? Find(string t) => combinedComps.TryGetValue(t, out var c) ? c : baseComps.TryGetValue(t, out var b) ? b : null;
+
+        // Uma mudança em componente compartilhado exige verificar todos os consumidores reais declarados.
+        // A propagação vem do manifest, não de nomes hardcoded (NN-004, NN-022).
+        var pendingConsumers = new Queue<string>(touched);
+        while (pendingConsumers.TryDequeue(out var touchedId))
+        {
+            if (Find(touchedId) is not { } component) continue;
+            foreach (var consumer in component.Arr("consumers").Select(x => x.GetString()).Where(x => !string.IsNullOrWhiteSpace(x)))
+                if (touched.Add(consumer!)) pendingConsumers.Enqueue(consumer!);
+        }
+
         var products = touched.Where(t => Find(t) is { } e && e.Str("type") == "product").ToArray();
 
         // Criticidade: política lida da main; sem política legível na main, tudo é crítico (falha fechada).
@@ -3007,6 +3018,9 @@ static class SelfTest
             bad = Node(); bad["normative_sources"] = new System.Text.Json.Nodes.JsonArray();
             Test(!Gate(bad, "apps/urbe/src/editor.js").Ok, "refatoração sem ADR falha");
             var ordinary = System.Text.Json.Nodes.JsonNode.Parse("""{"state":"review"}""")!;
+            var sharedCore = Gate(Node(), "platform/text-inspection/src/Ecosystem.TextInspection/TextInspector.cs");
+            Test(sharedCore.Products.SequenceEqual(["hub", "lunet2d"]),
+                "mudança em componente compartilhado exige CI de todos os Products consumidores declarados");
             Test(Gate(ordinary, "site/app.js").Ok, "feature local não exige declaração de migração");
             Test(!Gate(ordinary, "docs/contracts/schemas/context.schema.json").Ok, "mudança de contrato sem ADR bloqueia");
             Put(c, adr, "# ADR\n\n## Status\n\nProposto\n");
