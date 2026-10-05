@@ -314,11 +314,11 @@ static class Checks
     }
 
     // --- CHK-ARCH-REFS (NN-002, NN-003, NN-023; P1-7) ---
-    // O grafo de ecosystem.json declara as dependências; este check olha o CÓDIGO REAL dos produtos importados: nenhum Product
-    // pode referenciar outro Product nem o Hub (a menos que a dependência esteja declarada e permitida), nem apontar por
-    // ProjectReference / file: / link: para fora do próprio diretório.
+    // O grafo de ecosystem.json declara as dependências; este check olha o CÓDIGO REAL dos produtos importados.
+    // Product → Product/Hub continua proibido. Um Product pode usar ProjectReference para uma Library ativa
+    // explicitamente declarada (NN-004/NN-022); Compile/Content/Import/file:/link: externos continuam proibidos.
     static readonly string[] BinaryExt = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".apk", ".aab", ".jar", ".zip", ".gz", ".7z", ".woff", ".woff2", ".ttf", ".otf", ".mp3", ".ogg", ".wav", ".mp4", ".pdf", ".dll", ".exe", ".so", ".keystore", ".jks", ".bin", ".wasm", ".node", ".sqlite", ".db"];
-    static readonly Regex ProjectRef = new(@"<(?:ProjectReference|Import|Compile|None|Content)\s[^>]*?(?:Include|Project)\s*=\s*""([^""]+)""", RegexOptions.IgnoreCase);
+    static readonly Regex ProjectRef = new(@"<(?<kind>ProjectReference|Import|Compile|None|Content)\s[^>]*?(?:Include|Project)\s*=\s*""(?<path>[^""]+)""", RegexOptions.IgnoreCase);
     static readonly Regex LocalDep = new(@"""(?:file|link):([^""]+)""");
 
     static void ArchRefs(Context c)
@@ -330,6 +330,13 @@ static class Checks
         {
             var path = comp.Str("path")!;
             var declared = comp.Arr("dependencies").Select(d => d.Str("component")).Where(x => x is not null).ToHashSet();
+            var declaredLibraryRoots = c.Components()
+                .Where(x => declared.Contains(x.Id)
+                    && x.El.Str("type") == "library"
+                    && x.El.Str("status") == "active"
+                    && x.El.Str("path") is not null)
+                .Select(x => Path.GetFullPath(c.P(x.El.Str("path")!)) + Path.DirectorySeparatorChar)
+                .ToArray();
             // termos que identificam OUTROS componentes (produtos ativos e o Hub)
             var terms = new List<(string Target, Regex Rx)>();
             foreach (var (oid, other) in c.Components().Where(x => x.Id != cid && x.El.Str("type") == "product"))
@@ -367,15 +374,22 @@ static class Checks
                         c.R.Fail(id, $"{rel}: o produto '{cid}' referencia '{target}' ('{m.Value}'): Product → Product/Hub só por contract/capability declarada (NN-002, NN-003)");
 
                 var ext = Path.GetExtension(f).ToLowerInvariant();
-                IEnumerable<string> refs = ext is ".csproj" or ".props" or ".targets" or ".slnx"
-                    ? ProjectRef.Matches(text).Select(m => m.Groups[1].Value)
-                    : Path.GetFileName(f) == "package.json" ? LocalDep.Matches(text).Select(m => m.Groups[1].Value) : [];
-                foreach (var r in refs)
+                IEnumerable<(string Kind, string Path)> refs = ext is ".csproj" or ".props" or ".targets" or ".slnx"
+                    ? ProjectRef.Matches(text).Select(m => (m.Groups["kind"].Value, m.Groups["path"].Value))
+                    : Path.GetFileName(f) == "package.json"
+                        ? LocalDep.Matches(text).Select(m => ("package", m.Groups[1].Value))
+                        : [];
+                foreach (var reference in refs)
                 {
+                    var r = reference.Path;
                     if (r.Contains("$(")) continue;
                     var full = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(f)!, r.Replace('\\', '/')));
-                    if (!full.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar))
-                        c.R.Fail(id, $"{rel}: referência '{r}' aponta para fora de {path}/ (o produto precisa ser autocontido, NN-002, NN-023)");
+                    if (full.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar)) continue;
+
+                    var declaredLibraryReference = reference.Kind.Equals("ProjectReference", StringComparison.OrdinalIgnoreCase)
+                        && declaredLibraryRoots.Any(libraryRoot => full.StartsWith(libraryRoot, StringComparison.Ordinal));
+                    if (!declaredLibraryReference)
+                        c.R.Fail(id, $"{rel}: referência '{r}' aponta para fora de {path}/ sem ProjectReference para Library declarada (NN-002, NN-004, NN-022, NN-023)");
                 }
             }
         }
