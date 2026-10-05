@@ -3,14 +3,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261005-p5-6-connections-registry-ux",
   "category": "HANDOFF",
-  "timestamp": "2026-10-05T10:23:30Z",
+  "timestamp": "2026-10-05T10:29:10Z",
   "agent": {
     "id": "chatgpt-p5-6-connections-registry-ux",
     "kind": "ai-agent"
   },
   "task_id": "P5-6",
   "component": "ecosystem",
-  "state": "verifying",
+  "state": "review",
   "branch": "chatgpt/p5-6-connections-registry-ux",
   "base_commit": "3537b12f664a7bea811eeb8f6bdeb583e00d0baa",
   "commit": "c751e2e3a27faf56a79ee990512094a801878475",
@@ -40,35 +40,31 @@
     {
       "check": "Hub.Core + Hub Android + testes de Connections",
       "kind": "automated",
-      "result": "pending",
-      "tested_commit": "c751e2e3a27faf56a79ee990512094a801878475",
-      "evidence": "PR #236 aberto; aguarda Hub CI no head final."
+      "result": "passed",
+      "tested_commit": "3d1752ceee6c3af743b5c7e627739709fbd65b0d",
+      "evidence": "PR #236: hub-ci run 37296406568 passou testes e build Android; no estado combinado do integrador, Hub test e Android também passaram."
     },
     {
       "check": "Lunet.Core + Lunet Android + testes de Connections",
       "kind": "automated",
-      "result": "pending",
-      "tested_commit": "c751e2e3a27faf56a79ee990512094a801878475",
-      "evidence": "PR #236 aberto; aguarda Lunet CI no head final."
+      "result": "passed",
+      "tested_commit": "3d1752ceee6c3af743b5c7e627739709fbd65b0d",
+      "evidence": "PR #236: lunet2d-ci run 37296406445 passou; lunet2d-release run 37296406365 passou testes e APK; CI do Lunet no estado combinado também passou."
     },
     {
-      "check": "Consistency + integrador no estado combinado",
+      "check": "Consistency + self-test + integrator simulation + estado combinado",
       "kind": "automated",
-      "result": "pending",
-      "tested_commit": "c751e2e3a27faf56a79ee990512094a801878475",
-      "evidence": "PR #236 aberto; aguarda checks do Ecosystem e classificação do integrador."
+      "result": "passed",
+      "tested_commit": "3d1752ceee6c3af743b5c7e627739709fbd65b0d",
+      "evidence": "PR #236: consistency runs 37296402013 e 37296406589 passaram; integrator run 37296425884 passou planejamento, consistency/self-test/simulação e CIs de Hub/Lunet no estado combinado."
     }
   ],
-  "known_issues": [
-    "Validação automatizada do head final ainda pendente no PR #236."
-  ],
-  "blockers": [
-    "Não concluir P5-6 até Hub/Lunet/consistency/integrador passarem no head final."
-  ],
+  "known_issues": [],
+  "blockers": [],
   "next_actions": [
-    "Executar e conferir Hub CI, Lunet CI, consistency e estado combinado do PR #236.",
-    "Se verdes, atualizar este handoff para review, marcar P5-6 [~] e deixar a integração seguir a política real.",
-    "Após integração, preparar P5-7 com roteiro DEVICE para validar Connections, text.inspect nos dois Hosts, lifecycle, toque e layout."
+    "Deixar o integrador aplicar a política de integração ao PR #236; não fazer merge manual.",
+    "Após integração, fechar Issue #235 como state:done e iniciar P5-7.",
+    "P5-7 deve executar validação DEVICE nos dois Hosts, incluindo Connections, text.inspect, lifecycle, toque/layout e independência sem Hub."
   ],
   "decisions_required": [],
   "normative_sources": [
