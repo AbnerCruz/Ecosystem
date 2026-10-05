@@ -54,6 +54,20 @@ public sealed record LunetCapabilityDescriptor(
     string Lifecycle,
     IReadOnlySet<string> RequiredPermissions);
 
+/// <summary>Projeção de Connections sobre o mesmo Registry do Host; Context e grants decidem disponibilidade.</summary>
+public sealed record LunetConnectionDescriptor(
+    string Capability,
+    string Provider,
+    Version Version,
+    string Lifecycle,
+    IReadOnlyList<string> RequiredPermissions,
+    bool ContextMatches,
+    IReadOnlyList<string> MissingPermissions)
+{
+    public bool Available => ContextMatches && MissingPermissions.Count == 0;
+    public string Status => Available ? "available" : ContextMatches ? "grant-required" : "context-mismatch";
+}
+
 public sealed record LunetHostResponse(JsonElement? Output, string? HostError, string? CapabilityError)
 {
     public bool Succeeded => HostError is null && CapabilityError is null;
@@ -189,6 +203,36 @@ public sealed class LunetHostSession : IDisposable
 
     public string Identity => _identity;
     public LunetHostContext Context => _context;
+
+    public IReadOnlyList<string> Grants
+    {
+        get
+        {
+            lock (_gate)
+                return _closed ? [] : _grants.OrderBy(x => x, StringComparer.Ordinal).ToArray();
+        }
+    }
+
+    /// <summary>Lista capabilities registradas e explica disponibilidade sem criar estado paralelo ao Registry.</summary>
+    public IReadOnlyList<LunetConnectionDescriptor> Connections()
+    {
+        lock (_gate)
+        {
+            if (_closed) return [];
+            return _capabilities
+                .OrderBy(c => c.Id, StringComparer.Ordinal)
+                .ThenByDescending(c => c.Version)
+                .Select(c =>
+                {
+                    var required = c.RequiredPermissions.OrderBy(p => p, StringComparer.Ordinal).ToArray();
+                    var missing = required.Where(p => !_grants.Contains(p)).ToArray();
+                    return new LunetConnectionDescriptor(
+                        c.Id, c.Provider, c.Version, c.Lifecycle,
+                        required, c.Scope.Contains(_context), missing);
+                })
+                .ToArray();
+        }
+    }
 
     public IReadOnlyList<LunetCapabilityDescriptor> Discover()
     {

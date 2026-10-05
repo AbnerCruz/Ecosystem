@@ -1,6 +1,7 @@
 using Android.App;
 using Android.Content;
 using Android.Widget;
+using Hub.Core.Capabilities;
 
 namespace HubApp;
 
@@ -10,9 +11,41 @@ public sealed partial class MainActivity
 
     void AddIpcControls(LinearLayout content)
     {
-        _connections = new Button(this) { Text = "Conexões locais" };
+        var registry = new Button(this) { Text = "Connections" };
+        registry.Click += (_, _) => ShowRegistryConnections();
+        content.AddView(registry);
+
+        _connections = new Button(this) { Text = "Conexões IPC" };
         _connections.Click += (_, _) => ShowPendingPairings();
         content.AddView(_connections);
+    }
+
+    void ShowRegistryConnections()
+    {
+        var root = new LocalContext([new("ecosystem", "ecosystem")]);
+        var context = new LocalContext([new("ecosystem", "ecosystem"), new("product", "hub")]);
+        var host = new LocalCapabilityHost([TextInspectionTool.Definition(root)], []);
+        using var session = host.Open("hub-connections-ui", context, []);
+        var path = string.Join(" → ", session.Context.Path.Select(step => $"{step.Level}:{step.Id}"));
+        var grants = session.Grants.Count == 0 ? "nenhum" : string.Join(", ", session.Grants);
+        var lines = new List<string> { $"Context: {path}", $"Grants: {grants}", "" };
+
+        foreach (var connection in session.Connections())
+        {
+            var required = connection.RequiredPermissions.Count == 0 ? "nenhum" : string.Join(", ", connection.RequiredPermissions);
+            lines.Add($"{(connection.Available ? "✓" : "×")} {connection.Capability}@{connection.Version} · {connection.Provider}");
+            lines.Add($"  {connection.Status} · {connection.Operation} · lifecycle {connection.Lifecycle} · grants exigidos: {required}");
+            if (connection.MissingPermissions.Count > 0)
+                lines.Add($"  grants ausentes: {string.Join(", ", connection.MissingPermissions)}");
+        }
+
+        lines.Add("");
+        lines.Add("Fonte: Registry do Host. Connections não mantém cadastro próprio.");
+        new AlertDialog.Builder(this)
+            .SetTitle("Connections · Registry")
+            .SetMessage(string.Join("\n", lines))
+            .SetPositiveButton("Fechar", (_, _) => { })
+            .Show();
     }
 
     void PromptPendingIpcPairing()
