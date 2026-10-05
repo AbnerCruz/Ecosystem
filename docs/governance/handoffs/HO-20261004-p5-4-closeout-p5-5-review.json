@@ -10,7 +10,7 @@
   },
   "task_id": "P5-5",
   "component": "ecosystem",
-  "state": "waiting",
+  "state": "review",
   "branch": "chatgpt/p5-4-closeout-p5-5-review",
   "base_commit": "b5388dd00912d97d21755336a9ae1c068acb0740",
   "commit": "f0f01229d04fb75cbe8856d83aad8f669acefc26",
@@ -38,7 +38,9 @@
     "Issue #194 de P5-4 encerrada após a aprovação canônica e o closeout documental.",
     "Issue #227 de P5-5 movida para state:waiting enquanto DEC-0038 está pendente.",
     "Issue #194 corrigida para state:done, alinhando o estado vivo terminal ao ROADMAP [x].",
-    "Coordenação de fila: Issue #194 foi reaberta temporariamente em state:review para manter a main atual consistente enquanto o PR #223, anterior na fila, integra; o fechamento state:done será reaplicado quando #228 for o próximo candidato."
+    "Coordenação de fila: Issue #194 foi reaberta temporariamente em state:review para manter a main atual consistente enquanto o PR #223, anterior na fila, integra; o fechamento state:done será reaplicado quando #228 for o próximo candidato.",
+    "Fila serial liberada após integração do Urbe #223 em ccab4b91; Issue #194 fechada definitivamente como state:done porque #228 é agora o único PR aberto.",
+    "Handoff alterado de waiting para review: o trabalho deste PR está concluído; quem aguarda DEC-0038 é a tarefa P5-5 (Issue #227), não o closeout/review."
   ],
   "verification": [
     {
@@ -58,8 +60,8 @@
     {
       "check": "Checks do PR de transição",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Segundo consistency do PR #228 confirmou que ADR/DEC/handoffs/roadmap passam; a única falha era a label residual state:review da Issue #194. Issue corrigida para state:done; este commit dispara a avaliação final."
+      "result": "passed",
+      "evidence": "No head anterior b4119273: consistency completo (checks + self-test + simulação) verde; Lunet CI verde; Lunet release/APK verde. O único bloqueio do integrador depois da fila Urbe foi o estado do handoff 'waiting', corrigido neste commit para 'review'."
     }
   ],
   "known_issues": [
@@ -67,12 +69,12 @@
     "P5-6 e P5-7 continuam dependentes do segundo Host real concluído."
   ],
   "blockers": [
-    "DEC-0038 — fronteira compartilhada de text.inspect."
+    "DEC-0038 — bloqueia a implementação de P5-5, não a integração deste closeout/review."
   ],
   "next_actions": [
     "Integrar este closeout/review se checks verdes.",
-    "Proprietário resolve DEC-0038 pelo portal.",
-    "Aplicar ADR-0028 e implementar P5-5 conforme a alternativa escolhida.",
+    "Manter Issue #227 em state:waiting até DEC-0038 ser resolvida.",
+    "Após DEC-0038, aplicar ADR-0028 e implementar P5-5 conforme a alternativa escolhida.",
     "Depois provar conformance de text.inspect nos dois Hosts e independência standalone do Lunet."
   ],
   "decisions_required": [
