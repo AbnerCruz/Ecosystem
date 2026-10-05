@@ -66,6 +66,14 @@ Isso é evidência para P5-3, não sua conclusão. Envelope público, Host API d
 
 CI verde não substitui esta validação. O gate de dois Hosts precisa de outra evidência além deste roteiro.
 
+## P5-6 — Connections como projeção do Registry
+
+Connections não introduz entidade, cadastro, protocolo ou storage novos. Em cada Host, a superfície é calculada das mesmas definições que alimentam `discover`, combinadas com o Context e os grants capturados pela sessão. A projeção inclui capabilities disponíveis e indisponíveis e explicita `context-mismatch` ou `grant-required`; revogação muda a projeção imediatamente porque nenhum estado de Connection é persistido.
+
+O Hub apresenta uma superfície **Connections** separada do pareamento IPC: pareamento decide confiança/transporte, Connections descreve capabilities naquele Host. O Lunet apresenta **Ferramentas → Connections** no Product Shell e usa o `GameId` real do projeto no Context. Ambos continuam com runtimes próprios; não há Product→Product nem SDK/runtime compartilhado novo.
+
+Testes de Hub e Lunet cobrem capability disponível, grant ausente, Context incompatível e revogação refletida simultaneamente em Connections e discovery. O contrato Host API v1 e os contratos de capability permanecem inalterados.
+
 ## Dependências das fases seguintes
 
 P6-4 já possui prova local do Workspace, mas precisa do Host real/Fase 5; somente então P6-5 entrega a experiência do Product de IA sem duplicar loop/ledger/provider. Fase 7 exige auditoria e consumidor real antes de extrair Tool. Remote Workers/organizações e deployment têm decisões próprias de confiança, privacidade, orçamento e segredos; não se implementam por inferência a partir do pedido de continuar.
