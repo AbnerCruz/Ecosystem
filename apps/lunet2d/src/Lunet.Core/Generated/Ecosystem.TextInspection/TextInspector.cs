@@ -3,6 +3,7 @@
 // Authority: platform/text-inspection/src/Ecosystem.TextInspection/TextInspector.cs
 // Regenerate: dotnet run platform/text-inspection/tools/Projection.cs -- --write
 // </auto-generated>
+using System;
 using System.Text;
 using System.Threading;
 
