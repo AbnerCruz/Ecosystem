@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths: ['apps/lunet2d/**', 'platform/text-inspection/**', '.github/workflows/lunet2d-release.yml']
   pull_request:
-    paths: ['apps/lunet2d/**', '.github/workflows/lunet2d-release.yml']
+    paths: ['apps/lunet2d/**', 'platform/text-inspection/**', '.github/workflows/lunet2d-release.yml']
   workflow_dispatch:
 
 concurrency:
