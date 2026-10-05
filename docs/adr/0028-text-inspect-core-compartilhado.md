@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — aguarda DEC-0038.
+Aceito — **DEC-0038-A** escolhida pelo proprietário no portal em 2026-10-05 (Issue #233).
 
 ## Contexto
 
@@ -38,9 +38,7 @@ Como garantir que Hub e Lunet executem a mesma implementação de `text.inspect@
 
 ## Decisão
 
-Pendente de DEC-0038.
-
-Recomendação técnica: **A**.
+**DEC-0038-A aceita:** extrair somente o núcleo puro de `text.inspect` para uma Library C# compartilhada e host-neutra. Hub e Lunet mantêm Hosts/adapters próprios; `LocalCapabilityHost`, `AuthenticatedHostGateway`, Binder e `ecosystem-local/0` permanecem locais.
 
 ## Consequências
 
@@ -57,7 +55,7 @@ Se A for escolhida:
 
 ## Alternativas rejeitadas
 
-Nenhuma alternativa está rejeitada até a DEC-0038 ser decidida. A Extraction Review recomenda rejeitar B, C e D pelos custos descritos acima.
+DEC-0038 rejeitou B, C e D. B promove runtime sem segundo consumidor real; C duplica a implementação da capability; D mantém o Lunet dependente do Hub e não produz segundo Host standalone.
 
 ## Referências
 
