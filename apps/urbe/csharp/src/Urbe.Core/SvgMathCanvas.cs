@@ -75,7 +75,7 @@ internal sealed class SvgMathCanvas : ICanvas
             return;
 
         var color = ColorCss(foreground ?? CurrentColor ?? DefaultColor);
-        _body.Append("<path d='").Append(data).Append(''');
+        _body.Append("<path d='").Append(data).Append("'");
         if (style == PaintStyle.Fill)
         {
             _body.Append(" fill='").Append(color).Append("' stroke='none'");
@@ -143,7 +143,7 @@ internal sealed class SvgMathCanvas : ICanvas
 
     private static string EscapeXml(string value) =>
         value.Replace("&", "&amp;", StringComparison.Ordinal)
-            .Replace(""", "&quot;", StringComparison.Ordinal)
+            .Replace("\"", "&quot;", StringComparison.Ordinal)
             .Replace("'", "&apos;", StringComparison.Ordinal)
             .Replace("<", "&lt;", StringComparison.Ordinal)
             .Replace(">", "&gt;", StringComparison.Ordinal);
