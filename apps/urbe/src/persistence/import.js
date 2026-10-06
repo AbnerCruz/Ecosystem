@@ -21,16 +21,16 @@
     });
   }
   async function inspect(selection,opts){
-    opts=opts||{};var files=new Map(),keys=new Map(),total=0,manifest=null,backup=false,absent=[];
+    opts=opts||{};var files=new Map(),keys=new Map(),total=0,manifest=null,backup=false,absent=[],sourceConflicts=new Map();
     if(!selection.length)throw Error('Nenhum arquivo selecionado.');if(selection.length>MAX_COUNT)throw Error('Há arquivos demais nesta seleção.');
     async function add(p,bytes){canceled(opts.signal);p=path(p);if(p.toLowerCase()===JOURNAL)throw Error('O vault contém uma importação interrompida. Abra-o no aparelho de origem para recuperar antes de importar.');var key=p.toLowerCase(),old=keys.get(key);
-      if(old){if(await hash(files.get(old))!==await hash(bytes))throw Error('Arquivos têm o mesmo nome e conteúdos diferentes: '+p);return}
+      if(old){if(await hash(files.get(old))!==await hash(bytes)){var candidates=sourceConflicts.get(old)||[{path:old,bytes:files.get(old)}];if(!await Promise.all(candidates.map(async c=>await hash(c.bytes)===await hash(bytes))).then(values=>values.some(Boolean))){total+=bytes.length;if(total>MAX_TOTAL)throw Error('A seleção excede o limite seguro de importação.');candidates.push({path:p,bytes:bytes})}sourceConflicts.set(old,candidates)}return}
       total+=bytes.length;if(bytes.length>MAX_FILE||total>MAX_TOTAL||files.size>=MAX_COUNT)throw Error('A seleção excede o limite seguro de importação.');keys.set(key,p);files.set(p,bytes)}
     for(var item of selection){
       var file=item.file||item,p=path(item.rel||file.webkitRelativePath||file.name),bytes=await bytesOf(file,opts.signal);
       var zip=bytes.length>=4&&bytes[0]===80&&bytes[1]===75&&((bytes[2]===3&&bytes[3]===4)||(bytes[2]===5&&bytes[3]===6));
-      if(zip){
-        if(selection.length!==1||opts.directory)throw Error('Selecione o arquivo compactado separadamente dos demais documentos.');
+      if(zip&&!opts.directory){
+        if(selection.length!==1)throw Error('Selecione o arquivo compactado separadamente dos demais documentos.');
         if(!global.JSZip)throw Error('Não foi possível abrir o arquivo compactado offline.');
         var archive;try{archive=await global.JSZip.loadAsync(bytes)}catch(_){throw Error('O arquivo compactado está inválido ou incompleto.')}
         var entries=Object.values(archive.files).filter(function(e){return !e.dir&&!e.name.split('/').includes('__MACOSX')});
@@ -41,7 +41,7 @@
           if(entry._data&&entry._data.uncompressedSize>MAX_FILE)throw Error('Um arquivo compactado excede o limite seguro.');
           await add(prefix?entry.name.slice(prefix.length):entry.name,await zipBytes(entry));
         }
-      }else {if(/\.zip$/i.test(p))throw Error('O arquivo ZIP não foi reconhecido ou está inválido.');await add(p,bytes)}
+      }else {if(!opts.directory&&/\.zip$/i.test(p))throw Error('O arquivo ZIP não foi reconhecido ou está inválido.');await add(p,bytes)}
     }
     var M=global.UrbeExportManifest;
     if(files.has(M.NAME)){
@@ -70,7 +70,9 @@
     }
     if(metadata&&!backup&&!keys.has('.urbe/vault.json')&&!keys.has('.urbe/mapa.json'))throw Error('Os metadados selecionados não identificam um vault completo. Selecione a pasta inteira ou seu backup.');
     var kind=backup?'backup':metadata?(keys.has('.urbe/vault.json')?'current-vault':'historical-vault'):manifest?'export':'documents';
-    return{kind:kind,files:files,documents:documents,assets:assets,manifest:manifest,restore:kind!=='documents',partial:backup,absent:absent};
+    if(kind!=='documents'&&sourceConflicts.size)throw Error('A seleção contém versões diferentes de um vault. Selecione uma única cópia para restaurar.');
+    for(var candidates of sourceConflicts.values())for(var c of candidates){if(global.UrbeArtifacts.RE.text.test(c.path))text(c.bytes);if(/\.(page|block|theme)\.json$/i.test(c.path)){var data;try{data=JSON.parse(text(c.bytes))}catch(_){throw Error('Documento estruturado inválido: '+c.path)}if(data.version>1)throw Error('Documento de versão mais recente: '+c.path)}}
+    return{sourceConflicts:Array.from(sourceConflicts,([p,candidates])=>({path:p,candidates:candidates})),kind:kind,files:files,documents:documents,assets:assets,manifest:manifest,restore:kind!=='documents',partial:backup,absent:absent};
   }
   function validateMetadata(p,bytes){
     var max={'.urbe/vault.json':['formatVersion',2],'.urbe/mapa.json':['v',4],'.urbe/identity.json':['version',1],'.urbe/journal.json':['version',1],'.urbe/journal.v2.json':['version',2],'.urbe/history.json':['version',1],'.urbe/history.v2.json':['version',2],'.urbe/trash.json':['version',1],'.urbe/trash.v2.json':['version',2],'.urbe/compositions.json':['version',1],'.urbe/compositions.v2.json':['version',2]},contract=max[p.toLowerCase()];
@@ -79,7 +81,9 @@
     if(!Number.isInteger(version)||version<1||version>contract[1])throw Error('Este vault contém dados mais recentes ou não reconhecidos. Ele foi preservado.');
   }
   async function current(adapter,vault){var files=new Map(),total=0;for(var p of await adapter.list(vault)){path(p);if(p===JOURNAL)throw Error('Recupere a importação interrompida antes de continuar.');var blob=await adapter.readBlob(vault,p);if(!blob)throw Error('Não foi possível ler '+p);total+=blob.size;if(blob.size>MAX_FILE||total>MAX_TOTAL)throw Error('O vault atual excede o limite seguro desta operação. Nenhum dado foi alterado.');files.set(p,new Uint8Array(await blob.arrayBuffer()))}return files}
+  function resolveSources(inspection,choices){var files=new Map(inspection.files);for(var conflict of inspection.sourceConflicts||[]){var index=choices[conflict.path];if(!Number.isInteger(index)||index<0||index>=conflict.candidates.length)throw Error('Escolha qual arquivo importar: '+conflict.path);var chosen=conflict.candidates[index];files.delete(conflict.path);files.set(chosen.path,chosen.bytes)}return Object.assign({},inspection,{files:files,sourceConflicts:[]})}
   async function plan(inspection,existing,choices){
+    if(inspection.sourceConflicts&&inspection.sourceConflicts.length)throw Error('Escolha os arquivos de origem antes de importar.');
     var operations=[],conflicts=[],unchanged=0,casePaths=new Map();existing.forEach(function(_,p){if(casePaths.has(p.toLowerCase()))throw Error('O vault contém nomes conflitantes: '+p);casePaths.set(p.toLowerCase(),p)});
     for(var pair of inspection.files){var p=pair[0],bytes=pair[1],previous=casePaths.get(p.toLowerCase());
       if(previous){if(await hash(existing.get(previous))===await hash(bytes)){unchanged++;continue}if(!choices||!choices[p]){conflicts.push(p);continue}if(choices[p]==='keep'){if(inspection.restore)throw Error('A restauração foi cancelada para preservar o vault atual.');unchanged++;continue}if(choices[p]!=='replace')throw Error('Escolha de conflito inválida.');p=previous}
@@ -122,5 +126,5 @@
     await execute(adapter,vault,{inspection:{restore:true},operations:operations,conflicts:[],unchanged:0,revision:await revision(existing)});
     return{restored:entries.filter(function(e){return e.bytes!==null}).map(function(e){return e.path}),removed:entries.filter(function(e){return e.bytes===null}).map(function(e){return e.path})};
   }
-  global.UrbeImport={inspect:inspect,plan:plan,current:current,execute:execute,recover:recover,JOURNAL:JOURNAL,revision:revision,restoreBackup:restoreBackup};
+  global.UrbeImport={inspect:inspect,resolveSources:resolveSources,plan:plan,current:current,execute:execute,recover:recover,JOURNAL:JOURNAL,revision:revision,restoreBackup:restoreBackup};
 })(window);

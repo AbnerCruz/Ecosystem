@@ -29,7 +29,7 @@ public sealed class ImportPipelineTests
         foreach(var f in files)Assert.Equal(f.Bytes.ToArray(),x.Files[f.Path].Bytes.ToArray());
     }
     [Fact] public async Task InvalidZipAndEncodingAreRefused(){await Assert.ThrowsAsync<InvalidDataException>(()=>Inspect(Select(Text("bad.zip","oops"))).AsTask());await Assert.ThrowsAsync<InvalidDataException>(()=>Inspect(Select(Source("bad.md",[255]))).AsTask());}
-    [Fact] public async Task DuplicateSelectionCoalescesOnlyIdenticalBytes(){Assert.Single((await Inspect(Select(Text("A.md","a"),Text("a.md","a")))).Files);await Assert.ThrowsAsync<InvalidDataException>(()=>Inspect(Select(Text("A.md","a"),Text("a.md","b"))).AsTask());}
+    [Fact] public async Task DuplicateSelectionCoalescesOnlyIdenticalBytes(){Assert.Single((await Inspect(Select(Text("A.md","a"),Text("a.md","a")))).Files);var conflict=await Inspect(Select(Text("A.md","a"),Text("a.md","b")));Assert.Single(conflict.SourceConflicts!);Assert.Throws<InvalidOperationException>(()=>ImportPipeline.Plan(conflict,VaultReader.Read([]),"rev"));var selected=ImportPipeline.ResolveSources(conflict,new Dictionary<string,int>{{"A.md",1}});Assert.Equal("b",Encoding.UTF8.GetString(selected.Files["a.md"].Bytes.Span));Assert.Single(ImportPipeline.Plan(selected,VaultReader.Read([]),"rev").Operations);}
     [Fact] public async Task ReimportIsIdempotentAndConflictsRequireChoice()
     {
         var current=VaultReader.Read([new VaultFile("A.md",Encoding.UTF8.GetBytes("a"))]);var same=await Inspect(Select(Text("A.md","a")));var again=ImportPipeline.Plan(same,current,"rev");Assert.Empty(again.Operations);Assert.Equal(1,again.Unchanged);
@@ -59,5 +59,14 @@ public sealed class ImportPipelineTests
     }
     [Fact] public async Task UnknownMetadataCannotTurnAnOrdinarySelectionIntoDestructiveVaultRestore()
         => await Assert.ThrowsAsync<InvalidDataException>(()=>Inspect(Select(Text(".urbe/unknown.json","{}"),Text("A.md","a"))).AsTask());
+    [Fact] public async Task ZipAttachmentInsideSelectedFolderIsPreservedAsBinaryAsset()
+    {
+        var zip=VaultArchive.Export([new VaultFile("inside.md",Encoding.UTF8.GetBytes("inside"))]);
+        var x=await Inspect(new ImportSelection([Text("A.md","note"),Source("assets/archive.zip",zip.Bytes.ToArray())],true));
+        Assert.Equal(ImportKind.Documents,x.Kind);Assert.Equal(1,x.AssetCount);Assert.Equal(zip.Bytes.ToArray(),x.Files["assets/archive.zip"].Bytes.ToArray());Assert.False(x.Files.ContainsKey("inside.md"));
+    }
+    [Theory][InlineData("{\"version\":99}")][InlineData("{")]
+    public async Task UnsupportedCandidateCannotHideBehindAnIdenticalPath(string value)
+        => await Assert.ThrowsAsync<InvalidDataException>(()=>Inspect(Select(Text("A.page.json","{\"version\":1}"),Text("A.page.json",value))).AsTask());
     private sealed class NonSeekable(byte[] bytes):MemoryStream(bytes,false){public override bool CanSeek=>false;public override long Seek(long offset,SeekOrigin origin)=>throw new NotSupportedException();}
 }

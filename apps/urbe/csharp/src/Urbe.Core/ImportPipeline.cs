@@ -14,8 +14,9 @@ public sealed record ImportSource(string RelativePath, Func<CancellationToken, V
 public sealed record ImportLimits(long TotalBytes = 256L * 1024 * 1024, long FileBytes = 64L * 1024 * 1024, int FileCount = 10000);
 public sealed record ImportSelection(IReadOnlyList<ImportSource> Sources, bool IsDirectory = false);
 public sealed record ImportConflict(string Path);
+public sealed record ImportSourceConflict(string Path, IReadOnlyList<VaultFile> Candidates);
 public sealed record ImportInspection(ImportKind Kind, IReadOnlyDictionary<string, VaultFile> Files,
-    VaultSnapshot Snapshot, int DocumentCount, int AssetCount, VaultExportManifest? Manifest, IReadOnlyList<string>? AbsentPaths = null);
+    VaultSnapshot Snapshot, int DocumentCount, int AssetCount, VaultExportManifest? Manifest, IReadOnlyList<string>? AbsentPaths = null, IReadOnlyList<ImportSourceConflict>? SourceConflicts = null);
 public sealed record ImportPlan(ImportInspection Inspection, ImportMode Mode,
     IReadOnlyList<VaultOperation> Operations, IReadOnlyList<ImportConflict> Conflicts, string ExpectedRevision, int Unchanged);
 public sealed record ImportResult(int Written, int Removed, int Unchanged);
@@ -46,6 +47,7 @@ public static class ImportPipeline
         if (selection.Sources.Count > limits.FileCount) throw new InvalidDataException("Há arquivos demais nesta seleção.");
         var files = new Dictionary<string, VaultFile>(StringComparer.OrdinalIgnoreCase);
         long total = 0;
+        var sourceConflicts = new Dictionary<string, List<VaultFile>>(StringComparer.OrdinalIgnoreCase);
         VaultExportManifest? manifest = null;
         foreach (var source in selection.Sources)
         {
@@ -66,9 +68,9 @@ public static class ImportPipeline
             // Signature, not extension; a .zip without ZIP content is still an invalid selection.
             bool zip = bytes.Length >= 4 && bytes[0] == 0x50 && bytes[1] == 0x4b &&
                 ((bytes[2] == 3 && bytes[3] == 4) || (bytes[2] == 5 && bytes[3] == 6));
-            if (zip)
+            if (zip && !selection.IsDirectory)
             {
-                if (selection.Sources.Count != 1 || selection.IsDirectory)
+                if (selection.Sources.Count != 1)
                     throw new InvalidDataException("Selecione o arquivo compactado separadamente dos demais documentos.");
                 var archive = VaultArchive.Import(bytes, limits);
                 if (archive.ManifestState == VaultExportManifestState.Corrupt || archive.Manifest is { FormatVersion: not 1 } || archive.Verification is { Ok: false })
@@ -78,7 +80,7 @@ public static class ImportPipeline
             }
             else
             {
-                if (path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("O arquivo ZIP é inválido.");
+                if (!selection.IsDirectory && path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)) throw new InvalidDataException("O arquivo ZIP é inválido.");
                 Add(new VaultFile(path, bytes));
             }
         }
@@ -95,7 +97,7 @@ public static class ImportPipeline
         }
         var backup = UnpackBackup(ref files, out var absent);
         if (files.Count == 0 && absent.Count == 0) throw new InvalidDataException("Nenhum documento encontrado.");
-        foreach (var file in files.Values.Where(f => IsText(f.Path)))
+        foreach (var file in files.Values.Concat(sourceConflicts.Values.SelectMany(c=>c)).Where(f => IsText(f.Path)))
         {
             try { _ = StrictUtf8.GetString(file.Bytes.Span); }
             catch (DecoderFallbackException e) { throw new InvalidDataException("Texto com codificação inválida: " + file.Path, e); }
@@ -104,14 +106,31 @@ public static class ImportPipeline
         if (snapshot.FormatState is VaultFormatState.Future or VaultFormatState.Corrupt || snapshot.VaultFormatVersion < 1 ||
             snapshot.IsMapReadOnly || snapshot.FutureFiles.Count > 0)
             throw new InvalidDataException("Este vault contém dados mais recentes ou não reconhecidos. Ele foi preservado.");
+        foreach (var candidate in files.Values.Concat(sourceConflicts.Values.SelectMany(c => c)))
+        {
+            if (VaultReader.Read([candidate]).FutureFiles.Count > 0)
+                throw new InvalidDataException("Documento de origem contém dados de versão mais recente.");
+            if (!new[] { ".page.json", ".block.json", ".theme.json" }.Any(suffix => candidate.Path.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))) continue;
+            try
+            {
+                using var json = JsonDocument.Parse(candidate.Bytes);
+                if (json.RootElement.ValueKind != JsonValueKind.Object)
+                    throw new InvalidDataException("Documento estruturado inválido: " + candidate.Path);
+                if (json.RootElement.TryGetProperty("version", out var version) &&
+                    (version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out var number) || number > 1))
+                    throw new InvalidDataException("Documento de versão mais recente ou não reconhecida: " + candidate.Path);
+            }
+            catch (JsonException e) { throw new InvalidDataException("Documento estruturado inválido: " + candidate.Path, e); }
+        }
         var hasMetadata = files.Keys.Any(p => p.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase));
         if (hasMetadata && !backup && !files.ContainsKey(".urbe/vault.json") && !files.ContainsKey(".urbe/mapa.json"))
             throw new InvalidDataException("Os metadados selecionados não identificam um vault completo. Selecione a pasta inteira ou seu backup.");
         var kind = backup ? ImportKind.Backup : hasMetadata ? snapshot.FormatState == VaultFormatState.Absent || snapshot.VaultFormatVersion < 2 ? ImportKind.HistoricalVault : ImportKind.CurrentVault
             : manifest is not null ? ImportKind.Export : ImportKind.Documents;
+        if (kind != ImportKind.Documents && sourceConflicts.Count > 0) throw new InvalidDataException("A seleção contém versões diferentes de um vault. Selecione uma única cópia para restaurar.");
         var documents = files.Keys.Count(p => !p.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase) && IsText(p));
         return new ImportInspection(kind, new ReadOnlyDictionary<string, VaultFile>(files), snapshot,
-            documents, files.Keys.Count(p => !p.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase) && !IsText(p)), manifest, absent);
+            documents, files.Keys.Count(p => !p.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase) && !IsText(p)), manifest, absent, sourceConflicts.Select(c => new ImportSourceConflict(c.Key, c.Value.AsReadOnly())).ToArray());
 
         void Add(VaultFile file)
         {
@@ -120,7 +139,11 @@ public static class ImportPipeline
                 throw new InvalidDataException("O vault de origem contém uma importação interrompida. Recupere-o antes de importar.");
             if (files.TryGetValue(normalized, out var previous))
             {
-                if (!previous.Bytes.Span.SequenceEqual(file.Bytes.Span)) throw new InvalidDataException("Arquivos selecionados têm o mesmo nome e conteúdos diferentes: " + normalized);
+                if (!previous.Bytes.Span.SequenceEqual(file.Bytes.Span))
+                {
+                    if (!sourceConflicts.TryGetValue(normalized, out var candidates)) sourceConflicts[previous.Path] = candidates = [previous];
+                    if (!candidates.Any(c => c.Bytes.Span.SequenceEqual(file.Bytes.Span))) candidates.Add(new VaultFile(normalized, file.Bytes.ToArray()));
+                }
                 return;
             }
             if (files.Count >= limits.FileCount || files.Values.Sum(f => (long)f.Bytes.Length) + file.Bytes.Length > limits.TotalBytes || file.Bytes.Length > limits.FileBytes)
@@ -129,11 +152,25 @@ public static class ImportPipeline
         }
     }
 
+    public static ImportInspection ResolveSources(ImportInspection inspection, IReadOnlyDictionary<string, int> choices)
+    {
+        var files = new Dictionary<string, VaultFile>(inspection.Files, StringComparer.OrdinalIgnoreCase);
+        foreach (var conflict in inspection.SourceConflicts ?? [])
+        {
+            if (!choices.TryGetValue(conflict.Path, out var index) || index < 0 || index >= conflict.Candidates.Count)
+                throw new InvalidOperationException("Escolha qual arquivo importar: " + conflict.Path);
+            var chosen = conflict.Candidates[index];
+            files.Remove(conflict.Path); files.Add(chosen.Path, chosen);
+        }
+        return inspection with { Files = new ReadOnlyDictionary<string, VaultFile>(files), Snapshot = VaultReader.Read(files.Values), SourceConflicts = [] };
+    }
+
     public static ImportPlan Plan(ImportInspection inspection, VaultSnapshot current, string revision,
         IReadOnlyDictionary<string, ImportConflictChoice>? choices = null)
     {
         ArgumentNullException.ThrowIfNull(inspection);
         ArgumentNullException.ThrowIfNull(current);
+        if (inspection.SourceConflicts is { Count: > 0 }) throw new InvalidOperationException("Escolha os arquivos de origem antes de planejar a importação.");
         if (current.IsReadOnly || current.IsMapReadOnly || current.FutureFiles.Count > 0 || current.Files.ContainsKey(ImportTransaction.JournalPath))
             throw new InvalidDataException("O vault atual está protegido. Nenhum dado será alterado.");
         var mode = inspection.Kind == ImportKind.Backup ? ImportMode.RestoreSubset : inspection.Kind is ImportKind.CurrentVault or ImportKind.HistoricalVault or ImportKind.Export

@@ -96,20 +96,21 @@
     "Core C# fornece seleção por streams, detecção, plano e transação; compatibilidade JS mínima necessária ao cliente ainda distribuído, com importador antigo removido.",
     "Android SAF e Windows IPC expõem fontes somente leitura por tokens/chunks; domínio portátil sem lógica Android no Core.",
     "Revisão explícita do oráculo REQ-110: histórico preservado e 297 IDs mantidos; três expectativas de capabilities aditivas revistas, sem regenerar goldens Markdown/Visual.",
-    "Roteiro DEVICE preparado; não há publicação formal, autorização de integração nem validação humana nova neste registro."
+    "Roteiro DEVICE preparado; não há publicação formal, autorização de integração nem validação humana nova neste registro.",
+    "Conflitos de origem em documentos/assets agora exigem escolha entre versões antes do plano; prévia limitada e cancelamento seguro. ZIPs que são anexos dentro de pasta/vault são preservados em vez de descompactados. Seleção vazia/ação concorrente recebem mensagem clara."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Core C# e transações filesystem",
       "result": "passed",
-      "evidence": "203/203 Core C# testes passaram, nenhum ignorado; transações com filesystem real e rollback/reabertura."
+      "evidence": "206/206 Core C# testes passaram, nenhum ignorado; transações com filesystem real e rollback/reabertura."
     },
     {
       "kind": "automated",
       "check": "Importação JS de produção",
       "result": "passed",
-      "evidence": "16 grupos: streams non-seekable, Unicode/binários, ZIP/hash, forward, rollback/ENOSPC, cancelamento, conflito, reimportação, backup parcial, provider desktop e processo encerrado durante aplicação com recuperação real."
+      "evidence": "18 grupos: streams non-seekable, Unicode/binários, ZIP/hash, forward, rollback/ENOSPC, cancelamento, conflito, reimportação, backup parcial, provider desktop e processo encerrado durante aplicação com recuperação real."
     },
     {
       "kind": "automated",
@@ -127,7 +128,7 @@
       "kind": "automated",
       "check": "Build e identidade do APK local",
       "result": "passed",
-      "evidence": "APK local 1.8.4-beta versionCode 1080400 compilado; SHA-256 cdd005d59c36e1e6c345b8f2960fbf3c4ed9f984b7cd64db507e89f0f4798ed1. Certificado SHA-256 19d94932174ae79082ec524cbc42ad48a7134fac4682387a506815efe65e6cf3. Não publicado formalmente; bytes do pipeline serão conferidos separadamente."
+      "evidence": "Build anterior ec4e2b3: APK local 1.8.4-beta versionCode 1080400 compilado; SHA-256 cdd005d59c36e1e6c345b8f2960fbf3c4ed9f984b7cd64db507e89f0f4798ed1. Certificado SHA-256 19d94932174ae79082ec524cbc42ad48a7134fac4682387a506815efe65e6cf3. Não publicado formalmente; não corresponde à revisão final de conflitos de origem. Novos bytes do pipeline serão conferidos separadamente."
     },
     {
       "kind": "automated",
@@ -144,11 +145,12 @@
     {
       "kind": "automated",
       "check": "CI final por superfície e paridade all",
-      "result": "pending"
+      "result": "pending",
+      "evidence": "Nova revisão de conflitos de origem e ZIP anexo: 206 Core, 18 grupos de produção, E2E mobile com escolha de versão passaram; nova CI e novos bytes necessários. CI anterior ec4e2b3 permaneceu verde, evidência histórica nas Issues #261/#166."
     }
   ],
   "known_issues": [
-    "ZIP deve ser selecionado separadamente; duplicatas de origem diferentes recusadas claramente, sem escolher uma arbitrariamente.",
+    "ZIP deve ser selecionado separadamente; conflitos de documentos de origem exigem escolha explícita; múltiplas cópias de vault recusadas para selecionar uma única origem.",
     "Core fornece mecanismo portátil; não antecipa UI M3 nem corte C# (UC-31).",
     "Validação nativa em aparelho ainda necessária."
   ],

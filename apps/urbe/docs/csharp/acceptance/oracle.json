@@ -35,8 +35,8 @@
     },
     {
       "path": "docs/v2/contracts/import.md",
-      "bytes": 3544,
-      "sha256": "ce08c0f70608a2e7a98ca4b4b8bf958da4c96e3afb69850b7613dd4d1e735f1d"
+      "bytes": 3917,
+      "sha256": "94f5cd78a6b7f6ccf54acc9bfa28abad7effc29c122bf8f1ac2e3fe5148abbf9"
     },
     {
       "path": "docs/v2/contracts/native.md",
@@ -170,8 +170,8 @@
     },
     {
       "path": "tests/e2e/import.e2e.mjs",
-      "bytes": 3111,
-      "sha256": "d16836c2da7b5c58566dc101c56a5845daa816d201159e7820ae864a6da13668"
+      "bytes": 4489,
+      "sha256": "34ebfb23aa16f2dade91002073739887fe8125907d67c79de499353027a19efa"
     },
     {
       "path": "tests/e2e/layout.e2e.mjs",

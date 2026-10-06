@@ -1874,10 +1874,11 @@ document.getElementById('explorerRootBtn').onclick=()=>{explorerRegionTarget=nul
 let pendingImportTarget=null;
 var urbeImportBusy=false;
 async function importarEntradasDestino(entradas,ehPasta,nomePasta,target){
-  if(!entradas?.length||urbeImportBusy)return;urbeImportBusy=true;
+  if(!entradas?.length)return UD.alert({title:'Nenhum arquivo encontrado',message:'A seleção está vazia. Escolha uma pasta com documentos ou um backup.'});if(urbeImportBusy)return toast('Uma importação está em andamento. Aguarde o resultado.');urbeImportBusy=true;
   var persistence=window.UrbeCore.service('persistence'),I=window.UrbeImport,suspended=false;
   try{
     toast('Conferindo os arquivos…');var inspection=await I.inspect(entradas,{directory:ehPasta});
+    if(inspection.sourceConflicts.length){var selectedSources={};for(var conflict of inspection.sourceConflicts){var selected=await UD.choose({title:'Arquivos com o mesmo nome',message:conflict.path+' tem versões diferentes na seleção. Escolha qual importar ou cancele para selecionar novamente.',options:conflict.candidates.map(function(c,index){return{value:String(index),label:'Versão '+(index+1)+' — '+c.path,detail:c.bytes.length+' bytes'+(/\.md$/i.test(c.path)?' • '+new TextDecoder().decode(c.bytes.subarray(0,640)).slice(0,160):'')}})});if(selected==null)return toast('Importação cancelada.');selectedSources[conflict.path]=Number(selected)}inspection=I.resolveSources(inspection,selectedSources)}
     if(!inspection.restore&&target){var folder=caminhosRegioes().get(target);if(folder)inspection.files=new Map(Array.from(inspection.files,function(pair){return[folder+'/'+pair[0],pair[1]]}))}
     if(persistence.readOnly||persistence.mapaReadonly||persistence.foreign.length)throw Error('O vault atual está protegido. Nenhum dado será alterado.');
     var restoring=inspection.restore,label=restoring?'Vault para restauração':'Documentos para incorporar',description=inspection.documents+' documento(s) e '+inspection.assets+' arquivo(s). '+(restoring?'O vault de origem será restaurado com suas notas e metadados. Um backup do vault atual será preservado.':'Os documentos serão incorporados ao vault atual, mantendo suas pastas e referências.');
@@ -1892,7 +1893,7 @@ async function importarEntradasDestino(entradas,ehPasta,nomePasta,target){
     toast('Importando…');var result=await I.execute(persistence.adapter,Disco.cidade,plan,{progress:function(done,total){if(done===total||done%10===0)toast('Importando '+done+' de '+total+'…')}});
     await abrirCidade(Disco.cidade);suspended=false;
     if(inspection.manifest&&inspection.manifest.state){var state=inspection.manifest.state;if((Object.keys(state.localStorage||{}).length||Object.keys(state.plugins||{}).length)&&await UD.confirm({title:'Preferências do backup',message:'Aplicar as preferências deste backup? Permissões de plugins incluídas também serão autorizadas neste aparelho; mantenha as atuais se não confiar na origem.',confirm:'Aplicar preferências',cancel:'Manter atuais'}))window.UrbeExportManifest.applyState(localStorage,state,Disco.cidade)}
-    toast((restoring?'Vault restaurado. ':'Importação concluída. ')+result.written+' arquivo(s) gravado(s); '+result.unchanged+' já estavam presentes.');
+    toast((restoring?'Vault restaurado. ':'Importação concluída. ')+result.written+' arquivo(s) gravado(s); '+result.unchanged+' preservado(s), sem nova gravação.');
   }catch(error){console.warn('Importação:',error);await UD.alert({title:'Não foi possível importar',message:error.message||'A seleção não pôde ser lida. O vault atual foi preservado.'})}
   finally{if(suspended){try{await I.recover(persistence.adapter,Disco.cidade);await abrirCidade(Disco.cidade)}catch(error){persistence.suspend(true);toast('O vault aguarda recuperação. Preserve o backup e reabra o aplicativo.')}}urbeImportBusy=false}
 }
@@ -2517,6 +2518,7 @@ function v21MoveEntry(e){v21ChooseDestination(function(dest){moverEntradaPara(e,
 function v21MoveSelected(){var arr=v20SelectedEntries();if(!arr.length)return;v21ChooseDestination(function(dest){arr.forEach(function(e){moverEntradaPara(e,dest)});v20EntrySelection.clear();v21MultiMode=false;v21BuildTree();toast(arr.length+' item(ns) movido(s).')})}
 async function v21DeleteSelected(){var arr=v20SelectedEntries();if(!arr.length)return;if(!(await UD.confirm({title:'Excluir '+arr.length+' item(ns)?',message:'Os itens selecionados serão excluídos do vault.',confirm:'Excluir',danger:true})))return;var ids=new Set(arr.filter(function(e){return e.kind==='note'}).map(function(e){return e.b.id}));arr.filter(function(e){return e.kind==='asset'}).forEach(function(e){var fs=e.b.files||e.b.anexos||[];fs.splice(e.index,1);if(!fs.length)ids.add(e.b.id)});world.buildings=world.buildings.filter(function(b){return !ids.has(b.id)});v20EntrySelection.clear();v21MultiMode=false;marcarIndice();indexar();counts();scheduleRoadRebuild();agendarSalvar();marcarSinc();v21BuildTree();pedirDesenho();toast('Excluído.')}
 async function v21ImportPicker(target){
+  if(urbeImportBusy)return toast('Uma importação está em andamento. Aguarde o resultado.');
   pendingImportTarget=target||null;var choose=await v21ChooseImportMode();if(!choose)return;
   var native=window.UrbeImportSources;
   if(native){var selection;try{selection=await native.pick(choose);if(selection)await importarEntradasDestino(selection.files,choose==='folder','Pasta',pendingImportTarget)}catch(error){await UD.alert({title:'Não foi possível abrir a seleção',message:error.message})}finally{if(selection)await selection.release().catch(function(){})}return}
