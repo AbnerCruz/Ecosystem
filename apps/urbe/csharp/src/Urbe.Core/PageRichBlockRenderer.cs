@@ -85,7 +85,7 @@ internal static partial class PageRichBlockRenderer
             output.Append('<').Append(tag).Append(" class='card media-card'");
             if (url.Length > 0)
             {
-                output.Append(" href='").Append(MarkdownEngine.EscapeHtml(url)).Append(''');
+                output.Append(" href='").Append(MarkdownEngine.EscapeHtml(url)).Append("'");
                 if (IsHttp(url))
                     output.Append(" target='_blank' rel='noopener'");
             }
@@ -573,7 +573,7 @@ internal static partial class PageRichBlockRenderer
                 .Append(CssToken(Text(item["variant"]) ?? "primary"))
                 .Append("' href='")
                 .Append(MarkdownEngine.EscapeHtml(url))
-                .Append(''');
+                .Append("'");
 
             if (IsHttp(url))
                 output.Append(" target='_blank' rel='noopener'");
