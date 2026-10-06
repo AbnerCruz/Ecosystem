@@ -410,7 +410,13 @@ if (currentProfile is not null)
                 ["channel"] = S(ch["id"]),
                 ["kind"] = S(ch["kind"]),
                 ["role"] = S(ch["role"]),
-                ["location"] = from == "source.repository" ? S(comp["source"]?["repository"]) : S(comp[from!]),
+                ["location"] = from switch
+                {
+                    "source.repository" => S(comp["source"]?["repository"]),
+                    "ecosystem.repository" => repo,
+                    "publicUrl" => S(comp["publicUrl"]),
+                    _ => null,
+                },
                 ["artifacts"] = new JsonArray((ch["artifacts"]?.AsArray() ?? []).Select(x => (JsonNode?)JsonValue.Create(S(x))).ToArray()),
                 ["updateMechanism"] = S(ch["updateMechanism"]),
             });
