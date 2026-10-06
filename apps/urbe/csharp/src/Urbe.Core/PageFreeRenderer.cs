@@ -564,6 +564,23 @@ internal static partial class PageFreeRenderer
         else if (isBox && display == "stack")
             declarations.Add(
                 "display:flex;flex-direction:column;flex-wrap:nowrap");
+        else if (isBox &&
+                 (Number(style["columns"]) is not null ||
+                  Text(style["minCol"]).Length > 0))
+        {
+            var inheritedColumns = Number(style["columns"]);
+            var inheritedMinCol = Text(style["minCol"]);
+            declarations.Add(
+                "grid-template-columns:" +
+                (inheritedColumns is > 0
+                    ? "repeat(" +
+                      ((int)inheritedColumns.Value).ToString(
+                          CultureInfo.InvariantCulture) +
+                      ",minmax(0,1fr))"
+                    : "repeat(auto-fit,minmax(min(100%," +
+                      inheritedMinCol +
+                      "),1fr))"));
+        }
 
         Add(style, declarations, "gap", "gap");
         Add(style, declarations, "minCol", "--fx-basis");
@@ -670,13 +687,13 @@ internal static partial class PageFreeRenderer
         {
             declarations.Add(
                 "box-shadow:" +
-                shadow switch
+                (shadow switch
                 {
                     "none" => "none",
                     "strong" => "0 3px 6px rgba(0,0,0,.14),0 24px 50px -18px rgba(0,0,0,.6)",
                     "glow" => "0 0 0 1px color-mix(in srgb,var(--primary) 40%,transparent),0 10px 40px -6px color-mix(in srgb,var(--primary) 55%,transparent)",
                     _ => "0 1px 2px rgba(0,0,0,.08),0 10px 30px -14px rgba(0,0,0,.35)"
-                });
+                }));
         }
 
         var opacity = Number(style["opacity"]);
