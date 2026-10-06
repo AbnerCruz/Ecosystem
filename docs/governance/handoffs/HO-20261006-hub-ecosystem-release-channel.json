@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-hub-ecosystem-release-channel",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T18:12:00Z",
+  "agent": {
+    "id": "chatgpt-hub-download-repair",
+    "kind": "ai-agent"
+  },
+  "task_id": "HUB-202",
+  "component": "hub",
+  "state": "review",
+  "branch": "fix/hub-ecosystem-release-channel",
+  "base_commit": "e6d8374300bb455a7b3c83355eafe6fa66e30240",
+  "commit": "563dbd2c01f0c4b0d1b1e7ae3cc129d95da19ca0",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/268",
+  "files_changed": [
+    "apps/hub/src/Hub.Core/DistributionReader.cs",
+    "apps/hub/tests/Hub.Tests/DistributionReaderTests.cs",
+    "apps/hub/docs/catalogo-de-releases.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261006-hub-ecosystem-release-channel.json"
+  ],
+  "work_completed": [
+    "Identificada a regressão entre o perfil de distribuição atual e o leitor do Hub: os canais primários usam locationFrom ecosystem.repository e o Core não resolvia esse valor.",
+    "DistributionReader passa a resolver ecosystem.repository diretamente para o repositório canônico do Ecosystem recebido pelo loader, preservando source.repository e publicUrl.",
+    "Teste de regressão cobre resolução do monorepo e prefixo por Product; documentação do catálogo e ROADMAP registram o comportamento e a tarefa."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Hub.Tests",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR no estado combinado."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "pending",
+      "evidence": "Aguardando integrador/CI no estado combinado."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE",
+      "result": "not-applicable",
+      "evidence": "A correção é de resolução determinística do canal; a publicação normal do Hub permitirá conferir visualmente o catálogo sem fabricar aprovação."
+    }
+  ],
+  "known_issues": [
+    "A main pode avançar enquanto o PR estiver em revisão; o integrador deve revalidar o estado combinado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar Hub CI + consistency + integrador do PR #268.",
+    "Após integração, encerrar HUB-202 e conferir a release normal do Hub."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/distribution/current.profile.json",
+    "apps/hub/docs/catalogo-de-releases.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O perfil current permanece a única autoridade do canal; o Hub apenas o resolve."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #267, branch e handoff tornam causa, mudança e verificação observáveis."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Tags continuam filtradas por Product no mesmo repositório, preservando lifecycles independentes."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Canal declarado deixa de aparecer como indisponível por incompatibilidade do leitor."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhum Product passa a depender do Hub; apenas o catálogo do Hub é corrigido."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Correção local de leitura de um valor já canônico do perfil current; não altera canal, dados de usuário, segurança, arquitetura ou distribuição."
+  },
+  "cost": null
+}

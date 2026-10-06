@@ -24,11 +24,15 @@ public class DistributionReaderTests
         var origin = Read(Profile());
         Assert.Equal("acme/origin", origin.Value!.Repository.FullName);
         Assert.Null(origin.Value.TagPrefix);
-        var own = Read(Profile("publicUrl"));
+        var own = Read(Profile("ecosystem.repository"));
         Assert.Equal("acme/ecosystem", own.Value!.Repository.FullName);
         Assert.Equal("alpha-v", own.Value.TagPrefix);
         Assert.Equal("https://github.com/acme/ecosystem/releases", own.Value.ReleasesUrl);
         Assert.Contains(DistributionReader.ProfilePath, own.Source);
+
+        var publicUrl = Read(Profile("publicUrl"));
+        Assert.Equal("acme/ecosystem", publicUrl.Value!.Repository.FullName);
+        Assert.Equal("alpha-v", publicUrl.Value.TagPrefix);
     }
 
     [Theory]
