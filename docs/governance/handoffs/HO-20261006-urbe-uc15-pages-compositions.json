@@ -3,22 +3,24 @@
   "schemaVersion": 1,
   "message_id": "HO-20261006-urbe-uc15-pages-compositions",
   "category": "RESULT",
-  "timestamp": "2026-10-06T08:21:00Z",
+  "timestamp": "2026-10-06T08:32:00Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "UC-15",
   "component": "urbe",
-  "state": "working",
+  "state": "verifying",
   "branch": "feat/urbe-uc15-pages-compositions",
   "base_commit": "1eafe4db9676c884fbae78074803ff438298c044",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/250",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/PageModel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageNormalizer.cs",
     "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
     "apps/urbe/csharp/src/Urbe.Core/CompositionModel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/CompositionMigrationPlanner.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/PageCompositionTests.cs",
     "apps/urbe/csharp/README.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
@@ -32,38 +34,52 @@
   },
   "work_completed": [
     "PageDocument lê páginas de forma lossless, preserva campos desconhecidos e bloqueia escrita de versão futura/corrupta.",
-    "PageRenderer renderiza semanticamente blocos iniciais usando MarkdownEngine e DocumentStore, sem DOM/WebView/JS.",
+    "PageNormalizer aplica defaults conhecidos sem descartar campos desconhecidos nem criar/reescrever version silenciosamente (REQ-049).",
+    "PageRenderer fornece renderização semântica pura para blocos essenciais usando MarkdownEngine e DocumentStore, sem DOM/WebView/JS.",
     "CompositionFile lê compositions v1 e protege versões futuras/corruptas.",
-    "CompositionPageConverter converte order/sources para seções note em ordem determinística e preserva integralmente dados legados sem mapeamento exato.",
-    "Testes cobrem página futura/corrupta, round-trip de campos desconhecidos, renderer, fixture histórica de composição, ordem, missing sources e determinismo."
+    "CompositionPageConverter converte order/sources para seções note determinísticas e preserva integralmente dados legados sem mapeamento exato.",
+    "CompositionMigrationPlanner é idempotente em memória: reconhece página já migrada, recusa overwrite por conflito e bloqueia arquivo futuro/corrupto sem tocar o vault.",
+    "Testes cobrem proteção forward, round-trip de campos desconhecidos, defaults lossless, renderer, fixture histórica de composição, ordem, missing sources, conflito e idempotência."
   ],
   "verification": [
     {
       "check": "Core C# UC-15",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Draft PR #250 aberto; primeira rodada revelou erro de escaping em PageRenderer e a correção já foi enviada. Aguardando nova rodada."
+      "result": "passed",
+      "evidence": "urbe-checks run 37436138863: build portátil e dotnet test passaram; 170/170 testes, failed=0, skipped=0."
     },
     {
-      "check": "Regressão completa Urbe",
+      "check": "Android e E2E da primeira fatia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37436138863: build Android e E2E concluídos com success."
+    },
+    {
+      "check": "Regressão completa da primeira fatia",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Aguardando nova rodada completa após correção do renderer."
+      "evidence": "Run 37436138863 ainda finalizando checks e Windows; novo run será disparado pelo fechamento documental do PR."
+    },
+    {
+      "check": "Governança/consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency PR run 37436138620 e push run 37436132250 concluíram com success."
     }
   ],
   "known_issues": [
-    "O renderer C# cobre inicialmente blocos semânticos essenciais, não toda a superfície visual de pages/engine.js.",
-    "Migração física compositions→pages e remoção da UI legada não foram ligadas ao vault; isso toca dados do usuário e será tratado separadamente com backup/autorização crítica.",
+    "Esta é a primeira fatia de UC-15: o renderer C# cobre blocos semânticos essenciais, não toda a superfície visual de pages/engine.js.",
+    "Migração física compositions→pages e remoção da UI legada não foram ligadas ao vault; isso toca dados do usuário e será uma fatia crítica separada.",
     "KaTeX/renderização matemática visual permanece UC-16."
   ],
   "blockers": [
-    "Passar CI da primeira fatia e corrigir qualquer divergência encontrada.",
-    "Completar a paridade de blocos/normalização necessária antes de considerar UC-15 pronta para review."
+    "Concluir a regressão final do PR no estado combinado e integrar esta fatia rotineira.",
+    "UC-15 permanece aberta para ampliar paridade de páginas e depois preparar a migração física crítica."
   ],
   "next_actions": [
-    "Abrir draft PR da UC-15 e executar CI.",
-    "Corrigir compilação/testes e ampliar cobertura contra pages.mjs/composition.mjs.",
-    "Só depois planejar a ligação de migração real ao vault sob classificação user-data."
+    "Integrar a primeira fatia quando o estado combinado estiver verde.",
+    "Continuar UC-15 em nova fatia com o restante da semântica de páginas.",
+    "Separar a futura ligação compositions→pages ao vault em PR user-data crítico com backup restaurável e autorização do proprietário."
   ],
   "decisions_required": [],
   "normative_sources": [
