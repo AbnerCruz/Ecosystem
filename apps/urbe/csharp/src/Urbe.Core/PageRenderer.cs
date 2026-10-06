@@ -224,7 +224,7 @@ public static class PageRenderer
             inline.Append("background:").Append(bg).Append(';');
         var text = PageDocument.StringValue(style["textColor"]);
         if (!string.IsNullOrEmpty(text))
-            inline.Append("color:").Append(text).Append(';');
+            inline.Append("--text:").Append(text).Append(";color:").Append(text).Append(';');
 
         var customCss = PageFreeLayout.CssSafe(PageDocument.StringValue(style["css"]));
         var anchor = context.Anchor.Length > 0
