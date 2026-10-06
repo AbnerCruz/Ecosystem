@@ -234,15 +234,20 @@ public static class PageRenderer
             ? " style='" + MarkdownEngine.EscapeHtml(inline.ToString()) + "'"
             : string.Empty;
 
+        var scopedCss = string.Empty;
+        if (customCss.Length > 0)
+        {
+            var selector = "[data-s='" + CssToken(id) + "']";
+            scopedCss = customCss.Contains('&')
+                ? customCss.Replace("&", selector, StringComparison.Ordinal)
+                : selector + "{" + customCss + "}";
+        }
+
         return "<section data-s='" +
                MarkdownEngine.EscapeHtml(id) + "'" + anchor +
                " class='" + MarkdownEngine.EscapeHtml(string.Join(" ", classes)) + "'" +
                styleAttr + ">" +
-               (customCss.Length > 0
-                   ? "<style>[data-s='" + MarkdownEngine.EscapeHtml(id) + "']{" +
-                     customCss.Replace("&", "[data-s='" + MarkdownEngine.EscapeHtml(id) + "']", StringComparison.Ordinal) +
-                     "}</style>"
-                   : string.Empty) +
+               (scopedCss.Length > 0 ? "<style>" + scopedCss + "</style>" : string.Empty) +
                html +
                "</section>";
     }
