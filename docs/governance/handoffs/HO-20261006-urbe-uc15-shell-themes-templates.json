@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc15-shell-themes-templates",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T18:50:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc15",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-15",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc15-page-shell-templates",
+  "base_commit": "c7bf1ba4cbbe9965674c9dedd2de2e17e706a29a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PageThemeCatalog.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageTemplateCatalog.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageNormalizer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageThemeTemplateTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261006-urbe-uc15-shell-themes-templates.json"
+  ],
+  "work_completed": [
+    "Portada a autoridade pura de dez temas/fontes do pages/engine.js, com resolução e validação preservando chaves desconhecidas.",
+    "PageRenderer passa a emitir shell HTML completo: metadados, fontes, CSS, navegação, rodapé, estilos de seção e regras de impressão de livro.",
+    "Portado o catálogo dos 13 templates embutidos e variantes simple/skeleton como domínio C# sem DOM/IO.",
+    "Testes percorrem todos os presets/templates e verificam validação, estrutura, shell e livro."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "Web/Android/Windows/E2E/checks/consistency",
+      "result": "pending",
+      "evidence": "Aguardando integrador."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE",
+      "result": "not-applicable",
+      "evidence": "Fatia de domínio/render HTML puro; nenhuma UI distribuída muda."
+    }
+  ],
+  "known_issues": [
+    "O cliente C# ainda não corta o cliente JS; isso pertence a UC-31/G-C5.",
+    "Studio/preview editável pertencem à UC-18; page_schema/write_page e providers pertencem à UC-21."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir falhas de compilação/paridade detectadas pela CI.",
+    "Após integração, auditar UC-15 contra o escopo da Issue #249 e fechar somente se não restar domínio puro de páginas/composições."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/tests/pages.mjs",
+    "apps/urbe/tests/pages-free.mjs",
+    "apps/urbe/src/pages/engine.js",
+    "apps/urbe/src/pages/templates.js",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudança restrita ao Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Core não depende de Hub/host."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "UC-15, branch, PR e handoff rastreiam a fatia."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "URLs/CSS e conteúdo continuam passando por validadores/escape; campos avançados não concedem capacidade de host."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem inferir validação humana de CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-15 permanece aberta durante verificação."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Domínio/render puro sem escrita de dados reais, mudança de segurança, distribuição ou control-plane."
+  },
+  "cost": null
+}
