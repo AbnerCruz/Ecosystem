@@ -3086,6 +3086,12 @@ static class SelfTest
                     && urbe.GetProperty("release").Str("value")?.StartsWith("urbe-v2.0.0") == true
                     && urbe.GetProperty("mirror").ValueKind == JsonValueKind.Null,
                     "projeta release direto e Web do Ecosystem sem ressuscitar espelho legado");
+                var dist = doc.RootElement.GetProperty("distribution").Arr("channels");
+                var urbeRelease = dist.Single(c => c.Str("channel") == "urbe-ecosystem-release");
+                var urbePages = dist.Single(c => c.Str("channel") == "urbe-ecosystem-pages");
+                Report(urbeRelease.Str("location") == repo
+                    && urbePages.Str("location") == eco["components"]!["urbe"]!["publicUrl"]!.GetValue<string>(),
+                    "canais do Urbe projetam localizações canônicas do Ecosystem");
             }
             Report(!Checks.RunAll(tmp).Failed, "projeção com canal e artefato passa no schema e nos checks");
 
