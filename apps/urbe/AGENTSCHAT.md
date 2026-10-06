@@ -1,3 +1,11 @@
+### 2026-10-06 — ChatGPT — UC-15 quarta fatia: layout livre
+
+- Branch empilhada `feat/urbe-uc15-free-layout` criada sobre a terceira fatia enquanto #253 finaliza.
+- Portados modelo/normalização e renderer puro do `pages/free.js`, incluindo estilos responsivos por peça e isolamento por seção.
+- Segurança: medidas/cores/URLs/classes/CSS validados; embeds exigem HTTPS; conteúdo textual passa por Markdown/escape; HTML livre continua raw por contrato avançado.
+- Testes cobrem árvore/ids, responsividade, injeção, peças novas, nota do vault, modos de folha de livro e clamp.
+- Sem Studio/drag-drop/preview editável e sem escrita de dados reais; isso permanece fora do domínio desta fatia.
+
 ### 2026-10-06 — ChatGPT — UC-15 terceira fatia empilhada
 
 - Enquanto o PR #252 executa o estado combinado, foi aberta a branch `feat/urbe-uc15-book-structure` sobre o head da segunda fatia.

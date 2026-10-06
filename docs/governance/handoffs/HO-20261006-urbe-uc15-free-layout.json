@@ -1,0 +1,108 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc15-free-layout",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T10:58:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-15",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc15-free-layout",
+  "base_commit": "f7199d8a198b26128b2467725edcdc9c5520f5cf",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/254",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PageFreeLayout.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageFreeRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageNormalizer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageFreeLayoutTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261006-urbe-uc15-free-layout.json"
+  ],
+  "work_completed": [
+    "Portada a árvore de layout livre do pages/free.js com tipos válidos, ids únicos, limite de profundidade/nós e filhos apenas em containers.",
+    "Portada validação de estilos base/tablet/mobile: arranjo, dimensões, espaçamento, cores, imagens, tipografia, classes e CSS avançado.",
+    "Portado renderer puro para box, heading, text, image, button, list, quote, icon, divider, spacer, video, note, html, table, code, formula, badge, embed HTTPS e pagebreak.",
+    "CSS é escopado pelo id da seção e inclui regras responsivas; modo book respeita sheet flow/page/full.",
+    "Testes cobrem normalização da árvore, ids duplicados, responsividade, injeção, peças novas, vault note, livro e clamp.",
+    "Revisão por codex-urbe-import: incorporada reconciliação do PR #253 com main atual e handoff corrigido, preservando fatias UC-15/UC-16; teste de tabela verifica cabeçalhos/células reais permitindo metadados HTML legítimos, sem alterar renderer funcional."
+  ],
+  "verification": [
+    {
+      "check": "Core C# / regressão layout livre",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando draft PR/CI."
+    },
+    {
+      "kind": "automated",
+      "check": "Regressão local após incorporar PR #253 reconciliado",
+      "result": "passed",
+      "evidence": "190/190 testes Core e 22/22 checks de consistência passaram; tabela real parseada com cabeçalhos A/B e células 1/2, demais asserts de segurança preservados. Nova CI por superfície pendente."
+    }
+  ],
+  "known_issues": [
+    "Converter blocos fechados → layout livre e compactação lossless ainda não foram portados nesta fatia.",
+    "Studio/drag-drop/contenteditable/preview continuam fora do Core e pertencem à integração/UI futura.",
+    "Bloco html permanece raw por paridade explícita com a ferramenta avançada existente."
+  ],
+  "blockers": [
+    "PR #253 precisa integrar antes desta fatia poder ser retargetada para main.",
+    "Passar Core/Web/Android/Windows/E2E/checks/consistency."
+  ],
+  "next_actions": [
+    "Abrir draft PR empilhado e corrigir qualquer falha real.",
+    "Portar conversão closed-block→free e compactação/default-elision se necessário para fechar a paridade de UC-15.",
+    "Retargetar para main após #253."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/pages/free.js",
+    "apps/urbe/tests/pages-free.mjs",
+    "apps/urbe/src/pages/engine.js",
+    "apps/urbe/tests/pages.mjs"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças permanecem dentro do Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Layout livre é domínio puro; sem Hub/host concreto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #249, branch e handoff identificam a fatia."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "URLs, CSS, classes, embeds e conteúdo textual passam por validação/escape compatíveis com o contrato do produto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana/UI é alegada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-15 permanece aberta."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Port de domínio/renderização em memória; sem filesystem real, migração de dados ou control-plane."
+  },
+  "cost": null
+}

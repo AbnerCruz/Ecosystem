@@ -63,6 +63,15 @@ public static class PageRenderer
                 context);
         }
 
+        if (section.Type == "free")
+        {
+            return PageFreeRenderer.Render(
+                props,
+                documents,
+                section.Id ?? "s" + (context.Index + 1),
+                plan.BookFormat).Html;
+        }
+
         return section.Type switch
         {
             "hero" => RenderHero(props),

@@ -170,6 +170,16 @@ sumário de livro, partes e capítulos, preservando a numeração do cliente JS 
 sem introduzir estado de UI/host. Cabeçalhos internos de capítulos são
 deslocados semanticamente para manter a hierarquia do livro.
 
+
+### UC-15 — layout livre
+
+A quarta fatia porta o domínio puro de `pages/free.js`: árvore de peças,
+normalização de tipos/ids/estilos, breakpoints tablet/mobile, CSS escopado por
+seção e renderização de containers, títulos, Markdown, imagens, botões, listas,
+citações, vídeo, nota do vault, HTML avançado, tabela, código, fórmula, selo,
+embed HTTPS e quebra de página. A normalização limita profundidade/quantidade,
+recusa medidas/cores inválidas e limpa classes/CSS/URLs antes da renderização.
+
 ## UC-16 — edição matemática pura (primeira fatia)
 
 `MathEditing` fornece scanner compartilhado com `MarkdownEngine`, posição da
