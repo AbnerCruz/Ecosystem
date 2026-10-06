@@ -180,6 +180,16 @@ citações, vídeo, nota do vault, HTML avançado, tabela, código, fórmula, se
 embed HTTPS e quebra de página. A normalização limita profundidade/quantidade,
 recusa medidas/cores inválidas e limpa classes/CSS/URLs antes da renderização.
 
+### UC-15 — conversão e arquivo compacto
+
+A quinta fatia porta o conversor de blocos fechados para a árvore livre e a
+compactação de defaults do motor de páginas. `PageFreeConversion` cobre os 13
+tipos declarados convertíveis pelo cliente JS e resolve capítulos/notas contra
+`DocumentStore` sem IO novo. `PageCompactor` remove somente defaults que o
+`PageNormalizer` sabe restaurar e preserva chaves desconhecidas, inclusive em
+meta/props/style, para manter REQ-049. A transformação é em memória: não grava
+vault nem executa migração física.
+
 ## UC-16 — edição matemática pura (primeira fatia)
 
 `MathEditing` fornece scanner compartilhado com `MarkdownEngine`, posição da
