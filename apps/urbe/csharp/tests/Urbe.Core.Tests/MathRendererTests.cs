@@ -7,9 +7,10 @@ public sealed class MathRendererTests
 {
     [Theory]
     [InlineData(@"E=mc^2", false)]
-    [InlineData(@"rac{-bpmsqrt{b^2-4ac}}{2a}", true)]
-    [InlineData(@"int_0^1 x^2,dx=rac{1}{3}", true)]
-    [InlineData(@"egin{pmatrix}a&b\c&dend{pmatrix}", true)]
+    [InlineData(@"x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}", true)]
+    [InlineData(@"\int_0^1 x^2\,dx=\frac{1}{3}", true)]
+    [InlineData(@"\begin{pmatrix}a&b\\c&d\end{pmatrix}", true)]
+    [InlineData(@"\boxed{x=4}", true)]
     public void SupportedTexRendersToSelfContainedPathSvg(string tex, bool display)
     {
         var result = MathRenderer.RenderSvg(tex, display);
@@ -30,9 +31,8 @@ public sealed class MathRendererTests
     }
 
     [Theory]
-    [InlineData(@"doesnotexist")]
-    [InlineData(@"rac{")]
-    [InlineData(@"oxed{x=4}")]
+    [InlineData(@"\doesnotexist")]
+    [InlineData(@"\frac{")]
     public void UnsupportedOrMalformedTexIsDiagnosticAndNeverThrows(string tex)
     {
         var result = MathRenderer.RenderSvg(tex);
@@ -88,8 +88,6 @@ public sealed class MathRendererTests
             }
         }
 
-        // This is a floor, not a golden for known rejections: future compatibility
-        // work may legitimately turn the remaining diagnostic into a rendering.
         Assert.True(rendered >= 30, "Rendered: " + rendered);
         Assert.True(diagnostics <= 1, "Diagnostics: " + diagnostics);
     }
@@ -97,7 +95,7 @@ public sealed class MathRendererTests
     [Fact]
     public void RenderingIsDeterministicForTheSameInput()
     {
-        const string tex = @"sum_{i=1}^{n}i=rac{n(n+1)}{2}";
+        const string tex = @"\sum_{i=1}^{n}i=\frac{n(n+1)}{2}";
         var first = MathRenderer.RenderSvg(tex);
         var second = MathRenderer.RenderSvg(tex);
 
