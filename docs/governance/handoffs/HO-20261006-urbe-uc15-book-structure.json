@@ -13,7 +13,7 @@
   "state": "verifying",
   "branch": "feat/urbe-uc15-book-structure",
   "base_commit": "eeefea4033be8059b9ab3c137b57627213193067",
-  "commit": "f7199d8a198b26128b2467725edcdc9c5520f5cf",
+  "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/253",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/PageRenderPlan.cs",
@@ -31,7 +31,8 @@
     "O plano numera partes/capítulos e expande capítulos de pasta na mesma sequência global usada pelo motor JS.",
     "PageBookRenderer porta TOC, capa, folha de rosto, sumário de livro, parte, capítulo e capítulos por pasta.",
     "Headings internos de capítulos são deslocados sem alterar fenced code.",
-    "PageNormalizer passou a aplicar defaults de layout/book e defaults dos blocos de livro sem perder chaves desconhecidas."
+    "PageNormalizer passou a aplicar defaults de layout/book e defaults dos blocos de livro sem perder chaves desconhecidas.",
+    "Revisão por codex-urbe-import: reconciliação semântica com main a51c3be preserva UC-15, edição/investigação UC-16 e DEC-0040; referência obsoleta f719 substituída pelo resultado derivado deste handoff, conforme ADR-0014."
   ],
   "verification": [
     {
@@ -57,6 +58,12 @@
       "kind": "automated",
       "result": "pending",
       "evidence": "Windows direto ainda finalizando; o integrador combinado será reexecutado após o PR sair de draft."
+    },
+    {
+      "kind": "automated",
+      "check": "Reconciliação local com main a51c3be",
+      "result": "passed",
+      "evidence": "184/184 testes Core e 22/22 checks de consistência passaram; conflitos README/ROADMAP resolvidos semanticamente preservando UC-15/UC-16 e estados integrados. Nova CI necessária."
     }
   ],
   "known_issues": [

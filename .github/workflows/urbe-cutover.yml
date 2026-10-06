@@ -100,9 +100,9 @@ jobs:
           {
             echo "## Urbe P4-9 — corte direto"
             echo
-            echo "- versão: `$REQUESTED_VERSION`"
-            echo "- tag: `$TAG`"
-            echo "- commit: `$SHA`"
+            printf -- '- versão: `%s`\n' "$REQUESTED_VERSION"
+            printf -- '- tag: `%s`\n' "$TAG"
+            printf -- '- commit: `%s`\n' "$SHA"
             echo "- canal legado/sync: abandonado por DEC-0039"
-            echo "- `urbe-release.yml` foi disparado sobre a tag direta."
+            printf '%s\n' '- `urbe-release.yml` foi disparado sobre a tag direta.'
           } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,41 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-urbe-1.8.3-beta-windows",
+  "component": "urbe",
+  "build": "1.8.3-beta-windows",
+  "recorded_at": "2026-10-06",
+  "state": "AUTOMATED_VERIFIED",
+  "objective": "Registrar build Windows direto, publicação e integridade do instalador e metadados de atualização.",
+  "preconditions": [
+    "Instalador e latest.yml obtidos da release urbe-v1.8.3-beta."
+  ],
+  "steps": [
+    "Conferir versão 1.8.3-beta no latest.yml e presença de EXE/blockmap.",
+    "Comparar tamanho/SHA-256 com digests GitHub e SHA-512 do EXE com latest.yml."
+  ],
+  "expected": "Instalador e metadata publicados no canal direto com hashes/tamanhos corretos; isso não equivale a teste humano de instalação Windows.",
+  "known_issues": [
+    "Instalação/uso em máquina Windows não foram verificados nesta sessão."
+  ],
+  "artifact": {
+    "name": "Urbe-Setup-1.8.3-beta.exe",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.3-beta/Urbe-Setup-1.8.3-beta.exe",
+    "sha256": "106cc4ad4645c5c3aa12ed5bd08736f5ee8cef91a62e6436a16e89fb896780f1"
+  },
+  "traceability": {
+    "task": "P4-9",
+    "commit": "43ccb54e328b7b503d3e07adfde36180014e9964",
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/255",
+    "handoff": "HO-20261006-p4-9-release-evidence"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Release direta e integridade dos artefatos publicados",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/37458276965 concluiu verificar, Android, Windows e publicar com success. Os cinco arquivos foram baixados; todos os tamanhos/SHA-256 coincidem com a API GitHub. Checksum APK e SHA-512/tamanho do latest.yml coincidem com os bytes. APK SHA-256 5269c505ad3bc12149716e58f728cd5468c13fcef9d8b7192839a9496ba9d4b7; EXE 106cc4ad4645c5c3aa12ed5bd08736f5ee8cef91a62e6436a16e89fb896780f1. Identidade beta conferida por apksigner no job Android.",
+      "handoff": "HO-20261006-p4-9-release-evidence"
+    }
+  ]
+}

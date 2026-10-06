@@ -1,4 +1,4 @@
-# Cliente C# do Urbe — UC-8 a UC-15
+# Cliente C# do Urbe — UC-8 a UC-16
 
 Base de composição aprovada por DEC-0035-A / ADR-0025. O roadmap e os gates
 continuam em [`../docs/csharp/ROADMAP.md`](../docs/csharp/ROADMAP.md).
@@ -169,3 +169,23 @@ TOC, partes, capítulos e capítulos derivados de uma pasta antes da renderizaç
 sumário de livro, partes e capítulos, preservando a numeração do cliente JS e
 sem introduzir estado de UI/host. Cabeçalhos internos de capítulos são
 deslocados semanticamente para manter a hierarquia do livro.
+
+## UC-16 — edição matemática pura (primeira fatia)
+
+`MathEditing` fornece scanner compartilhado com `MarkdownEngine`, posição da
+fórmula sob o cursor em UTF-16, recuperação dos delimitadores, snippets e
+completação. `Commands`, `Symbols` e `Templates` portam o catálogo congelado do
+cliente JS como coleções imutáveis. Não acessa DOM, filesystem, host ou rede.
+
+A suíte compara 33 cenários de varredura e todas as posições do cursor, 91
+casos de autocomplete e 172 snippets com o módulo JS. O corpus suplementar em
+`tests/fixtures/math-editing.json` registra o SHA-256 da fonte; não modifica os
+297 casos de aceite UC-2. `node tests/math-oracle.mjs --check` verifica catálogo e
+expectativas executando a fonte congelada; `--write` é regeneração deliberada,
+cujo diff precisa de revisão. A suíte C# também verifica o SHA-256 da fonte e todas as expectativas.
+
+A biblioteca tipográfica ainda não foi escolhida (ADR-0025 / UC-4). Este passo
+não implementa renderização KaTeX, macros, diagnósticos LaTeX, export visual ou
+UI/seleção/teclado. UC-16 permanece aberta; UI fica na UC-18.
+
+Investigação UC-16: [renderer C#/SVG e corpus real](../docs/csharp/UC16-RENDERER-INVESTIGATION.md). Execute `node tests/math-renderer-probe.mjs` com .NET 10 e Chromium para reproduzir o experimento isolado; isso não adota suas bibliotecas no produto.

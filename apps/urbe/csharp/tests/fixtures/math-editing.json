@@ -1,0 +1,6678 @@
+{
+  "source": "src/math/core.js",
+  "sha256": "b606fbb5f3fcdfd0acc4c30ac7d03c1d8155c2d73b8fa41247c2ed7474875c5c",
+  "scan": [
+    {
+      "markdown": "",
+      "items": [],
+      "cursors": [
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$\u0000x$",
+      "items": [
+        {
+          "start": 0,
+          "end": 4,
+          "tex": "\u0000x",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$x$\u0000",
+      "items": [
+        {
+          "start": 0,
+          "end": 3,
+          "tex": "x",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "a $x+1$ b $$y$$",
+      "items": [
+        {
+          "start": 2,
+          "end": 7,
+          "tex": "x+1",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        },
+        {
+          "start": 10,
+          "end": 15,
+          "tex": "y",
+          "open": "$$",
+          "close": "$$",
+          "display": true,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$x$ \\(y\\) \\[z\\] $$w$$",
+      "items": [
+        {
+          "start": 0,
+          "end": 3,
+          "tex": "x",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        },
+        {
+          "start": 4,
+          "end": 9,
+          "tex": "y",
+          "open": "\\(",
+          "close": "\\)",
+          "display": false,
+          "block": false
+        },
+        {
+          "start": 10,
+          "end": 15,
+          "tex": "z",
+          "open": "\\[",
+          "close": "\\]",
+          "display": true,
+          "block": false
+        },
+        {
+          "start": 16,
+          "end": 21,
+          "tex": "w",
+          "open": "$$",
+          "close": "$$",
+          "display": true,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        -1,
+        -1,
+        2,
+        2,
+        -1,
+        -1,
+        -1,
+        -1,
+        3,
+        3,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "Seja $x^2$ e \\(y\\) mas R$ 10 e R$ 20, `$a$` e \\$5.\n\n```\n$$nao$$\n```\n\n$$\n\\int_0^1 f\n$$\n\nTexto \\[a=b\\] fim. E $5 e $6.",
+      "items": [
+        {
+          "start": 5,
+          "end": 10,
+          "tex": "x^2",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        },
+        {
+          "start": 13,
+          "end": 18,
+          "tex": "y",
+          "open": "\\(",
+          "close": "\\)",
+          "display": false,
+          "block": false
+        },
+        {
+          "start": 69,
+          "end": 85,
+          "tex": "\\int_0^1 f",
+          "open": "$$\n",
+          "close": "\n$$",
+          "display": true,
+          "block": true
+        },
+        {
+          "start": 93,
+          "end": 100,
+          "tex": "a=b",
+          "open": "\\[",
+          "close": "\\]",
+          "display": true,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        3,
+        3,
+        3,
+        3,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$$ \nA=B\n\t$$",
+      "items": [
+        {
+          "start": 0,
+          "end": 11,
+          "tex": "A=B",
+          "open": "$$ \n",
+          "close": "\n\t$$",
+          "display": true,
+          "block": true
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "  \\[a=b\\] \t\n",
+      "items": [
+        {
+          "start": 2,
+          "end": 9,
+          "tex": "a=b",
+          "open": "\\[",
+          "close": "\\]",
+          "display": true,
+          "block": true
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "texto $$x$$ fim",
+      "items": [
+        {
+          "start": 6,
+          "end": 11,
+          "tex": "x",
+          "open": "$$",
+          "close": "$$",
+          "display": true,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$$a\n\nb$$",
+      "items": [],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$x\ny$ \\(a\nb\\)",
+      "items": [],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$ x$ $x $ $x$2 $x$٢",
+      "items": [
+        {
+          "start": 5,
+          "end": 18,
+          "tex": "x $ $x$2 $x",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "\\$x$ e $x\\$y$",
+      "items": [
+        {
+          "start": 7,
+          "end": 13,
+          "tex": "x\\$y",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "\\(\\) \\[\\] $$$$",
+      "items": [],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "~~~tex\n$x$\n~~~\n$y$",
+      "items": [
+        {
+          "start": 15,
+          "end": 18,
+          "tex": "y",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "   ```tex\n$x$\n   ```\n$y$",
+      "items": [
+        {
+          "start": 21,
+          "end": 24,
+          "tex": "y",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "````\n$x$\n```\n$y$\n````\n$z$",
+      "items": [
+        {
+          "start": 22,
+          "end": 25,
+          "tex": "z",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "`$x$` ``$y$`` $z$",
+      "items": [
+        {
+          "start": 14,
+          "end": 17,
+          "tex": "z",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "😀 $α+β$ e \\[∑\\]",
+      "items": [
+        {
+          "start": 3,
+          "end": 8,
+          "tex": "α+β",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        },
+        {
+          "start": 11,
+          "end": 16,
+          "tex": "∑",
+          "open": "\\[",
+          "close": "\\]",
+          "display": true,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$﻿x$ $x﻿$",
+      "items": [],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$x$ $x$",
+      "items": [
+        {
+          "start": 0,
+          "end": 4,
+          "tex": "x",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        },
+        {
+          "start": 5,
+          "end": 9,
+          "tex": "x",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        1,
+        1,
+        1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$$a\\$$b$$",
+      "items": [
+        {
+          "start": 0,
+          "end": 9,
+          "tex": "a\\$$b",
+          "open": "$$",
+          "close": "$$",
+          "display": true,
+          "block": true
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "não fecha $x",
+      "items": [],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$$",
+      "items": [],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "\\",
+      "items": [],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "CRLF\r\n$$\r\nx\r\n$$",
+      "items": [
+        {
+          "start": 6,
+          "end": 15,
+          "tex": "\r\nx\r",
+          "open": "$$",
+          "close": "\n$$",
+          "display": true,
+          "block": true
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "\\[a\n\nb\\]",
+      "items": [
+        {
+          "start": 0,
+          "end": 8,
+          "tex": "a\n\nb",
+          "open": "\\[",
+          "close": "\\]",
+          "display": true,
+          "block": true
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$a\\$b$",
+      "items": [
+        {
+          "start": 0,
+          "end": 6,
+          "tex": "a\\$b",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "\\\\$x$",
+      "items": [
+        {
+          "start": 2,
+          "end": 5,
+          "tex": "x",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "``` sem fechar\n$x$",
+      "items": [],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "$x$\n\t$$\nx\n$$\n",
+      "items": [
+        {
+          "start": 0,
+          "end": 3,
+          "tex": "x",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        },
+        {
+          "start": 5,
+          "end": 12,
+          "tex": "x",
+          "open": "$$\n",
+          "close": "\n$$",
+          "display": true,
+          "block": true
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "``sem fechar $x$",
+      "items": [
+        {
+          "start": 13,
+          "end": 16,
+          "tex": "x",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1
+      ]
+    },
+    {
+      "markdown": "um $a$ e $b$",
+      "items": [
+        {
+          "start": 3,
+          "end": 6,
+          "tex": "a",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        },
+        {
+          "start": 9,
+          "end": 12,
+          "tex": "b",
+          "open": "$",
+          "close": "$",
+          "display": false,
+          "block": false
+        }
+      ],
+      "cursors": [
+        -1,
+        -1,
+        -1,
+        -1,
+        -1,
+        0,
+        0,
+        -1,
+        -1,
+        -1,
+        -1,
+        1,
+        1,
+        -1,
+        -1
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "cmd": "\\alpha",
+      "snip": "\\alpha",
+      "desc": "letra grega α",
+      "prev": null
+    },
+    {
+      "cmd": "\\beta",
+      "snip": "\\beta",
+      "desc": "letra grega β",
+      "prev": null
+    },
+    {
+      "cmd": "\\gamma",
+      "snip": "\\gamma",
+      "desc": "letra grega γ",
+      "prev": null
+    },
+    {
+      "cmd": "\\delta",
+      "snip": "\\delta",
+      "desc": "letra grega δ",
+      "prev": null
+    },
+    {
+      "cmd": "\\epsilon",
+      "snip": "\\epsilon",
+      "desc": "letra grega ϵ",
+      "prev": null
+    },
+    {
+      "cmd": "\\varepsilon",
+      "snip": "\\varepsilon",
+      "desc": "letra grega ε",
+      "prev": null
+    },
+    {
+      "cmd": "\\zeta",
+      "snip": "\\zeta",
+      "desc": "letra grega ζ",
+      "prev": null
+    },
+    {
+      "cmd": "\\eta",
+      "snip": "\\eta",
+      "desc": "letra grega η",
+      "prev": null
+    },
+    {
+      "cmd": "\\theta",
+      "snip": "\\theta",
+      "desc": "letra grega θ",
+      "prev": null
+    },
+    {
+      "cmd": "\\vartheta",
+      "snip": "\\vartheta",
+      "desc": "letra grega ϑ",
+      "prev": null
+    },
+    {
+      "cmd": "\\iota",
+      "snip": "\\iota",
+      "desc": "letra grega ι",
+      "prev": null
+    },
+    {
+      "cmd": "\\kappa",
+      "snip": "\\kappa",
+      "desc": "letra grega κ",
+      "prev": null
+    },
+    {
+      "cmd": "\\lambda",
+      "snip": "\\lambda",
+      "desc": "letra grega λ",
+      "prev": null
+    },
+    {
+      "cmd": "\\mu",
+      "snip": "\\mu",
+      "desc": "letra grega μ",
+      "prev": null
+    },
+    {
+      "cmd": "\\nu",
+      "snip": "\\nu",
+      "desc": "letra grega ν",
+      "prev": null
+    },
+    {
+      "cmd": "\\xi",
+      "snip": "\\xi",
+      "desc": "letra grega ξ",
+      "prev": null
+    },
+    {
+      "cmd": "\\pi",
+      "snip": "\\pi",
+      "desc": "letra grega π",
+      "prev": null
+    },
+    {
+      "cmd": "\\rho",
+      "snip": "\\rho",
+      "desc": "letra grega ρ",
+      "prev": null
+    },
+    {
+      "cmd": "\\sigma",
+      "snip": "\\sigma",
+      "desc": "letra grega σ",
+      "prev": null
+    },
+    {
+      "cmd": "\\tau",
+      "snip": "\\tau",
+      "desc": "letra grega τ",
+      "prev": null
+    },
+    {
+      "cmd": "\\upsilon",
+      "snip": "\\upsilon",
+      "desc": "letra grega υ",
+      "prev": null
+    },
+    {
+      "cmd": "\\phi",
+      "snip": "\\phi",
+      "desc": "letra grega ϕ",
+      "prev": null
+    },
+    {
+      "cmd": "\\varphi",
+      "snip": "\\varphi",
+      "desc": "letra grega φ",
+      "prev": null
+    },
+    {
+      "cmd": "\\chi",
+      "snip": "\\chi",
+      "desc": "letra grega χ",
+      "prev": null
+    },
+    {
+      "cmd": "\\psi",
+      "snip": "\\psi",
+      "desc": "letra grega ψ",
+      "prev": null
+    },
+    {
+      "cmd": "\\omega",
+      "snip": "\\omega",
+      "desc": "letra grega ω",
+      "prev": null
+    },
+    {
+      "cmd": "\\Gamma",
+      "snip": "\\Gamma",
+      "desc": "letra grega Γ",
+      "prev": null
+    },
+    {
+      "cmd": "\\Delta",
+      "snip": "\\Delta",
+      "desc": "letra grega Δ",
+      "prev": null
+    },
+    {
+      "cmd": "\\Theta",
+      "snip": "\\Theta",
+      "desc": "letra grega Θ",
+      "prev": null
+    },
+    {
+      "cmd": "\\Lambda",
+      "snip": "\\Lambda",
+      "desc": "letra grega Λ",
+      "prev": null
+    },
+    {
+      "cmd": "\\Xi",
+      "snip": "\\Xi",
+      "desc": "letra grega Ξ",
+      "prev": null
+    },
+    {
+      "cmd": "\\Pi",
+      "snip": "\\Pi",
+      "desc": "letra grega Π",
+      "prev": null
+    },
+    {
+      "cmd": "\\Sigma",
+      "snip": "\\Sigma",
+      "desc": "letra grega Σ",
+      "prev": null
+    },
+    {
+      "cmd": "\\Phi",
+      "snip": "\\Phi",
+      "desc": "letra grega Φ",
+      "prev": null
+    },
+    {
+      "cmd": "\\Psi",
+      "snip": "\\Psi",
+      "desc": "letra grega Ψ",
+      "prev": null
+    },
+    {
+      "cmd": "\\Omega",
+      "snip": "\\Omega",
+      "desc": "letra grega Ω",
+      "prev": null
+    },
+    {
+      "cmd": "\\frac",
+      "snip": "\\frac{●}{}",
+      "desc": "fração",
+      "prev": null
+    },
+    {
+      "cmd": "\\dfrac",
+      "snip": "\\dfrac{●}{}",
+      "desc": "fração grande",
+      "prev": null
+    },
+    {
+      "cmd": "\\sqrt",
+      "snip": "\\sqrt{●}",
+      "desc": "raiz quadrada",
+      "prev": null
+    },
+    {
+      "cmd": "\\sqrt[n]",
+      "snip": "\\sqrt[●]{}",
+      "desc": "raiz n-ésima",
+      "prev": null
+    },
+    {
+      "cmd": "\\binom",
+      "snip": "\\binom{●}{}",
+      "desc": "binomial",
+      "prev": null
+    },
+    {
+      "cmd": "\\sum",
+      "snip": "\\sum_{●}^{}",
+      "desc": "somatório",
+      "prev": null
+    },
+    {
+      "cmd": "\\prod",
+      "snip": "\\prod_{●}^{}",
+      "desc": "produtório",
+      "prev": null
+    },
+    {
+      "cmd": "\\int",
+      "snip": "\\int_{●}^{}",
+      "desc": "integral",
+      "prev": null
+    },
+    {
+      "cmd": "\\iint",
+      "snip": "\\iint",
+      "desc": "integral dupla",
+      "prev": null
+    },
+    {
+      "cmd": "\\oint",
+      "snip": "\\oint",
+      "desc": "integral de linha",
+      "prev": null
+    },
+    {
+      "cmd": "\\lim",
+      "snip": "\\lim_{● \\to }",
+      "desc": "limite",
+      "prev": null
+    },
+    {
+      "cmd": "\\partial",
+      "snip": "\\partial",
+      "desc": "derivada parcial",
+      "prev": null
+    },
+    {
+      "cmd": "\\nabla",
+      "snip": "\\nabla",
+      "desc": "nabla",
+      "prev": null
+    },
+    {
+      "cmd": "\\infty",
+      "snip": "\\infty",
+      "desc": "infinito",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathrm{d}",
+      "snip": "\\mathrm{d}●",
+      "desc": "d reto",
+      "prev": null
+    },
+    {
+      "cmd": "\\cdot",
+      "snip": "\\cdot",
+      "desc": "produto (ponto)",
+      "prev": null
+    },
+    {
+      "cmd": "\\times",
+      "snip": "\\times",
+      "desc": "vezes",
+      "prev": null
+    },
+    {
+      "cmd": "\\div",
+      "snip": "\\div",
+      "desc": "divisão",
+      "prev": null
+    },
+    {
+      "cmd": "\\pm",
+      "snip": "\\pm",
+      "desc": "mais ou menos",
+      "prev": null
+    },
+    {
+      "cmd": "\\mp",
+      "snip": "\\mp",
+      "desc": "menos ou mais",
+      "prev": null
+    },
+    {
+      "cmd": "\\circ",
+      "snip": "\\circ",
+      "desc": "composição",
+      "prev": null
+    },
+    {
+      "cmd": "\\leq",
+      "snip": "\\leq",
+      "desc": "menor ou igual",
+      "prev": null
+    },
+    {
+      "cmd": "\\geq",
+      "snip": "\\geq",
+      "desc": "maior ou igual",
+      "prev": null
+    },
+    {
+      "cmd": "\\neq",
+      "snip": "\\neq",
+      "desc": "diferente",
+      "prev": null
+    },
+    {
+      "cmd": "\\approx",
+      "snip": "\\approx",
+      "desc": "aproximadamente",
+      "prev": null
+    },
+    {
+      "cmd": "\\equiv",
+      "snip": "\\equiv",
+      "desc": "equivalente",
+      "prev": null
+    },
+    {
+      "cmd": "\\sim",
+      "snip": "\\sim",
+      "desc": "semelhante",
+      "prev": null
+    },
+    {
+      "cmd": "\\propto",
+      "snip": "\\propto",
+      "desc": "proporcional",
+      "prev": null
+    },
+    {
+      "cmd": "\\ll",
+      "snip": "\\ll",
+      "desc": "muito menor",
+      "prev": null
+    },
+    {
+      "cmd": "\\gg",
+      "snip": "\\gg",
+      "desc": "muito maior",
+      "prev": null
+    },
+    {
+      "cmd": "\\in",
+      "snip": "\\in",
+      "desc": "pertence",
+      "prev": null
+    },
+    {
+      "cmd": "\\notin",
+      "snip": "\\notin",
+      "desc": "não pertence",
+      "prev": null
+    },
+    {
+      "cmd": "\\subset",
+      "snip": "\\subset",
+      "desc": "subconjunto",
+      "prev": null
+    },
+    {
+      "cmd": "\\subseteq",
+      "snip": "\\subseteq",
+      "desc": "subconjunto ou igual",
+      "prev": null
+    },
+    {
+      "cmd": "\\supset",
+      "snip": "\\supset",
+      "desc": "contém",
+      "prev": null
+    },
+    {
+      "cmd": "\\cup",
+      "snip": "\\cup",
+      "desc": "união",
+      "prev": null
+    },
+    {
+      "cmd": "\\cap",
+      "snip": "\\cap",
+      "desc": "interseção",
+      "prev": null
+    },
+    {
+      "cmd": "\\setminus",
+      "snip": "\\setminus",
+      "desc": "diferença",
+      "prev": null
+    },
+    {
+      "cmd": "\\emptyset",
+      "snip": "\\emptyset",
+      "desc": "vazio",
+      "prev": null
+    },
+    {
+      "cmd": "\\varnothing",
+      "snip": "\\varnothing",
+      "desc": "vazio",
+      "prev": null
+    },
+    {
+      "cmd": "\\forall",
+      "snip": "\\forall",
+      "desc": "para todo",
+      "prev": null
+    },
+    {
+      "cmd": "\\exists",
+      "snip": "\\exists",
+      "desc": "existe",
+      "prev": null
+    },
+    {
+      "cmd": "\\nexists",
+      "snip": "\\nexists",
+      "desc": "não existe",
+      "prev": null
+    },
+    {
+      "cmd": "\\neg",
+      "snip": "\\neg",
+      "desc": "negação",
+      "prev": null
+    },
+    {
+      "cmd": "\\land",
+      "snip": "\\land",
+      "desc": "e",
+      "prev": null
+    },
+    {
+      "cmd": "\\lor",
+      "snip": "\\lor",
+      "desc": "ou",
+      "prev": null
+    },
+    {
+      "cmd": "\\to",
+      "snip": "\\to",
+      "desc": "seta",
+      "prev": null
+    },
+    {
+      "cmd": "\\rightarrow",
+      "snip": "\\rightarrow",
+      "desc": "seta",
+      "prev": null
+    },
+    {
+      "cmd": "\\leftarrow",
+      "snip": "\\leftarrow",
+      "desc": "seta à esquerda",
+      "prev": null
+    },
+    {
+      "cmd": "\\leftrightarrow",
+      "snip": "\\leftrightarrow",
+      "desc": "seta dupla",
+      "prev": null
+    },
+    {
+      "cmd": "\\mapsto",
+      "snip": "\\mapsto",
+      "desc": "leva em",
+      "prev": null
+    },
+    {
+      "cmd": "\\Rightarrow",
+      "snip": "\\Rightarrow",
+      "desc": "implica",
+      "prev": null
+    },
+    {
+      "cmd": "\\implies",
+      "snip": "\\implies",
+      "desc": "implica",
+      "prev": null
+    },
+    {
+      "cmd": "\\iff",
+      "snip": "\\iff",
+      "desc": "se e somente se",
+      "prev": null
+    },
+    {
+      "cmd": "\\Leftrightarrow",
+      "snip": "\\Leftrightarrow",
+      "desc": "equivalência",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathbb",
+      "snip": "\\mathbb{●}",
+      "desc": "conjuntos (ℝ, ℕ…)",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathbb{R}",
+      "snip": "\\mathbb{R}",
+      "desc": "reais ℝ",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathbb{N}",
+      "snip": "\\mathbb{N}",
+      "desc": "naturais ℕ",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathbb{Z}",
+      "snip": "\\mathbb{Z}",
+      "desc": "inteiros ℤ",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathbb{Q}",
+      "snip": "\\mathbb{Q}",
+      "desc": "racionais ℚ",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathbb{C}",
+      "snip": "\\mathbb{C}",
+      "desc": "complexos ℂ",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathcal",
+      "snip": "\\mathcal{●}",
+      "desc": "caligráfico",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathrm",
+      "snip": "\\mathrm{●}",
+      "desc": "texto reto",
+      "prev": null
+    },
+    {
+      "cmd": "\\mathbf",
+      "snip": "\\mathbf{●}",
+      "desc": "negrito",
+      "prev": null
+    },
+    {
+      "cmd": "\\boldsymbol",
+      "snip": "\\boldsymbol{●}",
+      "desc": "símbolo em negrito",
+      "prev": null
+    },
+    {
+      "cmd": "\\text",
+      "snip": "\\text{●}",
+      "desc": "texto normal",
+      "prev": null
+    },
+    {
+      "cmd": "\\operatorname",
+      "snip": "\\operatorname{●}",
+      "desc": "operador",
+      "prev": null
+    },
+    {
+      "cmd": "\\hat",
+      "snip": "\\hat{●}",
+      "desc": "chapéu",
+      "prev": null
+    },
+    {
+      "cmd": "\\bar",
+      "snip": "\\bar{●}",
+      "desc": "barra",
+      "prev": null
+    },
+    {
+      "cmd": "\\overline",
+      "snip": "\\overline{●}",
+      "desc": "barra longa",
+      "prev": null
+    },
+    {
+      "cmd": "\\vec",
+      "snip": "\\vec{●}",
+      "desc": "vetor",
+      "prev": null
+    },
+    {
+      "cmd": "\\dot",
+      "snip": "\\dot{●}",
+      "desc": "ponto",
+      "prev": null
+    },
+    {
+      "cmd": "\\ddot",
+      "snip": "\\ddot{●}",
+      "desc": "dois pontos",
+      "prev": null
+    },
+    {
+      "cmd": "\\tilde",
+      "snip": "\\tilde{●}",
+      "desc": "til",
+      "prev": null
+    },
+    {
+      "cmd": "\\underbrace",
+      "snip": "\\underbrace{●}_{}",
+      "desc": "chave embaixo",
+      "prev": null
+    },
+    {
+      "cmd": "\\left(",
+      "snip": "\\left( ● \\right)",
+      "desc": "parênteses que crescem",
+      "prev": null
+    },
+    {
+      "cmd": "\\left[",
+      "snip": "\\left[ ● \\right]",
+      "desc": "colchetes que crescem",
+      "prev": null
+    },
+    {
+      "cmd": "\\left\\{",
+      "snip": "\\left\\{ ● \\right\\}",
+      "desc": "chaves que crescem",
+      "prev": null
+    },
+    {
+      "cmd": "\\left|",
+      "snip": "\\left| ● \\right|",
+      "desc": "módulo que cresce",
+      "prev": null
+    },
+    {
+      "cmd": "\\langle",
+      "snip": "\\langle ● \\rangle",
+      "desc": "ângulos",
+      "prev": null
+    },
+    {
+      "cmd": "\\lVert",
+      "snip": "\\lVert ● \\rVert",
+      "desc": "norma",
+      "prev": null
+    },
+    {
+      "cmd": "\\ldots",
+      "snip": "\\ldots",
+      "desc": "reticências",
+      "prev": null
+    },
+    {
+      "cmd": "\\cdots",
+      "snip": "\\cdots",
+      "desc": "reticências centrais",
+      "prev": null
+    },
+    {
+      "cmd": "\\vdots",
+      "snip": "\\vdots",
+      "desc": "reticências verticais",
+      "prev": null
+    },
+    {
+      "cmd": "\\ddots",
+      "snip": "\\ddots",
+      "desc": "reticências diagonais",
+      "prev": null
+    },
+    {
+      "cmd": "\\quad",
+      "snip": "\\quad",
+      "desc": "espaço",
+      "prev": null
+    },
+    {
+      "cmd": "\\,",
+      "snip": "\\,",
+      "desc": "espaço fino",
+      "prev": null
+    },
+    {
+      "cmd": "\\sin",
+      "snip": "\\sin",
+      "desc": "seno",
+      "prev": null
+    },
+    {
+      "cmd": "\\cos",
+      "snip": "\\cos",
+      "desc": "cosseno",
+      "prev": null
+    },
+    {
+      "cmd": "\\tan",
+      "snip": "\\tan",
+      "desc": "tangente",
+      "prev": null
+    },
+    {
+      "cmd": "\\log",
+      "snip": "\\log",
+      "desc": "logaritmo",
+      "prev": null
+    },
+    {
+      "cmd": "\\ln",
+      "snip": "\\ln",
+      "desc": "logaritmo natural",
+      "prev": null
+    },
+    {
+      "cmd": "\\exp",
+      "snip": "\\exp",
+      "desc": "exponencial",
+      "prev": null
+    },
+    {
+      "cmd": "\\max",
+      "snip": "\\max",
+      "desc": "máximo",
+      "prev": null
+    },
+    {
+      "cmd": "\\min",
+      "snip": "\\min",
+      "desc": "mínimo",
+      "prev": null
+    },
+    {
+      "cmd": "\\det",
+      "snip": "\\det",
+      "desc": "determinante",
+      "prev": null
+    },
+    {
+      "cmd": "\\gcd",
+      "snip": "\\gcd",
+      "desc": "mdc",
+      "prev": null
+    },
+    {
+      "cmd": "\\begin{pmatrix}",
+      "snip": "\\begin{pmatrix} ● & \\\\  &  \\end{pmatrix}",
+      "desc": "matriz ( )",
+      "prev": null
+    },
+    {
+      "cmd": "\\begin{bmatrix}",
+      "snip": "\\begin{bmatrix} ● & \\\\  &  \\end{bmatrix}",
+      "desc": "matriz [ ]",
+      "prev": null
+    },
+    {
+      "cmd": "\\begin{vmatrix}",
+      "snip": "\\begin{vmatrix} ● & \\\\  &  \\end{vmatrix}",
+      "desc": "determinante",
+      "prev": null
+    },
+    {
+      "cmd": "\\begin{cases}",
+      "snip": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+      "desc": "função por partes",
+      "prev": null
+    },
+    {
+      "cmd": "\\begin{aligned}",
+      "snip": "\\begin{aligned} ● &=  \\\\ &=  \\end{aligned}",
+      "desc": "equações alinhadas",
+      "prev": null
+    },
+    {
+      "cmd": "\\overset",
+      "snip": "\\overset{●}{}",
+      "desc": "símbolo acima",
+      "prev": null
+    },
+    {
+      "cmd": "\\underset",
+      "snip": "\\underset{●}{}",
+      "desc": "símbolo abaixo",
+      "prev": null
+    },
+    {
+      "cmd": "\\boxed",
+      "snip": "\\boxed{●}",
+      "desc": "resposta em caixa",
+      "prev": null
+    },
+    {
+      "cmd": "\\cancel",
+      "snip": "\\cancel{●}",
+      "desc": "cancelar",
+      "prev": null
+    },
+    {
+      "cmd": "\\therefore",
+      "snip": "\\therefore",
+      "desc": "portanto",
+      "prev": null
+    },
+    {
+      "cmd": "\\because",
+      "snip": "\\because",
+      "desc": "porque",
+      "prev": null
+    },
+    {
+      "cmd": "\\angle",
+      "snip": "\\angle",
+      "desc": "ângulo",
+      "prev": null
+    },
+    {
+      "cmd": "\\perp",
+      "snip": "\\perp",
+      "desc": "perpendicular",
+      "prev": null
+    },
+    {
+      "cmd": "\\parallel",
+      "snip": "\\parallel",
+      "desc": "paralelo",
+      "prev": null
+    },
+    {
+      "cmd": "\\degree",
+      "snip": "^\\circ",
+      "desc": "grau",
+      "prev": null
+    }
+  ],
+  "symbols": [
+    {
+      "name": "Básico",
+      "items": [
+        {
+          "label": "x²",
+          "tex": "^{●}"
+        },
+        {
+          "label": "xₙ",
+          "tex": "_{●}"
+        },
+        {
+          "label": "a⁄b",
+          "tex": "\\frac{●}{}"
+        },
+        {
+          "label": "√",
+          "tex": "\\sqrt{●}"
+        },
+        {
+          "label": "( )",
+          "tex": "\\left( ● \\right)"
+        },
+        {
+          "label": "=",
+          "tex": "="
+        },
+        {
+          "label": "≠",
+          "tex": "\\neq "
+        },
+        {
+          "label": "≤",
+          "tex": "\\leq "
+        },
+        {
+          "label": "≥",
+          "tex": "\\geq "
+        },
+        {
+          "label": "≈",
+          "tex": "\\approx "
+        },
+        {
+          "label": "±",
+          "tex": "\\pm "
+        },
+        {
+          "label": "·",
+          "tex": "\\cdot "
+        },
+        {
+          "label": "×",
+          "tex": "\\times "
+        },
+        {
+          "label": "÷",
+          "tex": "\\div "
+        },
+        {
+          "label": "∞",
+          "tex": "\\infty "
+        },
+        {
+          "label": "|x|",
+          "tex": "\\left| ● \\right|"
+        },
+        {
+          "label": "{ }",
+          "tex": "\\{ ● \\}"
+        },
+        {
+          "label": "…",
+          "tex": "\\ldots "
+        }
+      ]
+    },
+    {
+      "name": "Grego",
+      "items": [
+        {
+          "label": "α",
+          "tex": "\\alpha "
+        },
+        {
+          "label": "β",
+          "tex": "\\beta "
+        },
+        {
+          "label": "γ",
+          "tex": "\\gamma "
+        },
+        {
+          "label": "δ",
+          "tex": "\\delta "
+        },
+        {
+          "label": "ε",
+          "tex": "\\varepsilon "
+        },
+        {
+          "label": "θ",
+          "tex": "\\theta "
+        },
+        {
+          "label": "λ",
+          "tex": "\\lambda "
+        },
+        {
+          "label": "μ",
+          "tex": "\\mu "
+        },
+        {
+          "label": "π",
+          "tex": "\\pi "
+        },
+        {
+          "label": "ρ",
+          "tex": "\\rho "
+        },
+        {
+          "label": "σ",
+          "tex": "\\sigma "
+        },
+        {
+          "label": "τ",
+          "tex": "\\tau "
+        },
+        {
+          "label": "φ",
+          "tex": "\\varphi "
+        },
+        {
+          "label": "ω",
+          "tex": "\\omega "
+        },
+        {
+          "label": "Δ",
+          "tex": "\\Delta "
+        },
+        {
+          "label": "Σ",
+          "tex": "\\Sigma "
+        },
+        {
+          "label": "Ω",
+          "tex": "\\Omega "
+        },
+        {
+          "label": "Φ",
+          "tex": "\\Phi "
+        }
+      ]
+    },
+    {
+      "name": "Cálculo",
+      "items": [
+        {
+          "label": "∫",
+          "tex": "\\int "
+        },
+        {
+          "label": "∫ₐᵇ",
+          "tex": "\\int_{●}^{} "
+        },
+        {
+          "label": "∑",
+          "tex": "\\sum_{●}^{} "
+        },
+        {
+          "label": "∏",
+          "tex": "\\prod_{●}^{} "
+        },
+        {
+          "label": "lim",
+          "tex": "\\lim_{● \\to } "
+        },
+        {
+          "label": "∂",
+          "tex": "\\partial "
+        },
+        {
+          "label": "∇",
+          "tex": "\\nabla "
+        },
+        {
+          "label": "d/dx",
+          "tex": "\\frac{d}{dx}"
+        },
+        {
+          "label": "dx",
+          "tex": "\\,dx"
+        },
+        {
+          "label": "→",
+          "tex": "\\to "
+        },
+        {
+          "label": "′",
+          "tex": "'"
+        }
+      ]
+    },
+    {
+      "name": "Conjuntos",
+      "items": [
+        {
+          "label": "∈",
+          "tex": "\\in "
+        },
+        {
+          "label": "∉",
+          "tex": "\\notin "
+        },
+        {
+          "label": "⊂",
+          "tex": "\\subset "
+        },
+        {
+          "label": "⊆",
+          "tex": "\\subseteq "
+        },
+        {
+          "label": "∪",
+          "tex": "\\cup "
+        },
+        {
+          "label": "∩",
+          "tex": "\\cap "
+        },
+        {
+          "label": "∅",
+          "tex": "\\emptyset "
+        },
+        {
+          "label": "ℕ",
+          "tex": "\\mathbb{N}"
+        },
+        {
+          "label": "ℤ",
+          "tex": "\\mathbb{Z}"
+        },
+        {
+          "label": "ℚ",
+          "tex": "\\mathbb{Q}"
+        },
+        {
+          "label": "ℝ",
+          "tex": "\\mathbb{R}"
+        },
+        {
+          "label": "ℂ",
+          "tex": "\\mathbb{C}"
+        },
+        {
+          "label": "∀",
+          "tex": "\\forall "
+        },
+        {
+          "label": "∃",
+          "tex": "\\exists "
+        },
+        {
+          "label": "¬",
+          "tex": "\\neg "
+        },
+        {
+          "label": "∧",
+          "tex": "\\land "
+        },
+        {
+          "label": "∨",
+          "tex": "\\lor "
+        }
+      ]
+    },
+    {
+      "name": "Setas",
+      "items": [
+        {
+          "label": "→",
+          "tex": "\\to "
+        },
+        {
+          "label": "←",
+          "tex": "\\leftarrow "
+        },
+        {
+          "label": "↔",
+          "tex": "\\leftrightarrow "
+        },
+        {
+          "label": "↦",
+          "tex": "\\mapsto "
+        },
+        {
+          "label": "⇒",
+          "tex": "\\Rightarrow "
+        },
+        {
+          "label": "⇐",
+          "tex": "\\Leftarrow "
+        },
+        {
+          "label": "⇔",
+          "tex": "\\iff "
+        },
+        {
+          "label": "↑",
+          "tex": "\\uparrow "
+        },
+        {
+          "label": "↓",
+          "tex": "\\downarrow "
+        }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "label": "Fração",
+      "tex": "\\frac{●}{}"
+    },
+    {
+      "label": "Raiz n-ésima",
+      "tex": "\\sqrt[●]{}"
+    },
+    {
+      "label": "Potência",
+      "tex": "{●}^{}"
+    },
+    {
+      "label": "Integral definida",
+      "tex": "\\int_{●}^{} f(x)\\,dx"
+    },
+    {
+      "label": "Somatório",
+      "tex": "\\sum_{i=●}^{n} "
+    },
+    {
+      "label": "Limite",
+      "tex": "\\lim_{x \\to ●} "
+    },
+    {
+      "label": "Derivada",
+      "tex": "\\frac{d●}{dx}"
+    },
+    {
+      "label": "Derivada parcial",
+      "tex": "\\frac{\\partial ●}{\\partial x}"
+    },
+    {
+      "label": "Matriz 2×2",
+      "tex": "\\begin{pmatrix} ● & b \\\\ c & d \\end{pmatrix}"
+    },
+    {
+      "label": "Matriz 3×3",
+      "tex": "\\begin{bmatrix} ● & & \\\\ & & \\\\ & & \\end{bmatrix}"
+    },
+    {
+      "label": "Determinante",
+      "tex": "\\begin{vmatrix} ● & b \\\\ c & d \\end{vmatrix}"
+    },
+    {
+      "label": "Sistema",
+      "tex": "\\begin{cases} ● \\\\ \\end{cases}"
+    },
+    {
+      "label": "Por partes",
+      "tex": "f(x)=\\begin{cases} ● & \\text{se } x<0 \\\\ & \\text{se } x\\ge 0 \\end{cases}"
+    },
+    {
+      "label": "Alinhado",
+      "tex": "\\begin{aligned} ● &= \\\\ &= \\end{aligned}"
+    },
+    {
+      "label": "Binomial",
+      "tex": "\\binom{●}{k}"
+    },
+    {
+      "label": "Vetor",
+      "tex": "\\vec{●}"
+    },
+    {
+      "label": "Norma",
+      "tex": "\\lVert ● \\rVert"
+    },
+    {
+      "label": "Resposta",
+      "tex": "\\boxed{●}"
+    }
+  ],
+  "complete": [
+    {
+      "prefix": "",
+      "limit": 8,
+      "items": []
+    },
+    {
+      "prefix": "",
+      "limit": 1,
+      "items": []
+    },
+    {
+      "prefix": "",
+      "limit": 0,
+      "items": []
+    },
+    {
+      "prefix": "",
+      "limit": 4,
+      "items": []
+    },
+    {
+      "prefix": "",
+      "limit": 1000,
+      "items": []
+    },
+    {
+      "prefix": "",
+      "limit": -1,
+      "items": []
+    },
+    {
+      "prefix": "",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\",
+      "limit": 8,
+      "items": [
+        {
+          "cmd": "\\,",
+          "snip": "\\,",
+          "desc": "espaço fino",
+          "prev": null
+        },
+        {
+          "cmd": "\\mu",
+          "snip": "\\mu",
+          "desc": "letra grega μ",
+          "prev": null
+        },
+        {
+          "cmd": "\\nu",
+          "snip": "\\nu",
+          "desc": "letra grega ν",
+          "prev": null
+        },
+        {
+          "cmd": "\\xi",
+          "snip": "\\xi",
+          "desc": "letra grega ξ",
+          "prev": null
+        },
+        {
+          "cmd": "\\pi",
+          "snip": "\\pi",
+          "desc": "letra grega π",
+          "prev": null
+        },
+        {
+          "cmd": "\\Xi",
+          "snip": "\\Xi",
+          "desc": "letra grega Ξ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Pi",
+          "snip": "\\Pi",
+          "desc": "letra grega Π",
+          "prev": null
+        },
+        {
+          "cmd": "\\pm",
+          "snip": "\\pm",
+          "desc": "mais ou menos",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\",
+      "limit": 1,
+      "items": [
+        {
+          "cmd": "\\,",
+          "snip": "\\,",
+          "desc": "espaço fino",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\",
+      "limit": 0,
+      "items": [
+        {
+          "cmd": "\\,",
+          "snip": "\\,",
+          "desc": "espaço fino",
+          "prev": null
+        },
+        {
+          "cmd": "\\mu",
+          "snip": "\\mu",
+          "desc": "letra grega μ",
+          "prev": null
+        },
+        {
+          "cmd": "\\nu",
+          "snip": "\\nu",
+          "desc": "letra grega ν",
+          "prev": null
+        },
+        {
+          "cmd": "\\xi",
+          "snip": "\\xi",
+          "desc": "letra grega ξ",
+          "prev": null
+        },
+        {
+          "cmd": "\\pi",
+          "snip": "\\pi",
+          "desc": "letra grega π",
+          "prev": null
+        },
+        {
+          "cmd": "\\Xi",
+          "snip": "\\Xi",
+          "desc": "letra grega Ξ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Pi",
+          "snip": "\\Pi",
+          "desc": "letra grega Π",
+          "prev": null
+        },
+        {
+          "cmd": "\\pm",
+          "snip": "\\pm",
+          "desc": "mais ou menos",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\",
+      "limit": 4,
+      "items": [
+        {
+          "cmd": "\\,",
+          "snip": "\\,",
+          "desc": "espaço fino",
+          "prev": null
+        },
+        {
+          "cmd": "\\mu",
+          "snip": "\\mu",
+          "desc": "letra grega μ",
+          "prev": null
+        },
+        {
+          "cmd": "\\nu",
+          "snip": "\\nu",
+          "desc": "letra grega ν",
+          "prev": null
+        },
+        {
+          "cmd": "\\xi",
+          "snip": "\\xi",
+          "desc": "letra grega ξ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\",
+      "limit": 1000,
+      "items": [
+        {
+          "cmd": "\\,",
+          "snip": "\\,",
+          "desc": "espaço fino",
+          "prev": null
+        },
+        {
+          "cmd": "\\mu",
+          "snip": "\\mu",
+          "desc": "letra grega μ",
+          "prev": null
+        },
+        {
+          "cmd": "\\nu",
+          "snip": "\\nu",
+          "desc": "letra grega ν",
+          "prev": null
+        },
+        {
+          "cmd": "\\xi",
+          "snip": "\\xi",
+          "desc": "letra grega ξ",
+          "prev": null
+        },
+        {
+          "cmd": "\\pi",
+          "snip": "\\pi",
+          "desc": "letra grega π",
+          "prev": null
+        },
+        {
+          "cmd": "\\Xi",
+          "snip": "\\Xi",
+          "desc": "letra grega Ξ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Pi",
+          "snip": "\\Pi",
+          "desc": "letra grega Π",
+          "prev": null
+        },
+        {
+          "cmd": "\\pm",
+          "snip": "\\pm",
+          "desc": "mais ou menos",
+          "prev": null
+        },
+        {
+          "cmd": "\\mp",
+          "snip": "\\mp",
+          "desc": "menos ou mais",
+          "prev": null
+        },
+        {
+          "cmd": "\\ll",
+          "snip": "\\ll",
+          "desc": "muito menor",
+          "prev": null
+        },
+        {
+          "cmd": "\\gg",
+          "snip": "\\gg",
+          "desc": "muito maior",
+          "prev": null
+        },
+        {
+          "cmd": "\\in",
+          "snip": "\\in",
+          "desc": "pertence",
+          "prev": null
+        },
+        {
+          "cmd": "\\to",
+          "snip": "\\to",
+          "desc": "seta",
+          "prev": null
+        },
+        {
+          "cmd": "\\ln",
+          "snip": "\\ln",
+          "desc": "logaritmo natural",
+          "prev": null
+        },
+        {
+          "cmd": "\\eta",
+          "snip": "\\eta",
+          "desc": "letra grega η",
+          "prev": null
+        },
+        {
+          "cmd": "\\rho",
+          "snip": "\\rho",
+          "desc": "letra grega ρ",
+          "prev": null
+        },
+        {
+          "cmd": "\\tau",
+          "snip": "\\tau",
+          "desc": "letra grega τ",
+          "prev": null
+        },
+        {
+          "cmd": "\\phi",
+          "snip": "\\phi",
+          "desc": "letra grega ϕ",
+          "prev": null
+        },
+        {
+          "cmd": "\\chi",
+          "snip": "\\chi",
+          "desc": "letra grega χ",
+          "prev": null
+        },
+        {
+          "cmd": "\\psi",
+          "snip": "\\psi",
+          "desc": "letra grega ψ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Phi",
+          "snip": "\\Phi",
+          "desc": "letra grega Φ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Psi",
+          "snip": "\\Psi",
+          "desc": "letra grega Ψ",
+          "prev": null
+        },
+        {
+          "cmd": "\\sum",
+          "snip": "\\sum_{●}^{}",
+          "desc": "somatório",
+          "prev": null
+        },
+        {
+          "cmd": "\\int",
+          "snip": "\\int_{●}^{}",
+          "desc": "integral",
+          "prev": null
+        },
+        {
+          "cmd": "\\lim",
+          "snip": "\\lim_{● \\to }",
+          "desc": "limite",
+          "prev": null
+        },
+        {
+          "cmd": "\\div",
+          "snip": "\\div",
+          "desc": "divisão",
+          "prev": null
+        },
+        {
+          "cmd": "\\leq",
+          "snip": "\\leq",
+          "desc": "menor ou igual",
+          "prev": null
+        },
+        {
+          "cmd": "\\geq",
+          "snip": "\\geq",
+          "desc": "maior ou igual",
+          "prev": null
+        },
+        {
+          "cmd": "\\neq",
+          "snip": "\\neq",
+          "desc": "diferente",
+          "prev": null
+        },
+        {
+          "cmd": "\\sim",
+          "snip": "\\sim",
+          "desc": "semelhante",
+          "prev": null
+        },
+        {
+          "cmd": "\\cup",
+          "snip": "\\cup",
+          "desc": "união",
+          "prev": null
+        },
+        {
+          "cmd": "\\cap",
+          "snip": "\\cap",
+          "desc": "interseção",
+          "prev": null
+        },
+        {
+          "cmd": "\\neg",
+          "snip": "\\neg",
+          "desc": "negação",
+          "prev": null
+        },
+        {
+          "cmd": "\\lor",
+          "snip": "\\lor",
+          "desc": "ou",
+          "prev": null
+        },
+        {
+          "cmd": "\\iff",
+          "snip": "\\iff",
+          "desc": "se e somente se",
+          "prev": null
+        },
+        {
+          "cmd": "\\hat",
+          "snip": "\\hat{●}",
+          "desc": "chapéu",
+          "prev": null
+        },
+        {
+          "cmd": "\\bar",
+          "snip": "\\bar{●}",
+          "desc": "barra",
+          "prev": null
+        },
+        {
+          "cmd": "\\vec",
+          "snip": "\\vec{●}",
+          "desc": "vetor",
+          "prev": null
+        },
+        {
+          "cmd": "\\dot",
+          "snip": "\\dot{●}",
+          "desc": "ponto",
+          "prev": null
+        },
+        {
+          "cmd": "\\sin",
+          "snip": "\\sin",
+          "desc": "seno",
+          "prev": null
+        },
+        {
+          "cmd": "\\cos",
+          "snip": "\\cos",
+          "desc": "cosseno",
+          "prev": null
+        },
+        {
+          "cmd": "\\tan",
+          "snip": "\\tan",
+          "desc": "tangente",
+          "prev": null
+        },
+        {
+          "cmd": "\\log",
+          "snip": "\\log",
+          "desc": "logaritmo",
+          "prev": null
+        },
+        {
+          "cmd": "\\exp",
+          "snip": "\\exp",
+          "desc": "exponencial",
+          "prev": null
+        },
+        {
+          "cmd": "\\max",
+          "snip": "\\max",
+          "desc": "máximo",
+          "prev": null
+        },
+        {
+          "cmd": "\\min",
+          "snip": "\\min",
+          "desc": "mínimo",
+          "prev": null
+        },
+        {
+          "cmd": "\\det",
+          "snip": "\\det",
+          "desc": "determinante",
+          "prev": null
+        },
+        {
+          "cmd": "\\gcd",
+          "snip": "\\gcd",
+          "desc": "mdc",
+          "prev": null
+        },
+        {
+          "cmd": "\\beta",
+          "snip": "\\beta",
+          "desc": "letra grega β",
+          "prev": null
+        },
+        {
+          "cmd": "\\zeta",
+          "snip": "\\zeta",
+          "desc": "letra grega ζ",
+          "prev": null
+        },
+        {
+          "cmd": "\\iota",
+          "snip": "\\iota",
+          "desc": "letra grega ι",
+          "prev": null
+        },
+        {
+          "cmd": "\\frac",
+          "snip": "\\frac{●}{}",
+          "desc": "fração",
+          "prev": null
+        },
+        {
+          "cmd": "\\sqrt",
+          "snip": "\\sqrt{●}",
+          "desc": "raiz quadrada",
+          "prev": null
+        },
+        {
+          "cmd": "\\prod",
+          "snip": "\\prod_{●}^{}",
+          "desc": "produtório",
+          "prev": null
+        },
+        {
+          "cmd": "\\iint",
+          "snip": "\\iint",
+          "desc": "integral dupla",
+          "prev": null
+        },
+        {
+          "cmd": "\\oint",
+          "snip": "\\oint",
+          "desc": "integral de linha",
+          "prev": null
+        },
+        {
+          "cmd": "\\cdot",
+          "snip": "\\cdot",
+          "desc": "produto (ponto)",
+          "prev": null
+        },
+        {
+          "cmd": "\\circ",
+          "snip": "\\circ",
+          "desc": "composição",
+          "prev": null
+        },
+        {
+          "cmd": "\\land",
+          "snip": "\\land",
+          "desc": "e",
+          "prev": null
+        },
+        {
+          "cmd": "\\text",
+          "snip": "\\text{●}",
+          "desc": "texto normal",
+          "prev": null
+        },
+        {
+          "cmd": "\\ddot",
+          "snip": "\\ddot{●}",
+          "desc": "dois pontos",
+          "prev": null
+        },
+        {
+          "cmd": "\\quad",
+          "snip": "\\quad",
+          "desc": "espaço",
+          "prev": null
+        },
+        {
+          "cmd": "\\perp",
+          "snip": "\\perp",
+          "desc": "perpendicular",
+          "prev": null
+        },
+        {
+          "cmd": "\\alpha",
+          "snip": "\\alpha",
+          "desc": "letra grega α",
+          "prev": null
+        },
+        {
+          "cmd": "\\gamma",
+          "snip": "\\gamma",
+          "desc": "letra grega γ",
+          "prev": null
+        },
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\theta",
+          "snip": "\\theta",
+          "desc": "letra grega θ",
+          "prev": null
+        },
+        {
+          "cmd": "\\kappa",
+          "snip": "\\kappa",
+          "desc": "letra grega κ",
+          "prev": null
+        },
+        {
+          "cmd": "\\sigma",
+          "snip": "\\sigma",
+          "desc": "letra grega σ",
+          "prev": null
+        },
+        {
+          "cmd": "\\omega",
+          "snip": "\\omega",
+          "desc": "letra grega ω",
+          "prev": null
+        },
+        {
+          "cmd": "\\Gamma",
+          "snip": "\\Gamma",
+          "desc": "letra grega Γ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Theta",
+          "snip": "\\Theta",
+          "desc": "letra grega Θ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Sigma",
+          "snip": "\\Sigma",
+          "desc": "letra grega Σ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Omega",
+          "snip": "\\Omega",
+          "desc": "letra grega Ω",
+          "prev": null
+        },
+        {
+          "cmd": "\\dfrac",
+          "snip": "\\dfrac{●}{}",
+          "desc": "fração grande",
+          "prev": null
+        },
+        {
+          "cmd": "\\binom",
+          "snip": "\\binom{●}{}",
+          "desc": "binomial",
+          "prev": null
+        },
+        {
+          "cmd": "\\nabla",
+          "snip": "\\nabla",
+          "desc": "nabla",
+          "prev": null
+        },
+        {
+          "cmd": "\\infty",
+          "snip": "\\infty",
+          "desc": "infinito",
+          "prev": null
+        },
+        {
+          "cmd": "\\times",
+          "snip": "\\times",
+          "desc": "vezes",
+          "prev": null
+        },
+        {
+          "cmd": "\\equiv",
+          "snip": "\\equiv",
+          "desc": "equivalente",
+          "prev": null
+        },
+        {
+          "cmd": "\\notin",
+          "snip": "\\notin",
+          "desc": "não pertence",
+          "prev": null
+        },
+        {
+          "cmd": "\\tilde",
+          "snip": "\\tilde{●}",
+          "desc": "til",
+          "prev": null
+        },
+        {
+          "cmd": "\\left(",
+          "snip": "\\left( ● \\right)",
+          "desc": "parênteses que crescem",
+          "prev": null
+        },
+        {
+          "cmd": "\\left[",
+          "snip": "\\left[ ● \\right]",
+          "desc": "colchetes que crescem",
+          "prev": null
+        },
+        {
+          "cmd": "\\left|",
+          "snip": "\\left| ● \\right|",
+          "desc": "módulo que cresce",
+          "prev": null
+        },
+        {
+          "cmd": "\\lVert",
+          "snip": "\\lVert ● \\rVert",
+          "desc": "norma",
+          "prev": null
+        },
+        {
+          "cmd": "\\ldots",
+          "snip": "\\ldots",
+          "desc": "reticências",
+          "prev": null
+        },
+        {
+          "cmd": "\\cdots",
+          "snip": "\\cdots",
+          "desc": "reticências centrais",
+          "prev": null
+        },
+        {
+          "cmd": "\\vdots",
+          "snip": "\\vdots",
+          "desc": "reticências verticais",
+          "prev": null
+        },
+        {
+          "cmd": "\\ddots",
+          "snip": "\\ddots",
+          "desc": "reticências diagonais",
+          "prev": null
+        },
+        {
+          "cmd": "\\boxed",
+          "snip": "\\boxed{●}",
+          "desc": "resposta em caixa",
+          "prev": null
+        },
+        {
+          "cmd": "\\angle",
+          "snip": "\\angle",
+          "desc": "ângulo",
+          "prev": null
+        },
+        {
+          "cmd": "\\lambda",
+          "snip": "\\lambda",
+          "desc": "letra grega λ",
+          "prev": null
+        },
+        {
+          "cmd": "\\varphi",
+          "snip": "\\varphi",
+          "desc": "letra grega φ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Lambda",
+          "snip": "\\Lambda",
+          "desc": "letra grega Λ",
+          "prev": null
+        },
+        {
+          "cmd": "\\approx",
+          "snip": "\\approx",
+          "desc": "aproximadamente",
+          "prev": null
+        },
+        {
+          "cmd": "\\propto",
+          "snip": "\\propto",
+          "desc": "proporcional",
+          "prev": null
+        },
+        {
+          "cmd": "\\subset",
+          "snip": "\\subset",
+          "desc": "subconjunto",
+          "prev": null
+        },
+        {
+          "cmd": "\\supset",
+          "snip": "\\supset",
+          "desc": "contém",
+          "prev": null
+        },
+        {
+          "cmd": "\\forall",
+          "snip": "\\forall",
+          "desc": "para todo",
+          "prev": null
+        },
+        {
+          "cmd": "\\exists",
+          "snip": "\\exists",
+          "desc": "existe",
+          "prev": null
+        },
+        {
+          "cmd": "\\mapsto",
+          "snip": "\\mapsto",
+          "desc": "leva em",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb",
+          "snip": "\\mathbb{●}",
+          "desc": "conjuntos (ℝ, ℕ…)",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm",
+          "snip": "\\mathrm{●}",
+          "desc": "texto reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbf",
+          "snip": "\\mathbf{●}",
+          "desc": "negrito",
+          "prev": null
+        },
+        {
+          "cmd": "\\left\\{",
+          "snip": "\\left\\{ ● \\right\\}",
+          "desc": "chaves que crescem",
+          "prev": null
+        },
+        {
+          "cmd": "\\langle",
+          "snip": "\\langle ● \\rangle",
+          "desc": "ângulos",
+          "prev": null
+        },
+        {
+          "cmd": "\\cancel",
+          "snip": "\\cancel{●}",
+          "desc": "cancelar",
+          "prev": null
+        },
+        {
+          "cmd": "\\degree",
+          "snip": "^\\circ",
+          "desc": "grau",
+          "prev": null
+        },
+        {
+          "cmd": "\\epsilon",
+          "snip": "\\epsilon",
+          "desc": "letra grega ϵ",
+          "prev": null
+        },
+        {
+          "cmd": "\\upsilon",
+          "snip": "\\upsilon",
+          "desc": "letra grega υ",
+          "prev": null
+        },
+        {
+          "cmd": "\\sqrt[n]",
+          "snip": "\\sqrt[●]{}",
+          "desc": "raiz n-ésima",
+          "prev": null
+        },
+        {
+          "cmd": "\\partial",
+          "snip": "\\partial",
+          "desc": "derivada parcial",
+          "prev": null
+        },
+        {
+          "cmd": "\\nexists",
+          "snip": "\\nexists",
+          "desc": "não existe",
+          "prev": null
+        },
+        {
+          "cmd": "\\implies",
+          "snip": "\\implies",
+          "desc": "implica",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathcal",
+          "snip": "\\mathcal{●}",
+          "desc": "caligráfico",
+          "prev": null
+        },
+        {
+          "cmd": "\\overset",
+          "snip": "\\overset{●}{}",
+          "desc": "símbolo acima",
+          "prev": null
+        },
+        {
+          "cmd": "\\because",
+          "snip": "\\because",
+          "desc": "porque",
+          "prev": null
+        },
+        {
+          "cmd": "\\vartheta",
+          "snip": "\\vartheta",
+          "desc": "letra grega ϑ",
+          "prev": null
+        },
+        {
+          "cmd": "\\subseteq",
+          "snip": "\\subseteq",
+          "desc": "subconjunto ou igual",
+          "prev": null
+        },
+        {
+          "cmd": "\\setminus",
+          "snip": "\\setminus",
+          "desc": "diferença",
+          "prev": null
+        },
+        {
+          "cmd": "\\emptyset",
+          "snip": "\\emptyset",
+          "desc": "vazio",
+          "prev": null
+        },
+        {
+          "cmd": "\\overline",
+          "snip": "\\overline{●}",
+          "desc": "barra longa",
+          "prev": null
+        },
+        {
+          "cmd": "\\underset",
+          "snip": "\\underset{●}{}",
+          "desc": "símbolo abaixo",
+          "prev": null
+        },
+        {
+          "cmd": "\\parallel",
+          "snip": "\\parallel",
+          "desc": "paralelo",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm{d}",
+          "snip": "\\mathrm{d}●",
+          "desc": "d reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\leftarrow",
+          "snip": "\\leftarrow",
+          "desc": "seta à esquerda",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{R}",
+          "snip": "\\mathbb{R}",
+          "desc": "reais ℝ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{N}",
+          "snip": "\\mathbb{N}",
+          "desc": "naturais ℕ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{Z}",
+          "snip": "\\mathbb{Z}",
+          "desc": "inteiros ℤ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{Q}",
+          "snip": "\\mathbb{Q}",
+          "desc": "racionais ℚ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{C}",
+          "snip": "\\mathbb{C}",
+          "desc": "complexos ℂ",
+          "prev": null
+        },
+        {
+          "cmd": "\\therefore",
+          "snip": "\\therefore",
+          "desc": "portanto",
+          "prev": null
+        },
+        {
+          "cmd": "\\varepsilon",
+          "snip": "\\varepsilon",
+          "desc": "letra grega ε",
+          "prev": null
+        },
+        {
+          "cmd": "\\varnothing",
+          "snip": "\\varnothing",
+          "desc": "vazio",
+          "prev": null
+        },
+        {
+          "cmd": "\\rightarrow",
+          "snip": "\\rightarrow",
+          "desc": "seta",
+          "prev": null
+        },
+        {
+          "cmd": "\\Rightarrow",
+          "snip": "\\Rightarrow",
+          "desc": "implica",
+          "prev": null
+        },
+        {
+          "cmd": "\\boldsymbol",
+          "snip": "\\boldsymbol{●}",
+          "desc": "símbolo em negrito",
+          "prev": null
+        },
+        {
+          "cmd": "\\underbrace",
+          "snip": "\\underbrace{●}_{}",
+          "desc": "chave embaixo",
+          "prev": null
+        },
+        {
+          "cmd": "\\operatorname",
+          "snip": "\\operatorname{●}",
+          "desc": "operador",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{cases}",
+          "snip": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+          "desc": "função por partes",
+          "prev": null
+        },
+        {
+          "cmd": "\\leftrightarrow",
+          "snip": "\\leftrightarrow",
+          "desc": "seta dupla",
+          "prev": null
+        },
+        {
+          "cmd": "\\Leftrightarrow",
+          "snip": "\\Leftrightarrow",
+          "desc": "equivalência",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{pmatrix}",
+          "snip": "\\begin{pmatrix} ● & \\\\  &  \\end{pmatrix}",
+          "desc": "matriz ( )",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{bmatrix}",
+          "snip": "\\begin{bmatrix} ● & \\\\  &  \\end{bmatrix}",
+          "desc": "matriz [ ]",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{vmatrix}",
+          "snip": "\\begin{vmatrix} ● & \\\\  &  \\end{vmatrix}",
+          "desc": "determinante",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{aligned}",
+          "snip": "\\begin{aligned} ● &=  \\\\ &=  \\end{aligned}",
+          "desc": "equações alinhadas",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\",
+      "limit": -1,
+      "items": [
+        {
+          "cmd": "\\,",
+          "snip": "\\,",
+          "desc": "espaço fino",
+          "prev": null
+        },
+        {
+          "cmd": "\\mu",
+          "snip": "\\mu",
+          "desc": "letra grega μ",
+          "prev": null
+        },
+        {
+          "cmd": "\\nu",
+          "snip": "\\nu",
+          "desc": "letra grega ν",
+          "prev": null
+        },
+        {
+          "cmd": "\\xi",
+          "snip": "\\xi",
+          "desc": "letra grega ξ",
+          "prev": null
+        },
+        {
+          "cmd": "\\pi",
+          "snip": "\\pi",
+          "desc": "letra grega π",
+          "prev": null
+        },
+        {
+          "cmd": "\\Xi",
+          "snip": "\\Xi",
+          "desc": "letra grega Ξ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Pi",
+          "snip": "\\Pi",
+          "desc": "letra grega Π",
+          "prev": null
+        },
+        {
+          "cmd": "\\pm",
+          "snip": "\\pm",
+          "desc": "mais ou menos",
+          "prev": null
+        },
+        {
+          "cmd": "\\mp",
+          "snip": "\\mp",
+          "desc": "menos ou mais",
+          "prev": null
+        },
+        {
+          "cmd": "\\ll",
+          "snip": "\\ll",
+          "desc": "muito menor",
+          "prev": null
+        },
+        {
+          "cmd": "\\gg",
+          "snip": "\\gg",
+          "desc": "muito maior",
+          "prev": null
+        },
+        {
+          "cmd": "\\in",
+          "snip": "\\in",
+          "desc": "pertence",
+          "prev": null
+        },
+        {
+          "cmd": "\\to",
+          "snip": "\\to",
+          "desc": "seta",
+          "prev": null
+        },
+        {
+          "cmd": "\\ln",
+          "snip": "\\ln",
+          "desc": "logaritmo natural",
+          "prev": null
+        },
+        {
+          "cmd": "\\eta",
+          "snip": "\\eta",
+          "desc": "letra grega η",
+          "prev": null
+        },
+        {
+          "cmd": "\\rho",
+          "snip": "\\rho",
+          "desc": "letra grega ρ",
+          "prev": null
+        },
+        {
+          "cmd": "\\tau",
+          "snip": "\\tau",
+          "desc": "letra grega τ",
+          "prev": null
+        },
+        {
+          "cmd": "\\phi",
+          "snip": "\\phi",
+          "desc": "letra grega ϕ",
+          "prev": null
+        },
+        {
+          "cmd": "\\chi",
+          "snip": "\\chi",
+          "desc": "letra grega χ",
+          "prev": null
+        },
+        {
+          "cmd": "\\psi",
+          "snip": "\\psi",
+          "desc": "letra grega ψ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Phi",
+          "snip": "\\Phi",
+          "desc": "letra grega Φ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Psi",
+          "snip": "\\Psi",
+          "desc": "letra grega Ψ",
+          "prev": null
+        },
+        {
+          "cmd": "\\sum",
+          "snip": "\\sum_{●}^{}",
+          "desc": "somatório",
+          "prev": null
+        },
+        {
+          "cmd": "\\int",
+          "snip": "\\int_{●}^{}",
+          "desc": "integral",
+          "prev": null
+        },
+        {
+          "cmd": "\\lim",
+          "snip": "\\lim_{● \\to }",
+          "desc": "limite",
+          "prev": null
+        },
+        {
+          "cmd": "\\div",
+          "snip": "\\div",
+          "desc": "divisão",
+          "prev": null
+        },
+        {
+          "cmd": "\\leq",
+          "snip": "\\leq",
+          "desc": "menor ou igual",
+          "prev": null
+        },
+        {
+          "cmd": "\\geq",
+          "snip": "\\geq",
+          "desc": "maior ou igual",
+          "prev": null
+        },
+        {
+          "cmd": "\\neq",
+          "snip": "\\neq",
+          "desc": "diferente",
+          "prev": null
+        },
+        {
+          "cmd": "\\sim",
+          "snip": "\\sim",
+          "desc": "semelhante",
+          "prev": null
+        },
+        {
+          "cmd": "\\cup",
+          "snip": "\\cup",
+          "desc": "união",
+          "prev": null
+        },
+        {
+          "cmd": "\\cap",
+          "snip": "\\cap",
+          "desc": "interseção",
+          "prev": null
+        },
+        {
+          "cmd": "\\neg",
+          "snip": "\\neg",
+          "desc": "negação",
+          "prev": null
+        },
+        {
+          "cmd": "\\lor",
+          "snip": "\\lor",
+          "desc": "ou",
+          "prev": null
+        },
+        {
+          "cmd": "\\iff",
+          "snip": "\\iff",
+          "desc": "se e somente se",
+          "prev": null
+        },
+        {
+          "cmd": "\\hat",
+          "snip": "\\hat{●}",
+          "desc": "chapéu",
+          "prev": null
+        },
+        {
+          "cmd": "\\bar",
+          "snip": "\\bar{●}",
+          "desc": "barra",
+          "prev": null
+        },
+        {
+          "cmd": "\\vec",
+          "snip": "\\vec{●}",
+          "desc": "vetor",
+          "prev": null
+        },
+        {
+          "cmd": "\\dot",
+          "snip": "\\dot{●}",
+          "desc": "ponto",
+          "prev": null
+        },
+        {
+          "cmd": "\\sin",
+          "snip": "\\sin",
+          "desc": "seno",
+          "prev": null
+        },
+        {
+          "cmd": "\\cos",
+          "snip": "\\cos",
+          "desc": "cosseno",
+          "prev": null
+        },
+        {
+          "cmd": "\\tan",
+          "snip": "\\tan",
+          "desc": "tangente",
+          "prev": null
+        },
+        {
+          "cmd": "\\log",
+          "snip": "\\log",
+          "desc": "logaritmo",
+          "prev": null
+        },
+        {
+          "cmd": "\\exp",
+          "snip": "\\exp",
+          "desc": "exponencial",
+          "prev": null
+        },
+        {
+          "cmd": "\\max",
+          "snip": "\\max",
+          "desc": "máximo",
+          "prev": null
+        },
+        {
+          "cmd": "\\min",
+          "snip": "\\min",
+          "desc": "mínimo",
+          "prev": null
+        },
+        {
+          "cmd": "\\det",
+          "snip": "\\det",
+          "desc": "determinante",
+          "prev": null
+        },
+        {
+          "cmd": "\\gcd",
+          "snip": "\\gcd",
+          "desc": "mdc",
+          "prev": null
+        },
+        {
+          "cmd": "\\beta",
+          "snip": "\\beta",
+          "desc": "letra grega β",
+          "prev": null
+        },
+        {
+          "cmd": "\\zeta",
+          "snip": "\\zeta",
+          "desc": "letra grega ζ",
+          "prev": null
+        },
+        {
+          "cmd": "\\iota",
+          "snip": "\\iota",
+          "desc": "letra grega ι",
+          "prev": null
+        },
+        {
+          "cmd": "\\frac",
+          "snip": "\\frac{●}{}",
+          "desc": "fração",
+          "prev": null
+        },
+        {
+          "cmd": "\\sqrt",
+          "snip": "\\sqrt{●}",
+          "desc": "raiz quadrada",
+          "prev": null
+        },
+        {
+          "cmd": "\\prod",
+          "snip": "\\prod_{●}^{}",
+          "desc": "produtório",
+          "prev": null
+        },
+        {
+          "cmd": "\\iint",
+          "snip": "\\iint",
+          "desc": "integral dupla",
+          "prev": null
+        },
+        {
+          "cmd": "\\oint",
+          "snip": "\\oint",
+          "desc": "integral de linha",
+          "prev": null
+        },
+        {
+          "cmd": "\\cdot",
+          "snip": "\\cdot",
+          "desc": "produto (ponto)",
+          "prev": null
+        },
+        {
+          "cmd": "\\circ",
+          "snip": "\\circ",
+          "desc": "composição",
+          "prev": null
+        },
+        {
+          "cmd": "\\land",
+          "snip": "\\land",
+          "desc": "e",
+          "prev": null
+        },
+        {
+          "cmd": "\\text",
+          "snip": "\\text{●}",
+          "desc": "texto normal",
+          "prev": null
+        },
+        {
+          "cmd": "\\ddot",
+          "snip": "\\ddot{●}",
+          "desc": "dois pontos",
+          "prev": null
+        },
+        {
+          "cmd": "\\quad",
+          "snip": "\\quad",
+          "desc": "espaço",
+          "prev": null
+        },
+        {
+          "cmd": "\\perp",
+          "snip": "\\perp",
+          "desc": "perpendicular",
+          "prev": null
+        },
+        {
+          "cmd": "\\alpha",
+          "snip": "\\alpha",
+          "desc": "letra grega α",
+          "prev": null
+        },
+        {
+          "cmd": "\\gamma",
+          "snip": "\\gamma",
+          "desc": "letra grega γ",
+          "prev": null
+        },
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\theta",
+          "snip": "\\theta",
+          "desc": "letra grega θ",
+          "prev": null
+        },
+        {
+          "cmd": "\\kappa",
+          "snip": "\\kappa",
+          "desc": "letra grega κ",
+          "prev": null
+        },
+        {
+          "cmd": "\\sigma",
+          "snip": "\\sigma",
+          "desc": "letra grega σ",
+          "prev": null
+        },
+        {
+          "cmd": "\\omega",
+          "snip": "\\omega",
+          "desc": "letra grega ω",
+          "prev": null
+        },
+        {
+          "cmd": "\\Gamma",
+          "snip": "\\Gamma",
+          "desc": "letra grega Γ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Theta",
+          "snip": "\\Theta",
+          "desc": "letra grega Θ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Sigma",
+          "snip": "\\Sigma",
+          "desc": "letra grega Σ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Omega",
+          "snip": "\\Omega",
+          "desc": "letra grega Ω",
+          "prev": null
+        },
+        {
+          "cmd": "\\dfrac",
+          "snip": "\\dfrac{●}{}",
+          "desc": "fração grande",
+          "prev": null
+        },
+        {
+          "cmd": "\\binom",
+          "snip": "\\binom{●}{}",
+          "desc": "binomial",
+          "prev": null
+        },
+        {
+          "cmd": "\\nabla",
+          "snip": "\\nabla",
+          "desc": "nabla",
+          "prev": null
+        },
+        {
+          "cmd": "\\infty",
+          "snip": "\\infty",
+          "desc": "infinito",
+          "prev": null
+        },
+        {
+          "cmd": "\\times",
+          "snip": "\\times",
+          "desc": "vezes",
+          "prev": null
+        },
+        {
+          "cmd": "\\equiv",
+          "snip": "\\equiv",
+          "desc": "equivalente",
+          "prev": null
+        },
+        {
+          "cmd": "\\notin",
+          "snip": "\\notin",
+          "desc": "não pertence",
+          "prev": null
+        },
+        {
+          "cmd": "\\tilde",
+          "snip": "\\tilde{●}",
+          "desc": "til",
+          "prev": null
+        },
+        {
+          "cmd": "\\left(",
+          "snip": "\\left( ● \\right)",
+          "desc": "parênteses que crescem",
+          "prev": null
+        },
+        {
+          "cmd": "\\left[",
+          "snip": "\\left[ ● \\right]",
+          "desc": "colchetes que crescem",
+          "prev": null
+        },
+        {
+          "cmd": "\\left|",
+          "snip": "\\left| ● \\right|",
+          "desc": "módulo que cresce",
+          "prev": null
+        },
+        {
+          "cmd": "\\lVert",
+          "snip": "\\lVert ● \\rVert",
+          "desc": "norma",
+          "prev": null
+        },
+        {
+          "cmd": "\\ldots",
+          "snip": "\\ldots",
+          "desc": "reticências",
+          "prev": null
+        },
+        {
+          "cmd": "\\cdots",
+          "snip": "\\cdots",
+          "desc": "reticências centrais",
+          "prev": null
+        },
+        {
+          "cmd": "\\vdots",
+          "snip": "\\vdots",
+          "desc": "reticências verticais",
+          "prev": null
+        },
+        {
+          "cmd": "\\ddots",
+          "snip": "\\ddots",
+          "desc": "reticências diagonais",
+          "prev": null
+        },
+        {
+          "cmd": "\\boxed",
+          "snip": "\\boxed{●}",
+          "desc": "resposta em caixa",
+          "prev": null
+        },
+        {
+          "cmd": "\\angle",
+          "snip": "\\angle",
+          "desc": "ângulo",
+          "prev": null
+        },
+        {
+          "cmd": "\\lambda",
+          "snip": "\\lambda",
+          "desc": "letra grega λ",
+          "prev": null
+        },
+        {
+          "cmd": "\\varphi",
+          "snip": "\\varphi",
+          "desc": "letra grega φ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Lambda",
+          "snip": "\\Lambda",
+          "desc": "letra grega Λ",
+          "prev": null
+        },
+        {
+          "cmd": "\\approx",
+          "snip": "\\approx",
+          "desc": "aproximadamente",
+          "prev": null
+        },
+        {
+          "cmd": "\\propto",
+          "snip": "\\propto",
+          "desc": "proporcional",
+          "prev": null
+        },
+        {
+          "cmd": "\\subset",
+          "snip": "\\subset",
+          "desc": "subconjunto",
+          "prev": null
+        },
+        {
+          "cmd": "\\supset",
+          "snip": "\\supset",
+          "desc": "contém",
+          "prev": null
+        },
+        {
+          "cmd": "\\forall",
+          "snip": "\\forall",
+          "desc": "para todo",
+          "prev": null
+        },
+        {
+          "cmd": "\\exists",
+          "snip": "\\exists",
+          "desc": "existe",
+          "prev": null
+        },
+        {
+          "cmd": "\\mapsto",
+          "snip": "\\mapsto",
+          "desc": "leva em",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb",
+          "snip": "\\mathbb{●}",
+          "desc": "conjuntos (ℝ, ℕ…)",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm",
+          "snip": "\\mathrm{●}",
+          "desc": "texto reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbf",
+          "snip": "\\mathbf{●}",
+          "desc": "negrito",
+          "prev": null
+        },
+        {
+          "cmd": "\\left\\{",
+          "snip": "\\left\\{ ● \\right\\}",
+          "desc": "chaves que crescem",
+          "prev": null
+        },
+        {
+          "cmd": "\\langle",
+          "snip": "\\langle ● \\rangle",
+          "desc": "ângulos",
+          "prev": null
+        },
+        {
+          "cmd": "\\cancel",
+          "snip": "\\cancel{●}",
+          "desc": "cancelar",
+          "prev": null
+        },
+        {
+          "cmd": "\\degree",
+          "snip": "^\\circ",
+          "desc": "grau",
+          "prev": null
+        },
+        {
+          "cmd": "\\epsilon",
+          "snip": "\\epsilon",
+          "desc": "letra grega ϵ",
+          "prev": null
+        },
+        {
+          "cmd": "\\upsilon",
+          "snip": "\\upsilon",
+          "desc": "letra grega υ",
+          "prev": null
+        },
+        {
+          "cmd": "\\sqrt[n]",
+          "snip": "\\sqrt[●]{}",
+          "desc": "raiz n-ésima",
+          "prev": null
+        },
+        {
+          "cmd": "\\partial",
+          "snip": "\\partial",
+          "desc": "derivada parcial",
+          "prev": null
+        },
+        {
+          "cmd": "\\nexists",
+          "snip": "\\nexists",
+          "desc": "não existe",
+          "prev": null
+        },
+        {
+          "cmd": "\\implies",
+          "snip": "\\implies",
+          "desc": "implica",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathcal",
+          "snip": "\\mathcal{●}",
+          "desc": "caligráfico",
+          "prev": null
+        },
+        {
+          "cmd": "\\overset",
+          "snip": "\\overset{●}{}",
+          "desc": "símbolo acima",
+          "prev": null
+        },
+        {
+          "cmd": "\\because",
+          "snip": "\\because",
+          "desc": "porque",
+          "prev": null
+        },
+        {
+          "cmd": "\\vartheta",
+          "snip": "\\vartheta",
+          "desc": "letra grega ϑ",
+          "prev": null
+        },
+        {
+          "cmd": "\\subseteq",
+          "snip": "\\subseteq",
+          "desc": "subconjunto ou igual",
+          "prev": null
+        },
+        {
+          "cmd": "\\setminus",
+          "snip": "\\setminus",
+          "desc": "diferença",
+          "prev": null
+        },
+        {
+          "cmd": "\\emptyset",
+          "snip": "\\emptyset",
+          "desc": "vazio",
+          "prev": null
+        },
+        {
+          "cmd": "\\overline",
+          "snip": "\\overline{●}",
+          "desc": "barra longa",
+          "prev": null
+        },
+        {
+          "cmd": "\\underset",
+          "snip": "\\underset{●}{}",
+          "desc": "símbolo abaixo",
+          "prev": null
+        },
+        {
+          "cmd": "\\parallel",
+          "snip": "\\parallel",
+          "desc": "paralelo",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm{d}",
+          "snip": "\\mathrm{d}●",
+          "desc": "d reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\leftarrow",
+          "snip": "\\leftarrow",
+          "desc": "seta à esquerda",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{R}",
+          "snip": "\\mathbb{R}",
+          "desc": "reais ℝ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{N}",
+          "snip": "\\mathbb{N}",
+          "desc": "naturais ℕ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{Z}",
+          "snip": "\\mathbb{Z}",
+          "desc": "inteiros ℤ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{Q}",
+          "snip": "\\mathbb{Q}",
+          "desc": "racionais ℚ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{C}",
+          "snip": "\\mathbb{C}",
+          "desc": "complexos ℂ",
+          "prev": null
+        },
+        {
+          "cmd": "\\therefore",
+          "snip": "\\therefore",
+          "desc": "portanto",
+          "prev": null
+        },
+        {
+          "cmd": "\\varepsilon",
+          "snip": "\\varepsilon",
+          "desc": "letra grega ε",
+          "prev": null
+        },
+        {
+          "cmd": "\\varnothing",
+          "snip": "\\varnothing",
+          "desc": "vazio",
+          "prev": null
+        },
+        {
+          "cmd": "\\rightarrow",
+          "snip": "\\rightarrow",
+          "desc": "seta",
+          "prev": null
+        },
+        {
+          "cmd": "\\Rightarrow",
+          "snip": "\\Rightarrow",
+          "desc": "implica",
+          "prev": null
+        },
+        {
+          "cmd": "\\boldsymbol",
+          "snip": "\\boldsymbol{●}",
+          "desc": "símbolo em negrito",
+          "prev": null
+        },
+        {
+          "cmd": "\\underbrace",
+          "snip": "\\underbrace{●}_{}",
+          "desc": "chave embaixo",
+          "prev": null
+        },
+        {
+          "cmd": "\\operatorname",
+          "snip": "\\operatorname{●}",
+          "desc": "operador",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{cases}",
+          "snip": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+          "desc": "função por partes",
+          "prev": null
+        },
+        {
+          "cmd": "\\leftrightarrow",
+          "snip": "\\leftrightarrow",
+          "desc": "seta dupla",
+          "prev": null
+        },
+        {
+          "cmd": "\\Leftrightarrow",
+          "snip": "\\Leftrightarrow",
+          "desc": "equivalência",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{pmatrix}",
+          "snip": "\\begin{pmatrix} ● & \\\\  &  \\end{pmatrix}",
+          "desc": "matriz ( )",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{bmatrix}",
+          "snip": "\\begin{bmatrix} ● & \\\\  &  \\end{bmatrix}",
+          "desc": "matriz [ ]",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{vmatrix}",
+          "snip": "\\begin{vmatrix} ● & \\\\  &  \\end{vmatrix}",
+          "desc": "determinante",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\fr",
+      "limit": 8,
+      "items": [
+        {
+          "cmd": "\\frac",
+          "snip": "\\frac{●}{}",
+          "desc": "fração",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\fr",
+      "limit": 1,
+      "items": [
+        {
+          "cmd": "\\frac",
+          "snip": "\\frac{●}{}",
+          "desc": "fração",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\fr",
+      "limit": 0,
+      "items": [
+        {
+          "cmd": "\\frac",
+          "snip": "\\frac{●}{}",
+          "desc": "fração",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\fr",
+      "limit": 4,
+      "items": [
+        {
+          "cmd": "\\frac",
+          "snip": "\\frac{●}{}",
+          "desc": "fração",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\fr",
+      "limit": 1000,
+      "items": [
+        {
+          "cmd": "\\frac",
+          "snip": "\\frac{●}{}",
+          "desc": "fração",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\fr",
+      "limit": -1,
+      "items": []
+    },
+    {
+      "prefix": "\\fr",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\Del",
+      "limit": 8,
+      "items": [
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\Del",
+      "limit": 1,
+      "items": [
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\Del",
+      "limit": 0,
+      "items": [
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\Del",
+      "limit": 4,
+      "items": [
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\Del",
+      "limit": 1000,
+      "items": [
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\Del",
+      "limit": -1,
+      "items": [
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\Del",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\del",
+      "limit": 8,
+      "items": [
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\del",
+      "limit": 1,
+      "items": [
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\del",
+      "limit": 0,
+      "items": [
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\del",
+      "limit": 4,
+      "items": [
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\del",
+      "limit": 1000,
+      "items": [
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        },
+        {
+          "cmd": "\\Delta",
+          "snip": "\\Delta",
+          "desc": "letra grega Δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\del",
+      "limit": -1,
+      "items": [
+        {
+          "cmd": "\\delta",
+          "snip": "\\delta",
+          "desc": "letra grega δ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\del",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\MA",
+      "limit": 8,
+      "items": [
+        {
+          "cmd": "\\max",
+          "snip": "\\max",
+          "desc": "máximo",
+          "prev": null
+        },
+        {
+          "cmd": "\\mapsto",
+          "snip": "\\mapsto",
+          "desc": "leva em",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb",
+          "snip": "\\mathbb{●}",
+          "desc": "conjuntos (ℝ, ℕ…)",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm",
+          "snip": "\\mathrm{●}",
+          "desc": "texto reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbf",
+          "snip": "\\mathbf{●}",
+          "desc": "negrito",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathcal",
+          "snip": "\\mathcal{●}",
+          "desc": "caligráfico",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm{d}",
+          "snip": "\\mathrm{d}●",
+          "desc": "d reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{R}",
+          "snip": "\\mathbb{R}",
+          "desc": "reais ℝ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\MA",
+      "limit": 1,
+      "items": [
+        {
+          "cmd": "\\max",
+          "snip": "\\max",
+          "desc": "máximo",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\MA",
+      "limit": 0,
+      "items": [
+        {
+          "cmd": "\\max",
+          "snip": "\\max",
+          "desc": "máximo",
+          "prev": null
+        },
+        {
+          "cmd": "\\mapsto",
+          "snip": "\\mapsto",
+          "desc": "leva em",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb",
+          "snip": "\\mathbb{●}",
+          "desc": "conjuntos (ℝ, ℕ…)",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm",
+          "snip": "\\mathrm{●}",
+          "desc": "texto reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbf",
+          "snip": "\\mathbf{●}",
+          "desc": "negrito",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathcal",
+          "snip": "\\mathcal{●}",
+          "desc": "caligráfico",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm{d}",
+          "snip": "\\mathrm{d}●",
+          "desc": "d reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{R}",
+          "snip": "\\mathbb{R}",
+          "desc": "reais ℝ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\MA",
+      "limit": 4,
+      "items": [
+        {
+          "cmd": "\\max",
+          "snip": "\\max",
+          "desc": "máximo",
+          "prev": null
+        },
+        {
+          "cmd": "\\mapsto",
+          "snip": "\\mapsto",
+          "desc": "leva em",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb",
+          "snip": "\\mathbb{●}",
+          "desc": "conjuntos (ℝ, ℕ…)",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm",
+          "snip": "\\mathrm{●}",
+          "desc": "texto reto",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\MA",
+      "limit": 1000,
+      "items": [
+        {
+          "cmd": "\\max",
+          "snip": "\\max",
+          "desc": "máximo",
+          "prev": null
+        },
+        {
+          "cmd": "\\mapsto",
+          "snip": "\\mapsto",
+          "desc": "leva em",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb",
+          "snip": "\\mathbb{●}",
+          "desc": "conjuntos (ℝ, ℕ…)",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm",
+          "snip": "\\mathrm{●}",
+          "desc": "texto reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbf",
+          "snip": "\\mathbf{●}",
+          "desc": "negrito",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathcal",
+          "snip": "\\mathcal{●}",
+          "desc": "caligráfico",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm{d}",
+          "snip": "\\mathrm{d}●",
+          "desc": "d reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{R}",
+          "snip": "\\mathbb{R}",
+          "desc": "reais ℝ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{N}",
+          "snip": "\\mathbb{N}",
+          "desc": "naturais ℕ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{Z}",
+          "snip": "\\mathbb{Z}",
+          "desc": "inteiros ℤ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{Q}",
+          "snip": "\\mathbb{Q}",
+          "desc": "racionais ℚ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{C}",
+          "snip": "\\mathbb{C}",
+          "desc": "complexos ℂ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\MA",
+      "limit": -1,
+      "items": [
+        {
+          "cmd": "\\max",
+          "snip": "\\max",
+          "desc": "máximo",
+          "prev": null
+        },
+        {
+          "cmd": "\\mapsto",
+          "snip": "\\mapsto",
+          "desc": "leva em",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb",
+          "snip": "\\mathbb{●}",
+          "desc": "conjuntos (ℝ, ℕ…)",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm",
+          "snip": "\\mathrm{●}",
+          "desc": "texto reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbf",
+          "snip": "\\mathbf{●}",
+          "desc": "negrito",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathcal",
+          "snip": "\\mathcal{●}",
+          "desc": "caligráfico",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathrm{d}",
+          "snip": "\\mathrm{d}●",
+          "desc": "d reto",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{R}",
+          "snip": "\\mathbb{R}",
+          "desc": "reais ℝ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{N}",
+          "snip": "\\mathbb{N}",
+          "desc": "naturais ℕ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{Z}",
+          "snip": "\\mathbb{Z}",
+          "desc": "inteiros ℤ",
+          "prev": null
+        },
+        {
+          "cmd": "\\mathbb{Q}",
+          "snip": "\\mathbb{Q}",
+          "desc": "racionais ℚ",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\MA",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\not",
+      "limit": 8,
+      "items": [
+        {
+          "cmd": "\\notin",
+          "snip": "\\notin",
+          "desc": "não pertence",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\not",
+      "limit": 1,
+      "items": [
+        {
+          "cmd": "\\notin",
+          "snip": "\\notin",
+          "desc": "não pertence",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\not",
+      "limit": 0,
+      "items": [
+        {
+          "cmd": "\\notin",
+          "snip": "\\notin",
+          "desc": "não pertence",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\not",
+      "limit": 4,
+      "items": [
+        {
+          "cmd": "\\notin",
+          "snip": "\\notin",
+          "desc": "não pertence",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\not",
+      "limit": 1000,
+      "items": [
+        {
+          "cmd": "\\notin",
+          "snip": "\\notin",
+          "desc": "não pertence",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\not",
+      "limit": -1,
+      "items": []
+    },
+    {
+      "prefix": "\\not",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\sqrt",
+      "limit": 8,
+      "items": [
+        {
+          "cmd": "\\sqrt",
+          "snip": "\\sqrt{●}",
+          "desc": "raiz quadrada",
+          "prev": null
+        },
+        {
+          "cmd": "\\sqrt[n]",
+          "snip": "\\sqrt[●]{}",
+          "desc": "raiz n-ésima",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\sqrt",
+      "limit": 1,
+      "items": [
+        {
+          "cmd": "\\sqrt",
+          "snip": "\\sqrt{●}",
+          "desc": "raiz quadrada",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\sqrt",
+      "limit": 0,
+      "items": [
+        {
+          "cmd": "\\sqrt",
+          "snip": "\\sqrt{●}",
+          "desc": "raiz quadrada",
+          "prev": null
+        },
+        {
+          "cmd": "\\sqrt[n]",
+          "snip": "\\sqrt[●]{}",
+          "desc": "raiz n-ésima",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\sqrt",
+      "limit": 4,
+      "items": [
+        {
+          "cmd": "\\sqrt",
+          "snip": "\\sqrt{●}",
+          "desc": "raiz quadrada",
+          "prev": null
+        },
+        {
+          "cmd": "\\sqrt[n]",
+          "snip": "\\sqrt[●]{}",
+          "desc": "raiz n-ésima",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\sqrt",
+      "limit": 1000,
+      "items": [
+        {
+          "cmd": "\\sqrt",
+          "snip": "\\sqrt{●}",
+          "desc": "raiz quadrada",
+          "prev": null
+        },
+        {
+          "cmd": "\\sqrt[n]",
+          "snip": "\\sqrt[●]{}",
+          "desc": "raiz n-ésima",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\sqrt",
+      "limit": -1,
+      "items": [
+        {
+          "cmd": "\\sqrt",
+          "snip": "\\sqrt{●}",
+          "desc": "raiz quadrada",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\sqrt",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\begin",
+      "limit": 8,
+      "items": [
+        {
+          "cmd": "\\begin{cases}",
+          "snip": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+          "desc": "função por partes",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{pmatrix}",
+          "snip": "\\begin{pmatrix} ● & \\\\  &  \\end{pmatrix}",
+          "desc": "matriz ( )",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{bmatrix}",
+          "snip": "\\begin{bmatrix} ● & \\\\  &  \\end{bmatrix}",
+          "desc": "matriz [ ]",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{vmatrix}",
+          "snip": "\\begin{vmatrix} ● & \\\\  &  \\end{vmatrix}",
+          "desc": "determinante",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{aligned}",
+          "snip": "\\begin{aligned} ● &=  \\\\ &=  \\end{aligned}",
+          "desc": "equações alinhadas",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\begin",
+      "limit": 1,
+      "items": [
+        {
+          "cmd": "\\begin{cases}",
+          "snip": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+          "desc": "função por partes",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\begin",
+      "limit": 0,
+      "items": [
+        {
+          "cmd": "\\begin{cases}",
+          "snip": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+          "desc": "função por partes",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{pmatrix}",
+          "snip": "\\begin{pmatrix} ● & \\\\  &  \\end{pmatrix}",
+          "desc": "matriz ( )",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{bmatrix}",
+          "snip": "\\begin{bmatrix} ● & \\\\  &  \\end{bmatrix}",
+          "desc": "matriz [ ]",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{vmatrix}",
+          "snip": "\\begin{vmatrix} ● & \\\\  &  \\end{vmatrix}",
+          "desc": "determinante",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{aligned}",
+          "snip": "\\begin{aligned} ● &=  \\\\ &=  \\end{aligned}",
+          "desc": "equações alinhadas",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\begin",
+      "limit": 4,
+      "items": [
+        {
+          "cmd": "\\begin{cases}",
+          "snip": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+          "desc": "função por partes",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{pmatrix}",
+          "snip": "\\begin{pmatrix} ● & \\\\  &  \\end{pmatrix}",
+          "desc": "matriz ( )",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{bmatrix}",
+          "snip": "\\begin{bmatrix} ● & \\\\  &  \\end{bmatrix}",
+          "desc": "matriz [ ]",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{vmatrix}",
+          "snip": "\\begin{vmatrix} ● & \\\\  &  \\end{vmatrix}",
+          "desc": "determinante",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\begin",
+      "limit": 1000,
+      "items": [
+        {
+          "cmd": "\\begin{cases}",
+          "snip": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+          "desc": "função por partes",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{pmatrix}",
+          "snip": "\\begin{pmatrix} ● & \\\\  &  \\end{pmatrix}",
+          "desc": "matriz ( )",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{bmatrix}",
+          "snip": "\\begin{bmatrix} ● & \\\\  &  \\end{bmatrix}",
+          "desc": "matriz [ ]",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{vmatrix}",
+          "snip": "\\begin{vmatrix} ● & \\\\  &  \\end{vmatrix}",
+          "desc": "determinante",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{aligned}",
+          "snip": "\\begin{aligned} ● &=  \\\\ &=  \\end{aligned}",
+          "desc": "equações alinhadas",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\begin",
+      "limit": -1,
+      "items": [
+        {
+          "cmd": "\\begin{cases}",
+          "snip": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+          "desc": "função por partes",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{pmatrix}",
+          "snip": "\\begin{pmatrix} ● & \\\\  &  \\end{pmatrix}",
+          "desc": "matriz ( )",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{bmatrix}",
+          "snip": "\\begin{bmatrix} ● & \\\\  &  \\end{bmatrix}",
+          "desc": "matriz [ ]",
+          "prev": null
+        },
+        {
+          "cmd": "\\begin{vmatrix}",
+          "snip": "\\begin{vmatrix} ● & \\\\  &  \\end{vmatrix}",
+          "desc": "determinante",
+          "prev": null
+        }
+      ]
+    },
+    {
+      "prefix": "\\begin",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\frac{",
+      "limit": 8,
+      "items": []
+    },
+    {
+      "prefix": "\\frac{",
+      "limit": 1,
+      "items": []
+    },
+    {
+      "prefix": "\\frac{",
+      "limit": 0,
+      "items": []
+    },
+    {
+      "prefix": "\\frac{",
+      "limit": 4,
+      "items": []
+    },
+    {
+      "prefix": "\\frac{",
+      "limit": 1000,
+      "items": []
+    },
+    {
+      "prefix": "\\frac{",
+      "limit": -1,
+      "items": []
+    },
+    {
+      "prefix": "\\frac{",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "alpha",
+      "limit": 8,
+      "items": []
+    },
+    {
+      "prefix": "alpha",
+      "limit": 1,
+      "items": []
+    },
+    {
+      "prefix": "alpha",
+      "limit": 0,
+      "items": []
+    },
+    {
+      "prefix": "alpha",
+      "limit": 4,
+      "items": []
+    },
+    {
+      "prefix": "alpha",
+      "limit": 1000,
+      "items": []
+    },
+    {
+      "prefix": "alpha",
+      "limit": -1,
+      "items": []
+    },
+    {
+      "prefix": "alpha",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\α",
+      "limit": 8,
+      "items": []
+    },
+    {
+      "prefix": "\\α",
+      "limit": 1,
+      "items": []
+    },
+    {
+      "prefix": "\\α",
+      "limit": 0,
+      "items": []
+    },
+    {
+      "prefix": "\\α",
+      "limit": 4,
+      "items": []
+    },
+    {
+      "prefix": "\\α",
+      "limit": 1000,
+      "items": []
+    },
+    {
+      "prefix": "\\α",
+      "limit": -1,
+      "items": []
+    },
+    {
+      "prefix": "\\α",
+      "limit": -1000,
+      "items": []
+    },
+    {
+      "prefix": "\\fr\n",
+      "limit": 8,
+      "items": []
+    },
+    {
+      "prefix": "\\fr\n",
+      "limit": 1,
+      "items": []
+    },
+    {
+      "prefix": "\\fr\n",
+      "limit": 0,
+      "items": []
+    },
+    {
+      "prefix": "\\fr\n",
+      "limit": 4,
+      "items": []
+    },
+    {
+      "prefix": "\\fr\n",
+      "limit": 1000,
+      "items": []
+    },
+    {
+      "prefix": "\\fr\n",
+      "limit": -1,
+      "items": []
+    },
+    {
+      "prefix": "\\fr\n",
+      "limit": -1000,
+      "items": []
+    }
+  ],
+  "snippets": [
+    {
+      "template": "\\alpha",
+      "expected": {
+        "text": "\\alpha",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\beta",
+      "expected": {
+        "text": "\\beta",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\gamma",
+      "expected": {
+        "text": "\\gamma",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\delta",
+      "expected": {
+        "text": "\\delta",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\epsilon",
+      "expected": {
+        "text": "\\epsilon",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\varepsilon",
+      "expected": {
+        "text": "\\varepsilon",
+        "caret": 11
+      }
+    },
+    {
+      "template": "\\zeta",
+      "expected": {
+        "text": "\\zeta",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\eta",
+      "expected": {
+        "text": "\\eta",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\theta",
+      "expected": {
+        "text": "\\theta",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\vartheta",
+      "expected": {
+        "text": "\\vartheta",
+        "caret": 9
+      }
+    },
+    {
+      "template": "\\iota",
+      "expected": {
+        "text": "\\iota",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\kappa",
+      "expected": {
+        "text": "\\kappa",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\lambda",
+      "expected": {
+        "text": "\\lambda",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\mu",
+      "expected": {
+        "text": "\\mu",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\nu",
+      "expected": {
+        "text": "\\nu",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\xi",
+      "expected": {
+        "text": "\\xi",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\pi",
+      "expected": {
+        "text": "\\pi",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\rho",
+      "expected": {
+        "text": "\\rho",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\sigma",
+      "expected": {
+        "text": "\\sigma",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\tau",
+      "expected": {
+        "text": "\\tau",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\upsilon",
+      "expected": {
+        "text": "\\upsilon",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\phi",
+      "expected": {
+        "text": "\\phi",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\varphi",
+      "expected": {
+        "text": "\\varphi",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\chi",
+      "expected": {
+        "text": "\\chi",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\psi",
+      "expected": {
+        "text": "\\psi",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\omega",
+      "expected": {
+        "text": "\\omega",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\Gamma",
+      "expected": {
+        "text": "\\Gamma",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\Delta",
+      "expected": {
+        "text": "\\Delta",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\Theta",
+      "expected": {
+        "text": "\\Theta",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\Lambda",
+      "expected": {
+        "text": "\\Lambda",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\Xi",
+      "expected": {
+        "text": "\\Xi",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\Pi",
+      "expected": {
+        "text": "\\Pi",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\Sigma",
+      "expected": {
+        "text": "\\Sigma",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\Phi",
+      "expected": {
+        "text": "\\Phi",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\Psi",
+      "expected": {
+        "text": "\\Psi",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\Omega",
+      "expected": {
+        "text": "\\Omega",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\frac{●}{}",
+      "expected": {
+        "text": "\\frac{}{}",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\dfrac{●}{}",
+      "expected": {
+        "text": "\\dfrac{}{}",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\sqrt{●}",
+      "expected": {
+        "text": "\\sqrt{}",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\sqrt[●]{}",
+      "expected": {
+        "text": "\\sqrt[]{}",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\binom{●}{}",
+      "expected": {
+        "text": "\\binom{}{}",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\sum_{●}^{}",
+      "expected": {
+        "text": "\\sum_{}^{}",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\prod_{●}^{}",
+      "expected": {
+        "text": "\\prod_{}^{}",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\int_{●}^{}",
+      "expected": {
+        "text": "\\int_{}^{}",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\iint",
+      "expected": {
+        "text": "\\iint",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\oint",
+      "expected": {
+        "text": "\\oint",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\lim_{● \\to }",
+      "expected": {
+        "text": "\\lim_{ \\to }",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\partial",
+      "expected": {
+        "text": "\\partial",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\nabla",
+      "expected": {
+        "text": "\\nabla",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\infty",
+      "expected": {
+        "text": "\\infty",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\mathrm{d}●",
+      "expected": {
+        "text": "\\mathrm{d}",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\cdot",
+      "expected": {
+        "text": "\\cdot",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\times",
+      "expected": {
+        "text": "\\times",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\div",
+      "expected": {
+        "text": "\\div",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\pm",
+      "expected": {
+        "text": "\\pm",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\mp",
+      "expected": {
+        "text": "\\mp",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\circ",
+      "expected": {
+        "text": "\\circ",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\leq",
+      "expected": {
+        "text": "\\leq",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\geq",
+      "expected": {
+        "text": "\\geq",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\neq",
+      "expected": {
+        "text": "\\neq",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\approx",
+      "expected": {
+        "text": "\\approx",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\equiv",
+      "expected": {
+        "text": "\\equiv",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\sim",
+      "expected": {
+        "text": "\\sim",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\propto",
+      "expected": {
+        "text": "\\propto",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\ll",
+      "expected": {
+        "text": "\\ll",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\gg",
+      "expected": {
+        "text": "\\gg",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\in",
+      "expected": {
+        "text": "\\in",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\notin",
+      "expected": {
+        "text": "\\notin",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\subset",
+      "expected": {
+        "text": "\\subset",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\subseteq",
+      "expected": {
+        "text": "\\subseteq",
+        "caret": 9
+      }
+    },
+    {
+      "template": "\\supset",
+      "expected": {
+        "text": "\\supset",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\cup",
+      "expected": {
+        "text": "\\cup",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\cap",
+      "expected": {
+        "text": "\\cap",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\setminus",
+      "expected": {
+        "text": "\\setminus",
+        "caret": 9
+      }
+    },
+    {
+      "template": "\\emptyset",
+      "expected": {
+        "text": "\\emptyset",
+        "caret": 9
+      }
+    },
+    {
+      "template": "\\varnothing",
+      "expected": {
+        "text": "\\varnothing",
+        "caret": 11
+      }
+    },
+    {
+      "template": "\\forall",
+      "expected": {
+        "text": "\\forall",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\exists",
+      "expected": {
+        "text": "\\exists",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\nexists",
+      "expected": {
+        "text": "\\nexists",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\neg",
+      "expected": {
+        "text": "\\neg",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\land",
+      "expected": {
+        "text": "\\land",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\lor",
+      "expected": {
+        "text": "\\lor",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\to",
+      "expected": {
+        "text": "\\to",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\rightarrow",
+      "expected": {
+        "text": "\\rightarrow",
+        "caret": 11
+      }
+    },
+    {
+      "template": "\\leftarrow",
+      "expected": {
+        "text": "\\leftarrow",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\leftrightarrow",
+      "expected": {
+        "text": "\\leftrightarrow",
+        "caret": 15
+      }
+    },
+    {
+      "template": "\\mapsto",
+      "expected": {
+        "text": "\\mapsto",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\Rightarrow",
+      "expected": {
+        "text": "\\Rightarrow",
+        "caret": 11
+      }
+    },
+    {
+      "template": "\\implies",
+      "expected": {
+        "text": "\\implies",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\iff",
+      "expected": {
+        "text": "\\iff",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\Leftrightarrow",
+      "expected": {
+        "text": "\\Leftrightarrow",
+        "caret": 15
+      }
+    },
+    {
+      "template": "\\mathbb{●}",
+      "expected": {
+        "text": "\\mathbb{}",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\mathbb{R}",
+      "expected": {
+        "text": "\\mathbb{R}",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\mathbb{N}",
+      "expected": {
+        "text": "\\mathbb{N}",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\mathbb{Z}",
+      "expected": {
+        "text": "\\mathbb{Z}",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\mathbb{Q}",
+      "expected": {
+        "text": "\\mathbb{Q}",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\mathbb{C}",
+      "expected": {
+        "text": "\\mathbb{C}",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\mathcal{●}",
+      "expected": {
+        "text": "\\mathcal{}",
+        "caret": 9
+      }
+    },
+    {
+      "template": "\\mathrm{●}",
+      "expected": {
+        "text": "\\mathrm{}",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\mathbf{●}",
+      "expected": {
+        "text": "\\mathbf{}",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\boldsymbol{●}",
+      "expected": {
+        "text": "\\boldsymbol{}",
+        "caret": 12
+      }
+    },
+    {
+      "template": "\\text{●}",
+      "expected": {
+        "text": "\\text{}",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\operatorname{●}",
+      "expected": {
+        "text": "\\operatorname{}",
+        "caret": 14
+      }
+    },
+    {
+      "template": "\\hat{●}",
+      "expected": {
+        "text": "\\hat{}",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\bar{●}",
+      "expected": {
+        "text": "\\bar{}",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\overline{●}",
+      "expected": {
+        "text": "\\overline{}",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\vec{●}",
+      "expected": {
+        "text": "\\vec{}",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\dot{●}",
+      "expected": {
+        "text": "\\dot{}",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\ddot{●}",
+      "expected": {
+        "text": "\\ddot{}",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\tilde{●}",
+      "expected": {
+        "text": "\\tilde{}",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\underbrace{●}_{}",
+      "expected": {
+        "text": "\\underbrace{}_{}",
+        "caret": 12
+      }
+    },
+    {
+      "template": "\\left( ● \\right)",
+      "expected": {
+        "text": "\\left(  \\right)",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\left[ ● \\right]",
+      "expected": {
+        "text": "\\left[  \\right]",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\left\\{ ● \\right\\}",
+      "expected": {
+        "text": "\\left\\{  \\right\\}",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\left| ● \\right|",
+      "expected": {
+        "text": "\\left|  \\right|",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\langle ● \\rangle",
+      "expected": {
+        "text": "\\langle  \\rangle",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\lVert ● \\rVert",
+      "expected": {
+        "text": "\\lVert  \\rVert",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\ldots",
+      "expected": {
+        "text": "\\ldots",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\cdots",
+      "expected": {
+        "text": "\\cdots",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\vdots",
+      "expected": {
+        "text": "\\vdots",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\ddots",
+      "expected": {
+        "text": "\\ddots",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\quad",
+      "expected": {
+        "text": "\\quad",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\,",
+      "expected": {
+        "text": "\\,",
+        "caret": 2
+      }
+    },
+    {
+      "template": "\\sin",
+      "expected": {
+        "text": "\\sin",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\cos",
+      "expected": {
+        "text": "\\cos",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\tan",
+      "expected": {
+        "text": "\\tan",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\log",
+      "expected": {
+        "text": "\\log",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\ln",
+      "expected": {
+        "text": "\\ln",
+        "caret": 3
+      }
+    },
+    {
+      "template": "\\exp",
+      "expected": {
+        "text": "\\exp",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\max",
+      "expected": {
+        "text": "\\max",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\min",
+      "expected": {
+        "text": "\\min",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\det",
+      "expected": {
+        "text": "\\det",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\gcd",
+      "expected": {
+        "text": "\\gcd",
+        "caret": 4
+      }
+    },
+    {
+      "template": "\\begin{pmatrix} ● & \\\\  &  \\end{pmatrix}",
+      "expected": {
+        "text": "\\begin{pmatrix}  & \\\\  &  \\end{pmatrix}",
+        "caret": 16
+      }
+    },
+    {
+      "template": "\\begin{bmatrix} ● & \\\\  &  \\end{bmatrix}",
+      "expected": {
+        "text": "\\begin{bmatrix}  & \\\\  &  \\end{bmatrix}",
+        "caret": 16
+      }
+    },
+    {
+      "template": "\\begin{vmatrix} ● & \\\\  &  \\end{vmatrix}",
+      "expected": {
+        "text": "\\begin{vmatrix}  & \\\\  &  \\end{vmatrix}",
+        "caret": 16
+      }
+    },
+    {
+      "template": "\\begin{cases} ● & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+      "expected": {
+        "text": "\\begin{cases}  & \\text{se }  \\\\  & \\text{se }  \\end{cases}",
+        "caret": 14
+      }
+    },
+    {
+      "template": "\\begin{aligned} ● &=  \\\\ &=  \\end{aligned}",
+      "expected": {
+        "text": "\\begin{aligned}  &=  \\\\ &=  \\end{aligned}",
+        "caret": 16
+      }
+    },
+    {
+      "template": "\\overset{●}{}",
+      "expected": {
+        "text": "\\overset{}{}",
+        "caret": 9
+      }
+    },
+    {
+      "template": "\\underset{●}{}",
+      "expected": {
+        "text": "\\underset{}{}",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\boxed{●}",
+      "expected": {
+        "text": "\\boxed{}",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\cancel{●}",
+      "expected": {
+        "text": "\\cancel{}",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\therefore",
+      "expected": {
+        "text": "\\therefore",
+        "caret": 10
+      }
+    },
+    {
+      "template": "\\because",
+      "expected": {
+        "text": "\\because",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\angle",
+      "expected": {
+        "text": "\\angle",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\perp",
+      "expected": {
+        "text": "\\perp",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\parallel",
+      "expected": {
+        "text": "\\parallel",
+        "caret": 9
+      }
+    },
+    {
+      "template": "^\\circ",
+      "expected": {
+        "text": "^\\circ",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\frac{●}{}",
+      "expected": {
+        "text": "\\frac{}{}",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\sqrt[●]{}",
+      "expected": {
+        "text": "\\sqrt[]{}",
+        "caret": 6
+      }
+    },
+    {
+      "template": "{●}^{}",
+      "expected": {
+        "text": "{}^{}",
+        "caret": 1
+      }
+    },
+    {
+      "template": "\\int_{●}^{} f(x)\\,dx",
+      "expected": {
+        "text": "\\int_{}^{} f(x)\\,dx",
+        "caret": 6
+      }
+    },
+    {
+      "template": "\\sum_{i=●}^{n} ",
+      "expected": {
+        "text": "\\sum_{i=}^{n} ",
+        "caret": 8
+      }
+    },
+    {
+      "template": "\\lim_{x \\to ●} ",
+      "expected": {
+        "text": "\\lim_{x \\to } ",
+        "caret": 12
+      }
+    },
+    {
+      "template": "\\frac{d●}{dx}",
+      "expected": {
+        "text": "\\frac{d}{dx}",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\frac{\\partial ●}{\\partial x}",
+      "expected": {
+        "text": "\\frac{\\partial }{\\partial x}",
+        "caret": 15
+      }
+    },
+    {
+      "template": "\\begin{pmatrix} ● & b \\\\ c & d \\end{pmatrix}",
+      "expected": {
+        "text": "\\begin{pmatrix}  & b \\\\ c & d \\end{pmatrix}",
+        "caret": 16
+      }
+    },
+    {
+      "template": "\\begin{bmatrix} ● & & \\\\ & & \\\\ & & \\end{bmatrix}",
+      "expected": {
+        "text": "\\begin{bmatrix}  & & \\\\ & & \\\\ & & \\end{bmatrix}",
+        "caret": 16
+      }
+    },
+    {
+      "template": "\\begin{vmatrix} ● & b \\\\ c & d \\end{vmatrix}",
+      "expected": {
+        "text": "\\begin{vmatrix}  & b \\\\ c & d \\end{vmatrix}",
+        "caret": 16
+      }
+    },
+    {
+      "template": "\\begin{cases} ● \\\\ \\end{cases}",
+      "expected": {
+        "text": "\\begin{cases}  \\\\ \\end{cases}",
+        "caret": 14
+      }
+    },
+    {
+      "template": "f(x)=\\begin{cases} ● & \\text{se } x<0 \\\\ & \\text{se } x\\ge 0 \\end{cases}",
+      "expected": {
+        "text": "f(x)=\\begin{cases}  & \\text{se } x<0 \\\\ & \\text{se } x\\ge 0 \\end{cases}",
+        "caret": 19
+      }
+    },
+    {
+      "template": "\\begin{aligned} ● &= \\\\ &= \\end{aligned}",
+      "expected": {
+        "text": "\\begin{aligned}  &= \\\\ &= \\end{aligned}",
+        "caret": 16
+      }
+    },
+    {
+      "template": "\\binom{●}{k}",
+      "expected": {
+        "text": "\\binom{}{k}",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\vec{●}",
+      "expected": {
+        "text": "\\vec{}",
+        "caret": 5
+      }
+    },
+    {
+      "template": "\\lVert ● \\rVert",
+      "expected": {
+        "text": "\\lVert  \\rVert",
+        "caret": 7
+      }
+    },
+    {
+      "template": "\\boxed{●}",
+      "expected": {
+        "text": "\\boxed{}",
+        "caret": 7
+      }
+    },
+    {
+      "template": null,
+      "expected": {
+        "text": "null",
+        "caret": 4
+      }
+    },
+    {
+      "template": "",
+      "expected": {
+        "text": "",
+        "caret": 0
+      }
+    },
+    {
+      "template": "abc",
+      "expected": {
+        "text": "abc",
+        "caret": 3
+      }
+    },
+    {
+      "template": "●a●b",
+      "expected": {
+        "text": "ab",
+        "caret": 0
+      }
+    },
+    {
+      "template": "😀●x",
+      "expected": {
+        "text": "😀x",
+        "caret": 2
+      }
+    },
+    {
+      "template": "α●β",
+      "expected": {
+        "text": "αβ",
+        "caret": 1
+      }
+    }
+  ]
+}

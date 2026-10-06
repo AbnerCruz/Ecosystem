@@ -7,9 +7,6 @@ namespace Urbe.Core;
 public sealed record MarkdownFrontmatterField(string Key, string Value);
 public sealed record MarkdownFrontmatter(string Raw, string Body, IReadOnlyList<MarkdownFrontmatterField> Fields);
 
-internal sealed record MarkdownMathAtom(
-    int Start, int End, string Tex, string Open, string Close, bool Display, bool Block);
-
 public static partial class MarkdownEngine
 {
     private const char InlineOpen = '\uE000';
@@ -522,9 +519,9 @@ public static partial class MarkdownEngine
                 "<em>$1</em>"),
             "<del>$1</del>");
 
-    private static List<MarkdownMathAtom> ScanMath(string source)
+    internal static List<MathFormula> ScanMath(string source)
     {
-        var atoms = new List<MarkdownMathAtom>();
+        var atoms = new List<MathFormula>();
         var i = 0;
         var lineStart = 0;
         char? inFence = null;
@@ -612,7 +609,7 @@ public static partial class MarkdownEngine
                         var tex = source[(i + 2)..end];
                         if (next == '(' && tex.Contains('\n')) { i += 2; continue; }
                         var display = next == '[';
-                        atoms.Add(new MarkdownMathAtom(
+                        atoms.Add(new MathFormula(
                             i, end + 2, tex, "\\" + next, closeToken,
                             display, display && AtLineStart(i) && AtLineEnd(end + 2)));
                         i = end + 2;
@@ -655,7 +652,7 @@ public static partial class MarkdownEngine
                                 tex = tex[..Math.Max(0, tex.Length - trail.Length)];
                             }
 
-                            atoms.Add(new MarkdownMathAtom(
+                            atoms.Add(new MathFormula(
                                 i, end + 2, tex, open, close, true,
                                 AtLineStart(i) && AtLineEnd(end + 2)));
                             i = end + 2;
@@ -668,7 +665,7 @@ public static partial class MarkdownEngine
                 }
 
                 var next = i + 1 < source.Length ? source[i + 1] : '\0';
-                if (next == '\0' || char.IsWhiteSpace(next)) { i++; continue; }
+                if (i + 1 >= source.Length || MathEditing.IsWhitespace(next)) { i++; continue; }
 
                 var j = i + 1;
                 var found = -1;
@@ -679,7 +676,7 @@ public static partial class MarkdownEngine
                     {
                         var prev = source[j - 1];
                         var after = j + 1 < source.Length ? source[j + 1] : '\0';
-                        if (!char.IsWhiteSpace(prev) && !char.IsDigit(after))
+                        if (!MathEditing.IsWhitespace(prev) && !(after is >= '0' and <= '9'))
                         {
                             found = j;
                             break;
@@ -690,7 +687,7 @@ public static partial class MarkdownEngine
 
                 if (found > i + 1)
                 {
-                    atoms.Add(new MarkdownMathAtom(
+                    atoms.Add(new MathFormula(
                         i, found + 1, source[(i + 1)..found], "$", "$", false, false));
                     i = found + 1;
                     continue;
@@ -703,7 +700,7 @@ public static partial class MarkdownEngine
         return atoms;
     }
 
-    private static string MathAtomHtml(MarkdownMathAtom atom, bool block)
+    private static string MathAtomHtml(MathFormula atom, bool block)
     {
         var attrs = " data-tex=\"" + EscapeHtml(atom.Tex) +
                     "\" data-open=\"" + EscapeHtml(atom.Open) +

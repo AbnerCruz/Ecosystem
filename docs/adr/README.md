@@ -51,3 +51,5 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0026](0026-urbe-transicao-cliente-csharp.md) | Transição do Urbe JavaScript para o cliente C# | Aceito (DEC-0036-C) |
 | [0027](0027-primeiro-ipc-local-android.md) | Primeiro IPC local autenticado entre Hub e Lunet | Aceito (DEC-0037-A) |
 | [0028](0028-text-inspect-core-compartilhado.md) | Núcleo compartilhado de `text.inspect` para o segundo Host | Aceito (DEC-0038-A) |
+| [0029](0029-product-de-autoria-matematica-temporal.md) | Product independente de autoria matemática temporal | Proposto |
+| [0030](0030-documento-canonico-de-autoria-matematica.md) | Documento canônico e autoria textual da matemática temporal | Proposto |

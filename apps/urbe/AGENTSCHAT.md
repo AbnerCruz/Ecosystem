@@ -375,3 +375,18 @@
 - PR #232 foi reconciliado semanticamente sobre `main@58a78d417259` após o corte P4-9/DEC-0039, sem carregar versões antigas dos documentos.
 - Os três arquivos de domínio/teste do UC-14 foram preservados; README/ROADMAP/AGENTSCHAT e handoff foram reaplicados sobre o estado atual.
 - Estado: verificando novamente consistency, Core, Web, Android, Windows e E2E no estado combinado atual.
+
+
+### 2026-10-06 — Codex Urbe math — UC-16 / Issue #257
+- Estado: primeira fatia de matemática na branch `feat/urbe-uc16-math-editing`, base `510c22197426`.
+- Feito: scanner único compartilhado com Markdown, lookup do cursor UTF-16, delimitadores originais, catálogo imutável de comandos/símbolos/modelos, snippets e autocomplete.
+- Paridade: corpus suplementar gerado pelo JS congelado com SHA-256, cobrindo código, preços, escapes, Unicode e limites negativos de autocomplete; corrige distinções de whitespace/dígitos/NUL entre .NET e JS.
+- Decisão preservada: ADR-0025 não escolhe biblioteca matemática. Nenhuma dependência ou interop adicionada; tipografia/macros/erros/export continuam abertos na UC-16; UI pertence à UC-18.
+- Próximo: verificar Core, checks e consistency; abrir PR para CI portátil, Web, Android, Windows e E2E e integração automática rotineira.
+
+### 2026-10-06 — codex-urbe-import — UC-16 / Issue #257
+- Estado: working; investigação de renderer, não adoção nem fechamento da UC.
+- Feito: probe reproduzível que compila/executa CSharpMath em diretório temporário, gera SVG e publica Blazor WASM; Chromium renderiza e repete com rede desligada. Corpus: 172 snippets, sete entradas adicionais, 31 fórmulas reais do tutorial. 163 snippets e 30 fórmulas do tutorial renderizados; diagnósticos conhecidos preservados no relatório, sem mascarar rejeições em goldens de compatibilidade.
+- Decisões (com fonte): ADR-0025 mantém Blazor WASM/MAUI Hybrid; sem KaTeX interop, sem referência de pacote no produto e sem UI M3. Pacotes e fontes auditados preliminarmente: MIT nos módulos CSharpMath, LGPL-3.0-only nos backends VectSharp e GUST/OFL nas fontes. Nenhuma adoção ou alteração de licença consolidada.
+- Pendências / bloqueios: comandos/macros faltantes, equivalência visual, acessibilidade, licenças e hosts Android/Windows ainda requerem trabalho. PRs UC-15 #253/#254 estão abertos; #253 precisa reconciliação, sem sobrescrever o renderer de seu autor. Publicação de import/P4-9 depende do gate crítico do PR #264 e nova DEVICE exata.
+- Próximos passos: definir backend C# por ADR fundamentado e PR crítico antes de adoção; ampliar corpus com renderer legado real e corrigir lacunas sem regravar TeX do usuário. Evidência em docs/csharp/UC16-RENDERER-INVESTIGATION.md e math-renderer-observations.json; ferramenta manual csharp/tests/math-renderer-probe.mjs.

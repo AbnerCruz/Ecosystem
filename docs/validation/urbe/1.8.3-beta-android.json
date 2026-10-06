@@ -1,0 +1,62 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-urbe-1.8.3-beta-android",
+  "component": "urbe",
+  "build": "1.8.3-beta-android",
+  "recorded_at": "2026-10-06",
+  "state": "IMPLEMENTED",
+  "objective": "Validar migração deliberada da instalação legada para o primeiro APK direto, restauração da cidade, uso standalone/offline e PWA do Ecosystem.",
+  "preconditions": [
+    "Guardar backup/export recuperável fora do armazenamento apagado ao desinstalar; não usar a única cópia de dados.",
+    "Usar o APK exato desta release; assinatura beta nova não atualiza a instalação legada in-place."
+  ],
+  "steps": [
+    "Conferir SHA-256 do APK; guardar backup/export da cidade legada e confirmar que existe fora do armazenamento do app.",
+    "Após guardar backup, desinstalar o legado se necessário e instalar Urbe-1.8.3-beta.apk.",
+    "Restaurar/abrir a cidade, editar conteúdo e fechar/reabrir para conferir preservação.",
+    "Confirmar uso essencial offline sem Hub.",
+    "Abrir https://abnercruz.github.io/Ecosystem/urbe/ e confirmar PWA e domínio essencial offline.",
+    "Aprovar ou reprovar no portal indicando este candidato; se já fez backup/desinstalação, não repetir operações destrutivas, apenas conferir a build e seus dados."
+  ],
+  "expected": "Instalação direta restaura cidade, preserva edição ao reabrir e funciona offline sem Hub; PWA funciona no canal atual.",
+  "known_issues": [
+    "A aprovação #251 antecede a existência deste APK e não valida estes bytes.",
+    "Canal beta com chave pública estável; migração legada por backup/reinstalação deliberada.",
+    "Relato posterior do proprietário em 2026-10-06: «O import da cidade/vault falhou no Android.» P4-9 bloqueado; aprovação #259 preservada como evidência histórica, sem encerrar o gate."
+  ],
+  "artifact": {
+    "name": "Urbe-1.8.3-beta.apk",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.3-beta/Urbe-1.8.3-beta.apk",
+    "sha256": "5269c505ad3bc12149716e58f728cd5468c13fcef9d8b7192839a9496ba9d4b7"
+  },
+  "traceability": {
+    "task": "P4-9",
+    "commit": "43ccb54e328b7b503d3e07adfde36180014e9964",
+    "pr": "https://github.com/AbnerCruz/Ecosystem/pull/255",
+    "handoff": "HO-20261006-p4-9-release-evidence"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Release direta e integridade dos artefatos publicados",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/37458276965 concluiu verificar, Android, Windows e publicar com success. Os cinco arquivos foram baixados; todos os tamanhos/SHA-256 coincidem com a API GitHub. Checksum APK e SHA-512/tamanho do latest.yml coincidem com os bytes. APK SHA-256 5269c505ad3bc12149716e58f728cd5468c13fcef9d8b7192839a9496ba9d4b7; EXE 106cc4ad4645c5c3aa12ed5bd08736f5ee8cef91a62e6436a16e89fb896780f1. Identidade beta conferida por apksigner no job Android.",
+      "handoff": "HO-20261006-p4-9-release-evidence"
+    },
+    {
+      "kind": "human",
+      "check": "Migração DEVICE e PWA do candidato publicado urbe-v1.8.3-beta",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-06 (Issue https://github.com/AbnerCruz/Ecosystem/issues/259); registro em docs/governance/responses/VAL-HO-20261006-p4-9-release-evidence-f682ac31a459.md.",
+      "handoff": "HO-20261006-p4-9-release-evidence"
+    },
+    {
+      "kind": "human",
+      "check": "Importação da cidade/vault no Android — relato posterior",
+      "result": "failed",
+      "evidence": "FATO RELATADO pelo proprietário em 2026-10-06 na sessão de desenvolvimento: «O import da cidade/vault falhou no Android.» Vinculado por ele a urbe-v1.8.3-beta/P4-9. Modalidade selecionada e mensagem de erro ainda não informadas; não equivale a nova resposta emitida pelo portal. Ver incidente HO-20261006-urbe-import-incident.",
+      "handoff": "HO-20261006-urbe-import-incident"
+    }
+  ]
+}
