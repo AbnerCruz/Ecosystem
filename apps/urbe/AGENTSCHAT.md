@@ -7,6 +7,15 @@
 - Testes cobrem Bhaskara, integral, matriz, determinismo, entradas inválidas e o corpus real do tutorial com piso de 30/31.
 - ADR-0012 fica Proposed até autorização do proprietário; macros/aliases incompatíveis continuam explícitos, sem reescrita silenciosa.
 
+### 2026-10-06 — ChatGPT — UC-15 concluída
+
+- Release 1.8.4-beta publicada separadamente; fechamento de UC-15 não reutiliza evidência DEVICE da release.
+- Auditoria final da Issue #249 confirmou cobertura do domínio puro exigido: páginas/composições, proteção forward/REQ-049, blocos, livro, layout livre, conversão/compactação, temas, shell HTML e templates.
+- Merge final #270 = `df66859924bb508f2320da9c676a0dc4e669530c`.
+- Main verde: csharp-portable, checks/Web, Android, Windows, E2E e Foundation consistency (runs `37517474704` / `37517474691`).
+- UI/Studio permanece UC-18; KaTeX/render matemática permanece UC-16; IA page_schema/write_page permanece UC-21; nenhuma escrita crítica de migração foi introduzida.
+- Próxima tarefa do M2: UC-16.
+
 ### 2026-10-06 — ChatGPT — UC-15 sexta fatia: shell, temas e templates
 
 - PR #269 integrou a quinta fatia na main (`c7bf1ba4`) com Core/Web/Android/Windows/E2E/consistency verdes.
