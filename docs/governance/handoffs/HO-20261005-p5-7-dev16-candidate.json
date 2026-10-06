@@ -42,10 +42,10 @@
     {
       "check": "Gate DEVICE A-E completo",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "docs/validation/P5-7-capability-runtime-gate.md",
-      "evidence": "A captura cobre somente instalação e a projeção Connections do Hub; ainda faltam execução da Tool no Hub, Lunet offline, equivalência, lifecycle/layout e independência."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-06 (Issue https://github.com/AbnerCruz/Ecosystem/issues/246); registro em docs/governance/responses/VAL-HO-20261005-p5-7-dev16-candidate-c2ff0d8de451.md."
     }
   ],
   "known_issues": [],
