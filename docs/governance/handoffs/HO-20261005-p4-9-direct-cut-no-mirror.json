@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "chatgpt/p4-9-direct-cut-no-mirror",
   "base_commit": "f99b26d1c7c8f9711511c8d42dcea18ba306e0c9",
-  "commit": "a4a2d2bbf1164979f0e7bde8a6427e55c441bdbd",
+  "commit": "0cf938956a65cfb67c1128b4866406795bf8097b",
   "pr": null,
   "files_changed": [
     "ecosystem.json",
@@ -36,7 +36,9 @@
     "docs/governance/addenda/ADD-0017-urbe-corte-direto-sem-espelho.md",
     "docs/governance/decisions.json",
     "docs/adr/0019-releases-diretas-dos-products.md",
-    "docs/governance/handoffs/HO-20261005-p4-9-direct-cut-no-mirror.json"
+    "docs/governance/handoffs/HO-20261005-p4-9-direct-cut-no-mirror.json",
+    "site/generator/GenerateStatus.cs",
+    "tests/consistency/Check.cs"
   ],
   "work_completed": [
     "Persistida DEC-0039/ADD-0017: o proprietário revoga a versão-ponte e abandona AbnerCruz/Urbe como canal ativo, aceitando backup + reinstalação deliberada.",
@@ -45,7 +47,10 @@
     "urbe-cutover.yml foi simplificado para corte direto: cria somente urbe-v<versão> e dispara urbe-release.yml; não existe legacy-bridge.",
     "O primeiro release direto pode ser urbe-v1.8.3-beta.",
     "Android beta direto passa a usar chave de desenvolvimento pública e estável específica do Urbe, versionada no Ecosystem e verificada por hash/certificado no CI.",
-    "Updater Android já usava AbnerCruz/Ecosystem e filtro urbe-v; comentário/CHANGELOG/runbook foram alinhados ao corte sem ponte."
+    "Updater Android já usava AbnerCruz/Ecosystem e filtro urbe-v; comentário/CHANGELOG/runbook foram alinhados ao corte sem ponte.",
+    "Portal/generator deixa de projetar source.repository como repositório/espelho ativo para Product já migrado quando o perfil current não declara esse canal; Urbe passa a apontar código/release/PWA para o Ecosystem sem ressuscitar o legado.",
+    "Self-tests de consistência e projeção de releases foram atualizados para o novo canal direto, incluindo localização ecosystem.repository/publicUrl e ausência de mirror do Urbe.",
+    "Validação de assinatura do APK foi corrigida para usar apksigner (assinaturas APK v2/v3 não são um JAR signature legível por keytool -jarfile)."
   ],
   "verification": [
     {
@@ -71,7 +76,7 @@
       "check": "Consistency + CI Urbe + builds Android/Windows no estado combinado",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Aguardando CI do PR."
+      "evidence": "Primeira rodada encontrou self-tests presos ao canal legado e conferência APK via keytool; ambos foram corrigidos. Aguardando nova rodada do PR head."
     },
     {
       "check": "Migração DEVICE do legado para o primeiro APK direto",
