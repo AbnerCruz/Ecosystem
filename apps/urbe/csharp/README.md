@@ -178,3 +178,5 @@ cujo diff precisa de revisão. A suíte C# também verifica o SHA-256 da fonte e
 A biblioteca tipográfica ainda não foi escolhida (ADR-0025 / UC-4). Este passo
 não implementa renderização KaTeX, macros, diagnósticos LaTeX, export visual ou
 UI/seleção/teclado. UC-16 permanece aberta; UI fica na UC-18.
+
+Investigação UC-16: [renderer C#/SVG e corpus real](../docs/csharp/UC16-RENDERER-INVESTIGATION.md). Execute `node tests/math-renderer-probe.mjs` com .NET 10 e Chromium para reproduzir o experimento isolado; isso não adota suas bibliotecas no produto.

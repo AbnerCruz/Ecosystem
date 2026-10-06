@@ -97,7 +97,8 @@
     "Android SAF e Windows IPC expõem fontes somente leitura por tokens/chunks; domínio portátil sem lógica Android no Core.",
     "Revisão explícita do oráculo REQ-110: histórico preservado e 297 IDs mantidos; três expectativas de capabilities aditivas revistas, sem regenerar goldens Markdown/Visual.",
     "Roteiro DEVICE preparado; não há publicação formal, autorização de integração nem validação humana nova neste registro.",
-    "Conflitos de origem em documentos/assets agora exigem escolha entre versões antes do plano; prévia limitada e cancelamento seguro. ZIPs que são anexos dentro de pasta/vault são preservados em vez de descompactados. Seleção vazia/ação concorrente recebem mensagem clara."
+    "Conflitos de origem em documentos/assets agora exigem escolha entre versões antes do plano; prévia limitada e cancelamento seguro. ZIPs que são anexos dentro de pasta/vault são preservados em vez de descompactados. Seleção vazia/ação concorrente recebem mensagem clara.",
+    "Reconciliação semântica da main a51c3beb com a branch: preservados os registros de importação e investigação UC-16 em AGENTSCHAT, sem sobrescrever DEC-0040 nem trabalho integrado."
   ],
   "verification": [
     {
@@ -146,7 +147,7 @@
       "kind": "automated",
       "check": "CI final por superfície e paridade all",
       "result": "pending",
-      "evidence": "Nova revisão de conflitos de origem e ZIP anexo: 206 Core, 18 grupos de produção, E2E mobile com escolha de versão passaram; nova CI e novos bytes necessários. CI anterior ec4e2b3 permaneceu verde, evidência histórica nas Issues #261/#166."
+      "evidence": "CI anterior c247231 e estado combinado deecfdac passaram em todas as superfícies (run 37500011201). Main avançou com UC-16 e DEC-0040; nova avaliação após reconciliação documental necessária. APK anterior rastreado nas Issues #261/#166, sem aprovação DEVICE."
     }
   ],
   "known_issues": [
