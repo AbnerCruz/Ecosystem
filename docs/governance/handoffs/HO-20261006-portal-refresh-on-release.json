@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-portal-refresh-on-release",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T19:05:45Z",
+  "agent": {
+    "id": "chatgpt-portal-release-refresh",
+    "kind": "ai-agent"
+  },
+  "task_id": "PORTAL-20261006.1",
+  "component": "portal",
+  "state": "review",
+  "branch": "fix/portal-refresh-on-release",
+  "base_commit": "c7bf1ba4cbbe9965674c9dedd2de2e17e706a29a",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/272",
+  "files_changed": [
+    ".github/workflows/pages.yml",
+    "docs/architecture/portal.md",
+    "tests/consistency/Check.cs",
+    "docs/governance/handoffs/HO-20261006-portal-refresh-on-release.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: releases podiam ficar ausentes do Portal até o próximo push na main porque pages.yml não reagia a release.published.",
+    "pages.yml passa a disparar também em release.published, mantendo push na main e workflow_dispatch.",
+    "Eventos de release fazem checkout explícito da branch padrão; source.commit usa o SHA realmente projetado, evitando tratar o commit da tag como SOURCE do Portal.",
+    "CHK-PORTAL passou a exigir o gatilho release.published e o checkout da branch padrão; self-tests cobrem as duas regressões.",
+    "A arquitetura do Portal documenta o comportamento e a separação entre SOURCE canônica e release como fonte de distribuição."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Consistency / CHK-PORTAL",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR no estado combinado."
+    },
+    {
+      "kind": "automated",
+      "check": "pages workflow syntax/build",
+      "result": "pending",
+      "evidence": "Aguardando GitHub Actions do PR e o integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Portal após release futura",
+      "result": "not-applicable",
+      "evidence": "O comportamento é de automação e projeção; a regressão fica coberta por CHK-PORTAL e pelo próximo evento real release.published."
+    }
+  ],
+  "known_issues": [
+    "O PR toca zonas control-plane e será classificado crítico pela política, exigindo autorização canônica do proprietário antes da integração."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar checks automáticos do PR #272.",
+    "Após checks verdes, o integrador aguardará a autorização canônica do proprietário por ser control-plane.",
+    "Depois da integração, um próximo release.published deve regenerar o Portal sem depender de push posterior."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/architecture/portal.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/distribution/current.profile.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O Portal continua projeção; SOURCE permanece a branch padrão e releases continuam sendo lidas da fonte de distribuição declarada."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #271, branch dedicada, handoff e PR tornam causa, arquivos, verificações e próxima ação observáveis."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "O gatilho reage à publicação sem criar releases artificiais nem acoplar versões de Products."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Uma release publicada deixa de poder permanecer invisível no Portal indefinidamente por falta de novo push."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "A correção toca .github/workflows/pages.yml e tests/consistency/Check.cs; a política classifica essas zonas como control-plane e exige autorização do proprietário."
+  },
+  "cost": null
+}

@@ -90,15 +90,18 @@ O portal mostra CI e validação humana em linhas **separadas**. Estados de vali
 Workflow próprio [`.github/workflows/pages.yml`](../../.github/workflows/pages.yml), separado do workflow de consistência:
 
 ```text
-push na branch padrão (ou execução manual)
+push na branch padrão, release publicada (ou execução manual)
+↓ checkout da branch padrão canônica
 ↓ checks de consistência        (falha → não publica; o site anterior continua no ar)
-↓ gera a projeção
+↓ gera a projeção e consulta releases publicadas
 ↓ valida a projeção (CHK-PORTAL)
 ↓ monta o artefato: site/ sem generator/
 ↓ publica no GitHub Pages
 ```
 
 Uma falha de publicação não bloqueia desenvolvimento: o workflow não é pré-requisito de nenhum outro, e os produtos nunca dependem do portal.
+
+A publicação de qualquer GitHub Release do repositório também dispara o workflow. Isso evita que a projeção de downloads fique congelada até o próximo commit na `main`. Em eventos `release.published`, o checkout é explicitamente feito da branch padrão e o campo `source.commit` recebe o SHA realmente projetado; a tag da release é apenas fonte de distribuição consultada pela API, nunca autoridade do código do Portal.
 
 **Pré-requisito do proprietário:** em *Settings → Pages*, definir *Source* = **GitHub Actions**.
 

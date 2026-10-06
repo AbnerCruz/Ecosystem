@@ -1179,6 +1179,19 @@ static class Checks
     {
         const string id = "CHK-PORTAL";
         c.R.Ran(id);
+
+        var pagesWorkflow = c.P(".github/workflows/pages.yml");
+        if (!File.Exists(pagesWorkflow))
+            c.R.Fail(id, ".github/workflows/pages.yml ausente: o Portal não possui publicação verificável");
+        else
+        {
+            var pages = File.ReadAllText(pagesWorkflow);
+            if (!Regex.IsMatch(pages, @"(?m)^  release:\s*$") ||
+                !Regex.IsMatch(pages, @"(?m)^    types:\s*\[published\]\s*$"))
+                c.R.Fail(id, "pages.yml deve republicar o Portal em release.published para não congelar releases na projeção");
+            if (!pages.Contains(@"ref: ${{ github.event.repository.default_branch }}", StringComparison.Ordinal))
+                c.R.Fail(id, "pages.yml deve projetar a branch padrão canônica também quando o evento nasce de uma tag de release");
+        }
         foreach (var (cid, comp) in c.Components().Where(x => x.El.Str("type") == "portal"))
         {
             var path = comp.Str("path");
@@ -2730,6 +2743,10 @@ static class SelfTest
         new("dependência de um componente no portal", "CHK-BOUNDARIES",
             r => Replace(r, "ecosystem.json", "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"dependencies\": []",
                 "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"dependencies\": [{ \"component\": \"portal\", \"kind\": \"optional\", \"reason\": \"x\" }]")),
+        new("portal sem gatilho release.published", "CHK-PORTAL",
+            r => Replace(r, ".github/workflows/pages.yml", "  release:\n    types: [published]\n", "")),
+        new("portal projeta tag em vez da branch canônica", "CHK-PORTAL",
+            r => Replace(r, ".github/workflows/pages.yml", "          ref: ${{ github.event.repository.default_branch }}", "          ref: ${{ github.ref }}")),
         new("versão escrita à mão no portal", "CHK-PORTAL",
             r => File.AppendAllText(Path.Combine(r, "site", "app.js"), "\nconst lunetVersion = \"0.4.2\";\n")),
         new("projeção divergente de ecosystem.json", "CHK-PORTAL",
