@@ -1,0 +1,12 @@
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using CSharpMath.VectSharp
+@using VectSharp.SVG
+<div id="formula">@((MarkupString)svg)</div>
+<button id="render" @onclick="Render">Render offline</button>
+<p id="status">@status</p>
+@code {
+  string svg="",status="starting";int count;
+  protected override void OnInitialized()=>Render();
+  void Render(){try{var painter=new MathPainter{LaTeX=count++==0?@"\frac{-b\pm\sqrt{b^2-4ac}}{2a}":@"\int_0^1 x^2\,dx=\frac{1}{3}"};if(painter.ErrorMessage is not null)throw new Exception(painter.ErrorMessage);using var stream=new MemoryStream();painter.DrawToPage().SaveAsSVG(stream,SVGContextInterpreter.TextOptions.ConvertIntoPaths);svg=System.Text.Encoding.UTF8.GetString(stream.ToArray());status="rendered:"+count;}catch(Exception e){status="error:"+e.ToString();}}
+}

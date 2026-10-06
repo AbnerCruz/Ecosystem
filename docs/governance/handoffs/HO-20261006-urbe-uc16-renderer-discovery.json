@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc16-renderer-discovery",
+  "category": "RESULT",
+  "timestamp": "2026-10-06T16:33:39.959267Z",
+  "agent": {
+    "id": "codex-urbe-import",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-16",
+  "component": "urbe",
+  "state": "review",
+  "branch": "docs/urbe-uc16-renderer-discovery",
+  "base_commit": "0ad2d983cecd3fccbb5ec1f29939167068888d87",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/csharp/tests/math-renderer-probe.mjs",
+    "apps/urbe/csharp/tests/probes/math-renderer/App.razor",
+    "apps/urbe/csharp/tests/probes/math-renderer/Console.cs",
+    "apps/urbe/csharp/tests/probes/math-renderer/WebProgram.cs",
+    "apps/urbe/csharp/tests/probes/math-renderer/index.html",
+    "apps/urbe/docs/csharp/UC16-RENDERER-INVESTIGATION.md",
+    "apps/urbe/docs/csharp/math-renderer-observations.json",
+    "docs/governance/handoffs/HO-20261006-urbe-uc16-renderer-discovery.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Investigação/probe temporário, não adoção: nenhum pacote em Core/UI/Web/MAUI, nenhuma mudança de licença, IO de vault, host de produto ou decisão consolidada. Adoção estrutural terá ADR e PR crítico próprios."
+  },
+  "work_completed": [
+    "Probe executa renderer C# real e export SVG em diretório temporário, com seis versões NuGet fixadas e sem adicionar referências ao produto.",
+    "Corpus de 172 snippets + sete entradas + 31 fórmulas reais de duas notas do tutorial, fontes/hashes registrados; relatório descritivo preserva incompatibilidades.",
+    "Blazor WASM publicado e Chromium real renderizaram outra fórmula com rede desligada; framework da pilha aceita, nenhum KaTeX interop.",
+    "Licenças preliminares verificadas no grafo/nuspec e fontes upstream: MIT, LGPL-3.0-only, GUST/OFL. A biblioteca principal MIT não determina a licença de todo o conjunto."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Renderer .NET real/corpus",
+      "result": "passed",
+      "evidence": "210 entradas: 196 SVG renderizados, 14 diagnósticos, nenhuma exceção. Catálogo: 163/172 renderizados; tutorial: 30/31. Rejeições são lacunas, não paridade aprovada."
+    },
+    {
+      "kind": "automated",
+      "check": "Renderer WASM/offline",
+      "result": "passed",
+      "evidence": "Publicação Release temporária e Chromium real: rendered:1 antes da rede desligada, rendered:2 após clique com contexto offline; SVG sem texto/font externa e sem pageerror. Não equivale a cold start PWA ou DEVICE."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency local",
+      "result": "passed",
+      "evidence": "22/22 checks de consistência; CI do PR será registrado separadamente."
+    }
+  ],
+  "known_issues": [
+    "Comandos dfrac, boldsymbol, lVert/rVert, overset, underset, boxed, cancel e macros newcommand/def não suportados no pacote testado.",
+    "Android/Windows instalados, paridade visual, acessibilidade e auditoria completa de redistribuição ainda não executados.",
+    "UC-16 e G-C2 continuam abertos; nenhum gate humano fabricado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Escolher backend C# por ADR e revisão crítica de dependência/licenças antes de adoção.",
+    "Resolver comandos/macros e diagnóstico limitado/seguro; preservar TeX fonte e ampliar corpus visual real.",
+    "Continuar respeitando dependências UC-15/G-C2; não iniciar M3."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/DEPENDENCIES.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Prova automatizada e compatibilidade parcial separadas de DEVICE/adoção/fechamento."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #257, ferramenta, relatório, documento e handoff rastreáveis."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Issues/PRs vivos e arquitetura aceita consultados antes da investigação."
+    }
+  ]
+}
