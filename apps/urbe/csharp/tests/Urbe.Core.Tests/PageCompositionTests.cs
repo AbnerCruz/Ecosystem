@@ -68,7 +68,80 @@ public sealed class PageModelTests
         Assert.Null(page.Version);
 
         var output = page.SerializeForWrite();
-        Assert.DoesNotContain(""version"", output, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"version\"", output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SemanticRendererUsesMarkdownAndDocumentsWithoutDomOrJavascript()
+    {
+        var documents = new DocumentStore();
+        documents.ReplaceAll(
+        [
+            new DocumentInput
+            {
+                Id = "doc_a",
+                Path = "Guia/Alfa.md",
+                Content = "# Alfa\n\nTexto **forte**.",
+                Tags = ["guia"],
+                Modified = "2026-10-06"
+            },
+            new DocumentInput
+            {
+                Id = "doc_b",
+                Path = "Guia/Beta.md",
+                Content = "# Beta\n\nOutro texto.",
+                Tags = ["guia"],
+                Modified = "2026-10-05"
+            }
+        ]);
+
+        var page = PageDocument.Parse(
+            """
+            {
+              "version":1,
+              "kind":"urbe-page",
+              "meta":{"title":"Manual","lang":"pt-BR"},
+              "sections":[
+                {"id":"h","type":"hero","props":{"title":"Olá","subtitle":"**Urbe**"}},
+                {"id":"t","type":"text","props":{"title":"Introdução","markdown":"Veja **isto**."}},
+                {"id":"n","type":"note","props":{"path":"Guia/Alfa.md","showTitle":true}},
+                {"id":"c","type":"notes","props":{"source":"tag","tag":"guia","sort":"title","expand":true}}
+              ]
+            }
+            """);
+
+        var html = PageRenderer.Render(page, documents);
+
+        Assert.StartsWith("<!doctype html>", html, StringComparison.Ordinal);
+        Assert.Contains("<title>Manual</title>", html, StringComparison.Ordinal);
+        Assert.Contains("<h1>Olá</h1>", html, StringComparison.Ordinal);
+        Assert.Contains("<strong>Urbe</strong>", html, StringComparison.Ordinal);
+        Assert.Contains("<h2>Introdução</h2>", html, StringComparison.Ordinal);
+        Assert.Contains("<strong>isto</strong>", html, StringComparison.Ordinal);
+        Assert.Contains("<h1 class=\"note-title\">Alfa</h1>", html, StringComparison.Ordinal);
+        Assert.Contains("Texto <strong>forte</strong>.", html, StringComparison.Ordinal);
+        Assert.Contains("<h3>Beta</h3>", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void HiddenSectionsAndUnsafeImageUrlsDoNotLeakActiveContent()
+    {
+        var page = PageDocument.Parse(
+            """
+            {
+              "version":1,
+              "sections":[
+                {"type":"text","props":{"markdown":"segredo"},"style":{"hidden":true}},
+                {"type":"image","props":{"src":"javascript:alert(1)","alt":"x"}}
+              ]
+            }
+            """);
+
+        var html = PageRenderer.RenderBody(page);
+
+        Assert.DoesNotContain("segredo", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("javascript:", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Escolha uma imagem", html, StringComparison.Ordinal);
     }
 }
 
@@ -180,7 +253,7 @@ public sealed class CompositionPageConverterTests
             Assert.Single(file.Items),
             documents);
 
-        Assert.Equal(["doc_missing"], conversion.MissingDocumentIds);
+        Assert.Equal(new[] { "doc_missing" }, conversion.MissingDocumentIds);
         Assert.Equal(string.Empty,
             conversion.Page.Raw["sections"]!.AsArray()[0]!["props"]!["path"]!.GetValue<string>());
         Assert.Equal(
@@ -213,8 +286,22 @@ public sealed class CompositionPageConverterTests
         Assert.Equal(before, item.Raw.ToJsonString());
     }
 
+    [Theory]
+    [InlineData("""{"version":3,"items":[{"id":"cmp_futuro"}]}""", CompositionFileState.Future)]
+    [InlineData("""{"version":"1","items":[]}""", CompositionFileState.Corrupt)]
+    [InlineData("""[]""", CompositionFileState.Corrupt)]
+    public void FutureAndCorruptCompositionFilesAreReadOnly(
+        string json,
+        CompositionFileState expected)
+    {
+        var file = CompositionFile.Parse(json);
+
+        Assert.Equal(expected, file.State);
+        Assert.True(file.IsReadOnly);
+    }
+
     [Fact]
-    public void FutureCompositionFileIsReadOnlyAndPreserved()
+    public void FutureCompositionFixtureIsPreserved()
     {
         var json = File.ReadAllText(
             Path.Combine(

@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Urbe.Core;
@@ -51,7 +50,7 @@ public sealed class CompositionFile
                 ? Parse(root)
                 : Corrupt();
         }
-        catch (JsonException)
+        catch (System.Text.Json.JsonException)
         {
             return Corrupt();
         }
@@ -63,18 +62,21 @@ public sealed class CompositionFile
     public static CompositionFile Parse(JsonObject root)
     {
         ArgumentNullException.ThrowIfNull(root);
-        var version = PageDocument.IntValue(root["version"]);
-        var state = version switch
-        {
-            > CurrentVersion => CompositionFileState.Future,
-            <= 0 => CompositionFileState.Corrupt,
-            _ => CompositionFileState.Current
-        };
 
-        if (root["version"] is null)
-            state = CompositionFileState.Current;
+        var versionNode = root["version"];
+        if (versionNode is null)
+            return new CompositionFile(CompositionFileState.Current, null, root);
 
-        return new CompositionFile(state, version, root);
+        var version = PageDocument.IntValue(versionNode);
+        if (version is null || version <= 0)
+            return new CompositionFile(CompositionFileState.Corrupt, version, root);
+
+        return new CompositionFile(
+            version > CurrentVersion
+                ? CompositionFileState.Future
+                : CompositionFileState.Current,
+            version,
+            root);
     }
 
     private static CompositionFile Corrupt() =>
@@ -165,21 +167,19 @@ public static class CompositionPageConverter
                 });
         }
 
-        var legacy = composition.Raw;
         var meta = new JsonObject
         {
             ["title"] = composition.Name,
             ["lang"] = "pt-BR",
-            ["legacyComposition"] = legacy
+            ["legacyComposition"] = composition.Raw
         };
 
         var theme = new JsonObject();
         if (composition.CustomCss.Length > 0)
             theme["css"] = composition.CustomCss;
 
-        // Keep original theme/style data losslessly. Current page fields do not
-        // express every composition override, so claiming a lossy mapping would
-        // violate ADR-0009.
+        // Current page fields do not express every composition override. Keep
+        // every legacy field losslessly instead of inventing a lossy mapping.
         theme["legacyCompositionTheme"] = composition.Theme;
         theme["legacyCompositionStyles"] = composition.Styles;
         theme["legacyCompositionOverrides"] = composition.Overrides;

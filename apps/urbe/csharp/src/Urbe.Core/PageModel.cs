@@ -71,19 +71,20 @@ public sealed class PageDocument
     {
         ArgumentNullException.ThrowIfNull(root);
 
-        var version = IntValue(root["version"]);
-        var state = version switch
-        {
-            > CurrentVersion => PageDocumentState.Future,
-            <= 0 => PageDocumentState.Corrupt,
-            _ => PageDocumentState.Current
-        };
+        var versionNode = root["version"];
+        if (versionNode is null)
+            return new PageDocument(PageDocumentState.Current, null, root);
 
-        // Pages written before the explicit version existed remain readable.
-        if (root["version"] is null)
-            state = PageDocumentState.Current;
+        var version = IntValue(versionNode);
+        if (version is null || version <= 0)
+            return new PageDocument(PageDocumentState.Corrupt, version, root);
 
-        return new PageDocument(state, version, root);
+        return new PageDocument(
+            version > CurrentVersion
+                ? PageDocumentState.Future
+                : PageDocumentState.Current,
+            version,
+            root);
     }
 
     public JsonObject ForWrite()
@@ -137,6 +138,13 @@ public sealed class PageDocument
             longNumber is >= int.MinValue and <= int.MaxValue)
             return (int)longNumber;
         return null;
+    }
+
+    internal static bool BoolValue(JsonNode? node, bool fallback = false)
+    {
+        if (node is not JsonValue value)
+            return fallback;
+        return value.TryGetValue<bool>(out var result) ? result : fallback;
     }
 }
 
