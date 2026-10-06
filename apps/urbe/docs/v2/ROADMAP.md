@@ -1993,3 +1993,16 @@ Ordem entre fases: F0 → F1 → F2; F3 pode iniciar após F0 nos itens sem depe
 - **Documentação:** FEEDBACK-BETA.md; CHANGELOG.
 - **Aceite:** Nenhum OBS sem cobertura.
 - **Gate:** G7
+
+### RM-F7-29 — Importação única e recuperação Android/P4-9
+- **Estado:** [~]
+- **REQ:** REQ-110, REQ-007, REQ-035, REQ-038, REQ-044
+- **SPEC:** §16
+- **Fase:** F7
+- **Depende:** RM-F1-07, RM-F1-18
+- **Implementação:** Correção crítica 1.x na Issue #261: inspeção e plano portátil, seleção nativa Arquivos/Pasta inteira, restauração íntegra e incorporação idempotente, rollback/recovery.
+- **Testes:** ZIP válido/inválido; atual/histórico/futuro; Markdown/assets/Unicode; duplicata/conflito; stream não seekable; cancelamento/IO; reimportação/reabertura; vault preservado.
+- **Aceite:** CI e checks verdes; candidato Android publicado com hash; DEVICE humano de seleção múltipla, Usar esta pasta, edição, reabertura, offline/standalone.
+- **Integração:** Persistência/Core/hosts; PR crítico pelo integrador. P4-9 aberto até novo DEVICE; sem corte C# ou M3.
+- **Documentação:** SPEC §16, contrato native e import, DATA-CATALOG e roteiro DEVICE.
+- **Gate:** G7

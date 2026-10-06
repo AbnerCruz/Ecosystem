@@ -9,6 +9,8 @@ const fsp=require('fs/promises');
 const {pathToFileURL}=require('url');
 const {createVaultFS}=require('./vault-fs');
 const G=require('./guards');
+const {createImportSources}=require('./import-source');
+let importSources;
 
 const APP_DIR=path.resolve(__dirname,'..','..');
 const ORIGIN=G.ORIGIN;
@@ -74,6 +76,10 @@ function serveApp(){
 /* ---------------- ponte com a página ---------------- */
 function ipc(){
   const h=(name,fn)=>ipcMain.handle(name,(e,...a)=>{if(!G.isTrustedSender(e))throw new Error('Origem não autorizada');return fn(...a)});
+  importSources=createImportSources(path.join(app.getPath('temp'),'urbe-import'));
+  h('import:pick',async kind=>{if(kind!=='files'&&kind!=='folder')throw Error('Seleção inválida.');const result=await dialog.showOpenDialog(win,{title:kind==='folder'?'Importar pasta inteira':'Importar arquivos',properties:kind==='folder'?['openDirectory']:['openFile','multiSelections']});if(result.canceled)return{canceled:true};return importSources.pick(result.filePaths,kind==='folder')});
+  h('import:read',(token,id,offset)=>importSources.read(token,id,offset));
+  h('import:release',token=>importSources.release(token));
   h('fs:stat',rel=>vault.stat(rel));
   h('fs:list',rel=>vault.list(rel));
   h('fs:readBytes',rel=>vault.readBytes(rel));
@@ -172,7 +178,7 @@ else{
     const ds=session.defaultSession;
     ds.setPermissionRequestHandler((_wc,perm,cb,d)=>cb(G.isPermissionAllowed(perm,d&&d.requestingUrl,d&&d.isMainFrame)));
     if(ds.setPermissionCheckHandler)ds.setPermissionCheckHandler((_wc,perm,origin,d)=>G.isPermissionAllowed(perm,(d&&d.requestingUrl)||origin,d&&d.isMainFrame));
-    await loadConfig();serveApp();ipc();createWindow();setupUpdater();watchVault();
+    await loadConfig();serveApp();ipc();if(!isTest)await importSources.initialize().catch(()=>{});createWindow();setupUpdater();watchVault();
   });
   app.on('window-all-closed',()=>app.quit());
 }

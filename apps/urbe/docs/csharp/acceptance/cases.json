@@ -5663,7 +5663,8 @@
               "print",
               "update",
               "back",
-              "storageStatus"
+              "storageStatus",
+              "importSelection"
             ],
             "api": []
           }
@@ -5699,7 +5700,8 @@
               "openExternal",
               "saveFile",
               "print",
-              "update"
+              "update",
+              "importSelection"
             ],
             "unsupported": [
               "back",
@@ -5711,7 +5713,8 @@
               "openExternal",
               "saveFile",
               "print",
-              "update"
+              "update",
+              "importSelection"
             ]
           }
         ]
@@ -5748,7 +5751,8 @@
               "print",
               "update",
               "back",
-              "storageStatus"
+              "storageStatus",
+              "importSelection"
             ],
             "unsupported": [],
             "api": [
@@ -5759,7 +5763,8 @@
               "print",
               "update",
               "back",
-              "storageStatus"
+              "storageStatus",
+              "importSelection"
             ]
           }
         ]

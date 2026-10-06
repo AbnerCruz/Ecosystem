@@ -41,6 +41,12 @@ async function suite(adapter, opts) {
     eq(await adapter.readBlob(vault, 'Anexos/ausente.bin'), null);
     ok((await adapter.list(vault)).includes('Anexos/x.bin'));
   });
+  await t('texto gravado como Blob continua legível como UTF-8', async () => {
+    const content = 'coração 🙂 — conteúdo preservado';
+    await adapter.writeBlob(vault, 'Pasta/blob.md', new Blob([content]));
+    eq(await adapter.read(vault, 'Pasta/blob.md'), content);
+    eq(await bytes(await adapter.readBlob(vault, 'Pasta/blob.md')), Array.from(new TextEncoder().encode(content)));
+  });
   await t('remove: apaga; ausente não falha; o resto permanece', async () => {
     await adapter.remove(vault, 'a.md');
     eq(await adapter.read(vault, 'a.md'), null);

@@ -10,11 +10,12 @@ let failed=0;async function test(name,fn){try{await fn();console.log('OK  ',name
 function ok(v,m){if(!v)throw new Error(m||'falhou')}
 async function rejects(p,m){try{await(typeof p==='function'?p():p)}catch(e){return e}throw new Error('deveria falhar: '+m)}
 const enc=s=>new TextEncoder().encode(s),dec=b=>new TextDecoder().decode(b);
-const UNIVERSE=['fs','vault','openExternal','saveFile','print','update','back','storageStatus'];
+const UNIVERSE=['fs','vault','openExternal','saveFile','print','update','back','storageStatus','importSelection'];
 const read=f=>fs.readFileSync(path.join(ROOT,f),'utf8');
 
 /* A API que cada capacidade exige do objeto UrbeNative (usada para conferir declaradas e ausentes) */
 const HAS={
+  importSelection:N=>!!(N&&N.importSelection&&['pick','readChunk','release'].every(m=>typeof N.importSelection[m]==='function')),
   fs:N=>!!(N&&N.fs&&['stat','list','readBytes','writeBytes','mkdir','remove'].every(k=>typeof N.fs[k]==='function')),
   vault:N=>!!(N&&typeof N.vault==='function'),
   openExternal:N=>!!(N&&typeof N.openExternal==='function'),
@@ -108,7 +109,7 @@ async function electronAdapter(){
   loadDesktop('preload.js',electron,S);
   const N=S.exposed.api,win=bridgeWin(N);
   let dest=null;
-  return{name:'electron',N,contract:N.contract,expect:['fs','vault','openExternal','saveFile','print','update'],win,canCancel:true,
+  return{name:'electron',N,contract:N.contract,expect:['fs','vault','openExternal','saveFile','print','update','importSelection'],win,canCancel:true,
     opened:()=>m.S.opened,
     leaked:()=>fs.existsSync(path.join(tmp,'fora.md'))||fs.existsSync(path.join(vault,'..','fora.md'))||fs.existsSync('/tmp/urbe-conformance-abs.txt'),
     prepSave(name,cancel){dest=path.join(tmp,'salvo-'+Math.random().toString(36).slice(2)+'-'+name);m.S.saveResults.push(cancel?{canceled:true}:{canceled:false,filePath:dest});const d=dest;return()=>fs.existsSync(d)?fs.readFileSync(d):null},
@@ -190,7 +191,7 @@ await test('conformidade — web (sem UrbeNative): nada declarado, tudo ausente'
 await test('ponte: contrato derivado quando a casca não declara (compatibilidade com app antigo)',()=>{
   const N={shell:'electron',fs:{stat(){},list(){},readBytes(){},writeBytes(){},mkdir(){},remove(){}},vault(){},openExternal(){},update:{check(){},onStatus(){}}};
   const c=bridgeWin(N).UrbeNativeContract;
-  ok(c.version===1&&c.capabilities.join()==='fs,vault,openExternal,update'&&c.unsupported.join()==='saveFile,print,back,storageStatus','derivado do formato: '+JSON.stringify(c));
+  ok(c.version===1&&c.capabilities.join()==='fs,vault,openExternal,update'&&c.unsupported.join()==='saveFile,print,back,storageStatus,importSelection','derivado do formato: '+JSON.stringify(c));
 });
 await test('contrato: preload.js e bridge.js declaram a mesma lista de capacidades do documento',()=>{
   const doc=read('docs/v2/contracts/native.md');

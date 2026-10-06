@@ -113,7 +113,8 @@
           "UrbeNative",
           "UrbeNativeContract",
           "UrbeNativeFS",
-          "UrbeNativeToast"
+          "UrbeNativeToast",
+          "UrbeImportSources"
         ],
         "services": []
       },
@@ -397,7 +398,9 @@
         "services": []
       },
       "requires": [],
-      "uses": [],
+      "uses": [
+        "src/persistence/import.js"
+      ],
       "platforms": [
         "web",
         "electron",
@@ -447,7 +450,9 @@
         "src/composition/store.js",
         "src/persistence/identity.js"
       ],
-      "uses": [],
+      "uses": [
+        "src/persistence/import.js"
+      ],
       "platforms": [
         "web",
         "electron",
@@ -493,6 +498,28 @@
         "services": []
       },
       "requires": [],
+      "uses": [],
+      "platforms": [
+        "web",
+        "electron",
+        "android"
+      ]
+    },
+    {
+      "name": "persistence/import",
+      "file": "src/persistence/import.js",
+      "layer": "persistence",
+      "phase": "core",
+      "provides": {
+        "globals": [
+          "UrbeImport"
+        ],
+        "services": []
+      },
+      "requires": [
+        "src/core/artifacts.js",
+        "src/persistence/export-manifest.js"
+      ],
       "uses": [],
       "platforms": [
         "web",
@@ -1518,7 +1545,8 @@
         "src/persistence/export-manifest.js",
         "src/persistence/multi-city.js",
         "src/editor/markdown.js",
-        "src/editor/visual.js"
+        "src/editor/visual.js",
+        "src/persistence/import.js"
       ],
       "uses": [
         "src/pages/studio.js",

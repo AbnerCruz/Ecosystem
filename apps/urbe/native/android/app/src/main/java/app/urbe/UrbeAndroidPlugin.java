@@ -1,6 +1,17 @@
 package app.urbe;
 
 import android.Manifest;
+import android.app.Activity;
+import android.content.ClipData;
+import androidx.activity.result.ActivityResult;
+import com.getcapacitor.annotation.ActivityCallback;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.UUID;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import android.content.UriPermission;
+import org.json.JSONArray;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -50,6 +61,91 @@ public class UrbeAndroidPlugin extends Plugin {
     private static final String PRINT_BASE_URL = "https://print.urbe.invalid/";
 
     private WebView printView; // mantém a página viva enquanto o Android imprime
+
+    private static final Set<String> importSessions = ConcurrentHashMap.newKeySet();
+    @Override public void load() {
+        File staging = new File(getContext().getCacheDir(), "urbe-import"); File[] sessions = staging.listFiles();
+        if (sessions == null) return;
+        for (File session : sessions) if (!importSessions.contains(session.getName())) {
+            File grants = new File(session, "grants.json");
+            try (FileInputStream stream = new FileInputStream(grants)) {
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream(); ImportDocuments.copy(stream, buffer, 65536, 65536);
+                JSONArray uris = new JSONArray(new String(buffer.toByteArray(), StandardCharsets.UTF_8));
+                for (int i = 0; i < uris.length(); i++) try { getContext().getContentResolver().releasePersistableUriPermission(Uri.parse(uris.getString(i)), Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (SecurityException ignored) {}
+            } catch (Exception ignored) {}
+            ImportDocuments.delete(session);
+        }
+    }
+
+    /** Distinct native pickers; no attempt to make the document picker select directories. */
+    @PluginMethod
+    public void pickImport(PluginCall call) {
+        String kind = call.getString("kind", "");
+        if (!kind.equals("folder") && !kind.equals("files")) { call.reject("Escolha Arquivos ou Pasta inteira."); return; }
+        boolean folder = kind.equals("folder");
+        Intent intent = new Intent(folder ? Intent.ACTION_OPEN_DOCUMENT_TREE : Intent.ACTION_OPEN_DOCUMENT);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+        if (!folder) { intent.addCategory(Intent.CATEGORY_OPENABLE); intent.setType("*/*"); intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true); }
+        startActivityForResult(call, intent, "importSelected");
+    }
+
+    @ActivityCallback
+    private void importSelected(PluginCall call, ActivityResult result) {
+        if (call == null) return; // Process recreation: no vault data was touched by selection.
+        Intent data = result.getData();
+        if (result.getResultCode() != Activity.RESULT_OK || data == null) {
+            JSObject canceled = new JSObject(); canceled.put("canceled", true); call.resolve(canceled); return;
+        }
+        ArrayList<Uri> uris = new ArrayList<>();
+        ClipData clip = data.getClipData();
+        if (clip != null) for (int i = 0; i < clip.getItemCount(); i++) uris.add(clip.getItemAt(i).getUri());
+        else if (data.getData() != null) uris.add(data.getData());
+        int flags = data.getFlags();
+        boolean folder = "folder".equals(call.getString("kind"));
+        getBridge().execute(() -> {
+            String token = UUID.randomUUID().toString(); File staging = new File(getContext().getCacheDir(), "urbe-import/" + token);
+            ArrayList<Uri> retained = new ArrayList<>();
+            try {
+                if (uris.isEmpty()) throw new java.io.IOException("Nenhum documento foi selecionado.");
+                ImportDocuments input = new ImportDocuments(getContext().getContentResolver(), staging);
+                importSessions.add(token);
+                for (Uri uri : uris) {
+                    boolean alreadyHeld = false;
+                    for (UriPermission grant : getContext().getContentResolver().getPersistedUriPermissions()) if (grant.getUri().equals(uri) && grant.isReadPermission()) alreadyHeld = true;
+                    if (!alreadyHeld && (flags & Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION) != 0) try {
+                        retained.add(uri); JSONArray grants = new JSONArray(); for (Uri held : retained) grants.put(held.toString());
+                        try (FileOutputStream out = new FileOutputStream(new File(staging, "grants.json"))) { out.write(grants.toString().getBytes(StandardCharsets.UTF_8)); out.getFD().sync(); }
+                        getContext().getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    } catch (SecurityException ignored) { /* Some providers supply a temporary stream grant only. */ }
+                    if (folder) input.tree(uri); else input.document(uri);
+                }
+                JSObject response = new JSObject(); response.put("token", token); response.put("files", input.files()); response.put("canceled", false); call.resolve(response);
+            } catch (Exception e) { importSessions.remove(token); ImportDocuments.delete(staging); call.reject(e instanceof SecurityException ? "Sem acesso aos documentos. Selecione-os novamente." : "Não foi possível ler a seleção. Confira o acesso à pasta e o espaço disponível. " + (e.getMessage() != null && !e.getMessage().contains("content:") && !e.getMessage().contains("/data/") ? e.getMessage() : "")); }
+            finally { for (Uri uri : retained) try { getContext().getContentResolver().releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (SecurityException ignored) {} }
+        });
+    }
+
+    private File importSession(PluginCall call) {
+        String token = call.getString("token", "");
+        if (!token.matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) throw new IllegalArgumentException("Seleção inválida.");
+        return new File(getContext().getCacheDir(), "urbe-import/" + token);
+    }
+    @PluginMethod
+    public void readImportChunk(PluginCall call) {
+        try {
+            File root = importSession(call); String id = call.getString("id", ""); long offset = call.getLong("offset", 0L);
+            if (!id.matches("[1-9][0-9]{0,4}") || offset < 0) throw new IllegalArgumentException("Arquivo selecionado inválido.");
+            try (RandomAccessFile file = new RandomAccessFile(new File(root, id), "r")) {
+                if (offset > file.length()) throw new IllegalArgumentException("Leitura inválida.");
+                file.seek(offset); byte[] bytes = new byte[(int)Math.min(65536, file.length() - offset)]; file.readFully(bytes);
+                JSObject response = new JSObject(); response.put("data", Base64.encodeToString(bytes, Base64.NO_WRAP)); response.put("done", file.getFilePointer() == file.length()); call.resolve(response);
+            }
+        } catch (Exception e) { call.reject("Não foi possível ler o arquivo selecionado: " + e.getMessage()); }
+    }
+    @PluginMethod
+    public void releaseImport(PluginCall call) {
+        try { File selected = importSession(call); importSessions.remove(selected.getName()); ImportDocuments.delete(selected); call.resolve(); } catch (Exception e) { call.reject(e.getMessage()); }
+    }
 
     @PluginMethod
     public void getInfo(PluginCall call) {

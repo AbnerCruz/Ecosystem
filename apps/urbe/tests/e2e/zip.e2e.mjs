@@ -41,14 +41,20 @@ try {
   // importar o ZIP pelo Explorer num app novo (bug 1.8.2: não descompactava) e conferir por hash
   const importar = async (h, path) => {
     await h.page.evaluate(() => { delete window.showDirectoryPicker; delete window.showOpenFilePicker; });
-    const [chooser] = await Promise.all([h.page.waitForEvent('filechooser'), h.page.evaluate(() => { UrbeCore.service('legacy.runtime').importFiles(null); })]);
+    await h.page.evaluate(() => { UrbeCore.service('legacy.runtime').importFiles(null); });
+    await h.page.locator('#explorerSheetActions').getByRole('button', { name: /^Arquivos/ }).waitFor();
+    const [chooser] = await Promise.all([h.page.waitForEvent('filechooser'), h.page.locator('#explorerSheetActions').getByRole('button', { name: /^Arquivos/ }).click()]);
     await chooser.setFiles(path);
   };
   const b = await app.newPage();
   await openApp(b, { docs: 1 });
   await importar(b, file);
-  await b.page.waitForSelector('.udlg [data-primary]'); // "Preferências do export": aplicar
-  assert.match(await b.page.textContent('.udlg-msg'), /preferências/);
+  await b.page.waitForSelector('.udlg [data-primary]');
+  assert.match(await b.page.textContent('.udlg-msg'), /restaurado com suas notas e metadados/);
+  await b.page.click('.udlg [data-primary]');
+  await b.page.waitForFunction(() => document.querySelector('.udlg-msg')?.textContent.includes('substituirá'));
+  await b.page.click('.udlg [data-primary]');
+  await b.page.waitForFunction(() => document.querySelector('.udlg-msg')?.textContent.includes('preferências deste backup'));
   await b.page.click('.udlg [data-primary]');
   await b.page.waitForFunction((n) => UrbeCore.service('documents').list().filter((d) => d.path.endsWith('.md') && !d.path.startsWith('Tutorial/')).length >= n, seed.notes, { timeout: 30000 });
   await waitSaved(b.page);
@@ -57,6 +63,11 @@ try {
   const byName = new Map(imported.map(([p, c]) => [p.split('/').pop(), c]));
   const zipped = await b.page.evaluate(async (bytes) => { const z = await JSZip.loadAsync(new Uint8Array(bytes)), out = {}; for (const n of Object.keys(z.files)) if (n.endsWith('.md') && !n.startsWith('.')) out[n.split('/').pop()] = await z.file(n).async('string'); return out; }, [...readFileSync(file)]);
   for (const [n, c] of Object.entries(zipped)) assert.equal(byName.get(n), c, 'conteúdo importado = exportado: ' + n);
+  const originalIds = await a.page.evaluate(() => UrbeCore.service('documents').list().map(d => [d.path, d.id]));
+  const importedIds = new Map(await b.page.evaluate(() => UrbeCore.service('documents').list().map(d => [d.path, d.id])));
+  for (const [p, id] of originalIds) assert.equal(importedIds.get(p), id, 'identidade restaurada: ' + p);
+  await b.page.reload(); await b.page.waitForFunction(n => UrbeCore.service('documents').list().length >= n, seed.notes);
+  for (const [p, id] of originalIds) assert.equal(await b.page.evaluate(p => UrbeCore.service('documents').get(p)?.id, p), id, 'identidade após reabrir: ' + p);
   assert.equal(await b.page.evaluate(() => localStorage.getItem('urbe.tip.teste')), '1', 'preferência aplicada');
   assert.equal(await b.page.evaluate(() => localStorage.getItem('urbe.ai.apiKey')), null);
   assert.deepEqual(b.errors, [], 'sem erros: ' + b.errors.join(' | '));
@@ -70,8 +81,8 @@ try {
   const before = await c.page.evaluate(() => UrbeCore.service('documents').list().length);
   await importar(c, tampered);
   await c.page.waitForSelector('.udlg [data-primary]');
-  assert.match(await c.page.textContent('.udlg-msg'), /não batem com o manifesto/);
-  await c.page.click('.udlg [data-cancel].ui-btn');
+  assert.match(await c.page.textContent('.udlg-msg'), /não conferem/);
+  await c.page.click('.udlg [data-primary]');
   await c.page.waitForTimeout(500);
   assert.equal(await c.page.evaluate(() => UrbeCore.service('documents').list().length), before, 'cancelar não importa nada');
   // manifesto de versão mais nova: recusa (política DATA-CATALOG §9) sem importar nada
@@ -79,7 +90,7 @@ try {
   writeFileSync(future, Buffer.from(await a.page.evaluate(async () => { const z = new JSZip(); z.file('Nota futura.md', '# x\n'); z.file('urbe-export.json', JSON.stringify({ format: 'urbe-export', formatVersion: 9, files: [] })); return [...await z.generateAsync({ type: 'uint8array' })]; })));
   await importar(c, future);
   await c.page.waitForSelector('.udlg [data-primary]');
-  assert.match(await c.page.textContent('.udlg-msg'), /versão mais nova/);
+  assert.match(await c.page.textContent('.udlg-msg'), /versão mais recente/);
   await c.page.click('.udlg [data-primary]'); await c.page.waitForTimeout(300);
   assert.equal(await c.page.evaluate(() => UrbeCore.service('documents').list().some((d) => d.path.endsWith('Nota futura.md'))), false, 'nada importado');
   assert.deepEqual(c.errors, [], 'sem erros: ' + c.errors.join(' | '));

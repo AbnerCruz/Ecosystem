@@ -8,7 +8,7 @@
   "sources": [
     {
       "path": "docs/v2/discovery/DATA-CATALOG.md",
-      "sha256": "ca5b05bc528b55831666662452bc4762933dd4e59a1e986eeec4d973d2a6b213"
+      "sha256": "a951974ecc8d2a4b681e12a49d5561c1dd8e6fd2f08adaaed8f64ec99beb25cc"
     },
     {
       "path": "docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
@@ -16,7 +16,7 @@
     },
     {
       "path": "src/persistence/workspace.js",
-      "sha256": "7d62435d3e619bc6fef8b19ad258cd0aaa9d7a0f58de8f66b6500371a63df051"
+      "sha256": "d7012f959d20ec22e6a28ce66478d4969b14296b369c3bddcedd6d94f74b46a5"
     },
     {
       "path": "src/persistence/vault-meta.js",
@@ -24,7 +24,7 @@
     },
     {
       "path": "src/persistence/backup.js",
-      "sha256": "2baff74796729e0d366df4ee5e3a3cf61ae8a9c7fa14c47383560a6452b8d52d"
+      "sha256": "b1b7fa099bc7ef8c55ead63e260f73891a04bad1f21664c0d828ea2d7eaa7836"
     },
     {
       "path": "src/persistence/identity.js",
