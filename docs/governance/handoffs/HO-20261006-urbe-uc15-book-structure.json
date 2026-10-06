@@ -1,0 +1,119 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc15-book-structure",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T10:55:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-15",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc15-book-structure",
+  "base_commit": "eeefea4033be8059b9ab3c137b57627213193067",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/253",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderPlan.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageBookRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageNormalizer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageBookRendererTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261006-urbe-uc15-book-structure.json"
+  ],
+  "work_completed": [
+    "PageRenderPlan calcula âncoras únicas e TOC sem mutar PageDocument.",
+    "O plano numera partes/capítulos e expande capítulos de pasta na mesma sequência global usada pelo motor JS.",
+    "PageBookRenderer porta TOC, capa, folha de rosto, sumário de livro, parte, capítulo e capítulos por pasta.",
+    "Headings internos de capítulos são deslocados sem alterar fenced code.",
+    "PageNormalizer passou a aplicar defaults de layout/book e defaults dos blocos de livro sem perder chaves desconhecidas.",
+    "Revisão por codex-urbe-import: reconciliação semântica com main a51c3be preserva UC-15, edição/investigação UC-16 e DEC-0040; referência obsoleta f719 substituída pelo resultado derivado deste handoff, conforme ADR-0014."
+  ],
+  "verification": [
+    {
+      "check": "Core C# / Web smoke da terceira fatia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37452328577: csharp-portable success, 179/179 testes C#, failed=0, skipped=0, publish Web e smoke verdes."
+    },
+    {
+      "check": "Checks, Android e E2E da terceira fatia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37452328577: checks, net10.0-android e e2e concluídos com success."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency PR 37452328510 e push 37452322793 concluídos com success."
+    },
+    {
+      "check": "Windows e estado combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Windows direto ainda finalizando; o integrador combinado será reexecutado após o PR sair de draft."
+    },
+    {
+      "kind": "automated",
+      "check": "Reconciliação local com main a51c3be",
+      "result": "passed",
+      "evidence": "184/184 testes Core e 22/22 checks de consistência passaram; conflitos README/ROADMAP resolvidos semanticamente preservando UC-15/UC-16 e estados integrados. Nova CI necessária."
+    }
+  ],
+  "known_issues": [
+    "CSS/layout visual de livro continua responsabilidade futura da UI; esta fatia porta semântica/HTML do domínio.",
+    "Migração física de composições continua fora desta fatia e sem escrita no vault."
+  ],
+  "blockers": [
+    "Aguardar Windows e estado combinado final; corrigir qualquer falha real antes da integração."
+  ],
+  "next_actions": [
+    "Marcar PR #253 ready e aguardar estado combinado.",
+    "Integrar a fatia routine quando todos os checks estiverem verdes.",
+    "Continuar UC-15 com layout livre/peças responsivas; manter migração física de dados separada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/pages/engine.js",
+    "apps/urbe/tests/pages.mjs",
+    "apps/urbe/docs/v2/REQUIREMENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece no Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Plano/renderização são puros e independentes de host concreto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #249, branch e handoff específicos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma prova visual humana é declarada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-15 permanece aberta enquanto a paridade de páginas não terminou."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência de Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Port de domínio/renderização em memória; sem dados reais, distribuição ou control-plane."
+  },
+  "cost": null
+}

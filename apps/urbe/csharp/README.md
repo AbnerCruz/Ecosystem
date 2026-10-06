@@ -161,6 +161,15 @@ conteúdo textual por escape/Markdown e o bloco avançado `html` permanece raw
 por paridade explícita com o produto atual.
 
 
+### UC-15 — contexto entre seções e livro
+
+A terceira fatia acrescenta um `PageRenderPlan` puro que calcula âncoras únicas,
+TOC, partes, capítulos e capítulos derivados de uma pasta antes da renderização.
+`PageBookRenderer` usa esse plano para capa, folha de rosto, sumário de página,
+sumário de livro, partes e capítulos, preservando a numeração do cliente JS e
+sem introduzir estado de UI/host. Cabeçalhos internos de capítulos são
+deslocados semanticamente para manter a hierarquia do livro.
+
 ## UC-16 — edição matemática pura (primeira fatia)
 
 `MathEditing` fornece scanner compartilhado com `MarkdownEngine`, posição da

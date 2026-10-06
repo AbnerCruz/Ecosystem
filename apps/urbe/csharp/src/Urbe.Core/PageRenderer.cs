@@ -29,21 +29,40 @@ public static class PageRenderer
     {
         ArgumentNullException.ThrowIfNull(page);
 
+        var plan = PageRenderPlan.Create(page, documents);
         var output = new StringBuilder();
-        foreach (var section in page.Sections)
+
+        foreach (var context in plan.Sections)
         {
+            var section = context.Section;
             if (PageDocument.BoolValue(section.Style["hidden"]))
                 continue;
 
-            output.Append(RenderSection(section, documents));
+            var html = RenderSection(context, documents, plan);
+            output.Append(WrapSection(context, html));
         }
 
         return output.ToString();
     }
 
-    private static string RenderSection(PageSection section, DocumentStore? documents)
+    private static string RenderSection(
+        PageSectionRenderContext context,
+        DocumentStore? documents,
+        PageRenderPlan plan)
     {
+        var section = context.Section;
         var props = section.Props;
+
+        if (PageBookRenderer.Handles(section.Type))
+        {
+            return PageBookRenderer.Render(
+                section.Type,
+                props,
+                documents,
+                plan,
+                context);
+        }
+
         return section.Type switch
         {
             "hero" => RenderHero(props),
@@ -52,10 +71,31 @@ public static class PageRenderer
             "notes" => RenderNotes(props, documents),
             "quote" => RenderQuote(props),
             "image" => RenderImage(props),
-            "chapter" => RenderChapter(props, documents),
-            "chapters" => RenderChapters(props, documents),
             _ => PageRichBlockRenderer.Render(section.Type, props, documents)
         };
+    }
+
+    private static string WrapSection(
+        PageSectionRenderContext context,
+        string html)
+    {
+        if (string.IsNullOrEmpty(html))
+            return string.Empty;
+
+        if (context.Section.Type is "part" or "chapter")
+            return html;
+
+        if (context.Anchor.Length == 0)
+            return html;
+
+        var id = context.Section.Id ?? "s" + (context.Index + 1);
+        return "<section data-s='" +
+               MarkdownEngine.EscapeHtml(id) +
+               "' id='" +
+               MarkdownEngine.EscapeHtml(context.Anchor) +
+               "'>" +
+               html +
+               "</section>";
     }
 
     private static string RenderHero(JsonObject props)
