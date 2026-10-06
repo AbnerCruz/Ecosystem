@@ -187,7 +187,7 @@ public sealed class PageThemeTemplateTests
                   "boxed":true,
                   "minHeight":"half",
                   "animation":"zoom",
-                  "className":"minha "><x"
+                  "className":"minha \"><x"
                 }
               }]
             }
@@ -206,7 +206,7 @@ public sealed class PageThemeTemplateTests
         Assert.Contains("boxed", html, StringComparison.Ordinal);
         Assert.Contains("mh-half", html, StringComparison.Ordinal);
         Assert.Contains("an-zoom", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("minha "><x", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("minha \"><x", html, StringComparison.Ordinal);
         Assert.DoesNotContain("fonts.googleapis.com/css2?", html, StringComparison.Ordinal);
         Assert.Contains("text-transform:uppercase", html, StringComparison.Ordinal);
         Assert.Contains("body{letter-spacing:.01em}", html, StringComparison.Ordinal);
