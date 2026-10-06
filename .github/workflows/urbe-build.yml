@@ -1,8 +1,8 @@
 name: urbe-build
 
 # Workflow reutilizável (REQ-006, REQ-066): só constrói e envia os artefatos. Quem publica é o release.yml.
-# - app.yml (PR e execução manual): valida que continua compilando (sem publicar).
-# - release.yml (tag v*): constrói para publicação; sem os secrets da chave Android, falha.
+# O canal beta direto do Urbe usa uma chave de desenvolvimento PÚBLICA e estável versionada em
+# apps/urbe/tools (DEC-0039). Instalações legadas migram por backup + reinstalação deliberada.
 
 on:
   workflow_call:
@@ -12,14 +12,9 @@ on:
         type: string
         required: true
       release:
-        description: 'Build para publicação (exige a chave de assinatura Android)'
+        description: 'Build destinado a publicação'
         type: boolean
         default: false
-    secrets:
-      ANDROID_KEYSTORE_BASE64:
-        required: false
-      ANDROID_KEYSTORE_PASSWORD:
-        required: false
 
 permissions:
   contents: read
@@ -70,31 +65,42 @@ jobs:
       - run: npm ci
       - name: App web para o Android
         run: node tools/build-www.mjs && npx cap sync android
-      - name: Chave de assinatura
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      - name: Assinatura estável do canal beta
         run: |
-          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
-            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/urbe.keystore"
-            echo "URBE_KEYSTORE=$RUNNER_TEMP/urbe.keystore" >> "$GITHUB_ENV"
-            echo "URBE_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
-            echo "Assinando com a chave do Urbe."
-          elif [ "${{ inputs.release }}" = "true" ]; then
-            echo "::error::Faltam os secrets ANDROID_KEYSTORE_BASE64 e ANDROID_KEYSTORE_PASSWORD (Settings → Secrets and variables → Actions). Sem a chave, o APK não pode ser atualizado depois."
+          set -euo pipefail
+          (cd tools && sha256sum -c urbe-dev.keystore.sha256)
+          expected="$(tr -d '[:space:]' < tools/urbe-dev.certificate.sha256)"
+          actual="$(keytool -list -v -keystore tools/urbe-dev.keystore -storepass urbe-dev -alias urbe | sed -n 's/^[[:space:]]*SHA256: //p' | head -n1)"
+          [ "$actual" = "$expected" ] || {
+            echo "::error::Certificado inesperado na chave dev do Urbe: $actual"
             exit 1
-          else
-            echo "::notice::Sem a chave do Urbe: APK de teste assinado com a chave de depuração."
-          fi
+          }
+          echo "URBE_KEYSTORE=$GITHUB_WORKSPACE/apps/urbe/tools/urbe-dev.keystore" >> "$GITHUB_ENV"
+          echo "URBE_KEYSTORE_PASSWORD=urbe-dev" >> "$GITHUB_ENV"
+          echo "URBE_KEY_ALIAS=urbe" >> "$GITHUB_ENV"
+          echo "URBE_KEY_PASSWORD=urbe-dev" >> "$GITHUB_ENV"
+          echo "Urbe beta certificate SHA-256: $actual"
       - name: APK
         working-directory: apps/urbe/native/android
         run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
-      - name: Nome do arquivo
+      - name: Conferir assinatura e nome do arquivo
         run: |
+          set -euo pipefail
+          apk="native/android/app/build/outputs/apk/release/app-release.apk"
+          test -s "$apk"
+          expected="$(tr -d '[:space:]' < tools/urbe-dev.certificate.sha256)"
+          actual="$(keytool -printcert -jarfile "$apk" | sed -n 's/^[[:space:]]*SHA256: //p' | head -n1)"
+          [ "$actual" = "$expected" ] || {
+            echo "::error::APK não está assinado com a identidade beta canônica do Urbe"
+            exit 1
+          }
           mkdir -p out
-          cp native/android/app/build/outputs/apk/release/app-release.apk "out/Urbe-${{ inputs.version }}.apk"
+          cp "$apk" "out/Urbe-${{ inputs.version }}.apk"
+          (cd out && sha256sum "Urbe-${{ inputs.version }}.apk" > "Urbe-${{ inputs.version }}.apk.sha256")
       - uses: actions/upload-artifact@v4
         with:
           name: android
-          path: apps/urbe/out/*.apk
+          path: |
+            apps/urbe/out/*.apk
+            apps/urbe/out/*.sha256
           if-no-files-found: error
