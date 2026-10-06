@@ -64,7 +64,7 @@ public sealed class MathRendererTests
     public void RealTutorialCorpusHasNoExceptionsAndKeepsCurrentThirtyOfThirtyOneFloor()
     {
         using var observations = JsonDocument.Parse(
-            File.ReadAllText(Path.Combine(CSharpRoot(), "docs", "csharp",
+            File.ReadAllText(Path.Combine(CSharpRoot(), "..", "docs", "csharp",
                 "math-renderer-observations.json")));
 
         var corpus = observations.RootElement.GetProperty("realCorpus");
