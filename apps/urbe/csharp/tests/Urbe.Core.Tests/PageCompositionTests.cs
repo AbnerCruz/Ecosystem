@@ -118,7 +118,7 @@ public sealed class PageModelTests
         Assert.Contains("<strong>Urbe</strong>", html, StringComparison.Ordinal);
         Assert.Contains("<h2>Introdução</h2>", html, StringComparison.Ordinal);
         Assert.Contains("<strong>isto</strong>", html, StringComparison.Ordinal);
-        Assert.Contains("<h1 class=\"note-title\">Alfa</h1>", html, StringComparison.Ordinal);
+        Assert.Contains("<h1 class='note-title'>Alfa</h1>", html, StringComparison.Ordinal);
         Assert.Contains("Texto <strong>forte</strong>.", html, StringComparison.Ordinal);
         Assert.Contains("<h3>Beta</h3>", html, StringComparison.Ordinal);
     }

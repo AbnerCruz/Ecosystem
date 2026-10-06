@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261006-urbe-uc15-pages-compositions",
   "category": "RESULT",
-  "timestamp": "2026-10-06T05:40:00Z",
+  "timestamp": "2026-10-06T08:21:00Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "feat/urbe-uc15-pages-compositions",
   "base_commit": "1eafe4db9676c884fbae78074803ff438298c044",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/250",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/PageModel.cs",
     "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
@@ -42,13 +42,13 @@
       "check": "Core C# UC-15",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Aguardando CI do draft PR após publicação desta fatia."
+      "evidence": "Draft PR #250 aberto; primeira rodada revelou erro de escaping em PageRenderer e a correção já foi enviada. Aguardando nova rodada."
     },
     {
       "check": "Regressão completa Urbe",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Aguardando Web/Android/Windows/E2E/checks/consistency."
+      "evidence": "Aguardando nova rodada completa após correção do renderer."
     }
   ],
   "known_issues": [
