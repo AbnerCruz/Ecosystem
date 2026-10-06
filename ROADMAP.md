@@ -281,3 +281,7 @@ Objetivo: extrair uma ferramenta com boundary claro (ex.: Sprite Studio ou Edito
 ## Revisões periódicas
 
 - Dívida e custo de integração da plataforma (NN-020): ao fim de cada fase.
+
+## Propostas de novos Products
+
+- [~] MSP-001 — Constituição do Product de autoria matemática temporal (codinome documental Math Studio). Identidade permanente e fundação propostas na DEC-0040; escopo e milestones em [roadmap da proposta](docs/proposals/math-studio/ROADMAP.md). Issue [#260](https://github.com/AbnerCruz/Ecosystem/issues/260); sem nova fase global ou alteração do roadmap de outro Product.
