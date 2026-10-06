@@ -13,8 +13,8 @@
   "state": "verifying",
   "branch": "feat/urbe-uc15-page-shell-templates",
   "base_commit": "c7bf1ba4cbbe9965674c9dedd2de2e17e706a29a",
-  "commit": null,
-  "pr": null,
+  "commit": "560c6c3dfbe433933031bf6cbfda06331929a451",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/270",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/PageThemeCatalog.cs",
     "apps/urbe/csharp/src/Urbe.Core/PageTemplateCatalog.cs",
