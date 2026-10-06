@@ -304,8 +304,25 @@ public static class PageTemplateCatalog
             : new[]
             {
                 Section("part", Obj(("title", "O começo"), ("markdown", "Onde tudo começa."))),
-                Section("chapter", Obj(("title", "A cidade de papel"), ("markdown", "Escreva aqui o primeiro capítulo."))),
-                Section("chapter", Obj(("title", "Ruas e pontes"), ("markdown", "Cada capítulo começa numa página nova.")))
+                Section(
+                    "chapter",
+                    Obj(
+                        ("title", "A cidade de papel"),
+                        ("epigraph", "Toda cidade é um livro que se lê andando."),
+                        ("epigraphAuthor", "Anônimo"),
+                        ("markdown", "Escreva aqui o primeiro capítulo.\n\n***\n\nUma troca de cena."))),
+                Section(
+                    "chapter",
+                    Obj(
+                        ("title", "Ruas e pontes"),
+                        ("markdown", "Cada capítulo começa numa página nova."))),
+                FreeBookPage(),
+                Section("part", Obj(("title", "O caminho"))),
+                Section(
+                    "chapter",
+                    Obj(
+                        ("title", "Onde tudo se liga"),
+                        ("markdown", "Notas e páginas se encontram no mesmo livro.")))
             };
 
         var sections = new List<JsonObject>
@@ -331,6 +348,28 @@ public static class PageTemplateCatalog
         return Page(title, "🔗", Theme("neon", ("width", 560)),
             Layout(("nav", false), ("backToTop", false), ("footer", "")),
             [Section("hero", Obj(("title", title), ("subtitle", "Criador de conteúdo · links abaixo 👇"), ("layout", "center"), ("height", "screen"), ("stack", true), ("buttons", Buttons(("Meu site", "https://exemplo.com", "primary"), ("Instagram", "https://instagram.com", "secondary"), ("YouTube", "https://youtube.com", "secondary")))))]);
+    }
+
+    private static JsonObject FreeBookPage()
+    {
+        var root = new JsonObject
+        {
+            ["type"] = "box",
+            ["style"] = Obj(("gap", "14px")),
+            ["children"] = List(
+                new JsonObject
+                {
+                    ["type"] = "heading",
+                    ["content"] = Obj(("text", "Uma página montada peça por peça"), ("level", 2)),
+                    ["style"] = Obj(("textAlign", "center"))
+                },
+                new JsonObject
+                {
+                    ["type"] = "text",
+                    ["content"] = Obj(("text", "Esta página usa o layout livre dentro do livro."))
+                })
+        };
+        return Section("free", Obj(("sheet", "page"), ("root", root)));
     }
 
     private static JsonObject FreeCanvas(string title)
