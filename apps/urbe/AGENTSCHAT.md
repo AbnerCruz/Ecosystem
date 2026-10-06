@@ -1,3 +1,12 @@
+### 2026-10-06 — ChatGPT — UC-16 renderer C# / SVG próprio
+
+- Escolha proposta após o probe #265: `CSharpMath.Rendering 1.0.0-pre.2` + backend SVG do Urbe; VectSharp/LGPL fica fora.
+- Pacotes CSharpMath/Rendering fixados exatamente em `1.0.0-pre.2`; alteração de csproj torna o PR crítico por política.
+- `MathRenderer` preserva TeX, limita entrada/fonte e devolve diagnóstico em vez de exceção de host.
+- `SvgMathCanvas` implementa `ICanvas/Path` e emite somente geometria SVG autocontida, sem links/scripts/texto externo.
+- Testes cobrem Bhaskara, integral, matriz, determinismo, entradas inválidas e o corpus real do tutorial com piso de 30/31.
+- ADR-0012 fica Proposed até autorização do proprietário; macros/aliases incompatíveis continuam explícitos, sem reescrita silenciosa.
+
 ### 2026-10-06 — ChatGPT — UC-15 concluída
 
 - Release 1.8.4-beta publicada separadamente; fechamento de UC-15 não reutiliza evidência DEVICE da release.

@@ -1,0 +1,121 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc16-svg-renderer",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T19:55:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc16",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-16",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc16-svg-renderer",
+  "base_commit": "869d55d0837fc18b484d36ff7cfc23f7ce697c59",
+  "commit": "20537a7f3490fda5b553871929d097e4a635d7fa",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/274",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
+    "apps/urbe/csharp/src/Urbe.Core/MathRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/SvgMathCanvas.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MathRendererTests.cs",
+    "apps/urbe/docs/v2/adr/0012-renderizacao-matematica-csharp-svg.md",
+    "apps/urbe/docs/v2/adr/README.md",
+    "apps/urbe/docs/csharp/UC16-RENDERER-ADOPTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261006-urbe-uc16-svg-renderer.json"
+  ],
+  "work_completed": [
+    "Fixados CSharpMath e CSharpMath.Rendering 1.0.0-pre.2 no Core, sem CSharpMath.VectSharp/VectSharp/Skia.",
+    "Implementado MathRenderer com diagnóstico na fronteira, limites explícitos e preservação do TeX original.",
+    "Implementado backend SVG próprio sobre ICanvas/Path, emitindo apenas geometria autocontida.",
+    "Adicionados testes de fórmulas reais, diagnósticos, limites, determinismo e corpus tutorial 30/31 como piso evolutivo.",
+    "Proposto ADR-0012 e registrada auditoria de licenças/grafo; adoção depende da autorização crítica."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR com restauração NuGet real."
+    },
+    {
+      "kind": "automated",
+      "check": "Web/Android/Windows/E2E/checks/consistency",
+      "result": "pending",
+      "evidence": "Aguardando CI e integrador no estado combinado."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE",
+      "result": "not-applicable",
+      "evidence": "Fatia é Core/render SVG; paridade visual e UI pertencem ao restante de UC-16/UC-18, sem inferência de DEVICE."
+    }
+  ],
+  "known_issues": [
+    "ADR-0012 permanece Proposed até autorização crítica do proprietário.",
+    "Macros e comandos incompatíveis conhecidos continuam diagnósticos; não há reescrita silenciosa.",
+    "Textos completos das licenças de fontes/pacotes precisam entrar no instalável C# antes de UC-27/G-C4."
+  ],
+  "blockers": [
+    "Integração exige autorização explícita do proprietário porque o PR altera .csproj (distribution) e propõe ADR (constitution)."
+  ],
+  "next_actions": [
+    "Rodar novamente CI e integrador após reconciliação semântica com main@9c8720d.",
+    "Após autorização crítica e integração, portar camada limitada de aliases/macros e ampliar comparação visual para fechar UC-16/G-C2."
+  ],
+  "decisions_required": [
+    "Autorizar ou rejeitar ADR-0012 e a adoção de CSharpMath.Rendering 1.0.0-pre.2 + backend SVG próprio."
+  ],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/UC16-RENDERER-INVESTIGATION.md",
+    "apps/urbe/docs/csharp/math-renderer-observations.json",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/v2/adr/0012-renderizacao-matematica-csharp-svg.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece dentro do Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Renderer está no Core e não depende de Hub ou Host concreto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #257, ADR, branch, PR e handoff registram a mudança."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "TeX é tratado como dados; backend não executa script/URL/IO."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não será confundida com validação visual DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-16 permanece aberta; macros/paridade visual ainda pendentes."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma dependência do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution",
+      "distribution"
+    ],
+    "reason": "Escolhe tecnologia estrutural por ADR e altera csproj/dependências do cliente C#; a política exige autorização do proprietário."
+  },
+  "cost": null
+}
