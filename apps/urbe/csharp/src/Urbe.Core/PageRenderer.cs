@@ -6,7 +6,7 @@ namespace Urbe.Core;
 /// <summary>
 /// Pure semantic renderer for persisted pages. This is deliberately UI-free:
 /// hosts decide preview/WebView concerns later. Unknown blocks are preserved in
-/// the PageDocument but omitted from this renderer until their C# port lands.
+/// PageDocument and omitted from this renderer until their C# port lands.
 /// </summary>
 public static class PageRenderer
 {
@@ -18,9 +18,9 @@ public static class PageRenderer
         var title = MarkdownEngine.EscapeHtml(page.Title);
         var lang = MarkdownEngine.EscapeHtml(page.Language);
 
-        return "<!doctype html><html lang="" + lang +
-               ""><head><meta charset="utf-8"><meta name="viewport" " +
-               "content="width=device-width,initial-scale=1"><title>" +
+        return "<!doctype html><html lang='" + lang +
+               "'><head><meta charset='utf-8'><meta name='viewport' " +
+               "content='width=device-width,initial-scale=1'><title>" +
                title + "</title></head><body><main>" + body +
                "</main></body></html>";
     }
@@ -64,13 +64,13 @@ public static class PageRenderer
         var subtitle = Text(props["subtitle"]) ?? string.Empty;
         var eyebrow = Text(props["eyebrow"]) ?? string.Empty;
 
-        return "<section class="hero">" +
+        return "<section class='hero'>" +
                (eyebrow.Length > 0
-                   ? "<p class="eyebrow">" + MarkdownEngine.InlineMarkdown(eyebrow) + "</p>"
+                   ? "<p class='eyebrow'>" + MarkdownEngine.InlineMarkdown(eyebrow) + "</p>"
                    : string.Empty) +
                "<h1>" + MarkdownEngine.InlineMarkdown(title) + "</h1>" +
                (subtitle.Length > 0
-                   ? "<div class="lead">" + MarkdownEngine.Render(subtitle) + "</div>"
+                   ? "<div class='lead'>" + MarkdownEngine.Render(subtitle) + "</div>"
                    : string.Empty) +
                "</section>";
     }
@@ -80,11 +80,11 @@ public static class PageRenderer
         var title = Text(props["title"]) ?? string.Empty;
         var markdown = Text(props["markdown"]) ?? string.Empty;
 
-        return "<section class="text">" +
+        return "<section class='text'>" +
                (title.Length > 0
                    ? "<h2>" + MarkdownEngine.InlineMarkdown(title) + "</h2>"
                    : string.Empty) +
-               "<div class="prose">" + MarkdownEngine.Render(markdown) + "</div>" +
+               "<div class='prose'>" + MarkdownEngine.Render(markdown) + "</div>" +
                "</section>";
     }
 
@@ -94,7 +94,7 @@ public static class PageRenderer
         var document = FindDocument(documents, path);
         if (document is null)
         {
-            return "<section class="note missing">Nota não encontrada: " +
+            return "<section class='note missing'>Nota não encontrada: " +
                    MarkdownEngine.EscapeHtml(path.Length == 0 ? "(escolha uma nota)" : path) +
                    "</section>";
         }
@@ -102,7 +102,7 @@ public static class PageRenderer
         var showTitle = Bool(props["showTitle"], true);
         var showMeta = Bool(props["showMeta"], false);
         var meta = showMeta
-            ? "<p class="meta">" +
+            ? "<p class='meta'>" +
               MarkdownEngine.EscapeHtml(
                   string.Join(
                       " · ",
@@ -114,9 +114,9 @@ public static class PageRenderer
               "</p>"
             : string.Empty;
 
-        return "<article class="prose note-article">" +
+        return "<article class='prose note-article'>" +
                (showTitle
-                   ? "<h1 class="note-title">" + MarkdownEngine.EscapeHtml(document.Title) + "</h1>"
+                   ? "<h1 class='note-title'>" + MarkdownEngine.EscapeHtml(document.Title) + "</h1>"
                    : string.Empty) +
                meta +
                MarkdownEngine.Render(StripLeadingTitle(document.Content, document.Title, showTitle)) +
@@ -129,20 +129,20 @@ public static class PageRenderer
         var title = Text(props["title"]) ?? string.Empty;
         var expand = Bool(props["expand"], false);
 
-        var output = new StringBuilder("<section class="notes">");
+        var output = new StringBuilder("<section class='notes'>");
         if (title.Length > 0)
             output.Append("<h2>").Append(MarkdownEngine.InlineMarkdown(title)).Append("</h2>");
 
         if (selected.Count == 0)
         {
-            output.Append("<div class="missing">Nenhuma nota encontrada para esta coleção.</div></section>");
+            output.Append("<div class='missing'>Nenhuma nota encontrada para esta coleção.</div></section>");
             return output.ToString();
         }
 
-        output.Append("<div class="note-list">");
+        output.Append("<div class='note-list'>");
         foreach (var document in selected)
         {
-            output.Append("<article class="note-card"><h3>")
+            output.Append("<article class='note-card'><h3>")
                 .Append(MarkdownEngine.EscapeHtml(document.Title))
                 .Append("</h3></article>");
         }
@@ -150,10 +150,10 @@ public static class PageRenderer
 
         if (expand)
         {
-            output.Append("<div class="note-full">");
+            output.Append("<div class='note-full'>");
             foreach (var document in selected)
             {
-                output.Append("<article class="prose note-article"><h2 class="note-title">")
+                output.Append("<article class='prose note-article'><h2 class='note-title'>")
                     .Append(MarkdownEngine.EscapeHtml(document.Title))
                     .Append("</h2>")
                     .Append(MarkdownEngine.Render(
@@ -172,7 +172,7 @@ public static class PageRenderer
         var text = Text(props["text"]) ?? string.Empty;
         var author = Text(props["author"]) ?? string.Empty;
 
-        return "<figure class="bigquote"><blockquote>" +
+        return "<figure class='bigquote'><blockquote>" +
                MarkdownEngine.InlineMarkdown(text) +
                "</blockquote>" +
                (author.Length > 0
@@ -186,15 +186,15 @@ public static class PageRenderer
         var source = Text(props["src"]) ?? string.Empty;
         var safe = MarkdownEngine.SafeUrl(source);
         if (safe == "#" || safe.Length == 0)
-            return "<div class="missing">Escolha uma imagem.</div>";
+            return "<div class='missing'>Escolha uma imagem.</div>";
 
         var alt = Text(props["alt"]) ?? Text(props["caption"]) ?? string.Empty;
         var caption = Text(props["caption"]) ?? string.Empty;
 
-        return "<figure class="figure"><img src="" +
+        return "<figure class='figure'><img src='" +
                MarkdownEngine.EscapeHtml(safe) +
-               "" alt="" + MarkdownEngine.EscapeHtml(alt) +
-               "">" +
+               "' alt='" + MarkdownEngine.EscapeHtml(alt) +
+               "'>" +
                (caption.Length > 0
                    ? "<figcaption>" + MarkdownEngine.EscapeHtml(caption) + "</figcaption>"
                    : string.Empty) +
@@ -212,8 +212,11 @@ public static class PageRenderer
             var path = Text(props["path"]) ?? string.Empty;
             var document = FindDocument(documents, path);
             if (document is null)
-                return "<section class="chapter missing">Nota não encontrada: " +
+            {
+                return "<section class='chapter missing'>Nota não encontrada: " +
                        MarkdownEngine.EscapeHtml(path) + "</section>";
+            }
+
             if (title.Length == 0)
                 title = document.Title;
             markdown = StripLeadingTitle(document.Content, document.Title, true);
@@ -223,7 +226,7 @@ public static class PageRenderer
             markdown = Text(props["markdown"]) ?? string.Empty;
         }
 
-        return "<section class="chapter">" +
+        return "<section class='chapter'>" +
                (title.Length > 0
                    ? "<h1>" + MarkdownEngine.InlineMarkdown(title) + "</h1>"
                    : string.Empty) +
@@ -245,12 +248,14 @@ public static class PageRenderer
             documents);
 
         if (selected.Count == 0)
-            return "<section class="chapter missing">Nenhuma nota na pasta " +
+        {
+            return "<section class='chapter missing'>Nenhuma nota na pasta " +
                    MarkdownEngine.EscapeHtml(folder) + ".</section>";
+        }
 
         return string.Concat(
             selected.Select(document =>
-                "<section class="chapter"><h1>" +
+                "<section class='chapter'><h1>" +
                 MarkdownEngine.EscapeHtml(document.Title) +
                 "</h1>" +
                 MarkdownEngine.Render(
@@ -278,7 +283,8 @@ public static class PageRenderer
                     .ToLowerInvariant();
                 query = all.Where(document =>
                     folder.Length == 0 ||
-                    document.Path.ToLowerInvariant().StartsWith(folder + "/", StringComparison.Ordinal));
+                    document.Path.ToLowerInvariant()
+                        .StartsWith(folder + "/", StringComparison.Ordinal));
                 break;
             }
             case "tag":
@@ -292,7 +298,10 @@ public static class PageRenderer
             case "list":
             {
                 var paths = (Text(props["paths"]) ?? string.Empty)
-                    .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    .Split(
+                        '\n',
+                        StringSplitOptions.RemoveEmptyEntries |
+                        StringSplitOptions.TrimEntries);
                 query = paths
                     .Select(path => FindDocument(documents, path))
                     .Where(document => document is not null)
@@ -309,14 +318,18 @@ public static class PageRenderer
         {
             query = sort switch
             {
-                "modified" => query.OrderByDescending(document => document.Modified ?? string.Empty),
-                "path" => query.OrderBy(document => document.Path, StringComparer.Ordinal),
-                _ => query.OrderBy(document => document.Title, StringComparer.Ordinal)
+                "modified" => query.OrderByDescending(
+                    document => document.Modified ?? string.Empty),
+                "path" => query.OrderBy(
+                    document => document.Path,
+                    StringComparer.Ordinal),
+                _ => query.OrderBy(
+                    document => document.Title,
+                    StringComparer.Ordinal)
             };
         }
 
-        var limit = Int(props["limit"], 24);
-        limit = Math.Clamp(limit, 1, 200);
+        var limit = Math.Clamp(Int(props["limit"], 24), 1, 200);
         return Array.AsReadOnly(query.Take(limit).ToArray());
     }
 
@@ -341,12 +354,16 @@ public static class PageRenderer
             string.Equals(document.Title, wanted, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string StripLeadingTitle(string content, string title, bool titleShown)
+    private static string StripLeadingTitle(
+        string content,
+        string title,
+        bool titleShown)
     {
         if (!titleShown)
             return content;
 
-        var normalized = content.Replace("\r\n", "\n", StringComparison.Ordinal)
+        var normalized = content
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n');
         var lines = normalized.Split('\n').ToList();
 
@@ -380,9 +397,6 @@ public static class PageRenderer
     private static bool Bool(JsonNode? node, bool fallback) =>
         node is null ? fallback : PageDocument.BoolValue(node, fallback);
 
-    private static int Int(JsonNode? node, int fallback)
-    {
-        var value = PageDocument.IntValue(node);
-        return value ?? fallback;
-    }
+    private static int Int(JsonNode? node, int fallback) =>
+        PageDocument.IntValue(node) ?? fallback;
 }
