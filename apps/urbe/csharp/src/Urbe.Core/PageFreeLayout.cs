@@ -46,7 +46,7 @@ internal static partial class PageFreeLayout
             ["fit"] = ["cover", "contain"],
             ["borderStyle"] = ["solid", "dashed", "dotted", "double"],
             ["shadow"] = ["none", "soft", "strong", "glow"],
-            ["font"] = ["heading", "body", "system", "inter", "nunito", "serif", "mono", "display"],
+            ["font"] = ["heading", "body", "inter", "manrope", "grotesk", "dmsans", "outfit", "playfair", "fraunces", "lora", "merriweather", "garamond", "cormorant", "crimson", "baskerville", "mono", "system", "serif"],
             ["weight"] = ["300", "400", "500", "600", "700", "800", "900"],
             ["textAlign"] = ["left", "center", "right", "justify"],
             ["transform"] = ["none", "uppercase", "lowercase", "capitalize"],
