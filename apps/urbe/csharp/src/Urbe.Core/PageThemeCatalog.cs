@@ -332,7 +332,7 @@ public static partial class PageThemeCatalog
         var numbers = PageDocument.BoolValue(layout["pageNumbers"], true);
         var running = PageDocument.StringValue(layout["runningHead"]) ?? string.Empty;
         var quote = running.Replace("\\", "\\\\", StringComparison.Ordinal)
-            .Replace(""", "\\"", StringComparison.Ordinal)
+            .Replace("\"", "\\\"", StringComparison.Ordinal)
             .Replace("\n", " ", StringComparison.Ordinal)
             .Replace("\r", " ", StringComparison.Ordinal);
 
@@ -353,7 +353,7 @@ public static partial class PageThemeCatalog
         if (numbers)
             css.Append(";@bottom-center{content:counter(page);font:9pt var(--fb);color:#555}");
         if (running.Length > 0)
-            css.Append(";@top-center{content:"").Append(quote).Append("";font:italic 8.5pt var(--fb);color:#666}");
+            css.Append(";@top-center{content:\"").Append(quote).Append("\";font:italic 8.5pt var(--fb);color:#666}");
         css.Append("}@page :left{margin-left:").Append(margin.O.ToString(CultureInfo.InvariantCulture))
             .Append("mm;margin-right:").Append(margin.I.ToString(CultureInfo.InvariantCulture))
             .Append("mm}@page :right{margin-left:").Append(margin.I.ToString(CultureInfo.InvariantCulture))
