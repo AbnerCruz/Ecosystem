@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc15-free-conversion-compact",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T18:20:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc15",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-15",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc15-free-conversion-compact",
+  "base_commit": "b1ce83474972e64be7e4ca88c77866921e152275",
+  "commit": "7b8a84e6d4d13156978e5b250f9138b2833d077a",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/269",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PageFreeConversion.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageCompactor.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageFreeConversionTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261006-urbe-uc15-free-conversion-compact.json"
+  ],
+  "work_completed": [
+    "Portados os 13 tipos CONVERTIBLE do pages/free.js para árvore livre determinística em C#, incluindo parser de parágrafos Markdown e resolução de capítulos/notas no DocumentStore.",
+    "Adicionada compactação que remove somente defaults restauráveis pelo PageNormalizer e preserva campos desconhecidos conforme REQ-049.",
+    "Testes cobrem sequência do oráculo JS para capítulo vindo de nota, validade de todos os tipos convertíveis, round-trip sem perda, redução do arquivo e recusa de versão futura."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe checks + consistency",
+      "result": "pending",
+      "evidence": "Aguardando estado combinado no integrador."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE",
+      "result": "not-applicable",
+      "evidence": "Domínio puro em memória, sem UI, filesystem real ou distribuição."
+    }
+  ],
+  "known_issues": [
+    "UC-15 só deve fechar depois de confirmar se resta alguma paridade de página/composição fora das cinco fatias.",
+    "Studio/drag-drop/contenteditable pertencem à UC-18; escrita/migração física do vault continua separada e crítica."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir qualquer falha real de compilação/oráculo no PR.",
+    "Após integração, auditar a matriz UC-15 e decidir fechamento/G-C2 sem antecipar UI."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/pages/free.js",
+    "apps/urbe/src/pages/engine.js",
+    "apps/urbe/tests/pages-free.mjs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece dentro do Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Conversão/compactação não dependem de Hub ou host concreto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #249, branch, PR e handoff rastreiam a fatia."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Conteúdo convertido volta a passar pelo normalizador/renderer seguro; dados não concedem capacidades."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação DEVICE é inferida de testes de Core."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-15 permanece aberta durante verificação."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Transformações puras em memória e testes; nenhuma escrita de user-data, segurança, distribuição ou control-plane."
+  },
+  "cost": null
+}
