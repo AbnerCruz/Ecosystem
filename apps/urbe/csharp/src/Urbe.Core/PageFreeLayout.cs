@@ -484,6 +484,7 @@ internal static partial class PageFreeLayout
     {
         var css = value ?? string.Empty;
         css = StyleClosePattern().Replace(css, string.Empty);
+        css = ScriptTagPattern().Replace(css, string.Empty);
         css = ImportPattern().Replace(css, string.Empty);
         css = ExpressionPattern().Replace(css, string.Empty);
         css = JavascriptUrlPattern().Replace(css, "url()");
@@ -613,6 +614,9 @@ internal static partial class PageFreeLayout
 
     [GeneratedRegex(@"</style", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex StyleClosePattern();
+
+    [GeneratedRegex(@"</?script", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex ScriptTagPattern();
 
     [GeneratedRegex(@"@import", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex ImportPattern();
