@@ -140,6 +140,11 @@ public sealed class PageThemeTemplateTests
                 skeleton.Sections.Select(section => section.Type));
         }
 
+        var links = PageTemplateCatalog.Build(
+            "links",
+            new PageTemplateContext { Title = "@x", Year = 2026 });
+        Assert.Equal(640d, links.Raw["theme"]!["width"]!.GetValue<double>());
+
         var landing = PageTemplateCatalog.Build(
             "landing",
             new PageTemplateContext { Title = "P", Year = 2026 });
