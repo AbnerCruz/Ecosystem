@@ -145,6 +145,84 @@ public sealed class PageModelTests
     }
 }
 
+
+public sealed class CompositionMigrationPlannerTests
+{
+    [Fact]
+    public void PlanIsIdempotentWhenGeneratedPageAlreadyExists()
+    {
+        var documents = new DocumentStore();
+        documents.Upsert(
+            new DocumentInput
+            {
+                Id = "doc_a",
+                Path = "A.md",
+                Content = "# A"
+            });
+
+        var file = CompositionFile.Parse(
+            """{"version":1,"items":[{"id":"cmp_a","name":"Livro","sources":["doc_a"]}]}""");
+
+        var first = CompositionMigrationPlanner.Plan(file, documents);
+
+        Assert.False(first.Blocked);
+        var created = Assert.Single(first.Creates);
+        Assert.Empty(first.AlreadyMigratedCompositionIds);
+        Assert.Empty(first.Conflicts);
+
+        var second = CompositionMigrationPlanner.Plan(
+            file,
+            documents,
+            [new PersistedPage(created.PagePath, created.Page)]);
+
+        Assert.False(second.Blocked);
+        Assert.Empty(second.Creates);
+        Assert.Equal(new[] { "cmp_a" }, second.AlreadyMigratedCompositionIds);
+        Assert.Empty(second.Conflicts);
+    }
+
+    [Fact]
+    public void PlanNeverOverwritesAnUnrelatedExistingPage()
+    {
+        var documents = new DocumentStore();
+        var file = CompositionFile.Parse(
+            """{"version":1,"items":[{"id":"cmp_a","name":"Livro","sources":[]}]}""");
+        var occupied = PageDocument.Parse(
+            """{"version":1,"kind":"urbe-page","meta":{"title":"Outra"},"sections":[]}""");
+
+        var plan = CompositionMigrationPlanner.Plan(
+            file,
+            documents,
+            [new PersistedPage("Páginas/Composições/Livro.page.json", occupied)]);
+
+        Assert.False(plan.Blocked);
+        Assert.Empty(plan.Creates);
+        var conflict = Assert.Single(plan.Conflicts);
+        Assert.Equal("cmp_a", conflict.CompositionId);
+        Assert.Equal("Páginas/Composições/Livro.page.json", conflict.TargetPath);
+    }
+
+    [Fact]
+    public void FutureAndCorruptCompositionFilesBlockMigrationPlanning()
+    {
+        foreach (var file in new[]
+                 {
+                     CompositionFile.Parse("""{"version":99,"items":[]}"""),
+                     CompositionFile.Parse("""{oops""")
+                 })
+        {
+            var plan = CompositionMigrationPlanner.Plan(
+                file,
+                new DocumentStore());
+
+            Assert.True(plan.Blocked);
+            Assert.False(plan.HasChanges);
+            Assert.NotNull(plan.BlockReason);
+            Assert.Empty(plan.Creates);
+        }
+    }
+}
+
 public sealed class CompositionPageConverterTests
 {
     private static readonly string Root = FindRoot();
