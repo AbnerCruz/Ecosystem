@@ -1,0 +1,144 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc16-math-editing",
+  "category": "RESULT",
+  "timestamp": "2026-10-06T13:50:30.791886Z",
+  "agent": {
+    "id": "codex-urbe-math",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-16",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc16-math-editing",
+  "base_commit": "510c22197426ab1bd57de8aed2ae39cde3733663",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/258",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MathEditing.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MathCatalog.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MathEditingTests.cs",
+    "apps/urbe/csharp/tests/math-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/math-editing.json",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261006-urbe-uc16-math-editing.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Domínio puro de edição matemática dentro da reescrita aprovada; sem IO, nova biblioteca, interop, mudança de dados, hosts, segurança ou distribuição."
+  },
+  "work_completed": [
+    "MathEditing compartilha o scanner com MarkdownEngine: posição UTF-16, lookup do cursor e delimitadores originais.",
+    "Catálogo de comandos/símbolos/modelos portado como coleções imutáveis; snippets e autocomplete reproduzem o JS congelado.",
+    "Correções de paridade para whitespace ECMAScript, dígitos ASCII e NUL.",
+    "Oráculo suplementar: 33 scans com todos os cursores, 91 casos de autocomplete, 172 snippets e catálogo integral; SHA-256 da fonte impede baseline silencioso. Corpus UC-2 permanece intacto."
+  ],
+  "verification": [
+    {
+      "check": "Core C# e goldens históricos",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet test --project tests/Urbe.Core.Tests -c Release: 179/179 passed, 0 failed, 0 skipped; inclui goldens Markdown/Visual históricos."
+    },
+    {
+      "check": "Oráculo matemático JS",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "node apps/urbe/csharp/tests/math-oracle.mjs --check: 33 scans, 91 completion, 172 snippets; catálogo e expectativas verificados."
+    },
+    {
+      "check": "Build portátil Core/UI/Web",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build Urbe.Portable.slnx -c Release -m:1 -nr:false: 0 warnings, 0 errors."
+    },
+    {
+      "check": "Consistência Ecosystem",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks passaram."
+    },
+    {
+      "check": "CI portátil, Web, Android, Windows e E2E",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Checks gerais Urbe",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Wrapper removido do inventário JS congelado. node tools/csharp-parity.mjs check passou com 297 casos intactos; native-contract.mjs passou isoladamente após falha do timeout legado de 50ms sob carga. Rodada final em andamento."
+    }
+  ],
+  "known_issues": [
+    "Primeira fatia, não conclui UC-16: biblioteca tipográfica, macros/erros LaTeX e export visual ainda sem implementação; ADR-0025 não aprova KaTeX interop.",
+    "Editor/UI e validação em aparelho pertencem à UC-18 e gates posteriores."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar primeira fatia via integrador automático após CI verde.",
+    "Continuar UC-16 com avaliação da biblioteca e prova de renderização do corpus real, conforme UC-4/ADR-0025."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/docs/v2/contracts/editor-markdown.md",
+    "apps/urbe/docs/v2/contracts/editor-visual.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/DEPENDENCIES.md",
+    "apps/urbe/docs/csharp/acceptance/README.md",
+    "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Scanner compartilhado no Core e catálogos portados de fonte identificada por SHA-256."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Reescrita já autorizada por DEC-0024-B, com testes contra comportamento congelado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #257, branch própria e handoff com base/resultados."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "ADRs e contratos consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma nova biblioteca ou interop presumida; decisão tipográfica continua separada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Escopo puro em memória, sem alegar aceite UI ou DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-16 permanece aberta, primeira fatia em review aguardando CI/integração."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Core standalone, sem Hub/rede/host."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "math-editing",
+      "status": "product-specific",
+      "rationale": "Semântica do Markdown/editor/catálogo do Urbe; nenhum consumidor externo concreto."
+    }
+  ]
+}
