@@ -35,8 +35,10 @@ public sealed class ArchitectureTests
         var packages = project.Descendants("PackageReference")
             .Select(reference => new
             {
-                Name = reference.Attribute("Include")?.Value,
+                Name = reference.Attribute("Include")?.Value
+                    ?? throw new InvalidDataException("PackageReference sem Include."),
                 Version = reference.Attribute("Version")?.Value
+                    ?? throw new InvalidDataException("PackageReference sem Version.")
             })
             .ToArray();
         Assert.Equal(
