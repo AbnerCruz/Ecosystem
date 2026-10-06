@@ -101,6 +101,7 @@ public sealed class PageThemeTemplateTests
             var html = PageRenderer.Render(page, documents);
             Assert.StartsWith("<!doctype html>", html, StringComparison.Ordinal);
             Assert.Contains("<meta name='generator' content='Urbe'>", html, StringComparison.Ordinal);
+            Assert.True(html.Length > 3000, template.Id + " HTML curto demais: " + html.Length);
             if (template.Id != "empty")
                 Assert.NotEmpty(page.Sections);
         }
@@ -150,6 +151,53 @@ public sealed class PageThemeTemplateTests
     }
 
     [Fact]
+    public void BookTemplateKeepsTwoPartsAndFiveChaptersWhenFolderChaptersAreAdded()
+    {
+        var documents = new DocumentStore();
+        documents.Upsert(
+            new DocumentInput
+            {
+                Path = "Guia/Instalação.md",
+                Title = "Instalação",
+                Content = "# Instalação\n\nVeja [[Uso]]."
+            });
+        documents.Upsert(
+            new DocumentInput
+            {
+                Path = "Guia/Uso.md",
+                Title = "Uso",
+                Content = "# Uso\n\nUse com calma."
+            });
+
+        var book = PageTemplateCatalog.Build(
+            "book",
+            new PageTemplateContext { Title = "A Cidade", Year = 2026 });
+        var raw = book.Raw;
+        raw["sections"]!.AsArray().Add(
+            new JsonObject
+            {
+                ["type"] = "chapters",
+                ["props"] = new JsonObject
+                {
+                    ["folder"] = "Guia",
+                    ["sort"] = "path",
+                    ["dropCap"] = true
+                },
+                ["style"] = new JsonObject()
+            });
+
+        var html = PageRenderer.Render(PageDocument.Parse(raw), documents);
+
+        Assert.Contains("Parte I", html, StringComparison.Ordinal);
+        Assert.Contains("Parte II", html, StringComparison.Ordinal);
+        for (var number = 1; number <= 5; number++)
+            Assert.Contains("Capítulo " + number, html, StringComparison.Ordinal);
+        Assert.Contains("href='#nota-instalacao'", html, StringComparison.Ordinal);
+        Assert.Contains("href='#nota-uso'", html, StringComparison.Ordinal);
+        Assert.Contains("id='nota-instalacao'", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void FullRendererIncludesThemeNavigationFooterSectionStyleAndBookPrintCss()
     {
         var page = PageDocument.Parse(
@@ -166,7 +214,11 @@ public sealed class PageThemeTemplateTests
                 "headingFont":"system",
                 "bodyFont":"system",
                 "headingCase":"upper",
-                "css":"body{letter-spacing:.01em}"
+                "lineHeight":1.8,
+                "border":"#abcdef",
+                "buttonStyle":"pill",
+                "cardStyle":"glass",
+                "css":"body{letter-spacing:.01em}</style><script>alert(9)</script>"
               },
               "layout":{
                 "nav":true,
@@ -187,8 +239,14 @@ public sealed class PageThemeTemplateTests
                   "boxed":true,
                   "minHeight":"half",
                   "animation":"zoom",
-                  "className":"minha \"><x"
+                  "className":"minha \"><x",
+                  "css":"& h2{color:red}"
                 }
+              },{
+                "id":"s_b",
+                "type":"text",
+                "props":{"markdown":"b"},
+                "style":{"css":"padding:0"}
               }]
             }
             """);
@@ -207,9 +265,18 @@ public sealed class PageThemeTemplateTests
         Assert.Contains("mh-half", html, StringComparison.Ordinal);
         Assert.Contains("an-zoom", html, StringComparison.Ordinal);
         Assert.DoesNotContain("minha \"><x", html, StringComparison.Ordinal);
+        Assert.Contains("minha x", html, StringComparison.Ordinal);
         Assert.DoesNotContain("fonts.googleapis.com/css2?", html, StringComparison.Ordinal);
         Assert.Contains("text-transform:uppercase", html, StringComparison.Ordinal);
+        Assert.Contains("line-height:1.8", html, StringComparison.Ordinal);
+        Assert.Contains("--border:#abcdef", html, StringComparison.Ordinal);
+        Assert.Contains("border-radius:999px", html, StringComparison.Ordinal);
+        Assert.Contains("backdrop-filter:blur(16px)", html, StringComparison.Ordinal);
+        Assert.Contains("--text:#ffffff", html, StringComparison.Ordinal);
+        Assert.Contains("[data-s='s_a'] h2{color:red}", html, StringComparison.Ordinal);
+        Assert.Contains("[data-s='s_b']{padding:0}", html, StringComparison.Ordinal);
         Assert.Contains("body{letter-spacing:.01em}", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("</style><script>alert", html, StringComparison.OrdinalIgnoreCase);
 
         var book = PageDocument.Parse(
             """
