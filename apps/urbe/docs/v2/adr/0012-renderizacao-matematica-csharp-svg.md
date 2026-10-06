@@ -24,7 +24,7 @@ backends próprios.
 - SVG autocontido para preview/export, sem rasterização nem engine nativa;
 - preservar o TeX do usuário e transformar incompatibilidades em diagnósticos;
 - evitar uma dependência LGPL quando uma fronteira MIT já oferece a extensão necessária;
-- manter o renderer no Core, independente de DOM/WebView/Hub;
+- manter o renderer no Core, independente de DOM/WebView e de qualquer plano de controle externo;
 - limitar entrada e evitar links/scripts/texto externo no SVG gerado.
 
 ## Alternativas consideradas
