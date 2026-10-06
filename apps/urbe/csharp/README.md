@@ -1,4 +1,4 @@
-# Cliente C# do Urbe — UC-8 a UC-14
+# Cliente C# do Urbe — UC-8 a UC-15
 
 Base de composição aprovada por DEC-0035-A / ADR-0025. O roadmap e os gates
 continuam em [`../docs/csharp/ROADMAP.md`](../docs/csharp/ROADMAP.md).
@@ -133,3 +133,19 @@ preserva matemática como átomos `umath` e aplica a mesma sanitização histór
 `VisualMarkdown` usa um parser de fragmento HTML próprio, BCL-only, para
 serializar o subconjunto do editor de volta a Markdown sem DOM, WebView ou JS.
 A paridade é exercitada diretamente pelos goldens históricos do cliente legado.
+
+
+## UC-15 — páginas e composições
+
+UC-15 inicia o port do domínio de páginas sem ligar UI ou filesystem. `PageDocument`
+lê `.page.json` de forma lossless, preserva chaves desconhecidas e recusa escrita de
+versões futuras/corruptas. `PageRenderer` fornece renderização semântica pura dos
+blocos já portados usando `MarkdownEngine` e `DocumentStore`, sem DOM, WebView ou
+JavaScript como autoridade de domínio.
+
+`CompositionFile` lê o sidecar legado e `CompositionPageConverter` transforma
+`order/sources` em seções `note` determinísticas. Todo dado legado que ainda não
+tem equivalente exato em páginas é mantido em `meta.legacyComposition` e campos
+`legacyComposition*`; a conversão não grava nem apaga nada. A ligação com backup,
+migração real e remoção da UI legada só poderá ocorrer em etapa crítica de dados do
+usuário, conforme REQ-038/REQ-105.

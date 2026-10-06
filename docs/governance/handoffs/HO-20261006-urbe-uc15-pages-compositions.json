@@ -1,0 +1,106 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc15-pages-compositions",
+  "category": "RESULT",
+  "timestamp": "2026-10-06T05:40:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-15",
+  "component": "urbe",
+  "state": "working",
+  "branch": "feat/urbe-uc15-pages-compositions",
+  "base_commit": "1eafe4db9676c884fbae78074803ff438298c044",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PageModel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/CompositionModel.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageCompositionTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc14-markdown-visual.json",
+    "docs/governance/handoffs/HO-20261006-urbe-uc15-pages-compositions.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "A fatia atual é domínio puro em memória e documentação. Não executa migração, backup, filesystem, host ou alteração de formato persistido."
+  },
+  "work_completed": [
+    "PageDocument lê páginas de forma lossless, preserva campos desconhecidos e bloqueia escrita de versão futura/corrupta.",
+    "PageRenderer renderiza semanticamente blocos iniciais usando MarkdownEngine e DocumentStore, sem DOM/WebView/JS.",
+    "CompositionFile lê compositions v1 e protege versões futuras/corruptas.",
+    "CompositionPageConverter converte order/sources para seções note em ordem determinística e preserva integralmente dados legados sem mapeamento exato.",
+    "Testes cobrem página futura/corrupta, round-trip de campos desconhecidos, renderer, fixture histórica de composição, ordem, missing sources e determinismo."
+  ],
+  "verification": [
+    {
+      "check": "Core C# UC-15",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI do draft PR após publicação desta fatia."
+    },
+    {
+      "check": "Regressão completa Urbe",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando Web/Android/Windows/E2E/checks/consistency."
+    }
+  ],
+  "known_issues": [
+    "O renderer C# cobre inicialmente blocos semânticos essenciais, não toda a superfície visual de pages/engine.js.",
+    "Migração física compositions→pages e remoção da UI legada não foram ligadas ao vault; isso toca dados do usuário e será tratado separadamente com backup/autorização crítica.",
+    "KaTeX/renderização matemática visual permanece UC-16."
+  ],
+  "blockers": [
+    "Passar CI da primeira fatia e corrigir qualquer divergência encontrada.",
+    "Completar a paridade de blocos/normalização necessária antes de considerar UC-15 pronta para review."
+  ],
+  "next_actions": [
+    "Abrir draft PR da UC-15 e executar CI.",
+    "Corrigir compilação/testes e ampliar cobertura contra pages.mjs/composition.mjs.",
+    "Só depois planejar a ligação de migração real ao vault sob classificação user-data."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/pages/engine.js",
+    "apps/urbe/src/composition/store.js",
+    "apps/urbe/src/composition/compiler.js",
+    "apps/urbe/tests/pages.mjs",
+    "apps/urbe/tests/composition.mjs",
+    "apps/urbe/tests/composition-regression.mjs",
+    "apps/urbe/docs/v2/adr/0009-composicoes-para-paginas.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece dentro do Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Core não depende de Hub, outro Product, DOM ou host concreto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #249, branch própria e handoff específico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação física/UI alegada nesta fatia."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-15 permanece working enquanto CI/paridade estão incompletos."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Domínio C# permanece funcional sem Hub."
+    }
+  ]
+}

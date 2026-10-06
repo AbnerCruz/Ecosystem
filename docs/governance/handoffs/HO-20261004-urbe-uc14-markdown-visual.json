@@ -3,17 +3,17 @@
   "schemaVersion": 1,
   "message_id": "HO-20261004-urbe-uc14-markdown-visual",
   "category": "RESULT",
-  "timestamp": "2026-10-06T05:30:00Z",
+  "timestamp": "2026-10-06T05:40:00Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "UC-14",
   "component": "urbe",
-  "state": "verifying",
+  "state": "done",
   "branch": "feat/urbe-uc14-markdown-visual",
   "base_commit": "58a78d417259d875e5077d423134d63543d8d431",
-  "commit": null,
+  "commit": "1eafe4db9676c884fbae78074803ff438298c044",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/232",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
@@ -40,32 +40,29 @@
     {
       "check": "Core C# / goldens no head reconciliado",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando nova rodada de urbe-checks após merge semântico com main atual."
+      "result": "passed",
+      "evidence": "PR #232 head f53905ce: Urbe.Core.Tests 146/146, failed=0, skipped=0."
     },
     {
       "check": "Regressão completa Urbe no estado combinado atual",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando checks, C# portátil, Web smoke, Android, Windows e E2E."
+      "result": "passed",
+      "evidence": "Integrator run 37418687396: urbe=success; Core portátil, Web smoke, Android, Windows, checks e E2E verdes."
     },
     {
       "check": "Governança/consistency no estado combinado atual",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguardando integrador após reconciliação com main@58a78d417259."
+      "result": "passed",
+      "evidence": "Integrator run 37418687396: consistency=success e main confiável=success."
     }
   ],
   "known_issues": [
     "UC-14 não implementa UI do editor nem KaTeX visual; esses escopos permanecem em UC-18 e UC-16."
   ],
-  "blockers": [
-    "Concluir a regressão automatizada do head reconciliado e corrigir qualquer divergência real."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Aguardar CI do PR #232 no estado combinado atual.",
-    "Corrigir qualquer divergência dos goldens sem alterar os oráculos.",
-    "Quando tudo verde, mover Issue #230 e handoff para review; integração é rotineira se a classificação permanecer routine."
+    "UC-15 — portar páginas e composições para o Core C#.",
+    "UC-16 permanece responsável pela biblioteca/renderização matemática visual."
   ],
   "decisions_required": [],
   "normative_sources": [
