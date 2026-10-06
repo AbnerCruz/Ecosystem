@@ -366,3 +366,11 @@
 - PR #232 foi reconciliado semanticamente sobre `main@58a78d417259` após o corte P4-9/DEC-0039, sem carregar versões antigas dos documentos.
 - Os três arquivos de domínio/teste do UC-14 foram preservados; README/ROADMAP/AGENTSCHAT e handoff foram reaplicados sobre o estado atual.
 - Estado: verificando novamente consistency, Core, Web, Android, Windows e E2E no estado combinado atual.
+
+
+### 2026-10-06 — Codex Urbe math — UC-16 / Issue #257
+- Estado: primeira fatia de matemática na branch `feat/urbe-uc16-math-editing`, base `510c22197426`.
+- Feito: scanner único compartilhado com Markdown, lookup do cursor UTF-16, delimitadores originais, catálogo imutável de comandos/símbolos/modelos, snippets e autocomplete.
+- Paridade: corpus suplementar gerado pelo JS congelado com SHA-256, cobrindo código, preços, escapes, Unicode e limites negativos de autocomplete; corrige distinções de whitespace/dígitos/NUL entre .NET e JS.
+- Decisão preservada: ADR-0025 não escolhe biblioteca matemática. Nenhuma dependência ou interop adicionada; tipografia/macros/erros/export continuam abertos na UC-16; UI pertence à UC-18.
+- Próximo: verificar Core, checks e consistency; abrir PR para CI portátil, Web, Android, Windows e E2E e integração automática rotineira.

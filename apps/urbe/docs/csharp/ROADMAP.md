@@ -44,7 +44,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 - [x] UC-13 — Projeção do mundo e bairros, com IDs estáveis. PR #223 integrado automaticamente em `ccab4b91`; 134/134 testes C#, Web/Android/Windows/E2E/checks e consistency verdes. Issue #221 encerrada.
 - [x] UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens. PR #232 integrado automaticamente em `1eafe4db`; estado combinado verde (Core/Web/Android/Windows/E2E/checks/consistency), Issue #230 encerrada.
 - [ ] UC-15 — Páginas e composições. Primeira fatia integrada no PR #250 (`4a7dd74d`): modelo lossless, normalização forward-safe, renderer essencial e planejamento idempotente de composições. Segunda fatia em andamento: portar blocos semânticos restantes de conteúdo/estrutura/livro sem DOM/WebView/JS. Nenhuma migração em dados reais ainda.
-- [ ] UC-16 — Matemática (decisão da biblioteca em UC-4/UC-5).
+- [ ] UC-16 — Matemática (decisão da biblioteca em UC-4/UC-5). Primeira fatia em Issue #257: edição pura (`MathEditing`), scanner compartilhado, catálogo, snippets e autocomplete com oráculo JS suplementar. A biblioteca tipográfica, macros/erros, export e UI continuam fora desta fatia; nenhuma exceção de interop é presumida.
 
 **Gate G-C2:** suíte de aceite (UC-2) verde para todo o domínio, sem UI.
 *Estado do gate:* **não iniciado**
