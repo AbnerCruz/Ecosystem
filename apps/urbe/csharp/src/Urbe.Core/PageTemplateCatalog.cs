@@ -160,16 +160,74 @@ public static class PageTemplateCatalog
     private static JsonObject Landing(PageTemplateContext c, int year)
     {
         var title = c.Title ?? "Nome do produto";
-        return Page(title, "🚀", Theme("aurora", ("background", "mesh")),
-            Layout(("brand", title), ("navCta", "Começar"), ("navCtaUrl", "#planos"), ("footer", "© " + year + " " + title + " · Feito com Urbe")),
+
+        var heroButtons = Buttons(
+            ("Começar grátis", "#planos", "primary"),
+            ("Ver como funciona", "#recursos", "secondary"));
+        var stats = List(
+            Obj(("value", "10k+"), ("label", "pessoas usando")),
+            Obj(("value", "4,9★"), ("label", "avaliação média")));
+        var features = List(
+            Obj(("icon", "⚡"), ("title", "Rápido"), ("text", "Resposta instantânea.")),
+            Obj(("icon", "🔒"), ("title", "Privado"), ("text", "Seus dados ficam com você.")),
+            Obj(("icon", "🎨"), ("title", "Bonito"), ("text", "Visual personalizável.")));
+        var testimonials = List(
+            Obj(("text", "Economizei horas."), ("author", "Marina")),
+            Obj(("text", "Simples e funciona."), ("author", "João")));
+        var pricing = List(
+            Obj(
+                ("name", "Grátis"),
+                ("price", "R$ 0"),
+                ("features", "Essencial"),
+                ("buttonLabel", "Começar"),
+                ("url", "#")),
+            Obj(
+                ("name", "Pro"),
+                ("price", "R$ 29"),
+                ("features", "Tudo"),
+                ("buttonLabel", "Assinar"),
+                ("url", "#"),
+                ("highlight", true)));
+        var faq = List(Obj(("q", "Posso cancelar?"), ("a", "Sim.")));
+
+        return Page(
+            title,
+            "🚀",
+            Theme("aurora", ("background", "mesh")),
+            Layout(
+                ("brand", title),
+                ("navCta", "Começar"),
+                ("navCtaUrl", "#planos"),
+                ("footer", "© " + year + " " + title + " · Feito com Urbe")),
             [
-                Section("hero", Obj(("eyebrow", "Novo · versão 1.0"), ("title", "O jeito mais simples de fazer **o que importa**"), ("subtitle", "Explique em uma frase o que o produto resolve e para quem ele é."), ("layout", "center"), ("height", "tall"), ("buttons", Buttons(("Começar grátis", "#planos", "primary"), ("Ver como funciona", "#recursos", "secondary")))),
-                Section("stats", Obj(("items", List(Obj(("value", "10k+"), ("label", "pessoas usando")), Obj(("value", "4,9★"), ("label", "avaliação média")))))),
-                Section("features", Obj(("title", "Tudo o que você precisa"), ("columns", 3), ("items", List(Obj(("icon", "⚡"), ("title", "Rápido"), ("text", "Resposta instantânea.")), Obj(("icon", "🔒"), ("title", "Privado"), ("text", "Seus dados ficam com você.")), Obj(("icon", "🎨"), ("title", "Bonito"), ("text", "Visual personalizável.")))))),
-                Section("testimonials", Obj(("title", "Quem usa, recomenda"), ("items", List(Obj(("text", "Economizei horas."), ("author", "Marina")), Obj(("text", "Simples e funciona."), ("author", "João")))))),
-                Section("pricing", Obj(("title", "Planos simples"), ("items", List(Obj(("name", "Grátis"), ("price", "R$ 0"), ("features", "Essencial"), ("buttonLabel", "Começar"), ("url", "#")), Obj(("name", "Pro"), ("price", "R$ 29"), ("features", "Tudo"), ("buttonLabel", "Assinar"), ("url", "#"), ("highlight", true)))))),
-                Section("faq", Obj(("title", "Perguntas frequentes"), ("items", List(Obj(("q", "Posso cancelar?"), ("a", "Sim.")))))),
-                Section("cta", Obj(("title", "Pronto para começar?"), ("text", "Leva menos de um minuto."), ("buttons", Buttons(("Criar conta grátis", "#", "primary")))))
+                Section(
+                    "hero",
+                    Obj(
+                        ("eyebrow", "Novo · versão 1.0"),
+                        ("title", "O jeito mais simples de fazer **o que importa**"),
+                        ("subtitle", "Explique em uma frase o que o produto resolve e para quem ele é."),
+                        ("layout", "center"),
+                        ("height", "tall"),
+                        ("buttons", heroButtons))),
+                Section("stats", Obj(("items", stats))),
+                Section(
+                    "features",
+                    Obj(("title", "Tudo o que você precisa"), ("columns", 3), ("items", features))),
+                Section(
+                    "testimonials",
+                    Obj(("title", "Quem usa, recomenda"), ("items", testimonials))),
+                Section(
+                    "pricing",
+                    Obj(("title", "Planos simples"), ("items", pricing))),
+                Section(
+                    "faq",
+                    Obj(("title", "Perguntas frequentes"), ("items", faq))),
+                Section(
+                    "cta",
+                    Obj(
+                        ("title", "Pronto para começar?"),
+                        ("text", "Leva menos de um minuto."),
+                        ("buttons", Buttons(("Criar conta grátis", "#", "primary")))))
             ]);
     }
 
