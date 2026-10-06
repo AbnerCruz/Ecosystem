@@ -81,10 +81,10 @@
     {
       "check": "Migração DEVICE do legado para o primeiro APK direto",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "docs/distribution/urbe-cutover-runbook.md",
-      "evidence": "Após integrar/publicar urbe-v1.8.3-beta: backup/export → desinstalar legado → instalar direto → restaurar cidade → testar offline/PWA."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-06 (Issue https://github.com/AbnerCruz/Ecosystem/issues/251); registro em docs/governance/responses/VAL-HO-20261005-p4-9-direct-cut-no-mirror-995155c48a9e.md."
     }
   ],
   "known_issues": [
