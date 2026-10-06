@@ -1456,7 +1456,7 @@
     },
     {
       "id": "DEC-0040",
-      "status": "pending",
+      "status": "decided",
       "component": "ecosystem",
       "blocking": true,
       "title": "Identidade técnica e constituição do Product de autoria matemática temporal",
@@ -1488,7 +1488,11 @@
         "https://github.com/AbnerCruz/Ecosystem/issues/260"
       ],
       "raisedBy": "codex-math-authoring",
-      "raisedAt": "2026-10-06"
+      "raisedAt": "2026-10-06",
+      "decision": "Alternativa A — A — ID math-authoring; nome público continua em aberto (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/266).",
+      "decidedAt": "2026-10-06",
+      "record": "docs/governance/responses/DEC-0040.md",
+      "consequencesApplied": false
     }
   ]
 }
