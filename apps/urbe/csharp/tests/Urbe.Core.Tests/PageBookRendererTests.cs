@@ -77,7 +77,7 @@ public sealed class PageBookRendererTests
 
         Assert.Contains("Parte I", html, StringComparison.Ordinal);
         Assert.Contains("href='#comeco'", html, StringComparison.Ordinal);
-        Assert.Contains("href='#introducao'", html, StringComparison.Ordinal);
+        Assert.Contains("href='#capitulo-1'", html, StringComparison.Ordinal);
         Assert.Contains("<p class='bk-chnum'>I</p>", html, StringComparison.Ordinal);
         Assert.Contains("<h2 class='bk-chtitle'>Introdução</h2>", html, StringComparison.Ordinal);
         Assert.Contains("<h4>Contexto</h4>", html, StringComparison.Ordinal);
