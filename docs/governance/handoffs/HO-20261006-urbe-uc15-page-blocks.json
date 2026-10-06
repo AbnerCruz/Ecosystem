@@ -3,18 +3,18 @@
   "schemaVersion": 1,
   "message_id": "HO-20261006-urbe-uc15-page-blocks",
   "category": "HANDOFF",
-  "timestamp": "2026-10-06T10:30:00Z",
+  "timestamp": "2026-10-06T10:35:00Z",
   "agent": {
     "id": "chatgpt",
     "kind": "ai-agent"
   },
   "task_id": "UC-15",
   "component": "urbe",
-  "state": "working",
+  "state": "verifying",
   "branch": "feat/urbe-uc15-page-blocks",
   "base_commit": "6e93934778387a38c08824e7b0c1f9fbd93b80e3",
-  "commit": "0939a8aace1311946b17a4e95759b030679df6c5",
-  "pr": null,
+  "commit": "57ee69fb3684b42b9a7fc8fc3f6cb5bd3af7698b",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/252",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
     "apps/urbe/csharp/src/Urbe.Core/PageRichBlockRenderer.cs",
@@ -32,10 +32,28 @@
   ],
   "verification": [
     {
-      "check": "Core C# e regressão Urbe da segunda fatia",
+      "check": "Core C# e Web smoke da segunda fatia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37450241519: build portátil + 174/174 testes C# + publish Web + web-smoke passaram."
+    },
+    {
+      "check": "Android da segunda fatia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37450241519: build net10.0-android concluído com success."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency PR 37450241524 e push 37450234265 concluíram com success."
+    },
+    {
+      "check": "Windows/checks/E2E e estado combinado",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Aguardando PR/CI."
+      "evidence": "Execuções ainda em andamento; integrador 37450666372 iniciou após o PR sair de draft."
     }
   ],
   "known_issues": [
@@ -44,7 +62,7 @@
     "UC-15 continua aberta; não há escrita/migração física do vault."
   ],
   "blockers": [
-    "Passar CI da segunda fatia e corrigir qualquer divergência real."
+    "Aguardar Windows/checks/E2E e estado combinado; corrigir qualquer falha real antes da integração."
   ],
   "next_actions": [
     "Abrir PR routine para esta segunda fatia.",
