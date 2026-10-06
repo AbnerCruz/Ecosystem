@@ -10,6 +10,11 @@ namespace Urbe.Core;
 /// </summary>
 public static class PageRenderer
 {
+    private const string ExportRuntime = """
+(function(){var d=document,r=d.documentElement;try{var s=localStorage.getItem("urbe-page-theme");if(s)r.dataset.theme=s}catch(e){}var t=d.querySelector(".fab-theme");if(t)t.onclick=function(){var dark=r.dataset.theme?r.dataset.theme==="dark":r.classList.contains("dark-default")?true:r.classList.contains("light-default")?false:matchMedia("(prefers-color-scheme: dark)").matches;r.dataset.theme=dark?"light":"dark";try{localStorage.setItem("urbe-page-theme",r.dataset.theme)}catch(e){}};var top=d.querySelector(".fab-top"),bar=d.querySelector(".progress");function sc(){var y=scrollY,h=r.scrollHeight-innerHeight;if(top)top.classList.toggle("on",y>600);if(bar)bar.style.width=(h>0?y/h*100:0)+"%"}addEventListener("scroll",sc,{passive:true});sc();if(top)top.onclick=function(){scrollTo({top:0,behavior:"smooth"})};d.querySelectorAll("pre.code .copy").forEach(function(b){b.onclick=function(){var c=b.parentNode.querySelector("code").textContent;(navigator.clipboard?navigator.clipboard.writeText(c):Promise.reject()).then(function(){b.textContent="Copiado!";setTimeout(function(){b.textContent="Copiar"},1400)},function(){})}});d.querySelectorAll(".countdown").forEach(function(el){var until=new Date(el.dataset.until).getTime(),cells=el.querySelectorAll(".cd strong");function tick(){var s=Math.max(0,Math.floor((until-Date.now())/1000));if(isNaN(until))return;if(!s){var box=el.querySelector(".cd");if(box)box.textContent=el.dataset.done;return}[Math.floor(s/86400),Math.floor(s/3600)%24,Math.floor(s/60)%60,s%60].forEach(function(v,i){if(cells[i])cells[i].textContent=String(v).padStart(2,"0")});setTimeout(tick,1000)}tick()})})();
+""";
+
+
     public static string Render(PageDocument page, DocumentStore? documents = null)
     {
         ArgumentNullException.ThrowIfNull(page);
@@ -118,6 +123,7 @@ public static class PageRenderer
             output.Append(" class='wrap'");
         output.Append('>').Append(body).Append("</main>")
             .Append(footer).Append(themeToggle).Append(backToTop).Append(print)
+            .Append("<script>").Append(ExportRuntime).Append("</script>")
             .Append("</body></html>");
         return output.ToString();
     }
