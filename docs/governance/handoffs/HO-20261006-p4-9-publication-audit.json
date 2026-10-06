@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-p4-9-publication-audit",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T11:05:28Z",
+  "agent": {
+    "id": "codex-p4-9-publication-audit",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-9",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "codex/p4-9-publication-audit",
+  "base_commit": "eeefea4033be8059b9ab3c137b57627213193067",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/urbe-cutover.yml",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261006-p4-9-publication-audit.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: PR #248 integrado em 58a78d417259d875e5077d423134d63543d8d431; aprovação DEVICE pelo proprietário na Issue #251 persistida no handoff original. Não foi criada aprovação pelo agente.",
+    "FATO OBSERVADO: GET releases/tags/urbe-v1.8.3-beta retorna 404 e a listagem das releases atuais não contém Urbe. Aprovação DEVICE não foi tratada como evidência de publicação.",
+    "Corrigido Resumo de urbe-cutover: printf com formato literal preserva versão/tag/commit/urbe-release.yml em Markdown sem command substitution.",
+    "ROADMAP atualizado com aprovação já registrada e publicação ainda pendente; P4-9 continua [~] e o gate da Fase 4 não foi aprovado por inferência."
+  ],
+  "verification": [
+    {
+      "check": "Resumo Bash e estrutura YAML",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Execução local do bloco Resumo com bash -euo pipefail e valores canônicos: saída sem stderr, versão/tag/commit/workflow preservados literalmente. PyYAML validou YAML e os seis passos originais."
+    },
+    {
+      "check": "Integração original e aprovação persistida",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "GET pulls/248 confirma merged=true e merge_commit_sha=58a78d417259d875e5077d423134d63543d8d431. Commit 6e93934778387a38c08824e7b0c1f9fbd93b80e3 contém resposta VAL-HO-20261005-p4-9-direct-cut-no-mirror-995155c48a9e; leitura do handoff confirma verificação DEVICE passed."
+    },
+    {
+      "check": "Consistency e self-tests do candidato",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Ambiente local sem dotnet; clone falha na conexão com proxy:8080. Checks obrigatórios serão executados no CI do PR e no estado combinado pelo integrador."
+    }
+  ],
+  "known_issues": [
+    "A release direta urbe-v1.8.3-beta ainda não foi encontrada; não há evidência de publicação para encerrar P4-9.",
+    "A aprovação DEVICE existente foi preservada integralmente em seu registro canônico; este handoff não substitui a resposta do proprietário."
+  ],
+  "blockers": [
+    "Publicação direta pendente; conector disponível não oferece workflow_dispatch. O workflow aprovado exige início explícito pelo proprietário.",
+    "A política da main classifica alteração de workflow como control-plane; integração exige autorização do proprietário após os checks."
+  ],
+  "next_actions": [
+    "Após checks verdes, autorizar este PR crítico pelo mecanismo do integrador.",
+    "Executar urbe-cutover com version=1.8.3-beta na main; conferir release e artefatos Android/Windows/checksums.",
+    "Depois de comprovar a publicação, reconciliar handoff/Issue #166 e encerrar P4-9 conforme Definition of Done."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0017-urbe-corte-direto-sem-espelho.md",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/distribution/urbe-cutover-runbook.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Aprovação referenciada na verificação canônica original; fonte de publicação consultada diretamente no GitHub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch própria, BASE exata e handoff distinto do agente original."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente; instruções de corte e integração preservadas."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Correção local de formatação; não altera política, canal, assinatura ou permissões."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aprovação humana existente preservada; não inventa validação nem substitui DEVICE por CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P4-9 continua aberta até evidência de release; checks locais e pendências distinguidos."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "ROADMAP e este handoff explicitam publicação ausente apesar da aprovação registrada."
+    }
+  ],
+  "cost": null
+}
