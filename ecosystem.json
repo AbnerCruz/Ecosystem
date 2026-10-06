@@ -40,7 +40,7 @@
       "path": "apps/urbe",
       "status": "active",
       "description": "Workspace de conhecimento, documentos, vault, páginas, mundo e organização (MANIFEST §5.2).",
-      "publicUrl": "https://abnercruz.github.io/Urbe/",
+      "publicUrl": "https://abnercruz.github.io/Ecosystem/urbe/",
       "owners": ["AbnerCruz"],
       "source": { "repository": "https://github.com/AbnerCruz/Urbe", "confirmed": true },
       "version": { "authority": "version-file", "file": "apps/urbe/package.json" },
