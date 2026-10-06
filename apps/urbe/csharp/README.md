@@ -209,3 +209,14 @@ não implementa renderização KaTeX, macros, diagnósticos LaTeX, export visual
 UI/seleção/teclado. UC-16 permanece aberta; UI fica na UC-18.
 
 Investigação UC-16: [renderer C#/SVG e corpus real](../docs/csharp/UC16-RENDERER-INVESTIGATION.md). Execute `node tests/math-renderer-probe.mjs` com .NET 10 e Chromium para reproduzir o experimento isolado; isso não adota suas bibliotecas no produto.
+
+
+### UC-15 — shell, temas e modelos
+
+A sexta fatia fecha a lacuna do oráculo `pages.mjs` que não estava coberta pelos
+renderers de blocos: `PageThemeCatalog` porta os dez presets e a tipografia;
+`PageRenderer.Render` passa a emitir o documento HTML completo com tema,
+metadados, navegação, rodapé, estilos de seção e CSS de impressão de livro; e
+`PageTemplateCatalog` representa os 13 modelos embutidos e as variantes
+`simple`/`skeleton`. Tudo continua puro e sem DOM/WebView/filesystem.
+Studio, preview editável e ferramentas de IA continuam nas UCs de UI/IA.
