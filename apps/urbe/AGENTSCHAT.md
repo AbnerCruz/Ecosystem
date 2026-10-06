@@ -1,3 +1,11 @@
+### 2026-10-06 — ChatGPT — UC-15 quinta fatia: conversão e compactação
+
+- PR #254 integrou o layout livre C# na main (`b1ce8347`); a nova branch parte desse estado.
+- Portado o conversor dos 13 blocos fechados declarados por `pages/free.js`, incluindo Markdown→peças e resolução de capítulo/nota via `DocumentStore`.
+- Adicionada compactação de defaults com round-trip pelo `PageNormalizer`; chaves futuras/desconhecidas são preservadas em vez de descartadas.
+- Testes reproduzem o oráculo JS do capítulo vindo de nota e verificam round-trip/arquivo menor/proteção forward.
+- Sem escrita de vault, Studio ou migração física; UC-15 continua aberta até CI e revisão do restante de paridade.
+
 ### 2026-10-06 — ChatGPT — UC-15 quarta fatia: layout livre
 
 - Branch empilhada `feat/urbe-uc15-free-layout` criada sobre a terceira fatia enquanto #253 finaliza.
