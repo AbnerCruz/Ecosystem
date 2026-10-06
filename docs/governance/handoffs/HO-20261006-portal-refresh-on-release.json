@@ -14,7 +14,7 @@
   "branch": "fix/portal-refresh-on-release",
   "base_commit": "c7bf1ba4cbbe9965674c9dedd2de2e17e706a29a",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/272",
   "files_changed": [
     ".github/workflows/pages.yml",
     "docs/architecture/portal.md",
@@ -53,8 +53,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Abrir PR e aguardar checks automáticos.",
-    "Após checks verdes, o integrador aguardará a autorização do proprietário por ser control-plane.",
+    "Aguardar checks automáticos do PR #272.",
+    "Após checks verdes, o integrador aguardará a autorização canônica do proprietário por ser control-plane.",
     "Depois da integração, um próximo release.published deve regenerar o Portal sem depender de push posterior."
   ],
   "decisions_required": [],
