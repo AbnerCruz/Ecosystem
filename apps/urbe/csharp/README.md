@@ -173,7 +173,7 @@ casos de autocomplete e 172 snippets com o módulo JS. O corpus suplementar em
 `tests/fixtures/math-editing.json` registra o SHA-256 da fonte; não modifica os
 297 casos de aceite UC-2. `node tests/math-oracle.mjs --check` verifica catálogo e
 expectativas executando a fonte congelada; `--write` é regeneração deliberada,
-cujo diff precisa de revisão. O runner Node existente também executa esse check.
+cujo diff precisa de revisão. A suíte C# também verifica o SHA-256 da fonte e todas as expectativas.
 
 A biblioteca tipográfica ainda não foi escolhida (ADR-0025 / UC-4). Este passo
 não implementa renderização KaTeX, macros, diagnósticos LaTeX, export visual ou

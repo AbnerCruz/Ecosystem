@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261006-urbe-uc16-math-editing",
   "category": "RESULT",
-  "timestamp": "2026-10-06T13:48:12.816345Z",
+  "timestamp": "2026-10-06T13:50:30.791886Z",
   "agent": {
     "id": "codex-urbe-math",
     "kind": "ai-agent"
@@ -22,7 +22,6 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/MathEditingTests.cs",
     "apps/urbe/csharp/tests/math-oracle.mjs",
     "apps/urbe/csharp/tests/fixtures/math-editing.json",
-    "apps/urbe/tests/csharp-math-editing.mjs",
     "apps/urbe/csharp/README.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "apps/urbe/AGENTSCHAT.md",
@@ -49,7 +48,7 @@
       "check": "Oráculo matemático JS",
       "kind": "automated",
       "result": "passed",
-      "evidence": "node apps/urbe/tests/csharp-math-editing.mjs: 33 scans, 91 completion, 172 snippets; catálogo e expectativas verificados."
+      "evidence": "node apps/urbe/csharp/tests/math-oracle.mjs --check: 33 scans, 91 completion, 172 snippets; catálogo e expectativas verificados."
     },
     {
       "check": "Build portátil Core/UI/Web",
@@ -72,7 +71,7 @@
       "check": "Checks gerais Urbe",
       "kind": "automated",
       "result": "pending",
-      "evidence": "npm run check em execução; suíte inclui oráculo matemático suplementar."
+      "evidence": "Wrapper removido do inventário JS congelado. node tools/csharp-parity.mjs check passou com 297 casos intactos; native-contract.mjs passou isoladamente após falha do timeout legado de 50ms sob carga. Rodada final em andamento."
     }
   ],
   "known_issues": [
