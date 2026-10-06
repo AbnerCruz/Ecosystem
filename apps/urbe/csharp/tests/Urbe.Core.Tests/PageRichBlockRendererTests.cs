@@ -82,12 +82,9 @@ public sealed class PageRichBlockRendererTests
     public void VideoBlockChoosesExpectedSafeEmbed(string url, string expected)
     {
         var page = PageDocument.Parse(
-            $$"""
-            {
-              "version":1,
-              "sections":[{"type":"video","props":{"url":"{{url}}"}}]
-            }
-            """);
+            "{\"version\":1,\"sections\":[{\"type\":\"video\",\"props\":{\"url\":\"" +
+            url +
+            "\"}}]}");
 
         var html = PageRenderer.RenderBody(page);
 
