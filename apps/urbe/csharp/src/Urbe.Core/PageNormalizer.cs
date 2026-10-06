@@ -106,7 +106,15 @@ public static class PageNormalizer
                 ["themeToggle"] = true,
                 ["backToTop"] = true,
                 ["progress"] = false,
-                ["format"] = "web"
+                ["format"] = "web",
+                ["pageSize"] = "a5",
+                ["margins"] = "normal",
+                ["pageNumbers"] = true,
+                ["runningHead"] = "",
+                ["chapterStyle"] = "word",
+                ["recto"] = false,
+                ["justify"] = true,
+                ["indent"] = true
             });
 
         if (root["sections"] is null)
@@ -215,7 +223,23 @@ public static class PageNormalizer
             case "divider":
                 Default(props, "style", "line");
                 break;
+            case "bookcover":
+                Default(props, "title", "O título do livro");
+                Default(props, "author", "Nome do autor");
+                Default(props, "style", "classic");
+                break;
+            case "titlepage":
+                Default(props, "title", "O título do livro");
+                Default(props, "author", "Nome do autor");
+                break;
+            case "booktoc":
+                Default(props, "title", "Sumário");
+                break;
+            case "part":
+                Default(props, "title", "Título da parte");
+                break;
             case "chapter":
+                Default(props, "title", "Título do capítulo");
                 Default(props, "source", "text");
                 Default(props, "numbered", true);
                 Default(props, "dropCap", true);
@@ -223,6 +247,12 @@ public static class PageNormalizer
             case "chapters":
                 Default(props, "sort", "path");
                 Default(props, "dropCap", true);
+                break;
+            case "about":
+                Default(props, "title", "Sobre o autor");
+                break;
+            case "dedication":
+                Default(props, "kind", "dedication");
                 break;
         }
     }
