@@ -8,6 +8,8 @@ on:
   push:
     branches:
       - main
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -21,12 +23,21 @@ jobs:
   build:
     name: Build portal
     runs-on: ubuntu-latest
+    outputs:
+      source_commit: ${{ steps.source.outputs.commit }}
     permissions:
       contents: read
       pages: read
       pull-requests: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Em release.published, github.ref/github.sha apontam para a tag; a projeção usa sempre a SOURCE canônica.
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Resolve canonical source commit
+        id: source
+        run: echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       # Evita "deploy verde" enquanto o Pages continua servindo a publicação legada da branch.
       # A API é a fonte observável do modo efetivo; a UI de Settings sozinha não basta como evidência.
@@ -59,7 +70,7 @@ jobs:
         run: >
           dotnet run site/generator/GenerateStatus.cs --
           --ref "${{ github.event.repository.default_branch }}"
-          --commit "${{ github.sha }}"
+          --commit "${{ steps.source.outputs.commit }}"
           --checks passing
           --releases online
           --checks-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
@@ -126,16 +137,17 @@ jobs:
 
   smoke:
     name: Verify live portal
-    needs: deploy
+    needs: [build, deploy]
     runs-on: ubuntu-latest
     steps:
       - name: Fetch public Pages URL and verify portal entrypoint
         env:
           PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+          SOURCE_COMMIT: ${{ needs.build.outputs.source_commit }}
         run: |
           echo "Checking ${PAGE_URL}"
           for attempt in {1..12}; do
-            body="$(curl -fsSL --max-time 20 "${PAGE_URL}?commit=${GITHUB_SHA}" || true)"
+            body="$(curl -fsSL --max-time 20 "${PAGE_URL}?commit=${SOURCE_COMMIT}" || true)"
             if printf '%s' "${body}" | grep -Fq '<title>Ecosystem — Portal</title>'; then
               echo "Live portal verified on attempt ${attempt}."
               exit 0
