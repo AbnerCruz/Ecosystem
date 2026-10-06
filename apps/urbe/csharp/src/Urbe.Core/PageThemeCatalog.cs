@@ -437,8 +437,15 @@ public static partial class PageThemeCatalog
     {
         if (obj[key] is null)
             return;
-        if (!TryNumber(obj[key], out var value) || value < min || value > max)
-            errors.Add(new PageNormalizationIssue(path, "Número fora do intervalo permitido."));
+        if (!TryNumber(obj[key], out var value))
+        {
+            errors.Add(new PageNormalizationIssue(path, "Deve ser um número."));
+            return;
+        }
+
+        // pages/engine.js coerces numeric fields and clamps valid numbers
+        // instead of turning an out-of-range value into a validation error.
+        obj[key] = Math.Clamp(value, min, max);
     }
 
     private static double Number(JsonNode? node, double fallback) =>
