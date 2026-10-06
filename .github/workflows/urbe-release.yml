@@ -1,7 +1,7 @@
 name: urbe-release
 
 # Publicação = tag "v<versão do package.json>" (ou execução manual sobre uma tag). Merge em main NÃO publica (REQ-006, REQ-066).
-# Depende de testes e checagens verdes; sem a chave Android o build falha (o APK não pode ser atualizado sem ela).
+# Depende de testes e checagens verdes; Android usa a chave beta pública e estável fixada por DEC-0039.
 #
 # Como lançar:  git tag v2.0.0-beta.1 && git push origin v2.0.0-beta.1
 
@@ -51,7 +51,6 @@ jobs:
     with:
       version: ${{ needs.verificar.outputs.version }}
       release: true
-    secrets: inherit
 
   publicar:
     needs: [verificar, construir]
