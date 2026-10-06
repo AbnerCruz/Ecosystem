@@ -73,14 +73,20 @@ public sealed class PageFreeConversionTests
 
         foreach (var type in PageFreeConversion.ConvertibleTypes)
         {
-            var props = samples[type];
+            var props = JsonNode.Parse(samples[type])!.AsObject();
             var page = PageDocument.Parse(
-                $$"""
+                new JsonObject
                 {
-                  "version":1,
-                  "sections":[{"id":"s","type":"{{type}}","props":{{props}},"style":{}}]
-                }
-                """);
+                    ["version"] = 1,
+                    ["sections"] = new JsonArray(
+                        new JsonObject
+                        {
+                            ["id"] = "s",
+                            ["type"] = type,
+                            ["props"] = props,
+                            ["style"] = new JsonObject()
+                        })
+                });
             var tree = PageFreeConversion.FromBlock(page.Sections[0], documents);
             Assert.NotNull(tree);
 
