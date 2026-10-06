@@ -149,3 +149,13 @@ tem equivalente exato em páginas é mantido em `meta.legacyComposition` e campo
 `legacyComposition*`; a conversão não grava nem apaga nada. A ligação com backup,
 migração real e remoção da UI legada só poderá ocorrer em etapa crítica de dados do
 usuário, conforme REQ-038/REQ-105.
+
+
+### UC-15 — blocos ricos
+
+A segunda fatia amplia o renderer puro de páginas para os blocos de conteúdo e
+estrutura do cliente legado (destaques, cartões, galeria, vídeo, depoimentos,
+números, timeline, FAQ, CTA, colunas, planos, contato, countdown, código,
+divisores e blocos editoriais simples de livro). URLs passam por `SafeUrl`,
+conteúdo textual por escape/Markdown e o bloco avançado `html` permanece raw
+por paridade explícita com o produto atual.
