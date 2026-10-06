@@ -54,7 +54,7 @@ public static class PageRenderer
             "image" => RenderImage(props),
             "chapter" => RenderChapter(props, documents),
             "chapters" => RenderChapters(props, documents),
-            _ => string.Empty
+            _ => PageRichBlockRenderer.Render(section.Type, props, documents)
         };
     }
 

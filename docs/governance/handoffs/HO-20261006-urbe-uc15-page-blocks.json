@@ -1,0 +1,112 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc15-page-blocks",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T10:35:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-15",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc15-page-blocks",
+  "base_commit": "6e93934778387a38c08824e7b0c1f9fbd93b80e3",
+  "commit": "57ee69fb3684b42b9a7fc8fc3f6cb5bd3af7698b",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/252",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRichBlockRenderer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageRichBlockRendererTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261006-urbe-uc15-page-blocks.json"
+  ],
+  "work_completed": [
+    "Portados para o Core C# os blocos semânticos de conteúdo/estrutura que não exigem estado de host: features, cards, gallery, video, testimonials, stats, timeline, faq, cta, columns, pricing, contact, countdown, code, divider e html.",
+    "Portados blocos editoriais simples de livro sem contexto entre seções: about, copyright, dedication e colophon.",
+    "URLs externas e mídia passam por MarkdownEngine.SafeUrl; código e metadados são escapados; Markdown reaproveita UC-14.",
+    "Testes exercitam renderização determinística, URLs inseguras, embeds YouTube/Vimeo, código escapado e paridade raw do bloco avançado html."
+  ],
+  "verification": [
+    {
+      "check": "Core C# e Web smoke da segunda fatia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37450241519: build portátil + 174/174 testes C# + publish Web + web-smoke passaram."
+    },
+    {
+      "check": "Android da segunda fatia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37450241519: build net10.0-android concluído com success."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency PR 37450241524 e push 37450234265 concluíram com success."
+    },
+    {
+      "check": "Windows/checks/E2E e estado combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Execuções ainda em andamento; integrador 37450666372 iniciou após o PR sair de draft."
+    }
+  ],
+  "known_issues": [
+    "TOC e blocos de livro que dependem de numeração/âncoras entre seções ainda não estão portados nesta fatia.",
+    "O bloco html permanece raw por paridade com a funcionalidade avançada existente; ele não deve ser confundido com conteúdo sanitizado.",
+    "UC-15 continua aberta; não há escrita/migração física do vault."
+  ],
+  "blockers": [
+    "Aguardar Windows/checks/E2E e estado combinado; corrigir qualquer falha real antes da integração."
+  ],
+  "next_actions": [
+    "Abrir PR routine para esta segunda fatia.",
+    "Depois dos checks, portar TOC e semântica estrutural de livro/contexto entre seções.",
+    "Manter migração física de composições separada de qualquer fatia routine."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/pages/engine.js",
+    "apps/urbe/tests/pages.mjs",
+    "apps/urbe/tests/pages-free.mjs",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/adr/0009-composicoes-para-paginas.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças permanecem dentro do Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Renderer de domínio é puro e não depende de Hub ou host concreto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #249, branch e handoff identificam a fatia."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana/UI é alegada nesta fatia de domínio."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-15 permanece aberta até a paridade necessária estar concluída."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Urbe continua independente do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Port de domínio/renderização em memória; não toca vault real, distribuição, segurança crítica ou control-plane."
+  },
+  "cost": null
+}

@@ -1,3 +1,11 @@
+### 2026-10-06 — ChatGPT — UC-15 segunda fatia: blocos de página
+
+- PR #250 foi integrado em `4a7dd74d`; a primeira fatia de UC-15 ficou verde no estado combinado.
+- Nova branch `feat/urbe-uc15-page-blocks` parte da main atual.
+- Port iniciado para blocos ricos/estrutura: features, cards, gallery, video, testimonials, stats, timeline, faq, cta, columns, pricing, contact, countdown, code, divider, html e blocos editoriais simples de livro.
+- Segurança/paridade: links e mídia passam por SafeUrl; texto por escape/Markdown; `html` continua raw porque esse é o contrato avançado do cliente JS.
+- Próximo: CI desta fatia; depois TOC/numeração e blocos estruturais de livro que dependem de contexto entre seções.
+
 ### 2026-10-06 — ChatGPT — UC-15 primeira fatia em verificação
 
 - Draft PR #250: PageDocument lossless, PageNormalizer REQ-049, PageRenderer puro, CompositionFile/conversor e planner idempotente de migração.
