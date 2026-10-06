@@ -10,7 +10,7 @@
   },
   "task_id": "UC-16",
   "component": "urbe",
-  "state": "verifying",
+  "state": "review",
   "branch": "feat/urbe-uc16-svg-renderer",
   "base_commit": "869d55d0837fc18b484d36ff7cfc23f7ce697c59",
   "commit": "20537a7f3490fda5b553871929d097e4a635d7fa",
@@ -61,10 +61,10 @@
     "Textos completos das licenças de fontes/pacotes precisam entrar no instalável C# antes de UC-27/G-C4."
   ],
   "blockers": [
-    "Integração exige autorização do proprietário porque o PR altera .csproj (distribution) e propõe ADR (constitution)."
+    "Integração exige autorização explícita do proprietário porque o PR altera .csproj (distribution) e propõe ADR (constitution)."
   ],
   "next_actions": [
-    "Corrigir qualquer incompatibilidade de API/semântica detectada pela CI.",
+    "Rodar novamente CI e integrador após reconciliação semântica com main@9c8720d.",
     "Após autorização crítica e integração, portar camada limitada de aliases/macros e ampliar comparação visual para fechar UC-16/G-C2."
   ],
   "decisions_required": [
