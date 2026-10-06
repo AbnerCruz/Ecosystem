@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc15-book-structure",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T10:42:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-15",
+  "component": "urbe",
+  "state": "working",
+  "branch": "feat/urbe-uc15-book-structure",
+  "base_commit": "b93a5f802ee2f7f27a5143e6737f2e8c7af483ef",
+  "commit": "b7e1b91e0cb8a0ab900b4ebd4db25c31a0e996f6",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderPlan.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageBookRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageNormalizer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageBookRendererTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261006-urbe-uc15-book-structure.json"
+  ],
+  "work_completed": [
+    "PageRenderPlan calcula âncoras únicas e TOC sem mutar PageDocument.",
+    "O plano numera partes/capítulos e expande capítulos de pasta na mesma sequência global usada pelo motor JS.",
+    "PageBookRenderer porta TOC, capa, folha de rosto, sumário de livro, parte, capítulo e capítulos por pasta.",
+    "Headings internos de capítulos são deslocados sem alterar fenced code.",
+    "PageNormalizer passou a aplicar defaults de layout/book e defaults dos blocos de livro sem perder chaves desconhecidas."
+  ],
+  "verification": [
+    {
+      "check": "Core C# / regressão da terceira fatia",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Será executado em draft PR empilhado sobre a segunda fatia."
+    }
+  ],
+  "known_issues": [
+    "Esta branch depende do head do PR #252; deve ser retargetada para main somente depois que #252 for integrado.",
+    "CSS/layout visual de livro continua responsabilidade futura da UI; esta fatia porta semântica/HTML do domínio.",
+    "Migração física de composições continua fora desta fatia e sem escrita no vault."
+  ],
+  "blockers": [
+    "PR #252 precisa integrar antes desta fatia poder ser integrada em main.",
+    "CI desta fatia precisa ficar verde."
+  ],
+  "next_actions": [
+    "Abrir draft PR empilhado para executar CI.",
+    "Corrigir qualquer divergência de Core/Web/Android/Windows/E2E.",
+    "Após merge do #252, retargetar este PR para main e executar estado combinado final."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/pages/engine.js",
+    "apps/urbe/tests/pages.mjs",
+    "apps/urbe/docs/v2/REQUIREMENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece no Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Plano/renderização são puros e independentes de host concreto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #249, branch e handoff específicos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma prova visual humana é declarada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-15 permanece aberta enquanto a paridade de páginas não terminou."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência de Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Port de domínio/renderização em memória; sem dados reais, distribuição ou control-plane."
+  },
+  "cost": null
+}
