@@ -5,6 +5,8 @@ name: urbe-cutover
 # O workflow cria urbe-v<versão> no commit atual da main e dispara urbe-release.yml.
 
 on:
+  push:
+    branches: ['release/urbe-1.8.4-beta-trigger']
   workflow_dispatch:
     inputs:
       version:
@@ -25,7 +27,7 @@ jobs:
     name: Validar e criar tag direta do Urbe
     runs-on: ubuntu-latest
     env:
-      REQUESTED_VERSION: ${{ inputs.version }}
+      REQUESTED_VERSION: ${{ inputs.version || '1.8.4-beta' }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
