@@ -1453,6 +1453,42 @@
       "decidedAt": "2026-10-05",
       "record": "docs/governance/addenda/ADD-0017-urbe-corte-direto-sem-espelho.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0040",
+      "status": "pending",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Identidade técnica e constituição do Product de autoria matemática temporal",
+      "context": "A delegação ecosystem-math-studio-prompt-2.md solicita um Product C# independente, mobile-first/local-first, com engine matemática determinística, documento único para visual/texto e vertical slice Δx → 0 com MP4 real. Essa intenção já está definida. A main auditada não tem Product nem decisão matemática anterior. O proprietário declarou Math Studio apenas codinome e não definiu ID permanente; AGENTS §3, NN-011/019 e o precedente DEC-0027 exigem identidade legitimada antes de apps/<id>/registro. SPEC, roadmap, arquitetura e comparação de formatos estão preparados como proposta, sem implementação ou aceite falsificado.",
+      "question": "Qual ID técnico permanente deve constituir este Product independente, mantendo o nome público em aberto e ratificando a fundação proposta nos ADRs 0029/0030?",
+      "alternatives": [
+        {
+          "option": "A — ID math-authoring; nome público continua em aberto",
+          "consequences": "Constitui o Product em apps/math-authoring, nome de exibição provisório Autoria matemática, sem adotar Math Studio como marca. Ratifica ADR-0029 e a fundação inicial JSON versionado + AST tipada do ADR-0030; após aplicação canônica, segue MA-001..011 autonomamente. Registro/CI/distribuição seguem os gates críticos reais do integrador."
+        },
+        {
+          "option": "B — ID math-composer; nome público continua em aberto",
+          "consequences": "Mesma constituição, documento único e roadmap, em apps/math-composer. O ID enfatiza composição, sem converter isso em marca pública. Ratifica ADR-0029/0030; preserva C#, standalone, local-first e todos os critérios do slice. Nenhuma implementação tem de ser renomeada, pois ainda não foi criada."
+        },
+        {
+          "option": "C — Manter a identidade em aberto e adiar a constituição",
+          "consequences": "Preserva a intenção e toda a preparação, mas não autoriza ID permanente, apps/<id>, registro ou implementação. A missão permanece bloqueada pela identidade até decisão explícita posterior; não transforma o codinome em autoridade."
+        }
+      ],
+      "consequences": "A/B fixam somente ID técnico e constituição/fundação inicial propostas; a marca pública continua aberta. A visão textual inicial é JSON sobre o mesmo ProjectDocument com AST, não C# arbitrário nem DSL definitiva. Após decisão registrada e aplicada, documentação local migra para o Product, sem duas autoridades, e a implementação avança por milestones verificáveis. Não aprova assinatura/canal/biblioteca externa inexistente nem substitui DEVICE/MP4 real. C mantém o gate aberto.",
+      "manifestCompatibility": "NN-001: documento único; NN-002/003/023: Product e distribuição independentes; NN-004/020/022: nenhuma extração especulativa; NN-005: C#; NN-008/009/010/011/019/021: proposta/decisão/identidade rastreáveis; NN-014/015: lifecycle próprio, GitHub somente desenvolvimento; NN-016: import é dado; NN-017/018: gates com evidência, sem alegar DEVICE ou vídeo pronto.",
+      "recommendation": "A — math-authoring descreve o domínio autoral de forma ampla e não prende marca ou saída a vídeo. JSON/AST inicial reduz custo de uma segunda linguagem antes de provar o slice; DSL futura exige ADR próprio.",
+      "related": [
+        "docs/proposals/math-studio/SPEC.md",
+        "docs/proposals/math-studio/ROADMAP.md",
+        "docs/proposals/math-studio/IMPLEMENTATION.md",
+        "docs/adr/0029-product-de-autoria-matematica-temporal.md",
+        "docs/adr/0030-documento-canonico-de-autoria-matematica.md",
+        "https://github.com/AbnerCruz/Ecosystem/issues/260"
+      ],
+      "raisedBy": "codex-math-authoring",
+      "raisedAt": "2026-10-06"
     }
   ]
 }
