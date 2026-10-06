@@ -146,6 +146,125 @@ public sealed class PageModelTests
 }
 
 
+
+public sealed class PageNormalizerTests
+{
+    [Fact]
+    public void DefaultsAreAppliedWithoutDroppingUnknownFieldsOrRewritingVersion()
+    {
+        var source = PageDocument.Parse(
+            """
+            {
+              "version":1,
+              "kind":"urbe-page",
+              "futureRoot":{"keep":true},
+              "meta":{"futureMeta":7},
+              "theme":{"futureTheme":"x"},
+              "layout":{"futureLayout":3},
+              "sections":[
+                {
+                  "id":"s1",
+                  "type":"hero",
+                  "futureSection":{"keep":true},
+                  "props":{"futureProp":"ok"},
+                  "style":{"futureStyle":9}
+                }
+              ]
+            }
+            """);
+
+        var result = PageNormalizer.Normalize(source);
+
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
+        var root = result.Page.Raw;
+        Assert.Equal(1, root["version"]!.GetValue<int>());
+        Assert.True(root["futureRoot"]!["keep"]!.GetValue<bool>());
+        Assert.Equal(7, root["meta"]!["futureMeta"]!.GetValue<int>());
+        Assert.Equal("Página sem título", root["meta"]!["title"]!.GetValue<string>());
+        Assert.Equal("pt-BR", root["meta"]!["lang"]!.GetValue<string>());
+        Assert.Equal("x", root["theme"]!["futureTheme"]!.GetValue<string>());
+        Assert.Equal("aurora", root["theme"]!["preset"]!.GetValue<string>());
+        Assert.Equal(3, root["layout"]!["futureLayout"]!.GetValue<int>());
+        Assert.Equal("web", root["layout"]!["format"]!.GetValue<string>());
+
+        var section = root["sections"]!.AsArray()[0]!.AsObject();
+        Assert.True(section["futureSection"]!["keep"]!.GetValue<bool>());
+        Assert.Equal("ok", section["props"]!["futureProp"]!.GetValue<string>());
+        Assert.Equal("Um título que diz tudo",
+            section["props"]!["title"]!.GetValue<string>());
+        Assert.Equal(9, section["style"]!["futureStyle"]!.GetValue<int>());
+        Assert.False(section["style"]!["hidden"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public void MissingVersionStaysMissingAfterNormalization()
+    {
+        var source = PageDocument.Parse(
+            """{"kind":"urbe-page","sections":[]}""");
+
+        var result = PageNormalizer.Normalize(source);
+
+        Assert.True(result.IsValid);
+        Assert.Null(result.Page.Raw["version"]);
+        Assert.Equal(
+            "Página sem título",
+            result.Page.Raw["meta"]!["title"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void UnknownBlocksAndMalformedKnownContainersArePreservedWithDiagnostics()
+    {
+        var source = PageDocument.Parse(
+            """
+            {
+              "version":1,
+              "meta":"não normalizar",
+              "sections":[
+                {"type":"future-block","props":{"x":1},"style":{}},
+                42,
+                {"type":"text","props":"texto cru","style":{}}
+              ]
+            }
+            """);
+
+        var result = PageNormalizer.Normalize(source);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Warnings,
+            issue => issue.Path == "sections[0].type");
+        Assert.Contains(result.Errors,
+            issue => issue.Path == "meta");
+        Assert.Contains(result.Errors,
+            issue => issue.Path == "sections[1]");
+        Assert.Contains(result.Errors,
+            issue => issue.Path == "sections[2].props");
+
+        var root = result.Page.Raw;
+        Assert.Equal("não normalizar", root["meta"]!.GetValue<string>());
+        Assert.Equal("future-block",
+            root["sections"]!.AsArray()[0]!["type"]!.GetValue<string>());
+        Assert.Equal(42, root["sections"]!.AsArray()[1]!.GetValue<int>());
+        Assert.Equal("texto cru",
+            root["sections"]!.AsArray()[2]!["props"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void FuturePageNormalizationIsRefusedWithoutMutatingInput()
+    {
+        var source = PageDocument.Parse(
+            """{"version":99,"kind":"urbe-page","future":{"keep":true}}""");
+        var before = source.Raw.ToJsonString();
+
+        var result = PageNormalizer.Normalize(source);
+
+        Assert.False(result.IsValid);
+        Assert.Single(result.Errors);
+        Assert.Equal(before, result.Page.Raw.ToJsonString());
+        Assert.Equal(PageDocumentState.Future, result.Page.State);
+    }
+}
+
 public sealed class CompositionMigrationPlannerTests
 {
     [Fact]
