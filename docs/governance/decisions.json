@@ -1369,6 +1369,90 @@
       "decidedAt": "2026-10-04",
       "record": "docs/governance/responses/DEC-0037.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0038",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Fronteira compartilhada de text.inspect para o segundo Host",
+      "context": "P5-4 foi concluído e aprovado canonicamente na Issue #225. P5-5 exige que Hub e Lunet executem a mesma implementação de text.inspect@1.0.0, sem duplicação e sem tornar Hub dependência essencial do Lunet. A Extraction Review de NN-022 encontrou dois consumidores reais e saldo positivo apenas para o núcleo puro de inspeção; o runtime experimental do Hub não possui segundo consumidor concreto.",
+      "question": "Qual fronteira deve ser compartilhada para que Hub e Lunet executem a mesma implementação de text.inspect em P5-5?",
+      "alternatives": [
+        {
+          "option": "A — Library C# mínima e host-neutra para o núcleo de text.inspect (recomendada)",
+          "consequences": "Extrai somente validação/algoritmo puro para platform/text-inspection. Hub e Lunet mantêm Hosts/adapters próprios; não compartilha lifecycle, identidade, grants, Binder ou ecosystem-local/0. Atende P5-5 sem antecipar a Tool standalone da Fase 7."
+        },
+        {
+          "option": "B — Promover o Capability Runtime/Host SDK do Hub junto com text.inspect",
+          "consequences": "Compartilha LocalCapabilityHost, contratos locais/gateway e sessão. Reduz duplicação de infraestrutura agora, mas congela o primeiro experimento como SDK público sem segundo consumidor real desse runtime e aumenta bastante o custo de versionamento/boundary."
+        },
+        {
+          "option": "C — Duplicar a implementação de text.inspect dentro do Lunet",
+          "consequences": "Evita componente compartilhado neste momento, porém cria duas implementações da mesma capability e risco de drift; contraria explicitamente P5-5 e NN-022 depois que já existem dois consumidores reais."
+        },
+        {
+          "option": "D — Manter text.inspect somente no Hub e o Lunet consumi-lo por Binder",
+          "consequences": "Reutiliza o provider atual, mas Lunet não se torna segundo Host standalone e a capability passa a depender do Hub. Não satisfaz o objetivo de P5-5."
+        }
+      ],
+      "consequences": "A decisão autoriza apenas a fronteira de compartilhamento de P5-5. Nenhuma alternativa altera o contrato text.inspect@1.0.0, o modelo de confiança Binder de P5-4 ou a Host API v1. A opção A cria uma Library compartilhada e exige declaração completa em ecosystem.json; a implementação ainda precisa de testes de consumidor real e conformance nos dois Hosts.",
+      "manifestCompatibility": "A preserva NN-003/004/006/007/020/022/023 com a menor superfície compartilhada. B pode ser compatível em tese, mas não demonstra redução de complexidade total para o runtime concreto e arrisca NN-020/022. C viola o objetivo de implementação única de P5-5. D conflita com a independência do segundo Host e com NN-003.",
+      "recommendation": "A — compartilhar somente o núcleo puro de text.inspect como Library C# host-neutra. É a menor abstração que elimina duplicação real sem congelar o runtime do Hub nem antecipar a Tool standalone da Fase 7.",
+      "related": [
+        "docs/adr/0028-text-inspect-core-compartilhado.md",
+        "docs/architecture/p5-5-text-inspect-extraction-review.md",
+        "docs/architecture/capability-runtime.md",
+        "docs/contracts/capabilities/text.inspect.json",
+        "ROADMAP.md",
+        "apps/lunet2d/ROADMAP.md"
+      ],
+      "raisedBy": "chatgpt-p5-4-closeout-p5-5-review",
+      "raisedAt": "2026-10-04",
+      "decision": "Alternativa A — A — Library C# mínima e host-neutra para o núcleo de text.inspect (recomendada) (escolhida pelo proprietário pelo portal; Issue https://github.com/AbnerCruz/Ecosystem/issues/233).",
+      "decidedAt": "2026-10-05",
+      "record": "docs/governance/responses/DEC-0038.md",
+      "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0039",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Cortar o Urbe diretamente para o Ecosystem sem versão-ponte nem sincronização",
+      "context": "O plano anterior de P4-9 mantinha AbnerCruz/Urbe como canal legado por uma última versão-ponte, exigia a mesma chave privada Android e só então desligaria o espelho. O proprietário rejeitou explicitamente essa compatibilidade e determinou que tudo do Urbe passe para o Ecosystem, aceitando fazer backup da cidade e abandonar a sincronização/repositório antigo como canal ativo.",
+      "question": "Como concluir o corte de distribuição do Urbe?",
+      "alternatives": [
+        {
+          "option": "A — Corte direto no Ecosystem, sem ponte/espelho; backup + reinstalação deliberada",
+          "consequences": "Código, PWA, APK e Windows ficam no Ecosystem. Instalações legadas não atualizam in-place; no Android o proprietário exporta/guarda a cidade, desinstala o legado, instala o APK direto e restaura. O canal beta direto ganha chave pública estável própria."
+        },
+        {
+          "option": "B — Manter a versão-ponte e a mesma chave privada antes do corte",
+          "consequences": "Preserva atualização in-place, mas mantém a dependência temporária do repositório legado, da sincronização e da chave privada antiga."
+        },
+        {
+          "option": "C — Manter o espelho indefinidamente",
+          "consequences": "Contraria a direção de concentrar desenvolvimento e distribuição no Ecosystem e mantém dois canais operacionais."
+        }
+      ],
+      "consequences": "A alternativa A elimina AbnerCruz/Urbe da distribuição atual, move a PWA pública para Ecosystem/urbe, usa tags urbe-v* no monorepo e assume migração por backup/reinstalação. O repositório antigo fica somente como histórico congelado.",
+      "manifestCompatibility": "Compatível com NN-001 (uma autoridade atual de distribuição), NN-009/011 (decisão explícita persistida antes do corte durável), NN-014 (pipeline seletivo no monorepo), NN-016 (identidade de assinatura declarada), NN-017/018 (DEVICE ainda obrigatório antes de fechar P4-9) e NN-023 (Urbe permanece instalável/usável sem Hub).",
+      "recommendation": "A, conforme escolha explícita do proprietário.",
+      "related": [
+        "docs/governance/addenda/ADD-0017-urbe-corte-direto-sem-espelho.md",
+        "docs/adr/0019-releases-diretas-dos-products.md",
+        "docs/distribution/direct-releases.md",
+        "docs/distribution/urbe-cutover-runbook.md",
+        "docs/distribution/current.profile.json",
+        "ecosystem.json"
+      ],
+      "raisedBy": "AbnerCruz (proprietário)",
+      "raisedAt": "2026-10-05",
+      "decision": "Alternativa A — corte direto no Ecosystem, sem versão-ponte nem sincronização; backup/export da cidade e reinstalação deliberada aceitos pelo proprietário em conversa. O repositório legado deixa de ser canal ativo; o Urbe passa a distribuir Web/PWA, Android e Windows pelo Ecosystem.",
+      "decidedAt": "2026-10-05",
+      "record": "docs/governance/addenda/ADD-0017-urbe-corte-direto-sem-espelho.md",
+      "consequencesApplied": true
     }
   ]
 }

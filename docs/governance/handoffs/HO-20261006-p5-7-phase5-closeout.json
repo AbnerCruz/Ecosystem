@@ -1,0 +1,111 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-p5-7-phase5-closeout",
+  "category": "RESULT",
+  "timestamp": "2026-10-06T00:54:00Z",
+  "agent": {
+    "id": "chatgpt-p5-7-phase5-closeout",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-7",
+  "component": "ecosystem",
+  "state": "done",
+  "branch": "chatgpt/p5-7-final-closeout",
+  "base_commit": "b1b8bf530dc5e8718f99a0c44d9d29b9d92e7963",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/validation/P5-7-capability-runtime-gate.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/governance/handoffs/HO-20261006-p5-7-phase5-closeout.json"
+  ],
+  "work_completed": [
+    "Concluído P5-7 após a aprovação canônica do gate DEVICE A-E no candidato final Hub dev.16 + Lunet dev.1000116.",
+    "Registrado que a atualização in-place do Hub dev.16 foi validada separadamente e que dev.15 permanece revogado por versionCode regressivo.",
+    "Incorporada a reconciliação crítica de enforcement do PR #245: NN-007 TEST e NN-016 RUNTIME refletem mecanismos já implementados na Fase 5.",
+    "ROADMAP passa P5-7 para [x] e o gate da Fase 5 para aprovado.",
+    "P6-4 deixa de apontar Fase 5 como bloqueio; permanece waiting apenas pelo critério de maturidade do Product anfitrião."
+  ],
+  "verification": [
+    {
+      "check": "Gate DEVICE A-E — dois Hosts reais, semântica, lifecycle, toque/layout e independência",
+      "kind": "human",
+      "result": "passed",
+      "critical": true,
+      "object": "docs/validation/P5-7-capability-runtime-gate.md",
+      "evidence": "Aprovado pelo proprietário pelo portal na Issue #246; registro docs/governance/responses/VAL-HO-20261005-p5-7-dev16-candidate-c2ff0d8de451.md."
+    },
+    {
+      "check": "Atualização corrigida do Hub dev.16 sobre a instalação existente",
+      "kind": "human",
+      "result": "passed",
+      "critical": true,
+      "object": "docs/validation/P5-7-capability-runtime-gate.md",
+      "evidence": "Aprovada pelo proprietário pelo portal na Issue #242; registro docs/governance/responses/VAL-HO-20261005-p5-7-hub-versioncode-fix-834d182e65b0.md."
+    },
+    {
+      "check": "Enforcement da Fase 5 reconciliado",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "7d37e59ff9d132fb8ef62b07d81acfa9a7486f0e",
+      "evidence": "PR #245 integrado após autorização do proprietário; consistency e estado combinado do integrador verdes."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Prosseguir com P6-4 quando um Product elegível atingir o marco de roadmap que autoriza hospedar o Agent Workspace.",
+    "P4-9 permanece independente e exige a mesma chave privada histórica do Urbe para o corte direto.",
+    "P6-5 permanece dependente de P6-4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/validation/P5-7-capability-runtime-gate.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/definition-of-done.md",
+    "docs/adr/0008-aprovacao-de-validacoes-pelo-portal.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O closeout usa as verificações humanas já registradas nos handoffs/responses canônicos; não cria segunda fonte."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "A mesma text.inspect@1.0.0 foi provada em Hosts independentes sem a Tool conhecer Host concreto."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A aprovação humana e a autorização crítica do enforcement foram persistidas antes do fechamento do ROADMAP."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Deny-by-default, Context/grants Host-owned e revoke estão implementados e refletidos na matriz de enforcement."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "O gate só fecha após validação DEVICE canônica; CI não substituiu a prova humana."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-7 só é marcado done após implementação, integração, enforcement e evidências humana/automatizada concluídas."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Lunet foi validado standalone com Hub parado/offline para a capability local."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Fecha estado e documentação após validações e reconciliação crítica já integradas; não altera runtime, contrato, segurança ou distribuição."
+  },
+  "cost": null
+}

@@ -6,7 +6,7 @@
   "author": "Abner P. S. Cruz",
   "license": "SEE LICENSE IN LICENSE",
   "private": true,
-  "homepage": "https://github.com/AbnerCruz/Urbe",
+  "homepage": "https://abnercruz.github.io/Ecosystem/urbe/",
   "main": "native/desktop/main.js",
   "scripts": {
     "desktop": "electron .",

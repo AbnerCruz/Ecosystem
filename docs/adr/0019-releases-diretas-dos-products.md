@@ -73,3 +73,19 @@ Rastreabilidade da tarefa: **P4-10**, Issue #120, handoff
 implementação/PR #123 e na resposta #126; esses registros históricos
 permanecem preservados. P4-8 identifica Patch Notes (Issue #119).
 Reconciliação: P4-11, Issue #128. P4-9 depende de P4-10.
+
+
+## Emenda DEC-0039 — Urbe sem ponte nem espelho
+
+Em 2026-10-05 o proprietário revogou, especificamente para o corte do Urbe, a exigência de preservar atualização in-place pela versão-ponte e pela mesma chave privada histórica.
+
+A nova direção, persistida em [ADD-0017](../governance/addenda/ADD-0017-urbe-corte-direto-sem-espelho.md), é:
+
+- `AbnerCruz/Urbe` deixa de ser canal ativo e seu `sync-from-ecosystem` é removido;
+- o primeiro release direto pode ser `urbe-v1.8.3-beta` no Ecosystem;
+- a migração da instalação legada é por **backup/export + desinstalação + instalação direta + restauração**, sem ponte;
+- Web/PWA atual passa a `https://abnercruz.github.io/Ecosystem/urbe/`;
+- o canal beta Android direto usa chave pública estável específica do Urbe no Ecosystem, com identidade verificada pelo CI;
+- o repositório antigo permanece somente como histórico congelado, não como fallback automático nem canal alternativo operacional.
+
+As partes anteriores deste ADR que exigem versão-ponte, mesma chave privada e desligamento do espelho *depois* da ponte permanecem como histórico da estratégia anterior e são substituídas por DEC-0039 para o Urbe. A arquitetura geral de releases por Product, tags prefixadas e independência do Hub permanece inalterada.

@@ -26,39 +26,44 @@ Somente depois de publicar e conferir o primeiro APK direto, desativar
 sync-from-ecosystem.yml na origem Lunet2D. O histórico permanece. Rollback:
 reativar o espelho para diagnóstico; não distribuir APK com versionCode menor.
 
-## Urbe: build pronto, corte condicionado
+## Urbe: corte direto, sem espelho
 
-O Pages do Ecosystem também monta o Urbe Web diretamente de apps/urbe, em
-`https://abnercruz.github.io/Ecosystem/urbe/`, junto do portal. O URL/PWA
-anterior permanece intacto: este deploy não transfere dados ou redireciona
-PWAs antigos; conferir abertura, offline e armazenamento em aparelho.
+DEC-0039 substitui a exigência de versão-ponte e de preservar a assinatura legada para o corte do Urbe. O proprietário escolheu deliberadamente **backup/export da cidade + reinstalação** e abandono de `AbnerCruz/Urbe` como canal ativo.
 
+Estado operacional:
 
-`urbe-app.yml` constrói Windows e Android em PRs, sem publicar nem receber secrets.
-Para publicar, manter gates REQ-006/066: versão única e CHANGELOG, tag
-urbe-v<package.version> e workflow urbe-release.yml. Nunca tag genérica v* no monorepo.
-O `latest` do repo é global: as releases diretas usam make_latest:false e precisam
-de consumidor que filtre o Product. Os leitores antigos não são alterados aqui.
+1. código canônico: `apps/urbe`;
+2. Web/PWA atual: `https://abnercruz.github.io/Ecosystem/urbe/`;
+3. releases Android/Windows: GitHub Releases do `AbnerCruz/Ecosystem`, tags `urbe-v<versão>`;
+4. updater do app novo: Ecosystem, filtrado por tag/asset do Product; nunca `/releases/latest` global;
+5. repositório `AbnerCruz/Urbe`: histórico congelado, sem `sync-from-ecosystem` e sem novas releases.
 
-P4-9 usa `1.8.3-beta` como versão-ponte: o canal legado a entrega primeiro; Windows passa a embutir `AbnerCruz/Ecosystem` com `tagNamePrefix=urbe-v`, e Android filtra a lista de releases do Ecosystem por tag/asset exatos. O `latest` global permanece proibido.
+O primeiro release direto pode ser `1.8.3-beta`; ele não precisa chegar ao canal antigo. No Android, a migração desde a instalação legada é deliberadamente incompatível com atualização in-place: faça backup/export da cidade, desinstale a versão antiga, instale o APK direto e restaure o backup.
 
-Antes do primeiro release/corte (P4-9):
+### Assinatura Android do canal beta direto
 
-1. Configurar no Ecosystem os secrets ANDROID_KEYSTORE_BASE64 e
-   ANDROID_KEYSTORE_PASSWORD com a MESMA chave do Urbe. GitHub não permite ler
-   valores de secrets existentes; o agente não os recupera nem imprime.
-2. Preparar versão-ponte do Urbe com feed por Product para Windows e Android,
-   testando filtro de tags, falhas, ausência de release e download correto.
-3. Entregar a ponte no canal antigo, ou documentar instalação manual deliberada.
-   Sem ponte, apps antigos continuam consultando AbnerCruz/Urbe.
-4. Conferir certificado/package/versionCode dos APKs; validar atualização com
-   vault real de teste e backup, sem reinstalação nem perda de dados.
-5. Mudar o perfil current só com canal real publicado e validado; então desligar
-   a sincronização do Urbe. Pages/PWA antiga permanece como recuperação. Migrar
-   URL/escopo do service worker em item próprio, com preservação de dados.
+O canal beta usa `apps/urbe/tools/urbe-dev.keystore`, chave **PÚBLICA** e estável, exclusiva do Urbe no Ecosystem. Ela serve para continuidade técnica entre builds beta diretos, não para provar autoria.
 
-A chave e o canal de atualização são bloqueios reais; pipeline existente não é
-prova de publicação nem atualização automática.
+- alias: `urbe`;
+- senha pública do canal de desenvolvimento: `urbe-dev`;
+- certificado SHA-256: `19:D9:49:32:17:4A:E7:90:82:EC:52:4C:BC:42:AD:48:A7:13:4F:AC:46:82:38:7A:50:68:15:EF:E6:5E:6C:F3`;
+- hash SHA-256 do keystore: `36a597cd0f276c6118a5bc4572eb6920880c7c80891feffcfde0f795e2ccf97b`.
+
+O CI verifica os dois hashes antes de construir e reconfere o certificado do APK. Como a chave é pública, este canal deve continuar identificado como beta/desenvolvimento; uma futura identidade estável privada exige item/decisão próprios.
+
+### Publicação
+
+`urbe-cutover.yml` agora possui somente o corte direto. O proprietário fornece a versão exata atual; o workflow cria a tag imutável `urbe-v<versão>` na `main` e dispara `urbe-release.yml`. Não há etapa `legacy-bridge`, tag `urbe/v*` nem chamada ao repositório antigo.
+
+Depois da primeira release direta, validar em DEVICE:
+
+- backup/export feito antes de remover a instalação legada;
+- APK direto instala após a desinstalação deliberada;
+- backup restaura a mesma cidade/vault e permanece editável;
+- fechar/reabrir e funcionamento offline do domínio essencial;
+- atualização posterior entre **duas builds diretas** mantém a assinatura beta e funciona sem reinstalação;
+- Web/PWA abre na URL do Ecosystem.
+
 
 ## Novo Product
 

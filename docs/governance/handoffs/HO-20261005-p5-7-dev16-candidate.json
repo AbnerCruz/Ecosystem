@@ -1,0 +1,90 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261005-p5-7-dev16-candidate",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-05T16:25:00Z",
+  "agent": {
+    "id": "chatgpt-p5-7-dev16-candidate",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-7",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p5-7-dev16-candidate",
+  "base_commit": "f14276bd4949166d05f5e8c3b24c572e49a6941f",
+  "commit": "62fb617ff9648961dfb3f0457c87ce5a22241d13",
+  "pr": null,
+  "files_changed": [
+    "docs/validation/P5-7-capability-runtime-gate.md",
+    "docs/governance/handoffs/HO-20261005-p5-7-dev16-candidate.json"
+  ],
+  "work_completed": [
+    "Atualizado o candidato Hub do gate P5-7 de dev.15 para dev.16 após a correção de versionCode do PR #240.",
+    "Preservado Lunet dev.1000116; a implementação da Capability Runtime permanece a de P5-6 em 0a5a49a.",
+    "Registrado que dev.15 foi revogado por falha de distribuição, não por falha funcional da Capability Runtime."
+  ],
+  "verification": [
+    {
+      "check": "Hub dev.16 publicado após correção de versionCode",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Release hub-v0.0.1-dev.16 publicada a partir do merge d725c2be do PR #240."
+    },
+    {
+      "check": "Instalação e Connections do Hub dev.16 no aparelho",
+      "kind": "human",
+      "result": "passed",
+      "critical": false,
+      "object": "docs/validation/P5-7-capability-runtime-gate.md",
+      "evidence": "Proprietário enviou captura no aparelho mostrando o Hub aberto e Connections com text.inspect@1.0.0 available, Context ecosystem:ecosystem → product:hub, Grants: nenhum e fonte Registry do Host."
+    },
+    {
+      "check": "Gate DEVICE A-E completo",
+      "kind": "human",
+      "result": "passed",
+      "critical": true,
+      "object": "docs/validation/P5-7-capability-runtime-gate.md",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-06 (Issue https://github.com/AbnerCruz/Ecosystem/issues/246); registro em docs/governance/responses/VAL-HO-20261005-p5-7-dev16-candidate-c2ff0d8de451.md."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [
+    "Gate DEVICE A-E ainda incompleto."
+  ],
+  "next_actions": [
+    "Integrar este ajuste documental do candidato.",
+    "Executar Analisar texto no Hub com o texto canônico e confirmar 11/3/2.",
+    "Executar o roteiro B-E no Lunet/Hub em DEVICE.",
+    "Somente após A-E passar registrar aprovação humana crítica e concluir P5-7/Fase 5."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/validation/P5-7-capability-runtime-gate.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-010",
+      "evidence": "Candidato atualizado com base na release real publicada após o PR #240."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A evidência visual parcial não substitui o restante do gate DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-7 continua aberto até a aprovação humana crítica de A-E."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Ajuste documental do candidato DEVICE após correção de distribuição já integrada; não altera runtime, contrato, segurança ou mecanismo de release."
+  },
+  "cost": null
+}

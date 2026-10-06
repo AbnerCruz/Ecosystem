@@ -1,0 +1,107 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261005-p5-7-hub-versioncode-fix",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-05T11:16:00Z",
+  "agent": {
+    "id": "chatgpt-p5-7-hub-versioncode-fix",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-7",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p5-7-hub-versioncode-fix",
+  "base_commit": "2899a8f3c02935ef1090f8c5c8f43a52a005c245",
+  "commit": "ae681552c1c342c1e92badc8411c676fbe0c4b12",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/240",
+  "files_changed": [
+    ".github/workflows/hub-release.yml",
+    "docs/governance/handoffs/HO-20261005-p5-7-hub-versioncode-fix.json"
+  ],
+  "work_completed": [
+    "Registrada a falha DEVICE do candidato hub-v0.0.1-dev.15 antes do gate funcional: Android exibiu que o pacote parecia inválido e recusou a instalação.",
+    "Identificada a causa raiz como downgrade de Android versionCode: o aparelho já tinha candidato P5-4 com versionCode 108, enquanto hub-release voltou a usar github.run_number cru e publicou dev.15 com versionCode 15.",
+    "hub-release passa a reservar a faixa 1_000_000 + github.run_number para o versionCode do canal público de desenvolvimento, preservando a tag hub-vX.Y.Z-dev.N e a mesma chave DEC-0029-A.",
+    "Release notes passam a registrar explicitamente o Android versionCode para tornar o diagnóstico e a auditoria do canal verificáveis."
+  ],
+  "verification": [
+    {
+      "check": "Instalação DEVICE do Hub dev.15",
+      "kind": "human",
+      "result": "failed",
+      "critical": true,
+      "object": "docs/validation/P5-7-capability-runtime-gate.md",
+      "evidence": "Falha reportada pelo proprietário no aparelho e registrada na Issue #238: Package Installer mostrou “Como o pacote parece ser inválido, o app não foi instalado.”"
+    },
+    {
+      "check": "Causa raiz — versionCode regressivo",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "hub-release.yml em main passava github.run_number diretamente para ApplicationVersion; dev.15 portanto usa 15. O candidato P5-4 instalado no aparelho havia usado versionCode 108, logo a atualização é downgrade para o Android."
+    },
+    {
+      "check": "Nova release corrigida instala por cima do Hub atual",
+      "kind": "human",
+      "result": "passed",
+      "critical": true,
+      "object": "docs/validation/P5-7-capability-runtime-gate.md",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-05 (Issue https://github.com/AbnerCruz/Ecosystem/issues/242); registro em docs/governance/responses/VAL-HO-20261005-p5-7-hub-versioncode-fix-834d182e65b0.md."
+    }
+  ],
+  "known_issues": [
+    "hub-v0.0.1-dev.15 não é candidato válido para este aparelho porque seu versionCode é inferior ao já instalado.",
+    "P5-7 permanece aberto; nenhuma parte do gate DEVICE é aprovada por esta correção."
+  ],
+  "blockers": [
+    "Integração deste PR altera .github/workflows/** e portanto é crítica por classe control-plane; exige autorização do proprietário via política de integração.",
+    "Após integração, é necessário publicar e instalar a nova release do Hub e repetir o roteiro A-E."
+  ],
+  "next_actions": [
+    "Obter autorização do proprietário para integrar o PR crítico #240.",
+    "Após merge, aguardar hub-release publicar a próxima release com versionCode na faixa 1_000_000+.",
+    "Atualizar o candidato fixo de P5-7 e repetir o gate DEVICE sem desinstalar o Hub atual.",
+    "Somente depois de A-E aprovados registrar a validação canônica e concluir a Fase 5."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/validation/P5-7-capability-runtime-gate.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md",
+    "docs/adr/0015-integrador-automatico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "A correção altera apenas a numeração de build do canal existente; não cria autoridade paralela."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Não cria dependência do Hub para qualquer Product."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Falha, workflow de release e política de integração foram inspecionados diretamente antes da correção."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "A correção não transforma CI em evidência DEVICE; nova instalação física continua obrigatória."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P5-7 permanece aberto após a falha e até nova evidência física."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane",
+      "distribution"
+    ],
+    "reason": "O PR altera .github/workflows/hub-release.yml e o versionCode usado pelo mecanismo de release Android; a política exige autorização do proprietário antes da integração."
+  },
+  "cost": null
+}

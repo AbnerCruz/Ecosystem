@@ -177,7 +177,8 @@ foreach (var (id, c) in eco["components"]!.AsObject())
     var sourceRepo = S(c["source"]?["repository"]);
     var inMonorepo = status is "active" or "migrating" or "deprecated";
 
-    var repoLink = sourceRepo ?? (inMonorepo ? Tree(path) : null);
+    // Depois da migração, a autoridade do código é o caminho canônico no Ecosystem; source.repository é apenas proveniência/canal quando declarado.
+    var repoLink = inMonorepo ? Tree(path) : sourceRepo;
     var channels = currentProfile?["entries"]?.AsArray().FirstOrDefault(e => S(e?["component"]) == id)?["channels"]?.AsArray();
     var releaseChannel = channels?.FirstOrDefault(ch => S(ch?["kind"]) == "github-release");
     var locationFrom = S(releaseChannel?["locationFrom"]);
@@ -215,10 +216,13 @@ foreach (var (id, c) in eco["components"]!.AsObject())
     };
     if (authority == "version-file" && versionFile is not null) sources.Add(versionFile);
 
-    // Espelho de distribuição (DEC-0014-A, DEC-0017-A): a árvore que a origem deveria ter; o portal compara ao vivo com o
-    // último commit de sincronização da origem e mostra se ela está atrasada (com o link para disparar a sincronização).
+    // Só projetar espelho quando o perfil current realmente declarar o repositório de origem como canal secundário.
+    // source.repository sozinho é proveniência de migração e não deve ressuscitar um espelho abandonado (DEC-0039).
+    var sourceChannel = channels?.FirstOrDefault(ch =>
+        S(ch?["locationFrom"]) == "source.repository" &&
+        S(ch?["role"]) is "mirror" or "legacy" or "alternative");
     JsonObject? mirror = null;
-    if (status == "active" && sourceRepo is not null && GitTree(path) is { } tree
+    if (status == "active" && sourceChannel is not null && sourceRepo is not null && GitTree(path) is { } tree
         && System.Text.RegularExpressions.Regex.Match(sourceRepo, @"^https://github\.com/([^/]+/[^/]+?)/?$") is { Success: true } om)
         mirror = new JsonObject
         {
@@ -406,7 +410,13 @@ if (currentProfile is not null)
                 ["channel"] = S(ch["id"]),
                 ["kind"] = S(ch["kind"]),
                 ["role"] = S(ch["role"]),
-                ["location"] = from == "source.repository" ? S(comp["source"]?["repository"]) : S(comp[from!]),
+                ["location"] = from switch
+                {
+                    "source.repository" => S(comp["source"]?["repository"]),
+                    "ecosystem.repository" => repo,
+                    "publicUrl" => S(comp["publicUrl"]),
+                    _ => null,
+                },
                 ["artifacts"] = new JsonArray((ch["artifacts"]?.AsArray() ?? []).Select(x => (JsonNode?)JsonValue.Create(S(x))).ToArray()),
                 ["updateMechanism"] = S(ch["updateMechanism"]),
             });

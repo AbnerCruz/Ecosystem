@@ -35,7 +35,8 @@
     "Lookup de spatial/regiões usa comparação ordinal case-sensitive como Map do JS; DocumentStore mantém resolução de documentos case-insensitive.",
     "FromVault recusa snapshot recuperado por journal para não misturar regiões físicas antigas com estado efetivo recuperado.",
     "Testes cobrem fixture v1-mapa-v4, hashes exatos, colisões, idempotência, truthiness de files, rename/case, metadata desconhecida, futuro/corrupto e journal.",
-    "PR #223 integrado automaticamente como mudança rotineira em ccab4b91; estado combinado testado tornou-se a main."
+    "PR #223 integrado automaticamente como mudança rotineira em ccab4b91; estado combinado testado tornou-se a main.",
+    "Revalidação do closeout deve usar a main atual, onde o PR #228 já reconciliou P5-4; a falha anterior de consistency era exclusivamente estado transversal obsoleto da base."
   ],
   "verification": [
     {
@@ -94,7 +95,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "UC-13 permanece working até CI e integração."
+      "evidence": "UC-13 concluída após regressão verde e integração automática do PR #223 em ccab4b91."
     },
     {
       "id": "NN-023",

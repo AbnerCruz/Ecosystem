@@ -145,13 +145,16 @@ P5-4 só pode virar `[x]` depois de:
 
 ## Resultado
 
-**DEVICE parcial verde; candidato final v3 publicado para C/D.**
+**APROVADO — P5-4 concluído.**
 
-O proprietário confirmou no aparelho que o fluxo real está funcionando: o pareamento existente é reconhecido, a sessão autentica, `discover` encontra a capability e `text.inspect@1.0.0` executa corretamente.
+O proprietário aprovou o gate integral P5-4 pelo portal na Issue #225. A automação registrou a verificação crítica C/D como `passed` no handoff `HO-20261004-p5-4-post-device-ux` e persistiu a resposta canônica em `docs/governance/responses/VAL-HO-20261004-p5-4-post-device-ux-b5942374f719.md` (commit `18ea0bf`).
 
-O indicador observado como `0` depois do comando não representa desconexão. O cliente fecha a sessão transitória no `finally` e mantém a confiança de pareamento. A UI foi corrigida para distinguir:
+Evidência consolidada:
+- P5-4 crítico integrado pelo PR #222;
+- UX de pareamento versus sessão reconciliada pelo PR #224;
+- candidato v3 e hashes registrados pelo PR #226;
+- A–D aprovados pelo proprietário;
+- Lunet continua funcional sem Hub/provider;
+- `0` sessões abertas em idle é esperado e não representa perda de pareamento.
 
-- **instalações pareadas** — confiança persistente entre as instalações;
-- **sessões IPC abertas agora** — sessões transitórias abertas durante operação ou teste de lifecycle.
-
-P5-4 permanece aberto somente até concluir **C** (revogação/rotação) e **D** (process death / `LinkToDeath`) no aparelho e registrar a validação crítica final.
+P5-5 pode iniciar. Nenhuma aprovação anterior é reutilizada para o gate da Fase 5 (P5-7).

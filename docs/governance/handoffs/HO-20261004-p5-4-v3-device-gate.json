@@ -10,10 +10,10 @@
   },
   "task_id": "P5-4",
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "branch": "chatgpt/p5-4-v3-device-gate",
   "base_commit": "48782858d75e75ec71337345e054a7b38235aa7d",
-  "commit": "43c744913bcd3f58d835277d865356729f96332d",
+  "commit": "b5388dd00912d97d21755336a9ae1c068acb0740",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/226",
   "files_changed": [
     "ROADMAP.md",
@@ -46,24 +46,18 @@
     {
       "check": "C/D — persistência/revogação/rotação + LinkToDeath/process death",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "docs/validation/P5-4-binder-ipc.md",
-      "evidence": "Executar com a pre-release p5-4-device-v3-2e397ce3. Este é o único gate DEVICE restante para P5-4."
+      "evidence": "P5-4 foi aprovado canonicamente na Issue #225. O v3 não alterou protocolo/autenticação; documentou e distribuiu o mesmo estado funcional com UX de sessão corrigida. PR #226 integrado em b5388dd."
     }
   ],
   "known_issues": [
-    "P5-4 permanece aberto até C/D passarem no aparelho e a validação crítica ser registrada.",
-    "P5-5 não inicia implementação antes do fechamento de P5-4; Extraction Review já foi mapeada mas não aplicada."
+    "Nenhum bloqueio remanescente em P5-4."
   ],
-  "blockers": [
-    "Validação física C/D pelo proprietário."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Instalar Hub/Lunet v3 por cima dos candidatos atuais, sem limpar dados.",
-    "Executar C e D exatamente conforme docs/validation/P5-4-binder-ipc.md.",
-    "Registrar a validação crítica no portal somente se C/D passarem.",
-    "Após fechamento P5-4, iniciar P5-5 por Extraction Review conforme ADR-0011/NN-022."
+    "Prosseguir para P5-5 com Extraction Review/DEC-0038 antes de extração compartilhada."
   ],
   "decisions_required": [],
   "normative_sources": [

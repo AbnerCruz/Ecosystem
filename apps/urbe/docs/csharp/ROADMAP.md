@@ -42,7 +42,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 - [x] UC-12 — Documentos, artefatos e índice de conhecimento. PR #218 integrado automaticamente em `79c5be01`; 114/114 testes C#, Web/Android/Windows/E2E/checks e consistency verdes. Issue #216 encerrada.
 - [x] UC-13 — Projeção do mundo e bairros, com IDs estáveis. PR #223 integrado automaticamente em `ccab4b91`; 134/134 testes C#, Web/Android/Windows/E2E/checks e consistency verdes. Issue #221 encerrada.
-- [ ] UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens. Em implementação na Issue #230 / PR #232; Core puro, sem DOM/WebView/JS.
+- [~] UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens. Implementação no PR #232: Core puro/BCL-only, sem DOM/WebView/JS; aguardando a regressão final no estado combinado atual.
 - [ ] UC-15 — Páginas e composições.
 - [ ] UC-16 — Matemática (decisão da biblioteca em UC-4/UC-5).
 

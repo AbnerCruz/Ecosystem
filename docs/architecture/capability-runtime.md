@@ -66,9 +66,17 @@ Isso é evidência para P5-3, não sua conclusão. Envelope público, Host API d
 
 CI verde não substitui esta validação. O gate de dois Hosts precisa de outra evidência além deste roteiro.
 
+## P5-6 — Connections como projeção do Registry
+
+Connections não introduz entidade, cadastro, protocolo ou storage novos. Em cada Host, a superfície é calculada das mesmas definições que alimentam `discover`, combinadas com o Context e os grants capturados pela sessão. A projeção inclui capabilities disponíveis e indisponíveis e explicita `context-mismatch` ou `grant-required`; revogação muda a projeção imediatamente porque nenhum estado de Connection é persistido.
+
+O Hub apresenta uma superfície **Connections** separada do pareamento IPC: pareamento decide confiança/transporte, Connections descreve capabilities naquele Host. O Lunet apresenta **Ferramentas → Connections** no Product Shell e usa o `GameId` real do projeto no Context. Ambos continuam com runtimes próprios; não há Product→Product nem SDK/runtime compartilhado novo.
+
+Testes de Hub e Lunet cobrem capability disponível, grant ausente, Context incompatível e revogação refletida simultaneamente em Connections e discovery. O contrato Host API v1 e os contratos de capability permanecem inalterados.
+
 ## Dependências das fases seguintes
 
-P6-4 já possui prova local do Workspace, mas precisa do Host real/Fase 5; somente então P6-5 entrega a experiência do Product de IA sem duplicar loop/ledger/provider. Fase 7 exige auditoria e consumidor real antes de extrair Tool. Remote Workers/organizações e deployment têm decisões próprias de confiança, privacidade, orçamento e segredos; não se implementam por inferência a partir do pedido de continuar.
+A Fase 5 está aprovada e a dependência técnica de Host real/Host API de P6-4 está satisfeita. P6-4 ainda não pode ser concluído porque o critério de anfitrião real do Agent Workspace (§11.1 de `agent-runtime.md`) exige um Product no marco correto do próprio roadmap; Lunet ainda não chegou à Fase 8 e Urbe ainda não chegou ao UC-21/M3. P6-5 continua dependente de P6-4. Fase 7 exige auditoria e consumidor real antes de extrair Tool. Remote Workers/organizações e deployment têm decisões próprias de confiança, privacidade, orçamento e segredos; não se implementam por inferência a partir do pedido de continuar.
 
 ## P5-3 — Host API v1 aceita e implementada
 
@@ -99,3 +107,28 @@ também prevalecem sobre falhas tardias. Nenhuma exceção arbitrária entra no 
 Regressões em `LocalCapabilityHostTests`: coleção que lança após o primeiro grant
 e provider que lança depois da revogação. A matriz pública de conformance continua
 usando o contrato v1; nenhum transporte IPC ou segundo Host é declarado por isso.
+
+## P5-4 — fechamento aprovado e transição para P5-5
+
+P5-4 foi aprovado canonicamente pelo proprietário na Issue #225 e registrado na `main` em `18ea0bf`. O binding Android/Binder permanece o primeiro transporte real, mas não vira dependência essencial nem SDK geral. O follow-up de UX distinguiu pareamento persistente de sessão IPC transitória; `0` sessões em idle é estado normal.
+
+P5-5 começou na Issue #227. A evidência de segundo consumidor agora é real: Hub e Lunet precisam executar `text.inspect@1.0.0` sem duplicar a implementação e sem o Lunet depender do Hub. A Extraction Review de NN-022 está em `p5-5-text-inspect-extraction-review.md`.
+
+A revisão conclui:
+- compartilhar somente o núcleo puro de inspeção tem saldo positivo;
+- promover `LocalCapabilityHost`, `AuthenticatedHostGateway`, Binder ou `ecosystem-local/0` não tem evidência suficiente e permanece proibido por NN-020/022;
+- a primeira Tool compartilhada standalone continua reservada à Fase 7;
+- P5-5 pode usar uma Library host-neutra se DEC-0038 aprovar ADR-0028.
+
+Até DEC-0038 ser resolvida, P5-5 não move código para `platform/` e não cria dependência Lunet → Hub.
+
+## P5-5 — segundo Host real / DEC-0038-A
+
+DEC-0038-A autoriza somente o núcleo puro de `text.inspect@1.0.0` como Library host-neutra. A autoridade editável é `platform/text-inspection/src/Ecosystem.TextInspection/TextInspector.cs`.
+
+Hub e Lunet permanecem autocontidos: ambos compilam uma projeção determinística `Generated / DO NOT EDIT` da autoridade. `Projection.cs --write` regenera; `--check` falha em drift ou arquivo ausente; `--self-test` cobre drift, missing e regeneração byte-estável. Não existe `ProjectReference` de Product para `platform/`.
+
+O Hub mantém `LocalCapabilityHost` e seu adapter. O Lunet implementa Host API v1 em processo próprio, com Context Host-owned `ecosystem → lunet2d → <GameId>`, identidade local atribuída pelo Host, grants deny-by-default, discovery, invoke, cancel explícito, revoke e close. A UI fornece seleção/documento em memória à capability; o Text Inspection Core não recebe filesystem.
+
+`LocalCapabilityHost`, `AuthenticatedHostGateway`, Binder, sessões do Hub e `ecosystem-local/0` não são promovidos. P5-5 não é a Tool standalone da Fase 7.
+

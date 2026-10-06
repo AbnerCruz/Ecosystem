@@ -169,6 +169,8 @@ public sealed partial class MainActivity
     private void ShowToolsMenu() => ShowActionMenu("Ferramentas",
     [
         ("Documentação", () => HandleCommand(EditorCommand.Documentation)),
+        ("Connections", ShowConnections),
+        ("Inspecionar texto (Host local)", InspectEditorWithLocalHost),
         ("Exportar logs (Console e Problemas)", ExportLogs),
         ("Recuperar alterações não salvas", OfferRecovery),
         ("Git", ShowGit),

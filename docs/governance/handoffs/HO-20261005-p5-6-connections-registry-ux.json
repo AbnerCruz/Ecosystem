@@ -1,0 +1,127 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261005-p5-6-connections-registry-ux",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-05T10:30:30Z",
+  "agent": {
+    "id": "chatgpt-p5-6-connections-registry-ux",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-6",
+  "component": "ecosystem",
+  "state": "done",
+  "branch": "chatgpt/p5-6-connections-registry-ux",
+  "base_commit": "3537b12f664a7bea811eeb8f6bdeb583e00d0baa",
+  "commit": "3d1752ceee6c3af743b5c7e627739709fbd65b0d",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/236",
+  "files_changed": [
+    "apps/hub/src/Hub.Core/Capabilities/LocalCapabilityHost.cs",
+    "apps/hub/src/Hub.Android/MainActivity.Ipc.cs",
+    "apps/hub/tests/Hub.Tests/LocalCapabilityHostTests.cs",
+    "apps/lunet2d/src/Lunet.Core/Capabilities/LunetCapabilityHost.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.CapabilityHost.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.Ide.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LunetCapabilityHostTests.cs",
+    "docs/architecture/capability-runtime.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261005-p5-5-second-host-text-inspect.json",
+    "docs/governance/handoffs/HO-20261005-p5-6-connections-registry-ux.json"
+  ],
+  "work_completed": [
+    "Connections foi implementado como projeção das mesmas definições de capability que alimentam discovery, sem Registry, protocolo ou storage paralelo.",
+    "Hub e Lunet expõem Context capturado, grants efetivos, permissões exigidas, permissões ausentes e status available/grant-required/context-mismatch.",
+    "Revogação de grant altera imediatamente Connections e discovery porque a projeção não persiste estado próprio.",
+    "Hub separa Connections (capabilities) de Conexões IPC (pareamento/transporte), evitando misturar confiança de instalação com autorização de capability.",
+    "Lunet expõe Ferramentas → Connections usando o Context real do projeto baseado no GameId.",
+    "P5-5 foi fechado canonicamente após evidência pós-merge verde; P5-6 parte da main que já contém o segundo Host real."
+  ],
+  "verification": [
+    {
+      "check": "Hub.Core + Hub Android + testes de Connections",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "3d1752ceee6c3af743b5c7e627739709fbd65b0d",
+      "evidence": "PR #236: hub-ci run 37296406568 passou testes e build Android; no estado combinado do integrador, Hub test e Android também passaram."
+    },
+    {
+      "check": "Lunet.Core + Lunet Android + testes de Connections",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "3d1752ceee6c3af743b5c7e627739709fbd65b0d",
+      "evidence": "PR #236: lunet2d-ci run 37296406445 passou; lunet2d-release run 37296406365 passou testes e APK; CI do Lunet no estado combinado também passou."
+    },
+    {
+      "check": "Consistency + self-test + integrator simulation + estado combinado",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "3d1752ceee6c3af743b5c7e627739709fbd65b0d",
+      "evidence": "PR #236: consistency runs 37296402013 e 37296406589 passaram; integrator run 37296425884 passou planejamento, consistency/self-test/simulação e CIs de Hub/Lunet no estado combinado antes de integrar."
+    },
+    {
+      "check": "Integração na main",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "0a5a49a802d881fc192b6e9426d4f65b5e7344a5",
+      "evidence": "PR #236 integrado automaticamente pela política em 0a5a49a802d881fc192b6e9426d4f65b5e7344a5."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Iniciar P5-7: validar em DEVICE os dois Hosts reais, Connections, text.inspect, lifecycle, toque/layout e independência sem Hub.",
+    "Somente após evidência DEVICE e aprovação registrada declarar o gate da Fase 5 concluído."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/architecture/product-model.md",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/capabilities/text.inspect.json",
+    "docs/contracts/permissions.json",
+    "docs/contracts/schemas/context.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Connections não possui fonte de dados própria; é derivado do Registry/Host da sessão."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma referência Product→Product foi criada."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Hub e Lunet exibem Connections a partir de Hosts próprios e continuam independentes."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Host API v1 e contratos de capability não foram alterados; a UX projeta contratos existentes."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Nenhuma capability passou a conhecer Hub ou Lunet; somente os Product Shells renderizam a projeção."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Grants continuam deny-by-default e indisponibilidade por grant ausente é explicitada sem elevação."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Hub continua projeção/UX e não vira autoridade de capability ou Connection."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Lunet implementa Connections e text.inspect sem exigir Hub distribuído ou em execução."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Mudança restrita à UX/runtime local já aprovado de Hub e Lunet e seus testes; não altera contratos, platform, manifest, segurança, distribuição ou control plane."
+  },
+  "cost": null
+}

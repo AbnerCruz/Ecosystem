@@ -3,13 +3,16 @@
   "schemaVersion": 1,
   "message_id": "HO-20261004-urbe-uc14-markdown-visual",
   "category": "RESULT",
-  "timestamp": "2026-10-05T00:20:00Z",
-  "agent": {"id":"chatgpt","kind":"ai-agent"},
+  "timestamp": "2026-10-06T05:30:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
   "task_id": "UC-14",
   "component": "urbe",
-  "state": "working",
+  "state": "verifying",
   "branch": "feat/urbe-uc14-markdown-visual",
-  "base_commit": "b940b9da20e1fae8860774e36a5975aff6b09c33",
+  "base_commit": "58a78d417259d875e5077d423134d63543d8d431",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/232",
   "files_changed": [
@@ -30,42 +33,39 @@
     "Scanner matemático preserva delimitadores históricos e emite átomos umath sem depender de KaTeX.",
     "VisualMarkdown implementa parser de fragmento HTML limitado ao subconjunto do editor e serialização Visual→Markdown.",
     "Frontmatter do modo Visual permanece autoridade externa, como no JS.",
-    "Suíte lê diretamente os dois goldens históricos e cobre SafeUrl, código inline, parser Visual e frontmatter."
+    "Suíte lê diretamente os dois goldens históricos e cobre SafeUrl, código inline, parser Visual e frontmatter.",
+    "PR #232 reconciliado semanticamente sobre main@58a78d417259 após P4-9; código/testes UC-14 preservados e documentos reaplicados sem reverter decisões posteriores."
   ],
   "verification": [
     {
-      "check": "Core C# / goldens",
-      "kind": "automated",
-      "result": "passed",
-      "evidence": "urbe-checks 37247026863: csharp-portable build passou e toda a suíte C# passou após corrigir o escape HTML; Android também success."
-    },
-    {
-      "check": "Regressão completa Urbe",
+      "check": "Core C# / goldens no head reconciliado",
       "kind": "automated",
       "result": "pending",
-      "evidence": "E2E/checks/Windows ainda estavam executando ao registrar o handoff."
+      "evidence": "Aguardando nova rodada de urbe-checks após merge semântico com main atual."
     },
     {
-      "check": "Governança/consistency",
+      "check": "Regressão completa Urbe no estado combinado atual",
       "kind": "automated",
       "result": "pending",
-      "evidence": "A rodada atual herdou estado P5-4 antigo da branch-base; PR #228 já corrigiu isso na main. O PR #232 será retargetado após o closeout #229."
+      "evidence": "Aguardando checks, C# portátil, Web smoke, Android, Windows e E2E."
+    },
+    {
+      "check": "Governança/consistency no estado combinado atual",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando integrador após reconciliação com main@58a78d417259."
     }
   ],
   "known_issues": [
-    "A branch nasceu sobre docs/urbe-uc13-closeout; após PR #229 integrar, PR #232 deve apontar para main para eliminar o estado transversal P5 antigo.",
-    "UC-14 não implementa UI do editor nem KaTeX visual."
+    "UC-14 não implementa UI do editor nem KaTeX visual; esses escopos permanecem em UC-18 e UC-16."
   ],
   "blockers": [
-    "Finalizar E2E/checks/Windows no head atual.",
-    "Integrar PR #229 e retargetar PR #232 para main atual.",
-    "Repetir consistency no estado combinado definitivo."
+    "Concluir a regressão automatizada do head reconciliado e corrigir qualquer divergência real."
   ],
   "next_actions": [
-    "Concluir regressão dos hosts.",
-    "Retargetar PR #232 para main após o closeout UC-13.",
-    "Corrigir qualquer divergência restante dos goldens sem alterar os oráculos.",
-    "Quando tudo verde, mover Issue #230 e handoff para review."
+    "Aguardar CI do PR #232 no estado combinado atual.",
+    "Corrigir qualquer divergência dos goldens sem alterar os oráculos.",
+    "Quando tudo verde, mover Issue #230 e handoff para review; integração é rotineira se a classificação permanecer routine."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -78,11 +78,29 @@
     "docs/governance/integration-policy.json"
   ],
   "invariants": [
-    {"id":"NN-002","evidence":"Implementação permanece no Urbe.Core e usa apenas BCL."},
-    {"id":"NN-003","evidence":"Sem DOM, WebView, filesystem, rede, host ou plano de controle."},
-    {"id":"NN-008","evidence":"Issue #230, branch própria, PR #232 e handoff específico."},
-    {"id":"NN-017","evidence":"Nenhuma validação física/UI alegada; escopo é transformação pura."},
-    {"id":"NN-018","evidence":"UC-14 permanece working até regressão final e integração."},
-    {"id":"NN-023","evidence":"Core permanece standalone."}
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece no Urbe.Core e usa apenas BCL."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Sem DOM, WebView, filesystem, rede, host ou plano de controle."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #230, branch própria, PR #232 e handoff específico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação física/UI alegada; escopo é transformação pura."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-14 permanece working até regressão final e integração."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Core permanece standalone."
+    }
   ]
 }
