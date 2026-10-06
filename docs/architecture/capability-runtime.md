@@ -76,7 +76,7 @@ Testes de Hub e Lunet cobrem capability disponível, grant ausente, Context inco
 
 ## Dependências das fases seguintes
 
-P6-4 já possui prova local do Workspace, mas precisa do Host real/Fase 5; somente então P6-5 entrega a experiência do Product de IA sem duplicar loop/ledger/provider. Fase 7 exige auditoria e consumidor real antes de extrair Tool. Remote Workers/organizações e deployment têm decisões próprias de confiança, privacidade, orçamento e segredos; não se implementam por inferência a partir do pedido de continuar.
+A Fase 5 está aprovada e a dependência técnica de Host real/Host API de P6-4 está satisfeita. P6-4 ainda não pode ser concluído porque o critério de anfitrião real do Agent Workspace (§11.1 de `agent-runtime.md`) exige um Product no marco correto do próprio roadmap; Lunet ainda não chegou à Fase 8 e Urbe ainda não chegou ao UC-21/M3. P6-5 continua dependente de P6-4. Fase 7 exige auditoria e consumidor real antes de extrair Tool. Remote Workers/organizações e deployment têm decisões próprias de confiança, privacidade, orçamento e segredos; não se implementam por inferência a partir do pedido de continuar.
 
 ## P5-3 — Host API v1 aceita e implementada
 

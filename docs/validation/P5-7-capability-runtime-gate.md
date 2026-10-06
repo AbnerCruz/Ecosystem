@@ -121,6 +121,11 @@ P5-4 continua sendo a evidência canônica do transporte Binder autenticado. P5-
 
 ## Resultado
 
-O gate só pode ser marcado **passed** se A, B, C, D e E passarem no candidato fixado.
+**PASSED / aprovado.**
 
-Se tudo passar, aprove a validação P5-7 no portal/Issue gerada pelo Ecosystem. Se qualquer etapa falhar, registre **qual seção e qual passo**, a mensagem exibida e, se possível, uma captura de tela. A Fase 5 permanece aberta até a aprovação humana canônica.
+- O candidato final foi Hub `hub-v0.0.1-dev.16` + Lunet `lunet2d-v0.0.1-dev.1000116`.
+- O gate DEVICE A–E completo foi aprovado pelo proprietário pelo portal na Issue #246; registro canônico `docs/governance/responses/VAL-HO-20261005-p5-7-dev16-candidate-c2ff0d8de451.md`.
+- A correção de `versionCode` do Hub foi validada separadamente na Issue #242, provando atualização in-place do dev.16 sobre a instalação anterior.
+- A matriz de enforcement da Fase 5 foi reconciliada no PR #245: NN-007/TEST e NN-016/RUNTIME passaram de `planned` para `implemented`, refletindo mecanismos já existentes e testados.
+
+Com implementação, integração, enforcement, CI e DEVICE registrados, P5-7 e o gate da Fase 5 estão concluídos.
