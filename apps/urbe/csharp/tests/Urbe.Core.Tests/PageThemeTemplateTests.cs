@@ -232,7 +232,7 @@ public sealed class PageThemeTemplateTests
         Assert.Contains("@page{size:148", bookHtml, StringComparison.Ordinal);
         Assert.Contains("@page :left", bookHtml, StringComparison.Ordinal);
         Assert.Contains("@bottom-center{content:counter(page)", bookHtml, StringComparison.Ordinal);
-        Assert.Contains("@top-center{content:"Livro"", bookHtml, StringComparison.Ordinal);
+        Assert.Contains("@top-center{content:\"Livro\"", bookHtml, StringComparison.Ordinal);
         Assert.DoesNotContain("class='nav", bookHtml, StringComparison.Ordinal);
         Assert.Contains("Imprimir ou salvar PDF", bookHtml, StringComparison.Ordinal);
     }
