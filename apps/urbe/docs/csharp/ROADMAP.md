@@ -7,7 +7,7 @@
 
 ## Próxima tarefa
 
-**M2 — Domínio do conhecimento e do mundo.** M1 foi concluído com leitura/escrita do vault, migração/backup/identidade/GC e export/import ZIP no Core C#. G-C1 aprovado. Próxima tarefa: UC-15 — Páginas e composições no Core C#, preservando proteção forward e o legado de composições sem tocar dados reais nesta etapa.
+**M2 — Domínio do conhecimento e do mundo.** UC-15 foi concluída com páginas/composições, temas, templates, shell HTML, livro e layout livre no Core C#. Próxima tarefa: UC-16 — matemática, adotando biblioteca/renderizador somente após a investigação já registrada e preservando execução offline/host-neutra.
 
 ---
 
@@ -43,8 +43,8 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 - [x] UC-12 — Documentos, artefatos e índice de conhecimento. PR #218 integrado automaticamente em `79c5be01`; 114/114 testes C#, Web/Android/Windows/E2E/checks e consistency verdes. Issue #216 encerrada.
 - [x] UC-13 — Projeção do mundo e bairros, com IDs estáveis. PR #223 integrado automaticamente em `ccab4b91`; 134/134 testes C#, Web/Android/Windows/E2E/checks e consistency verdes. Issue #221 encerrada.
 - [x] UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens. PR #232 integrado automaticamente em `1eafe4db`; estado combinado verde (Core/Web/Android/Windows/E2E/checks/consistency), Issue #230 encerrada.
-- [ ] UC-15 — Páginas e composições. Primeira fatia integrada no PR #250 (`4a7dd74d`): modelo lossless, normalização forward-safe, renderer essencial e planejamento idempotente de composições. Segunda fatia integrada no PR #252 (`eeefea40`): blocos semânticos de conteúdo/estrutura. Terceira fatia integrada no PR #253: TOC, âncoras estáveis, numeração e estrutura de livro. Quarta fatia integrada no PR #254 (`b1ce8347`): layout livre/peças responsivas. Quinta fatia integrada no PR #269 (`c7bf1ba4`): conversão fechados→livre e compactação lossless. Sexta fatia em verificação: autoridade C# de temas, shell HTML completo (nav/rodapé/metadados/estilo global/livro) e catálogo dos 13 templates com variantes simple/skeleton. Nenhuma migração em dados reais ainda.
-- [ ] UC-16 — Matemática. Primeira fatia integrada no PR #258 (`4e6cfe8f`): edição pura, scanner, catálogo/snippets/autocomplete. Investigação do PR #265 provou CSharpMath em WASM/offline e mapeou licenças/lacunas. Segunda fatia em PR crítico: ADR-0012 propõe `CSharpMath.Rendering 1.0.0-pre.2` + backend SVG próprio, sem VectSharp/LGPL ou JS matemático; corpus real, diagnósticos e export SVG entram no Core. Macros/aliases e paridade visual ampliada continuam pendentes.
+- [x] UC-15 — Páginas e composições concluídas. Fatias integradas nos PRs #250 (`4a7dd74d`), #252 (`eeefea40`), #253, #254 (`b1ce8347`), #269 (`c7bf1ba4`) e #270 (`df668599`): modelo lossless/forward-safe, composições legadas, blocos semânticos, TOC/âncoras/livro, layout livre responsivo, conversão/compactação lossless, temas, shell HTML completo e 13 templates com variantes. O merge final `df668599` passou C# portátil, Web/checks, Android, Windows, E2E e consistency na main (runs 37517474704 / 37517474691). Nenhuma migração física de vault foi antecipada.
+- [~] UC-16 — Matemática. Primeira fatia integrada no PR #258 (`4e6cfe8f`): edição pura, scanner, catálogo/snippets/autocomplete. Investigação do PR #265 provou CSharpMath em WASM/offline e mapeou licenças/lacunas. Segunda fatia em PR crítico #274: ADR-0012 propõe `CSharpMath.Rendering 1.0.0-pre.2` + backend SVG próprio do Urbe, sem VectSharp/LGPL ou JS matemático; corpus real, diagnósticos e export SVG entram no Core. Macros/aliases e paridade visual ampliada continuam pendentes. Integração depende de autorização explícita do proprietário.
 
 **Gate G-C2:** suíte de aceite (UC-2) verde para todo o domínio, sem UI.
 *Estado do gate:* **não iniciado**
