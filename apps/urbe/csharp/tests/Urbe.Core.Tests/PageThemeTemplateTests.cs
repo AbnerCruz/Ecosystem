@@ -282,6 +282,9 @@ public sealed class PageThemeTemplateTests
         Assert.Contains("[data-s='s_b']{padding:0}", html, StringComparison.Ordinal);
         Assert.Contains("body{letter-spacing:.01em}", html, StringComparison.Ordinal);
         Assert.DoesNotContain("</style><script>alert", html, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("<script>(function(){var d=document", html, StringComparison.Ordinal);
+        Assert.Contains("urbe-page-theme", html, StringComparison.Ordinal);
+        Assert.Contains("scrollTo({top:0,behavior:\"smooth\"})", html, StringComparison.Ordinal);
 
         var book = PageDocument.Parse(
             """
