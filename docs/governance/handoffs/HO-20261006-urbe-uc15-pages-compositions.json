@@ -1,0 +1,122 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc15-pages-compositions",
+  "category": "RESULT",
+  "timestamp": "2026-10-06T08:32:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-15",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc15-pages-compositions",
+  "base_commit": "1eafe4db9676c884fbae78074803ff438298c044",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/250",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/PageModel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageNormalizer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/PageRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Core/CompositionModel.cs",
+    "apps/urbe/csharp/src/Urbe.Core/CompositionMigrationPlanner.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/PageCompositionTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc14-markdown-visual.json",
+    "docs/governance/handoffs/HO-20261006-urbe-uc15-pages-compositions.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "A fatia atual é domínio puro em memória e documentação. Não executa migração, backup, filesystem, host ou alteração de formato persistido."
+  },
+  "work_completed": [
+    "PageDocument lê páginas de forma lossless, preserva campos desconhecidos e bloqueia escrita de versão futura/corrupta.",
+    "PageNormalizer aplica defaults conhecidos sem descartar campos desconhecidos nem criar/reescrever version silenciosamente (REQ-049).",
+    "PageRenderer fornece renderização semântica pura para blocos essenciais usando MarkdownEngine e DocumentStore, sem DOM/WebView/JS.",
+    "CompositionFile lê compositions v1 e protege versões futuras/corruptas.",
+    "CompositionPageConverter converte order/sources para seções note determinísticas e preserva integralmente dados legados sem mapeamento exato.",
+    "CompositionMigrationPlanner é idempotente em memória: reconhece página já migrada, recusa overwrite por conflito e bloqueia arquivo futuro/corrupto sem tocar o vault.",
+    "Testes cobrem proteção forward, round-trip de campos desconhecidos, defaults lossless, renderer, fixture histórica de composição, ordem, missing sources, conflito e idempotência."
+  ],
+  "verification": [
+    {
+      "check": "Core C# UC-15",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37436138863: build portátil e dotnet test passaram; 170/170 testes, failed=0, skipped=0."
+    },
+    {
+      "check": "Android e E2E da primeira fatia",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "urbe-checks run 37436138863: build Android e E2E concluídos com success."
+    },
+    {
+      "check": "Regressão completa da primeira fatia",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Run 37436138863 ainda finalizando checks e Windows; novo run será disparado pelo fechamento documental do PR."
+    },
+    {
+      "check": "Governança/consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "consistency PR run 37436138620 e push run 37436132250 concluíram com success."
+    }
+  ],
+  "known_issues": [
+    "Esta é a primeira fatia de UC-15: o renderer C# cobre blocos semânticos essenciais, não toda a superfície visual de pages/engine.js.",
+    "Migração física compositions→pages e remoção da UI legada não foram ligadas ao vault; isso toca dados do usuário e será uma fatia crítica separada.",
+    "KaTeX/renderização matemática visual permanece UC-16."
+  ],
+  "blockers": [
+    "Concluir a regressão final do PR no estado combinado e integrar esta fatia rotineira.",
+    "UC-15 permanece aberta para ampliar paridade de páginas e depois preparar a migração física crítica."
+  ],
+  "next_actions": [
+    "Integrar a primeira fatia quando o estado combinado estiver verde.",
+    "Continuar UC-15 em nova fatia com o restante da semântica de páginas.",
+    "Separar a futura ligação compositions→pages ao vault em PR user-data crítico com backup restaurável e autorização do proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/pages/engine.js",
+    "apps/urbe/src/composition/store.js",
+    "apps/urbe/src/composition/compiler.js",
+    "apps/urbe/tests/pages.mjs",
+    "apps/urbe/tests/composition.mjs",
+    "apps/urbe/tests/composition-regression.mjs",
+    "apps/urbe/docs/v2/adr/0009-composicoes-para-paginas.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece dentro do Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Core não depende de Hub, outro Product, DOM ou host concreto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #249, branch própria e handoff específico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação física/UI alegada nesta fatia."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-15 permanece working enquanto CI/paridade estão incompletos."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Domínio C# permanece funcional sem Hub."
+    }
+  ]
+}

@@ -1,3 +1,18 @@
+### 2026-10-06 — ChatGPT — UC-15 primeira fatia em verificação
+
+- Draft PR #250: PageDocument lossless, PageNormalizer REQ-049, PageRenderer puro, CompositionFile/conversor e planner idempotente de migração.
+- Prova parcial já verde no head: Core C# 170/170, Android e E2E; consistency PR/push verde. Windows/checks ainda finalizavam quando o handoff foi promovido para verifying.
+- Escopo deliberado: nenhuma escrita/migração real no vault. A ligação compositions→pages será PR separado de classe user-data, com backup e autorização.
+- UC-15 continua aberta após esta fatia; próximo passo é ampliar paridade de páginas sem misturar o corte de dados.
+
+### 2026-10-06 — ChatGPT — UC-14 encerrada; UC-15 iniciada
+
+- UC-14: PR #232 integrado automaticamente em `1eafe4db`; estado combinado verde e Issue #230 encerrada.
+- UC-15: Issue #249 aberto; branch `feat/urbe-uc15-pages-compositions`.
+- Primeira fatia: `PageDocument` lossless/proteção forward, `PageRenderer` puro e `CompositionFile` + conversão composição→página.
+- Invariante: nenhum write/migration real no vault nesta fatia; composições antigas permanecem intactas e campos sem mapeamento exato são preservados.
+- Próximo: rodar CI, corrigir divergências e então ampliar a paridade de páginas antes de qualquer ligação a hosts/dados reais.
+
 ### 2026-10-04 — ChatGPT — UC-5/UC-6 consolidadas e G-C0 aprovado
 
 - DEC-0035-A aplicada: Blazor WebAssembly PWA + .NET MAUI Blazor Hybrid com RCL compartilhada.
