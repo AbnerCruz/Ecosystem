@@ -6,10 +6,10 @@
 
 | Área | Obrigação existente | Evidência da implementação atual |
 |---|---|---|
-| Vault | Sem vault.json = legado. formatVersion maior que 2 = vault somente leitura. Leitor não sobrescreve formato futuro. | src/persistence/vault-meta.js:5; src/persistence/workspace.js:54 |
-| Mapa | Ausente v = legado; inteiros 1..4 aceitos; futuro/desconhecido preservado. Mapa v4 continua legível pela 1.x. | src/persistence/workspace.js:61 |
+| Vault | Sem vault.json = legado. formatVersion maior que 2 = vault somente leitura. Leitor não sobrescreve formato futuro. | src/persistence/vault-meta.js:5; src/persistence/workspace.js:55 |
+| Mapa | Ausente v = legado; inteiros 1..4 aceitos; futuro/desconhecido preservado. Mapa v4 continua legível pela 1.x. | src/persistence/workspace.js:62 |
 | Sidecars | v2 tem precedência; nomes v1 preservados durante beta. v2 ilegível/estranho desliga escrita daquele artefato; não apaga. | src/persistence/workspace.js:30 |
-| Journal | Recuperação v2 antes de v1; somente versão suportada e documents array. Futuro preservado. Não confundir operação multi-arquivo com transação do SO. | src/persistence/workspace.js:68 |
+| Journal | Recuperação v2 antes de v1; somente versão suportada e documents array. Futuro preservado. Não confundir operação multi-arquivo com transação do SO. | src/persistence/workspace.js:69 |
 | Migração | Captura originais antes de escrita; backup restaurável antes da migração; reabrir não duplica migração nem backup. | src/persistence/workspace.js:22; tests/vault-format.mjs |
 | Backup | manifest.version=1; paths .urbe/ viram urbe/ na cópia; absent registra inexistentes. SHA-256 de texto UTF-8. size é quantidade de unidades UTF-16, NÃO bytes. | src/persistence/backup.js:21; src/persistence/backup.js:9 |
 | Restauração | Cópia ausente ou hash divergente rejeita; absent removidos. Implementação restaura sequencialmente: rejeição pode ocorrer após arquivos anteriores serem gravados. Não alegar atomicidade total. | src/persistence/backup.js:34 |
@@ -92,9 +92,11 @@ Regras comuns: (1) a 2.x **lê** o formato 1.x; (2) só **escreve** o formato 2.
 | `.urbe/vault.json` | — | novo: `{formatVersion,createdBy,lastWriter,migrations[],maintenance[],archivedCities?}` (`maintenance`: últimas 20 limpezas `{kind:'gc',at,removed,orphanDays,trashDays}`, RM-F1-16) | sim | sim | `formatVersion` maior: modo seguro | `vault.mjs` (RM-F1-04) |
 | `.urbe/identity.json` | — | novo: `{version:1,docs:{<docId>:{path,fingerprint,seen}}}` | sim | sim | preservar | RM-F1-15 |
 | `.urbe/backup/<data>-<de>-<para>/` | — | novo: cópias restauráveis pré-migração | sim | sim | — | RM-F1-07 |
+| `.urbe/import.v1.json` | — | novo: registro de rollback binário v1 | sim | sim | preservar e bloquear load se futuro/corrupto | RM-F7-29 |
 | `urbe-export.json` (dentro do ZIP) | — | novo: manifesto do export | sim | sim | recusar import de `format` desconhecido | RM-F1-18 |
 | `Personalização/tema.json` | `versao:1` | mesmo | v1 | v1 (preserva chaves desconhecidas) | preservar; modo seguro de tema | `v1-personalizacao`, `futuro-desconhecido` |
 | `Personalização/{temas,estilos,texturas,plugins}/*` | sem versão | mesmo | sim | sim | preservar | `v1-personalizacao` |
 | `Páginas/**/*.page.json` (+ Modelos/Blocos) | `version:1` | mesmo; preserva chaves desconhecidas e `version` | v1 | v1 sem reescrever `version` | preservar (somente leitura no Studio) | `v1-paginas`, `futuro-desconhecido` |
 | Notas e demais textos | — | sem mudança (nenhum ID no arquivo) | sim | bytes preservados | — | todas as fixtures |
+
 

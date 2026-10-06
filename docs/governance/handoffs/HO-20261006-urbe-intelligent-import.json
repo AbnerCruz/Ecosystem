@@ -76,7 +76,9 @@
     "docs/governance/handoffs/HO-20261006-urbe-intelligent-import.json",
     "docs/validation/urbe/1.8.4-beta-import-device.md",
     ".github/workflows/urbe-checks.yml",
-    ".github/workflows/urbe-build.yml"
+    ".github/workflows/urbe-build.yml",
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "apps/urbe/docs/csharp/acceptance/vault-manifest.json"
   ],
   "criticality": {
     "declared": "critical",
@@ -123,21 +125,26 @@
     },
     {
       "kind": "automated",
-      "check": "Checks completos e build APK final",
+      "check": "Build e identidade do APK local",
       "result": "passed",
       "evidence": "APK local 1.8.4-beta versionCode 1080400 compilado; SHA-256 cdd005d59c36e1e6c345b8f2960fbf3c4ed9f984b7cd64db507e89f0f4798ed1. Certificado SHA-256 19d94932174ae79082ec524cbc42ad48a7134fac4682387a506815efe65e6cf3. Não publicado formalmente; bytes do pipeline serão conferidos separadamente."
     },
     {
       "kind": "automated",
-      "check": "Checks gerais e paridade all finais",
-      "result": "pending",
-      "evidence": "Checks finais em execução; falha CI do provider desktop corrigida sem suprimir IO, adaptador ZIP atualizado para caminhos completos incluindo tutorial restaurado."
+      "check": "Checks JS e correções do contrato",
+      "result": "passed",
+      "evidence": "66/66 arquivos JS passaram com Node 22; contrato/manifesto UC-3 regenerado e diff revisado (hashes/linhas/catalogação do import journal). Reexecução dos checks corrigidos passou; regressão produção 16 grupos e paridade ZIP 1/1. CI final e paridade all aguardados."
     },
     {
       "kind": "automated",
       "check": "Consistency local",
       "result": "passed",
       "evidence": "22/22 checks passaram após cessar compilação concorrente de arquivos temporários."
+    },
+    {
+      "kind": "automated",
+      "check": "CI final por superfície e paridade all",
+      "result": "pending"
     }
   ],
   "known_issues": [
