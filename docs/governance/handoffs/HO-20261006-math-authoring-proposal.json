@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261006-math-authoring-proposal",
   "category": "HANDOFF",
-  "timestamp": "2026-10-06T15:23:11Z",
+  "timestamp": "2026-10-06T15:28:34Z",
   "agent": {
     "id": "codex-math-authoring",
     "kind": "ai-agent"
@@ -14,7 +14,7 @@
   "branch": "codex/math-authoring-proposal",
   "base_commit": "43ccb54e328b7b503d3e07adfde36180014e9964",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/263",
   "files_changed": [
     "ROADMAP.md",
     "docs/adr/README.md",
