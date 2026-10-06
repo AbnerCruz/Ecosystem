@@ -1,6 +1,6 @@
 # Catálogo de releases — P4-1
 
-O Hub lê `docs/distribution/current.profile.json` e resolve o canal `github-release` primário de cada Product a partir de `source.repository`, `ecosystem.repository` ou `publicUrl` em `ecosystem.json`, conforme `locationFrom`. `ecosystem.repository` aponta explicitamente para o monorepo e é o valor usado pelos canais diretos atuais de Lunet2D, Urbe e Hub. `target` descreve direção futura e não é um canal operacional. Web não vira release, canal ausente não é presumido e duas entradas primárias não são escolhidas arbitrariamente.
+O Hub lê `docs/distribution/current.profile.json` e resolve o canal `github-release` primário de cada Product a partir de `source.repository`, `ecosystem.repository` ou `publicUrl` em `ecosystem.json`, conforme `locationFrom`. `ecosystem.repository` aponta explicitamente para o monorepo e é o valor usado pelos canais diretos atuais declarados no perfil. `target` descreve direção futura e não é um canal operacional. Web não vira release, canal ausente não é presumido e duas entradas primárias não são escolhidas arbitrariamente.
 
 Consulta até 100 releases recentes do repositório, ignora rascunhos, ordena pela publicação e inclui pré-lançamentos identificados. No próprio monorepo, aceita somente tags `<component-id>-v…`, sem escolher a release de outro Product. A consulta do monorepo é reutilizada. A tela mostra até três releases por Product e quatro APKs por release, com o link do canal para consulta e recuperação.
 
