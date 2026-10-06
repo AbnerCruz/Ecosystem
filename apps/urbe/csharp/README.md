@@ -159,3 +159,13 @@ números, timeline, FAQ, CTA, colunas, planos, contato, countdown, código,
 divisores e blocos editoriais simples de livro). URLs passam por `SafeUrl`,
 conteúdo textual por escape/Markdown e o bloco avançado `html` permanece raw
 por paridade explícita com o produto atual.
+
+
+### UC-15 — contexto entre seções e livro
+
+A terceira fatia acrescenta um `PageRenderPlan` puro que calcula âncoras únicas,
+TOC, partes, capítulos e capítulos derivados de uma pasta antes da renderização.
+`PageBookRenderer` usa esse plano para capa, folha de rosto, sumário de página,
+sumário de livro, partes e capítulos, preservando a numeração do cliente JS e
+sem introduzir estado de UI/host. Cabeçalhos internos de capítulos são
+deslocados semanticamente para manter a hierarquia do livro.
