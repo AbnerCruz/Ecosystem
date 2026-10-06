@@ -1,3 +1,12 @@
+### 2026-10-06 — ChatGPT — UC-15 terceira fatia empilhada
+
+- Enquanto o PR #252 executa o estado combinado, foi aberta a branch `feat/urbe-uc15-book-structure` sobre o head da segunda fatia.
+- Novo `PageRenderPlan`: âncoras únicas, TOC, numeração de partes/capítulos e expansão de capítulos por pasta.
+- Novo `PageBookRenderer`: TOC, capa, folha de rosto, sumário de livro, partes, capítulos e capítulos por pasta.
+- PageNormalizer agora inclui defaults de layout/book do motor JS.
+- Testes cobrem slug com acentos/duplicatas, hidden, numeração contínua, capítulo sem número, heading shift, capa segura e defaults.
+- A branch é empilhada deliberadamente; só será retargetada para main depois que #252 entrar.
+
 ### 2026-10-06 — ChatGPT — UC-15 segunda fatia: blocos de página
 
 - PR #250 foi integrado em `4a7dd74d`; a primeira fatia de UC-15 ficou verde no estado combinado.
