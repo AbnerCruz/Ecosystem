@@ -1,0 +1,163 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261005-p4-9-direct-cut-no-mirror",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T01:30:00Z",
+  "agent": {
+    "id": "chatgpt-p4-9-direct-cut-no-mirror",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-9",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p4-9-direct-cut-no-mirror",
+  "base_commit": "f99b26d1c7c8f9711511c8d42dcea18ba306e0c9",
+  "commit": "0cf938956a65cfb67c1128b4866406795bf8097b",
+  "pr": null,
+  "files_changed": [
+    "ecosystem.json",
+    "ROADMAP.md",
+    ".github/workflows/urbe-app.yml",
+    ".github/workflows/urbe-build.yml",
+    ".github/workflows/urbe-cutover.yml",
+    ".github/workflows/urbe-release.yml",
+    "apps/urbe/package.json",
+    "apps/urbe/CHANGELOG.md",
+    "apps/urbe/src/native/bridge.js",
+    "apps/urbe/native/android/app/build.gradle",
+    "apps/urbe/tools/urbe-dev.keystore",
+    "apps/urbe/tools/urbe-dev.keystore.sha256",
+    "apps/urbe/tools/urbe-dev.certificate.sha256",
+    "docs/distribution/current.profile.json",
+    "docs/distribution/target.profile.json",
+    "docs/distribution/direct-releases.md",
+    "docs/distribution/urbe-cutover-runbook.md",
+    "docs/governance/addenda/ADD-0017-urbe-corte-direto-sem-espelho.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/governance/handoffs/HO-20261005-p4-9-direct-cut-no-mirror.json",
+    "site/generator/GenerateStatus.cs",
+    "tests/consistency/Check.cs"
+  ],
+  "work_completed": [
+    "Persistida DEC-0039/ADD-0017: o proprietário revoga a versão-ponte e abandona AbnerCruz/Urbe como canal ativo, aceitando backup + reinstalação deliberada.",
+    "O workflow sync-from-ecosystem foi removido do repositório legado AbnerCruz/Urbe no commit 6d1a925507d552e225d872f15a55254569e228e9; o legado fica histórico/congelado.",
+    "Urbe Web/PWA atual passa para https://abnercruz.github.io/Ecosystem/urbe/ e current.profile usa somente canais do Ecosystem para Urbe.",
+    "urbe-cutover.yml foi simplificado para corte direto: cria somente urbe-v<versão> e dispara urbe-release.yml; não existe legacy-bridge.",
+    "O primeiro release direto pode ser urbe-v1.8.3-beta.",
+    "Android beta direto passa a usar chave de desenvolvimento pública e estável específica do Urbe, versionada no Ecosystem e verificada por hash/certificado no CI.",
+    "Updater Android já usava AbnerCruz/Ecosystem e filtro urbe-v; comentário/CHANGELOG/runbook foram alinhados ao corte sem ponte.",
+    "Portal/generator deixa de projetar source.repository como repositório/espelho ativo para Product já migrado quando o perfil current não declara esse canal; Urbe passa a apontar código/release/PWA para o Ecosystem sem ressuscitar o legado.",
+    "Self-tests de consistência e projeção de releases foram atualizados para o novo canal direto, incluindo localização ecosystem.repository/publicUrl e ausência de mirror do Urbe.",
+    "Validação de assinatura do APK foi corrigida para usar apksigner (assinaturas APK v2/v3 não são um JAR signature legível por keytool -jarfile)."
+  ],
+  "verification": [
+    {
+      "check": "Decisão material persistida antes do corte durável",
+      "kind": "human",
+      "result": "passed",
+      "critical": false,
+      "evidence": "Direção explícita do proprietário na conversa persistida em ADD-0017 e DEC-0039."
+    },
+    {
+      "check": "Espelho legado desativado",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "AbnerCruz/Urbe commit 6d1a925507d552e225d872f15a55254569e228e9 remove .github/workflows/sync-from-ecosystem.yml."
+    },
+    {
+      "check": "Identidade beta do Urbe",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Keystore gerado para alias urbe; SHA-256 do arquivo 36a597cd0f276c6118a5bc4572eb6920880c7c80891feffcfde0f795e2ccf97b; certificado SHA-256 19:D9:49:32:17:4A:E7:90:82:EC:52:4C:BC:42:AD:48:A7:13:4F:AC:46:82:38:7A:50:68:15:EF:E6:5E:6C:F3. O workflow passa a verificá-los antes/depois do build."
+    },
+    {
+      "check": "Consistency + CI Urbe + builds Android/Windows no estado combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Primeira rodada encontrou self-tests presos ao canal legado e conferência APK via keytool; ambos foram corrigidos. Aguardando nova rodada do PR head."
+    },
+    {
+      "check": "Migração DEVICE do legado para o primeiro APK direto",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "docs/distribution/urbe-cutover-runbook.md",
+      "evidence": "Após integrar/publicar urbe-v1.8.3-beta: backup/export → desinstalar legado → instalar direto → restaurar cidade → testar offline/PWA."
+    }
+  ],
+  "known_issues": [
+    "Ainda não existe release urbe-v* no Ecosystem; P4-9 não pode fechar antes da publicação e DEVICE.",
+    "A chave beta é pública e não prova autoria; serve apenas para continuidade técnica do canal beta direto.",
+    "Instalação Android legada tem assinatura incompatível com o novo canal por decisão deliberada; sem backup antes da desinstalação os dados locais podem ser perdidos."
+  ],
+  "blockers": [
+    "Integração deste PR é crítica por control-plane/distribution e exige autorização do proprietário pelo mecanismo do integrador.",
+    "Depois do merge, o proprietário precisa executar urbe-cutover com version=1.8.3-beta porque o conector atual não expõe workflow_dispatch.",
+    "DEVICE humano obrigatório após a primeira release direta."
+  ],
+  "next_actions": [
+    "Integrar o PR crítico após checks e autorização.",
+    "Executar urbe-cutover version=1.8.3-beta.",
+    "Conferir release urbe-v1.8.3-beta, APK/EXE/checksum e certificado.",
+    "Fazer backup/export da cidade antiga; desinstalar legado; instalar APK direto; restaurar a cidade; validar PWA/offline.",
+    "Fechar P4-9 e aprovar o gate da Fase 4 somente após DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/governance/addenda/ADD-0017-urbe-corte-direto-sem-espelho.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0019-releases-diretas-dos-products.md",
+    "docs/distribution/current.profile.json",
+    "docs/distribution/direct-releases.md",
+    "docs/distribution/urbe-cutover-runbook.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Urbe passa a ter um único canal atual no Ecosystem; o repo antigo é histórico, não autoridade paralela."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A nova direção foi persistida em ADD-0017/DEC-0039 antes de sustentar o corte durável."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "A alteração consciente de distribuição/assinatura está registrada como decisão explícita e emenda ao ADR-0019."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Build/release permanecem em workflows seletivos do Urbe no monorepo."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "A identidade beta Android é explícita, versionada e verificada; chave pública é declarada como não-autoritativa."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não fecha P4-9; a migração real da cidade continua com validação DEVICE humana."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P4-9 fica [~], não [x], até release e DEVICE."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Urbe Web/APK/Windows continuam distribuíveis e utilizáveis sem Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane",
+      "distribution"
+    ],
+    "reason": "Altera workflows de build/release/cutover, perfil de distribuição, URL pública e identidade de assinatura Android do Urbe."
+  },
+  "cost": null
+}

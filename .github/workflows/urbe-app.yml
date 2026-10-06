@@ -1,7 +1,7 @@
 name: urbe-app
 
 # Só valida que o instalador do Windows e o APK continuam compilando.
-# NUNCA publica: a publicação é do release.yml (tag v*), separada da integração em main (REQ-006).
+# NUNCA publica: a publicação é do urbe-release.yml (tag urbe-v*), separada da integração em main (REQ-006).
 
 on:
   pull_request:
@@ -12,6 +12,9 @@ on:
       - 'apps/urbe/package-lock.json'
       - 'apps/urbe/capacitor.config.json'
       - 'apps/urbe/tools/build-www.mjs'
+      - 'apps/urbe/tools/urbe-dev.keystore'
+      - 'apps/urbe/tools/urbe-dev.keystore.sha256'
+      - 'apps/urbe/tools/urbe-dev.certificate.sha256'
       - '.github/workflows/urbe-app.yml'
       - '.github/workflows/urbe-build.yml'
   workflow_dispatch:

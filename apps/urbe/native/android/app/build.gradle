@@ -29,8 +29,8 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    /* Assinatura: nos lançamentos a chave vem dos secrets do GitHub (URBE_KEYSTORE…).
-       Sem ela (builds de teste), usa a chave de depuração. */
+    /* Assinatura: o CI do Ecosystem injeta a chave pública e estável do canal beta do Urbe.
+       Builds locais sem URBE_KEYSTORE continuam usando a chave de depuração. */
     signingConfigs {
         release {
             if (System.getenv('URBE_KEYSTORE')) {

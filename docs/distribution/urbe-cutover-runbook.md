@@ -1,49 +1,52 @@
-# P4-9 — corte de distribuição do Urbe
+# P4-9 — corte direto de distribuição do Urbe
 
-Este roteiro executa somente as operações de tag/release já autorizadas por ADD-0015 / DEC-0031 / ADR-0019. Ele não troca chave, não apaga o canal antigo e não conclui o gate sem validação DEVICE.
+Autoridade: DEC-0039 / ADD-0017. A estratégia anterior de versão-ponte e sincronização foi abandonada pelo proprietário.
 
-## Estado atual
+## Estado escolhido
 
-- a versão-ponte é `1.8.3-beta`;
-- o espelho `AbnerCruz/Urbe` já contém a árvore da ponte sincronizada a partir do Ecosystem;
-- o canal antigo ainda não publicou `v1.8.3-beta`;
-- ainda não existe release direto `urbe-v*` no Ecosystem;
-- `urbe-cutover.yml` existe para evitar criação manual e propensa a erro de tags pelo celular.
+- `AbnerCruz/Urbe` é histórico congelado, não canal atual;
+- `sync-from-ecosystem.yml` foi removido do repositório legado;
+- o primeiro release direto pode ser `urbe-v1.8.3-beta`;
+- Web/PWA atual: `https://abnercruz.github.io/Ecosystem/urbe/`;
+- APK/Windows: Releases do `AbnerCruz/Ecosystem`;
+- Android beta direto usa a chave pública estável registrada em `apps/urbe/tools/urbe-dev.keystore`.
 
-## Etapa A — entregar a ponte pelo canal antigo
+## Antes de instalar no Android
 
-1. No Ecosystem, execute **urbe-cutover** com:
-   - `stage = legacy-bridge`
-   - `version = 1.8.3-beta`
-2. O workflow só aceita a versão canônica do `package.json`, confere a configuração do feed e cria `urbe/v1.8.3-beta` no commit atual da `main`.
-3. Execute **sync-from-ecosystem** no repositório `AbnerCruz/Urbe`. O script canônico detecta a nova tag, materializa a árvore daquele commit como `v1.8.3-beta` na origem e dispara `release.yml`.
-4. Verifique que o release legado contém APK/EXE `1.8.3-beta` e foi assinado pela identidade histórica. Nenhum release direto é permitido antes desta etapa.
+A assinatura direta não é a assinatura da instalação legada. Portanto:
 
-## Etapa B — primeiro release direto
+1. abra o Urbe antigo;
+2. faça backup/export da cidade/vault e confirme que o arquivo/pasta existe fora do armazenamento que será apagado;
+3. só depois desinstale a versão antiga.
 
-1. Depois da ponte publicada, incremente a versão do Urbe para a próxima beta e mantenha CHANGELOG.
-2. Integre a alteração normalmente.
-3. Execute **urbe-cutover** com:
-   - `stage = direct`
-   - `version = <versão nova>`
-4. O workflow cria `urbe-v<versão>` e dispara explicitamente `urbe-release.yml` sobre a tag. O pipeline falha fechado se a chave Android histórica não estiver disponível.
-5. Verifique artefatos, assinatura, package id e versionCode.
+Essa perda de atualização in-place é deliberada e foi aceita pelo proprietário.
 
-## Etapa C — DEVICE e corte do perfil
+## Publicar o primeiro release direto
 
-Em aparelho com a versão anterior instalada:
+No Ecosystem execute **urbe-cutover**:
 
-- atualizar pelo canal antigo para 1.8.3-beta;
-- a partir da ponte, detectar e instalar a versão direta;
-- confirmar que o mesmo vault abre íntegro e continua editável;
-- fechar/reabrir, testar offline no domínio essencial e conferir que o Hub não é requisito.
+- `version = 1.8.3-beta`
 
-Só depois da evidência humana:
+O workflow:
 
-- trocar o canal primário do Urbe em `current.profile.json` para `ecosystem.repository`;
-- manter o repositório antigo como recuperação/histórico;
-- encerrar P4-9 e, se nenhum item da fase estiver aberto, aprovar o gate da Fase 4.
+1. confere a versão em `apps/urbe/package.json`;
+2. confere que o publish aponta para `AbnerCruz/Ecosystem` com prefixo `urbe-v`;
+3. cria `urbe-v1.8.3-beta` na `main`;
+4. dispara `urbe-release.yml`;
+5. o build confere o keystore/certificado beta;
+6. publica APK, checksum e instalador Windows no Ecosystem.
 
-## Falha segura
+Não crie `urbe/v*` e não execute nada em `AbnerCruz/Urbe`.
 
-Se assinatura, versão, tag, artefato, updater ou vault divergirem, não cortar o canal. Não publicar APK de teste com chave diferente. Não reescrever tags existentes.
+## DEVICE
+
+Depois da release:
+
+1. com o backup já guardado, desinstale a instalação legada;
+2. instale `Urbe-1.8.3-beta.apk` direto do Ecosystem;
+3. restaure/aponte para a cidade;
+4. confirme abertura, edição, fechar/reabrir e domínio essencial offline;
+5. abra `https://abnercruz.github.io/Ecosystem/urbe/` e confirme a PWA;
+6. numa release direta posterior, confirmar atualização in-place entre builds assinadas pelo novo certificado.
+
+P4-9 só fecha após a primeira release direta existir e essa migração deliberada ser validada. O repositório antigo não volta a ser pré-requisito nem rollback automático.

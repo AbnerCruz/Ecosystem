@@ -1,14 +1,13 @@
 # Urbe — Changelog
 
-## v1.8.3-beta — Ponte para releases diretas do Ecosystem (2026-10-03)
+## v1.8.3-beta — Corte direto para o Ecosystem (2026-10-05)
 
 ### Atualizações
-- Esta é a **versão-ponte** do corte de distribuição: ela ainda deve chegar pelo canal antigo do Urbe para que instalações existentes aprendam o novo feed sem reinstalação.
-- **Windows:** o updater passa a consultar `AbnerCruz/Ecosystem` e somente tags `urbe-v<versão>`; releases de outros Products não entram no canal do Urbe.
-- **Android:** deixa de consultar `/releases/latest` global. A busca lista releases do Ecosystem, aceita somente tags `urbe-v<versão>` e exige o APK exato `Urbe-<versão>.apk` hospedado no próprio Ecosystem.
-- A URL/PWA antiga continua intacta. O Urbe atualiza e funciona sem depender de launcher externo.
-- O primeiro APK publicado diretamente no Ecosystem continua condicionado à **mesma chave privada** usada nas versões anteriores. Sem ela, o pipeline falha fechado e nenhum APK de teste vira release.
-
+- O repositório legado `AbnerCruz/Urbe` deixa de participar de desenvolvimento, sincronização e novas releases. O código, Web/PWA, APK e instalador Windows passam a sair do `AbnerCruz/Ecosystem`.
+- **Migração deliberada:** instalações antigas não recebem ponte. Faça backup/export da cidade, desinstale a instalação Android antiga se necessário e instale o APK direto do Ecosystem; depois restaure o backup. Esta escolha foi autorizada pelo proprietário em DEC-0039.
+- **Windows e Android:** o canal do produto é `urbe-v<versão>` no Ecosystem. Android filtra a lista de releases e exige o APK exato `Urbe-<versão>.apk`; o `latest` global do monorepo permanece proibido.
+- **Web/PWA:** a URL atual passa a ser `https://abnercruz.github.io/Ecosystem/urbe/`. A página antiga pode continuar existindo como histórico congelado, mas não é canal atual.
+- **Assinatura Android do canal beta direto:** nova chave de desenvolvimento pública e estável, exclusiva do Urbe no Ecosystem. Certificado SHA-256: `19:D9:49:32:17:4A:E7:90:82:EC:52:4C:BC:42:AD:48:A7:13:4F:AC:46:82:38:7A:50:68:15:EF:E6:5E:6C:F3`. Ela não é compatível com a assinatura legada — por design, pois a migração é por backup + reinstalação.
 
 ## v1.8.2-beta — Tocar na casa não abre mais buraco no bairro (2026-09-28)
 
