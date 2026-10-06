@@ -180,6 +180,12 @@ Todos os REQ-001..024 acima permanecem intactos e IMPLEMENTAR. Os requisitos aba
 | REQ-108 | UX | IMPLEMENTAR | Tutorial em painel dedicado (navegação, busca, texto e imagens), aberto por Configurações → Tutorial, sem criar casas no mundo; migração do `Tutorial/` existente sem perder notas do usuário. | OBS-16 |
 | REQ-109 | UX | IMPLEMENTAR | `[[nota inexistente]]` no editor oferece criar a nota (na pasta da nota atual) e abri-la; digitar um link novo dá o mesmo caminho. | OBS-17 |
 
+### Importação crítica Android/P4-9 (2026-10-06)
+
+| ID | Classe | Estado | Requisito | Origem |
+|---|---|---|---|---|
+| REQ-110 | DATA | IMPLEMENTAR | Uma ação Importar oferece Arquivos (múltiplos) ou Pasta inteira; picker nativo correspondente, SAF/streams no Android sem converter content:// em caminhos. Inspecionar conteúdo/estrutura/manifesto antes de planejar/aplicar. Preservar identidade, forward, assets e vault atual; conflitos explícitos, idempotência, backup/rollback e recuperação após reabrir. Novo candidato exige DEVICE próprio. | Relato e direção explícita do proprietário, Issue #261; SPEC §16 |
+
 ## Decisões abertas — status após a descoberta
 
 | Decisão | Status | Onde |
@@ -205,3 +211,5 @@ Detalhes, alternativas e perguntas objetivas: `docs/v2/discovery/OPEN-DECISIONS.
 
 Um requisito pode mudar de estado, mas nunca ser removido silenciosamente. Toda substituição, rejeição, adiamento ou saída de escopo deve registrar justificativa e requisito substituto quando aplicável.
 - Feedback de uso (2026-09-30): REQ-089..109 adicionados a partir de `discovery/FEEDBACK-BETA.md`; nenhum REQ removido.
+
+- 2026-10-06: REQ-110 acrescentado por direção explícita do proprietário após falha DEVICE de importação P4-9. REQ-077 continua adiando a substituição do armazenamento ativo; não proíbe SAF para seleção de entrada.

@@ -1,5 +1,13 @@
 # Urbe — Changelog
 
+## v1.8.4-beta
+
+- Importar oferece Arquivos (múltiplos) ou Pasta inteira; Android utiliza seleção nativa de documentos e pasta.
+- Inspeção antes de aplicar: arquivos compactados, vault atual/histórico, notas/assets e backups; metadados e IDs preservados.
+- Verificação de hashes, conflitos explícitos, reimportação idempotente e backup binário com recuperação após falha/interrupção.
+- Correção crítica de importação do candidato P4-9 anterior. Esta versão requer nova validação em aparelho; não reutiliza aprovação da 1.8.3-beta.
+- Cliente distribuído permanece JavaScript; domínio de importação/recuperação portátil no Core C# sem antecipar corte ou M3.
+
 ## v1.8.3-beta — Corte direto para o Ecosystem (2026-10-05)
 
 ### Atualizações

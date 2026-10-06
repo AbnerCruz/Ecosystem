@@ -13,15 +13,20 @@
   if(!N&&cap&&typeof cap.isNativePlatform==='function'&&cap.isNativePlatform())N=global.UrbeNative=capacitorNative(cap);
   /* contrato de capacidades (docs/v2/contracts/native.md): a página consulta em vez de adivinhar pela plataforma.
      Sem casca nativa (navegador/PWA) nada é oferecido: o arquivo vem do File System Access ou do armazenamento do navegador. */
-  var CAPS=['fs','vault','openExternal','saveFile','print','update','back','storageStatus'];
+  var CAPS=['fs','vault','openExternal','saveFile','print','update','back','storageStatus','importSelection'];
   function contractOf(n){
     if(n&&n.contract&&n.contract.version)return n.contract;
     var has={fs:!!(n&&n.fs),vault:!!(n&&n.vault),openExternal:!!(n&&n.openExternal),saveFile:!!(n&&n.saveFile),print:!!(n&&n.printHtml),
-      update:!!(n&&n.update&&n.update.check),back:!!(n&&n.minimize),storageStatus:!!(n&&n.storage&&n.storage.status)};
+      update:!!(n&&n.update&&n.update.check),back:!!(n&&n.minimize),storageStatus:!!(n&&n.storage&&n.storage.status),importSelection:!!(n&&n.importSelection&&n.importSelection.pick)};
     return{version:1,capabilities:CAPS.filter(function(c){return has[c]}),unsupported:CAPS.filter(function(c){return !has[c]})};
   }
   global.UrbeNativeContract=contractOf(N);
   if(!N||!N.fs)return;
+
+  if(N.importSelection)global.UrbeImportSources={pick:async function(kind){
+    var selected=await N.importSelection.pick(kind);if(!selected||selected.canceled)return null;
+    return{files:(selected.files||[]).map(function(f){return{rel:f.path,file:{name:f.path.split('/').pop(),size:f.size,stream:function(){var offset=0;return new ReadableStream({pull:async function(controller){try{var r=await N.importSelection.readChunk(selected.token,f.id,offset),bytes=new Uint8Array(r.data);offset+=bytes.length;controller.enqueue(bytes);if(r.done)controller.close()}catch(e){controller.error(e)}}})}}}}),release:function(){return N.importSelection.release(selected.token)}};
+  }};
 
   /* ---------------- utilidades ---------------- */
   function err(name,msg){try{return new DOMException(msg||name,name)}catch(_){var e=new Error(msg||name);e.name=name;return e}}
@@ -66,7 +71,7 @@
       want.forEach(function(p){if(Object.prototype.hasOwnProperty.call(got,p))m.texts.set(p,got[p])});
       return true}catch(e){console.info('espelho da pasta indisponível; lendo arquivo a arquivo',e&&e.message);mir=null;return false}
   }
-  var enc=new TextEncoder(),dec=new TextDecoder();
+  var enc=new TextEncoder(),dec=new TextDecoder('utf-8',{ignoreBOM:true});
   var fs={
     stat:async function(r){if(mir){var k=mir.kinds.get(r);if(!k)return null;if(k==='directory')return{kind:k,size:0,mtime:0};if(mir.texts.has(r))return{kind:'file',size:mir.texts.get(r).length,mtime:0}}return raw.stat(r)},
     list:async function(r){if(mir&&mir.kinds.get(r||'')==='directory'){var out=[];(mir.kids.get(r||'')||new Set()).forEach(function(n){var c=r?r+'/'+n:n;out.push({name:n,kind:mir.kinds.get(c)||'file'})});return out}return raw.list(r)},
@@ -301,12 +306,17 @@
       info:async function(){if(!info)info=await call('UrbeAndroid','getInfo');return info},
       vault:async function(){await fsA.mkdir('');return{label:'Documentos/'+BASE,path:'Documents/'+BASE}},
       fs:fsA,
+      importSelection:{
+        pick:function(kind){return call('UrbeAndroid','pickImport',{kind:kind})},
+        readChunk:async function(token,id,offset){var r=await call('UrbeAndroid','readImportChunk',{token:token,id:id,offset:offset});return{data:unb64(r.data),done:r.done}},
+        release:function(token){return call('UrbeAndroid','releaseImport',{token:token})}
+      },
       storage:{
         status:function(){return call('UrbeAndroid','storageStatus')},
         requestAllFiles:function(){return call('UrbeAndroid','requestAllFiles')},
         requestLegacy:function(){return call('Filesystem','requestPermissions',{permissions:['publicStorage']}).catch(function(){})}
       },
-      contract:{version:1,capabilities:['fs','vault','openExternal','saveFile','print','update','back','storageStatus'],unsupported:[]},
+      contract:{version:1,capabilities:['fs','vault','openExternal','saveFile','print','update','back','storageStatus','importSelection'],unsupported:[]},
       openExternal:function(url){if(!extOk(url))return Promise.reject(new Error('Endereço não permitido'));return call('UrbeAndroid','openUrl',{url:String(url)})},
       saveFile:function(name,bytes,mime){return call('UrbeAndroid','saveFile',{name:String(name),data:b64(bytes),mime:mime||''})},
       printHtml:function(html,name){return call('UrbeAndroid','printHtml',{html:String(html),name:String(name||'Urbe')})},

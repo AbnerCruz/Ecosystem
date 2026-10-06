@@ -151,7 +151,7 @@ function createMemoryIndexedDB(seed) {
           const db={
             objectStoreNames:{contains:(store)=>record.stores.has(store)},
             createObjectStore(store){if(!record.stores.has(store))record.stores.set(store,new Map());return apiFor(record,store)},
-            transaction(store){return{objectStore:(requested)=>apiFor(record,requested||store)}}
+            transaction(store){const transaction={objectStore:(requested)=>apiFor(record,requested||store),oncomplete:null,onerror:null,onabort:null};queueMicrotask(()=>queueMicrotask(()=>transaction.oncomplete?.({target:transaction})));return transaction}
           };
           r.result=db;
           if(fresh&&r.onupgradeneeded)r.onupgradeneeded({target:r});

@@ -374,3 +374,11 @@
 - Paridade: corpus suplementar gerado pelo JS congelado com SHA-256, cobrindo código, preços, escapes, Unicode e limites negativos de autocomplete; corrige distinções de whitespace/dígitos/NUL entre .NET e JS.
 - Decisão preservada: ADR-0025 não escolhe biblioteca matemática. Nenhuma dependência ou interop adicionada; tipografia/macros/erros/export continuam abertos na UC-16; UI pertence à UC-18.
 - Próximo: verificar Core, checks e consistency; abrir PR para CI portátil, Web, Android, Windows e E2E e integração automática rotineira.
+
+### 2026-10-06 — codex-urbe-import — RM-F7-29 / REQ-110 / URBE-261
+- Estado: verifying; P4-9 permanece aberto, falha DEVICE de 1.8.3-beta preservada em HO-20261006-urbe-import-incident.
+- Feito: fonte Android SAF para arquivos múltiplos/árvore por streams, fonte desktop limitada por tokens, UI Importar → Arquivos/Pasta inteira, inspeção e confirmação, restauração de identidade/metadados, conflito explícito e backup/rollback/recovery binários. Sucessor portátil em Urbe.Core; compatibilidade JS somente para manter o cliente distribuído funcional até UC-31/32.
+- Decisões (com fonte): direção explícita do proprietário na Issue #261; arquitetura registrada no ADR-0011 proposto. Revisão pontual do oráculo documentada, baseline anterior preservado e 297 IDs mantidos. Nenhuma autorização presumida de KaTeX interop ou corte C#.
+- Evidência: 203 testes Core passaram; 16 testes Java passaram; 16 grupos suplementares executam produção/IO real e incluem interrupção de processo; E2E mobile arquivos/pasta/reabertura e ZIP com IDs passaram. Checks completos, paridade all, APK final e CI ainda em fechamento; não são DEVICE.
+- Pendências / bloqueios: PR crítico depende do integrador e autorização real do proprietário; publicação oficial e registro DEVICE exato virão depois, pelo pipeline existente. ZIP selecionado separadamente; duplicatas divergentes na origem recusadas sem alteração. Roteiro: docs/validation/urbe/1.8.4-beta-import-device.md (raiz), ainda sem aprovação.
+- Próximos passos: concluir verificações, integrar conforme política, publicar candidato e vincular hash real ao portal. UC-15 #249 possui PRs #253/#254 abertos; UC-16 #257 ainda exige investigação tipográfica/licenças/offline/export. M3 continua dependendo de G-C2.

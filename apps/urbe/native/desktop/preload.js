@@ -11,12 +11,13 @@ ipcRenderer.on('update:status',(_e,s)=>listeners.forEach(fn=>{try{fn(s)}catch(_)
 contextBridge.exposeInMainWorld('UrbeNative',{
   shell:'electron',
   /* contrato de capacidades (docs/v2/contracts/native.md): o que esta casca oferece e o que não */
-  contract:{version:1,capabilities:['fs','vault','openExternal','saveFile','print','update'],unsupported:['back','storageStatus']},
+  contract:{version:1,capabilities:['fs','vault','openExternal','saveFile','print','update','importSelection'],unsupported:['back','storageStatus']},
   platform:process.platform==='win32'?'windows':process.platform==='darwin'?'mac':'linux',
   info:()=>inv('app:info'),
   vault:()=>inv('vault:get'),
   pickVault:()=>inv('vault:pick'),
   revealVault:()=>inv('vault:reveal'),
+  importSelection:{pick:kind=>inv('import:pick',kind),readChunk:(token,id,offset)=>inv('import:read',token,id,offset),release:token=>inv('import:release',token)},
   fs:{
     stat:rel=>inv('fs:stat',rel),
     list:rel=>inv('fs:list',rel),

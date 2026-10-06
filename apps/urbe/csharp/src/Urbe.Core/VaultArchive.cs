@@ -122,8 +122,10 @@ public static class VaultArchive
             Array.AsReadOnly(exportedFiles));
     }
 
-    public static VaultArchiveImportResult Import(ReadOnlyMemory<byte> bytes)
+    public static VaultArchiveImportResult Import(ReadOnlyMemory<byte> bytes, ImportLimits? limits = null)
     {
+        limits ??= new ImportLimits();
+        if (bytes.Length > limits.TotalBytes) throw new InvalidDataException("ZIP excede o limite seguro.");
         if (bytes.Length == 0)
             throw new InvalidDataException("ZIP vazio.");
 
@@ -135,6 +137,9 @@ public static class VaultArchive
                 !string.IsNullOrEmpty(entry.Name) &&
                 !entry.FullName.Contains("__MACOSX", StringComparison.Ordinal))
             .ToArray();
+
+        if (entries.Length > limits.FileCount || entries.Sum(e => e.Length) > limits.TotalBytes || entries.Any(e => e.Length > limits.FileBytes))
+            throw new InvalidDataException("ZIP excede o limite seguro de importação.");
 
         var rawNames = entries
             .Select(entry => NormalizeZipEntryName(entry.FullName))
@@ -160,7 +165,14 @@ public static class VaultArchive
             var path = NormalizeArchivePath(relative);
             using var stream = entries[i].Open();
             using var buffer = new MemoryStream();
-            stream.CopyTo(buffer);
+            var chunk = new byte[64 * 1024];
+            int read;
+            while ((read = stream.Read(chunk)) != 0)
+            {
+                if (buffer.Length + read > limits.FileBytes || buffer.Length + read > entries[i].Length)
+                    throw new InvalidDataException("ZIP expandido excede o tamanho declarado ou o limite seguro.");
+                buffer.Write(chunk, 0, read);
+            }
 
             if (!files.TryAdd(path, new VaultFile(path, buffer.ToArray())))
                 throw new InvalidDataException(

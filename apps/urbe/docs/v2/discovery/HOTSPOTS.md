@@ -18,7 +18,7 @@ Definições: *Linhas* = linhas do arquivo; *Funções* = declarações `functio
 | `src/customize/panel.js` | feature | 307 | 57 | 7 | 0 | 1 | 35 | 0 | 0 |
 | `src/world/pixel-art.js` | feature | 384 | 39 | 0 | 3 | 1 | 1 | 0 | 0 |
 
-_Base: 75 módulos em `src/modules.json`; reproduza com `node tools/hotspots.mjs`._
+_Base: 76 módulos em `src/modules.json`; reproduza com `node tools/hotspots.mjs`._
 <!-- hotspots:end -->
 
 ## 2. Leitura por arquivo e decisão

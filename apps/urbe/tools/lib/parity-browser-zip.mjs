@@ -42,9 +42,10 @@ export function makeBrowserZipCases(){
 
 async function importZip(h,file){
   await h.page.evaluate(()=>{delete window.showDirectoryPicker;delete window.showOpenFilePicker});
+  await h.page.evaluate(()=>{UrbeCore.service('legacy.runtime').importFiles(null)});
   const [chooser]=await Promise.all([
     h.page.waitForEvent('filechooser'),
-    h.page.evaluate(()=>UrbeCore.service('legacy.runtime').importFiles(null))
+    h.page.locator('#explorerSheetActions').getByRole('button',{name:/^Arquivos/}).click()
   ]);
   await chooser.setFiles(file);
 }
@@ -97,6 +98,10 @@ export async function runBrowserZip(input){
     await openApp(b,{docs:1});
     await importZip(b,file);
     await b.page.waitForSelector('.udlg [data-primary]');
+    await b.page.click('.udlg [data-primary]');
+    await b.page.waitForFunction(()=>document.querySelector('.udlg-msg')?.textContent.includes('substituirá'));
+    await b.page.click('.udlg [data-primary]');
+    await b.page.waitForFunction(()=>document.querySelector('.udlg-msg')?.textContent.includes('preferências deste backup'));
     const prefDialog=/preferências/i.test(await b.page.textContent('.udlg-msg'));
     await b.page.click('.udlg [data-primary]');
     await b.page.waitForFunction(n=>UrbeCore.service('documents').list().filter(d=>d.path.endsWith('.md')&&!d.path.startsWith('Tutorial/')).length>=n,input.docs,{timeout:30000});
@@ -119,8 +124,8 @@ export async function runBrowserZip(input){
     const before=await c.page.evaluate(()=>UrbeCore.service('documents').list().length);
     await importZip(c,tampered);
     await c.page.waitForSelector('.udlg [data-primary]');
-    const tamperedWarned=/não batem com o manifesto/i.test(await c.page.textContent('.udlg-msg'));
-    await c.page.click('.udlg [data-cancel].ui-btn');
+    const tamperedWarned=/não conferem/i.test(await c.page.textContent('.udlg-msg'));
+    await c.page.click('.udlg [data-primary]');
     await c.page.waitForTimeout(500);
     const tamperedCancelled=await c.page.evaluate(()=>UrbeCore.service('documents').list().length)===before;
 
@@ -134,7 +139,7 @@ export async function runBrowserZip(input){
     writeFileSync(future,Buffer.from(futureBytes));
     await importZip(c,future);
     await c.page.waitForSelector('.udlg [data-primary]');
-    const futureWarned=/versão mais nova/i.test(await c.page.textContent('.udlg-msg'));
+    const futureWarned=/versão mais recente/i.test(await c.page.textContent('.udlg-msg'));
     await c.page.click('.udlg [data-primary]');
     await c.page.waitForTimeout(300);
     const futureRefused=await c.page.evaluate(()=>!UrbeCore.service('documents').list().some(d=>d.path.endsWith('Nota futura.md')));

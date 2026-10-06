@@ -224,3 +224,11 @@ Comportamentos observados pelo proprietário na beta 1.8.2. Cada cláusula é ve
 ### 15.4 Escopo e dados
 - **REQ-105** — Composições: migração automática e reversível (backup, REQ-038) de `.urbe/compositions.json`/`compositions.v2.json` para páginas (`Páginas/…page.json`), preservando fontes, ordem e estilos; depois a UI e os módulos de composição são removidos (REQ-030/029). Aprovado pelo proprietário (OD-14, ADR-0009).
 - **REQ-108** — Tutorial: painel dedicado com navegação, busca e visualização de texto/imagens, aberto por Configurações → Tutorial; o conteúdo vem de `src/tutorial/content.js` (sem criar notas/casas); vaults com a pasta `Tutorial/` existente mantêm as notas do usuário (a pasta vira comum e a migração avisa); `tools/build-tutorial.mjs --check` continua validando o conteúdo.
+
+## 16. Importação humana única (REQ-110)
+
+- **REQ-110** — A ação **Importar** oferece somente **Arquivos** («Selecione um ou vários arquivos. O Urbe identifica automaticamente o conteúdo.») e **Pasta inteira** («Selecione um vault ou uma pasta com seus documentos.»). No Android são pickers distintos de documentos múltiplos e árvore SAF. URIs são lidas pelo ContentResolver como streams; nunca convertidas em paths.
+
+Seleção → inspeção → plano → execução → resultado. Detectar ZIP por conteúdo, manifesto por contrato e vault por estrutura/metadados; preservar `.urbe/`, identidade documental e bytes binários. Mostrar contagens e restauração versus incorporação antes da confirmação. Entrada inválida/futura não autoriza escrita. Conflitos diferentes exigem escolha explícita; entrada idêntica não duplica. Não aplicar credenciais de IA ou aprovações de plugins automaticamente.
+
+Validar integralmente antes da primeira mutação. Aplicação preserva backup restaurável e possui rollback/recovery durável; falha/cancelamento não deixam o vault parcialmente aplicado. Leitores continuam obedecendo ADR-0004. Hosts possuem picker, permissões e streams; Core possui detecção/plano, sem Android. O JS distribuído recebe somente a correção crítica necessária; não há corte antecipado do C# nem liberação de M3. P4-9 exige novo candidato exato e DEVICE humano; evidência anterior não é reutilizada.

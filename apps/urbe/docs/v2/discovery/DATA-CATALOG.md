@@ -150,8 +150,20 @@ Regras comuns: (1) a 2.x **lê** o formato 1.x; (2) só **escreve** o formato 2.
 | `.urbe/vault.json` | — | novo: `{formatVersion,createdBy,lastWriter,migrations[],maintenance[],archivedCities?}` (`maintenance`: últimas 20 limpezas `{kind:'gc',at,removed,orphanDays,trashDays}`, RM-F1-16) | sim | sim | `formatVersion` maior: modo seguro | `vault.mjs` (RM-F1-04) |
 | `.urbe/identity.json` | — | novo: `{version:1,docs:{<docId>:{path,fingerprint,seen}}}` | sim | sim | preservar | RM-F1-15 |
 | `.urbe/backup/<data>-<de>-<para>/` | — | novo: cópias restauráveis pré-migração | sim | sim | — | RM-F1-07 |
+| `.urbe/import.v1.json` | — | novo: registro de rollback binário v1 | sim | sim | preservar e bloquear load se futuro/corrupto | RM-F7-29 |
 | `urbe-export.json` (dentro do ZIP) | — | novo: manifesto do export | sim | sim | recusar import de `format` desconhecido | RM-F1-18 |
 | `Personalização/tema.json` | `versao:1` | mesmo | v1 | v1 (preserva chaves desconhecidas) | preservar; modo seguro de tema | `v1-personalizacao`, `futuro-desconhecido` |
 | `Personalização/{temas,estilos,texturas,plugins}/*` | sem versão | mesmo | sim | sim | preservar | `v1-personalizacao` |
 | `Páginas/**/*.page.json` (+ Modelos/Blocos) | `version:1` | mesmo; preserva chaves desconhecidas e `version` | v1 | v1 sem reescrever `version` | preservar (somente leitura no Studio) | `v1-paginas`, `futuro-desconhecido` |
 | Notas e demais textos | — | sem mudança (nenhum ID no arquivo) | sim | bytes preservados | — | todas as fixtures |
+
+## 10. Correção crítica de importação (REQ-110 / RM-F7-29)
+
+O comportamento RM-F1-18 de ignorar `.urbe/` e permitir continuar após hash divergente (§1 acima) é evidência histórica do importador anterior, substituído nesta correção. Importação agora mantém o conjunto completo, exige verificação e distingue restauração de incorporação.
+
+| Caminho | Ownership | Formato/escritor | Leitura/migração/forward | Evidência |
+|---|---|---|---|---|
+| `.urbe/import.v1.json` | WorkspacePersistence / transação de importação | `{version:1,root,entries:[{path,backup:null ou path,size,sha256}]}`; `src/persistence/import.js`, `Urbe.Core/ImportTransaction` | Recuperar antes do load normal; validar todos os backups antes da primeira escrita; rollback idempotente até remover o registro. Corrupto/futuro: bloquear o load e preservar, nunca apagar. Entrada com registro de importação pendente é recusada. | Corpus suplementar import-legacy e ImportTransactionTests |
+| `.urbe/backup/import-<uuid>/` (`.urbe/backup/import-`) | transação de importação | `manifest.json` `{version:2,kind:'urbe-import-backup',journal:{…}}`; `files/<path>` preserva bytes, inclusive `.urbe/`, sem mapear nomes | Backup verificado antes da mutação. Restauração v2 delega à transação binária; v1 existente continua legível. Versão desconhecida não restaura. Backups existentes não são substituídos nem removidos pela importação. | Testes de IO, processo fechado e reabertura |
+
+Política adicional à §9: nenhum arquivo de usuário muda de formato. Estes dois artefatos aditivos são exclusivos da transação. Um cliente antigo não deve abrir um vault durante uma transação interrompida: recuperar no cliente que iniciou antes de transferir. Credenciais de IA nunca são incluídas; estado de export não é aplicado automaticamente.

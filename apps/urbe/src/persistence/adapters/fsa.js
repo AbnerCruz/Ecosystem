@@ -26,7 +26,7 @@
       async readBlob(v,rel){try{var s=split(rel),d=await dir(await city(v),s.seg,false);return await(await d.getFileHandle(s.file)).getFile()}catch(_){return null}},
       write:function(v,rel,text){return put(v,rel,text)},
       writeBlob:function(v,rel,blob){return put(v,rel,blob)},
-      async remove(v,rel){try{var s=split(rel),d=await dir(await city(v),s.seg,false);await d.removeEntry(s.file)}catch(_){}},
+      async remove(v,rel){try{var s=split(rel),d=await dir(await city(v),s.seg,false);await d.removeEntry(s.file)}catch(error){if(!error||error.name!=='NotFoundError')throw error}},
       async createFolder(v,path){if(!path)return;await dir(await city(v),path.split('/'),true)},
       async removeFolder(v,path){if(!path)return;var seg=path.split('/'),alvo=seg.pop();try{var d=await dir(await city(v),seg,false);await d.removeEntry(alvo)}catch(_){}}
     };

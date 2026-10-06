@@ -33,6 +33,8 @@
   /** Restaura os arquivos do backup e remove os que não existiam na época (`absent`). Verifica o hash quando disponível. */
   async function restore(adapter,vault,dir){
     var manifest=JSON.parse(await adapter.read(vault,dir+'/manifest.json')),restored=[],removed=[];
+    if(manifest.version===2&&manifest.kind==='urbe-import-backup'&&global.UrbeImport)return global.UrbeImport.restoreBackup(adapter,vault,dir);
+    if(manifest.version!==1)throw new Error('Backup de versão não reconhecida; nenhum dado foi alterado.');
     for(var i=0;i<manifest.files.length;i++){var f=manifest.files[i],text=await adapter.read(vault,dir+'/files/'+mapPath(f.path));
       if(text==null)throw new Error('backup incompleto: '+f.path);
       if(f.sha256){var h=await sha256(text);if(h&&h!==f.sha256)throw new Error('backup corrompido: '+f.path)}
