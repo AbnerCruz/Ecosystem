@@ -1285,93 +1285,6 @@ function distribuirNotas(r,arquivos,mapa){
 }
 function contarPastasNo(no){let n=0;for(const f of no.filhas.values())n+=1+contarPastasNo(f);return n}
 function contarItensNo(no){let n=no.arquivos.length;for(const f of no.filhas.values())n+=contarItensNo(f);return n}
-function importarItens(itens,opcoes={}){
-  const mapa=new Map(),arvore=montarArvore(itens),itemRegion=new Map();
-  const destinoId=opcoes.destinoRegionId||null;let destino=destinoId?world.regions.find(r=>r.id===destinoId)||null:null;
-  if(opcoes.wrapRootName){
-    const qtd=Math.max(1,contarItensNo(arvore));
-    const wr=criarRegiaoOrganica(opcoes.wrapRootName,qtd,semente(opcoes.wrapRootName+Date.now()),destino?destino.id:null,null,"Pasta importada do Vault.");
-    if(wr)destino=wr;
-  }
-  const importarNo=(no,parent,isRoot=false)=>{
-    let r=parent;
-    if(!isRoot){
-      const qtd=Math.max(1,contarItensNo(no)+contarPastasNo(no)*2);
-      r=criarRegiaoOrganica(no.nome,qtd,semente(no.nome+qtd+":"+(parent?.id||"root")),parent?.id||null,null,"Pasta importada do Vault.");
-      if(!r){toast("Não coube criar a sub-região "+no.nome+".");return}
-    }
-    for(const it of no.arquivos)itemRegion.set(it,r||null);
-    /* subpastas primeiro: reservam o espaço delas; as casas desta pasta ocupam o resto */
-    for(const filha of no.filhas.values())importarNo(filha,r,false);
-    distribuirNotas(r,no.arquivos.filter(i=>EXT_MD.test(i.rel)),mapa);
-  };
-  importarNo(arvore,destino,true);
-
-  /* Referências a anexos: um lote por TIPO para cada nota, não um lote por arquivo. */
-  const citados=new Map();
-  for(const b of world.buildings.filter(x=>x.tipo==="nota")){
-    let m;const re=/!?\[\[([^\]|#]+)/g;
-    while((m=re.exec(b.content||""))!==null){const alvo=m[1].trim().toLowerCase(),bn=baseNome(alvo);citados.set(alvo,b);citados.set(bn,b);citados.set(bn.replace(/\.[^.]+$/,""),b)}
-  }
-  const grupos=new Map(),orfaos=[];
-  for(const a of itens.filter(i=>!EXT_MD.test(i.rel))){
-    const bn=baseNome(a.rel),sem=bn.replace(/\.[^.]+$/,""),dono=citados.get(a.rel.toLowerCase())||citados.get(bn)||citados.get(sem);
-    if(!dono){orfaos.push(a);continue}
-    const c=classificarArquivo(a.rel),k=dono.id+"|"+c;if(!grupos.has(k))grupos.set(k,{dono,c,items:[]});grupos.get(k).items.push(a);
-  }
-  let agrupados=0;
-  for(const g of grupos.values()){
-    const r=g.dono.regionId?world.regions.find(x=>x.id===g.dono.regionId)||null:null,pos=posicaoAdjacenteArquivo(g.dono,r,g.c+g.dono.id);
-    if(!pos){toast("Sem lote adjacente para anexos de "+g.dono.name+".");continue}
-    const camImport=caminhosRegioes();
-    const files=g.items.map(i=>{const rr=itemRegion.get(i)||null;i.anexo.folderPath=rr?(camImport.get(rr.id)||""):"";return i.anexo});criarPredioArquivo(g.items[0],pos.x,pos.y,r?r.id:null,{aux:true,fileClass:g.c,parentNoteId:g.dono.id,files,name:files.length===1?files[0].nome:(rotuloClasse(g.c)+" ("+files.length+") · "+g.dono.name),description:files.length+" arquivo(s) citado(s) pela nota"});
-    g.dono.anexos=(g.dono.anexos||[]).concat(files);agrupados+=files.length;
-  }
-  for(const a of orfaos){
-    const r=itemRegion.get(a)||destino||null,pos=r?vagaNaRegiao(r,semente(a.rel),new Set()):vagaAleatoria(semente(a.rel));
-    if(!pos){toast("Sem lote para "+baseNome(a.rel)+".");continue}
-    if(a.anexo){const camImport=caminhosRegioes();a.anexo.folderPath=r?(camImport.get(r.id)||""):""}
-    criarPredioArquivo(a,pos.x,pos.y,r?r.id:null);
-  }
-  marcarIndice();indexar();rebuildRoadNetwork();counts();buildTree();agendarSalvar();
-  return {notas:itens.filter(i=>EXT_MD.test(i.rel)).length,citados:agrupados,orfaos:orfaos.length,regioes:world.regions.length};
-}
-async function lerEntrada(files,{expandZip=false}={}){
-  const itens=[];
-  const registrar=async(rel,pegar)=>{
-    if(EXT_TEXTO.test(rel)){
-      itens.push({rel,nome:limparNome(rel),texto:await pegar("string")});
-      return;
-    }
-    const classe=classificarArquivo(rel),a={nome:rel.split("/").pop(),tipo:(rel.split(".").pop()||"").toLowerCase(),mime:mimePorNome(rel)};
-    /* v0.18: todo binário importado é preservado; o cache é staging/fallback e
-       a sincronização o materializa como arquivo real no vault físico. */
-    const blob=await pegar("blob");
-    if(blob){
-      a.tamanho=blob.size;a.mime=blob.type||a.mime;a.cacheId=cacheAssetKey();
-      try{await DBK.bSet(a.cacheId,blob)}catch(err){console.warn("cache de preview indisponível",err);delete a.cacheId}
-      if(classe==="image"&&blob.size<LIMITE_IMG){const b64=await blob.arrayBuffer().then(ab=>{let out="",u=new Uint8Array(ab);for(let i=0;i<u.length;i++)out+=String.fromCharCode(u[i]);return btoa(out)});a.dataUrl="data:"+a.mime+";base64,"+b64}
-    }else a.tamanho=await pegar("tamanho");
-    itens.push({rel,nome:limparNome(rel),anexo:a});
-  };
-  for(const entrada of files){
-    const f=entrada&&entrada.file?entrada.file:entrada,relEntrada=(entrada&&entrada.rel)||f.webkitRelativePath||f.name;
-    if(expandZip&&/\.zip$/i.test(f.name)){
-      const JSZipLib=await exigirJSZip(),zip=await JSZipLib.loadAsync(f);
-      const todos=Object.keys(zip.files).filter(n=>!zip.files[n].dir&&!n.includes("__MACOSX")),nomes=todos.filter(n=>!/^\./.test(baseNome(n)));
-      let prefixo="";if(nomes.length){const partes=nomes.map(n=>n.split("/"));if(partes.every(p=>p.length>1&&p[0]===partes[0][0]))prefixo=partes[0][0]+"/"}
-      /* ZIP exportado pelo Urbe: confere o manifesto; .urbe/ e demais pastas ocultas não viram notas (REQ-044) */
-      const M=window.UrbeExportManifest;let mEnt=todos.find(n=>n===prefixo+M.NAME);const info=mEnt?M.parse(await zip.files[mEnt].async("string")):null;if(info&&info.state==='corrupt')mEnt=null; /* não é o nosso manifesto: é arquivo do usuário */
-      if(mEnt){const bytes=new Map();for(const n of todos)if(n!==mEnt)bytes.set(n.slice(prefixo.length),await zip.files[n].async("uint8array"));info.check=info.manifest&&info.state==='current'?await M.verify(info.manifest,bytes):null;itens.exportInfo=info}
-      for(const n of nomes){if(n===mEnt||n.slice(prefixo.length).split("/").some(p=>p.startsWith(".")))continue;const ent=zip.files[n];await registrar(n.slice(prefixo.length),t=>t==="string"?ent.async("string"):t==="blob"?ent.async("blob"):t==="tamanho"?ent.async("uint8array").then(u=>u.length):ent.async(t))}
-    }else{
-      await registrar(relEntrada,t=>t==="string"?f.text():t==="blob"?Promise.resolve(f):t==="tamanho"?Promise.resolve(f.size):f.arrayBuffer().then(ab=>{let out="",u=new Uint8Array(ab);for(let i=0;i<u.length;i++)out+=String.fromCharCode(u[i]);return btoa(out)}));
-    }
-  }
-  return itens;
-}
-/* ZIP exportado pelo Urbe: avisa se os arquivos não batem com o manifesto e oferece aplicar as preferências (REQ-044). false = cancelar. */
-async function urbeConferirExport(x){if(!x)return true;if(x.state==='future'){await UD.alert({title:'Export de versão mais nova',message:'Este ZIP foi exportado por uma versão mais nova do Urbe (formato '+x.manifest.formatVersion+'). Atualize o Urbe para importá-lo com segurança.'});return false}const c=x.check,n=c.mismatched.length+c.missing.length+c.extra.length;if(n&&!(await UD.confirm({title:'Arquivos não conferem',message:n+' arquivo(s) deste ZIP não batem com o manifesto do export (alterados, faltando ou a mais): '+c.mismatched.concat(c.missing,c.extra).slice(0,5).join(', ')+(n>5?'…':'')+'. Importar mesmo assim?',confirm:'Importar',cancel:'Cancelar'})))return false;const st=x.manifest.state||{};if((Object.keys(st.localStorage||{}).length||Object.keys(st.plugins||{}).length)&&await UD.confirm({title:'Preferências do export',message:'Este ZIP traz preferências e aprovações de plugins do aparelho de origem. Aplicar neste aparelho?',confirm:'Aplicar',cancel:'Não aplicar'})){try{window.UrbeExportManifest.applyState(window.localStorage,st,Disco.cidade)}catch(_){}}return true}
 /* ---------- JSZip embutido: importação/exportação ZIP 100% offline ---------- */
 function carregarJSZip(){
   return window.JSZip ? Promise.resolve(window.JSZip) : Promise.reject(new Error("JSZip local indisponível"));
@@ -1417,19 +1330,7 @@ async function resolverDestinoImportacao(nomePasta,ehPasta){
   const criar=await UD.confirm({title:"Onde importar?",message:`Criar a pasta “${nomePasta}” na raiz, ou importar os arquivos soltos na raiz?`,confirm:"Criar pasta",cancel:"Soltos na raiz"});
   return criar?{destinoRegionId:null,wrapRootName:nomePasta}:{destinoRegionId:null};
 }
-async function importarArquivosUI(entradas,ehPasta=false,nomePasta="Vault"){
-  if(!entradas.length)return;toast("Lendo importação...");
-  try{const itens=await lerEntrada(entradas);if(!itens.length){toast("Nenhum arquivo aproveitável.");return}const opts=await resolverDestinoImportacao(nomePasta,ehPasta),r=importarItens(itens,opts);toast(`${r.notas} nota(s) · ${r.citados} citado(s) · ${r.orfaos} arquivo(s) independente(s)`)}catch(err){console.error(err);toast("Falhou ao importar: "+err.message)}
-}
-async function listarHandlePasta(handle){
-  const out=[];async function walk(dir,prefix=""){for await(const [nome,entry] of dir.entries()){if(nome.startsWith("."))continue;if(entry.kind==="directory")await walk(entry,prefix+nome+"/");else out.push({file:await entry.getFile(),rel:prefix+nome})}}await walk(handle,"");return out;
-}
-document.getElementById("explorerImportFolderBtn").onclick=async()=>{
-  if(typeof window.showDirectoryPicker==="function"){try{const h=await window.showDirectoryPicker({mode:"read"});const itens=await listarHandlePasta(h);await importarArquivosUI(itens,true,h.name)}catch(e){if(e?.name!=="AbortError"){console.warn(e);toast("Não consegui abrir a pasta.")}}}
-  else document.getElementById("vaultFolderIn").click();
-};
-document.getElementById("vaultFolderIn").onchange=async e=>{const fs=[...e.target.files],nome=nomeRaizEntrada(fs),prefixo=nome+"/";const entradas=fs.map(f=>({file:f,rel:(f.webkitRelativePath||f.name).startsWith(prefixo)?(f.webkitRelativePath||f.name).slice(prefixo.length):(f.webkitRelativePath||f.name)}));await importarArquivosUI(entradas,true,nome);e.target.value=""};
-document.getElementById("vaultFilesIn").onchange=async e=>{await importarArquivosUI([...e.target.files],false,"Arquivos");e.target.value=""};
+
 /* ---------- IA ---------- */
 
 
@@ -1938,7 +1839,7 @@ function regiaoPorCaminho(cam){if(!cam)return null;const paths=caminhosRegioes()
 function pastaDoAsset(a,b){const cam=typeof a?.folderPath==='string'?a.folderPath:(a?.relPath?dirDe(a.relPath):caminhoRegiaoPorId(b.regionId));return regiaoPorCaminho(cam)}
 function ensureExplorerActionSheet(){let sh=document.getElementById('explorerActionSheet');if(sh)return sh;sh=document.createElement('div');sh.id='explorerActionSheet';sh.innerHTML='<div class="explorerSheet"><div class="explorerSheetHead"><strong id="explorerSheetTitle">Ações</strong><button id="explorerSheetClose" aria-label="Fechar">×</button></div><div id="explorerSheetActions"></div></div>';document.body.appendChild(sh);sh.addEventListener('pointerdown',e=>{if(e.target===sh)fecharMenuExplorer()});sh.querySelector('#explorerSheetClose').onclick=fecharMenuExplorer;return sh}
 function fecharMenuExplorer(){document.getElementById('explorerActionSheet')?.classList.remove('open')}
-function abrirMenuExplorer(titulo,acoes){const sh=ensureExplorerActionSheet(),box=sh.querySelector('#explorerSheetActions');sh.querySelector('#explorerSheetTitle').textContent=titulo;box.innerHTML='';for(const a of acoes){const b=document.createElement('button');b.className='explorerAction'+(a.danger?' danger':'');b.innerHTML='<span class="ico">'+((window.UrbeIcons&&UrbeIcons.fromGlyph(a.ico))||escapeHTML(a.ico||'•'))+'</span><span>'+escapeHTML(a.label)+'</span>';b.onclick=()=>{fecharMenuExplorer();a.run()};box.appendChild(b)}sh.classList.add('open')}
+function abrirMenuExplorer(titulo,acoes){const sh=ensureExplorerActionSheet(),box=sh.querySelector('#explorerSheetActions');sh.querySelector('#explorerSheetTitle').textContent=titulo;box.innerHTML='';for(const a of acoes){const b=document.createElement('button');b.className='explorerAction'+(a.danger?' danger':'');b.innerHTML='<span class="ico">'+((window.UrbeIcons&&UrbeIcons.fromGlyph(a.ico))||escapeHTML(a.ico||'•'))+'</span><span>'+escapeHTML(a.label)+(a.detail?'<small style="display:block;font-weight:400;line-height:1.4;margin-top:4px">'+escapeHTML(a.detail)+'</small>':'')+'</span>';b.onclick=()=>{fecharMenuExplorer();a.run()};box.appendChild(b)}sh.classList.add('open')}
 function bindExplorerGesture(el,tap,hold){let tm=null,sx=0,sy=0,moved=false,held=false;const cancel=()=>{clearTimeout(tm);tm=null};el.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;sx=e.clientX;sy=e.clientY;moved=false;held=false;cancel();tm=setTimeout(()=>{held=true;if(navigator.vibrate)navigator.vibrate(16);hold(e)},EXPLORER_HOLD_MS)});el.addEventListener('pointermove',e=>{if(Math.hypot(e.clientX-sx,e.clientY-sy)>EXPLORER_HOLD_MOVE){moved=true;cancel()}});el.addEventListener('pointerup',e=>{cancel();if(!moved&&!held)tap(e)});el.addEventListener('pointercancel',cancel);el.addEventListener('contextmenu',e=>{e.preventDefault();cancel();hold(e)})}
 function explorerEntries(regionId){const out=[];for(const b of world.buildings){if(b.tipo==='nota'){if((b.regionId||null)===(regionId||null))out.push({kind:'note',b,name:b.name+'.md'})}else{const fs=b.files||b.anexos||[];if(fs.length){fs.forEach((a,i)=>{const rr=pastaDoAsset(a,b);if((rr?.id||null)===(regionId||null))out.push({kind:'asset',b,a,index:i,name:a.nome||b.fileName||b.name})})}else if((b.regionId||null)===(regionId||null))out.push({kind:'asset',b,a:null,index:0,name:b.fileName||b.name})}}return out.sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}))}
 function iconeEntrada(e){if(e.kind==='note')return'📄';const c=classificarArquivo(e.name||'');return{image:'🖼',audio:'♫',video:'▶',pdf:'PDF',html:'HTML',zip:'ZIP',other:'FILE'}[c]||'FILE'}
@@ -1953,8 +1854,8 @@ async function moverAsset(b,i){const fs=b.files||b.anexos||[],a=fs[i];if(!a)retu
 function descendentesRegiao(r){const ids=new Set([r.id]);let mudou=true;while(mudou){mudou=false;for(const x of world.regions)if(x.parentId&&ids.has(x.parentId)&&!ids.has(x.id)){ids.add(x.id);mudou=true}}return ids}
 async function excluirRegiaoExplorer(r){if(!(await UD.confirm({title:'Excluir a pasta “'+r.name+'”?',message:'Todo o conteúdo dentro dela também será excluído.',confirm:'Excluir pasta',danger:true})))return;apagarRegiao(r)}
 function apagarRegiao(r,silencioso){const ids=descendentesRegiao(r),paths=caminhosRegioes(),base=paths.get(r.id)||r.name;for(const b of [...world.buildings]){if(b.tipo==='nota'&&ids.has(b.regionId)){world.buildings=world.buildings.filter(x=>x!==b);continue}if(b.tipo!=='nota'){const fs=b.files||b.anexos||[],keep=[];for(const a of fs){const fp=typeof a.folderPath==='string'?a.folderPath:dirDe(a.relPath||'');if(fp===base||fp.startsWith(base+'/')){if(a.cacheId)DBK.bDel(a.cacheId).catch(()=>{})}else keep.push(a)}b.files=keep;b.anexos=keep;if(!keep.length)world.buildings=world.buildings.filter(x=>x!==b)}}world.regions=world.regions.filter(x=>!ids.has(x.id));explorerRegionTarget=null;marcarIndice();indexar();scheduleRoadRebuild();counts();buildTree();agendarSalvar();marcarSinc();pedirDesenho();if(!silencioso)toast('Pasta excluída.')}
-function menuRaizExplorer(){abrirMenuExplorer('Raiz',[{ico:'＋',label:'Nova nota',run:()=>criarNotaNoDestino(null)},{ico:'📁',label:'Nova pasta',run:()=>criarPastaNoDestino(null)},{ico:'⇩',label:'Adicionar do dispositivo',run:()=>abrirImportadorUnificado(null)},{ico:'⇧',label:'Exportar vault .zip',run:exportarVault}])}
-function menuRegiaoExplorer(r){abrirMenuExplorer(r.name,[{ico:'＋',label:'Nova nota aqui',run:()=>criarNotaNoDestino(r.id)},{ico:'📁',label:'Nova subpasta',run:()=>criarPastaNoDestino(r.id)},{ico:'⇩',label:'Adicionar do dispositivo',run:()=>abrirImportadorUnificado(r.id)},{ico:'✎',label:'Editar nome, cor e descrição',run:()=>openRegionEditDialog(r)},{ico:'🗑',label:'Excluir pasta/região',danger:true,run:()=>excluirRegiaoExplorer(r)}])}
+function menuRaizExplorer(){abrirMenuExplorer('Raiz',[{ico:'＋',label:'Nova nota',run:()=>criarNotaNoDestino(null)},{ico:'📁',label:'Nova pasta',run:()=>criarPastaNoDestino(null)},{ico:'⇩',label:'Importar',run:()=>abrirImportadorUnificado(null)},{ico:'⇧',label:'Exportar vault .zip',run:exportarVault}])}
+function menuRegiaoExplorer(r){abrirMenuExplorer(r.name,[{ico:'＋',label:'Nova nota aqui',run:()=>criarNotaNoDestino(r.id)},{ico:'📁',label:'Nova subpasta',run:()=>criarPastaNoDestino(r.id)},{ico:'⇩',label:'Importar',run:()=>abrirImportadorUnificado(r.id)},{ico:'✎',label:'Editar nome, cor e descrição',run:()=>openRegionEditDialog(r)},{ico:'🗑',label:'Excluir pasta/região',danger:true,run:()=>excluirRegiaoExplorer(r)}])}
 function menuEntradaExplorer(e){if(e.kind==='note')abrirMenuExplorer(e.name,[{ico:'✎',label:'Abrir e editar',run:()=>{openFullEditor(e.b);fileSidebar.classList.remove('open')}},{ico:'Aa',label:'Renomear',run:()=>renomearNota(e.b)},{ico:'↪',label:'Mover',run:async()=>{const d=await escolherDestinoRegiao();if(d!==undefined)moverArquivosParaRegiao([e.b.id],d)}},{ico:'🗑',label:'Excluir',danger:true,run:()=>removerNota(e.b)}]);else abrirMenuExplorer(e.name,[{ico:'◉',label:'Visualizar',run:()=>openFilePreview(e.b,e.index)},{ico:'Aa',label:'Renomear',run:()=>renomearAsset(e.b,e.index)},{ico:'↪',label:'Mover',run:()=>moverAsset(e.b,e.index)},{ico:'🗑',label:'Excluir',danger:true,run:()=>removerAsset(e.b,e.index)}])}
 function buildTree(){
   const treeEl=document.getElementById('tree'),paths=caminhosRegioes(),alvo=explorerRegionTarget?world.regions.find(r=>r.id===explorerRegionTarget):null,pathEl=document.getElementById('explorerPath');if(pathEl)pathEl.textContent=alvo?(paths.get(alvo.id)||alvo.name):'/';
@@ -1971,10 +1872,32 @@ document.getElementById('explorerRootBtn').onclick=()=>{explorerRegionTarget=nul
 
 /* um único botão de importação; a escolha pasta/arquivo acontece no sheet */
 let pendingImportTarget=null;
-async function importarEntradasDestino(entradas,ehPasta,nomePasta,target){if(!entradas?.length)return;toast('Lendo arquivos…');try{const itens=await lerEntrada(entradas,{expandZip:true});if(!itens.length)return toast('Nenhum arquivo aproveitável.');if(!(await urbeConferirExport(itens.exportInfo)))return toast('Importação cancelada.');const opts={destinoRegionId:target||null};if(ehPasta)opts.wrapRootName=nomePasta;const r=importarItens(itens,opts);agendarSalvar();marcarSinc();toast(r.notas+' nota(s) · '+r.orfaos+' arquivo(s) · '+r.citados+' citado(s)')}catch(err){console.error(err);toast('Falhou ao importar: '+err.message)}}
-async function escolherPastaImportacao(target){pendingImportTarget=target||null;if(typeof window.showDirectoryPicker==='function'){try{const h=await window.showDirectoryPicker({mode:'read'}),itens=await listarHandlePasta(h);await importarEntradasDestino(itens,true,h.name,pendingImportTarget)}catch(e){if(e?.name!=='AbortError'){console.warn(e);toast('Não consegui abrir a pasta.')}}}else document.getElementById('vaultFolderIn').click()}
-async function escolherArquivosImportacao(target){pendingImportTarget=target||null;if(typeof window.showOpenFilePicker==='function'){try{const hs=await window.showOpenFilePicker({multiple:true}),entradas=[];for(const h of hs)entradas.push({file:await h.getFile(),rel:h.name});await importarEntradasDestino(entradas,false,'Arquivos',pendingImportTarget)}catch(e){if(e?.name!=='AbortError'){console.warn(e);toast('Não consegui abrir os arquivos.')}}}else document.getElementById('vaultFilesIn').click()}
-function abrirImportadorUnificado(target){abrirMenuExplorer(target?(world.regions.find(r=>r.id===target)?.name||'Pasta'):'Adicionar à Raiz',[{ico:'📁',label:'Selecionar uma pasta inteira',run:()=>escolherPastaImportacao(target)},{ico:'📄',label:'Selecionar arquivo(s)',run:()=>escolherArquivosImportacao(target)}])}
+var urbeImportBusy=false;
+async function importarEntradasDestino(entradas,ehPasta,nomePasta,target){
+  if(!entradas?.length)return UD.alert({title:'Nenhum arquivo encontrado',message:'A seleção está vazia. Escolha uma pasta com documentos ou um backup.'});if(urbeImportBusy)return toast('Uma importação está em andamento. Aguarde o resultado.');urbeImportBusy=true;
+  var persistence=window.UrbeCore.service('persistence'),I=window.UrbeImport,suspended=false;
+  try{
+    toast('Conferindo os arquivos…');var inspection=await I.inspect(entradas,{directory:ehPasta});
+    if(inspection.sourceConflicts.length){var selectedSources={};for(var conflict of inspection.sourceConflicts){var selected=await UD.choose({title:'Arquivos com o mesmo nome',message:conflict.path+' tem versões diferentes na seleção. Escolha qual importar ou cancele para selecionar novamente.',options:conflict.candidates.map(function(c,index){return{value:String(index),label:'Versão '+(index+1)+' — '+c.path,detail:c.bytes.length+' bytes'+(/\.md$/i.test(c.path)?' • '+new TextDecoder().decode(c.bytes.subarray(0,640)).slice(0,160):'')}})});if(selected==null)return toast('Importação cancelada.');selectedSources[conflict.path]=Number(selected)}inspection=I.resolveSources(inspection,selectedSources)}
+    if(!inspection.restore&&target){var folder=caminhosRegioes().get(target);if(folder)inspection.files=new Map(Array.from(inspection.files,function(pair){return[folder+'/'+pair[0],pair[1]]}))}
+    if(persistence.readOnly||persistence.mapaReadonly||persistence.foreign.length)throw Error('O vault atual está protegido. Nenhum dado será alterado.');
+    var restoring=inspection.restore,label=restoring?'Vault para restauração':'Documentos para incorporar',description=inspection.documents+' documento(s) e '+inspection.assets+' arquivo(s). '+(restoring?'O vault de origem será restaurado com suas notas e metadados. Um backup do vault atual será preservado.':'Os documentos serão incorporados ao vault atual, mantendo suas pastas e referências.');
+    if(!await UD.confirm({title:label,message:description,confirm:'Continuar',cancel:'Cancelar'}))return toast('Importação cancelada.');
+    while(sincRodando)await new Promise(r=>setTimeout(r,20));await rodarSinc(true);await persistence.flush();while(persistence.busy)await new Promise(r=>setTimeout(r,20));persistence.suspend(true);sincSuspenso=true;clearTimeout(sincTimer);sincTimer=null;suspended=true;await v21StopSync();
+    var existing=await I.current(persistence.adapter,Disco.cidade),plan=await I.plan(inspection,existing),choices={};
+    if(plan.conflicts.length){
+      if(restoring){if(!await UD.confirm({title:'Restaurar este vault?',message:'A restauração substituirá '+plan.conflicts.length+' arquivo(s) do vault atual. Eles serão guardados em backup antes de qualquer alteração.',confirm:'Restaurar com backup',cancel:'Cancelar'}))return toast('Importação cancelada.');plan.conflicts.forEach(p=>choices[p]='replace')}
+      else for(var path of plan.conflicts){if(!await UD.confirm({title:'Arquivo já existe',message:path+' tem conteúdo diferente. Substituir guardando o original em backup?',confirm:'Substituir com backup',cancel:'Manter atual'})){choices[path]='keep'}else choices[path]='replace'}
+      plan=await I.plan(inspection,existing,choices);
+    }
+    toast('Importando…');var result=await I.execute(persistence.adapter,Disco.cidade,plan,{progress:function(done,total){if(done===total||done%10===0)toast('Importando '+done+' de '+total+'…')}});
+    await abrirCidade(Disco.cidade);suspended=false;
+    if(inspection.manifest&&inspection.manifest.state){var state=inspection.manifest.state;if((Object.keys(state.localStorage||{}).length||Object.keys(state.plugins||{}).length)&&await UD.confirm({title:'Preferências do backup',message:'Aplicar as preferências deste backup? Permissões de plugins incluídas também serão autorizadas neste aparelho; mantenha as atuais se não confiar na origem.',confirm:'Aplicar preferências',cancel:'Manter atuais'}))window.UrbeExportManifest.applyState(localStorage,state,Disco.cidade)}
+    toast((restoring?'Vault restaurado. ':'Importação concluída. ')+result.written+' arquivo(s) gravado(s); '+result.unchanged+' preservado(s), sem nova gravação.');
+  }catch(error){console.warn('Importação:',error);await UD.alert({title:'Não foi possível importar',message:error.message||'A seleção não pôde ser lida. O vault atual foi preservado.'})}
+  finally{if(suspended){try{await I.recover(persistence.adapter,Disco.cidade);await abrirCidade(Disco.cidade)}catch(error){persistence.suspend(true);toast('O vault aguarda recuperação. Preserve o backup e reabra o aplicativo.')}}urbeImportBusy=false}
+}
+function abrirImportadorUnificado(target){return v21ImportPicker(target)}
 document.getElementById('explorerImportFolderBtn').onclick=()=>abrirImportadorUnificado(null);
 document.getElementById('vaultFolderIn').onchange=async e=>{const fs=[...e.target.files],nome=nomeRaizEntrada(fs),prefixo=nome+'/';const entradas=fs.map(f=>({file:f,rel:(f.webkitRelativePath||f.name).startsWith(prefixo)?(f.webkitRelativePath||f.name).slice(prefixo.length):(f.webkitRelativePath||f.name)}));await importarEntradasDestino(entradas,true,nome,pendingImportTarget);e.target.value=''};
 document.getElementById('vaultFilesIn').onchange=async e=>{await importarEntradasDestino([...e.target.files],false,'Arquivos',pendingImportTarget);e.target.value=''};
@@ -2210,20 +2133,17 @@ const treeRoot=document.getElementById('tree');
 treeRoot.addEventListener('contextmenu',e=>{if(e.target===treeRoot||e.target.classList.contains('treeEmpty')){e.preventDefault();menuRaizExplorer()}});
 let rootHold=null;treeRoot.addEventListener('pointerdown',e=>{if(!(e.target===treeRoot||e.target.classList.contains('treeEmpty')))return;rootHold=setTimeout(()=>menuRaizExplorer(),TREE_HOLD)});treeRoot.addEventListener('pointerup',()=>{clearTimeout(rootHold)});treeRoot.addEventListener('pointermove',()=>{clearTimeout(rootHold)});
 
-/* ---------- importação: um ícone, nenhuma escolha intermediária no Urbe ---------- */
+/* Seleção de arquivos após a escolha humana no fluxo Importar. */
 pendingImportTarget=null;
 async function importarHandlesArquivos(handles,target){const entradas=[];for(const h of handles)if(h?.kind==='file')entradas.push({file:await h.getFile(),rel:h.name});await importarEntradasDestino(entradas,false,'Arquivos',target)}
 async function abrirImportacaoSistema(target){
   pendingImportTarget=target||null;
-  /* A Web File System API não possui um picker único arquivo-ou-diretório.
-     Mantemos uma única ação no Urbe e delegamos ao seletor de arquivos do SO.
-     Diretórios recebidos por drag/drop são percorridos recursivamente abaixo. */
   if(typeof window.showOpenFilePicker==='function'){
     try{const hs=await window.showOpenFilePicker({multiple:true});await importarHandlesArquivos(hs,pendingImportTarget)}catch(e){if(e?.name!=='AbortError'){console.warn(e);toast('Não consegui abrir o armazenamento.')}}return;
   }
   document.getElementById('vaultFilesIn').click();
 }
-document.getElementById('explorerImportFolderBtn').onclick=()=>abrirImportacaoSistema(explorerRegionTarget||null);
+document.getElementById('explorerImportFolderBtn').onclick=()=>v21ImportPicker(explorerRegionTarget||null);
 document.getElementById('vaultFilesIn').onchange=async e=>{await importarEntradasDestino([...e.target.files],false,'Arquivos',pendingImportTarget);e.target.value=''};
 /* o input de diretório permanece oculto somente para compatibilidade de vaults antigos */
 
@@ -2396,7 +2316,7 @@ function v20SelectedEntries(){return [...v20EntrySelection].map(v20EntryFromKey)
 function v20EnsureExplorerToolbar(){
   let bar=document.getElementById('explorerTopActions');if(bar)return bar;bar=document.createElement('div');bar.id='explorerTopActions';bar.innerHTML='<span id="explorerSelectionLabel"></span><button class="explorerTopBtn" id="exNewNote" title="Nova nota">＋</button><button class="explorerTopBtn" id="exNewFolder" title="Nova pasta">📁</button><button class="explorerTopBtn" id="exImport" title="Importar do dispositivo">⇩</button><button class="explorerTopBtn" id="exEdit" title="Editar/renomear">✎</button><button class="explorerTopBtn" id="exMove" title="Mover">↪</button><button class="explorerTopBtn" id="exGroup" title="Criar pasta com seleção">▣</button><button class="explorerTopBtn danger" id="exDelete" title="Excluir">🗑</button><button class="explorerTopBtn" id="exClear" title="Limpar seleção">×</button>';
   const top=fileSidebar.querySelector('.sidebarTop'),old=document.getElementById('explorerImportFolderBtn');if(old)old.hidden=true;top.insertBefore(bar,document.getElementById('closeSidebar'));
-  bar.querySelector('#exNewNote').onclick=()=>criarNotaNoDestino(explorerRegionTarget||null);bar.querySelector('#exNewFolder').onclick=()=>criarPastaNoDestino(explorerRegionTarget||null);bar.querySelector('#exImport').onclick=()=>abrirImportacaoSistema(explorerRegionTarget||null);bar.querySelector('#exEdit').onclick=()=>v20EditarContextoExplorer();bar.querySelector('#exMove').onclick=()=>v20MoverSelecao();bar.querySelector('#exGroup').onclick=()=>v20AgruparSelecao();bar.querySelector('#exDelete').onclick=()=>v20ExcluirContexto();bar.querySelector('#exClear').onclick=()=>{v20EntrySelection.clear();buildTree()};return bar;
+  bar.querySelector('#exNewNote').onclick=()=>criarNotaNoDestino(explorerRegionTarget||null);bar.querySelector('#exNewFolder').onclick=()=>criarPastaNoDestino(explorerRegionTarget||null);bar.querySelector('#exImport').onclick=()=>v21ImportPicker(explorerRegionTarget||null);bar.querySelector('#exEdit').onclick=()=>v20EditarContextoExplorer();bar.querySelector('#exMove').onclick=()=>v20MoverSelecao();bar.querySelector('#exGroup').onclick=()=>v20AgruparSelecao();bar.querySelector('#exDelete').onclick=()=>v20ExcluirContexto();bar.querySelector('#exClear').onclick=()=>{v20EntrySelection.clear();buildTree()};return bar;
 }
 function v20UpdateExplorerToolbar(){
   const bar=v20EnsureExplorerToolbar(),sel=v20SelectedEntries(),r=explorerRegionTarget?world.regions.find(x=>x.id===explorerRegionTarget)||null:null,label=bar.querySelector('#explorerSelectionLabel');label.textContent=sel.length?sel.length+' sel.':(r?r.name:'Raiz');bar.querySelector('#exNewNote').hidden=sel.length>0;bar.querySelector('#exNewFolder').hidden=sel.length>0;bar.querySelector('#exImport').hidden=sel.length>0;bar.querySelector('#exEdit').hidden=sel.length>1;bar.querySelector('#exMove').hidden=sel.length===0;bar.querySelector('#exGroup').hidden=sel.length<2;bar.querySelector('#exDelete').hidden=sel.length===0&&!r;bar.querySelector('#exClear').hidden=sel.length===0;
@@ -2580,11 +2500,6 @@ async function v21OpenCity(nome){sincSuspenso=true;v21SetLoading(true,7,'Lendo v
 async function v21IndexBinary(nome,rels,regPorCaminho,mapa){snapBin=new Map();var existingByRel=new Set();world.buildings.filter(function(b){return b.tipo!=='nota'}).forEach(function(b){(b.files||b.anexos||[]).forEach(function(a){if(a.relPath)existingByRel.add(a.relPath.toLowerCase())})});var assets=rels.filter(function(r){return !v21IsEditablePath(r)&&!r.startsWith('.urbe/')&&!r.split('/').some(function(p){return p.startsWith('.')})&&!/\/\.pasta$|^\.pasta$/.test(r)});for(var i=0;i<assets.length;i++){var rel=assets[i];if(existingByRel.has(rel.toLowerCase()))continue;var dir=dirDe(rel),r=dir?regPorCaminho.get(dir)||null:null,pos=r?vagaNaRegiao(r,semente(rel),new Set()):vagaAleatoria(semente(rel),3,3);if(!pos)continue;var nomeA=rel.split('/').pop(),meta={nome:nomeA,tipo:(nomeA.split('.').pop()||'').toLowerCase(),mime:mimePorNome(nomeA),relPath:rel,folderPath:dir};try{var blob=await FS.lerBlob(nome,rel);if(blob){meta.tamanho=blob.size;meta.mime=blob.type||meta.mime;meta.cacheId=cacheAssetKey();try{await DBK.bSet(meta.cacheId,blob)}catch(_){delete meta.cacheId}}}catch(_){ }criarPredioArquivo({rel:rel,nome:v21Stem(nomeA),anexo:meta},pos.x,pos.y,r?r.id:null,{files:[meta],fileClass:classificarArquivo(nomeA),name:nomeA})}}
 var abrirCidade=v21OpenCity;
 
-/* import textual formats as editable buildings */
-var v21OriginalLerEntrada=lerEntrada;lerEntrada=async function(files,opts){var raw=await v21OriginalLerEntrada(files,opts);for(var i=0;i<raw.length;i++){var it=raw[i];if(v21IsEditablePath(it.rel)&&it.texto==null&&it.anexo){try{var blob=it.anexo.cacheId?await DBK.bGet(it.anexo.cacheId):null;if(blob){it.texto=await blob.text();delete it.anexo}}catch(_){}}}return raw};
-var v21OldImportarItens=importarItens;importarItens=function(itens,opcoes){var texts=itens.filter(function(i){return v21IsEditablePath(i.rel)}),bins=itens.filter(function(i){return !v21IsEditablePath(i.rel)});/* temporarily make supported text look like MD to legacy distributor, then restore extension */var patched=texts.map(function(i){return{...i,rel:i.rel.replace(V21_EXT_RE,'.md'),_v21Rel:i.rel}}),result=v21OldImportarItens(patched.concat(bins),opcoes||{}),byStem=new Map(texts.map(function(i){return[v21Stem(i.rel.split('/').pop()).toLowerCase(),i]}));world.buildings.filter(function(b){return b.tipo==='nota'}).forEach(function(b){var src=byStem.get(String(b.name).toLowerCase());if(src){b.ext=(src.rel.match(V21_EXT_RE)||['.md'])[0].toLowerCase();b.content=src.texto||''}});marcarSinc();v21BuildTree();return result};
-
-/* Explorer v0.21 */
 function v21EnsureExplorer(){var top=document.querySelector('#fileSidebar .sidebarTop'),legacy=document.getElementById('explorerTopActions');if(legacy)legacy.remove();if(!document.getElementById('v21ExplorerToolbar')){var bar=document.createElement('div');bar.id='v21ExplorerToolbar';bar.innerHTML='<button class="v21ExBtn" id="v21ExNew" title="Novo arquivo">＋</button><button class="v21ExBtn" id="v21ExFolder" title="Nova pasta">▣</button><button class="v21ExBtn" id="v21ExImport" title="Importar">⇩</button><button class="v21ExBtn" id="v21ExMulti" title="Multiseleção">✓</button><button class="v21ExBtn" id="v21ExMove" title="Mover seleção" hidden>↪</button><button class="v21ExBtn danger" id="v21ExDelete" title="Excluir seleção" hidden>×</button>';top.insertBefore(bar,document.getElementById('closeSidebar'));document.getElementById('v21ExNew').onclick=function(){v21CreateFileInRegion(explorerRegionTarget||null)};document.getElementById('v21ExFolder').onclick=function(){criarPastaNoDestino(explorerRegionTarget||null)};document.getElementById('v21ExImport').onclick=function(){v21ImportPicker(explorerRegionTarget||null)};document.getElementById('v21ExMulti').onclick=function(){v21MultiMode=!v21MultiMode;if(!v21MultiMode)v20EntrySelection.clear();v21BuildTree()};document.getElementById('v21ExMove').onclick=v21MoveSelected;document.getElementById('v21ExDelete').onclick=v21DeleteSelected}
   if(!document.getElementById('v21ExplorerSearch')){var s=document.createElement('input');s.id='v21ExplorerSearch';s.type='search';s.placeholder='Buscar arquivos e pastas';s.oninput=function(){v21ExplorerQuery=s.value.trim().toLowerCase();v21BuildTree()};document.getElementById('explorerContext').insertAdjacentElement('afterend',s)}
   document.getElementById('explorerRootBtn').onclick=function(){explorerRegionTarget=null;v21BuildTree()};
@@ -2602,8 +2517,19 @@ function v21ChooseDestination(cb){var acts=[{ico:'⌂',label:Disco.cidade||'Raiz
 function v21MoveEntry(e){v21ChooseDestination(function(dest){moverEntradaPara(e,dest);v21BuildTree();toast('Movido.')})}
 function v21MoveSelected(){var arr=v20SelectedEntries();if(!arr.length)return;v21ChooseDestination(function(dest){arr.forEach(function(e){moverEntradaPara(e,dest)});v20EntrySelection.clear();v21MultiMode=false;v21BuildTree();toast(arr.length+' item(ns) movido(s).')})}
 async function v21DeleteSelected(){var arr=v20SelectedEntries();if(!arr.length)return;if(!(await UD.confirm({title:'Excluir '+arr.length+' item(ns)?',message:'Os itens selecionados serão excluídos do vault.',confirm:'Excluir',danger:true})))return;var ids=new Set(arr.filter(function(e){return e.kind==='note'}).map(function(e){return e.b.id}));arr.filter(function(e){return e.kind==='asset'}).forEach(function(e){var fs=e.b.files||e.b.anexos||[];fs.splice(e.index,1);if(!fs.length)ids.add(e.b.id)});world.buildings=world.buildings.filter(function(b){return !ids.has(b.id)});v20EntrySelection.clear();v21MultiMode=false;marcarIndice();indexar();counts();scheduleRoadRebuild();agendarSalvar();marcarSinc();v21BuildTree();pedirDesenho();toast('Excluído.')}
-async function v21ImportPicker(target){pendingImportTarget=target||null;if(typeof window.showDirectoryPicker==='function'){var choose=await v21ChooseImportMode();if(choose==='folder'){try{var h=await window.showDirectoryPicker({mode:'read'}),entries=[];async function walk(dir,prefix){for await(var ch of dir.values()){if(ch.kind==='file')entries.push({file:await ch.getFile(),rel:prefix+ch.name});else await walk(ch,prefix+ch.name+'/')}}await walk(h,'');await importarEntradasDestino(entries,true,h.name,pendingImportTarget)}catch(e){if(e&&e.name!=='AbortError')toast('Falha ao importar pasta.')}return}if(choose!=='files')return}return abrirImportacaoSistema(pendingImportTarget)}
-function v21ChooseImportMode(){return new Promise(function(resolve){abrirMenuExplorer('Importar',[{ico:'▣',label:'Pasta completa',run:function(){resolve('folder')}},{ico:'⇩',label:'Arquivos',run:function(){resolve('files')}}]);setTimeout(function(){var sh=document.getElementById('explorerActionSheet');if(sh)sh.addEventListener('pointerdown',function h(e){if(e.target===sh){sh.removeEventListener('pointerdown',h);resolve(null)}},{once:true})},0)})}
+async function v21ImportPicker(target){
+  if(urbeImportBusy)return toast('Uma importação está em andamento. Aguarde o resultado.');
+  pendingImportTarget=target||null;var choose=await v21ChooseImportMode();if(!choose)return;
+  var native=window.UrbeImportSources;
+  if(native){var selection;try{selection=await native.pick(choose);if(selection)await importarEntradasDestino(selection.files,choose==='folder','Pasta',pendingImportTarget)}catch(error){await UD.alert({title:'Não foi possível abrir a seleção',message:error.message})}finally{if(selection)await selection.release().catch(function(){})}return}
+  if(choose==='folder'){
+    if(window.UrbeNative)return UD.alert({title:'Seleção de pasta indisponível',message:'Esta versão não oferece seleção de pasta nesta plataforma. Use Arquivos ou atualize o Urbe.'});
+    if(typeof window.showDirectoryPicker!=='function')return document.getElementById('vaultFolderIn').click();
+    try{var handle=await window.showDirectoryPicker({mode:'read'}),entries=[];async function walk(dir,prefix){for await(var child of dir.values()){if(child.kind==='file')entries.push({file:await child.getFile(),rel:prefix+child.name});else await walk(child,prefix+child.name+'/')}}await walk(handle,'');await importarEntradasDestino(entries,true,handle.name,pendingImportTarget)}catch(error){if(error.name!=='AbortError')await UD.alert({title:'Não foi possível abrir a pasta',message:error.message})}return;
+  }
+  return abrirImportacaoSistema(pendingImportTarget);
+}
+function v21ChooseImportMode(){return new Promise(function(resolve){abrirMenuExplorer('O que deseja importar?',[{ico:'⇩',label:'Arquivos',detail:'Selecione um ou vários arquivos. O Urbe identifica automaticamente o conteúdo.',run:function(){resolve('files')}},{ico:'▣',label:'Pasta inteira',detail:'Selecione um vault ou uma pasta com seus documentos.',run:function(){resolve('folder')}}]);setTimeout(function(){var sh=document.getElementById('explorerActionSheet');if(sh)sh.addEventListener('pointerdown',function h(e){if(e.target===sh){sh.removeEventListener('pointerdown',h);resolve(null)}},{once:true})},0)})}
 
 /* Editor tabs + adaptive behavior */
 var v21BaseLoadFile=loadFile;loadFile=function(b){if(!b.ext)b.ext='.md';v21BaseLoadFile(b);v21TouchTab(b);v21RefreshEditorChrome()};
@@ -3055,7 +2981,7 @@ function v23MenuCriar(){
       v23Navegar('mundo');setTool('region');v23Atualizar();
     }},
     {ico:'⌂',label:'Adicionar construção',run:function(){v23Navegar('mundo');v21BeginNewPlacement();v23Atualizar()}},
-    {ico:'⇩',label:'Importar arquivos',run:function(){v21ImportPicker(alvo)}}
+    {ico:'⇩',label:'Importar',run:function(){v21ImportPicker(alvo)}}
   ]);
 }
 

@@ -34,8 +34,7 @@
               "print",
               "update",
               "back",
-              "storageStatus",
-              "importSelection"
+              "storageStatus"
             ],
             "api": []
           }
@@ -71,8 +70,7 @@
               "openExternal",
               "saveFile",
               "print",
-              "update",
-              "importSelection"
+              "update"
             ],
             "unsupported": [
               "back",
@@ -84,8 +82,7 @@
               "openExternal",
               "saveFile",
               "print",
-              "update",
-              "importSelection"
+              "update"
             ]
           }
         ]
@@ -122,8 +119,7 @@
               "print",
               "update",
               "back",
-              "storageStatus",
-              "importSelection"
+              "storageStatus"
             ],
             "unsupported": [],
             "api": [
@@ -134,8 +130,7 @@
               "print",
               "update",
               "back",
-              "storageStatus",
-              "importSelection"
+              "storageStatus"
             ]
           }
         ]

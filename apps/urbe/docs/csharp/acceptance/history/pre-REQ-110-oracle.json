@@ -5,18 +5,18 @@
   "files": [
     {
       "path": "docs/v2/REQUIREMENTS.md",
-      "bytes": 28027,
-      "sha256": "ab64f83b16c54074a0cd948b7331acdbdfeeae466c31da37738a93c536145ba4"
+      "bytes": 27165,
+      "sha256": "b40b58769efe5f394a127ea9b01a8c1b900d272f5cdef28d2a19d4be5d6c8dd2"
     },
     {
       "path": "docs/v2/ROADMAP.md",
-      "bytes": 94881,
-      "sha256": "405e9d82f26307cb2eb1aca16e874fd1ca61bb27eddf1c2f63616372dd6dbd93"
+      "bytes": 93880,
+      "sha256": "b5553653445a795b27b7c4862b61814ac2bea864af9cd9172f38d25f60919e15"
     },
     {
       "path": "docs/v2/SPEC.md",
-      "bytes": 35158,
-      "sha256": "24e205d98388ecc86b1c1a876cea3c15f1208f4aa3b7e83cbf2ac3ddabc3dd1c"
+      "bytes": 33696,
+      "sha256": "567933aeba2c3a182f101416da3050a664dbb654c6deead0ce4393e366adb5c3"
     },
     {
       "path": "docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
@@ -34,14 +34,9 @@
       "sha256": "1ca2caa8ebc4f9dfda9a3c9a0ccd96c50fa43559c75108d7805c4e51d26f80d4"
     },
     {
-      "path": "docs/v2/contracts/import.md",
-      "bytes": 3917,
-      "sha256": "94f5cd78a6b7f6ccf54acc9bfa28abad7effc29c122bf8f1ac2e3fe5148abbf9"
-    },
-    {
       "path": "docs/v2/contracts/native.md",
-      "bytes": 8989,
-      "sha256": "c75f55c61843355176858f13c094431387efad77cf9cbbef8caabc904665b6ee"
+      "bytes": 7081,
+      "sha256": "8db013d5259c6d6f1cc8dac188c2acc9e25f21ff676194d8805a4439a5639f15"
     },
     {
       "path": "docs/v2/contracts/persistence-adapter.md",
@@ -50,8 +45,8 @@
     },
     {
       "path": "docs/v2/discovery/DATA-CATALOG.md",
-      "bytes": 28909,
-      "sha256": "a951974ecc8d2a4b681e12a49d5561c1dd8e6fd2f08adaaed8f64ec99beb25cc"
+      "bytes": 26906,
+      "sha256": "ca5b05bc528b55831666662452bc4762933dd4e59a1e986eeec4d973d2a6b213"
     },
     {
       "path": "tests/adapter-contract.mjs",
@@ -125,8 +120,8 @@
     },
     {
       "path": "tests/desktop-preload.mjs",
-      "bytes": 6679,
-      "sha256": "8e67b68ea7b3cc993cc2911f98fa4d31f65b32e9e406e154c7eb776924de5e89"
+      "bytes": 6647,
+      "sha256": "4bfb65d4bc437e3a72b5b7cd2d114afde560e070455e89db39bcf7384784fc50"
     },
     {
       "path": "tests/documents.mjs",
@@ -169,11 +164,6 @@
       "sha256": "183441c6020f0a8bac143f2d562b57fac6f014bd065f9910b8ae502a99214610"
     },
     {
-      "path": "tests/e2e/import.e2e.mjs",
-      "bytes": 4489,
-      "sha256": "34ebfb23aa16f2dade91002073739887fe8125907d67c79de499353027a19efa"
-    },
-    {
       "path": "tests/e2e/layout.e2e.mjs",
       "bytes": 5729,
       "sha256": "77d2c2e89ec4bfdd35aed7ce46d783ef0374e4b7b4c90fb31983fcffdfa1a036"
@@ -210,8 +200,8 @@
     },
     {
       "path": "tests/e2e/zip.e2e.mjs",
-      "bytes": 8045,
-      "sha256": "03e26e24d77173811c1e9d0fa30f6757ad912419da98972500b39f3d1cfbb51a"
+      "bytes": 6910,
+      "sha256": "3850707f4cb3260f634c3fae1f59e63c1a642a545d5315b89977c45c258c620d"
     },
     {
       "path": "tests/editor-persistence.mjs",
@@ -665,8 +655,8 @@
     },
     {
       "path": "tests/lib/adapter-contract-suite.mjs",
-      "bytes": 5058,
-      "sha256": "3410917fbf04d1dcde5ff62153f42dce0091f7420d501c9a85284776d5d7b118"
+      "bytes": 4658,
+      "sha256": "5b14ae81460f43d98569144f0b36cc278ba0780aefaed394e1a7a9750b7dab07"
     },
     {
       "path": "tests/lib/fake-capacitor.mjs",
@@ -715,8 +705,8 @@
     },
     {
       "path": "tests/native-contract.mjs",
-      "bytes": 17465,
-      "sha256": "f4554c2fec3f6a422a5bd851761a2f9ec4b1dba898ad05698b60f0771d0f2215"
+      "bytes": 17283,
+      "sha256": "f718262de90abeb4cad1a96113d8112023b43557ec2d2f5b90a8fc4ec66382ba"
     },
     {
       "path": "tests/pages-free.mjs",
@@ -840,8 +830,8 @@
     },
     {
       "path": "tutorial/Arquivos e segurança/Importar e exportar.md",
-      "bytes": 2592,
-      "sha256": "3df8c60eb55fe9cafed9a82fb2c35acc43ab4e6fc08876341bf696a927324396"
+      "bytes": 1993,
+      "sha256": "af196e2feb4ebe263e585c1ea6c11c27a42e035cbad98ecd194d851b70be4183"
     },
     {
       "path": "tutorial/Arquivos e segurança/Onde ficam seus arquivos.md",

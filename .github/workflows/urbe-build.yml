@@ -82,7 +82,7 @@ jobs:
           echo "Urbe beta certificate SHA-256: $actual"
       - name: APK
         working-directory: apps/urbe/native/android
-        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
+        run: chmod +x gradlew && ./gradlew testDebugUnitTest assembleRelease --no-daemon --stacktrace
       - name: Conferir assinatura e nome do arquivo
         run: |
           set -euo pipefail

@@ -1,4 +1,4 @@
-const CACHE = 'urbe-shell-v1.8.3-beta';
+const CACHE = 'urbe-shell-v1.8.4-beta';
 const APP_SHELL = [
   /* urbe:shell:begin */
   './',
@@ -36,6 +36,7 @@ const APP_SHELL = [
   './src/persistence/workspace.js',
   './src/persistence/gc.js',
   './src/persistence/export-manifest.js',
+  './src/persistence/import.js',
   './src/persistence/multi-city.js',
   './src/persistence/adapters/idb.js',
   './src/persistence/adapters/fsa.js',

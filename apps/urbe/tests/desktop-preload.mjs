@@ -18,7 +18,7 @@ await test('expõe só window.UrbeNative, com a forma do contrato',()=>{
   ok(S.exposed.name==='UrbeNative','nome');
   ok(S.requires.length===1&&S.requires[0]==='electron','preload só requer "electron" (sandbox): '+S.requires);
   const keys=Object.keys(api).sort();
-  ok(keys.join()==='contract,fs,info,onVaultChanged,openExternal,pickVault,platform,printHtml,revealVault,saveFile,shell,update,vault',keys.join());
+  ok(keys.join()==='contract,fs,importSelection,info,onVaultChanged,openExternal,pickVault,platform,printHtml,revealVault,saveFile,shell,update,vault',keys.join());
   ok(Object.keys(api.fs).sort().join()==='list,mkdir,readBytes,readTexts,remove,stat,tree,writeBytes','fs: '+Object.keys(api.fs));
   ok(Object.keys(api.update).sort().join()==='check,install,onStatus','update: '+Object.keys(api.update));
   ok(api.shell==='electron'&&['windows','mac','linux'].includes(api.platform),'shell/platform');
@@ -30,7 +30,7 @@ await test('plataforma mapeada (win32→windows, darwin→mac, resto→linux)',(
 await test('contrato: versão 1, capacidades declaradas e ausentes explícitas',()=>{
   const c=boot().api.contract;
   ok(c.version===1,'versão');
-  ok(c.capabilities.join()==='fs,vault,openExternal,saveFile,print,update','capabilities: '+c.capabilities);
+  ok(c.capabilities.join()==='fs,vault,openExternal,saveFile,print,update,importSelection','capabilities: '+c.capabilities);
   ok(c.unsupported.join()==='back,storageStatus','unsupported: '+c.unsupported);
 });
 await test('não vaza ipcRenderer, require, process nem Node (varredura profunda)',()=>{

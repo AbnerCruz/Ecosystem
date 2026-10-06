@@ -1,0 +1,208 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-intelligent-import",
+  "category": "RESULT",
+  "timestamp": "2026-10-06T15:48:45.132576Z",
+  "agent": {
+    "id": "codex-urbe-import",
+    "kind": "ai-agent"
+  },
+  "task_id": "URBE-261",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-intelligent-import",
+  "base_commit": "1cad2d2044107c4bda0c2ee1726c474dbb64eda6",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/264",
+  "files_changed": [
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/CHANGELOG.md",
+    "apps/urbe/README.md",
+    "apps/urbe/csharp/src/Urbe.Core/VaultArchive.cs",
+    "apps/urbe/docs/csharp/PARITY.md",
+    "apps/urbe/docs/csharp/acceptance/README.md",
+    "apps/urbe/docs/csharp/acceptance/cases.json",
+    "apps/urbe/docs/csharp/acceptance/native-cases.json",
+    "apps/urbe/docs/csharp/acceptance/oracle.json",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/TRACEABILITY.md",
+    "apps/urbe/docs/v2/contracts/native.md",
+    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/v2/discovery/HOTSPOTS.md",
+    "apps/urbe/index.html",
+    "apps/urbe/native/android/app/src/main/java/app/urbe/UrbeAndroidPlugin.java",
+    "apps/urbe/native/desktop/main.js",
+    "apps/urbe/native/desktop/preload.js",
+    "apps/urbe/package-lock.json",
+    "apps/urbe/package.json",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/core/core.js",
+    "apps/urbe/src/modules.json",
+    "apps/urbe/src/native/bridge.js",
+    "apps/urbe/src/persistence/adapters/fsa.js",
+    "apps/urbe/src/persistence/adapters/idb.js",
+    "apps/urbe/src/persistence/backup.js",
+    "apps/urbe/src/persistence/workspace.js",
+    "apps/urbe/src/tutorial/content.js",
+    "apps/urbe/sw.js",
+    "apps/urbe/tests/desktop-preload.mjs",
+    "apps/urbe/tests/e2e/zip.e2e.mjs",
+    "apps/urbe/tests/lib/adapter-contract-suite.mjs",
+    "apps/urbe/tests/native-contract.mjs",
+    "apps/urbe/tools/check-all.mjs",
+    "apps/urbe/tools/debt-ceiling.json",
+    "apps/urbe/tools/lib/parity-browser-zip.mjs",
+    "apps/urbe/tools/lib/parity-native.mjs",
+    "apps/urbe/tools/lib/parity-storage.mjs",
+    "apps/urbe/tutorial/Arquivos e segurança/Importar e exportar.md",
+    "docs/governance/handoffs/HO-20261006-urbe-import-incident.json",
+    "apps/urbe/csharp/src/Urbe.Core/ImportPipeline.cs",
+    "apps/urbe/csharp/src/Urbe.Core/ImportTransaction.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ImportPipelineTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/ImportTransactionTests.cs",
+    "apps/urbe/csharp/tests/import-legacy.mjs",
+    "apps/urbe/docs/csharp/acceptance/history/pre-REQ-110-native-cases.json",
+    "apps/urbe/docs/csharp/acceptance/history/pre-REQ-110-oracle.json",
+    "apps/urbe/docs/v2/adr/0011-importacao-unica-e-recuperacao.md",
+    "apps/urbe/docs/v2/contracts/import.md",
+    "apps/urbe/native/android/app/src/main/java/app/urbe/ImportDocuments.java",
+    "apps/urbe/native/android/app/src/test/java/app/urbe/ImportDocumentsTest.java",
+    "apps/urbe/native/desktop/import-source.js",
+    "apps/urbe/src/persistence/import.js",
+    "apps/urbe/tests/e2e/import.e2e.mjs",
+    "docs/governance/handoffs/HO-20261006-urbe-intelligent-import.json",
+    "docs/validation/urbe/1.8.4-beta-import-device.md",
+    ".github/workflows/urbe-checks.yml",
+    ".github/workflows/urbe-build.yml",
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "apps/urbe/docs/csharp/acceptance/vault-manifest.json"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data",
+      "security",
+      "architecture",
+      "distribution"
+    ],
+    "reason": "Backup/journal recuperável, contratos de IO nativo e versão candidata; autorização de integração crítica pelo proprietário obrigatória."
+  },
+  "work_completed": [
+    "FATO OBSERVADO: Android distribuído não implementava seleção de documentos/árvore; relato humano confirma que Importar pasta não abriu fluxo. API nativa adicionada, sem conversão content:// para filesystem.",
+    "Fluxo único Importar → Arquivos/Pasta inteira; inspeção, contagens e confirmação antes de aplicar; conflitos explícitos, backup binário, idempotência e recuperação durável antes de abrir vault.",
+    "Core C# fornece seleção por streams, detecção, plano e transação; compatibilidade JS mínima necessária ao cliente ainda distribuído, com importador antigo removido.",
+    "Android SAF e Windows IPC expõem fontes somente leitura por tokens/chunks; domínio portátil sem lógica Android no Core.",
+    "Revisão explícita do oráculo REQ-110: histórico preservado e 297 IDs mantidos; três expectativas de capabilities aditivas revistas, sem regenerar goldens Markdown/Visual.",
+    "Roteiro DEVICE preparado; não há publicação formal, autorização de integração nem validação humana nova neste registro.",
+    "Conflitos de origem em documentos/assets agora exigem escolha entre versões antes do plano; prévia limitada e cancelamento seguro. ZIPs que são anexos dentro de pasta/vault são preservados em vez de descompactados. Seleção vazia/ação concorrente recebem mensagem clara.",
+    "Reconciliação semântica da main a51c3beb com a branch: preservados os registros de importação e investigação UC-16 em AGENTSCHAT, sem sobrescrever DEC-0040 nem trabalho integrado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Core C# e transações filesystem",
+      "result": "passed",
+      "evidence": "206/206 Core C# testes passaram, nenhum ignorado; transações com filesystem real e rollback/reabertura."
+    },
+    {
+      "kind": "automated",
+      "check": "Importação JS de produção",
+      "result": "passed",
+      "evidence": "18 grupos: streams non-seekable, Unicode/binários, ZIP/hash, forward, rollback/ENOSPC, cancelamento, conflito, reimportação, backup parcial, provider desktop e processo encerrado durante aplicação com recuperação real."
+    },
+    {
+      "kind": "automated",
+      "check": "Android Java",
+      "result": "passed",
+      "evidence": "testDebugUnitTest: 16 testes, zero failures/errors; seis novos ImportDocumentsTest cobrem leitura binária non-seekable, limites, erro de IO e nomes."
+    },
+    {
+      "kind": "automated",
+      "check": "E2E mobile e ZIP",
+      "result": "passed",
+      "evidence": "Chromium real: seleção múltipla MD + imagem, pasta inteira, contagens/confirmação e reabertura; ZIP preserva identidade/metadados e rejeita hashes inválidos. Não equivale a DEVICE."
+    },
+    {
+      "kind": "automated",
+      "check": "Build e identidade do APK local",
+      "result": "passed",
+      "evidence": "Build anterior ec4e2b3: APK local 1.8.4-beta versionCode 1080400 compilado; SHA-256 cdd005d59c36e1e6c345b8f2960fbf3c4ed9f984b7cd64db507e89f0f4798ed1. Certificado SHA-256 19d94932174ae79082ec524cbc42ad48a7134fac4682387a506815efe65e6cf3. Não publicado formalmente; não corresponde à revisão final de conflitos de origem. Novos bytes do pipeline serão conferidos separadamente."
+    },
+    {
+      "kind": "automated",
+      "check": "Checks JS e correções do contrato",
+      "result": "passed",
+      "evidence": "66/66 arquivos JS passaram com Node 22; contrato/manifesto UC-3 regenerado e diff revisado (hashes/linhas/catalogação do import journal). Reexecução dos checks corrigidos passou; regressão produção 16 grupos e paridade ZIP 1/1. CI final e paridade all aguardados."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency local",
+      "result": "passed",
+      "evidence": "22/22 checks passaram após cessar compilação concorrente de arquivos temporários."
+    },
+    {
+      "kind": "automated",
+      "check": "CI final por superfície e paridade all",
+      "result": "pending",
+      "evidence": "CI anterior c247231 e estado combinado deecfdac passaram em todas as superfícies (run 37500011201). Main avançou com UC-16 e DEC-0040; nova avaliação após reconciliação documental necessária. APK anterior rastreado nas Issues #261/#166, sem aprovação DEVICE."
+    }
+  ],
+  "known_issues": [
+    "ZIP deve ser selecionado separadamente; conflitos de documentos de origem exigem escolha explícita; múltiplas cópias de vault recusadas para selecionar uma única origem.",
+    "Core fornece mecanismo portátil; não antecipa UI M3 nem corte C# (UC-31).",
+    "Validação nativa em aparelho ainda necessária."
+  ],
+  "blockers": [
+    "Integração crítica depende do evento real do proprietário no PR após CI verde; agentes não aplicam integrar.",
+    "Publicação formal de 1.8.4-beta e objeto DEVICE com bytes/hash exatos dependem dessa integração. P4-9 permanece aberto."
+  ],
+  "next_actions": [
+    "Fechar checks/CI e APK final; autorizar integração crítica pelo portal do Ecosystem.",
+    "Após integração, executar dispatch aprovado urbe-cutover, conferir artefato publicado e criar novo objeto DEVICE sem reutilizar aprovação de 1.8.3-beta.",
+    "Prosseguir UC-15/UC-16 elegível segundo Issues vivas; não abrir M3 antes de G-C2."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+    "apps/urbe/docs/v2/adr/0011-importacao-unica-e-recuperacao.md",
+    "apps/urbe/docs/v2/contracts/import.md",
+    "apps/urbe/docs/v2/contracts/native.md",
+    "apps/urbe/docs/v2/discovery/DATA-CATALOG.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Automação e DEVICE separados; falha histórica preservada, P4-9 não aprovado."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Estado main atual, contratos e Issues 166/249/257/261 inspecionados diretamente."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #261, handoff, contratos, ADR proposto e protocolo DEVICE rastreáveis."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "vault-import",
+      "status": "product-specific",
+      "rationale": "Formatos e domínio do Urbe; nenhum consumidor externo real."
+    }
+  ]
+}

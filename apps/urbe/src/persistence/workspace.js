@@ -45,6 +45,7 @@
 
     async load(vault){
       if(!this.adapter)throw new Error('Persistence adapter not configured');this.suspended=true;this.vault=vault;
+      if(global.UrbeImport)await global.UrbeImport.recover(this.adapter,vault);
       this.foreign=[];this.sideReadonly={};this.readOnly=false;this.mapaReadonly=false;
       var paths=await this.adapter.list(vault);this.paths=paths;
       var md=paths.filter(editable);

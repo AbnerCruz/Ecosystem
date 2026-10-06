@@ -6,7 +6,7 @@ import vm from 'node:vm';
 import {ROOT} from './v2-docs.mjs';
 import {bootMain,makeElectron,loadDesktop} from '../../tests/lib/fake-electron.mjs';
 import {fakeCapacitor,load as loadAndroid} from '../../tests/lib/fake-capacitor.mjs';
-const universe=['fs','vault','openExternal','saveFile','print','update','back','storageStatus'];
+const universe=['fs','vault','openExternal','saveFile','print','update','back','storageStatus','importSelection'];
 const methods={fs:['stat','list','readBytes','writeBytes','mkdir','remove'],update:['check','install','onStatus']};
 export function makeNativeCases(){return JSON.parse(fs.readFileSync(path.join(ROOT,'docs/csharp/acceptance/native-cases.json'),'utf8')).cases}
 function bridge(N){
@@ -52,6 +52,7 @@ async function createHost(input){
 }
 function availability(N){return universe.filter(cap=>{
   if(cap==='fs'||cap==='update')return methods[cap].every(k=>typeof N?.[cap]?.[k]==='function');
+  if(cap==='importSelection')return ['pick','readChunk','release'].every(k=>typeof N?.importSelection?.[k]==='function');
   if(cap==='storageStatus')return typeof N?.storage?.status==='function';
   return typeof N?.[{print:'printHtml',back:'minimize'}[cap]||cap]==='function';
 })}

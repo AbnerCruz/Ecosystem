@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261006-urbe-import-incident",
   "category": "INCIDENT",
-  "timestamp": "2026-10-06T14:58:24.737584Z",
+  "timestamp": "2026-10-06T15:37:18.300347Z",
   "agent": {
     "id": "codex-urbe-import",
     "kind": "ai-agent"
@@ -22,7 +22,8 @@
   "work_completed": [
     "FATO RELATADO: proprietário informa falha de importação da cidade/vault no Android do candidato urbe-v1.8.3-beta.",
     "Preservadas aprovação #259 e resposta canônica anterior; acrescentada evidência humana posterior failed, sem fabricar evento de portal.",
-    "FATO OBSERVADO: Android não oferece picker de árvore ao bridge atual; lerEntrada ZIP ignora .urbe/* e importarItens incorpora conteúdo em vez de restaurar identidade/metadados. Causa exata da falha em aparelho ainda sob investigação."
+    "FATO OBSERVADO: Android não oferece picker de árvore ao bridge atual; lerEntrada ZIP ignora .urbe/* e importarItens incorpora conteúdo em vez de restaurar identidade/metadados. Causa exata da falha em aparelho ainda sob investigação.",
+    "CLARIFICAÇÃO HUMANA posterior: «Selecionei para importar, importar pasta e ai não aconteceu nada». Relato registrado na Issue #261: https://github.com/AbnerCruz/Ecosystem/issues/261#issuecomment-6019768008. Sintoma no acionamento da seleção de pasta, antes da leitura, compatível com ausência de API nativa de árvore; sem exceção de stream relatada."
   ],
   "verification": [
     {

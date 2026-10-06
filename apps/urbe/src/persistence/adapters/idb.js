@@ -9,7 +9,7 @@
     function open(){if(pr)return pr;pr=new Promise(function(ok,err){var r=global.indexedDB.open(name,3);
       r.onupgradeneeded=function(e){var d=e.target.result;['kv','fs','blobs'].forEach(function(s){if(!d.objectStoreNames.contains(s))d.createObjectStore(s)})};
       r.onsuccess=function(){ok(r.result)};r.onerror=function(){err(r.error)}});return pr}
-    function op(store,mode,fn){return open().then(function(d){return new Promise(function(ok,err){var t=d.transaction(store,mode),q=fn(t.objectStore(store));q.onsuccess=function(){ok(q.result)};q.onerror=function(){err(q.error)}})})}
+    function op(store,mode,fn){return open().then(function(d){return new Promise(function(ok,err){var t=d.transaction(store,mode),q=fn(t.objectStore(store));var result;q.onsuccess=function(){result=q.result};q.onerror=function(){err(q.error)};t.oncomplete=function(){ok(result)};t.onerror=function(){err(t.error)};t.onabort=function(){err(t.error||new Error('Gravação cancelada pelo armazenamento.'))}})})}
     /* mesma API (nomes) do antigo DBK: usada pelo restante do app para configurações e cache de anexos */
     var store={
       get:function(k){return op('kv','readonly',function(s){return s.get(k)})},set:function(k,v){return op('kv','readwrite',function(s){return s.put(v,k)})},del:function(k){return op('kv','readwrite',function(s){return s.delete(k)})},
@@ -25,7 +25,7 @@
         var ks=await store.fChaves();for(var j=0;j<ks.length;j++)if(ks[j]===n||ks[j].indexOf(n+'/')===0)await store.fDel(ks[j]);
       },
       async list(v){var ks=await store.fChaves(),p=v+'/';return ks.filter(function(k){return k.indexOf(p)===0}).map(function(k){return k.slice(p.length)})},
-      async read(v,rel){var x=await store.fGet(v+'/'+rel);return x==null?null:x},
+      async read(v,rel){var x=await store.fGet(v+'/'+rel);return x==null?null:(x instanceof global.Blob?await x.text():x)},
       async readBlob(v,rel){var x=await store.fGet(v+'/'+rel);if(x==null)return null;return x instanceof global.Blob?x:new global.Blob([x],{type:mime(rel)})},
       async write(v,rel,text){await store.fSet(v+'/'+rel,text)},
       async writeBlob(v,rel,blob){await store.fSet(v+'/'+rel,blob)},

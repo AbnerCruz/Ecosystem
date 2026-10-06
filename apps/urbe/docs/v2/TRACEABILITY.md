@@ -20,6 +20,7 @@
 | REQ-006 | §10.2 | F0 | RM-F0-14 — Separar integração e publicação (release por tag) | [?] | Dry-run em branch de teste: push em `main` não publica; tag publica em repositório de teste. | G0 |
 | REQ-006 | §10.2 | F6 | RM-F6-12 — Release candidato 2.0 | [ ] | CI + smoke instalador/APK. | G6 |
 | REQ-007 | §1.2 | F1 | RM-F1-25 — Testes de invariante local-first/offline e integridade de notas | [ ] | Falha se `fetch` for chamado no fluxo essencial. | G1 |
+| REQ-007 | §1.2 | F7 | RM-F7-29 — Importação única e recuperação Android/P4-9 | [~] | ZIP válido/inválido; atual/histórico/futuro; Markdown/assets/Unicode; duplicata/conflito; stream não seekable; cancelamento/IO; reimportação/reabertura; vault preservado. | G7 |
 | REQ-008 | §6.1 | F4 | RM-F4-02 — Suíte de conformidade `native-contract` por adapter | [x] | Falha se capacidade declarada não funcionar. | G4 |
 | REQ-008 | §6.1 | F4 | RM-F4-15 — Matriz de capacidades por plataforma verificada | [ ] | `check` compara tabela e contrato. | G4 |
 | REQ-009 | §8 | F5 | RM-F5-01 — Gate de regressão de performance no CI | [ ] | Teste com regressão injetada. | G5 |
@@ -74,10 +75,12 @@
 | REQ-032 | §3.4 | F2 | RM-F2-17 — Contratos públicos versionados | [ ] | `tests/contracts.mjs`. | G2 |
 | REQ-035 | §5.1 | F1 | RM-F1-05 — Proteção forward: journal, history, trash, compositions | [x] | Fixture `futuro-desconhecido`: bytes inalterados após abrir/salvar; teste de coexistência v1/v2. | G1 |
 | REQ-035 | §5.1 | F1 | RM-F1-06 — Proteção forward: mapa, tema, páginas, blocos, modelos | [x] | Fixture futuro: nada reescrito; UI mostra aviso. | G1 |
+| REQ-035 | §5.1 | F7 | RM-F7-29 — Importação única e recuperação Android/P4-9 | [~] | ZIP válido/inválido; atual/histórico/futuro; Markdown/assets/Unicode; duplicata/conflito; stream não seekable; cancelamento/IO; reimportação/reabertura; vault preservado. | G7 |
 | REQ-036 | §5.1 | F1 | RM-F1-04 — `vault.json` e detecção de versão do vault | [x] | Fixtures: 1.x sem `vault.json`, 2.x, futuro maior. | G1 |
 | REQ-037 | §5.1 | F1 | RM-F1-01 — Criar fixtures de vaults históricos | [x] | Cada fixture abre no código 1.8.2 sem erro (teste de caracterização). | G1 |
 | REQ-037 | §5.1 | F1 | RM-F1-02 — Harness de abertura/migração de fixtures | [x] | Rodar contra 1.8.2 (baseline) e depois a cada item. | G1 |
 | REQ-038 | §5.1 | F1 | RM-F1-07 — Motor de backup pré-migração e restauração | [x] | Testes: backup íntegro, restauração byte a byte, migração repetida não duplica. | G1 |
+| REQ-038 | §5.1 | F7 | RM-F7-29 — Importação única e recuperação Android/P4-9 | [~] | ZIP válido/inválido; atual/histórico/futuro; Markdown/assets/Unicode; duplicata/conflito; stream não seekable; cancelamento/IO; reimportação/reabertura; vault preservado. | G7 |
 | REQ-039 | §5.2 | F1 | RM-F1-08 — Fonte única de tipos de artefato | [x] | `tests/artifacts.mjs` (tabela de casos); `grep` de listas antigas retorna 0. | G1 |
 | REQ-040 | §5.2 | F1 | RM-F1-13 — Escritor único do mapa e leitura de `mapa.v` | [x] | Fixtures mapa v1/v2/v4; teste de dupla escrita (não há); assinatura de binários preservada. | G1 |
 | REQ-041 | §5.2 | F1 | RM-F1-14 — IDs estáveis de regiões, construções e vínculos | [x] | Fixtures: rename externo mantém região/asset; mapa v4 legível pela 1.8.2 (teste de compat). | G1 |
@@ -85,6 +88,7 @@
 | REQ-042 | §5.2 | F1 | RM-F1-16 — GC de órfãos em history/trash/compositions | [x] | Fixture com órfãos; dry-run e execução. | G1 |
 | REQ-043 | §5.2 | F1 | RM-F1-17 — Versão de mundo e reorganização com backup/desfazer | [x] | Fixture `v1-mundo-antigo`, `v1-cidades-mescladas`: backup criado, posições restauráveis. | G1 |
 | REQ-044 | §5.2 | F1 | RM-F1-18 — Export ZIP com manifesto e estado local | [x] | Testes: hash íntegro, adulteração detectada, ausência de chaves. | G1 |
+| REQ-044 | §5.2 | F7 | RM-F7-29 — Importação única e recuperação Android/P4-9 | [~] | ZIP válido/inválido; atual/histórico/futuro; Markdown/assets/Unicode; duplicata/conflito; stream não seekable; cancelamento/IO; reimportação/reabertura; vault preservado. | G7 |
 | REQ-045 | §5.2 | F1 | RM-F1-19 — Migração multi-cidade idempotente | [x] | Fixture `v1-cidades-mescladas`: 3 boots consecutivos, mesmo resultado. | G1 |
 | REQ-046 | §5.2 | F1 | RM-F1-20 — Escrita recuperável na web e integridade do modo IDB | [ ] | Simulação de falha no meio da escrita; export do IDB reproduz vault. | G1 |
 | REQ-047 | §5.2 | F1 | RM-F1-21 — Estado local por vault e tolerância a órfãos | [ ] | Trocar de vault não reabre abas alheias; orphan não lança. | G1 |
@@ -176,6 +180,7 @@
 | REQ-108 | §15.4 | F7 | RM-F7-27 — Migração do `Tutorial/` existente e checagem do conteúdo | [ ] | Fixture com Tutorial; testes. | G7 |
 | REQ-109 | §15.1 | F7 | RM-F7-01 — Reproduzir em E2E (desktop e celular) os bugs relatados | [ ] | Cada cenário roda hoje e registra a falha esperada; ao corrigir, a lacuna fecha e a lista encolhe. | G7 |
 | REQ-109 | §15.1 | F7 | RM-F7-11 — Criar nota a partir de `[[nota inexistente]]` | [ ] | E2E: digitar `[[Nova]]`, clicar, nota criada e aberta. | G7 |
+| REQ-110 | §16 | F7 | RM-F7-29 — Importação única e recuperação Android/P4-9 | [~] | ZIP válido/inválido; atual/histórico/futuro; Markdown/assets/Unicode; duplicata/conflito; stream não seekable; cancelamento/IO; reimportação/reabertura; vault preservado. | G7 |
 
 ## Requisitos que não são IMPLEMENTAR
 
@@ -192,5 +197,5 @@
 
 ## Cobertura
 
-- REQ IMPLEMENTAR: 101; com item no ROADMAP: 101.
-- Itens no ROADMAP: 146; concluídos `[x]`: 43.
+- REQ IMPLEMENTAR: 102; com item no ROADMAP: 102.
+- Itens no ROADMAP: 147; concluídos `[x]`: 43.

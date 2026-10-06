@@ -31,6 +31,7 @@ do formato do objeto pela ponte (`UrbeNativeContract`), com o mesmo resultado.
 | `print` | `printHtml(html, name)` | Imprime/gera PDF do HTML. Resultado `{saved: caminho}` (PDF gravado), `{printing: true}` (diálogo do sistema) ou `{canceled: true}`. O HTML é conteúdo do usuário: roda isolado (sem acesso ao app nem ao disco). |
 | `update` | `update.check()`, `update.install()`, `update.onStatus(fn)` | `check()` devolve `{state}` com `state` em `none/checking/available/downloading/ready/error`. |
 | `back` | `minimize()` + evento `urbeBack` no documento | Botão "voltar" do sistema: fecha o que está por cima; na cidade, minimiza. |
+| `importSelection` | `importSelection.pick(kind)`, `readChunk(token,id,offset)`, `release(token)` | `kind` é `files` ou `folder`. Picker independente do vault ativo. Retorna `{canceled:true}` ou `{token,files:[{id,path,size}],canceled:false}`. `path` é nome relativo, não URI/path físico. `readChunk` retorna `{data:Uint8Array,done}` até 64 KiB. Seleção temporária somente leitura, 64 MiB/arquivo, 256 MiB/seleção, 10000 arquivos. `release` descarta staging; cancelamento não altera dados. Erro explícito de permissão/provider/IO/limite. Após morte do processo, refazer seleção; transação aplicada é recuperada pelo Core/persistência. |
 | `storageStatus` | `storage.status()` | Devolve `{sdk: number, ...}` com o estado de permissão de armazenamento. |
 
 ## 3. Matriz por plataforma
@@ -43,6 +44,7 @@ do formato do objeto pela ponte (`UrbeNativeContract`), com o mesmo resultado.
 | `saveFile` | declarada (`dialog.showSaveDialog`, `fs:saveFile`) | declarada (MediaStore/Downloads/Urbe) | ausente (download do navegador) |
 | `print` | declarada (PDF via `app://print`, sessão isolada) | declarada (WebView sem JS) | ausente (`window.print`) |
 | `update` | declarada (electron-updater; só no app instalado) | declarada (GitHub Releases, instalação manual do APK) | ausente (service worker) |
+| `importSelection` | declarada (diálogos independentes + tokens) | declarada (SAF, ContentResolver) | ausente (APIs nativas do navegador) |
 | `back` | **ausente** | declarada | ausente |
 | `storageStatus` | **ausente** | declarada | ausente |
 
@@ -82,3 +84,9 @@ exigiria mover essas operações para o `UrbeAndroidPlugin` (decisão a registra
 - `node tests/security/links.mjs` — allowlist de links nos três lugares.
 - Java (sem Android SDK): `javac -d out native/android/app/src/main/java/app/urbe/{PathGuard,UrlGuard}.java native/android/app/src/test/java/app/urbe/GuardChecks.java && java -cp out app.urbe.GuardChecks`.
   Os JUnit4 (`PathGuardTest`, `UrlGuardTest`) chamam as mesmas verificações e rodam com `./gradlew testDebugUnitTest` (exige Android SDK).
+
+### Importação aditiva v1 (REQ-110)
+
+Canais `import:pick`, `import:read`, `import:release` usam o mesmo guard de origem. Nenhum aceita um caminho arbitrário do renderer; apenas tokens gerados após escolha explícita, ids e offsets. `pickVault` continua selecionando armazenamento ativo e nunca é usado como fonte de importação. `UrbeImportSources` é o adapter de streams da ponte, não autoridade de domínio. Cascas antigas sem a capacidade não são anunciadas como tendo seleção de pasta nativa.
+
+Android `pickImport` usa ACTION_OPEN_DOCUMENT + EXTRA_ALLOW_MULTIPLE ou ACTION_OPEN_DOCUMENT_TREE; ActivityCallback trata cancelamento. Flags read/persistable; reter acesso apenas durante staging, liberar depois. ContentResolver abre streams, DocumentsContract enumera árvores (incluindo `.urbe/` e Unicode); nunca resolver content:// em filesystem. O staging é privado e verificado com limites reais de bytes. A seleção não grava no vault e a transação não depende da URI após concluída a cópia. Não substitui o armazenamento ativo MANAGE_EXTERNAL_STORAGE (REQ-077 permanece adiado).

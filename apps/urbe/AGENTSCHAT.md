@@ -384,6 +384,14 @@
 - Decisão preservada: ADR-0025 não escolhe biblioteca matemática. Nenhuma dependência ou interop adicionada; tipografia/macros/erros/export continuam abertos na UC-16; UI pertence à UC-18.
 - Próximo: verificar Core, checks e consistency; abrir PR para CI portátil, Web, Android, Windows e E2E e integração automática rotineira.
 
+### 2026-10-06 — codex-urbe-import — RM-F7-29 / REQ-110 / URBE-261
+- Estado: verifying; P4-9 permanece aberto, falha DEVICE de 1.8.3-beta preservada em HO-20261006-urbe-import-incident.
+- Feito: fonte Android SAF para arquivos múltiplos/árvore por streams, fonte desktop limitada por tokens, UI Importar → Arquivos/Pasta inteira, inspeção e confirmação, restauração de identidade/metadados, conflito explícito e backup/rollback/recovery binários. Sucessor portátil em Urbe.Core; compatibilidade JS somente para manter o cliente distribuído funcional até UC-31/32.
+- Decisões (com fonte): direção explícita do proprietário na Issue #261; arquitetura registrada no ADR-0011 proposto. Revisão pontual do oráculo documentada, baseline anterior preservado e 297 IDs mantidos. Nenhuma autorização presumida de KaTeX interop ou corte C#.
+- Evidência: 206 testes Core passaram; 16 testes Java passaram; 18 grupos suplementares executam produção/IO real e incluem interrupção de processo; E2E mobile arquivos/pasta/reabertura e ZIP com IDs passaram. CI do head c247231 e estado combinado deecfdac passou, APK do pipeline identificado nas Issues #261/#166; não são DEVICE. Main avançou com UC-16/DEC-0040; reconciliação preserva ambos os registros e exige novo CI.
+- Pendências / bloqueios: PR crítico depende do integrador e autorização real do proprietário; publicação oficial e registro DEVICE exato virão depois, pelo pipeline existente. ZIP selecionado separadamente; conflitos de documentos/assets na origem exigem escolha explícita; cópias divergentes de vault são recusadas sem alteração. Roteiro: docs/validation/urbe/1.8.4-beta-import-device.md (raiz), ainda sem aprovação.
+- Próximos passos: concluir verificações, integrar conforme política, publicar candidato e vincular hash real ao portal. UC-15 #249 possui PRs #253/#254 abertos; UC-16 #257 ainda exige investigação tipográfica/licenças/offline/export. M3 continua dependendo de G-C2.
+
 ### 2026-10-06 — codex-urbe-import — UC-16 / Issue #257
 - Estado: working; investigação de renderer, não adoção nem fechamento da UC.
 - Feito: probe reproduzível que compila/executa CSharpMath em diretório temporário, gera SVG e publica Blazor WASM; Chromium renderiza e repete com rede desligada. Corpus: 172 snippets, sete entradas adicionais, 31 fórmulas reais do tutorial. 163 snippets e 30 fórmulas do tutorial renderizados; diagnósticos conhecidos preservados no relatório, sem mascarar rejeições em goldens de compatibilidade.
