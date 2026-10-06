@@ -35,10 +35,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -e
-          if [ "${{ github.ref_type }}" != "tag" ]; then echo "::error::Execute este workflow sobre uma tag v<versão>, não sobre um branch."; exit 1; fi
+          if [ "${{ github.ref_type }}" != "tag" ]; then echo "::error::Execute este workflow sobre uma tag urbe-v<versão>, não sobre um branch."; exit 1; fi
           VERSION=$(node -p "require('./package.json').version")
-          [ "${{ github.ref_name }}" = "urbe-v$VERSION" ] || { echo "::error::A tag ${{ github.ref_name }} não corresponde ao package.json (v$VERSION)"; exit 1; }
-          if gh release view "urbe-v$VERSION" --repo "${{ github.repository }}" >/dev/null 2>&1; then echo "::error::Já existe o lançamento v$VERSION"; exit 1; fi
+          [ "${{ github.ref_name }}" = "urbe-v$VERSION" ] || { echo "::error::A tag ${{ github.ref_name }} não corresponde ao package.json (urbe-v$VERSION)"; exit 1; }
+          if gh release view "urbe-v$VERSION" --repo "${{ github.repository }}" >/dev/null 2>&1; then echo "::error::Já existe o lançamento urbe-v$VERSION"; exit 1; fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Checagens e testes (mesmo gate do CI)
         run: |
