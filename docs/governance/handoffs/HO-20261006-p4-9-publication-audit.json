@@ -10,11 +10,11 @@
   },
   "task_id": "P4-9",
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "branch": "codex/p4-9-publication-audit",
   "base_commit": "eeefea4033be8059b9ab3c137b57627213193067",
-  "commit": null,
-  "pr": null,
+  "commit": "19f5349cdb736adfaa7e5809bd6974714531e154",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/255",
   "files_changed": [
     ".github/workflows/urbe-cutover.yml",
     "ROADMAP.md",
@@ -42,22 +42,17 @@
     {
       "check": "Consistency e self-tests do candidato",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Ambiente local sem dotnet; clone falha na conexão com proxy:8080. Checks obrigatórios serão executados no CI do PR e no estado combinado pelo integrador."
+      "result": "passed",
+      "evidence": "Consistency, self-tests e simulação passaram no PR e no estado combinado: https://github.com/AbnerCruz/Ecosystem/actions/runs/37456087931; PR #255 integrado em 43ccb54e328b7b503d3e07adfde36180014e9964.",
+      "tested_commit": "19f5349cdb736adfaa7e5809bd6974714531e154"
     }
   ],
   "known_issues": [
-    "A release direta urbe-v1.8.3-beta ainda não foi encontrada; não há evidência de publicação para encerrar P4-9.",
-    "A aprovação DEVICE existente foi preservada integralmente em seu registro canônico; este handoff não substitui a resposta do proprietário."
+    "Histórico: release ausente no momento desta auditoria. Publicação posterior e DEVICE do candidato acompanhados em HO-20261006-p4-9-release-evidence."
   ],
-  "blockers": [
-    "Publicação direta pendente; conector disponível não oferece workflow_dispatch. O workflow aprovado exige início explícito pelo proprietário.",
-    "A política da main classifica alteração de workflow como control-plane; integração exige autorização do proprietário após os checks."
-  ],
+  "blockers": [],
   "next_actions": [
-    "Após checks verdes, autorizar este PR crítico pelo mecanismo do integrador.",
-    "Executar urbe-cutover com version=1.8.3-beta na main; conferir release e artefatos Android/Windows/checksums.",
-    "Depois de comprovar a publicação, reconciliar handoff/Issue #166 e encerrar P4-9 conforme Definition of Done."
+    "Acompanhar P4-9 no handoff HO-20261006-p4-9-release-evidence; este resultado da correção/auditoria foi integrado."
   ],
   "decisions_required": [],
   "normative_sources": [
