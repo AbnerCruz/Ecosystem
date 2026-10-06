@@ -88,10 +88,12 @@ jobs:
           set -euo pipefail
           apk="native/android/app/build/outputs/apk/release/app-release.apk"
           test -s "$apk"
-          expected="$(tr -d '[:space:]' < tools/urbe-dev.certificate.sha256)"
-          actual="$(keytool -printcert -jarfile "$apk" | sed -n 's/^[[:space:]]*SHA256: //p' | head -n1)"
-          [ "$actual" = "$expected" ] || {
-            echo "::error::APK não está assinado com a identidade beta canônica do Urbe"
+          expected="$(tr -d '[:space:]' < tools/urbe-dev.certificate.sha256 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n1)"
+          test -x "$apksigner" || { echo "::error::apksigner não encontrado"; exit 1; }
+          actual="$("$apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n1 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          [ -n "$actual" ] && [ "$actual" = "$expected" ] || {
+            echo "::error::APK não está assinado com a identidade beta canônica do Urbe (esperado=$expected)"
             exit 1
           }
           mkdir -p out
