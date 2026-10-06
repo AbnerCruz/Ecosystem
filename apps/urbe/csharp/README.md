@@ -1,4 +1,4 @@
-# Cliente C# do Urbe — UC-8 a UC-12
+# Cliente C# do Urbe — UC-8 a UC-14
 
 Base de composição aprovada por DEC-0035-A / ADR-0025. O roadmap e os gates
 continuam em [`../docs/csharp/ROADMAP.md`](../docs/csharp/ROADMAP.md).
@@ -123,3 +123,13 @@ reproduz os IDs determinísticos `reg_*`/`ast_*` da 1.x e
 `mapa.json`. Campos desconhecidos são preservados; mapas futuros/corruptos
 ficam somente leitura. Terreno, ruas, vida, AquariumWorld, câmera, desenho e
 interação continuam fora do Core nesta etapa.
+
+
+## UC-14 — Markdown e round-trip Visual
+
+UC-14 porta para o Core os contratos puros de `src/editor/markdown.js` e
+`src/editor/visual.js`. `MarkdownEngine` renderiza Markdown para HTML,
+preserva matemática como átomos `umath` e aplica a mesma sanitização histórica.
+`VisualMarkdown` usa um parser de fragmento HTML próprio, BCL-only, para
+serializar o subconjunto do editor de volta a Markdown sem DOM, WebView ou JS.
+A paridade é exercitada diretamente pelos goldens históricos do cliente legado.

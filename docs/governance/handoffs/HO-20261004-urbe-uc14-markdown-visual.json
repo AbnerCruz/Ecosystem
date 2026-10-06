@@ -1,0 +1,106 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261004-urbe-uc14-markdown-visual",
+  "category": "RESULT",
+  "timestamp": "2026-10-06T05:30:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-14",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc14-markdown-visual",
+  "base_commit": "58a78d417259d875e5077d423134d63543d8d431",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/232",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VisualMarkdown.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MarkdownVisualTests.cs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261004-urbe-uc14-markdown-visual.json"
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Porta transformação pura em memória e testes; não grava vault, não altera migração, segurança, hosts ou distribuição."
+  },
+  "work_completed": [
+    "MarkdownEngine porta o pipeline Markdown→HTML do cliente JS usando apenas BCL.",
+    "Scanner matemático preserva delimitadores históricos e emite átomos umath sem depender de KaTeX.",
+    "VisualMarkdown implementa parser de fragmento HTML limitado ao subconjunto do editor e serialização Visual→Markdown.",
+    "Frontmatter do modo Visual permanece autoridade externa, como no JS.",
+    "Suíte lê diretamente os dois goldens históricos e cobre SafeUrl, código inline, parser Visual e frontmatter.",
+    "PR #232 reconciliado semanticamente sobre main@58a78d417259 após P4-9; código/testes UC-14 preservados e documentos reaplicados sem reverter decisões posteriores."
+  ],
+  "verification": [
+    {
+      "check": "Core C# / goldens no head reconciliado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando nova rodada de urbe-checks após merge semântico com main atual."
+    },
+    {
+      "check": "Regressão completa Urbe no estado combinado atual",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando checks, C# portátil, Web smoke, Android, Windows e E2E."
+    },
+    {
+      "check": "Governança/consistency no estado combinado atual",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando integrador após reconciliação com main@58a78d417259."
+    }
+  ],
+  "known_issues": [
+    "UC-14 não implementa UI do editor nem KaTeX visual; esses escopos permanecem em UC-18 e UC-16."
+  ],
+  "blockers": [
+    "Concluir a regressão automatizada do head reconciliado e corrigir qualquer divergência real."
+  ],
+  "next_actions": [
+    "Aguardar CI do PR #232 no estado combinado atual.",
+    "Corrigir qualquer divergência dos goldens sem alterar os oráculos.",
+    "Quando tudo verde, mover Issue #230 e handoff para review; integração é rotineira se a classificação permanecer routine."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/src/editor/markdown.js",
+    "apps/urbe/src/editor/visual.js",
+    "apps/urbe/src/math/core.js",
+    "apps/urbe/src/math/editor.js",
+    "apps/urbe/tests/fixtures/markdown-golden.json",
+    "apps/urbe/tests/fixtures/visual-golden.json",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece no Urbe.Core e usa apenas BCL."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Sem DOM, WebView, filesystem, rede, host ou plano de controle."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #230, branch própria, PR #232 e handoff específico."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação física/UI alegada; escopo é transformação pura."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-14 permanece working até regressão final e integração."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Core permanece standalone."
+    }
+  ]
+}
