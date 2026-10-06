@@ -2793,7 +2793,7 @@ static class SelfTest
         new("perfil de distribuição atual cita decisão inexistente", "CHK-REGISTRY",
             r => Replace(r, "docs/distribution/current.profile.json", "\"DEC-0008\"", "\"DEC-8888\"")),
         new("perfil de distribuição alvo sem a decisão que o sustenta", "CHK-REGISTRY",
-            r => Replace(r, "docs/distribution/target.profile.json", "\"decisions\": [\n    \"DEC-0021\",\n    \"DEC-0039\"\n  ],", "\"decisions\": []")),
+            r => Replace(r, "docs/distribution/target.profile.json", "\"decisions\": [\n    \"DEC-0021\",\n    \"DEC-0039\"\n  ],", "\"decisions\": [],")),
         new("perfil de distribuição alvo com canal existente sem localização", "CHK-REGISTRY",
             r => Replace(r, "docs/distribution/target.profile.json", "\"locationFrom\": \"source.repository\",", "")),
         new("perfil de distribuição com ecosystem.repository sem autoridade", "CHK-REGISTRY",
