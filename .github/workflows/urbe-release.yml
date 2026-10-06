@@ -1,9 +1,9 @@
 name: urbe-release
 
-# Publicação = tag "v<versão do package.json>" (ou execução manual sobre uma tag). Merge em main NÃO publica (REQ-006, REQ-066).
+# Publicação = tag `urbe-v<versão do package.json>` (ou execução manual sobre essa tag). Merge em main NÃO publica (REQ-006, REQ-066).
 # Depende de testes e checagens verdes; Android usa a chave beta pública e estável fixada por DEC-0039.
 #
-# Como lançar:  git tag v2.0.0-beta.1 && git push origin v2.0.0-beta.1
+# O helper canônico é urbe-cutover.yml; não criar tag manualmente.
 
 on:
   push:
@@ -77,7 +77,7 @@ jobs:
           tag_name: urbe-v${{ needs.verificar.outputs.version }}
           name: Urbe ${{ needs.verificar.outputs.version }}
           body_path: apps/urbe/notas.md
-          # Os apps instalados se atualizam por /releases/latest: betas também são "latest" (como na 1.x).
+          # O monorepo contém vários Products; o Urbe seleciona somente tags urbe-v*, nunca /releases/latest global.
           make_latest: false
           files: |
             apps/urbe/artefatos/windows/*
