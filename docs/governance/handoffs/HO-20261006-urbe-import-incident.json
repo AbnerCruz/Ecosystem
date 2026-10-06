@@ -1,0 +1,74 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-import-incident",
+  "category": "INCIDENT",
+  "timestamp": "2026-10-06T14:58:24.737584Z",
+  "agent": {
+    "id": "codex-urbe-import",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-9",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-p4-9-import-incident",
+  "base_commit": "33ad25e3a6fb99cc2fd356ef3921f90c49d54882",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/validation/urbe/1.8.3-beta-android.json",
+    "docs/governance/handoffs/HO-20261006-urbe-import-incident.json"
+  ],
+  "work_completed": [
+    "FATO RELATADO: proprietário informa falha de importação da cidade/vault no Android do candidato urbe-v1.8.3-beta.",
+    "Preservadas aprovação #259 e resposta canônica anterior; acrescentada evidência humana posterior failed, sem fabricar evento de portal.",
+    "FATO OBSERVADO: Android não oferece picker de árvore ao bridge atual; lerEntrada ZIP ignora .urbe/* e importarItens incorpora conteúdo em vez de restaurar identidade/metadados. Causa exata da falha em aparelho ainda sob investigação."
+  ],
+  "verification": [
+    {
+      "kind": "human",
+      "check": "Importação da cidade/vault no Android — relato posterior",
+      "result": "failed",
+      "evidence": "FATO RELATADO pelo proprietário em 2026-10-06 na sessão de desenvolvimento: «O import da cidade/vault falhou no Android.» Vinculado por ele a urbe-v1.8.3-beta/P4-9. Modalidade selecionada e mensagem de erro ainda não informadas; não equivale a nova resposta emitida pelo portal. Ver incidente HO-20261006-urbe-import-incident.",
+      "critical": true,
+      "object": "docs/validation/urbe/1.8.3-beta-android.json"
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency do registro de incidente",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks locais. Registro do candidato passa a IMPLEMENTED porque há evidência humana failed; histórico e CI passed preservados."
+    }
+  ],
+  "known_issues": [
+    "APK 5269c505ad3bc12149716e58f728cd5468c13fcef9d8b7192839a9496ba9d4b7 tem falha de importação relatada; não declarar P4-9 aprovado."
+  ],
+  "blockers": [
+    "P4-9 requer correção e nova validação DEVICE do novo candidato exato."
+  ],
+  "next_actions": [
+    "Investigar e corrigir importação; fluxo Importar → Arquivos ou Pasta inteira, com inspeção antes da aplicação e recuperação segura.",
+    "Publicar novo candidato pelo pipeline após integração autorizada; criar objeto DEVICE com novos bytes/hash."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-017",
+      "evidence": "Relato humano failed separado de CI passed; aprovação anterior preservada."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Incidente e artefato identificados no registro; tarefa P4-9 permanece aberta."
+    }
+  ]
+}

@@ -5,7 +5,7 @@
   "component": "urbe",
   "build": "1.8.3-beta-android",
   "recorded_at": "2026-10-06",
-  "state": "AUTOMATED_VERIFIED",
+  "state": "IMPLEMENTED",
   "objective": "Validar migração deliberada da instalação legada para o primeiro APK direto, restauração da cidade, uso standalone/offline e PWA do Ecosystem.",
   "preconditions": [
     "Guardar backup/export recuperável fora do armazenamento apagado ao desinstalar; não usar a única cópia de dados.",
@@ -22,7 +22,8 @@
   "expected": "Instalação direta restaura cidade, preserva edição ao reabrir e funciona offline sem Hub; PWA funciona no canal atual.",
   "known_issues": [
     "A aprovação #251 antecede a existência deste APK e não valida estes bytes.",
-    "Canal beta com chave pública estável; migração legada por backup/reinstalação deliberada."
+    "Canal beta com chave pública estável; migração legada por backup/reinstalação deliberada.",
+    "Relato posterior do proprietário em 2026-10-06: «O import da cidade/vault falhou no Android.» P4-9 bloqueado; aprovação #259 preservada como evidência histórica, sem encerrar o gate."
   ],
   "artifact": {
     "name": "Urbe-1.8.3-beta.apk",
@@ -49,6 +50,13 @@
       "result": "passed",
       "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-06 (Issue https://github.com/AbnerCruz/Ecosystem/issues/259); registro em docs/governance/responses/VAL-HO-20261006-p4-9-release-evidence-f682ac31a459.md.",
       "handoff": "HO-20261006-p4-9-release-evidence"
+    },
+    {
+      "kind": "human",
+      "check": "Importação da cidade/vault no Android — relato posterior",
+      "result": "failed",
+      "evidence": "FATO RELATADO pelo proprietário em 2026-10-06 na sessão de desenvolvimento: «O import da cidade/vault falhou no Android.» Vinculado por ele a urbe-v1.8.3-beta/P4-9. Modalidade selecionada e mensagem de erro ainda não informadas; não equivale a nova resposta emitida pelo portal. Ver incidente HO-20261006-urbe-import-incident.",
+      "handoff": "HO-20261006-urbe-import-incident"
     }
   ]
 }
