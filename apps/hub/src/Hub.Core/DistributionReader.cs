@@ -31,6 +31,7 @@ public static class DistributionReader
             var location = Str(releases[0], "locationFrom") switch
             {
                 "source.repository" => product.Repository.Value,
+                "ecosystem.repository" => $"https://github.com/{ecosystem.FullName}",
                 "publicUrl" => product.PublicUrl.Value,
                 _ => null,
             };
