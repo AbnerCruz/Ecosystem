@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "fix/hub-ecosystem-release-channel",
   "base_commit": "e6d8374300bb455a7b3c83355eafe6fa66e30240",
-  "commit": null,
-  "pr": null,
+  "commit": "563dbd2c01f0c4b0d1b1e7ae3cc129d95da19ca0",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/268",
   "files_changed": [
     "apps/hub/src/Hub.Core/DistributionReader.cs",
     "apps/hub/tests/Hub.Tests/DistributionReaderTests.cs",
@@ -52,8 +52,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Abrir PR e deixar Hub CI + consistency + integrador validarem a correção.",
-    "Após integração, encerrar HUB-202 e conferir que o Hub publicado lista os APKs atuais de Lunet2D, Urbe e Hub."
+    "Aguardar Hub CI + consistency + integrador do PR #268.",
+    "Após integração, encerrar HUB-202 e conferir a release normal do Hub."
   ],
   "decisions_required": [],
   "normative_sources": [
