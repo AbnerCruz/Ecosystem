@@ -48,12 +48,14 @@ public sealed class PageBookRendererTests
             {
                 Id = "doc_a",
                 Path = "Livro/02 - Beta.md",
+                Title = "Beta",
                 Content = "# Beta\n\n## Cena\n\nB."
             },
             new DocumentInput
             {
                 Id = "doc_b",
                 Path = "Livro/03 - Gama.md",
+                Title = "Gama",
                 Content = "# Gama\n\nG."
             }
         ]);
