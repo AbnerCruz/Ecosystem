@@ -52,10 +52,10 @@
     {
       "check": "Migração DEVICE e PWA do candidato publicado urbe-v1.8.3-beta",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "docs/validation/urbe/1.8.3-beta-android.json",
-      "evidence": "Validar o APK publicado em 2026-10-06T11:49:01Z, SHA-256 5269c505ad3bc12149716e58f728cd5468c13fcef9d8b7192839a9496ba9d4b7. A resposta #251 foi enviada às 10:21:56Z, antes de este artefato existir; permanece preservada como histórico e não comprova esta build."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-06 (Issue https://github.com/AbnerCruz/Ecosystem/issues/259); registro em docs/governance/responses/VAL-HO-20261006-p4-9-release-evidence-f682ac31a459.md."
     },
     {
       "check": "Consistency local do conjunto documental",

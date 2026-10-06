@@ -5,7 +5,7 @@
   "component": "urbe",
   "build": "1.8.3-beta-android",
   "recorded_at": "2026-10-06",
-  "state": "HUMAN_VALIDATION_PENDING",
+  "state": "AUTOMATED_VERIFIED",
   "objective": "Validar migração deliberada da instalação legada para o primeiro APK direto, restauração da cidade, uso standalone/offline e PWA do Ecosystem.",
   "preconditions": [
     "Guardar backup/export recuperável fora do armazenamento apagado ao desinstalar; não usar a única cópia de dados.",
@@ -46,8 +46,8 @@
     {
       "kind": "human",
       "check": "Migração DEVICE e PWA do candidato publicado urbe-v1.8.3-beta",
-      "result": "pending",
-      "evidence": "Validar o APK publicado em 2026-10-06T11:49:01Z, SHA-256 5269c505ad3bc12149716e58f728cd5468c13fcef9d8b7192839a9496ba9d4b7. A resposta #251 foi enviada às 10:21:56Z, antes de este artefato existir; permanece preservada como histórico e não comprova esta build.",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-06 (Issue https://github.com/AbnerCruz/Ecosystem/issues/259); registro em docs/governance/responses/VAL-HO-20261006-p4-9-release-evidence-f682ac31a459.md.",
       "handoff": "HO-20261006-p4-9-release-evidence"
     }
   ]
