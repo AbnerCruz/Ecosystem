@@ -82,7 +82,7 @@
   "normative_sources": [
     "apps/urbe/tests/pages.mjs",
     "apps/urbe/tests/composition.mjs",
-    "apps/urbe/docs/v2/ADR-0009.md",
+    "apps/urbe/docs/v2/adr/0009-composicoes-para-paginas.md",
     "apps/urbe/docs/v2/REQUIREMENTS.md",
     "apps/urbe/docs/csharp/ROADMAP.md"
   ],
