@@ -10,11 +10,11 @@
   },
   "task_id": "UC-15",
   "component": "urbe",
-  "state": "working",
+  "state": "verifying",
   "branch": "feat/urbe-uc15-free-layout",
   "base_commit": "f7199d8a198b26128b2467725edcdc9c5520f5cf",
-  "commit": "f015a92065fbbcf2ffd6bb7bc8a7ee0ee77349ec",
-  "pr": null,
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/254",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/PageFreeLayout.cs",
     "apps/urbe/csharp/src/Urbe.Core/PageFreeRenderer.cs",
@@ -31,7 +31,8 @@
     "Portada validação de estilos base/tablet/mobile: arranjo, dimensões, espaçamento, cores, imagens, tipografia, classes e CSS avançado.",
     "Portado renderer puro para box, heading, text, image, button, list, quote, icon, divider, spacer, video, note, html, table, code, formula, badge, embed HTTPS e pagebreak.",
     "CSS é escopado pelo id da seção e inclui regras responsivas; modo book respeita sheet flow/page/full.",
-    "Testes cobrem normalização da árvore, ids duplicados, responsividade, injeção, peças novas, vault note, livro e clamp."
+    "Testes cobrem normalização da árvore, ids duplicados, responsividade, injeção, peças novas, vault note, livro e clamp.",
+    "Revisão por codex-urbe-import: incorporada reconciliação do PR #253 com main atual e handoff corrigido, preservando fatias UC-15/UC-16; teste de tabela verifica cabeçalhos/células reais permitindo metadados HTML legítimos, sem alterar renderer funcional."
   ],
   "verification": [
     {
@@ -39,6 +40,12 @@
       "kind": "automated",
       "result": "pending",
       "evidence": "Aguardando draft PR/CI."
+    },
+    {
+      "kind": "automated",
+      "check": "Regressão local após incorporar PR #253 reconciliado",
+      "result": "passed",
+      "evidence": "190/190 testes Core e 22/22 checks de consistência passaram; tabela real parseada com cabeçalhos A/B e células 1/2, demais asserts de segurança preservados. Nova CI por superfície pendente."
     }
   ],
   "known_issues": [

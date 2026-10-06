@@ -1,0 +1,190 @@
+{
+  "packages": {
+    "CSharpMath": "1.0.0-pre.2",
+    "CSharpMath.Rendering": "1.0.0-pre.2",
+    "CSharpMath.VectSharp": "1.0.0-pre.2",
+    "VectSharp": "2.6.1",
+    "VectSharp.SVG": "1.10.0",
+    "ExCSS": "4.2.5"
+  },
+  "fixtureSha256": "c03320556ab62a34e8f59d76d459e8b1e17f9b9f8e6091a94b5522d9ecac871d",
+  "inputs": 210,
+  "realCorpus": [
+    {
+      "source": "tutorial/Matemática/Fórmulas em qualquer nota.md",
+      "sourceSha256": "32ec1ea0087d5a87e1b779a44f89c826ed541f7eb98df7b90f76d5dd8f53a1be",
+      "tex": "E = mc^2"
+    },
+    {
+      "source": "tutorial/Matemática/Fórmulas em qualquer nota.md",
+      "sourceSha256": "32ec1ea0087d5a87e1b779a44f89c826ed541f7eb98df7b90f76d5dd8f53a1be",
+      "tex": "\\int_0^1 x^2\\,dx = \\frac{1}{3}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\frac{a}{b}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "x^2"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "x_n"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "x_{i,j}^{2}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\sqrt{2}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\sqrt[3]{x}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "a \\neq b"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "x \\leq y"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "p \\approx 3{,}14"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\pm"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\times"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\div"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\alpha, \\beta, \\gamma, \\delta, \\varepsilon, \\theta, \\lambda, \\mu, \\pi, \\sigma, \\phi, \\omega, \\Delta, \\Sigma, \\Omega"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\begin{cases}\n2x + y = 5 \\\\\nx - y = 1\n\\end{cases}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\lim_{x \\to 0} \\frac{\\sin x}{x} = 1"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\frac{d}{dx}\\left(x^n\\right) = n\\,x^{n-1}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\int_a^b f(x)\\,dx = F(b) - F(a)"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "A = \\begin{pmatrix} 1 & 2 \\\\ 3 & 4 \\end{pmatrix}\n\\qquad\n\\det A = \\begin{vmatrix} 1 & 2 \\\\ 3 & 4 \\end{vmatrix} = -2"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\mathbb{N} \\subset \\mathbb{Z} \\subset \\mathbb{Q} \\subset \\mathbb{R}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\quad A \\cup B"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\quad A \\cap B = \\emptyset"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\quad x \\in A"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\quad p \\Rightarrow q"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\quad \\forall x\\ \\exists y"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\begin{aligned}\n(a+b)^2 &= (a+b)(a+b) \\\\\n        &= a^2 + 2ab + b^2\n\\end{aligned}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "|x| = \\begin{cases} x & \\text{se } x \\ge 0 \\\\ -x & \\text{se } x < 0 \\end{cases}"
+    },
+    {
+      "source": "tutorial/Matemática/Galeria de fórmulas.md",
+      "sourceSha256": "0dd883b3e64404371c675a7a5371efad05b6ccdcaf6a3c8204579b8775a87a52",
+      "tex": "\\boxed{x = 4}"
+    }
+  ],
+  "realCorpusCounts": {
+    "rendered": 30,
+    "diagnostic": 1
+  },
+  "counts": {
+    "rendered": 196,
+    "diagnostic": 14
+  },
+  "unsupportedSnippets": [
+    "\\dfrac{}{}",
+    "\\boldsymbol{}",
+    "\\lVert  \\rVert",
+    "\\overset{}{}",
+    "\\underset{}{}",
+    "\\boxed{}",
+    "\\cancel{}"
+  ],
+  "web": "actual-wasm-render-and-offline-rerender-passed",
+  "native": "not-executed",
+  "recordedAt": "2026-10-06T16:20:26.768544Z",
+  "role": "Observed discovery evidence; not a compatibility golden or production approval."
+}

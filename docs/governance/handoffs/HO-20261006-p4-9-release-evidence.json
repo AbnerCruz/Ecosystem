@@ -1,0 +1,123 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-p4-9-release-evidence",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T13:21:02.879409Z",
+  "agent": {
+    "id": "codex-p4-9-release-evidence",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-9",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "codex/p4-9-release-evidence",
+  "base_commit": "43ccb54e328b7b503d3e07adfde36180014e9964",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261006-p4-9-publication-audit.json",
+    "docs/governance/handoffs/HO-20261006-p4-9-release-evidence.json",
+    "docs/validation/urbe/1.8.3-beta-android.json",
+    "docs/validation/urbe/1.8.3-beta-windows.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: PR #255 integrado; urbe-cutover run 37458256165 criou a tag canônica e disparou a publicação.",
+    "FATO OBSERVADO: primeira release direta urbe-v1.8.3-beta publicada em 2026-10-06T11:49:01Z; Android/Windows/testes/publicação verdes.",
+    "Conferidos bytes, hashes e metadata do updater dos cinco artefatos publicados; criada rastreabilidade de validação por build.",
+    "Aprovação #251 preservada; não foi extrapolada para APK gerado depois dela. Preparado objeto exato para validar migração/restauração, standalone e PWA.",
+    "Atualizado ROADMAP; P4-9 continua [~] e gate da Fase 4 aguarda DEVICE deste candidato. Encerrado somente o resultado da correção/auditoria anterior, cuja integração e CI estão comprovados."
+  ],
+  "verification": [
+    {
+      "check": "Release direta e integridade dos artefatos publicados",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "43ccb54e328b7b503d3e07adfde36180014e9964",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/37458276965 concluiu verificar, Android, Windows e publicar com success. Os cinco arquivos foram baixados; todos os tamanhos/SHA-256 coincidem com a API GitHub. Checksum APK e SHA-512/tamanho do latest.yml coincidem com os bytes. APK SHA-256 5269c505ad3bc12149716e58f728cd5468c13fcef9d8b7192839a9496ba9d4b7; EXE 106cc4ad4645c5c3aa12ed5bd08736f5ee8cef91a62e6436a16e89fb896780f1. Identidade beta conferida por apksigner no job Android."
+    },
+    {
+      "check": "Disponibilidade HTTP do Urbe Web/PWA",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "HTTP 200 e conteúdo não vazio em https://abnercruz.github.io/Ecosystem/urbe/, manifest.webmanifest, src/app.js e sw.js. É smoke HTTP; não comprova instalação PWA, restauração ou uso offline em dispositivo."
+    },
+    {
+      "check": "Projeção online do portal",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "GenerateStatus.cs --releases online projetou urbe-v1.8.3-beta, APK/EXE com hashes canônicos e exatamente uma validação pendente P4-9 com objeto, hash f682ac31a459 e botões Aprovar/Reprovar. Saída de revisão em /tmp/ecosystem-p4-9-status.json; dados derivados não versionados."
+    },
+    {
+      "check": "Migração DEVICE e PWA do candidato publicado urbe-v1.8.3-beta",
+      "kind": "human",
+      "result": "passed",
+      "critical": true,
+      "object": "docs/validation/urbe/1.8.3-beta-android.json",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-06 (Issue https://github.com/AbnerCruz/Ecosystem/issues/259); registro em docs/governance/responses/VAL-HO-20261006-p4-9-release-evidence-f682ac31a459.md."
+    },
+    {
+      "check": "Consistency local do conjunto documental",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks passaram localmente com SDK 10.0.401; CI/integrador verificam a versão integrada."
+    }
+  ],
+  "known_issues": [
+    "A identidade beta direta é pública e incompatível com a instalação legada por DEC-0039; não promete atualização in-place do legado.",
+    "Instalação/restauração em aparelho e PWA offline ainda não comprovadas para este candidato; não marcar build VALIDATED."
+  ],
+  "blockers": [
+    "P4-9 depende de resultado DEVICE para o APK publicado; aprovação anterior não identifica bytes desta release."
+  ],
+  "next_actions": [
+    "Integrar estes registros pelo integrador automático.",
+    "Validar o candidato publicado pelo objeto docs/validation/urbe/1.8.3-beta-android.json e responder no portal.",
+    "Depois do resultado DEVICE, reconciliar os registros, Issue #166 e gate da Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/contracts/schemas/validation-record.schema.json",
+    "docs/distribution/urbe-cutover-runbook.md",
+    "docs/governance/addenda/ADD-0017-urbe-corte-direto-sem-espelho.md",
+    "docs/adr/0019-releases-diretas-dos-products.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Estado por build em registros canônicos; evidência humana aponta para a mesma verificação deste handoff."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "BASE, branch própria, runs, hashes e pendências registrados."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e HTTP não são DEVICE; não declara validação de artefato posterior à aprovação antiga."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P4-9/gate continuam abertos até verificação do candidato real."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Release direta do Product independente do Hub; uso standalone faz parte do roteiro humano."
+    }
+  ],
+  "cost": null
+}

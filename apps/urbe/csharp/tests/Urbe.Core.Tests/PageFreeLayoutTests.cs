@@ -1,4 +1,6 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Urbe.Core;
 
 namespace Urbe.Core.Tests;
@@ -197,7 +199,11 @@ public sealed class PageFreeLayoutTests
         var normalized = PageNormalizer.Normalize(page);
         var html = PageRenderer.RenderBody(normalized.Page);
 
-        Assert.Contains("<table>", html, StringComparison.Ordinal);
+        var tableHtml = Regex.Match(html, @"<table\b[^>]*>[\s\S]*?</table>").Value;
+        Assert.NotEmpty(tableHtml);
+        var table = XElement.Parse(tableHtml);
+        Assert.Equal(new[] { "A", "B" }, table.Descendants("th").Select(cell => cell.Value));
+        Assert.Equal(new[] { "1", "2" }, table.Descendants("td").Select(cell => cell.Value));
         Assert.Contains("fx-badge", html, StringComparison.Ordinal);
         Assert.Contains("&lt;b&gt;x&lt;/b&gt;", html, StringComparison.Ordinal);
         Assert.DoesNotContain("<b>x</b>", html, StringComparison.Ordinal);
