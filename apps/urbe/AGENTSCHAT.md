@@ -1,3 +1,12 @@
+### 2026-10-06 — ChatGPT — UC-15 sexta fatia: shell, temas e templates
+
+- PR #269 integrou a quinta fatia na main (`c7bf1ba4`) com Core/Web/Android/Windows/E2E/consistency verdes.
+- Auditoria contra `tests/pages.mjs` encontrou uma lacuna real: o C# renderizava blocos, mas ainda ignorava tema/layout global e não tinha o catálogo puro de templates.
+- Portados os 10 presets de tema/fontes, validação de tema/estilo de seção, shell HTML com nav/rodapé/metadados e CSS de livro.
+- Portados os 13 templates embutidos e variantes `simple`/`skeleton`, sem Studio/DOM/IO.
+- Testes novos exercitam todos os presets/templates, validação forward-safe, HTML completo e CSS de impressão.
+- UC-15 permanece aberta até esta fatia integrar e a auditoria final confirmar que só restam responsabilidades explicitamente fora do escopo.
+
 ### 2026-10-06 — ChatGPT — UC-15 quinta fatia: conversão e compactação
 
 - PR #254 integrou o layout livre C# na main (`b1ce8347`); a nova branch parte desse estado.

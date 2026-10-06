@@ -557,7 +557,7 @@ internal static partial class PageFreeLayout
             return string.Empty;
         if (value.TryGetValue<string>(out var text))
             return text;
-        if (value.TryGetValue<double>(out var number))
+        if (TryNumber(node, out var number))
             return number.ToString(CultureInfo.InvariantCulture);
         return value.ToJsonString();
     }
@@ -569,8 +569,29 @@ internal static partial class PageFreeLayout
         number = 0;
         if (node is not JsonValue value)
             return false;
+
         if (value.TryGetValue<double>(out number))
             return double.IsFinite(number);
+        if (value.TryGetValue<float>(out var single))
+        {
+            number = single;
+            return float.IsFinite(single);
+        }
+        if (value.TryGetValue<decimal>(out var decimalNumber))
+        {
+            number = (double)decimalNumber;
+            return double.IsFinite(number);
+        }
+        if (value.TryGetValue<long>(out var longNumber))
+        {
+            number = longNumber;
+            return true;
+        }
+        if (value.TryGetValue<int>(out var intNumber))
+        {
+            number = intNumber;
+            return true;
+        }
         if (value.TryGetValue<string>(out var text) &&
             double.TryParse(
                 text,

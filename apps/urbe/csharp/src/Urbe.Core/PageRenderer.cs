@@ -10,19 +10,122 @@ namespace Urbe.Core;
 /// </summary>
 public static class PageRenderer
 {
+    private const string ExportRuntime = """
+(function(){var d=document,r=d.documentElement;try{var s=localStorage.getItem("urbe-page-theme");if(s)r.dataset.theme=s}catch(e){}var t=d.querySelector(".fab-theme");if(t)t.onclick=function(){var dark=r.dataset.theme?r.dataset.theme==="dark":r.classList.contains("dark-default")?true:r.classList.contains("light-default")?false:matchMedia("(prefers-color-scheme: dark)").matches;r.dataset.theme=dark?"light":"dark";try{localStorage.setItem("urbe-page-theme",r.dataset.theme)}catch(e){}};var top=d.querySelector(".fab-top"),bar=d.querySelector(".progress");function sc(){var y=scrollY,h=r.scrollHeight-innerHeight;if(top)top.classList.toggle("on",y>600);if(bar)bar.style.width=(h>0?y/h*100:0)+"%"}addEventListener("scroll",sc,{passive:true});sc();if(top)top.onclick=function(){scrollTo({top:0,behavior:"smooth"})};d.querySelectorAll("pre.code .copy").forEach(function(b){b.onclick=function(){var c=b.parentNode.querySelector("code").textContent;(navigator.clipboard?navigator.clipboard.writeText(c):Promise.reject()).then(function(){b.textContent="Copiado!";setTimeout(function(){b.textContent="Copiar"},1400)},function(){})}});d.querySelectorAll(".countdown").forEach(function(el){var until=new Date(el.dataset.until).getTime(),cells=el.querySelectorAll(".cd strong");function tick(){var s=Math.max(0,Math.floor((until-Date.now())/1000));if(isNaN(until))return;if(!s){var box=el.querySelector(".cd");if(box)box.textContent=el.dataset.done;return}[Math.floor(s/86400),Math.floor(s/3600)%24,Math.floor(s/60)%60,s%60].forEach(function(v,i){if(cells[i])cells[i].textContent=String(v).padStart(2,"0")});setTimeout(tick,1000)}tick()})})();
+""";
+
+
     public static string Render(PageDocument page, DocumentStore? documents = null)
     {
         ArgumentNullException.ThrowIfNull(page);
 
-        var body = RenderBody(page, documents);
-        var title = MarkdownEngine.EscapeHtml(page.Title);
-        var lang = MarkdownEngine.EscapeHtml(page.Language);
+        var normalized = page.IsReadOnly
+            ? page
+            : PageNormalizer.Normalize(page).Page;
+        var raw = normalized.Raw;
+        var meta = raw["meta"] as JsonObject ?? new JsonObject();
+        var theme = raw["theme"] as JsonObject ?? new JsonObject();
+        var layout = raw["layout"] as JsonObject ?? new JsonObject();
+        var plan = PageRenderPlan.Create(normalized, documents);
+        var body = RenderBody(normalized, documents);
+        var title = MarkdownEngine.EscapeHtml(normalized.Title);
+        var lang = MarkdownEngine.EscapeHtml(normalized.Language);
+        var description = PageDocument.StringValue(meta["description"]) ?? string.Empty;
+        var head = SafeHead(PageDocument.StringValue(meta["head"]));
+        var resolvedTheme = PageThemeCatalog.Resolve(theme);
+        var modeClass = resolvedTheme.Mode switch
+        {
+            "dark" => "dark-default",
+            "light" => "light-default",
+            _ => string.Empty
+        };
+        var htmlClass = string.Join(
+            " ",
+            new[] { modeClass, plan.BookFormat ? "book" : string.Empty }
+                .Where(value => value.Length > 0));
+        var fonts = PageThemeCatalog.GoogleFontsQuery(resolvedTheme);
+        var css = PageThemeCatalog.BuildCss(theme, layout, plan.BookFormat);
 
-        return "<!doctype html><html lang='" + lang +
-               "'><head><meta charset='utf-8'><meta name='viewport' " +
-               "content='width=device-width,initial-scale=1'><title>" +
-               title + "</title></head><body><main>" + body +
-               "</main></body></html>";
+        var nav = string.Empty;
+        if (!plan.BookFormat && PageDocument.BoolValue(layout["nav"], true))
+        {
+            var brand = PageDocument.StringValue(layout["brand"]) ?? normalized.Title;
+            var menu = string.Concat(
+                plan.TocEntries
+                    .Where(entry => entry.Menu)
+                    .Select(entry =>
+                        "<a href='#" + MarkdownEngine.EscapeHtml(entry.Anchor) + "'>" +
+                        MarkdownEngine.EscapeHtml(entry.Title) + "</a>"));
+            var cta = PageDocument.StringValue(layout["navCta"]) ?? string.Empty;
+            var ctaUrl = MarkdownEngine.SafeUrl(
+                PageDocument.StringValue(layout["navCtaUrl"]) ?? "#");
+            if (cta.Length > 0)
+            {
+                menu += "<a class='btn' href='" +
+                        MarkdownEngine.EscapeHtml(ctaUrl) + "'>" +
+                        MarkdownEngine.EscapeHtml(cta) + "</a>";
+            }
+
+            nav = "<header class='nav" +
+                  (PageDocument.BoolValue(layout["sticky"], true) ? " sticky" : "") +
+                  "'><div class='wrap'><a class='brand' href='#top'>" +
+                  MarkdownEngine.EscapeHtml(brand) +
+                  "</a><nav class='nav-links'>" + menu +
+                  "</nav></div></header>";
+        }
+
+        var footerMarkdown = plan.BookFormat
+            ? string.Empty
+            : PageDocument.StringValue(layout["footer"]) ?? string.Empty;
+        var footer = footerMarkdown.Length > 0
+            ? "<footer class='foot'><div class='wrap'>" +
+              MarkdownEngine.Render(footerMarkdown) + "</div></footer>"
+            : string.Empty;
+        var progress = !plan.BookFormat &&
+                       PageDocument.BoolValue(layout["progress"])
+            ? "<div class='progress' aria-hidden='true'></div>"
+            : string.Empty;
+        var themeToggle = !plan.BookFormat &&
+                          PageDocument.BoolValue(layout["themeToggle"], true)
+            ? "<button class='fab fab-theme' type='button' aria-label='Alternar tema'>◐</button>"
+            : string.Empty;
+        var backToTop = !plan.BookFormat &&
+                        PageDocument.BoolValue(layout["backToTop"], true)
+            ? "<button class='fab fab-top' type='button' aria-label='Voltar ao topo'>↑</button>"
+            : string.Empty;
+        var print = plan.BookFormat
+            ? "<button class='fab fab-print' type='button' onclick='print()'>Imprimir ou salvar PDF</button>"
+            : string.Empty;
+
+        var output = new StringBuilder("<!doctype html><html");
+        if (htmlClass.Length > 0)
+            output.Append(" class='").Append(MarkdownEngine.EscapeHtml(htmlClass)).Append('\'');
+        output.Append(" lang='").Append(lang)
+            .Append("'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,viewport-fit=cover'><title>")
+            .Append(title).Append("</title>");
+        if (description.Length > 0)
+        {
+            output.Append("<meta name='description' content='")
+                .Append(MarkdownEngine.EscapeHtml(description))
+                .Append("'><meta property='og:description' content='")
+                .Append(MarkdownEngine.EscapeHtml(description)).Append("'>");
+        }
+        output.Append("<meta property='og:title' content='").Append(title)
+            .Append("'><meta name='generator' content='Urbe'>");
+        if (fonts.Length > 0)
+        {
+            output.Append("<link rel='preconnect' href='https://fonts.googleapis.com'><link rel='preconnect' href='https://fonts.gstatic.com' crossorigin><link rel='stylesheet' href='https://fonts.googleapis.com/css2?")
+                .Append(MarkdownEngine.EscapeHtml(fonts)).Append("&display=swap'>");
+        }
+        output.Append(head).Append("<style>").Append(css).Append("</style></head><body id='top'>")
+            .Append(progress).Append(nav).Append("<main");
+        if (!plan.BookFormat)
+            output.Append(" class='wrap'");
+        output.Append('>').Append(body).Append("</main>")
+            .Append(footer).Append(themeToggle).Append(backToTop).Append(print)
+            .Append("<script>").Append(ExportRuntime).Append("</script>")
+            .Append("</body></html>");
+        return output.ToString();
     }
 
     public static string RenderBody(PageDocument page, DocumentStore? documents = null)
@@ -94,17 +197,85 @@ public static class PageRenderer
         if (context.Section.Type is "part" or "chapter")
             return html;
 
-        if (context.Anchor.Length == 0)
-            return html;
-
+        var style = context.Section.Style;
         var id = context.Section.Id ?? "s" + (context.Index + 1);
+        var classes = new List<string> { "sec" };
+        var background = PageDocument.StringValue(style["background"]);
+        if (!string.IsNullOrEmpty(background) && background != "none")
+            classes.Add("bg-" + CssToken(background));
+        var padding = PageDocument.StringValue(style["padding"]);
+        if (!string.IsNullOrEmpty(padding) && padding != "none")
+            classes.Add("p-" + CssToken(padding));
+        var width = PageDocument.StringValue(style["width"]);
+        if (!string.IsNullOrEmpty(width) && width != "normal")
+            classes.Add("w-" + CssToken(width));
+        var align = PageDocument.StringValue(style["align"]);
+        if (align == "center")
+            classes.Add("center");
+        if (PageDocument.BoolValue(style["boxed"]))
+            classes.Add("boxed");
+        var minHeight = PageDocument.StringValue(style["minHeight"]);
+        if (!string.IsNullOrEmpty(minHeight) && minHeight != "none")
+            classes.Add("mh-" + CssToken(minHeight));
+        var animation = PageDocument.StringValue(style["animation"]);
+        if (!string.IsNullOrEmpty(animation) && animation != "none")
+            classes.Add("an-" + CssToken(animation));
+        var customClass = CleanClasses(PageDocument.StringValue(style["className"]));
+        if (customClass.Length > 0)
+            classes.Add(customClass);
+
+        var inline = new StringBuilder();
+        var bg = PageDocument.StringValue(style["bgColor"]);
+        if (!string.IsNullOrEmpty(bg))
+            inline.Append("background:").Append(bg).Append(';');
+        var text = PageDocument.StringValue(style["textColor"]);
+        if (!string.IsNullOrEmpty(text))
+            inline.Append("--text:").Append(text).Append(";color:").Append(text).Append(';');
+
+        var customCss = PageFreeLayout.CssSafe(PageDocument.StringValue(style["css"]));
+        var anchor = context.Anchor.Length > 0
+            ? " id='" + MarkdownEngine.EscapeHtml(context.Anchor) + "'"
+            : string.Empty;
+        var styleAttr = inline.Length > 0
+            ? " style='" + MarkdownEngine.EscapeHtml(inline.ToString()) + "'"
+            : string.Empty;
+
+        var scopedCss = string.Empty;
+        if (customCss.Length > 0)
+        {
+            var selector = "[data-s='" + CssToken(id) + "']";
+            scopedCss = customCss.Contains('&')
+                ? customCss.Replace("&", selector, StringComparison.Ordinal)
+                : selector + "{" + customCss + "}";
+        }
+
         return "<section data-s='" +
-               MarkdownEngine.EscapeHtml(id) +
-               "' id='" +
-               MarkdownEngine.EscapeHtml(context.Anchor) +
-               "'>" +
+               MarkdownEngine.EscapeHtml(id) + "'" + anchor +
+               " class='" + MarkdownEngine.EscapeHtml(string.Join(" ", classes)) + "'" +
+               styleAttr + ">" +
+               (scopedCss.Length > 0 ? "<style>" + scopedCss + "</style>" : string.Empty) +
                html +
                "</section>";
+    }
+
+    private static string SafeHead(string? value) =>
+        (value ?? string.Empty)
+            .Replace("</head", string.Empty, StringComparison.OrdinalIgnoreCase)
+            .Replace("<script", "&lt;script", StringComparison.OrdinalIgnoreCase);
+
+    private static string CssToken(string? value) =>
+        new string((value ?? string.Empty)
+            .Where(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_')
+            .ToArray());
+
+    private static string CleanClasses(string? value)
+    {
+        var clean = new string((value ?? string.Empty)
+            .Select(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_' || char.IsWhiteSpace(ch) ? ch : ' ')
+            .ToArray());
+        return string.Join(" ", clean
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Take(8));
     }
 
     private static string RenderHero(JsonObject props)
