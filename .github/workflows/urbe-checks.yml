@@ -61,7 +61,7 @@ jobs:
           cache-dependency-path: apps/urbe/package-lock.json
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - run: node tools/run-e2e.mjs app-runtime zip smoke
+      - run: node tools/run-e2e.mjs app-runtime zip smoke import
 
   csharp-portable:
     runs-on: ubuntu-latest

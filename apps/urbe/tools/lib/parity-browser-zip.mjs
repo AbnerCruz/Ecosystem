@@ -77,7 +77,7 @@ export async function runBrowserZip(input){
       for(const n of names)if(n!=='urbe-export.json')all.set(n,await z.file(n).async('uint8array'));
       const check=await UrbeExportManifest.verify(parsed.manifest,all);
       const markdown={};
-      for(const n of names)if(n.endsWith('.md')&&!n.startsWith('.'))markdown[n.split('/').pop()]=await z.file(n).async('string');
+      for(const n of names)if(n.endsWith('.md')&&!n.startsWith('.'))markdown[n]=await z.file(n).async('string');
       return{names,manifest:parsed.manifest,check,markdown};
     },[...bytes]);
     const state=JSON.stringify(inspected.manifest.state||{});
@@ -106,7 +106,7 @@ export async function runBrowserZip(input){
     await b.page.click('.udlg [data-primary]');
     await b.page.waitForFunction(n=>UrbeCore.service('documents').list().filter(d=>d.path.endsWith('.md')&&!d.path.startsWith('Tutorial/')).length>=n,input.docs,{timeout:30000});
     await waitSaved(b.page);
-    const imported=Object.fromEntries(await b.page.evaluate(()=>UrbeCore.service('documents').list().filter(d=>d.path.endsWith('.md')&&!d.path.startsWith('Tutorial/')).map(d=>[d.path.split('/').pop(),d.content])));
+    const imported=Object.fromEntries(await b.page.evaluate(()=>UrbeCore.service('documents').list().filter(d=>d.path.endsWith('.md')).map(d=>[d.path,d.content])));
     const importedContentEqual=prefDialog&&Object.entries(inspected.markdown).every(([name,body])=>imported[name]===body);
     const preferenceImported=await b.page.evaluate(key=>localStorage.getItem(key),input.preference.key)===input.preference.value;
     const secretNotImported=await b.page.evaluate(key=>localStorage.getItem(key),input.secret.key)===null;

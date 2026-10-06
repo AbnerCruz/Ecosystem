@@ -178,7 +178,7 @@ else{
     const ds=session.defaultSession;
     ds.setPermissionRequestHandler((_wc,perm,cb,d)=>cb(G.isPermissionAllowed(perm,d&&d.requestingUrl,d&&d.isMainFrame)));
     if(ds.setPermissionCheckHandler)ds.setPermissionCheckHandler((_wc,perm,origin,d)=>G.isPermissionAllowed(perm,(d&&d.requestingUrl)||origin,d&&d.isMainFrame));
-    await loadConfig();serveApp();ipc();createWindow();setupUpdater();watchVault();
+    await loadConfig();serveApp();ipc();if(!isTest)await importSources.initialize().catch(()=>{});createWindow();setupUpdater();watchVault();
   });
   app.on('window-all-closed',()=>app.quit());
 }

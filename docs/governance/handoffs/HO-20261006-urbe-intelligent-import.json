@@ -14,7 +14,7 @@
   "branch": "fix/urbe-intelligent-import",
   "base_commit": "1cad2d2044107c4bda0c2ee1726c474dbb64eda6",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/264",
   "files_changed": [
     "apps/urbe/AGENTSCHAT.md",
     "apps/urbe/CHANGELOG.md",
@@ -74,7 +74,9 @@
     "apps/urbe/src/persistence/import.js",
     "apps/urbe/tests/e2e/import.e2e.mjs",
     "docs/governance/handoffs/HO-20261006-urbe-intelligent-import.json",
-    "docs/validation/urbe/1.8.4-beta-import-device.md"
+    "docs/validation/urbe/1.8.4-beta-import-device.md",
+    ".github/workflows/urbe-checks.yml",
+    ".github/workflows/urbe-build.yml"
   ],
   "criticality": {
     "declared": "critical",
@@ -122,7 +124,20 @@
     {
       "kind": "automated",
       "check": "Checks completos e build APK final",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "APK local 1.8.4-beta versionCode 1080400 compilado; SHA-256 cdd005d59c36e1e6c345b8f2960fbf3c4ed9f984b7cd64db507e89f0f4798ed1. Certificado SHA-256 19d94932174ae79082ec524cbc42ad48a7134fac4682387a506815efe65e6cf3. Não publicado formalmente; bytes do pipeline serão conferidos separadamente."
+    },
+    {
+      "kind": "automated",
+      "check": "Checks gerais e paridade all finais",
+      "result": "pending",
+      "evidence": "Checks finais em execução; falha CI do provider desktop corrigida sem suprimir IO, adaptador ZIP atualizado para caminhos completos incluindo tutorial restaurado."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency local",
+      "result": "passed",
+      "evidence": "22/22 checks passaram após cessar compilação concorrente de arquivos temporários."
     }
   ],
   "known_issues": [

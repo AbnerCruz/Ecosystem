@@ -5,9 +5,9 @@ const MAX_FILE=64*1024*1024,MAX_TOTAL=256*1024*1024,MAX_COUNT=10000;
 function createImportSources(cacheRoot){
   const sessions=new Map();
   // The desktop host holds its single-instance lock before constructing this provider.
-  const ready=fs.mkdir(cacheRoot,{recursive:true}).then(async()=>{for(const name of await fs.readdir(cacheRoot))if(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(name))await fs.rm(path.join(cacheRoot,name),{recursive:true,force:true})});
+  let ready;function initialize(){return ready??=fs.mkdir(cacheRoot,{recursive:true}).then(async()=>{for(const name of await fs.readdir(cacheRoot))if(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(name))await fs.rm(path.join(cacheRoot,name),{recursive:true,force:true})})}
   async function pick(paths,folder){
-    await ready;const token=crypto.randomUUID(),root=path.join(cacheRoot,token),files=[];let total=0;
+    await initialize();const token=crypto.randomUUID(),root=path.join(cacheRoot,token),files=[];let total=0;
     await fs.mkdir(root,{recursive:true});
     async function add(file,relative,depth){
       if(depth>64)throw Error('Pasta profunda demais.');
@@ -27,6 +27,6 @@ function createImportSources(cacheRoot){
     const file=await fs.open(path.join(root,String(id)),'r');try{const size=(await file.stat()).size;if(offset>size)throw Error('Leitura inválida.');const bytes=Buffer.alloc(Math.min(65536,size-offset));await file.read(bytes,0,bytes.length,offset);return{data:new Uint8Array(bytes),done:offset+bytes.length===size}}finally{await file.close()}
   }
   async function release(token){const root=sessions.get(token);if(!root)return;sessions.delete(token);await fs.rm(root,{recursive:true,force:true})}
-  return{pick,read,release,close:async()=>{for(const token of sessions.keys())await release(token)}};
+  return{pick,read,release,initialize,close:async()=>{for(const token of sessions.keys())await release(token)}};
 }
 module.exports={createImportSources};
