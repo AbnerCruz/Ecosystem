@@ -27,7 +27,8 @@ public static class PageNormalizer
                 "stats", "timeline", "faq", "cta", "columns", "pricing",
                 "contact", "countdown", "code", "toc", "divider", "html",
                 "bookcover", "titlepage", "copyright", "dedication",
-                "booktoc", "part", "chapter", "chapters", "about", "colophon"
+                "booktoc", "part", "chapter", "chapters", "about", "colophon",
+                "free"
             ],
             StringComparer.Ordinal);
 
@@ -93,6 +94,9 @@ public static class PageNormalizer
                 ["shadow"] = "soft",
                 ["animations"] = true
             });
+
+        if (root["theme"] is JsonObject normalizedTheme)
+            PageThemeCatalog.Validate(normalizedTheme, errors);
 
         ApplyObjectDefaults(
             root,
@@ -178,6 +182,7 @@ public static class PageNormalizer
                     style["hidden"] = false;
                 if (style["menu"] is null)
                     style["menu"] = false;
+                PageThemeCatalog.ValidateSectionStyle(style, path + ".style", errors);
             }
 
             if (section["props"] is JsonObject props && type is not null)
