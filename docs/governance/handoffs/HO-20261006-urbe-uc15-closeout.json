@@ -1,0 +1,117 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261006-urbe-uc15-closeout",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-06T19:46:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc15",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-15",
+  "component": "urbe",
+  "state": "done",
+  "branch": "chore/urbe-uc15-closeout",
+  "base_commit": "869d55d0837fc18b484d36ff7cfc23f7ce697c59",
+  "commit": "f16ba1b9308e7d28cc7835fb2931e29030498013",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/273",
+  "files_changed": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261006-urbe-uc15-closeout.json"
+  ],
+  "work_completed": [
+    "Auditado o escopo literal da Issue #249 contra pages.mjs, composition.mjs, as seis fatias integradas e o estado final da main.",
+    "Confirmado que todo domínio puro de páginas/composições exigido por UC-15 está no Core C#; responsabilidades de UI, matemática visual e IA permanecem nas UCs 18, 16 e 21.",
+    "Promovida UC-16 como próxima tarefa do M2 sem antecipar G-C2."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "csharp-portable",
+      "result": "passed",
+      "evidence": "Merge df668599, run 37517474704."
+    },
+    {
+      "kind": "automated",
+      "check": "Web/checks",
+      "result": "passed",
+      "evidence": "Merge df668599, run 37517474704."
+    },
+    {
+      "kind": "automated",
+      "check": "Android",
+      "result": "passed",
+      "evidence": "Merge df668599, run 37517474704."
+    },
+    {
+      "kind": "automated",
+      "check": "Windows",
+      "result": "passed",
+      "evidence": "Merge df668599, run 37517474704."
+    },
+    {
+      "kind": "automated",
+      "check": "E2E",
+      "result": "passed",
+      "evidence": "Merge df668599, run 37517474704."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency",
+      "result": "passed",
+      "evidence": "Merge df668599, run 37517474691."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE",
+      "result": "not-applicable",
+      "evidence": "UC-15 é domínio puro sem UI/host; validação humana pertence às UCs/gates posteriores."
+    }
+  ],
+  "known_issues": [
+    "UC-16 ainda precisa fechar matemática/renderização para que G-C2 possa ser avaliado.",
+    "UI/Studio de páginas permanece deliberadamente em UC-18."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar este closeout e encerrar Issue #249 como state:done.",
+    "Continuar UC-16 a partir da investigação #257, escolhendo/adotando renderer C# com auditoria de licença e paridade."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/tests/pages.mjs",
+    "apps/urbe/tests/composition.mjs",
+    "apps/urbe/docs/v2/adr/0009-composicoes-para-paginas.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Escopo restrito ao Urbe."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #249, PRs e handoffs preservam rastreabilidade completa."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana foi inferida de CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Conclusão só após todos os checks exigidos pela própria Issue."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Core permanece independente do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Closeout documental de trabalho já integrado e testado; nenhuma mudança de runtime/dados/distribuição."
+  },
+  "cost": null
+}
