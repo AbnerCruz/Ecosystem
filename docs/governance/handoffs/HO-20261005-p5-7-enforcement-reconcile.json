@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261005-p5-7-enforcement-reconcile",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-05T16:48:00Z",
+  "agent": {
+    "id": "chatgpt-p5-7-enforcement-reconcile",
+    "kind": "ai-agent"
+  },
+  "task_id": "P5-7",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "chatgpt/p5-7-enforcement-reconcile",
+  "base_commit": "1db0e985e396da42e36bf728046bf119664ac006",
+  "commit": "93df57ff89d75eb626f24ac91e5384688d7af82f",
+  "pr": null,
+  "files_changed": [
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/handoffs/HO-20261005-p5-7-enforcement-reconcile.json"
+  ],
+  "work_completed": [
+    "Reconciliado NN-007 TEST de planned/phase-5 para implemented: a Fase 5 agora tem dois Hosts reais, mesma Tool host-neutra, testes de Context/grants/revoke/Connections e fiscalização arquitetural contra dependência em Host concreto.",
+    "Reconciliado NN-016 RUNTIME de planned/phase-5 para implemented: Hub e Lunet aplicam Context/grants Host-owned e deny-by-default em runtime, incluindo revoke sobre chamada ativa.",
+    "Nenhum mecanismo novo foi inventado; a matriz passa a refletir enforcement já integrado e validado em P5-3..P5-7."
+  ],
+  "verification": [
+    {
+      "check": "Evidência NN-007 — Tool independente de Host concreto",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "CHK-ARCH-REFS já está implementado; Hub LocalCapabilityHostTests e Lunet LunetCapabilityHostTests exercitam text.inspect/Context/grants em Hosts próprios, e Projection --check protege o núcleo compartilhado."
+    },
+    {
+      "check": "Evidência NN-016 — permissões em runtime",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Suites de Hub/Lunet cobrem grant-required, context-mismatch, deny-by-default, revoke e cancelamento; P5-7 foi aprovado canonicamente nas Issues #241/#242."
+    },
+    {
+      "check": "Consistency/self-test/integrador após a reconciliação",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR no estado combinado."
+    }
+  ],
+  "known_issues": [
+    "P5-7 só pode ser marcado [x] depois que esta reconciliação crítica entrar na main; até lá Issue #238 permanece aberta/state:review."
+  ],
+  "blockers": [
+    "Mudança em docs/governance/enforcement-matrix.json é crítica por control-plane e exige autorização do proprietário para integração."
+  ],
+  "next_actions": [
+    "Abrir PR crítico e aguardar checks.",
+    "Após autorização/integração, executar closeout routine de P5-7: ROADMAP [x], gate aprovado, Issue #238 state:done/closed.",
+    "Reavaliar P6-4 somente quanto ao Product anfitrião; Fase 5 deixa de ser bloqueio."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/integration-policy.json",
+    "docs/architecture/capability-runtime.md",
+    "docs/contracts/host-api.v1.json",
+    "docs/contracts/permissions.json",
+    "docs/validation/P5-7-capability-runtime-gate.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-007",
+      "evidence": "A matriz agora reflete os testes e boundaries já existentes para Tool host-neutra em Hub e Lunet."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "A matriz agora reflete o enforcement runtime já existente de Context/grants deny-by-default e revoke."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A mudança registra em fonte canônica enforcement já demonstrado, sem depender desta conversa."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Não cria decisão arquitetural nova; apenas reconcilia o estado de mecanismos já aprovados/implementados na Fase 5."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Gate não será fechado enquanto a matriz ainda declarar obrigações phase-5 como planned."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Altera a matriz canônica de enforcement que o checker usa para fiscalizar obrigações por fase; integração exige autorização do proprietário."
+  },
+  "cost": null
+}
