@@ -94,7 +94,7 @@ public static class PageRenderer
 
         var output = new StringBuilder("<!doctype html><html");
         if (htmlClass.Length > 0)
-            output.Append(" class='").Append(MarkdownEngine.EscapeHtml(htmlClass)).Append(''');
+            output.Append(" class='").Append(MarkdownEngine.EscapeHtml(htmlClass)).Append('\'');
         output.Append(" lang='").Append(lang)
             .Append("'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1,viewport-fit=cover'><title>")
             .Append(title).Append("</title>");
