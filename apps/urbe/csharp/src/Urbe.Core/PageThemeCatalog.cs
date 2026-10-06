@@ -283,7 +283,11 @@ public static partial class PageThemeCatalog
           .Append(".btn{display:inline-flex;padding:.72em 1em;border-radius:var(--radius);background:var(--primary);color:var(--on-primary);text-decoration:none}.foot{padding:28px 0;border-top:1px solid var(--border);color:var(--muted)}")
           .Append(".progress{position:fixed;left:0;top:0;height:3px;background:var(--primary);z-index:50}.fab{position:fixed;right:18px;width:46px;height:46px;border:1px solid var(--border);border-radius:50%;background:var(--surface);color:var(--text)}")
           .Append(".fab-theme{bottom:72px}.fab-top{bottom:18px}.prose{max-width:72ch}.grid{display:grid;gap:18px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}")
-          .Append(".card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}.missing{color:var(--muted)}");
+          .Append(".card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px}.missing{color:var(--muted)}")
+          .Append(".sec{position:relative}.sec.p-s{padding-block:24px}.sec.p-m{padding-block:48px}.sec.p-l{padding-block:72px}.sec.p-xl{padding-block:104px}")
+          .Append(".sec.w-narrow{max-width:760px;margin-inline:auto}.sec.w-wide{max-width:1320px;margin-inline:auto}.sec.w-full{width:100%;max-width:none}.sec.center{text-align:center}")
+          .Append(".sec.boxed{padding-inline:24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}.sec.mh-half{min-height:50vh}.sec.mh-screen{min-height:100vh}")
+          .Append(".sec.bg-surface{background:var(--surface)}.sec.bg-primary{background:var(--primary);color:var(--on-primary)}.sec.bg-gradient{background:linear-gradient(135deg,var(--primary),var(--accent));color:var(--on-primary)}.sec.bg-inverse{background:var(--text);color:var(--bg)}");
 
         if (background == "gradient")
             sb.Append("body{background:linear-gradient(135deg,var(--bg),color-mix(in srgb,var(--primary) 12%,var(--bg)))}");
@@ -293,6 +297,30 @@ public static partial class PageThemeCatalog
             sb.Append("body{background-image:radial-gradient(var(--border) 1px,transparent 1px);background-size:22px 22px}");
         else if (background == "grid")
             sb.Append("body{background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);background-size:28px 28px}");
+
+        var buttonStyle = PageDocument.StringValue(t["buttonStyle"]) ?? "solid";
+        if (buttonStyle == "pill")
+            sb.Append(".btn{border-radius:999px}");
+        else if (buttonStyle == "square")
+            sb.Append(".btn{border-radius:0}");
+        else if (buttonStyle == "outline")
+            sb.Append(".btn{background:transparent;color:var(--primary);border:1px solid var(--primary)}");
+        else if (buttonStyle == "soft")
+            sb.Append(".btn{background:color-mix(in srgb,var(--primary) 14%,transparent);color:var(--primary)}");
+
+        var cardStyle = PageDocument.StringValue(t["cardStyle"]) ?? "elevated";
+        if (cardStyle == "glass")
+            sb.Append(".card{background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:blur(16px)}");
+        else if (cardStyle == "outlined")
+            sb.Append(".card{box-shadow:none;border:1px solid var(--border)}");
+        else if (cardStyle == "flat")
+            sb.Append(".card{box-shadow:none;border-color:transparent}");
+
+        var linkStyle = PageDocument.StringValue(t["linkStyle"]) ?? "underline";
+        if (linkStyle == "plain")
+            sb.Append(".prose a{text-decoration:none}");
+        else if (linkStyle == "highlight")
+            sb.Append(".prose a{background:color-mix(in srgb,var(--accent) 22%,transparent);text-decoration:none}");
 
         if (headingCase == "upper")
             sb.Append("h1,h2,h3,h4{text-transform:uppercase}");
