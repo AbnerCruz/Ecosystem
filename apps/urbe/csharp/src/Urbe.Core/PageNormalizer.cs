@@ -181,7 +181,18 @@ public static class PageNormalizer
             }
 
             if (section["props"] is JsonObject props && type is not null)
+            {
                 ApplyBlockDefaults(type, props);
+                if (type == "free")
+                {
+                    Default(props, "sheet", "page");
+                    props["root"] = PageFreeLayout.NormalizeRoot(
+                        props["root"],
+                        path + ".props.root",
+                        errors,
+                        warnings);
+                }
+            }
         }
     }
 
