@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "feat/urbe-uc16-svg-renderer",
   "base_commit": "869d55d0837fc18b484d36ff7cfc23f7ce697c59",
-  "commit": "20537a7f3490fda5b553871929d097e4a635d7fa",
+  "commit": "31eff451c3bfa1829350265c2d10209379f9ab62",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/274",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
@@ -64,12 +64,10 @@
     "Integração exige autorização explícita do proprietário porque o PR altera .csproj (distribution) e propõe ADR (constitution)."
   ],
   "next_actions": [
-    "Rodar novamente CI e integrador após reconciliação semântica com main@9c8720d.",
+    "Rodar novamente CI e integrador após as correções de sintaxe e governança.",
     "Após autorização crítica e integração, portar camada limitada de aliases/macros e ampliar comparação visual para fechar UC-16/G-C2."
   ],
-  "decisions_required": [
-    "Autorizar ou rejeitar ADR-0012 e a adoção de CSharpMath.Rendering 1.0.0-pre.2 + backend SVG próprio."
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "apps/urbe/docs/csharp/UC16-RENDERER-INVESTIGATION.md",
     "apps/urbe/docs/csharp/math-renderer-observations.json",
