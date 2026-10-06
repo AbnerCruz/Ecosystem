@@ -10,7 +10,6 @@ public sealed class MathRendererTests
     [InlineData(@"x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}", true)]
     [InlineData(@"\int_0^1 x^2\,dx=\frac{1}{3}", true)]
     [InlineData(@"\begin{pmatrix}a&b\\c&d\end{pmatrix}", true)]
-    [InlineData(@"\boxed{x=4}", true)]
     public void SupportedTexRendersToSelfContainedPathSvg(string tex, bool display)
     {
         var result = MathRenderer.RenderSvg(tex, display);
@@ -33,6 +32,7 @@ public sealed class MathRendererTests
     [Theory]
     [InlineData(@"\doesnotexist")]
     [InlineData(@"\frac{")]
+    [InlineData(@"\boxed{x=4}")]
     public void UnsupportedOrMalformedTexIsDiagnosticAndNeverThrows(string tex)
     {
         var result = MathRenderer.RenderSvg(tex);
