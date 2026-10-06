@@ -13,7 +13,7 @@
   "state": "verifying",
   "branch": "feat/urbe-uc15-page-shell-templates",
   "base_commit": "c7bf1ba4cbbe9965674c9dedd2de2e17e706a29a",
-  "commit": "560c6c3dfbe433933031bf6cbfda06331929a451",
+  "commit": "e5cd8914bb08b6ae73f57f6f3e4ee0f246aa042d",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/270",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/PageThemeCatalog.cs",
@@ -27,10 +27,11 @@
     "docs/governance/handoffs/HO-20261006-urbe-uc15-shell-themes-templates.json"
   ],
   "work_completed": [
-    "Portada a autoridade pura de dez temas/fontes do pages/engine.js, com resolução e validação preservando chaves desconhecidas.",
+    "Portada a autoridade pura de dez temas/fontes do pages/engine.js, com resolução, clamp numérico e validação preservando chaves desconhecidas.",
     "PageRenderer passa a emitir shell HTML completo: metadados, fontes, CSS, navegação, rodapé, estilos de seção e regras de impressão de livro.",
-    "Portado o catálogo dos 13 templates embutidos e variantes simple/skeleton como domínio C# sem DOM/IO.",
-    "Testes percorrem todos os presets/templates e verificam validação, estrutura, shell e livro."
+    "O HTML exportado recebe runtime autocontido gerado pelo Core para tema, progresso, voltar ao topo, copiar código e countdown; isso não cria dependência JS no cliente C#.",
+    "Portado o catálogo dos 13 templates embutidos e variantes simple/skeleton como domínio C# sem DOM/IO; livro alinhado a duas partes, capítulos e página livre.",
+    "Testes percorrem todos os presets/templates e verificam validação, coerção, estrutura, shell, runtime, personalização e livro."
   ],
   "verification": [
     {
@@ -58,8 +59,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Corrigir falhas de compilação/paridade detectadas pela CI.",
-    "Após integração, auditar UC-15 contra o escopo da Issue #249 e fechar somente se não restar domínio puro de páginas/composições."
+    "Aguardar CI e estado combinado do PR #270.",
+    "Após integração, auditar UC-15 contra a Issue #249 e fechar somente se o restante pertencer explicitamente a UC-16/18/21 ou segurança."
   ],
   "decisions_required": [],
   "normative_sources": [
