@@ -35,13 +35,13 @@ internal sealed class SvgMathCanvas : ICanvas
     {
         var a = Transform(x1, y1);
         var b = Transform(x2, y2);
-        _body.Append("<line x1="").Append(N(a.X))
-            .Append("" y1="").Append(N(a.Y))
-            .Append("" x2="").Append(N(b.X))
-            .Append("" y2="").Append(N(b.Y))
-            .Append("" stroke="").Append(ColorCss(CurrentColor ?? DefaultColor))
-            .Append("" stroke-width="").Append(N(Math.Max(.01f, lineThickness)))
-            .Append("" fill="none"/>");
+        _body.Append("<line x1='").Append(N(a.X))
+            .Append("' y1='").Append(N(a.Y))
+            .Append("' x2='").Append(N(b.X))
+            .Append("' y2='").Append(N(b.Y))
+            .Append("' stroke='").Append(ColorCss(CurrentColor ?? DefaultColor))
+            .Append("' stroke-width='").Append(N(Math.Max(.01f, lineThickness)))
+            .Append("' fill='none'/>");
     }
 
     public void StrokeRect(float left, float top, float width, float height) =>
@@ -75,15 +75,15 @@ internal sealed class SvgMathCanvas : ICanvas
             return;
 
         var color = ColorCss(foreground ?? CurrentColor ?? DefaultColor);
-        _body.Append("<path d="").Append(data).Append('"');
+        _body.Append("<path d='").Append(data).Append(''');
         if (style == PaintStyle.Fill)
         {
-            _body.Append(" fill="").Append(color).Append("" stroke="none"");
+            _body.Append(" fill='").Append(color).Append("' stroke='none'");
         }
         else
         {
-            _body.Append(" fill="none" stroke="").Append(color)
-                .Append("" stroke-width="1"");
+            _body.Append(" fill='none' stroke='").Append(color)
+                .Append("' stroke-width='1'");
         }
         _body.Append("/>");
     }
@@ -92,11 +92,11 @@ internal sealed class SvgMathCanvas : ICanvas
     {
         var width = N(Width);
         var height = N(Height);
-        return "<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 " +
-               width + " " + height + "" width="" + width +
-               "" height="" + height +
-               "" role="img" aria-label="" +
-               EscapeXml(ariaLabel ?? string.Empty) + "">" +
+        return "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 " +
+               width + " " + height + "' width='" + width +
+               "' height='" + height +
+               "' role='img' aria-label='" +
+               EscapeXml(ariaLabel ?? string.Empty) + "'>" +
                _body + "</svg>";
     }
 
@@ -116,10 +116,10 @@ internal sealed class SvgMathCanvas : ICanvas
                    "L" + N(c.X) + " " + N(c.Y) +
                    "L" + N(d.X) + " " + N(d.Y) + "Z";
         var color = ColorCss(CurrentColor ?? DefaultColor);
-        _body.Append("<path d="").Append(path).Append("" ")
-            .Append(fill ? "fill="" : "fill="none" stroke="")
+        _body.Append("<path d='").Append(path).Append("' ")
+            .Append(fill ? "fill='" : "fill='none' stroke='")
             .Append(color)
-            .Append(fill ? "" stroke="none"" : "" stroke-width="1"")
+            .Append(fill ? "' stroke='none'" : "' stroke-width='1'")
             .Append("/>");
     }
 
@@ -144,6 +144,7 @@ internal sealed class SvgMathCanvas : ICanvas
     private static string EscapeXml(string value) =>
         value.Replace("&", "&amp;", StringComparison.Ordinal)
             .Replace(""", "&quot;", StringComparison.Ordinal)
+            .Replace("'", "&apos;", StringComparison.Ordinal)
             .Replace("<", "&lt;", StringComparison.Ordinal)
             .Replace(">", "&gt;", StringComparison.Ordinal);
 
@@ -195,8 +196,6 @@ internal sealed class SvgMathCanvas : ICanvas
 
         public override void MoveTo(float x0, float y0)
         {
-            if (_contourOpen)
-                _data.Append('Z');
             var point = _owner.Transform(x0, y0);
             _data.Append('M').Append(N(point.X)).Append(' ').Append(N(point.Y));
             _contourOpen = true;
