@@ -43,7 +43,7 @@
     {
       "kind": "human",
       "check": "DEVICE",
-      "result": "not-required-for-code-fix",
+      "result": "not-applicable",
       "evidence": "A correção é de resolução determinística do canal; a publicação normal do Hub permitirá conferir visualmente o catálogo sem fabricar aprovação."
     }
   ],
