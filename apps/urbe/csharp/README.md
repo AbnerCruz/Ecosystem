@@ -220,3 +220,12 @@ metadados, navegação, rodapé, estilos de seção e CSS de impressão de livro
 `PageTemplateCatalog` representa os 13 modelos embutidos e as variantes
 `simple`/`skeleton`. Tudo continua puro e sem DOM/WebView/filesystem.
 Studio, preview editável e ferramentas de IA continuam nas UCs de UI/IA.
+
+
+### UC-16 — renderer SVG C# (proposta crítica)
+
+`MathRenderer.RenderSvg` usa CSharpMath.Rendering com um `ICanvas` SVG escrito
+no próprio Urbe. Não há VectSharp, Skia ou interop matemático em JavaScript.
+Falhas de TeX viram diagnóstico, o texto original é preservado e o SVG exportado
+é formado por paths/linhas/retângulos autocontidos. A dependência permanece
+sujeita à autorização crítica do ADR-0012.
