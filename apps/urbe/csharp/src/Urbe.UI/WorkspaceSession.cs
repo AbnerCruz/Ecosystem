@@ -512,9 +512,10 @@ public sealed class WorkspaceSession : IDisposable
         if (IsReadOnly)
             return null;
 
-        var safeName = ArtifactModel.SafeName(name);
-        if (string.IsNullOrWhiteSpace(safeName))
+        if (string.IsNullOrWhiteSpace(name))
             return null;
+
+        var safeName = ArtifactModel.SafeName(name);
 
         var normalizedParent = DocumentModel.NormalizePath(parent);
         var candidate = normalizedParent.Length == 0
