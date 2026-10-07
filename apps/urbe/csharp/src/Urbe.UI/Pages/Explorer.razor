@@ -64,12 +64,11 @@
     }
     else
     {
-        <div class="explorer-list" role="list">
+        <div class="explorer-list" aria-label="Arquivos do vault">
             @foreach (var entry in entries)
             {
                 <button type="button"
                         class="explorer-row"
-                        role="listitem"
                         disabled="@(!entry.IsFolder && !entry.Editable)"
                         @onclick="() => Activate(entry)">
                     <span class="explorer-kind" aria-hidden="true">@(entry.IsFolder ? "▣" : "•")</span>
