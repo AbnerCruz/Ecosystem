@@ -1,0 +1,135 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc16-render-diagnostics",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T01:18:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc16-render-diagnostics",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-16",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc16-render-diagnostics",
+  "base_commit": "a54b39eac2fbaa641af93d4a59b56d21d456abe8",
+  "commit": "a46537f09d8a160c660dca4e45fc7743e1dc6dfe",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/276",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/MathRenderer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MathRendererTests.cs",
+    "apps/urbe/docs/csharp/UC16-MATH-COMPATIBILITY.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc16-render-diagnostics.json"
+  ],
+  "work_completed": [
+    "MathRenderResult preserva o construtor posicional existente e expõe CompatibilityDiagnostics estruturado.",
+    "MathRenderer executa preflight de incompatibilidades conhecidas e declarações de macro antes de invocar CSharpMath.",
+    "Falhas exclusivas do parser continuam distinguíveis por lista de compatibilidade vazia; o TeX nunca é reescrito.",
+    "Testes cobrem incompatibilidade conhecida, macro, erro genérico, limites, determinismo e corpus real do tutorial."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests",
+      "result": "pending",
+      "evidence": "PR #276 empilhado aguardando CI."
+    },
+    {
+      "kind": "automated",
+      "check": "Web/Android/Windows/E2E/checks/consistency",
+      "result": "pending",
+      "evidence": "Aguardando CI da pilha e, depois, estado combinado contra main."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE",
+      "result": "not-applicable",
+      "evidence": "Fatia de domínio/render puro, sem UI ou interação física."
+    }
+  ],
+  "known_issues": [
+    "PR #276 está temporariamente baseado na branch do PR #275 e deve ser retargetado para main após a integração do #275.",
+    "Compatibilidade visual na UI pertence à UC-18; licenças nos artefatos distribuídos pertencem à UC-27/G-C4.",
+    "Comandos incompatíveis continuam diagnósticos, não aliases automáticos."
+  ],
+  "blockers": [
+    "Integração final deste PR depende primeiro da integração rotineira do PR #275."
+  ],
+  "next_actions": [
+    "Executar CI da pilha e corrigir qualquer regressão.",
+    "Após #275 integrar, retargetar #276 para main e revalidar o estado combinado.",
+    "Com renderer + compatibilidade integrados, auditar e fechar UC-16/G-C2 se não restar domínio sem UI."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PARITY.md",
+    "apps/urbe/docs/v2/adr/0012-renderizacao-matematica-csharp-svg.md",
+    "apps/urbe/docs/csharp/UC16-MATH-COMPATIBILITY.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudança permanece exclusivamente no Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Renderer e diagnósticos não dependem do Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #257, PR #276, branch, AGENTSCHAT e handoff tornam o trabalho observável."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Nenhuma nova decisão foi inferida; a implementação aplica UC-16 e o renderer já autorizado/integrado."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas relevantes foram consultadas diretamente."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Entrada é texto em memória; macros são diagnosticadas, não executadas ou expandidas."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE não é aplicável e não é inferido de CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-16 permanece aberta até integração e auditoria do gate G-C2."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reutiliza MathCompatibility e MathRenderer locais; nenhuma abstração ou pacote novo."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência de distribuição do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "math-renderer-diagnostics",
+      "status": "product-specific",
+      "rationale": "API e semântica pertencem ao renderer matemático do Urbe; não há segundo consumidor real."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Sem csproj, ADR, dados, segurança, distribuição ou contrato público estabilizado; apenas integração interna de duas fatias já autorizadas de UC-16."
+  },
+  "cost": null
+}
