@@ -1,0 +1,104 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc18-visual-edit",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T13:03:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc18-visual-edit",
+  "base_commit": "8433fc27a64c49e4b407d82994af82af89640310",
+  "commit": "9d49512dbffcdf9fe88a8fddd67ed639e7768d1e",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/Shared/VisualEditor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/editor-dom.js",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc18-visual-edit.json"
+  ],
+  "work_completed": [
+    "Modo Visual ganhou contenteditable compartilhado em Urbe.UI.",
+    "Cada input Visual é convertido imediatamente por VisualMarkdown C# e atualizado no mesmo WorkspaceSession/DocumentStore/histórico do modo Fonte.",
+    "Ponte editor-dom.js é estritamente DOM: readHtml/syncHtml, sem regra de Markdown, seleção, histórico ou persistência.",
+    "Sincronização não sobrescreve o DOM enquanto o editor está focado, preservando caret durante digitação.",
+    "Smoke Web edita HTML Visual, espera revisão da sessão, verifica Markdown canônico/wikilink no modo Fonte e volta ao Visual."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "web-smoke UC-18 visual edit",
+      "result": "pending",
+      "evidence": "PR empilhado ainda será aberto contra a branch do #286 para CI."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR empilhado."
+    },
+    {
+      "kind": "human",
+      "check": "edição/toque/layout real",
+      "result": "not-applicable",
+      "evidence": "Reservado a G-C3 conforme NN-017."
+    }
+  ],
+  "known_issues": [
+    "Toolbar e estado de formatação/seleção REQ-090/095/107 ainda não foram portados.",
+    "Split view e requisitos avançados de comentários, painel fixado, templates e timer permanecem UC-18.",
+    "Persistência física da sessão/mutações ainda depende dos adapters dos hosts.",
+    "A ponte DOM usa JavaScript apenas porque contenteditable expõe innerHTML pelo DOM; toda autoridade funcional permanece C#."
+  ],
+  "blockers": [
+    "Esta branch está empilhada sobre PR #286; deve ser retargetada para main somente depois da integração do #286."
+  ],
+  "next_actions": [
+    "Executar CI como PR draft empilhado contra feat/urbe-uc18-explorer-move.",
+    "Após #286 integrar, retargetar esta fatia para main e promover para integração routine se verde.",
+    "Portar toolbar e estado de seleção do Editor sem transferir autoridade de Markdown ao DOM/JS."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Issue #281, branch, AGENTSCHAT, PR draft e handoff registram a fatia."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI/smoke não é tratado como validação humana de edição/toque/layout."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Editor Visual e ponte DOM não dependem do Hub/plano de controle."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "visual-editor-dom-adapter",
+      "status": "product-specific",
+      "rationale": "Adapter mínimo do contenteditable usado pela UI compartilhada do Urbe; domínio e conversão permanecem Urbe.Core."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "UI e adapter DOM sem mudança de formato, persistência, pacote/csproj, segurança privilegiada ou distribuição."
+  },
+  "cost": null
+}
