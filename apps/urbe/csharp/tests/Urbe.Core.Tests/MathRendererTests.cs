@@ -16,6 +16,7 @@ public sealed class MathRendererTests
 
         Assert.True(result.Success, result.Diagnostic);
         Assert.Null(result.Diagnostic);
+        Assert.Empty(result.CompatibilityDiagnostics);
         Assert.StartsWith("<svg ", result.Svg, StringComparison.Ordinal);
         Assert.Contains("<path ", result.Svg, StringComparison.Ordinal);
         Assert.DoesNotContain("<text", result.Svg, StringComparison.OrdinalIgnoreCase);
@@ -44,18 +45,68 @@ public sealed class MathRendererTests
     }
 
     [Fact]
+    public void KnownUnsupportedCommandReturnsStructuredCompatibilityDiagnostic()
+    {
+        const string tex = @"x + \boxed{4}";
+
+        var result = MathRenderer.RenderSvg(tex);
+
+        Assert.False(result.Success);
+        var diagnostic = Assert.Single(result.CompatibilityDiagnostics);
+        Assert.Equal(MathCompatibilityCodes.UnsupportedCommand, diagnostic.Code);
+        Assert.Equal("\\boxed", diagnostic.Command);
+        Assert.Equal(tex.IndexOf(@"\boxed", StringComparison.Ordinal), diagnostic.Start);
+        Assert.Equal(diagnostic.Command.Length, diagnostic.Length);
+        Assert.True(diagnostic.BlocksRendering);
+        Assert.Contains("\\boxed", result.Diagnostic, StringComparison.Ordinal);
+        Assert.Equal(tex, result.Tex);
+    }
+
+    [Fact]
+    public void MacroDeclarationIsBlockedBeforeRendererWithoutMutatingTex()
+    {
+        const string tex = @"\newcommand{\foo}{x^2}\foo";
+
+        var result = MathRenderer.RenderSvg(tex);
+
+        Assert.False(result.Success);
+        var diagnostic = Assert.Single(result.CompatibilityDiagnostics);
+        Assert.Equal(MathCompatibilityCodes.MacroDeclaration, diagnostic.Code);
+        Assert.Equal("\\newcommand", diagnostic.Command);
+        Assert.Equal(0, diagnostic.Start);
+        Assert.True(diagnostic.BlocksRendering);
+        Assert.Contains("macro", result.Diagnostic, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(tex, result.Tex);
+    }
+
+    [Fact]
+    public void ParserOnlyFailureDoesNotInventCompatibilityDiagnostic()
+    {
+        const string tex = @"\doesnotexist";
+
+        var result = MathRenderer.RenderSvg(tex);
+
+        Assert.False(result.Success);
+        Assert.Empty(result.CompatibilityDiagnostics);
+        Assert.NotNull(result.Diagnostic);
+        Assert.Equal(tex, result.Tex);
+    }
+
+    [Fact]
     public void LimitsProtectHostsWithoutMutatingTex()
     {
         var huge = new string('x', MathRenderer.MaxTexLength + 1);
         var hugeResult = MathRenderer.RenderSvg(huge);
         Assert.False(hugeResult.Success);
         Assert.Equal(huge, hugeResult.Tex);
+        Assert.Empty(hugeResult.CompatibilityDiagnostics);
         Assert.Contains("limite", hugeResult.Diagnostic, StringComparison.OrdinalIgnoreCase);
 
         foreach (var size in new[] { float.NaN, float.PositiveInfinity, 5f, 257f })
         {
             var result = MathRenderer.RenderSvg("x", fontSize: size);
             Assert.False(result.Success);
+            Assert.Empty(result.CompatibilityDiagnostics);
             Assert.Contains("fonte", result.Diagnostic, StringComparison.OrdinalIgnoreCase);
         }
     }
@@ -70,6 +121,7 @@ public sealed class MathRendererTests
         var corpus = observations.RootElement.GetProperty("realCorpus");
         var rendered = 0;
         var diagnostics = 0;
+        var compatibilityDiagnostics = 0;
 
         foreach (var item in corpus.EnumerateArray())
         {
@@ -79,17 +131,20 @@ public sealed class MathRendererTests
             if (result.Success)
             {
                 rendered++;
+                Assert.Empty(result.CompatibilityDiagnostics);
                 Assert.Contains("<path ", result.Svg, StringComparison.Ordinal);
             }
             else
             {
                 diagnostics++;
+                compatibilityDiagnostics += result.CompatibilityDiagnostics.Count;
                 Assert.False(string.IsNullOrWhiteSpace(result.Diagnostic));
             }
         }
 
         Assert.True(rendered >= 30, "Rendered: " + rendered);
         Assert.True(diagnostics <= 1, "Diagnostics: " + diagnostics);
+        Assert.Equal(1, compatibilityDiagnostics);
     }
 
     [Fact]
@@ -103,6 +158,7 @@ public sealed class MathRendererTests
         Assert.Equal(first.Svg, second.Svg);
         Assert.Equal(first.Width, second.Width);
         Assert.Equal(first.Height, second.Height);
+        Assert.Equal(first.CompatibilityDiagnostics, second.CompatibilityDiagnostics);
     }
 
     private static string CSharpRoot()
