@@ -7,7 +7,7 @@
 
 ## Próxima tarefa
 
-**M2 — Domínio do conhecimento e do mundo.** UC-15 foi concluída com páginas/composições, temas, templates, shell HTML, livro e layout livre no Core C#. Próxima tarefa: UC-16 — matemática, adotando biblioteca/renderizador somente após a investigação já registrada e preservando execução offline/host-neutra.
+**M3 — Interface e extensões.** M2 foi concluído com o domínio matemático C# aprovado em G-C2. Próxima tarefa: UC-17 — shell e navegação, consumindo apenas APIs de domínio já fechadas; validação humana de UI/toque continua reservada ao G-C3.
 
 ---
 
@@ -44,10 +44,10 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 - [x] UC-13 — Projeção do mundo e bairros, com IDs estáveis. PR #223 integrado automaticamente em `ccab4b91`; 134/134 testes C#, Web/Android/Windows/E2E/checks e consistency verdes. Issue #221 encerrada.
 - [x] UC-14 — Markdown: renderização e volta do editor Visual, contra os goldens. PR #232 integrado automaticamente em `1eafe4db`; estado combinado verde (Core/Web/Android/Windows/E2E/checks/consistency), Issue #230 encerrada.
 - [x] UC-15 — Páginas e composições concluídas. Fatias integradas nos PRs #250 (`4a7dd74d`), #252 (`eeefea40`), #253, #254 (`b1ce8347`), #269 (`c7bf1ba4`) e #270 (`df668599`): modelo lossless/forward-safe, composições legadas, blocos semânticos, TOC/âncoras/livro, layout livre responsivo, conversão/compactação lossless, temas, shell HTML completo e 13 templates com variantes. O merge final `df668599` passou C# portátil, Web/checks, Android, Windows, E2E e consistency na main (runs 37517474704 / 37517474691). Nenhuma migração física de vault foi antecipada.
-- [~] UC-16 — Matemática. Primeira fatia integrada no PR #258 (`4e6cfe8f`): edição pura, scanner, catálogo/snippets/autocomplete. Investigação do PR #265 provou CSharpMath em WASM/offline e mapeou licenças/lacunas. Segunda fatia em PR crítico #274: ADR-0012 propõe `CSharpMath.Rendering 1.0.0-pre.2` + backend SVG próprio do Urbe, sem VectSharp/LGPL ou JS matemático; corpus real, diagnósticos e export SVG entram no Core. Macros/aliases e paridade visual ampliada continuam pendentes. Integração depende de autorização explícita do proprietário.
+- [x] UC-16 — Matemática concluída. PR #258 (`4e6cfe8f`) portou edição/scanner/catálogo/snippets/autocomplete; PR #265 registrou o probe reproduzível; PR crítico #274 integrou, após autorização do proprietário, `CSharpMath`/`CSharpMath.Rendering 1.0.0-pre.2` + backend SVG próprio sem VectSharp/LGPL/JS; PRs #275/#276 adicionaram compatibilidade e diagnósticos estruturados; PR #277 (`680e6db6`) portou macros de string limitadas, sem estado global. A suíte de aceite de domínio cobre composição edição→compatibilidade→macros→renderer, corpus real 30/31, determinismo e geometria SVG segura. UI/paridade visual humana permanece UC-18/G-C3; avisos de terceiros e instaláveis permanecem UC-27/G-C4.
 
 **Gate G-C2:** suíte de aceite (UC-2) verde para todo o domínio, sem UI.
-*Estado do gate:* **não iniciado**
+*Estado do gate:* **aprovado** — domínio M2 fechado no Core C#; scanner/catálogo, páginas/composições e matemática possuem provas automatizadas. Validação humana/visual de UI não é inferida e fica no G-C3.
 
 ## M3 — Interface e extensões
 

@@ -1,6 +1,6 @@
 # ADR-0012 — Renderização matemática C# com CSharpMath.Rendering e backend SVG próprio
 
-- Status: Proposed
+- Status: Accepted
 - Data: 2026-10-06
 - Requisitos: REQ-007, REQ-027, REQ-064
 - Decisores: proprietário do Ecosystem (autorização crítica de integração)
@@ -53,8 +53,7 @@ uma exceção arquitetural que ADR-0010/DEC-0024-B não autorizaram. Rejeitada.
 
 ## Decisão
 
-Propor a alternativa A. A adoção só se torna **Accepted** quando o PR crítico que
-altera o `.csproj` receber a autorização do proprietário e integrar.
+Adotar a alternativa A. O PR crítico #274 recebeu a autorização canônica do proprietário e integrou em 2026-10-07; portanto a condição de aceitação definida por este ADR foi satisfeita.
 
 O backend do Urbe deve:
 1. produzir SVG autocontido sem `<script>`, `<text>` ou `href` externo;
@@ -74,8 +73,8 @@ O backend do Urbe deve:
 
 - `CSharpMath 1.0.0-pre.2` ainda é prerelease;
 - o Urbe passa a manter um pequeno backend SVG;
-- comandos hoje recusados (`boxed`, `overset`, `underset`, `cancel`,
-  `boldsymbol`, `dfrac`, `lVert/rVert`) e macros ainda exigem trabalho;
+- comandos sem suporte nativo (`boxed`, `overset`, `underset`, `cancel`, `boldsymbol`, `dfrac`, `lVert/rVert`) permanecem diagnósticos explícitos em vez de reescrita silenciosa;
+- macros de string compatíveis com o contrato útil observado de `UrbeMath.setMacros` são expandidas apenas em memória, com limites e sem estado global; declarações dinâmicas `newcommand/def` continuam bloqueadas;
 - licenças das fontes incorporadas precisam constar dos avisos de terceiros antes
   da distribuição do novo cliente.
 
@@ -91,7 +90,9 @@ corte de cliente autorizado.
 - SVG sem texto, script ou referências externas;
 - resultado determinístico para a mesma entrada;
 - Core/Web/Android/Windows/E2E/checks/consistency verdes no estado combinado;
-- compatibilidade visual/macros ampliadas antes de fechar UC-16/G-C2.
+- macros limitadas e diagnósticos estruturados integrados;
+- suíte final de G-C2 cruza edição, compatibilidade, macros e renderer, exige corpus real 30/31, SVG geométrico não vazio e determinismo;
+- comparação visual humana de UI é deliberadamente G-C3/UC-18, não é inferida por este ADR.
 
 ## Relações
 

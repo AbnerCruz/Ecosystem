@@ -1,3 +1,12 @@
+### 2026-10-07 — ChatGPT — UC-16 / G-C2 closeout
+
+- Todas as fatias matemáticas anteriores estão integradas na main até `680e6db6`.
+- Adicionada suíte final `MathDomainAcceptanceTests` cruzando edição, compatibilidade, macros, renderer, corpus real 30/31, determinismo e geometria SVG.
+- ADR-0012 passa de Proposed para Accepted porque sua condição explícita foi satisfeita: PR crítico #274 autorizado e integrado.
+- ROADMAP fecha UC-16 e aprova G-C2 somente para domínio sem UI; aparência/toque continuam G-C3 e não são inferidos.
+- Próxima tarefa passa a UC-17 — shell e navegação.
+- Closeout toca ADR e é declarado crítico por constituição; integração deve respeitar o gate normal do Ecosystem.
+
 ### 2026-10-06 — ChatGPT — UC-16 macros de renderização sem estado global
 
 - Auditoria do legado confirmou `UrbeMath.setMacros(m)`; não há consumidor/teste interno, mas a investigação de UC-16 exige camada limitada de macros antes de G-C2.
