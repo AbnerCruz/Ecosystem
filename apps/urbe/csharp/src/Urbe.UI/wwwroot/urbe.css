@@ -772,3 +772,25 @@ a:focus-visible {
         align-items: center;
     }
 }
+
+
+/* UC-18 — Visual editável; Markdown continua autoridade em C#. */
+.editor-visual-editable[contenteditable="true"] {
+    cursor: text;
+}
+
+.editor-visual-editable[contenteditable="true"]:focus {
+    outline: 3px solid rgba(182, 239, 205, .55);
+    outline-offset: 2px;
+    border-color: #6c9a7e;
+}
+
+.editor-visual-editable[contenteditable="true"]:empty::before {
+    content: "Comece a escrever…";
+    color: #738078;
+    pointer-events: none;
+}
+
+.editor-visual-editable[contenteditable="false"] {
+    cursor: default;
+}
