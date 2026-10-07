@@ -1,0 +1,126 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc16-closeout",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T03:50:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc16-closeout",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-16",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc16-closeout",
+  "base_commit": "680e6db6e5d30f96cc33491bb6cfda048e086afb",
+  "commit": "7280a26227ee42b860d97719e0a79959275a0173",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MathDomainAcceptanceTests.cs",
+    "apps/urbe/docs/v2/adr/0012-renderizacao-matematica-csharp-svg.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UC16-CLOSEOUT.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc16-closeout.json"
+  ],
+  "work_completed": [
+    "Adicionada suíte integrada de aceite do domínio matemático sem UI, cruzando scanner/catálogo, compatibilidade, macros e renderer.",
+    "O corpus real do tutorial é exigido em 30 renderizações + 1 diagnóstico, com determinismo e geometria SVG coerente.",
+    "ADR-0012 passa a Accepted porque a condição escrita no próprio ADR foi satisfeita pelo PR crítico #274 autorizado e integrado.",
+    "ROADMAP fecha UC-16, aprova G-C2 apenas para domínio sem UI e move a próxima tarefa para UC-17.",
+    "Closeout separa explicitamente validação geométrica automatizada de validação visual humana, reservada a UC-18/G-C3."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests + MathDomainAcceptanceTests",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR de closeout."
+    },
+    {
+      "kind": "automated",
+      "check": "Web/Android/Windows/E2E/checks/consistency",
+      "result": "pending",
+      "evidence": "Aguardando estado combinado no integrador."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE",
+      "result": "not-applicable",
+      "evidence": "G-C2 é gate de domínio sem UI; DEVICE/visual pertence ao G-C3/G-C4."
+    }
+  ],
+  "known_issues": [
+    "Avisos/licenças de terceiros nos artefatos distribuídos continuam UC-27/G-C4.",
+    "Consumo visual do renderer e comparação humana de aparência pertencem a UC-18/G-C3.",
+    "O cliente distribuído continua JS até UC-31/G-C5."
+  ],
+  "blockers": [
+    "Integração do closeout toca ADR e deve respeitar o gate crítico de constituição; nenhum bypass é permitido."
+  ],
+  "next_actions": [
+    "Executar CI completa do closeout.",
+    "Após integração crítica, fechar Issue #257 como state:done.",
+    "Iniciar UC-17 — shell e navegação."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0012-renderizacao-matematica-csharp-svg.md",
+    "apps/urbe/docs/csharp/UC16-RENDERER-INVESTIGATION.md",
+    "apps/urbe/docs/csharp/math-renderer-observations.json",
+    "docs/governance/integration-policy.json",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Closeout permanece no Product Urbe."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #257, branch, PR, AGENTSCHAT, closeout e handoff registram o fechamento."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "ADR-0012 não recebe decisão nova: apenas materializa a condição de Accepted já autorizada pelo proprietário no PR #274."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas e evidências de integração foram consultadas diretamente."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "G-C2 não infere DEVICE ou validação visual humana; esses itens permanecem nos gates posteriores."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Issue #257 só será fechada depois da integração crítica e CI verde."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma dependência de distribuição do Hub foi adicionada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "math-domain-acceptance",
+      "status": "product-specific",
+      "rationale": "Suíte de aceite fecha o domínio matemático do Urbe e não cria nova abstração compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "O PR altera o status do ADR-0012 e o estado do gate G-C2; embora a condição de aceitação já tenha sido autorizada no PR #274, a integração deve passar pelo gate crítico normal."
+  },
+  "cost": null
+}
