@@ -1,0 +1,32 @@
+@inherits LayoutComponentBase
+
+<div class="urbe-shell" data-product="@ProductIdentity.Id">
+    <a class="skip-link" href="#main-content">Ir para o conteúdo</a>
+
+    <header class="shell-header">
+        <a class="shell-brand" href="" aria-label="Urbe — início">
+            <span class="shell-brand-mark" aria-hidden="true">U</span>
+            <span>
+                <strong>@ProductIdentity.DisplayName</strong>
+                <small>workspace local</small>
+            </span>
+        </a>
+        <span class="shell-phase">C# · M3</span>
+    </header>
+
+    <nav class="shell-nav" aria-label="Navegação principal">
+        @foreach (var destination in ShellNavigation.Primary)
+        {
+            <NavLink class="shell-nav-link"
+                     href="@destination.Href"
+                     Match="@(destination.Exact ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                <span class="shell-nav-dot" aria-hidden="true"></span>
+                <span>@destination.Label</span>
+            </NavLink>
+        }
+    </nav>
+
+    <main id="main-content" class="shell-content">
+        @Body
+    </main>
+</div>
