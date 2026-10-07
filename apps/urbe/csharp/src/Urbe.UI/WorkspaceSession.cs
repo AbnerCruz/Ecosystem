@@ -217,6 +217,17 @@ public sealed class WorkspaceSession : IDisposable
         return true;
     }
 
+    public bool Restore(string? idOrPath)
+    {
+        var document = Documents.Get(idOrPath);
+        if (document is null || !ArtifactModel.Classify(document.Path).Editable)
+            return false;
+
+        CurrentDocument = document;
+        Revision++;
+        return true;
+    }
+
     public bool OpenLinked(string? target, string returnHref)
     {
         if (CurrentDocument is null)
