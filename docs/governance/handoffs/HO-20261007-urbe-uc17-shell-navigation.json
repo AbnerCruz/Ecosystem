@@ -54,7 +54,7 @@
     {
       "kind": "human",
       "check": "layout/toque",
-      "result": "not-executed",
+      "result": "not-applicable",
       "evidence": "Reservado a G-C3 conforme NN-017."
     }
   ],
