@@ -30,7 +30,8 @@ public static class MathRenderer
     public static MathRenderResult RenderSvg(
         string? tex,
         bool display = true,
-        float fontSize = 20)
+        float fontSize = 20,
+        IReadOnlyDictionary<string, string>? macros = null)
     {
         var source = tex ?? string.Empty;
         if (source.Length > MaxTexLength)
@@ -55,6 +56,33 @@ public static class MathRenderer
                 compatibility);
         }
 
+        var macroExpansion = MathMacros.Expand(source, macros);
+        if (!macroExpansion.Success)
+        {
+            return Failure(
+                source,
+                display,
+                "Falha ao expandir macros: " + macroExpansion.Diagnostic,
+                compatibility);
+        }
+
+        var renderSource = macroExpansion.Expanded;
+        if (!string.Equals(renderSource, source, StringComparison.Ordinal))
+        {
+            var expandedCompatibility = MathCompatibility.Analyze(renderSource);
+            var expandedBlocking =
+                expandedCompatibility.FirstOrDefault(item => item.BlocksRendering);
+            if (expandedBlocking is not null)
+            {
+                return Failure(
+                    source,
+                    display,
+                    "Após expandir macros: " +
+                    FormatCompatibilityDiagnostic(expandedBlocking),
+                    compatibility);
+            }
+        }
+
         try
         {
             var painter = new UrbeSvgMathPainter
@@ -62,7 +90,7 @@ public static class MathRenderer
                 DisplayErrorInline = false,
                 FontSize = fontSize,
                 LineStyle = display ? LineStyle.Display : LineStyle.Text,
-                LaTeX = source
+                LaTeX = renderSource
             };
 
             if (!string.IsNullOrWhiteSpace(painter.ErrorMessage))
