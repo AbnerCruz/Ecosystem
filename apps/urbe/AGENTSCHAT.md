@@ -1,3 +1,13 @@
+### 2026-10-07 — ChatGPT — UC-18 / edição Visual direta
+
+- Estado: quarta fatia preparada de forma empilhada sobre o PR #286 enquanto o rerun de `csharp-portable` finaliza.
+- Feito: novo `VisualEditor.razor` com `contenteditable`; cada input retorna ao `WorkspaceSession.UpdateVisualHtml`, que usa `VisualMarkdown` C# e o mesmo histórico/document store do modo Fonte.
+- A única ponte JS é `editor-dom.js`, restrita a ler/sincronizar `innerHTML`; não contém Markdown, comandos, seleção, histórico, persistência ou regra de editor.
+- Teste: smoke Web passa a editar HTML diretamente no modo Visual, aguarda a revisão da sessão, alterna para Fonte e exige Markdown canônico com wikilink preservado, depois volta ao Visual.
+- Arquitetura: o DOM é superfície efêmera; Markdown C# continua autoridade. O adapter evita reescrever o DOM enquanto o elemento está focado para não quebrar caret durante digitação.
+- Pendências após esta fatia: toolbar/estado de seleção (REQ-090/095/107), split view, comentários/painel/templates/timer e persistência física pelos hosts.
+- Validação humana de toque/layout continua G-C3; smoke não substitui DEVICE/humano.
+
 ### 2026-10-07 — ChatGPT — UC-18 terceira fatia: Explorer operacional
 
 - Base: `fab94d76` após integração das duas primeiras fatias de UC-18.
