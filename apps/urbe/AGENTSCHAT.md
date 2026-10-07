@@ -1,8 +1,8 @@
 ### 2026-10-07 — ChatGPT — UC-18 / sessão de edição 2
 
 - Estado: fatia filha preparada sobre o PR #283; ainda sem PR próprio até a primeira fatia integrar.
-- Feito: abas reais do editor com ativação/fechamento, limite de 12 abas, suporte interno a pin; histórico por documento com até 100 estados e `Desfazer`/`Refazer`; reset seguro ao trocar de vault; UI de abas/histórico compartilhada Web/MAUI.
-- Teste preparado: smoke Web edita duas versões em Fonte, desfaz/refaz, verifica render Visual, abre segunda nota e troca entre abas.
+- Feito: abas reais do editor com ativação/fechamento, limite de 12 abas, suporte interno a pin; histórico por documento com até 100 estados e `Desfazer`/`Refazer`; reset seguro ao trocar de vault; UI de abas/histórico compartilhada Web/MAUI; wikilinks não resolvidos aparecem como ação explícita para criar a nota na pasta atual e abri-la.
+- Teste preparado: smoke Web edita duas versões em Fonte, desfaz/refaz, verifica render Visual, cria nota a partir de wikilink inexistente, volta pela pilha correta, abre segunda nota e troca entre abas.
 - Decisões: segue a semântica observada de `src/editor/session.js`; nenhuma nova autoridade de persistência, nenhum JS de produto e nenhuma mudança de formato.
 - Pendências: aguardar integração do PR #283; então abrir PR incremental desta fatia e executar estado combinado.
 - Próximos passos: depois desta fatia, links inexistentes/criação no editor e edição Visual interativa sem segunda autoridade Markdown.
