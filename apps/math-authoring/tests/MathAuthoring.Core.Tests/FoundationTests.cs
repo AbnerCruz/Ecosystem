@@ -50,12 +50,12 @@ public sealed class FoundationTests
     [Fact]
     public void Core_has_no_product_or_ui_dependencies()
     {
-        var forbidden = new[] { "Hub", "Urbe", "Lunet", "EcosystemAI", "Android" };
         var references = typeof(ProductIdentity).Assembly.GetReferencedAssemblies()
-            .Select(x => x.Name ?? string.Empty);
+            .Select(x => x.Name ?? string.Empty)
+            .ToArray();
 
-        Assert.DoesNotContain(references, name => forbidden.Any(prefix =>
-            name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)));
+        Assert.All(references, name =>
+            Assert.StartsWith("System", name, StringComparison.Ordinal));
     }
 
     [Fact]
