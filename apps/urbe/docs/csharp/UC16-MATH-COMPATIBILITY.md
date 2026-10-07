@@ -41,3 +41,17 @@ Portanto, REQ-007 (preservação) e a política de migração impedem “consert
 - UI/editor;
 - migração ou escrita de vault;
 - declarar UC-16/G-C2 concluídos.
+
+
+## Consumo pelo renderer
+
+A fatia seguinte integra a análise ao `MathRenderer.RenderSvg` sem alterar a string
+TeX nem o contrato posicional existente de `MathRenderResult`.
+
+`MathRenderResult.CompatibilityDiagnostics` expõe os diagnósticos estruturados.
+Se existir uma incompatibilidade `BlocksRendering`, o renderer retorna falha antes
+de invocar CSharpMath; erros exclusivos do parser continuam com a lista estruturada
+vazia, deixando explícita a diferença entre incompatibilidade conhecida e erro
+genérico de parse/render.
+
+Isso permite que UC-18 mostre posição, comando e sugestão sem analisar texto de erro.
