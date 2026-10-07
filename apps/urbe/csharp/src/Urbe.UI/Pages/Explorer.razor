@@ -85,8 +85,25 @@
 </section>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "folder")]
+    public string? FolderFromNavigation { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "query")]
+    public string? QueryFromNavigation { get; set; }
+
     private string Query { get; set; } = string.Empty;
     private string NewNoteTitle { get; set; } = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        if (FolderFromNavigation is not null)
+            Workspace.SetFolder(FolderFromNavigation);
+
+        if (QueryFromNavigation is not null)
+            Query = QueryFromNavigation;
+    }
 
     private string ParentLabel
     {
