@@ -1,3 +1,12 @@
+### 2026-10-07 — ChatGPT — UC-18 / sessão de edição 2
+
+- Estado: segunda fatia preparada sobre a primeira fatia já integrada em `9efb5555`.
+- Feito: abas reais do editor com ativação/fechamento, limite de 12 abas e suporte interno a pin; histórico por documento com até 100 estados e `Desfazer`/`Refazer`; reset seguro ao trocar de vault; wikilinks não resolvidos aparecem como ação explícita para criar a nota na pasta atual e abri-la.
+- Teste: smoke Web edita duas versões em Fonte, desfaz/refaz, verifica render Visual, cria nota a partir de wikilink inexistente, volta pela pilha correta, abre segunda nota e troca entre abas.
+- Decisões: segue a semântica observada de `src/editor/session.js`; nenhuma nova autoridade de persistência, nenhum JS de produto e nenhuma mudança de formato.
+- Pendências: edição Visual direta, persistência física dos hosts, split view e operações/gestos completos do Explorer continuam dentro da UC-18.
+- Próximos passos: integrar esta fatia se rotina e então portar edição Visual interativa sem segunda autoridade Markdown.
+
 ### 2026-10-07 — ChatGPT — UC-18 / Issue #281
 
 - Estado: primeira fatia implementada; aguardando CI e integração.
