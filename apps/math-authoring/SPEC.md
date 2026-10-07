@@ -12,7 +12,7 @@ divulgadores devem combinar relações matemáticas, composição visual, cenas,
 timeline e saída audiovisual. O diferencial é produzir complexidade visual alta
 a partir de poucas relações matemáticas e intenções temporais.
 
-Não é uma feature do Hub/Urbe/Lunet2D, clone de Manim ou editor genérico de vídeo.
+Não é uma feature de outro Product, clone de Manim ou editor genérico de vídeo.
 A intenção está definida na delegação; a identidade permanente não foi definida.
 A DEC-0040 escolheu a alternativa A e legitimou o ID técnico `math-authoring`.
 O nome de exibição “Autoria matemática” é descritivo e provisório; não fixa marca pública.
@@ -23,7 +23,7 @@ Os IDs `MA-REQ-*` são requisitos estáveis deste Product.
 
 | ID | Requisito | Evidência exigida |
 |---|---|---|
-| MA-REQ-001 | Product independente, C#, local-first, utilizável e distribuível sem Hub, conta, rede ou IA | Grafo sem referências a outros Products; teste headless; instalação e uso offline sem Hub |
+| MA-REQ-001 | Product independente, C#, local-first, utilizável e distribuível sem outro Product, conta, rede ou IA | Grafo sem referências a outros Products; teste headless; instalação e uso offline de qualquer outro Product |
 | MA-REQ-002 | Um documento canônico versionado para projeto, cenas, semântica, apresentação, timeline e assets | Mesmo estado após operações visuais/textuais, save/load e undo/redo; nenhuma sincronização heurística |
 | MA-REQ-003 | Expressões estruturadas, funções, variáveis e dependências reativas determinísticas | Mudança em Δx invalida B/reta/inclinação; ciclos, referências inválidas e domínio matemático produzem erros estruturados |
 | MA-REQ-004 | Scene graph genérico com transformações, grupos, ordem visual, estilos e câmera | Render de projetos diferentes e hit testing; demo não contém branch por ID de objeto/cena |
@@ -123,7 +123,7 @@ Saídas progressivas: projeto local versionado; PNG e vetor quando adequado;
 MP4/H.264; Presenter com pausa/variáveis; interatividade exportável. Áudio e
 edição audiovisual servem à explicação matemática. IA futura pode sugerir cenas,
 storyboard, transformações, narração e exercícios por operações no mesmo modelo,
-sem novo formato ou dependência direta do Ecosystem AI.
+sem novo formato ou dependência direta de qualquer Product de IA.
 
 ## Não escopo inicial
 
