@@ -138,7 +138,7 @@
                 <button type="button"
                         class="@RowClass(entry)"
                         data-path="@entry.Path"
-                        draggable="@(!Workspace.IsReadOnly)"
+                        draggable="@(Workspace.IsReadOnly ? "false" : "true")"
                         disabled="@(!entry.IsFolder && !entry.Editable)"
                         @onclick="() => Activate(entry)"
                         @ondragstart="() => BeginDrag(entry.Path)"
