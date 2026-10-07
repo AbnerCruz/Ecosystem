@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc17-shell-navigation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T08:20:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc17",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-17",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc17-shell-navigation",
+  "base_commit": "c3ec27e6b1feaaae53c42e347e3c168f6b376075",
+  "commit": "1c3b779a7148020396d92c1ee04d9d06b6da9e85",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/ShellNavigation.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Shared/MainLayout.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Shared/PlannedSurface.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Foundation.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/World.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/More.razor",
+    "apps/urbe/csharp/src/Urbe.UI/UrbeRoutes.razor",
+    "apps/urbe/csharp/src/Urbe.UI/_Imports.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc17-shell-navigation.json"
+  ],
+  "work_completed": [
+    "Criado shell compartilhado em Urbe.UI para Web e MAUI Hybrid.",
+    "Definidas rotas canônicas para Início, Explorer, Editor, Cidade e Mais.",
+    "Superfícies ainda não portadas são placeholders explícitos com UC responsável.",
+    "Layout mobile-first usa safe-area, barra inferior no celular e rail lateral em viewport maior.",
+    "Smoke Web verifica navegação ativa online/offline, base paths / e /preview/, service worker e ausência de overflow horizontal."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "estado combinado",
+      "result": "pending",
+      "evidence": "Aguardando integrador."
+    },
+    {
+      "kind": "human",
+      "check": "layout/toque",
+      "result": "not-executed",
+      "evidence": "Reservado a G-C3 conforme NN-017."
+    }
+  ],
+  "known_issues": [
+    "Explorer e Editor reais pertencem a UC-18.",
+    "Cidade interativa pertence a UC-19.",
+    "Validação humana de layout/toque permanece G-C3.",
+    "Cliente distribuído continua JS até UC-31."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI e integrar esta fatia se rotina.",
+    "Após integração verde, reconciliar ROADMAP/Issue #279 e decidir se UC-17 fecha ou se resta alguma fatia de navegação.",
+    "Então iniciar UC-18."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/adr/0010-*.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Issue #279, branch, AGENTSCHAT, PR e handoff registram a execução."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana de layout/toque é inferida pela CI."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Shell não depende do Hub nem do plano de controle."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-shell",
+      "status": "product-specific",
+      "rationale": "Navegação e superfícies são específicas do produto Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "UI compartilhada e testes de navegação sem mudança de constituição, dados persistidos, segurança ou distribuição."
+  },
+  "cost": null
+}
