@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "feat/urbe-uc18-editor-session-2",
   "base_commit": "9efb5555b84b0fd41f21c8cf2e2b0af227a717f0",
-  "commit": "a4d3bcaad85efcb4bbd02aee97553c00eb00ecd6",
-  "pr": null,
+  "commit": "a5e75883a5febcfad6ef8b178678df5af6171ff2",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/285",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
     "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
