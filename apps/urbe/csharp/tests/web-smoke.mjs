@@ -118,6 +118,34 @@ async function assertShell(page) {
     await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
     assert.match(await page.locator('.editor-visual').innerText(), /Texto forte\./);
 
+    const visual = page.getByLabel('Editor visual da nota');
+    const beforeVisualRevision = Number(
+        await page.locator('[data-surface="editor"]').getAttribute('data-revision'));
+    await visual.evaluate(element => {
+        element.innerHTML =
+            '<h1>Visual editado</h1>' +
+            '<p><strong>direto</strong> ' +
+            '<span class="wikilink" data-note-name="Nova ligada">Nova ligada</span></p>';
+        element.dispatchEvent(
+            new InputEvent('input', {
+                bubbles: true,
+                inputType: 'insertText',
+                data: null
+            }));
+    });
+    await page.waitForFunction(
+        previous => Number(
+            document.querySelector('[data-surface="editor"]')?.dataset.revision) > previous,
+        beforeVisualRevision);
+
+    await page.getByRole('button', { name: 'Fonte', exact: true }).click();
+    await page.waitForFunction(
+        () => document.querySelector('textarea')?.value.includes('# Visual editado'));
+    assert.match(await page.getByLabel('Markdown da nota').inputValue(), /\*\*direto\*\* \[\[Nova ligada\]\]/);
+
+    await page.getByRole('button', { name: 'Visual', exact: true }).click();
+    await page.locator('.editor-visual h1', { hasText: 'Visual editado' }).waitFor();
+
     await page.getByRole('button', { name: 'Criar Nova ligada', exact: true }).click();
     await page.getByRole('heading', { name: 'Nova ligada', exact: true }).waitFor();
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
@@ -269,7 +297,7 @@ try {
 
     assert.deepEqual(errors, []);
     console.log(
-        'UC-17/18 Web: Explorer move mouse/toque + Editor Fonte/Visual + undo/redo + abas + wikilinks + offline OK.');
+        'UC-17/18 Web: Explorer move mouse/toque + edição Visual direta + Fonte + undo/redo + abas + wikilinks + offline OK.');
 } finally {
     await browser?.close();
     await new Promise(resolve => server.close(resolve));
