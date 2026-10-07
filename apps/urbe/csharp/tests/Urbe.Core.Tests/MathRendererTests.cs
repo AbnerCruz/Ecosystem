@@ -109,7 +109,7 @@ public sealed class MathRendererTests
         Assert.Empty(result.CompatibilityDiagnostics);
         Assert.Contains("<path ", result.Svg, StringComparison.Ordinal);
         Assert.Contains(
-            "aria-label='" + tex.Replace("\\", "&quot;", StringComparison.Ordinal),
+            "aria-label='" + tex + "'",
             result.Svg,
             StringComparison.Ordinal);
     }
