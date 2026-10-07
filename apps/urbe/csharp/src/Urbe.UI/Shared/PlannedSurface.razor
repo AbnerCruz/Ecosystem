@@ -1,0 +1,18 @@
+@if (Eyebrow is not null)
+{
+    <p class="surface-eyebrow">@Eyebrow</p>
+}
+<h1>@Title</h1>
+<p class="surface-copy">@Description</p>
+<div class="surface-planned" role="status">
+    <strong>@OwnerUseCase</strong>
+    <span>@Status</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string Description { get; set; } = string.Empty;
+    [Parameter, EditorRequired] public string OwnerUseCase { get; set; } = string.Empty;
+    [Parameter] public string Status { get; set; } = "Superfície ainda não portada para o cliente C#.";
+    [Parameter] public string? Eyebrow { get; set; } = "Superfície planejada";
+}
