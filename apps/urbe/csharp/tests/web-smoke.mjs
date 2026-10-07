@@ -96,17 +96,40 @@ async function assertShell(page) {
 
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
     const source = page.getByLabel('Markdown da nota');
-    await source.fill('# Título smoke\\n\\nTexto **forte**.');
+    await source.fill('# Primeira versão\\n\\nTexto inicial.');
+    await source.fill('# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]');
+    assert.equal(await source.inputValue(), '# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]');
+
+    await page.getByRole('button', { name: 'Desfazer', exact: true }).click();
+    await page.waitForFunction(
+        () => document.querySelector('textarea')?.value.includes('Primeira versão'));
+    assert.match(await source.inputValue(), /Primeira versão/);
+
+    await page.getByRole('button', { name: 'Refazer', exact: true }).click();
+    await page.waitForFunction(
+        () => document.querySelector('textarea')?.value.includes('Título smoke'));
     assert.equal(await source.inputValue(), '# Título smoke\\n\\nTexto **forte**.');
 
     await page.getByRole('button', { name: 'Visual', exact: true }).click();
     await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
     assert.match(await page.locator('.editor-visual').innerText(), /Texto forte\./);
 
+    await page.getByRole('button', { name: 'Criar Nova ligada', exact: true }).click();
+    await page.getByRole('heading', { name: 'Nova ligada', exact: true }).waitFor();
+    await page.getByRole('button', { name: '← Voltar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
+
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
     await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
+
+    await page.getByLabel('Nova nota').fill('Outra');
+    await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Outra', exact: true }).waitFor();
+    assert.equal(await page.locator('.editor-tab').count(), 3);
+    await page.locator('.editor-tab-open').filter({ hasText: 'Smoke' }).click();
+    await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
 
     await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
     await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
@@ -198,7 +221,7 @@ try {
 
     assert.deepEqual(errors, []);
     console.log(
-        'UC-17/18 Web: shell + sessão Explorer/Editor + Markdown Visual/Fonte + offline OK.');
+        'UC-17/18 Web: Explorer/Editor + Fonte/Visual + undo/redo + abas + criação de wikilink + offline OK.');
 } finally {
     await browser?.close();
     await new Promise(resolve => server.close(resolve));
