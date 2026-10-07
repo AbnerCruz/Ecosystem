@@ -88,7 +88,11 @@ async function assertShell(page) {
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
 
     // UC-18: prove that the shared in-memory workspace really connects
-    // Explorer → Editor → Markdown domain → Visual → origin stack.
+    // Explorer → folder actions/move → Editor → Markdown domain → Visual.
+    await page.getByLabel('Nova pasta').fill('Destino');
+    await page.getByRole('button', { name: 'Criar pasta', exact: true }).click();
+    await page.getByLabel('Ações de Destino').waitFor();
+
     await page.getByLabel('Nova nota').fill('Smoke');
     await page.getByRole('button', { name: 'Criar', exact: true }).click();
     await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
@@ -121,8 +125,21 @@ async function assertShell(page) {
 
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
-    await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
+    const smokeRow = page.getByRole('button', { name: /Smoke\.md/ });
+    await smokeRow.waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
+
+    const destinationRow = page.getByRole('button', { name: /Destino/ });
+    await smokeRow.dragTo(destinationRow);
+    await destinationRow.click();
+    await page.getByLabel('Ações de Destino').waitFor();
+    await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
+    await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
+    assert.match(
+        await page.getByText(/alteração\(ões\) aguardando persistência pelo host/).innerText(),
+        /alteração/);
+
+    await page.getByRole('button', { name: '← Raiz', exact: true }).click();
 
     await page.getByLabel('Nova nota').fill('Outra');
     await page.getByRole('button', { name: 'Criar', exact: true }).click();
@@ -130,6 +147,31 @@ async function assertShell(page) {
     assert.equal(await page.locator('.editor-tab').count(), 3);
     await page.locator('.editor-tab-open').filter({ hasText: 'Smoke' }).click();
     await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
+
+    await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
+    await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
+
+    const anotherRow = page.getByRole('button', { name: /Outra\.md/ });
+    await anotherRow.dispatchEvent('pointerdown', {
+        pointerType: 'touch',
+        button: 0,
+        isPrimary: true
+    });
+    await page.waitForTimeout(650);
+    await page.getByRole('status').filter({ hasText: /Movendo Outra\.md/ }).waitFor();
+    await anotherRow.dispatchEvent('pointerup', {
+        pointerType: 'touch',
+        button: 0,
+        isPrimary: true
+    });
+    await page.getByRole('button', { name: /Destino/ }).click();
+
+    const movedFolder = page.getByRole('button', { name: /Destino/ });
+    await movedFolder.click();
+    await page.getByLabel('Ações de Destino').waitFor();
+    await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
+    await page.getByRole('button', { name: /Outra\.md/ }).waitFor();
+    await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
 
     await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
     await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
@@ -221,7 +263,7 @@ try {
 
     assert.deepEqual(errors, []);
     console.log(
-        'UC-17/18 Web: Explorer/Editor + Fonte/Visual + undo/redo + abas + criação de wikilink + offline OK.');
+        'UC-17/18 Web: Explorer move mouse/toque + Editor Fonte/Visual + undo/redo + abas + wikilinks + offline OK.');
 } finally {
     await browser?.close();
     await new Promise(resolve => server.close(resolve));
