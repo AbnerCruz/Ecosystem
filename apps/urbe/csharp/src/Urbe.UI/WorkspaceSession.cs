@@ -525,6 +525,35 @@ public sealed class WorkspaceSession : IDisposable
             ? Array.Empty<UrbeDocument>()
             : Knowledge.Backlinks(CurrentDocument.Id);
 
+    public IReadOnlyList<string> MissingLinks()
+    {
+        if (CurrentDocument is null)
+            return Array.Empty<string>();
+
+        var resolved = Knowledge.Links(CurrentDocument.Id);
+        var missing = CurrentDocument.Links
+            .Where(
+                raw =>
+                    !resolved.Any(
+                        document =>
+                            string.Equals(
+                                document.Title,
+                                raw,
+                                StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(
+                                ArtifactModel.WithoutNoteExtension(document.Path),
+                                raw,
+                                StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(
+                                document.Path,
+                                raw,
+                                StringComparison.OrdinalIgnoreCase)))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return Array.AsReadOnly(missing);
+    }
+
     private UrbeDocument? ApplyCurrentContent(string content, string metadata)
     {
         if (CurrentDocument is null)
