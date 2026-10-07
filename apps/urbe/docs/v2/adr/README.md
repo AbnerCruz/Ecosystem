@@ -53,3 +53,4 @@ Use [0000-template.md](0000-template.md) como base.
 | [0008](0008-comentarios-em-sidecar.md) | Comentários em sidecar fora do arquivo | Accepted |
 | [0009](0009-composicoes-para-paginas.md) | Composições migram para páginas | Accepted |
 | [0010](0010-migracao-para-csharp.md) | Migração do Urbe para C# (reescrita com paridade; Ecosystem ADR-0016, DEC-0024-B) | Accepted |
+| [0012](0012-renderizacao-matematica-csharp-svg.md) | Renderização matemática C# com CSharpMath.Rendering e backend SVG próprio | Proposed |

@@ -32,7 +32,22 @@ public sealed class ArchitectureTests
     {
         var project = XDocument.Load(Path.Combine(Root, "src/Urbe.Core/Urbe.Core.csproj"));
         Assert.Empty(project.Descendants("ProjectReference"));
-        Assert.Empty(project.Descendants("PackageReference"));
+        var packages = project.Descendants("PackageReference")
+            .Select(reference => new
+            {
+                Name = reference.Attribute("Include")?.Value
+                    ?? throw new InvalidDataException("PackageReference sem Include."),
+                Version = reference.Attribute("Version")?.Value
+                    ?? throw new InvalidDataException("PackageReference sem Version.")
+            })
+            .ToArray();
+        Assert.Equal(
+            new[]
+            {
+                new { Name = "CSharpMath", Version = "[1.0.0-pre.2]" },
+                new { Name = "CSharpMath.Rendering", Version = "[1.0.0-pre.2]" }
+            },
+            packages);
         Assert.Empty(project.Descendants("FrameworkReference"));
         Assert.DoesNotContain(typeof(ProductIdentity).Assembly.GetReferencedAssemblies(),
             reference => reference.Name!.StartsWith("Microsoft.Maui", StringComparison.Ordinal) ||
