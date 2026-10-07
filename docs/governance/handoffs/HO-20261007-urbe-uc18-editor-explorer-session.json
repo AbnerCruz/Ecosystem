@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "feat/urbe-uc18-editor-explorer-session",
   "base_commit": "9143b2393a7198966f2b978e5037c39e3222a233",
-  "commit": "3c8084558d4c450dc9ee5776bc085e95a5561717",
-  "pr": null,
+  "commit": "d1bd128d077f98d4cb3c3c1179c1fe1578003fd6",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/283",
   "files_changed": [
     "apps/urbe/csharp/Urbe.Portable.slnx",
     "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
