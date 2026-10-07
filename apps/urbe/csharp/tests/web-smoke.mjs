@@ -108,7 +108,7 @@ async function assertShell(page) {
     await page.getByRole('button', { name: 'Refazer', exact: true }).click();
     await page.waitForFunction(
         () => document.querySelector('textarea')?.value.includes('Título smoke'));
-    assert.equal(await source.inputValue(), '# Título smoke\\n\\nTexto **forte**.');
+    assert.equal(await source.inputValue(), '# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]');
 
     await page.getByRole('button', { name: 'Visual', exact: true }).click();
     await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
