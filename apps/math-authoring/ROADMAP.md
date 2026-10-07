@@ -1,19 +1,13 @@
-# Histórico de roadmap proposto — autoria matemática temporal
+# ROADMAP — Autoria matemática temporal
 
-> **Supersedido como autoridade por `apps/math-authoring/ROADMAP.md` após a aplicação da DEC-0040.** Este arquivo preserva o plano pré-constituição.
-
-> Autoridade de escopo/IDs desta proposta; estado vivo em Issues; evidências em
-> handoffs. Não é fase nova do roadmap global nem Product constituído.
-> Após DEC-0040, mover para `apps/<id-decidido>/ROADMAP.md`, preservando IDs e
-> deixando aqui somente um ponteiro. Não manter duas autoridades concorrentes.
+> Autoridade de escopo/IDs do Product `math-authoring`; estado vivo em Issues e evidências em handoffs.
+> DEC-0040 alternativa A foi aplicada: o ID técnico permanente é `math-authoring`.
+> O nome público permanece em aberto. Este roadmap não cria fase global nem altera o roadmap de outros Products.
 
 ## Preparação e constituição
 
-- [~] MSP-001 — Auditar o repositório vivo, formalizar SPEC/plano/ADRs propostos
-  e expor identidade permanente na DEC-0040. Issue #260. Saída: objeto revisável
-  no portal, CI consistency e handoff com base/fontes/NN. A preparação documental
-  não constitui o Product. Gate: decisão do proprietário sobre ID e constituição.
-- [ ] MA-001 — Aplicar a alternativa escolhida, aceitar ADRs na forma legitimada,
+- [x] MSP-001 — Preparação de constituição concluída: auditoria, SPEC/plano e ADRs foram integrados; DEC-0040 foi decidida pelo proprietário em favor de `math-authoring`. Issue #260 acompanha o fechamento da constituição efetiva.
+- [~] MA-001 — Aplicar a alternativa escolhida, aceitar ADRs na forma legitimada,
   migrar SPEC/ROADMAP para `apps/<id>`, criar AGENTS local, VERSION, Core C# mínimo
   com build/test reais, registro e CI seletivo. Gate: boundaries/testes standalone
   e consistency; PR de efeito arquitetural/control plane segue aprovação crítica

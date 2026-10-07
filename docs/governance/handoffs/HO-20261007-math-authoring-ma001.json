@@ -1,0 +1,203 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-math-authoring-ma001",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T10:16:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "MA-001",
+  "component": "math-authoring",
+  "state": "review",
+  "branch": "chatgpt/math-authoring-ma001",
+  "base_commit": "9143b2393a7198966f2b978e5037c39e3222a233",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/284",
+  "files_changed": [
+    ".github/workflows/math-authoring-ci.yml",
+    "ROADMAP.md",
+    "apps/math-authoring/AGENTS.md",
+    "apps/math-authoring/Directory.Build.props",
+    "apps/math-authoring/MathAuthoring.slnx",
+    "apps/math-authoring/README.md",
+    "apps/math-authoring/ROADMAP.md",
+    "apps/math-authoring/SPEC.md",
+    "apps/math-authoring/VERSION",
+    "apps/math-authoring/global.json",
+    "apps/math-authoring/src/MathAuthoring.Core/Expressions.cs",
+    "apps/math-authoring/src/MathAuthoring.Core/Identity.cs",
+    "apps/math-authoring/src/MathAuthoring.Core/MathAuthoring.Core.csproj",
+    "apps/math-authoring/src/MathAuthoring.Core/ProjectDocument.cs",
+    "apps/math-authoring/src/MathAuthoring.Core/ProjectValidator.cs",
+    "apps/math-authoring/tests/MathAuthoring.Core.Tests/FoundationTests.cs",
+    "apps/math-authoring/tests/MathAuthoring.Core.Tests/MathAuthoring.Core.Tests.csproj",
+    "docs/adr/0029-product-de-autoria-matematica-temporal.md",
+    "docs/adr/0030-documento-canonico-de-autoria-matematica.md",
+    "docs/governance/decisions.json",
+    "docs/proposals/math-studio/ROADMAP.md",
+    "docs/proposals/math-studio/SPEC.md",
+    "ecosystem.json",
+    "docs/governance/handoffs/HO-20261007-math-authoring-ma001.json",
+    "docs/adr/README.md",
+    ".github/workflows/integrate.yml",
+    ".github/integrator/integrate.sh"
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution",
+      "architecture",
+      "control-plane"
+    ],
+    "reason": "Aplica DEC-0040, aceita ADR-0029/0030, registra um novo Product em ecosystem.json e adiciona workflow seletivo; a integração exige autorização crítica após checks verdes."
+  },
+  "work_completed": [
+    "DEC-0040 alternativa A foi aplicada canonicamente; consequencesApplied=true e ADR-0029/0030 foram atualizados para Aceito.",
+    "Product `math-authoring` registrado em ecosystem.json com lifecycle, versão, docs, comando de teste e dependencies vazio.",
+    "SPEC e ROADMAP migrados para `apps/math-authoring` como autoridades canônicas; documentos de proposta foram marcados históricos para evitar duas autoridades.",
+    "Core C# net10.0 headless criado sem PackageReference nem referência a outro Product.",
+    "ProjectDocument schemaVersion 1, metadata, variáveis, cenas e perfis de export formam o modelo mínimo; expressões já são AST tipada em vez de string autoritativa.",
+    "Validador mínimo rejeita schema incompatível, IDs duplicados, valores não finitos e perfis inválidos.",
+    "Testes do Product cobrem identidade estável, projeto mínimo válido, validação negativa, AST estruturada e ausência de dependências de Products/UI.",
+    "Workflow math-authoring-ci seletivo criado com suporte a workflow_call para o candidato combinado do integrador.",
+    "Roadmap raiz aponta para a autoridade local do Product e Issues #260/#282 registram o estado vivo."
+  ],
+  "verification": [
+    {
+      "check": "cd apps/math-authoring && dotnet test --project tests/MathAuthoring.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O ambiente local não possui `dotnet`; o primeiro run do PR #284 (`math-authoring-ci`, run 37606283902) compilou e executou os testes do Core com sucesso no head 1d4ed0f. Commits de correção posteriores exigem rerun antes de declarar o head final verde."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O primeiro consistency do PR #284 (run 37606283847) detectou referências textuais a Products, índice de ADRs, reuse duplicado e ausência do novo Product no integrador. As correções são aplicadas na mesma branch sem enfraquecer checks; rerun final obrigatório."
+    }
+  ],
+  "known_issues": [
+    "MA-001 é somente constituição e fundação headless. Persistência completa, math dependency graph, renderer, timeline, editor Android e MP4 pertencem a MA-002..011.",
+    "Nenhuma validação DEVICE ou arquivo MP4 é reivindicada nesta etapa.",
+    "O nome público/branding permanece em aberto por decisão explícita; `Autoria matemática` é somente display descritivo provisório."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Observar novamente math-authoring-ci + consistency após as correções.",
+    "Se algum check falhar, corrigir/reconciliar na mesma branch sem enfraquecer checks.",
+    "Quando o integrador classificar o PR crítico verde, aguardar a autorização do proprietário pelo mecanismo oficial; não adicionar label de integração manualmente.",
+    "Após integração, encerrar MA-001/MSP-001 com evidência e iniciar MA-002 autonomamente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/decisions.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/ecosystem.schema.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/adr/0011-local-first-e-promocao-por-evidencia.md",
+    "docs/adr/0015-integrador-automatico.md",
+    "docs/adr/0029-product-de-autoria-matematica-temporal.md",
+    "docs/adr/0030-documento-canonico-de-autoria-matematica.md",
+    "docs/governance/responses/DEC-0040.md",
+    "docs/proposals/math-studio/SPEC.md",
+    "docs/proposals/math-studio/ROADMAP.md",
+    "docs/proposals/math-studio/IMPLEMENTATION.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ProjectDocument é a única autoridade autoral planejada; SPEC/ROADMAP locais substituem explicitamente as propostas históricas."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "math-authoring é Product independente e declara dependencies vazio."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Core headless executa sem Hub e não referencia Hub."
+    },
+    {
+      "id": "NN-004",
+      "evidence": "Nenhum shared/common/core global foi criado; todo código novo está no Product."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Nova implementação usa C#/.NET 10."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #282, branch, commits, handoff e PR tornam o trabalho observável."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A direção está persistida em DEC-0040, ADR-0029/0030 e SPEC antes de sustentar a implementação."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas consultadas diretamente estão listadas neste handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Constituição e documento canônico estão cobertos por ADR-0029/0030 ratificados pela DEC-0040."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "VERSION, comando de teste, roadmap e workflow seletivo próprios preservam lifecycle independente."
+    },
+    {
+      "id": "NN-015",
+      "evidence": "GitHub é usado somente para desenvolvimento/governança; nenhum runtime usa GitHub como IPC."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Nenhuma execução de código importado ou permissão implícita foi introduzida."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI pendente é separado de futuras validações DEVICE; nenhuma validação humana é fingida."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "MA-001 permanece review até checks e integração crítica; não é marcado done por existir código."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "`math-authoring` é o ID técnico estável escolhido pelo proprietário; `Math Studio` não foi promovido a identidade."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "A fundação implementa somente o slice necessário, sem plataforma matemática transversal especulativa."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Registro, roadmap, Issues, decisão e handoff tornam o estado descobrível."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "AST/documento permanecem locais; reuso é candidato, não extração."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma dependência de distribuição do Hub foi criada; standalone é requisito da SPEC e teste do Core."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "math-authoring-core",
+      "status": "possible-candidate",
+      "rationale": "O núcleo semântico pode revelar valor de reuso no futuro, mas hoje possui um único consumidor real e permanece integralmente no Product."
+    }
+  ],
+  "cost": null
+}
