@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "feat/urbe-uc17-shell-navigation",
   "base_commit": "c3ec27e6b1feaaae53c42e347e3c168f6b376075",
-  "commit": "1c3b779a7148020396d92c1ee04d9d06b6da9e85",
-  "pr": null,
+  "commit": "4879888f2ffd602ec7de3405a84efaf57cd82229",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/280",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.UI/ShellNavigation.cs",
     "apps/urbe/csharp/src/Urbe.UI/Shared/MainLayout.razor",
@@ -75,7 +75,6 @@
     "apps/urbe/docs/csharp/ROADMAP.md",
     "apps/urbe/docs/v2/REQUIREMENTS.md",
     "apps/urbe/docs/v2/SPEC.md",
-    "apps/urbe/docs/v2/adr/0010-*.md",
     "apps/urbe/AGENTS.md",
     "docs/governance/integration-policy.json"
   ],
