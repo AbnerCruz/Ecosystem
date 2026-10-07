@@ -39,7 +39,10 @@
     "docs/proposals/math-studio/ROADMAP.md",
     "docs/proposals/math-studio/SPEC.md",
     "ecosystem.json",
-    "docs/governance/handoffs/HO-20261007-math-authoring-ma001.json"
+    "docs/governance/handoffs/HO-20261007-math-authoring-ma001.json",
+    "docs/adr/README.md",
+    ".github/workflows/integrate.yml",
+    ".github/integrator/integrate.sh"
   ],
   "criticality": {
     "declared": "critical",
@@ -66,13 +69,13 @@
       "check": "cd apps/math-authoring && dotnet test --project tests/MathAuthoring.Core.Tests",
       "kind": "automated",
       "result": "pending",
-      "evidence": "O ambiente deste agente não possui `dotnet` (comando indisponível). O workflow seletivo do PR executará .NET 10; nenhum verde local foi inventado."
+      "evidence": "O ambiente local não possui `dotnet`; o primeiro run do PR #284 (`math-authoring-ci`, run 37606283902) compilou e executou os testes do Core com sucesso no head 1d4ed0f. Commits de correção posteriores exigem rerun antes de declarar o head final verde."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
       "result": "pending",
-      "evidence": "SDK .NET ausente no ambiente local; consistency deve ser executado pelo CI/integrador sobre o estado combinado."
+      "evidence": "O primeiro consistency do PR #284 (run 37606283847) detectou referências textuais a Products, índice de ADRs, reuse duplicado e ausência do novo Product no integrador. As correções são aplicadas na mesma branch sem enfraquecer checks; rerun final obrigatório."
     }
   ],
   "known_issues": [
@@ -82,8 +85,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Abrir PR crítico pronto para revisão e observar math-authoring-ci + consistency no estado combinado.",
-    "Se CI falhar, corrigir/reconciliar na mesma branch sem enfraquecer checks.",
+    "Observar novamente math-authoring-ci + consistency após as correções.",
+    "Se algum check falhar, corrigir/reconciliar na mesma branch sem enfraquecer checks.",
     "Quando o integrador classificar o PR crítico verde, aguardar a autorização do proprietário pelo mecanismo oficial; não adicionar label de integração manualmente.",
     "Após integração, encerrar MA-001/MSP-001 com evidência e iniciar MA-002 autonomamente."
   ],
@@ -191,9 +194,9 @@
   ],
   "reuse_assessment": [
     {
-      "subject": "math-semantic-scene",
+      "subject": "math-authoring-core",
       "status": "possible-candidate",
-      "rationale": "Documento semântico/math/scene/time podem ser úteis a futuros consumidores, mas não existe segundo consumidor legitimado; permanecem no Product."
+      "rationale": "O núcleo semântico pode revelar valor de reuso no futuro, mas hoje possui um único consumidor real e permanece integralmente no Product."
     }
   ],
   "cost": null
