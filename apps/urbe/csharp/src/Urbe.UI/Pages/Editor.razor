@@ -108,15 +108,24 @@
         <div class="editor-relations">
             <section>
                 <h2>Links</h2>
-                @if (Workspace.Links().Count == 0)
+                @if (Workspace.Links().Count == 0 && Workspace.MissingLinks().Count == 0)
                 {
-                    <p>Nenhum link resolvido.</p>
+                    <p>Nenhum link.</p>
                 }
                 else
                 {
                     @foreach (var linked in Workspace.Links())
                     {
                         <button type="button" @onclick="() => OpenLinked(linked)">@linked.Title</button>
+                    }
+                    @foreach (var missing in Workspace.MissingLinks())
+                    {
+                        <button type="button"
+                                class="missing-link"
+                                disabled="@Workspace.IsReadOnly"
+                                @onclick="() => CreateMissingLink(missing)">
+                            Criar @missing
+                        </button>
                     }
                 }
             </section>
@@ -199,6 +208,28 @@
     {
         Workspace.TryPopOrigin(out var origin);
         Navigation.NavigateTo(origin.Href);
+    }
+
+    private void CreateMissingLink(string target)
+    {
+        var current = Workspace.CurrentDocument;
+        if (current is null)
+            return;
+
+        var created = Workspace.CreateLinkedNote(target);
+        if (created is null)
+            return;
+
+        var returnHref =
+            "editor?path=" + Uri.EscapeDataString(current.Path);
+
+        if (!Workspace.Open(
+                created.Id,
+                new EditorOpenOrigin(EditorOpenOriginKind.Link, returnHref)))
+            return;
+
+        Navigation.NavigateTo(
+            "editor?path=" + Uri.EscapeDataString(created.Path));
     }
 
     private void OpenLinked(UrbeDocument document)
