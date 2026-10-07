@@ -1,3 +1,12 @@
+### 2026-10-07 — ChatGPT — UC-17 shell e navegação
+
+- UC-16/G-C2 foi autorizado e integrado em `c3ec27e6`; Issue #257 encerrada e UC-17 aberta como Issue #279.
+- Criado shell compartilhado em `Urbe.UI`, usado igualmente por Web e MAUI Hybrid.
+- Navegação canônica: Início, Explorer, Editor, Cidade e Mais; superfícies posteriores permanecem placeholders explícitos com UC responsável.
+- Layout mobile-first com safe-area, barra inferior no celular e rail lateral em viewport maior; nenhum corte do cliente distribuído.
+- `web-smoke.mjs` agora prova rotas ativas, base path `/` e `/preview/`, recarga com service worker, navegação offline e ausência de overflow horizontal.
+- Esta fatia não declara G-C3 nem validação humana de layout/toque; isso continua reservado aos gates posteriores.
+
 ### 2026-10-07 — ChatGPT — UC-16 / G-C2 closeout
 
 - Todas as fatias matemáticas anteriores estão integradas na main até `680e6db6`.

@@ -1,10 +1,21 @@
 @page "/"
 
-<main class="foundation" data-product="@ProductIdentity.Id">
-    <p class="eyebrow">Workspace de conhecimento</p>
+<section class="surface home-surface" data-surface="home">
+    <p class="surface-eyebrow">Workspace de conhecimento</p>
     <h1>@ProductIdentity.DisplayName</h1>
-    <p>Suas ideias, documentos e mundos em um só lugar.</p>
-    <aside role="status">
-        Este cliente está em construção. Continue usando o Urbe atual para suas notas.
-    </aside>
-</main>
+    <p class="surface-copy">
+        Suas ideias, documentos e mundos em um só lugar, agora sobre o shell compartilhado do cliente C#.
+    </p>
+
+    <div class="home-status" role="status">
+        <strong>M3 iniciado</strong>
+        <span>O domínio C# está fechado até G-C2. As superfícies são portadas incrementalmente sem cortar o cliente atual.</span>
+    </div>
+
+    <div class="surface-grid" aria-label="Estado da migração">
+        <article><strong>Domínio</strong><span>G-C2 aprovado</span></article>
+        <article><strong>Shell</strong><span>UC-17 em andamento</span></article>
+        <article><strong>Editor / Explorer</strong><span>UC-18</span></article>
+        <article><strong>Cidade</strong><span>UC-19</span></article>
+    </div>
+</section>
