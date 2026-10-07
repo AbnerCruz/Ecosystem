@@ -1,0 +1,101 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc18-explorer-move",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T11:12:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc18-explorer-move",
+  "base_commit": "fab94d76fc4a6482fc61a9d0bdf2e020a9cbc5e8",
+  "commit": "5c91000b9e81b8a132b72b744ee11f465180e9c4",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc18-explorer-move.json"
+  ],
+  "work_completed": [
+    "WorkspaceSession ganhou pastas explícitas e fila host-neutra de mutações CreateFolder/Move.",
+    "Mover arquivo ou árvore de pasta preserva IDs documentais e rebaseia documentos abertos sem criar segunda autoridade de persistência.",
+    "Explorer passou a exibir ações de pasta e local atual como alvos de movimento.",
+    "Desktop move por drag-and-drop; toque arma movimento por long press e conclui tocando na pasta de destino.",
+    "Smoke Web cobre criação de pasta, movimento por mouse e long press/touch além das jornadas Editor já existentes."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "web-smoke UC-18 Explorer move",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks estado combinado",
+      "result": "pending",
+      "evidence": "Aguardando integrador."
+    },
+    {
+      "kind": "human",
+      "check": "toque/layout real",
+      "result": "not-applicable",
+      "evidence": "Reservado a G-C3 conforme NN-017."
+    }
+  ],
+  "known_issues": [
+    "Persistência física das mutações ainda depende dos adapters de host a serem conectados.",
+    "Edição Visual direta ainda não foi portada; Visual continua renderizando Markdown canônico.",
+    "REQ-107 toolbar junto ao teclado virtual permanece pendente.",
+    "Comentários, painel fixado, templates, timer e estado completo da toolbar permanecem pendentes em UC-18."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar esta fatia se routine e estado combinado verde.",
+    "Portar edição Visual direta sem criar segunda autoridade de Markdown.",
+    "Conectar PendingMutations à persistência canônica dos hosts.",
+    "Completar requisitos avançados de Editor antes de fechar UC-18."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Issue #281, branch, AGENTSCHAT, PR e handoff registram a terceira fatia."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Smoke automatizado não é tratado como validação humana de toque/layout."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Fila de mutações e Explorer não dependem do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "workspace-mutations",
+      "status": "product-specific",
+      "rationale": "Representa operações de Explorer do Urbe e prepara o boundary de persistência já definido pelo produto."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "UI e planejamento de mutações em memória; não escreve formato persistido nem altera csproj, segurança, migração ou distribuição."
+  },
+  "cost": null
+}
