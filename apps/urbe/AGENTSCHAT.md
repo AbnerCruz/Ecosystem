@@ -1,3 +1,12 @@
+### 2026-10-07 — ChatGPT — UC-18 / Issue #281
+
+- Estado: primeira fatia implementada; aguardando CI e integração.
+- Feito: sessão compartilhada `WorkspaceSession` em `Urbe.UI`; carregamento de `VaultSnapshot`; Explorer por pasta e busca, classificação por `ArtifactModel`, criação de notas e abertura; Editor com pilha de origem, modo Fonte editável, render Visual via `MarkdownEngine`, conversão Visual→Markdown via `VisualMarkdown`, links/backlinks via `KnowledgeIndex`; sessão registrada igualmente em Web e MAUI.
+- Testes: novo `Urbe.UI.Tests` cobre vault→Explorer, round-trip Fonte/Visual, pilha de origem, criação sem colisão, busca e read-only.
+- Limite desta fatia: o modo Visual ainda é renderização, não edição DOM direta; hosts ainda não conectam armazenamento físico à sessão. Esses dois pontos permanecem dentro da UC-18 e não são declarados concluídos.
+- Decisões: nenhuma nova decisão estrutural; usa somente autoridades C# já aprovadas em M1/M2.
+- Próximos passos: CI do PR; depois conectar edição Visual interativa sem segunda autoridade de Markdown e integrar o carregamento/persistência do workspace por adapters de host.
+
 ### 2026-10-07 — ChatGPT — UC-17 shell e navegação
 
 - UC-16/G-C2 foi autorizado e integrado em `c3ec27e6`; Issue #257 encerrada e UC-17 aberta como Issue #279.
