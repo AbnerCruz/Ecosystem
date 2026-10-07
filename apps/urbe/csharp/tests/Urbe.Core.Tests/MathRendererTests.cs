@@ -93,6 +93,65 @@ public sealed class MathRendererTests
     }
 
     [Fact]
+    public void ConfiguredStringMacrosRenderWithoutMutatingSourceTex()
+    {
+        const string tex = @"\RR + \sq{x+1}";
+        var macros = new Dictionary<string, string>
+        {
+            [@"\RR"] = @"\mathbb{R}",
+            [@"\sq"] = @"\left(#1\right)^2"
+        };
+
+        var result = MathRenderer.RenderSvg(tex, macros: macros);
+
+        Assert.True(result.Success, result.Diagnostic);
+        Assert.Equal(tex, result.Tex);
+        Assert.Empty(result.CompatibilityDiagnostics);
+        Assert.Contains("<path ", result.Svg, StringComparison.Ordinal);
+        Assert.Contains(
+            "aria-label='" + tex.Replace("\\", "&quot;", StringComparison.Ordinal),
+            result.Svg,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MacroExpansionFailureIsDiagnosticAndPreservesSource()
+    {
+        const string tex = @"\a";
+        var macros = new Dictionary<string, string>
+        {
+            [@"\a"] = @"\b",
+            [@"\b"] = @"\a"
+        };
+
+        var result = MathRenderer.RenderSvg(tex, macros: macros);
+
+        Assert.False(result.Success);
+        Assert.Equal(tex, result.Tex);
+        Assert.Empty(result.Svg);
+        Assert.Contains("macros", result.Diagnostic, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Ciclo", result.Diagnostic, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void MacroExpandingToKnownUnsupportedCommandFailsExplicitly()
+    {
+        const string tex = @"\answer{4}";
+        var macros = new Dictionary<string, string>
+        {
+            [@"\answer"] = @"\boxed{#1}"
+        };
+
+        var result = MathRenderer.RenderSvg(tex, macros: macros);
+
+        Assert.False(result.Success);
+        Assert.Equal(tex, result.Tex);
+        Assert.Empty(result.Svg);
+        Assert.Contains("Após expandir macros", result.Diagnostic, StringComparison.Ordinal);
+        Assert.Contains("\\boxed", result.Diagnostic, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void LimitsProtectHostsWithoutMutatingTex()
     {
         var huge = new string('x', MathRenderer.MaxTexLength + 1);
