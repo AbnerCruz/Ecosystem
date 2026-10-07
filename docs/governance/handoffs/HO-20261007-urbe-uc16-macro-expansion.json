@@ -1,0 +1,140 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc16-macro-expansion",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T01:29:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc16-macros",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-16",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc16-macro-expansion",
+  "base_commit": "341d3bd74c2e39a899b45fb48ff1d76d9c5eb9ff",
+  "commit": "d4f050e3e09c72f2690d1788807a72571ba7bf83",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/277",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/MathMacros.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MathRenderer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MathMacroTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MathRendererTests.cs",
+    "apps/urbe/docs/csharp/UC16-MATH-COMPATIBILITY.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc16-macro-expansion.json"
+  ],
+  "work_completed": [
+    "Portado o contrato útil observado de UrbeMath.setMacros como expansão explícita de macros de string por renderização, sem estado global.",
+    "Implementados argumentos #1..#9, grupos balanceados, token simples, macros aninhadas, comentários preservados e literal ##.",
+    "Adicionados limites de definições, replacement, saída expandida, profundidade e número de expansões, além de detecção de ciclo.",
+    "MathRenderer aceita dicionário opcional de macros, renderiza apenas a expansão efêmera e preserva TeX/aria-label originais.",
+    "Macros expandidas para comandos incompatíveis conhecidos falham explicitamente; newcommand/def continuam diagnósticos, não execução."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests",
+      "result": "pending",
+      "evidence": "PR #277 retargetado para main; aguardando CI final após correção de macros aninhadas."
+    },
+    {
+      "kind": "automated",
+      "check": "Web/Android/Windows/E2E/checks/consistency",
+      "result": "pending",
+      "evidence": "Aguardando CI e estado combinado do integrador contra main."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE",
+      "result": "not-applicable",
+      "evidence": "Domínio puro/render em memória; UI e DEVICE pertencem a UCs/gates posteriores."
+    }
+  ],
+  "known_issues": [
+    "Formas avançadas de macro KaTeX baseadas em callbacks/objetos JavaScript não foram portadas: não há consumidor real observado e isso introduziria execução/estado global sem requisito.",
+    "Paridade visual/UI pertence à UC-18; avisos de licenças distribuídas pertencem à UC-27/G-C4."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revalidar #277 contra main após a integração do #276.",
+    "Depois auditar UC-16/G-C2 e preparar closeout normativo, incluindo ADR-0012 Accepted e evidência geométrica automatizada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/src/math/core.js",
+    "apps/urbe/tests/math.mjs",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UC16-RENDERER-INVESTIGATION.md",
+    "apps/urbe/docs/v2/adr/0012-renderizacao-matematica-csharp-svg.md",
+    "apps/urbe/docs/csharp/UC16-MATH-COMPATIBILITY.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Macros são parâmetros explícitos por renderização; nenhuma segunda autoridade global é criada."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Implementação permanece no Product Urbe."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Sem Hub ou Host concreto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #257, PR #277, branch, AGENTSCHAT e handoff registram a fatia."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Sem inferir novo requisito; a fatia porta API legada observada e ação prevista pela investigação UC-16."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas e fonte legada foram consultadas diretamente."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Macros são dados de string; callbacks/execução dinâmica não são aceitos e expansão é limitada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE é not-applicable e não é inferido da CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-16 permanece aberta até integração, auditoria e closeout."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Sem nova biblioteca/abstração compartilhada; solução local reduz estado global legado."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência de distribuição do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "math-macro-expansion",
+      "status": "product-specific",
+      "rationale": "Compatibilidade do renderer matemático do Urbe; nenhum segundo consumidor real."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Sem csproj/ADR/dados/segurança/distribuição; porta comportamento em memória dentro de UC-16 já autorizada."
+  },
+  "cost": null
+}
