@@ -13,7 +13,7 @@ Ler diretamente `/MANIFEST.md` (0.1), `/AGENTS.md`, `/ecosystem.json`, `SPEC.md`
 - **MA-I03 — Tempo puro.** Estado em `t` independe do frame anterior.
 - **MA-I04 — Renderer não decide matemática.** Ele apresenta snapshots avaliados.
 - **MA-I05 — IA opcional.** Core/render/export não dependem de IA ou rede.
-- **MA-I06 — Standalone.** Sem dependência direta de Hub, Urbe, Lunet2D ou Ecosystem AI.
+- **MA-I06 — Standalone.** Sem dependência direta de qualquer outro Product do Ecosystem.
 - **MA-I07 — Local-first.** Projeto pertence ao usuário e evolui por schema versionado.
 - **MA-I08 — Mobile-first profissional.** Core não conhece Activity/touch.
 - **MA-I09 — Import é dado.** Projeto importado não executa código arbitrário.
