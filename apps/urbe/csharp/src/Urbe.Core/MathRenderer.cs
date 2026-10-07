@@ -11,7 +11,11 @@ public sealed record MathRenderResult(
     string Svg,
     string? Diagnostic,
     float Width,
-    float Height);
+    float Height)
+{
+    public IReadOnlyList<MathCompatibilityDiagnostic> CompatibilityDiagnostics { get; init; } =
+        Array.Empty<MathCompatibilityDiagnostic>();
+}
 
 /// <summary>
 /// Pure C# TeX renderer for Urbe. Parsing/typesetting come from CSharpMath;
@@ -40,6 +44,17 @@ public static class MathRenderer
         if (!float.IsFinite(fontSize) || fontSize is < 6 or > 256)
             return Failure(source, display, "Tamanho de fonte inválido.");
 
+        var compatibility = MathCompatibility.Analyze(source);
+        var blocking = compatibility.FirstOrDefault(item => item.BlocksRendering);
+        if (blocking is not null)
+        {
+            return Failure(
+                source,
+                display,
+                FormatCompatibilityDiagnostic(blocking),
+                compatibility);
+        }
+
         try
         {
             var painter = new UrbeSvgMathPainter
@@ -51,7 +66,7 @@ public static class MathRenderer
             };
 
             if (!string.IsNullOrWhiteSpace(painter.ErrorMessage))
-                return Failure(source, display, painter.ErrorMessage!);
+                return Failure(source, display, painter.ErrorMessage!, compatibility);
 
             var bounds = painter.Measure(float.NaN);
             var width = Math.Max(1, bounds.Width);
@@ -59,7 +74,11 @@ public static class MathRenderer
             if (!float.IsFinite(width) || !float.IsFinite(height) ||
                 width > 100_000 || height > 100_000)
             {
-                return Failure(source, display, "Dimensões de renderização inválidas.");
+                return Failure(
+                    source,
+                    display,
+                    "Dimensões de renderização inválidas.",
+                    compatibility);
             }
 
             var canvas = new SvgMathCanvas(width, height);
@@ -72,7 +91,10 @@ public static class MathRenderer
                 canvas.ToSvg(source),
                 null,
                 width,
-                height);
+                height)
+            {
+                CompatibilityDiagnostics = compatibility
+            };
         }
         catch (Exception error)
         {
@@ -81,15 +103,27 @@ public static class MathRenderer
             return Failure(
                 source,
                 display,
-                "Falha ao renderizar fórmula: " + error.Message);
+                "Falha ao renderizar fórmula: " + error.Message,
+                compatibility);
         }
     }
+
+    private static string FormatCompatibilityDiagnostic(
+        MathCompatibilityDiagnostic diagnostic) =>
+        string.IsNullOrWhiteSpace(diagnostic.Suggestion)
+            ? diagnostic.Message
+            : diagnostic.Message + " " + diagnostic.Suggestion;
 
     private static MathRenderResult Failure(
         string tex,
         bool display,
-        string diagnostic) =>
-        new(tex, display, false, string.Empty, diagnostic, 0, 0);
+        string diagnostic,
+        IReadOnlyList<MathCompatibilityDiagnostic>? compatibility = null) =>
+        new(tex, display, false, string.Empty, diagnostic, 0, 0)
+        {
+            CompatibilityDiagnostics =
+                compatibility ?? Array.Empty<MathCompatibilityDiagnostic>()
+        };
 
     private sealed class UrbeSvgMathPainter :
         CSharpMath.Rendering.FrontEnd.MathPainter<SvgMathCanvas, Color>

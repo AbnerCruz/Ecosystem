@@ -1,3 +1,11 @@
+### 2026-10-06 — ChatGPT — UC-16 renderer consome diagnósticos estruturados
+
+- Branch empilhada sobre #275 para não bloquear a integração da camada pura de compatibilidade.
+- `MathRenderResult` mantém o construtor existente e ganha `CompatibilityDiagnostics`.
+- `MathRenderer` faz preflight dos comandos/macros conhecidos antes de CSharpMath, preservando TeX e distinguindo incompatibilidade conhecida de erro genérico do parser.
+- Testes cobrem `boxed`, `newcommand`, comando desconhecido, limites, determinismo e corpus real 30/31.
+- Sem nova dependência, ADR, UI, IO ou dado persistido; a fatia é rotineira e será retargetada para main após #275 integrar.
+
 ### 2026-10-06 — ChatGPT — UC-16 compatibilidade TeX independente do renderer
 
 - PR #274 está verde e aguardando autorização crítica para a dependência/ADR; esta fatia não toca esse gate.
