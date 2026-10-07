@@ -2,7 +2,7 @@
 @inject WorkspaceSession Workspace
 @inject NavigationManager Navigation
 
-<section class="surface editor-surface" data-surface="editor">
+<section class="surface editor-surface" data-surface="editor" data-revision="@Workspace.Revision">
     @if (Workspace.CurrentDocument is null)
     {
         <p class="surface-eyebrow">UC-18 · Editor</p>
@@ -96,12 +96,12 @@
         }
         else
         {
-            <article class="editor-visual" aria-label="Visualização da nota">
-                @((MarkupString)Workspace.PreviewHtml)
-            </article>
+            <VisualEditor Html="@Workspace.PreviewHtml"
+                          ReadOnly="@Workspace.IsReadOnly"
+                          HtmlChanged="OnVisualHtmlChanged" />
             <p class="editor-stage-note">
-                A renderização Visual já usa o motor C# canônico. Edição direta no DOM entra na próxima fatia desta UC,
-                sem criar uma segunda autoridade de Markdown.
+                O DOM é apenas uma superfície de entrada. A cada edição, o conteúdo volta imediatamente ao Markdown
+                canônico em C# e entra no mesmo histórico do modo Fonte.
             </p>
         }
 
@@ -170,6 +170,11 @@
     private void OnSourceInput(ChangeEventArgs args)
     {
         Workspace.UpdateSource(args.Value?.ToString() ?? string.Empty);
+    }
+
+    private void OnVisualHtmlChanged(string html)
+    {
+        Workspace.UpdateVisualHtml(html);
     }
 
     private void Undo() => Workspace.Undo();
