@@ -55,3 +55,30 @@ vazia, deixando explícita a diferença entre incompatibilidade conhecida e erro
 genérico de parse/render.
 
 Isso permite que UC-18 mostre posição, comando e sugestão sem analisar texto de erro.
+
+
+## Macros configuradas
+
+O cliente JS expõe `UrbeMath.setMacros(m)` e repassa o dicionário para KaTeX.
+Não há consumidor interno nem teste legado para essa API, portanto UC-16 porta
+somente o contrato útil e seguro observado: **macros de string em memória**.
+
+`MathMacros.Expand(tex, macros)` e o parâmetro opcional `macros` de
+`MathRenderer.RenderSvg` mantêm diferenças deliberadas em relação ao estado
+global do JS:
+
+- o dicionário é passado explicitamente por renderização; não existe estado global;
+- o `MathRenderResult.Tex` e o `aria-label` preservam o TeX original;
+- a expansão é usada apenas como entrada efêmera do renderer;
+- nomes aceitos são comandos `\\[A-Za-z]+`;
+- substituições suportam `#1` a `#9`, grupos balanceados e tokens simples;
+- macros podem chamar outras macros, mas ciclos, profundidade, número de
+  substituições, definições e tamanho expandido possuem limites;
+- comentários TeX não são expandidos;
+- declarações dinâmicas dentro da fórmula (`\\newcommand`, `\\def` etc.)
+  continuam diagnóstico, não execução.
+
+KaTeX também aceita formas avançadas de macro JavaScript. Elas não são portadas:
+não há consumidor real observado e introduzir callbacks/estado global no Core
+aumentaria a superfície sem requisito. Se um consumidor real aparecer, isso vira
+novo caso verificável em vez de alargar silenciosamente este contrato.
