@@ -1,4 +1,5 @@
 @page "/explorer"
+@implements IDisposable
 @inject WorkspaceSession Workspace
 @inject NavigationManager Navigation
 
@@ -12,8 +13,8 @@
     </div>
 
     <p class="surface-copy">
-        Arquivos do vault sobre a sessão C# compartilhada. Tipos são derivados de <code>ArtifactModel</code>;
-        arquivos internos de <code>.urbe/</code> ficam ocultos da navegação comum.
+        Arquivos do vault sobre a sessão C# compartilhada. Arraste no desktop ou mantenha pressionado no toque
+        para armar um movimento; nenhuma escrita física acontece fora do adapter canônico do host.
     </p>
 
     <div class="explorer-controls">
@@ -25,7 +26,10 @@
         <div class="new-note">
             <label class="field">
                 <span>Nova nota</span>
-                <input value="@NewNoteTitle" @oninput="OnNewNoteTitleInput" placeholder="Título" disabled="@Workspace.IsReadOnly" />
+                <input value="@NewNoteTitle"
+                       @oninput="OnNewNoteTitleInput"
+                       placeholder="Título"
+                       disabled="@Workspace.IsReadOnly" />
             </label>
             <button type="button"
                     class="surface-action"
@@ -34,13 +38,77 @@
                 Criar
             </button>
         </div>
+
+        <div class="new-note">
+            <label class="field">
+                <span>Nova pasta</span>
+                <input value="@NewFolderName"
+                       @oninput="OnNewFolderNameInput"
+                       placeholder="Nome"
+                       disabled="@Workspace.IsReadOnly" />
+            </label>
+            <button type="button"
+                    class="surface-action"
+                    disabled="@Workspace.IsReadOnly"
+                    @onclick="CreateFolder">
+                Criar pasta
+            </button>
+        </div>
     </div>
+
+    <div class="explorer-location"
+         @ondragover:preventDefault
+         @ondrop="MoveToCurrentFolder">
+        <span>Local atual</span>
+        <strong>@CurrentFolderLabel</strong>
+        @if (_moveSource is not null)
+        {
+            <button type="button"
+                    disabled="@Workspace.IsReadOnly"
+                    @onclick="MoveArmedToCurrentFolder">
+                Mover aqui
+            </button>
+        }
+    </div>
+
+    @if (_moveSource is not null)
+    {
+        <div class="explorer-move-banner" role="status">
+            <span>Movendo <strong>@FileName(_moveSource)</strong></span>
+            <button type="button" @onclick="CancelMove">Cancelar</button>
+        </div>
+    }
 
     @if (Workspace.CurrentFolder.Length > 0 && Query.Length == 0)
     {
         <button type="button" class="folder-back" @onclick="GoParent">
             ← @ParentLabel
         </button>
+    }
+
+    @if (_selectedFolder is not null)
+    {
+        <div class="explorer-folder-actions" aria-label="@($"Ações de {_selectedFolder.Name}")">
+            <div>
+                <strong>@_selectedFolder.Name</strong>
+                <span>@_selectedFolder.Path</span>
+            </div>
+            <button type="button" @onclick="OpenSelectedFolder">Abrir pasta</button>
+            <button type="button"
+                    disabled="@Workspace.IsReadOnly"
+                    @onclick="CreateNoteInSelectedFolder">
+                Nova nota aqui
+            </button>
+            @if (_moveSource is not null &&
+                 !string.Equals(_moveSource, _selectedFolder.Path, StringComparison.OrdinalIgnoreCase))
+            {
+                <button type="button"
+                        disabled="@Workspace.IsReadOnly"
+                        @onclick="MoveArmedToSelectedFolder">
+                    Mover para cá
+                </button>
+            }
+        </div>
     }
 
     @{
@@ -50,7 +118,7 @@
     @if (entries.Count == 0)
     {
         <div class="surface-planned" role="status">
-            @if (Workspace.Paths.Count == 0)
+            @if (Workspace.Paths.Count == 0 && Workspace.Folders.Count == 0)
             {
                 <strong>Nenhum vault conectado</strong>
                 <span>A superfície está funcional; os hosts ainda precisam entregar um <code>VaultSnapshot</code> à sessão.</span>
@@ -68,18 +136,34 @@
             @foreach (var entry in entries)
             {
                 <button type="button"
-                        class="explorer-row"
+                        class="@RowClass(entry)"
+                        draggable="@(!Workspace.IsReadOnly)"
                         disabled="@(!entry.IsFolder && !entry.Editable)"
-                        @onclick="() => Activate(entry)">
+                        @onclick="() => Activate(entry)"
+                        @ondragstart="() => BeginDrag(entry.Path)"
+                        @ondragend="EndDrag"
+                        @ondragover:preventDefault
+                        @ondrop="() => DropOn(entry)"
+                        @onpointerdown="() => BeginLongPress(entry)"
+                        @onpointerup="CancelLongPress"
+                        @onpointercancel="CancelLongPress"
+                        @onpointerleave="CancelLongPress">
                     <span class="explorer-kind" aria-hidden="true">@(entry.IsFolder ? "▣" : "•")</span>
                     <span class="explorer-main">
                         <strong>@entry.Name</strong>
                         <small>@EntryMeta(entry)</small>
                     </span>
-                    <span class="explorer-open" aria-hidden="true">@(entry.IsFolder ? "›" : entry.Editable ? "↗" : "")</span>
+                    <span class="explorer-open" aria-hidden="true">@(entry.IsFolder ? "…" : entry.Editable ? "↗" : "")</span>
                 </button>
             }
         </div>
+    }
+
+    @if (Workspace.PendingMutations.Count > 0)
+    {
+        <p class="explorer-pending">
+            @Workspace.PendingMutations.Count alteração(ões) aguardando persistência pelo host.
+        </p>
     }
 </section>
 
@@ -94,6 +178,12 @@
 
     private string Query { get; set; } = string.Empty;
     private string NewNoteTitle { get; set; } = string.Empty;
+    private string NewFolderName { get; set; } = string.Empty;
+    private WorkspaceExplorerEntry? _selectedFolder;
+    private string? _dragSource;
+    private string? _moveSource;
+    private bool _suppressNextClick;
+    private CancellationTokenSource? _longPressCancellation;
 
     protected override void OnParametersSet()
     {
@@ -104,15 +194,16 @@
             Query = QueryFromNavigation;
     }
 
-    private void OnQueryInput(ChangeEventArgs args)
+    public void Dispose()
     {
-        Query = args.Value?.ToString() ?? string.Empty;
+        CancelLongPress();
+        GC.SuppressFinalize(this);
     }
 
-    private void OnNewNoteTitleInput(ChangeEventArgs args)
-    {
-        NewNoteTitle = args.Value?.ToString() ?? string.Empty;
-    }
+    private string CurrentFolderLabel =>
+        Workspace.CurrentFolder.Length == 0
+            ? "Raiz"
+            : Workspace.CurrentFolder;
 
     private string ParentLabel
     {
@@ -123,15 +214,49 @@
         }
     }
 
+    private void OnQueryInput(ChangeEventArgs args)
+    {
+        Query = args.Value?.ToString() ?? string.Empty;
+        _selectedFolder = null;
+    }
+
+    private void OnNewNoteTitleInput(ChangeEventArgs args) =>
+        NewNoteTitle = args.Value?.ToString() ?? string.Empty;
+
+    private void OnNewFolderNameInput(ChangeEventArgs args) =>
+        NewFolderName = args.Value?.ToString() ?? string.Empty;
+
     private void Activate(WorkspaceExplorerEntry entry)
     {
-        if (entry.IsFolder)
+        if (_suppressNextClick)
         {
-            Workspace.SetFolder(entry.Path);
-            Query = string.Empty;
+            _suppressNextClick = false;
             return;
         }
 
+        if (_moveSource is not null && entry.IsFolder)
+        {
+            Move(_moveSource, entry.Path);
+            return;
+        }
+
+        if (entry.IsFolder)
+        {
+            _selectedFolder =
+                string.Equals(
+                    _selectedFolder?.Path,
+                    entry.Path,
+                    StringComparison.OrdinalIgnoreCase)
+                    ? null
+                    : entry;
+            return;
+        }
+
+        OpenDocument(entry);
+    }
+
+    private void OpenDocument(WorkspaceExplorerEntry entry)
+    {
         if (!entry.Editable)
             return;
 
@@ -144,17 +269,25 @@
             "editor?path=" + Uri.EscapeDataString(entry.Path));
     }
 
+    private void OpenSelectedFolder()
+    {
+        if (_selectedFolder is null)
+            return;
+
+        Workspace.SetFolder(_selectedFolder.Path);
+        _selectedFolder = null;
+        Query = string.Empty;
+    }
+
     private void GoParent()
     {
         var slash = Workspace.CurrentFolder.LastIndexOf('/');
         Workspace.SetFolder(slash < 0 ? string.Empty : Workspace.CurrentFolder[..slash]);
+        _selectedFolder = null;
     }
 
     private void CreateNote()
     {
-        if (string.IsNullOrWhiteSpace(NewNoteTitle))
-            return;
-
         var document = Workspace.CreateNote(
             NewNoteTitle,
             Workspace.CurrentFolder);
@@ -171,6 +304,146 @@
             "editor?path=" + Uri.EscapeDataString(document.Path));
     }
 
+    private void CreateNoteInSelectedFolder()
+    {
+        if (_selectedFolder is null)
+            return;
+
+        var title = string.IsNullOrWhiteSpace(NewNoteTitle)
+            ? "Nova nota"
+            : NewNoteTitle;
+
+        var document = Workspace.CreateNote(
+            title,
+            _selectedFolder.Path);
+
+        if (document is null)
+            return;
+
+        Workspace.Open(
+            document.Id,
+            new EditorOpenOrigin(EditorOpenOriginKind.Explorer, ExplorerHref()));
+
+        NewNoteTitle = string.Empty;
+        Navigation.NavigateTo(
+            "editor?path=" + Uri.EscapeDataString(document.Path));
+    }
+
+    private void CreateFolder()
+    {
+        var created = Workspace.CreateFolder(
+            NewFolderName,
+            Workspace.CurrentFolder);
+
+        if (created is null)
+            return;
+
+        NewFolderName = string.Empty;
+        _selectedFolder = Workspace
+            .ExplorerEntries(Workspace.CurrentFolder)
+            .FirstOrDefault(
+                entry =>
+                    entry.IsFolder &&
+                    string.Equals(
+                        entry.Path,
+                        created,
+                        StringComparison.OrdinalIgnoreCase));
+    }
+
+    private void BeginDrag(string path)
+    {
+        if (Workspace.IsReadOnly)
+            return;
+
+        _dragSource = path;
+        _moveSource = path;
+    }
+
+    private void EndDrag()
+    {
+        _dragSource = null;
+    }
+
+    private void DropOn(WorkspaceExplorerEntry entry)
+    {
+        if (!entry.IsFolder || _dragSource is null)
+            return;
+
+        Move(_dragSource, entry.Path);
+    }
+
+    private void MoveToCurrentFolder()
+    {
+        if (_dragSource is null)
+            return;
+
+        Move(_dragSource, Workspace.CurrentFolder);
+    }
+
+    private void MoveArmedToCurrentFolder()
+    {
+        if (_moveSource is null)
+            return;
+
+        Move(_moveSource, Workspace.CurrentFolder);
+    }
+
+    private void MoveArmedToSelectedFolder()
+    {
+        if (_moveSource is null || _selectedFolder is null)
+            return;
+
+        Move(_moveSource, _selectedFolder.Path);
+    }
+
+    private void Move(string source, string targetFolder)
+    {
+        if (!Workspace.MoveItem(source, targetFolder))
+            return;
+
+        _dragSource = null;
+        _moveSource = null;
+        _selectedFolder = null;
+    }
+
+    private async Task BeginLongPress(WorkspaceExplorerEntry entry)
+    {
+        if (Workspace.IsReadOnly)
+            return;
+
+        CancelLongPress();
+        var cancellation = new CancellationTokenSource();
+        _longPressCancellation = cancellation;
+
+        try
+        {
+            await Task.Delay(550, cancellation.Token);
+            if (cancellation.IsCancellationRequested)
+                return;
+
+            _moveSource = entry.Path;
+            _suppressNextClick = true;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    private void CancelLongPress()
+    {
+        _longPressCancellation?.Cancel();
+        _longPressCancellation?.Dispose();
+        _longPressCancellation = null;
+    }
+
+    private void CancelMove()
+    {
+        _dragSource = null;
+        _moveSource = null;
+        _suppressNextClick = false;
+    }
+
     private string ExplorerHref()
     {
         var parts = new List<string>();
@@ -182,6 +455,32 @@
         return parts.Count == 0
             ? "explorer"
             : "explorer?" + string.Join("&", parts);
+    }
+
+    private string RowClass(WorkspaceExplorerEntry entry)
+    {
+        var selected =
+            entry.IsFolder &&
+            string.Equals(
+                _selectedFolder?.Path,
+                entry.Path,
+                StringComparison.OrdinalIgnoreCase);
+
+        var moving =
+            string.Equals(
+                _moveSource,
+                entry.Path,
+                StringComparison.OrdinalIgnoreCase);
+
+        return "explorer-row" +
+               (selected ? " selected" : string.Empty) +
+               (moving ? " moving" : string.Empty);
+    }
+
+    private static string FileName(string path)
+    {
+        var slash = path.LastIndexOf('/');
+        return slash >= 0 ? path[(slash + 1)..] : path;
     }
 
     private static string EntryMeta(WorkspaceExplorerEntry entry)
