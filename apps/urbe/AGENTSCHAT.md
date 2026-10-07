@@ -1,3 +1,11 @@
+### 2026-10-06 — ChatGPT — UC-16 macros de renderização sem estado global
+
+- Auditoria do legado confirmou `UrbeMath.setMacros(m)`; não há consumidor/teste interno, mas a investigação de UC-16 exige camada limitada de macros antes de G-C2.
+- Portado `MathMacros` para dicionários de string explícitos por renderização, com #1..#9, grupos/tokens, macros aninhadas e preservação do TeX original.
+- Segurança/determinismo: sem mutação global de CSharpMath, sem `newcommand/def`, com limites de definições, expansão, profundidade e detecção de ciclo.
+- `MathRenderer.RenderSvg(..., macros: ...)` usa a expansão apenas internamente; resultado e acessibilidade continuam referindo o TeX do usuário.
+- Branch empilhada sobre #276; só será retargetada para main depois da fatia de diagnósticos integrar.
+
 ### 2026-10-06 — ChatGPT — UC-16 renderer consome diagnósticos estruturados
 
 - Branch empilhada sobre #275 para não bloquear a integração da camada pura de compatibilidade.
