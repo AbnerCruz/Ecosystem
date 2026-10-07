@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "feat/urbe-uc18-visual-edit",
   "base_commit": "8433fc27a64c49e4b407d82994af82af89640310",
-  "commit": "9d49512dbffcdf9fe88a8fddd67ed639e7768d1e",
-  "pr": null,
+  "commit": "99717214be15da5ee579826b85b5c55adc19da1d",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/287",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.UI/Shared/VisualEditor.razor",
     "apps/urbe/csharp/src/Urbe.UI/wwwroot/editor-dom.js",
@@ -36,7 +36,7 @@
       "kind": "automated",
       "check": "web-smoke UC-18 visual edit",
       "result": "pending",
-      "evidence": "PR empilhado ainda será aberto contra a branch do #286 para CI."
+      "evidence": "PR draft #287 aberto contra a branch do #286; aguardando CI."
     },
     {
       "kind": "automated",
