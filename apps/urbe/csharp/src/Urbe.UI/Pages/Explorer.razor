@@ -137,6 +137,7 @@
             {
                 <button type="button"
                         class="@RowClass(entry)"
+                        data-path="@entry.Path"
                         draggable="@(!Workspace.IsReadOnly)"
                         disabled="@(!entry.IsFolder && !entry.Editable)"
                         @onclick="() => Activate(entry)"
@@ -303,6 +304,7 @@
             new EditorOpenOrigin(EditorOpenOriginKind.Explorer, ExplorerHref()));
 
         NewNoteTitle = string.Empty;
+        _selectedFolder = null;
         Navigation.NavigateTo(
             "editor?path=" + Uri.EscapeDataString(document.Path));
     }
