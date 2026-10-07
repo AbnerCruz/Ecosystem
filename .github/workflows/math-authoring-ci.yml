@@ -1,0 +1,39 @@
+name: math-authoring-ci
+
+on:
+  push:
+    paths:
+      - 'apps/math-authoring/**'
+      - '.github/workflows/math-authoring-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/math-authoring/**'
+      - '.github/workflows/math-authoring-ci.yml'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: 'Commit a testar no estado combinado do integrador'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Math Authoring Core
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/math-authoring
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Testar Core standalone
+        run: dotnet test --project tests/MathAuthoring.Core.Tests
