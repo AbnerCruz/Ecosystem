@@ -1,4 +1,4 @@
-// UC-17: shared shell + client-side navigation smoke.
+// UC-17/18: shared shell + Explorer/Editor session smoke.
 // This is still not UC-29 human/device acceptance.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -87,9 +87,26 @@ async function assertShell(page) {
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
 
-    await nav.getByRole('link', { name: 'Editor', exact: true }).click();
-    await page.getByRole('heading', { name: 'Editor', exact: true }).waitFor();
+    // UC-18: prove that the shared in-memory workspace really connects
+    // Explorer → Editor → Markdown domain → Visual → origin stack.
+    await page.getByLabel('Nova nota').fill('Smoke');
+    await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Editor/);
+
+    await page.getByRole('button', { name: 'Fonte', exact: true }).click();
+    const source = page.getByLabel('Markdown da nota');
+    await source.fill('# Título smoke\\n\\nTexto **forte**.');
+    assert.equal(await source.inputValue(), '# Título smoke\\n\\nTexto **forte**.');
+
+    await page.getByRole('button', { name: 'Visual', exact: true }).click();
+    await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
+    assert.match(await page.locator('.editor-visual').innerText(), /Texto forte\./);
+
+    await page.getByRole('button', { name: '← Voltar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
+    await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
+    assert.match(await nav.locator('a.active').innerText(), /Explorer/);
 
     await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
     await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
@@ -133,7 +150,7 @@ try {
                 console.error(response.status(), response.url());
         });
 
-        console.log('UC-17 shell online:', base);
+        console.log('UC-17/18 shell + editor online:', base);
         await page.goto(origin + base);
         await assertShell(page);
 
@@ -168,7 +185,7 @@ try {
                 console.error(response.status(), response.url());
         });
 
-        console.log('UC-17 shell offline:', base);
+        console.log('UC-17/18 shell + editor offline:', base);
         await page.goto(origin + base);
         await assertShell(page);
 
@@ -181,7 +198,7 @@ try {
 
     assert.deepEqual(errors, []);
     console.log(
-        'UC-17 Web: shell compartilhado + rotas ativas + base path + offline OK.');
+        'UC-17/18 Web: shell + sessão Explorer/Editor + Markdown Visual/Fonte + offline OK.');
 } finally {
     await browser?.close();
     await new Promise(resolve => server.close(resolve));

@@ -1,0 +1,114 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc18-editor-explorer-session",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T09:00:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc18-editor-explorer-session",
+  "base_commit": "9143b2393a7198966f2b978e5037c39e3222a233",
+  "commit": "eddcfb3d33517e6daaa9cc25100d68a60259022c",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/283",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/src/Urbe.Web/Program.cs",
+    "apps/urbe/csharp/src/Urbe.App/MauiProgram.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc18-editor-explorer-session.json",
+    "apps/urbe/csharp/tests/web-smoke.mjs"
+  ],
+  "work_completed": [
+    "Criada WorkspaceSession host-neutra compartilhando DocumentStore e KnowledgeIndex entre Explorer e Editor.",
+    "VaultSnapshot pode alimentar a sessão preservando read-only e todos os caminhos para o Explorer.",
+    "Explorer substitui o placeholder com pastas, busca, classificação por ArtifactModel, criação de notas e abertura de arquivos editáveis.",
+    "Editor substitui o placeholder com pilha de origem, edição Fonte, render Visual via MarkdownEngine e relações via KnowledgeIndex.",
+    "Conversão Visual HTML→Markdown já está encapsulada na sessão por VisualMarkdown, pronta para a próxima fatia de edição DOM.",
+    "Web e MAUI registram a mesma WorkspaceSession.",
+    "Smoke Web percorre Explorer→criação→Editor Fonte→Visual→Voltar nos base paths / e /preview/, inclusive offline."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "web-smoke UC-18",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "estado combinado",
+      "result": "pending",
+      "evidence": "Aguardando integrador."
+    },
+    {
+      "kind": "human",
+      "check": "layout/toque",
+      "result": "not-applicable",
+      "evidence": "Reservado a G-C3 conforme NN-017."
+    }
+  ],
+  "known_issues": [
+    "Modo Visual nesta fatia renderiza o Markdown, mas ainda não edita diretamente o DOM.",
+    "Hosts ainda não carregam/persistem um vault físico na WorkspaceSession; a fronteira foi preparada sem adicionar segunda autoridade de IO.",
+    "Drag-and-drop/toque longo e operações completas de pasta do REQ-096 permanecem para fatias seguintes da UC-18.",
+    "Toolbar junto ao teclado virtual, comentários, painel fixado, templates e demais REQs do Editor ainda permanecem em UC-18.",
+    "Cliente distribuído continua JS até UC-31."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI e integrar esta fatia se rotina.",
+    "Portar edição Visual interativa sobre VisualMarkdown sem segunda autoridade de Markdown.",
+    "Conectar adapters de workspace dos hosts à sessão compartilhada e persistir mudanças pelo boundary canônico.",
+    "Completar operações e gestos do Explorer e requisitos de editor restantes antes de fechar UC-18."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Issue #281, branch, ROADMAP, AGENTSCHAT, PR e handoff registram a execução."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana de layout/toque é inferida pela CI."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sessão e UI não dependem do Hub nem do plano de controle."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "workspace-session",
+      "status": "product-specific",
+      "rationale": "Coordena semântica de documentos, Explorer e Editor do Urbe sobre os domínios canônicos."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Fatia de UI/sessão em item autorizado do roadmap; não altera formato persistido, migração, segurança, licença ou distribuição."
+  },
+  "cost": null
+}

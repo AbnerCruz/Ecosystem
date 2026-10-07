@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Maui.Hosting;
+using Urbe.UI;
 
 namespace Urbe.App;
 
@@ -9,6 +10,7 @@ public static class MauiProgram
     {
         var builder = MauiApp.CreateBuilder().UseMauiApp<App>();
         builder.Services.AddMauiBlazorWebView();
+        builder.Services.AddSingleton<WorkspaceSession>();
         return builder.Build();
     }
 }

@@ -1,8 +1,151 @@
 @page "/editor"
+@inject WorkspaceSession Workspace
+@inject NavigationManager Navigation
 
-<section class="surface" data-surface="editor">
-    <PlannedSurface
-        Title="Editor"
-        Description="A superfície Visual/Fonte, links, ferramentas e matemática consumirá o domínio C# já validado."
-        OwnerUseCase="UC-18" />
+<section class="surface editor-surface" data-surface="editor">
+    @if (Workspace.CurrentDocument is null)
+    {
+        <p class="surface-eyebrow">UC-18 · Editor</p>
+        <h1>Editor</h1>
+        <p class="surface-copy">Abra um arquivo editável pelo Explorer.</p>
+        <a class="surface-action" href="explorer">Ir para o Explorer</a>
+    }
+    else
+    {
+        var document = Workspace.CurrentDocument;
+
+        <div class="editor-header">
+            <button type="button" class="editor-back" @onclick="Back">← Voltar</button>
+            <div class="editor-title">
+                <p class="surface-eyebrow">@document.Path</p>
+                <h1>@document.Title</h1>
+            </div>
+            @if (Workspace.IsReadOnly)
+            {
+                <span class="surface-chip">somente leitura</span>
+            }
+        </div>
+
+        <div class="editor-mode-switch" role="group" aria-label="Modo do editor">
+            <button type="button"
+                    class="@ModeClass(EditorSurfaceMode.Visual)"
+                    aria-pressed="@(Workspace.Mode == EditorSurfaceMode.Visual)"
+                    @onclick="() => Workspace.SetMode(EditorSurfaceMode.Visual)">
+                Visual
+            </button>
+            <button type="button"
+                    class="@ModeClass(EditorSurfaceMode.Source)"
+                    aria-pressed="@(Workspace.Mode == EditorSurfaceMode.Source)"
+                    @onclick="() => Workspace.SetMode(EditorSurfaceMode.Source)">
+                Fonte
+            </button>
+        </div>
+
+        @if (Workspace.Mode == EditorSurfaceMode.Source)
+        {
+            <label class="editor-source-field">
+                <span class="sr-only">Markdown da nota</span>
+                <textarea value="@document.Content"
+                          disabled="@Workspace.IsReadOnly"
+                          @oninput="OnSourceInput"
+                          spellcheck="true"></textarea>
+            </label>
+        }
+        else
+        {
+            <article class="editor-visual" aria-label="Visualização da nota">
+                @((MarkupString)Workspace.PreviewHtml)
+            </article>
+            <p class="editor-stage-note">
+                A renderização Visual já usa o motor C# canônico. Edição direta no DOM entra na próxima fatia desta UC,
+                sem criar uma segunda autoridade de Markdown.
+            </p>
+        }
+
+        <div class="editor-relations">
+            <section>
+                <h2>Links</h2>
+                @if (Workspace.Links().Count == 0)
+                {
+                    <p>Nenhum link resolvido.</p>
+                }
+                else
+                {
+                    @foreach (var linked in Workspace.Links())
+                    {
+                        <button type="button" @onclick="() => OpenLinked(linked)">@linked.Title</button>
+                    }
+                }
+            </section>
+            <section>
+                <h2>Backlinks</h2>
+                @if (Workspace.Backlinks().Count == 0)
+                {
+                    <p>Nenhum backlink.</p>
+                }
+                else
+                {
+                    @foreach (var linked in Workspace.Backlinks())
+                    {
+                        <button type="button" @onclick="() => OpenLinked(linked)">@linked.Title</button>
+                    }
+                }
+            </section>
+        </div>
+    }
 </section>
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "path")]
+    public string? Path { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrWhiteSpace(Path))
+            return;
+
+        if (Workspace.CurrentDocument is null ||
+            !string.Equals(
+                Workspace.CurrentDocument.Path,
+                DocumentModel.NormalizePath(Path),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            Workspace.Restore(Path);
+        }
+    }
+
+    private void OnSourceInput(ChangeEventArgs args)
+    {
+        Workspace.UpdateSource(args.Value?.ToString() ?? string.Empty);
+    }
+
+    private void Back()
+    {
+        Workspace.TryPopOrigin(out var origin);
+        Navigation.NavigateTo(origin.Href);
+    }
+
+    private void OpenLinked(UrbeDocument document)
+    {
+        var current = Workspace.CurrentDocument;
+        if (current is null)
+            return;
+
+        var returnHref =
+            "editor?path=" + Uri.EscapeDataString(current.Path);
+
+        if (!Workspace.Open(
+                document.Id,
+                new EditorOpenOrigin(EditorOpenOriginKind.Link, returnHref)))
+            return;
+
+        Navigation.NavigateTo(
+            "editor?path=" + Uri.EscapeDataString(document.Path));
+    }
+
+    private string ModeClass(EditorSurfaceMode mode) =>
+        Workspace.Mode == mode
+            ? "editor-mode active"
+            : "editor-mode";
+}
