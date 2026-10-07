@@ -129,12 +129,18 @@ async function assertShell(page) {
     await smokeRow.waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
 
-    const destinationRow = page.getByRole('button', { name: /Destino/ });
+    const destinationRow = page.locator('[data-path="Destino"]');
     await smokeRow.dragTo(destinationRow);
+    await page.waitForFunction(
+        () => !document.querySelector('[data-path="Smoke.md"]'));
     await destinationRow.click();
+    await page.waitForFunction(
+        () => document.querySelector('[data-path="Destino"]')?.classList.contains('selected'));
     await page.getByLabel('Ações de Destino').waitFor();
     await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
-    await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
+    await page.waitForFunction(
+        () => document.querySelector('.explorer-location strong')?.textContent.trim() === 'Destino');
+    await page.locator('[data-path="Destino/Smoke.md"]').waitFor();
     assert.match(
         await page.getByText(/alteração\(ões\) aguardando persistência pelo host/).innerText(),
         /alteração/);
@@ -164,9 +170,9 @@ async function assertShell(page) {
         button: 0,
         isPrimary: true
     });
-    await page.getByRole('button', { name: /Destino/ }).click();
+    await page.locator('[data-path="Destino"]').click();
 
-    const movedFolder = page.getByRole('button', { name: /Destino/ });
+    const movedFolder = page.locator('[data-path="Destino"]');
     await movedFolder.click();
     await page.getByLabel('Ações de Destino').waitFor();
     await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
