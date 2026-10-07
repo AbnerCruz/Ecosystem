@@ -243,6 +243,8 @@ try {
     // intercept the first preview navigation.
     for (const base of ['/preview/', '/']) {
         const page = await context.newPage();
+        page.setDefaultTimeout(15000);
+        page.setDefaultNavigationTimeout(15000);
         page.on('pageerror', error => {
             errors.push(error.message);
             console.error(error.message);
