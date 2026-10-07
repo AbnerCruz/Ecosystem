@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc18-editor-history-tabs",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T10:40:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc18-editor-history-tabs",
+  "base_commit": "366b499c764834c0524d3536b233d1969f76d2a1",
+  "commit": "b32eaed7ebe7a8863a4b2f4cfe3631c2b1a4814b",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc18-editor-history-tabs.json"
+  ],
+  "work_completed": [
+    "Portado histórico por documento com Desfazer/Refazer, até 100 estados, sem persistência concorrente.",
+    "Portadas abas de editor com ativação, fechamento, limite de 12 e suporte interno a pin.",
+    "Histórico e abas são resetados ao trocar de vault e permanecem host-neutros em WorkspaceSession.",
+    "UI compartilhada expõe abas e histórico em Web e MAUI.",
+    "Smoke Web preparado para provar duas edições, undo/redo, render Visual e troca entre duas abas."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "consistency da branch",
+      "result": "pending",
+      "evidence": "Runs disparados por push; PR incremental ainda não aberto."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks estado combinado",
+      "result": "pending",
+      "evidence": "Será executado após PR #283 integrar e este PR incremental ser aberto."
+    },
+    {
+      "kind": "human",
+      "check": "layout/toque",
+      "result": "not-applicable",
+      "evidence": "Reservado a G-C3 conforme NN-017."
+    }
+  ],
+  "known_issues": [
+    "Edição Visual direta ainda não foi portada; Visual continua renderizando o Markdown canônico.",
+    "Persistência física de host ainda não está conectada à WorkspaceSession.",
+    "Split view, toolbar móvel, comentários, painel fixado e demais requisitos avançados permanecem em UC-18."
+  ],
+  "blockers": [
+    "PR #283 precisa integrar antes de abrir esta fatia como PR incremental contra main."
+  ],
+  "next_actions": [
+    "Após integração do PR #283, abrir PR incremental desta branch e executar checks combinados.",
+    "Em seguida portar criação de wikilink inexistente e edição Visual interativa sem segunda autoridade Markdown."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Issue #281, branch, AGENTSCHAT e handoff registram a segunda fatia."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana de toque/layout é inferida."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sessão do editor não depende do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-session",
+      "status": "product-specific",
+      "rationale": "Abas e histórico seguem a semântica do editor Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Comportamento de sessão/UI em UC-18; sem formato persistido, migração, segurança, csproj ou distribuição."
+  },
+  "cost": null
+}
