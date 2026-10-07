@@ -201,16 +201,23 @@ public static class MathMacros
                         MaxExpansions + " substituições.");
                 }
 
-                if (!stack.Add(command))
-                    throw new MacroExpansionException("Ciclo de macros detectado em " + command + ".");
-
                 var cursor = commandEnd;
                 var arguments = new string[definition.Arity];
                 for (var argument = 0; argument < definition.Arity; argument++)
                 {
                     SkipWhitespace(text, ref cursor);
-                    arguments[argument] = ReadArgument(text, ref cursor, command, argument + 1);
+                    var rawArgument =
+                        ReadArgument(text, ref cursor, command, argument + 1);
+                    // Arguments are independent input. Expanding them before
+                    // marking the current definition as active allows valid
+                    // nesting such as \\double{\\double{x}} while still
+                    // detecting a definition cycle like \\a -> \\a.
+                    arguments[argument] =
+                        Expand(rawArgument, depth + 1, stack);
                 }
+
+                if (!stack.Add(command))
+                    throw new MacroExpansionException("Ciclo de macros detectado em " + command + ".");
 
                 var substituted = Substitute(definition.Replacement, arguments);
                 var nested = Expand(substituted, depth + 1, stack);
