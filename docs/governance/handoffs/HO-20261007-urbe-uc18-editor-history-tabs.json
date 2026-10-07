@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "feat/urbe-uc18-editor-history-tabs",
   "base_commit": "366b499c764834c0524d3536b233d1969f76d2a1",
-  "commit": "b32eaed7ebe7a8863a4b2f4cfe3631c2b1a4814b",
+  "commit": "1bbc703d23ec98afcafd0a1bde0c9f2e1da2341d",
   "pr": null,
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
@@ -28,7 +28,8 @@
     "Portadas abas de editor com ativação, fechamento, limite de 12 e suporte interno a pin.",
     "Histórico e abas são resetados ao trocar de vault e permanecem host-neutros em WorkspaceSession.",
     "UI compartilhada expõe abas e histórico em Web e MAUI.",
-    "Smoke Web preparado para provar duas edições, undo/redo, render Visual e troca entre duas abas."
+    "Smoke Web preparado para provar duas edições, undo/redo, render Visual, criação de wikilink inexistente e troca entre abas.",
+    "Wikilinks não resolvidos são expostos e podem criar nota irmã via serviço canônico, preservando a pilha de origem do editor."
   ],
   "verification": [
     {
@@ -60,7 +61,7 @@
   ],
   "next_actions": [
     "Após integração do PR #283, abrir PR incremental desta branch e executar checks combinados.",
-    "Em seguida portar criação de wikilink inexistente e edição Visual interativa sem segunda autoridade Markdown."
+    "Em seguida portar edição Visual interativa sem segunda autoridade Markdown e completar operações/gestos do Explorer."
   ],
   "decisions_required": [],
   "normative_sources": [
