@@ -1,9 +1,16 @@
 <Router AppAssembly="@typeof(UrbeRoutes).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" />
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
     <NotFound>
-        <main class="foundation"><h1>Página não encontrada</h1><a href="">Voltar ao início</a></main>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <section class="surface" data-surface="not-found">
+                <p class="surface-eyebrow">Navegação</p>
+                <h1>Página não encontrada</h1>
+                <p class="surface-copy">A rota não existe neste estágio do cliente C#.</p>
+                <a class="surface-action" href="">Voltar ao início</a>
+            </section>
+        </LayoutView>
     </NotFound>
 </Router>
