@@ -1,3 +1,12 @@
+### 2026-10-07 — ChatGPT — UC-18 terceira fatia: Explorer operacional
+
+- Base: `fab94d76` após integração das duas primeiras fatias de UC-18.
+- Implementado: criação de pastas vazias na sessão, enumeração de pastas, fila host-neutra de mutações `CreateFolder/Move`, movimento de arquivos e árvores de pasta preservando IDs e documentos abertos.
+- Explorer: seleção de pasta expõe ações; desktop usa drag-and-drop; toque usa long press para armar movimento e toque na pasta para concluir; local atual também aceita drop/movimento.
+- Segurança de dados: esta fatia NÃO escreve no filesystem; operações ficam em `PendingMutations` para o adapter canônico do host persistir depois. Nenhuma autoridade paralela de IO foi criada.
+- Smoke Web ampliado para criar pasta, mover por mouse, armar por long press/touch, verificar destino e manter Editor/abas/undo/redo funcionando.
+- Ainda falta em UC-18: edição Visual direta, toolbar/visualViewport, persistência física por host e requisitos avançados (comentários/painel/templates/timer/estado da toolbar).
+
 ### 2026-10-07 — ChatGPT — UC-18 / sessão de edição 2
 
 - Estado: segunda fatia preparada sobre a primeira fatia já integrada em `9efb5555`.
