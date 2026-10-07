@@ -7,7 +7,7 @@
 
 ## Próxima tarefa
 
-**M3 — Interface e extensões.** M2 foi concluído com o domínio matemático C# aprovado em G-C2. Próxima tarefa: UC-17 — shell e navegação, consumindo apenas APIs de domínio já fechadas; validação humana de UI/toque continua reservada ao G-C3.
+**M3 — Interface e extensões.** UC-17 foi integrada em `9143b239` com shell compartilhado e navegação canônica. Próxima tarefa: UC-18 — Editor Visual/Fonte e Explorer sobre a sessão C# compartilhada; validação humana de UI/toque continua reservada ao G-C3.
 
 ---
 
@@ -51,8 +51,8 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 ## M3 — Interface e extensões
 
-- [ ] UC-17 — Shell e navegação.
-- [ ] UC-18 — Editor (visual e fonte) e Explorer.
+- [x] UC-17 — Shell e navegação. PR #280 integrado automaticamente em `9143b239`: shell compartilhado Web/MAUI, navegação Início/Explorer/Editor/Cidade/Mais, base path `/` e `/preview/`, online/offline e regressão Web/Android/Windows/E2E/checks/consistency verdes. Issue #279 encerrada; validação humana de layout/toque continua G-C3.
+- [ ] UC-18 — Editor (visual e fonte) e Explorer. Issue #281 em andamento; primeira fatia cria sessão compartilhada, Explorer real, edição Fonte, render Visual e relações sem antecipar persistência específica de host.
 - [ ] UC-19 — Mundo: desenho e toque.
 - [ ] UC-20 — Personalização, tema e **plugins** (decisão do modelo de confiança em C#).
 - [ ] UC-21 — IA: providers e agente.
