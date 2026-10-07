@@ -1,0 +1,99 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc18-editor-session-2",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T10:52:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc18-editor-session-2",
+  "base_commit": "9efb5555b84b0fd41f21c8cf2e2b0af227a717f0",
+  "commit": "a5e75883a5febcfad6ef8b178678df5af6171ff2",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/285",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc18-editor-session-2.json"
+  ],
+  "work_completed": [
+    "Portado histórico por documento com Desfazer/Refazer e limite de 100 estados.",
+    "Portadas abas do editor com ativação, fechamento, limite de 12 e suporte interno a pin.",
+    "Histórico e abas são resetados ao trocar de vault e permanecem host-neutros na WorkspaceSession.",
+    "Wikilinks não resolvidos são expostos como ação explícita de criação da nota irmã na pasta atual, preservando a pilha de origem.",
+    "Smoke Web cobre duas edições em Fonte, undo/redo, render Visual, criação de wikilink inexistente e troca entre abas."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "consistency da branch",
+      "result": "pending",
+      "evidence": "Aguardando run do PR incremental."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks estado combinado",
+      "result": "pending",
+      "evidence": "Aguardando integrador do PR incremental."
+    },
+    {
+      "kind": "human",
+      "check": "layout/toque",
+      "result": "not-applicable",
+      "evidence": "Reservado a G-C3 conforme NN-017."
+    }
+  ],
+  "known_issues": [
+    "Edição Visual direta ainda não foi portada; Visual continua renderizando Markdown canônico.",
+    "Persistência física de host ainda não está conectada à WorkspaceSession.",
+    "Split view, toolbar móvel, comentários, painel fixado e operações/gestos completos do Explorer permanecem em UC-18."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar esta fatia se routine e estado combinado verde.",
+    "Portar edição Visual interativa sem segunda autoridade Markdown.",
+    "Completar operações/gestos do Explorer e conexão com persistência de host antes de fechar UC-18."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Issue #281, branch, AGENTSCHAT, PR e handoff registram a segunda fatia."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação humana de layout/toque é inferida."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sessão do editor não depende do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "editor-session",
+      "status": "product-specific",
+      "rationale": "Abas, histórico e navegação de wikilinks seguem a semântica do editor Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Comportamento de sessão/UI em UC-18; sem formato persistido, migração, segurança, csproj ou distribuição."
+  },
+  "cost": null
+}
