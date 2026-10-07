@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "feat/urbe-uc18-explorer-move",
   "base_commit": "fab94d76fc4a6482fc61a9d0bdf2e020a9cbc5e8",
-  "commit": "5c91000b9e81b8a132b72b744ee11f465180e9c4",
-  "pr": null,
+  "commit": "771a744e741e6774fd5750d1921d0f681f6aacb3",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/286",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
     "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
