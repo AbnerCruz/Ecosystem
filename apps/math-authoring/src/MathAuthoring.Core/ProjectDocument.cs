@@ -40,8 +40,8 @@ public sealed record ProjectDocument(
             projectId,
             new ProjectMetadata(title),
             Empty<VariableDefinition>(),
-            ReadOnly([new SceneDocument("scene-1", "Cena 1", Empty<string>())]),
-            ReadOnly([new ExportProfile("preview-720p30", "720p / 30 fps", 1280, 720, 30)]));
+            ReadOnly(new[] { new SceneDocument("scene-1", "Cena 1", Empty<string>()) }),
+            ReadOnly(new[] { new ExportProfile("preview-720p30", "720p / 30 fps", 1280, 720, 30) }));
     }
 
     private static ReadOnlyCollection<T> Empty<T>() => Array.AsReadOnly(Array.Empty<T>());
