@@ -54,7 +54,7 @@ public sealed class MathCompatibilityTests
     public void CommentsAndLinebreakControlSymbolsDoNotCreateFalsePositives()
     {
         const string tex = "x % \\boxed{ignored}\n" +
-                           @"y \\boxed literal + \\cancel{real}";
+                           @"y \\boxed literal + \cancel{real}";
 
         var diagnostics = MathCompatibility.Analyze(tex);
 
