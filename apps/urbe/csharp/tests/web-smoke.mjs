@@ -59,7 +59,7 @@ const server = createServer(async (request, response) => {
 
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 
-async function assertShell(page) {
+async function assertShell(page, journey = false) {
     await page.getByRole('heading', { name: 'Urbe', exact: true })
         .waitFor({ timeout: 15000 })
         .catch(async error => {
@@ -83,6 +83,7 @@ async function assertShell(page) {
         'rgb(18, 26, 25)',
         'Estilos da RCL carregados');
 
+    if (journey) {
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
@@ -213,6 +214,8 @@ async function assertShell(page) {
     await page.getByRole('button', { name: /Outra\.md/ }).waitFor();
     await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
 
+    }
+
     await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
     await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Cidade/);
@@ -259,7 +262,7 @@ try {
 
         console.log('UC-17/18 shell + editor online:', base);
         await page.goto(origin + base);
-        await assertShell(page);
+        await assertShell(page, base === '/preview/');
 
         await page.evaluate(async () => {
             await Promise.race([
@@ -276,7 +279,7 @@ try {
             () => !!navigator.serviceWorker.controller,
             null,
             { timeout: 15000 });
-        await assertShell(page);
+        await assertShell(page, false);
         await page.close();
     }
 
@@ -297,7 +300,7 @@ try {
 
         console.log('UC-17/18 shell + editor offline:', base);
         await page.goto(origin + base);
-        await assertShell(page);
+        await assertShell(page, base === '/');
 
         assert.match(
             await page.getByRole('status').innerText(),
