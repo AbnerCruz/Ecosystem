@@ -1,8 +1,171 @@
 @page "/explorer"
+@inject WorkspaceSession Workspace
+@inject NavigationManager Navigation
 
-<section class="surface" data-surface="explorer">
-    <PlannedSurface
-        Title="Explorer"
-        Description="Arquivos, pastas e ações do vault serão conectados aqui sem duplicar a autoridade de dados já portada."
-        OwnerUseCase="UC-18" />
+<section class="surface explorer-surface" data-surface="explorer">
+    <div class="surface-toolbar">
+        <div>
+            <p class="surface-eyebrow">UC-18 · Explorer</p>
+            <h1>Explorer</h1>
+        </div>
+        <span class="surface-chip">@Workspace.Paths.Count arquivo(s)</span>
+    </div>
+
+    <p class="surface-copy">
+        Arquivos do vault sobre a sessão C# compartilhada. Tipos são derivados de <code>ArtifactModel</code>;
+        arquivos internos de <code>.urbe/</code> ficam ocultos da navegação comum.
+    </p>
+
+    <div class="explorer-controls">
+        <label class="field">
+            <span>Buscar</span>
+            <input @bind="Query" @bind:event="oninput" placeholder="nome ou caminho" />
+        </label>
+
+        <div class="new-note">
+            <label class="field">
+                <span>Nova nota</span>
+                <input @bind="NewNoteTitle" placeholder="Título" disabled="@Workspace.IsReadOnly" />
+            </label>
+            <button type="button"
+                    class="surface-action"
+                    disabled="@Workspace.IsReadOnly"
+                    @onclick="CreateNote">
+                Criar
+            </button>
+        </div>
+    </div>
+
+    @if (Workspace.CurrentFolder.Length > 0 && Query.Length == 0)
+    {
+        <button type="button" class="folder-back" @onclick="GoParent">
+            ← @ParentLabel
+        </button>
+    }
+
+    @{
+        var entries = Workspace.ExplorerEntries(Workspace.CurrentFolder, Query);
+    }
+
+    @if (entries.Count == 0)
+    {
+        <div class="surface-planned" role="status">
+            @if (Workspace.Paths.Count == 0)
+            {
+                <strong>Nenhum vault conectado</strong>
+                <span>A superfície está funcional; os hosts ainda precisam entregar um <code>VaultSnapshot</code> à sessão.</span>
+            }
+            else
+            {
+                <strong>Nenhum resultado</strong>
+                <span>Não há arquivo correspondente neste contexto.</span>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="explorer-list" role="list">
+            @foreach (var entry in entries)
+            {
+                <button type="button"
+                        class="explorer-row"
+                        role="listitem"
+                        disabled="@(!entry.IsFolder && !entry.Editable)"
+                        @onclick="() => Activate(entry)">
+                    <span class="explorer-kind" aria-hidden="true">@(entry.IsFolder ? "▣" : "•")</span>
+                    <span class="explorer-main">
+                        <strong>@entry.Name</strong>
+                        <small>@EntryMeta(entry)</small>
+                    </span>
+                    <span class="explorer-open" aria-hidden="true">@(entry.IsFolder ? "›" : entry.Editable ? "↗" : "")</span>
+                </button>
+            }
+        </div>
+    }
 </section>
+
+@code {
+    private string Query { get; set; } = string.Empty;
+    private string NewNoteTitle { get; set; } = string.Empty;
+
+    private string ParentLabel
+    {
+        get
+        {
+            var slash = Workspace.CurrentFolder.LastIndexOf('/');
+            return slash < 0 ? "Raiz" : Workspace.CurrentFolder[..slash];
+        }
+    }
+
+    private void Activate(WorkspaceExplorerEntry entry)
+    {
+        if (entry.IsFolder)
+        {
+            Workspace.SetFolder(entry.Path);
+            Query = string.Empty;
+            return;
+        }
+
+        if (!entry.Editable)
+            return;
+
+        if (!Workspace.Open(
+                entry.Path,
+                new EditorOpenOrigin(EditorOpenOriginKind.Explorer, ExplorerHref())))
+            return;
+
+        Navigation.NavigateTo(
+            "editor?path=" + Uri.EscapeDataString(entry.Path));
+    }
+
+    private void GoParent()
+    {
+        var slash = Workspace.CurrentFolder.LastIndexOf('/');
+        Workspace.SetFolder(slash < 0 ? string.Empty : Workspace.CurrentFolder[..slash]);
+    }
+
+    private void CreateNote()
+    {
+        if (string.IsNullOrWhiteSpace(NewNoteTitle))
+            return;
+
+        var document = Workspace.CreateNote(
+            NewNoteTitle,
+            Workspace.CurrentFolder);
+
+        if (document is null)
+            return;
+
+        Workspace.Open(
+            document.Id,
+            new EditorOpenOrigin(EditorOpenOriginKind.Explorer, ExplorerHref()));
+
+        NewNoteTitle = string.Empty;
+        Navigation.NavigateTo(
+            "editor?path=" + Uri.EscapeDataString(document.Path));
+    }
+
+    private string ExplorerHref()
+    {
+        var parts = new List<string>();
+        if (Workspace.CurrentFolder.Length > 0)
+            parts.Add("folder=" + Uri.EscapeDataString(Workspace.CurrentFolder));
+        if (Query.Length > 0)
+            parts.Add("query=" + Uri.EscapeDataString(Query));
+
+        return parts.Count == 0
+            ? "explorer"
+            : "explorer?" + string.Join("&", parts);
+    }
+
+    private static string EntryMeta(WorkspaceExplorerEntry entry)
+    {
+        if (entry.IsFolder)
+            return "pasta";
+
+        var kind = entry.Type?.ToString().ToLowerInvariant() ?? "arquivo";
+        return entry.Extension.Length == 0
+            ? kind
+            : kind + " · " + entry.Extension;
+    }
+}
