@@ -13,6 +13,34 @@
     else
     {
         var document = Workspace.CurrentDocument;
+        var history = Workspace.HistoryStatus;
+
+        @if (Workspace.Tabs.Count > 0)
+        {
+            <div class="editor-tabs" aria-label="Abas abertas">
+                @foreach (var tab in Workspace.Tabs)
+                {
+                    <div class="editor-tab @(tab.Active ? "active" : null)">
+                        <button type="button"
+                                class="editor-tab-open"
+                                aria-current="@(tab.Active ? "page" : null)"
+                                @onclick="() => ActivateTab(tab)">
+                            @if (tab.Pinned)
+                            {
+                                <span aria-hidden="true">◆</span>
+                            }
+                            <span>@tab.Title</span>
+                        </button>
+                        <button type="button"
+                                class="editor-tab-close"
+                                aria-label="@($"Fechar {tab.Title}")"
+                                @onclick="() => CloseTab(tab)">
+                            ×
+                        </button>
+                    </div>
+                }
+            </div>
+        }
 
         <div class="editor-header">
             <button type="button" class="editor-back" @onclick="Back">← Voltar</button>
@@ -26,19 +54,34 @@
             }
         </div>
 
-        <div class="editor-mode-switch" role="group" aria-label="Modo do editor">
+        <div class="editor-actions">
+            <div class="editor-history-actions" role="group" aria-label="Histórico do editor">
+                <button type="button"
+                        disabled="@(!history.CanUndo || Workspace.IsReadOnly)"
+                        @onclick="Undo">
+                    Desfazer
+                </button>
+                <button type="button"
+                        disabled="@(!history.CanRedo || Workspace.IsReadOnly)"
+                        @onclick="Redo">
+                    Refazer
+                </button>
+            </div>
+
+            <div class="editor-mode-switch" role="group" aria-label="Modo do editor">
             <button type="button"
                     class="@ModeClass(EditorSurfaceMode.Visual)"
                     aria-pressed="@(Workspace.Mode == EditorSurfaceMode.Visual)"
                     @onclick="() => Workspace.SetMode(EditorSurfaceMode.Visual)">
                 Visual
             </button>
-            <button type="button"
-                    class="@ModeClass(EditorSurfaceMode.Source)"
-                    aria-pressed="@(Workspace.Mode == EditorSurfaceMode.Source)"
-                    @onclick="() => Workspace.SetMode(EditorSurfaceMode.Source)">
-                Fonte
-            </button>
+                <button type="button"
+                        class="@ModeClass(EditorSurfaceMode.Source)"
+                        aria-pressed="@(Workspace.Mode == EditorSurfaceMode.Source)"
+                        @onclick="() => Workspace.SetMode(EditorSurfaceMode.Source)">
+                    Fonte
+                </button>
+            </div>
         </div>
 
         @if (Workspace.Mode == EditorSurfaceMode.Source)
@@ -118,6 +161,38 @@
     private void OnSourceInput(ChangeEventArgs args)
     {
         Workspace.UpdateSource(args.Value?.ToString() ?? string.Empty);
+    }
+
+    private void Undo() => Workspace.Undo();
+
+    private void Redo() => Workspace.Redo();
+
+    private void ActivateTab(EditorWorkspaceTab tab)
+    {
+        if (!Workspace.ActivateTab(tab.Id))
+            return;
+
+        Navigation.NavigateTo(
+            "editor?path=" + Uri.EscapeDataString(tab.Path));
+    }
+
+    private void CloseTab(EditorWorkspaceTab tab)
+    {
+        var wasActive = tab.Active;
+        if (!Workspace.CloseTab(tab.Id))
+            return;
+
+        if (!wasActive)
+            return;
+
+        if (Workspace.CurrentDocument is null)
+        {
+            Navigation.NavigateTo("explorer");
+            return;
+        }
+
+        Navigation.NavigateTo(
+            "editor?path=" + Uri.EscapeDataString(Workspace.CurrentDocument.Path));
     }
 
     private void Back()
