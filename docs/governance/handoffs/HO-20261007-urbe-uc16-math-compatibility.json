@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "feat/urbe-uc16-math-compatibility",
   "base_commit": "9c8720d913c32a6990d9e07519d8ae50539cc7ac",
-  "commit": "0b0943b3f49bec9a2647ac1d22e9d91fbf0f2a71",
+  "commit": "3897cdfdccb59c2168a63439b274544468b23902",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/275",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/MathCompatibility.cs",
@@ -121,7 +121,7 @@
   ],
   "reuse_assessment": [
     {
-      "subject": "MathCompatibility",
+      "subject": "math-compatibility",
       "status": "product-specific",
       "rationale": "A semântica acompanha o catálogo/renderer do Urbe e não há segundo consumidor real; extração aumentaria custo sem benefício demonstrado."
     }
