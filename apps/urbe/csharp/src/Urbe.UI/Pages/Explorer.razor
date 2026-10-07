@@ -182,7 +182,7 @@
     private WorkspaceExplorerEntry? _selectedFolder;
     private string? _dragSource;
     private string? _moveSource;
-    private bool _suppressNextClick;
+    private string? _suppressClickPath;
     private CancellationTokenSource? _longPressCancellation;
 
     protected override void OnParametersSet()
@@ -228,9 +228,12 @@
 
     private void Activate(WorkspaceExplorerEntry entry)
     {
-        if (_suppressNextClick)
+        if (string.Equals(
+                _suppressClickPath,
+                entry.Path,
+                StringComparison.OrdinalIgnoreCase))
         {
-            _suppressNextClick = false;
+            _suppressClickPath = null;
             return;
         }
 
@@ -422,7 +425,7 @@
                 return;
 
             _moveSource = entry.Path;
-            _suppressNextClick = true;
+            _suppressClickPath = entry.Path;
             await InvokeAsync(StateHasChanged);
         }
         catch (OperationCanceledException)
@@ -441,7 +444,7 @@
     {
         _dragSource = null;
         _moveSource = null;
-        _suppressNextClick = false;
+        _suppressClickPath = null;
     }
 
     private string ExplorerHref()
