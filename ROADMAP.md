@@ -285,4 +285,4 @@ Objetivo: extrair uma ferramenta com boundary claro (ex.: Sprite Studio ou Edito
 
 ## Propostas de novos Products
 
-- [~] MSP-001 — Constituição do Product de autoria matemática temporal (codinome documental Math Studio). Identidade permanente e fundação propostas na DEC-0040; escopo e milestones em [roadmap da proposta](docs/proposals/math-studio/ROADMAP.md). Issue [#260](https://github.com/AbnerCruz/Ecosystem/issues/260); sem nova fase global ou alteração do roadmap de outro Product.
+- [~] MSP-001 — Constituição do Product de autoria matemática temporal. DEC-0040 escolheu o ID técnico `math-authoring`; MA-001 está em execução na Issue [#282](https://github.com/AbnerCruz/Ecosystem/issues/282), com escopo e milestones no [roadmap canônico do Product](apps/math-authoring/ROADMAP.md). O nome público permanece em aberto; sem nova fase global ou alteração do roadmap de outro Product.
