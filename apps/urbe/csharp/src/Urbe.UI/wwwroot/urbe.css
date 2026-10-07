@@ -560,3 +560,105 @@ a:focus-visible {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+
+/* UC-18 — editor workspace tabs + local history */
+.editor-tabs {
+    display: flex;
+    gap: .35rem;
+    margin: 0 0 .8rem;
+    padding: .2rem 0 .45rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.editor-tab {
+    flex: 0 0 auto;
+    display: inline-grid;
+    grid-template-columns: minmax(0, auto) auto;
+    align-items: center;
+    border: 1px solid #2d4439;
+    border-radius: .7rem;
+    background: #141f1b;
+    color: #90a89b;
+}
+
+.editor-tab.active {
+    border-color: #52735f;
+    background: #1d3027;
+    color: #d8f2e0;
+}
+
+.editor-tab-open,
+.editor-tab-close,
+.editor-history-actions button {
+    border: 0;
+    font: inherit;
+    color: inherit;
+}
+
+.editor-tab-open {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    max-width: 13rem;
+    padding: .5rem .35rem .5rem .7rem;
+    background: transparent;
+    cursor: pointer;
+}
+
+.editor-tab-open span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.editor-tab-close {
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: .55rem;
+    background: transparent;
+    color: #7f988b;
+    cursor: pointer;
+}
+
+.editor-tab-close:hover,
+.editor-tab-close:focus-visible {
+    background: #294035;
+    color: #edf5ee;
+}
+
+.editor-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.editor-actions .editor-mode-switch {
+    margin-top: 0;
+}
+
+.editor-history-actions {
+    display: inline-flex;
+    gap: .35rem;
+}
+
+.editor-history-actions button {
+    min-height: 2.15rem;
+    padding: .45rem .65rem;
+    border: 1px solid #2d473a;
+    border-radius: .65rem;
+    background: #18251f;
+    color: #b4ccb9;
+    cursor: pointer;
+}
+
+.editor-history-actions button:disabled {
+    opacity: .4;
+    cursor: default;
+}
