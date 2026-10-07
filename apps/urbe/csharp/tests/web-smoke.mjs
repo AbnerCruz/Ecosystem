@@ -160,14 +160,20 @@ async function assertShell(page) {
     const destinationRow = page.locator('[data-path="Destino"]');
     await smokeRow.dragTo(destinationRow);
     await page.waitForFunction(
-        () => !document.querySelector('[data-path="Smoke.md"]'));
+        () => !document.querySelector('[data-path="Smoke.md"]'),
+        null,
+        { timeout: 15000 });
     await destinationRow.click();
     await page.waitForFunction(
-        () => document.querySelector('[data-path="Destino"]')?.classList.contains('selected'));
+        () => document.querySelector('[data-path="Destino"]')?.classList.contains('selected'),
+        null,
+        { timeout: 15000 });
     await page.getByLabel('Ações de Destino').waitFor();
     await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
     await page.waitForFunction(
-        () => document.querySelector('.explorer-location strong')?.textContent.trim() === 'Destino');
+        () => document.querySelector('.explorer-location strong')?.textContent.trim() === 'Destino',
+        null,
+        { timeout: 15000 });
     await page.locator('[data-path="Destino/Smoke.md"]').waitFor();
     assert.match(
         await page.getByText(/alteração\(ões\) aguardando persistência pelo host/).innerText(),
@@ -264,7 +270,10 @@ try {
         });
 
         await page.reload();
-        await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+        await page.waitForFunction(
+            () => !!navigator.serviceWorker.controller,
+            null,
+            { timeout: 15000 });
         await assertShell(page);
         await page.close();
     }
