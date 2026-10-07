@@ -19,13 +19,13 @@
     <div class="explorer-controls">
         <label class="field">
             <span>Buscar</span>
-            <input @bind="Query" @bind:event="oninput" placeholder="nome ou caminho" />
+            <input value="@Query" @oninput="OnQueryInput" placeholder="nome ou caminho" />
         </label>
 
         <div class="new-note">
             <label class="field">
                 <span>Nova nota</span>
-                <input @bind="NewNoteTitle" placeholder="Título" disabled="@Workspace.IsReadOnly" />
+                <input value="@NewNoteTitle" @oninput="OnNewNoteTitleInput" placeholder="Título" disabled="@Workspace.IsReadOnly" />
             </label>
             <button type="button"
                     class="surface-action"
@@ -103,6 +103,16 @@
 
         if (QueryFromNavigation is not null)
             Query = QueryFromNavigation;
+    }
+
+    private void OnQueryInput(ChangeEventArgs args)
+    {
+        Query = args.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnNewNoteTitleInput(ChangeEventArgs args)
+    {
+        NewNoteTitle = args.Value?.ToString() ?? string.Empty;
     }
 
     private string ParentLabel
