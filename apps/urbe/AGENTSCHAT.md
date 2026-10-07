@@ -1,3 +1,11 @@
+### 2026-10-06 — ChatGPT — UC-16 compatibilidade TeX independente do renderer
+
+- PR #274 está verde e aguardando autorização crítica para a dependência/ADR; esta fatia não toca esse gate.
+- Escopo independente: analisador puro de compatibilidade TeX/macros, sem PackageReference, IO, UI ou mutação do texto.
+- Diagnósticos cobrem incompatibilidades observadas no probe #265 e declarações dinâmicas de macro; offsets seguem UTF-16 do editor.
+- Regra: nenhuma substituição automática (dfrac/frac, boldsymbol/mathbf, normas etc. não são equivalentes gerais).
+- Próximo: testar esta fatia como PR rotineiro; depois consumir os diagnósticos no renderer somente se/como o PR crítico for autorizado.
+
 ### 2026-10-06 — ChatGPT — UC-16 renderer C# / SVG próprio
 
 - Escolha proposta após o probe #265: `CSharpMath.Rendering 1.0.0-pre.2` + backend SVG do Urbe; VectSharp/LGPL fica fora.
