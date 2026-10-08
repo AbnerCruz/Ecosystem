@@ -13,7 +13,7 @@
   "branch": "agent/lunet-camera-20261008",
   "base_commit": "c0c7be02b98f91ec3d72b939312aa3d61eb8bc7a",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/295",
   "files_changed": [
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/ROADMAP.md",
