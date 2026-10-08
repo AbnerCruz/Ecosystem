@@ -60,6 +60,15 @@
         <div class="editor-reference-main">
         <div class="editor-actions">
             <button type="button" class="editor-pin-reference" @onclick="PinDocument">Fixar nota em painel</button>
+            @if (!Workspace.IsReadOnly && ArtifactModel.IsNote(document.Path) &&
+                 !NoteTemplateEngine.IsTemplatePath(document.Path))
+            {
+                <button type="button" class="editor-pin-reference" @onclick="SaveAsTemplate">Salvar como modelo</button>
+            }
+            @if (_templateStatus is not null)
+            {
+                <span role="status" class="surface-chip">@_templateStatus</span>
+            }
             <div class="editor-history-actions" role="group" aria-label="Histórico do editor">
                 <button type="button"
                         disabled="@(!history.CanUndo || Workspace.IsReadOnly)"
@@ -292,6 +301,16 @@
     public string? Path { get; set; }
 
     private void RefreshReferences() => StateHasChanged();
+
+    private string? _templateStatus;
+
+    private void SaveAsTemplate()
+    {
+        var saved = Workspace.SaveCurrentAsTemplate();
+        _templateStatus = saved is null
+            ? "Não foi possível criar o modelo."
+            : "Modelo criado: " + saved.Path;
+    }
 
     private void PinDocument()
     {
