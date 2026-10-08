@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-pathfinding",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T04:17:36Z",
+  "agent": {
+    "id": "codex-lunet-pathfinding",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-406",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-pathfinding-20261008",
+  "base_commit": "0dc9471293d1d17657c54b91c812e7be58f1b717",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/313",
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/pathfinding.md",
+    "apps/lunet2d/src/Lunet.Framework/Pathfinding/GridPoint.cs",
+    "apps/lunet2d/src/Lunet.Framework/Pathfinding/GridPathfinder.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PathfindingTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-pathfinding.json"
+  ],
+  "work_completed": [
+    "A* portátil com custos de entrada/obstáculos, quatro/oito vizinhos sem cortar cantos e desempate estável.",
+    "Buffers/heap reutilizáveis e saída Span; BufferTooSmall retorna tamanho necessário sem escrever parcialmente; entradas inválidas rejeitadas.",
+    "Guia offline completo com toque e terreno ponderado; XML API/examples documentados, compilados e JSON regenerado.",
+    "12 casos novos, incluindo 200 mapas contra oracle Dijkstra independente e execução do guia compilado no GameHost com toque físico 2×."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "dotnet build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false; zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão xUnit v3: 363/363, zero falhas/erros/skips. Busca válida sem alocação medida, oracle independente e guia executado no runtime real."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22 checks; snapshot de Issues ausente localmente, permanece verificação remota CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Pathfinding no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/pathfinding.md",
+      "evidence": "Rota, paredes, terreno, quatro/oito vizinhos, toque, bordas e Preview rápido/isolado offline; nenhuma validação GL/performance/aparelho inferida dos testes portáteis."
+    }
+  ],
+  "known_issues": [
+    "Busca síncrona e não thread-safe/reentrante; limpeza O(células), heap na expansão, construção aloca ~32 bytes/célula além dos objetos. Grades grandes podem bloquear o frame.",
+    "API calcula rota de células, não movimento físico, coordenação de agentes nem atualização automática de caminhos após editar custos.",
+    "Formato persistente/Tile Studio, física completa e gate Fase 4 continuam em itens separados. HUD do exemplo aloca; zero bytes aplica-se à API de busca.",
+    "SDK Android ausente localmente; CI APK e DEVICE são evidências separadas."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar checks/integração do PR pelo integrador automático e confirmar release/APK.",
+    "Executar roteiro pathfinding.md no aparelho e registrar resultado sem inferir aprovação.",
+    "Continuar Fase 4; #302 exige autorização do proprietário por ProjectStore, #307 depende de #302."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API local no Framework, sem dependências de outros Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #311, LUNET-406, branch/base/handoff explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, sem fechar item/gate."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/guia verificados, integração/CI/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração; A* previsto em SPEC §7 e ROADMAP Fase 4."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "grid-pathfinding",
+      "status": "product-specific",
+      "rationale": "API de jogo local do Framework prevista na Fase 4; nenhum consumidor externo exige extração."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva prevista no plano; sem persistência, mudança de contratos existentes, boundaries ou áreas protegidas."
+  },
+  "cost": null
+}

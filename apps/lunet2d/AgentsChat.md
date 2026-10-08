@@ -145,3 +145,14 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Novo modelo opcional **Demo: Partículas** e guia offline; usa textura procedural, toque/arraste, botões Burst/Fluxo/Parar/Limpar. Ownership da textura preservado; câmera/clip/blend do lote existentes.
 - Build portátil sem warnings/errors; suíte xUnit 388/388 (14 casos novos), incluindo zero bytes em Burst/Update/Draw e guia/modelo no compilador/runtime reais com toque físico 2×. Checks finais no handoff `HO-20261008-lunet-particles`.
 - Roteiro de aparelho pendente em `docs/guides/particulas.md`; não declarar frame time/GL aprovados por teste em memória. Fase 4 continua aberta.
+
+### 20261008-codex-pathfinding — Codex → próximos agentes — review
+- LUNET-406 / Issue #311; base main `0dc9471293d1d17657c54b91c812e7be58f1b717`, branch `agent/lunet-pathfinding-20261008`. Entrega independente de #302/#307, sem alterar templates, ProjectStore, persistência ou formato do futuro Tile Studio.
+- GridPoint/PathStatus/PathResult/GridPathfinder: A* com custos positivos inclusive <1, obstáculos, diagonais sem cortar cantos, heap indexado e Span de saída; falha/saída pequena não escrevem rota parcial. API XML/JSON e guia offline completo.
+- Build .NET 10 sem warnings/errors; suíte padrão 363/363 (12 casos novos). Oracle Dijkstra independente em 200 grades ponderadas; zero bytes por busca, repetição/edição/cantos/buffers/validação. Guia compilado e executado com toque físico 2× no GameHost.
+- Roteiro de aparelho em `docs/guides/pathfinding.md` continua pendente; sem fechar item/gate da Fase 4. Busca síncrona O(células) para limpeza + heap de expansão, 32 bytes/célula de buffers; não é thread-safe, não faz movimento nem coordenação de agentes. Integração/release ficam com integrador.
+- Estado observado dos trabalhos anteriores: #302 testes combinados verdes, classificado crítico pela política da main por tocar ProjectStore.cs; aguarda label integrar do proprietário. #307 CI/consistency/APK verdes, empilhado sobre #302, ainda não integrado. Não simular autorização nem alterar política para liberar entrega.
+
+- Reconciliação LUNET-404 em 2026-10-08 (A*): main `040dd8d` preservada; ambas as entradas AgentsChat/CHANGELOG mantidas e API JSON regenerada. Build sem warnings/errors, 386/386 testes padrão. ProjectStore permanece classificado crítico; APIs/guias serão entregues em fatia separada sem a criação de templates.
+
+- Reconciliação LUNET-405 com main/A*: build sem warnings/errors e 400/400 testes padrão. APIs/guias serão entregues separadamente dos modelos protegidos em ProjectStore; PR #307 mantém os modelos para autorização.

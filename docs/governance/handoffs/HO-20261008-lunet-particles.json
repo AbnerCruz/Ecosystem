@@ -33,7 +33,8 @@
     "Pool de capacidade fixa; Burst retorna quantas partículas nasceram, fluxo contínuo tem taxa/fração/Start/Stop/Clear. Sem fila de excedentes e sem percorrer ciclos históricos em deltas grandes.",
     "Movimento balístico analítico e desenho pelo SpriteBatch existente, preservando câmera/clip/blend/sampler e ownership da textura; sem culling/depth sorting/colisão.",
     "Modelo opcional Demo: Partículas na criação Android, guia completo, API XML/JSON atualizada e exemplos compilados.",
-    "14 casos novos: saturação/reuso, movimento/tamanho/RGBA/UV, seed, origem, taxa/idade, deltas enormes, estado/entradas inválidas, câmera/clip/overflow e zero bytes. Modelo/guia criados pelo ProjectStore e executados no runtime real com toque 2×."
+    "14 casos novos: saturação/reuso, movimento/tamanho/RGBA/UV, seed, origem, taxa/idade, deltas enormes, estado/entradas inválidas, câmera/clip/overflow e zero bytes. Modelo/guia criados pelo ProjectStore e executados no runtime real com toque 2×.",
+    "Reconciliado com A* publicado e animação; mudanças main preservadas e entradas de documentação concatenadas semanticamente."
   ],
   "verification": [
     {
@@ -46,7 +47,7 @@
       "check": "Lunet.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "xUnit v3 .NET 10 padrão: 388/388, zero falhas/erros/skips; 14 casos de partículas, mais animação/câmera/regressão. Burst/Update/Draw sem alocações medidos com backend NoOp; exemplo compilado/executado com toque físico 2×, fluxo/parada/limpar/saturação."
+      "evidence": "Suíte padrão xUnit v3 .NET 10: 400/400 após reconciliação com main 040dd8d/A*, incluindo câmera/animação/partículas, exemplos compilados, guias no runtime e medição de zero bytes."
     },
     {
       "check": "Consistency",
@@ -120,8 +121,11 @@
     }
   ],
   "criticality": {
-    "declared": "routine",
-    "reason": "Recurso autorizado da Fase 4; APIs/modelo adicionais e sem alteração de dados, compatibilidade, boundaries ou distribuição."
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "A seleção do novo template Particles em ProjectStore.cs toca zona protegida pela política da main; formato e projetos existentes preservados. APIs/guias serão entregues sem esse efeito protegido em PR independente."
   },
   "cost": null
 }
