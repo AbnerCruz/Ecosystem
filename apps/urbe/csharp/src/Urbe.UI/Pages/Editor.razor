@@ -365,7 +365,8 @@
             // Refuse stale DOM values instead of overwriting concurrent edits.
             if (selection is null ||
                 !string.Equals(selection.Text, original.Content, StringComparison.Ordinal) ||
-                Workspace.CurrentDocument?.Id != original.Id)
+                Workspace.CurrentDocument?.Id != original.Id ||
+                !string.Equals(Workspace.CurrentDocument?.Content, original.Content, StringComparison.Ordinal))
             {
                 _inlineCodeError = "O editor mudou durante o comando. Tente novamente.";
                 return;
