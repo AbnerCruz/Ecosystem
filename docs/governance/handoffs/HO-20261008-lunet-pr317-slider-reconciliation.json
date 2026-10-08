@@ -1,0 +1,135 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-pr317-slider-reconciliation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T13:58:48.522328+00:00",
+  "agent": {
+    "id": "codex-lunet-reconciliation",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-404",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-demo-templates-20261008",
+  "base_commit": "0f3b6fb0b82c6b94964e741a416941ada5785ee7",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/317",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/guides/sliders-ui.md",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchSlider.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchSliderStyle.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchSliderTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-touch-slider.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr317-slider-reconciliation.json"
+  ],
+  "work_completed": [
+    "PR #317 combinado com main b614d94c39a1ec7ad133718d7af184eef7670003, slider #336 e página 4 do Laboratório; código específico anterior preservado.",
+    "Conflitos de metadados resolvidos preservando registros; API JSON regenerada pela suíte padrão.",
+    "Código/testes de slider importados da main exatamente; ProjectTemplates no PR #317 conserva demos anteriores e recebe só mudanças do Laboratório.",
+    "Slider e página do Laboratório publicados na release 1000160, target main b614d94c39a1ec7ad133718d7af184eef7670003; pipeline 37788348867 test/apk/release success."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "Build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false, zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão completo: 441/441, zero erros/falhas/skips, incluindo 15 casos de slider e casos específicos anteriores."
+    },
+    {
+      "kind": "automated",
+      "check": "Código preservado",
+      "result": "passed",
+      "evidence": "Delta de source/tests frente ao head anterior contém somente TouchSlider/Style, TouchSliderTests, DemoTemplateTests e mudança do Laboratório em ProjectTemplates da main. APIs próprias e ProjectStore protegida preservados."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram; ROADMAP × Issues não verificado localmente sem snapshot, verificação remota no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Modelos na criação de projetos Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/animacao.md",
+      "evidence": "Criar ambos os modelos em telas pequenas/rotacionadas e testar animacao.md/particulas.md no Preview rápido/isolado, offline; reabrir projeto existente. Aprovação de integração crítica é separada, pelo integrador."
+    }
+  ],
+  "known_issues": [
+    "Revisões independentes podem exigir nova reconciliação quando a main mudar; quem integra é o integrador automático.",
+    "DEVICE continua pendente, sem mudança de regras/gates. Preferência de entrega não significa aprovação das APIs no aparelho.",
+    "Uma tentativa de build portátil do PR #317 terminou em segmentation fault; repetição sequencial compilou sem warnings/errors e executou 441/441. Nenhum resultado da DLL anterior usado como validação final."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Enviar reconciliação ao PR existente com lease, sem force/merge manual/label integrar.",
+    "Acompanhar checks combinados e release; PR crítico #317 conserva exigência de autorização do proprietário.",
+    "DEVICE e Fase 4 permanecem abertos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Código específico Core/Android do Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Tasks LUNET-404/405, Issues #298/#306, base/branch/handoff explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente separado de testes/factory."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "403 testes não equivalem a integração/APK/aparelho."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração/contrato/backend novo."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Seleção de modelos em ProjectStore.cs toca zona protegida user-data da main. Efeito limitado à criação de projetos novos, sem alterar formato/migração/projetos existentes; revisão única para autorização."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "project-demo-templates",
+      "status": "product-specific",
+      "rationale": "Modelos próprios da criação de projetos do Lunet, exemplos das APIs oficiais."
+    }
+  ],
+  "cost": null
+}
