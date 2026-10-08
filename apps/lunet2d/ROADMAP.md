@@ -180,9 +180,11 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [~] **LUNET-405 — Partículas** (§7, §23): pool fixo, burst/emissão contínua, vida, velocidade, gravidade, tamanho e cor; Issue #306. APIs/guias integrados pelo PR #316 e publicados no APK 1000141; roteiro Android pendente. Handoff `HO-20261008-lunet-particles-api`. Modelo opcional na revisão consolidada #317 (zona ProjectStore, autorização do proprietário).
 - [ ] Tilemaps (carregar formato do Tile Studio, colisão).
 - [ ] Fontes personalizadas (bitmap e TrueType).
-- [~] **LUNET-408 — Fontes bitmap personalizadas** (§7, §23): imagem/atlas, métricas proporcionais e fallback Unicode em SpriteFont/DrawString; Issue #327; API/guia testados, CI/integração/release e roteiro Android pendentes. TrueType permanece pendente; não conclui o item completo de fontes.
+- [~] **LUNET-408 — Fontes bitmap personalizadas** (§7, §23): imagem/atlas, métricas proporcionais e fallback Unicode em SpriteFont/DrawString; Issue #327; Integrado pelo PR #328 e publicado no APK 1000155; roteiro Android pendente. TrueType permanece pendente; não conclui o item completo de fontes.
 - [ ] UI (layout, âncoras, nine-slice, temas).
-- [~] **LUNET-411 — Slider por toque e demonstração no Laboratório** (§7, §23): faixa/valor/passo, captura por dedo, cancelamento/disable e desenho; Issue #335. Implementação e suíte combinada 438/438 verificadas; revisão, integração/release e validação Android pendentes. Demonstração executável na página 4 do Laboratório.
+- [~] **LUNET-409 — Layout de UI por âncoras e margens** (§7, §23): LayoutRect/Fixed/Stretch e composição aninhada sem alocação; Issue #329; API/guia testados, integração/release e roteiro Android pendentes. Incremento de UI; temas e controles completos permanecem pendentes.
+
+- [~] **LUNET-411 — Slider por toque e demonstração no Laboratório** (§7, §23): faixa/valor/passo, captura por dedo, cancelamento/disable e desenho; Issue #335. Implementação e suíte combinada 438/438 verificadas; integrado pelo PR #336 e publicado no APK 1000160; validação Android pendente. Demonstração executável na página 4 do Laboratório.
 - [~] **LUNET-407 — Nine-slice** (§7, §23): painéis/botões com cantos preservados, recorte de atlas e bordas escaláveis; Issue #319. Incremento de UI, sem concluir layout/âncoras/temas; Integrado pelo PR #324 e publicado no APK 1000150; roteiro Android pendente.
 - [~] **LUNET-406 — Pathfinding A*** (§7): grade com obstáculos/custos, quatro/oito vizinhos e buffers reutilizáveis; Issue #311. Integrado pelo PR #313 e publicado no APK 1000133; guia offline e CI verdes, aparelho pendente. Handoff `HO-20261008-lunet-pathfinding`.
 - [ ] Scene2D opcional e API entidade/componente opcional (sem obrigar ECS).

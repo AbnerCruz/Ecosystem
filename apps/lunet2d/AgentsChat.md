@@ -145,6 +145,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Closeout de colisão/câmera conserva as aprovações canônicas #303/#304. A* recebeu evidência de integração/release; DEVICE A*/animação/partículas continua pendente, Fase 4 aberta. Próximo: integrar esta fatia pelo integrador, confirmar APK direto e entregar roteiro dos guias.
 
 
+### 20261008-codex-ui-layout — Codex → próximos agentes — review
+- LUNET-409 / Issue #329, UI da Fase 4 (§7/§23); base main `29fbc892197882ec8de180ba90cd90f0d344e7d8`, branch `agent/lunet-ui-layout-20261008`. Pedido explícito Lunet; sem substituir prioridade global (AGENTS §1.1).
+- LayoutRect/Fixed/Stretch: âncoras normalizadas, pivôs, offsets/margens e composição aninhada; GetBounds entrega o mesmo RectangleF para desenho/Contains, sem alocação. Pais pequenos colapsam limites invertidos; resultados não representáveis são rejeitados. Sem persistência, árvore de UI, backend, modelos ou ProjectStore.
+- Build .NET 10 sem warnings/errors, suíte padrão 411/411 (main 400 + 11 novos). Guia compilado/executado no GameHost com toque físico 2×: botão se reposiciona, desenho coincide e toque na posição antiga não conta. Casos de extremos/validação/zero bytes incluídos.
+- Bloqueio global P4-9 resolvido por #326/main 29fbc89. Reconciliações feitas pelo outro agente preservadas: #324 c902b02, #328 7622f53, #317 9b77faf. Ainda não integrados; APK público confirmado continua 1000141. Não inventar green combinado novo nem aplicar integrar.
+- Roteiro `docs/guides/layout-ui.md` no aparelho continua pendente. UI completa/temas e Fase 4 abertos; handoff `HO-20261008-lunet-ui-layout`, próximo: checks/PR/CI/integrador/release.
 ### 20261008-codex-bitmap-fonts — Codex → próximos agentes — review
 - LUNET-408 / Issue #327, fontes da Fase 4 (§7/§23); base main `d25bcebf35ec248f474a7332dc3756e60817a01d`, branch `agent/lunet-bitmap-fonts-20261008`. Pedido explícito Lunet conforme AGENTS §1.1/PLAT-001; não é substituto de progresso global.
 - SpriteFont.FromBitmap + BitmapGlyph: mapas Unicode/recortes de atlas copiados, avanços proporcionais, offset, fallback, CR/LF/CRLF e espaços invisíveis. Reutiliza DrawString/Measure/SpriteBatch e permite Content.LoadTexture; não cria formato persistente, importador, backend ou modelo de projeto.
@@ -158,11 +164,17 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Layout/âncoras/temas e UI Studio continuam pendentes. DEVICE/GL/aparência/Preview rápido e isolado aguardam roteiro `docs/guides/nine-slice.md`; sem encerrar item/gate. Handoff `HO-20261008-lunet-nine-slice`; próxima ação: CI/integrador e confirmação da release.
 
 
+### 20261008-codex-reconcile-330-nine-slice — Codex → próximos agentes — review
+- PR #330 reconciliado semanticamente com main `f3392f2a3e111de7f7bcd36fc78073a84bf375e7` (NineSlice integrado pelo #324, release pública 1000150). Entradas de código e de histórico de ambos os lados preservadas; duplicação do changelog de APIs corrigida, ROADMAP 404/405/407 alinhado às integrações reais sem fechar DEVICE.
 ### 20261008-codex-reconcile-328-nine-slice — Codex → próximos agentes — review
 - PR #328 reconciliado semanticamente com main `f3392f2a3e111de7f7bcd36fc78073a84bf375e7` (NineSlice integrado pelo #324, release pública 1000150). Entradas de código e de histórico de ambos os lados preservadas; duplicação do changelog de APIs corrigida, ROADMAP 404/405/407 alinhado às integrações reais sem fechar DEVICE.
 - Código específico do PR preservado; testes completos e checks serão registrados no handoff de reconciliação. Sem alterar gates, contratos ou política de integração; nenhuma label integrar aplicada.
 - Preferência explícita do proprietário nesta sessão: demonstrações para testar no celular devem ser executáveis pelo Laboratório ou por um template, prontas para Run; não entregar copiar código de guia como roteiro principal. Não reformar documentação agora; usar esse formato nas próximas demonstrações. Isso não é aprovação de DEVICE nem autorização do PR crítico #317.
 
+
+### 20261008-codex-reconcile-330-bitmap — Codex → próximos agentes — review
+- PR #330 combinado com main `2e62f554fdd13525e9489f07386862ee39e5d298`: fontes bitmap #328 publicadas no APK 1000155; código específico e registros anteriores preservados, changelog sem duplicação, API JSON regenerada.
+- Build sem warnings/errors; suíte padrão 434/434, zero falhas/erros/skips; delta source/tests limitado aos três arquivos bitmap da main, byte idênticos. Consistency no handoff; DEVICE e gate da Fase 4 não aprovados. Classificação anterior mantida; sem merge manual/label integrar.
 
 ### 20261008-codex-touch-slider — Codex → próximos agentes — review
 - LUNET-411 / Issue #335; branch `agent/lunet-touch-slider-20261008`, base main `2e62f554fdd13525e9489f07386862ee39e5d298` (fontes bitmap #328 integradas).
@@ -171,3 +183,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Preferência explícita do proprietário: exemplos executáveis no Laboratório ou template. Não reformar os guias anteriores agora. Guia novo contém roteiro da página pronta, sem exigir cópia de código.
 - Build sem warnings/errors; suíte padrão combinada 438/438 (423 da main + 15 novos casos), incluindo execução real do Laboratório com toque físico 2×, zero bytes do controle, extremos/validação e regressões das páginas anteriores. Consistency: 22 checks; snapshot ROADMAP × Issues conferido remotamente.
 - DEVICE e release ainda pendentes. Slider horizontal sem foco/teclado/layout/tema global; não conclui UI nem gate da Fase 4. Integração exclusivamente automática, sem merge manual/label integrar.
+
+
+### 20261008-codex-reconcile-330-slider — Codex → próximos agentes — review
+- PR #330 combinado com main `b614d94c39a1ec7ad133718d7af184eef7670003` após integração real de #336. Página 4 do Laboratório e slider preservados; código específico anterior mantido, API JSON regenerada.
+- Build sem warnings/errors; suíte padrão 449/449, zero falhas/erros/skips. Delta source/tests só traz slider e Laboratório da main; ProjectStore/demos próprios mantidos. Consistency no handoff; DEVICE/gate pendentes, classificação anterior e política de integração preservadas.
