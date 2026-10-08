@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace MathAuthoring.Persistence;
 
 public enum ProjectCopy
@@ -26,6 +28,11 @@ public sealed record ProjectRecovery(
 /// </summary>
 public static class ProjectStorage
 {
+    // Serialize same-path saves inside this process; File.Replace alone does not
+    // protect against two writers rotating the same backup concurrently.
+    // Cross-process coordination is deliberately not claimed.
+    private static readonly ConcurrentDictionary<string, object> PathLocks =
+        new(StringComparer.Ordinal);
     public static void Save(string path, PortableProject project, Action<SaveCheckpoint>? fault = null) =>
         SaveFile(path, project, fault);
 
@@ -81,6 +88,12 @@ public static class ProjectStorage
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(project);
         var absolute = Path.GetFullPath(path);
+        lock (PathLocks.GetOrAdd(absolute, static _ => new object()))
+            SaveFileCore(absolute, project, fault);
+    }
+
+    private static void SaveFileCore(string absolute, PortableProject project, Action<SaveCheckpoint>? fault)
+    {
         var directory = Path.GetDirectoryName(absolute)
             ?? throw new ArgumentException("Path sem diretório.", nameof(path));
         Directory.CreateDirectory(directory);
