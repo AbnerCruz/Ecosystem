@@ -25,7 +25,9 @@
     "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
     "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
     "apps/lunet2d/tests/Lunet.Tests/AdvancedTemplateTests.cs",
-    "docs/governance/handoffs/HO-20261008-lunet-demo-templates.json"
+    "docs/governance/handoffs/HO-20261008-lunet-demo-templates.json",
+    "docs/governance/handoffs/HO-20261008-lunet-animation-api.json",
+    "docs/governance/handoffs/HO-20261008-lunet-particles-api.json"
   ],
   "work_completed": [
     "Consolidado efeito protegido de criação dos modelos LUNET-404/LUNET-405 em revisão única, separado das APIs do PR #316.",
