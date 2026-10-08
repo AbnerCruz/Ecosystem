@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-math-authoring-ma003-storage",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T00:56:38.395Z",
+  "agent": {
+    "id": "chatgpt-math-authoring-ma003",
+    "kind": "ai-agent"
+  },
+  "task_id": "MA-003",
+  "component": "math-authoring",
+  "state": "review",
+  "branch": "chatgpt/math-authoring-ma003-persistence",
+  "base_commit": "e20d737ec610c686428a90ba65e6bc9b0c230916",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/math-authoring/src/MathAuthoring.Persistence/MathAuthoring.Persistence.csproj",
+    "apps/math-authoring/src/MathAuthoring.Persistence/ProjectPackage.cs",
+    "apps/math-authoring/src/MathAuthoring.Persistence/ProjectStorage.cs",
+    "apps/math-authoring/tests/MathAuthoring.Core.Tests/MathAuthoring.Core.Tests.csproj",
+    "apps/math-authoring/tests/MathAuthoring.Core.Tests/PersistenceTests.cs",
+    "apps/math-authoring/MathAuthoring.slnx",
+    "apps/math-authoring/README.md",
+    "apps/math-authoring/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261008-math-authoring-ma003-storage.json"
+  ],
+  "work_completed": [
+    "MA-003 sob o mesmo Product: assembly C# local de persistência com referência apenas ao Core autoral, sem Hub/Urbe/Lunet.",
+    "PortableProject ZIP v1: manifest/documento com SHA-256; assets por ID/hash, desduplicação por hash, limites de bytes/nós/entradas/expansão, chaves JSON estritas e allowlist de tipo.",
+    "Leitura de ZIP não extrai nem executa entradas; rejeita traversal, extra entries, symlinks, hashes/UTF-8/metadata inválidos; stream de entrada serve para SAF Android.",
+    "ProjectStorage implementa checkpoint temporário gravado e relido, File.Replace em filesystem local, backup, autosave e recuperação seletiva por revisão; nunca reescreve arquivo corrompido silenciosamente.",
+    "Defesa contra rollback de revisão e mistura de projeto entre backups; testes com corrupção, pacote comprimido hostil e fault injection antes/depois da publicação.",
+    "README e ROADMAP local atualizados no mesmo branch."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/math-authoring/tests/MathAuthoring.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI math-authoring-ci do último head aguardando validação; resultados de commits anteriores não substituem CI final."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI e integrador sobre o estado combinado da main."
+    },
+    {
+      "check": "Validação em aparelho Android com SAF, escrita e recuperação na UI",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "O MA-003 atual cobre apenas adapters headless/FS local; integração SAF/Android e DEVICE estão fora deste PR e seguem não validados."
+    }
+  ],
+  "known_issues": [
+    "PR #297 MA-002 é ancestral de branch e ainda aguarda integração; reconciliar sem perder alterações independentes caso a main mude.",
+    "No Android SAF não existe garantia de atomicidade de File.Replace: é necessário adapter próprio e DEVICE em etapa posterior.",
+    "Recovery retorna a cópia íntegra e sua origem sem substituir o primário danificado; substituição exige escolha explícita na UI.",
+    "Checksum SHA-256 detecta corrupção, não fornece autenticação de autoria; pacote não recebe código executável."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar math-authoring-ci e consistency no head; corrigir qualquer regressão observada sem afrouxar os testes.",
+    "Aguardar PR #297 integrado e reconciliar branch MA-003 contra a main atual antes de integração final.",
+    "Integrador deve classificar como critical/user-data e solicitar autorização do proprietário se gate verde.",
+    "Não declarar full MA-003 done antes da validação pertinente de adapter e integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "apps/math-authoring/AGENTS.md",
+    "apps/math-authoring/SPEC.md",
+    "apps/math-authoring/ROADMAP.md",
+    "docs/adr/0029-product-de-autoria-matematica-temporal.md",
+    "docs/adr/0030-documento-canonico-de-autoria-matematica.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ProjectDocument/ProjectJson continuam única autoridade; ZIP e backups são cópias verificáveis derivadas."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Somente Core do Product math-authoring é referenciado por Persistence."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Persistência standalone não conhece o Hub."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Nova implementação local ao Product usa C# sem reescrever Urbe."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #299, branch própria, handoff, estados e CI explícitos."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Manifesto, ADR-0030, SPEC e política de integração lidos diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem contrato público/Ecosystem, decisão arquitetural nova ou alteração de boundary."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Import como dados com limites, hashes, paths controlados, MIME allowlist e sem execução."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não alegar DEVICE; filesystem local não equivale a SAF Android."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "MA-003 permanece [~] até CI/integração, handoff review."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs de projeto e assets explícitos, hashes estáveis e referência por ID."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Persistência incorporada ao Product sem framework externo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem novo componente compartilhado, nenhum segundo consumidor real."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Export, import e recovery funcionam sem distribuir Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Nova semântica de formato portátil, backup/recovery e salvamento de projetos de usuários requer aprovação crítica pela política do integrador."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "math-project-persistence",
+      "status": "product-specific",
+      "rationale": "Persistência dos projetos de autoria matemática pertence ao Product, sem prova de segundo consumidor."
+    }
+  ]
+}
