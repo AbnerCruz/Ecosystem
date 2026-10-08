@@ -38,8 +38,8 @@
     {
       "kind": "automated",
       "check": "Self-test",
-      "result": "pending",
-      "evidence": "Suíte de mutações em execução local; CI remoto obrigatório."
+      "result": "passed",
+      "evidence": "Self-test: todos os checks provaram detectar suas violações. Executado localmente com main d25bcebf combinada; a atualização posterior para main 29fbc892 modifica apenas documentos de estado. CI remoto continua obrigatório."
     }
   ],
   "known_issues": [],
