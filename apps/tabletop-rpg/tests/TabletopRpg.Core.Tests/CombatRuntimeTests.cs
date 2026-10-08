@@ -66,6 +66,9 @@ public sealed class CombatRuntimeTests
         var first = f.Engine.Execute(new AttackIntent(f.Human, f.Hero, f.Enemy, "strike"));
         Assert.True(first.Accepted);
         Assert.True(first.Success);
+        Assert.NotNull(first.Combat);
+        Assert.Equal(15, first.Combat.Roll);
+        Assert.Equal(5, first.Combat.Damage);
         Assert.Equal(5, Hp(f.Campaign, f.Enemy));
         Assert.True(f.Encounter.ActionSpent);
         Assert.Equal(2, dice.Calls);
@@ -151,6 +154,7 @@ public sealed class CombatRuntimeTests
         var result = f.Engine.Execute(new AttackIntent(f.Human, f.Hero, f.Enemy, "strike"));
         Assert.True(result.Accepted);
         Assert.Equal(0, Hp(f.Campaign, f.Enemy));
+        Assert.Equal(6, result.Combat!.Damage);
         Assert.True(f.Encounter.IsFinished);
         Assert.Contains(f.Campaign.Events, e => e.Kind == "combat-finished");
         Assert.False(f.Engine.Execute(new EndCombatTurnIntent(f.Human, f.Hero)).Accepted);
