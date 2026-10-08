@@ -54,10 +54,10 @@
     {
       "check": "Preview no Android",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/colisao.md",
       "critical": false,
-      "evidence": "Roteiro de recurso intermediário; toque simulado e backend em memória não comprovam GL/Preview isolado no aparelho."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-08 (Issue https://github.com/AbnerCruz/Ecosystem/issues/303); registro em docs/governance/responses/VAL-HO-20261008-lunet-collision-4b6224b3dab2.md."
     },
     {
       "check": "Integração e release development",
