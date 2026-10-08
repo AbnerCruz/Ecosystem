@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-p4-9-184-candidate",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T04:15:06.428Z",
+  "timestamp": "2026-10-08T10:39:44.680Z",
   "agent": {
     "id": "chatgpt-ecosystem-p4-9",
     "kind": "ai-agent"
@@ -24,7 +24,8 @@
     "GitHub Release urbe-v1.8.4-beta e digest do APK verificados diretamente pela API do GitHub; 1.8.3-beta e aprovação #251/#259 mantidas como evidência histórica, não transportadas.",
     "Registro de validação VR-urbe-1.8.4-beta-android criado com artefato exato, hash, versão, critérios de teste de importação Android SAF Arquivos/Pasta, reimportação, recuperabilidade e offline, e status HUMAN_VALIDATION_PENDING.",
     "ROADMAP geral (intro, item P4-9 e gate Fase 4) aponta para a versão corrente e o objeto DEVICE correto, preservando [~] e gate aguardando.",
-    "Não houve instalação, desinstalação, teste em dispositivo, publicação nova nem alteração de scripts/apps; mudança apenas da projeção documental do candidato existente."
+    "Não houve instalação, desinstalação, teste em dispositivo, publicação nova nem alteração de scripts/apps; mudança apenas da projeção documental do candidato existente.",
+    "FATO OBSERVADO em 2026-10-08: o proprietário aprovou pelo Portal (#318) a validação P4-9/DEVICE do APK 1.8.4-beta; registro de build passa a VALIDATED, mas P4-9/Phase 4 permanecem em review até os mecanismos de enforcement fase4 NN-003/NN-023 serem reconciliados e integrados."
   ],
   "verification": [
     {
@@ -36,8 +37,8 @@
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Executar consistency/CHK-VALIDATION/CHK-HANDOFFS/CHK-ROADMAP no head de PR e estado combinado."
+      "result": "passed",
+      "evidence": "PR #312 (commit be71e707) integrado na main após consistency verde em runs 37726592846/37726588432; validação humana P4-9 1.8.4-beta registrada posteriormente em 2026-10-08 (Issue #318). Este PR de fechamento deverá confirmar consistency verde para VALIDATED/done."
     },
     {
       "check": "P4-9 DEVICE Urbe 1.8.4-beta: importação, recuperação e standalone",
@@ -49,15 +50,15 @@
     }
   ],
   "known_issues": [
-    "Não existe prova DEVICE específica da 1.8.4-beta nesta alteração; nenhuma aprovação anterior é herdada.",
+    "A validação DEVICE do Urbe 1.8.4-beta foi aprovada explicitamente pelo proprietário na Issue #318 e está registrada no mesmo objeto do build; não foi obtida por CI.",
     "Protocolo exige backup externo antes de migração e só permite simular corrupção/interrupção em vault de teste.",
-    "Root Fase 4 permanece aguardando; não publicar outra release nem marcar P4-9 [x] por documentação."
+    "O gate da Fase 4 e a Issue #166 permanecem em review até a reconciliação crítica da matriz de enforcement, sem alterar aprovação DEVICE já registrada."
   ],
   "blockers": [],
   "next_actions": [
-    "Revisar consistency e self-tests do PR, corrigindo divergências de CHK-VALIDATION e handoff.",
-    "Após integração da documentação, usar o Portal para executar o roteiro DEVICE 1.8.4-beta no Android e registrar resposta real do proprietário com build exata.",
-    "Se falhar, registrar incidente, corrigir app e publicar novo candidato; se passar, reconciliar validação e só então fechar P4-9/gate Fase 4."
+    "Validação DEVICE 1.8.4-beta aprovada oficialmente (#318), sem necessidade de repetir o teste no mesmo APK.",
+    "Aguardar consistência e autorização crítica do PR #320 de NN-003/NN-023 antes de fechar gate da Fase 4 e Issue #166 no ROADMAP.",
+    "Após atualização integrada da matriz, efetuar fechamento routine do gate/Issue e prosseguir o roadmap sem projetar a aprovação a builds futuras."
   ],
   "decisions_required": [],
   "normative_sources": [
