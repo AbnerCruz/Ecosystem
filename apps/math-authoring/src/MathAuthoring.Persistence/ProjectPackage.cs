@@ -114,7 +114,10 @@ public static class ProjectPackage
             !files.TryGetValue("project.json", out var documentEntry))
             throw new InvalidDataException("Package sem manifest ou documento.");
 
-        var manifest = ParseManifest(ReadEntry(manifestEntry, MaxManifestBytes));
+        Manifest manifest;
+        try { manifest = ParseManifest(ReadEntry(manifestEntry, MaxManifestBytes)); }
+        catch (Exception e) when (e is JsonException or InvalidOperationException or FormatException or OverflowException)
+        { throw new InvalidDataException("Manifest JSON inválido.", e); }
         var documentBytes = ReadEntry(documentEntry, ProjectJson.MaxBytes);
         if (!string.Equals(Sha(documentBytes), manifest.DocumentSha256, StringComparison.Ordinal))
             throw new InvalidDataException("Hash do documento incompatível.");
@@ -247,7 +250,7 @@ public static class ProjectPackage
         (value.StartsWith("assets/", StringComparison.Ordinal) &&
          value.EndsWith(".bin", StringComparison.Ordinal) &&
          value.Length == "assets/".Length + 64 + ".bin".Length &&
-         ValidSha(value["assets/".Length..^".bin".Length]));
+         ValidSha(value.Substring("assets/".Length, 64)));
 
     private static bool IsSymlink(ZipArchiveEntry entry) =>
         ((entry.ExternalAttributes >> 16) & 0xF000) == 0xA000;
