@@ -28,9 +28,9 @@ public class ChatCompletionsProviderTests
     [Fact]
     public async Task Provider_traduz_tool_calls_versoes_e_custo_informado_sem_vazar_token_no_corpo()
     {
-        const string json = """
-        {"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"call-1","type":"function","function":{"name":"files.read","arguments":"{\"path\":\"README.md\"}"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":10,"completion_tokens":20,"cost":0.012}}
-        """;
+        var json = """
+        {"choices":[{"message":{"role":"assistant","content":null,"tool_calls":[{"id":"call-1","type":"function","function":{"name":"WIRE_NAME","arguments":"{\"path\":\"README.md\"}"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":10,"completion_tokens":20,"cost":0.012}}
+        """.Replace("WIRE_NAME", ChatCompletionsProvider.WireName("files.read"), StringComparison.Ordinal);
         var handler = new Handler(json);
         using var http = new HttpClient(handler);
         var provider = new ChatCompletionsProvider(http,
@@ -46,7 +46,8 @@ public class ChatCompletionsProviderTests
         Assert.DoesNotContain("super-secret-token", handler.Body!);
         using var sent = JsonDocument.Parse(handler.Body!);
         Assert.Equal("sistema", sent.RootElement.GetProperty("messages")[0].GetProperty("content").GetString());
-        Assert.Equal("files.read", sent.RootElement.GetProperty("tools")[0].GetProperty("function").GetProperty("name").GetString());
+        Assert.Equal(ChatCompletionsProvider.WireName("files.read"), sent.RootElement.GetProperty("tools")[0].GetProperty("function").GetProperty("name").GetString());
+        Assert.Matches("^[a-zA-Z0-9_-]{1,64}$", ChatCompletionsProvider.WireName("files.read"));
     }
 
     [Fact]
@@ -66,6 +67,7 @@ public class ChatCompletionsProviderTests
         using var sent = JsonDocument.Parse(handler.Body!);
         var messages = sent.RootElement.GetProperty("messages");
         Assert.Equal("assistant", messages[2].GetProperty("role").GetString());
+        Assert.Equal(ChatCompletionsProvider.WireName("files.read"), messages[2].GetProperty("tool_calls")[0].GetProperty("function").GetProperty("name").GetString());
         Assert.Equal("tool", messages[3].GetProperty("role").GetString());
         Assert.Equal("call-2", messages[3].GetProperty("tool_call_id").GetString());
     }
