@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-tabletop-rpg-rpg003-world-state",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T04:05:00Z",
+  "timestamp": "2026-10-08T04:10:10Z",
   "agent": {
     "id": "chatgpt-rpg003",
     "kind": "ai-agent"
@@ -13,7 +13,7 @@
   "branch": "feat/tabletop-rpg-rpg003-world-state",
   "base_commit": "0dc9471293d1d17657c54b91c812e7be58f1b717",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/310",
   "files_changed": [
     "apps/tabletop-rpg/src/TabletopRpg.Core/WorldState.cs",
     "apps/tabletop-rpg/src/TabletopRpg.Core/CampaignState.cs",
