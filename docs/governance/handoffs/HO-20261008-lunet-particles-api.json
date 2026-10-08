@@ -13,7 +13,7 @@
   "branch": "agent/lunet-advanced-api-20261008",
   "base_commit": "040dd8d0529c7546644bd5d97e0dda1b27f456c3",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/316",
   "files_changed": [
     "apps/lunet2d/AgentsChat.md",
     "apps/lunet2d/CHANGELOG.md",
