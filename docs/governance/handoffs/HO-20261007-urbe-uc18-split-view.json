@@ -14,7 +14,7 @@
   "branch": "feat/urbe-uc18-editor-split-view",
   "base_commit": "ee920ea5f058e514b85ca01972e8e6351deb5f38",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/300",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
     "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
