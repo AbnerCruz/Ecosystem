@@ -80,6 +80,9 @@ public sealed class CampaignCodec
         if (!string.Equals(actualChecksum, envelope.PayloadSha256, StringComparison.OrdinalIgnoreCase))
             throw new CampaignFormatException("Campaign checksum does not match the payload.");
 
+        if (envelope.SchemaVersion == 2)
+            ValidateV2WorldShape(envelope.Payload);
+
         CampaignDto dto;
         try
         {
@@ -267,6 +270,45 @@ public sealed class CampaignCodec
         { World = world };
     }
 
+
+
+    private static void ValidateV2WorldShape(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("world", out var world))
+            throw new CampaignFormatException("Campaign field 'world' is required in v2.");
+
+        RequireShape(world, "world",
+            ["fictionMinutes", "activeSceneId", "scenes", "quests", "inventory", "conditions", "resources"]);
+
+        RequireItems("scenes", ["id", "title", "description"]);
+        RequireItems("quests", ["id", "title", "status", "sceneId"]);
+        RequireItems("inventory", ["id", "owner", "itemKey", "quantity"]);
+        RequireItems("conditions", ["characterId", "key", "expiresAtMinute"]);
+        RequireItems("resources", ["characterId", "key", "current", "maximum"]);
+
+        void RequireItems(string key, string[] names)
+        {
+            var array = world.GetProperty(key);
+            if (array.ValueKind != JsonValueKind.Array || array.GetArrayLength() > 4096)
+                throw new CampaignFormatException($"World '{key}' is not a bounded array.");
+            foreach (var item in array.EnumerateArray())
+                RequireShape(item, "world." + key + "[]", names);
+        }
+    }
+
+    private static void RequireShape(JsonElement element, string context, string[] names)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+            throw new CampaignFormatException($"Campaign {context} must be a JSON object.");
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var property in element.EnumerateObject())
+        {
+            if (!seen.Add(property.Name) || !names.Contains(property.Name, StringComparer.Ordinal))
+                throw new CampaignFormatException($"Campaign {context} has a duplicate or unknown field.");
+        }
+        if (names.Any(name => !seen.Contains(name)))
+            throw new CampaignFormatException($"Campaign {context} has a missing field.");
+    }
 
     private static WorldDto ToWorldDto(WorldSnapshot world) => new(
         world.FictionMinutes,
