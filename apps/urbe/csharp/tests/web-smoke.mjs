@@ -116,6 +116,26 @@ async function assertShell(page, journey = false) {
     smokeStage('source-edit');
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
     const source = page.getByLabel('Markdown da nota');
+    smokeStage('source-inline-code');
+    await source.fill('antes palavra depois');
+    await source.evaluate(element => element.setSelectionRange(6, 13));
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes `palavra` depois');
+    assert.deepEqual(
+        await source.evaluate(element => [element.selectionStart, element.selectionEnd]),
+        [7, 14]);
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes palavra depois');
+
+    await source.evaluate(element => element.setSelectionRange(6, 6));
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes ``palavra depois');
+    assert.deepEqual(
+        await source.evaluate(element => [element.selectionStart, element.selectionEnd]),
+        [7, 7]);
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes palavra depois');
+
     await source.fill('# Primeira versão\\n\\nTexto inicial.');
     await source.fill('# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]');
     assert.equal(await source.inputValue(), '# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]');
