@@ -1,0 +1,136 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-p6-4-lunet-real-host",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T17:15:00Z",
+  "agent": {
+    "id": "chatgpt-p6-lunet-pilot",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-4",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-4-lunet-real-host-pilot-20261008",
+  "base_commit": "5d4291a0a2c5e032e8c35d6b56dae605861933f5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "tests/integration/p6-lunet-host/P6LunetHost.csproj",
+    "tests/integration/p6-lunet-host/Program.cs",
+    ".github/workflows/consistency.yml",
+    "docs/adr/0031-p6-4-piloto-headless-lunet.md",
+    "docs/adr/README.md",
+    "docs/governance/decisions.json",
+    "docs/governance/addenda/ADD-0018-p6-4-piloto-headless.md",
+    "docs/governance/handoffs/HO-20261008-p6-4-lunet-real-host.json"
+  ],
+  "work_completed": [
+    "Registra a autorização do proprietário para piloto restrito, sem antecipar Fase 8 do Lunet nem UC-21 do Urbe.",
+    "Cria projeto de integração test-only que compõe os assemblies reais Lunet.Core, AgentRuntime.Core, AgentRuntime.Testing e AgentWorkspace, sem nova referência em qualquer assembly de Product.",
+    "Exercita dois ProjectStore reais, vínculo do GameId ao Context, text.inspect real, agente Scripted, verifier independente, deny-by-default de agent.act, grants da Host API, revogação, cancelamento e fechamento.",
+    "Vincula a prova ao CI de consistência no estado combinado; sem custo de modelo, sem deploy e sem APK."
+  ],
+  "verification": [
+    {
+      "check": "Testes do piloto em CI combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Etapa dotnet run --project tests/integration/p6-lunet-host/P6LunetHost.csproj adicionada ao consistency.yml; somente o workflow do PR integrado ao candidato poderá confirmar resultado."
+    },
+    {
+      "check": "Conformance global de consistência",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O checker e o self-test deverão validar novo ADR, DEC, handoff e a árvore combinada em CI."
+    },
+    {
+      "check": "DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Sem UI, Android lifecycle, novo IPC, packaging ou tela; composição local net10.0 com Host real Core."
+    }
+  ],
+  "known_issues": [
+    "P6-4 não pode ser declarada concluída antes dos checks e merge crítico autorizado no integrador.",
+    "O piloto testa as implementações reais dentro de processo de teste; não instala painel de agente no Lunet e não prova interação Android.",
+    "Conexão ao Product só como Host API em Core, sem experiência embarcada de IA ou SDK compartilhado novo."
+  ],
+  "blockers": [
+    "Integração crítica requer label integrar do proprietário após status pronto-para-integrar e CI verde."
+  ],
+  "next_actions": [
+    "Submeter PR crítico; conferir os checks e corrigir falhas eventualmente reportadas.",
+    "Depois do CI verde, proprietário deve aplicar a label integrar no PR se aprovar o diff e a decisão DEC-0041.",
+    "Após merge e prova verde, reconciliar ROADMAP P6-4, Issue #144 e handoff sem antecipar P6-5."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0021-r3-sessao-local-do-agent-workspace.md",
+    "docs/adr/0028-text-inspect-core-compartilhado.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/architecture/agent-runtime.md",
+    "docs/architecture/p6-4-host-eligibility.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Projeto de teste separado consome dois Products reais; assembly de produção de nenhum Product tem dependência do outro."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "O piloto não referencia Hub; Lunet opera standalone."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "P6-4 #144, branch, base, handoff e testes rastreáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Autorização documentada em ADD-0018/DEC-0041/ADR-0031."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança de sequencing explícita e crítica, sem integração sem label do proprietário."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Grants capturados, agent.act deny-by-default, revoke/cancel em Host real."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara DEVICE em teste headless."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P6-4 permanece em andamento até resultado verde e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reuso de implementações existentes, sem duplicar Runner, provider ou servidor."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhum componente compartilhado promovido; bridge permanece na composição de teste."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "architecture",
+      "control-plane"
+    ],
+    "reason": "Sequenciamento aprovado é ajustado com ADR e novo CI; exige autorização do proprietário no PR."
+  },
+  "cost": null
+}

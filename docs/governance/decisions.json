@@ -1493,6 +1493,40 @@
       "decidedAt": "2026-10-06",
       "record": "docs/governance/responses/DEC-0040.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0041",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Piloto antecipado restrito do Host Lunet para desbloquear P6-4",
+      "context": "O Lunet possui Host API em processo e capability text.inspect real na Fase 4, mas seu Agentic Workspace completo está previsto na Fase 8. A prova R3/P6-4 precisa exercitar Host real sem antecipar a UI/IA. Após discutir o bloqueio e comparar as alternativas, o proprietário autorizou explicitamente prosseguir até desbloquear P6-4, escolhendo o piloto restrito descrito em docs/architecture/p6-4-host-eligibility.md.",
+      "question": "Permitir somente o piloto headless de integração com o Host Lunet real antes da Fase 8?",
+      "alternatives": [
+        {
+          "option": "A — piloto técnico headless em processo agora",
+          "consequences": "Prova Context, text.inspect, grants, cancel/revoke em Lunet.Core com AgentWorkspace e provider simulado; sem UI, client de LLM, SDK compartilhado ou mudança do gate da Fase 4 do Product. CI e portão crítico permanecem."
+        },
+        {
+          "option": "B — esperar Fase 8 ou UC-21",
+          "consequences": "Mantém a ordem integral, mas bloqueia a prova técnica P6-4 apesar da Host API já funcional."
+        }
+      ],
+      "consequences": "Autoriza o teste técnico limitado ADR-0031 sem declarar automaticamente P6-4 done. A experiência de IA continua na Fase 8 do Lunet, o User Agent no Urbe continua UC-21. Toda mudança crítica aguarda a label integrar aplicada pelo próprio proprietário após avaliação do CI.",
+      "manifestCompatibility": "Preserva NN-001/002/003/006/008/009/010/011/016/017/018/020/022/023; nenhuma mudança em schemas públicos, Product Core ou grants automáticos.",
+      "recommendation": "A — separação explícita entre prova técnica de Host e UX completa de IA.",
+      "related": [
+        "docs/governance/addenda/ADD-0018-p6-4-piloto-headless.md",
+        "docs/adr/0031-p6-4-piloto-headless-lunet.md",
+        "docs/architecture/p6-4-host-eligibility.md",
+        "https://github.com/AbnerCruz/Ecosystem/issues/144"
+      ],
+      "raisedBy": "AbnerCruz (proprietário, instrução em conversa)",
+      "raisedAt": "2026-10-08",
+      "decision": "Alternativa A — proprietário autorizou executar até desbloquear P6-4 após a recomendação de piloto restrito Lunet. Implementação de agente real na UI não foi autorizada.",
+      "decidedAt": "2026-10-08",
+      "record": "docs/governance/addenda/ADD-0018-p6-4-piloto-headless.md",
+      "consequencesApplied": false
     }
   ]
 }
