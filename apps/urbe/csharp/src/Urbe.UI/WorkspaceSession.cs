@@ -103,6 +103,14 @@ public sealed class WorkspaceSession : IDisposable
     public IReadOnlyList<WorkspaceMutation> PendingMutations =>
         new ReadOnlyCollection<WorkspaceMutation>(_pendingMutations.ToArray());
 
+    // Derived from ordinary Markdown in Modelos/. DocumentStore stays the
+    // single authority; no second registry or persisted schema.
+    public IReadOnlyList<UrbeDocument> Templates =>
+        Documents.List()
+            .Where(document => NoteTemplateEngine.IsTemplatePath(document.Path))
+            .OrderBy(document => document.Path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
     public string PreviewHtml =>
         MarkdownEngine.Render(CurrentDocument?.Content ?? string.Empty);
 
@@ -675,6 +683,53 @@ public sealed class WorkspaceSession : IDisposable
         _paths.Add(document.Path);
         Revision++;
         return document;
+    }
+
+    /// <summary>
+    /// Clones the current Markdown note into Modelos/, using the same
+    /// ordinary document creation path as the Explorer. The original stays
+    /// untouched. Host persistence is still owned by its future adapter.
+    /// </summary>
+    public UrbeDocument? SaveCurrentAsTemplate()
+    {
+        var source = CurrentDocument;
+        if (IsReadOnly || source is null ||
+            !ArtifactModel.IsNote(source.Path) ||
+            ArtifactModel.IsSystem(source.Path))
+            return null;
+
+        if (!FolderExists(NoteTemplateEngine.Folder))
+        {
+            if (PathOrFolderExists(NoteTemplateEngine.Folder) ||
+                CreateFolder(NoteTemplateEngine.Folder) is null)
+                return null;
+        }
+
+        return CreateNote(
+            source.Title,
+            NoteTemplateEngine.Folder,
+            source.Content);
+    }
+
+    /// <summary>
+    /// Rejects invalid templates/fields before CreateNote, so failure cannot
+    /// create a partial document or steal an existing note's identity.
+    /// </summary>
+    public UrbeDocument? CreateFromTemplate(
+        string? templatePath,
+        string? title,
+        string? folder,
+        IReadOnlyDictionary<string, string?>? fields)
+    {
+        if (IsReadOnly || !NoteTemplateEngine.IsTemplatePath(templatePath))
+            return null;
+
+        var template = Documents.Get(DocumentModel.NormalizePath(templatePath));
+        if (template is null ||
+            !NoteTemplateEngine.TryRender(template.Content, fields, out var content))
+            return null;
+
+        return CreateNote(title, folder, content);
     }
 
     public UrbeDocument? CreateLinkedNote(string? target)
