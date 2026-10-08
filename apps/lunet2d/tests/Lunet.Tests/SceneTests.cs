@@ -187,7 +187,7 @@ public class SceneTests
             Assert.Contains(backend.Batches, b => b.Vertices.Any(v => Vector2.Distance(v.Position, position - new Vector2(24)) < 0.01f));
             Touch(Lunet.Input.TouchPhase.Pressed, 180, 374); host.Pause(); host.Resume();
             Touch(Lunet.Input.TouchPhase.Released, 180, 374); Assert.True(motion.IsEnabled);
-            Tap(100, 23); Assert.Equal(0, Field("page")); start = entity.Transform.Position; host.Tick(1.0 / 60); Assert.Equal(start, entity.Transform.Position);
+            Tap(100, 23); Assert.Equal(6, Field("page")); Tap(100, 23); Assert.Equal(0, Field("page")); start = entity.Transform.Position; host.Tick(1.0 / 60); Assert.Equal(start, entity.Transform.Position);
             Assert.False(host.IsFaulted, host.Fault?.ToString()); host.Stop(); Assert.Empty(backend.LiveTargets); Assert.Empty(backend.LiveShaders);
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }

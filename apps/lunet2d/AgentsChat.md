@@ -222,3 +222,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Sexta página executável do Laboratório; criar novo projeto e Run. Componentes de movimento/desenho separados, pausa/visibilidade/desanexar/reattach e cancelamento no OnPause. Nenhuma escrita em projetos existentes/ProjectStore. Ajustados testes de navegação para seis páginas mantendo verificações anteriores.
 - Build .NET 10 sem warnings/errors; runner xUnit padrão 475/475 (main 463 + 12 novos casos), API JSON regenerada, exemplos XML compilados; runtime da demonstração executado com toque físico 2×, zero bytes de percursos/lookup medidos. Consistency registrada no handoff.
 - DEVICE pendente em docs/guides/laboratorio-cenas.md. Fase 4 continua aberta, sem avanço de fase. CI/integração/release separados; integrador automático, sem label integrar ou merge manual.
+
+
+### 20261008-codex-debug-shapes — Codex → próximos agentes — review
+- LUNET-413 / Issue #340, Fase 4 §7/§23; branch agent/lunet-debug-shapes-20261008, base remota 62baa859c210b15a1a54c47ea20260d79391abc5. Snapshot local inicial tem árvore 6a09181 idêntica à main; publicação será parented na main real.
+- Helpers aditivos DebugDraw.Polygon/Ray/Axes/Grid: validação de toda geometria antes de escrever, limites de 4096 segmentos, transform/câmera/clip/batch existentes e zero bytes após aquecimento. Não altera Line/Circle/Rect/Cross nem cria backend, collider, persistência ou Tool transversal.
+- Sétima página executável do Laboratório: contorno transformado, raio com hit de Circle pela API existente, grade, eixos, girar/refletir/câmera/toggle e cancelamento na pausa. Projetos anteriores/ProjectStore preservados; navegação testada mantendo todas as verificações antigas.
+- Build sem warnings/errors, 485/485 testes (main 475 + 10 novos casos). Geometria registrada pelo backend, falhas sem desenho parcial, extremos/limites, ordem/reflexão/matriz, batching/câmera/clipping e zero bytes; projeto gerado compilado/executado com toque físico 2×. API JSON e XML cobertura verdes.
+- Proprietário adiou o teste no aparelho em 2026-10-08 e autorizou continuar desenvolvimento independente. Isso não é aprovação DEVICE, nem fecha Fase 4, nem autoriza pular seu gate. LUNET-412 já integrado/publicado no APK 1000169; validação de ambos permanece pendente.
+- Handoff HO-20261008-lunet-debug-shapes; guia laboratorio-debug.md. Próximo: CI/integrador/release, continuar pendências independentes da Fase 4 sem pedir teste agora.

@@ -7033,6 +7033,63 @@
       "since": "0.0.1",
       "members": [
         {
+          "id": "F:Lunet.Graphics.DebugDraw.MaxDebugSegments",
+          "name": "MaxDebugSegments",
+          "kind": "field",
+          "signature": "public const int MaxDebugSegments = 4096",
+          "summary": "Limite de linhas por grade e de v\u00E9rtices por pol\u00EDgono de depura\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.DebugDraw.Axes(Lunet.Graphics.SpriteBatch,Lunet.Transform2D,System.Single,Lunet.Graphics.Color,Lunet.Graphics.Color,System.Single)",
+          "name": "Axes",
+          "kind": "method",
+          "signature": "public static void Axes(SpriteBatch batch, Transform2D transform, float length, Color xColor, Color yColor, float thickness = 1f)",
+          "summary": "Desenha eixos X/Y no piv\u00F4 mundial do transform; respeita rota\u00E7\u00E3o, escala e reflex\u00E3o.",
+          "remarks": "Eixos partem de Transform.Position (piv\u00F4), n\u00E3o do ponto local zero deslocado por Origin.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote entre Begin/End."
+            },
+            {
+              "name": "transform",
+              "type": "Transform2D",
+              "description": "Transform com posi\u00E7\u00E3o, origem, rota\u00E7\u00E3o e escala finitas."
+            },
+            {
+              "name": "length",
+              "type": "float",
+              "description": "Comprimento local positivo e finito; escala zero colapsa o respectivo eixo."
+            },
+            {
+              "name": "xColor",
+              "type": "Color",
+              "description": "Cor do eixo X."
+            },
+            {
+              "name": "yColor",
+              "type": "Color",
+              "description": "Cor do eixo Y."
+            },
+            {
+              "name": "thickness",
+              "type": "float",
+              "description": "Espessura positiva e finita."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.DebugDraw.Circle(Lunet.Graphics.SpriteBatch,System.Numerics.Vector2,System.Single,Lunet.Graphics.Color,System.Single,System.Int32)",
           "name": "Circle",
           "kind": "method",
@@ -7145,6 +7202,45 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.DebugDraw.Grid(Lunet.Graphics.SpriteBatch,Lunet.RectangleF,System.Numerics.Vector2,Lunet.Graphics.Color,System.Single)",
+          "name": "Grid",
+          "kind": "method",
+          "signature": "public static void Grid(SpriteBatch batch, RectangleF area, Vector2 spacing, Color color, float thickness = 1f)",
+          "summary": "Desenha grade limitada \u00E0 \u00E1rea, incluindo bordas, sem alocar. Origem \u00E9 o canto da \u00E1rea.",
+          "remarks": "Rejeita mais de 4096 linhas antes de desenhar. Bordas n\u00E3o s\u00E3o repetidas quando coincidem com a grade. N\u00E3o recorta outros desenhos.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote entre Begin/End."
+            },
+            {
+              "name": "area",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo finito com dimens\u00F5es n\u00E3o negativas; \u00E1rea zero n\u00E3o desenha."
+            },
+            {
+              "name": "spacing",
+              "type": "Vector2",
+              "description": "Passo X/Y positivo e finito."
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor das linhas."
+            },
+            {
+              "name": "thickness",
+              "type": "float",
+              "description": "Espessura positiva e finita."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.DebugDraw.Line(Lunet.Graphics.SpriteBatch,System.Numerics.Vector2,System.Numerics.Vector2,Lunet.Graphics.Color,System.Single)",
           "name": "Line",
           "kind": "method",
@@ -7176,6 +7272,89 @@
               "name": "thickness",
               "type": "float",
               "description": "Espessura."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.DebugDraw.Polygon(Lunet.Graphics.SpriteBatch,System.ReadOnlySpan{System.Numerics.Vector2},Lunet.Graphics.Color,System.Boolean,System.Single,System.Nullable{System.Numerics.Matrix3x2})",
+          "name": "Polygon",
+          "kind": "method",
+          "signature": "public static void Polygon(SpriteBatch batch, ReadOnlySpan\u003CVector2\u003E vertices, Color color, bool closed = true, float thickness = 1f, Matrix3x2? transform = null)",
+          "summary": "Desenha contorno fechado ou polilinha, sem preencher nem alocar.",
+          "remarks": "Valida toda a geometria antes de desenhar. Aceita formas c\u00F4ncavas; n\u00E3o calcula colis\u00E3o, preenchimento ou triangula\u00E7\u00E3o.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote entre Begin/End; c\u00E2mera e clipping existentes s\u00E3o preservados."
+            },
+            {
+              "name": "vertices",
+              "type": "ReadOnlySpan\u003CVector2\u003E",
+              "description": "Pontos locais; m\u00EDnimo tr\u00EAs se fechado, dois se aberto, m\u00E1ximo 4096."
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor do contorno."
+            },
+            {
+              "name": "closed",
+              "type": "bool",
+              "description": "Liga o \u00FAltimo ponto ao primeiro quando true."
+            },
+            {
+              "name": "thickness",
+              "type": "float",
+              "description": "Espessura positiva e finita."
+            },
+            {
+              "name": "transform",
+              "type": "Matrix3x2?",
+              "description": "Matriz local\u2192mundo opcional; null usa identidade."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.DebugDraw.Ray(Lunet.Graphics.SpriteBatch,Lunet.Ray2D,System.Single,Lunet.Graphics.Color,System.Single)",
+          "name": "Ray",
+          "kind": "method",
+          "signature": "public static void Ray(SpriteBatch batch, Ray2D ray, float length, Color color, float thickness = 1f)",
+          "summary": "Desenha trecho de um Ray2D de comprimento expl\u00EDcito, sem alocar.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote entre Begin/End."
+            },
+            {
+              "name": "ray",
+              "type": "Ray2D",
+              "description": "Raio com origem/dire\u00E7\u00E3o finitas e dire\u00E7\u00E3o unit\u00E1ria; default \u00E9 rejeitado."
+            },
+            {
+              "name": "length",
+              "type": "float",
+              "description": "Dist\u00E2ncia n\u00E3o negativa e finita; zero n\u00E3o desenha."
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor da linha."
+            },
+            {
+              "name": "thickness",
+              "type": "float",
+              "description": "Espessura positiva e finita."
             }
           ],
           "returns": "",

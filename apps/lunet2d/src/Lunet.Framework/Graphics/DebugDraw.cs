@@ -10,7 +10,7 @@ namespace Lunet.Graphics;
 /// DebugDraw.Line(batch, position, position + velocity, Color.Yellow);
 /// </code>
 /// </example>
-public static class DebugDraw
+public static partial class DebugDraw
 {
     /// <summary>Desenha uma linha.</summary>
     /// <param name="batch">Lote em uso (entre Begin e End).</param>
