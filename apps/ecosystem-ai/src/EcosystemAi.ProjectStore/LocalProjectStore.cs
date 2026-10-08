@@ -15,7 +15,7 @@ public sealed record SessionEntry(string Id, string Title, DateTimeOffset Create
 public sealed record ConversationTurn(string Role, string Text, DateTimeOffset At);
 
 public sealed record RunReceipt(string RunId, string Status, long CostMinor, string Currency,
-    bool Verified, string? Verification, DateTimeOffset At);
+    bool Verified, string? Verification, DateTimeOffset At, bool CostEstimated = false);
 
 public sealed record ProjectCatalog(long Revision, IReadOnlyList<ProjectEntry> Projects);
 
@@ -126,6 +126,35 @@ public sealed class LocalProjectStore
             if (session.Runs.Count >= MaxTurns) throw new InvalidOperationException("Limite de runs atingido.");
             var changed = session with { Runs = session.Runs.Append(receipt).ToArray() };
             return (ReplaceProject(state, ReplaceSession(project, changed)), true);
+        });
+    }
+
+    /// <summary>
+    /// Adiciona resultado e receipt na MESMA revisão para não registrar metade de uma resposta.
+    /// O chamador fornece texto já filtrado/redigido; nenhuma chave de API entra automaticamente.
+    /// </summary>
+    public void CompleteRun(string projectId, string sessionId, RunReceipt receipt, string? assistantText)
+    {
+        CheckId(projectId); CheckId(sessionId);
+        ArgumentNullException.ThrowIfNull(receipt);
+        CheckReceipt(receipt);
+        if (assistantText is not null) CheckText(assistantText, nameof(assistantText), MaxText);
+        Change(state =>
+        {
+            var project = FindProject(state, projectId);
+            var session = FindSession(project, sessionId);
+            if (session.Runs.Any(r => r.RunId == receipt.RunId))
+                throw new InvalidOperationException("RunId duplicado na sessão.");
+            if (session.Runs.Count >= MaxTurns
+                || (assistantText is not null && session.Turns.Count >= MaxTurns))
+                throw new InvalidOperationException("Limite de histórico atingido.");
+            var updated = session with
+            {
+                Runs = session.Runs.Append(receipt).ToArray(),
+                Turns = assistantText is null ? session.Turns
+                    : session.Turns.Append(new ConversationTurn("assistant", assistantText, _clock())).ToArray()
+            };
+            return (ReplaceProject(state, ReplaceSession(project, updated)), true);
         });
     }
 
