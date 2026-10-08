@@ -5,7 +5,7 @@ namespace Urbe.Core.Tests;
 public sealed class InlineCodeEditingTests
 {
     [Theory]
-    [InlineData("", 0, "", 1)]
+    [InlineData("", 0, "``", 1)]
     [InlineData("texto", 0, "``texto", 1)]
     [InlineData("a b", 2, "a ``b", 3)]
     public void NoSelectionInsertsEmptyPairWithCaretInside(
