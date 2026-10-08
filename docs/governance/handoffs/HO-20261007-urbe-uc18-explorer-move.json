@@ -1,0 +1,103 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc18-explorer-move",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-07T11:12:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc18-explorer-move",
+  "base_commit": "fab94d76fc4a6482fc61a9d0bdf2e020a9cbc5e8",
+  "commit": "771a744e741e6774fd5750d1921d0f681f6aacb3",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/286",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261007-urbe-uc18-explorer-move.json"
+  ],
+  "work_completed": [
+    "WorkspaceSession ganhou pastas explícitas e fila host-neutra de mutações CreateFolder/Move.",
+    "Mover arquivo ou árvore de pasta preserva IDs documentais e rebaseia documentos abertos sem criar segunda autoridade de persistência.",
+    "Explorer passou a exibir ações de pasta e local atual como alvos de movimento.",
+    "Desktop move por drag-and-drop; toque arma movimento por long press e conclui tocando na pasta de destino.",
+    "Smoke Web cobre criação de pasta, movimento por mouse e long press/touch além das jornadas Editor já existentes.",
+    "Hardened Explorer session: system folders hidden by default; CreateNote/CreateFolder/MoveItem reject system/traversal or nonexistent target folders without changing vault data."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "web-smoke UC-18 Explorer move",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks estado combinado",
+      "result": "pending",
+      "evidence": "Aguardando integrador."
+    },
+    {
+      "kind": "human",
+      "check": "toque/layout real",
+      "result": "not-applicable",
+      "evidence": "Não validada nesta fatia automática: toque/layout seguem reservados exclusivamente ao G-C3 conforme NN-017, sem solicitar validação humana no portal deste PR."
+    }
+  ],
+  "known_issues": [
+    "Persistência física das mutações ainda depende dos adapters de host a serem conectados.",
+    "REQ-107 toolbar junto ao teclado virtual permanece pendente.",
+    "Comentários, painel fixado, templates, timer e estado completo da toolbar permanecem pendentes em UC-18.",
+    "Fila de mutações ainda em memória, sem aplicação host/FS nesta UC-18.",
+    "Edição Visual direta já integrada nos PRs #289/#296; split integrado no PR #300. G-C3 humano continua aberto."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar esta fatia se routine e estado combinado verde.",
+    "Portar edição Visual direta sem criar segunda autoridade de Markdown.",
+    "Conectar PendingMutations à persistência canônica dos hosts.",
+    "Completar requisitos avançados de Editor antes de fechar UC-18."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/AGENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Issue #281, branch, AGENTSCHAT, PR e handoff registram a terceira fatia."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Smoke automatizado não é tratado como validação humana de toque/layout."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Fila de mutações e Explorer não dependem do Hub."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "workspace-mutations",
+      "status": "product-specific",
+      "rationale": "Representa operações de Explorer do Urbe e prepara o boundary de persistência já definido pelo produto."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "UI e planejamento de mutações em memória; não escreve formato persistido nem altera csproj, segurança, migração ou distribuição."
+  },
+  "cost": null
+}

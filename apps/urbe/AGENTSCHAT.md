@@ -1,3 +1,12 @@
+### 2026-10-07 — ChatGPT — UC-18 terceira fatia: Explorer operacional
+
+- Base: `fab94d76` após integração das duas primeiras fatias de UC-18.
+- Implementado: criação de pastas vazias na sessão, enumeração de pastas, fila host-neutra de mutações `CreateFolder/Move`, movimento de arquivos e árvores de pasta preservando IDs e documentos abertos.
+- Explorer: seleção de pasta expõe ações; desktop usa drag-and-drop; toque usa long press para armar movimento e toque na pasta para concluir; local atual também aceita drop/movimento.
+- Segurança de dados: esta fatia NÃO escreve no filesystem; operações ficam em `PendingMutations` para o adapter canônico do host persistir depois. Nenhuma autoridade paralela de IO foi criada.
+- Smoke Web ampliado para criar pasta, mover por mouse, armar por long press/touch, verificar destino e manter Editor/abas/undo/redo funcionando.
+- Ainda falta em UC-18: edição Visual direta, toolbar/visualViewport, persistência física por host e requisitos avançados (comentários/painel/templates/timer/estado da toolbar).
+
 ### 2026-10-07 — ChatGPT — UC-18 / sessão de edição 2
 
 - Estado: segunda fatia preparada sobre a primeira fatia já integrada em `9efb5555`.
@@ -524,3 +533,11 @@
 - Testes: smoke Web valida o aviso e as contagens após criar três notas e usar três abas, incluindo `/`, `/preview/` e cenários offline; CI de PR pendente.
 - Invariantes: NN-001/017/018; sem escrita em disco, formato novo, release, alteração de integração ou alegação de gate humano.
 - Próximos passos: CI, retarget e integração automática após a cadeia do modo Dividido; conectar os hosts ao vault somente no escopo/autoridade apropriados.
+
+### 2026-10-08 — ChatGPT — UC-18 Explorer: proteção de caminhos
+
+- Estado: `verifying`, PR #286 em draft sobre main; CI reexecutando.
+- Fato: `ExplorerEntries` omitira arquivos de `.urbe` mas ainda podia apresentar a pasta interna. Corrigido filtro de pastas.
+- Correções: `CreateFolder`, `CreateNote` e `MoveItem` recusam pastas inexistentes, reservadas/internas e componentes de travessia `.`/`..`; movimentação de arquivo/pasta continua sobre a mesma sessão e preserva IDs.
+- Decisões: guardas de sessão host-neutral, sem mudanças no formato do vault, storage físico, migração, backup ou publicação; nenhum gate humano declarado aprovado.
+- Pendências: validar CI C#/Web/Android/Windows/E2E e consistency, retomar integração automática da UC-18 após verde.
