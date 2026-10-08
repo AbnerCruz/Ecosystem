@@ -80,6 +80,9 @@ public sealed class WorkspaceSession : IDisposable
     public string PreviewHtml =>
         MarkdownEngine.Render(CurrentDocument?.Content ?? string.Empty);
 
+    public VisualDocumentModel VisualModel =>
+        VisualDocumentEditor.Parse(CurrentDocument?.Content ?? string.Empty);
+
     public IReadOnlyList<EditorWorkspaceTab> Tabs =>
         Array.AsReadOnly(
             _tabs
@@ -458,6 +461,17 @@ public sealed class WorkspaceSession : IDisposable
             html,
             CurrentDocument.Content);
         return UpdateSource(markdown);
+    }
+
+    public UrbeDocument? UpdateVisualBlocks(
+        string? frontmatter,
+        IEnumerable<VisualBlock>? blocks)
+    {
+        if (IsReadOnly || CurrentDocument is null)
+            return null;
+
+        return UpdateSource(
+            VisualDocumentEditor.ToMarkdown(frontmatter, blocks));
     }
 
     public UrbeDocument? CreateNote(
