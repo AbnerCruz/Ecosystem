@@ -209,6 +209,40 @@ public sealed class PersistenceTests
         });
     }
 
+    [Fact]
+    public void Concurrent_save_attempts_do_not_rollback_newest_revision()
+    {
+        InTempDirectory(directory =>
+        {
+            var path = Path.Combine(directory, "concurrent.maproj");
+            ProjectStorage.Save(path, Make(1));
+            var start = new System.Threading.ManualResetEventSlim();
+            Exception? olderError = null;
+            Exception? newerError = null;
+            var older = Task.Run(() =>
+            {
+                start.Wait();
+                try { ProjectStorage.Save(path, Make(2)); }
+                catch (InvalidDataException e) { olderError = e; }
+            });
+            var newer = Task.Run(() =>
+            {
+                start.Wait();
+                try { ProjectStorage.Save(path, Make(3)); }
+                catch (InvalidDataException e) { newerError = e; }
+            });
+            start.Set();
+            Task.WaitAll(older, newer);
+
+            Assert.Null(newerError);
+            Assert.True(olderError is null || olderError is InvalidDataException);
+            Assert.Equal(3, ProjectStorage.Recover(path).Project.Revision);
+            using var primary = File.OpenRead(path);
+            Assert.Equal(3, ProjectPackage.Read(primary).Revision);
+            Assert.Empty(Directory.GetFiles(directory, "*.tmp"));
+        });
+    }
+
     private static void InTempDirectory(Action<string> action)
     {
         var folder = Path.Combine(Path.GetTempPath(), "math-authoring-" + Guid.NewGuid().ToString("N"));
