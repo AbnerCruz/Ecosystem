@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-platform-work-priority",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T10:40:19.559Z",
+  "timestamp": "2026-10-08T10:41:52.391Z",
   "agent": {
     "id": "chatgpt-platform-priority",
     "kind": "ai-agent"
@@ -18,13 +18,15 @@
     "AGENTS.md",
     "docs/governance/multi-agent.md",
     "docs/architecture/platform-execution.md",
+    "docs/architecture/p6-4-host-eligibility.md",
     "docs/governance/handoffs/HO-20261008-platform-work-priority.json"
   ],
   "work_completed": [
     "Regra operacional explícita: pedidos globais de continuidade selecionam primeiro Issue acionável do roadmap global; pedidos de Product seguem o respectivo roadmap.",
     "Protocolo multiagente separa seleção de tarefas da integração e prevê frente de núcleo somente com agentes efetivamente disponíveis.",
     "Runbook de execução documenta trilha P4-9 PR #320, dependência real R3 P6-4 e auditoria independente para Fase 7, sem editar gates ou adiantar roadmap de Product.",
-    "Issue PLAT-001 #323 registra escopo, critérios e dependências da correção."
+    "Issue PLAT-001 #323 registra escopo, critérios e dependências da correção.",
+    "Auditoria técnica preliminar da elegibilidade do Host real P6-4: Lunet possui LunetCapabilityHost/OpenForProject, Urbe C# possui WorkspaceSession de editor e Hub tem LocalCapabilityHost; distinguido bloqueio do marco Fase 8/UC-21 de lacuna de infraestrutura."
   ],
   "verification": [
     {
@@ -60,7 +62,7 @@
   "blockers": [],
   "next_actions": [
     "Integrador testar PR combinado; devido à mudança em AGENTS.md e docs/governance/multi-agent.md, aguardar autorização de integração crítica pelo proprietário.",
-    "Após a integração, próxima execução global deve priorizar matriz real de elegibilidade do Host P6-4 ou outro slice acionável do núcleo.",
+    "A partir da matriz docs/architecture/p6-4-host-eligibility.md, validar adaptador headless de Lunet como proposta e submeter qualquer alteração de sequência D7/§11.1 à decisão/ADR canônica; não antecipar por inferência.",
     "Registrar em Issue própria a auditoria de Tool da Fase 7, respeitando consumidores reais e Extraction Review."
   ],
   "decisions_required": [],
