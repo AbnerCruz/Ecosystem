@@ -230,6 +230,28 @@ Falhas de TeX viram diagnóstico, o texto original é preservado e o SVG exporta
 é formado por paths/linhas/retângulos autocontidos. A dependência permanece
 sujeita à autorização crítica do ADR-0012.
 
+## UC-18 — Código em linha na Fonte (REQ-090, primeira fatia)
+
+A barra do modo **Fonte** (também presente no **Dividido**) inclui
+**Código em linha**. Com uma seleção de uma linha, envolve somente o
+trecho em crases; pressionar novamente sobre a mesma seleção remove o
+envoltório. Sem seleção, insere duas crases sem texto de reserva e deixa
+o cursor entre elas; pressionar novamente remove o par vazio. Trechos
+com crases recebem delimitador de tamanho apropriado. Uma seleção de
+múltiplas linhas é recusada sem alterar o texto — código em bloco é
+outro comando.
+
+A operação é calculada em `Urbe.Core/InlineCodeEditing` usando
+offsets UTF-16, compatíveis com o cursor do navegador. Um módulo JS
+mínimo lê/restaura somente a seleção do `textarea`, sem lógica Markdown,
+persistência ou segundo estado canônico. O fluxo mantém o histórico da
+`WorkspaceSession`. Há testes de domínio e smoke Web real para seleção,
+alternância e cursor.
+
+Esta fatia não habilita a bolha/formatação sob o cursor no modo Visual,
+nem conclui a totalidade de REQ-090, REQ-095 ou G-C3. Persistência
+física dos hosts C# permanece pendente.
+
 ## UC-18 — modelos de nota (REQ-093)
 
 No Editor C#, **Salvar como modelo** clona a nota Markdown atual para
