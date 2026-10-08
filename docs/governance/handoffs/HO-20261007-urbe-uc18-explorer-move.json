@@ -47,16 +47,16 @@
     {
       "kind": "human",
       "check": "toque/layout real",
-      "result": "pending",
-      "evidence": "Reservado a G-C3 conforme NN-017."
+      "result": "not-applicable",
+      "evidence": "Não validada nesta fatia automática: toque/layout seguem reservados exclusivamente ao G-C3 conforme NN-017, sem solicitar validação humana no portal deste PR."
     }
   ],
   "known_issues": [
     "Persistência física das mutações ainda depende dos adapters de host a serem conectados.",
-    "Edição Visual direta ainda não foi portada; Visual continua renderizando Markdown canônico.",
     "REQ-107 toolbar junto ao teclado virtual permanece pendente.",
     "Comentários, painel fixado, templates, timer e estado completo da toolbar permanecem pendentes em UC-18.",
-    "Fila de mutações ainda em memória, sem aplicação host/FS nesta UC-18."
+    "Fila de mutações ainda em memória, sem aplicação host/FS nesta UC-18.",
+    "Edição Visual direta já integrada nos PRs #289/#296; split integrado no PR #300. G-C3 humano continua aberto."
   ],
   "blockers": [],
   "next_actions": [
