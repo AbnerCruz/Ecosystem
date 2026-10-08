@@ -92,7 +92,7 @@ public sealed class WorldStateTests
         Assert.Equal("Secret chamber", Assert.Single(restored.Scenes).Title);
         Assert.Equal("Find the duke", Assert.Single(restored.Quests).Title);
         Assert.Equal(item.Id, Assert.Single(restored.Inventory).Id);
-        Assert.Equal(7L, Assert.Single(restored.Conditions).ExpiresAtMinute - restored.FictionMinutes);
+        Assert.Equal(10L, Assert.Single(restored.Conditions).ExpiresAtMinute);
         Assert.Equal(8, Assert.Single(restored.Resources).Current);
         Assert.Equal(serialized, encodedAgain);
         Assert.Equal(campaign.Events.Select(x => x.Kind), restored.Events.Select(x => x.Kind));
@@ -185,6 +185,17 @@ public sealed class WorldStateTests
         Assert.Throws<CampaignFormatException>(() => codec.Decode(Encoding.UTF8.GetBytes(envelope.ToJsonString())));
 
         envelope["schemaVersion"] = 3;
+        Assert.Throws<CampaignFormatException>(() => codec.Decode(Encoding.UTF8.GetBytes(envelope.ToJsonString())));
+    }
+
+    [Fact]
+    public void Missing_required_world_properties_cannot_be_recovered_by_defaults()
+    {
+        var (campaign, _, _, _) = Create();
+        var codec = new CampaignCodec(new PersistenceTestFixture.FixedTimeProvider());
+        var envelope = JsonNode.Parse(codec.Encode(campaign))!.AsObject();
+        envelope["payload"]!["world"]!.AsObject().Remove("fictionMinutes");
+        Resign(envelope);
         Assert.Throws<CampaignFormatException>(() => codec.Decode(Encoding.UTF8.GetBytes(envelope.ToJsonString())));
     }
 
