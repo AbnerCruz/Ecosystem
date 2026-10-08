@@ -35,8 +35,8 @@ public class R4ProductPipelineTests
         {
             File.WriteAllText(Path.Combine(root, "README.md"), "conteudo do projeto R4");
             var toolReply = """
-            {"choices":[{"message":{"tool_calls":[{"id":"read-1","type":"function","function":{"name":"files.read","arguments":"{\"path\":\"README.md\"}"}}]},"finish_reason":"tool_calls"}],"usage":{"cost":0.01,"prompt_tokens":30,"completion_tokens":15}}
-            """;
+            {"choices":[{"message":{"tool_calls":[{"id":"read-1","type":"function","function":{"name":"WIRE_NAME","arguments":"{\"path\":\"README.md\"}"}}]},"finish_reason":"tool_calls"}],"usage":{"cost":0.01,"prompt_tokens":30,"completion_tokens":15}}
+            """.Replace("WIRE_NAME", ChatCompletionsProvider.WireName("files.read"), StringComparison.Ordinal);
             var answerReply = """
             {"choices":[{"message":{"content":"O projeto contém conteudo do projeto R4."},"finish_reason":"stop"}],"usage":{"cost":0.02,"prompt_tokens":45,"completion_tokens":20}}
             """;
@@ -64,7 +64,7 @@ public class R4ProductPipelineTests
             Assert.Equal(2, handler.Requests.Count);
             using var first = JsonDocument.Parse(handler.Requests[0]);
             using var second = JsonDocument.Parse(handler.Requests[1]);
-            Assert.Equal(FileToolIds.Read, first.RootElement.GetProperty("tools")[0].GetProperty("function").GetProperty("name").GetString());
+            Assert.Equal(ChatCompletionsProvider.WireName(FileToolIds.Read), first.RootElement.GetProperty("tools")[0].GetProperty("function").GetProperty("name").GetString());
             Assert.Equal("tool", second.RootElement.GetProperty("messages")[3].GetProperty("role").GetString());
             Assert.Contains("conteudo do projeto R4", second.RootElement.GetProperty("messages")[3].GetProperty("content").GetString());
             Assert.DoesNotContain("not-a-real-secret-token", handler.Requests[0]);
