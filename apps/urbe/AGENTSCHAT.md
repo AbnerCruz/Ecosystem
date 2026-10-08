@@ -549,3 +549,11 @@
 - Aplicado: `WorkspaceSession.CanEditVisualHtml` e `UpdateVisualHtml` rejeitam transformações quando não há garantia de fidelidade; Fonte continua disponível; nenhuma autoridade de documento nova.
 - Testes: casos canônicos e não canônicos (sem newline, CRLF, whitespace); CI do PR pendente.
 - Limite: não ativa o PR #287, que continua draft até reconciliar sua UI de `contenteditable` com o Editor estrutural e com esta guarda; G-C3 permanece não validado.
+
+### 2026-10-08 — ChatGPT — UC-18 REQ-094 ferramentas de tempo
+
+- Estado: `verifying`, branch `feat/urbe-uc18-editor-time-tools` empilhada sobre o PR #321; CI pendente.
+- Feito: relógio local, cronômetro e timer de contagem regressiva em componente C# nativo no rodapé do editor. Tempo decorrido usa relógio monotônico; iniciar/pausar/zerar independem de `WorkspaceSession` e não alteram notas.
+- Interface: controle responsivo e rotulado, com estado de tempo encerrado, limite 1–240 minutos, descarte do ticker ao sair do editor; sem JS extra ou persistência nova.
+- Verificação: smoke Web cobre relógio, cronômetro, timer e reset nas jornadas do Editor. Testes multiplataforma/consistency pendentes; validação humana de G-C3 não reivindicada.
+- Próximos passos: validar CI, corrigir falhas, integrar após PR #321 e #286 sob integrador automático; persistência real dos hosts segue etapa separada e crítica.
