@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-portal-bot-release-refresh",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T03:45:10.889Z",
+  "agent": {
+    "id": "chatgpt-ecosystem-portal",
+    "kind": "ai-agent"
+  },
+  "task_id": "PORTAL-20261006.1",
+  "component": "portal",
+  "state": "review",
+  "branch": "fix/portal-release-workflow-run-271",
+  "base_commit": "0b541c6f642175832db40bcda98c124931d0806f",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/pages.yml",
+    "tests/consistency/Check.cs",
+    "docs/architecture/portal.md",
+    "docs/governance/handoffs/HO-20261008-portal-bot-release-refresh.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: pages.yml anteriormente subscrevia release.published; releases criadas por GITHUB_TOKEN (Hub, Lunet e Urbe) não acionam esse evento em outro workflow GitHub Actions, deixando a projeção potencialmente obsoleta.",
+    "Trigger workflow_run completed registra produtores hub-release, lunet2d-release e urbe-release, preservando push main, release.published e workflow_dispatch.",
+    "Workflow_run só permite job build com conclusion success, origem repositório igual e evento diferente de pull_request; checkout continua sempre a branch default canônica, sem materializar conteúdo upstream.",
+    "CHK-PORTAL valida os três produtores, successful completion, origem, filtro de pull_request e branch padrão; self-tests causam regressões deliberadas de trigger e guardas.",
+    "docs/architecture/portal.md explica gatilhos, razão GITHUB_TOKEN, garantia de proveniência e limites de validação; o Portal segue independente dos Products."
+  ],
+  "verification": [
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando execução do workflow consistency no último commit deste PR."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Self-test integra workflow consistency; precisa confirmar validação de regressões."
+    },
+    {
+      "check": "GitHub Pages smoke em release real gerada pelo token",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Requer integrar workflow no default branch, publicar release e observar workflow_run→deploy→smoke; nenhum evento real reivindicado nesta branch."
+    }
+  ],
+  "known_issues": [
+    "Workflow_run dispara apenas se definição estiver na default branch; antes da integração não há prova ponta a ponta.",
+    "workflow_run com conclusão success de um workflow de release reconstruirá o Portal mesmo quando a publicação já existia; comportamento idempotente intencional.",
+    "Gatilho não cobre novos workflows publicadores que venham a ser adicionados sem registro em workflows e CHK-PORTAL."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar consistency no head e reparos conforme falhas reais observadas.",
+    "Submeter PR ao integrador; classe critical/control-plane obriga autorização do proprietário no Portal.",
+    "Após integração, inspecionar execução real de pages causada por workflow_run após próxima release e smoke-test de URL; só então fechar Issue #271."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/architecture/portal.md",
+    "docs/adr/0005-portal-web-github-pages.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Release continua tendo GitHub Releases como autoridade; o Portal é projeção da main e releases online."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Portal independente, Hub e Products nunca o consultam para operar."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #271, branch, handoff, PR, CI e smoke com estados explícitos."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Manifesto, docs/architecture/portal.md, ADR-0005, governança e workflows consultados diretamente."
+    },
+    {
+      "id": "NN-014",
+      "evidence": "Somente workflow Pages existente é alterado; produtores/release do Product não passam a exigir Hub."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegação DEVICE e sem prova de publicação real antes do merge."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review, checks/evidências pendentes e item não marcado pronto."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "CHK-PORTAL fiscaliza projeção da branch canônica e novo gatilho release."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição de cada Product não depende do Portal; build/deploy independente."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Alteração de .github/workflows/pages.yml e tests/consistency/Check.cs classificada critical/control-plane; integração exige autorização do proprietário via integrador automático."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "Portal release refresh",
+      "status": "product-specific",
+      "rationale": "Evento de publicação é responsabilidade do portal, sem Service compartilhado novo."
+    }
+  ]
+}
