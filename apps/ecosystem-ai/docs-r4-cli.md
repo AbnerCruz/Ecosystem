@@ -80,6 +80,13 @@ O catálogo nunca contém o valor de `ECOAI_API_KEY` por gravação automática,
 mas mensagens selecionadas para persistência são texto claro; o redator
 do Runtime é aplicado ao conteúdo com segredos conhecidos.
 
+O histórico pode ser consultado sem endpoint/modelo configurado:
+
+```text
+--list --catalog /pasta/historico
+--show --catalog /pasta/historico --project-id ID --session-id ID
+```
+
 A persistência **não é memória automática do modelo** e ainda não reconstitui
 um run interrompido ou o ledger. Ela apenas permite consulta posterior da
 conversa e comprovantes mínimos. A escolha da pasta é opt-in.

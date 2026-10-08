@@ -57,7 +57,9 @@ recibos e symlink para fora.
 A CLI agora integra o catálogo por `--catalog` opt-in, preservando a operação
 sem histórico como padrão e expondo `--project-id`/`--session-id` para reabertura.
 O resultado e o receipt são gravados atomica e conjuntamente, com teste
-do adapter de Product. Isso **não** é memória contextual automática do modelo.
+do adapter de Product. A CLI oferece `--list --catalog` e `--show --catalog
+--project-id --session-id` para consulta **sem modelo, chave ou rede**.
+Isso **não** é memória contextual automática do modelo.
 
 Não conclui P6-5: ainda faltam
 retomada efetiva de eventos do Runtime, interface de usuário, equipes,

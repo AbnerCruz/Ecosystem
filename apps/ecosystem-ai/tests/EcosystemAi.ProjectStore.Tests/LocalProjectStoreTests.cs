@@ -194,6 +194,27 @@ public sealed class LocalProjectStoreTests
     }
 
     [Fact]
+    public void Comandos_de_consulta_exibem_historico_sem_endpoint_ou_modelo()
+    {
+        InTemp(root =>
+        {
+            var dir = Path.Combine(root, "db");
+            Assert.Throws<FileNotFoundException>(() => CliHistoryCommands.List(dir));
+            var session = CliSessionPersistence.Open(dir, root, projectName: "Livro");
+            session.Begin("primeiro capítulo");
+            session.Complete(new RunReceipt("run-1", "succeeded", 4, "USD", true,
+                "conferido", Fixed), "texto do capítulo");
+            var listing = CliHistoryCommands.List(dir);
+            Assert.Contains(listing, line => line.Contains(session.ProjectId, StringComparison.Ordinal));
+            Assert.Contains(listing, line => line.Contains(session.SessionId, StringComparison.Ordinal));
+            var details = CliHistoryCommands.Show(dir, session.ProjectId, session.SessionId);
+            Assert.Contains(details, line => line.Contains("texto do capítulo", StringComparison.Ordinal));
+            Assert.Contains(details, line => line.Contains("custo=4", StringComparison.Ordinal));
+            Assert.Throws<KeyNotFoundException>(() => CliHistoryCommands.Show(dir, "invalido", session.SessionId));
+        });
+    }
+
+    [Fact]
     public void Arquivo_de_dados_nunca_contem_credencial_de_provider_ausente_da_entrada()
     {
         InTemp(root =>

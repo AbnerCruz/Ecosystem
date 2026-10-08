@@ -27,14 +27,16 @@
     "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
     "apps/ecosystem-ai/src/EcosystemAi.Cli/EcosystemAi.Cli.csproj",
     "apps/ecosystem-ai/EcosystemAI.slnx",
-    "apps/ecosystem-ai/docs-r4-cli.md"
+    "apps/ecosystem-ai/docs-r4-cli.md",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliHistoryCommands.cs"
   ],
   "work_completed": [
     "Implementa Product-local catálogo de projetos, sessões, mensagens e recibos sem duplicar AgentRunner, IEventLog ou orçamento.",
     "Persistência local explícita com revisões, schema, integridade SHA-256, lock exclusivo entre processos, escrita em temp/flush/rename, limites e recusa de symlink/corrupção/versão futura.",
     "Cria testes xUnit de round-trip, retomada após reabrir, corrupção sem sobrescrita, versão futura, crash temp orphan, concorrência e recibos inválidos.",
     "Adiciona projeto de teste ao CI Ecosystem AI; mantém P6-5 aberta, sem implantar rede nem UI artificial.",
-    "Com a CLI R4 já integrada na main por PR #356, reconciliou a branch e conectou --catalog opt-in a projetos/sessões persistentes com IDs de reabertura, vínculo de workspace e receipt + resposta atômicos; adicionou teste real sem rede."
+    "Com a CLI R4 já integrada na main por PR #356, reconciliou a branch e conectou --catalog opt-in a projetos/sessões persistentes com IDs de reabertura, vínculo de workspace e receipt + resposta atômicos; adicionou teste real sem rede.",
+    "Adiciona comandos reais CLI --list e --show para consulta offline dos projetos, sessões, mensagens e receipts (com verificação de catálogo existente); teste sem endpoint nem modelo."
   ],
   "verification": [
     {
