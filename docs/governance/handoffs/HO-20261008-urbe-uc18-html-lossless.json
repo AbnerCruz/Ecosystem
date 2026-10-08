@@ -1,0 +1,108 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-urbe-uc18-html-lossless",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T10:33:12.565Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18-html-guard",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-uc18-visual-html-lossless",
+  "base_commit": "3426674129f3becbfaa736e7c761cdf3ce7694ca",
+  "commit": "95f7dd67b6f9362127fc1e146587919fb48713a0",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/321",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VisualMarkdown.cs",
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MarkdownVisualTests.cs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261008-urbe-uc18-html-lossless.json"
+  ],
+  "work_completed": [
+    "A elegibilidade da edição rich HTML exige reconstrução exata do Markdown a partir do HTML renderizado.",
+    "Guarda aplica-se no WorkspaceSession.UpdateVisualHtml, não somente na UI, preservando a única autoridade do DocumentStore.",
+    "Testes de núcleo provam casos canônicos e bloqueio conservador para sem newline, CRLF e espaços de fim de linha.",
+    "PR #287 continua draft até integrar sem regressão com a edição estrutural e modo Dividido."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests: HTML visual round trip guard",
+      "result": "pending",
+      "evidence": "Executar no CI do PR #321."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe CI Web/Android/Windows/E2E e consistency",
+      "result": "pending",
+      "evidence": "PR #321 stacked sobre #286; verificar cabeça combinada após integração da base."
+    },
+    {
+      "kind": "human",
+      "check": "Toque/layout real no editor rich",
+      "result": "not-applicable",
+      "evidence": "G-C3 reservado conforme NN-017; não há nova UI ativada neste PR."
+    }
+  ],
+  "known_issues": [
+    "Edição HTML rica permanece indisponível quando a renderização não admite round-trip byte-exato; o modo Fonte permanece disponível.",
+    "Este PR não substitui/integra #287 e não conecta persistência física do vault.",
+    "Base #286 aguarda integração; rebase semântico e CI após mudança de base."
+  ],
+  "blockers": [
+    "Aguardar PR #286 para retarget; estado verifying até CI."
+  ],
+  "next_actions": [
+    "Validar testes e tratar falhas reais.",
+    "Retarget para main e abrir para integrador automático quando #286 integrar.",
+    "Reconciliar #287 com o modo estrutural, a guarda e os testes de perda antes de ativar contenteditable."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O único armazenamento permanece DocumentStore; edição rica usa WorkspaceSession e a fonte original."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Mudanças e limitações registradas em issue, PR, AGENTSCHAT e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não se reivindica G-C3 ou validação humana em dispositivo."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying até CI combinado."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Guarda específica do domínio Markdown/Urbe, sem ferramenta artificialmente compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Correção conservadora para conversão Markdown em memória, sem alteração no formato persistido, migração, hosts, backups ou assinatura."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "html-visual-lossless-guard",
+      "status": "product-specific",
+      "rationale": "Validação específica do conversor Markdown do Urbe, sem consumidores externos independentes."
+    }
+  ],
+  "cost": null
+}
