@@ -167,7 +167,7 @@ public static class ProjectTemplates
         }
         """.Replace("\r\n", "\n") + "\n";
 
-    /// <summary>Laboratório: painel de testes de aparelho em seis páginas (dispositivos, gráficos, câmera, sliders, botões e cenas).</summary>
+    /// <summary>Laboratório: painel de testes de aparelho em sete páginas (dispositivos, gráficos, câmera, sliders, botões, cenas e debug).</summary>
     public static string LabSource(string className) => $$"""
         using System.Numerics;
         using Lunet;
@@ -184,6 +184,7 @@ public static class ProjectTemplates
         // Página 4: sliders de UI, passos, disable e cancelamento na pausa.
         // Página 5: botões de UI, clique na soltura, disable, layout e cancelamento.
         // Página 6: cena opcional e componentes de movimento/desenho.
+        // Página 7: grade, polígono transformado, raio e eixos de debug.
         public sealed class {{className}} : Game
         {
             readonly TouchButton pageControl = new(new RectangleF(8, 8, 344, 30));
@@ -212,6 +213,17 @@ public static class ProjectTemplates
             readonly TouchButton sceneHide = new(new RectangleF(24, 408, 312, 44));
             readonly TouchButton sceneAttach = new(new RectangleF(24, 464, 312, 44));
             SceneMotion sceneMotion = null!;
+            readonly Vector2[] debugVertices = { new(-44, -32), new(44, -32), new(44, 32), new(-44, 32) };
+            Transform2D debugTransform = new(new Vector2(180, 270));
+            Vector2 debugTarget = new(300, 310);
+            readonly Camera2D debugCamera = new() { Position = new Vector2(180, 270), Zoom = 1.2f };
+            readonly TouchButton debugToggle = new(new RectangleF(24, 416, 312, 44));
+            readonly TouchButton debugRotate = new(new RectangleF(24, 472, 148, 44));
+            readonly TouchButton debugReflect = new(new RectangleF(188, 472, 148, 44));
+            readonly TouchButton debugView = new(new RectangleF(24, 528, 312, 44));
+            bool debugShown = true, debugUseCamera;
+            Ray2D debugRay = new(new Vector2(40, 270), Vector2.UnitX);
+            bool debugHit;
             sealed class SceneMotion : Component2D
             {
                 public float Phase;
@@ -281,7 +293,7 @@ public static class ProjectTemplates
                     "uniform float uAmount; void main() { vec4 c = texture(uTex, vUv) * vColor; float g = dot(c.rgb, vec3(0.3, 0.59, 0.11)); outColor = vec4(mix(c.rgb, vec3(g), uAmount), c.a); }");
             }
 
-            protected override void OnPause() { radius.Cancel(); level.Cancel(); pageControl.Cancel(); clickButton.Cancel(); enableButton.Cancel(); moveButton.Cancel(); scenePause.Cancel(); sceneHide.Cancel(); sceneAttach.Cancel(); }
+            protected override void OnPause() { radius.Cancel(); level.Cancel(); pageControl.Cancel(); clickButton.Cancel(); enableButton.Cancel(); moveButton.Cancel(); scenePause.Cancel(); sceneHide.Cancel(); sceneAttach.Cancel(); debugToggle.Cancel(); debugRotate.Cancel(); debugReflect.Cancel(); debugView.Cancel(); }
 
             protected override void UnloadContent()
             {
@@ -322,7 +334,7 @@ public static class ProjectTemplates
             {
                 clock += time.DeltaSeconds;
                 pageControl.Update(Input);
-                if (pageControl.WasClicked) page = (page + 1) % 6;
+                if (pageControl.WasClicked) page = (page + 1) % 7;
                 foreach (var gesture in Input.Gestures)
                 {
                     lastGesture = gesture.Type.ToString();
@@ -372,6 +384,21 @@ public static class ProjectTemplates
                 clickButton.Update(Input); enableButton.Update(Input); moveButton.Update(Input);
                 scenePause.IsEnabled = sceneHide.IsEnabled = sceneAttach.IsEnabled = page == 5;
                 scenePause.Update(Input); sceneHide.Update(Input); sceneAttach.Update(Input);
+                debugToggle.IsEnabled = debugRotate.IsEnabled = debugReflect.IsEnabled = debugView.IsEnabled = page == 6;
+                debugToggle.Update(Input); debugRotate.Update(Input); debugReflect.Update(Input); debugView.Update(Input);
+                if (page == 6)
+                {
+                    if (debugToggle.WasClicked) debugShown = !debugShown;
+                    if (debugRotate.WasClicked) debugTransform.Rotation += System.MathF.PI / 8;
+                    if (debugReflect.WasClicked) debugTransform.Scale.X = -debugTransform.Scale.X;
+                    if (debugView.WasClicked) debugUseCamera = !debugUseCamera;
+                    if (Input.TryGetPointer(out var point) && point.Y >= 160 && point.Y < 400)
+                        debugTarget = debugUseCamera ? debugCamera.ScreenToWorld(point, GraphicsDevice.ViewSize) : point;
+                    var direction = debugTarget - new Vector2(40, 270);
+                    if (direction.LengthSquared() > 0.0001f) debugRay = new Ray2D(new Vector2(40, 270), direction);
+                    debugHit = debugRay.Intersects(new Circle(debugTransform.Position, 36), out _);
+                    return;
+                }
                 if (page == 5)
                 {
                     if (scenePause.WasClicked) sceneMotion.IsEnabled = !sceneMotion.IsEnabled;
@@ -454,14 +481,39 @@ public static class ProjectTemplates
                 GraphicsDevice.Clear(new Color(18, 22, 40));
                 batch.Begin();
                 batch.FillRect(pageControl.Bounds, pageControl.IsPressed ? new Color(130, 90, 160) : new Color(90, 60, 120));
-                batch.DrawString(font, $"Página {page + 1}/6 (toque para trocar)", pageControl.Bounds.Position + new Vector2(6, 8), Color.White, 2);
+                batch.DrawString(font, $"Página {page + 1}/7 (toque para trocar)", pageControl.Bounds.Position + new Vector2(6, 8), Color.White, 2);
                 batch.End();
                 if (page == 0) DrawDevices();
                 else if (page == 1) DrawGraphics();
                 else if (page == 2) DrawCamera();
                 else if (page == 3) DrawSliders();
                 else if (page == 4) DrawButtons();
-                else DrawScene(time);
+                else if (page == 5) DrawScene(time);
+                else DrawDebug();
+            }
+
+            void DrawDebug()
+            {
+                if (debugUseCamera) batch.Begin(camera: debugCamera); else batch.Begin();
+                batch.Draw(dot, new RectangleF(144, 234, 72, 72), null, new Color(50, 90, 140), 0, Vector2.Zero);
+                if (debugShown)
+                {
+                    batch.Grid(new RectangleF(24, 160, 312, 224), new Vector2(28, 28), new Color(70, 75, 95));
+                    batch.Polygon(debugVertices, Color.Yellow, thickness: 2, transform: debugTransform.ToMatrix());
+                    batch.Axes(debugTransform, 64, Color.Red, Color.Green, 3);
+                    batch.Ray(debugRay, 280, debugHit ? Color.Green : Color.Red, 2);
+                    batch.Cross(debugTarget, 8, Color.White, 2);
+                }
+                batch.End();
+                batch.Begin();
+                batch.DrawString(font, "Depuracao visual", new Vector2(24, 64), Color.White, 2);
+                batch.DrawString(font, "Toque na area para apontar o raio.", new Vector2(24, 104), Color.White, 1.3f);
+                batch.DrawString(font, debugHit ? "Raio atinge o circulo: SIM" : "Raio atinge o circulo: NAO", new Vector2(24, 128), debugHit ? Color.Green : Color.Red, 1.4f);
+                debugToggle.Draw(batch, font, debugShown ? "Ocultar debug" : "Mostrar debug", TouchButtonStyle.Default, 2);
+                debugRotate.Draw(batch, font, "Girar", TouchButtonStyle.Default, 2);
+                debugReflect.Draw(batch, font, "Espelhar X", TouchButtonStyle.Default, 1.5f);
+                debugView.Draw(batch, font, debugUseCamera ? "Camera: ligada" : "Camera: desligada", TouchButtonStyle.Default, 2);
+                batch.End();
             }
 
             void DrawScene(GameTime time)

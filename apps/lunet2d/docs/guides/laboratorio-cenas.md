@@ -5,12 +5,12 @@ A organização por `Lunet.Scenes.Scene2D`, `Entity2D` e `Component2D` é opcion
 ## Teste no aparelho
 
 1. Crie **um novo projeto** com o modelo **Laboratório** e aperte **Run**. Projetos existentes preservam seu código e suas páginas.
-2. Toque no cabeçalho até **Página 6/6**. Uma bola amarela atravessa a área marcada.
+2. Toque no cabeçalho até **Página 6/7**. Uma bola amarela atravessa a área marcada.
 3. Toque **Pausar movimento**: a bola permanece visível e parada. Toque **Retomar movimento**: volta a andar.
 4. Toque **Ocultar entidade**: a bola desaparece, mas o movimento continua. Toque **Mostrar entidade**: reaparece na posição atual.
 5. Toque **Remover da cena**: a bola desaparece e o contador muda para zero. **Reanexar entidade** restaura o mesmo objeto e seus componentes; o contador volta a um.
 6. Segure **Pausar movimento**, mande o app para segundo plano e retorne. Soltar o dedo não deve ativar o botão. Um novo toque deve funcionar.
-7. Troque de página com outro dedo enquanto segura um botão. Volte à página 6: nenhum clique escondido deve ter sido executado. Toque no cabeçalho após a página 6 para voltar à primeira.
+7. Troque de página com outro dedo enquanto segura um botão. Volte à página 6: nenhum clique escondido deve ter sido executado. Toque no cabeçalho após a página 7 para voltar à primeira.
 8. Repita offline, no Preview rápido e no isolado. Confira câmera, sliders e botões nas páginas anteriores.
 
 Resultado esperado: organização e flags funcionam sem falha do Preview; apenas projetos novos recebem a nova página. Toque, aparência, Android e performance percebida aguardam validação humana.

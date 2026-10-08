@@ -11,6 +11,8 @@
 
 ### Added
 
+- Helpers `DebugDraw.Polygon`, `Ray`, `Axes` e `Grid`: geometria de depuração transformada, limites/validação antes de desenhar e zero alocação no loop; página 7 pronta no Laboratório (LUNET-413).
+
 - `Lunet.Scenes.Scene2D`, `Entity2D` e `Component2D`: organização opcional de movimento/desenho, ownership exclusivo, percursos em ordem de inserção sem alocação e flags independentes; sexta página pronta para Run no Laboratório (LUNET-412).
 
 - `Lunet.UI.TouchButton`/`TouchButtonStyle`: clique ao soltar com captura por ID, estados/cancelamento/disable e desenho de fundo/texto com cores configuráveis, sem alocação no loop; quinta página executável do Laboratório com clique, arraste, disable, pausa e reposicionamento por LayoutRect (LUNET-410).

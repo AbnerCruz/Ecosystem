@@ -260,7 +260,9 @@ public class LabTemplateTests : IDisposable
         Assert.Equal(4, type.GetField("page", fields)!.GetValue(loaded.Game));
         Tap(100, 23);
         Assert.Equal(5, type.GetField("page", fields)!.GetValue(loaded.Game));
-        Tap(100, 23); // sexta página volta aos dispositivos
+        Tap(100, 23);
+        Assert.Equal(6, type.GetField("page", fields)!.GetValue(loaded.Game));
+        Tap(100, 23); // sétima página volta aos dispositivos
         Assert.Equal(0, type.GetField("page", fields)!.GetValue(loaded.Game));
         Assert.False(host.IsFaulted, host.Fault?.ToString());
 
