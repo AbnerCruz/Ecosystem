@@ -14,7 +14,7 @@
   "branch": "fix/hub-stale-release-catalog-20261008",
   "base_commit": "f724b3c9fe65f4d45d39d07e7ce0a989291c9be4",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/292",
   "files_changed": [
     "apps/hub/src/Hub.Core/HubScreen.cs",
     "apps/hub/tests/Hub.Tests/HubScreenTests.cs",
@@ -32,25 +32,32 @@
       "kind": "automated",
       "check": "Hub.Tests",
       "result": "passed",
-      "evidence": "dotnet run --project tests/Hub.Tests --no-restore -p:UseSharedCompilation=false: 276 testes, zero falhas. Runner in-process usado porque dotnet test foi bloqueado pelo socket de named pipe do ambiente."
+      "evidence": "dotnet run --project tests/Hub.Tests --no-restore -p:UseSharedCompilation=false: 276 testes, zero falhas. Runner in-process usado porque dotnet test foi bloqueado pelo socket de named pipe do ambiente. Controle negativo: HubScreen original falhou em quatro casos; implementação restaurada passou novamente nos 276 testes."
     },
     {
       "kind": "automated",
       "check": "Consistency",
       "result": "passed",
-      "evidence": "dotnet run tests/consistency/Check.cs: 22 checks passaram; reexecutar após handoff."
+      "evidence": "22 checks passaram também após inclusão do handoff."
     },
     {
       "kind": "automated",
       "check": "Consistency self-test",
-      "result": "pending",
-      "evidence": "Em execução local."
+      "result": "passed",
+      "evidence": "PATH configurado com SDK 10: self-test terminou com todos os checks detectando suas violações."
     },
     {
       "kind": "human",
       "check": "DEVICE",
       "result": "not-applicable",
       "evidence": "Projeção textual determinística testada no Core; não altera layout nativo, toque, instalação ou lifecycle, nem reivindica aceite no aparelho."
+    },
+    {
+      "kind": "automated",
+      "check": "Hub CI (Core + Android APK)",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/37707358020",
+      "tested_commit": "5d724c1003dcfda3ee2e367a3d359c49d896f097"
     }
   ],
   "known_issues": [
@@ -105,3 +112,4 @@
   },
   "cost": null
 }
+
