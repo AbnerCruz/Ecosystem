@@ -259,8 +259,11 @@ async function assertShell(page, journey = false) {
     assert.match(await persistence.innerText(), /Prévia sem salvamento permanente/);
     assert.match(await persistence.innerText(), /Recarregar ou fechar esta prévia pode descartar alterações/);
     const sessionCards = page.getByRole('group', { name: 'Sessão de trabalho' });
-    assert.equal(await sessionCards.locator('article').nth(0).locator('span').innerText(), '3');
-    assert.equal(await sessionCards.locator('article').nth(1).locator('span').innerText(), '3');
+    // A journey builds three in-memory notes/tabs. Reload and fresh online
+    // or offline pages start empty until host persistence is implemented.
+    const expectedSessionCount = journey ? '3' : '0';
+    assert.equal(await sessionCards.locator('article').nth(0).locator('span').innerText(), expectedSessionCount);
+    assert.equal(await sessionCards.locator('article').nth(1).locator('span').innerText(), expectedSessionCount);
     assert.match(await page.getByText('UC-17 integrado').innerText(), /UC-17 integrado/);
 
     const metrics = await page.evaluate(() => ({
