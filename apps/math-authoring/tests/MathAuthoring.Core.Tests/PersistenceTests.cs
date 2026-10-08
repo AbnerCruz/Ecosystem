@@ -54,7 +54,7 @@ public sealed class PersistenceTests
         Assert.Equal("math-demo", project.Document.ProjectId);
         Assert.Equal("Δx → 0", project.Document.Metadata.Title);
         Assert.Equal(3, project.Assets.Count);
-        Assert.Equal(new byte[] { 137, 80, 78, 71, 1, 2, 3 }, project.Assets[0].Bytes);
+        Assert.Equal(new byte[] { 137, 80, 78, 71, 1, 2, 3 }, project.Assets.Single(a => a.Id == "graph").Bytes);
         Assert.Equal(Pack(Make(7)), bytes);
         using var archive = new ZipArchive(new MemoryStream(bytes));
         Assert.Equal(4, archive.Entries.Count); // duplicated asset content stored only once
