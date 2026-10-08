@@ -49,7 +49,7 @@ public sealed partial class Campaign
             perspectives,
             _events.ToArray(),
             _sessions.ToArray(),
-            _activeSessionId);
+            _activeSessionId) { World = CaptureWorld() };
     }
 
     internal static Campaign Restore(CampaignState state)
@@ -205,6 +205,7 @@ public sealed partial class Campaign
             throw new CampaignStateException("An open session requires ActiveSessionId.");
         }
 
+        campaign.RestoreWorld(state.World);
         campaign._clock = state.Clock;
         return campaign;
     }
