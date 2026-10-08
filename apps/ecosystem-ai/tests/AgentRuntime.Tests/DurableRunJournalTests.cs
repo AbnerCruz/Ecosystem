@@ -26,6 +26,37 @@ public sealed class DurableRunJournalTests
     }
 
     [Fact]
+    public async Task AgentRunner_real_escreve_reabre_e_retoma_run_terminal_sem_outra_chamada()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "eco-journal-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var rig = new Rig();
+            rig.Provider.ThenText("resultado verificado", cost: 2);
+            var journal = new LocalRunEventLog(root);
+            var request = Rig.Request(runId: "real-run");
+
+            var result = await rig.Runner(log: journal).RunAsync(request);
+            Assert.Equal(RunStatus.Succeeded, result.State.Status);
+            Assert.True(result.State.Verified);
+
+            var reopened = new LocalRunEventLog(root);
+            var events = await reopened.ReadRunAsync("real-run", CancellationToken.None);
+            Assert.Contains(events, e => e.Kind == EventKind.ModelResponded);
+            Assert.Contains(events, e => e.Kind == EventKind.VerificationPassed);
+            Assert.Contains(events, e => e.Kind == EventKind.RunSucceeded);
+            Assert.Equal(RunStatus.Succeeded, RunState.Replay(events).Status);
+            Assert.All(events, e => Assert.Equal(Rig.Context.ToString(), e.ContextRef));
+
+            var alreadyFinished = await rig.Runner(log: reopened).ResumeAsync(request);
+            Assert.Equal(RunStatus.Succeeded, alreadyFinished.State.Status);
+            Assert.Equal(1, rig.Provider.Calls);
+            Assert.Equal(events.Count, (await reopened.ReadRunAsync("real-run", CancellationToken.None)).Count);
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+    }
+
+    [Fact]
     public async Task Run_efetivo_reabre_e_reconstroi_estado_do_core()
     {
         var path = Path.Combine(Path.GetTempPath(), "eco-journal-" + Guid.NewGuid().ToString("N"));
