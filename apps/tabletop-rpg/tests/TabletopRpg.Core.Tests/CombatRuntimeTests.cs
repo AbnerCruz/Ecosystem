@@ -36,6 +36,16 @@ public sealed class CombatRuntimeTests
         }
     }
 
+    private sealed class ReentrantRules : ICombatRules
+    {
+        public Action? OnResolve { get; set; }
+        public CombatStrike ResolveAttack(Character attacker, Character defender, string attackKey, IDiceRoller dice)
+        {
+            OnResolve?.Invoke();
+            return new CombatStrike(true, 20, 9);
+        }
+    }
+
     private static Fixture Create(ICombatRules? rules = null, IDiceRoller? dice = null, int hp = 10)
     {
         var campaign = new Campaign(CampaignId.New(), "Encounter");
@@ -175,6 +185,44 @@ public sealed class CombatRuntimeTests
         Assert.False(f.Engine.Execute(new AttackIntent(f.Human, f.Hero, f.Enemy, "strike")).Accepted);
         Assert.Throws<InvalidOperationException>(() =>
             new CombatEncounter(f.Campaign, new BasicD20CombatRules(), [f.Hero, f.Enemy]));
+    }
+
+    [Fact]
+    public async Task Concurrent_attacks_cannot_spend_the_same_turn_twice()
+    {
+        var rules = new FixedRules(new CombatStrike(true, 19, 1));
+        var f = Create(rules);
+        var before = Hp(f.Campaign, f.Enemy);
+        var attempts = Enumerable.Range(0, 16).Select(_ =>
+            Task.Run(() => f.Engine.Execute(
+                new AttackIntent(f.Human, f.Hero, f.Enemy, "strike")))).ToArray();
+        var results = await Task.WhenAll(attempts);
+
+        Assert.Single(results, r => r.Accepted);
+        Assert.Equal(1, rules.Calls);
+        Assert.Equal(before - 1, Hp(f.Campaign, f.Enemy));
+        Assert.Single(f.Campaign.Events, e => e.Kind == "combat-attack");
+    }
+
+    [Fact]
+    public void Reentrant_rule_callback_cannot_commit_stale_outer_attack()
+    {
+        var rules = new ReentrantRules();
+        var f = Create(rules);
+        rules.OnResolve = () =>
+        {
+            var nested = f.Engine.Execute(new EndCombatTurnIntent(f.Human, f.Hero));
+            Assert.True(nested.Accepted);
+        };
+        var before = Hp(f.Campaign, f.Enemy);
+        var attack = f.Engine.Execute(new AttackIntent(f.Human, f.Hero, f.Enemy, "strike"));
+
+        Assert.False(attack.Accepted);
+        Assert.Equal(before, Hp(f.Campaign, f.Enemy));
+        Assert.Equal(f.Enemy, f.Encounter.ActiveCharacter);
+        Assert.False(f.Encounter.ActionSpent);
+        Assert.DoesNotContain(f.Campaign.Events, x => x.Kind == "combat-attack");
+        Assert.Single(f.Campaign.Events, x => x.Kind == "combat-next-turn");
     }
 
     [Fact]
