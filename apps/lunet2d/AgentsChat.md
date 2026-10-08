@@ -237,6 +237,6 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Base: main 97eefdeac179884478cb790339e3234e707a4915; branch agent/lunet-tilemaps-20261008.
 - Trabalho: TileMap JSON local, camada collision/visible, viewport culling, conversão do A*, ContentManager.LoadTileMap, testes de casos inválidos e demonstração compilável do guia; ROADMAP/CHANGELOG e documentação offline.
 - Verificação: SDK .NET 10 e Android indisponíveis nesta sessão; CI e DEVICE pendentes. Não declarar merge, release ou aprovação.
-- Isolamento: sem mudar ProjectStore, Android, Hub nem a trilha de Profiler #343 ou modelos PR #317.
+- Isolamento: sem mudar ProjectStore, Android, outros produtos nem a trilha de Profiler #343 ou modelos PR #317.
 - Handoff: HO-20261008-lunet-tilemaps. Próximo: CI, correções, integrador automático, roteiro de toque no aparelho.
 

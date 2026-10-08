@@ -1,6 +1,6 @@
 # Tilemaps com camadas, colisão e A* — LUNET-415
 
-`TileMap` é um recurso **local ao Lunet2D**: o mapa é JSON editável em `Content/Data/` e o tileset é PNG em `Content/Textures/`. Não depende do Hub, do Tile Studio nem de uma ferramenta externa; os projetos existentes continuam no formato atual.
+`TileMap` é um recurso **local ao Lunet2D**: o mapa é JSON editável em `Content/Data/` e o tileset é PNG em `Content/Textures/`. Não depende de lançador externo, do Tile Studio nem de ferramenta online; os projetos existentes continuam no formato atual.
 
 O mapa v1 segue este modelo:
 
