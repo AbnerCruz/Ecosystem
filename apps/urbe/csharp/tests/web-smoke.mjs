@@ -99,6 +99,29 @@ async function assertShell(page, journey = false) {
     await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Editor/);
 
+    // UC-18 / REQ-094: native C# clock, stopwatch and timer share the
+    // editor footer; run/pause/reset do not modify the Markdown document.
+    const timeTools = page.getByRole('group', { name: 'Ferramentas de tempo' });
+    await timeTools.waitFor();
+    assert.match(await timeTools.getByLabel('Hora local').innerText(), /^\\d{2}:\\d{2}:\\d{2}$/);
+    await timeTools.getByRole('button', { name: 'Cronômetro', exact: true }).click();
+    assert.equal(await timeTools.getByLabel('Tempo do cronômetro').innerText(), '00:00');
+    await timeTools.getByRole('button', { name: 'Iniciar cronômetro' }).click();
+    await page.waitForFunction(
+        () => document.querySelector('[aria-label="Tempo do cronômetro"]')?.textContent !== '00:00',
+        null, { timeout: 5000 });
+    await timeTools.getByRole('button', { name: 'Pausar cronômetro' }).click();
+    await timeTools.getByRole('button', { name: 'Zerar cronômetro' }).click();
+    assert.equal(await timeTools.getByLabel('Tempo do cronômetro').innerText(), '00:00');
+    await timeTools.getByRole('button', { name: 'Timer', exact: true }).click();
+    await timeTools.getByLabel('Tempo (minutos)').fill('1');
+    await timeTools.getByLabel('Tempo (minutos)').press('Tab');
+    assert.equal(await timeTools.getByLabel('Tempo restante').innerText(), '01:00');
+    await timeTools.getByRole('button', { name: 'Iniciar timer' }).click();
+    await timeTools.getByRole('button', { name: 'Pausar timer' }).waitFor();
+    await timeTools.getByRole('button', { name: 'Reiniciar timer' }).click();
+    assert.equal(await timeTools.getByLabel('Tempo restante').innerText(), '01:00');
+
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
     const source = page.getByLabel('Markdown da nota');
     await source.fill('# Primeira versão\\n\\nTexto inicial.');
