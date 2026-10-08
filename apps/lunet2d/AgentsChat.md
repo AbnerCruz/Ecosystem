@@ -111,3 +111,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação automatizada: Lunet 321/321; APK arm64 verde no run 37221326943, artifact 11310540558; APK SHA-256 `17e9913e569890f254c9074a2960e4002238c886c81690d1ff1eceed600c3422`. Provider Android e consistency também verdes no mesmo candidato.
 - Limite: isto NÃO é validação em aparelho. Pairing visual, Keystore real, Binder entre APKs/processos, LinkToDeath e funcionamento standalone ainda exigem o roteiro `docs/validation/P5-4-binder-ipc.md`.
 - Próximo passo: proprietário executa o gate DEVICE; PR #210 permanece draft/critical e não deve ser integrado antes da aprovação canônica.
+
+
+### 20261008-codex-collision — Codex → próximos agentes — review
+- Item: LUNET-402, Issue #288, Fase 4 (§7); base `f724b3c`, branch `agent/lunet-continue-20261008`.
+- Geometry ganhou distância/closest point/interseção AABB; SAT corrige contenção e rejeita formas sem área. APIs anteriores e convenções de borda preservadas.
+- 11 casos de teste, incluindo compilação/execução do guia offline no runtime real; documentação XML/API regenerada. Build portátil sem warnings/errors; suíte padrão 337/337 e 22 checks. A falha concorrente de alocação foi reproduzida na base e corrigida isolando as medições por coleção, sem relaxar zero bytes.
+- Roteiro Android intermediário em `docs/guides/colisao.md`; sem validação humana inventada e sem fechar a Fase 4. Evidência final/PR: `HO-20261008-lunet-collision`.
