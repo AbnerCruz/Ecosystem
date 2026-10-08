@@ -117,7 +117,7 @@ async function assertShell(page, journey = false) {
     await timeTools.getByLabel('Tempo (minutos)').fill('1');
     await timeTools.getByLabel('Tempo (minutos)').press('Tab');
     assert.equal(await timeTools.getByLabel('Tempo restante').innerText(), '01:00');
-    await timeTools.getByRole('button', { name: 'Iniciar timer' }).click();
+    await timeTools.getByRole('button', { name: 'Iniciar timer', exact: true }).click();
     await timeTools.getByRole('button', { name: 'Pausar timer' }).waitFor();
     await timeTools.getByRole('button', { name: 'Reiniciar timer' }).click();
     assert.equal(await timeTools.getByLabel('Tempo restante').innerText(), '01:00');
