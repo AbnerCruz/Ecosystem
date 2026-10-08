@@ -1,5 +1,7 @@
 
 using AgentRuntime;
+using System.Security.Cryptography;
+using System.Text;
 using EcosystemAi.RunJournal;
 
 namespace AgentRuntime.Tests;
@@ -39,7 +41,7 @@ public sealed class DurableRunJournalTests
             Assert.Empty(await b.ReadRunAsync("other-run", CancellationToken.None));
             await b.AppendAsync(Start("run-B"), CancellationToken.None);
             Assert.Single(await a.ReadRunAsync("run-B", CancellationToken.None));
-            Assert.Equal(3, Directory.GetFiles(path, "*.json").Length);
+            Assert.Equal(2, Directory.GetFiles(path, "*.json").Length);
         }
         finally { if (Directory.Exists(path)) Directory.Delete(path, recursive: true); }
     }
@@ -126,7 +128,8 @@ public sealed class DurableRunJournalTests
                     File.WriteAllText(outside, "DO-NOT-TOUCH");
                     var other = new LocalRunEventLog(Path.Combine(root, "linked"));
                     // O journal canônico é identificado por SHA-256 do RunId e não por um caminho fornecido.
-                    var src = Directory.GetFiles(root, "*.json").First();
+                    var fileName = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes("one"))).ToLowerInvariant() + ".json";
+                    var src = Path.Combine(root, fileName);
                     var payload = File.ReadAllText(src);
                     var victim = Path.Combine(root, "linked", Path.GetFileName(src));
                     File.CreateSymbolicLink(victim, outside);
