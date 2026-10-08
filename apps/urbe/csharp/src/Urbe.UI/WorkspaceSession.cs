@@ -83,6 +83,15 @@ public sealed class WorkspaceSession : IDisposable
     public VisualDocumentModel VisualModel =>
         VisualDocumentEditor.Parse(CurrentDocument?.Content ?? string.Empty);
 
+    /// <summary>
+    /// Structural editing is disabled when a parse/save cycle would rewrite
+    /// any existing Markdown. The Source editor remains unrestricted.
+    /// </summary>
+    public bool CanEditVisualBlocks =>
+        !IsReadOnly &&
+        CurrentDocument is not null &&
+        VisualDocumentEditor.IsLosslessRoundTrip(CurrentDocument.Content);
+
     public IReadOnlyList<EditorWorkspaceTab> Tabs =>
         Array.AsReadOnly(
             _tabs
@@ -467,7 +476,7 @@ public sealed class WorkspaceSession : IDisposable
         string? frontmatter,
         IEnumerable<VisualBlock>? blocks)
     {
-        if (IsReadOnly || CurrentDocument is null)
+        if (!CanEditVisualBlocks)
             return null;
 
         return UpdateSource(
