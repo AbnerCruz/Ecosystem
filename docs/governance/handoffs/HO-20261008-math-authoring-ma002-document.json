@@ -13,7 +13,7 @@
   "branch": "chatgpt/math-authoring-ma002-document",
   "base_commit": "9c8e799ce74da4da69f8f139bc0f9d37cf28dabd",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/297",
   "files_changed": [
     "apps/math-authoring/src/MathAuthoring.Core/ProjectJson.cs",
     "apps/math-authoring/src/MathAuthoring.Core/ProjectValidator.cs",
