@@ -11,6 +11,8 @@
 
 ### Added
 
+- LUNET-418 (em revisão): Laboratório 2.0 com índice, 12 módulos offline prontos para Run, navegação anterior/próxima e testes reais de animação, partículas, tilemap/A*, SAT, bitmap fonts, nine-slice e UiTheme oficial. Template separado do ProjectTemplates, sem alterar projetos existentes.
+
 - LUNET-416 (em revisão): `Camera2D.GetWorldViewBounds` calcula a AABB visível sob zoom/rotação para recortar TileMap.Draw sem corte de cantos, com testes de precisão e alocação.
 
 - LUNET-415 (integrado PR #358; DEVICE pendente): `TileMap` JSON v1 em camadas, tileset, colisão, viewport culling e integração com A* e colisão AABB de personagens, com guia offline e testes no host portátil. Tile Studio/DEVICE pendentes.

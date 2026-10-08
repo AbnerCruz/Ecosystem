@@ -195,6 +195,7 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [~] **LUNET-412 — Scene2D opcional e API entidade/componente** (§7, §23): Issue #338; ownership exclusivo, ordem de inserção e percursos sem alocação. Demonstração pronta na página 6 do Laboratório; integrado pelo PR #339 e publicado no APK 1000169, suíte 475/475 e CI verdes; DEVICE pendente. Sem obrigar ECS.
 - [~] **LUNET-413 — Debug APIs e helpers** (§7, §23): polígonos, raios, eixos de transformação e grades limitadas; Issue #340. Demonstração pronta na página 7 do Laboratório; build sem warnings/errors, 485/485 testes; integração/release e DEVICE pendentes.
 - [ ] Profiler básico do framework (FPS, frame time, update/render time, draw calls, triângulos, memória, GC, audio underruns) (§23), com o painel Profiler no workspace (movido da Fase 3).
+- [~] **LUNET-418 — Laboratório 2.0, central de validação offline** (§7, §23): Issue #367, PR #368; índice com doze módulos, navegação e visual unificado, legado preservado e demos de animações, partículas, tilemaps/A*, SAT, fontes, nine-slice e UiTheme oficial. Aguardando CI combinado, integração/release e DEVICE, sem alterar ProjectStore nem projetos existentes.
 - [ ] Auditoria de fechamento da Fase 4 registrada em `docs/audits/`.
 
 ## Fase 5 — Lunet Studio (§13)
