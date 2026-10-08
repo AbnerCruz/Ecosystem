@@ -14,7 +14,7 @@
   "branch": "feat/p6-4-finalize-real-host-evidence-20261008",
   "base_commit": "97eefdeac179884478cb790339e3234e707a4915",
   "commit": null,
-  "pr": 344,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/344",
   "files_changed": [
     "ROADMAP.md",
     "apps/ecosystem-ai/README.md",
@@ -39,7 +39,6 @@
       "check": "P6-4 integração no estado combinado",
       "kind": "automated",
       "result": "passed",
-      "tested_commit": "08c25886f0e39fc8fb653b806621fea4604bdc26",
       "evidence": "Workflow integrate #37818341813 success; PR #344 merged em 2026-10-08T18:22:40Z, merge commit cb554ccad53c5183f5f8c887c5ec6a8ce40342fa; label integrar aplicada pelo proprietário."
     },
     {
