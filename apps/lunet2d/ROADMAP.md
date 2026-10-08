@@ -20,7 +20,8 @@ Legenda de estado das fases: ✅ concluída (gate + auditoria) · 🟡 em andame
 | 1 Vertical Slice | ✅ concluída (auditoria em `docs/audits/fase-1.md`) |
 | 2 Framework Core | ✅ concluída e aprovada (auditoria em `docs/audits/fase-2.md`) |
 | 3 IDE | ✅ concluída e aprovada (LUNET-303 / Issue #204; auditoria em `docs/audits/fase-3.md`) |
-| 4–15 | ⬜ |
+| 4 Framework Advanced | 🟡 em andamento |
+| 5–15 | ⬜ |
 
 ---
 
@@ -172,9 +173,9 @@ Gate: jogos 2D substanciais apenas com APIs oficiais.
 Integração transversal autorizada pelo Ecosystem (não altera o gate de Framework Advanced):
 - [x] **LUNET-401 — Adapter opcional da Host API do Ecosystem via Android Binder** (P5-4 / DEC-0037-A): integrado e validado. Pareamento, `text.inspect`, revogação/rotação e lifecycle/process-death foram aprovados no gate P5-4 pela Issue #225; Lunet permanece funcional sem provider. O estado idle `0 sessões IPC abertas agora` é esperado e não invalida o pareamento.
 
-- [ ] Camada simples de colisão: AABB, Rectangle, Circle, Point, Ray, overlap, intersection, distance, SAT.
+- [~] **LUNET-402 — Camada simples de colisão** (§7): AABB, Rectangle, Circle, Point, Ray, overlap, intersection, distance, SAT. Issue #288; completar consultas e corrigir separação SAT em contenção. Integração e roteiro Preview pendentes; física completa é o item separado abaixo.
 - [ ] Física completa (`PhysicsWorld`, `RigidBody2D`, `Collider2D`, `Fixture2D`, `Joint2D`, `Contact`, `Raycast`) sobre backend maduro (Box2D ou equivalente) sem expor tipos internos; ADR da escolha.
-- [ ] `Camera2D`.
+- [~] **LUNET-403 — `Camera2D`** (§7): posição, zoom, rotação, conversão toque/mundo e desenho por `SpriteBatch`; Issue #293. Testes, integração e roteiro Android registrados no handoff `HO-20261008-lunet-camera`.
 - [ ] Animação de sprites e tweening.
 - [ ] Partículas.
 - [ ] Tilemaps (carregar formato do Tile Studio, colisão).
