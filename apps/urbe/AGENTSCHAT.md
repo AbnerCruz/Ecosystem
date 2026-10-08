@@ -541,3 +541,11 @@
 - Correções: `CreateFolder`, `CreateNote` e `MoveItem` recusam pastas inexistentes, reservadas/internas e componentes de travessia `.`/`..`; movimentação de arquivo/pasta continua sobre a mesma sessão e preserva IDs.
 - Decisões: guardas de sessão host-neutral, sem mudanças no formato do vault, storage físico, migração, backup ou publicação; nenhum gate humano declarado aprovado.
 - Pendências: validar CI C#/Web/Android/Windows/E2E e consistency, retomar integração automática da UC-18 após verde.
+
+### 2026-10-08 — ChatGPT — UC-18 guarda para editor HTML inline
+
+- Estado: `verifying`; branch `fix/urbe-uc18-visual-html-lossless` empilhada sobre #286.
+- Implementado: `VisualMarkdown.IsLosslessEditorRoundTrip` exige que renderização Markdown → HTML → Markdown mantenha exatamente a fonte original antes de permitir mutação rich HTML.
+- Aplicado: `WorkspaceSession.CanEditVisualHtml` e `UpdateVisualHtml` rejeitam transformações quando não há garantia de fidelidade; Fonte continua disponível; nenhuma autoridade de documento nova.
+- Testes: casos canônicos e não canônicos (sem newline, CRLF, whitespace); CI do PR pendente.
+- Limite: não ativa o PR #287, que continua draft até reconciliar sua UI de `contenteditable` com o Editor estrutural e com esta guarda; G-C3 permanece não validado.
