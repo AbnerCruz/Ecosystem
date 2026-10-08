@@ -116,6 +116,36 @@ async function assertShell(page, journey = false) {
     smokeStage('source-edit');
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
     const source = page.getByLabel('Markdown da nota');
+    smokeStage('source-inline-code');
+    await source.fill('antes palavra depois');
+    await source.evaluate(element => element.setSelectionRange(6, 13));
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    try {
+        await page.waitForFunction(
+            () => document.querySelector('.editor-source-field textarea')?.value === 'antes `palavra` depois',
+            null,
+            { timeout: 5500 });
+    } catch (error) {
+        const alert = await page.getByRole('alert').allInnerTexts();
+        const status = await page.getByRole('status').allInnerTexts();
+        throw new Error(`Código em linha não atualizou o textarea: alert=${JSON.stringify(alert)}; status=${JSON.stringify(status)}; atual=${JSON.stringify(await source.inputValue())}`, { cause: error });
+    }
+    assert.equal(await source.inputValue(), 'antes `palavra` depois');
+    assert.deepEqual(
+        await source.evaluate(element => [element.selectionStart, element.selectionEnd]),
+        [7, 14]);
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes palavra depois');
+
+    await source.evaluate(element => element.setSelectionRange(6, 6));
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes ``palavra depois');
+    assert.deepEqual(
+        await source.evaluate(element => [element.selectionStart, element.selectionEnd]),
+        [7, 7]);
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes palavra depois');
+
     await source.fill('# Primeira versão\\n\\nTexto inicial.');
     await source.fill('# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]');
     assert.equal(await source.inputValue(), '# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]');
