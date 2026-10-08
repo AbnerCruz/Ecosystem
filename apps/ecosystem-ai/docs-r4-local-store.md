@@ -54,6 +54,11 @@ O CI valida round-trip após reinício, checksum adulterado, versão futura,
 arquivo temporário órfão, concorrência de dois stores/lock, limites, ids,
 recibos e symlink para fora.
 
-Não conclui P6-5: ainda faltam integração da CLI com o catálogo,
+A CLI agora integra o catálogo por `--catalog` opt-in, preservando a operação
+sem histórico como padrão e expondo `--project-id`/`--session-id` para reabertura.
+O resultado e o receipt são gravados atomica e conjuntamente, com teste
+do adapter de Product. Isso **não** é memória contextual automática do modelo.
+
+Não conclui P6-5: ainda faltam
 retomada efetiva de eventos do Runtime, interface de usuário, equipes,
 artefatos navegáveis, custos por provedor e experiência completa mobile.

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using EcosystemAi.ProjectStore;
+using EcosystemAi.Cli;
 
 namespace EcosystemAi.ProjectStore.Tests;
 
@@ -141,6 +142,54 @@ public sealed class LocalProjectStoreTests
             File.CreateSymbolicLink(Path.Combine(root, "db", "catalog.json"), outside);
             Assert.Throws<IOException>(() => store.CreateProject("Projeto", root));
             Assert.Equal("DO-NOT-CHANGE", File.ReadAllText(outside));
+        });
+    }
+
+    [Fact]
+    public void Cli_pode_reabrir_mesmo_projeto_e_sessao_com_resultado_atomico()
+    {
+        InTemp(root =>
+        {
+            var dir = Path.Combine(root, "db");
+            var first = CliSessionPersistence.Open(dir, root, projectName: "Arquivo", sessionTitle: "Dia 1");
+            first.Begin("Como funciona?");
+            first.Complete(new RunReceipt("run-1", "succeeded", 2, "USD", true, "teste independente",
+                Fixed, CostEstimated: true), "A ferramenta leu o projeto.");
+            var reopened = CliSessionPersistence.Open(dir, root, first.ProjectId, first.SessionId);
+            reopened.Begin("E agora?");
+            reopened.Complete(new RunReceipt("run-2", "blocked", 1, "USD", false, "sem orçamento",
+                Fixed), null);
+            var session = Assert.Single(Assert.Single(reopened.Read().Projects).Sessions);
+            Assert.Equal(new[] { "user", "assistant", "user" }, session.Turns.Select(x => x.Role));
+            Assert.Equal(2, session.Runs.Count);
+            Assert.True(session.Runs[0].CostEstimated);
+            Assert.False(session.Runs[1].Verified);
+            Assert.Throws<InvalidOperationException>(() => CliSessionPersistence.Open(dir,
+                Path.Combine(root, "db"), first.ProjectId, first.SessionId));
+            Assert.Throws<ArgumentException>(() => CliSessionPersistence.Open(dir, root, sessionId: first.SessionId));
+        });
+    }
+
+    [Fact]
+    public void Resposta_ou_receipt_invalidos_nao_persistem_metade_da_revisao()
+    {
+        InTemp(root =>
+        {
+            var db = new LocalProjectStore(Path.Combine(root, "db"));
+            var p = db.CreateProject("P", root);
+            var s = db.CreateSession(p.Id, "S");
+            var r = new RunReceipt("run", "succeeded", 2, "USD", true, "verificado", Fixed);
+            var before = db.Read().Revision;
+            Assert.Throws<ArgumentException>(() => db.CompleteRun(p.Id, s.Id, r, new string('x', 20000)));
+            Assert.Throws<ArgumentException>(() => db.CompleteRun(p.Id, s.Id,
+                new RunReceipt("run", "failed", -1, "USD", false, null, Fixed), "resposta"));
+            Assert.Equal(before, db.Read().Revision);
+            db.CompleteRun(p.Id, s.Id, r, "concluído");
+            Assert.Throws<InvalidOperationException>(() => db.CompleteRun(p.Id, s.Id, r, "duplicado"));
+            var result = Assert.Single(Assert.Single(db.Read().Projects).Sessions);
+            Assert.Single(result.Runs);
+            Assert.Single(result.Turns);
+            Assert.Equal(before + 1, db.Read().Revision);
         });
     }
 

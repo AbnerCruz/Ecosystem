@@ -22,13 +22,19 @@
     "apps/ecosystem-ai/tests/EcosystemAi.ProjectStore.Tests/LocalProjectStoreTests.cs",
     "apps/ecosystem-ai/docs-r4-local-store.md",
     ".github/workflows/ecosystem-ai-ci.yml",
-    "docs/governance/handoffs/HO-20261008-p6-5-project-sessions.json"
+    "docs/governance/handoffs/HO-20261008-p6-5-project-sessions.json",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliSessionPersistence.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/EcosystemAi.Cli.csproj",
+    "apps/ecosystem-ai/EcosystemAI.slnx",
+    "apps/ecosystem-ai/docs-r4-cli.md"
   ],
   "work_completed": [
     "Implementa Product-local catálogo de projetos, sessões, mensagens e recibos sem duplicar AgentRunner, IEventLog ou orçamento.",
     "Persistência local explícita com revisões, schema, integridade SHA-256, lock exclusivo entre processos, escrita em temp/flush/rename, limites e recusa de symlink/corrupção/versão futura.",
     "Cria testes xUnit de round-trip, retomada após reabrir, corrupção sem sobrescrita, versão futura, crash temp orphan, concorrência e recibos inválidos.",
-    "Adiciona projeto de teste ao CI Ecosystem AI; mantém P6-5 aberta, sem implantar rede nem UI artificial."
+    "Adiciona projeto de teste ao CI Ecosystem AI; mantém P6-5 aberta, sem implantar rede nem UI artificial.",
+    "Com a CLI R4 já integrada na main por PR #356, reconciliou a branch e conectou --catalog opt-in a projetos/sessões persistentes com IDs de reabertura, vínculo de workspace e receipt + resposta atômicos; adicionou teste real sem rede."
   ],
   "verification": [
     {
@@ -51,16 +57,16 @@
     }
   ],
   "known_issues": [
-    "O catálogo é persistência local explicitamente habilitada, não restauração automática do run/ledger; integração à CLI pertence ao próximo slice.",
     "A pasta usa JSON em claro; o checksum não garante confidencialidade, criptografia nem autenticidade.",
     "Fluxos concorrentes recebem erro de lock, não entram em fila; sem dependência de background worker.",
-    "Nova etapa em workflow altera zona de controle crítico e pode exigir label integrar do proprietário."
+    "Nova etapa em workflow altera zona de controle crítico e pode exigir label integrar do proprietário.",
+    "O histórico opt-in da CLI não repõe contexto no modelo nem reconstitui event logs e limites de orçamento entre runs. A versão v1 guarda mensagens em claro no catálogo escolhido."
   ],
   "blockers": [],
   "next_actions": [
     "Conferir e corrigir CI do novo projeto.",
-    "Depois da integração do PR #356 conectar CLI ao catálogo preservando escolha opt-in de persistência.",
-    "Construir UX do Product com seleção de projeto/sessão e histórico; UI real e DEVICE em gates próprios."
+    "Construir UX do Product com seleção de projeto/sessão e histórico; UI real e DEVICE em gates próprios.",
+    "Próximo slice: UI local de seleção de projetos/sessões e consulta de histórico sem depender do modelo."
   ],
   "decisions_required": [],
   "normative_sources": [
