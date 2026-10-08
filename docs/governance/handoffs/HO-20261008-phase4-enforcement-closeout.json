@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-phase4-enforcement-closeout",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T10:35:40.043Z",
+  "timestamp": "2026-10-08T10:39:57.019Z",
   "agent": {
     "id": "chatgpt-ecosystem-p4-enforcement",
     "kind": "ai-agent"
@@ -23,7 +23,7 @@
   ],
   "work_completed": [
     "FATO OBSERVADO: a resposta oficial do proprietário Issue #318 registrou aprovação HUMAN do APK Urbe 1.8.4-beta, com SHA-256 e handoff vinculados à build real; P4-9 e incidente #261 foram encerrados sem aproveitar validações da build anterior.",
-    "ROADMAP P4-9 passou a [x], Fase 4 a aprovado e objeto de validação do APK exato a VALIDATED, apoiados por CI do PR #312, run de release e aprovação #318.",
+    "O registro de validação do APK exato passou a VALIDATED com prova humana. ROADMAP P4-9/gate Fase 4 **ainda permanecem [~]/aguardando** até que a atualização crítica dos mecanismos NN-003/NN-023 seja integrada; a Issue #166 permanece em review para manter checks dos demais PRs verdes.",
     "CHK-STATE-CONSISTENCY detectou corretamente controles NN-003 CI/DEVICE e NN-023 DEVICE ainda planejados para a Fase 4: a matriz foi reconciliada com os workflows já existentes (urbe-release/lunet2d-release e CHK-ARCH-REFS) e provas HUMAN #163/#318, sem criar verificação falsa em CI.",
     "NN-003 CI passa a implemented com check real CHK-ARCH-REFS e evidência de workflows próprios; NN-003/NN-023 DEVICE passam a manual (nunca para implemented automático), com registros de aparelho/superfície e exigência de repetir por build.",
     "A classificação control-plane é declarada crítica porque altera autoridade de fiscalização da fase; integração é do integrador com autorização do proprietário, não de agente."
@@ -51,12 +51,14 @@
   "known_issues": [
     "Provas DEVICE são específicas de builds (Lunet 0.0.1-dev.1000008, Urbe 1.8.4-beta), não autorizam declarar qualquer build futura validada.",
     "Atualização de docs/governance/enforcement-matrix.json é uma mudança crítica control-plane, sujeita ao gate de autorização na integração.",
-    "Referência CHK-ARCH-REFS prova boundary/código/pipeline de Product, mas não substitui prova de instalação do APK; esta permanece explicitamente DEVICE manual."
+    "Referência CHK-ARCH-REFS prova boundary/código/pipeline de Product, mas não substitui prova de instalação do APK; esta permanece explicitamente DEVICE manual.",
+    "A Issue #166 permanece aberta propositalmente porque a main ainda exibe P4-9 [~]; fechá-la antes de integrar a etapa de fechamento interromperia CHK-STATE-CONSISTENCY em PRs paralelos."
   ],
   "blockers": [],
   "next_actions": [
-    "Esperar consistency e self-test verdes, revisão independente e autorização crítica pelo integrador para aplicar fechamento Fase 4.",
-    "Prosseguir pelo roadmap Fase 6 e dependências de Product sem inventar novas validações DEVICE."
+    "Obter consistency/CHK-STATE-CONSISTENCY e self-tests verdes para a matriz fase4 no PR #320, classificado critical/control-plane.",
+    "Aguardar autorização crítica do proprietário via integrador. Somente após integração, PR routine posterior promoverá P4-9 [x], gate Fase 4 aprovado e Issue #166 concluída, sem repetir DEVICE.",
+    "Revalidar PRs ativos que dependam da main; não deixar closing de issue desatualizar o snapshot nos checks paralelos."
   ],
   "decisions_required": [],
   "normative_sources": [
