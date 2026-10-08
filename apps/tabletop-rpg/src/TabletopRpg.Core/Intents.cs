@@ -18,6 +18,18 @@ public sealed record SkillCheckIntent(
     string Description)
     : GameIntent(ParticipantId, CharacterId);
 
+public sealed record AttackIntent(
+    ParticipantId ParticipantId,
+    CharacterId CharacterId,
+    CharacterId TargetId,
+    string AttackKey)
+    : GameIntent(ParticipantId, CharacterId);
+
+public sealed record EndCombatTurnIntent(
+    ParticipantId ParticipantId,
+    CharacterId CharacterId)
+    : GameIntent(ParticipantId, CharacterId);
+
 public sealed record ActionResolution(
     bool Accepted,
     bool? Success,
