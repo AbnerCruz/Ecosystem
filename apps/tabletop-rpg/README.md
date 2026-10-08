@@ -24,6 +24,7 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - `ROADMAP.md`: fases e gates próprios.
 - `docs/persistence-v1.md`: formato legado, contratos originais e política de recuperação.
 - `docs/persistence-v2.md`: schema atual (RPG-003), mundo/quests/inventário e migração v1 segura.
+- `docs/combat-r0.md`: runtime RPG-004, esquema neutro de regras, turnos, intents e limites de persistência.
 
 ## Teste
 
@@ -42,3 +43,13 @@ Escrita persistida passa a schema v2; importações v1 mantêm identidade/sessõ
 mas iniciam o novo estado de mundo vazio (não havia esses dados no formato antigo).
 A transição não autoriza UI, IA, multiplayer nem divulgação automática de informações
 secretas na visão de um Player Agent; esses itens têm gates próprios no roadmap.
+
+## Combate R0 (RPG-004)
+
+O `CombatEncounter` gerencia ordem e turnos explícitos com validação de
+participantes no mesmo `SessionEngine`, usa `ICombatRules` pluggable e dados
+rolados por `IDiceRoller`. Dano reduz o recurso `hp` do alvo na campanha;
+ações/eventos/HP sobrevivem ao codec v2. O cursor de turno não é salvo nesta
+fase: a sessão de combate deve ser reiniciada explicitamente após retomar
+uma campanha. Sem IA real, multiplayer, app mobile ou biblioteca de regras
+comercial. RPG-004 depende da integração prévia de RPG-003 (PR #310).
