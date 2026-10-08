@@ -55,7 +55,11 @@
             }
         </div>
 
+        <div class="editor-reference-layout @(Workspace.References.Entries.Count > 0 ? "has-references" : null)">
+        <EditorReferencePanel Changed="RefreshReferences" />
+        <div class="editor-reference-main">
         <div class="editor-actions">
+            <button type="button" class="editor-pin-reference" @onclick="PinDocument">Fixar nota em painel</button>
             <div class="editor-history-actions" role="group" aria-label="Histórico do editor">
                 <button type="button"
                         disabled="@(!history.CanUndo || Workspace.IsReadOnly)"
@@ -161,6 +165,7 @@
                                         <option value="@VisualBlockKind.Raw">Avançado</option>
                                     </select>
                                     <span class="visual-block-label">@VisualBlockLabel(block.Kind)</span>
+                                    <button type="button" @onclick="() => PinBlock(blockIndex)" aria-label="@($"Fixar trecho {blockIndex + 1} em painel")">Fixar trecho</button>
                                     <button type="button" @onclick="() => MoveVisualBlock(blockIndex, -1)" disabled="@(!canEditVisual || blockIndex == 0)" aria-label="Mover bloco para cima">↑</button>
                                     <button type="button" @onclick="() => MoveVisualBlock(blockIndex, 1)" disabled="@(!canEditVisual || blockIndex == VisualBlocks.Count - 1)" aria-label="Mover bloco para baixo">↓</button>
                                     <button type="button" @onclick="() => RemoveVisualBlock(blockIndex)" disabled="@(!canEditVisual)" aria-label="Excluir bloco">Excluir</button>
@@ -276,6 +281,8 @@
                 }
             </section>
         </div>
+        </div>
+        </div>
     }
 </section>
 
@@ -283,6 +290,20 @@
     [Parameter]
     [SupplyParameterFromQuery(Name = "path")]
     public string? Path { get; set; }
+
+    private void RefreshReferences() => StateHasChanged();
+
+    private void PinDocument()
+    {
+        if (Workspace.CurrentDocument is { } document)
+            Workspace.References.PinDocument(document);
+    }
+
+    private void PinBlock(int index)
+    {
+        if (Workspace.CurrentDocument is { } document)
+            Workspace.References.PinBlock(document, index);
+    }
 
 
     private void OnSourceInput(ChangeEventArgs args)

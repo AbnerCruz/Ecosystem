@@ -1,0 +1,44 @@
+@inject WorkspaceSession Workspace
+
+@if (Workspace.References.Entries.Count > 0)
+{
+    <aside class="editor-reference-panel" aria-label="Painel de referência">
+        <header class="reference-panel-header">
+            <strong>Referências</strong>
+            <button type="button" @onclick="Close" aria-label="Fechar painel de referência">Fechar</button>
+        </header>
+        <p class="reference-panel-note">Cópias de consulta nesta sessão.</p>
+        <div class="reference-panel-scroll" tabindex="0" aria-label="Referências fixadas">
+            @foreach (var entry in Workspace.References.Entries)
+            {
+                <section class="reference-entry" @key="entry.Id">
+                    <header>
+                        <div>
+                            <strong>@entry.Title</strong>
+                            <small>@entry.Path · @(entry.IsExcerpt ? "trecho" : "nota inteira")</small>
+                        </div>
+                        <button type="button" @onclick="() => Remove(entry.Id)"
+                                aria-label="@($"Remover referência de {entry.Title}")">×</button>
+                    </header>
+                    <div class="reference-markdown">@((MarkupString)MarkdownEngine.Render(entry.Markdown))</div>
+                </section>
+            }
+        </div>
+    </aside>
+}
+
+@code {
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private async Task Remove(string id)
+    {
+        Workspace.References.Remove(id);
+        await Changed.InvokeAsync();
+    }
+
+    private async Task Close()
+    {
+        Workspace.References.Clear();
+        await Changed.InvokeAsync();
+    }
+}

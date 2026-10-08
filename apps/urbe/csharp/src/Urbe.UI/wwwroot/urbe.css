@@ -137,6 +137,47 @@ a { color: inherit; }
 }
 
 .surface { max-width: 54rem; }
+
+.editor-reference-layout { display: grid; gap: 1rem; align-items: start; }
+.editor-reference-main { min-width: 0; }
+.editor-reference-panel {
+    position: sticky;
+    top: calc(4.5rem + env(safe-area-inset-top));
+    z-index: 10;
+    min-width: 0;
+    border: 1px solid #55785f;
+    border-radius: .8rem;
+    background: #17271f;
+    overflow: hidden;
+}
+.reference-panel-header, .reference-entry > header {
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    padding: .5rem .65rem;
+}
+.reference-panel-header button, .reference-entry button, .editor-pin-reference {
+    min-height: 2.75rem;
+    border: 1px solid #55785f;
+    border-radius: .5rem;
+    background: #233b2d;
+    color: #edf5ee;
+    padding: .4rem .6rem;
+    cursor: pointer;
+}
+.reference-panel-note { margin: 0 .65rem .4rem; font-size: .72rem; color: #abc5b2; }
+.reference-panel-scroll { max-height: 24dvh; overflow: auto; overscroll-behavior: contain; }
+.reference-entry { border-top: 1px solid #395643; }
+.reference-entry > header > div { min-width: 0; }
+.reference-entry small { display: block; overflow-wrap: anywhere; color: #abc5b2; font-size: .7rem; }
+.reference-markdown { padding: 0 .65rem .5rem; overflow-wrap: anywhere; }
+.reference-markdown pre { overflow: auto; }
+.reference-markdown img { max-width: 100%; }
+
+@media (min-width: 1000px) {
+    .editor-reference-layout.has-references { grid-template-columns: minmax(0, 1fr) 16rem; }
+    .editor-reference-panel { grid-column: 2; grid-row: 1; }
+    .editor-reference-main { grid-column: 1; grid-row: 1; }
+    .reference-panel-scroll { max-height: 60dvh; }
+}
 .surface-eyebrow {
     margin: 0 0 .4rem;
     color: #93c7a5;

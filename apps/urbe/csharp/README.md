@@ -229,3 +229,16 @@ no próprio Urbe. Não há VectSharp, Skia ou interop matemático em JavaScript.
 Falhas de TeX viram diagnóstico, o texto original é preservado e o SVG exportado
 é formado por paths/linhas/retângulos autocontidos. A dependência permanece
 sujeita à autorização crítica do ADR-0012.
+
+## UC-18 — painel de referência (REQ-091)
+
+No Editor, **Fixar nota em painel** guarda uma cópia de consulta da nota atual.
+No modo Visual/Dividido, **Fixar trecho** guarda o bloco correspondente. É possível
+consultar várias referências, remover uma ou fechar o painel; no celular ele fica
+no topo, no desktop largo na lateral, com rolagem própria. A edição e o histórico
+continuam sobre o documento canônico.
+
+As referências são snapshots da sessão: editar/mover a nota não reescreve a cópia,
+e abrir outra nota não a fecha. Recarregar o cliente ou carregar outro vault limpa
+o painel. Seleção livre dentro de um bloco e seleção rich HTML ficam pendentes
+na UC-18; esta fatia não representa fechamento integral do REQ-091 ou G-C3.

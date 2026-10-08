@@ -76,6 +76,8 @@ public sealed class WorkspaceSession : IDisposable
 
     public DocumentStore Documents { get; } = new();
 
+    public EditorReferenceSession References { get; } = new();
+
     public KnowledgeIndex Knowledge { get; }
 
     public UrbeDocument? CurrentDocument { get; private set; }
@@ -933,6 +935,7 @@ public sealed class WorkspaceSession : IDisposable
 
     private void ResetEditorState()
     {
+        References.Clear();
         _origins.Clear();
         _tabs.Clear();
         _history.Clear();

@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-urbe-uc18-reference-panel",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T16:17:32.438463+00:00",
+  "agent": {
+    "id": "codex-urbe-reference-panel",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc18-reference-panel",
+  "base_commit": "62baa859c210b15a1a54c47ea20260d79391abc5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/EditorReferenceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Shared/EditorReferencePanel.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/EditorReferenceSessionTests.cs",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261008-urbe-uc18-reference-panel.json"
+  ],
+  "work_completed": [
+    "UC-18 / REQ-091: fixação de nota inteira e de bloco Visual em painel de referência com múltiplas cópias somente de leitura.",
+    "Painel sticky no topo do celular e lateral no desktop, com rolagem própria, remoção individual e fechamento.",
+    "Snapshots não escrevem no DocumentStore ou histórico, sobrevivem à navegação na mesma sessão e são limpos ao carregar outro vault.",
+    "Deduplicação de fixação idêntica; snapshots anteriores permanecem consultáveis após edição."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Core, build portátil, Web smoke e consistency",
+      "result": "pending",
+      "evidence": "Verificações locais em andamento; CI do PR deve testar Web/Android/Windows/E2E/checks e estado combinado."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3: toque/layout real",
+      "result": "not-applicable",
+      "evidence": "Esta fatia não fecha UC-18 nem G-C3; validação por superfície permanece no gate."
+    }
+  ],
+  "known_issues": [
+    "Seleção arbitrária dentro de um bloco, bolha de formatação e seleção rich HTML não são entregues: fixação de trecho nesta fatia usa o bloco Visual inteiro.",
+    "Snapshots são voláteis e não se atualizam automaticamente; UI identifica cópias de consulta nesta sessão.",
+    "Persistência física dos hosts e outras pendências UC-18 continuam abertas."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Concluir CI e integração automática rotineira sobre a main atual.",
+    "Completar seleção livre/toolbar na UC-18 sem duplicar o PR #287."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "docs/governance/integration-policy.json",
+    "apps/urbe/docs/v2/SPEC.md",
+    "apps/urbe/docs/v2/ROADMAP.md",
+    "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/governance/communication.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "DocumentStore permanece autoridade documental; referências são snapshots explicitamente rotulados, sem escrita de volta."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #281, PR e handoff registram a fatia e limitações."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação de dispositivo/G-C3 inferida."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying até verificação do CI combinado."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Recurso local do Urbe, sem contrato compartilhado artificial."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "UI e cópias voláteis de consulta sem formato persistido, migração, assinatura, canal ou boundary novos."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "editor-reference-panel",
+      "status": "product-specific",
+      "rationale": "Estado transitório de consulta do editor Urbe; não existe segundo consumidor comprovado."
+    }
+  ],
+  "cost": null
+}
