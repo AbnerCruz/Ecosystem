@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-p6-4-real-host-closure",
+  "category": "RESULT",
+  "timestamp": "2026-10-08T18:38:00Z",
+  "agent": {
+    "id": "chatgpt-ecosystem-p6-close",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-4",
+  "component": "ecosystem-ai",
+  "state": "done",
+  "branch": "feat/p6-4-finalize-real-host-evidence-20261008",
+  "base_commit": "97eefdeac179884478cb790339e3234e707a4915",
+  "commit": null,
+  "pr": 344,
+  "files_changed": [
+    "ROADMAP.md",
+    "apps/ecosystem-ai/README.md",
+    "apps/ecosystem-ai/docs-r3.md",
+    "docs/architecture/p6-4-host-eligibility.md",
+    "docs/governance/handoffs/HO-20261008-p6-4-real-host-closure.json"
+  ],
+  "work_completed": [
+    "Reconcilia P6-4 do status waiting/review para done após integração real do piloto Lunet no PR #344 e autorização DEC-0041.",
+    "Mantém explícita a fronteira: teste host real em processo separado não é produto com UI; Lunet Fase 8 e P6-5 mantêm gates próprios.",
+    "Fecha evidência de workflow, contexto GameId de dois projetos, capability text.inspect real, deny-by-default, cancel/revoke, integrador serial e logs."
+  ],
+  "verification": [
+    {
+      "check": "P6-4 Host real (run 37818339358)",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "6ac85ea8155d1908dd7c5d997c930776bd56834a",
+      "evidence": "GitHub Actions workflow consistency #37818339358 (2026-10-08) success; etapa P6-4 real Lunet Host + Agent Workspace pilot passed."
+    },
+    {
+      "check": "P6-4 integração no estado combinado",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "08c25886f0e39fc8fb653b806621fea4604bdc26",
+      "evidence": "Workflow integrate #37818341813 success; PR #344 merged em 2026-10-08T18:22:40Z, merge commit cb554ccad53c5183f5f8c887c5ec6a8ce40342fa; label integrar aplicada pelo proprietário."
+    },
+    {
+      "check": "DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Nenhuma UI Android, APK, IPC ou lifecycle modificado: composição headless contra Lunet.Core e AgentRuntime/Core reais."
+    }
+  ],
+  "known_issues": [
+    "O teste P6-4 não implementa painel de agentes nem fluxo de IA no APK Lunet; a Fase 8 do Lunet continua futura.",
+    "P6-5 terá experiência de Product própria; ainda não concluída."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Iniciar P6-5 (R4), Product Ecosystem AI consumindo Runtime e Workspace existentes, com fluxo observável de chat/projetos/agentes/tarefas/artefatos/custos.",
+    "Conservar o piloto headless no CI de consistência para prevenir regressão."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0031-p6-4-piloto-headless-lunet.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/addenda/ADD-0018-p6-4-piloto-headless.md",
+    "docs/architecture/p6-4-host-eligibility.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Handoff, Issue #144, PR #344 e runs identificados."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "DEC-0041, ADD-0018 e ADR-0031 documentam decisão de piloto restrito."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Segue exatamente o escopo autorizado, sem alterar regras futuras do Product."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não usa CI para alegar validação Android que não ocorreu."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "PR #344 integrado e teste positivo; handoff de closure não inventa integração de experiência visual."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Somente encerramento de estado/evidência após PR crítico já autorizado e integrado, sem novas decisões nem comportamento de runtime."
+  },
+  "cost": null
+}

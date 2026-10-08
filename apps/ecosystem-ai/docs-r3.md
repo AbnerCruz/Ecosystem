@@ -38,8 +38,4 @@ Os testes de arquitetura verificam o assembly do Workspace: só Core e bibliotec
 base, sem referências a Products concretos, fornecedor, IO, ledger ou log próprio;
 o Core não referencia o Workspace.
 
-**P6-4 não está completo.** A prova de Host simulado segue o plano aprovado.
-Hospedagem real depende da Host API/Fase 5 e do marco autorizado do Product;
-não integrar a IA a Products fora do marco autorizado de seus roadmaps.
-Não existe novo protocolo IPC nem capability compartilhada: API experimental
-local, sem extração antes de segundo consumidor real e Extraction Review.
+**P6-4 concluído como prova técnica delimitada:** PR #344 integra o adapter de teste externo `tests/integration/p6-lunet-host/`, compõe o Host real `LunetCapabilityHost.OpenForProject` em dois projetos com `GameId` distintos, chama a capability `text.inspect@1.0.0` existente, percorre o Runtime/Workspace existentes e verifica grants, Context, cancelamento e revogação. A exceção de sequencing foi autorizada pelo proprietário (DEC-0041 / ADD-0018 / ADR-0031). O teste não instala a IA no Lunet, não altera o roadmap local nem cria protocolo IPC ou componente compartilhado. A UX dos agentes do Lunet ainda é Fase 8; o Product dedicado Ecosystem AI é P6-5.
