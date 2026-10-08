@@ -1,0 +1,113 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-tilemaps",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T18:55:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-tilemaps",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-415",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-tilemaps-20261008",
+  "base_commit": "97eefdeac179884478cb790339e3234e707a4915",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Graphics/TileMap.cs",
+    "apps/lunet2d/src/Lunet.Framework/Content/ContentManager.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TileMapTests.cs",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/tilemaps.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261008-lunet-tilemaps.json"
+  ],
+  "work_completed": [
+    "Mapas de tiles JSON v1 imutáveis com até 32 camadas, limites de validação, colisão, conversão de coordenadas, recorte por viewport e sincronização explícita para GridPathfinder.",
+    "ContentManager.LoadTileMap, testes de JSON hostil, desenho/UV, colisão e exemplo que compila/executa no GameHost portátil.",
+    "Guia offline e referência de API atualizada; estado da Fase 4 ainda aberto."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "SDK .NET 10 indisponível nesta sessão; aguardar CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "pending",
+      "evidence": "dotnet run tests/consistency/Check.cs indisponível localmente; aguardar CI."
+    },
+    {
+      "kind": "human",
+      "check": "Preview Android tilemaps",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/tilemaps.md",
+      "evidence": "Renderização OpenGL, toque e desempenho não podem ser aprovados pelo CI."
+    }
+  ],
+  "known_issues": [
+    "Tile Studio/autotiling/propriedades e tileset editável ficam na Fase 5.",
+    "Viewport usa AABB do mundo fornecida pelo usuário; culling não calcula a câmera rotacionada sozinho.",
+    "Sem .NET/Android para execução local; CI e DEVICE pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar CI do PR e corrigir falhas de teste/docs.",
+    "Integrar apenas pelo integrador automático da main.",
+    "Validar roteiro Android e continuar a Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Lunet.Framework autônomo, sem dependência Urbe/Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #355, branch, commits, PR e handoff identificados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE e gate Fase 4 mantidos abertos."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CI e integração não declarados concluídos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "API local sem abstração transversal não justificada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "tilemap-runtime",
+      "status": "product-specific",
+      "rationale": "Incremento interno do framework Lunet da Fase 4; nenhum segundo consumidor externo."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva no Product e JSON de asset local; sem mudanças em dados existentes, assinatura ou paths protegidos."
+  },
+  "cost": null
+}

@@ -178,7 +178,8 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [x] **LUNET-403 — `Camera2D`** (§7): posição, zoom, rotação e toque/mundo integrados pelo PR #295; Issue #293 encerrada, APK 1000126 publicado e roteiro aprovado pelo proprietário no portal (Issue #304), registro no handoff `HO-20261008-lunet-camera`.
 - [~] **LUNET-404 — Animação de sprites e tweening** (§7, §23): clips, playback e transições sem alocação por quadro; Issue #298. APIs/guias integrados pelo PR #316 e publicados no APK 1000141; validação Android pendente. Handoff `HO-20261008-lunet-animation-api`. Modelo opcional na revisão consolidada #317 (zona ProjectStore, autorização do proprietário).
 - [~] **LUNET-405 — Partículas** (§7, §23): pool fixo, burst/emissão contínua, vida, velocidade, gravidade, tamanho e cor; Issue #306. APIs/guias integrados pelo PR #316 e publicados no APK 1000141; roteiro Android pendente. Handoff `HO-20261008-lunet-particles-api`. Modelo opcional na revisão consolidada #317 (zona ProjectStore, autorização do proprietário).
-- [ ] Tilemaps (carregar formato do Tile Studio, colisão).
+- [~] **LUNET-415 — Tilemaps em camadas, colisão e A*** (§7, §23): Issue #355. Incremento local de formato JSON v1, renderização com viewport, colisão por camada e integração com GridPathfinder; em revisão, sem CI/merge/DEVICE confirmados.
+- [ ] Tilemaps completos (conexão com formato definitivo do Tile Studio, colisão e validação em aparelho) — Fase 4 continua aberta.
 - [ ] Fontes personalizadas (bitmap e TrueType).
 - [~] **LUNET-408 — Fontes bitmap personalizadas** (§7, §23): imagem/atlas, métricas proporcionais e fallback Unicode em SpriteFont/DrawString; Issue #327; Integrado pelo PR #328 e publicado no APK 1000155; roteiro Android pendente. TrueType permanece pendente; não conclui o item completo de fontes.
 - [ ] UI (layout, âncoras, nine-slice, temas).
