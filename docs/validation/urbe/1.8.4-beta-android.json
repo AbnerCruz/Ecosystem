@@ -5,7 +5,7 @@
   "component": "urbe",
   "build": "1.8.4-beta-android",
   "recorded_at": "2026-10-08",
-  "state": "HUMAN_VALIDATION_PENDING",
+  "state": "VALIDATED",
   "objective": "Validar no aparelho o APK direto do Urbe 1.8.4-beta, corrigindo o incidente de importação do vault e encerrando P4-9 somente com evidência correspondente à build exata.",
   "preconditions": [
     "Preservar export/backup recuperável fora do armazenamento do aplicativo antes de qualquer desinstalação ou importação destrutiva.",
@@ -27,7 +27,7 @@
   ],
   "expected": "Seleção única Importar cobre múltiplos arquivos ou pasta inteira; importação é segura/idempotente, restaura estruturas e funciona offline com salvamento persistente; nenhum cancelamento, corrupção ou interrupção destrói a cidade existente.",
   "known_issues": [
-    "Falha Android na importação de cidade/vault relatada no candidato antigo 1.8.3-beta (Issue #261); correção 1.8.4-beta ainda depende de DEVICE do novo APK.",
+    "A falha de importação Android na 1.8.3-beta permanece como histórico (Issue #261); a validação de 1.8.4-beta foi aprovada pelo proprietário na Issue #318 em 2026-10-08.",
     "Canal beta com assinatura pública estável; usuários do legado que ainda não migraram devem guardar backup e realizar reinstalação deliberada.",
     "Aprovações antigas #251/#259 não provam a correção na build 1.8.4-beta."
   ],
@@ -53,8 +53,8 @@
     {
       "kind": "human",
       "check": "P4-9 DEVICE Urbe 1.8.4-beta: importação, recuperação e standalone",
-      "result": "pending",
-      "evidence": "Validação humana da importação/restauração e uso standalone/offline no Android 1.8.4-beta ainda não foi comprovada por registro referente a estes bytes; aprovações anteriores de 1.8.3-beta são históricas.",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-08 (Issue https://github.com/AbnerCruz/Ecosystem/issues/318); registro em docs/governance/responses/VAL-HO-20261008-p4-9-184-candidate-432aa50b2adc.md.",
       "handoff": "HO-20261008-p4-9-184-candidate"
     }
   ]
