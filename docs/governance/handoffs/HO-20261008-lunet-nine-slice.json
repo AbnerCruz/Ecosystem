@@ -1,0 +1,123 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-nine-slice",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T10:37:15Z",
+  "agent": {
+    "id": "codex-lunet-nine-slice",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-407",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-nine-slice-20261008",
+  "base_commit": "91aebbc012490a598ec18fd53503d90df1a421cd",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/nine-slice.md",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/NineSlice.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteBatch.cs",
+    "apps/lunet2d/tests/Lunet.Tests/NineSliceTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-nine-slice.json"
+  ],
+  "work_completed": [
+    "NineSlice imutável com recorte de atlas e bordas assimétricas; overload SpriteBatch com até nove quads, reutilizando câmera/clip/blend/sampler/shader e batching existente.",
+    "Escala positiva das bordas, compressão proporcional independente por eixo, destino zero sem desenho e entradas inválidas rejeitadas antes das partes.",
+    "10 casos novos: geometria/UV/cor, cobertura sem sobreposição, compressão/escala extrema/zero, entradas inválidas/disposal, câmera/state/capacity flush, zero bytes e guia compilado/executado com toque físico 2×.",
+    "Guia offline completo para projeto Em branco, XML/API JSON atualizados."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "dotnet build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false: zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner xUnit v3 padrão: 410/410, zero falhas/erros/skips. Guia executado no GameHost e zero bytes por desenho medidos."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22 checks passaram; ROADMAP × Issues não verificado localmente sem snapshot, CI/integrador conferem remotamente."
+    },
+    {
+      "kind": "human",
+      "check": "Nine-slice no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/nine-slice.md",
+      "evidence": "Cantos, redimensionamento, escala 1×/2×, destino 4×4, Preview rápido/isolado e regressão offline. Testes portáteis não comprovam GL/aparência/aparelho."
+    }
+  ],
+  "known_issues": [
+    "Centro/bordas esticam; sem repetição, rotação individual, padding, layout, âncoras, interação ou temas. Item UI completo e gate Fase 4 permanecem abertos.",
+    "Textura é mantida/liberada pelo jogo. Atlas Linear requer padding/extrusão contra bleeding; coordenadas seguem a precisão float do SpriteBatch.",
+    "HUD do exemplo aloca na concatenação; zero bytes é a garantia da API de desenho. SDK Android ausente localmente; APK será produzido no CI."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR pronto após check local; integração pelo integrador automático.",
+    "Confirmar release APK e validar roteiro Android; não inferir aprovação nem encerrar Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API local no Framework, sem dependência de outros Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-407 / Issue #319, branch/base/handoff explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, UI completa e gate abertos."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/guia verificados; CI/integração/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "UI prevista na Fase 4; reutiliza renderer/batching existente, nenhuma extração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "nine-slice",
+      "status": "product-specific",
+      "rationale": "Desenho de UI de jogo no Framework autorizado; reutiliza SpriteBatch sem criar backend/infraestrutura compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva de UI autorizada, sem persistência, contratos existentes, boundaries ou zonas protegidas."
+  },
+  "cost": null
+}
