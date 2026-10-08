@@ -4,7 +4,7 @@ namespace EcosystemAi.Cli;
 
 /// <summary>
 /// Fronteira do Product entre uma execução CLI e o catálogo persistente.
-// Não executa agentes, não armazena eventos do Core nem decide orçamento.
+/// Não executa agentes, não armazena eventos do Core nem decide orçamento.
 /// </summary>
 public sealed class CliSessionPersistence
 {
