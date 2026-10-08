@@ -120,6 +120,16 @@ async function assertShell(page, journey = false) {
     await source.fill('antes palavra depois');
     await source.evaluate(element => element.setSelectionRange(6, 13));
     await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    try {
+        await page.waitForFunction(
+            () => document.querySelector('.editor-source-field textarea')?.value === 'antes `palavra` depois',
+            null,
+            { timeout: 5500 });
+    } catch (error) {
+        const alert = await page.getByRole('alert').allInnerTexts();
+        const status = await page.getByRole('status').allInnerTexts();
+        throw new Error(`Código em linha não atualizou o textarea: alert=${JSON.stringify(alert)}; status=${JSON.stringify(status)}; atual=${JSON.stringify(await source.inputValue())}`, { cause: error });
+    }
     assert.equal(await source.inputValue(), 'antes `palavra` depois');
     assert.deepEqual(
         await source.evaluate(element => [element.selectionStart, element.selectionEnd]),
