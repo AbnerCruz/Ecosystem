@@ -71,7 +71,7 @@ public sealed class DocumentEditingTests
     {
         var json = ProjectJson.Format(Example());
         var unknown = json.Replace("\"projectId\": \"proof\"", "\"projectId\": \"proof\", \"executor\": \"script\"", StringComparison.Ordinal);
-        var duplicate = json.Replace("\"title\": \"Δx → 0\"", "\"title\": \"Δx → 0\", \"title\": \"outro\"", StringComparison.Ordinal);
+        var duplicate = json.Replace("\"projectId\": \"proof\"", "\"projectId\": \"proof\", \"projectId\": \"duplicate\"", StringComparison.Ordinal);
 
         Assert.Contains(ProjectJson.Parse(unknown).Problems, x => x.Code == "json.unknown-field");
         Assert.Contains(ProjectJson.Parse(duplicate).Problems, x => x.Code == "json.duplicate-key");
