@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-phase4-enforcement-closeout",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T10:35:40.043Z",
+  "agent": {
+    "id": "chatgpt-ecosystem-p4-enforcement",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-9",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "docs/p4-9-closeout-184-approved",
+  "base_commit": "320998d5a4219e029246ed3278781897786c0fad",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/320",
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/validation/urbe/1.8.4-beta-android.json",
+    "docs/governance/handoffs/HO-20261008-p4-9-184-candidate.json",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/handoffs/HO-20261008-phase4-enforcement-closeout.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: a resposta oficial do proprietário Issue #318 registrou aprovação HUMAN do APK Urbe 1.8.4-beta, com SHA-256 e handoff vinculados à build real; P4-9 e incidente #261 foram encerrados sem aproveitar validações da build anterior.",
+    "ROADMAP P4-9 passou a [x], Fase 4 a aprovado e objeto de validação do APK exato a VALIDATED, apoiados por CI do PR #312, run de release e aprovação #318.",
+    "CHK-STATE-CONSISTENCY detectou corretamente controles NN-003 CI/DEVICE e NN-023 DEVICE ainda planejados para a Fase 4: a matriz foi reconciliada com os workflows já existentes (urbe-release/lunet2d-release e CHK-ARCH-REFS) e provas HUMAN #163/#318, sem criar verificação falsa em CI.",
+    "NN-003 CI passa a implemented com check real CHK-ARCH-REFS e evidência de workflows próprios; NN-003/NN-023 DEVICE passam a manual (nunca para implemented automático), com registros de aparelho/superfície e exigência de repetir por build.",
+    "A classificação control-plane é declarada crítica porque altera autoridade de fiscalização da fase; integração é do integrador com autorização do proprietário, não de agente."
+  ],
+  "verification": [
+    {
+      "check": "Registro Android 1.8.4-beta / Issue #318",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "Validação do proprietário pelo Portal Issue https://github.com/AbnerCruz/Ecosystem/issues/318, hash 432aa50b2adc, registrado no objeto docs/validation/urbe/1.8.4-beta-android.json e response canônico VAL-HO-20261008-p4-9-184-candidate-432aa50b2adc."
+    },
+    {
+      "check": "Registro Lunet standalone 0.0.1-dev.1000008 / Issue #163",
+      "kind": "human",
+      "result": "passed",
+      "evidence": "Validação do proprietário pela Issue #163 reproduzida no documento docs/validation/lunet2d/0.0.1-dev.1000008.json; remoção do Hub e uso de Lunet standalone."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs e --self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar CI da versão exata do PR #320 após reconciliação da matriz de enforcement e estados."
+    }
+  ],
+  "known_issues": [
+    "Provas DEVICE são específicas de builds (Lunet 0.0.1-dev.1000008, Urbe 1.8.4-beta), não autorizam declarar qualquer build futura validada.",
+    "Atualização de docs/governance/enforcement-matrix.json é uma mudança crítica control-plane, sujeita ao gate de autorização na integração.",
+    "Referência CHK-ARCH-REFS prova boundary/código/pipeline de Product, mas não substitui prova de instalação do APK; esta permanece explicitamente DEVICE manual."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Esperar consistency e self-test verdes, revisão independente e autorização crítica pelo integrador para aplicar fechamento Fase 4.",
+    "Prosseguir pelo roadmap Fase 6 e dependências de Product sem inventar novas validações DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/enforcement-matrix.json",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/enforcement-matrix.schema.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "docs/contracts/schemas/validation-record.schema.json",
+    "docs/validation/urbe/1.8.4-beta-android.json",
+    "docs/validation/lunet2d/0.0.1-dev.1000008.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Matriz relaciona mecanismos de CI/DEVICE às fontes já existentes, sem duplicar resultados humanos."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Build/release standalone e Android DEVICE das builds exatas provam independência do Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #320, Issue #318, handoff de encerramento e verificação crítica explícita."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Documentos normativos consultados diretamente, além de workflows e registros DEVICE."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança da matriz declarada critical control-plane para revisão/autorização do proprietário."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Controles DEVICE classificados manual, nunca equiparados ao verde de CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "O gate só entra na main com CI/integração; evidência da aprovação OWNER é canônica."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Instalação e operação standalone demonstradas em Lunet e Urbe sem Hub por validação humana."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "A reconciliação alterou o estado canônico de enforcement para NN-003 e NN-023; por ser documento de fiscalização em docs/governance/enforcement-matrix.json, exige autorização crítica pelo integrador."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "phase4-enforcement",
+      "status": "product-specific",
+      "rationale": "Registro transversal do gate de distribuição da Fase 4; não cria novo componente runtime nem abstração compartilhada."
+    }
+  ]
+}
