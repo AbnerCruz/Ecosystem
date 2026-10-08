@@ -233,6 +233,31 @@ public class LabTemplateTests : IDisposable
         Tap(100, 489);
         Assert.Equal((360, 640), (host.GraphicsDevice.VirtualWidth, host.GraphicsDevice.VirtualHeight));
 
+        // Página 3: câmera testável sem copiar código. Preserva as páginas 1/2.
+        Tap(100, 23);
+        var type = loaded.Game.GetType();
+        const System.Reflection.BindingFlags fields = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+        var camera = (Camera2D)type.GetField("camera", fields)!.GetValue(loaded.Game)!;
+        var marker = type.GetField("cameraMarker", fields)!;
+        Assert.Equal(1, camera.Zoom);
+        Tap(40, 65);
+        Assert.Equal(2, camera.Zoom);
+        Tap(130, 65);
+        Assert.Equal(1, camera.Zoom);
+        Tap(260, 65);
+        Assert.Equal(MathF.PI / 4, camera.Rotation, 5);
+        var expected = camera.ScreenToWorld(new Vector2(260, 320), host.GraphicsDevice.ViewSize);
+        host.SetSurfaceTouches([new TouchPoint(9, TouchPhase.Moved, new Vector2(260, 320))]);
+        Frame();
+        var actual = (Vector2)marker.GetValue(loaded.Game)!;
+        Assert.Equal(expected.X, actual.X, 3);
+        Assert.Equal(expected.Y, actual.Y, 3);
+        host.SetSurfaceTouches([]);
+        Frame();
+        Tap(100, 23);
+        Assert.Equal(0, type.GetField("page", fields)!.GetValue(loaded.Game));
+        Assert.False(host.IsFaulted, host.Fault?.ToString());
+
         host.Stop();
         Assert.Empty(backend.LiveTargets);
         Assert.Empty(backend.LiveShaders);

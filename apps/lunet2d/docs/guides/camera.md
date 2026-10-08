@@ -19,6 +19,10 @@ Use câmera e conversão com o mesmo tamanho de vista. A projeção, o letterbox
 
 ## Testar no Preview
 
+**Teste rápido no celular:** crie um projeto com o modelo **Laboratório**, execute e toque duas vezes no cabeçalho para abrir **Página 3/3**. Toque/arraste na grade; use **+ Zoom**, **- Zoom** e **Girar 45 graus**. A grade muda, o marcador acompanha o toque e os controles ficam fixos. Toque novamente no cabeçalho para retornar à página de dispositivos. Projetos Laboratório já existentes preservam seu código; a nova página aparece ao criar um novo projeto.
+
+Para inspecionar uma demonstração menor ou adaptar ao seu jogo, use o exemplo abaixo:
+
 Crie um projeto **Em branco** separado e substitua a classe do jogo pelo código abaixo. Run deve funcionar sem internet. A classe pública `CameraDemo` é descoberta pelo carregador.
 
 ```csharp

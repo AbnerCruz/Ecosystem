@@ -125,3 +125,5 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Camera2D opcional e overload de SpriteBatch: mundo, zoom, rotação, conversão de toque e HUD fixo; nenhum backend alterado e APIs anteriores preservadas.
 - Build portátil sem warnings/errors; suíte padrão 351/351, incluindo 14 casos novos. Guia offline compilado/executado com toque físico 2×. Evidência final/PR no handoff `HO-20261008-lunet-camera`.
 - PR #291 integrado e APK 1000120 publicado; handoff anterior recebe evidência automatizada sem inventar teste do aparelho. Fase 4 permanece aberta; câmera aguarda roteiro Android intermediário.
+
+- Complemento LUNET-403: nova página 3 do modelo Laboratório testa câmera sem copiar código. Suíte padrão rerodada 351/351, com regressão das páginas antigas e controles de zoom/giro/toque.

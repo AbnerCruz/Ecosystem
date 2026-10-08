@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-lunet-camera",
   "category": "RESULT",
-  "timestamp": "2026-10-08T00:33:58.306518Z",
+  "timestamp": "2026-10-08T00:37:16.012702Z",
   "agent": {
     "id": "codex-lunet-camera",
     "kind": "ai-agent"
@@ -24,14 +24,17 @@
     "apps/lunet2d/docs/guides/camera.md",
     "apps/lunet2d/AgentsChat.md",
     "docs/governance/handoffs/HO-20261008-lunet-camera.json",
-    "docs/governance/handoffs/HO-20261008-lunet-collision.json"
+    "docs/governance/handoffs/HO-20261008-lunet-collision.json",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs"
   ],
   "work_completed": [
     "Camera2D com posição/zoom/rotação, matriz mundo→vista, inversão analítica para toque e validação de estado.",
     "Overload adicional SpriteBatch.Begin(Camera2D,...), preservando o Begin anterior de quatro parâmetros e o overload Material. Snapshot por lote aplicado aos vértices sem alterar backend, projeção, UVs, cor ou scissor.",
     "14 casos adicionais: round trips, rotação, batching/flush por textura e capacidade, texto/DebugDraw, HUD, target/clip, argumentos inválidos, zero alocações e guia compilado/executado com toque físico 2×.",
     "Guia offline camera.md interativo; API XML/JSON regenerada; Fase 4 explicitamente em andamento sem fechar gate.",
-    "PR #291 integrado em 9c8e799 e release lunet2d-v0.0.1-dev.1000120 publicada; evidência automatizada adicionada ao handoff anterior sem inferir aceite do aparelho."
+    "PR #291 integrado em 9c8e799 e release lunet2d-v0.0.1-dev.1000120 publicada; evidência automatizada adicionada ao handoff anterior sem inferir aceite do aparelho.",
+    "Modelo Laboratório ganha terceira página para testar câmera, zoom/rotação e HUD no celular sem copiar código; páginas anteriores preservadas e testadas."
   ],
   "verification": [
     {
@@ -44,7 +47,7 @@
       "check": "Lunet.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "xUnit .NET 10, modo padrão: 351 testes, zero falhas/erros/skips. Inclui 14 casos de câmera e guia executado pelo compilador/loader/host do produto."
+      "evidence": "xUnit .NET 10, modo padrão: 351 testes, zero falhas/erros/skips. Inclui 14 casos de câmera e guia executado pelo compilador/loader/host do produto. Suíte rerodada após incluir Lab: 351/351; teste existente de Lab cobre criação/compilação, páginas 1/2, câmera, zoom +/-/giro, conversão de toque e retorno à página 1."
     },
     {
       "check": "Consistency",
