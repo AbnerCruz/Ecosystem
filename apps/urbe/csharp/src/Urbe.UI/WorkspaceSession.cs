@@ -523,12 +523,13 @@ public sealed class WorkspaceSession : IDisposable
 
     public UrbeDocument? UpdateVisualHtml(string? html)
     {
-        if (CurrentDocument is null || !CanEditVisualHtml)
+        var current = CurrentDocument;
+        if (current is null || !CanEditVisualHtml)
             return null;
 
         var markdown = VisualMarkdown.FromHtmlUsingEditorSource(
             html,
-            CurrentDocument.Content);
+            current.Content);
         return UpdateSource(markdown);
     }
 
