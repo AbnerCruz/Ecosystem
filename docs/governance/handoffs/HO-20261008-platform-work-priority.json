@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-platform-work-priority",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T10:41:52.391Z",
+  "agent": {
+    "id": "chatgpt-platform-priority",
+    "kind": "ai-agent"
+  },
+  "task_id": "PLAT-001",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "fix/platform-first-execution-20261008",
+  "base_commit": "320998d5a4219e029246ed3278781897786c0fad",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/325",
+  "files_changed": [
+    "AGENTS.md",
+    "docs/governance/multi-agent.md",
+    "docs/architecture/platform-execution.md",
+    "docs/architecture/p6-4-host-eligibility.md",
+    "docs/governance/handoffs/HO-20261008-platform-work-priority.json"
+  ],
+  "work_completed": [
+    "Regra operacional explícita: pedidos globais de continuidade selecionam primeiro Issue acionável do roadmap global; pedidos de Product seguem o respectivo roadmap.",
+    "Protocolo multiagente separa seleção de tarefas da integração e prevê frente de núcleo somente com agentes efetivamente disponíveis.",
+    "Runbook de execução documenta trilha P4-9 PR #320, dependência real R3 P6-4 e auditoria independente para Fase 7, sem editar gates ou adiantar roadmap de Product.",
+    "Issue PLAT-001 #323 registra escopo, critérios e dependências da correção.",
+    "Auditoria técnica preliminar da elegibilidade do Host real P6-4: Lunet possui LunetCapabilityHost/OpenForProject, Urbe C# possui WorkspaceSession de editor e Hub tem LocalCapabilityHost; distinguido bloqueio do marco Fase 8/UC-21 de lacuna de infraestrutura."
+  ],
+  "verification": [
+    {
+      "check": "Revisão de conformidade documental com MANIFEST/ADR-0017/AGENTS",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Integração e checker do repositório ainda não executados; a verificação final cabe ao CI do PR combinado."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Será executado pelo pipeline de consistency e pelo integrador; nenhum resultado local é alegado."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguarda workflow do PR; nenhuma execução local reivindicada."
+    },
+    {
+      "check": "DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "A mudança é exclusivamente de protocolo de agentes e runbook; nenhum app/distribuição/UI foi alterado."
+    }
+  ],
+  "known_issues": [
+    "P6-4 permanece waiting: o Host real exige marco de Product ou revisão arquitetural; este PR não altera D7 de ADR-0017.",
+    "Fase 4/P4-9 está sendo encerrada no PR #320 por outro fluxo; esta mudança não duplica seu estado.",
+    "A política orienta agentes convocados; não cria agendamento/execução de agentes em segundo plano."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrador testar PR combinado; devido à mudança em AGENTS.md e docs/governance/multi-agent.md, aguardar autorização de integração crítica pelo proprietário.",
+    "A partir da matriz docs/architecture/p6-4-host-eligibility.md, validar adaptador headless de Lunet como proposta e submeter qualquer alteração de sequência D7/§11.1 à decisão/ADR canônica; não antecipar por inferência.",
+    "Registrar em Issue própria a auditoria de Tool da Fase 7, respeitando consumidores reais e Extraction Review."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ecosystem.json",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "docs/architecture/agent-runtime.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/adr/0021-r3-sessao-local-do-agent-workspace.md",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Issue #323, branch, commits e handoff rastreiam o trabalho; nenhuma atividade de agente permanente é inventada."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "MANIFEST, ADR-0017, instruções operacionais e schema foram consultados diretamente antes da edição."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Não modifica D3/D7, escopo de Products, permissões ou roadmap; exceção de Host real dependerá de ADR/decisão própria."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "PR fica em review e checks pendentes; não marca P6-4 nem fase como done."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Priorização exige contribuição verificável da plataforma, sem multiplicar abstrações ou bloquear roadmap local explícito."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Autoridades de estado continuam ROADMAP/Issues/handoffs; runbook não copia status como nova fonte."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Extração de Tool condicionada a segundo consumidor real, contrato e Extraction Review."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "Atualiza instruções operacionais centrais dos agentes e protocolo de trabalho multiagente; integrador deve exigir autorização humana crítica."
+  },
+  "cost": null
+}
