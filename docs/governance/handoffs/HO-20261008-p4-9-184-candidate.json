@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-p4-9-184-candidate",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T04:12:00Z",
+  "agent": {
+    "id": "chatgpt-ecosystem-p4-9",
+    "kind": "ai-agent"
+  },
+  "task_id": "P4-9",
+  "component": "urbe",
+  "state": "review",
+  "branch": "docs/p4-9-urbe-184-validation",
+  "base_commit": "0dc9471293d1d17657c54b91c812e7be58f1b717",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "ROADMAP.md",
+    "docs/validation/urbe/1.8.4-beta-android.json",
+    "docs/governance/handoffs/HO-20261008-p4-9-184-candidate.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: Ecosystem ROADMAP indicava 1.8.3-beta como candidato atual P4-9 embora o incidente Urbe import (Issue #261) tivesse gerado release substituta 1.8.4-beta.",
+    "GitHub Release urbe-v1.8.4-beta e digest do APK verificados diretamente pela API do GitHub; 1.8.3-beta e aprovação #251/#259 mantidas como evidência histórica, não transportadas.",
+    "Registro de validação VR-urbe-1.8.4-beta-android criado com artefato exato, hash, versão, critérios de teste de importação Android SAF Arquivos/Pasta, reimportação, recuperabilidade e offline, e status HUMAN_VALIDATION_PENDING.",
+    "ROADMAP geral (intro, item P4-9 e gate Fase 4) aponta para a versão corrente e o objeto DEVICE correto, preservando [~] e gate aguardando.",
+    "Não houve instalação, desinstalação, teste em dispositivo, publicação nova nem alteração de scripts/apps; mudança apenas da projeção documental do candidato existente."
+  ],
+  "verification": [
+    {
+      "check": "Release 1.8.4-beta publicada, tamanho e checksum APK",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "GitHub Release urbe-v1.8.4-beta publicada em 2026-10-06 (workflow urbe-release 37520229711: verificar, Android, Windows e publicar = success). Asset Urbe-1.8.4-beta.apk de 4302423 bytes com digest SHA-256 4605add4a397b84eb53dc36de61fc4c212627963f528aaba1a4123f20ab11d6e confirmado pela API de releases GitHub nesta verificação; publicação não comprova uso DEVICE."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Executar consistency/CHK-VALIDATION/CHK-HANDOFFS/CHK-ROADMAP no head de PR e estado combinado."
+    },
+    {
+      "check": "P4-9 DEVICE Urbe 1.8.4-beta: importação, recuperação e standalone",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Validação humana da importação/restauração e uso standalone/offline no Android 1.8.4-beta ainda não foi comprovada por registro referente a estes bytes; aprovações anteriores de 1.8.3-beta são históricas.",
+      "object": "docs/validation/urbe/1.8.4-beta-android.json",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "Não existe prova DEVICE específica da 1.8.4-beta nesta alteração; nenhuma aprovação anterior é herdada.",
+    "Protocolo exige backup externo antes de migração e só permite simular corrupção/interrupção em vault de teste.",
+    "Root Fase 4 permanece aguardando; não publicar outra release nem marcar P4-9 [x] por documentação."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar consistency e self-tests do PR, corrigindo divergências de CHK-VALIDATION e handoff.",
+    "Após integração da documentação, usar o Portal para executar o roteiro DEVICE 1.8.4-beta no Android e registrar resposta real do proprietário com build exata.",
+    "Se falhar, registrar incidente, corrigir app e publicar novo candidato; se passar, reconciliar validação e só então fechar P4-9/gate Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/multi-agent.md",
+    "docs/contracts/schemas/validation-record.schema.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/validation/urbe/1.8.3-beta-android.json",
+    "docs/validation/urbe/1.8.4-beta-import-device.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Registro de validação por build exato, não marca versão antiga como nova; releases GitHub continuam fonte de artefatos."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issues #166/#261, branch própria, handoff, PR e resultados distinguindo automated vs human."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Roadmap e objeto de validação são persistidos no repositório como autoridades de status."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Roadmap global, protocolo local e schemas de validação/handoff consultados diretamente."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "HUMAN_VALIDATION_PENDING + human.pending crítico, sem inventar prova DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Roteiro e release publicados não fecham gate; estado review e [~]."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "ID P4-9 e artefato/tag versão correta identificados sem renumerar tarefas."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Roadmap agora referencia projeção canônica da release verificada sem versão hardcoded no Portal."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Urbe segue standalone e beta publicada sem Hub; validação exige operação offline."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-device-validation",
+      "status": "product-specific",
+      "rationale": "Validação da build de Urbe no corte de distribuição P4-9."
+    }
+  ]
+}
