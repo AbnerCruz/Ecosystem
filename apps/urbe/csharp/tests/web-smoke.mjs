@@ -103,7 +103,7 @@ async function assertShell(page, journey = false) {
     // editor footer; run/pause/reset do not modify the Markdown document.
     const timeTools = page.getByRole('group', { name: 'Ferramentas de tempo' });
     await timeTools.waitFor();
-    assert.match(await timeTools.getByLabel('Hora local').innerText(), /^\\d{2}:\\d{2}:\\d{2}$/);
+    assert.match(await timeTools.getByLabel('Hora local').innerText(), /^\d{2}:\d{2}:\d{2}$/);
     await timeTools.getByRole('button', { name: 'Cronômetro', exact: true }).click();
     assert.equal(await timeTools.getByLabel('Tempo do cronômetro').innerText(), '00:00');
     await timeTools.getByRole('button', { name: 'Iniciar cronômetro' }).click();
