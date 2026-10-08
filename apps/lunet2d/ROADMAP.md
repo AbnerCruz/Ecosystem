@@ -181,6 +181,7 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [ ] Tilemaps (carregar formato do Tile Studio, colisão).
 - [ ] Fontes personalizadas (bitmap e TrueType).
 - [ ] UI (layout, âncoras, nine-slice, temas).
+- [~] **LUNET-409 — Layout de UI por âncoras e margens** (§7, §23): LayoutRect/Fixed/Stretch e composição aninhada sem alocação; Issue #329; API/guia testados, integração/release e roteiro Android pendentes. Incremento de UI; temas e controles completos permanecem pendentes.
 - [~] **LUNET-406 — Pathfinding A*** (§7): grade com obstáculos/custos, quatro/oito vizinhos e buffers reutilizáveis; Issue #311. Integrado pelo PR #313 e publicado no APK 1000133; guia offline e CI verdes, aparelho pendente. Handoff `HO-20261008-lunet-pathfinding`.
 - [ ] Scene2D opcional e API entidade/componente opcional (sem obrigar ECS).
 - [ ] Debug APIs e helpers.

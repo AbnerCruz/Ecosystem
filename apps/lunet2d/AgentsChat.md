@@ -143,3 +143,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Build .NET 10 sem warnings/errors, suíte padrão 400/400. Testes dos guias agora criam projeto Em branco, escrevem o código pelo fluxo existente e compilam/executam no GameHost com toque físico 2×; medições de zero bytes e regressões de A*/câmera incluídas. Testes de criação dos novos modelos permanecem nos PRs protegidos originais, não foram removidos daqueles PRs.
 - Reconciliação dos PRs #302/#307 publicada separadamente, com 386/400 testes e 22 checks, sem simular autorização. A inclusão dos modelos continua crítica pela zona ProjectStore e depende do proprietário; isso não impede a entrega destas APIs sem efeito protegido.
 - Closeout de colisão/câmera conserva as aprovações canônicas #303/#304. A* recebeu evidência de integração/release; DEVICE A*/animação/partículas continua pendente, Fase 4 aberta. Próximo: integrar esta fatia pelo integrador, confirmar APK direto e entregar roteiro dos guias.
+
+
+### 20261008-codex-ui-layout — Codex → próximos agentes — review
+- LUNET-409 / Issue #329, UI da Fase 4 (§7/§23); base main `29fbc892197882ec8de180ba90cd90f0d344e7d8`, branch `agent/lunet-ui-layout-20261008`. Pedido explícito Lunet; sem substituir prioridade global (AGENTS §1.1).
+- LayoutRect/Fixed/Stretch: âncoras normalizadas, pivôs, offsets/margens e composição aninhada; GetBounds entrega o mesmo RectangleF para desenho/Contains, sem alocação. Pais pequenos colapsam limites invertidos; resultados não representáveis são rejeitados. Sem persistência, árvore de UI, backend, modelos ou ProjectStore.
+- Build .NET 10 sem warnings/errors, suíte padrão 411/411 (main 400 + 11 novos). Guia compilado/executado no GameHost com toque físico 2×: botão se reposiciona, desenho coincide e toque na posição antiga não conta. Casos de extremos/validação/zero bytes incluídos.
+- Bloqueio global P4-9 resolvido por #326/main 29fbc89. Reconciliações feitas pelo outro agente preservadas: #324 c902b02, #328 7622f53, #317 9b77faf. Ainda não integrados; APK público confirmado continua 1000141. Não inventar green combinado novo nem aplicar integrar.
+- Roteiro `docs/guides/layout-ui.md` no aparelho continua pendente. UI completa/temas e Fase 4 abertos; handoff `HO-20261008-lunet-ui-layout`, próximo: checks/PR/CI/integrador/release.

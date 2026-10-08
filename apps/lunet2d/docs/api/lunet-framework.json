@@ -14108,6 +14108,195 @@
           "since": "0.0.1"
         }
       ]
+    },
+    {
+      "id": "T:Lunet.UI.LayoutRect",
+      "name": "LayoutRect",
+      "namespace": "Lunet.UI",
+      "kind": "struct",
+      "signature": "public readonly struct LayoutRect",
+      "summary": "Layout de um ret\u00E2ngulo por \u00E2ncoras normalizadas e offsets no espa\u00E7o do pai.",
+      "remarks": "Imut\u00E1vel e sem aloca\u00E7\u00E3o por c\u00E1lculo. Retorna geometria para desenhar e testar toque; n\u00E3o possui filhos, eventos, texto, recorte ou temas. default \u00E9 um ret\u00E2ngulo zero no canto superior esquerdo do pai.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar panel = Lunet.UI.LayoutRect.Stretch(12, 12, 12, 12);\nvar bounds = panel.GetBounds(new RectangleF(0, 0, 360, 640));\nvar button = Lunet.UI.LayoutRect.Fixed(Vector2.One, new Vector2(100, 44), Vector2.One, new Vector2(-8, -8));\nvar buttonBounds = button.GetBounds(bounds);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.LayoutRect.#ctor(System.Numerics.Vector2,System.Numerics.Vector2,System.Numerics.Vector2,System.Numerics.Vector2)",
+          "name": "LayoutRect",
+          "kind": "constructor",
+          "signature": "public LayoutRect(Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin = null, Vector2 offsetMax = null)",
+          "summary": "Define as \u00E2ncoras dos limites e seus deslocamentos em unidades do pai.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "anchorMin",
+              "type": "Vector2",
+              "description": "\u00C2ncora superior/esquerda em 0\u20131, inclusivo."
+            },
+            {
+              "name": "anchorMax",
+              "type": "Vector2",
+              "description": "\u00C2ncora inferior/direita em 0\u20131, maior ou igual a anchorMin por eixo."
+            },
+            {
+              "name": "offsetMin",
+              "type": "Vector2",
+              "description": "Deslocamento finito do limite superior/esquerdo."
+            },
+            {
+              "name": "offsetMax",
+              "type": "Vector2",
+              "description": "Deslocamento finito do limite inferior/direito."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.LayoutRect.AnchorMax",
+          "name": "AnchorMax",
+          "kind": "property",
+          "signature": "public Vector2 AnchorMax { get; }",
+          "summary": "Fra\u00E7\u00E3o do pai em que termina o ret\u00E2ngulo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.LayoutRect.AnchorMin",
+          "name": "AnchorMin",
+          "kind": "property",
+          "signature": "public Vector2 AnchorMin { get; }",
+          "summary": "Fra\u00E7\u00E3o do pai em que come\u00E7a o ret\u00E2ngulo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.LayoutRect.OffsetMax",
+          "name": "OffsetMax",
+          "kind": "property",
+          "signature": "public Vector2 OffsetMax { get; }",
+          "summary": "Deslocamento dos limites direito/inferior.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.LayoutRect.OffsetMin",
+          "name": "OffsetMin",
+          "kind": "property",
+          "signature": "public Vector2 OffsetMin { get; }",
+          "summary": "Deslocamento dos limites esquerdo/superior.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.LayoutRect.Fixed(System.Numerics.Vector2,System.Numerics.Vector2,System.Numerics.Vector2,System.Numerics.Vector2)",
+          "name": "Fixed",
+          "kind": "method",
+          "signature": "public static LayoutRect Fixed(Vector2 anchor, Vector2 size, Vector2 pivot = null, Vector2 offset = null)",
+          "summary": "Cria um ret\u00E2ngulo de tamanho fixo preso a um ponto do pai.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "anchor",
+              "type": "Vector2",
+              "description": "Ponto normalizado 0\u20131 do pai (0,0 = topo/esquerda; 1,1 = base/direita)."
+            },
+            {
+              "name": "size",
+              "type": "Vector2",
+              "description": "Tamanho finito n\u00E3o negativo em unidades do pai."
+            },
+            {
+              "name": "pivot",
+              "type": "Vector2",
+              "description": "Ponto normalizado 0\u20131 do ret\u00E2ngulo preso \u00E0 \u00E2ncora; padr\u00E3o canto superior esquerdo."
+            },
+            {
+              "name": "offset",
+              "type": "Vector2",
+              "description": "Deslocamento finito do ponto de ancoragem."
+            }
+          ],
+          "returns": "Layout fixo; lan\u00E7a OverflowException se seus offsets n\u00E3o couberem em float.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.LayoutRect.GetBounds(Lunet.RectangleF)",
+          "name": "GetBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetBounds(RectangleF parent)",
+          "summary": "Calcula os limites no mesmo espa\u00E7o de coordenadas do pai.",
+          "remarks": "Cada limite \u00E9 posi\u00E7\u00E3o do pai \u002B tamanho \u00D7 \u00E2ncora \u002B offset. Limites invertidos colapsam a zero no limite m\u00EDnimo, sem tamanho negativo. Offsets podem colocar o layout fora do pai; n\u00E3o h\u00E1 clipping autom\u00E1tico. Para aninhar, passe o resultado como pai do pr\u00F3ximo layout.",
+          "parameters": [
+            {
+              "name": "parent",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo finito com tamanho n\u00E3o negativo e limites represent\u00E1veis em float."
+            }
+          ],
+          "returns": "Ret\u00E2ngulo para desenho/Contains; lan\u00E7a OverflowException quando o resultado n\u00E3o cabe em float.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.LayoutRect.Stretch(System.Single,System.Single,System.Single,System.Single)",
+          "name": "Stretch",
+          "kind": "method",
+          "signature": "public static LayoutRect Stretch(float left = 0f, float top = 0f, float right = 0f, float bottom = 0f)",
+          "summary": "Ocupa o pai com margens internas em cada lado.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "left",
+              "type": "float",
+              "description": "Margem esquerda finita n\u00E3o negativa."
+            },
+            {
+              "name": "top",
+              "type": "float",
+              "description": "Margem superior finita n\u00E3o negativa."
+            },
+            {
+              "name": "right",
+              "type": "float",
+              "description": "Margem direita finita n\u00E3o negativa."
+            },
+            {
+              "name": "bottom",
+              "type": "float",
+              "description": "Margem inferior finita n\u00E3o negativa."
+            }
+          ],
+          "returns": "Layout esticado; margens grandes podem colapsar seu tamanho a zero.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
     }
   ]
 }
