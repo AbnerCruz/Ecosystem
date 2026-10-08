@@ -1,0 +1,126 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-scene2d",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T15:49:10Z",
+  "agent": {
+    "id": "codex-lunet-scene2d",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-412",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-scene2d-20261008",
+  "base_commit": "18debffa8c9d7858091078aae6d70e36efa2c2c8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/laboratorio-cenas.md",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/src/Lunet.Framework/Scenes/Scene2D.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ButtonLaboratoryTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/SceneTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchSliderTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-scene2d.json"
+  ],
+  "work_completed": [
+    "Scene2D/Entity2D/Component2D opcionais; ownership exclusivo e percursos em ordem de inserção sem alocação, flags independentes, Transform2D existente.",
+    "Mutação estrutural e reentrada proibidas durante percurso; falha antes de mudar ownership, propagação de exceções com finally e remoção por referência mesmo quando componente sobrescreve Equals.",
+    "Sexta página pronta para Run no Laboratório; componentes distintos de movimento/desenho, pause/hide/detach/reattach e cancelamento na pausa. Projetos existentes preservados.",
+    "12 casos novos, exemplos XML/API JSON atualizados e guia de teste da página executável."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "dotnet build tests/Lunet.Tests --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false: 0 warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner xUnit v3 padrão: 475/475, zero erros/falhas/skips. Main 463 + 12 casos de ownership/reentrada/flags/ordem/exceções/zero bytes e Laboratório compilado/executado no GameHost com toque físico 2×. API/examples/documentation coverage verdes."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram; ROADMAP × Issues não verificado localmente sem snapshot, permanece obrigatório no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Cena e componentes no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/laboratorio-cenas.md",
+      "evidence": "Novo Laboratório, Run, página 6/6: movimento/pausa/visibilidade/remove/reattach, segundo plano e troca de página; repetir offline rápido/isolado e regressão das páginas anteriores."
+    }
+  ],
+  "known_issues": [
+    "API da thread do jogo, sem rollback, serialização, hierarchy, callback attach/dispose, fila automática de spawn/despawn ou ECS de consultas. Mudanças estruturais antes/depois dos percursos.",
+    "Recursos e Begin/End/câmera/blend/clipping pertencem ao jogo; transform não é aplicado automaticamente. Criação/adição e callbacks do usuário podem alocar; a demonstração formata texto por quadro.",
+    "SDK Android ausente localmente; build APK/CI e DEVICE separados. Fase 4 e item continuam abertos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Publicar PR e acompanhar CI/integrador automático.",
+    "Confirmar release e APK público com a nova página antes de entrega de DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API local ao Framework, sem dependência entre Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #338, branch/base/arquivos/handoff explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, gate Fase 4 não fechado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build e suíte comprovados, CI/integração/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reutiliza GameTime/Transform2D/SpriteBatch, sem extração compartilhada sem consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "scene-entity-component-game-api",
+      "status": "product-specific",
+      "rationale": "Conveniência de organização de jogos no Framework prevista no SPEC §7. Não existe segundo consumidor justificando Tool/Library transversal."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva local prevista na Fase 4, sem persistência/ProjectStore/formatos/contratos estáveis/zonas protegidas."
+  },
+  "cost": null
+}
