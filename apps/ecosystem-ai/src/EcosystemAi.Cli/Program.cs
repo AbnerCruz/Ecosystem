@@ -117,9 +117,10 @@ o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat per
             Console.CancelKeyPress += handler;
             try
             {
-                var result = await workspace.ExecuteAsync("cli-run-" + Guid.NewGuid().ToString("N"), task, agent,
+                var runId = "cli-run-" + Guid.NewGuid().ToString("N");
+                var result = await workspace.ExecuteAsync(runId, task, agent,
                     cancellationToken: cancel.Token);
-                var events = await log.ReadRunAsync(result.State.RunId, CancellationToken.None);
+                var events = await log.ReadRunAsync(runId, CancellationToken.None);
                 foreach (var entry in events.Where(e => e.Kind is EventKind.ToolCalled or EventKind.ToolDenied
                     or EventKind.ToolResult or EventKind.ProviderFailed))
                     Console.WriteLine($"{entry.Kind}: {entry.Tool ?? entry.Result ?? "resposta"}");
