@@ -32,7 +32,8 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --list --catalog /pasta/historico lista projetos/sessões, sem modelo nem rede.
 --show --catalog /pasta/historico --project-id ID --session-id ID mostra o histórico.
 Preços são fornecidos pelo operador; quando o provider nao devolve usage.cost,
-o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat persistente.
+o custo é ESTIMADO, não garantido. Sem background job ou memória automática;
+histórico local existe somente mediante --catalog explícito.
 """;
 
     public static async Task<int> RunAsync(string[] args)
