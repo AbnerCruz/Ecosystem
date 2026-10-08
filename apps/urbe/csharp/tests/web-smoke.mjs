@@ -119,7 +119,42 @@ async function assertShell(page, journey = false) {
     await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
     assert.match(await page.locator('.editor-visual').innerText(), /Texto forte\./);
 
-    await page.getByRole('button', { name: 'Criar Nova ligada', exact: true }).click();
+    // Split mode must reflect Source → canonical model and Visual → Source
+    // without creating a parallel document or breaking history on mobile.
+    await page.getByRole('button', { name: 'Dividido', exact: true }).click();
+    const splitSource = page.getByLabel('Markdown da nota');
+    await splitSource.waitFor({ state: 'visible' });
+    assert.equal(await page.locator('.editor-stage-layout.split').count(), 1);
+    const previousViewport = page.viewportSize();
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - innerWidth);
+    assert.ok(mobileOverflow <= 0, 'Modo dividido não pode causar overflow no celular');
+    await page.setViewportSize(previousViewport);
+
+    const canonical = '# Título smoke\n\nTexto **forte**. [[Nova ligada]]\n';
+    await splitSource.fill(canonical);
+    await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
+    const addBlock = page.getByRole('button', { name: 'Adicionar', exact: true });
+    assert.equal(await addBlock.isEnabled(), true);
+    await addBlock.click();
+    await page.waitForFunction(
+        () => document.querySelector('.editor-source-field textarea')?.value.endsWith('Texto\n'));
+    assert.match(await splitSource.inputValue(), /\n\nTexto\n$/);
+    await page.getByRole('button', { name: 'Desfazer', exact: true }).click();
+    await page.waitForFunction(
+        target => document.querySelector('.editor-source-field textarea')?.value === target,
+        canonical);
+    await page.getByRole('button', { name: 'Visual', exact: true }).click();
+    await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
+
+
+    const createMissingLink = page.getByRole('button', { name: 'Criar Nova ligada', exact: true });
+    assert.equal(
+        await createMissingLink.isEnabled(),
+        true,
+        'Criar wikilink não deve depender da possibilidade de edição visual estrutural');
+    await createMissingLink.click();
     await page.getByRole('heading', { name: 'Nova ligada', exact: true }).waitFor();
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();

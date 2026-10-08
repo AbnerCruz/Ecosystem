@@ -510,3 +510,18 @@
 - Decisões (com fonte): ADR-0025 mantém Blazor WASM/MAUI Hybrid; sem KaTeX interop, sem referência de pacote no produto e sem UI M3. Pacotes e fontes auditados preliminarmente: MIT nos módulos CSharpMath, LGPL-3.0-only nos backends VectSharp e GUST/OFL nas fontes. Nenhuma adoção ou alteração de licença consolidada.
 - Pendências / bloqueios: comandos/macros faltantes, equivalência visual, acessibilidade, licenças e hosts Android/Windows ainda requerem trabalho. PRs UC-15 #253/#254 estão abertos; #253 precisa reconciliação, sem sobrescrever o renderer de seu autor. Publicação de import/P4-9 depende do gate crítico do PR #264 e nova DEVICE exata.
 - Próximos passos: definir backend C# por ADR fundamentado e PR crítico antes de adoção; ampliar corpus com renderer legado real e corrigir lacunas sem regravar TeX do usuário. Evidência em docs/csharp/UC16-RENDERER-INVESTIGATION.md e math-renderer-observations.json; ferramenta manual csharp/tests/math-renderer-probe.mjs.
+
+### 2026-10-07 — ChatGPT — UC-18 / REQ-007/035/038 / PR #296
+- Estado: PR #296 draft, empilhado sobre #289; `verifying`, sem integração nem validação G-C3.
+- Feito: proteção `IsLosslessRoundTrip` byte a byte antes de mutações estruturais; salvamento Visual bloqueado na `WorkspaceSession` quando não preservar Markdown; modo Fonte permanece utilizável; Undo/Redo resincronizam os blocos; testes regressivos para sintaxe não canônica.
+- Decisões (com fonte): `docs/csharp/ROADMAP.md` UC-18, NN-001/017/018 e `docs/governance/integration-policy.json`; nenhuma alteração de formato persistente ou boundary. Proteção é conservadora: Markdown incompatível com round-trip exato continua editável em Fonte.
+- Verificação: CI do PR #296 pendente; `urbe-checks` e `consistency` são autoridade de execução; não declarar pronto antecipadamente.
+- Pendências / bloqueios: PR base #289 precisa ser integrado antes do retarget de #296 para `main`; persistência física, split view e Explorer avançado continuam UC-18.
+- Próximos passos: validar PR #296, integrar após #289 e só depois avançar ao próximo recorte UC-18.
+
+### 2026-10-07 — ChatGPT — UC-18 modo Dividido (REQ-007/035/038)
+- Estado: verifying, PR a abrir sobre #296 (que depende de #289); não integrado.
+- Feito: modo Dividido no editor C# usa a mesma WorkspaceSession para Fonte e Visual; ao digitar na Fonte sincroniza visualização e modelo estrutural; ao editar blocos reflete no texto Fonte; undo/redo permanece compartilhado.
+- Testes: smoke Web de alternância e ida-e-volta de alterações, inclusive undo, em / e /preview/ online/offline. CI ainda pendente, sem alegação G-C3.
+- Decisões: código local ao Urbe, sem formato paralelo, persistência/host, migração ou distribuição; conforme docs/csharp/ROADMAP UC-18, NN-001/017/018.
+- Próximos passos: CI, corrigir regressões, integrar somente após a cadeia base; seguir UC-18 Explorer/hosts.
