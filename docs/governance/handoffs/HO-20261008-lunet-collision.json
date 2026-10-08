@@ -13,7 +13,7 @@
   "branch": "agent/lunet-continue-20261008",
   "base_commit": "f724b3c9fe65f4d45d39d07e7ce0a989291c9be4",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/291",
   "files_changed": [
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/ROADMAP.md",
