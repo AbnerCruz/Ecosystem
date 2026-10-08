@@ -223,7 +223,7 @@ public sealed class MathRendererTests
     [Fact]
     public void ConcurrentTypesettingDoesNotCorruptSharedCaches()
     {
-        const string tex = @"\\sum_{i=1}^{n}i=\\frac{n(n+1)}{2}";
+        const string tex = @"\sum_{i=1}^{n}i=\frac{n(n+1)}{2}";
         const int count = 48;
         var outputs = new MathRenderResult[count];
 
