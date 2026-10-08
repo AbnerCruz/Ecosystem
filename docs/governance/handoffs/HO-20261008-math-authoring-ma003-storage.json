@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-math-authoring-ma003-storage",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T00:57:19.530Z",
+  "timestamp": "2026-10-08T10:36:23.338Z",
   "agent": {
     "id": "chatgpt-math-authoring-ma003",
     "kind": "ai-agent"
@@ -10,10 +10,10 @@
   "task_id": "MA-003",
   "component": "math-authoring",
   "state": "review",
-  "branch": "chatgpt/math-authoring-ma003-persistence",
-  "base_commit": "e20d737ec610c686428a90ba65e6bc9b0c230916",
+  "branch": "chatgpt/math-authoring-ma003-clean",
+  "base_commit": "320998d5a4219e029246ed3278781897786c0fad",
   "commit": null,
-  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/301",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/322",
   "files_changed": [
     "apps/math-authoring/src/MathAuthoring.Persistence/MathAuthoring.Persistence.csproj",
     "apps/math-authoring/src/MathAuthoring.Persistence/ProjectPackage.cs",
@@ -31,7 +31,8 @@
     "Leitura de ZIP não extrai nem executa entradas; rejeita traversal, extra entries, symlinks, hashes/UTF-8/metadata inválidos; stream de entrada serve para SAF Android.",
     "ProjectStorage implementa checkpoint temporário gravado e relido, File.Replace em filesystem local, backup, autosave e recuperação seletiva por revisão; nunca reescreve arquivo corrompido silenciosamente.",
     "Defesa contra rollback de revisão e mistura de projeto entre backups; testes com corrupção, pacote comprimido hostil e fault injection antes/depois da publicação.",
-    "README e ROADMAP local atualizados no mesmo branch."
+    "README e ROADMAP local atualizados no mesmo branch.",
+    "Revisão PR 2026-10-08: MA-002 PR #297 já integrado na main, PR #301 herdava arquivos/commits de MA-002; MA-003 foi isolado sobre o commit main 320998d5, com diff apenas de persistência, docs e testes, sem reintroduzir implementação duplicada."
   ],
   "verification": [
     {
@@ -54,17 +55,16 @@
     }
   ],
   "known_issues": [
-    "PR #297 MA-002 é ancestral de branch e ainda aguarda integração; reconciliar sem perder alterações independentes caso a main mude.",
+    "PR #297 (MA-002) já está integrado; novo PR limpo #322 substitui o PR #301 stacked, sem duplicar MA-002.",
     "No Android SAF não existe garantia de atomicidade de File.Replace: é necessário adapter próprio e DEVICE em etapa posterior.",
     "Recovery retorna a cópia íntegra e sua origem sem substituir o primário danificado; substituição exige escolha explícita na UI.",
     "Checksum SHA-256 detecta corrupção, não fornece autenticação de autoria; pacote não recebe código executável."
   ],
   "blockers": [],
   "next_actions": [
-    "Confirmar math-authoring-ci e consistency no head; corrigir qualquer regressão observada sem afrouxar os testes.",
-    "Aguardar PR #297 integrado e reconciliar branch MA-003 contra a main atual antes de integração final.",
-    "Integrador deve classificar como critical/user-data e solicitar autorização do proprietário se gate verde.",
-    "Não declarar full MA-003 done antes da validação pertinente de adapter e integração."
+    "Verificar CI math-authoring-ci e consistency do PR #322 no head limpo; corrigir qualquer falha sem remover proteções.",
+    "Depois de CI verde, tornar PR #322 pronto para revisão de user-data crítica, encerrar o PR antigo #301 sem integrá-lo.",
+    "Autorizar integração crítica via integrador e só marcar MA-003 [x] conforme critérios do Product/DEVICE aplicáveis."
   ],
   "decisions_required": [],
   "normative_sources": [
