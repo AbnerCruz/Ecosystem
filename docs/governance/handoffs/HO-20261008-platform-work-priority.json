@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-platform-work-priority",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T10:41:52.391Z",
+  "timestamp": "2026-10-08T11:02:51.006Z",
   "agent": {
     "id": "chatgpt-platform-priority",
     "kind": "ai-agent"
   },
   "task_id": "PLAT-001",
   "component": "ecosystem",
-  "state": "review",
+  "state": "done",
   "branch": "fix/platform-first-execution-20261008",
   "base_commit": "320998d5a4219e029246ed3278781897786c0fad",
   "commit": null,
@@ -26,26 +26,30 @@
     "Protocolo multiagente separa seleção de tarefas da integração e prevê frente de núcleo somente com agentes efetivamente disponíveis.",
     "Runbook de execução documenta trilha P4-9 PR #320, dependência real R3 P6-4 e auditoria independente para Fase 7, sem editar gates ou adiantar roadmap de Product.",
     "Issue PLAT-001 #323 registra escopo, critérios e dependências da correção.",
-    "Auditoria técnica preliminar da elegibilidade do Host real P6-4: Lunet possui LunetCapabilityHost/OpenForProject, Urbe C# possui WorkspaceSession de editor e Hub tem LocalCapabilityHost; distinguido bloqueio do marco Fase 8/UC-21 de lacuna de infraestrutura."
+    "Auditoria técnica preliminar da elegibilidade do Host real P6-4: Lunet possui LunetCapabilityHost/OpenForProject, Urbe C# possui WorkspaceSession de editor e Hub tem LocalCapabilityHost; distinguido bloqueio do marco Fase 8/UC-21 de lacuna de infraestrutura.",
+    "O PR #325 foi mergeado pelo proprietário diretamente no GitHub em 2026-10-08T10:58:21Z (commit d25bcebf35ec248f474a7332dc3756e60817a01d), com #320 como ancestral; a regra platform-first já está na main. Issue #323 encerrada após reconciliação."
   ],
   "verification": [
     {
       "check": "Revisão de conformidade documental com MANIFEST/ADR-0017/AGENTS",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Integração e checker do repositório ainda não executados; a verificação final cabe ao CI do PR combinado."
+      "result": "passed",
+      "evidence": "Workflow consistency do PR #325 37765185592 completed/success para head a8aa7a0ae357837025f2f14e3bfa7a0b751a3b41; workflow inclui CHK-AGENTS-NN, Check.cs e --self-test. Merge na main d25bcebf35ec248f474a7332dc3756e60817a01d; não há alegação de testes locais adicionais.",
+      "tested_commit": "a8aa7a0ae357837025f2f14e3bfa7a0b751a3b41"
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Será executado pelo pipeline de consistency e pelo integrador; nenhum resultado local é alegado."
+      "result": "passed",
+      "evidence": "Workflow consistency do PR #325 37765185592 completed/success para head a8aa7a0ae357837025f2f14e3bfa7a0b751a3b41; workflow inclui CHK-AGENTS-NN, Check.cs e --self-test. Merge na main d25bcebf35ec248f474a7332dc3756e60817a01d; não há alegação de testes locais adicionais.",
+      "tested_commit": "a8aa7a0ae357837025f2f14e3bfa7a0b751a3b41"
     },
     {
       "check": "dotnet run tests/consistency/Check.cs -- --self-test",
       "kind": "automated",
-      "result": "pending",
-      "evidence": "Aguarda workflow do PR; nenhuma execução local reivindicada."
+      "result": "passed",
+      "evidence": "Workflow consistency do PR #325 37765185592 completed/success para head a8aa7a0ae357837025f2f14e3bfa7a0b751a3b41; workflow inclui CHK-AGENTS-NN, Check.cs e --self-test. Merge na main d25bcebf35ec248f474a7332dc3756e60817a01d; não há alegação de testes locais adicionais.",
+      "tested_commit": "a8aa7a0ae357837025f2f14e3bfa7a0b751a3b41"
     },
     {
       "check": "DEVICE",
@@ -56,14 +60,14 @@
   ],
   "known_issues": [
     "P6-4 permanece waiting: o Host real exige marco de Product ou revisão arquitetural; este PR não altera D7 de ADR-0017.",
-    "Fase 4/P4-9 está sendo encerrada no PR #320 por outro fluxo; esta mudança não duplica seu estado.",
+    "Fase 4/P4-9 reconciliada após merge #320 e fechamento P4-9; não duplicada pela correção platform-first.",
     "A política orienta agentes convocados; não cria agendamento/execução de agentes em segundo plano."
   ],
   "blockers": [],
   "next_actions": [
-    "Integrador testar PR combinado; devido à mudança em AGENTS.md e docs/governance/multi-agent.md, aguardar autorização de integração crítica pelo proprietário.",
-    "A partir da matriz docs/architecture/p6-4-host-eligibility.md, validar adaptador headless de Lunet como proposta e submeter qualquer alteração de sequência D7/§11.1 à decisão/ADR canônica; não antecipar por inferência.",
-    "Registrar em Issue própria a auditoria de Tool da Fase 7, respeitando consumidores reais e Extraction Review."
+    "Aplicar a regra platform-first às novas solicitações genéricas de Ecosystem; dar preferência a tarefa global real e rastreável por Issue.",
+    "Qualificar integração R3 em Product real via Issue #144 ou abrir proposta de ADR para antecipar apenas piloto técnico; não alterar marco UC-21/Fase 8 por inferência.",
+    "Auditar a primeira Tool da Fase 7 com consumidores reais e Extração Review (NN-022) antes de abstrair."
   ],
   "decisions_required": [],
   "normative_sources": [
