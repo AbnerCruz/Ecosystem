@@ -205,4 +205,39 @@ public sealed class DocumentEditingTests
         Assert.Equal("Persistido", reopened.Snapshot.Metadata.Title);
         Assert.Equal(session.Source, reopened.Source);
     }
+    [Fact]
+    public void Reentrant_command_cannot_overwrite_a_nested_successful_commit()
+    {
+        var session = new ProjectSession(Example());
+        var outer = session.Apply(0, first =>
+        {
+            var inner = session.Apply(0, second =>
+                second with { Metadata = second.Metadata with { Title = "Inner" } });
+            Assert.True(inner.Applied);
+            return first with { Metadata = first.Metadata with { Title = "Outer" } };
+        });
+
+        Assert.False(outer.Accepted);
+        Assert.Contains(outer.Problems, p => p.Code == "transaction.stale");
+        Assert.Equal(1, session.Revision);
+        Assert.Equal("Inner", session.Snapshot.Metadata.Title);
+    }
+
+    [Fact]
+    public async Task Concurrent_editors_cannot_both_publish_the_same_revision()
+    {
+        var session = new ProjectSession(Example());
+        var first = Task.Run(() => session.Apply(0,
+            d => d with { Metadata = d.Metadata with { Title = "First" } }));
+        var second = Task.Run(() => session.Apply(0,
+            d => d with { Metadata = d.Metadata with { Title = "Second" } }));
+
+        var results = await Task.WhenAll(first, second);
+        Assert.Single(results.Where(r => r.Applied));
+        Assert.Single(results.Where(r => r.Problems.Any(p => p.Code == "transaction.stale")));
+        Assert.Equal(1, session.Revision);
+        Assert.True(session.CanUndo);
+        Assert.False(session.CanRedo);
+    }
+
 }
