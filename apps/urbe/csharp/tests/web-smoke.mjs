@@ -341,6 +341,11 @@ async function assertNoteTemplates(page) {
         content: document.documentElement.scrollWidth
     }));
     assert.ok(metrics.content <= metrics.width, 'Campos de modelo não devem provocar overflow');
+
+    // The in-memory preview deliberately cannot restore an editor session
+    // across a reload. Return Home before the existing PWA reload checks.
+    await nav.getByRole('link', { name: 'Início', exact: true }).click();
+    await page.getByRole('heading', { name: 'Urbe', exact: true }).waitFor();
 }
 
 let browser;
