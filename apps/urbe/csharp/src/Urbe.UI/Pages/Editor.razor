@@ -263,20 +263,6 @@
     [SupplyParameterFromQuery(Name = "path")]
     public string? Path { get; set; }
 
-    protected override void OnParametersSet()
-    {
-        if (string.IsNullOrWhiteSpace(Path))
-            return;
-
-        if (Workspace.CurrentDocument is null ||
-            !string.Equals(
-                Workspace.CurrentDocument.Path,
-                DocumentModel.NormalizePath(Path),
-                StringComparison.OrdinalIgnoreCase))
-        {
-            Workspace.Restore(Path);
-        }
-    }
 
     private void OnSourceInput(ChangeEventArgs args)
     {
