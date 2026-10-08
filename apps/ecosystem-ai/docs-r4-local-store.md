@@ -2,7 +2,7 @@
 
 Implementação: `src/EcosystemAi.ProjectStore/LocalProjectStore.cs`.
 É **código de Product**, não de `AgentRuntime.Core` nem um novo
-`IEventLog`/ledger. Nenhuma dependência do Lunet, Urbe ou Hub.
+`IEventLog`/ledger. Nenhuma dependência de outros Products.
 
 ## Funcionalidades reais
 
