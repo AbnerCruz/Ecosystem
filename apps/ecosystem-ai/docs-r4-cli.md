@@ -63,3 +63,31 @@ Interface mobile de verdade, histórico persistente de sessões/projetos, equipe
 tarefas e memória, artefatos navegáveis, configuração de provedores, preços e
 permissions de UX, secret store da plataforma, registro de validação de build e
 fluxos completos avaliados com usuário. Nenhum destes itens é declarado concluído.
+
+## Histórico local opcional (slice R4 de projetos/sessões)
+
+A CLI continua efêmera por padrão. Para salvar perguntas, respostas redigidas
+e recibos de runs em uma pasta controlada pelo usuário, acrescentar:
+
+```text
+--catalog /pasta/historico --project-name "Meu projeto" --session-title "Sessão 1"
+```
+
+A saída fornece `projectId` e `sessionId`. Para reutilizar uma sessão em outra
+execução, passar `--catalog`, `--project-id` e `--session-id`.
+O vínculo do projeto com o workspace original é verificado ao reabrir.
+O catálogo nunca contém o valor de `ECOAI_API_KEY` por gravação automática,
+mas mensagens selecionadas para persistência são texto claro; o redator
+do Runtime é aplicado ao conteúdo com segredos conhecidos.
+
+O histórico pode ser consultado sem endpoint/modelo configurado:
+
+```text
+--list --catalog /pasta/historico
+--show --catalog /pasta/historico --project-id ID --session-id ID
+```
+
+A persistência **não é memória automática do modelo** e ainda não reconstitui
+um run interrompido ou o ledger. Ela apenas permite consulta posterior da
+conversa e comprovantes mínimos. A escolha da pasta é opt-in.
+Detalhes: [docs-r4-local-store.md](docs-r4-local-store.md).

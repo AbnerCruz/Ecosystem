@@ -40,3 +40,5 @@ jobs:
           dotnet-version: '10.0.x'
       - name: 'Test (Agent Runtime: Core, Testing, Tools.Files)'
         run: dotnet test --project tests/AgentRuntime.Tests
+      - name: 'Test (Ecosystem AI Product local-first projects/sessions)'
+        run: dotnet test --project tests/EcosystemAi.ProjectStore.Tests

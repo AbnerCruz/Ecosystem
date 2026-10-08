@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using EcosystemAi.Cli;
+using EcosystemAi.ProjectStore;
 using AgentRuntime;
 using AgentRuntime.Providers.ChatCompletions;
 using AgentRuntime.Tools.Files;
@@ -23,8 +25,15 @@ Chave: ECOAI_API_KEY via ambiente (nunca argumento; sem gravação).
 A pasta precisa existir. Somente files.read por padrão.
 --allow-create permite APENAS arquivos novos (nunca sobrescrever).
 --accept-exists arquivo.txt ativa verificador no disco (para tarefas de escrita).
+--catalog /pasta/historico ativa persistência local opt-in em texto claro.
+--project-id ID e --session-id ID reabrem sessões previamente criadas.
+--project-name NOME e --session-title TITULO personalizam novos registros.
+Sem --catalog nenhum projeto ou mensagem é salvo no disco.
+--list --catalog /pasta/historico lista projetos/sessões, sem modelo nem rede.
+--show --catalog /pasta/historico --project-id ID --session-id ID mostra o histórico.
 Preços são fornecidos pelo operador; quando o provider nao devolve usage.cost,
-o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat persistente.
+o custo é ESTIMADO, não garantido. Sem background job ou memória automática;
+histórico local existe somente mediante --catalog explícito.
 """;
 
     public static async Task<int> RunAsync(string[] args)
@@ -36,9 +45,13 @@ o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat per
         }
         Dictionary<string, string> fields = new(StringComparer.Ordinal);
         bool allowCreate = false;
+        bool listHistory = false;
+        bool showHistory = false;
         for (var i = 0; i < args.Length; i++)
         {
             if (args[i] == "--allow-create") { allowCreate = true; continue; }
+            if (args[i] == "--list") { listHistory = true; continue; }
+            if (args[i] == "--show") { showHistory = true; continue; }
             if (!args[i].StartsWith("--", StringComparison.Ordinal) || i + 1 >= args.Length
                 || args[i + 1].StartsWith("--", StringComparison.Ordinal) || !fields.TryAdd(args[i], args[++i]))
             {
@@ -51,9 +64,22 @@ o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat per
             string Need(string name) => fields.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value)
                 ? value : throw new ArgumentException($"Falta {name}.");
             var allowed = new[] { "--project", "--goal", "--endpoint", "--model", "--budget-cents",
-                "--max-call-cents", "--input-usd-per-million", "--output-usd-per-million", "--accept-exists" };
+                "--max-call-cents", "--input-usd-per-million", "--output-usd-per-million", "--accept-exists",
+                "--catalog", "--project-id", "--session-id", "--project-name", "--session-title" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
+            if (listHistory || showHistory)
+            {
+                if (listHistory && showHistory || allowCreate || fields.Keys.Any(k => k is not (
+                    "--catalog" or "--project-id" or "--session-id")))
+                    throw new ArgumentException("Modo de consulta aceita apenas --catalog, --project-id e --session-id.");
+                var catalog = Need("--catalog");
+                var lines = listHistory ? CliHistoryCommands.List(catalog)
+                    : CliHistoryCommands.Show(catalog, Need("--project-id"), Need("--session-id"));
+                foreach (var line in lines) Console.WriteLine(line);
+                return 0;
+            }
+
             var root = Path.GetFullPath(Need("--project"));
             if (!Directory.Exists(root)) throw new ArgumentException("O diretório de projeto precisa existir.");
             var goal = Need("--goal");
@@ -65,6 +91,12 @@ o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat per
             var priceOut = decimal.Parse(Need("--output-usd-per-million"), CultureInfo.InvariantCulture);
             if (budgetCents < 1 || callCents < 1 || callCents > budgetCents)
                 throw new ArgumentException("Orçamento por operação e total devem ser positivos; por operação <= total.");
+
+            if (!fields.ContainsKey("--catalog")
+                && fields.Keys.Any(k => k is "--project-id" or "--session-id" or "--project-name" or "--session-title"))
+                throw new ArgumentException("Opções de histórico exigem --catalog.");
+            if (fields.ContainsKey("--session-id") && !fields.ContainsKey("--project-id"))
+                throw new ArgumentException("--session-id exige --project-id.");
 
             var secret = Environment.GetEnvironmentVariable("ECOAI_API_KEY");
             if (string.IsNullOrWhiteSpace(secret) && !endpoint.IsLoopback)
@@ -103,6 +135,11 @@ o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat per
             var redactor = new SecretRedactor();
             if (!string.IsNullOrWhiteSpace(secret) && secret.Length >= SecretRedactor.MinimumLength)
                 redactor.Register(secret);
+            var history = fields.TryGetValue("--catalog", out var catalogDirectory)
+                ? CliSessionPersistence.Open(catalogDirectory, root,
+                    fields.GetValueOrDefault("--project-id"), fields.GetValueOrDefault("--session-id"),
+                    fields.GetValueOrDefault("--project-name"), fields.GetValueOrDefault("--session-title"))
+                : null;
             var runner = new AgentRunner(providers, host, ledger, log, clock, verifier, redactor: redactor);
             var workspace = new WorkspaceSession("cli:" + contextId, runner, context, grant, grant, [scope]);
             var profile = new ModelProfile(provider.ProviderId, model,
@@ -117,6 +154,9 @@ o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat per
             Console.CancelKeyPress += handler;
             try
             {
+                history?.Begin(redactor.Redact(goal));
+                if (history is not null)
+                    Console.WriteLine($"Histórico local — projeto: {history.ProjectId} / sessão: {history.SessionId}");
                 var runId = "cli-run-" + Guid.NewGuid().ToString("N");
                 var result = await workspace.ExecuteAsync(runId, task, agent,
                     cancellationToken: cancel.Token);
@@ -133,11 +173,30 @@ o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat per
                 Console.WriteLine($"Verificação: {result.Verification?.Evidence ?? "ausente"}");
                 Console.WriteLine($"Custo: {(provider.LastCostEstimated ? "estimado " : "")}{spent} centavos USD; limite local {budgetCents}");
                 foreach (var artifact in result.Artifacts) Console.WriteLine($"Artefato: {artifact.Location}");
+                if (history is not null)
+                {
+                    var persistedStatus = result.State.Status switch
+                    {
+                        RunStatus.Succeeded => "succeeded",
+                        RunStatus.Failed => "failed",
+                        RunStatus.Cancelled => "cancelled",
+                        RunStatus.Blocked => "blocked",
+                        _ => throw new InvalidOperationException("Status ainda não persistível.")
+                    };
+                    history.Complete(new RunReceipt(runId, persistedStatus, spent, "USD",
+                        result.State.Verified,
+                        result.Verification is null ? null : redactor.Redact(result.Verification.Evidence),
+                        DateTimeOffset.UtcNow,
+                        CostEstimated: provider.LastCostEstimated),
+                        string.IsNullOrWhiteSpace(final) ? null : redactor.Redact(final));
+                }
                 return result.State.Status == RunStatus.Succeeded ? 0 : 1;
             }
             finally { Console.CancelKeyPress -= handler; }
         }
-        catch (Exception e) when (e is ArgumentException or FormatException or OverflowException or UriFormatException)
+        catch (Exception e) when (e is ArgumentException or FormatException or OverflowException
+            or UriFormatException or IOException or InvalidDataException or InvalidOperationException
+            or KeyNotFoundException)
         {
             Console.Error.WriteLine("Configuração inválida: " + e.Message);
             return 2;
