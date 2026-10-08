@@ -58,6 +58,13 @@
       "object": "apps/lunet2d/docs/guides/colisao.md",
       "critical": false,
       "evidence": "Roteiro de recurso intermediário; toque simulado e backend em memória não comprovam GL/Preview isolado no aparelho."
+    },
+    {
+      "check": "Integração e release development",
+      "kind": "automated",
+      "result": "passed",
+      "tested_commit": "9c8e799ce74da4da69f8f139bc0f9d37cf28dabd",
+      "evidence": "PR #291 merged; CI Lunet 37707253713 success; consistency 37707253709 success; release lunet2d-v0.0.1-dev.1000120 publicada em 2026-10-08T00:31:41Z no commit 9c8e799 com APK arm64/checksums/notas. Metadados de release conferidos; bytes do APK não reconferidos localmente."
     }
   ],
   "known_issues": [

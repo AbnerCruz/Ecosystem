@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-camera",
+  "category": "RESULT",
+  "timestamp": "2026-10-08T00:33:58.306518Z",
+  "agent": {
+    "id": "codex-lunet-camera",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-403",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-camera-20261008",
+  "base_commit": "c0c7be02b98f91ec3d72b939312aa3d61eb8bc7a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteBatch.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/Camera2D.cs",
+    "apps/lunet2d/tests/Lunet.Tests/CameraTests.cs",
+    "apps/lunet2d/docs/guides/camera.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261008-lunet-camera.json",
+    "docs/governance/handoffs/HO-20261008-lunet-collision.json"
+  ],
+  "work_completed": [
+    "Camera2D com posição/zoom/rotação, matriz mundo→vista, inversão analítica para toque e validação de estado.",
+    "Overload adicional SpriteBatch.Begin(Camera2D,...), preservando o Begin anterior de quatro parâmetros e o overload Material. Snapshot por lote aplicado aos vértices sem alterar backend, projeção, UVs, cor ou scissor.",
+    "14 casos adicionais: round trips, rotação, batching/flush por textura e capacidade, texto/DebugDraw, HUD, target/clip, argumentos inválidos, zero alocações e guia compilado/executado com toque físico 2×.",
+    "Guia offline camera.md interativo; API XML/JSON regenerada; Fase 4 explicitamente em andamento sem fechar gate.",
+    "PR #291 integrado em 9c8e799 e release lunet2d-v0.0.1-dev.1000120 publicada; evidência automatizada adicionada ao handoff anterior sem inferir aceite do aparelho."
+  ],
+  "verification": [
+    {
+      "check": "Build portátil .NET 10",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false: zero warnings/errors."
+    },
+    {
+      "check": "Lunet.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "xUnit .NET 10, modo padrão: 351 testes, zero falhas/erros/skips. Inclui 14 casos de câmera e guia executado pelo compilador/loader/host do produto."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks passaram após fast-forward de main 9c8e799. Snapshot remoto de Issues será conferido pelo CI/integrador."
+    },
+    {
+      "check": "Câmera no Preview Android",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/camera.md",
+      "evidence": "Roteiro intermediário para câmera/HUD/toque/zoom/rotação em Preview rápido/isolado; teste em memória não prova GL no aparelho."
+    }
+  ],
+  "known_issues": [
+    "Camera2D não implementa culling, shake, limites de mundo ou arredondamento automático de pixels; comportamento geométrico/float está documentado.",
+    "O usuário deve terminar o lote antes de mudar alvo ou tamanho da vista."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI, integração automática e release própria do Lunet.",
+    "Validar o roteiro intermediário camera.md no aparelho; fase permanece aberta.",
+    "Continuar itens independentes da Fase 4; física completa exige escolha de backend por ADR."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudança apenas no Framework local e documentos/testes, sem Product externo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #293 / LUNET-403, branch própria, base_commit e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Roteiro Android pendente e ROADMAP [~]; sem aceite inferido do continue."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Testes e release anteriores distinguem-se de integração, release e validação de câmera."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem componente extraído ou dependência nova; câmera pertence ao Framework do produto."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "game-camera-2d",
+      "status": "product-specific",
+      "rationale": "Câmera de jogos para o Framework Lunet. Não há consumidor externo que sustente extração."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Recurso previsto no SPEC §7/Fase 4, com overload adicional e sem quebra das assinaturas existentes, dados, segurança ou distribuição."
+  },
+  "cost": null
+}

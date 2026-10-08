@@ -118,3 +118,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Geometry ganhou distância/closest point/interseção AABB; SAT corrige contenção e rejeita formas sem área. APIs anteriores e convenções de borda preservadas.
 - 11 casos de teste, incluindo compilação/execução do guia offline no runtime real; documentação XML/API regenerada. Build portátil sem warnings/errors; suíte padrão 337/337 e 22 checks. A falha concorrente de alocação foi reproduzida na base e corrigida isolando as medições por coleção, sem relaxar zero bytes.
 - Roteiro Android intermediário em `docs/guides/colisao.md`; sem validação humana inventada e sem fechar a Fase 4. Evidência final/PR: `HO-20261008-lunet-collision`.
+
+
+### 20261008-codex-camera — Codex → próximos agentes — review
+- Item LUNET-403, Issue #293; branch `agent/lunet-camera-20261008`, base `c0c7be02`; main `9c8e799` juntada por fast-forward antes da entrega.
+- Camera2D opcional e overload de SpriteBatch: mundo, zoom, rotação, conversão de toque e HUD fixo; nenhum backend alterado e APIs anteriores preservadas.
+- Build portátil sem warnings/errors; suíte padrão 351/351, incluindo 14 casos novos. Guia offline compilado/executado com toque físico 2×. Evidência final/PR no handoff `HO-20261008-lunet-camera`.
+- PR #291 integrado e APK 1000120 publicado; handoff anterior recebe evidência automatizada sem inventar teste do aparelho. Fase 4 permanece aberta; câmera aguarda roteiro Android intermediário.
