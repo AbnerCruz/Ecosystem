@@ -23,6 +23,8 @@
 
 - `Lunet.UI.LayoutRect`: âncoras, pivôs, margens Fixed/Stretch e composição de retângulos aninhados, sem alocação por cálculo; guia offline de UI com redimensionamento e toque alinhado (LUNET-409).
 
+- `UiTheme`: paletas locais imutáveis Dark/Light/HighContrast aplicáveis a botões, sliders, fundo, painel e texto, sem estado global; teste de desenho e ausência de alocação por quadro (LUNET-417, em revisão).
+
 - `TouchSlider` e `TouchSliderStyle`: arraste contínuo ou em passos, captura por dedo, cancelamento e estado desabilitado; demonstração executável na página 4 do Laboratório, sem copiar código (LUNET-411).
 
 - `SpriteFont.FromBitmap` e `BitmapGlyph`: fontes bitmap personalizadas sobre textura/atlas, métricas proporcionais, deslocamento, Unicode/fallback e layout sem alocação no loop; guia offline de placar (LUNET-408).
