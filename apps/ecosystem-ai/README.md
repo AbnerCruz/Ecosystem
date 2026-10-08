@@ -45,5 +45,4 @@ Autoridade do escopo: P6-3 no ROADMAP; contrato candidato: ADR-0020.
 ## Sessão do Agent Workspace
 
 A prova local de hospedagem em dois contextos está em [docs-r3.md](docs-r3.md).
-O Workspace consome o Core; ainda não existe UI nem integração com Host real.
-Escopo: P6-4 / Issue #144; detalhes candidatos no ADR-0021.
+O Workspace consome o Core. A prova técnica P6-4 foi concluída com o **Host real Lunet Core** por composição headless em `tests/integration/p6-lunet-host` (PR #344, ADR-0031, DEC-0041), sem UX de agentes no APK ou dependência entre Products. A interface do Ecosystem AI é escopo P6-5; o Agentic Workspace visual do Lunet continua na Fase 8.
