@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-p4-9-184-candidate",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T10:39:44.680Z",
+  "timestamp": "2026-10-08T11:02:51.006Z",
   "agent": {
     "id": "chatgpt-ecosystem-p4-9",
     "kind": "ai-agent"
   },
   "task_id": "P4-9",
   "component": "urbe",
-  "state": "review",
+  "state": "done",
   "branch": "docs/p4-9-urbe-184-validation",
   "base_commit": "0dc9471293d1d17657c54b91c812e7be58f1b717",
   "commit": null,
@@ -25,7 +25,8 @@
     "Registro de validação VR-urbe-1.8.4-beta-android criado com artefato exato, hash, versão, critérios de teste de importação Android SAF Arquivos/Pasta, reimportação, recuperabilidade e offline, e status HUMAN_VALIDATION_PENDING.",
     "ROADMAP geral (intro, item P4-9 e gate Fase 4) aponta para a versão corrente e o objeto DEVICE correto, preservando [~] e gate aguardando.",
     "Não houve instalação, desinstalação, teste em dispositivo, publicação nova nem alteração de scripts/apps; mudança apenas da projeção documental do candidato existente.",
-    "FATO OBSERVADO em 2026-10-08: o proprietário aprovou pelo Portal (#318) a validação P4-9/DEVICE do APK 1.8.4-beta; registro de build passa a VALIDATED, mas P4-9/Phase 4 permanecem em review até os mecanismos de enforcement fase4 NN-003/NN-023 serem reconciliados e integrados."
+    "FATO OBSERVADO em 2026-10-08: o proprietário aprovou pelo Portal (#318) a validação P4-9/DEVICE do APK 1.8.4-beta; registro de build passa a VALIDATED, mas P4-9/Phase 4 permanecem em review até os mecanismos de enforcement fase4 NN-003/NN-023 serem reconciliados e integrados.",
+    "Reconciliação pós-merge: PR #320 foi integrado na main em 2026-10-08T10:58:02Z (commit 26ee28a133af469e7096205fe7a80d659b9aed88); P4-9 [x], gate Fase 4 aprovado após reconciliar controles NN-003/NN-023 e Issue #166 encerrada, preservando DEVICE exclusivo da build 1.8.4-beta."
   ],
   "verification": [
     {
@@ -47,18 +48,24 @@
       "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-08 (Issue https://github.com/AbnerCruz/Ecosystem/issues/318); registro em docs/governance/responses/VAL-HO-20261008-p4-9-184-candidate-432aa50b2adc.md.",
       "object": "docs/validation/urbe/1.8.4-beta-android.json",
       "critical": true
+    },
+    {
+      "check": "PR #320 / consistency e self-test antes do merge",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Workflow consistency 37764973707 concluído com success para head 2b54bd30a0a7c024fc909b0338f3f86e0e97ce44; merge SHA 26ee28a133af469e7096205fe7a80d659b9aed88. Não reivindica teste separado no commit combinado.",
+      "tested_commit": "2b54bd30a0a7c024fc909b0338f3f86e0e97ce44"
     }
   ],
   "known_issues": [
     "A validação DEVICE do Urbe 1.8.4-beta foi aprovada explicitamente pelo proprietário na Issue #318 e está registrada no mesmo objeto do build; não foi obtida por CI.",
     "Protocolo exige backup externo antes de migração e só permite simular corrupção/interrupção em vault de teste.",
-    "O gate da Fase 4 e a Issue #166 permanecem em review até a reconciliação crítica da matriz de enforcement, sem alterar aprovação DEVICE já registrada."
+    "Histórico encerrado: a espera pela matriz NN-003/NN-023 terminou após merge do PR #320; gate da Fase 4 e Issue #166 reconciliados. Não reaproveitar DEVICE em builds futuras."
   ],
   "blockers": [],
   "next_actions": [
-    "Validação DEVICE 1.8.4-beta aprovada oficialmente (#318), sem necessidade de repetir o teste no mesmo APK.",
-    "Aguardar consistência e autorização crítica do PR #320 de NN-003/NN-023 antes de fechar gate da Fase 4 e Issue #166 no ROADMAP.",
-    "Após atualização integrada da matriz, efetuar fechamento routine do gate/Issue e prosseguir o roadmap sem projetar a aprovação a builds futuras."
+    "Revalidar no dispositivo cada nova build distribuída; a aprovação humana #318 abrange exclusivamente o APK Urbe 1.8.4-beta.",
+    "Prosseguir roadmap global; o próximo item P6-4 permanece waiting por integração real com Product no marco autorizado (Issue #144)."
   ],
   "decisions_required": [],
   "normative_sources": [
