@@ -1,0 +1,185 @@
+@implements IDisposable
+
+<section class="editor-time-tools" role="group" aria-label="Ferramentas de tempo">
+    <div class="editor-time-head">
+        <strong>Tempo</strong>
+        <div class="editor-time-modes" role="group" aria-label="Modo do relógio">
+            <button type="button" aria-pressed="@(_mode == TimeMode.Clock)" @onclick="() => SetMode(TimeMode.Clock)">Relógio</button>
+            <button type="button" aria-pressed="@(_mode == TimeMode.Stopwatch)" @onclick="() => SetMode(TimeMode.Stopwatch)">Cronômetro</button>
+            <button type="button" aria-pressed="@(_mode == TimeMode.Countdown)" @onclick="() => SetMode(TimeMode.Countdown)">Timer</button>
+        </div>
+    </div>
+
+    @if (_mode == TimeMode.Clock)
+    {
+        <output class="editor-time-display" aria-label="Hora local">@_clock.ToString("HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture)</output>
+    }
+    else if (_mode == TimeMode.Stopwatch)
+    {
+        <div class="editor-time-body">
+            <output class="editor-time-display" aria-label="Tempo do cronômetro">@FormatElapsed(StopwatchElapsed)</output>
+            <div class="editor-time-actions">
+                <button type="button" @onclick="ToggleStopwatch">@(_stopwatchStart is null ? "Iniciar cronômetro" : "Pausar cronômetro")</button>
+                <button type="button" @onclick="ResetStopwatch" disabled="@(StopwatchElapsed == TimeSpan.Zero)">Zerar cronômetro</button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="editor-time-body">
+            <label class="editor-time-duration">
+                <span>Tempo (minutos)</span>
+                <input type="number" min="1" max="240" step="1" value="@_minutes"
+                       @onchange="ChangeMinutes" disabled="@(_countdownStart is not null)" />
+            </label>
+            <output class="editor-time-display" aria-label="Tempo restante">@FormatElapsed(CountdownRemaining)</output>
+            <div class="editor-time-actions">
+                <button type="button" @onclick="ToggleCountdown" disabled="@(_timerFinished && _countdownStart is null)">@(_countdownStart is null ? "Iniciar timer" : "Pausar timer")</button>
+                <button type="button" @onclick="ResetCountdown">Reiniciar timer</button>
+            </div>
+            @if (_timerFinished)
+            {
+                <span class="editor-time-finished" role="status">Tempo encerrado</span>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private enum TimeMode { Clock, Stopwatch, Countdown }
+
+    private TimeMode _mode = TimeMode.Clock;
+    private DateTimeOffset _clock = DateTimeOffset.Now;
+    private PeriodicTimer? _ticker;
+    private CancellationTokenSource? _tickerCancellation;
+
+    // Stopwatch.GetTimestamp is monotonic, unlike the host's wall clock.
+    private TimeSpan _stopwatchAccumulated = TimeSpan.Zero;
+    private long? _stopwatchStart;
+
+    private int _minutes = 5;
+    private TimeSpan _countdownStored = TimeSpan.FromMinutes(5);
+    private long? _countdownStart;
+    private bool _timerFinished;
+
+    private TimeSpan StopwatchElapsed =>
+        _stopwatchAccumulated +
+        (_stopwatchStart is long stamp
+            ? System.Diagnostics.Stopwatch.GetElapsedTime(stamp)
+            : TimeSpan.Zero);
+
+    private TimeSpan CountdownRemaining
+    {
+        get
+        {
+            var elapsed = _countdownStart is long stamp
+                ? System.Diagnostics.Stopwatch.GetElapsedTime(stamp)
+                : TimeSpan.Zero;
+            var remaining = _countdownStored - elapsed;
+            return remaining > TimeSpan.Zero ? remaining : TimeSpan.Zero;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        _tickerCancellation = new CancellationTokenSource();
+        _ticker = new PeriodicTimer(TimeSpan.FromMilliseconds(500));
+        _ = RunTickerAsync(_ticker, _tickerCancellation.Token);
+    }
+
+    private async Task RunTickerAsync(PeriodicTimer ticker, CancellationToken cancellation)
+    {
+        try
+        {
+            while (await ticker.WaitForNextTickAsync(cancellation))
+            {
+                await InvokeAsync(() =>
+                {
+                    _clock = DateTimeOffset.Now;
+                    if (_countdownStart is not null &&
+                        CountdownRemaining == TimeSpan.Zero)
+                    {
+                        _countdownStart = null;
+                        _countdownStored = TimeSpan.Zero;
+                        _timerFinished = true;
+                    }
+
+                    StateHasChanged();
+                });
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected on editor navigation/disposal.
+        }
+        catch (ObjectDisposedException)
+        {
+            // The timer may be disposed between a tick and cancellation.
+        }
+    }
+
+    private void SetMode(TimeMode mode) => _mode = mode;
+
+    private void ToggleStopwatch()
+    {
+        if (_stopwatchStart is long stamp)
+        {
+            _stopwatchAccumulated += System.Diagnostics.Stopwatch.GetElapsedTime(stamp);
+            _stopwatchStart = null;
+        }
+        else
+        {
+            _stopwatchStart = System.Diagnostics.Stopwatch.GetTimestamp();
+        }
+    }
+
+    private void ResetStopwatch()
+    {
+        _stopwatchAccumulated = TimeSpan.Zero;
+        _stopwatchStart = null;
+    }
+
+    private void ChangeMinutes(ChangeEventArgs args)
+    {
+        if (_countdownStart is not null)
+            return;
+        if (!int.TryParse(args.Value?.ToString(), out var minutes))
+            minutes = 5;
+        _minutes = Math.Clamp(minutes, 1, 240);
+        ResetCountdown();
+    }
+
+    private void ToggleCountdown()
+    {
+        if (_countdownStart is long stamp)
+        {
+            _countdownStored = CountdownRemaining;
+            _countdownStart = null;
+        }
+        else if (!_timerFinished && _countdownStored > TimeSpan.Zero)
+        {
+            _countdownStart = System.Diagnostics.Stopwatch.GetTimestamp();
+        }
+    }
+
+    private void ResetCountdown()
+    {
+        _countdownStart = null;
+        _timerFinished = false;
+        _countdownStored = TimeSpan.FromMinutes(_minutes);
+    }
+
+    private static string FormatElapsed(TimeSpan value) =>
+        value.TotalHours >= 1
+            ? $"{(int)value.TotalHours:00}:{value.Minutes:00}:{value.Seconds:00}"
+            : $"{(int)value.TotalMinutes:00}:{value.Seconds:00}";
+
+    public void Dispose()
+    {
+        _tickerCancellation?.Cancel();
+        _ticker?.Dispose();
+        _tickerCancellation?.Dispose();
+        _ticker = null;
+        _tickerCancellation = null;
+    }
+}
