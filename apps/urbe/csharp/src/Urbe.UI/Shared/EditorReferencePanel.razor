@@ -1,6 +1,6 @@
 @inject WorkspaceSession Workspace
 
-@if (Workspace.References.Entries.Count > 0)
+@if (Entries.Count > 0)
 {
     <aside class="editor-reference-panel" aria-label="Painel de referência">
         <header class="reference-panel-header">
@@ -9,7 +9,7 @@
         </header>
         <p class="reference-panel-note">Cópias de consulta nesta sessão.</p>
         <div class="reference-panel-scroll" tabindex="0" aria-label="Referências fixadas">
-            @foreach (var entry in Workspace.References.Entries)
+            @foreach (var entry in Entries)
             {
                 <section class="reference-entry" @key="entry.Id">
                     <header>
@@ -28,6 +28,7 @@
 }
 
 @code {
+    [Parameter] public IReadOnlyList<EditorReference> Entries { get; set; } = [];
     [Parameter] public EventCallback Changed { get; set; }
 
     private async Task Remove(string id)

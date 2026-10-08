@@ -14,7 +14,7 @@
   "branch": "feat/urbe-uc18-reference-panel",
   "base_commit": "62baa859c210b15a1a54c47ea20260d79391abc5",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/341",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/EditorReferenceSession.cs",
     "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
@@ -36,9 +36,33 @@
   "verification": [
     {
       "kind": "automated",
-      "check": "Core, build portátil, Web smoke e consistency",
+      "check": "Urbe.Core.Tests",
+      "result": "passed",
+      "evidence": "Execução direta do runner xUnit compilado: 281/281, zero falhas; inclui EditorReferenceSessionTests. dotnet test wrapper não abre named pipe neste ambiente."
+    },
+    {
+      "kind": "automated",
+      "check": "npm run check",
+      "result": "passed",
+      "evidence": "66/66 arquivos de teste e todas as checagens passaram; log local /tmp/urbe-check.log."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs -p:UseSharedCompilation=false: 22/22 checks; instantâneo GitHub de Issues verificado no CI."
+    },
+    {
+      "kind": "automated",
+      "check": "Web smoke Chromium publicado",
+      "result": "passed",
+      "evidence": "node tests/web-smoke.mjs artifacts/web/wwwroot passou em / e /preview/, online/offline, incluindo fixação, deduplicação, edição+undo, viewport 390x844, troca de nota, remoção e fechamento. Workaround local só de infraestrutura: targets NuGet externos executaram tasks in-process em vez de TaskHostFactory (named pipes restritos); originais restaurados depois. CI canônico continua obrigatório."
+    },
+    {
+      "kind": "automated",
+      "check": "CI canônico Web/Android/Windows/E2E e estado combinado",
       "result": "pending",
-      "evidence": "Verificações locais em andamento; CI do PR deve testar Web/Android/Windows/E2E/checks e estado combinado."
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/pull/341; acompanhar head corrigido, sem reutilizar CI da cabeça anterior."
     },
     {
       "kind": "human",
