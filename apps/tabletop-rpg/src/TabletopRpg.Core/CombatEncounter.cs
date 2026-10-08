@@ -88,7 +88,8 @@ public sealed class CombatEncounter
             _finished = true;
             _campaign.RecordEvent("combat-finished", null, null, "last-combatant-standing");
         }
-        return new ActionResolution(true, strike.Hit, strike.Hit ? "hit" : "miss");
+        return new ActionResolution(true, strike.Hit, strike.Hit ? "hit" : "miss",
+            Combat: new CombatStrike(strike.Hit, strike.Roll, damage));
     }
 
     public ActionResolution EndTurn(EndCombatTurnIntent intent)
