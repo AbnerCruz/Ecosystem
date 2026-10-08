@@ -30,6 +30,24 @@ Quando uma tarefa tocar **arquitetura, governança, migração, protocolo ou con
 
 ---
 
+## 1.1 Escopo de solicitação e prioridade de plataforma (PLAT-001)
+
+**O escopo explícito da tarefa vence a prioridade genérica.** "Continue o Urbe", "continue o Lunet" e uma Issue de Product identificada significam trabalhar no respectivo Product e seu roadmap, seguindo as decisões vigentes. **"Continue o Ecosystem" sem Product nomeado significa trabalhar no núcleo da plataforma**, não escolher livremente uma feature de qualquer aplicativo apenas por ela viver no monorepo.
+
+Antes de reivindicar nova tarefa de pedido global, o agente deve:
+
+1. consultar as autoridades de estado atuais (ROADMAP.md para fases/gates; Issues e PRs para trabalho em curso; handoffs para evidências; ecosystem.json para componentes);
+2. selecionar **um item global acionável**, priorizando fechar bloqueios reais de gates, implementar o próximo slice do núcleo e provar capacidades reutilizáveis; registrar Issue, branch, escopo e próxima ação;
+3. se o próximo item global estiver waiting/blocked, identificar **o bloqueador específico**. Só atuar num Product quando a mudança for um pré-requisito rastreável do item global, com autorização de seu roadmap e do ADR correspondente; caso contrário escolher outra tarefa de plataforma acionável;
+4. não inventar conclusão, acesso permanente a agentes, background scheduler ou aprovação: trabalho simultâneo existe apenas quando agentes foram efetivamente acionados e seus PRs/Issues o demonstram;
+5. verificar em todo trabalho de Product a oportunidade de reuso por reuse_assessment (ADR-0011/NN-022): possível candidato **não** autoriza extração ou segundo contrato.
+
+**Se houver múltiplos agentes efetivamente ativos**, planejar pelo menos uma frente de núcleo quando existir trabalho global acionável e não retirar unilateralmente a tarefa de um agente de Product já designado. A alocação é uma regra de delegação, não promessa de execução autônoma nem quota de PRs. A rastreabilidade e a integração seguem docs/governance/multi-agent.md §7 e docs/architecture/platform-execution.md.
+
+Mudanças de prioridade **não** derrubam gates, antecipam UC-21/Fase 8, abrem permissões ou promovem abstrações sem segundo consumidor. Qualquer exceção que mude direção aprovada exige ADR/decisão (NN-011); o agente continua pelo trabalho seguro que não dependa dessa exceção.
+
+---
+
 ## 2. NON-NEGOTIABLES (reprodução operacional de MANIFEST §0.1)
 
 Estas invariantes são **obrigatórias**. Nenhuma pode ser removida, suavizada, ter seu escopo alterado ou ser tratada como recomendação. A matriz legível por máquina que associa cada invariante aos mecanismos de fiscalização é [`docs/governance/enforcement-matrix.json`](docs/governance/enforcement-matrix.json). A impossibilidade de automatizar uma regra **não** autoriza sua remoção.
