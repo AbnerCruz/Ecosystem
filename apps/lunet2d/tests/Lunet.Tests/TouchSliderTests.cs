@@ -193,7 +193,7 @@ public class TouchSliderTests
             Tap(100, 23); Assert.Equal(4, Field("page")); Assert.False(radius.IsCaptured);
             Tap(100, 23); Assert.Equal(5, Field("page"));
             Tap(100, 23); Assert.Equal(6, Field("page"));
-            Tap(100, 23); Assert.Equal(0, Field("page"));
+            for (int next = 7; next < 12; next++) { Tap(100, 23); Assert.Equal(next, Field("page")); } Tap(100, 23); Assert.Equal(0, Field("page"));
             Assert.False(host.IsFaulted, host.Fault?.ToString()); host.Stop(); Assert.Empty(backend.LiveTargets); Assert.Empty(backend.LiveShaders);
             Assert.Equal(oldCode, File.ReadAllBytes(Path.Combine(old.Directory, "Game.cs"))); Assert.Equal(oldManifest, File.ReadAllBytes(Path.Combine(old.Directory, "lunet.json")));
         }
