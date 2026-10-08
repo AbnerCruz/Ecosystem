@@ -135,6 +135,83 @@ public class HubScreenTests
         Assert.DoesNotContain("Nenhum APK", line.Detail);
     }
 
+    static HubSnapshot CatalogSnapshot(int count = 4)
+    {
+        var data = Datum<IReadOnlyList<ReleaseInfo>>.From(Enumerable.Range(1, count)
+            .Select(i => new ReleaseInfo($"v{i}", null, false, null, "release", 1,
+                [new("alpha.apk", "https://example.invalid/alpha.apk", 123, null)])).ToList(), "api");
+        return Snap([Product("alpha")], releases: new Dictionary<string, Datum<IReadOnlyList<ReleaseInfo>>> { ["alpha"] = data }) with
+        { ReleaseChannels = new Dictionary<string, Datum<ReleaseChannel>>
+          { ["alpha"] = Datum<ReleaseChannel>.From(new(new("acme", "alpha"), "https://github.com/acme/alpha/releases", null), "profile") } };
+    }
+
+    [Fact]
+    public void PartialRefreshMarksCachedCatalogWithoutMarkingFreshProductsAsOld()
+    {
+        var saved = CatalogSnapshot();
+        var fresh = saved with { ProductReleases = new Dictionary<string, Datum<IReadOnlyList<ReleaseInfo>>>
+            { ["alpha"] = Datum<IReadOnlyList<ReleaseInfo>>.Missing("api", "HTTP 403") } };
+        var choice = SnapshotPolicy.Choose(fresh, SnapshotCache.Serialize(saved));
+        var screen = HubScreenBuilder.Build(choice.Show);
+        Assert.Null(screen.Banner);
+        var product = Section(screen, "Products").Lines.Single();
+        Assert.DoesNotContain("último estado", product.Text);
+        Assert.Contains("último estado conhecido", product.Detail);
+        var catalog = Section(screen, "Releases e artefatos").Lines;
+        Assert.All(catalog, l => Assert.Contains("último estado conhecido", l.Text));
+        Assert.Contains("HTTP 403", catalog[0].Detail);
+        Assert.Contains("alpha.apk", catalog[0].Detail);
+        Assert.All(ArtifactCatalog.Choices(choice.Show), c => Assert.True(c.Stale));
+        Assert.All(Section(HubScreenBuilder.Build(SnapshotCache.Load(choice.ToCache)), "Releases e artefatos").Lines,
+            l => Assert.Contains("último estado conhecido", l.Text));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(4)]
+    public void CachedChannelsAndOfflineSnapshotsMarkEvenEmptyCatalogs(int count)
+    {
+        var saved = CatalogSnapshot(count);
+        var oldChannel = saved with { ReleaseChannels = new Dictionary<string, Datum<ReleaseChannel>>
+            { ["alpha"] = saved.ReleaseChannels!["alpha"].AsStale() } };
+        foreach (var snapshot in new[] { oldChannel, saved with { Stale = true } })
+        {
+            var screen = HubScreenBuilder.Build(snapshot);
+            Assert.Contains("último estado conhecido", Section(screen, "Products").Lines.Single().Detail);
+            Assert.All(Section(screen, "Releases e artefatos").Lines,
+                l => Assert.Contains("último estado conhecido", l.Text));
+        }
+    }
+
+    [Fact]
+    public void FreshEmptyCatalogRemainsFreshAndNeverReusesCachedReleases()
+    {
+        var choice = SnapshotPolicy.Choose(CatalogSnapshot(0), SnapshotCache.Serialize(CatalogSnapshot()));
+        var screen = HubScreenBuilder.Build(choice.Show);
+        var line = Section(screen, "Releases e artefatos").Lines.Single();
+        Assert.Contains("nenhuma release", line.Text);
+        Assert.DoesNotContain("último estado", line.Text);
+        Assert.Empty(ArtifactCatalog.Choices(choice.Show));
+    }
+
+    [Fact]
+    public void UnavailableValuesNeverAppearAsUsableReleaseOrChannelMetadata()
+    {
+        var saved = CatalogSnapshot();
+        var noReleases = saved with { ProductReleases = new Dictionary<string, Datum<IReadOnlyList<ReleaseInfo>>>
+            { ["alpha"] = saved.ProductReleases["alpha"] with { Availability = Availability.NotAvailable } } };
+        var noChannel = saved with { ReleaseChannels = new Dictionary<string, Datum<ReleaseChannel>>
+            { ["alpha"] = saved.ReleaseChannels!["alpha"] with { Availability = Availability.NotAvailable } } };
+        foreach (var snapshot in new[] { noReleases, noChannel })
+        {
+            var catalog = Section(HubScreenBuilder.Build(snapshot), "Releases e artefatos").Lines.Single();
+            Assert.Contains("indispon", catalog.Text);
+            Assert.DoesNotContain("alpha.apk", catalog.Detail ?? "");
+            Assert.Empty(ArtifactCatalog.Choices(snapshot));
+        }
+        Assert.Contains("releases indisponíveis", Section(HubScreenBuilder.Build(noReleases), "Products").Lines.Single().Detail);
+    }
+
     [Fact]
     public void TimelineBlocksShowIdTitleAndDetail()
     {
