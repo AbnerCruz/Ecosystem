@@ -1,4 +1,6 @@
-# Roadmap proposto — autoria matemática temporal
+# Histórico de roadmap proposto — autoria matemática temporal
+
+> **Supersedido como autoridade por `apps/math-authoring/ROADMAP.md` após a aplicação da DEC-0040.** Este arquivo preserva o plano pré-constituição.
 
 > Autoridade de escopo/IDs desta proposta; estado vivo em Issues; evidências em
 > handoffs. Não é fase nova do roadmap global nem Product constituído.

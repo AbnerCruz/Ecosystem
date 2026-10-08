@@ -8,6 +8,8 @@ Os metadados do APK vêm da API: nome, URL HTTPS, tamanho não negativo e SHA-25
 
 Offline continua mostrando o último snapshot marcado como antigo; releases e canais também recebem `Stale`. Cache da Fase 3, sem os novos campos, continua carregando e não fabrica metadados. Sem perfil disponível, o Hub explica a falha em vez de escolher o repositório de origem por conta própria.
 
+Quando apenas a consulta de releases falha, o Hub preserva o histórico do mesmo canal como cache. O resumo da última release e cada linha do catálogo exibem **último estado conhecido**, mesmo sem banner global, pois os demais dados podem ter sido atualizados. Isso também vale para histórico vazio antigo e canal antigo. A falha atual permanece nos detalhes. Um catálogo vazio consultado com sucesso continua vazio; dados `NotAvailable` não exibem artefatos, mesmo que ainda contenham um valor.
+
 ## Conferência visual em aparelho
 
 Depois de publicada a build contendo P4-1, instale o APK de desenvolvimento do [canal do Hub](https://github.com/AbnerCruz/Ecosystem/releases), abra com internet e toque **Atualizar**. Confira **Releases e artefatos**, legibilidade de nomes/tamanhos/URLs/checksums e rolagem em tela estreita. Um Product sem canal ou APK deve explicar isso. Depois de uma carga boa, reabra offline: o aviso de último estado conhecido deve permanecer.

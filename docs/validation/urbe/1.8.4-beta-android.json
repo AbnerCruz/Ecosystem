@@ -1,0 +1,61 @@
+{
+  "$schema": "../../contracts/schemas/validation-record.schema.json",
+  "schemaVersion": 1,
+  "record_id": "VR-urbe-1.8.4-beta-android",
+  "component": "urbe",
+  "build": "1.8.4-beta-android",
+  "recorded_at": "2026-10-08",
+  "state": "VALIDATED",
+  "objective": "Validar no aparelho o APK direto do Urbe 1.8.4-beta, corrigindo o incidente de importação do vault e encerrando P4-9 somente com evidência correspondente à build exata.",
+  "preconditions": [
+    "Preservar export/backup recuperável fora do armazenamento do aplicativo antes de qualquer desinstalação ou importação destrutiva.",
+    "Instalar o Urbe-1.8.4-beta.apk publicado no Ecosystem; conferir versão e checksum, não reutilizar a aprovação da 1.8.3-beta.",
+    "Executar testes destrutivos de arquivo ZIP inválido, crash e versão futura somente com uma cópia de teste, nunca no único vault existente.",
+    "Não repetir desinstalação destrutiva caso o aparelho já tenha sido migrado."
+  ],
+  "steps": [
+    "Abrir o Urbe standalone sem Hub e tocar Importar → Arquivos; selecionar dois .md com caracteres acentuados e imagem referenciada. Confirmar que texto, links e imagem foram importados.",
+    "Repetir a seleção de arquivos; conferir que não existem duplicações silenciosas.",
+    "Importar → Pasta inteira, usar Android SAF → Usar esta pasta; conferir notas, pastas, links, imagens e incorporação correta.",
+    "Importar uma pasta/vault com .urbe/ e confirmar restauração de identidade/estrutura sem apagar estado anterior inadvertidamente.",
+    "Editar uma nota importada, fechar completamente, abrir e conferir persistência.",
+    "Em modo avião, conferir leitura e edição offline, sem Hub.",
+    "Importar um ZIP de Exportar tudo, verificar reabertura e round-trip sem perda.",
+    "Cancelar seletores/confirmar e verificar que o estado se mantém; rejeitar ZIP inválido e vault de versão futura sem alteração; simular interrupção em cópia de teste, reabrir e conferir recuperação consistente.",
+    "Testar o PWA https://abnercruz.github.io/Ecosystem/urbe/ sem tomar seu funcionamento como evidência do Android nativo.",
+    "Aprovar/reprovar somente o candidato 1.8.4-beta pelo Portal, informando etapa exata e texto de erro se houver falha."
+  ],
+  "expected": "Seleção única Importar cobre múltiplos arquivos ou pasta inteira; importação é segura/idempotente, restaura estruturas e funciona offline com salvamento persistente; nenhum cancelamento, corrupção ou interrupção destrói a cidade existente.",
+  "known_issues": [
+    "A falha de importação Android na 1.8.3-beta permanece como histórico (Issue #261); a validação de 1.8.4-beta foi aprovada pelo proprietário na Issue #318 em 2026-10-08.",
+    "Canal beta com assinatura pública estável; usuários do legado que ainda não migraram devem guardar backup e realizar reinstalação deliberada.",
+    "Aprovações antigas #251/#259 não provam a correção na build 1.8.4-beta."
+  ],
+  "artifact": {
+    "name": "Urbe-1.8.4-beta.apk",
+    "url": "https://github.com/AbnerCruz/Ecosystem/releases/download/urbe-v1.8.4-beta/Urbe-1.8.4-beta.apk",
+    "sha256": "4605add4a397b84eb53dc36de61fc4c212627963f528aaba1a4123f20ab11d6e"
+  },
+  "traceability": {
+    "task": "P4-9",
+    "commit": "869d55d0837fc18b484d36ff7cfc23f7ce697c59",
+    "pr": null,
+    "handoff": "HO-20261008-p4-9-184-candidate"
+  },
+  "evidence": [
+    {
+      "kind": "automated",
+      "check": "Release 1.8.4-beta publicada, tamanho e checksum APK",
+      "result": "passed",
+      "evidence": "GitHub Release urbe-v1.8.4-beta publicada em 2026-10-06 (workflow urbe-release 37520229711: verificar, Android, Windows e publicar = success). Asset Urbe-1.8.4-beta.apk de 4302423 bytes com digest SHA-256 4605add4a397b84eb53dc36de61fc4c212627963f528aaba1a4123f20ab11d6e confirmado pela API de releases GitHub nesta verificação; publicação não comprova uso DEVICE.",
+      "handoff": "HO-20261008-p4-9-184-candidate"
+    },
+    {
+      "kind": "human",
+      "check": "P4-9 DEVICE Urbe 1.8.4-beta: importação, recuperação e standalone",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-08 (Issue https://github.com/AbnerCruz/Ecosystem/issues/318); registro em docs/governance/responses/VAL-HO-20261008-p4-9-184-candidate-432aa50b2adc.md.",
+      "handoff": "HO-20261008-p4-9-184-candidate"
+    }
+  ]
+}

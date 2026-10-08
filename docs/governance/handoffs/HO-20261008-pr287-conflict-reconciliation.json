@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-pr287-conflict-reconciliation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T11:32:18.423247Z",
+  "agent": {
+    "id": "codex-pr-conflict-reconciliation",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc18-visual-edit",
+  "base_commit": "29fbc892197882ec8de180ba90cd90f0d344e7d8",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/287",
+  "files_changed": [
+    "docs/governance/handoffs/HO-20261008-pr287-conflict-reconciliation.json"
+  ],
+  "work_completed": [
+    "Incorporada a main atual na branch do PR sem rebase, force-push, descarte de alterações concorrentes ou integração manual.",
+    "Preservada a classificação crítica original e os gates/dependências existentes.",
+    "Conflitos em Editor.razor/web-smoke resolvidos preservando blocos, modo Dividido, histórico, Explorer e edição direta. Dependência #321 combinada para impor round-trip lossless na UI e na sessão C#."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build e suíte C# do Product no estado combinado",
+      "result": "passed",
+      "evidence": "Build .NET 10 sem warnings/errors; execução direta do assembly xUnit: 278/278 testes passaram. Runner dotnet test local falhou no IPC do ambiente; mesmo assembly executado diretamente."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "Todos os 22 checks locais passaram; snapshot ROADMAP × Issues é validado remotamente pelo integrador."
+    },
+    {
+      "kind": "automated",
+      "check": "Self-test",
+      "result": "pending",
+      "evidence": "Suíte de mutações em execução local; CI remoto obrigatório."
+    },
+    {
+      "kind": "automated",
+      "check": "Compilação Razor e WorkspaceSession",
+      "result": "passed",
+      "evidence": "Harness temporário com SDK Razor/FrameworkReference local compilou o código UI real sem warnings/errors; não equivale a publish WASM/smoke Web."
+    },
+    {
+      "kind": "automated",
+      "check": "Probe de WorkspaceSession combinado",
+      "result": "passed",
+      "evidence": "Edição rich, wikilink canônico, undo e seis fixtures não canônicas recusadas sem alteração de conteúdo/revisão. Harness temporário usa o código UI real."
+    }
+  ],
+  "known_issues": [
+    "Build Web/smoke local indisponível: pacotes Blazor/WASM ausentes do cache local; CI remoto obrigatório."
+  ],
+  "blockers": [
+    "PR #286 e proteção #321 ainda dependentes; manter draft até integração das bases e CI Web combinado."
+  ],
+  "next_actions": [
+    "Reavaliar CI e estado combinado pelo integrador automático. Não realizar merge manual nem adicionar integrar."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/governance/multi-agent.md",
+    "apps/urbe/AGENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Reconciliação registrada com autoria própria e PR original."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes automatizados não substituem DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Somente reconciliação da branch; integração do Product não declarada concluída."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "pr-conflict-reconciliation",
+      "status": "product-specific",
+      "rationale": "Reconciliação dos PRs existentes sem extração nem novo contrato."
+    }
+  ]
+}

@@ -14,6 +14,7 @@
     {
         var document = Workspace.CurrentDocument;
         var history = Workspace.HistoryStatus;
+        var canEditVisual = Workspace.CanEditVisualBlocks;
 
         @if (Workspace.Tabs.Count > 0)
         {
@@ -72,19 +73,26 @@
             <button type="button"
                     class="@ModeClass(EditorSurfaceMode.Visual)"
                     aria-pressed="@(Workspace.Mode == EditorSurfaceMode.Visual)"
-                    @onclick="() => Workspace.SetMode(EditorSurfaceMode.Visual)">
+                    @onclick="() => SetEditorMode(EditorSurfaceMode.Visual)">
                 Visual
             </button>
                 <button type="button"
                         class="@ModeClass(EditorSurfaceMode.Source)"
                         aria-pressed="@(Workspace.Mode == EditorSurfaceMode.Source)"
-                        @onclick="() => Workspace.SetMode(EditorSurfaceMode.Source)">
+                        @onclick="() => SetEditorMode(EditorSurfaceMode.Source)">
                     Fonte
+                </button>
+                <button type="button"
+                        class="@ModeClass(EditorSurfaceMode.Split)"
+                        aria-pressed="@(Workspace.Mode == EditorSurfaceMode.Split)"
+                        @onclick="() => SetEditorMode(EditorSurfaceMode.Split)">
+                    Dividido
                 </button>
             </div>
         </div>
 
-        @if (Workspace.Mode == EditorSurfaceMode.Source)
+        <div class="editor-stage-layout @(Workspace.Mode == EditorSurfaceMode.Split ? "split" : "")">
+        @if (Workspace.Mode != EditorSurfaceMode.Visual)
         {
             <label class="editor-source-field">
                 <span class="sr-only">Markdown da nota</span>
@@ -94,16 +102,144 @@
                           spellcheck="true"></textarea>
             </label>
         }
-        else
+        @if (Workspace.Mode != EditorSurfaceMode.Source)
         {
-            <VisualEditor Html="@Workspace.PreviewHtml"
-                          ReadOnly="@Workspace.IsReadOnly"
-                          HtmlChanged="OnVisualHtmlChanged" />
+            <div class="editor-pane-visual">
+            <div class="visual-editor" aria-label="Editor visual">
+                <div class="visual-editor-toolbar">
+                    <strong>Blocos visuais</strong>
+                    <div class="visual-editor-add">
+                        <select value="@NewVisualBlockKind" @onchange="ChangeNewVisualBlockKind" aria-label="Tipo do novo bloco">
+                            <option value="@VisualBlockKind.Paragraph">Texto</option>
+                            <option value="@VisualBlockKind.Heading">Título</option>
+                            <option value="@VisualBlockKind.UnorderedList">Lista</option>
+                            <option value="@VisualBlockKind.OrderedList">Lista numerada</option>
+                            <option value="@VisualBlockKind.Quote">Citação</option>
+                            <option value="@VisualBlockKind.Code">Código</option>
+                            <option value="@VisualBlockKind.HorizontalRule">Separador</option>
+                        </select>
+                        <button type="button" @onclick="AddVisualBlock" disabled="@(!canEditVisual)">Adicionar</button>
+                    </div>
+                </div>
+
+                @if (!canEditVisual && !Workspace.IsReadOnly)
+                {
+                    <p class="editor-stage-note" role="status">
+                        Edição estrutural indisponível para este documento: a conversão alteraria
+                        o Markdown original. Use o modo Fonte para preservar a formatação
+                        sem perda de conteúdo.
+                    </p>
+                }
+
+                @if (VisualBlocks.Count == 0)
+                {
+                    <div class="visual-empty">
+                        <strong>Documento vazio</strong>
+                        <span>Adicione um bloco ou troque para Fonte para começar.</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="visual-blocks">
+                        @for (var index = 0; index < VisualBlocks.Count; index++)
+                        {
+                            var blockIndex = index;
+                            var block = VisualBlocks[blockIndex];
+                            <section class="visual-block visual-block-@block.Kind.ToString().ToLowerInvariant()">
+                                <div class="visual-block-toolbar">
+                                    <select value="@block.Kind"
+                                            @onchange="e => ChangeVisualKind(blockIndex, e)"
+                                            disabled="@(!canEditVisual || block.Kind == VisualBlockKind.Raw)"
+                                            aria-label="Tipo do bloco">
+                                        <option value="@VisualBlockKind.Paragraph">Texto</option>
+                                        <option value="@VisualBlockKind.Heading">Título</option>
+                                        <option value="@VisualBlockKind.UnorderedList">Lista</option>
+                                        <option value="@VisualBlockKind.OrderedList">Lista numerada</option>
+                                        <option value="@VisualBlockKind.Quote">Citação</option>
+                                        <option value="@VisualBlockKind.Code">Código</option>
+                                        <option value="@VisualBlockKind.HorizontalRule">Separador</option>
+                                        <option value="@VisualBlockKind.Raw">Avançado</option>
+                                    </select>
+                                    <span class="visual-block-label">@VisualBlockLabel(block.Kind)</span>
+                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, -1)" disabled="@(!canEditVisual || blockIndex == 0)" aria-label="Mover bloco para cima">↑</button>
+                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, 1)" disabled="@(!canEditVisual || blockIndex == VisualBlocks.Count - 1)" aria-label="Mover bloco para baixo">↓</button>
+                                    <button type="button" @onclick="() => RemoveVisualBlock(blockIndex)" disabled="@(!canEditVisual)" aria-label="Excluir bloco">Excluir</button>
+                                </div>
+
+                                @if (block.Kind == VisualBlockKind.Heading)
+                                {
+                                    <div class="visual-block-heading">
+                                        <select value="@block.Level"
+                                                @onchange="e => ChangeVisualLevel(blockIndex, e)"
+                                                disabled="@(!canEditVisual)"
+                                                aria-label="Nível do título">
+                                            @for (var level = 1; level <= 6; level++)
+                                            {
+                                                <option value="@level">H@level</option>
+                                            }
+                                        </select>
+                                        <input value="@block.Text"
+                                               @onchange="e => ChangeVisualText(blockIndex, e)"
+                                               disabled="@(!canEditVisual)"
+                                               aria-label="Texto do título"
+                                               placeholder="Título" />
+                                    </div>
+                                }
+                                else if (block.Kind == VisualBlockKind.HorizontalRule)
+                                {
+                                    <div class="visual-rule-preview" aria-label="Separador">––––––––</div>
+                                }
+                                else if (block.Kind == VisualBlockKind.Code)
+                                {
+                                    <input class="visual-code-language"
+                                           value="@block.Language"
+                                           @onchange="e => ChangeVisualLanguage(blockIndex, e)"
+                                           disabled="@(!canEditVisual)"
+                                           aria-label="Linguagem do código"
+                                           placeholder="linguagem opcional" />
+                                    <textarea value="@block.Text"
+                                              @onchange="e => ChangeVisualText(blockIndex, e)"
+                                              disabled="@(!canEditVisual)"
+                                              aria-label="Código do bloco"
+                                              spellcheck="false"></textarea>
+                                }
+                                else if (block.Kind == VisualBlockKind.Raw)
+                                {
+                                    <textarea value="@block.Text"
+                                              @onchange="e => ChangeVisualText(blockIndex, e)"
+                                              disabled="@(!canEditVisual)"
+                                              aria-label="Markdown avançado"
+                                              spellcheck="false"></textarea>
+                                    <small class="visual-raw-note">Sintaxe avançada preservada como Markdown canônico.</small>
+                                }
+                                else
+                                {
+                                    <textarea value="@block.Text"
+                                              @onchange="e => ChangeVisualText(blockIndex, e)"
+                                              disabled="@(!canEditVisual)"
+                                              aria-label="@VisualBlockLabel(block.Kind)"
+                                              placeholder="@VisualBlockPlaceholder(block.Kind)"></textarea>
+                                }
+                            </section>
+                        }
+                    </div>
+                }
+
+                <VisualEditor Html="@Workspace.PreviewHtml"
+                              ReadOnly="@(!Workspace.CanEditVisualHtml)"
+                              HtmlChanged="OnVisualHtmlChanged" />
+                @if (!Workspace.CanEditVisualHtml && !Workspace.IsReadOnly)
+                {
+                    <p class="editor-stage-note" role="status">Edição direta indisponível: use Fonte ou os blocos habilitados para preservar o Markdown original.</p>
+                }
+            </div>
             <p class="editor-stage-note">
-                O DOM é apenas uma superfície de entrada. A cada edição, o conteúdo volta imediatamente ao Markdown
-                canônico em C# e entra no mesmo histórico do modo Fonte.
+                A edição Visual altera o mesmo Markdown canônico usado pelo modo Fonte. Blocos avançados não são reinterpretados silenciosamente.
             </p>
+            </div>
         }
+
+        </div>
 
         <div class="editor-relations">
             <section>
@@ -152,34 +288,31 @@
     [SupplyParameterFromQuery(Name = "path")]
     public string? Path { get; set; }
 
-    protected override void OnParametersSet()
-    {
-        if (string.IsNullOrWhiteSpace(Path))
-            return;
-
-        if (Workspace.CurrentDocument is null ||
-            !string.Equals(
-                Workspace.CurrentDocument.Path,
-                DocumentModel.NormalizePath(Path),
-                StringComparison.OrdinalIgnoreCase))
-        {
-            Workspace.Restore(Path);
-        }
-    }
 
     private void OnSourceInput(ChangeEventArgs args)
     {
         Workspace.UpdateSource(args.Value?.ToString() ?? string.Empty);
+        if (Workspace.Mode == EditorSurfaceMode.Split)
+            SyncVisualModel();
     }
 
     private void OnVisualHtmlChanged(string html)
     {
         Workspace.UpdateVisualHtml(html);
+        SyncVisualModel();
     }
 
-    private void Undo() => Workspace.Undo();
+    private void Undo()
+    {
+        Workspace.Undo();
+        SyncVisualModel();
+    }
 
-    private void Redo() => Workspace.Redo();
+    private void Redo()
+    {
+        Workspace.Redo();
+        SyncVisualModel();
+    }
 
     private void ActivateTab(EditorWorkspaceTab tab)
     {
@@ -254,6 +387,177 @@
         Navigation.NavigateTo(
             "editor?path=" + Uri.EscapeDataString(document.Path));
     }
+
+    private List<VisualBlock> VisualBlocks { get; } = [];
+    private string VisualFrontmatter { get; set; } = string.Empty;
+    private VisualBlockKind NewVisualBlockKind { get; set; } = VisualBlockKind.Paragraph;
+
+    protected override void OnParametersSet()
+    {
+        if (string.IsNullOrWhiteSpace(Path))
+            return;
+
+        if (Workspace.CurrentDocument is null ||
+            !string.Equals(
+                Workspace.CurrentDocument.Path,
+                DocumentModel.NormalizePath(Path),
+                StringComparison.OrdinalIgnoreCase))
+        {
+            Workspace.Restore(Path);
+        }
+
+        SyncVisualModel();
+    }
+
+    private void SyncVisualModel()
+    {
+        var model = Workspace.VisualModel;
+        VisualFrontmatter = model.Frontmatter;
+        VisualBlocks.Clear();
+        VisualBlocks.AddRange(model.Blocks);
+    }
+
+    private void SetEditorMode(EditorSurfaceMode mode)
+    {
+        if (mode != EditorSurfaceMode.Source)
+            SyncVisualModel();
+
+        Workspace.SetMode(mode);
+    }
+
+    private void ChangeNewVisualBlockKind(ChangeEventArgs args)
+    {
+        if (Enum.TryParse<VisualBlockKind>(args.Value?.ToString(), out var kind))
+            NewVisualBlockKind = kind;
+    }
+
+    private void AddVisualBlock()
+    {
+        if (!Workspace.CanEditVisualBlocks)
+            return;
+
+        var block = NewVisualBlockKind switch
+        {
+            VisualBlockKind.Heading => new VisualBlock(VisualBlockKind.Heading, "Título", 1),
+            VisualBlockKind.UnorderedList => new VisualBlock(VisualBlockKind.UnorderedList, "Item 1"),
+            VisualBlockKind.OrderedList => new VisualBlock(VisualBlockKind.OrderedList, "Item 1"),
+            VisualBlockKind.Quote => new VisualBlock(VisualBlockKind.Quote, "Citação"),
+            VisualBlockKind.Code => new VisualBlock(VisualBlockKind.Code, string.Empty, Language: "csharp"),
+            VisualBlockKind.HorizontalRule => new VisualBlock(VisualBlockKind.HorizontalRule, string.Empty),
+            _ => new VisualBlock(VisualBlockKind.Paragraph, "Texto")
+        };
+
+        VisualBlocks.Add(block);
+        CommitVisualChanges();
+    }
+
+    private void RemoveVisualBlock(int index)
+    {
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
+            return;
+
+        VisualBlocks.RemoveAt(index);
+        CommitVisualChanges();
+    }
+
+    private void MoveVisualBlock(int index, int delta)
+    {
+        if (!Workspace.CanEditVisualBlocks)
+            return;
+
+        var target = index + delta;
+        if (index < 0 || index >= VisualBlocks.Count || target < 0 || target >= VisualBlocks.Count)
+            return;
+
+        (VisualBlocks[index], VisualBlocks[target]) = (VisualBlocks[target], VisualBlocks[index]);
+        CommitVisualChanges();
+    }
+
+    private void ChangeVisualKind(int index, ChangeEventArgs args)
+    {
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
+            return;
+
+        if (!Enum.TryParse<VisualBlockKind>(args.Value?.ToString(), out var kind))
+            return;
+
+        var block = VisualBlocks[index];
+        if (block.Kind == VisualBlockKind.Raw)
+            return;
+
+        var replacement = kind switch
+        {
+            VisualBlockKind.Heading => block with { Kind = kind, Level = Math.Clamp(block.Level, 1, 6) },
+            VisualBlockKind.Code => block with { Kind = kind, Language = string.IsNullOrWhiteSpace(block.Language) ? "csharp" : block.Language },
+            _ => block with { Kind = kind }
+        };
+
+        VisualBlocks[index] = replacement;
+        CommitVisualChanges();
+    }
+
+    private void ChangeVisualLevel(int index, ChangeEventArgs args)
+    {
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
+            return;
+
+        if (int.TryParse(args.Value?.ToString(), out var level))
+        {
+            VisualBlocks[index] = VisualBlocks[index] with { Level = Math.Clamp(level, 1, 6) };
+            CommitVisualChanges();
+        }
+    }
+
+    private void ChangeVisualLanguage(int index, ChangeEventArgs args)
+    {
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
+            return;
+
+        VisualBlocks[index] = VisualBlocks[index] with { Language = args.Value?.ToString() ?? string.Empty };
+        CommitVisualChanges();
+    }
+
+    private void ChangeVisualText(int index, ChangeEventArgs args)
+    {
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
+            return;
+
+        VisualBlocks[index] = VisualBlocks[index] with { Text = args.Value?.ToString() ?? string.Empty };
+        CommitVisualChanges();
+    }
+
+    private void CommitVisualChanges()
+    {
+        if (!Workspace.CanEditVisualBlocks)
+            return;
+
+        Workspace.UpdateVisualBlocks(VisualFrontmatter, VisualBlocks);
+        SyncVisualModel();
+    }
+
+    private static string VisualBlockLabel(VisualBlockKind kind) =>
+        kind switch
+        {
+            VisualBlockKind.Paragraph => "Texto",
+            VisualBlockKind.Heading => "Título",
+            VisualBlockKind.UnorderedList => "Lista",
+            VisualBlockKind.OrderedList => "Lista numerada",
+            VisualBlockKind.Quote => "Citação",
+            VisualBlockKind.Code => "Código",
+            VisualBlockKind.HorizontalRule => "Separador",
+            VisualBlockKind.Raw => "Avançado",
+            _ => kind.ToString()
+        };
+
+    private static string VisualBlockPlaceholder(VisualBlockKind kind) =>
+        kind switch
+        {
+            VisualBlockKind.Paragraph => "Escreva o texto…",
+            VisualBlockKind.UnorderedList => "Um item por linha…",
+            VisualBlockKind.OrderedList => "Um item por linha…",
+            VisualBlockKind.Quote => "Escreva a citação…",
+            _ => "Conteúdo…"
+        };
 
     private string ModeClass(EditorSurfaceMode mode) =>
         Workspace.Mode == mode

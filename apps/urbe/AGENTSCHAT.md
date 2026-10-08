@@ -520,3 +520,42 @@
 - Decisões (com fonte): ADR-0025 mantém Blazor WASM/MAUI Hybrid; sem KaTeX interop, sem referência de pacote no produto e sem UI M3. Pacotes e fontes auditados preliminarmente: MIT nos módulos CSharpMath, LGPL-3.0-only nos backends VectSharp e GUST/OFL nas fontes. Nenhuma adoção ou alteração de licença consolidada.
 - Pendências / bloqueios: comandos/macros faltantes, equivalência visual, acessibilidade, licenças e hosts Android/Windows ainda requerem trabalho. PRs UC-15 #253/#254 estão abertos; #253 precisa reconciliação, sem sobrescrever o renderer de seu autor. Publicação de import/P4-9 depende do gate crítico do PR #264 e nova DEVICE exata.
 - Próximos passos: definir backend C# por ADR fundamentado e PR crítico antes de adoção; ampliar corpus com renderer legado real e corrigir lacunas sem regravar TeX do usuário. Evidência em docs/csharp/UC16-RENDERER-INVESTIGATION.md e math-renderer-observations.json; ferramenta manual csharp/tests/math-renderer-probe.mjs.
+
+### 2026-10-07 — ChatGPT — UC-18 / REQ-007/035/038 / PR #296
+- Estado: PR #296 draft, empilhado sobre #289; `verifying`, sem integração nem validação G-C3.
+- Feito: proteção `IsLosslessRoundTrip` byte a byte antes de mutações estruturais; salvamento Visual bloqueado na `WorkspaceSession` quando não preservar Markdown; modo Fonte permanece utilizável; Undo/Redo resincronizam os blocos; testes regressivos para sintaxe não canônica.
+- Decisões (com fonte): `docs/csharp/ROADMAP.md` UC-18, NN-001/017/018 e `docs/governance/integration-policy.json`; nenhuma alteração de formato persistente ou boundary. Proteção é conservadora: Markdown incompatível com round-trip exato continua editável em Fonte.
+- Verificação: CI do PR #296 pendente; `urbe-checks` e `consistency` são autoridade de execução; não declarar pronto antecipadamente.
+- Pendências / bloqueios: PR base #289 precisa ser integrado antes do retarget de #296 para `main`; persistência física, split view e Explorer avançado continuam UC-18.
+- Próximos passos: validar PR #296, integrar após #289 e só depois avançar ao próximo recorte UC-18.
+
+### 2026-10-07 — ChatGPT — UC-18 modo Dividido (REQ-007/035/038)
+- Estado: verifying, PR a abrir sobre #296 (que depende de #289); não integrado.
+- Feito: modo Dividido no editor C# usa a mesma WorkspaceSession para Fonte e Visual; ao digitar na Fonte sincroniza visualização e modelo estrutural; ao editar blocos reflete no texto Fonte; undo/redo permanece compartilhado.
+- Testes: smoke Web de alternância e ida-e-volta de alterações, inclusive undo, em / e /preview/ online/offline. CI ainda pendente, sem alegação G-C3.
+- Decisões: código local ao Urbe, sem formato paralelo, persistência/host, migração ou distribuição; conforme docs/csharp/ROADMAP UC-18, NN-001/017/018.
+- Próximos passos: CI, corrigir regressões, integrar somente após a cadeia base; seguir UC-18 Explorer/hosts.
+
+### 2026-10-08 — ChatGPT — UC-18 aviso de sessão volátil C#
+
+- Estado: verifying. Branch `fix/urbe-uc18-session-persistence-warning` empilhada sobre PR #300; não integrada.
+- Feito: página inicial torna explícito que a prévia do Editor/Explorer usa sessão de memória ainda sem persistência física do host; exibe contagens reais de arquivos/abas e link direto para Explorer; status UC-17 atualizado.
+- Testes: smoke Web valida o aviso e as contagens após criar três notas e usar três abas, incluindo `/`, `/preview/` e cenários offline; CI de PR pendente.
+- Invariantes: NN-001/017/018; sem escrita em disco, formato novo, release, alteração de integração ou alegação de gate humano.
+- Próximos passos: CI, retarget e integração automática após a cadeia do modo Dividido; conectar os hosts ao vault somente no escopo/autoridade apropriados.
+
+### 2026-10-08 — ChatGPT — UC-18 Explorer: proteção de caminhos
+
+- Estado: `verifying`, PR #286 em draft sobre main; CI reexecutando.
+- Fato: `ExplorerEntries` omitira arquivos de `.urbe` mas ainda podia apresentar a pasta interna. Corrigido filtro de pastas.
+- Correções: `CreateFolder`, `CreateNote` e `MoveItem` recusam pastas inexistentes, reservadas/internas e componentes de travessia `.`/`..`; movimentação de arquivo/pasta continua sobre a mesma sessão e preserva IDs.
+- Decisões: guardas de sessão host-neutral, sem mudanças no formato do vault, storage físico, migração, backup ou publicação; nenhum gate humano declarado aprovado.
+- Pendências: validar CI C#/Web/Android/Windows/E2E e consistency, retomar integração automática da UC-18 após verde.
+
+### 2026-10-08 — ChatGPT — UC-18 guarda para editor HTML inline
+
+- Estado: `verifying`; branch `fix/urbe-uc18-visual-html-lossless` empilhada sobre #286.
+- Implementado: `VisualMarkdown.IsLosslessEditorRoundTrip` exige que renderização Markdown → HTML → Markdown mantenha exatamente a fonte original antes de permitir mutação rich HTML.
+- Aplicado: `WorkspaceSession.CanEditVisualHtml` e `UpdateVisualHtml` rejeitam transformações quando não há garantia de fidelidade; Fonte continua disponível; nenhuma autoridade de documento nova.
+- Testes: casos canônicos e não canônicos (sem newline, CRLF, whitespace); CI do PR pendente.
+- Limite: não ativa o PR #287, que continua draft até reconciliar sua UI de `contenteditable` com o Editor estrutural e com esta guarda; G-C3 permanece não validado.

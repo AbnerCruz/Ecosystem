@@ -10,7 +10,7 @@
   },
   "task_id": "UC-18",
   "component": "urbe",
-  "state": "review",
+  "state": "verifying",
   "branch": "feat/urbe-uc18-explorer-move",
   "base_commit": "fab94d76fc4a6482fc61a9d0bdf2e020a9cbc5e8",
   "commit": "771a744e741e6774fd5750d1921d0f681f6aacb3",
@@ -28,7 +28,8 @@
     "Mover arquivo ou árvore de pasta preserva IDs documentais e rebaseia documentos abertos sem criar segunda autoridade de persistência.",
     "Explorer passou a exibir ações de pasta e local atual como alvos de movimento.",
     "Desktop move por drag-and-drop; toque arma movimento por long press e conclui tocando na pasta de destino.",
-    "Smoke Web cobre criação de pasta, movimento por mouse e long press/touch além das jornadas Editor já existentes."
+    "Smoke Web cobre criação de pasta, movimento por mouse e long press/touch além das jornadas Editor já existentes.",
+    "Hardened Explorer session: system folders hidden by default; CreateNote/CreateFolder/MoveItem reject system/traversal or nonexistent target folders without changing vault data."
   ],
   "verification": [
     {
@@ -47,14 +48,15 @@
       "kind": "human",
       "check": "toque/layout real",
       "result": "not-applicable",
-      "evidence": "Reservado a G-C3 conforme NN-017."
+      "evidence": "Não validada nesta fatia automática: toque/layout seguem reservados exclusivamente ao G-C3 conforme NN-017, sem solicitar validação humana no portal deste PR."
     }
   ],
   "known_issues": [
     "Persistência física das mutações ainda depende dos adapters de host a serem conectados.",
-    "Edição Visual direta ainda não foi portada; Visual continua renderizando Markdown canônico.",
     "REQ-107 toolbar junto ao teclado virtual permanece pendente.",
-    "Comentários, painel fixado, templates, timer e estado completo da toolbar permanecem pendentes em UC-18."
+    "Comentários, painel fixado, templates, timer e estado completo da toolbar permanecem pendentes em UC-18.",
+    "Fila de mutações ainda em memória, sem aplicação host/FS nesta UC-18.",
+    "Edição Visual direta já integrada nos PRs #289/#296; split integrado no PR #300. G-C3 humano continua aberto."
   ],
   "blockers": [],
   "next_actions": [

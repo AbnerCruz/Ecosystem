@@ -55,13 +55,15 @@ public static class HubScreenBuilder
         foreach (var p in s.Products)
         {
             var name = p.Name.Value ?? p.Id;
-            if (!s.ReleaseChannels!.TryGetValue(p.Id, out var channel) || channel.Value is null)
+            if (!s.ReleaseChannels!.TryGetValue(p.Id, out var channel) || channel.Availability == Availability.NotAvailable || channel.Value is null)
             { lines.Add(new($"{name} — catálogo indisponível", channel?.Note ?? "canal de releases não declarado")); continue; }
             var c = channel.Value;
-            if (!s.ProductReleases.TryGetValue(p.Id, out var releases) || releases.Value is null)
+            if (!s.ProductReleases.TryGetValue(p.Id, out var releases) || releases.Availability == Availability.NotAvailable || releases.Value is null)
             { lines.Add(new($"{name} — releases indisponíveis", $"{releases?.Note ?? "sem leitura do canal"}\nCanal: {c.ReleasesUrl}")); continue; }
+            var age = s.Stale || channel.Availability == Availability.Stale || releases.Availability == Availability.Stale
+                ? " (último estado conhecido)" : "";
             if (releases.Value.Count == 0)
-            { lines.Add(new($"{name} — nenhuma release encontrada", $"{releases.Note}\nCanal: {c.ReleasesUrl}")); continue; }
+            { lines.Add(new($"{name} — nenhuma release encontrada{age}", $"{releases.Note}\nCanal: {c.ReleasesUrl}")); continue; }
             foreach (var r in releases.Value.Take(3))
             {
                 var details = new List<string>();
@@ -81,9 +83,9 @@ public static class HubScreenBuilder
                     if (apks.Count > 4) details.Add($"… e mais {apks.Count - 4} APK(s).");
                 }
                 if (r.ArtifactNote is not null) details.Add(r.ArtifactNote);
-                lines.Add(new($"{name} · {r.Tag}{(r.Prerelease ? " (pré-lançamento)" : "")}", string.Join("\n", details)));
+                lines.Add(new($"{name} · {r.Tag}{(r.Prerelease ? " (pré-lançamento)" : "")}{age}", string.Join("\n", details)));
             }
-            if (releases.Value.Count > 3) lines.Add(new($"{name} — mais {releases.Value.Count - 3} release(s) no canal", c.ReleasesUrl));
+            if (releases.Value.Count > 3) lines.Add(new($"{name} — mais {releases.Value.Count - 3} release(s) no canal{age}", c.ReleasesUrl));
         }
         if (lines.Count == 0) lines.Add(new("Nenhum Product lido de ecosystem.json."));
         return new("Releases e artefatos", lines);
@@ -100,9 +102,12 @@ public static class HubScreenBuilder
     static string? Release(HubSnapshot s, string productId)
     {
         if (!s.ProductReleases.TryGetValue(productId, out var rel)) return null;
-        if (rel.Availability == Availability.NotAvailable) return $"releases indisponíveis{(rel.Note is null ? "" : $" ({rel.Note})")}";
+        if (rel.Availability == Availability.NotAvailable || rel.Value is null) return $"releases indisponíveis{(rel.Note is null ? "" : $" ({rel.Note})")}";
         var latest = rel.Value?.FirstOrDefault();
-        return latest is null ? rel.Note ?? "nenhuma release publicada" : $"última release: {latest.Tag}{(latest.Prerelease ? " (pré-lançamento)" : "")}";
+        var age = s.Stale || rel.Availability == Availability.Stale ||
+            s.ReleaseChannels?.GetValueOrDefault(productId)?.Availability == Availability.Stale
+            ? " (último estado conhecido)" : "";
+        return (latest is null ? rel.Note ?? "nenhuma release publicada" : $"última release: {latest.Tag}{(latest.Prerelease ? " (pré-lançamento)" : "")}") + age;
     }
 
     static ScreenSection Block(string title, IReadOnlyList<TimelineEntry> entries)

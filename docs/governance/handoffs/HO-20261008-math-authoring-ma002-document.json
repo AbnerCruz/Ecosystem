@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-math-authoring-ma002-document",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T00:37:41.391Z",
+  "agent": {
+    "id": "chatgpt-math-authoring-ma002",
+    "kind": "ai-agent"
+  },
+  "task_id": "MA-002",
+  "component": "math-authoring",
+  "state": "review",
+  "branch": "chatgpt/math-authoring-ma002-document",
+  "base_commit": "9c8e799ce74da4da69f8f139bc0f9d37cf28dabd",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/297",
+  "files_changed": [
+    "apps/math-authoring/src/MathAuthoring.Core/ProjectJson.cs",
+    "apps/math-authoring/src/MathAuthoring.Core/ProjectValidator.cs",
+    "apps/math-authoring/src/MathAuthoring.Core/ProjectSession.cs",
+    "apps/math-authoring/tests/MathAuthoring.Core.Tests/DocumentEditingTests.cs",
+    "apps/math-authoring/document.v1.schema.json",
+    "apps/math-authoring/README.md",
+    "apps/math-authoring/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261008-math-authoring-ma002-document.json",
+    "apps/math-authoring/src/MathAuthoring.Core/ProjectMigrator.cs"
+  ],
+  "work_completed": [
+    "Primeira fatia de MA-002: codec JSON v1 explícito de AST (tipos, campos, versões e arrays sem ordenação artificial) e schema local.",
+    "Leitura valida duplicatas, campos/tipos desconhecidos, versão futura, valores não finitos, tamanho e limites; referências de variáveis e limites da AST checados.",
+    "ProjectSession publica somente snapshots validados; visual Apply e textual ApplyText compartilham revisão-base, histórico e undo/redo, sem commit parcial.",
+    "Testes adicionados para round-trip, invariância cultural, entradas hostis, conflitos e histórico; README e roadmap do Product atualizados.",
+    "Migração opt-in por steps versionados N→N+1, com cópia imutável e revalidação do destino, sem aceitar versões futuras nem fonte ambígua.",
+    "ProjectSession agora serializa commits concorrentes e reprova callback reentrante cuja revisão-base ficou obsoleta."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/math-authoring/tests/MathAuthoring.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "SDK .NET 10 não instalado no executor local; PR e CI do Product devem validar."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Sem dotnet neste executor; integrador verificará estado combinado com main."
+    }
+  ],
+  "known_issues": [
+    "ObjectIds de cenas não têm catálogo de objetos neste estágio; resolução de referências de cena chega no MA-005.",
+    "MA-003 (save, autosave, backup, recovery) e editor Android não estão implementados por este PR."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI do PR, corrigir erro real sem afrouxar checks e preservar revisão-base da main.",
+    "Integrar pelo integrador do repositório; não fazer merge manual.",
+    "Aguardar CI no head revisado (inclui migration e regressão de concorrência) e revisar resultados."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/math-authoring/AGENTS.md",
+    "apps/math-authoring/SPEC.md",
+    "apps/math-authoring/ROADMAP.md",
+    "docs/adr/0029-product-de-autoria-matematica-temporal.md",
+    "docs/adr/0030-documento-canonico-de-autoria-matematica.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Única autoridade: ProjectDocument publicado via ProjectSession; JSON e UI são projeções/rascunhos."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma referência entre Products introduzida."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Core e testes C# local ao Product; nenhuma reescrita externa."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #294, branch dedicada, handoff, PR e verificação pendente declarada."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Contrato ADR-0030 e SPEC consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Somente implementação local do formato v1 já legitimado; sem mudança estrutural ou novo contrato público."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Parser não executa código, recusa chaves desconhecidas e referências/tipos inválidos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não será confundido com DEVICE; trabalho em Core puro não tem gate humano visual."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Handoff review com verificação pendente; milestone ainda [~], não declarado pronto."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "ProjectId, scene/variable/profile IDs preservados em serialização e histórico."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nada extraído para shared/platform sem segundo consumidor real."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Math Core standalone e sem dependência de Hub para execução ou distribuição."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "math-project-document",
+      "status": "product-specific",
+      "rationale": "Domínio matemático e transações autorais são locais ao math-authoring; não há segundo consumidor real."
+    }
+  ]
+}

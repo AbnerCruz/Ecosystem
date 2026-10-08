@@ -6,7 +6,8 @@ namespace Urbe.UI;
 public enum EditorSurfaceMode
 {
     Visual,
-    Source
+    Source,
+    Split
 }
 
 public enum EditorOpenOriginKind
@@ -102,6 +103,28 @@ public sealed class WorkspaceSession : IDisposable
 
     public string PreviewHtml =>
         MarkdownEngine.Render(CurrentDocument?.Content ?? string.Empty);
+
+    public VisualDocumentModel VisualModel =>
+        VisualDocumentEditor.Parse(CurrentDocument?.Content ?? string.Empty);
+
+    /// <summary>
+    /// Structural editing is disabled when a parse/save cycle would rewrite
+    /// any existing Markdown. The Source editor remains unrestricted.
+    /// </summary>
+    public bool CanEditVisualBlocks =>
+        !IsReadOnly &&
+        CurrentDocument is not null &&
+        VisualDocumentEditor.IsLosslessRoundTrip(CurrentDocument.Content);
+
+    /// <summary>
+    /// HTML visual editing must not normalize any untouched Markdown.
+    /// Independent of CanEditVisualBlocks: the HTML converter has its own
+    /// fidelity boundary and only the Source mode is always lossless.
+    /// </summary>
+    public bool CanEditVisualHtml =>
+        !IsReadOnly &&
+        CurrentDocument is not null &&
+        VisualMarkdown.IsLosslessEditorRoundTrip(CurrentDocument.Content);
 
     public IReadOnlyList<EditorWorkspaceTab> Tabs =>
         Array.AsReadOnly(
@@ -218,6 +241,8 @@ public sealed class WorkspaceSession : IDisposable
 
         foreach (var folderPath in EnumerateFolders())
         {
+            if (!includeSystem && ArtifactModel.IsSystem(folderPath))
+                continue;
             if (!folderPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 continue;
 
@@ -498,13 +523,24 @@ public sealed class WorkspaceSession : IDisposable
 
     public UrbeDocument? UpdateVisualHtml(string? html)
     {
-        if (CurrentDocument is null)
+        if (CurrentDocument is null || !CanEditVisualHtml)
             return null;
 
         var markdown = VisualMarkdown.FromHtmlUsingEditorSource(
             html,
             CurrentDocument.Content);
         return UpdateSource(markdown);
+    }
+
+    public UrbeDocument? UpdateVisualBlocks(
+        string? frontmatter,
+        IEnumerable<VisualBlock>? blocks)
+    {
+        if (!CanEditVisualBlocks)
+            return null;
+
+        return UpdateSource(
+            VisualDocumentEditor.ToMarkdown(frontmatter, blocks));
     }
 
     public string? CreateFolder(string? name, string? parent = null)
@@ -518,6 +554,12 @@ public sealed class WorkspaceSession : IDisposable
         var safeName = ArtifactModel.SafeName(name);
 
         var normalizedParent = DocumentModel.NormalizePath(parent);
+        if (normalizedParent.Length > 0 &&
+            (!FolderExists(normalizedParent) ||
+             ArtifactModel.IsSystem(normalizedParent) ||
+             ContainsTraversal(normalizedParent)))
+            return null;
+
         var candidate = normalizedParent.Length == 0
             ? safeName
             : normalizedParent + "/" + safeName;
@@ -545,7 +587,12 @@ public sealed class WorkspaceSession : IDisposable
         var source = DocumentModel.NormalizePath(sourcePath);
         var target = DocumentModel.NormalizePath(targetFolder);
 
-        if (source.Length == 0)
+        if (source.Length == 0 ||
+            ContainsTraversal(source) ||
+            ContainsTraversal(target) ||
+            ArtifactModel.IsSystem(source) ||
+            (target.Length > 0 &&
+             (ArtifactModel.IsSystem(target) || !FolderExists(target))))
             return false;
 
         var sourceIsFile = _paths.Contains(source);
@@ -592,6 +639,12 @@ public sealed class WorkspaceSession : IDisposable
 
         var safeTitle = ArtifactModel.SafeName(title);
         var normalizedFolder = DocumentModel.NormalizePath(folder);
+        if (normalizedFolder.Length > 0 &&
+            (ArtifactModel.IsSystem(normalizedFolder) ||
+             ContainsTraversal(normalizedFolder) ||
+             !FolderExists(normalizedFolder)))
+            return null;
+
         var path = normalizedFolder.Length == 0
             ? safeTitle + ".md"
             : normalizedFolder + "/" + safeTitle + ".md";
@@ -695,6 +748,9 @@ public sealed class WorkspaceSession : IDisposable
 
         return folders;
     }
+
+    private static bool ContainsTraversal(string path) =>
+        path.Split('/').Any(segment => segment is "." or "..");
 
     private bool FolderExists(string path) =>
         _explicitFolders.Contains(path) ||

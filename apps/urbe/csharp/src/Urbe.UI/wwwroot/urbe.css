@@ -663,6 +663,226 @@ a:focus-visible {
     cursor: default;
 }
 
+/* UC-18 — direct structural visual editing */
+.visual-editor {
+    margin-top: 1rem;
+    display: grid;
+    gap: .75rem;
+}
+
+.visual-editor-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    flex-wrap: wrap;
+    padding: .7rem .8rem;
+    border: 1px solid #2d4539;
+    border-radius: .85rem;
+    background: #16221d;
+}
+
+.visual-editor-toolbar strong {
+    color: #cfe9d7;
+    font-size: .82rem;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+}
+
+.visual-editor-add {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.visual-editor-add select,
+.visual-editor-add button,
+.visual-block-toolbar select,
+.visual-block-toolbar button,
+.visual-block-heading select,
+.visual-block-heading input,
+.visual-code-language {
+    min-height: 2.3rem;
+    border: 1px solid #334d40;
+    border-radius: .6rem;
+    background: #101a16;
+    color: #dbece1;
+}
+
+.visual-editor-add select,
+.visual-block-toolbar select,
+.visual-block-heading select {
+    padding: .4rem .55rem;
+}
+
+.visual-editor-add button,
+.visual-block-toolbar button {
+    padding: .4rem .65rem;
+    cursor: pointer;
+}
+
+.visual-editor-add button:hover,
+.visual-block-toolbar button:hover {
+    border-color: #5a826b;
+    background: #1a2b23;
+}
+
+.visual-editor-add button:disabled,
+.visual-block-toolbar button:disabled {
+    opacity: .42;
+    cursor: default;
+}
+
+.visual-blocks {
+    display: grid;
+    gap: .65rem;
+}
+
+.visual-block {
+    display: grid;
+    gap: .6rem;
+    padding: .75rem;
+    border: 1px solid #2b4338;
+    border-radius: .85rem;
+    background: #141f1b;
+}
+
+.visual-block-toolbar {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    flex-wrap: wrap;
+}
+
+.visual-block-toolbar select {
+    max-width: 10rem;
+}
+
+.visual-block-label {
+    flex: 1 1 auto;
+    color: #839d90;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+
+.visual-block-heading {
+    display: grid;
+    grid-template-columns: 4.2rem minmax(0, 1fr);
+    gap: .5rem;
+}
+
+.visual-block-heading input,
+.visual-code-language {
+    width: 100%;
+    padding: .55rem .65rem;
+    outline: none;
+}
+
+.visual-block textarea {
+    width: 100%;
+    min-height: 7.5rem;
+    resize: vertical;
+    padding: .7rem;
+    border: 1px solid #30483d;
+    border-radius: .65rem;
+    background: #0e1714;
+    color: #edf5ee;
+    line-height: 1.55;
+    outline: none;
+}
+
+.visual-block textarea:focus,
+.visual-block-heading input:focus,
+.visual-code-language:focus,
+.visual-editor-add select:focus,
+.visual-block-toolbar select:focus {
+    border-color: #84c69b;
+    box-shadow: 0 0 0 3px rgba(132, 198, 155, .1);
+}
+
+.visual-code-language {
+    max-width: 16rem;
+}
+
+.visual-rule-preview {
+    padding: .55rem .2rem;
+    color: #6f897a;
+    letter-spacing: .14em;
+    overflow: hidden;
+}
+
+.visual-raw-note {
+    color: #9aab9f;
+    font-size: .72rem;
+    line-height: 1.45;
+}
+
+.visual-empty {
+    display: grid;
+    gap: .3rem;
+    padding: 1.2rem;
+    border: 1px dashed #365344;
+    border-radius: .85rem;
+    color: #9ab1a3;
+}
+
+.visual-empty strong {
+    color: #d0e9d8;
+}
+
+.visual-editor-preview {
+    margin-top: .15rem;
+}
+
+@media (min-width: 760px) {
+    .visual-block-toolbar {
+        flex-wrap: nowrap;
+    }
+
+    .visual-block-toolbar select {
+        max-width: 12rem;
+    }
+}
+
+/* UC-18 — source/visual split shares one DocumentStore and one history. */
+.editor-mode-switch {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.editor-stage-layout {
+    min-width: 0;
+}
+
+.editor-stage-layout > * {
+    min-width: 0;
+}
+
+@media (max-width: 599px) {
+    .editor-mode {
+        min-width: 0;
+        padding: .5rem .55rem;
+    }
+}
+
+@media (min-width: 980px) {
+    .editor-stage-layout.split {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+        gap: 1rem;
+    }
+
+    .editor-stage-layout.split .editor-source-field textarea {
+        min-height: 70dvh;
+    }
+
+    .editor-stage-layout.split .visual-editor {
+        margin-top: 1rem;
+    }
+}
+
 
 /* UC-18 — Explorer folder actions + move mode */
 .explorer-location,

@@ -10,6 +10,12 @@ on:
       - main
   release:
     types: [published]
+  # Releases do Hub/Lunet/Urbe usam GITHUB_TOKEN: release.published não dispara
+  # outro workflow nesses casos. workflow_run observa o produtor já concluído,
+  # sem PAT, sem repository_dispatch e sem depender de novo push na main.
+  workflow_run:
+    workflows: [hub-release, lunet2d-release, urbe-release]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -22,6 +28,15 @@ concurrency:
 jobs:
   build:
     name: Build portal
+    # Não reconstruir para builds falhos nem para CI de PRs do Lunet.
+    # O checkout é sempre da branch padrão, nunca do código de workflow_run.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.repository.full_name == github.repository &&
+        github.event.workflow_run.event != 'pull_request'
+      )
     runs-on: ubuntu-latest
     outputs:
       source_commit: ${{ steps.source.outputs.commit }}

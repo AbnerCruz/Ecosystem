@@ -4,11 +4,19 @@
 
 ### Fixed
 
+- SAT calcula separação correta quando um polígono contém outro; polígonos sem área não produzem empurrão inválido.
+- Medições de alocação isoladas de outras coleções de testes, preservando a exigência de zero bytes no loop; falha concorrente reproduzida também na base anterior.
 - Correções rápidas removem apenas a diretiva using, preservando código na mesma linha e comentários; ordenação preserva global using, CRLF e comentários, e recusa blocos ambíguos/condicionais.
 
 
 ### Added
 
+- APIs `SpriteAnimationClip`/`SpriteAnimator`, `Tween` e `ParticleEmitter`/`ParticleSettings`: animação, transições e partículas code-first, sem alocação no loop. Guias offline completos para projetos Em branco; novos modelos de criação seguem nos PRs #302/#307.
+
+- `Lunet.Pathfinding`: A* em grade com custos/obstáculos, quatro/oito vizinhos sem cortar cantos, buffers reutilizáveis sem alocação por busca e guia interativo offline (LUNET-406).
+
+- `Camera2D`: posição, zoom, rotação, conversão mundo/vista e toque no mundo; lote com câmera opcional em `SpriteBatch`, HUD sem câmera, terceira página do modelo Laboratório e guia offline interativo (LUNET-403).
+- Consultas `Geometry.Distance`, `ClosestPoint` e `Intersection` para círculos, pontos e AABBs, sem alocação; guia offline com demonstração de colisão no Preview (LUNET-402).
 - Candidato exato e entrega do roteiro integral da Fase 3 no portal (LUNET-303); aprovações ZIP/C6 reconciliadas sem aprovar o gate inteiro.
 
 - Identidade Framework / IDE / Studio code-first, um Product e um projeto, política Visual ↔ Source e backlog classificado (ADR 0007).
