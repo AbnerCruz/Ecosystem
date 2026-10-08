@@ -84,8 +84,8 @@ public sealed class ChatCompletionsProvider : IModelProvider
         HttpResponseMessage response;
         try { response = await _client.SendAsync(http, HttpCompletionOption.ResponseHeadersRead, cancellationToken); }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
-        catch (OperationCanceledException) { throw new ProviderException("timeout", "Timeout do provider.", true); }
-        catch (HttpRequestException) { throw new ProviderException("transport", "Falha de transporte do provider.", true); }
+        catch (OperationCanceledException) { throw new ProviderException("timeout", "Timeout do provider; efeito remoto é desconhecido, sem retry automático.", false); }
+        catch (HttpRequestException) { throw new ProviderException("transport", "Falha de transporte; efeito remoto é desconhecido, sem retry automático.", false); }
 
         using (response)
         {
@@ -145,8 +145,13 @@ public sealed class ChatCompletionsProvider : IModelProvider
                 var usdAmount = reportedUsd ?? (prompt * _inputUsdPerMillion + completion * _outputUsdPerMillion) / 1_000_000m;
                 var cents = checked((long)decimal.Ceiling(usdAmount * 100m));
                 var finish = first.TryGetProperty("finish_reason", out var finishProperty) ? finishProperty.GetString() : null;
-                var stop = blocks.OfType<ToolUseBlock>().Any() ? StopReason.ToolUse
-                    : finish == "length" ? StopReason.MaxTokens : StopReason.EndTurn;
+                if (finish == "length")
+                    throw new ProviderException("truncated", "Saída truncada não equivale a tarefa concluída.", false);
+                if (finish is "content_filter" or "error")
+                    throw new ProviderException("filtered", "Provider não entregou conclusão utilizável.", false);
+                if (finish is not (null or "stop" or "tool_calls"))
+                    throw new ProviderException("finish-unknown", "Motivo de conclusão não reconhecido.", false);
+                var stop = blocks.OfType<ToolUseBlock>().Any() ? StopReason.ToolUse : StopReason.EndTurn;
                 return new ModelResponse(blocks, stop, new Usage(prompt, completion, new Money(cents, "USD")));
             }
             catch (ProviderException) { throw; }
