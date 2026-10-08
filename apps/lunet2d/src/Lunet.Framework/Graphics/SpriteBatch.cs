@@ -22,6 +22,8 @@ public sealed class SpriteBatch
     private bool _begun;
     private DrawState _state = DrawState.Default;
     private Shader? _shader;
+    private Matrix3x2 _view = Matrix3x2.Identity;
+    private bool _hasView;
 
     /// <summary>Cria um lote de sprites.</summary>
     /// <param name="device">Dispositivo gráfico.</param>
@@ -41,12 +43,31 @@ public sealed class SpriteBatch
         if (shader is { IsDisposed: true }) throw new ObjectDisposedException(nameof(Shader));
         _begun = true;
         _shader = shader;
+        _view = Matrix3x2.Identity;
+        _hasView = false;
         _state = new DrawState(
             (blend ?? BlendState.Alpha).Mode,
             sampler,
             clip is { } area ? _device.ToScissor(area) : null,
             shader?.Handle ?? 0,
             null);
+    }
+
+    /// <summary>Começa um lote em coordenadas do mundo usando uma câmera.</summary>
+    /// <param name="camera">Câmera a capturar; mudanças nela afetam somente o próximo Begin.</param>
+    /// <param name="blend">Mistura; nulo usa Alpha.</param>
+    /// <param name="sampler">Filtro e repetição; nulo usa o estado da textura.</param>
+    /// <param name="shader">Shader de fragmento; nulo usa o padrão.</param>
+    /// <param name="clip">Recorte em coordenadas virtuais da vista, independente da câmera.</param>
+    /// <remarks>Usa GraphicsDevice.ViewSize, inclusive em render targets. Transformação aplicada a sprites,
+    /// texto e DebugDraw sem mudar o backend. Para HUD, encerre o lote e use Begin() sem câmera.</remarks>
+    public void Begin(Camera2D camera, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, RectangleF? clip = null)
+    {
+        ArgumentNullException.ThrowIfNull(camera);
+        var view = camera.GetViewMatrix(_device.ViewSize);
+        Begin(blend, sampler, shader, clip);
+        _view = view;
+        _hasView = view != Matrix3x2.Identity;
     }
 
     /// <summary>Começa um lote usando o estado do material.</summary>
@@ -116,6 +137,7 @@ public sealed class SpriteBatch
             vertex.Position = new Vector2(
                 destination.X + ox + x * cos - y * sin,
                 destination.Y + oy + x * sin + y * cos);
+            if (_hasView) vertex.Position = Vector2.Transform(vertex.Position, _view);
             vertex.TexCoord = new Vector2(u, v);
             vertex.Color = packed;
         }

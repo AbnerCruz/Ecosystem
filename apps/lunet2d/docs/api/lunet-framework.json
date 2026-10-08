@@ -1442,6 +1442,30 @@
       "since": "0.0.1",
       "members": [
         {
+          "id": "M:Lunet.Geometry.ClosestPoint(System.Numerics.Vector2,Lunet.RectangleF)",
+          "name": "ClosestPoint",
+          "kind": "method",
+          "signature": "public static Vector2 ClosestPoint(Vector2 point, RectangleF rect)",
+          "summary": "Ponto do ret\u00E2ngulo fechado mais pr\u00F3ximo do ponto dado.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto finito."
+            },
+            {
+              "name": "rect",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            }
+          ],
+          "returns": "Ponto mais pr\u00F3ximo, incluindo as bordas direita e inferior.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Geometry.ClosestPointOnSegment(System.Numerics.Vector2,System.Numerics.Vector2,System.Numerics.Vector2)",
           "name": "ClosestPointOnSegment",
           "kind": "method",
@@ -1495,6 +1519,126 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Geometry.Distance(System.Numerics.Vector2,Lunet.RectangleF)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(Vector2 point, RectangleF rect)",
+          "summary": "Dist\u00E2ncia de um ponto ao ret\u00E2ngulo fechado; zero dentro ou na borda.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto finito."
+            },
+            {
+              "name": "rect",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa entre o ponto e o ret\u00E2ngulo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Distance(System.Numerics.Vector2,Lunet.Circle)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(Vector2 point, Circle circle)",
+          "summary": "Dist\u00E2ncia de um ponto ao c\u00EDrculo preenchido; zero dentro ou na borda.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto finito."
+            },
+            {
+              "name": "circle",
+              "type": "Circle",
+              "description": "C\u00EDrculo finito com raio n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa entre o ponto e o c\u00EDrculo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Distance(Lunet.Circle,Lunet.Circle)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(Circle a, Circle b)",
+          "summary": "Dist\u00E2ncia entre dois c\u00EDrculos preenchidos; zero quando se tocam ou sobrep\u00F5em.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "Circle",
+              "description": "Primeiro c\u00EDrculo finito com raio n\u00E3o negativo."
+            },
+            {
+              "name": "b",
+              "type": "Circle",
+              "description": "Segundo c\u00EDrculo finito com raio n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa entre os c\u00EDrculos.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Distance(Lunet.Circle,Lunet.RectangleF)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(Circle circle, RectangleF rect)",
+          "summary": "Dist\u00E2ncia entre um c\u00EDrculo preenchido e um ret\u00E2ngulo fechado.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "circle",
+              "type": "Circle",
+              "description": "C\u00EDrculo finito com raio n\u00E3o negativo."
+            },
+            {
+              "name": "rect",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa; zero no contato ou na sobreposi\u00E7\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Distance(Lunet.RectangleF,Lunet.RectangleF)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(RectangleF a, RectangleF b)",
+          "summary": "Dist\u00E2ncia entre dois ret\u00E2ngulos fechados.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "RectangleF",
+              "description": "Primeiro ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            },
+            {
+              "name": "b",
+              "type": "RectangleF",
+              "description": "Segundo ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa; zero no contato ou na sobreposi\u00E7\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Geometry.DistanceToSegment(System.Numerics.Vector2,System.Numerics.Vector2,System.Numerics.Vector2)",
           "name": "DistanceToSegment",
           "kind": "method",
@@ -1519,6 +1663,35 @@
             }
           ],
           "returns": "Menor dist\u00E2ncia entre o ponto e o segmento.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Intersection(Lunet.RectangleF,Lunet.RectangleF,Lunet.RectangleF@)",
+          "name": "Intersection",
+          "kind": "method",
+          "signature": "public static bool Intersection(RectangleF a, RectangleF b, out RectangleF intersection)",
+          "summary": "Calcula a regi\u00E3o de sobreposi\u00E7\u00E3o com \u00E1rea positiva entre dois AABBs.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "RectangleF",
+              "description": "Primeiro ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            },
+            {
+              "name": "b",
+              "type": "RectangleF",
+              "description": "Segundo ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            },
+            {
+              "name": "intersection",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o comum; default quando n\u00E3o h\u00E1 \u00E1rea positiva."
+            }
+          ],
+          "returns": "Verdadeiro quando existe regi\u00E3o comum com \u00E1rea positiva; contato de borda \u00E9 falso.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -1553,7 +1726,7 @@
           "kind": "method",
           "signature": "public static bool SatOverlap(ReadOnlySpan\u003CVector2\u003E a, ReadOnlySpan\u003CVector2\u003E b, out Vector2 push)",
           "summary": "Teste SAT entre dois pol\u00EDgonos convexos. Se houver sobreposi\u00E7\u00E3o, \u0060push\u0060 \u00E9 o menor vetor que, somado \u00E0 posi\u00E7\u00E3o de \u0060a\u0060, o separa de \u0060b\u0060.",
-          "remarks": "",
+          "remarks": "V\u00E9rtices finitos em ordem, pol\u00EDgonos convexos. Contato de borda e pol\u00EDgonos sem \u00E1rea retornam falso. O empurr\u00E3o move A at\u00E9 o contato, inclusive quando uma forma cont\u00E9m a outra. N\u00E3o aloca mem\u00F3ria.",
           "parameters": [
             {
               "name": "a",
@@ -1571,7 +1744,7 @@
               "description": "Vetor m\u00EDnimo que separa os pol\u00EDgonos quando se sobrep\u00F5em."
             }
           ],
-          "returns": "Verdadeiro se os pol\u00EDgonos se sobrep\u00F5em.",
+          "returns": "Verdadeiro se os pol\u00EDgonos se sobrep\u00F5em com \u00E1rea positiva.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -6041,6 +6214,128 @@
       ]
     },
     {
+      "id": "T:Lunet.Graphics.Camera2D",
+      "name": "Camera2D",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class Camera2D",
+      "summary": "C\u00E2mera 2D: posi\u00E7\u00E3o no centro da vista, zoom e rota\u00E7\u00E3o, sem alterar coordenadas do jogo.",
+      "remarks": "A vista usa coordenadas virtuais, n\u00E3o pixels f\u00EDsicos. O toque de Input j\u00E1 est\u00E1 nesse espa\u00E7o. Use GraphicsDevice.SurfaceToVirtual antes de converter um ponto f\u00EDsico. A c\u00E2mera \u00E9 opcional; um lote sem c\u00E2mera continua desenhando diretamente na vista.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar camera = new Camera2D { Position = position, Zoom = 2 };\nif (input.TryGetPointer(out var touch))\n    position = camera.ScreenToWorld(touch, device.ViewSize);\nbatch.Begin(camera);\nbatch.Draw(texture, position, Color.White);\nbatch.End();\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.Graphics.Camera2D.Position",
+          "name": "Position",
+          "kind": "property",
+          "signature": "public Vector2 Position { get; set; }",
+          "summary": "Ponto do mundo mostrado no centro da vista. Padr\u00E3o: origem do mundo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.Camera2D.Rotation",
+          "name": "Rotation",
+          "kind": "property",
+          "signature": "public float Rotation { get; set; }",
+          "summary": "Rota\u00E7\u00E3o da c\u00E2mera em radianos, finita; o mundo gira no sentido inverso. Padr\u00E3o zero.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.Camera2D.Zoom",
+          "name": "Zoom",
+          "kind": "property",
+          "signature": "public float Zoom { get; set; }",
+          "summary": "Escala uniforme; 2 duplica o tamanho aparente. Positiva, finita e com inverso finito; padr\u00E3o 1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.Camera2D.GetViewMatrix(System.Numerics.Vector2)",
+          "name": "GetViewMatrix",
+          "kind": "method",
+          "signature": "public Matrix3x2 GetViewMatrix(Vector2 viewSize)",
+          "summary": "Matriz mundo\u2192vista: deslocamento, rota\u00E7\u00E3o inversa, zoom e centraliza\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "viewSize",
+              "type": "Vector2",
+              "description": "Tamanho positivo e finito da vista virtual ou do render target."
+            }
+          ],
+          "returns": "Matriz para desenhar pontos do mundo na vista; sem aloca\u00E7\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.Camera2D.ScreenToWorld(System.Numerics.Vector2,System.Numerics.Vector2)",
+          "name": "ScreenToWorld",
+          "kind": "method",
+          "signature": "public Vector2 ScreenToWorld(Vector2 screen, Vector2 viewSize)",
+          "summary": "Converte um ponto virtual da vista para o mundo, invertendo zoom e rota\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "screen",
+              "type": "Vector2",
+              "description": "Ponto virtual, por exemplo o toque fornecido por Input."
+            },
+            {
+              "name": "viewSize",
+              "type": "Vector2",
+              "description": "Tamanho positivo e finito da vista virtual ou do render target."
+            }
+          ],
+          "returns": "Posi\u00E7\u00E3o no mundo; n\u00E3o modifica o ponto nem a c\u00E2mera.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.Camera2D.WorldToScreen(System.Numerics.Vector2,System.Numerics.Vector2)",
+          "name": "WorldToScreen",
+          "kind": "method",
+          "signature": "public Vector2 WorldToScreen(Vector2 world, Vector2 viewSize)",
+          "summary": "Converte uma posi\u00E7\u00E3o do mundo em coordenadas virtuais da vista.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "world",
+              "type": "Vector2",
+              "description": "Posi\u00E7\u00E3o no mundo."
+            },
+            {
+              "name": "viewSize",
+              "type": "Vector2",
+              "description": "Tamanho positivo e finito da vista virtual ou do render target."
+            }
+          ],
+          "returns": "Ponto na vista, antes da escala f\u00EDsica/letterbox.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Graphics.Color",
       "name": "Color",
       "namespace": "Lunet.Graphics",
@@ -8217,6 +8512,45 @@
           "related": [
             "F:Lunet.Graphics.BlendState.Alpha"
           ],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.Begin(Lunet.Graphics.Camera2D,Lunet.Graphics.BlendState,Lunet.Graphics.SamplerState,Lunet.Graphics.Shader,System.Nullable{Lunet.RectangleF})",
+          "name": "Begin",
+          "kind": "method",
+          "signature": "public void Begin(Camera2D camera, BlendState? blend = null, SamplerState? sampler = null, Shader? shader = null, RectangleF? clip = null)",
+          "summary": "Come\u00E7a um lote em coordenadas do mundo usando uma c\u00E2mera.",
+          "remarks": "Usa GraphicsDevice.ViewSize, inclusive em render targets. Transforma\u00E7\u00E3o aplicada a sprites, texto e DebugDraw sem mudar o backend. Para HUD, encerre o lote e use Begin() sem c\u00E2mera.",
+          "parameters": [
+            {
+              "name": "camera",
+              "type": "Camera2D",
+              "description": "C\u00E2mera a capturar; mudan\u00E7as nela afetam somente o pr\u00F3ximo Begin."
+            },
+            {
+              "name": "blend",
+              "type": "BlendState",
+              "description": "Mistura; nulo usa Alpha."
+            },
+            {
+              "name": "sampler",
+              "type": "SamplerState",
+              "description": "Filtro e repeti\u00E7\u00E3o; nulo usa o estado da textura."
+            },
+            {
+              "name": "shader",
+              "type": "Shader",
+              "description": "Shader de fragmento; nulo usa o padr\u00E3o."
+            },
+            {
+              "name": "clip",
+              "type": "RectangleF?",
+              "description": "Recorte em coordenadas virtuais da vista, independente da c\u00E2mera."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
           "since": "0.0.1"
         },
         {
