@@ -240,4 +240,37 @@ public sealed class DocumentEditingTests
         Assert.False(session.CanRedo);
     }
 
+    [Fact]
+    public void Migration_only_runs_explicit_trusted_step_and_validates_final_document()
+    {
+        var v1 = ProjectJson.Format(Example());
+        var legacy = v1.Replace("\"schemaVersion\": 1", "\"schemaVersion\": 0", StringComparison.Ordinal);
+        Assert.Contains(ProjectMigrator.Open(legacy).Problems, p => p.Code == "migration.missing");
+
+        var migration = new DocumentMigration(0, 1,
+            source => source.Replace("\"schemaVersion\": 0", "\"schemaVersion\": 1", StringComparison.Ordinal));
+        var migrated = ProjectMigrator.Open(legacy, migration);
+
+        Assert.True(migrated.Success);
+        Assert.Equal(v1, ProjectJson.Format(migrated.Document!));
+        Assert.Equal(v1, ProjectJson.Format(ProjectMigrator.Open(v1).Document!));
+
+        var wrongVersion = ProjectMigrator.Open(legacy, new DocumentMigration(0, 2, migration.Upgrade));
+        Assert.Contains(wrongVersion.Problems, p => p.Code == "migration.invalid-step");
+        var corrupt = ProjectMigrator.Open(legacy, new DocumentMigration(0, 1, _ => "{"));
+        Assert.Contains(corrupt.Problems, p => p.Code == "json.syntax");
+        Assert.Equal(legacy, legacy); // No migration mutates the supplied string.
+    }
+
+    [Fact]
+    public void Migration_never_downgrades_future_schema_or_accepts_duplicate_source()
+    {
+        var v1 = ProjectJson.Format(Example());
+        var future = v1.Replace("\"schemaVersion\": 1", "\"schemaVersion\": 2", StringComparison.Ordinal);
+        Assert.Contains(ProjectMigrator.Open(future).Problems, p => p.Code == "schema.unsupported");
+        var duplicate = v1.Replace("\"projectId\": \"proof\"",
+            "\"projectId\": \"proof\", \"projectId\": \"extra\"", StringComparison.Ordinal);
+        Assert.Contains(ProjectMigrator.Open(duplicate).Problems, p => p.Code == "json.duplicate-key");
+    }
+
 }
