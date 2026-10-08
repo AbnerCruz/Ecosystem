@@ -9,7 +9,7 @@
   },
   "task_id": "LUNET-402",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-continue-20261008",
   "base_commit": "f724b3c9fe65f4d45d39d07e7ce0a989291c9be4",
   "commit": null,
@@ -73,9 +73,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI e integração automática do PR.",
-    "Confirmar development release direta pelo pipeline aprovado e executar roteiro intermediário no Android.",
-    "Seguir Fase 4; backend maduro de física requer ADR próprio."
+    "Continuar itens da Fase 4; fechamento de fase exige todos os itens e seu gate próprio."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -103,7 +101,7 @@
     },
     {
       "id": "NN-017",
-      "evidence": "Roteiro de aparelho pendente; ROADMAP [~], sem afirmar validação humana."
+      "evidence": "Roteiro de colisão aprovado pelo proprietário na Issue #303; resposta canônica VAL-HO-20261008-lunet-collision-4b6224b3dab2."
     },
     {
       "id": "NN-018",

@@ -13,6 +13,27 @@
 
 O portal **não** é o Hub, não o substitui, não implementa o Hub em HTML e não duplica funções que pertencem ao Hub (Control Plane, Past/Now/Next, workspaces, capabilities). **Exceção decidida pelo proprietário (DEC-0007):** o portal apresenta, como projeção somente leitura, as decisões pendentes e as validações humanas pendentes, sempre com o objeto a decidir/validar (§3.1); o Hub mantém a superfície completa de decisões (MANIFEST §35). Ele continua existindo depois que o Hub existir, como mecanismo de recuperação independente: com o Hub ausente ou quebrado, deve continuar sendo possível acessar a documentação, baixar Hub e Lunet2D, acessar o Urbe Web, localizar releases e localizar instruções de recuperação e teste.
 
+### Publicação após releases automáticas (PORTAL-20261006.1)
+
+O portal projeta as versões e artefatos do GitHub **durante seu build**; não consulta
+o GitHub para preencher versões estáticas no dispositivo. O gatilho
+`release.published` continua cobrindo releases publicadas manualmente ou por
+credenciais capazes de emitir eventos de workflow. Porém, os pipelines internos
+`hub-release`, `lunet2d-release` e `urbe-release` publicam releases com
+`GITHUB_TOKEN`: esses eventos **não** acionam outros workflows GitHub Actions.
+
+Por isso `.github/workflows/pages.yml` também usa `workflow_run: completed`
+nesses três produtores. Só constrói após conclusão `success`, do mesmo
+repositório, e nunca após `pull_request` (o Lunet testa PRs sem publicar).
+Em todos os eventos, `checkout` usa `github.event.repository.default_branch`,
+não a tag nem artefatos ou código do produtor. A fila `concurrency: pages`
+preserva a ordem de publicações e a projeção sempre consulta as releases
+existentes naquele instante; eventos repetidos são seguros. Não se cria PAT,
+ação manual nem dependência adicional dos produtos no Portal.
+
+`CHK-PORTAL` e os seus self-tests verificam gatilhos, filtro de sucesso/origem,
+e a fonte canônica do checkout. O smoke test de Pages continua necessário:
+CI verde não comprova que o conteúdo publicado está servível na URL pública.
 ## 2. Nunca fonte de verdade, nunca dependência
 
 ```text
