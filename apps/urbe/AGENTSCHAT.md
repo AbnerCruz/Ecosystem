@@ -557,3 +557,11 @@
 - Testes: regressão Core de snapshots/remoção/paridade documental e Web smoke de edição, undo, troca de nota, mobile e fechamento; execução registrada no handoff.
 - Pendências: seleção livre dentro de bloco e rich HTML/bolha ainda não entregues; não fecha REQ-091, UC-18 ou G-C3, não altera persistência ou release.
 - Próximos passos: CI combinado e integração rotineira, depois seleção/toolbar coordenada com #287.
+
+### 2026-10-08 — ChatGPT — UC-18 / REQ-093 modelos de nota C#
+- Estado: revisão na branch `feat/urbe-uc18-note-templates-req093`, sem integração, CI ou DEVICE presumidos.
+- Feito: mecanismo C# puro de campos `{{campo}}`, preservação do Markdown, modelos como notas ordinárias em `Modelos/`; Editor clona a nota em modelo; Explorer cria nova nota com formulário dinâmico, campos repetidos e validação antes de mutação.
+- Decisões (fontes): SPEC §15.1 / REQ-093 / roadmap UC-18, com DocumentStore como autoridade única. Nenhum formato persistido, migração, backend, integração de outro Product ou nova release.
+- Testes: adicionada suíte unitária de placeholders; execução .NET local indisponível neste ambiente, CI `urbe-checks`/consistency e smoke Web ainda devem rodar no PR e estado combinado.
+- Limites: sessão host-neutral em memória; persistência física futura, Android/toque real, e gate G-C3 seguem pendentes. Não marcar REQ-093 concluído.
+- Próximos passos: validar CI do PR, corrigir regressões, integrar somente pelo integrador automático e seguir com a persistência física da UC-18.
