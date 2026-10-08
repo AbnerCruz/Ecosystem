@@ -14,6 +14,7 @@
     {
         var document = Workspace.CurrentDocument;
         var history = Workspace.HistoryStatus;
+        var canEditVisual = Workspace.CanEditVisualBlocks;
 
         @if (Workspace.Tabs.Count > 0)
         {
@@ -109,11 +110,11 @@
                             <option value="@VisualBlockKind.Code">Código</option>
                             <option value="@VisualBlockKind.HorizontalRule">Separador</option>
                         </select>
-                        <button type="button" @onclick="AddVisualBlock" disabled="@(!Workspace.CanEditVisualBlocks)">Adicionar</button>
+                        <button type="button" @onclick="AddVisualBlock" disabled="@(!canEditVisual)">Adicionar</button>
                     </div>
                 </div>
 
-                @if (!Workspace.CanEditVisualBlocks && !Workspace.IsReadOnly)
+                @if (!canEditVisual && !Workspace.IsReadOnly)
                 {
                     <p class="editor-stage-note" role="status">
                         Edição estrutural indisponível para este documento: a conversão alteraria
@@ -140,7 +141,7 @@
                                 <div class="visual-block-toolbar">
                                     <select value="@block.Kind"
                                             @onchange="e => ChangeVisualKind(blockIndex, e)"
-                                            disabled="@(!Workspace.CanEditVisualBlocks || block.Kind == VisualBlockKind.Raw)"
+                                            disabled="@(!canEditVisual || block.Kind == VisualBlockKind.Raw)"
                                             aria-label="Tipo do bloco">
                                         <option value="@VisualBlockKind.Paragraph">Texto</option>
                                         <option value="@VisualBlockKind.Heading">Título</option>
@@ -152,9 +153,9 @@
                                         <option value="@VisualBlockKind.Raw">Avançado</option>
                                     </select>
                                     <span class="visual-block-label">@VisualBlockLabel(block.Kind)</span>
-                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, -1)" disabled="@(!Workspace.CanEditVisualBlocks || blockIndex == 0)" aria-label="Mover bloco para cima">↑</button>
-                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, 1)" disabled="@(!Workspace.CanEditVisualBlocks || blockIndex == VisualBlocks.Count - 1)" aria-label="Mover bloco para baixo">↓</button>
-                                    <button type="button" @onclick="() => RemoveVisualBlock(blockIndex)" disabled="@(!Workspace.CanEditVisualBlocks)" aria-label="Excluir bloco">Excluir</button>
+                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, -1)" disabled="@(!canEditVisual || blockIndex == 0)" aria-label="Mover bloco para cima">↑</button>
+                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, 1)" disabled="@(!canEditVisual || blockIndex == VisualBlocks.Count - 1)" aria-label="Mover bloco para baixo">↓</button>
+                                    <button type="button" @onclick="() => RemoveVisualBlock(blockIndex)" disabled="@(!canEditVisual)" aria-label="Excluir bloco">Excluir</button>
                                 </div>
 
                                 @if (block.Kind == VisualBlockKind.Heading)
@@ -162,7 +163,7 @@
                                     <div class="visual-block-heading">
                                         <select value="@block.Level"
                                                 @onchange="e => ChangeVisualLevel(blockIndex, e)"
-                                                disabled="@(!Workspace.CanEditVisualBlocks)"
+                                                disabled="@(!canEditVisual)"
                                                 aria-label="Nível do título">
                                             @for (var level = 1; level <= 6; level++)
                                             {
@@ -171,7 +172,7 @@
                                         </select>
                                         <input value="@block.Text"
                                                @onchange="e => ChangeVisualText(blockIndex, e)"
-                                               disabled="@(!Workspace.CanEditVisualBlocks)"
+                                               disabled="@(!canEditVisual)"
                                                aria-label="Texto do título"
                                                placeholder="Título" />
                                     </div>
@@ -185,12 +186,12 @@
                                     <input class="visual-code-language"
                                            value="@block.Language"
                                            @onchange="e => ChangeVisualLanguage(blockIndex, e)"
-                                           disabled="@(!Workspace.CanEditVisualBlocks)"
+                                           disabled="@(!canEditVisual)"
                                            aria-label="Linguagem do código"
                                            placeholder="linguagem opcional" />
                                     <textarea value="@block.Text"
                                               @onchange="e => ChangeVisualText(blockIndex, e)"
-                                              disabled="@(!Workspace.CanEditVisualBlocks)"
+                                              disabled="@(!canEditVisual)"
                                               aria-label="Código do bloco"
                                               spellcheck="false"></textarea>
                                 }
@@ -198,7 +199,7 @@
                                 {
                                     <textarea value="@block.Text"
                                               @onchange="e => ChangeVisualText(blockIndex, e)"
-                                              disabled="@(!Workspace.CanEditVisualBlocks)"
+                                              disabled="@(!canEditVisual)"
                                               aria-label="Markdown avançado"
                                               spellcheck="false"></textarea>
                                     <small class="visual-raw-note">Sintaxe avançada preservada como Markdown canônico.</small>
@@ -207,7 +208,7 @@
                                 {
                                     <textarea value="@block.Text"
                                               @onchange="e => ChangeVisualText(blockIndex, e)"
-                                              disabled="@(!Workspace.CanEditVisualBlocks)"
+                                              disabled="@(!canEditVisual)"
                                               aria-label="@VisualBlockLabel(block.Kind)"
                                               placeholder="@VisualBlockPlaceholder(block.Kind)"></textarea>
                                 }
@@ -242,7 +243,7 @@
                     {
                         <button type="button"
                                 class="missing-link"
-                                disabled="@(!Workspace.CanEditVisualBlocks)"
+                                disabled="@(!canEditVisual)"
                                 @onclick="() => CreateMissingLink(missing)">
                             Criar @missing
                         </button>
