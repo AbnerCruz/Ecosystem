@@ -37,7 +37,8 @@
     "Tween local float/Vector2/Color com Linear/InQuad/OutQuad/InOutQuad/SmoothStep, pausa/retomada/reinício, endpoints exatos e interpolação numérica sem overflow intermediário.",
     "Novo modelo opcional na criação de projeto Android: animação procedural + transição por toque, retarget sem salto e botões de pausa/reinício. Modelos antigos não alterados.",
     "Guia offline completo, API XML/JSON atualizada e testes de regressão, precisão/entrada inválida, UV/cor no SpriteBatch e guia/modelo no compilador/runtime reais.",
-    "Reconciliado semanticamente com main 0b541c6, preservando câmera e animação em código/API/documentação; aprovações canônicas #303/#304 aplicadas aos estados de colisão/câmera, sem fechar a Fase 4."
+    "Reconciliado semanticamente com main 0b541c6, preservando câmera e animação em código/API/documentação; aprovações canônicas #303/#304 aplicadas aos estados de colisão/câmera, sem fechar a Fase 4.",
+    "Reconciliação semântica com main 040dd8d: A* e mudanças Urbe preservados, conflitos de documentação resolvidos mantendo ambas as entregas."
   ],
   "verification": [
     {
@@ -50,7 +51,7 @@
       "check": "Lunet.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Runner xUnit v3 .NET 10 padrão no conjunto reconciliado com main 0b541c6: 374 testes, zero falhas/erros/skips. Inclui 23 casos de animação/tween e 14 de câmera, UV/cor, zero bytes e os modelos/guias no runtime real."
+      "evidence": "Suíte padrão xUnit v3 .NET 10: 386/386 após merge main 040dd8d, incluindo A* e exemplos XML/guias compilados/executados."
     },
     {
       "check": "Consistency",
@@ -74,8 +75,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI/integração e release de animação/tween; PR #295 já integrado.",
-    "Validar animacao.md no aparelho e continuar Fase 4."
+    "Acompanhar testes combinados/CI do PR #302 após reconciliação com main 040dd8d; autorização do proprietário pela label integrar, sem simular evento.",
+    "Confirmar release/APK após integração; validar animacao.md no aparelho."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -122,8 +123,11 @@
     }
   ],
   "criticality": {
-    "declared": "routine",
-    "reason": "Recurso previsto e autorizado da Fase 4, com APIs/modelo adicionais; preserva APIs existentes, dados, boundaries e distribuição."
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Política confiável da main protege ProjectStore.cs por caminho. O diff adiciona somente a seleção do template Animation, sem alterar formato, migração ou projetos existentes; integração exige autorização do proprietário."
   },
   "cost": null
 }

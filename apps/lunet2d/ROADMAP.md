@@ -181,7 +181,7 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [ ] Tilemaps (carregar formato do Tile Studio, colisão).
 - [ ] Fontes personalizadas (bitmap e TrueType).
 - [ ] UI (layout, âncoras, nine-slice, temas).
-- [ ] Pathfinding A*.
+- [~] **LUNET-406 — Pathfinding A*** (§7): grade com obstáculos/custos, quatro/oito vizinhos e buffers reutilizáveis; Issue #311. Implementado/testado com guia offline; integração/CI/aparelho pendentes. Handoff `HO-20261008-lunet-pathfinding`.
 - [ ] Scene2D opcional e API entidade/componente opcional (sem obrigar ECS).
 - [ ] Debug APIs e helpers.
 - [ ] Profiler básico do framework (FPS, frame time, update/render time, draw calls, triângulos, memória, GC, audio underruns) (§23), com o painel Profiler no workspace (movido da Fase 3).

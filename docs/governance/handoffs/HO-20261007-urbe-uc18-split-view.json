@@ -1,0 +1,107 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc18-split-view",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T00:54:04.811Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18-split",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc18-editor-split-view",
+  "base_commit": "ee920ea5f058e514b85ca01972e8e6351deb5f38",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/300",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs"
+  ],
+  "work_completed": [
+    "Introduzido modo Dividido com painéis simultâneos de Fonte e Visual, sem nova autoridade de dados.",
+    "Entradas Source atualizam DocumentStore e resincronizam modelo Visual enquanto no modo Dividido.",
+    "Mutações visuais escrevem pelo UpdateVisualBlocks/UpdateSource existente, refletindo na fonte exibida.",
+    "Responsividade mantém pilha vertical no mobile e dois painéis a partir de 980 px.",
+    "Smoke Playwright testa alternância, fonte→visual, visual→fonte e undo compartilhado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe CI: C# portátil, Web, Android, Windows, E2E",
+      "result": "pending",
+      "evidence": "CI do PR empilhado."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency",
+      "result": "pending",
+      "evidence": "CI do PR empilhado."
+    },
+    {
+      "kind": "human",
+      "check": "layout/toque em Android real",
+      "result": "not-applicable",
+      "evidence": "G-C3, UC-29, NN-017: validação humana separada."
+    }
+  ],
+  "known_issues": [
+    "Dependência empilhada sobre PR #296 e, indiretamente, #289. Sem persistência física nos hosts nem reivindicação de UC-18 concluída.",
+    "Vista dividida em telas estreitas mantém painéis empilhados, sem scroll sincronizado."
+  ],
+  "blockers": [
+    "PRs #289/#296 ainda aguardam integração da base e validação combinada."
+  ],
+  "next_actions": [
+    "Executar CI e corrigir regressões.",
+    "Retarget para main após integração dos PRs base; integrar pela fila automática somente com checks verdes.",
+    "Continuar UC-18 em Explorer/hosts sem antecipar gates críticos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Fonte e Visual são projeções da mesma WorkspaceSession/DocumentStore, sem duplicação persistida."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff rastreia branch, trabalho, CI e bloqueios."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem declaração de validação física antecipada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying até CI e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Sem nova tool/capability; UI local ao Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Modo de UI, sem mudança de formato de dados, boundary, segurança, canais ou regras de integração."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "editor-split-view",
+      "status": "product-specific",
+      "rationale": "A UI usa apenas o domínio do Urbe e não possui consumidor externo independente."
+    }
+  ],
+  "cost": null
+}

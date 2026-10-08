@@ -137,3 +137,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - CI e integrador seguem pelo PR; teste GL/aparelho permanece pendente em `docs/guides/animacao.md`. Nenhuma fase fechada ou física completa improvisada.
 
 - Reconciliação LUNET-404 em 2026-10-08: main `0b541c6` preservada integralmente; conflitos em AgentsChat/CHANGELOG/ROADMAP resolvidos mantendo ambas as entregas. Colisão/câmera aprovadas pelo proprietário nas Issues #303/#304; estados reconciliados para done, sem fechar Fase 4. Câmera distribuída no APK 1000126. Suíte combinada registrada no handoff.
+
+### 20261008-codex-pathfinding — Codex → próximos agentes — review
+- LUNET-406 / Issue #311; base main `0dc9471293d1d17657c54b91c812e7be58f1b717`, branch `agent/lunet-pathfinding-20261008`. Entrega independente de #302/#307, sem alterar templates, ProjectStore, persistência ou formato do futuro Tile Studio.
+- GridPoint/PathStatus/PathResult/GridPathfinder: A* com custos positivos inclusive <1, obstáculos, diagonais sem cortar cantos, heap indexado e Span de saída; falha/saída pequena não escrevem rota parcial. API XML/JSON e guia offline completo.
+- Build .NET 10 sem warnings/errors; suíte padrão 363/363 (12 casos novos). Oracle Dijkstra independente em 200 grades ponderadas; zero bytes por busca, repetição/edição/cantos/buffers/validação. Guia compilado e executado com toque físico 2× no GameHost.
+- Roteiro de aparelho em `docs/guides/pathfinding.md` continua pendente; sem fechar item/gate da Fase 4. Busca síncrona O(células) para limpeza + heap de expansão, 32 bytes/célula de buffers; não é thread-safe, não faz movimento nem coordenação de agentes. Integração/release ficam com integrador.
+- Estado observado dos trabalhos anteriores: #302 testes combinados verdes, classificado crítico pela política da main por tocar ProjectStore.cs; aguarda label integrar do proprietário. #307 CI/consistency/APK verdes, empilhado sobre #302, ainda não integrado. Não simular autorização nem alterar política para liberar entrega.
+
+- Reconciliação LUNET-404 em 2026-10-08 (A*): main `040dd8d` preservada; ambas as entradas AgentsChat/CHANGELOG mantidas e API JSON regenerada. Build sem warnings/errors, 386/386 testes padrão. ProjectStore permanece classificado crítico; APIs/guias serão entregues em fatia separada sem a criação de templates.
