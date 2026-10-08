@@ -65,6 +65,9 @@ public static class ProjectStorage
             throw new InvalidDataException("Todos os checkpoints estão inválidos: " + string.Join(", ", warnings));
         }
 
+        if (recovered.Select(x => x.Project.Document.ProjectId).Distinct(StringComparer.Ordinal).Count() > 1)
+            throw new InvalidDataException("Checkpoints pertencem a projetos diferentes; escolha manual necessária.");
+
         // Revision is the explicit source of freshness, not clock time.
         // Tie-break order is Primary, Autosave, Backup, AutosaveBackup.
         var selected = recovered.OrderByDescending(x => x.Project.Revision)
@@ -91,7 +94,11 @@ public static class ProjectStorage
             if (File.Exists(absolute))
             {
                 using var existing = File.OpenRead(absolute);
-                _ = ProjectPackage.Read(existing);
+                var previous = ProjectPackage.Read(existing);
+                if (!string.Equals(previous.Document.ProjectId, project.Document.ProjectId, StringComparison.Ordinal))
+                    throw new InvalidDataException("Destino pertence a outro projeto.");
+                if (project.Revision <= previous.Revision)
+                    throw new InvalidDataException("Revisão de salvamento não avança o checkpoint existente.");
             }
             else if (File.Exists(backup))
             {
