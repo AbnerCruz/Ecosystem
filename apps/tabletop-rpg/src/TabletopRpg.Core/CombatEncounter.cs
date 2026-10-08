@@ -8,6 +8,8 @@ namespace TabletopRpg.Core;
 public sealed class CombatEncounter
 {
     public const int MaxCombatants = 32;
+    private readonly object _gate = new();
+    private long _version;
     private readonly Campaign _campaign;
     private readonly ICombatRules _rules;
     private readonly CharacterId[] _turnOrder;
@@ -47,8 +49,14 @@ public sealed class CombatEncounter
 
     public ActionResolution Attack(AttackIntent intent, IDiceRoller dice)
     {
+        lock (_gate) return AttackCore(intent, dice);
+    }
+
+    private ActionResolution AttackCore(AttackIntent intent, IDiceRoller dice)
+    {
         ArgumentNullException.ThrowIfNull(intent);
         ArgumentNullException.ThrowIfNull(dice);
+        var expectedVersion = _version;
         if (!CanAct(intent.CharacterId, out var reason)) return ActionResolution.Reject(reason);
         if (_actionSpent) return ActionResolution.Reject("Combat action already spent in this turn.");
         if (intent.TargetId == intent.CharacterId || !_turnOrder.Contains(intent.TargetId))
@@ -71,6 +79,10 @@ public sealed class CombatEncounter
         {
             return ActionResolution.Reject("Combat rules could not resolve this attack.");
         }
+        // A ruleset callback may reenter this encounter through its trusted
+        // host. Do not let the outer action overwrite a committed nested turn.
+        if (_version != expectedVersion || !CanAct(intent.CharacterId, out _) || _actionSpent)
+            return ActionResolution.Reject("Combat turn changed while resolving rules.");
         if (strike is null || strike.Roll < 1 || strike.Roll > 1000000 ||
             strike.Damage is < 0 or > 1000000 || (!strike.Hit && strike.Damage != 0))
             return ActionResolution.Reject("Combat rules returned an invalid result.");
@@ -82,6 +94,7 @@ public sealed class CombatEncounter
             "combat-attack", intent.ParticipantId, intent.CharacterId,
             $"{intent.CharacterId.Value:N}>{intent.TargetId.Value:N}:{intent.AttackKey}:{strike.Roll}:{(strike.Hit ? "hit" : "miss")}:{damage}");
         _actionSpent = true;
+        _version++;
 
         if (_turnOrder.Count(x => HitPoints(x) is > 0) <= 1)
         {
@@ -93,6 +106,11 @@ public sealed class CombatEncounter
     }
 
     public ActionResolution EndTurn(EndCombatTurnIntent intent)
+    {
+        lock (_gate) return EndTurnCore(intent);
+    }
+
+    private ActionResolution EndTurnCore(EndCombatTurnIntent intent)
     {
         ArgumentNullException.ThrowIfNull(intent);
         if (!CanAct(intent.CharacterId, out var reason)) return ActionResolution.Reject(reason);
@@ -109,6 +127,7 @@ public sealed class CombatEncounter
             }
             _turnIndex = next;
             _actionSpent = false;
+            _version++;
             _campaign.RecordEvent("combat-next-turn", intent.ParticipantId, intent.CharacterId,
                 $"{_round}:{ActiveCharacter.Value:N}");
             return new ActionResolution(true, true, "next-turn");
