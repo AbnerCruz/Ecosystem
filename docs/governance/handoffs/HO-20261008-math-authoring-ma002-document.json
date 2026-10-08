@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-math-authoring-ma002-document",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T00:34:42.904Z",
+  "timestamp": "2026-10-08T00:37:41.391Z",
   "agent": {
     "id": "chatgpt-math-authoring-ma002",
     "kind": "ai-agent"
@@ -22,13 +22,16 @@
     "apps/math-authoring/document.v1.schema.json",
     "apps/math-authoring/README.md",
     "apps/math-authoring/ROADMAP.md",
-    "docs/governance/handoffs/HO-20261008-math-authoring-ma002-document.json"
+    "docs/governance/handoffs/HO-20261008-math-authoring-ma002-document.json",
+    "apps/math-authoring/src/MathAuthoring.Core/ProjectMigrator.cs"
   ],
   "work_completed": [
     "Primeira fatia de MA-002: codec JSON v1 explícito de AST (tipos, campos, versões e arrays sem ordenação artificial) e schema local.",
     "Leitura valida duplicatas, campos/tipos desconhecidos, versão futura, valores não finitos, tamanho e limites; referências de variáveis e limites da AST checados.",
     "ProjectSession publica somente snapshots validados; visual Apply e textual ApplyText compartilham revisão-base, histórico e undo/redo, sem commit parcial.",
-    "Testes adicionados para round-trip, invariância cultural, entradas hostis, conflitos e histórico; README e roadmap do Product atualizados."
+    "Testes adicionados para round-trip, invariância cultural, entradas hostis, conflitos e histórico; README e roadmap do Product atualizados.",
+    "Migração opt-in por steps versionados N→N+1, com cópia imutável e revalidação do destino, sem aceitar versões futuras nem fonte ambígua.",
+    "ProjectSession agora serializa commits concorrentes e reprova callback reentrante cuja revisão-base ficou obsoleta."
   ],
   "verification": [
     {
@@ -45,15 +48,14 @@
     }
   ],
   "known_issues": [
-    "O slice ainda não é o encerramento integral do MA-002: falta estratégia explícita para migration hooks e validação completa de schema além da suíte de contrato atual.",
     "ObjectIds de cenas não têm catálogo de objetos neste estágio; resolução de referências de cena chega no MA-005.",
     "MA-003 (save, autosave, backup, recovery) e editor Android não estão implementados por este PR."
   ],
   "blockers": [],
   "next_actions": [
     "Acompanhar CI do PR, corrigir erro real sem afrouxar checks e preservar revisão-base da main.",
-    "Concluir migration hooks versionados de MA-002 antes de marcar milestone como [x].",
-    "Integrar pelo integrador do repositório; não fazer merge manual."
+    "Integrar pelo integrador do repositório; não fazer merge manual.",
+    "Aguardar CI no head revisado (inclui migration e regressão de concorrência) e revisar resultados."
   ],
   "decisions_required": [],
   "normative_sources": [
