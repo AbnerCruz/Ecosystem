@@ -11,6 +11,8 @@
 
 ### Added
 
+- `Lunet.Pathfinding`: A* em grade com custos/obstáculos, quatro/oito vizinhos sem cortar cantos, buffers reutilizáveis sem alocação por busca e guia interativo offline (LUNET-406).
+
 - `Camera2D`: posição, zoom, rotação, conversão mundo/vista e toque no mundo; lote com câmera opcional em `SpriteBatch`, HUD sem câmera, terceira página do modelo Laboratório e guia offline interativo (LUNET-403).
 - Consultas `Geometry.Distance`, `ClosestPoint` e `Intersection` para círculos, pontos e AABBs, sem alocação; guia offline com demonstração de colisão no Preview (LUNET-402).
 - Candidato exato e entrega do roteiro integral da Fase 3 no portal (LUNET-303); aprovações ZIP/C6 reconciliadas sem aprovar o gate inteiro.

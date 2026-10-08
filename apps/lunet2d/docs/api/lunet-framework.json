@@ -12138,6 +12138,376 @@
       ]
     },
     {
+      "id": "T:Lunet.Pathfinding.GridPathfinder",
+      "name": "GridPathfinder",
+      "namespace": "Lunet.Pathfinding",
+      "kind": "class",
+      "signature": "public sealed class GridPathfinder",
+      "summary": "A* em grade retangular finita com custos por c\u00E9lula e mem\u00F3ria reutiliz\u00E1vel.",
+      "remarks": "Busca s\u00EDncrona; n\u00E3o \u00E9 thread-safe nem reentrante. Constru\u00E7\u00E3o aloca O(largura \u00D7 altura). Cada busca limpa os buffers em O(c\u00E9lulas); expans\u00E3o usa heap bin\u00E1rio, sem aloca\u00E7\u00E3o por busca. N\u00E3o carrega mapas, n\u00E3o move entidades e n\u00E3o modifica dados de projeto. Diagonais nunca cortam cantos bloqueados.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar grid = new Lunet.Pathfinding.GridPathfinder(10, 10);\ngrid.SetCost(new(4, 4), 0); // parede\nvar path = new Lunet.Pathfinding.GridPoint[100]; // reutilizar\nvar result = grid.FindPath(new(0, 0), new(9, 9), path, allowDiagonals: true);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Pathfinding.GridPathfinder.#ctor(System.Int32,System.Int32)",
+          "name": "GridPathfinder",
+          "kind": "constructor",
+          "signature": "public GridPathfinder(int width, int height)",
+          "summary": "Cria uma grade com todas as c\u00E9lulas transit\u00E1veis, custo 1.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Colunas positivas; o produto das dimens\u00F5es deve caber em um array .NET."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Linhas positivas."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.GridPathfinder.Height",
+          "name": "Height",
+          "kind": "property",
+          "signature": "public int Height { get; }",
+          "summary": "N\u00FAmero de linhas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.GridPathfinder.Width",
+          "name": "Width",
+          "kind": "property",
+          "signature": "public int Width { get; }",
+          "summary": "N\u00FAmero de colunas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Pathfinding.GridPathfinder.FindPath(Lunet.Pathfinding.GridPoint,Lunet.Pathfinding.GridPoint,System.Span{Lunet.Pathfinding.GridPoint},System.Boolean)",
+          "name": "FindPath",
+          "kind": "method",
+          "signature": "public PathResult FindPath(GridPoint start, GridPoint goal, Span\u003CGridPoint\u003E path, bool allowDiagonals = false)",
+          "summary": "Encontra uma rota de menor custo e a escreve da origem ao destino, sem aloca\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "start",
+              "type": "GridPoint",
+              "description": "Origem dentro da grade. Seu custo n\u00E3o \u00E9 cobrado."
+            },
+            {
+              "name": "goal",
+              "type": "GridPoint",
+              "description": "Destino dentro da grade."
+            },
+            {
+              "name": "path",
+              "type": "Span\u003CGridPoint\u003E",
+              "description": "Buffer reutiliz\u00E1vel; preservado integralmente quando sem rota ou pequeno demais."
+            },
+            {
+              "name": "allowDiagonals",
+              "type": "bool",
+              "description": "Oito vizinhos se true, quatro se false. Passos diagonais custam \u221A2 vezes o custo de entrada."
+            }
+          ],
+          "returns": "Estado, tamanho necess\u00E1rio, custo e visitas. Extremos fora da grade lan\u00E7am ArgumentOutOfRangeException.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Pathfinding.GridPathfinder.GetCost(Lunet.Pathfinding.GridPoint)",
+          "name": "GetCost",
+          "kind": "method",
+          "signature": "public float GetCost(GridPoint cell)",
+          "summary": "L\u00EA o custo de entrada da c\u00E9lula; zero significa bloqueada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "cell",
+              "type": "GridPoint",
+              "description": "Coordenada dentro da grade."
+            }
+          ],
+          "returns": "Custo finito e n\u00E3o negativo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Pathfinding.GridPathfinder.SetCost(Lunet.Pathfinding.GridPoint,System.Single)",
+          "name": "SetCost",
+          "kind": "method",
+          "signature": "public void SetCost(GridPoint cell, float cost)",
+          "summary": "Define o custo de entrada, sem alterar rotas j\u00E1 copiadas para o chamador.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "cell",
+              "type": "GridPoint",
+              "description": "Coordenada dentro da grade."
+            },
+            {
+              "name": "cost",
+              "type": "float",
+              "description": "Zero bloqueia; valores positivos finitos permitem tr\u00E2nsito, inclusive menores que 1."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Pathfinding.GridPoint",
+      "name": "GridPoint",
+      "namespace": "Lunet.Pathfinding",
+      "kind": "struct",
+      "signature": "public readonly struct GridPoint",
+      "summary": "Coordenada inteira de uma c\u00E9lula; n\u00E3o representa pixels ou posi\u00E7\u00E3o de mundo.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar cell = new Lunet.Pathfinding.GridPoint(2, 3);\nvar world = new System.Numerics.Vector2(cell.X * 32 \u002B 16, cell.Y * 32 \u002B 16);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Pathfinding.GridPoint.#ctor(System.Int32,System.Int32)",
+          "name": "GridPoint",
+          "kind": "constructor",
+          "signature": "public GridPoint(int X, int Y)",
+          "summary": "Coordenada inteira de uma c\u00E9lula; n\u00E3o representa pixels ou posi\u00E7\u00E3o de mundo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "X",
+              "type": "int",
+              "description": "Coluna, a partir de zero."
+            },
+            {
+              "name": "Y",
+              "type": "int",
+              "description": "Linha, a partir de zero."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nvar cell = new Lunet.Pathfinding.GridPoint(2, 3);\nvar world = new System.Numerics.Vector2(cell.X * 32 \u002B 16, cell.Y * 32 \u002B 16);\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.GridPoint.X",
+          "name": "X",
+          "kind": "property",
+          "signature": "public int X { get; init; }",
+          "summary": "Coluna, a partir de zero.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.GridPoint.Y",
+          "name": "Y",
+          "kind": "property",
+          "signature": "public int Y { get; init; }",
+          "summary": "Linha, a partir de zero.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Pathfinding.PathResult",
+      "name": "PathResult",
+      "namespace": "Lunet.Pathfinding",
+      "kind": "struct",
+      "signature": "public readonly struct PathResult",
+      "summary": "Metadados da \u00FAltima busca, sem possuir o buffer da rota.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar grid = new Lunet.Pathfinding.GridPathfinder(4, 4);\nvar path = new Lunet.Pathfinding.GridPoint[16];\nLunet.Pathfinding.PathResult result = grid.FindPath(new(0, 0), new(3, 3), path);\ndouble cost = result.Cost;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Pathfinding.PathResult.#ctor(Lunet.Pathfinding.PathStatus,System.Int32,System.Double,System.Int32)",
+          "name": "PathResult",
+          "kind": "constructor",
+          "signature": "public PathResult(PathStatus Status, int Length, double Cost, int VisitedCount)",
+          "summary": "Metadados da \u00FAltima busca, sem possuir o buffer da rota.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "Status",
+              "type": "PathStatus",
+              "description": "Estado da busca."
+            },
+            {
+              "name": "Length",
+              "type": "int",
+              "description": "C\u00E9lulas da rota, incluindo extremos; tamanho necess\u00E1rio se BufferTooSmall, zero se NotFound."
+            },
+            {
+              "name": "Cost",
+              "type": "double",
+              "description": "Soma dos custos de entrada, multiplicados pela dist\u00E2ncia do passo; infinito se NotFound."
+            },
+            {
+              "name": "VisitedCount",
+              "type": "int",
+              "description": "N\u00FAmero de remo\u00E7\u00F5es da fila de busca, inclusive destino quando encontrado."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nvar grid = new Lunet.Pathfinding.GridPathfinder(4, 4);\nvar path = new Lunet.Pathfinding.GridPoint[16];\nLunet.Pathfinding.PathResult result = grid.FindPath(new(0, 0), new(3, 3), path);\ndouble cost = result.Cost;\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.PathResult.Cost",
+          "name": "Cost",
+          "kind": "property",
+          "signature": "public double Cost { get; init; }",
+          "summary": "Soma dos custos de entrada, multiplicados pela dist\u00E2ncia do passo; infinito se NotFound.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.PathResult.Length",
+          "name": "Length",
+          "kind": "property",
+          "signature": "public int Length { get; init; }",
+          "summary": "C\u00E9lulas da rota, incluindo extremos; tamanho necess\u00E1rio se BufferTooSmall, zero se NotFound.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.PathResult.Status",
+          "name": "Status",
+          "kind": "property",
+          "signature": "public PathStatus Status { get; init; }",
+          "summary": "Estado da busca.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.PathResult.VisitedCount",
+          "name": "VisitedCount",
+          "kind": "property",
+          "signature": "public int VisitedCount { get; init; }",
+          "summary": "N\u00FAmero de remo\u00E7\u00F5es da fila de busca, inclusive destino quando encontrado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Pathfinding.PathStatus",
+      "name": "PathStatus",
+      "namespace": "Lunet.Pathfinding",
+      "kind": "enum",
+      "signature": "public enum PathStatus",
+      "summary": "Resultado da busca: sucesso, aus\u00EAncia de rota ou sa\u00EDda pequena.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar grid = new Lunet.Pathfinding.GridPathfinder(8, 8);\nvar path = new Lunet.Pathfinding.GridPoint[64];\nvar result = grid.FindPath(new(0, 0), new(7, 7), path);\nbool found = result.Status == Lunet.Pathfinding.PathStatus.Found;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.Pathfinding.PathStatus.BufferTooSmall",
+          "name": "BufferTooSmall",
+          "kind": "enum value",
+          "signature": "public const PathStatus BufferTooSmall = 2",
+          "summary": "Rota encontrada, mas a sa\u00EDda n\u00E3o comporta Length c\u00E9lulas; sa\u00EDda preservada.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Pathfinding.PathStatus.Found",
+          "name": "Found",
+          "kind": "enum value",
+          "signature": "public const PathStatus Found = 0",
+          "summary": "Rota escrita na sa\u00EDda, incluindo origem e destino.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Pathfinding.PathStatus.NotFound",
+          "name": "NotFound",
+          "kind": "enum value",
+          "signature": "public const PathStatus NotFound = 1",
+          "summary": "Sem rota, inclusive quando origem ou destino est\u00E3o bloqueados.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Storage.DirectorySaveStore",
       "name": "DirectorySaveStore",
       "namespace": "Lunet.Storage",
