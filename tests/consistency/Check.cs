@@ -1189,6 +1189,17 @@ static class Checks
             if (!Regex.IsMatch(pages, @"(?m)^  release:\s*$") ||
                 !Regex.IsMatch(pages, @"(?m)^    types:\s*\[published\]\s*$"))
                 c.R.Fail(id, "pages.yml deve republicar o Portal em release.published para não congelar releases na projeção");
+            // Releases publicadas por workflows com GITHUB_TOKEN não disparam
+            // release.published em outro workflow. CHK-PORTAL fiscaliza o
+            // gatilho pela conclusão dos produtores e o filtro de segurança.
+            if (!Regex.IsMatch(pages, @"(?m)^  workflow_run:\s*$") ||
+                !Regex.IsMatch(pages, @"(?m)^    workflows:\s*\[hub-release,\s*lunet2d-release,\s*urbe-release\]\s*$") ||
+                !Regex.IsMatch(pages, @"(?m)^    types:\s*\[completed\]\s*$"))
+                c.R.Fail(id, "pages.yml deve observar workflow_run completed de Hub, Lunet e Urbe para releases publicadas por GITHUB_TOKEN");
+            if (!pages.Contains("github.event.workflow_run.conclusion == 'success'", StringComparison.Ordinal) ||
+                !pages.Contains("github.event.workflow_run.repository.full_name == github.repository", StringComparison.Ordinal) ||
+                !pages.Contains("github.event.workflow_run.event != 'pull_request'", StringComparison.Ordinal))
+                c.R.Fail(id, "pages.yml deve bloquear workflow_run falho, fora do repositório ou de pull_request antes de publicar");
             if (!pages.Contains(@"ref: ${{ github.event.repository.default_branch }}", StringComparison.Ordinal))
                 c.R.Fail(id, "pages.yml deve projetar a branch padrão canônica também quando o evento nasce de uma tag de release");
         }
@@ -2745,6 +2756,18 @@ static class SelfTest
                 "\"commands\": { \"test\": \"dotnet run tests/consistency/Check.cs\" },\n      \"dependencies\": [{ \"component\": \"portal\", \"kind\": \"optional\", \"reason\": \"x\" }]")),
         new("portal sem gatilho release.published", "CHK-PORTAL",
             r => Replace(r, ".github/workflows/pages.yml", "  release:\n    types: [published]\n", "")),
+        new("portal não observa produtores de release do próprio token", "CHK-PORTAL",
+            r => Replace(r, ".github/workflows/pages.yml",
+                "    workflows: [hub-release, lunet2d-release, urbe-release]",
+                "    workflows: [hub-release, urbe-release]")),
+        new("portal permite republicação após workflow de release com falha", "CHK-PORTAL",
+            r => Replace(r, ".github/workflows/pages.yml",
+                "github.event.workflow_run.conclusion == 'success'",
+                "github.event.workflow_run.conclusion != 'success'")),
+        new("portal permite execução de CI de pull request como publicação", "CHK-PORTAL",
+            r => Replace(r, ".github/workflows/pages.yml",
+                "github.event.workflow_run.event != 'pull_request'",
+                "github.event.workflow_run.event == 'pull_request'")),
         new("portal projeta tag em vez da branch canônica", "CHK-PORTAL",
             r => Replace(r, ".github/workflows/pages.yml", "          ref: ${{ github.event.repository.default_branch }}", "          ref: ${{ github.ref }}")),
         new("versão escrita à mão no portal", "CHK-PORTAL",
