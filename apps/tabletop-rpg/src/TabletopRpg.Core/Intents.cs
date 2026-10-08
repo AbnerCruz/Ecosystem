@@ -34,7 +34,8 @@ public sealed record ActionResolution(
     bool Accepted,
     bool? Success,
     string Message,
-    SkillCheckResult? Check = null)
+    SkillCheckResult? Check = null,
+    CombatStrike? Combat = null)
 {
     public static ActionResolution Reject(string message) =>
         new(false, null, message);
