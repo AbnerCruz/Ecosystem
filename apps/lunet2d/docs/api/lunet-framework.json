@@ -14589,6 +14589,310 @@
       ]
     },
     {
+      "id": "T:Lunet.UI.TouchButton",
+      "name": "TouchButton",
+      "namespace": "Lunet.UI",
+      "kind": "class",
+      "signature": "public sealed class TouchButton",
+      "summary": "Bot\u00E3o retangular: captura um dedo e confirma clique ao soltar dentro dos limites.",
+      "remarks": "Atualize uma vez por passo, inclusive desabilitado. Usa IDs/fases de TouchPoint, sem consumir input nem arbitrar controles sobrepostos. Cancel em OnPause/ao ocultar. N\u00E3o captura dedos que j\u00E1 estavam pressionados no Update anterior. Sem aloca\u00E7\u00E3o no loop.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar button = new Lunet.UI.TouchButton(new RectangleF(20, 100, 160, 48));\nbutton.Update(input);\nif (button.WasClicked) log.Info(\u0022clicou\u0022);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.TouchButton.#ctor(Lunet.RectangleF)",
+          "name": "TouchButton",
+          "kind": "constructor",
+          "signature": "public TouchButton(RectangleF bounds)",
+          "summary": "Cria um bot\u00E3o com \u00E1rea finita n\u00E3o negativa.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "bounds",
+              "type": "RectangleF",
+              "description": "\u00C1rea no mesmo espa\u00E7o dos toques (normalmente coordenadas virtuais)."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButton.Bounds",
+          "name": "Bounds",
+          "kind": "property",
+          "signature": "public RectangleF Bounds { get; set; }",
+          "summary": "\u00C1rea para desenho e toque. Altere antes de Update ao recalcular layout; n\u00E3o faz clipping.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButton.IsCaptured",
+          "name": "IsCaptured",
+          "kind": "property",
+          "signature": "public bool IsCaptured { get; }",
+          "summary": "H\u00E1 um dedo capturado, mesmo arrastado para fora do bot\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButton.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Desabilitar cancela imediatamente a captura e o clique; reabilitar n\u00E3o retoma um dedo j\u00E1 acompanhado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButton.IsPressed",
+          "name": "IsPressed",
+          "kind": "property",
+          "signature": "public bool IsPressed { get; }",
+          "summary": "O dedo capturado est\u00E1 pressionado dentro dos limites no \u00FAltimo Update.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButton.WasClicked",
+          "name": "WasClicked",
+          "kind": "property",
+          "signature": "public bool WasClicked { get; }",
+          "summary": "Verdadeiro s\u00F3 no Update que recebeu Released do dedo capturado dentro dos limites.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchButton.Cancel",
+          "name": "Cancel",
+          "kind": "method",
+          "signature": "public void Cancel()",
+          "summary": "Cancela a intera\u00E7\u00E3o sem clique; conserva o hist\u00F3rico de dedos para n\u00E3o recapturar um toque repetido.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchButton.Draw(Lunet.Graphics.SpriteBatch,Lunet.Graphics.SpriteFont,System.String,Lunet.UI.TouchButtonStyle,System.Single)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(SpriteBatch batch, SpriteFont font, string text, TouchButtonStyle style, float textScale = 1f)",
+          "summary": "Desenha fundo e texto centralizado usando o estado atual. Chame entre Begin/End.",
+          "remarks": "Zero \u00E1rea n\u00E3o desenha. Reutiliza c\u00E2mera, clipping e batching do SpriteBatch atual.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "SpriteBatch do jogo."
+            },
+            {
+              "name": "font",
+              "type": "SpriteFont",
+              "description": "Fonte pertencente ao jogo; n\u00E3o \u00E9 criada nem liberada pelo bot\u00E3o."
+            },
+            {
+              "name": "text",
+              "type": "string",
+              "description": "Texto; n\u00E3o faz wrap, ajuste autom\u00E1tico nem recorte."
+            },
+            {
+              "name": "style",
+              "type": "TouchButtonStyle",
+              "description": "Cores dos estados; use TouchButtonStyle.Default para o estilo inicial."
+            },
+            {
+              "name": "textScale",
+              "type": "float",
+              "description": "Escala finita positiva do texto."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchButton.Update(Lunet.Input.InputState)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(InputState input)",
+          "summary": "Atualiza a captura/estado; desaparecimento ou Cancelled cancela sem clique.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Snapshot do host com no m\u00E1ximo InputState.MaxTouches; posi\u00E7\u00F5es no espa\u00E7o de Bounds."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.UI.TouchButtonStyle",
+      "name": "TouchButtonStyle",
+      "namespace": "Lunet.UI",
+      "kind": "struct",
+      "signature": "public readonly struct TouchButtonStyle",
+      "summary": "Paleta imut\u00E1vel de um TouchButton; n\u00E3o cont\u00E9m texturas, fonte ou recursos a liberar.",
+      "remarks": "default tem todas as cores transparentes; use Default para uma paleta vis\u00EDvel. \u00C9 um estilo local de bot\u00E3o, sem tema global, skins, hierarquia ou formato persistente.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar colors = Lunet.UI.TouchButtonStyle.Default;\nColor pressed = colors.PressedBackground;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.TouchButtonStyle.#ctor(Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color)",
+          "name": "TouchButtonStyle",
+          "kind": "constructor",
+          "signature": "public TouchButtonStyle(Color background, Color pressedBackground, Color disabledBackground, Color foreground, Color disabledForeground)",
+          "summary": "Cria a paleta dos estados do bot\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "background",
+              "type": "Color",
+              "description": "Fundo normal."
+            },
+            {
+              "name": "pressedBackground",
+              "type": "Color",
+              "description": "Fundo pressionado."
+            },
+            {
+              "name": "disabledBackground",
+              "type": "Color",
+              "description": "Fundo desabilitado."
+            },
+            {
+              "name": "foreground",
+              "type": "Color",
+              "description": "Texto habilitado."
+            },
+            {
+              "name": "disabledForeground",
+              "type": "Color",
+              "description": "Texto desabilitado."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButtonStyle.Background",
+          "name": "Background",
+          "kind": "property",
+          "signature": "public Color Background { get; }",
+          "summary": "Fundo normal.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButtonStyle.Default",
+          "name": "Default",
+          "kind": "property",
+          "signature": "public static TouchButtonStyle Default { get; }",
+          "summary": "Paleta azul com texto branco e estado desabilitado cinza.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButtonStyle.DisabledBackground",
+          "name": "DisabledBackground",
+          "kind": "property",
+          "signature": "public Color DisabledBackground { get; }",
+          "summary": "Fundo desabilitado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButtonStyle.DisabledForeground",
+          "name": "DisabledForeground",
+          "kind": "property",
+          "signature": "public Color DisabledForeground { get; }",
+          "summary": "Texto desabilitado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButtonStyle.Foreground",
+          "name": "Foreground",
+          "kind": "property",
+          "signature": "public Color Foreground { get; }",
+          "summary": "Texto habilitado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchButtonStyle.PressedBackground",
+          "name": "PressedBackground",
+          "kind": "property",
+          "signature": "public Color PressedBackground { get; }",
+          "summary": "Fundo pressionado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.UI.TouchSlider",
       "name": "TouchSlider",
       "namespace": "Lunet.UI",

@@ -145,6 +145,13 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Closeout de colisão/câmera conserva as aprovações canônicas #303/#304. A* recebeu evidência de integração/release; DEVICE A*/animação/partículas continua pendente, Fase 4 aberta. Próximo: integrar esta fatia pelo integrador, confirmar APK direto e entregar roteiro dos guias.
 
 
+### 20261008-codex-touch-buttons — Codex → próximos agentes — review
+- LUNET-410 / Issue #331, incremento de UI da Fase 4 (§7/§23). Base main `29fbc892197882ec8de180ba90cd90f0d344e7d8`, branch `agent/lunet-touch-buttons-20261008`; escopo explícito Lunet, reuso product-specific.
+- TouchButton acompanha o ID que começou dentro: clique somente ao soltar dentro dos limites atuais. Fora mantém captura sem visual pressionado; retorno restaura visual. Cancelled/ausência/posição inválida, disable e Cancel não clicam. Histórico fixo de dedos impede rearmar Pressed retido entre passos.
+- TouchButtonStyle imutável e Draw com fundo/texto centralizado, cores normal/pressionado/desabilitado, SpriteBatch/SpriteFont existentes. Sem alocação Update/Draw após recursos aquecidos; sem consumo/arbitragem de input, foco, árvore, tema global ou persistência. Controles sobrepostos exigem escolha explícita do jogo.
+- Build .NET 10 sem warnings/errors; runner padrão 413/413 (base main 400 + 13 novos). Guia completo compilado/executado no GameHost com toque físico 2×, clique/arraste/disable/paleta/pausa/retomada e desenho. Não altera VirtualButton, InputState, ProjectStore ou backend.
+- #324/#328/#330 continuam independentes, com CI verde e aguardando integrador; última release pública confirmada 1000141. Não declarar APIs novas integradas por artifact de PR. Handoff `HO-20261008-lunet-touch-buttons`; guia `docs/guides/botoes-ui.md`, DEVICE pendente e Fase 4 aberta.
+
 ### 20261008-codex-ui-layout — Codex → próximos agentes — review
 - LUNET-409 / Issue #329, UI da Fase 4 (§7/§23); base main `29fbc892197882ec8de180ba90cd90f0d344e7d8`, branch `agent/lunet-ui-layout-20261008`. Pedido explícito Lunet; sem substituir prioridade global (AGENTS §1.1).
 - LayoutRect/Fixed/Stretch: âncoras normalizadas, pivôs, offsets/margens e composição aninhada; GetBounds entrega o mesmo RectangleF para desenho/Contains, sem alocação. Pais pequenos colapsam limites invertidos; resultados não representáveis são rejeitados. Sem persistência, árvore de UI, backend, modelos ou ProjectStore.
@@ -164,6 +171,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Layout/âncoras/temas e UI Studio continuam pendentes. DEVICE/GL/aparência/Preview rápido e isolado aguardam roteiro `docs/guides/nine-slice.md`; sem encerrar item/gate. Handoff `HO-20261008-lunet-nine-slice`; próxima ação: CI/integrador e confirmação da release.
 
 
+### 20261008-codex-reconcile-332-nine-slice — Codex → próximos agentes — review
+- PR #332 reconciliado semanticamente com main `f3392f2a3e111de7f7bcd36fc78073a84bf375e7` (NineSlice integrado pelo #324, release pública 1000150). Entradas de código e de histórico de ambos os lados preservadas; duplicação do changelog de APIs corrigida, ROADMAP 404/405/407 alinhado às integrações reais sem fechar DEVICE.
+
 ### 20261008-codex-reconcile-330-nine-slice — Codex → próximos agentes — review
 - PR #330 reconciliado semanticamente com main `f3392f2a3e111de7f7bcd36fc78073a84bf375e7` (NineSlice integrado pelo #324, release pública 1000150). Entradas de código e de histórico de ambos os lados preservadas; duplicação do changelog de APIs corrigida, ROADMAP 404/405/407 alinhado às integrações reais sem fechar DEVICE.
 ### 20261008-codex-reconcile-328-nine-slice — Codex → próximos agentes — review
@@ -171,6 +181,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Código específico do PR preservado; testes completos e checks serão registrados no handoff de reconciliação. Sem alterar gates, contratos ou política de integração; nenhuma label integrar aplicada.
 - Preferência explícita do proprietário nesta sessão: demonstrações para testar no celular devem ser executáveis pelo Laboratório ou por um template, prontas para Run; não entregar copiar código de guia como roteiro principal. Não reformar documentação agora; usar esse formato nas próximas demonstrações. Isso não é aprovação de DEVICE nem autorização do PR crítico #317.
 
+
+### 20261008-codex-reconcile-332-bitmap — Codex → próximos agentes — review
+- PR #332 combinado com main `2e62f554fdd13525e9489f07386862ee39e5d298`: fontes bitmap #328 publicadas no APK 1000155; código específico e registros anteriores preservados, changelog sem duplicação, API JSON regenerada.
+- Build sem warnings/errors; suíte padrão 436/436, zero falhas/erros/skips; delta source/tests limitado aos três arquivos bitmap da main, byte idênticos. Consistency no handoff; DEVICE e gate da Fase 4 não aprovados. Classificação anterior mantida; sem merge manual/label integrar.
 
 ### 20261008-codex-reconcile-330-bitmap — Codex → próximos agentes — review
 - PR #330 combinado com main `2e62f554fdd13525e9489f07386862ee39e5d298`: fontes bitmap #328 publicadas no APK 1000155; código específico e registros anteriores preservados, changelog sem duplicação, API JSON regenerada.
@@ -185,6 +199,18 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - DEVICE e release ainda pendentes. Slider horizontal sem foco/teclado/layout/tema global; não conclui UI nem gate da Fase 4. Integração exclusivamente automática, sem merge manual/label integrar.
 
 
+### 20261008-codex-reconcile-332-slider — Codex → próximos agentes — review
+- PR #332 combinado com main `b614d94c39a1ec7ad133718d7af184eef7670003` após integração real de #336. Página 4 do Laboratório e slider preservados; código específico anterior mantido, API JSON regenerada.
+- Build sem warnings/errors; suíte padrão 451/451, zero falhas/erros/skips. Delta source/tests só traz slider e Laboratório da main; ProjectStore/demos próprios mantidos. Consistency no handoff; DEVICE/gate pendentes, classificação anterior e política de integração preservadas.
+
 ### 20261008-codex-reconcile-330-slider — Codex → próximos agentes — review
 - PR #330 combinado com main `b614d94c39a1ec7ad133718d7af184eef7670003` após integração real de #336. Página 4 do Laboratório e slider preservados; código específico anterior mantido, API JSON regenerada.
 - Build sem warnings/errors; suíte padrão 449/449, zero falhas/erros/skips. Delta source/tests só traz slider e Laboratório da main; ProjectStore/demos próprios mantidos. Consistency no handoff; DEVICE/gate pendentes, classificação anterior e política de integração preservadas.
+
+
+### 20261008-codex-buttons-laboratory — Codex → próximos agentes — review
+- LUNET-410 / Issue #331 / PR #332, reconciliado com main `4966481372efcdb2dedd7816806621d48ba51eab` (LayoutRect #330 e APK 1000164). APIs próprias de TouchButton/Style preservadas.
+- Quinta página no Laboratório existente: clique confirmado na soltura, feedback, drag-out/retorno, disable/habilitar, reposicionamento por LayoutRect, contador e pausa. Não altera projetos existentes nem ProjectStore; próximos exemplos continuam prontos para Run.
+- Cabeçalho usa TouchButton para aceitar segundo dedo enquanto outro controla uma barra/botão; navegação cancela controles escondidos. Reconhecedor de gestos não alterado. OnPause cancela também navegação. Teste antigo passou a enviar Pressed no início dos taps, como o Android, mantendo todas as verificações de áudio/sensores/gráficos/câmera.
+- Build sem warnings/errors, suíte padrão completa 463/463 (main 449 + 13 casos de botões + 1 novo fluxo do Laboratório). Novo caso executa o projeto gerado, em 720×1280: clique/arraste/disable/pausa/relocação/redimensionamento/segundo dedo no cabeçalho; testes anteriores de slider e páginas preservados.
+- Guia novo laboratorio-botoes é roteiro da página pronta; guia antigo não reformado. Integração/release e DEVICE pendentes, sem fechar UI/Fase 4 ou inferir autorização crítica de #317. Handoff HO-20261008-lunet-buttons-laboratory.
