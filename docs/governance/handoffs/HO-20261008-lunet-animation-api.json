@@ -70,7 +70,7 @@
   "known_issues": [
     "Sem eventos para quadros pulados, editor visual, scheduler global, composição ou modo ping-pong automático; controle permanece no código do jogo.",
     "Cor interpola canais RGBA de 8 bits, sem correção gamma. HUD do exemplo formata texto; apenas APIs de playback/tween são declaradas sem alocação por quadro.",
-    "Novo modelo de criação fora desta fatia: PR #302 crítico. Guia funciona pela edição normal de um projeto Em branco.",
+    "Novo modelo de criação fora desta fatia: PR #317 crítico. Guia funciona pela edição normal de um projeto Em branco.",
     "SDK Android ausente localmente; APK vem do CI, DEVICE permanece pendente."
   ],
   "blockers": [],

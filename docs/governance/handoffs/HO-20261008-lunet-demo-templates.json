@@ -14,7 +14,7 @@
   "branch": "agent/lunet-demo-templates-20261008",
   "base_commit": "e96e085cd58f2ebec8cedbca16e1c253e673bfe7",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/317",
   "files_changed": [
     "apps/lunet2d/AgentsChat.md",
     "apps/lunet2d/CHANGELOG.md",
@@ -68,9 +68,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Depois das APIs integradas, publicar PR pronto desta fatia; encerrar #302/#307 como substituídos preservando histórico.",
-    "Proprietário autoriza o efeito protegido pela label integrar após os checks do integrador; agente nunca adiciona essa label.",
-    "Confirmar APK e testar ambos os guias sem fechar Fase 4."
+    "Acompanhar integração/release das APIs pelo PR #316; PR #317 consolida modelos protegidos, substituindo #302/#307.",
+    "Proprietário autoriza o efeito protegido no PR #317 pela label integrar após checks verdes; agente nunca adiciona a label.",
+    "Confirmar APK dos modelos após integração e testar ambos os guias sem fechar Fase 4."
   ],
   "decisions_required": [],
   "normative_sources": [
