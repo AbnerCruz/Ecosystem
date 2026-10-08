@@ -95,7 +95,7 @@ public static class ProjectStorage
     private static void SaveFileCore(string absolute, PortableProject project, Action<SaveCheckpoint>? fault)
     {
         var directory = Path.GetDirectoryName(absolute)
-            ?? throw new ArgumentException("Path sem diretório.", nameof(path));
+            ?? throw new ArgumentException("Path sem diretório.", nameof(absolute));
         Directory.CreateDirectory(directory);
         var backup = absolute + ".bak";
         var temp = absolute + "." + Guid.NewGuid().ToString("N") + ".tmp";
