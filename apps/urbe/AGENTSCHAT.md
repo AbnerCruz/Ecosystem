@@ -509,3 +509,10 @@
 - Verificação: CI do PR #296 pendente; `urbe-checks` e `consistency` são autoridade de execução; não declarar pronto antecipadamente.
 - Pendências / bloqueios: PR base #289 precisa ser integrado antes do retarget de #296 para `main`; persistência física, split view e Explorer avançado continuam UC-18.
 - Próximos passos: validar PR #296, integrar após #289 e só depois avançar ao próximo recorte UC-18.
+
+### 2026-10-07 — ChatGPT — UC-18 modo Dividido (REQ-007/035/038)
+- Estado: verifying, PR a abrir sobre #296 (que depende de #289); não integrado.
+- Feito: modo Dividido no editor C# usa a mesma WorkspaceSession para Fonte e Visual; ao digitar na Fonte sincroniza visualização e modelo estrutural; ao editar blocos reflete no texto Fonte; undo/redo permanece compartilhado.
+- Testes: smoke Web de alternância e ida-e-volta de alterações, inclusive undo, em / e /preview/ online/offline. CI ainda pendente, sem alegação G-C3.
+- Decisões: código local ao Urbe, sem formato paralelo, persistência/host, migração ou distribuição; conforme docs/csharp/ROADMAP UC-18, NN-001/017/018.
+- Próximos passos: CI, corrigir regressões, integrar somente após a cadeia base; seguir UC-18 Explorer/hosts.
