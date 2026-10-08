@@ -353,7 +353,7 @@ public static class ProjectTemplates
         }
         """.Replace("\r\n", "\n") + "\n";
 
-    /// <summary>Laboratório: painel de testes de aparelho em quatro páginas (dispositivos, gráficos, câmera e sliders de UI).</summary>
+    /// <summary>Laboratório: painel de testes de aparelho em cinco páginas (dispositivos, gráficos, câmera, sliders e botões de UI).</summary>
     public static string LabSource(string className) => $$"""
         using System.Numerics;
         using Lunet;
@@ -367,9 +367,10 @@ public static class ProjectTemplates
         // Página 2: mistura (blend), shader, recorte, alvo de desenho, amostragem, pixel perfect e área segura.
         // Página 3: câmera, conversão de toque, zoom, rotação e HUD fixo.
         // Página 4: sliders de UI, passos, disable e cancelamento na pausa.
+        // Página 5: botões de UI, clique na soltura, disable, layout e cancelamento.
         public sealed class {{className}} : Game
         {
-            readonly RectangleF pageButton = new(8, 8, 344, 30);
+            readonly TouchButton pageControl = new(new RectangleF(8, 8, 344, 30));
             readonly RectangleF pixelButton = new(8, 440, 344, 30);
             readonly RectangleF resolutionButton = new(8, 474, 344, 30);
             readonly RectangleF cameraZoomIn = new(8, 44, 80, 46);
@@ -383,6 +384,12 @@ public static class ProjectTemplates
             readonly RectangleF sliderToggle = new(24, 352, 312, 44);
             bool sliderDisabled;
             int sliderChanges;
+            readonly TouchButton clickButton = new(new RectangleF(24, 174, 312, 52));
+            readonly TouchButton enableButton = new(new RectangleF(24, 258, 312, 52));
+            readonly TouchButton moveButton = new(new RectangleF(24, 342, 312, 52));
+            bool buttonDisabled;
+            bool buttonMoved;
+            int buttonClicks;
             readonly (string Label, RectangleF Area)[] buttons =
             {
                 ("Música liga/desliga (fade)", new RectangleF(8, 44, 344, 30)),
@@ -430,7 +437,7 @@ public static class ProjectTemplates
                     "uniform float uAmount; void main() { vec4 c = texture(uTex, vUv) * vColor; float g = dot(c.rgb, vec3(0.3, 0.59, 0.11)); outColor = vec4(mix(c.rgb, vec3(g), uAmount), c.a); }");
             }
 
-            protected override void OnPause() { radius.Cancel(); level.Cancel(); }
+            protected override void OnPause() { radius.Cancel(); level.Cancel(); pageControl.Cancel(); clickButton.Cancel(); enableButton.Cancel(); moveButton.Cancel(); }
 
             protected override void UnloadContent()
             {
@@ -470,13 +477,14 @@ public static class ProjectTemplates
             protected override void Update(GameTime time)
             {
                 clock += time.DeltaSeconds;
+                pageControl.Update(Input);
+                if (pageControl.WasClicked) page = (page + 1) % 5;
                 foreach (var gesture in Input.Gestures)
                 {
                     lastGesture = gesture.Type.ToString();
                     switch (gesture.Type)
                     {
                         case GestureType.Tap:
-                            if (pageButton.Contains(gesture.Position)) { page = (page + 1) % 4; break; }
                             if (page == 3)
                             {
                                 if (sliderToggle.Contains(gesture.Position)) sliderDisabled = !sliderDisabled;
@@ -514,6 +522,17 @@ public static class ProjectTemplates
 
                 radius.IsEnabled = page == 3; level.IsEnabled = page == 3 && !sliderDisabled;
                 radius.Update(Input); level.Update(Input);
+                clickButton.IsEnabled = page == 4 && !buttonDisabled;
+                enableButton.IsEnabled = page == 4; moveButton.IsEnabled = page == 4;
+                SetClickButtonBounds();
+                clickButton.Update(Input); enableButton.Update(Input); moveButton.Update(Input);
+                if (page == 4)
+                {
+                    if (clickButton.WasClicked) buttonClicks++;
+                    if (enableButton.WasClicked) { buttonDisabled = !buttonDisabled; clickButton.IsEnabled = !buttonDisabled; }
+                    if (moveButton.WasClicked) { buttonMoved = !buttonMoved; clickButton.Cancel(); SetClickButtonBounds(); }
+                    return;
+                }
                 if (page == 3)
                 {
                     if (radius.WasChanged || level.WasChanged) sliderChanges++;
@@ -578,13 +597,35 @@ public static class ProjectTemplates
 
                 GraphicsDevice.Clear(new Color(18, 22, 40));
                 batch.Begin();
-                batch.FillRect(pageButton, new Color(90, 60, 120));
-                batch.DrawString(font, $"Página {page + 1}/4 (toque para trocar)", pageButton.Position + new Vector2(6, 8), Color.White, 2);
+                batch.FillRect(pageControl.Bounds, pageControl.IsPressed ? new Color(130, 90, 160) : new Color(90, 60, 120));
+                batch.DrawString(font, $"Página {page + 1}/5 (toque para trocar)", pageControl.Bounds.Position + new Vector2(6, 8), Color.White, 2);
                 batch.End();
                 if (page == 0) DrawDevices();
                 else if (page == 1) DrawGraphics();
                 else if (page == 2) DrawCamera();
-                else DrawSliders();
+                else if (page == 3) DrawSliders();
+                else DrawButtons();
+            }
+
+            void SetClickButtonBounds()
+            {
+                clickButton.Bounds = LayoutRect.Fixed(new Vector2(0.5f, 0), new Vector2(312, 52),
+                    new Vector2(0.5f, 0), new Vector2(0, buttonMoved ? 438 : 174))
+                    .GetBounds(new RectangleF(0, 0, GraphicsDevice.VirtualWidth, GraphicsDevice.VirtualHeight));
+            }
+
+            void DrawButtons()
+            {
+                batch.Begin();
+                batch.DrawString(font, "Botoes de UI", new Vector2(24, 64), Color.White, 2);
+                batch.DrawString(font, "Pressione e solte dentro para contar.", new Vector2(24, 100), Color.White, 1.4f);
+                batch.DrawString(font, "Arraste para fora. Mova o botao.", new Vector2(24, 124), Color.White, 1.4f);
+                clickButton.Draw(batch, font, "Somar clique", TouchButtonStyle.Default, 2);
+                enableButton.Draw(batch, font, buttonDisabled ? "Habilitar" : "Desabilitar", TouchButtonStyle.Default, 2);
+                moveButton.Draw(batch, font, buttonMoved ? "Mover para cima" : "Mover para baixo", TouchButtonStyle.Default, 2);
+                batch.DrawString(font, $"Cliques: {buttonClicks}", new Vector2(24, 540), Color.Yellow, 2);
+                batch.DrawString(font, "Pausa e troca de pagina cancelam.", new Vector2(24, 584), Color.White, 1.4f);
+                batch.End();
             }
 
             void DrawSliders()

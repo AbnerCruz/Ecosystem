@@ -183,6 +183,8 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [~] **LUNET-408 — Fontes bitmap personalizadas** (§7, §23): imagem/atlas, métricas proporcionais e fallback Unicode em SpriteFont/DrawString; Issue #327; Integrado pelo PR #328 e publicado no APK 1000155; roteiro Android pendente. TrueType permanece pendente; não conclui o item completo de fontes.
 - [ ] UI (layout, âncoras, nine-slice, temas).
 
+- [~] **LUNET-410 — Botões de UI por toque e estilos de cores** (§7, §23): captura por dedo, clique ao soltar, cancelamento/disable e desenho pelo SpriteBatch; Issue #331. API e quinta página executável no Laboratório em revisão; integração/release e roteiro Android pendentes, sem árvore de UI, foco ou temas completos.
+
 - [~] **LUNET-409 — Layout de UI por âncoras e margens** (§7, §23): LayoutRect/Fixed/Stretch e composição aninhada sem alocação; Issue #329; Integrado pelo PR #330 e publicado no APK 1000164; roteiro Android pendente. Incremento de UI; temas e controles completos permanecem pendentes.
 
 - [~] **LUNET-411 — Slider por toque e demonstração no Laboratório** (§7, §23): faixa/valor/passo, captura por dedo, cancelamento/disable e desenho; Issue #335. Implementação e suíte combinada 438/438 verificadas; integrado pelo PR #336 e publicado no APK 1000160; validação Android pendente. Demonstração executável na página 4 do Laboratório.
