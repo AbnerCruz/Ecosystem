@@ -8012,6 +8012,422 @@
       ]
     },
     {
+      "id": "T:Lunet.Graphics.ParticleEmitter",
+      "name": "ParticleEmitter",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class ParticleEmitter",
+      "summary": "Part\u00EDculas radiais com pool de capacidade fixa, emiss\u00E3o cont\u00EDnua ou bursts e desenho no SpriteBatch existente.",
+      "remarks": "N\u00E3o possui/libera a textura. Update/Draw/Burst n\u00E3o alocam; custo limitado \u00E0 capacidade. Quando cheio, descarta emiss\u00E3o excedente sem fila. Ordem de desenho n\u00E3o \u00E9 est\u00E1vel ap\u00F3s expira\u00E7\u00E3o. Use na thread do jogo.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar particles = new ParticleEmitter(texture, new ParticleSettings(), capacity: 256, seed: 42);\nparticles.Burst(40, position);\nparticles.Update(1.0 / 60);\nbatch.Begin();\nparticles.Draw(batch);\nbatch.End();\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.#ctor(Lunet.Graphics.Texture2D,Lunet.Graphics.ParticleSettings,System.Int32,System.UInt64)",
+          "name": "ParticleEmitter",
+          "kind": "constructor",
+          "signature": "public ParticleEmitter(Texture2D texture, ParticleSettings settings, int capacity = 256, ulong seed = 1)",
+          "summary": "Cria um emissor sem emiss\u00E3o cont\u00EDnua ativa.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura compartilhada desenhada inteira em cada part\u00EDcula."
+            },
+            {
+              "name": "settings",
+              "type": "ParticleSettings",
+              "description": "Configura\u00E7\u00E3o imut\u00E1vel do efeito."
+            },
+            {
+              "name": "capacity",
+              "type": "int",
+              "description": "N\u00FAmero m\u00E1ximo positivo de part\u00EDculas vivas."
+            },
+            {
+              "name": "seed",
+              "type": "ulong",
+              "description": "Semente determin\u00EDstica das velocidades."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Capacity",
+          "name": "Capacity",
+          "kind": "property",
+          "signature": "public int Capacity { get; }",
+          "summary": "Capacidade do pool.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Count",
+          "name": "Count",
+          "kind": "property",
+          "signature": "public int Count { get; }",
+          "summary": "Quantidade viva; excedentes s\u00E3o descartados.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.EmissionRate",
+          "name": "EmissionRate",
+          "kind": "property",
+          "signature": "public float EmissionRate { get; set; }",
+          "summary": "Part\u00EDculas por segundo, finito e n\u00E3o negativo. Padr\u00E3o zero; mudar a taxa reinicia a fra\u00E7\u00E3o acumulada.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.IsEmitting",
+          "name": "IsEmitting",
+          "kind": "property",
+          "signature": "public bool IsEmitting { get; }",
+          "summary": "Se a emiss\u00E3o cont\u00EDnua est\u00E1 ligada. Stop n\u00E3o remove part\u00EDculas existentes.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Position",
+          "name": "Position",
+          "kind": "property",
+          "signature": "public Vector2 Position { get; set; }",
+          "summary": "Origem da emiss\u00E3o cont\u00EDnua; mover n\u00E3o move part\u00EDculas j\u00E1 emitidas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Settings",
+          "name": "Settings",
+          "kind": "property",
+          "signature": "public ParticleSettings Settings { get; }",
+          "summary": "Configura\u00E7\u00E3o imut\u00E1vel das part\u00EDculas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Texture",
+          "name": "Texture",
+          "kind": "property",
+          "signature": "public Texture2D Texture { get; }",
+          "summary": "Textura compartilhada; o jogo mant\u00E9m seu ownership.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Burst(System.Int32,System.Numerics.Vector2)",
+          "name": "Burst",
+          "kind": "method",
+          "signature": "public int Burst(int count, Vector2 position)",
+          "summary": "Emite imediatamente at\u00E9 o limite livre do pool; funciona mesmo com emiss\u00E3o cont\u00EDnua parada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "description": "Quantidade n\u00E3o negativa desejada."
+            },
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Origem finita das novas part\u00EDculas."
+            }
+          ],
+          "returns": "Quantidade realmente emitida.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Clear",
+          "name": "Clear",
+          "kind": "method",
+          "signature": "public void Clear()",
+          "summary": "Remove todas as part\u00EDculas e reinicia a fra\u00E7\u00E3o de emiss\u00E3o, sem mudar taxa/estado/semente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Draw(Lunet.Graphics.SpriteBatch)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(SpriteBatch batch)",
+          "summary": "Desenha os quads vivos dentro de um lote j\u00E1 aberto; c\u00E2mera, clipping, blend e sampler v\u00EAm desse lote.",
+          "remarks": "Movimento bal\u00EDstico anal\u00EDtico evita depend\u00EAncia do tamanho do passo. Regi\u00F5es fora do intervalo num\u00E9rico float s\u00E3o omitidas do desenho; a vida continua avan\u00E7ando. N\u00E3o faz culling de tela nem depth sorting.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote do jogo, entre Begin e End."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Start",
+          "name": "Start",
+          "kind": "method",
+          "signature": "public void Start()",
+          "summary": "Liga a emiss\u00E3o; o primeiro nascimento ocorre ap\u00F3s 1/EmissionRate segundo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Stop",
+          "name": "Stop",
+          "kind": "method",
+          "signature": "public void Stop()",
+          "summary": "Para novos nascimentos e descarta a fra\u00E7\u00E3o acumulada; part\u00EDculas existentes continuam envelhecendo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Update(System.Double)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(double deltaSeconds)",
+          "summary": "Avan\u00E7a o efeito e emite apenas nascimentos ainda vivos no fim do intervalo.",
+          "remarks": "Um delta grande n\u00E3o percorre todos os nascimentos hist\u00F3ricos. Aceita os nascimentos mais recentes que cabem no pool; a origem \u00E9 Position no momento do Update. N\u00E3o interpola a trajet\u00F3ria do emissor.",
+          "parameters": [
+            {
+              "name": "deltaSeconds",
+              "type": "double",
+              "description": "Tempo simulado finito e n\u00E3o negativo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.ParticleSettings",
+      "name": "ParticleSettings",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class ParticleSettings",
+      "summary": "Configura\u00E7\u00E3o imut\u00E1vel de vida, velocidade radial, gravidade e apar\u00EAncia das part\u00EDculas.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar effect = new ParticleSettings(lifetimeSeconds: 1.5, minSpeed: 40, maxSpeed: 120, gravity: new Vector2(0, 100));\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.#ctor(System.Double,System.Single,System.Single,System.Nullable{System.Numerics.Vector2},System.Single,System.Single,System.Nullable{Lunet.Graphics.Color},System.Nullable{Lunet.Graphics.Color})",
+          "name": "ParticleSettings",
+          "kind": "constructor",
+          "signature": "public ParticleSettings(double lifetimeSeconds = 1, float minSpeed = 50f, float maxSpeed = 150f, Vector2? gravity = null, float startSize = 8f, float endSize = 0f, Color? startColor = null, Color? endColor = null)",
+          "summary": "Configura um efeito radial; valores num\u00E9ricos devem ser finitos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "lifetimeSeconds",
+              "type": "double",
+              "description": "Vida positiva em segundos."
+            },
+            {
+              "name": "minSpeed",
+              "type": "float",
+              "description": "Velocidade m\u00EDnima n\u00E3o negativa, em unidades por segundo."
+            },
+            {
+              "name": "maxSpeed",
+              "type": "float",
+              "description": "Velocidade m\u00E1xima, pelo menos minSpeed."
+            },
+            {
+              "name": "gravity",
+              "type": "Vector2?",
+              "description": "Acelera\u00E7\u00E3o constante; padr\u00E3o zero."
+            },
+            {
+              "name": "startSize",
+              "type": "float",
+              "description": "Tamanho inicial do quad em unidades do jogo, n\u00E3o negativo."
+            },
+            {
+              "name": "endSize",
+              "type": "float",
+              "description": "Tamanho final, n\u00E3o negativo."
+            },
+            {
+              "name": "startColor",
+              "type": "Color?",
+              "description": "Cor inicial; padr\u00E3o branco."
+            },
+            {
+              "name": "endColor",
+              "type": "Color?",
+              "description": "Cor final; padr\u00E3o branco transparente."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.EndColor",
+          "name": "EndColor",
+          "kind": "property",
+          "signature": "public Color EndColor { get; }",
+          "summary": "Cor final.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.EndSize",
+          "name": "EndSize",
+          "kind": "property",
+          "signature": "public float EndSize { get; }",
+          "summary": "Tamanho final do quad.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Gravity",
+          "name": "Gravity",
+          "kind": "property",
+          "signature": "public Vector2 Gravity { get; }",
+          "summary": "Acelera\u00E7\u00E3o constante.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.LifetimeSeconds",
+          "name": "LifetimeSeconds",
+          "kind": "property",
+          "signature": "public double LifetimeSeconds { get; }",
+          "summary": "Vida em segundos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.MaxSpeed",
+          "name": "MaxSpeed",
+          "kind": "property",
+          "signature": "public float MaxSpeed { get; }",
+          "summary": "Velocidade radial m\u00E1xima.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.MinSpeed",
+          "name": "MinSpeed",
+          "kind": "property",
+          "signature": "public float MinSpeed { get; }",
+          "summary": "Velocidade radial m\u00EDnima.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.StartColor",
+          "name": "StartColor",
+          "kind": "property",
+          "signature": "public Color StartColor { get; }",
+          "summary": "Cor inicial.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.StartSize",
+          "name": "StartSize",
+          "kind": "property",
+          "signature": "public float StartSize { get; }",
+          "summary": "Tamanho inicial do quad.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Graphics.RectI",
       "name": "RectI",
       "namespace": "Lunet.Graphics",

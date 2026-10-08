@@ -198,6 +198,7 @@ public sealed partial class MainActivity : Activity
             ("Demo: Coletor de moedas (texto, gestos, som, salvamento)", ProjectTemplate.CoinCatcher),
             ("Laboratório: testa música, sensores, controle, vibração, gestos e gráficos", ProjectTemplate.Lab),
             ("Demo: Animação e tween (quadros, movimento, pausa)", ProjectTemplate.Animation),
+            ("Demo: Partículas (explosões, fluxo, capacidade fixa)", ProjectTemplate.Particles),
         };
         var byId = new Dictionary<int, ProjectTemplate>();
         foreach (var (text, choice) in options)

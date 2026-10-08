@@ -177,7 +177,7 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [ ] Física completa (`PhysicsWorld`, `RigidBody2D`, `Collider2D`, `Fixture2D`, `Joint2D`, `Contact`, `Raycast`) sobre backend maduro (Box2D ou equivalente) sem expor tipos internos; ADR da escolha.
 - [x] **LUNET-403 — `Camera2D`** (§7): posição, zoom, rotação e toque/mundo integrados pelo PR #295; Issue #293 encerrada, APK 1000126 publicado e roteiro aprovado pelo proprietário no portal (Issue #304), registro no handoff `HO-20261008-lunet-camera`.
 - [~] **LUNET-404 — Animação de sprites e tweening** (§7, §23): clips, playback e transições sem alocação por quadro; Issue #298. Playback/tween implementados, documentação offline e modelo Demo: Animação e tween; integração e validação Android pendentes. Handoff `HO-20261008-lunet-animation`.
-- [ ] Partículas.
+- [~] **LUNET-405 — Partículas** (§7, §23): pool fixo, burst/emissão contínua, vida, velocidade, gravidade, tamanho e cor; Issue #306. Implementado/testado, modelo Demo: Partículas e guia offline; integração e roteiro Android pendentes. Handoff `HO-20261008-lunet-particles`.
 - [ ] Tilemaps (carregar formato do Tile Studio, colisão).
 - [ ] Fontes personalizadas (bitmap e TrueType).
 - [ ] UI (layout, âncoras, nine-slice, temas).

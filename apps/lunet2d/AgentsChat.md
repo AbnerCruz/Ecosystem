@@ -137,3 +137,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - CI e integrador seguem pelo PR; teste GL/aparelho permanece pendente em `docs/guides/animacao.md`. Nenhuma fase fechada ou física completa improvisada.
 
 - Reconciliação LUNET-404 em 2026-10-08: main `0b541c6` preservada integralmente; conflitos em AgentsChat/CHANGELOG/ROADMAP resolvidos mantendo ambas as entregas. Colisão/câmera aprovadas pelo proprietário nas Issues #303/#304; estados reconciliados para done, sem fechar Fase 4. Câmera distribuída no APK 1000126. Suíte combinada registrada no handoff.
+
+
+### 20261008-codex-particles — Codex → próximos agentes — review
+- Item LUNET-405, Issue #306; branch `agent/lunet-particles-20261008`, base `c6181b6` (PR #302 reconciliado). Entrega empilhada até integrar #302, sem forçar merge.
+- ParticleSettings imutável e ParticleEmitter com pool fixo, burst/emissão contínua, life/velocidade radial/gravidade/tamanho/cor, seed e SpriteBatch existente. Deltas grandes não percorrem nascimentos históricos; saturação descarta excedentes sem fila.
+- Novo modelo opcional **Demo: Partículas** e guia offline; usa textura procedural, toque/arraste, botões Burst/Fluxo/Parar/Limpar. Ownership da textura preservado; câmera/clip/blend do lote existentes.
+- Build portátil sem warnings/errors; suíte xUnit 388/388 (14 casos novos), incluindo zero bytes em Burst/Update/Draw e guia/modelo no compilador/runtime reais com toque físico 2×. Checks finais no handoff `HO-20261008-lunet-particles`.
+- Roteiro de aparelho pendente em `docs/guides/particulas.md`; não declarar frame time/GL aprovados por teste em memória. Fase 4 continua aberta.

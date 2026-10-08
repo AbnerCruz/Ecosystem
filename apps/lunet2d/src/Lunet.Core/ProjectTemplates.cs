@@ -1,7 +1,7 @@
 namespace Lunet.Core;
 
 /// <summary>Modelos de projeto iniciais.</summary>
-public enum ProjectTemplate { Blank, CoinCatcher, Lab, Animation }
+public enum ProjectTemplate { Blank, CoinCatcher, Lab, Animation, Particles }
 
 public static class ProjectTemplates
 {
@@ -98,6 +98,80 @@ public static class ProjectTemplates
             }
 
             protected override void UnloadContent() => sheetTexture.Dispose();
+        }
+        """;
+
+    /// <summary>Demonstração de partículas com burst, fluxo contínuo e pool fixo.</summary>
+    public static string ParticlesSource(string className) => $$"""
+        using System.Numerics;
+        using Lunet;
+        using Lunet.Graphics;
+        using Lunet.Input;
+
+        public sealed class {{className}} : Game
+        {
+            readonly RectangleF burstButton = new(8, 44, 108, 44);
+            readonly RectangleF flowButton = new(126, 44, 108, 44);
+            readonly RectangleF clearButton = new(244, 44, 108, 44);
+            SpriteBatch batch = null!;
+            SpriteFont font = null!;
+            Texture2D dot = null!;
+            ParticleEmitter particles = null!;
+
+            protected override void LoadContent()
+            {
+                batch = new SpriteBatch(GraphicsDevice);
+                font = SpriteFont.CreateDefault(GraphicsDevice);
+                dot = Texture2D.CreateCircle(GraphicsDevice, 16, Color.White);
+                var effect = new ParticleSettings(lifetimeSeconds: 1.5, minSpeed: 40, maxSpeed: 160,
+                    gravity: new Vector2(0, 100), startSize: 12, endSize: 2,
+                    startColor: Color.Yellow, endColor: Color.Red.WithAlpha(0));
+                particles = new ParticleEmitter(dot, effect, capacity: 256, seed: 42)
+                {
+                    Position = new Vector2(180, 320),
+                    EmissionRate = 80
+                };
+                particles.Burst(60, particles.Position);
+            }
+
+            protected override void Update(GameTime time)
+            {
+                foreach (var gesture in Input.Gestures)
+                {
+                    if (gesture.Type != GestureType.Tap) continue;
+                    if (burstButton.Contains(gesture.Position)) particles.Burst(60, particles.Position);
+                    else if (flowButton.Contains(gesture.Position))
+                    {
+                        if (particles.IsEmitting) particles.Stop(); else particles.Start();
+                    }
+                    else if (clearButton.Contains(gesture.Position)) particles.Clear();
+                    else if (gesture.Position.Y >= 120) particles.Burst(40, gesture.Position);
+                }
+                if (Input.TryGetPointer(out var pointer) && pointer.Y >= 120) particles.Position = pointer;
+                particles.Update(time.DeltaSeconds);
+            }
+
+            protected override void Draw(GameTime time)
+            {
+                GraphicsDevice.Clear(new Color(18, 22, 40));
+                batch.Begin(BlendState.Additive, clip: new RectangleF(0, 120, GraphicsDevice.ViewSize.X, GraphicsDevice.ViewSize.Y - 120));
+                particles.Draw(batch);
+                batch.End();
+                batch.Begin();
+                batch.DrawString(font, "Particulas: burst + fluxo", new Vector2(8, 12), Color.White, 2);
+                batch.FillRect(burstButton, new Color(70, 80, 130));
+                batch.FillRect(flowButton, particles.IsEmitting ? Color.Green : new Color(70, 80, 130));
+                batch.FillRect(clearButton, new Color(70, 80, 130));
+                batch.DrawString(font, "Burst", burstButton.Position + new Vector2(14, 14), Color.White, 2);
+                batch.DrawString(font, particles.IsEmitting ? "Parar" : "Fluxo", flowButton.Position + new Vector2(14, 14), Color.White, 2);
+                batch.DrawString(font, "Limpar", clearButton.Position + new Vector2(14, 14), Color.White, 2);
+                batch.DrawString(font, "Toque/arraste abaixo: origem do efeito", new Vector2(8, 100), Color.White, 1.5f);
+                batch.Cross(particles.Position, 10, Color.Yellow);
+                batch.DrawString(font, "Vivas: " + particles.Count + "/" + particles.Capacity, new Vector2(8, 600), Color.White, 2);
+                batch.End();
+            }
+
+            protected override void UnloadContent() => dot.Dispose();
         }
         """;
 

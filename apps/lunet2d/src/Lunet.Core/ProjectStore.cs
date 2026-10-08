@@ -49,6 +49,7 @@ public sealed class ProjectStore
                     ProjectTemplate.CoinCatcher => ProjectTemplates.CoinCatcherSource(className),
                     ProjectTemplate.Lab => ProjectTemplates.LabSource(className),
                     ProjectTemplate.Animation => ProjectTemplates.AnimationSource(className),
+                    ProjectTemplate.Particles => ProjectTemplates.ParticlesSource(className),
                     _ => ProjectTemplates.BlankGameSource(className),
                 });
             Directory.CreateDirectory(Path.Combine(directory, "Content"));
