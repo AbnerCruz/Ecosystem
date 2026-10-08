@@ -14,6 +14,7 @@
     {
         var document = Workspace.CurrentDocument;
         var history = Workspace.HistoryStatus;
+        var canEditVisual = Workspace.CanEditVisualBlocks;
 
         @if (Workspace.Tabs.Count > 0)
         {
@@ -109,9 +110,18 @@
                             <option value="@VisualBlockKind.Code">Código</option>
                             <option value="@VisualBlockKind.HorizontalRule">Separador</option>
                         </select>
-                        <button type="button" @onclick="AddVisualBlock" disabled="@Workspace.IsReadOnly">Adicionar</button>
+                        <button type="button" @onclick="AddVisualBlock" disabled="@(!canEditVisual)">Adicionar</button>
                     </div>
                 </div>
+
+                @if (!canEditVisual && !Workspace.IsReadOnly)
+                {
+                    <p class="editor-stage-note" role="status">
+                        Edição estrutural indisponível para este documento: a conversão alteraria
+                        o Markdown original. Use o modo Fonte para preservar a formatação
+                        sem perda de conteúdo.
+                    </p>
+                }
 
                 @if (VisualBlocks.Count == 0)
                 {
@@ -131,7 +141,7 @@
                                 <div class="visual-block-toolbar">
                                     <select value="@block.Kind"
                                             @onchange="e => ChangeVisualKind(blockIndex, e)"
-                                            disabled="@Workspace.IsReadOnly || block.Kind == VisualBlockKind.Raw"
+                                            disabled="@(!canEditVisual || block.Kind == VisualBlockKind.Raw)"
                                             aria-label="Tipo do bloco">
                                         <option value="@VisualBlockKind.Paragraph">Texto</option>
                                         <option value="@VisualBlockKind.Heading">Título</option>
@@ -143,9 +153,9 @@
                                         <option value="@VisualBlockKind.Raw">Avançado</option>
                                     </select>
                                     <span class="visual-block-label">@VisualBlockLabel(block.Kind)</span>
-                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, -1)" disabled="@Workspace.IsReadOnly || blockIndex == 0" aria-label="Mover bloco para cima">↑</button>
-                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, 1)" disabled="@Workspace.IsReadOnly || blockIndex == VisualBlocks.Count - 1" aria-label="Mover bloco para baixo">↓</button>
-                                    <button type="button" @onclick="() => RemoveVisualBlock(blockIndex)" disabled="@Workspace.IsReadOnly" aria-label="Excluir bloco">Excluir</button>
+                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, -1)" disabled="@(!canEditVisual || blockIndex == 0)" aria-label="Mover bloco para cima">↑</button>
+                                    <button type="button" @onclick="() => MoveVisualBlock(blockIndex, 1)" disabled="@(!canEditVisual || blockIndex == VisualBlocks.Count - 1)" aria-label="Mover bloco para baixo">↓</button>
+                                    <button type="button" @onclick="() => RemoveVisualBlock(blockIndex)" disabled="@(!canEditVisual)" aria-label="Excluir bloco">Excluir</button>
                                 </div>
 
                                 @if (block.Kind == VisualBlockKind.Heading)
@@ -153,7 +163,7 @@
                                     <div class="visual-block-heading">
                                         <select value="@block.Level"
                                                 @onchange="e => ChangeVisualLevel(blockIndex, e)"
-                                                disabled="@Workspace.IsReadOnly"
+                                                disabled="@(!canEditVisual)"
                                                 aria-label="Nível do título">
                                             @for (var level = 1; level <= 6; level++)
                                             {
@@ -162,7 +172,7 @@
                                         </select>
                                         <input value="@block.Text"
                                                @onchange="e => ChangeVisualText(blockIndex, e)"
-                                               disabled="@Workspace.IsReadOnly"
+                                               disabled="@(!canEditVisual)"
                                                aria-label="Texto do título"
                                                placeholder="Título" />
                                     </div>
@@ -176,12 +186,12 @@
                                     <input class="visual-code-language"
                                            value="@block.Language"
                                            @onchange="e => ChangeVisualLanguage(blockIndex, e)"
-                                           disabled="@Workspace.IsReadOnly"
+                                           disabled="@(!canEditVisual)"
                                            aria-label="Linguagem do código"
                                            placeholder="linguagem opcional" />
                                     <textarea value="@block.Text"
                                               @onchange="e => ChangeVisualText(blockIndex, e)"
-                                              disabled="@Workspace.IsReadOnly"
+                                              disabled="@(!canEditVisual)"
                                               aria-label="Código do bloco"
                                               spellcheck="false"></textarea>
                                 }
@@ -189,7 +199,7 @@
                                 {
                                     <textarea value="@block.Text"
                                               @onchange="e => ChangeVisualText(blockIndex, e)"
-                                              disabled="@Workspace.IsReadOnly"
+                                              disabled="@(!canEditVisual)"
                                               aria-label="Markdown avançado"
                                               spellcheck="false"></textarea>
                                     <small class="visual-raw-note">Sintaxe avançada preservada como Markdown canônico.</small>
@@ -198,7 +208,7 @@
                                 {
                                     <textarea value="@block.Text"
                                               @onchange="e => ChangeVisualText(blockIndex, e)"
-                                              disabled="@Workspace.IsReadOnly"
+                                              disabled="@(!canEditVisual)"
                                               aria-label="@VisualBlockLabel(block.Kind)"
                                               placeholder="@VisualBlockPlaceholder(block.Kind)"></textarea>
                                 }
@@ -269,9 +279,17 @@
         Workspace.UpdateSource(args.Value?.ToString() ?? string.Empty);
     }
 
-    private void Undo() => Workspace.Undo();
+    private void Undo()
+    {
+        Workspace.Undo();
+        SyncVisualModel();
+    }
 
-    private void Redo() => Workspace.Redo();
+    private void Redo()
+    {
+        Workspace.Redo();
+        SyncVisualModel();
+    }
 
     private void ActivateTab(EditorWorkspaceTab tab)
     {
@@ -392,7 +410,7 @@
 
     private void AddVisualBlock()
     {
-        if (Workspace.IsReadOnly)
+        if (!Workspace.CanEditVisualBlocks)
             return;
 
         var block = NewVisualBlockKind switch
@@ -412,7 +430,7 @@
 
     private void RemoveVisualBlock(int index)
     {
-        if (Workspace.IsReadOnly || index < 0 || index >= VisualBlocks.Count)
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
             return;
 
         VisualBlocks.RemoveAt(index);
@@ -421,7 +439,7 @@
 
     private void MoveVisualBlock(int index, int delta)
     {
-        if (Workspace.IsReadOnly)
+        if (!Workspace.CanEditVisualBlocks)
             return;
 
         var target = index + delta;
@@ -434,7 +452,7 @@
 
     private void ChangeVisualKind(int index, ChangeEventArgs args)
     {
-        if (Workspace.IsReadOnly || index < 0 || index >= VisualBlocks.Count)
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
             return;
 
         if (!Enum.TryParse<VisualBlockKind>(args.Value?.ToString(), out var kind))
@@ -457,7 +475,7 @@
 
     private void ChangeVisualLevel(int index, ChangeEventArgs args)
     {
-        if (Workspace.IsReadOnly || index < 0 || index >= VisualBlocks.Count)
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
             return;
 
         if (int.TryParse(args.Value?.ToString(), out var level))
@@ -469,7 +487,7 @@
 
     private void ChangeVisualLanguage(int index, ChangeEventArgs args)
     {
-        if (Workspace.IsReadOnly || index < 0 || index >= VisualBlocks.Count)
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
             return;
 
         VisualBlocks[index] = VisualBlocks[index] with { Language = args.Value?.ToString() ?? string.Empty };
@@ -478,7 +496,7 @@
 
     private void ChangeVisualText(int index, ChangeEventArgs args)
     {
-        if (Workspace.IsReadOnly || index < 0 || index >= VisualBlocks.Count)
+        if (!Workspace.CanEditVisualBlocks || index < 0 || index >= VisualBlocks.Count)
             return;
 
         VisualBlocks[index] = VisualBlocks[index] with { Text = args.Value?.ToString() ?? string.Empty };
@@ -487,7 +505,7 @@
 
     private void CommitVisualChanges()
     {
-        if (Workspace.IsReadOnly)
+        if (!Workspace.CanEditVisualBlocks)
             return;
 
         Workspace.UpdateVisualBlocks(VisualFrontmatter, VisualBlocks);

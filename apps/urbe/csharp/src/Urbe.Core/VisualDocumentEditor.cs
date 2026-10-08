@@ -187,6 +187,21 @@ public static class VisualDocumentEditor
             Array.AsReadOnly(blocks.ToArray()));
     }
 
+    /// <summary>
+    /// Returns true only when entering the structural editor and saving its
+    /// unchanged model would preserve every byte of the current Markdown.
+    /// When false, the Source editor remains available without normalization.
+    /// </summary>
+    public static bool IsLosslessRoundTrip(string? markdown)
+    {
+        var source = markdown ?? string.Empty;
+        var model = Parse(source);
+        return string.Equals(
+            ToMarkdown(model.Frontmatter, model.Blocks),
+            source,
+            StringComparison.Ordinal);
+    }
+
     public static string ToMarkdown(
         string? frontmatter,
         IEnumerable<VisualBlock>? blocks)
