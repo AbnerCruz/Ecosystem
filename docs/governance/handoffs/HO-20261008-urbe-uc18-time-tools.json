@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-urbe-uc18-time-tools",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T12:13:07.946Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18-time-tools",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc18-editor-time-tools",
+  "base_commit": "7249eefa3d911abdfc07666b555a282faff44690",
+  "commit": "a9dfe2ec8bb6eeeb77c814612f81a2dfa51247b2",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/333",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/Shared/EditorTimeTools.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261008-urbe-uc18-time-tools.json"
+  ],
+  "work_completed": [
+    "Relógio, cronômetro e timer nativos no rodapé do editor usando componente Razor C# independente da sessão.",
+    "Timer/cronômetro usam relógio monotônico com iniciar, pausar, retomar, zerar e aviso ao encerrar.",
+    "Componente descarta PeriodicTimer e cancelamento ao navegar, sem armazenamento e sem APIs JS adicionais.",
+    "UI mobile-first e acessível com smoke Web de comandos de tempo."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks Web/Android/Windows/E2E/checks",
+      "result": "pending",
+      "evidence": "CI PR #333 empilhado sobre #321."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency",
+      "result": "pending",
+      "evidence": "CI PR #333 no estado combinado."
+    },
+    {
+      "kind": "human",
+      "check": "layout/toque real G-C3",
+      "result": "not-applicable",
+      "evidence": "G-C3 permanece separado conforme NN-017, não solicitado para este PR rotineiro."
+    }
+  ],
+  "known_issues": [
+    "Cronômetro/timer existem somente enquanto o Editor está aberto, não persistem nem executam como alarmes em background.",
+    "Requisito REQ-094 cobre também o comportamento visual a validar no gate G-C3; não declarar DoD final.",
+    "Branch depende de PR #321 e PR #286; retarget e novo CI após integrações."
+  ],
+  "blockers": [
+    "Integração de #321 e #286 antes deste PR."
+  ],
+  "next_actions": [
+    "Validar compilação, smoke, E2E e consistency combinados; corrigir o que falhar.",
+    "Após PRs base integrados, retarget para main e disponibilizar ao integrador automático.",
+    "Continuar UC-18 nos requisitos de toolbar e persistência de host sem alterar formato nem publicar release."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Ferramenta temporal não lê/escreve DocumentStore; a autoridade documental segue única."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue, PR, handoff e AGENTSCHAT documentam mudanças e verificação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegação de validação humana G-C3."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying até CI."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Componente de UI próprio do Urbe, sem abstração compartilhada prematura."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "UI e comportamento temporal em memória; sem mudança em dados do usuário, migração, segurança, app host ou distribuição."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "editor-time-tools",
+      "status": "product-specific",
+      "rationale": "REQ-094 é experiência específica do editor Urbe; usa APIs C# padrão."
+    }
+  ],
+  "cost": null
+}
