@@ -25,6 +25,7 @@ public sealed record CharacterResource(CharacterId CharacterId, string Key, int 
 
 public sealed partial class Campaign
 {
+    private const int MaxWorldEntries = 4096;
     private readonly Dictionary<SceneId, CampaignScene> _scenes = [];
     private readonly Dictionary<QuestId, CampaignQuest> _quests = [];
     private readonly Dictionary<InventoryId, InventoryEntry> _inventory = [];
@@ -51,6 +52,8 @@ public sealed partial class Campaign
         RequireId(id.Value, "Scene");
         title = RequireText(title, "Scene title");
         description = RequireDescription(description);
+        if (_scenes.Count >= MaxWorldEntries && !_scenes.ContainsKey(id))
+            throw new InvalidOperationException("Scene capacity reached.");
         var scene = new CampaignScene(id, title, description);
         if (!_scenes.TryAdd(id, scene)) throw new InvalidOperationException("Duplicate scene.");
         RecordEvent("scene-created", null, null, id.Value.ToString("N"));
@@ -84,6 +87,8 @@ public sealed partial class Campaign
         title = RequireText(title, "Quest title");
         if (sceneId is { } scene && !_scenes.ContainsKey(scene))
             throw new KeyNotFoundException("Quest scene not found.");
+        if (_quests.Count >= MaxWorldEntries && !_quests.ContainsKey(id))
+            throw new InvalidOperationException("Quest capacity reached.");
         var quest = new CampaignQuest(id, title, QuestStatus.Open, sceneId);
         if (!_quests.TryAdd(id, quest)) throw new InvalidOperationException("Duplicate quest.");
         RecordEvent("quest-created", null, null, id.Value.ToString("N"));
@@ -108,6 +113,8 @@ public sealed partial class Campaign
         RequireCharacter(owner);
         itemKey = RequireKey(itemKey);
         if (quantity < 1 || quantity > 1_000_000) throw new ArgumentOutOfRangeException(nameof(quantity));
+        if (_inventory.Count >= MaxWorldEntries && !_inventory.ContainsKey(id))
+            throw new InvalidOperationException("Inventory capacity reached.");
         var item = new InventoryEntry(id, owner, itemKey, quantity);
         if (!_inventory.TryAdd(id, item)) throw new InvalidOperationException("Duplicate inventory entry.");
         RecordEvent("inventory-added", null, owner, id.Value.ToString("N"));
@@ -149,6 +156,8 @@ public sealed partial class Campaign
         key = RequireKey(key);
         if (durationMinutes is <= 0) throw new ArgumentOutOfRangeException(nameof(durationMinutes));
         long? expiry = durationMinutes is { } duration ? checked(_fictionMinutes + duration) : null;
+        if (_conditions.Count >= MaxWorldEntries && !_conditions.ContainsKey((characterId, key)))
+            throw new InvalidOperationException("Condition capacity reached.");
         var value = new CharacterCondition(characterId, key, expiry);
         _conditions[(characterId, key)] = value;
         RecordEvent("condition-set", null, characterId, key);
@@ -170,6 +179,8 @@ public sealed partial class Campaign
         key = RequireKey(key);
         if (maximum < 1 || maximum > 1_000_000 || current < 0 || current > maximum)
             throw new ArgumentOutOfRangeException(nameof(current), "Require 0 <= current <= maximum <= 1000000.");
+        if (_resources.Count >= MaxWorldEntries && !_resources.ContainsKey((characterId, key)))
+            throw new InvalidOperationException("Resource capacity reached.");
         var value = new CharacterResource(characterId, key, current, maximum);
         _resources[(characterId, key)] = value;
         RecordEvent("resource-set", null, characterId, key);
@@ -236,6 +247,10 @@ public sealed partial class Campaign
     {
         if (world is null || world.FictionMinutes < 0)
             throw new CampaignStateException("Fiction clock is invalid.");
+        if (world.Scenes.Count > MaxWorldEntries || world.Quests.Count > MaxWorldEntries ||
+            world.Inventory.Count > MaxWorldEntries || world.Conditions.Count > MaxWorldEntries ||
+            world.Resources.Count > MaxWorldEntries)
+            throw new CampaignStateException("World collection capacity exceeded.");
 
         _fictionMinutes = world.FictionMinutes;
         foreach (var scene in world.Scenes)
