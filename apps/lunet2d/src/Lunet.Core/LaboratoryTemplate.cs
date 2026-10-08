@@ -156,6 +156,7 @@ internal static class LaboratoryTemplate
 
             // Módulo 11: nine-slice redimensionável e fonte bitmap customizada.
             NineSlice skin = null!;
+            Texture2D panelTexture = null!;
             SpriteFont digits = null!;
             Texture2D digitAtlas = null!;
             readonly RectangleF fontScaleButton = new(16, 88, 152, 42);
@@ -226,6 +227,7 @@ internal static class LaboratoryTemplate
                 gray.Dispose();
                 tileTexture.Dispose();
                 digitAtlas.Dispose();
+                panelTexture.Dispose();
             }
 
 
@@ -257,7 +259,21 @@ internal static class LaboratoryTemplate
                 tileMap.CopyCollisionTo(tileGrid);
                 tileRoute = tileGrid.FindPath(new GridPoint(0, 0), new GridPoint(5, 5), tilePath);
 
-                skin = new NineSlice(checker, new RectangleF(0, 0, 8, 8), 2, 2, 2, 2);
+                // Skin procedural de 9 recortes, em vez de reutilizar o checker de teste gráfico.
+                var skinPixels = new byte[24 * 24 * 4];
+                for (int y = 0; y < 24; y++)
+                for (int x = 0; x < 24; x++)
+                {
+                    bool frame = x < 6 || x >= 18 || y < 6 || y >= 18;
+                    bool corner = (x < 6 || x >= 18) && (y < 6 || y >= 18);
+                    var color = corner ? new Color(95, 154, 215)
+                        : frame ? new Color(55, 104, 165) : new Color(24, 42, 67);
+                    int o = (y * 24 + x) * 4;
+                    skinPixels[o] = color.R; skinPixels[o + 1] = color.G;
+                    skinPixels[o + 2] = color.B; skinPixels[o + 3] = color.A;
+                }
+                panelTexture = Texture2D.FromPixels(GraphicsDevice, 24, 24, skinPixels, TextureFilter.Point);
+                skin = new NineSlice(panelTexture, new RectangleF(0, 0, 24, 24), 6, 6, 6, 6);
                 var glyphPixels = new byte[80 * 12 * 4];
                 int[] mask = { 63, 6, 91, 79, 102, 109, 125, 7, 127, 111 };
                 for (int digit = 0; digit < 10; digit++)
@@ -739,8 +755,9 @@ internal static class LaboratoryTemplate
                 batch.FillRect(new RectangleF(0, 0, GraphicsDevice.VirtualWidth, 42), new Color(24, 40, 64));
                 batch.FillRect(new RectangleF(0, 40, GraphicsDevice.VirtualWidth, 2), new Color(62, 153, 201));
                 batch.FillRect(pageControl.Bounds, pageControl.IsPressed ? new Color(51, 95, 146) : new Color(31, 63, 105));
-                batch.DrawString(font, $"LUNET LAB    {page + 1:00}/{PageCount:00}   {pageNames[page]}",
-                    new Vector2(14, 16), Color.White, 1.45f);
+                batch.DrawString(font, "LUNET LAB", new Vector2(14, 15), Color.White, 1.55f);
+                batch.DrawString(font, $"{page + 1:00}/{PageCount:00}  {pageNames[page]}",
+                    new Vector2(105, 16), new Color(180, 218, 244), 1.03f);
                 menuControl.Draw(batch, font, menuOpen ? "FECHAR" : "INDICE",
                     TouchButtonStyle.Default, 1.05f);
                 batch.End();
@@ -770,8 +787,8 @@ internal static class LaboratoryTemplate
                     var area = new RectangleF(col == 0 ? 8 : 184, 92 + row * 77, 168, 68);
                     batch.FillRect(area, i == page ? new Color(42, 104, 143) : new Color(31, 47, 71));
                     batch.Rect(area, i == page ? Color.Yellow : new Color(63, 83, 111), 1);
-                    batch.DrawString(font, $"{i + 1:00}  {pageNames[i]}", area.Position + new Vector2(8, 14), Color.White, 1.45f);
-                    batch.DrawString(font, pageHints[i], area.Position + new Vector2(8, 42), new Color(160, 190, 214), 1.13f);
+                    batch.DrawString(font, $"{i + 1:00}  {pageNames[i]}", area.Position + new Vector2(8, 14), Color.White, 1.15f);
+                    batch.DrawString(font, pageHints[i], area.Position + new Vector2(8, 42), new Color(160, 190, 214), 1.02f);
                 }
                 batch.DrawString(font, "RUN / OFFLINE  -  12 TESTES NUM SO PROJETO", new Vector2(12, 574), Color.Green, 1.2f);
                 batch.End();
