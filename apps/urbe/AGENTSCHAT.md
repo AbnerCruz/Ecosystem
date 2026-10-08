@@ -525,3 +525,11 @@
 - Testes: smoke Web de alternância e ida-e-volta de alterações, inclusive undo, em / e /preview/ online/offline. CI ainda pendente, sem alegação G-C3.
 - Decisões: código local ao Urbe, sem formato paralelo, persistência/host, migração ou distribuição; conforme docs/csharp/ROADMAP UC-18, NN-001/017/018.
 - Próximos passos: CI, corrigir regressões, integrar somente após a cadeia base; seguir UC-18 Explorer/hosts.
+
+### 2026-10-08 — ChatGPT — UC-18 Explorer: proteção de caminhos
+
+- Estado: `verifying`, PR #286 em draft sobre main; CI reexecutando.
+- Fato: `ExplorerEntries` omitira arquivos de `.urbe` mas ainda podia apresentar a pasta interna. Corrigido filtro de pastas.
+- Correções: `CreateFolder`, `CreateNote` e `MoveItem` recusam pastas inexistentes, reservadas/internas e componentes de travessia `.`/`..`; movimentação de arquivo/pasta continua sobre a mesma sessão e preserva IDs.
+- Decisões: guardas de sessão host-neutral, sem mudanças no formato do vault, storage físico, migração, backup ou publicação; nenhum gate humano declarado aprovado.
+- Pendências: validar CI C#/Web/Android/Windows/E2E e consistency, retomar integração automática da UC-18 após verde.
