@@ -1,4 +1,5 @@
 @page "/"
+@inject WorkspaceSession Workspace
 
 <section class="surface home-surface" data-surface="home">
     <p class="surface-eyebrow">Workspace de conhecimento</p>
@@ -12,10 +13,32 @@
         <span>O domínio C# está fechado até G-C2. As superfícies são portadas incrementalmente sem cortar o cliente atual.</span>
     </div>
 
+    <section class="surface-planned" aria-label="Persistência da prévia C#">
+        <strong>Prévia sem salvamento permanente</strong>
+        <span>
+            O Editor e o Explorer C# ainda funcionam sobre uma sessão em memória.
+            Recarregar ou fechar esta prévia pode descartar alterações.
+            Não use esta prévia como armazenamento único de documentos importantes;
+            mantenha seus dados no cliente Urbe publicado até a integração dos hosts.
+        </span>
+    </section>
+
+    <div class="surface-grid" aria-label="Sessão de trabalho">
+        <article>
+            <strong>Arquivos nesta sessão</strong>
+            <span>@Workspace.Paths.Count</span>
+        </article>
+        <article>
+            <strong>Abas abertas</strong>
+            <span>@Workspace.Tabs.Count</span>
+        </article>
+    </div>
+    <a class="surface-action" href="explorer">Abrir Explorer</a>
+
     <div class="surface-grid" aria-label="Estado da migração">
         <article><strong>Domínio</strong><span>G-C2 aprovado</span></article>
-        <article><strong>Shell</strong><span>UC-17 em andamento</span></article>
-        <article><strong>Editor / Explorer</strong><span>UC-18</span></article>
-        <article><strong>Cidade</strong><span>UC-19</span></article>
+        <article><strong>Shell</strong><span>UC-17 integrado</span></article>
+        <article><strong>Editor / Explorer</strong><span>UC-18 em desenvolvimento</span></article>
+        <article><strong>Cidade</strong><span>UC-19 pendente</span></article>
     </div>
 </section>
