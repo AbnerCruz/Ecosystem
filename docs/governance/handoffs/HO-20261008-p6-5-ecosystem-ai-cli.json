@@ -22,6 +22,7 @@
     "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
     "apps/ecosystem-ai/tests/AgentRuntime.Tests/AgentRuntime.Tests.csproj",
     "apps/ecosystem-ai/tests/AgentRuntime.Tests/ChatCompletionsProviderTests.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4ProductPipelineTests.cs",
     "apps/ecosystem-ai/EcosystemAI.slnx",
     "apps/ecosystem-ai/README.md",
     "apps/ecosystem-ai/docs-r4-cli.md",
@@ -31,7 +32,8 @@
     "Nova porta concreta para APIs Chat Completions configuráveis fora do Core: traduz tool_calls/tool results e custos informados ou estimados por tarifa declarada.",
     "CLI local portável que usa WorkspaceSession/AgentRunner originais com Context do projeto, tools files.read/write, grant explícito, verificação e custos; sem modelo/agent loop duplicado.",
     "HTTP remoto somente TLS; HTTP plano só em loopback, redirecionamento desativado; segredo recebido do ambiente; sem permissão destrutiva e write somente com --allow-create.",
-    "Testes sem rede/sem chave com HttpMessageHandler falso cobrem tradução, round trip de tool calls, status HTTP, custo desconhecido, endpoint inseguro e CLI help."
+    "Testes sem rede/sem chave com HttpMessageHandler falso cobrem tradução, round trip de tool calls, status HTTP, custo desconhecido, endpoint inseguro e CLI help.",
+    "Teste R4 de ponta a ponta realiza duas chamadas HTTP fake, invoca files.read sobre arquivo real no sandbox, injeta resultado na conversa e exige verificação independente, ledger USD e isolamento de Context."
   ],
   "verification": [
     {
