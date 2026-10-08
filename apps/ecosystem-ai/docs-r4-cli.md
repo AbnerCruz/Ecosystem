@@ -27,6 +27,8 @@ cima. Isto é **aproximação**, não garantia contratual de cobrança pelo prov
 uma chamada já enviada pode exceder sua reserva e o Runtime irá bloquear.
 Orçamento e logs são efêmeros; **não** são histórico ou controle de conta persistente.
 
+**Privacidade:** ao usar `files.read` com um endpoint externo, o conteúdo lido é enviado a esse provedor. Não escolha uma pasta contendo segredos ou dados sensíveis que não possam ser compartilhados. O isolamento por diretório protege outros caminhos, mas não oculta arquivos legítimos dentro do projeto autorizado.
+
 Por padrão o agente só vê `files.read`. A flag `--allow-create` adiciona
 `files.write`, que cria arquivos novos **sem sobrescrever**. Exclusão e execução
 de comandos ficam indisponíveis. Com `--accept-exists arquivo.txt`, um arquivo
