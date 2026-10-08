@@ -549,3 +549,11 @@
 - Aplicado: `WorkspaceSession.CanEditVisualHtml` e `UpdateVisualHtml` rejeitam transformações quando não há garantia de fidelidade; Fonte continua disponível; nenhuma autoridade de documento nova.
 - Testes: casos canônicos e não canônicos (sem newline, CRLF, whitespace); CI do PR pendente.
 - Limite: não ativa o PR #287, que continua draft até reconciliar sua UI de `contenteditable` com o Editor estrutural e com esta guarda; G-C3 permanece não validado.
+
+### 2026-10-08 — Codex — UC-18 / REQ-091 painel de referência
+- Estado: verifying, branch `feat/urbe-uc18-reference-panel`, Issue #281.
+- Feito: nota inteira e bloco Visual fixáveis em painel de consulta, múltiplos snapshots, deduplicação, remoção/fechamento, posição sticky mobile e lateral desktop; referências sobrevivem à navegação e são limpas no load do workspace.
+- Decisões (fontes): UC-18, REQ-091, SPEC §15.1 e RM-F7-14 como critério de paridade; implementação apenas no cliente C#, respeitando DEC-0025-C. DocumentStore continua autoridade; painel é cópia volátil explícita.
+- Testes: regressão Core de snapshots/remoção/paridade documental e Web smoke de edição, undo, troca de nota, mobile e fechamento; execução registrada no handoff.
+- Pendências: seleção livre dentro de bloco e rich HTML/bolha ainda não entregues; não fecha REQ-091, UC-18 ou G-C3, não altera persistência ou release.
+- Próximos passos: CI combinado e integração rotineira, depois seleção/toolbar coordenada com #287.

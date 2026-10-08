@@ -165,6 +165,33 @@ async function assertShell(page, journey = false) {
     await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
 
 
+    smokeStage('reference-panel');
+    await page.getByRole('button', { name: 'Fixar nota em painel', exact: true }).click();
+    await page.getByRole('button', { name: 'Fixar nota em painel', exact: true }).click();
+    const referencePanel = page.getByRole('complementary', { name: 'Painel de referência' });
+    await referencePanel.waitFor();
+    assert.equal(await referencePanel.locator('.reference-entry').count(), 1, 'Repetir fixação não duplica');
+    await page.getByRole('button', { name: 'Fixar trecho 2 em painel', exact: true }).click();
+    assert.equal(await referencePanel.locator('.reference-entry').count(), 2);
+    const pinnedText = await referencePanel.innerText();
+    await page.getByRole('button', { name: 'Fonte', exact: true }).click();
+    await source.fill(canonical + '\nEdição com referência aberta.\n');
+    assert.equal(await referencePanel.innerText(), pinnedText, 'Referência é cópia de consulta, sem mutação da nota');
+    await page.getByRole('button', { name: 'Desfazer', exact: true }).click();
+    await page.waitForFunction(target => document.querySelector('.editor-source-field textarea')?.value === target, canonical);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await source.scrollIntoViewIfNeeded();
+    const referenceMetrics = await referencePanel.evaluate(panel => ({
+        top: panel.getBoundingClientRect().top,
+        overflow: document.documentElement.scrollWidth - innerWidth,
+        scrollable: getComputedStyle(panel.querySelector('.reference-panel-scroll')).overflowY
+    }));
+    assert.ok(referenceMetrics.top >= 0 && referenceMetrics.top < 200, 'Painel permanece no topo durante a escrita no celular');
+    assert.ok(referenceMetrics.overflow <= 0, 'Painel não provoca overflow horizontal');
+    assert.equal(referenceMetrics.scrollable, 'auto');
+    await page.setViewportSize(previousViewport);
+    await page.getByRole('button', { name: 'Visual', exact: true }).click();
+
     const createMissingLink = page.getByRole('button', { name: 'Criar Nova ligada', exact: true });
     assert.equal(
         await createMissingLink.isEnabled(),
@@ -172,8 +199,15 @@ async function assertShell(page, journey = false) {
         'Criar wikilink não deve depender da possibilidade de edição visual estrutural');
     await createMissingLink.click();
     await page.getByRole('heading', { name: 'Nova ligada', exact: true }).waitFor();
+    assert.equal(await referencePanel.locator('.reference-entry').count(), 2, 'Referências sobrevivem à troca de nota');
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
+
+    await referencePanel.getByRole('button', { name: 'Remover referência de Smoke', exact: true }).first().click();
+    assert.equal(await referencePanel.locator('.reference-entry').count(), 1);
+    await page.getByRole('button', { name: 'Fechar painel de referência', exact: true }).click();
+    await referencePanel.waitFor({ state: 'hidden' });
+    assert.equal(await page.locator('.editor-reference-layout.has-references').count(), 0);
 
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
