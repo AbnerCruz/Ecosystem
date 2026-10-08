@@ -114,7 +114,12 @@ async function assertShell(page) {
     await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
     assert.match(await page.locator('.editor-visual').innerText(), /Texto forte\./);
 
-    await page.getByRole('button', { name: 'Criar Nova ligada', exact: true }).click();
+    const createMissingLink = page.getByRole('button', { name: 'Criar Nova ligada', exact: true });
+    assert.equal(
+        await createMissingLink.isEnabled(),
+        true,
+        'Criar wikilink não deve depender da possibilidade de edição visual estrutural');
+    await createMissingLink.click();
     await page.getByRole('heading', { name: 'Nova ligada', exact: true }).waitFor();
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
