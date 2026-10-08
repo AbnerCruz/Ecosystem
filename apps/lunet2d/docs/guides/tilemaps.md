@@ -17,6 +17,8 @@ O mapa v1 segue este modelo:
 
 `tiles` são IDs na ordem das linhas, começando em 0 para vazio e 1 para o tile superior esquerdo da imagem; IDs seguintes percorrem o tileset da esquerda para a direita. Camadas são desenhadas na ordem do arquivo. `visible: false` apenas oculta o desenho; `collision: true` bloqueia toda célula onde o ID for diferente de 0. Fora da grade também é bloqueado.
 
+Para um personagem com corpo retangular, `map.OverlapsCollision(new RectangleF(x, y, largura, altura), origin)` consulta a área ocupada em pixels do mundo. A consulta considera paredes de camadas ocultas, não confunde bordas encostadas com sobreposição, e trata saídas do mapa como sólidas. Retângulo vazio não colide. Consulte a posição pretendida antes de movê-lo; o método não substitui física contínua e não recalcula o A*.
+
 No `LoadContent`, execute `var map = Content.LoadTileMap("Data/level.json"); var tileset = Content.LoadTexture(map.TexturePath, TextureFilter.Point);` e uma única vez `map.CopyCollisionTo(grid);`. O método substitui os custos do A* (0 nas paredes e custo positivo nas livres), por isso atualize-o somente quando mudar o mapa. No `Draw` use `map.Draw(batch, tileset, visibleWorld, origin, Color.White)` entre `batch.Begin()` e `batch.End()`, com `visibleWorld` representando o retângulo visível em coordenadas de **mundo**. Use AABB conservadora se a câmera girar. Tiles fora da viewport não são submetidos ao backend.
 
 ## Demonstração imediata no Preview

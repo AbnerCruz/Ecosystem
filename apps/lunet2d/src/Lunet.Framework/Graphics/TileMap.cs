@@ -80,6 +80,39 @@ public sealed class TileMap
         return false;
     }
 
+    /// <summary>Consulta colisão de AABB em pixels de mundo; paredes invisíveis também contam e fora do mapa é sólido.</summary>
+    /// <param name="bounds">Retângulo mundial finito de largura/altura não negativas (contato de borda não conta).</param>
+    /// <param name="origin">Deslocamento do canto superior esquerdo do mapa no mundo.</param>
+    /// <returns>Verdadeiro se a área não vazia invade célula bloqueada ou ultrapassa os limites do mapa.</returns>
+    /// <remarks>Para mover um personagem, consulte o retângulo desejado antes de atualizar a posição.
+    /// Não resolve colisão, aceleração ou movimento contínuo; chamadas não alocam memória por quadro.</remarks>
+    public bool OverlapsCollision(RectangleF bounds, Vector2 origin)
+    {
+        if (!Valid(origin) || !float.IsFinite(bounds.X) || !float.IsFinite(bounds.Y)
+            || !float.IsFinite(bounds.Width) || !float.IsFinite(bounds.Height)
+            || bounds.Width < 0 || bounds.Height < 0)
+            throw new ArgumentOutOfRangeException(nameof(bounds));
+        if (bounds.Width == 0 || bounds.Height == 0) return false;
+
+        // Double preserva limites quando as coordenadas float são muito grandes.
+        double minX = ((double)bounds.X - origin.X) / TileWidth;
+        double minY = ((double)bounds.Y - origin.Y) / TileHeight;
+        double maxX = ((double)bounds.X + bounds.Width - origin.X) / TileWidth;
+        double maxY = ((double)bounds.Y + bounds.Height - origin.Y) / TileHeight;
+        if (minX < 0 || minY < 0 || maxX > Width || maxY > Height) return true;
+
+        int left = (int)Math.Floor(minX), top = (int)Math.Floor(minY);
+        int right = (int)Math.Ceiling(maxX), bottom = (int)Math.Ceiling(maxY);
+        foreach (var layer in _layers)
+        {
+            if (!layer.Collision) continue;
+            for (int y = top; y < bottom; y++)
+            for (int x = left; x < right; x++)
+                if (layer.Tiles[y * Width + x] != 0) return true;
+        }
+        return false;
+    }
+
     /// <summary>Substitui os custos da grade A* (bloqueado = 0; demais freeCost), sem alocar.</summary>
     /// <param name="grid">Grade com as mesmas dimensões do mapa.</param>
     /// <param name="freeCost">Custo finito e positivo das células livres.</param>

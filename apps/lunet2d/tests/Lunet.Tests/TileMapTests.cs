@@ -40,6 +40,38 @@ public class TileMapTests
         Assert.Equal(new RectangleF(23, 33, 8, 8), map.CellBounds(new(1, 1), new(15, 25)));
     }
 
+    [Theory]
+    [InlineData(10, 20, 8, 8, false)]
+    [InlineData(18, 20, 8, 8, false)]
+    [InlineData(25, 20, 2, 8, true)]
+    [InlineData(26, 20, 8, 8, true)]
+    [InlineData(10, 28, 16, 8, false)]
+    [InlineData(34, 20, 1, 8, true)]
+    [InlineData(9, 20, 1, 8, true)]
+    [InlineData(10, 19, 8, 2, true)]
+    [InlineData(10, 20, 0, 8, false)]
+    [InlineData(10, 20, 8, 0, false)]
+    public void AabbCollision_UsesHalfOpenBoundsAndTreatsOutsideAsSolid(
+        float x, float y, float width, float height, bool expected)
+    {
+        var map = TileMap.Parse(MapJson);
+        Assert.Equal(expected, map.OverlapsCollision(new RectangleF(x, y, width, height), new Vector2(10, 20)));
+    }
+
+    [Fact]
+    public void AabbCollision_RejectsInvalidGeometryAndMatchesCellCollision()
+    {
+        var map = TileMap.Parse(MapJson);
+        Assert.True(map.OverlapsCollision(new RectangleF(26, 20, 8, 8), new Vector2(10, 20)));
+        Assert.False(map.OverlapsCollision(new RectangleF(18, 20, 8, 8), new Vector2(10, 20)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => map.OverlapsCollision(
+            new RectangleF(float.NaN, 20, 8, 8), new Vector2(10, 20)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => map.OverlapsCollision(
+            new RectangleF(10, 20, -1, 8), new Vector2(10, 20)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => map.OverlapsCollision(
+            new RectangleF(10, 20, 8, 8), new Vector2(float.PositiveInfinity, 20)));
+    }
+
     [Fact]
     public void CopiesCollisionIntoExistingPathfinder_Deterministically()
     {
@@ -134,9 +166,9 @@ public class TileMapTests
     {
         var map = TileMap.Parse(MapJson);
         var grid = new GridPathfinder(3, 2);
-        for (int i = 0; i < 200; i++) { map.IsBlocked(new(2, 1)); map.CopyCollisionTo(grid); map.WorldToCell(Vector2.One, Vector2.Zero); }
+        for (int i = 0; i < 200; i++) { map.IsBlocked(new(2, 1)); map.CopyCollisionTo(grid); map.WorldToCell(Vector2.One, Vector2.Zero); map.OverlapsCollision(new RectangleF(16, 0, 3, 6), Vector2.Zero); }
         long before = GC.GetAllocatedBytesForCurrentThread();
-        for (int i = 0; i < 1000; i++) { map.IsBlocked(new(2, 1)); map.CopyCollisionTo(grid); map.WorldToCell(Vector2.One, Vector2.Zero); }
+        for (int i = 0; i < 1000; i++) { map.IsBlocked(new(2, 1)); map.CopyCollisionTo(grid); map.WorldToCell(Vector2.One, Vector2.Zero); map.OverlapsCollision(new RectangleF(16, 0, 3, 6), Vector2.Zero); }
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
     }
 }
