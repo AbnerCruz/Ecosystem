@@ -11426,6 +11426,30 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.TileMap.OverlapsCollision(Lunet.RectangleF,System.Numerics.Vector2)",
+          "name": "OverlapsCollision",
+          "kind": "method",
+          "signature": "public bool OverlapsCollision(RectangleF bounds, Vector2 origin)",
+          "summary": "Consulta colis\u00E3o de AABB em pixels de mundo; paredes invis\u00EDveis tamb\u00E9m contam e fora do mapa \u00E9 s\u00F3lido.",
+          "remarks": "Para mover um personagem, consulte o ret\u00E2ngulo desejado antes de atualizar a posi\u00E7\u00E3o. N\u00E3o resolve colis\u00E3o, acelera\u00E7\u00E3o ou movimento cont\u00EDnuo; chamadas n\u00E3o alocam mem\u00F3ria por quadro.",
+          "parameters": [
+            {
+              "name": "bounds",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo mundial finito de largura/altura n\u00E3o negativas (contato de borda n\u00E3o conta)."
+            },
+            {
+              "name": "origin",
+              "type": "Vector2",
+              "description": "Deslocamento do canto superior esquerdo do mapa no mundo."
+            }
+          ],
+          "returns": "Verdadeiro se a \u00E1rea n\u00E3o vazia invade c\u00E9lula bloqueada ou ultrapassa os limites do mapa.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.TileMap.Parse(System.String)",
           "name": "Parse",
           "kind": "method",
