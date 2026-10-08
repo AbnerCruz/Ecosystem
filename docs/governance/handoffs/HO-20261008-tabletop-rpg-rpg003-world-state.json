@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-tabletop-rpg-rpg003-world-state",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T04:05:00Z",
+  "agent": {
+    "id": "chatgpt-rpg003",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-003",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg003-world-state",
+  "base_commit": "0dc9471293d1d17657c54b91c812e7be58f1b717",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.Core/WorldState.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/CampaignState.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Campaign.Persistence.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Persistence/CampaignDocument.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Persistence/CampaignCodec.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/WorldStateTests.cs",
+    "apps/tabletop-rpg/docs/persistence-v1.md",
+    "apps/tabletop-rpg/docs/persistence-v2.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261008-tabletop-rpg-rpg003-world-state.json"
+  ],
+  "work_completed": [
+    "RPG-003 desbloqueado pelo Product roadmap após RPG-001 e RPG-002. Outros agentes trabalham em Urbe/Lunet, sem alteração nos escopos deles.",
+    "Core C# independente de AI/UI/rede modela scenes, quests, fictional minutes separados do Clock de auditoria, inventory por CharacterId, conditions expiradas pelo relógio e resources sob limites.",
+    "Operações validam IDs/referências/chaves/quantidades antes de publicar eventos ordenados e não promovem state secreto para PlayerView.",
+    "Snapshot do mundo é capturado/restaurado junto à mesma autoridade de campanha, com proteção contra duplicatas, referências soltas e limites de entradas.",
+    "Codec escreve envelope schemaVersion 2; leitor aceita versão 1 legacy por conversão explícita de mundo ausente em estado vazio, sem regravar ou inventar IDs; rejeita versões futuras e schema1 com campos v2.",
+    "Validação estrita do World JSON v2 impõe campos obrigatórios (incluindo null explícito quando permitido), rejeita campos extras/duplicados, dados corrompidos e valores não permitidos.",
+    "Suíte própria cobre ciclo de cenas/quests, tempo/condições, transferências/consumo, recursos, v1→v2, round-trip sem perda, visão limitada e rejeição de import malicioso; docs de compatibilidade e roadmap atualizados."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O CI tabletop-rpg-ci compilou os arquivos Core/Codec em commits intermediários; a versão final incluindo WorldStateTests aguarda execução do workflow no head."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Workflow consistency e self-tests aguardando verificação do head e do estado combinado."
+    },
+    {
+      "check": "Interface Android / DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Slice RPG-003 é somente Core headless, sem UI nem app distribuível."
+    }
+  ],
+  "known_issues": [
+    "Leitores legados de schemaVersion 1 recusam campanha v2; backup/export antes de retornar a versões antigas. O editor mobile e a compatibilidade de dois clientes simultâneos pertencem a fases futuras.",
+    "Operações programáticas de mestre no Core são APIs confiáveis; intents de participantes e ferramentas de AI continuam controlados pelo SessionEngine, sem acesso direto ao Campaign mutável.",
+    "Modelo v2 não representa combate, inventário de cena, crafting, mapas nem execução de missões; milestones RPG-004 e R1/R3 são posteriores.",
+    "Nova serialização do usuário demanda autorização crítica pelo integrador, sem merge manual."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar resultados e logs do tabletop-rpg-ci com os testes novos, corrigindo falhas reais antes de integrar.",
+    "Submeter PR routine code + user-data critical ao mecanismo do integrador; requer autorização do proprietário para commit combinado.",
+    "Após integração, atualizar Issue #308 e fechar milestone RPG-003 somente com evidências; não aprovar G-R0 sem RPG-004."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/docs/persistence-v1.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Campaign é autoridade única; WorldSnapshot capturado e restaurado no mesmo estado do codec."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "TabletopRpg.Core/Persistence não importa outros Products do Ecosystem."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhum runtime requer Hub, controle central ou conectividade."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Novo trabalho é C# nativo do Product sem reescrever Urbe."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #308, branch própria, handoff com arquivos, verificações, escopo e estado."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Contrato de formato v2 documentado no próprio Product em docs/persistence-v2.md."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "SPEC/ROADMAP/AGENTS do Product e manifesto/política da raiz lidos diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Não muda contrato Ecosystem; evolução de dados de usuário escalada critical para decisão do proprietário."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Import fail-closed, referências e limites validados; nenhuma invocação de ferramentas IA por texto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não confundir CI com DEVICE; UI mobile segue fase futura."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-003 continua [~] e Issue aberta até CI, PR e integração."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs de cenas, quests, inventário e entidades persistem sem regeneração."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração/Service genérico: estruturas locais a tabletop-rpg."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Product continua standalone sem control plane."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Escrita de campanha muda de schemaVersion 1 para 2 e modifica codec/restore de dados do usuário. Integração exige autorização crítica no Portal por mecanismo canônico."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "rpg-world-state",
+      "status": "product-specific",
+      "rationale": "Domínio específico de campanhas de RPG; nenhum segundo consumidor fora do Product."
+    }
+  ]
+}
