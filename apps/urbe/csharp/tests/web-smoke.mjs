@@ -119,10 +119,22 @@ async function assertShell(page, journey = false) {
     await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
     assert.match(await page.locator('.editor-visual').innerText(), /Texto forte\./);
 
+    const readonlyVisual = page.getByLabel('Editor visual da nota');
     assert.equal(
-        await page.getByLabel('Editor visual da nota').getAttribute('contenteditable'),
+        await readonlyVisual.getAttribute('contenteditable'),
         'false',
         'Edição direta não pode reescrever fonte sem round-trip exato');
+    // Even a programmatically dispatched DOM input must not mutate an unsafe
+    // Markdown source, including the literal backslash-n sequence above.
+    const unsafeSource = '# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]';
+    await readonlyVisual.evaluate(element => {
+        element.innerHTML = '<h1>ALTERAÇÃO PROIBIDA</h1>';
+        element.dispatchEvent(new InputEvent('input', { bubbles: true }));
+    });
+    await page.getByRole('button', { name: 'Fonte', exact: true }).click();
+    assert.equal(await page.getByLabel('Markdown da nota').inputValue(), unsafeSource);
+    await page.getByRole('button', { name: 'Visual', exact: true }).click();
+    await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
 
     // Split mode must reflect Source → canonical model and Visual → Source
     // without creating a parallel document or breaking history on mobile.
