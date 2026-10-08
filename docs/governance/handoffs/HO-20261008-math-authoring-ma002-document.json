@@ -59,10 +59,10 @@
   ],
   "decisions_required": [],
   "normative_sources": [
-    "MANIFEST.md §0.1, §23, §24",
-    "AGENTS.md §1–5",
+    "MANIFEST.md",
+    "AGENTS.md",
     "ecosystem.json",
-    "ARCHITECTURE.md §4",
+    "ARCHITECTURE.md",
     "apps/math-authoring/AGENTS.md",
     "apps/math-authoring/SPEC.md",
     "apps/math-authoring/ROADMAP.md",
