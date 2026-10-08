@@ -21,6 +21,12 @@ internal sealed class NoOpBackend : IGraphicsBackend
     public void DrawQuads(int textureHandle, ReadOnlySpan<SpriteVertex> vertices, int quadCount, in Matrix4x4 projection) { }
 }
 
+// Medições de alocação não podem concorrer com compilação, reflection e outros
+// workloads da suíte. O limite de zero bytes continua obrigatório.
+[CollectionDefinition("Frame allocation", DisableParallelization = true)]
+public sealed class FrameAllocationCollection;
+
+[Collection("Frame allocation")]
 public class PerformanceTests
 {
     private sealed class HotPathGame : Game
