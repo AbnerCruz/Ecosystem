@@ -74,14 +74,15 @@
         },
         {
           "mechanism": "CI",
-          "status": "planned",
-          "how": "Gate de release dos produtos executado sem Hub.",
-          "phase": "phase-4"
+          "status": "implemented",
+          "how": "Build/test/release próprios de Urbe e Lunet, sem executar nem empacotar o Hub: workflows urbe-release.yml (run 37520229711, Android/Windows/publicar success) e lunet2d-release.yml (test→Android→release, releases do canal próprio). CHK-ARCH-REFS verifica ausência de dependências dos Products ao Hub inclusive código/projetos/workflows; o gate CI opera como Product standalone.",
+          "phase": "phase-4",
+          "check": "CHK-ARCH-REFS"
         },
         {
           "mechanism": "DEVICE",
-          "status": "planned",
-          "how": "Validação em aparelho de que Lunet2D e Urbe abrem e funcionam sem Hub instalado.",
+          "status": "manual",
+          "how": "Validação HUMAN efetivamente realizada, sem alegar prova automatizada: Lunet standalone após retirar Hub no registro VALIDATED docs/validation/lunet2d/0.0.1-dev.1000008.json (Issue #163), Urbe Android standalone/importação/offline na build exata 1.8.4-beta (Issue #318; docs/validation/urbe/1.8.4-beta-android.json). Toda build nova exige sua própria evidência humana.",
           "phase": "phase-4"
         }
       ]
@@ -606,8 +607,8 @@
         },
         {
           "mechanism": "DEVICE",
-          "status": "planned",
-          "how": "Instalar, atualizar e usar cada Product em aparelho real sem o Hub instalado.",
+          "status": "manual",
+          "how": "Validação HUMAN por Product: Lunet via Hub e depois standalone mesmo sem Hub (Issue #163; registro VR-lunet2d-0.0.1-dev.1000008); Urbe instalado/distribuído pelo Ecosystem e usado standalone/offline, com importação/restauração aprovada no 1.8.4-beta (Issue #318; registro VR-urbe-1.8.4-beta-android). Não confundir essas aprovações com validações de builds futuras.",
           "phase": "phase-4"
         },
         {
