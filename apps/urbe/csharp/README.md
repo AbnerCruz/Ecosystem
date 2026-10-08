@@ -230,6 +230,31 @@ Falhas de TeX viram diagnóstico, o texto original é preservado e o SVG exporta
 é formado por paths/linhas/retângulos autocontidos. A dependência permanece
 sujeita à autorização crítica do ADR-0012.
 
+## UC-18 — modelos de nota (REQ-093)
+
+No Editor C#, **Salvar como modelo** clona a nota Markdown atual para
+`Modelos/` (sem alterar o original). Esse diretório contém **notas comuns**:
+`Modelos/Reunião.md` pode ter, por exemplo, `# {{Assunto}}` e
+`Responsável: {{Pessoa}}`. O Explorer oferece **Modelo da nota** ao criar
+uma nota e pede o valor de cada campo uma única vez, mesmo que ele apareça
+várias vezes. Campos sem valor produzem texto vazio; sintaxe não reconhecida
+permanece literal. O nome/caminho da nota criada é independente do modelo.
+É possível editar diretamente a nota-modelo como qualquer outro Markdown.
+
+A expansão preserva exatamente a fonte fora dos marcadores: quebras CRLF,
+frontmatter, links, códigos e espaços não são normalizados. Se o modelo
+desaparecer, mudar de campos durante o formulário, contiver mais de 32
+campos distintos, ou o destino não for válido, a criação é recusada antes
+de modificar o documento. Os testes do Core exercitam fidelidade, valores
+literais e falhas fechadas.
+
+**Limite da UC-18:** o Explorer/Editor C# ainda usa uma sessão em memória.
+A criação de modelos e notas usa `WorkspaceSession`/`DocumentStore`
+canônicos; a gravação física e a recuperação após reiniciar o host dependem
+do adapter planejado de persistência. Não usar este cliente experimental
+para notas reais. REQ-093 e G-C3 não são declarados concluídos antes de
+persistência e validação visual/toque no dispositivo.
+
 ## UC-18 — painel de referência (REQ-091)
 
 No Editor, **Fixar nota em painel** guarda uma cópia de consulta da nota atual.

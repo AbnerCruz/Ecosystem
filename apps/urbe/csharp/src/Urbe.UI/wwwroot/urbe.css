@@ -334,7 +334,8 @@ a:focus-visible {
     font-weight: 700;
 }
 
-.field input {
+.field input,
+.field select {
     width: 100%;
     min-height: 2.75rem;
     padding: .65rem .75rem;
@@ -345,9 +346,26 @@ a:focus-visible {
     outline: none;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
     border-color: #8bc9a1;
     box-shadow: 0 0 0 3px rgba(139, 201, 161, .12);
+}
+
+.explorer-template-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: .7rem;
+    grid-column: 1 / -1;
+    padding: .8rem;
+    border: 1px solid #355445;
+    border-radius: .8rem;
+    background: #172720;
+}
+
+.explorer-create-error {
+    color: #ffd6bf;
+    font-size: .8rem;
 }
 
 .new-note {

@@ -307,6 +307,47 @@ async function assertShell(page, journey = false) {
     assert.ok(metrics.content <= metrics.width, 'Shell não pode causar overflow horizontal');
 }
 
+async function assertNoteTemplates(page) {
+    const nav = page.getByRole('navigation', { name: 'Navegação principal' });
+    smokeStage('note-template-create-source');
+    await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
+    await page.getByLabel('Nova nota').fill('Modelo base');
+    await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Modelo base', exact: true }).waitFor();
+
+    await page.getByRole('button', { name: 'Fonte', exact: true }).click();
+    await page.getByLabel('Markdown da nota').fill('# {{Tema}}\n\nPessoa: {{Pessoa}}\n{{Tema}}');
+    await page.getByRole('button', { name: 'Salvar como modelo', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: /Modelo criado: Modelos\/Modelo base\.md/ }).waitFor();
+
+    smokeStage('note-template-fill');
+    await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
+    await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
+    await page.getByRole('combobox', { name: 'Selecionar modelo de nota' })
+        .selectOption('Modelos/Modelo base.md');
+    await page.getByLabel('Tema', { exact: true }).fill('Teste');
+    await page.getByLabel('Pessoa', { exact: true }).fill('Alice $&');
+    await page.getByLabel('Nova nota').fill('Nota gerada');
+    await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Nota gerada', exact: true }).waitFor();
+
+    await page.getByRole('button', { name: 'Fonte', exact: true }).click();
+    assert.equal(
+        await page.getByLabel('Markdown da nota').inputValue(),
+        '# Teste\n\nPessoa: Alice $&\nTeste');
+
+    const metrics = await page.evaluate(() => ({
+        width: innerWidth,
+        content: document.documentElement.scrollWidth
+    }));
+    assert.ok(metrics.content <= metrics.width, 'Campos de modelo não devem provocar overflow');
+
+    // The in-memory preview deliberately cannot restore an editor session
+    // across a reload. Return Home before the existing PWA reload checks.
+    await nav.getByRole('link', { name: 'Início', exact: true }).click();
+    await page.getByRole('heading', { name: 'Urbe', exact: true }).waitFor();
+}
+
 let browser;
 try {
     browser = await chromium.launch({ headless: true });
@@ -336,6 +377,8 @@ try {
         console.log('UC-17/18 shell + editor online:', base);
         await page.goto(origin + base);
         await assertShell(page, base === '/preview/');
+        if (base === '/preview/')
+            await assertNoteTemplates(page);
 
         await page.evaluate(async () => {
             await Promise.race([
