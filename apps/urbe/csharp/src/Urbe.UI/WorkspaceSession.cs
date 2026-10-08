@@ -629,6 +629,12 @@ public sealed class WorkspaceSession : IDisposable
 
         var safeTitle = ArtifactModel.SafeName(title);
         var normalizedFolder = DocumentModel.NormalizePath(folder);
+        if (normalizedFolder.Length > 0 &&
+            (ArtifactModel.IsSystem(normalizedFolder) ||
+             ContainsTraversal(normalizedFolder) ||
+             !FolderExists(normalizedFolder)))
+            return null;
+
         var path = normalizedFolder.Length == 0
             ? safeTitle + ".md"
             : normalizedFolder + "/" + safeTitle + ".md";
