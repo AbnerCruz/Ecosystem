@@ -42,6 +42,8 @@ O token não integra o prompt; logs não copiam payloads HTTP de falha.
 HTTP não-criptografado é aceito apenas em loopback para modelos locais.
 Redirecionamentos estão desativados no HttpClient da CLI.
 
+IDs internos de capabilities, como `files.read`, são traduzidos para nomes de função seguros na API (prefixo + hash estável) e revertidos na resposta; o Registry e o Runtime continuam vendo exclusivamente o ID canônico. Isso evita rejeição de nomes com ponto em endpoints Chat Completions.
+
 O Product instancia `AgentWorkspace.WorkspaceSession` e
 `AgentRuntime.AgentRunner`, com `ToolHost`, `InMemoryLedger`,
 `ContextPath` e `IEventLog` existentes. Apenas a porta de rede vive em
