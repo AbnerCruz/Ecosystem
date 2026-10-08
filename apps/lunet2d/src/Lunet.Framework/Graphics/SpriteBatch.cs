@@ -143,6 +143,20 @@ public sealed class SpriteBatch
         }
     }
 
+    /// <summary>Desenha um painel nine-slice, sem alocação, no lote atual.</summary>
+    /// <param name="slice">Região e bordas da textura.</param>
+    /// <param name="destination">Destino finito com tamanho não negativo; tamanho zero não desenha.</param>
+    /// <param name="color">Cor multiplicada em todas as partes.</param>
+    /// <param name="borderScale">Escala positiva e finita das bordas; 1 preserva pixels da imagem.</param>
+    /// <remarks>Se o destino for menor que a soma das bordas, comprime-as proporcionalmente por eixo
+    /// e elimina o centro nesse eixo. Usa câmera, clip, blend e sampler do lote; até nove quads.</remarks>
+    public void Draw(NineSlice slice, RectangleF destination, Color color, float borderScale = 1f)
+    {
+        if (!_begun) throw new InvalidOperationException("Chame Begin() antes de Draw().");
+        ArgumentNullException.ThrowIfNull(slice);
+        slice.Draw(this, destination, color, borderScale);
+    }
+
     /// <summary>Desenha uma região de um atlas com o pivô da região em <paramref name="position"/>.</summary>
     /// <param name="atlas">Atlas que contém a região.</param>
     /// <param name="region">Nome da região dentro do atlas.</param>
