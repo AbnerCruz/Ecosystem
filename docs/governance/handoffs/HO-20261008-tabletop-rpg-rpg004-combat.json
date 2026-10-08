@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-tabletop-rpg-rpg004-combat",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T08:22:00.572Z",
+  "agent": {
+    "id": "chatgpt-rpg004",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-004",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg004-combat-runtime",
+  "base_commit": "97a974aa248d4bc1baee370cfbd134225f631778",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.Core/CombatEncounter.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/Intents.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Core/SessionEngine.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/CombatRuntimeTests.cs",
+    "apps/tabletop-rpg/docs/combat-r0.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261008-tabletop-rpg-rpg004-combat.json"
+  ],
+  "work_completed": [
+    "RPG-004 slice do roadmap R0: modelo de combate headless ruleset-neutral, dependente do recurso hp adicionado ao Core em RPG-003 PR #310.",
+    "CombatEncounter cria ordem explícita de 2..32 combatentes únicos vivos na sessão ativa, escolhe personagem ativa, gasto de ação e avanço determinístico de rodada sem timers/IA.",
+    "Human e Agent Controllers submetem AttackIntent e EndCombatTurnIntent através do mesmo SessionEngine e do gate existente de autorização por CharacterId controlado.",
+    "ICombatRules pluggable interpreta ataques e dados confiáveis via IDiceRoller; BasicD20CombatRules é somente exemplo, sem dependência de regras comerciais.",
+    "Recusas fail-closed de turnos ilegais, self-target, desconhecidos, chaves malformadas, resultados de rules inválidos; dano é limitado ao HP do inimigo no estado canônico com eventos ordenados.",
+    "ActionResolution.Combat informa hit, rolagem e dano efetivo sem expor HP secreto de adversário. Turnos e ataques são protegidos por lock/revisão contra corridas e reentrância de callbacks.",
+    "Suíte inclui dois controllers, turnos/rounds, miss/hit/overkill, término, autorização, regras substituíveis, dados persistidos no codec v2, concorrência e reentrância, sem mutação em rejeições.",
+    "README, Product ROADMAP e docs/combat-r0.md atualizados, limite explícito: HP/eventos persistem, cursor de turno do encontro é transitório e não cria schema3 prematuro."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Execuções de commits intermediários passaram, mas o último head com proteção contra reentrância e testes novos aguarda conclusão do CI tabletop-rpg-ci."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs + --self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar workflow consistency e integrador no estado combinado main + PR."
+    },
+    {
+      "check": "DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Core headless, sem APK/distribuição e sem validação visual."
+    }
+  ],
+  "known_issues": [
+    "Dependência RPG-003 PR #310 permanece aberta com label critico e precisa de autorização; este branch é stacked no seu head, não pode integrar como PR independente antes da dependência.",
+    "CombatEncounter não é persistido; HP e eventos de auditoria sim. O Host deve criar um novo encontro após retomada. RPG-032 e mudança de schema futura tratam da persistência da iniciativa/posições.",
+    "Host ainda deve serializar alterações externas à própria campanha; somente métodos Attack e EndTurn do CombatEncounter possuem lock+revisão.",
+    "Não há UI, IA real, sistema de regras completo, RPG-032 tático, multiplayer ou DEVICE."
+  ],
+  "blockers": [
+    "RPG-003 PR #310 ainda não integrado: aguardar autorização crítica, conciliar branch RPG-004 com a main atual, só depois retirar draft e habilitar integração."
+  ],
+  "next_actions": [
+    "Confirmar CI final tabletop-rpg-ci, corrigindo falhas de testes, compilação ou analyzer.",
+    "Aguardar #310 integrado e reconciliar branch; o PR RPG-004 fica draft até essa dependência ser satisfeita.",
+    "Após integração routine e CI combinado, confirmar RPG-004 no roadmap e avaliar gate R0 sem afirmar DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/docs/persistence-v2.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "CombatEncounter em memória não duplica autoridade de persistência; campanha guarda recursos HP e eventos."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Core local de tabletop-rpg sem ProjectReferences externas."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Combat funciona standalone sem Hub; nenhum Host API de Ecosystem é alterado."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Implementação somente C#."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #314, branch stacked separada de Urbe/Lunet e RPG-003, handoff, PR draft e CI."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "AGENTS/SPEC/ROADMAP do Product e governança canônica foram consultados."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Não introduz novos formatos de dados, rede, UI, segredos ou contrato público."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Intents são validados pelo SessionEngine antes de regras, dados e mutações; sem eval/script de IA."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Somente CI headless; sem alegação de validação em dispositivo."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-004 permanece [~] enquanto depende de revisão/integração/CI."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Combate referencia CharacterIds já existentes, sem recriar identidade."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Rules adapter permanece local e intercambiável, sem Service novo ou extração prematura."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Produto funciona sem Hub/control-plane."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "rpg-combat-runtime",
+      "status": "product-specific",
+      "rationale": "Regras, turnos e ações de combate específicas do Product tabletop-rpg; sem segundo consumidor."
+    }
+  ]
+}
