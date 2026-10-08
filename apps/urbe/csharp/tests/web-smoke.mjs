@@ -326,9 +326,7 @@ async function assertNoteTemplates(page) {
     await page.getByRole('combobox', { name: 'Selecionar modelo de nota' })
         .selectOption('Modelos/Modelo base.md');
     await page.getByLabel('Tema', { exact: true }).fill('Teste');
-    await page.getByLabel('Pessoa', { exact: true }).fill('Alice let browser;
-try {
-    browser = await chromium.launch({ headless: true });');
+    await page.getByLabel('Pessoa', { exact: true }).fill('Alice $&');
     await page.getByLabel('Nova nota').fill('Nota gerada');
     await page.getByRole('button', { name: 'Criar', exact: true }).click();
     await page.getByRole('heading', { name: 'Nota gerada', exact: true }).waitFor();
@@ -336,9 +334,7 @@ try {
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
     assert.equal(
         await page.getByLabel('Markdown da nota').inputValue(),
-        '# Teste\\n\\nPessoa: Alice let browser;
-try {
-    browser = await chromium.launch({ headless: true });\\nTeste');
+        '# Teste\\n\\nPessoa: Alice $&\\nTeste');
 
     const metrics = await page.evaluate(() => ({
         width: innerWidth,
