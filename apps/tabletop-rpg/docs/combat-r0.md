@@ -49,7 +49,10 @@ iniciativa/posicionamento e persistência da sessão de combate quando
 autorizada uma revisão de schema. Nenhuma decisão de sistema de RPG é imposta
 à campanha.
 
-A API é pensada para execução serial do Host; sincronização concorrente e
-rede são assuntos de RPG-050+. O estado secreto e as decisões do mestre
+O Host continua responsável por serialização das demais mutações da campanha.
+O encontro serializa seus próprios ataques/avanços de turno e compara uma revisão
+interna após callbacks de rulesets: ataques concorrentes ou reentrantes não
+podem consumir o mesmo turno duas vezes. Sincronização entre dispositivos,
+rede e reentrância de outros componentes são assuntos de RPG-050+. O estado secreto e as decisões do mestre
 continuam fora de `PlayerView`. Não há UI, dados em mapa, IA real,
 multiplayer, alteração de distribuição nem publicação de APK.
