@@ -698,17 +698,22 @@ public sealed class WorkspaceSession : IDisposable
             ArtifactModel.IsSystem(source.Path))
             return null;
 
-        if (!FolderExists(NoteTemplateEngine.Folder))
+        // Use the spelling of an existing folder, also on case-sensitive
+        // hosts, instead of accidentally creating a parallel Modelos tree.
+        var folder = Folders.FirstOrDefault(
+            path => string.Equals(
+                path, NoteTemplateEngine.Folder,
+                StringComparison.OrdinalIgnoreCase));
+        if (folder is null)
         {
-            if (PathOrFolderExists(NoteTemplateEngine.Folder) ||
-                CreateFolder(NoteTemplateEngine.Folder) is null)
+            if (PathOrFolderExists(NoteTemplateEngine.Folder))
+                return null;
+            folder = CreateFolder(NoteTemplateEngine.Folder);
+            if (folder is null)
                 return null;
         }
 
-        return CreateNote(
-            source.Title,
-            NoteTemplateEngine.Folder,
-            source.Content);
+        return CreateNote(source.Title, folder, source.Content);
     }
 
     /// <summary>
