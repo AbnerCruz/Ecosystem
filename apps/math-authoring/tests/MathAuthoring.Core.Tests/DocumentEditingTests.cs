@@ -205,6 +205,7 @@ public sealed class DocumentEditingTests
         Assert.Equal("Persistido", reopened.Snapshot.Metadata.Title);
         Assert.Equal(session.Source, reopened.Source);
     }
+
     [Fact]
     public void Reentrant_command_cannot_overwrite_a_nested_successful_commit()
     {
@@ -259,7 +260,7 @@ public sealed class DocumentEditingTests
         Assert.Contains(wrongVersion.Problems, p => p.Code == "migration.invalid-step");
         var corrupt = ProjectMigrator.Open(legacy, new DocumentMigration(0, 1, _ => "{"));
         Assert.Contains(corrupt.Problems, p => p.Code == "json.syntax");
-        Assert.Equal(legacy, legacy); // No migration mutates the supplied string.
+        Assert.Contains(ProjectJson.Parse(legacy).Problems, p => p.Code == "schema.unsupported");
     }
 
     [Fact]
