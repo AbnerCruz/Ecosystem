@@ -120,15 +120,15 @@ async function assertShell(page) {
     const splitSource = page.getByLabel('Markdown da nota');
     await splitSource.waitFor({ state: 'visible' });
     assert.equal(await page.locator('.editor-stage-layout.split').count(), 1);
-    const canonical = '# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]\\n';
+    const canonical = '# Título smoke\n\nTexto **forte**. [[Nova ligada]]\n';
     await splitSource.fill(canonical);
     await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
     const addBlock = page.getByRole('button', { name: 'Adicionar', exact: true });
     assert.equal(await addBlock.isEnabled(), true);
     await addBlock.click();
     await page.waitForFunction(
-        () => document.querySelector('.editor-source-field textarea')?.value.endsWith('Texto\\n'));
-    assert.match(await splitSource.inputValue(), /\\n\\nTexto\\n$/);
+        () => document.querySelector('.editor-source-field textarea')?.value.endsWith('Texto\n'));
+    assert.match(await splitSource.inputValue(), /\n\nTexto\n$/);
     await page.getByRole('button', { name: 'Desfazer', exact: true }).click();
     await page.waitForFunction(
         target => document.querySelector('.editor-source-field textarea')?.value === target,
