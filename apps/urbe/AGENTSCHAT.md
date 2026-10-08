@@ -541,3 +541,11 @@
 - Correções: `CreateFolder`, `CreateNote` e `MoveItem` recusam pastas inexistentes, reservadas/internas e componentes de travessia `.`/`..`; movimentação de arquivo/pasta continua sobre a mesma sessão e preserva IDs.
 - Decisões: guardas de sessão host-neutral, sem mudanças no formato do vault, storage físico, migração, backup ou publicação; nenhum gate humano declarado aprovado.
 - Pendências: validar CI C#/Web/Android/Windows/E2E e consistency, retomar integração automática da UC-18 após verde.
+
+### 2026-10-08 — ChatGPT — UC-18 abas fixadas no Editor
+
+- Estado: verifying; branch `feat/urbe-uc18-pin-tabs` criada após a integração do Explorer #286, sem aguardar o editor HTML rico.
+- O método C# `WorkspaceSession.PinTab` já implementava retenção no limite de abas, mas não existia um comando visual. Agora cada aba possui controle dedicado Fixar/Desafixar com `aria-pressed` e rótulo acessível; indicador visual substitui o símbolo duplicado.
+- Teste Web smoke verifica fixar nota, abrir outras abas, alternar e desafixar sem perder o documento da sessão.
+- Sem alterações no vault persistido, migração, plugin, host/distribuição nem formato Markdown. Fixação continua em memória; não é alegada persistência após recarregar.
+- CI e G-C3 ainda pendentes; esperar integração automática após estado combinado verde.
