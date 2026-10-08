@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-collision",
+  "category": "RESULT",
+  "timestamp": "2026-10-08T00:18:52.666234Z",
+  "agent": {
+    "id": "codex-lunet-collision",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-402",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-continue-20261008",
+  "base_commit": "f724b3c9fe65f4d45d39d07e7ce0a989291c9be4",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/src/Lunet.Framework/Geometry.cs",
+    "apps/lunet2d/docs/guides/colisao.md",
+    "apps/lunet2d/tests/Lunet.Tests/CollisionTests.cs",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261008-lunet-collision.json",
+    "apps/lunet2d/tests/Lunet.Tests/PerformanceTests.cs"
+  ],
+  "work_completed": [
+    "Geometry: distância ponto/forma e forma/forma, closest point e região de interseção AABB com XML docs e API offline regenerada.",
+    "SAT: translação de saída correta na contenção em ambos sentidos; formas sem área retornam false/zero, sem alterar assinaturas existentes.",
+    "11 casos novos de teste incluindo contenção, winding, rotação, degeneração, bordas, raio, zero alocações e guia C# compilado/executado no runtime real com toque simulado.",
+    "Guia offline colisao.md com roteiro intermediário Preview rápido/isolado; nenhum fechamento ou aprovação da Fase 4.",
+    "Reproduzida falha de PerformanceTests na base f724b3c (326 testes, 1 falha); medições isoladas por coleção xUnit sem reduzir o limite de zero bytes. Suíte padrão atual 337/337."
+  ],
+  "verification": [
+    {
+      "check": "Build portátil .NET 10",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false; 0 warnings, 0 errors."
+    },
+    {
+      "check": "Lunet.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Suíte xUnit padrão após isolamento de medições: 337 testes, zero falhas/erros/skips; guia C# compila e roda com contenção e toque. Base f724b3c reproduziu a falha concorrente preexistente (326 testes, 1 falha); não é regressão de Geometry."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: todos os 22 checks passaram. Snapshot de Issues ausente na execução local; integração/CI verificam estado remoto."
+    },
+    {
+      "check": "Preview no Android",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/colisao.md",
+      "critical": false,
+      "evidence": "Roteiro de recurso intermediário; toque simulado e backend em memória não comprovam GL/Preview isolado no aparelho."
+    }
+  ],
+  "known_issues": [
+    "Física completa, CCD e resolução de movimento não fazem parte desta camada geométrica.",
+    "SAT requer formas convexas e finitas; distância requer tamanhos/raios não negativos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI e integração automática do PR.",
+    "Confirmar development release direta pelo pipeline aprovado e executar roteiro intermediário no Android.",
+    "Seguir Fase 4; backend maduro de física requer ADR próprio."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Nenhum novo ProjectReference nem Product externo; matemática permanece no Framework local."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-402 / Issue #288, branch própria e este handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Roteiro de aparelho pendente; ROADMAP [~], sem afirmar validação humana."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Evidências automatizadas separadas da integração e do roteiro Android."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração ou componente compartilhado novo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "game-collision-queries",
+      "status": "product-specific",
+      "rationale": "Consultas para jogos 2D no Framework Lunet; nenhum segundo consumidor independente demonstrado."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Recurso autorizado da Fase 4 e correção geométrica local; sem mudança de dados, distribuição, segurança ou boundaries."
+  },
+  "cost": null
+}

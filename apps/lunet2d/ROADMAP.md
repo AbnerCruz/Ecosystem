@@ -172,7 +172,7 @@ Gate: jogos 2D substanciais apenas com APIs oficiais.
 Integração transversal autorizada pelo Ecosystem (não altera o gate de Framework Advanced):
 - [x] **LUNET-401 — Adapter opcional da Host API do Ecosystem via Android Binder** (P5-4 / DEC-0037-A): integrado e validado. Pareamento, `text.inspect`, revogação/rotação e lifecycle/process-death foram aprovados no gate P5-4 pela Issue #225; Lunet permanece funcional sem provider. O estado idle `0 sessões IPC abertas agora` é esperado e não invalida o pareamento.
 
-- [ ] Camada simples de colisão: AABB, Rectangle, Circle, Point, Ray, overlap, intersection, distance, SAT.
+- [~] **LUNET-402 — Camada simples de colisão** (§7): AABB, Rectangle, Circle, Point, Ray, overlap, intersection, distance, SAT. Issue #288; completar consultas e corrigir separação SAT em contenção. Integração e roteiro Preview pendentes; física completa é o item separado abaixo.
 - [ ] Física completa (`PhysicsWorld`, `RigidBody2D`, `Collider2D`, `Fixture2D`, `Joint2D`, `Contact`, `Raycast`) sobre backend maduro (Box2D ou equivalente) sem expor tipos internos; ADR da escolha.
 - [ ] `Camera2D`.
 - [ ] Animação de sprites e tweening.

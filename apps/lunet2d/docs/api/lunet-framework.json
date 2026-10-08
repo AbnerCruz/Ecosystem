@@ -1442,6 +1442,30 @@
       "since": "0.0.1",
       "members": [
         {
+          "id": "M:Lunet.Geometry.ClosestPoint(System.Numerics.Vector2,Lunet.RectangleF)",
+          "name": "ClosestPoint",
+          "kind": "method",
+          "signature": "public static Vector2 ClosestPoint(Vector2 point, RectangleF rect)",
+          "summary": "Ponto do ret\u00E2ngulo fechado mais pr\u00F3ximo do ponto dado.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto finito."
+            },
+            {
+              "name": "rect",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            }
+          ],
+          "returns": "Ponto mais pr\u00F3ximo, incluindo as bordas direita e inferior.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Geometry.ClosestPointOnSegment(System.Numerics.Vector2,System.Numerics.Vector2,System.Numerics.Vector2)",
           "name": "ClosestPointOnSegment",
           "kind": "method",
@@ -1495,6 +1519,126 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Geometry.Distance(System.Numerics.Vector2,Lunet.RectangleF)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(Vector2 point, RectangleF rect)",
+          "summary": "Dist\u00E2ncia de um ponto ao ret\u00E2ngulo fechado; zero dentro ou na borda.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto finito."
+            },
+            {
+              "name": "rect",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa entre o ponto e o ret\u00E2ngulo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Distance(System.Numerics.Vector2,Lunet.Circle)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(Vector2 point, Circle circle)",
+          "summary": "Dist\u00E2ncia de um ponto ao c\u00EDrculo preenchido; zero dentro ou na borda.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "point",
+              "type": "Vector2",
+              "description": "Ponto finito."
+            },
+            {
+              "name": "circle",
+              "type": "Circle",
+              "description": "C\u00EDrculo finito com raio n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa entre o ponto e o c\u00EDrculo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Distance(Lunet.Circle,Lunet.Circle)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(Circle a, Circle b)",
+          "summary": "Dist\u00E2ncia entre dois c\u00EDrculos preenchidos; zero quando se tocam ou sobrep\u00F5em.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "Circle",
+              "description": "Primeiro c\u00EDrculo finito com raio n\u00E3o negativo."
+            },
+            {
+              "name": "b",
+              "type": "Circle",
+              "description": "Segundo c\u00EDrculo finito com raio n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa entre os c\u00EDrculos.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Distance(Lunet.Circle,Lunet.RectangleF)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(Circle circle, RectangleF rect)",
+          "summary": "Dist\u00E2ncia entre um c\u00EDrculo preenchido e um ret\u00E2ngulo fechado.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "circle",
+              "type": "Circle",
+              "description": "C\u00EDrculo finito com raio n\u00E3o negativo."
+            },
+            {
+              "name": "rect",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa; zero no contato ou na sobreposi\u00E7\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Distance(Lunet.RectangleF,Lunet.RectangleF)",
+          "name": "Distance",
+          "kind": "method",
+          "signature": "public static float Distance(RectangleF a, RectangleF b)",
+          "summary": "Dist\u00E2ncia entre dois ret\u00E2ngulos fechados.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "RectangleF",
+              "description": "Primeiro ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            },
+            {
+              "name": "b",
+              "type": "RectangleF",
+              "description": "Segundo ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            }
+          ],
+          "returns": "Menor dist\u00E2ncia n\u00E3o negativa; zero no contato ou na sobreposi\u00E7\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Geometry.DistanceToSegment(System.Numerics.Vector2,System.Numerics.Vector2,System.Numerics.Vector2)",
           "name": "DistanceToSegment",
           "kind": "method",
@@ -1519,6 +1663,35 @@
             }
           ],
           "returns": "Menor dist\u00E2ncia entre o ponto e o segmento.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Geometry.Intersection(Lunet.RectangleF,Lunet.RectangleF,Lunet.RectangleF@)",
+          "name": "Intersection",
+          "kind": "method",
+          "signature": "public static bool Intersection(RectangleF a, RectangleF b, out RectangleF intersection)",
+          "summary": "Calcula a regi\u00E3o de sobreposi\u00E7\u00E3o com \u00E1rea positiva entre dois AABBs.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "a",
+              "type": "RectangleF",
+              "description": "Primeiro ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            },
+            {
+              "name": "b",
+              "type": "RectangleF",
+              "description": "Segundo ret\u00E2ngulo finito com tamanho n\u00E3o negativo."
+            },
+            {
+              "name": "intersection",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o comum; default quando n\u00E3o h\u00E1 \u00E1rea positiva."
+            }
+          ],
+          "returns": "Verdadeiro quando existe regi\u00E3o comum com \u00E1rea positiva; contato de borda \u00E9 falso.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -1553,7 +1726,7 @@
           "kind": "method",
           "signature": "public static bool SatOverlap(ReadOnlySpan\u003CVector2\u003E a, ReadOnlySpan\u003CVector2\u003E b, out Vector2 push)",
           "summary": "Teste SAT entre dois pol\u00EDgonos convexos. Se houver sobreposi\u00E7\u00E3o, \u0060push\u0060 \u00E9 o menor vetor que, somado \u00E0 posi\u00E7\u00E3o de \u0060a\u0060, o separa de \u0060b\u0060.",
-          "remarks": "",
+          "remarks": "V\u00E9rtices finitos em ordem, pol\u00EDgonos convexos. Contato de borda e pol\u00EDgonos sem \u00E1rea retornam falso. O empurr\u00E3o move A at\u00E9 o contato, inclusive quando uma forma cont\u00E9m a outra. N\u00E3o aloca mem\u00F3ria.",
           "parameters": [
             {
               "name": "a",
@@ -1571,7 +1744,7 @@
               "description": "Vetor m\u00EDnimo que separa os pol\u00EDgonos quando se sobrep\u00F5em."
             }
           ],
-          "returns": "Verdadeiro se os pol\u00EDgonos se sobrep\u00F5em.",
+          "returns": "Verdadeiro se os pol\u00EDgonos se sobrep\u00F5em com \u00E1rea positiva.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
