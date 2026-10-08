@@ -2026,46 +2026,6 @@
       "members": []
     },
     {
-      "id": "T:Lunet.Inspector\u00601",
-      "name": "Inspector",
-      "namespace": "Lunet",
-      "kind": "class",
-      "signature": "public abstract class Inspector\u003CT\u003E : IInspector",
-      "summary": "Inspector customizado para um tipo do jogo. Crie uma classe que herda de \u0060Inspector\u003CMeuTipo\u003E\u0060 no projeto e o Inspector do app a usa no lugar da lista autom\u00E1tica de campos.",
-      "remarks": "",
-      "examples": [
-        "\u0060\u0060\u0060\npublic sealed class Turret { public float Angle; public int Shots; }\n\npublic sealed class TurretInspector : Inspector\u003CTurret\u003E\n{\n    public override void OnInspect(InspectorContext ui, Turret target)\n    {\n        ui.Header(\u0022Torre\u0022);\n        ui.Slider(\u0022\u00C2ngulo\u0022, () =\u003E target.Angle, v =\u003E target.Angle = v, 0, 360);\n        ui.Field(\u0022Disparos\u0022, () =\u003E target.Shots);\n        ui.Button(\u0022Atirar\u0022, () =\u003E target.Shots\u002B\u002B);\n    }\n}\n\u0060\u0060\u0060"
-      ],
-      "related": [],
-      "since": "0.0.1",
-      "members": [
-        {
-          "id": "M:Lunet.Inspector\u00601.OnInspect(Lunet.InspectorContext,\u00600)",
-          "name": "OnInspect",
-          "kind": "method",
-          "signature": "public abstract void OnInspect(InspectorContext ui, T target)",
-          "summary": "Descreve a interface do objeto adicionando linhas em \u0060ui\u0060.",
-          "remarks": "",
-          "parameters": [
-            {
-              "name": "ui",
-              "type": "InspectorContext",
-              "description": "Onde adicionar linhas."
-            },
-            {
-              "name": "target",
-              "type": "T",
-              "description": "Objeto inspecionado."
-            }
-          ],
-          "returns": "",
-          "examples": [],
-          "related": [],
-          "since": "0.0.1"
-        }
-      ]
-    },
-    {
       "id": "T:Lunet.InspectorContext",
       "name": "InspectorContext",
       "namespace": "Lunet",
@@ -2737,6 +2697,46 @@
           "summary": "Linha divis\u00F3ria.",
           "remarks": "",
           "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Inspector\u00601",
+      "name": "Inspector",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public abstract class Inspector\u003CT\u003E : IInspector",
+      "summary": "Inspector customizado para um tipo do jogo. Crie uma classe que herda de \u0060Inspector\u003CMeuTipo\u003E\u0060 no projeto e o Inspector do app a usa no lugar da lista autom\u00E1tica de campos.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\npublic sealed class Turret { public float Angle; public int Shots; }\n\npublic sealed class TurretInspector : Inspector\u003CTurret\u003E\n{\n    public override void OnInspect(InspectorContext ui, Turret target)\n    {\n        ui.Header(\u0022Torre\u0022);\n        ui.Slider(\u0022\u00C2ngulo\u0022, () =\u003E target.Angle, v =\u003E target.Angle = v, 0, 360);\n        ui.Field(\u0022Disparos\u0022, () =\u003E target.Shots);\n        ui.Button(\u0022Atirar\u0022, () =\u003E target.Shots\u002B\u002B);\n    }\n}\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Inspector\u00601.OnInspect(Lunet.InspectorContext,\u00600)",
+          "name": "OnInspect",
+          "kind": "method",
+          "signature": "public abstract void OnInspect(InspectorContext ui, T target)",
+          "summary": "Descreve a interface do objeto adicionando linhas em \u0060ui\u0060.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "ui",
+              "type": "InspectorContext",
+              "description": "Onde adicionar linhas."
+            },
+            {
+              "name": "target",
+              "type": "T",
+              "description": "Objeto inspecionado."
+            }
+          ],
           "returns": "",
           "examples": [],
           "related": [],
