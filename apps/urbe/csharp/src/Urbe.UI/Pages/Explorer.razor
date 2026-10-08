@@ -41,6 +41,45 @@
 
         <div class="new-note">
             <label class="field">
+                <span>Modelo da nota (opcional)</span>
+                <select value="@SelectedTemplatePath"
+                        @onchange="OnTemplateSelected"
+                        disabled="@Workspace.IsReadOnly"
+                        aria-label="Selecionar modelo de nota">
+                    <option value="">Nota em branco</option>
+                    @foreach (var template in Workspace.Templates)
+                    {
+                        <option value="@template.Path">@template.Title (@template.Path)</option>
+                    }
+                </select>
+            </label>
+        </div>
+
+        @if (SelectedTemplate is { } selectedTemplate)
+        {
+            var fields = NoteTemplateEngine.Fields(selectedTemplate.Content);
+            @if (fields.Count > NoteTemplateEngine.MaxFields)
+            {
+                <p role="alert">Este modelo excede o limite de @NoteTemplateEngine.MaxFields campos.</p>
+            }
+            else if (fields.Count > 0)
+            {
+                <div class="explorer-template-fields" aria-label="Campos do modelo">
+                    @foreach (var field in fields)
+                    {
+                        <label class="field">
+                            <span>@field</span>
+                            <input value="@GetTemplateField(field)"
+                                   @oninput="args => SetTemplateField(field, args)"
+                                   disabled="@Workspace.IsReadOnly" />
+                        </label>
+                    }
+                </div>
+            }
+        }
+
+        <div class="new-note">
+            <label class="field">
                 <span>Nova pasta</span>
                 <input value="@NewFolderName"
                        @oninput="OnNewFolderNameInput"
@@ -55,6 +94,11 @@
             </button>
         </div>
     </div>
+
+    @if (_createError is not null)
+    {
+        <p class="explorer-create-error" role="alert">@_createError</p>
+    }
 
     <div class="explorer-location"
          @ondragover:preventDefault
@@ -180,6 +224,15 @@
     private string Query { get; set; } = string.Empty;
     private string NewNoteTitle { get; set; } = string.Empty;
     private string NewFolderName { get; set; } = string.Empty;
+    private string SelectedTemplatePath { get; set; } = string.Empty;
+    private readonly Dictionary<string, string?> _templateValues = new(StringComparer.Ordinal);
+    private string? _createError;
+
+    private UrbeDocument? SelectedTemplate =>
+        Workspace.Templates.FirstOrDefault(
+            template => string.Equals(
+                template.Path, SelectedTemplatePath,
+                StringComparison.OrdinalIgnoreCase));
     private WorkspaceExplorerEntry? _selectedFolder;
     private string? _dragSource;
     private string? _moveSource;
@@ -226,6 +279,37 @@
 
     private void OnNewFolderNameInput(ChangeEventArgs args) =>
         NewFolderName = args.Value?.ToString() ?? string.Empty;
+
+    private void OnTemplateSelected(ChangeEventArgs args)
+    {
+        SelectedTemplatePath = args.Value?.ToString() ?? string.Empty;
+        _templateValues.Clear();
+        _createError = null;
+        if (SelectedTemplate is { } selected)
+        {
+            foreach (var field in NoteTemplateEngine.Fields(selected.Content))
+                _templateValues[field] = string.Empty;
+        }
+    }
+
+    private string GetTemplateField(string name) =>
+        _templateValues.GetValueOrDefault(name) ?? string.Empty;
+
+    private void SetTemplateField(string name, ChangeEventArgs args)
+    {
+        _templateValues[name] = args.Value?.ToString() ?? string.Empty;
+        _createError = null;
+    }
+
+    private UrbeDocument? CreateWithSelectedTemplate(string? title, string? folder)
+    {
+        if (SelectedTemplatePath.Length == 0)
+            return Workspace.CreateNote(title, folder);
+
+        return SelectedTemplate is { } template
+            ? Workspace.CreateFromTemplate(template.Path, title, folder, _templateValues)
+            : null;
+    }
 
     private void Activate(WorkspaceExplorerEntry entry)
     {
@@ -292,12 +376,16 @@
 
     private void CreateNote()
     {
-        var document = Workspace.CreateNote(
+        var document = CreateWithSelectedTemplate(
             NewNoteTitle,
             Workspace.CurrentFolder);
 
         if (document is null)
+        {
+            _createError = "Não foi possível criar a nota. Confira o modelo, os campos e a pasta.";
             return;
+        }
+        _createError = null;
 
         Workspace.Open(
             document.Id,
@@ -318,12 +406,16 @@
             ? "Nova nota"
             : NewNoteTitle;
 
-        var document = Workspace.CreateNote(
+        var document = CreateWithSelectedTemplate(
             title,
             _selectedFolder.Path);
 
         if (document is null)
+        {
+            _createError = "Não foi possível criar a nota nesta pasta com este modelo.";
             return;
+        }
+        _createError = null;
 
         Workspace.Open(
             document.Id,
