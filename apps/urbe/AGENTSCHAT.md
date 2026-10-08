@@ -565,3 +565,11 @@
 - Testes: adicionada suíte unitária de placeholders; execução .NET local indisponível neste ambiente, CI `urbe-checks`/consistency e smoke Web ainda devem rodar no PR e estado combinado.
 - Limites: sessão host-neutral em memória; persistência física futura, Android/toque real, e gate G-C3 seguem pendentes. Não marcar REQ-093 concluído.
 - Próximos passos: validar CI do PR, corrigir regressões, integrar somente pelo integrador automático e seguir com a persistência física da UC-18.
+
+### 2026-10-08 — ChatGPT — UC-18 / REQ-090 editor Fonte C#
+- Estado: branch `feat/urbe-uc18-req090-inline-code-source`, aguardando PR e CI; não integrado.
+- Implementado: núcleo C# aplica código em linha à seleção UTF-16, suporta envolver/desfazer, delimitadores com crases internas e par vazio com cursor entre as crases; não insere conteúdo de reserva.
+- Integração: botão em Fonte/Dividido lê caret por JS estritamente DOM, atualiza WorkspaceSession/DocumentStore e restaura a seleção; não cria segunda autoridade nem formato persistido.
+- Testes: nova suíte InlineCodeEditingTests e smoke Web real; aguarda execução CI e estado combinado.
+- Limites: modo Visual rich inline e estado da barra sob o cursor permanecem pendentes; não fecha REQ-090/095/UC-18/G-C3, não implementa adapter de persistência.
+- Próximos passos: validar PR, revisar falhas e integrar apenas por integrador automático; PR #334 continua responsável pela corrida no renderer matemático.
