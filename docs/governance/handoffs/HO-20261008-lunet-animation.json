@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-animation",
+  "category": "RESULT",
+  "timestamp": "2026-10-08T00:58:39.256582Z",
+  "agent": {
+    "id": "codex-lunet-animation",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-404",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-animation-20261008",
+  "base_commit": "9c8e799ce74da4da69f8f139bc0f9d37cf28dabd",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/animacao.md",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteAnimationClip.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteAnimator.cs",
+    "apps/lunet2d/src/Lunet.Framework/Utilities/Tween.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AnimationTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-animation.json"
+  ],
+  "work_completed": [
+    "SpriteAnimationFrame/Clip local: cópia imutável da sequência, regiões/durações verificadas, quadros de spritesheet ou atlas, duração por quadro e textura com ownership preservado.",
+    "SpriteAnimator independente: loop/one-shot, pausa/retomada/reinício/Play, busca binária do quadro, deltas grandes sem varrer ciclos e zero alocações por Update.",
+    "Tween local float/Vector2/Color com Linear/InQuad/OutQuad/InOutQuad/SmoothStep, pausa/retomada/reinício, endpoints exatos e interpolação numérica sem overflow intermediário.",
+    "Novo modelo opcional na criação de projeto Android: animação procedural + transição por toque, retarget sem salto e botões de pausa/reinício. Modelos antigos não alterados.",
+    "Guia offline completo, API XML/JSON atualizada e testes de regressão, precisão/entrada inválida, UV/cor no SpriteBatch e guia/modelo no compilador/runtime reais."
+  ],
+  "verification": [
+    {
+      "check": "Build portátil .NET 10",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false; zero warnings/errors."
+    },
+    {
+      "check": "Lunet.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Runner xUnit v3 .NET 10 padrão: 360 testes, zero falhas/erros/skips. Inclui 23 casos de animação/tween, amostragem/precisão/deltas enormes, UV/cor, zero bytes e guia/modelo criado pelo ProjectStore e compilado/executado com toque físico 2×/pausa/retarget/reinício."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22 checks; ROADMAP × Issues remoto segue verificação pelo CI/integrador."
+    },
+    {
+      "check": "Animação/tween no Preview Android",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/animacao.md",
+      "evidence": "Modelo Demo: Animação e tween; testar frames, toque, retarget, pausa/retomada/reinício, Preview rápido/isolado e projeto existente. Teste em memória não comprova GL nem performance percebida."
+    }
+  ],
+  "known_issues": [
+    "Sem eventos para quadros pulados, editor visual, scheduler global, composição ou modo ping-pong automático; controle permanece no código do jogo.",
+    "Cor interpola canais RGBA de 8 bits, sem correção gamma. HUD do exemplo formata texto; apenas APIs de playback/tween são declaradas sem alocação por quadro.",
+    "SDK Android ausente localmente; APK e CI do Product seguem pelo pipeline do Ecosystem."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI/integração automática e release direta do Lunet.",
+    "Se main integrar PR #295 antes desta entrega, reconciliar semanticamente mudanças documentais, preservando câmera e animação.",
+    "Validar roteiro intermediário animacao.md no aparelho; manter Fase 4 aberta."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação local no Framework/Core/Android do Lunet, sem referências a outro Product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #298 / LUNET-404, branch própria e handoff com base_commit."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE explicitamente pendente; Fase 4 e item em andamento."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build, testes, documentação e checks distintos de integração/release/validação humana."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração ou dependência; playback/tween pertencem ao Framework do Product."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "sprite-animation-and-tween",
+      "status": "product-specific",
+      "rationale": "APIs complementares previstas no Framework do Lunet (§7); nenhum consumidor externo real justifica extração."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Recurso previsto e autorizado da Fase 4, com APIs/modelo adicionais; preserva APIs existentes, dados, boundaries e distribuição."
+  },
+  "cost": null
+}

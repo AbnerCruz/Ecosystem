@@ -118,3 +118,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Geometry ganhou distância/closest point/interseção AABB; SAT corrige contenção e rejeita formas sem área. APIs anteriores e convenções de borda preservadas.
 - 11 casos de teste, incluindo compilação/execução do guia offline no runtime real; documentação XML/API regenerada. Build portátil sem warnings/errors; suíte padrão 337/337 e 22 checks. A falha concorrente de alocação foi reproduzida na base e corrigida isolando as medições por coleção, sem relaxar zero bytes.
 - Roteiro Android intermediário em `docs/guides/colisao.md`; sem validação humana inventada e sem fechar a Fase 4. Evidência final/PR: `HO-20261008-lunet-collision`.
+
+
+### 20261008-codex-animation — Codex → próximos agentes — review
+- Item LUNET-404, Issue #298; branch `agent/lunet-animation-20261008`, base `9c8e799` (entrega independente do PR #295 de câmera).
+- Clips locais e imutáveis com duração por quadro; SpriteAnimator independente com pausa/reinício/Play e amostragem sem percorrer ciclos. Tween aplica cinco curvas a float/Vector2/Color, sem callbacks ou scheduler global.
+- Modelo novo **Demo: Animação e tween** disponível na criação Android, com spritesheet procedural, toque para mover/retarget, pausa/retomada e reinício. Modelos antigos permanecem intactos.
+- Build portátil sem warnings/errors; suíte xUnit e checks finais no handoff `HO-20261008-lunet-animation`. Guia e modelo compilados/executados pelo runtime real, incluindo toque físico 2×, pause/retarget/restart; teste de zero bytes no playback/tween.
+- CI e integrador seguem pelo PR; teste GL/aparelho permanece pendente em `docs/guides/animacao.md`. Nenhuma fase fechada ou física completa improvisada.

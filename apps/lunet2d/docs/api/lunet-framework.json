@@ -309,6 +309,87 @@
       ]
     },
     {
+      "id": "T:Lunet.Ease",
+      "name": "Ease",
+      "namespace": "Lunet",
+      "kind": "enum",
+      "signature": "public enum Ease",
+      "summary": "Curvas normalizadas de acelera\u00E7\u00E3o/desacelera\u00E7\u00E3o de uma transi\u00E7\u00E3o.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar tween = new Tween(0.5, Ease.OutQuad);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.Ease.InOutQuad",
+          "name": "InOutQuad",
+          "kind": "enum value",
+          "signature": "public const Ease InOutQuad = 3",
+          "summary": "Acelera at\u00E9 a metade e desacelera depois.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Ease.InQuad",
+          "name": "InQuad",
+          "kind": "enum value",
+          "signature": "public const Ease InQuad = 1",
+          "summary": "Acelera\u00E7\u00E3o quadr\u00E1tica.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Ease.Linear",
+          "name": "Linear",
+          "kind": "enum value",
+          "signature": "public const Ease Linear = 0",
+          "summary": "Velocidade constante.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Ease.OutQuad",
+          "name": "OutQuad",
+          "kind": "enum value",
+          "signature": "public const Ease OutQuad = 2",
+          "summary": "Desacelera\u00E7\u00E3o quadr\u00E1tica.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Ease.SmoothStep",
+          "name": "SmoothStep",
+          "kind": "enum value",
+          "signature": "public const Ease SmoothStep = 4",
+          "summary": "Curva c\u00FAbica com velocidade zero nas duas pontas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.FileAttribute",
       "name": "FileAttribute",
       "namespace": "Lunet",
@@ -4037,6 +4118,267 @@
             }
           ],
           "returns": "Falso se a transforma\u00E7\u00E3o n\u00E3o pode ser invertida (escala zero).",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Tween",
+      "name": "Tween",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class Tween",
+      "summary": "Rel\u00F3gio de transi\u00E7\u00E3o controlado pelo jogo; interpola valores sem callbacks ou aloca\u00E7\u00F5es por quadro.",
+      "remarks": "Crie uma vez e chame Restart para reutilizar. N\u00E3o h\u00E1 scheduler global: o jogo decide o que avan\u00E7ar, pausar e aplicar. Cor interpola canais RGBA de 8 bits, sem corre\u00E7\u00E3o gamma. Dura\u00E7\u00E3o zero j\u00E1 come\u00E7a completa.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar tween = new Tween(0.5, Ease.OutQuad);\ntween.Update(1.0 / 60);\nVector2 next = tween.Value(Vector2.Zero, new Vector2(100, 200));\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Tween.#ctor(System.Double,Lunet.Ease)",
+          "name": "Tween",
+          "kind": "constructor",
+          "signature": "public Tween(double durationSeconds, Ease ease = Ease.Linear)",
+          "summary": "Cria uma transi\u00E7\u00E3o em execu\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "durationSeconds",
+              "type": "double",
+              "description": "Dura\u00E7\u00E3o finita e n\u00E3o negativa."
+            },
+            {
+              "name": "ease",
+              "type": "Ease",
+              "description": "Curva de interpola\u00E7\u00E3o."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.Amount",
+          "name": "Amount",
+          "kind": "property",
+          "signature": "public float Amount { get; }",
+          "summary": "Progresso de 0 a 1 depois da curva.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.DurationSeconds",
+          "name": "DurationSeconds",
+          "kind": "property",
+          "signature": "public double DurationSeconds { get; }",
+          "summary": "Dura\u00E7\u00E3o em segundos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.Ease",
+          "name": "Ease",
+          "kind": "property",
+          "signature": "public Ease Ease { get; }",
+          "summary": "Curva aplicada ao progresso.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.ElapsedSeconds",
+          "name": "ElapsedSeconds",
+          "kind": "property",
+          "signature": "public double ElapsedSeconds { get; }",
+          "summary": "Tempo transcorrido, limitado \u00E0 dura\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.IsComplete",
+          "name": "IsComplete",
+          "kind": "property",
+          "signature": "public bool IsComplete { get; }",
+          "summary": "Se chegou ao valor final.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.IsPlaying",
+          "name": "IsPlaying",
+          "kind": "property",
+          "signature": "public bool IsPlaying { get; }",
+          "summary": "Se Update avan\u00E7a o rel\u00F3gio.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.Progress",
+          "name": "Progress",
+          "kind": "property",
+          "signature": "public float Progress { get; }",
+          "summary": "Progresso linear de 0 a 1; dura\u00E7\u00E3o zero retorna 1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Pause",
+          "name": "Pause",
+          "kind": "method",
+          "signature": "public void Pause()",
+          "summary": "Pausa sem alterar valores.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Restart",
+          "name": "Restart",
+          "kind": "method",
+          "signature": "public void Restart()",
+          "summary": "Reutiliza o rel\u00F3gio desde o in\u00EDcio; dura\u00E7\u00E3o zero continua completa.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Resume",
+          "name": "Resume",
+          "kind": "method",
+          "signature": "public void Resume()",
+          "summary": "Retoma se a transi\u00E7\u00E3o ainda n\u00E3o est\u00E1 completa.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Update(System.Double)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(double deltaSeconds)",
+          "summary": "Avan\u00E7a at\u00E9 o fim, preservando exatamente o endpoint.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "deltaSeconds",
+              "type": "double",
+              "description": "Tempo finito e n\u00E3o negativo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Value(System.Single,System.Single)",
+          "name": "Value",
+          "kind": "method",
+          "signature": "public float Value(float from, float to)",
+          "summary": "Interpola um n\u00FAmero; valores iniciais/finais devem ser finitos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "from",
+              "type": "float",
+              "description": "Valor inicial."
+            },
+            {
+              "name": "to",
+              "type": "float",
+              "description": "Valor final."
+            }
+          ],
+          "returns": "Valor no progresso atual.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Value(System.Numerics.Vector2,System.Numerics.Vector2)",
+          "name": "Value",
+          "kind": "method",
+          "signature": "public Vector2 Value(Vector2 from, Vector2 to)",
+          "summary": "Interpola posi\u00E7\u00E3o, escala ou outro vetor de dois componentes finitos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "from",
+              "type": "Vector2",
+              "description": "Vetor inicial."
+            },
+            {
+              "name": "to",
+              "type": "Vector2",
+              "description": "Vetor final."
+            }
+          ],
+          "returns": "Vetor no progresso atual.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Value(Lunet.Graphics.Color,Lunet.Graphics.Color)",
+          "name": "Value",
+          "kind": "method",
+          "signature": "public Color Value(Color from, Color to)",
+          "summary": "Interpola canais RGBA, arredondando para o byte mais pr\u00F3ximo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "from",
+              "type": "Color",
+              "description": "Cor inicial."
+            },
+            {
+              "name": "to",
+              "type": "Color",
+              "description": "Cor final."
+            }
+          ],
+          "returns": "Cor no progresso atual.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -8291,6 +8633,417 @@
             }
           ],
           "returns": "O sprite.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.SpriteAnimationClip",
+      "name": "SpriteAnimationClip",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class SpriteAnimationClip",
+      "summary": "Sequ\u00EAncia imut\u00E1vel de quadros; pode ser compartilhada por v\u00E1rios animadores independentes.",
+      "remarks": "Copia os quadros na cria\u00E7\u00E3o. N\u00E3o possui nem libera a textura. As regi\u00F5es podem ter tamanhos diferentes e vir de um atlas.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar sheet = new SpriteSheet(texture, 16, 16);\nvar clip = SpriteAnimationClip.FromSheet(sheet, new[] { 0, 1, 2, 1 }, 0.1);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimationClip.#ctor(Lunet.Graphics.Texture2D,System.Collections.Generic.IReadOnlyList{Lunet.Graphics.SpriteAnimationFrame},System.Boolean)",
+          "name": "SpriteAnimationClip",
+          "kind": "constructor",
+          "signature": "public SpriteAnimationClip(Texture2D texture, IReadOnlyList\u003CSpriteAnimationFrame\u003E frames, bool loop = true)",
+          "summary": "Cria um clip com dura\u00E7\u00E3o individual por quadro.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura compartilhada; deve continuar viva durante o desenho."
+            },
+            {
+              "name": "frames",
+              "type": "IReadOnlyList\u003CSpriteAnimationFrame\u003E",
+              "description": "Quadros n\u00E3o vazios, com regi\u00F5es dentro da textura e dura\u00E7\u00E3o positiva/finita."
+            },
+            {
+              "name": "loop",
+              "type": "bool",
+              "description": "Repetir ao chegar ao fim; falso mant\u00E9m o \u00FAltimo quadro."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationClip.DurationSeconds",
+          "name": "DurationSeconds",
+          "kind": "property",
+          "signature": "public double DurationSeconds { get; }",
+          "summary": "Dura\u00E7\u00E3o de um ciclo completo em segundos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationClip.FrameCount",
+          "name": "FrameCount",
+          "kind": "property",
+          "signature": "public int FrameCount { get; }",
+          "summary": "N\u00FAmero de quadros.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationClip.Loop",
+          "name": "Loop",
+          "kind": "property",
+          "signature": "public bool Loop { get; }",
+          "summary": "Se a sequ\u00EAncia repete.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationClip.Texture",
+          "name": "Texture",
+          "kind": "property",
+          "signature": "public Texture2D Texture { get; }",
+          "summary": "Textura compartilhada dos quadros.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimationClip.Frame(System.Int32)",
+          "name": "Frame",
+          "kind": "method",
+          "signature": "public SpriteAnimationFrame Frame(int index)",
+          "summary": "Consulta um quadro por \u00EDndice, sem expor o array interno.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice de zero a FrameCount\u22121."
+            }
+          ],
+          "returns": "Regi\u00E3o e dura\u00E7\u00E3o do quadro.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimationClip.FromSheet(Lunet.Graphics.SpriteSheet,System.Collections.Generic.IReadOnlyList{System.Int32},System.Double,System.Boolean)",
+          "name": "FromSheet",
+          "kind": "method",
+          "signature": "public static SpriteAnimationClip FromSheet(SpriteSheet sheet, IReadOnlyList\u003Cint\u003E indices, double frameSeconds, bool loop = true)",
+          "summary": "Cria uma sequ\u00EAncia de quadros de tamanho igual, com dura\u00E7\u00E3o uniforme.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "sheet",
+              "type": "SpriteSheet",
+              "description": "Spritesheet."
+            },
+            {
+              "name": "indices",
+              "type": "IReadOnlyList\u003Cint\u003E",
+              "description": "Ordem dos quadros; repeti\u00E7\u00E3o de \u00EDndices \u00E9 permitida."
+            },
+            {
+              "name": "frameSeconds",
+              "type": "double",
+              "description": "Dura\u00E7\u00E3o positiva/finita de cada quadro."
+            },
+            {
+              "name": "loop",
+              "type": "bool",
+              "description": "Repetir a sequ\u00EAncia."
+            }
+          ],
+          "returns": "Clip imut\u00E1vel.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.SpriteAnimationFrame",
+      "name": "SpriteAnimationFrame",
+      "namespace": "Lunet.Graphics",
+      "kind": "struct",
+      "signature": "public readonly struct SpriteAnimationFrame",
+      "summary": "Quadro de anima\u00E7\u00E3o: regi\u00E3o da textura e tempo de exibi\u00E7\u00E3o em segundos.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar frame = new SpriteAnimationFrame(new RectangleF(0, 0, 16, 16), 0.1);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimationFrame.#ctor(Lunet.RectangleF,System.Double)",
+          "name": "SpriteAnimationFrame",
+          "kind": "constructor",
+          "signature": "public SpriteAnimationFrame(RectangleF source, double durationSeconds)",
+          "summary": "Define um quadro. A validade da regi\u00E3o e dura\u00E7\u00E3o \u00E9 conferida pelo clip.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "source",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o em pixels."
+            },
+            {
+              "name": "durationSeconds",
+              "type": "double",
+              "description": "Tempo positivo e finito de exibi\u00E7\u00E3o."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationFrame.DurationSeconds",
+          "name": "DurationSeconds",
+          "kind": "property",
+          "signature": "public double DurationSeconds { get; }",
+          "summary": "Dura\u00E7\u00E3o do quadro em segundos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationFrame.Source",
+          "name": "Source",
+          "kind": "property",
+          "signature": "public RectangleF Source { get; }",
+          "summary": "Regi\u00E3o em pixels da textura.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.SpriteAnimator",
+      "name": "SpriteAnimator",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class SpriteAnimator",
+      "summary": "Playback independente de um clip; avance em Update e desenhe Texture/Source pelo SpriteBatch.",
+      "remarks": "Sem aloca\u00E7\u00E3o por Update. Deltas grandes pulam direto para o quadro atual, sem percorrer ciclos. N\u00E3o dispara eventos para quadros pulados. Atualize na thread do jogo.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar sheet = new SpriteSheet(texture, 16, 16);\nvar animator = new SpriteAnimator(SpriteAnimationClip.FromSheet(sheet, new[] { 0, 1 }, 0.1));\nanimator.Update(1.0 / 60);\nbatch.Draw(animator.Clip.Texture, position, animator.Source, Color.White);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.#ctor(Lunet.Graphics.SpriteAnimationClip)",
+          "name": "SpriteAnimator",
+          "kind": "constructor",
+          "signature": "public SpriteAnimator(SpriteAnimationClip clip)",
+          "summary": "Cria um animador em reprodu\u00E7\u00E3o no primeiro quadro.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "clip",
+              "type": "SpriteAnimationClip",
+              "description": "Sequ\u00EAncia compartilhada."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.Clip",
+          "name": "Clip",
+          "kind": "property",
+          "signature": "public SpriteAnimationClip Clip { get; }",
+          "summary": "Clip atual.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.FrameIndex",
+          "name": "FrameIndex",
+          "kind": "property",
+          "signature": "public int FrameIndex { get; }",
+          "summary": "\u00CDndice do quadro exibido.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.IsComplete",
+          "name": "IsComplete",
+          "kind": "property",
+          "signature": "public bool IsComplete { get; }",
+          "summary": "Se chegou ao fim de um clip sem loop; pausar n\u00E3o completa o clip.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.IsPlaying",
+          "name": "IsPlaying",
+          "kind": "property",
+          "signature": "public bool IsPlaying { get; }",
+          "summary": "Se Update avan\u00E7a o rel\u00F3gio.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.PositionSeconds",
+          "name": "PositionSeconds",
+          "kind": "property",
+          "signature": "public double PositionSeconds { get; }",
+          "summary": "Tempo no ciclo atual; no one-shot completo \u00E9 igual \u00E0 dura\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.Source",
+          "name": "Source",
+          "kind": "property",
+          "signature": "public RectangleF Source { get; }",
+          "summary": "Regi\u00E3o do quadro exibido.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Pause",
+          "name": "Pause",
+          "kind": "method",
+          "signature": "public void Pause()",
+          "summary": "Pausa sem perder posi\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Play(Lunet.Graphics.SpriteAnimationClip,System.Boolean)",
+          "name": "Play",
+          "kind": "method",
+          "signature": "public void Play(SpriteAnimationClip clip, bool restart = false)",
+          "summary": "Troca o clip e reinicia; o mesmo clip continua sem reiniciar por padr\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "clip",
+              "type": "SpriteAnimationClip",
+              "description": "Novo clip."
+            },
+            {
+              "name": "restart",
+              "type": "bool",
+              "description": "For\u00E7ar rein\u00EDcio mesmo se for o clip atual."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Restart",
+          "name": "Restart",
+          "kind": "method",
+          "signature": "public void Restart()",
+          "summary": "Recome\u00E7a no primeiro quadro e retoma reprodu\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Resume",
+          "name": "Resume",
+          "kind": "method",
+          "signature": "public void Resume()",
+          "summary": "Retoma a posi\u00E7\u00E3o pausada; um one-shot completo s\u00F3 volta com Restart/Play.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Update(System.Double)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(double deltaSeconds)",
+          "summary": "Avan\u00E7a pelo tempo do jogo, em segundos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "deltaSeconds",
+              "type": "double",
+              "description": "Delta finito e n\u00E3o negativo; zero n\u00E3o muda o estado."
+            }
+          ],
+          "returns": "",
           "examples": [],
           "related": [],
           "since": "0.0.1"

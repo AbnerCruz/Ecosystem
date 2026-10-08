@@ -197,6 +197,7 @@ public sealed partial class MainActivity : Activity
             ("Em branco (bola que segue o toque)", ProjectTemplate.Blank),
             ("Demo: Coletor de moedas (texto, gestos, som, salvamento)", ProjectTemplate.CoinCatcher),
             ("Laboratório: testa música, sensores, controle, vibração, gestos e gráficos", ProjectTemplate.Lab),
+            ("Demo: Animação e tween (quadros, movimento, pausa)", ProjectTemplate.Animation),
         };
         var byId = new Dictionary<int, ProjectTemplate>();
         foreach (var (text, choice) in options)
@@ -211,9 +212,11 @@ public sealed partial class MainActivity : Activity
             if (byId.TryGetValue(e.CheckedId, out var chosen)) template[0] = chosen;
         };
         form.AddView(group);
+        var scroll = new ScrollView(this);
+        scroll.AddView(form);
         new AlertDialog.Builder(this)!
             .SetTitle("Novo projeto")!
-            .SetView(form)!
+            .SetView(scroll)!
             .SetNegativeButton("Cancelar", (_, _) => { })!
             .SetPositiveButton("Criar", (_, _) =>
             {
