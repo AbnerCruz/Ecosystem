@@ -72,6 +72,7 @@ public sealed class LaboratoryV2Tests
             Go(9);
             Touch(TouchPhase.Moved, 150, 260);
             Assert.NotEqual(Read("collisionDesired"), Read("collisionResolved"));
+            host.SetSurfaceTouches([]); host.Tick(1.0 / 60); // encerra o arraste antes do próximo toque
             Go(10);
             Tap(40, 104); Assert.Equal(1235, Read("score"));
             Go(11);
