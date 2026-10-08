@@ -73,8 +73,8 @@ public class TileMapTests
         Assert.Equal(new Vector2(16, 8), verts[2].Position);
         Assert.Equal(new Vector2(1f / 3f, 0), verts[0].TexCoord);
         Assert.Equal(new Vector2(2f / 3f, 0.5f), verts[2].TexCoord);
-        Assert.Throws<ArgumentException>(() => map.Draw(batch, texture, new RectangleF(0, 0, 4, 4),
-            Vector2.Zero, Color.White)) /* batch closed only throws after validation? */;
+        Assert.Throws<InvalidOperationException>(() => map.Draw(batch, texture, new RectangleF(0, 0, 4, 4),
+            Vector2.Zero, Color.White));
     }
 
     [Fact]

@@ -10,7 +10,7 @@ namespace Lunet.Graphics;
 /// <example><code>
 /// var map = content.LoadTileMap("Data/level.tilemap.json");
 /// var tiles = content.LoadTexture(map.TexturePath, TextureFilter.Point);
-/// var grid = new GridPathfinder(map.Width, map.Height);
+/// var grid = new Lunet.Pathfinding.GridPathfinder(map.Width, map.Height);
 /// map.CopyCollisionTo(grid);
 /// batch.Begin();
 /// map.Draw(batch, tiles, new RectangleF(0, 0, 360, 640), Vector2.Zero, Color.White);
