@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using AgentRuntime;
@@ -22,6 +23,14 @@ public sealed class ChatCompletionsProvider : IModelProvider
     public string ProviderId => "chat-completions";
     public bool LastCostEstimated { get; private set; }
 
+    /// <summary>Nome de wire compatível com function tools; ID de capability canônico nunca é alterado.</summary>
+    public static string WireName(string capabilityId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(capabilityId);
+        return "c_" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(capabilityId)))
+            .ToLowerInvariant()[..32];
+    }
+
     public ChatCompletionsProvider(HttpClient client, Uri endpoint, string? token,
         decimal inputUsdPerMillion, decimal outputUsdPerMillion)
     {
@@ -43,6 +52,7 @@ public sealed class ChatCompletionsProvider : IModelProvider
     public async ValueTask<ModelResponse> CompleteAsync(ModelRequest request, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var wireToId = request.Tools.ToDictionary(t => WireName(t.Name), t => t.Name, StringComparer.Ordinal);
         var messages = new List<object> { new { role = "system", content = request.System } };
         foreach (var message in request.Messages)
         {
@@ -50,7 +60,7 @@ public sealed class ChatCompletionsProvider : IModelProvider
             {
                 var text = string.Join("\n", message.Content.OfType<TextBlock>().Select(t => t.Text));
                 var calls = message.Content.OfType<ToolUseBlock>()
-                    .Select(t => new { id = t.Id, type = "function", function = new { name = t.Name, arguments = t.Input.GetRawText() } }).ToArray();
+                    .Select(t => new { id = t.Id, type = "function", function = new { name = WireName(t.Name), arguments = t.Input.GetRawText() } }).ToArray();
                 if (calls.Length > 0)
                     messages.Add(new { role = "assistant", content = text.Length == 0 ? null : text, tool_calls = calls });
                 else messages.Add(new { role = "assistant", content = text });
@@ -65,7 +75,7 @@ public sealed class ChatCompletionsProvider : IModelProvider
         }
         var exposed = request.Profile.Capabilities.Tools
             ? request.Tools.Select(t => new {
-                type = "function", function = new { name = t.Name, description = t.Description,
+                type = "function", function = new { name = WireName(t.Name), description = t.Description,
                     parameters = JsonSerializer.Deserialize<JsonElement>(t.InputSchemaJson) }
             }).ToArray()
             : [];
@@ -124,7 +134,7 @@ public sealed class ChatCompletionsProvider : IModelProvider
                             throw new JsonException("tool call malformada");
                         using var input = JsonDocument.Parse(arguments);
                         if (input.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("arguments deve ser objeto");
-                        blocks.Add(new ToolUseBlock(id, name, input.RootElement.Clone()));
+                        blocks.Add(new ToolUseBlock(id, wireToId.GetValueOrDefault(name, name), input.RootElement.Clone()));
                     }
                 }
                 if (blocks.Count == 0) throw new JsonException("resposta sem conteúdo nem chamada");
