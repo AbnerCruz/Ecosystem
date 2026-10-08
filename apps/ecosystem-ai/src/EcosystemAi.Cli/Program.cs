@@ -29,6 +29,8 @@ A pasta precisa existir. Somente files.read por padrão.
 --project-id ID e --session-id ID reabrem sessões previamente criadas.
 --project-name NOME e --session-title TITULO personalizam novos registros.
 Sem --catalog nenhum projeto ou mensagem é salvo no disco.
+--list --catalog /pasta/historico lista projetos/sessões, sem modelo nem rede.
+--show --catalog /pasta/historico --project-id ID --session-id ID mostra o histórico.
 Preços são fornecidos pelo operador; quando o provider nao devolve usage.cost,
 o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat persistente.
 """;
@@ -42,9 +44,13 @@ o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat per
         }
         Dictionary<string, string> fields = new(StringComparer.Ordinal);
         bool allowCreate = false;
+        bool listHistory = false;
+        bool showHistory = false;
         for (var i = 0; i < args.Length; i++)
         {
             if (args[i] == "--allow-create") { allowCreate = true; continue; }
+            if (args[i] == "--list") { listHistory = true; continue; }
+            if (args[i] == "--show") { showHistory = true; continue; }
             if (!args[i].StartsWith("--", StringComparison.Ordinal) || i + 1 >= args.Length
                 || args[i + 1].StartsWith("--", StringComparison.Ordinal) || !fields.TryAdd(args[i], args[++i]))
             {
@@ -61,6 +67,18 @@ o custo é ESTIMADO, não garantido. Nenhum background job, memória ou chat per
                 "--catalog", "--project-id", "--session-id", "--project-name", "--session-title" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
+            if (listHistory || showHistory)
+            {
+                if (listHistory && showHistory || allowCreate || fields.Keys.Any(k => k is not (
+                    "--catalog" or "--project-id" or "--session-id")))
+                    throw new ArgumentException("Modo de consulta aceita apenas --catalog, --project-id e --session-id.");
+                var catalog = Need("--catalog");
+                var lines = listHistory ? CliHistoryCommands.List(catalog)
+                    : CliHistoryCommands.Show(catalog, Need("--project-id"), Need("--session-id"));
+                foreach (var line in lines) Console.WriteLine(line);
+                return 0;
+            }
+
             var root = Path.GetFullPath(Need("--project"));
             if (!Directory.Exists(root)) throw new ArgumentException("O diretório de projeto precisa existir.");
             var goal = Need("--goal");
