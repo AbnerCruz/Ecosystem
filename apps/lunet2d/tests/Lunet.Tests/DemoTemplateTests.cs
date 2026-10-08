@@ -255,6 +255,8 @@ public class LabTemplateTests : IDisposable
         host.SetSurfaceTouches([]);
         Frame();
         Tap(100, 23);
+        Assert.Equal(3, type.GetField("page", fields)!.GetValue(loaded.Game));
+        Tap(100, 23); // quarta página volta aos dispositivos
         Assert.Equal(0, type.GetField("page", fields)!.GetValue(loaded.Game));
         Assert.False(host.IsFaulted, host.Fault?.ToString());
 
