@@ -26,10 +26,6 @@
                                 class="editor-tab-open"
                                 aria-current="@(tab.Active ? "page" : null)"
                                 @onclick="() => ActivateTab(tab)">
-                            @if (tab.Pinned)
-                            {
-                                <span aria-hidden="true">◆</span>
-                            }
                             <span>@tab.Title</span>
                         </button>
                         <button type="button"
