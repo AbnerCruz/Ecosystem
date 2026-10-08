@@ -14702,6 +14702,434 @@
           "since": "0.0.1"
         }
       ]
+    },
+    {
+      "id": "T:Lunet.UI.TouchSlider",
+      "name": "TouchSlider",
+      "namespace": "Lunet.UI",
+      "kind": "class",
+      "signature": "public sealed class TouchSlider",
+      "summary": "Slider horizontal por toque, com intervalo finito e passo opcional.",
+      "remarks": "Um dedo \u00E9 capturado ao come\u00E7ar dentro. O arraste fora \u00E9 limitado ao intervalo; Cancel/disable n\u00E3o desfazem valores j\u00E1 aplicados. Atualize inclusive desabilitado. Sem consumo de input, foco ou arbitragem de controles sobrepostos; sem aloca\u00E7\u00E3o no loop.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar slider = new Lunet.UI.TouchSlider(new RectangleF(24, 100, 312, 48), 0, 100, 50, 10);\nslider.Update(input);\nif (slider.WasChanged) log.Info(\u0022valor \u0022 \u002B slider.Value);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.TouchSlider.#ctor(Lunet.RectangleF,System.Single,System.Single,System.Single,System.Single,System.Single)",
+          "name": "TouchSlider",
+          "kind": "constructor",
+          "signature": "public TouchSlider(RectangleF bounds, float minimum = 0f, float maximum = 1f, float value = 0f, float step = 0f, float knobWidth = 20f)",
+          "summary": "Cria um slider; o valor inicial \u00E9 limitado e quantizado.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "bounds",
+              "type": "RectangleF",
+              "description": "\u00C1rea finita n\u00E3o negativa no espa\u00E7o do input."
+            },
+            {
+              "name": "minimum",
+              "type": "float",
+              "description": "Limite inferior finito."
+            },
+            {
+              "name": "maximum",
+              "type": "float",
+              "description": "Limite superior finito, estritamente maior que minimum."
+            },
+            {
+              "name": "value",
+              "type": "float",
+              "description": "Valor inicial finito."
+            },
+            {
+              "name": "step",
+              "type": "float",
+              "description": "Passo finito n\u00E3o negativo; zero \u00E9 cont\u00EDnuo. A grade parte de minimum."
+            },
+            {
+              "name": "knobWidth",
+              "type": "float",
+              "description": "Largura finita positiva do cursor, reduzida se Bounds for menor."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.Bounds",
+          "name": "Bounds",
+          "kind": "property",
+          "signature": "public RectangleF Bounds { get; set; }",
+          "summary": "\u00C1rea para desenho/toque. Atualize antes de Update ap\u00F3s mudar o layout.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.IsCaptured",
+          "name": "IsCaptured",
+          "kind": "property",
+          "signature": "public bool IsCaptured { get; }",
+          "summary": "O slider acompanha um dedo, inclusive fora dos limites.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Desabilitar cancela a captura imediatamente, conservando o valor.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.KnobWidth",
+          "name": "KnobWidth",
+          "kind": "property",
+          "signature": "public float KnobWidth { get; }",
+          "summary": "Largura desejada do cursor.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.Maximum",
+          "name": "Maximum",
+          "kind": "property",
+          "signature": "public float Maximum { get; }",
+          "summary": "Limite superior, imut\u00E1vel.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.Minimum",
+          "name": "Minimum",
+          "kind": "property",
+          "signature": "public float Minimum { get; }",
+          "summary": "Limite inferior, imut\u00E1vel.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.NormalizedValue",
+          "name": "NormalizedValue",
+          "kind": "property",
+          "signature": "public float NormalizedValue { get; }",
+          "summary": "Fra\u00E7\u00E3o 0\u20131 do valor, calculada em double para intervalos extremos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.Step",
+          "name": "Step",
+          "kind": "property",
+          "signature": "public float Step { get; }",
+          "summary": "Passo da grade relativa ao m\u00EDnimo; zero \u00E9 cont\u00EDnuo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.Value",
+          "name": "Value",
+          "kind": "property",
+          "signature": "public float Value { get; set; }",
+          "summary": "Valor limitado/quantizado. Atribui\u00E7\u00E3o por c\u00F3digo n\u00E3o publica WasChanged.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSlider.WasChanged",
+          "name": "WasChanged",
+          "kind": "property",
+          "signature": "public bool WasChanged { get; }",
+          "summary": "Pulso do Update em que o toque mudou o valor final; o pr\u00F3ximo Update limpa.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchSlider.Cancel",
+          "name": "Cancel",
+          "kind": "method",
+          "signature": "public void Cancel()",
+          "summary": "Cancela sem desfazer o valor; conserva hist\u00F3rico para ignorar Pressed retido.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchSlider.Draw(Lunet.Graphics.SpriteBatch,Lunet.UI.TouchSliderStyle)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(SpriteBatch batch, TouchSliderStyle style)",
+          "summary": "Desenha trilho, preenchimento e cursor entre SpriteBatch.Begin/End.",
+          "remarks": "Zero \u00E1rea n\u00E3o desenha; n\u00E3o cria fonte/textura e n\u00E3o desenha r\u00F3tulo.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "SpriteBatch do jogo, com sua c\u00E2mera/clip/state atuais."
+            },
+            {
+              "name": "style",
+              "type": "TouchSliderStyle",
+              "description": "Paleta; use TouchSliderStyle.Default para cores vis\u00EDveis."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchSlider.GetKnobBounds",
+          "name": "GetKnobBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetKnobBounds()",
+          "summary": "Limites atuais do cursor, incluindo sua largura reduzida em \u00E1reas estreitas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "RectangleF no mesmo espa\u00E7o de Bounds.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchSlider.Update(Lunet.Input.InputState)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(InputState input)",
+          "summary": "Atualiza por ID; captura somente Pressed novo dentro, e ignora \u00E1rea sem percurso horizontal.",
+          "remarks": "Released aplica a posi\u00E7\u00E3o final e solta. Cancelled, dedo ausente ou posi\u00E7\u00E3o n\u00E3o finita cancelam sem alterar o \u00FAltimo valor. Cada Update produz no m\u00E1ximo um pulso WasChanged.",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Snapshot do host. Toques devem estar no mesmo espa\u00E7o de Bounds."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.UI.TouchSliderStyle",
+      "name": "TouchSliderStyle",
+      "namespace": "Lunet.UI",
+      "kind": "struct",
+      "signature": "public readonly struct TouchSliderStyle",
+      "summary": "Paleta imut\u00E1vel de TouchSlider, sem recursos gr\u00E1ficos pr\u00F3prios.",
+      "remarks": "default \u00E9 transparente; n\u00E3o \u00E9 um tema global nem um formato persistente.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar style = Lunet.UI.TouchSliderStyle.Default;\nColor color = style.Fill;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.TouchSliderStyle.#ctor(Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color)",
+          "name": "TouchSliderStyle",
+          "kind": "constructor",
+          "signature": "public TouchSliderStyle(Color track, Color fill, Color knob, Color pressedKnob, Color disabledTrack, Color disabledFill, Color disabledKnob)",
+          "summary": "Cria as cores dos estados do slider.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "track",
+              "type": "Color",
+              "description": "Trilho normal."
+            },
+            {
+              "name": "fill",
+              "type": "Color",
+              "description": "Parte preenchida."
+            },
+            {
+              "name": "knob",
+              "type": "Color",
+              "description": "Cursor normal."
+            },
+            {
+              "name": "pressedKnob",
+              "type": "Color",
+              "description": "Cursor capturado."
+            },
+            {
+              "name": "disabledTrack",
+              "type": "Color",
+              "description": "Trilho desabilitado."
+            },
+            {
+              "name": "disabledFill",
+              "type": "Color",
+              "description": "Preenchimento desabilitado."
+            },
+            {
+              "name": "disabledKnob",
+              "type": "Color",
+              "description": "Cursor desabilitado."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSliderStyle.Default",
+          "name": "Default",
+          "kind": "property",
+          "signature": "public static TouchSliderStyle Default { get; }",
+          "summary": "Paleta azul com captura amarela e estado desabilitado cinza.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSliderStyle.DisabledFill",
+          "name": "DisabledFill",
+          "kind": "property",
+          "signature": "public Color DisabledFill { get; }",
+          "summary": "Preenchimento desabilitado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSliderStyle.DisabledKnob",
+          "name": "DisabledKnob",
+          "kind": "property",
+          "signature": "public Color DisabledKnob { get; }",
+          "summary": "Cursor desabilitado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSliderStyle.DisabledTrack",
+          "name": "DisabledTrack",
+          "kind": "property",
+          "signature": "public Color DisabledTrack { get; }",
+          "summary": "Trilho desabilitado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSliderStyle.Fill",
+          "name": "Fill",
+          "kind": "property",
+          "signature": "public Color Fill { get; }",
+          "summary": "Parte preenchida.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSliderStyle.Knob",
+          "name": "Knob",
+          "kind": "property",
+          "signature": "public Color Knob { get; }",
+          "summary": "Cursor normal.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSliderStyle.PressedKnob",
+          "name": "PressedKnob",
+          "kind": "property",
+          "signature": "public Color PressedKnob { get; }",
+          "summary": "Cursor capturado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchSliderStyle.Track",
+          "name": "Track",
+          "kind": "property",
+          "signature": "public Color Track { get; }",
+          "summary": "Trilho normal.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
     }
   ]
 }
