@@ -150,6 +150,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - ProjectStore muda somente duas entradas de seleção; ProjectTemplates contém os exemplos já executados e Android adiciona duas opções, com ScrollView. Formato lunet.json e projetos existentes preservados; alteração permanece explicitamente crítica user-data pela política da main.
 - 403 testes padrão: mantém os 400 da entrega de APIs e adiciona 3 casos de factory/compatibilidade. Novos casos verificam criação, código igual ao guia e compilável, rejeição de nome duplicado sem sobrescrever e bytes do manifest/código/assets do projeto existente preservados.
 - Após integração das APIs, publicar esta revisão pronta e encerrar os PRs redundantes apontando para ela; nunca adicionar integrar ou simular autorização. DEVICE dos modelos continua pendente; gate Fase 4 aberto.
+### 20261008-codex-bitmap-fonts — Codex → próximos agentes — review
+- LUNET-408 / Issue #327, fontes da Fase 4 (§7/§23); base main `d25bcebf35ec248f474a7332dc3756e60817a01d`, branch `agent/lunet-bitmap-fonts-20261008`. Pedido explícito Lunet conforme AGENTS §1.1/PLAT-001; não é substituto de progresso global.
+- SpriteFont.FromBitmap + BitmapGlyph: mapas Unicode/recortes de atlas copiados, avanços proporcionais, offset, fallback, CR/LF/CRLF e espaços invisíveis. Reutiliza DrawString/Measure/SpriteBatch e permite Content.LoadTexture; não cria formato persistente, importador, backend ou modelo de projeto.
+- Build .NET 10 sem warnings/errors; suíte padrão 413/413, 13 casos novos incluindo UV/layout, Unicode inválido/suplementar, zero bytes, câmera/clip/state/capacity flush e guia compilado/executado com toque físico 2×. Fonte embutida e contratos anteriores preservados.
+- Roteiro `docs/guides/fontes-bitmap.md` pendente no aparelho; TrueType/kerning/shaping/bidi/wrap e item completo de fontes permanecem abertos. Handoff `HO-20261008-lunet-bitmap-fonts`; próxima ação: checks/PR/CI/integrador/release.
+- Estado anterior verificado: #316 integrado, APK 1000141 real; roadmap 404/405 reconciliado sem fechar DEVICE. #317 modelos críticos verdes pendentes e #324 nine-slice não integrados; nenhum novo APK público inferido de artefato CI.
 ### 20261008-codex-nine-slice — Codex → próximos agentes — review
 - LUNET-407 / Issue #319, UI da Fase 4 (§7/§23); base main `91aebbc012490a598ec18fd53503d90df1a421cd`, branch `agent/lunet-nine-slice-20261008`. APIs de animação/tween/partículas já integradas pelo #316 e publicadas no APK 1000141; modelos opcionais #317 críticos verdes aguardam autorização real do proprietário.
 - NineSlice imutável e SpriteBatch.Draw(panel, ...): região de atlas, bordas assimétricas/escaláveis, compressão proporcional em destinos pequenos, até nove quads e zero alocação por desenho. Reutiliza câmera/clip/state/batching, sem tocar ProjectStore, criação de projetos, persistência ou backend.
@@ -159,5 +165,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ### 20261008-codex-reconcile-317-nine-slice — Codex → próximos agentes — review
 - PR #317 reconciliado semanticamente com main `f3392f2a3e111de7f7bcd36fc78073a84bf375e7` (NineSlice integrado pelo #324, release pública 1000150). Entradas de código e de histórico de ambos os lados preservadas; duplicação do changelog de APIs corrigida, ROADMAP 404/405/407 alinhado às integrações reais sem fechar DEVICE.
+### 20261008-codex-reconcile-328-nine-slice — Codex → próximos agentes — review
+- PR #328 reconciliado semanticamente com main `f3392f2a3e111de7f7bcd36fc78073a84bf375e7` (NineSlice integrado pelo #324, release pública 1000150). Entradas de código e de histórico de ambos os lados preservadas; duplicação do changelog de APIs corrigida, ROADMAP 404/405/407 alinhado às integrações reais sem fechar DEVICE.
 - Código específico do PR preservado; testes completos e checks serão registrados no handoff de reconciliação. Sem alterar gates, contratos ou política de integração; nenhuma label integrar aplicada.
 - Preferência explícita do proprietário nesta sessão: demonstrações para testar no celular devem ser executáveis pelo Laboratório ou por um template, prontas para Run; não entregar copiar código de guia como roteiro principal. Não reformar documentação agora; usar esse formato nas próximas demonstrações. Isso não é aprovação de DEVICE nem autorização do PR crítico #317.
+
+
+### 20261008-codex-reconcile-317-bitmap — Codex → próximos agentes — review
+- PR #317 combinado com main `2e62f554fdd13525e9489f07386862ee39e5d298`: fontes bitmap #328 publicadas no APK 1000155; código específico e registros anteriores preservados, changelog sem duplicação, API JSON regenerada.
+- Build sem warnings/errors; suíte padrão 426/426, zero falhas/erros/skips; delta source/tests limitado aos três arquivos bitmap da main, byte idênticos. Consistency no handoff; DEVICE e gate da Fase 4 não aprovados. Classificação anterior mantida; sem merge manual/label integrar.

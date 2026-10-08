@@ -39,6 +39,17 @@ public sealed record EditorWorkspaceTab(
 
 public sealed record EditorHistoryStatus(bool CanUndo, bool CanRedo);
 
+public enum WorkspaceMutationKind
+{
+    CreateFolder,
+    Move
+}
+
+public sealed record WorkspaceMutation(
+    WorkspaceMutationKind Kind,
+    string? SourcePath,
+    string TargetPath);
+
 /// <summary>
 /// Host-neutral session shared by the Explorer and Editor surfaces.
 /// It owns no filesystem API: hosts load a VaultSnapshot and later persist
@@ -52,6 +63,9 @@ public sealed class WorkspaceSession : IDisposable
     private readonly List<EditorTabState> _tabs = [];
     private readonly Dictionary<string, EditorHistoryState> _history =
         new(StringComparer.Ordinal);
+    private readonly HashSet<string> _explicitFolders =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<WorkspaceMutation> _pendingMutations = [];
     private const int MaxTabs = 12;
     private const int HistoryLimit = 100;
 
@@ -77,6 +91,15 @@ public sealed class WorkspaceSession : IDisposable
     public IReadOnlyCollection<string> Paths =>
         new ReadOnlyCollection<string>(
             _paths.OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray());
+
+    public IReadOnlyCollection<string> Folders =>
+        new ReadOnlyCollection<string>(
+            EnumerateFolders()
+                .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
+
+    public IReadOnlyList<WorkspaceMutation> PendingMutations =>
+        new ReadOnlyCollection<WorkspaceMutation>(_pendingMutations.ToArray());
 
     public string PreviewHtml =>
         MarkdownEngine.Render(CurrentDocument?.Content ?? string.Empty);
@@ -141,6 +164,8 @@ public sealed class WorkspaceSession : IDisposable
         ArgumentNullException.ThrowIfNull(snapshot);
 
         _paths.Clear();
+        _explicitFolders.Clear();
+        _pendingMutations.Clear();
         foreach (var path in snapshot.Files.Keys)
             _paths.Add(DocumentModel.NormalizePath(path));
 
@@ -164,6 +189,8 @@ public sealed class WorkspaceSession : IDisposable
         Documents.ReplaceAll(materialized, "workspace-load-documents");
 
         _paths.Clear();
+        _explicitFolders.Clear();
+        _pendingMutations.Clear();
         foreach (var document in Documents.List())
             _paths.Add(document.Path);
 
@@ -201,6 +228,28 @@ public sealed class WorkspaceSession : IDisposable
         var folders = new Dictionary<string, WorkspaceExplorerEntry>(
             StringComparer.OrdinalIgnoreCase);
         var files = new List<WorkspaceExplorerEntry>();
+
+        foreach (var folderPath in EnumerateFolders())
+        {
+            if (!includeSystem && ArtifactModel.IsSystem(folderPath))
+                continue;
+            if (!folderPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var rest = folderPath[prefix.Length..];
+            if (rest.Length == 0 || rest.Contains('/'))
+                continue;
+
+            folders.TryAdd(
+                folderPath,
+                new WorkspaceExplorerEntry(
+                    folderPath,
+                    rest,
+                    true,
+                    null,
+                    string.Empty,
+                    false));
+        }
 
         foreach (var path in _paths.OrderBy(
                      path => path,
@@ -484,6 +533,92 @@ public sealed class WorkspaceSession : IDisposable
             VisualDocumentEditor.ToMarkdown(frontmatter, blocks));
     }
 
+    public string? CreateFolder(string? name, string? parent = null)
+    {
+        if (IsReadOnly)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        var safeName = ArtifactModel.SafeName(name);
+
+        var normalizedParent = DocumentModel.NormalizePath(parent);
+        if (normalizedParent.Length > 0 &&
+            (!FolderExists(normalizedParent) ||
+             ArtifactModel.IsSystem(normalizedParent) ||
+             ContainsTraversal(normalizedParent)))
+            return null;
+
+        var candidate = normalizedParent.Length == 0
+            ? safeName
+            : normalizedParent + "/" + safeName;
+
+        var suffix = 2;
+        var baseCandidate = candidate;
+        while (PathOrFolderExists(candidate))
+            candidate = baseCandidate + "-" + suffix++;
+
+        _explicitFolders.Add(candidate);
+        _pendingMutations.Add(
+            new WorkspaceMutation(
+                WorkspaceMutationKind.CreateFolder,
+                null,
+                candidate));
+        Revision++;
+        return candidate;
+    }
+
+    public bool MoveItem(string? sourcePath, string? targetFolder)
+    {
+        if (IsReadOnly)
+            return false;
+
+        var source = DocumentModel.NormalizePath(sourcePath);
+        var target = DocumentModel.NormalizePath(targetFolder);
+
+        if (source.Length == 0 ||
+            ContainsTraversal(source) ||
+            ContainsTraversal(target) ||
+            ArtifactModel.IsSystem(source) ||
+            (target.Length > 0 &&
+             (ArtifactModel.IsSystem(target) || !FolderExists(target))))
+            return false;
+
+        var sourceIsFile = _paths.Contains(source);
+        var sourceIsFolder = FolderExists(source);
+        if (!sourceIsFile && !sourceIsFolder)
+            return false;
+
+        if (sourceIsFolder &&
+            (string.Equals(source, target, StringComparison.OrdinalIgnoreCase) ||
+             target.StartsWith(source + "/", StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        var slash = source.LastIndexOf('/');
+        var name = slash >= 0 ? source[(slash + 1)..] : source;
+        var destination = target.Length == 0 ? name : target + "/" + name;
+
+        if (string.Equals(source, destination, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (PathOrFolderExists(destination))
+            return false;
+
+        if (sourceIsFile)
+            MoveSinglePath(source, destination);
+        else
+            MoveFolderTree(source, destination);
+
+        _pendingMutations.Add(
+            new WorkspaceMutation(
+                WorkspaceMutationKind.Move,
+                source,
+                destination));
+        Revision++;
+        return true;
+    }
+
     public UrbeDocument? CreateNote(
         string? title,
         string? folder = null,
@@ -494,6 +629,12 @@ public sealed class WorkspaceSession : IDisposable
 
         var safeTitle = ArtifactModel.SafeName(title);
         var normalizedFolder = DocumentModel.NormalizePath(folder);
+        if (normalizedFolder.Length > 0 &&
+            (ArtifactModel.IsSystem(normalizedFolder) ||
+             ContainsTraversal(normalizedFolder) ||
+             !FolderExists(normalizedFolder)))
+            return null;
+
         var path = normalizedFolder.Length == 0
             ? safeTitle + ".md"
             : normalizedFolder + "/" + safeTitle + ".md";
@@ -576,6 +717,139 @@ public sealed class WorkspaceSession : IDisposable
             .ToArray();
 
         return Array.AsReadOnly(missing);
+    }
+
+    private IEnumerable<string> EnumerateFolders()
+    {
+        var folders = new HashSet<string>(
+            _explicitFolders,
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var path in _paths)
+        {
+            var slash = path.LastIndexOf('/');
+            while (slash > 0)
+            {
+                var folder = path[..slash];
+                folders.Add(folder);
+                slash = folder.LastIndexOf('/');
+            }
+        }
+
+        return folders;
+    }
+
+    private static bool ContainsTraversal(string path) =>
+        path.Split('/').Any(segment => segment is "." or "..");
+
+    private bool FolderExists(string path) =>
+        _explicitFolders.Contains(path) ||
+        _paths.Any(
+            file =>
+                file.StartsWith(
+                    path + "/",
+                    StringComparison.OrdinalIgnoreCase));
+
+    private bool PathOrFolderExists(string path) =>
+        _paths.Contains(path) || FolderExists(path);
+
+    private void MoveSinglePath(string source, string destination)
+    {
+        _paths.Remove(source);
+        _paths.Add(destination);
+        MoveDocumentPath(source, destination);
+    }
+
+    private void MoveFolderTree(string source, string destination)
+    {
+        var fileMoves = _paths
+            .Where(
+                path =>
+                    path.StartsWith(
+                        source + "/",
+                        StringComparison.OrdinalIgnoreCase))
+            .Select(
+                path => new
+                {
+                    Source = path,
+                    Target = destination + path[source.Length..]
+                })
+            .ToArray();
+
+        foreach (var move in fileMoves)
+        {
+            _paths.Remove(move.Source);
+            _paths.Add(move.Target);
+            MoveDocumentPath(move.Source, move.Target);
+        }
+
+        var folderMoves = _explicitFolders
+            .Where(
+                path =>
+                    string.Equals(
+                        path,
+                        source,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith(
+                        source + "/",
+                        StringComparison.OrdinalIgnoreCase))
+            .Select(
+                path => new
+                {
+                    Source = path,
+                    Target = destination + path[source.Length..]
+                })
+            .ToArray();
+
+        foreach (var move in folderMoves)
+        {
+            _explicitFolders.Remove(move.Source);
+            _explicitFolders.Add(move.Target);
+        }
+
+        if (folderMoves.Length == 0)
+            _explicitFolders.Add(destination);
+
+        if (string.Equals(
+                CurrentFolder,
+                source,
+                StringComparison.OrdinalIgnoreCase) ||
+            CurrentFolder.StartsWith(
+                source + "/",
+                StringComparison.OrdinalIgnoreCase))
+            CurrentFolder = destination + CurrentFolder[source.Length..];
+    }
+
+    private void MoveDocumentPath(string source, string destination)
+    {
+        var document = Documents.Get(source);
+        if (document is null)
+            return;
+
+        var wasCurrent = string.Equals(
+            CurrentDocument?.Id,
+            document.Id,
+            StringComparison.Ordinal);
+
+        Documents.Remove(source, "explorer-move");
+        var moved = Documents.Upsert(
+            new DocumentInput
+            {
+                Id = document.Id,
+                Path = destination,
+                Title = document.Title,
+                Content = document.Content,
+                Properties = document.Properties,
+                Tags = document.Tags,
+                Links = document.Links,
+                Created = document.Created,
+                Modified = document.Modified,
+                Revision = document.Revision
+            },
+            "explorer-move");
+
+        if (wasCurrent)
+            CurrentDocument = moved;
     }
 
     private UrbeDocument? ApplyCurrentContent(string content, string metadata)

@@ -1,0 +1,126 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-bitmap-fonts",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T11:18:18Z",
+  "agent": {
+    "id": "codex-lunet-bitmap-fonts",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-408",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-bitmap-fonts-20261008",
+  "base_commit": "d25bcebf35ec248f474a7332dc3756e60817a01d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/fontes-bitmap.md",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/BitmapGlyph.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteFont.cs",
+    "apps/lunet2d/tests/Lunet.Tests/BitmapFontTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-bitmap-fonts.json"
+  ],
+  "work_completed": [
+    "SpriteFont.FromBitmap e BitmapGlyph sobre textura/atlas fornecido pelo jogo: recortes, avanços proporcionais, offsets e mapa Unicode copiado na criação.",
+    "DrawString/Measure existentes suportam fontes personalizadas sem alocação; fallback por escalar Unicode, UTF-16 inválido como U+FFFD, CR/LF/CRLF e espaços sem quad; fonte embutida preservada.",
+    "13 casos novos incluindo medidas/UV/cor/offset, Unicode/combinação/fallback, entradas inválidas/lifetime, extremos, câmera/clip/state/capacity flush, zero bytes e guia compilado/executado no GameHost com toque físico 2×.",
+    "Guia offline completo de placar sete segmentos; XML/API JSON regenerados. Roadmap de animação/partículas reconciliado com integração #316 e release real 1000141, modelos consolidados #317 sem inferir DEVICE/autorizações."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "dotnet build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false: zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão xUnit v3: 413/413, zero falhas/erros/skips; baseline 400 + 13 casos novos. Compilação/execução real do guia, zero bytes de Measure/DrawString personalizados e regressões da fonte embutida."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22 checks passaram; snapshot ROADMAP × Issues ausente localmente, verificado remotamente no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Fontes bitmap no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/fontes-bitmap.md",
+      "evidence": "Offline, dígito 1 proporcional, Pontos/escala 2×/3×, Preview rápido/isolado e regressão com fonte embutida. CI portátil não comprova aparência/GL/aparelho."
+    }
+  ],
+  "known_issues": [
+    "TrueType, kerning, shaping, ligaturas, bidi e wrap não implementados. Item completo de fontes e Fase 4 permanecem abertos.",
+    "Measure personalizado mede avanço/passo de linhas incluindo espaçamento final, não o contorno da tinta; Offset pode ultrapassar layout. Texto vazio tem uma linha.",
+    "Mapa/font alocam na criação. O jogo ou ContentManager possui a textura; não há novo formato de arquivo/importador nem transferência de posse.",
+    "Layouts fora de float: Measure lança OverflowException e DrawString omite quads não representáveis; precisão das coordenadas segue SpriteBatch.",
+    "HUD do exemplo formata texto por quadro e aloca; zero bytes aplica-se às APIs. SDK Android ausente localmente; CI APK e DEVICE separados."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR pronto após check local; integração exclusivamente pelo integrador automático.",
+    "Acompanhar #324 nine-slice e esta entrega; confirmar release antes de indicar teste no APK.",
+    "Validar roteiro Android sem inferir aprovação; continuar Fase 4 sem encerrar gate."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API de jogo local no Framework, sem dependências de Products/Editor/Studio."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-408 / Issue #327, branch/base/handoff e roteiro explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, nenhuma aprovação inferida da conversa."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/guia verificados, integração/CI/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Fonte bitmap autorizada na Fase 4; reutiliza SpriteFont/SpriteBatch/ContentManager, sem extração ou novo backend."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "bitmap-fonts",
+      "status": "product-specific",
+      "rationale": "Métricas/renderização de fontes do framework de jogos Lunet; nenhum segundo consumidor real exige extração. Reutiliza textura e batching existentes."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva de fontes prevista na Fase 4, comportamento da fonte embutida preservado; sem persistência, formato/contrato existente, boundary ou área protegida."
+  },
+  "cost": null
+}
