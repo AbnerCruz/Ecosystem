@@ -2,8 +2,7 @@
 
 ## Status
 
-Proposto — fundação recomendada junto à constituição na DEC-0040, sem schema
-persistente publicado ou implementação autorizada antes da escolha de identidade.
+Aceito — fundação ratificada pela DEC-0040, alternativa A, junto à constituição de `math-authoring`.
 
 ## Contexto
 
@@ -30,7 +29,7 @@ publicar prematuramente contrato do Ecosystem.
 
 ## Decisão
 
-**Recomendação proposta: A** para a v1. JSON é a visão textual direta de
+**Decisão aceita: A** para a v1. JSON é a visão textual direta de
 `ProjectDocument`; AST tipada é a representação de expressão no modelo, não uma
 segunda string autoritativa. Um campo de expressão digitada serve como rascunho
 até parse/commit e o formatter deriva texto da AST. Não publicar DSL definitiva.

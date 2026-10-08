@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposto — identidade e constituição pendentes na DEC-0040. Não cria Product.
+Aceito — ratificado pela DEC-0040, alternativa A (`math-authoring`), em 2026-10-06.
 
 ## Contexto
 
@@ -36,10 +36,7 @@ O nome de exibição documental provisório descreve o domínio e não anuncia m
 
 ## Decisão
 
-**Proposta, sem aceite registrado:** opção 1. A escolha A/B da DEC-0040 ratifica
-esta constituição e a fundação de documento do ADR-0030, com o ID explícito da
-alternativa; não equivale a aprovação de código, assinatura ou canal inexistentes.
-Aplicar a decisão no repositório antes de começar MA-001.
+**Decisão aceita:** opção 1 com ID técnico permanente `math-authoring`, conforme DEC-0040 alternativa A. A marca pública continua em aberto. A mesma decisão ratifica a fundação do ADR-0030; não equivale a aprovação de assinatura, canal, dependência externa ou validação DEVICE.
 
 Core/math, cena, timeline, render, persistência, operações editoriais e UI são
 módulos dentro do Product. Nenhuma referência a outro Product ou nova capability

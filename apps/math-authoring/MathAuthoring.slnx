@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MathAuthoring.Core/MathAuthoring.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MathAuthoring.Core.Tests/MathAuthoring.Core.Tests.csproj" />
+  </Folder>
+</Solution>

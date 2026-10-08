@@ -1,4 +1,6 @@
-# Proposta de Product — autoria matemática temporal
+# Histórico de proposta — autoria matemática temporal
+
+> **Supersedido como autoridade por `apps/math-authoring/SPEC.md` após a aplicação da DEC-0040.** Este arquivo preserva preparação e rastreabilidade; não é mais a SPEC canônica do Product.
 
 > Natureza: proposta de constituição, não Product registrado nem implementação.
 > `Math Studio` / `math-studio` são somente codinomes documentais.

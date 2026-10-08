@@ -227,6 +227,8 @@ Objetivo: detectar versões, listar releases, baixar artefatos, validar integrid
 - [x] P4-11 — **Corrigir validações humanas e identidade de tarefas**: projeções de evidência convergem transacionalmente; aprovação/reprovação/idempotência têm veredito coerente; IDs duplicados falham no checker. Issue #128; handoff `HO-20261003-governanca-validacoes-identidade`. Preserva P4-8 Patch Notes e migra releases diretas para P4-10; PR #129 integrado (6f64d8e), CI main verde; eventos #114/#125 reprocessados com sucesso sem novo clique. Registros dev.4/dev.6 reconciliados com respostas humanas existentes.
 - [~] HUB-202 — **Corrigir catálogo após migração dos releases para o monorepo**: `current.profile.json` usa `locationFrom: "ecosystem.repository"` nos canais primários atuais, mas o leitor do Hub ainda aceitava apenas `source.repository`/`publicUrl`, tornando releases/APKs indisponíveis na UI. Issue #267. Correção local no Hub.Core + regressão automatizada + documentação; sem alterar canais, autoridade de distribuição ou mecanismo de download.
 
+- [~] HUB-203 — **Identificar catálogo antigo após atualização parcial**: resumo e catálogo de releases marcam dados `Stale` por Product, inclusive histórico vazio e canal antigo; dados indisponíveis não exibem artefatos. Issue [#290](https://github.com/AbnerCruz/Ecosystem/issues/290); regressão cobre refresh parcial → cache → tela. Handoff `HO-20261008-hub-stale-release-catalog`.
+
 ## Fase 5 — Capability Runtime
 
 Objetivo: IPC; command/event/request; capability discovery local; lifecycle; permissions; Host API; Tool hosting. Por ADR (ADD-0002): Host API de Product Shell; Context em discovery e permissões; Connections implementada sobre o Capability Registry (UX, sem registro paralelo).
@@ -285,4 +287,4 @@ Objetivo: extrair uma ferramenta com boundary claro (ex.: Sprite Studio ou Edito
 
 ## Propostas de novos Products
 
-- [~] MSP-001 — Constituição do Product de autoria matemática temporal (codinome documental Math Studio). Identidade permanente e fundação propostas na DEC-0040; escopo e milestones em [roadmap da proposta](docs/proposals/math-studio/ROADMAP.md). Issue [#260](https://github.com/AbnerCruz/Ecosystem/issues/260); sem nova fase global ou alteração do roadmap de outro Product.
+- [~] MSP-001 — Constituição do Product de autoria matemática temporal. DEC-0040 escolheu o ID técnico `math-authoring`; MA-001 está em execução na Issue [#282](https://github.com/AbnerCruz/Ecosystem/issues/282), com escopo e milestones no [roadmap canônico do Product](apps/math-authoring/ROADMAP.md). O nome público permanece em aberto; sem nova fase global ou alteração do roadmap de outro Product.

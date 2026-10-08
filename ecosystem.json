@@ -96,6 +96,31 @@
       "commands": { "test": "cd apps/tabletop-rpg && dotnet test --project tests/TabletopRpg.Core.Tests" },
       "dependencies": []
     },
+    "math-authoring": {
+      "name": "Autoria matemática",
+      "type": "product",
+      "language": "csharp",
+      "path": "apps/math-authoring",
+      "status": "active",
+      "description": "Product independente C# para autoria matemática temporal: documento semântico único, cena, timeline, edição visual/textual e export progressivo (ADR-0029/0030, DEC-0040).",
+      "owners": [
+        "AbnerCruz"
+      ],
+      "version": {
+        "authority": "version-file",
+        "file": "apps/math-authoring/VERSION"
+      },
+      "docs": {
+        "readme": "apps/math-authoring/README.md",
+        "spec": "apps/math-authoring/SPEC.md",
+        "roadmap": "apps/math-authoring/ROADMAP.md",
+        "agents": "apps/math-authoring/AGENTS.md"
+      },
+      "commands": {
+        "test": "cd apps/math-authoring && dotnet test --project tests/MathAuthoring.Core.Tests"
+      },
+      "dependencies": []
+    },
     "portal": {
       "name": "Portal web (GitHub Pages)",
       "type": "portal",

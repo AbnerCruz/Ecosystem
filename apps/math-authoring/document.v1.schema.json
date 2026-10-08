@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "math-authoring/project-document/v1",
+  "title": "Math Authoring ProjectDocument v1",
+  "description": "Formato autoral local, sem execução de código. O parser C# é obrigatório para detectar propriedades JSON duplicadas, validar referências e impor limite em bytes e profundidade.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "projectId", "metadata", "variables", "scenes", "exportProfiles"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "projectId": { "$ref": "#/$defs/id" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "description"],
+      "properties": {
+        "title": { "$ref": "#/$defs/text" },
+        "description": { "type": ["string", "null"], "maxLength": 4096 }
+      }
+    },
+    "variables": {
+      "type": "array", "maxItems": 512,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "name", "initialValue", "definition"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "name": { "$ref": "#/$defs/text" },
+          "initialValue": { "type": "number" },
+          "definition": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/expression" }] }
+        }
+      }
+    },
+    "scenes": {
+      "type": "array", "maxItems": 128,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "name", "objectIds"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "name": { "$ref": "#/$defs/text" },
+          "objectIds": {
+            "type": "array", "maxItems": 4096,
+            "uniqueItems": true,
+            "items": { "$ref": "#/$defs/id" }
+          }
+        }
+      }
+    },
+    "exportProfiles": {
+      "type": "array", "maxItems": 32,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "name", "width", "height", "framesPerSecond"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "name": { "$ref": "#/$defs/text" },
+          "width": { "type": "integer", "minimum": 1 },
+          "height": { "type": "integer", "minimum": 1 },
+          "framesPerSecond": { "type": "integer", "minimum": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "$ref": "#/$defs/text" },
+    "text": { "type": "string", "minLength": 1, "maxLength": 4096, "pattern": "\\S" },
+    "expression": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "version", "value"],
+          "properties": {
+            "kind": { "const": "constant" },
+            "version": { "const": 1 },
+            "value": { "type": "number" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "version", "variableId"],
+          "properties": {
+            "kind": { "const": "variable" },
+            "version": { "const": 1 },
+            "variableId": { "$ref": "#/$defs/id" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "version", "operator", "left", "right"],
+          "properties": {
+            "kind": { "const": "binary" },
+            "version": { "const": 1 },
+            "operator": { "enum": ["add", "subtract", "multiply", "divide", "power"] },
+            "left": { "$ref": "#/$defs/expression" },
+            "right": { "$ref": "#/$defs/expression" }
+          }
+        }
+      ]
+    }
+  }
+}
