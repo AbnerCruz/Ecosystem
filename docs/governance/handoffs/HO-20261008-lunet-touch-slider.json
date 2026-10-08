@@ -1,0 +1,127 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-touch-slider",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T13:48:45.012223+00:00",
+  "agent": {
+    "id": "codex-lunet-touch-slider",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-411",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-touch-slider-20261008",
+  "base_commit": "2e62f554fdd13525e9489f07386862ee39e5d298",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/sliders-ui.md",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchSlider.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchSliderStyle.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchSliderTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-touch-slider.json"
+  ],
+  "work_completed": [
+    "TouchSlider e TouchSliderStyle: faixa/valor/passo, captura por dedo, cancelamento, disable e desenho sem alocação.",
+    "Página 4 do Laboratório existente, pronta para Run, com raio contínuo, intensidade em passos e botão de disable; demais páginas e projetos existentes preservados.",
+    "15 casos novos: geometria/renderização/zero bytes, IDs e snapshots, estados/extremos/entradas inválidas e execução real do Laboratório físico 2×; API XML/JSON atualizada.",
+    "Atualização de fontes bitmap da main incorporada, sem alterar seu código ou testes."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "Build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false, zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão completo: 438/438, zero erros/falhas/skips. Main 423 mais 15 novos casos; API JSON regenerada."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22 checks locais passaram. ROADMAP × Issues sem snapshot local; verificação remota no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Slider no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/sliders-ui.md",
+      "evidence": "Novo Laboratório → Run → página 4/4; arrastar, passos, disable, dois dedos, pausa e troca de página; Preview rápido/isolado. CI não comprova DEVICE/GL."
+    }
+  ],
+  "known_issues": [
+    "Projetos Laboratório existentes não são reescritos; a nova página está no código de novos projetos.",
+    "Controle horizontal sem foco, teclado, roteamento central ou layout/tema global. Não conclui UI/Fase 4.",
+    "InputState é snapshot: ciclos completos perdidos antes do Update não podem ser reconstruídos. Valores usam precisão float, intermediários double.",
+    "HUD da demonstração formata texto; zero bytes aplica-se ao Update/Draw do controle. SDK Android ausente localmente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Publicar PR pronto e acompanhar CI/integrador automático.",
+    "Confirmar release real antes de indicar página do slider no APK.",
+    "Registrar validação Android sem inferir aprovação; continuar Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API local no Framework; string do jogo Laboratório no Core, sem dependência compilada Core→Framework."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-411, Issue #335, branch/base/handoff e roteiro explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, nenhuma aprovação inferida."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/consistency separados de integração/release e aparelho."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "UI prevista na Fase 4; reutiliza InputState/SpriteBatch e Laboratório existente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "touch-slider",
+      "status": "product-specific",
+      "rationale": "Controle de jogo Lunet reutilizando input e batching existentes; sem segundo consumidor real."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva e página do template existente em ProjectTemplates; não altera ProjectStore, persistência, formatos ou áreas protegidas."
+  },
+  "cost": null
+}
