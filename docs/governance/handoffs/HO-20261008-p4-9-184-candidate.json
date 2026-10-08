@@ -2,14 +2,14 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-p4-9-184-candidate",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T10:31:54.489Z",
+  "timestamp": "2026-10-08T10:39:44.680Z",
   "agent": {
     "id": "chatgpt-ecosystem-p4-9",
     "kind": "ai-agent"
   },
   "task_id": "P4-9",
   "component": "urbe",
-  "state": "done",
+  "state": "review",
   "branch": "docs/p4-9-urbe-184-validation",
   "base_commit": "0dc9471293d1d17657c54b91c812e7be58f1b717",
   "commit": null,
@@ -25,7 +25,7 @@
     "Registro de validação VR-urbe-1.8.4-beta-android criado com artefato exato, hash, versão, critérios de teste de importação Android SAF Arquivos/Pasta, reimportação, recuperabilidade e offline, e status HUMAN_VALIDATION_PENDING.",
     "ROADMAP geral (intro, item P4-9 e gate Fase 4) aponta para a versão corrente e o objeto DEVICE correto, preservando [~] e gate aguardando.",
     "Não houve instalação, desinstalação, teste em dispositivo, publicação nova nem alteração de scripts/apps; mudança apenas da projeção documental do candidato existente.",
-    "FATO OBSERVADO em 2026-10-08: o proprietário enviou #318 e a resposta de validação P4-9 passou para o APK Urbe 1.8.4-beta; o registro de build é agora VALIDATED e o gate P4-9/Fase 4 foi promovido com a mesma evidência, preservando o incidente legado."
+    "FATO OBSERVADO em 2026-10-08: o proprietário aprovou pelo Portal (#318) a validação P4-9/DEVICE do APK 1.8.4-beta; registro de build passa a VALIDATED, mas P4-9/Phase 4 permanecem em review até os mecanismos de enforcement fase4 NN-003/NN-023 serem reconciliados e integrados."
   ],
   "verification": [
     {
@@ -52,12 +52,13 @@
   "known_issues": [
     "A validação DEVICE do Urbe 1.8.4-beta foi aprovada explicitamente pelo proprietário na Issue #318 e está registrada no mesmo objeto do build; não foi obtida por CI.",
     "Protocolo exige backup externo antes de migração e só permite simular corrupção/interrupção em vault de teste.",
-    "A Fase 4 é promovida a aprovada somente após consistência e integração deste fechamento; não há nova release nesta mudança."
+    "O gate da Fase 4 e a Issue #166 permanecem em review até a reconciliação crítica da matriz de enforcement, sem alterar aprovação DEVICE já registrada."
   ],
   "blockers": [],
   "next_actions": [
-    "Após integrar este PR de fechamento, encerrar Issues #166 e #261 com referência à aprovação #318 e ao SHA-256 do APK exato.",
-    "Prosseguir no roadmap da Fase 6 e nos próximos slices de Product sem inferir que a aprovação P4-9 valide builds futuras."
+    "Validação DEVICE 1.8.4-beta aprovada oficialmente (#318), sem necessidade de repetir o teste no mesmo APK.",
+    "Aguardar consistência e autorização crítica do PR #320 de NN-003/NN-023 antes de fechar gate da Fase 4 e Issue #166 no ROADMAP.",
+    "Após atualização integrada da matriz, efetuar fechamento routine do gate/Issue e prosseguir o roadmap sem projetar a aprovação a builds futuras."
   ],
   "decisions_required": [],
   "normative_sources": [
