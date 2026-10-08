@@ -252,4 +252,4 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Extração do Laboratório para `Lunet.Core/LaboratoryTemplate.cs`, `ProjectTemplates.LabSource` permanece com assinatura estável. `ProjectStore.cs` permanece byte-intacto; projetos anteriores não são regravados.
 - 12 módulos: dispositivos, gráficos, câmera, sliders, botões, cenas, depuração, animação/partículas, tilemaps/pathfinding, colisão SAT, bitmap font/nine-slice e paletas de UI. Índice em grid, anterior/próximo e Run offline. Assets de exemplo procedurais.
 - Os testes das sete áreas antigas foram preservados e adaptados ao total de 12; demais testes end-to-end, CI, APK e DEVICE precisam ser verificados. Não inferir aprovação no aparelho.
-- Reuse assessment product-specific, NN-002/008/017/018/022; sem alteração em formato, ProjectStore, Hub, build/signing, Tool ou Host.
+- Reuse assessment product-specific, NN-002/008/017/018/022; sem alteração em formato, ProjectStore, distribuição, build/signing, Tool ou Host.
