@@ -14,7 +14,7 @@
   "branch": "fix/urbe-uc18-lossless-visual-undo",
   "base_commit": "cbd1c7a58df412feceea589ae488db6eca13de22",
   "commit": "34939add86782e2b78326c9402618f75618785a9",
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/296",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/VisualDocumentEditor.cs",
     "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
