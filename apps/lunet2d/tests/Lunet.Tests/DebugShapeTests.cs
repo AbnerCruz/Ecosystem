@@ -149,7 +149,7 @@ public class DebugShapeTests
             Tap(180, 438); Tap(180, 550); Assert.True((bool)Field("debugUseCamera")); Tap(260, 300);
             var camera = (Camera2D)Field("debugCamera"); Near(camera.ScreenToWorld(new(260, 300), new(360, 640)), (Vector2)Field("debugTarget"));
             Touch(TouchPhase.Pressed, 180, 438); host.Pause(); host.Resume(); Touch(TouchPhase.Released, 180, 438); Assert.True((bool)Field("debugShown"));
-            Tap(100, 23); Assert.Equal(0, Field("page")); Assert.False(host.IsFaulted, host.Fault?.ToString()); host.Stop(); Assert.Empty(backend.LiveTargets); Assert.Empty(backend.LiveShaders);
+            for (int next = 7; next < 12; next++) { Tap(100, 23); Assert.Equal(next, Field("page")); } Tap(100, 23); Assert.Equal(0, Field("page")); Assert.False(host.IsFaulted, host.Fault?.ToString()); host.Stop(); Assert.Empty(backend.LiveTargets); Assert.Empty(backend.LiveShaders);
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
     }

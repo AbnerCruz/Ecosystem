@@ -262,7 +262,13 @@ public class LabTemplateTests : IDisposable
         Assert.Equal(5, type.GetField("page", fields)!.GetValue(loaded.Game));
         Tap(100, 23);
         Assert.Equal(6, type.GetField("page", fields)!.GetValue(loaded.Game));
-        Tap(100, 23); // sétima página volta aos dispositivos
+        // As sete áreas antigas continuam nas mesmas posições; as cinco novas vêm depois.
+        for (int next = 7; next < 12; next++)
+        {
+            Tap(100, 23);
+            Assert.Equal(next, type.GetField("page", fields)!.GetValue(loaded.Game));
+        }
+        Tap(100, 23);
         Assert.Equal(0, type.GetField("page", fields)!.GetValue(loaded.Game));
         Assert.False(host.IsFaulted, host.Fault?.ToString());
 

@@ -752,7 +752,7 @@ internal static class LaboratoryTemplate
                 batch.FillRect(new RectangleF(0, 600, GraphicsDevice.VirtualWidth, 40), new Color(24, 40, 64));
                 previousControl.Draw(batch, font, "ANTERIOR", TouchButtonStyle.Default, 1.25f);
                 nextControl.Draw(batch, font, "PROXIMO", TouchButtonStyle.Default, 1.25f);
-                batch.DrawString(font, "INDICE", new Vector2(153, 614), Color.Yellow, 1.3f);
+                batch.DrawString(font, "INDICE", new Vector2(153, 614), Color.White, 1.3f);
                 batch.End();
             }
 
