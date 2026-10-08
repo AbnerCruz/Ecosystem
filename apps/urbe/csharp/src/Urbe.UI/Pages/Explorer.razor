@@ -360,8 +360,10 @@
         if (Workspace.IsReadOnly)
             return;
 
+        // Desktop drag should not arm the touch move banner. That banner
+        // inserts layout above the drop target while Chromium is dragging,
+        // invalidating the pointer coordinates used by Playwright and users.
         _dragSource = path;
-        _moveSource = path;
     }
 
     private void EndDrag()
