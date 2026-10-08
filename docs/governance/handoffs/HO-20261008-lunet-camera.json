@@ -58,10 +58,10 @@
     {
       "check": "Câmera no Preview Android",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/camera.md",
-      "evidence": "Roteiro intermediário para câmera/HUD/toque/zoom/rotação em Preview rápido/isolado; teste em memória não prova GL no aparelho."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-08 (Issue https://github.com/AbnerCruz/Ecosystem/issues/304); registro em docs/governance/responses/VAL-HO-20261008-lunet-camera-042634730c9c.md."
     }
   ],
   "known_issues": [
