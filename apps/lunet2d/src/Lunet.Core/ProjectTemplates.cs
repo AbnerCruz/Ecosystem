@@ -263,7 +263,7 @@ public static class ProjectTemplates
         }
         """.Replace("\r\n", "\n") + "\n";
 
-    /// <summary>Laboratório: painel de testes de aparelho em duas páginas (dispositivos e gráficos).</summary>
+    /// <summary>Laboratório: painel de testes de aparelho em três páginas (dispositivos, gráficos e câmera).</summary>
     public static string LabSource(string className) => $$"""
         using System.Numerics;
         using Lunet;
@@ -274,11 +274,17 @@ public static class ProjectTemplates
         // Laboratório: cada bloco testa um recurso no aparelho.
         // Página 1: música, som, vibração, sensores, controle, gestos de dois dedos, joystick e botão de tela.
         // Página 2: mistura (blend), shader, recorte, alvo de desenho, amostragem, pixel perfect e área segura.
+        // Página 3: câmera, conversão de toque, zoom, rotação e HUD fixo.
         public sealed class {{className}} : Game
         {
             readonly RectangleF pageButton = new(8, 8, 344, 30);
             readonly RectangleF pixelButton = new(8, 440, 344, 30);
             readonly RectangleF resolutionButton = new(8, 474, 344, 30);
+            readonly RectangleF cameraZoomIn = new(8, 44, 80, 46);
+            readonly RectangleF cameraZoomOut = new(96, 44, 80, 46);
+            readonly RectangleF cameraRotate = new(184, 44, 168, 46);
+            readonly Camera2D camera = new() { Position = new Vector2(500, 400) };
+            Vector2 cameraMarker = new(500, 400);
             bool altResolution;
             readonly (string Label, RectangleF Area)[] buttons =
             {
@@ -371,7 +377,14 @@ public static class ProjectTemplates
                     switch (gesture.Type)
                     {
                         case GestureType.Tap:
-                            if (pageButton.Contains(gesture.Position)) { page = 1 - page; break; }
+                            if (pageButton.Contains(gesture.Position)) { page = (page + 1) % 3; break; }
+                            if (page == 2)
+                            {
+                                if (cameraZoomIn.Contains(gesture.Position)) camera.Zoom = System.Math.Clamp(camera.Zoom * 2, 0.25f, 4);
+                                else if (cameraZoomOut.Contains(gesture.Position)) camera.Zoom = System.Math.Clamp(camera.Zoom / 2, 0.25f, 4);
+                                else if (cameraRotate.Contains(gesture.Position)) camera.Rotation += System.MathF.PI / 4;
+                                break;
+                            }
                             if (page == 1 && pixelButton.Contains(gesture.Position)) { GraphicsDevice.PixelPerfect = !GraphicsDevice.PixelPerfect; break; }
                             if (page == 1 && resolutionButton.Contains(gesture.Position))
                             {
@@ -393,6 +406,14 @@ public static class ProjectTemplates
                             boxAngle += gesture.Rotation;
                             break;
                     }
+                }
+
+                if (page == 2)
+                {
+                    if (Input.TryGetPointer(out var touch) && touch.Y >= 120)
+                        cameraMarker = camera.ScreenToWorld(touch, GraphicsDevice.ViewSize);
+                    camera.Position = Vector2.Lerp(camera.Position, cameraMarker, System.Math.Clamp(time.DeltaSeconds * 5, 0, 1));
+                    return;
                 }
 
                 var a = Input.Accelerometer;
@@ -446,10 +467,33 @@ public static class ProjectTemplates
                 GraphicsDevice.Clear(new Color(18, 22, 40));
                 batch.Begin();
                 batch.FillRect(pageButton, new Color(90, 60, 120));
-                batch.DrawString(font, $"Página {page + 1}/2 (toque para trocar)", pageButton.Position + new Vector2(6, 8), Color.White, 2);
+                batch.DrawString(font, $"Página {page + 1}/3 (toque para trocar)", pageButton.Position + new Vector2(6, 8), Color.White, 2);
                 batch.End();
                 if (page == 0) DrawDevices();
-                else DrawGraphics();
+                else if (page == 1) DrawGraphics();
+                else DrawCamera();
+            }
+
+            void DrawCamera()
+            {
+                // Recorte em coordenadas da vista preserva o HUD no topo.
+                batch.Begin(camera, clip: new RectangleF(0, 120, GraphicsDevice.ViewSize.X, GraphicsDevice.ViewSize.Y - 120));
+                for (int i = 0; i <= 2000; i += 100)
+                {
+                    batch.Line(new Vector2(i, 0), new Vector2(i, 2000), Color.CornflowerBlue);
+                    batch.Line(new Vector2(0, i), new Vector2(2000, i), Color.CornflowerBlue);
+                }
+                batch.Circle(cameraMarker, 12, Color.Yellow, 3);
+                batch.End();
+                batch.Begin();
+                batch.FillRect(cameraZoomIn, new Color(52, 64, 110));
+                batch.FillRect(cameraZoomOut, new Color(52, 64, 110));
+                batch.FillRect(cameraRotate, new Color(52, 64, 110));
+                batch.DrawString(font, "+ Zoom", cameraZoomIn.Position + new Vector2(6, 14), Color.White, 1.5f);
+                batch.DrawString(font, "- Zoom", cameraZoomOut.Position + new Vector2(6, 14), Color.White, 1.5f);
+                batch.DrawString(font, "Girar 45 graus", cameraRotate.Position + new Vector2(6, 14), Color.White, 1.5f);
+                batch.DrawString(font, "Toque/arraste na grade. Os controles ficam fixos.", new Vector2(8, 102), Color.White, 1.1f);
+                batch.End();
             }
 
             void DrawDevices()

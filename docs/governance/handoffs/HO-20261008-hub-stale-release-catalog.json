@@ -1,0 +1,115 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-hub-stale-release-catalog",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T00:20:30.404747Z",
+  "agent": {
+    "id": "codex-ecosystem-hub-203",
+    "kind": "ai-agent"
+  },
+  "task_id": "HUB-203",
+  "component": "hub",
+  "state": "review",
+  "branch": "fix/hub-stale-release-catalog-20261008",
+  "base_commit": "f724b3c9fe65f4d45d39d07e7ce0a989291c9be4",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/292",
+  "files_changed": [
+    "apps/hub/src/Hub.Core/HubScreen.cs",
+    "apps/hub/tests/Hub.Tests/HubScreenTests.cs",
+    "apps/hub/docs/catalogo-de-releases.md",
+    "ROADMAP.md",
+    "docs/governance/handoffs/HO-20261008-hub-stale-release-catalog.json"
+  ],
+  "work_completed": [
+    "Resumo e catálogo identificam releases/canais Stale sem depender do banner global, inclusive histórico vazio e linhas de continuação.",
+    "Disponibilidade NotAvailable prevalece sobre Value residual; artefatos indisponíveis não aparecem como utilizáveis.",
+    "Regressão cobre SnapshotPolicy, serialização/reabertura, tela e seleção de APKs; dados atuais e vazio atual preservados."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Hub.Tests",
+      "result": "passed",
+      "evidence": "dotnet run --project tests/Hub.Tests --no-restore -p:UseSharedCompilation=false: 276 testes, zero falhas. Runner in-process usado porque dotnet test foi bloqueado pelo socket de named pipe do ambiente. Controle negativo: HubScreen original falhou em quatro casos; implementação restaurada passou novamente nos 276 testes."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22 checks passaram também após inclusão do handoff."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency self-test",
+      "result": "passed",
+      "evidence": "PATH configurado com SDK 10: self-test terminou com todos os checks detectando suas violações."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE",
+      "result": "not-applicable",
+      "evidence": "Projeção textual determinística testada no Core; não altera layout nativo, toque, instalação ou lifecycle, nem reivindica aceite no aparelho."
+    },
+    {
+      "kind": "automated",
+      "check": "Hub CI (Core + Android APK)",
+      "result": "passed",
+      "evidence": "https://github.com/AbnerCruz/Ecosystem/actions/runs/37707358020",
+      "tested_commit": "5d724c1003dcfda3ee2e367a3d359c49d896f097"
+    }
+  ],
+  "known_issues": [
+    "CI Android e integração combinada serão verificados pelo integrador no PR."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar checks e integrador; fechar Issue #290 e sincronizar estado canônico após integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "ROADMAP.md",
+    "docs/adr/0013-hub-read-only-fase-3.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/state-drift.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/hub/docs/catalogo-de-releases.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Disponibilidade canônica do Datum é preservada; cache continua projeção."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #290, branch, testes e handoff registram trabalho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "276 testes locais passaram; integração ainda pendente."
+    },
+    {
+      "id": "NN-021",
+      "evidence": "Último estado conhecido nunca é apresentado como leitura atual."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Correção local do Hub sem dependência de outro Product."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Bug da projeção textual dentro do modelo e comportamento aprovados; sem mudança de contratos, permissões, dados ou distribuição."
+  },
+  "cost": null
+}
+

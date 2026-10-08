@@ -120,9 +120,20 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Roteiro Android intermediário em `docs/guides/colisao.md`; sem validação humana inventada e sem fechar a Fase 4. Evidência final/PR: `HO-20261008-lunet-collision`.
 
 
+### 20261008-codex-camera — Codex → próximos agentes — review
+- Item LUNET-403, Issue #293; branch `agent/lunet-camera-20261008`, base `c0c7be02`; main `9c8e799` juntada por fast-forward antes da entrega.
+- Camera2D opcional e overload de SpriteBatch: mundo, zoom, rotação, conversão de toque e HUD fixo; nenhum backend alterado e APIs anteriores preservadas.
+- Build portátil sem warnings/errors; suíte padrão 351/351, incluindo 14 casos novos. Guia offline compilado/executado com toque físico 2×. Evidência final/PR no handoff `HO-20261008-lunet-camera`.
+- PR #291 integrado e APK 1000120 publicado; handoff anterior recebe evidência automatizada sem inventar teste do aparelho. Fase 4 permanece aberta; câmera aguarda roteiro Android intermediário.
+
+- Complemento LUNET-403: nova página 3 do modelo Laboratório testa câmera sem copiar código. Suíte padrão rerodada 351/351, com regressão das páginas antigas e controles de zoom/giro/toque.
+
+
 ### 20261008-codex-animation — Codex → próximos agentes — review
 - Item LUNET-404, Issue #298; branch `agent/lunet-animation-20261008`, base `9c8e799` (entrega independente do PR #295 de câmera).
 - Clips locais e imutáveis com duração por quadro; SpriteAnimator independente com pausa/reinício/Play e amostragem sem percorrer ciclos. Tween aplica cinco curvas a float/Vector2/Color, sem callbacks ou scheduler global.
 - Modelo novo **Demo: Animação e tween** disponível na criação Android, com spritesheet procedural, toque para mover/retarget, pausa/retomada e reinício. Modelos antigos permanecem intactos.
 - Build portátil sem warnings/errors; suíte xUnit e checks finais no handoff `HO-20261008-lunet-animation`. Guia e modelo compilados/executados pelo runtime real, incluindo toque físico 2×, pause/retarget/restart; teste de zero bytes no playback/tween.
 - CI e integrador seguem pelo PR; teste GL/aparelho permanece pendente em `docs/guides/animacao.md`. Nenhuma fase fechada ou física completa improvisada.
+
+- Reconciliação LUNET-404 em 2026-10-08: main `0b541c6` preservada integralmente; conflitos em AgentsChat/CHANGELOG/ROADMAP resolvidos mantendo ambas as entregas. Colisão/câmera aprovadas pelo proprietário nas Issues #303/#304; estados reconciliados para done, sem fechar Fase 4. Câmera distribuída no APK 1000126. Suíte combinada registrada no handoff.

@@ -27,14 +27,17 @@
     "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
     "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
     "apps/lunet2d/tests/Lunet.Tests/AnimationTests.cs",
-    "docs/governance/handoffs/HO-20261008-lunet-animation.json"
+    "docs/governance/handoffs/HO-20261008-lunet-animation.json",
+    "docs/governance/handoffs/HO-20261008-lunet-camera.json",
+    "docs/governance/handoffs/HO-20261008-lunet-collision.json"
   ],
   "work_completed": [
     "SpriteAnimationFrame/Clip local: cópia imutável da sequência, regiões/durações verificadas, quadros de spritesheet ou atlas, duração por quadro e textura com ownership preservado.",
     "SpriteAnimator independente: loop/one-shot, pausa/retomada/reinício/Play, busca binária do quadro, deltas grandes sem varrer ciclos e zero alocações por Update.",
     "Tween local float/Vector2/Color com Linear/InQuad/OutQuad/InOutQuad/SmoothStep, pausa/retomada/reinício, endpoints exatos e interpolação numérica sem overflow intermediário.",
     "Novo modelo opcional na criação de projeto Android: animação procedural + transição por toque, retarget sem salto e botões de pausa/reinício. Modelos antigos não alterados.",
-    "Guia offline completo, API XML/JSON atualizada e testes de regressão, precisão/entrada inválida, UV/cor no SpriteBatch e guia/modelo no compilador/runtime reais."
+    "Guia offline completo, API XML/JSON atualizada e testes de regressão, precisão/entrada inválida, UV/cor no SpriteBatch e guia/modelo no compilador/runtime reais.",
+    "Reconciliado semanticamente com main 0b541c6, preservando câmera e animação em código/API/documentação; aprovações canônicas #303/#304 aplicadas aos estados de colisão/câmera, sem fechar a Fase 4."
   ],
   "verification": [
     {
@@ -47,7 +50,7 @@
       "check": "Lunet.Tests",
       "kind": "automated",
       "result": "passed",
-      "evidence": "Runner xUnit v3 .NET 10 padrão: 360 testes, zero falhas/erros/skips. Inclui 23 casos de animação/tween, amostragem/precisão/deltas enormes, UV/cor, zero bytes e guia/modelo criado pelo ProjectStore e compilado/executado com toque físico 2×/pausa/retarget/reinício."
+      "evidence": "Runner xUnit v3 .NET 10 padrão no conjunto reconciliado com main 0b541c6: 374 testes, zero falhas/erros/skips. Inclui 23 casos de animação/tween e 14 de câmera, UV/cor, zero bytes e os modelos/guias no runtime real."
     },
     {
       "check": "Consistency",
@@ -71,9 +74,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI/integração automática e release direta do Lunet.",
-    "Se main integrar PR #295 antes desta entrega, reconciliar semanticamente mudanças documentais, preservando câmera e animação.",
-    "Validar roteiro intermediário animacao.md no aparelho; manter Fase 4 aberta."
+    "Acompanhar CI/integração e release de animação/tween; PR #295 já integrado.",
+    "Validar animacao.md no aparelho e continuar Fase 4."
   ],
   "decisions_required": [],
   "normative_sources": [

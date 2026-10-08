@@ -173,9 +173,9 @@ Gate: jogos 2D substanciais apenas com APIs oficiais.
 Integração transversal autorizada pelo Ecosystem (não altera o gate de Framework Advanced):
 - [x] **LUNET-401 — Adapter opcional da Host API do Ecosystem via Android Binder** (P5-4 / DEC-0037-A): integrado e validado. Pareamento, `text.inspect`, revogação/rotação e lifecycle/process-death foram aprovados no gate P5-4 pela Issue #225; Lunet permanece funcional sem provider. O estado idle `0 sessões IPC abertas agora` é esperado e não invalida o pareamento.
 
-- [~] **LUNET-402 — Camada simples de colisão** (§7): AABB, Rectangle, Circle, Point, Ray, overlap, intersection, distance, SAT. Issue #288; completar consultas e corrigir separação SAT em contenção. Integração e roteiro Preview pendentes; física completa é o item separado abaixo.
+- [x] **LUNET-402 — Camada simples de colisão** (§7): consultas e separação SAT integradas pelo PR #291; Issue #288 encerrada, roteiro aprovado pelo proprietário no portal (Issue #303), registro no handoff `HO-20261008-lunet-collision`. Física completa permanece no item separado abaixo.
 - [ ] Física completa (`PhysicsWorld`, `RigidBody2D`, `Collider2D`, `Fixture2D`, `Joint2D`, `Contact`, `Raycast`) sobre backend maduro (Box2D ou equivalente) sem expor tipos internos; ADR da escolha.
-- [ ] `Camera2D`.
+- [x] **LUNET-403 — `Camera2D`** (§7): posição, zoom, rotação e toque/mundo integrados pelo PR #295; Issue #293 encerrada, APK 1000126 publicado e roteiro aprovado pelo proprietário no portal (Issue #304), registro no handoff `HO-20261008-lunet-camera`.
 - [~] **LUNET-404 — Animação de sprites e tweening** (§7, §23): clips, playback e transições sem alocação por quadro; Issue #298. Playback/tween implementados, documentação offline e modelo Demo: Animação e tween; integração e validação Android pendentes. Handoff `HO-20261008-lunet-animation`.
 - [ ] Partículas.
 - [ ] Tilemaps (carregar formato do Tile Studio, colisão).
