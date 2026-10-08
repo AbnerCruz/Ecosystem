@@ -121,7 +121,7 @@ public static class ProjectPackage
         var documentBytes = ReadEntry(documentEntry, ProjectJson.MaxBytes);
         if (!string.Equals(Sha(documentBytes), manifest.DocumentSha256, StringComparison.Ordinal))
             throw new InvalidDataException("Hash do documento incompatível.");
-        var loaded = ProjectMigrator.Open(Encoding.UTF8.GetString(documentBytes), migrations);
+        var loaded = ProjectMigrator.Open(DecodeUtf8(documentBytes), migrations);
         if (!loaded.Success)
             throw new InvalidDataException("Documento inválido: " + loaded.Problems[0].Code);
 
@@ -261,6 +261,12 @@ public static class ProjectPackage
 
     private static bool ValidSha(string? hash) =>
         hash is { Length: 64 } && hash.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
+
+    private static string DecodeUtf8(byte[] bytes)
+    {
+        try { return new UTF8Encoding(false, true).GetString(bytes); }
+        catch (DecoderFallbackException e) { throw new InvalidDataException("Documento não está em UTF-8 válido.", e); }
+    }
 
     private static string Sha(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
 
