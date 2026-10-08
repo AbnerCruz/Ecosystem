@@ -309,6 +309,87 @@
       ]
     },
     {
+      "id": "T:Lunet.Ease",
+      "name": "Ease",
+      "namespace": "Lunet",
+      "kind": "enum",
+      "signature": "public enum Ease",
+      "summary": "Curvas normalizadas de acelera\u00E7\u00E3o/desacelera\u00E7\u00E3o de uma transi\u00E7\u00E3o.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar tween = new Tween(0.5, Ease.OutQuad);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.Ease.InOutQuad",
+          "name": "InOutQuad",
+          "kind": "enum value",
+          "signature": "public const Ease InOutQuad = 3",
+          "summary": "Acelera at\u00E9 a metade e desacelera depois.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Ease.InQuad",
+          "name": "InQuad",
+          "kind": "enum value",
+          "signature": "public const Ease InQuad = 1",
+          "summary": "Acelera\u00E7\u00E3o quadr\u00E1tica.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Ease.Linear",
+          "name": "Linear",
+          "kind": "enum value",
+          "signature": "public const Ease Linear = 0",
+          "summary": "Velocidade constante.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Ease.OutQuad",
+          "name": "OutQuad",
+          "kind": "enum value",
+          "signature": "public const Ease OutQuad = 2",
+          "summary": "Desacelera\u00E7\u00E3o quadr\u00E1tica.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Ease.SmoothStep",
+          "name": "SmoothStep",
+          "kind": "enum value",
+          "signature": "public const Ease SmoothStep = 4",
+          "summary": "Curva c\u00FAbica com velocidade zero nas duas pontas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.FileAttribute",
       "name": "FileAttribute",
       "namespace": "Lunet",
@@ -4044,6 +4125,267 @@
       ]
     },
     {
+      "id": "T:Lunet.Tween",
+      "name": "Tween",
+      "namespace": "Lunet",
+      "kind": "class",
+      "signature": "public sealed class Tween",
+      "summary": "Rel\u00F3gio de transi\u00E7\u00E3o controlado pelo jogo; interpola valores sem callbacks ou aloca\u00E7\u00F5es por quadro.",
+      "remarks": "Crie uma vez e chame Restart para reutilizar. N\u00E3o h\u00E1 scheduler global: o jogo decide o que avan\u00E7ar, pausar e aplicar. Cor interpola canais RGBA de 8 bits, sem corre\u00E7\u00E3o gamma. Dura\u00E7\u00E3o zero j\u00E1 come\u00E7a completa.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar tween = new Tween(0.5, Ease.OutQuad);\ntween.Update(1.0 / 60);\nVector2 next = tween.Value(Vector2.Zero, new Vector2(100, 200));\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Tween.#ctor(System.Double,Lunet.Ease)",
+          "name": "Tween",
+          "kind": "constructor",
+          "signature": "public Tween(double durationSeconds, Ease ease = Ease.Linear)",
+          "summary": "Cria uma transi\u00E7\u00E3o em execu\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "durationSeconds",
+              "type": "double",
+              "description": "Dura\u00E7\u00E3o finita e n\u00E3o negativa."
+            },
+            {
+              "name": "ease",
+              "type": "Ease",
+              "description": "Curva de interpola\u00E7\u00E3o."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.Amount",
+          "name": "Amount",
+          "kind": "property",
+          "signature": "public float Amount { get; }",
+          "summary": "Progresso de 0 a 1 depois da curva.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.DurationSeconds",
+          "name": "DurationSeconds",
+          "kind": "property",
+          "signature": "public double DurationSeconds { get; }",
+          "summary": "Dura\u00E7\u00E3o em segundos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.Ease",
+          "name": "Ease",
+          "kind": "property",
+          "signature": "public Ease Ease { get; }",
+          "summary": "Curva aplicada ao progresso.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.ElapsedSeconds",
+          "name": "ElapsedSeconds",
+          "kind": "property",
+          "signature": "public double ElapsedSeconds { get; }",
+          "summary": "Tempo transcorrido, limitado \u00E0 dura\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.IsComplete",
+          "name": "IsComplete",
+          "kind": "property",
+          "signature": "public bool IsComplete { get; }",
+          "summary": "Se chegou ao valor final.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.IsPlaying",
+          "name": "IsPlaying",
+          "kind": "property",
+          "signature": "public bool IsPlaying { get; }",
+          "summary": "Se Update avan\u00E7a o rel\u00F3gio.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Tween.Progress",
+          "name": "Progress",
+          "kind": "property",
+          "signature": "public float Progress { get; }",
+          "summary": "Progresso linear de 0 a 1; dura\u00E7\u00E3o zero retorna 1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Pause",
+          "name": "Pause",
+          "kind": "method",
+          "signature": "public void Pause()",
+          "summary": "Pausa sem alterar valores.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Restart",
+          "name": "Restart",
+          "kind": "method",
+          "signature": "public void Restart()",
+          "summary": "Reutiliza o rel\u00F3gio desde o in\u00EDcio; dura\u00E7\u00E3o zero continua completa.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Resume",
+          "name": "Resume",
+          "kind": "method",
+          "signature": "public void Resume()",
+          "summary": "Retoma se a transi\u00E7\u00E3o ainda n\u00E3o est\u00E1 completa.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Update(System.Double)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(double deltaSeconds)",
+          "summary": "Avan\u00E7a at\u00E9 o fim, preservando exatamente o endpoint.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "deltaSeconds",
+              "type": "double",
+              "description": "Tempo finito e n\u00E3o negativo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Value(System.Single,System.Single)",
+          "name": "Value",
+          "kind": "method",
+          "signature": "public float Value(float from, float to)",
+          "summary": "Interpola um n\u00FAmero; valores iniciais/finais devem ser finitos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "from",
+              "type": "float",
+              "description": "Valor inicial."
+            },
+            {
+              "name": "to",
+              "type": "float",
+              "description": "Valor final."
+            }
+          ],
+          "returns": "Valor no progresso atual.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Value(System.Numerics.Vector2,System.Numerics.Vector2)",
+          "name": "Value",
+          "kind": "method",
+          "signature": "public Vector2 Value(Vector2 from, Vector2 to)",
+          "summary": "Interpola posi\u00E7\u00E3o, escala ou outro vetor de dois componentes finitos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "from",
+              "type": "Vector2",
+              "description": "Vetor inicial."
+            },
+            {
+              "name": "to",
+              "type": "Vector2",
+              "description": "Vetor final."
+            }
+          ],
+          "returns": "Vetor no progresso atual.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Tween.Value(Lunet.Graphics.Color,Lunet.Graphics.Color)",
+          "name": "Value",
+          "kind": "method",
+          "signature": "public Color Value(Color from, Color to)",
+          "summary": "Interpola canais RGBA, arredondando para o byte mais pr\u00F3ximo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "from",
+              "type": "Color",
+              "description": "Cor inicial."
+            },
+            {
+              "name": "to",
+              "type": "Color",
+              "description": "Cor final."
+            }
+          ],
+          "returns": "Cor no progresso atual.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Audio.AudioBus",
       "name": "AudioBus",
       "namespace": "Lunet.Audio",
@@ -7670,6 +8012,422 @@
       ]
     },
     {
+      "id": "T:Lunet.Graphics.ParticleEmitter",
+      "name": "ParticleEmitter",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class ParticleEmitter",
+      "summary": "Part\u00EDculas radiais com pool de capacidade fixa, emiss\u00E3o cont\u00EDnua ou bursts e desenho no SpriteBatch existente.",
+      "remarks": "N\u00E3o possui/libera a textura. Update/Draw/Burst n\u00E3o alocam; custo limitado \u00E0 capacidade. Quando cheio, descarta emiss\u00E3o excedente sem fila. Ordem de desenho n\u00E3o \u00E9 est\u00E1vel ap\u00F3s expira\u00E7\u00E3o. Use na thread do jogo.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar particles = new ParticleEmitter(texture, new ParticleSettings(), capacity: 256, seed: 42);\nparticles.Burst(40, position);\nparticles.Update(1.0 / 60);\nbatch.Begin();\nparticles.Draw(batch);\nbatch.End();\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.#ctor(Lunet.Graphics.Texture2D,Lunet.Graphics.ParticleSettings,System.Int32,System.UInt64)",
+          "name": "ParticleEmitter",
+          "kind": "constructor",
+          "signature": "public ParticleEmitter(Texture2D texture, ParticleSettings settings, int capacity = 256, ulong seed = 1)",
+          "summary": "Cria um emissor sem emiss\u00E3o cont\u00EDnua ativa.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura compartilhada desenhada inteira em cada part\u00EDcula."
+            },
+            {
+              "name": "settings",
+              "type": "ParticleSettings",
+              "description": "Configura\u00E7\u00E3o imut\u00E1vel do efeito."
+            },
+            {
+              "name": "capacity",
+              "type": "int",
+              "description": "N\u00FAmero m\u00E1ximo positivo de part\u00EDculas vivas."
+            },
+            {
+              "name": "seed",
+              "type": "ulong",
+              "description": "Semente determin\u00EDstica das velocidades."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Capacity",
+          "name": "Capacity",
+          "kind": "property",
+          "signature": "public int Capacity { get; }",
+          "summary": "Capacidade do pool.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Count",
+          "name": "Count",
+          "kind": "property",
+          "signature": "public int Count { get; }",
+          "summary": "Quantidade viva; excedentes s\u00E3o descartados.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.EmissionRate",
+          "name": "EmissionRate",
+          "kind": "property",
+          "signature": "public float EmissionRate { get; set; }",
+          "summary": "Part\u00EDculas por segundo, finito e n\u00E3o negativo. Padr\u00E3o zero; mudar a taxa reinicia a fra\u00E7\u00E3o acumulada.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.IsEmitting",
+          "name": "IsEmitting",
+          "kind": "property",
+          "signature": "public bool IsEmitting { get; }",
+          "summary": "Se a emiss\u00E3o cont\u00EDnua est\u00E1 ligada. Stop n\u00E3o remove part\u00EDculas existentes.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Position",
+          "name": "Position",
+          "kind": "property",
+          "signature": "public Vector2 Position { get; set; }",
+          "summary": "Origem da emiss\u00E3o cont\u00EDnua; mover n\u00E3o move part\u00EDculas j\u00E1 emitidas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Settings",
+          "name": "Settings",
+          "kind": "property",
+          "signature": "public ParticleSettings Settings { get; }",
+          "summary": "Configura\u00E7\u00E3o imut\u00E1vel das part\u00EDculas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleEmitter.Texture",
+          "name": "Texture",
+          "kind": "property",
+          "signature": "public Texture2D Texture { get; }",
+          "summary": "Textura compartilhada; o jogo mant\u00E9m seu ownership.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Burst(System.Int32,System.Numerics.Vector2)",
+          "name": "Burst",
+          "kind": "method",
+          "signature": "public int Burst(int count, Vector2 position)",
+          "summary": "Emite imediatamente at\u00E9 o limite livre do pool; funciona mesmo com emiss\u00E3o cont\u00EDnua parada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "count",
+              "type": "int",
+              "description": "Quantidade n\u00E3o negativa desejada."
+            },
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Origem finita das novas part\u00EDculas."
+            }
+          ],
+          "returns": "Quantidade realmente emitida.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Clear",
+          "name": "Clear",
+          "kind": "method",
+          "signature": "public void Clear()",
+          "summary": "Remove todas as part\u00EDculas e reinicia a fra\u00E7\u00E3o de emiss\u00E3o, sem mudar taxa/estado/semente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Draw(Lunet.Graphics.SpriteBatch)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(SpriteBatch batch)",
+          "summary": "Desenha os quads vivos dentro de um lote j\u00E1 aberto; c\u00E2mera, clipping, blend e sampler v\u00EAm desse lote.",
+          "remarks": "Movimento bal\u00EDstico anal\u00EDtico evita depend\u00EAncia do tamanho do passo. Regi\u00F5es fora do intervalo num\u00E9rico float s\u00E3o omitidas do desenho; a vida continua avan\u00E7ando. N\u00E3o faz culling de tela nem depth sorting.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote do jogo, entre Begin e End."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Start",
+          "name": "Start",
+          "kind": "method",
+          "signature": "public void Start()",
+          "summary": "Liga a emiss\u00E3o; o primeiro nascimento ocorre ap\u00F3s 1/EmissionRate segundo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Stop",
+          "name": "Stop",
+          "kind": "method",
+          "signature": "public void Stop()",
+          "summary": "Para novos nascimentos e descarta a fra\u00E7\u00E3o acumulada; part\u00EDculas existentes continuam envelhecendo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.ParticleEmitter.Update(System.Double)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(double deltaSeconds)",
+          "summary": "Avan\u00E7a o efeito e emite apenas nascimentos ainda vivos no fim do intervalo.",
+          "remarks": "Um delta grande n\u00E3o percorre todos os nascimentos hist\u00F3ricos. Aceita os nascimentos mais recentes que cabem no pool; a origem \u00E9 Position no momento do Update. N\u00E3o interpola a trajet\u00F3ria do emissor.",
+          "parameters": [
+            {
+              "name": "deltaSeconds",
+              "type": "double",
+              "description": "Tempo simulado finito e n\u00E3o negativo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.ParticleSettings",
+      "name": "ParticleSettings",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class ParticleSettings",
+      "summary": "Configura\u00E7\u00E3o imut\u00E1vel de vida, velocidade radial, gravidade e apar\u00EAncia das part\u00EDculas.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar effect = new ParticleSettings(lifetimeSeconds: 1.5, minSpeed: 40, maxSpeed: 120, gravity: new Vector2(0, 100));\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.ParticleSettings.#ctor(System.Double,System.Single,System.Single,System.Nullable{System.Numerics.Vector2},System.Single,System.Single,System.Nullable{Lunet.Graphics.Color},System.Nullable{Lunet.Graphics.Color})",
+          "name": "ParticleSettings",
+          "kind": "constructor",
+          "signature": "public ParticleSettings(double lifetimeSeconds = 1, float minSpeed = 50f, float maxSpeed = 150f, Vector2? gravity = null, float startSize = 8f, float endSize = 0f, Color? startColor = null, Color? endColor = null)",
+          "summary": "Configura um efeito radial; valores num\u00E9ricos devem ser finitos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "lifetimeSeconds",
+              "type": "double",
+              "description": "Vida positiva em segundos."
+            },
+            {
+              "name": "minSpeed",
+              "type": "float",
+              "description": "Velocidade m\u00EDnima n\u00E3o negativa, em unidades por segundo."
+            },
+            {
+              "name": "maxSpeed",
+              "type": "float",
+              "description": "Velocidade m\u00E1xima, pelo menos minSpeed."
+            },
+            {
+              "name": "gravity",
+              "type": "Vector2?",
+              "description": "Acelera\u00E7\u00E3o constante; padr\u00E3o zero."
+            },
+            {
+              "name": "startSize",
+              "type": "float",
+              "description": "Tamanho inicial do quad em unidades do jogo, n\u00E3o negativo."
+            },
+            {
+              "name": "endSize",
+              "type": "float",
+              "description": "Tamanho final, n\u00E3o negativo."
+            },
+            {
+              "name": "startColor",
+              "type": "Color?",
+              "description": "Cor inicial; padr\u00E3o branco."
+            },
+            {
+              "name": "endColor",
+              "type": "Color?",
+              "description": "Cor final; padr\u00E3o branco transparente."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.EndColor",
+          "name": "EndColor",
+          "kind": "property",
+          "signature": "public Color EndColor { get; }",
+          "summary": "Cor final.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.EndSize",
+          "name": "EndSize",
+          "kind": "property",
+          "signature": "public float EndSize { get; }",
+          "summary": "Tamanho final do quad.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.Gravity",
+          "name": "Gravity",
+          "kind": "property",
+          "signature": "public Vector2 Gravity { get; }",
+          "summary": "Acelera\u00E7\u00E3o constante.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.LifetimeSeconds",
+          "name": "LifetimeSeconds",
+          "kind": "property",
+          "signature": "public double LifetimeSeconds { get; }",
+          "summary": "Vida em segundos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.MaxSpeed",
+          "name": "MaxSpeed",
+          "kind": "property",
+          "signature": "public float MaxSpeed { get; }",
+          "summary": "Velocidade radial m\u00E1xima.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.MinSpeed",
+          "name": "MinSpeed",
+          "kind": "property",
+          "signature": "public float MinSpeed { get; }",
+          "summary": "Velocidade radial m\u00EDnima.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.StartColor",
+          "name": "StartColor",
+          "kind": "property",
+          "signature": "public Color StartColor { get; }",
+          "summary": "Cor inicial.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.ParticleSettings.StartSize",
+          "name": "StartSize",
+          "kind": "property",
+          "signature": "public float StartSize { get; }",
+          "summary": "Tamanho inicial do quad.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Graphics.RectI",
       "name": "RectI",
       "namespace": "Lunet.Graphics",
@@ -8413,6 +9171,417 @@
             }
           ],
           "returns": "O sprite.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.SpriteAnimationClip",
+      "name": "SpriteAnimationClip",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class SpriteAnimationClip",
+      "summary": "Sequ\u00EAncia imut\u00E1vel de quadros; pode ser compartilhada por v\u00E1rios animadores independentes.",
+      "remarks": "Copia os quadros na cria\u00E7\u00E3o. N\u00E3o possui nem libera a textura. As regi\u00F5es podem ter tamanhos diferentes e vir de um atlas.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar sheet = new SpriteSheet(texture, 16, 16);\nvar clip = SpriteAnimationClip.FromSheet(sheet, new[] { 0, 1, 2, 1 }, 0.1);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimationClip.#ctor(Lunet.Graphics.Texture2D,System.Collections.Generic.IReadOnlyList{Lunet.Graphics.SpriteAnimationFrame},System.Boolean)",
+          "name": "SpriteAnimationClip",
+          "kind": "constructor",
+          "signature": "public SpriteAnimationClip(Texture2D texture, IReadOnlyList\u003CSpriteAnimationFrame\u003E frames, bool loop = true)",
+          "summary": "Cria um clip com dura\u00E7\u00E3o individual por quadro.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura compartilhada; deve continuar viva durante o desenho."
+            },
+            {
+              "name": "frames",
+              "type": "IReadOnlyList\u003CSpriteAnimationFrame\u003E",
+              "description": "Quadros n\u00E3o vazios, com regi\u00F5es dentro da textura e dura\u00E7\u00E3o positiva/finita."
+            },
+            {
+              "name": "loop",
+              "type": "bool",
+              "description": "Repetir ao chegar ao fim; falso mant\u00E9m o \u00FAltimo quadro."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationClip.DurationSeconds",
+          "name": "DurationSeconds",
+          "kind": "property",
+          "signature": "public double DurationSeconds { get; }",
+          "summary": "Dura\u00E7\u00E3o de um ciclo completo em segundos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationClip.FrameCount",
+          "name": "FrameCount",
+          "kind": "property",
+          "signature": "public int FrameCount { get; }",
+          "summary": "N\u00FAmero de quadros.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationClip.Loop",
+          "name": "Loop",
+          "kind": "property",
+          "signature": "public bool Loop { get; }",
+          "summary": "Se a sequ\u00EAncia repete.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationClip.Texture",
+          "name": "Texture",
+          "kind": "property",
+          "signature": "public Texture2D Texture { get; }",
+          "summary": "Textura compartilhada dos quadros.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimationClip.Frame(System.Int32)",
+          "name": "Frame",
+          "kind": "method",
+          "signature": "public SpriteAnimationFrame Frame(int index)",
+          "summary": "Consulta um quadro por \u00EDndice, sem expor o array interno.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice de zero a FrameCount\u22121."
+            }
+          ],
+          "returns": "Regi\u00E3o e dura\u00E7\u00E3o do quadro.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimationClip.FromSheet(Lunet.Graphics.SpriteSheet,System.Collections.Generic.IReadOnlyList{System.Int32},System.Double,System.Boolean)",
+          "name": "FromSheet",
+          "kind": "method",
+          "signature": "public static SpriteAnimationClip FromSheet(SpriteSheet sheet, IReadOnlyList\u003Cint\u003E indices, double frameSeconds, bool loop = true)",
+          "summary": "Cria uma sequ\u00EAncia de quadros de tamanho igual, com dura\u00E7\u00E3o uniforme.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "sheet",
+              "type": "SpriteSheet",
+              "description": "Spritesheet."
+            },
+            {
+              "name": "indices",
+              "type": "IReadOnlyList\u003Cint\u003E",
+              "description": "Ordem dos quadros; repeti\u00E7\u00E3o de \u00EDndices \u00E9 permitida."
+            },
+            {
+              "name": "frameSeconds",
+              "type": "double",
+              "description": "Dura\u00E7\u00E3o positiva/finita de cada quadro."
+            },
+            {
+              "name": "loop",
+              "type": "bool",
+              "description": "Repetir a sequ\u00EAncia."
+            }
+          ],
+          "returns": "Clip imut\u00E1vel.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.SpriteAnimationFrame",
+      "name": "SpriteAnimationFrame",
+      "namespace": "Lunet.Graphics",
+      "kind": "struct",
+      "signature": "public readonly struct SpriteAnimationFrame",
+      "summary": "Quadro de anima\u00E7\u00E3o: regi\u00E3o da textura e tempo de exibi\u00E7\u00E3o em segundos.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar frame = new SpriteAnimationFrame(new RectangleF(0, 0, 16, 16), 0.1);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimationFrame.#ctor(Lunet.RectangleF,System.Double)",
+          "name": "SpriteAnimationFrame",
+          "kind": "constructor",
+          "signature": "public SpriteAnimationFrame(RectangleF source, double durationSeconds)",
+          "summary": "Define um quadro. A validade da regi\u00E3o e dura\u00E7\u00E3o \u00E9 conferida pelo clip.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "source",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o em pixels."
+            },
+            {
+              "name": "durationSeconds",
+              "type": "double",
+              "description": "Tempo positivo e finito de exibi\u00E7\u00E3o."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationFrame.DurationSeconds",
+          "name": "DurationSeconds",
+          "kind": "property",
+          "signature": "public double DurationSeconds { get; }",
+          "summary": "Dura\u00E7\u00E3o do quadro em segundos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimationFrame.Source",
+          "name": "Source",
+          "kind": "property",
+          "signature": "public RectangleF Source { get; }",
+          "summary": "Regi\u00E3o em pixels da textura.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.SpriteAnimator",
+      "name": "SpriteAnimator",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class SpriteAnimator",
+      "summary": "Playback independente de um clip; avance em Update e desenhe Texture/Source pelo SpriteBatch.",
+      "remarks": "Sem aloca\u00E7\u00E3o por Update. Deltas grandes pulam direto para o quadro atual, sem percorrer ciclos. N\u00E3o dispara eventos para quadros pulados. Atualize na thread do jogo.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar sheet = new SpriteSheet(texture, 16, 16);\nvar animator = new SpriteAnimator(SpriteAnimationClip.FromSheet(sheet, new[] { 0, 1 }, 0.1));\nanimator.Update(1.0 / 60);\nbatch.Draw(animator.Clip.Texture, position, animator.Source, Color.White);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.#ctor(Lunet.Graphics.SpriteAnimationClip)",
+          "name": "SpriteAnimator",
+          "kind": "constructor",
+          "signature": "public SpriteAnimator(SpriteAnimationClip clip)",
+          "summary": "Cria um animador em reprodu\u00E7\u00E3o no primeiro quadro.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "clip",
+              "type": "SpriteAnimationClip",
+              "description": "Sequ\u00EAncia compartilhada."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.Clip",
+          "name": "Clip",
+          "kind": "property",
+          "signature": "public SpriteAnimationClip Clip { get; }",
+          "summary": "Clip atual.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.FrameIndex",
+          "name": "FrameIndex",
+          "kind": "property",
+          "signature": "public int FrameIndex { get; }",
+          "summary": "\u00CDndice do quadro exibido.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.IsComplete",
+          "name": "IsComplete",
+          "kind": "property",
+          "signature": "public bool IsComplete { get; }",
+          "summary": "Se chegou ao fim de um clip sem loop; pausar n\u00E3o completa o clip.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.IsPlaying",
+          "name": "IsPlaying",
+          "kind": "property",
+          "signature": "public bool IsPlaying { get; }",
+          "summary": "Se Update avan\u00E7a o rel\u00F3gio.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.PositionSeconds",
+          "name": "PositionSeconds",
+          "kind": "property",
+          "signature": "public double PositionSeconds { get; }",
+          "summary": "Tempo no ciclo atual; no one-shot completo \u00E9 igual \u00E0 dura\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.SpriteAnimator.Source",
+          "name": "Source",
+          "kind": "property",
+          "signature": "public RectangleF Source { get; }",
+          "summary": "Regi\u00E3o do quadro exibido.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Pause",
+          "name": "Pause",
+          "kind": "method",
+          "signature": "public void Pause()",
+          "summary": "Pausa sem perder posi\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Play(Lunet.Graphics.SpriteAnimationClip,System.Boolean)",
+          "name": "Play",
+          "kind": "method",
+          "signature": "public void Play(SpriteAnimationClip clip, bool restart = false)",
+          "summary": "Troca o clip e reinicia; o mesmo clip continua sem reiniciar por padr\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "clip",
+              "type": "SpriteAnimationClip",
+              "description": "Novo clip."
+            },
+            {
+              "name": "restart",
+              "type": "bool",
+              "description": "For\u00E7ar rein\u00EDcio mesmo se for o clip atual."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Restart",
+          "name": "Restart",
+          "kind": "method",
+          "signature": "public void Restart()",
+          "summary": "Recome\u00E7a no primeiro quadro e retoma reprodu\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Resume",
+          "name": "Resume",
+          "kind": "method",
+          "signature": "public void Resume()",
+          "summary": "Retoma a posi\u00E7\u00E3o pausada; um one-shot completo s\u00F3 volta com Restart/Play.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteAnimator.Update(System.Double)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(double deltaSeconds)",
+          "summary": "Avan\u00E7a pelo tempo do jogo, em segundos.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "deltaSeconds",
+              "type": "double",
+              "description": "Delta finito e n\u00E3o negativo; zero n\u00E3o muda o estado."
+            }
+          ],
+          "returns": "",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -12130,6 +13299,376 @@
               "description": "Estado de entrada."
             }
           ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Pathfinding.GridPathfinder",
+      "name": "GridPathfinder",
+      "namespace": "Lunet.Pathfinding",
+      "kind": "class",
+      "signature": "public sealed class GridPathfinder",
+      "summary": "A* em grade retangular finita com custos por c\u00E9lula e mem\u00F3ria reutiliz\u00E1vel.",
+      "remarks": "Busca s\u00EDncrona; n\u00E3o \u00E9 thread-safe nem reentrante. Constru\u00E7\u00E3o aloca O(largura \u00D7 altura). Cada busca limpa os buffers em O(c\u00E9lulas); expans\u00E3o usa heap bin\u00E1rio, sem aloca\u00E7\u00E3o por busca. N\u00E3o carrega mapas, n\u00E3o move entidades e n\u00E3o modifica dados de projeto. Diagonais nunca cortam cantos bloqueados.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar grid = new Lunet.Pathfinding.GridPathfinder(10, 10);\ngrid.SetCost(new(4, 4), 0); // parede\nvar path = new Lunet.Pathfinding.GridPoint[100]; // reutilizar\nvar result = grid.FindPath(new(0, 0), new(9, 9), path, allowDiagonals: true);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Pathfinding.GridPathfinder.#ctor(System.Int32,System.Int32)",
+          "name": "GridPathfinder",
+          "kind": "constructor",
+          "signature": "public GridPathfinder(int width, int height)",
+          "summary": "Cria uma grade com todas as c\u00E9lulas transit\u00E1veis, custo 1.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Colunas positivas; o produto das dimens\u00F5es deve caber em um array .NET."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Linhas positivas."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.GridPathfinder.Height",
+          "name": "Height",
+          "kind": "property",
+          "signature": "public int Height { get; }",
+          "summary": "N\u00FAmero de linhas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.GridPathfinder.Width",
+          "name": "Width",
+          "kind": "property",
+          "signature": "public int Width { get; }",
+          "summary": "N\u00FAmero de colunas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Pathfinding.GridPathfinder.FindPath(Lunet.Pathfinding.GridPoint,Lunet.Pathfinding.GridPoint,System.Span{Lunet.Pathfinding.GridPoint},System.Boolean)",
+          "name": "FindPath",
+          "kind": "method",
+          "signature": "public PathResult FindPath(GridPoint start, GridPoint goal, Span\u003CGridPoint\u003E path, bool allowDiagonals = false)",
+          "summary": "Encontra uma rota de menor custo e a escreve da origem ao destino, sem aloca\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "start",
+              "type": "GridPoint",
+              "description": "Origem dentro da grade. Seu custo n\u00E3o \u00E9 cobrado."
+            },
+            {
+              "name": "goal",
+              "type": "GridPoint",
+              "description": "Destino dentro da grade."
+            },
+            {
+              "name": "path",
+              "type": "Span\u003CGridPoint\u003E",
+              "description": "Buffer reutiliz\u00E1vel; preservado integralmente quando sem rota ou pequeno demais."
+            },
+            {
+              "name": "allowDiagonals",
+              "type": "bool",
+              "description": "Oito vizinhos se true, quatro se false. Passos diagonais custam \u221A2 vezes o custo de entrada."
+            }
+          ],
+          "returns": "Estado, tamanho necess\u00E1rio, custo e visitas. Extremos fora da grade lan\u00E7am ArgumentOutOfRangeException.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Pathfinding.GridPathfinder.GetCost(Lunet.Pathfinding.GridPoint)",
+          "name": "GetCost",
+          "kind": "method",
+          "signature": "public float GetCost(GridPoint cell)",
+          "summary": "L\u00EA o custo de entrada da c\u00E9lula; zero significa bloqueada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "cell",
+              "type": "GridPoint",
+              "description": "Coordenada dentro da grade."
+            }
+          ],
+          "returns": "Custo finito e n\u00E3o negativo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Pathfinding.GridPathfinder.SetCost(Lunet.Pathfinding.GridPoint,System.Single)",
+          "name": "SetCost",
+          "kind": "method",
+          "signature": "public void SetCost(GridPoint cell, float cost)",
+          "summary": "Define o custo de entrada, sem alterar rotas j\u00E1 copiadas para o chamador.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "cell",
+              "type": "GridPoint",
+              "description": "Coordenada dentro da grade."
+            },
+            {
+              "name": "cost",
+              "type": "float",
+              "description": "Zero bloqueia; valores positivos finitos permitem tr\u00E2nsito, inclusive menores que 1."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Pathfinding.GridPoint",
+      "name": "GridPoint",
+      "namespace": "Lunet.Pathfinding",
+      "kind": "struct",
+      "signature": "public readonly struct GridPoint",
+      "summary": "Coordenada inteira de uma c\u00E9lula; n\u00E3o representa pixels ou posi\u00E7\u00E3o de mundo.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar cell = new Lunet.Pathfinding.GridPoint(2, 3);\nvar world = new System.Numerics.Vector2(cell.X * 32 \u002B 16, cell.Y * 32 \u002B 16);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Pathfinding.GridPoint.#ctor(System.Int32,System.Int32)",
+          "name": "GridPoint",
+          "kind": "constructor",
+          "signature": "public GridPoint(int X, int Y)",
+          "summary": "Coordenada inteira de uma c\u00E9lula; n\u00E3o representa pixels ou posi\u00E7\u00E3o de mundo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "X",
+              "type": "int",
+              "description": "Coluna, a partir de zero."
+            },
+            {
+              "name": "Y",
+              "type": "int",
+              "description": "Linha, a partir de zero."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nvar cell = new Lunet.Pathfinding.GridPoint(2, 3);\nvar world = new System.Numerics.Vector2(cell.X * 32 \u002B 16, cell.Y * 32 \u002B 16);\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.GridPoint.X",
+          "name": "X",
+          "kind": "property",
+          "signature": "public int X { get; init; }",
+          "summary": "Coluna, a partir de zero.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.GridPoint.Y",
+          "name": "Y",
+          "kind": "property",
+          "signature": "public int Y { get; init; }",
+          "summary": "Linha, a partir de zero.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Pathfinding.PathResult",
+      "name": "PathResult",
+      "namespace": "Lunet.Pathfinding",
+      "kind": "struct",
+      "signature": "public readonly struct PathResult",
+      "summary": "Metadados da \u00FAltima busca, sem possuir o buffer da rota.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar grid = new Lunet.Pathfinding.GridPathfinder(4, 4);\nvar path = new Lunet.Pathfinding.GridPoint[16];\nLunet.Pathfinding.PathResult result = grid.FindPath(new(0, 0), new(3, 3), path);\ndouble cost = result.Cost;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Pathfinding.PathResult.#ctor(Lunet.Pathfinding.PathStatus,System.Int32,System.Double,System.Int32)",
+          "name": "PathResult",
+          "kind": "constructor",
+          "signature": "public PathResult(PathStatus Status, int Length, double Cost, int VisitedCount)",
+          "summary": "Metadados da \u00FAltima busca, sem possuir o buffer da rota.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "Status",
+              "type": "PathStatus",
+              "description": "Estado da busca."
+            },
+            {
+              "name": "Length",
+              "type": "int",
+              "description": "C\u00E9lulas da rota, incluindo extremos; tamanho necess\u00E1rio se BufferTooSmall, zero se NotFound."
+            },
+            {
+              "name": "Cost",
+              "type": "double",
+              "description": "Soma dos custos de entrada, multiplicados pela dist\u00E2ncia do passo; infinito se NotFound."
+            },
+            {
+              "name": "VisitedCount",
+              "type": "int",
+              "description": "N\u00FAmero de remo\u00E7\u00F5es da fila de busca, inclusive destino quando encontrado."
+            }
+          ],
+          "returns": "",
+          "examples": [
+            "\u0060\u0060\u0060\nvar grid = new Lunet.Pathfinding.GridPathfinder(4, 4);\nvar path = new Lunet.Pathfinding.GridPoint[16];\nLunet.Pathfinding.PathResult result = grid.FindPath(new(0, 0), new(3, 3), path);\ndouble cost = result.Cost;\n\u0060\u0060\u0060"
+          ],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.PathResult.Cost",
+          "name": "Cost",
+          "kind": "property",
+          "signature": "public double Cost { get; init; }",
+          "summary": "Soma dos custos de entrada, multiplicados pela dist\u00E2ncia do passo; infinito se NotFound.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.PathResult.Length",
+          "name": "Length",
+          "kind": "property",
+          "signature": "public int Length { get; init; }",
+          "summary": "C\u00E9lulas da rota, incluindo extremos; tamanho necess\u00E1rio se BufferTooSmall, zero se NotFound.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.PathResult.Status",
+          "name": "Status",
+          "kind": "property",
+          "signature": "public PathStatus Status { get; init; }",
+          "summary": "Estado da busca.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Pathfinding.PathResult.VisitedCount",
+          "name": "VisitedCount",
+          "kind": "property",
+          "signature": "public int VisitedCount { get; init; }",
+          "summary": "N\u00FAmero de remo\u00E7\u00F5es da fila de busca, inclusive destino quando encontrado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Pathfinding.PathStatus",
+      "name": "PathStatus",
+      "namespace": "Lunet.Pathfinding",
+      "kind": "enum",
+      "signature": "public enum PathStatus",
+      "summary": "Resultado da busca: sucesso, aus\u00EAncia de rota ou sa\u00EDda pequena.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar grid = new Lunet.Pathfinding.GridPathfinder(8, 8);\nvar path = new Lunet.Pathfinding.GridPoint[64];\nvar result = grid.FindPath(new(0, 0), new(7, 7), path);\nbool found = result.Status == Lunet.Pathfinding.PathStatus.Found;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.Pathfinding.PathStatus.BufferTooSmall",
+          "name": "BufferTooSmall",
+          "kind": "enum value",
+          "signature": "public const PathStatus BufferTooSmall = 2",
+          "summary": "Rota encontrada, mas a sa\u00EDda n\u00E3o comporta Length c\u00E9lulas; sa\u00EDda preservada.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Pathfinding.PathStatus.Found",
+          "name": "Found",
+          "kind": "enum value",
+          "signature": "public const PathStatus Found = 0",
+          "summary": "Rota escrita na sa\u00EDda, incluindo origem e destino.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Pathfinding.PathStatus.NotFound",
+          "name": "NotFound",
+          "kind": "enum value",
+          "signature": "public const PathStatus NotFound = 1",
+          "summary": "Sem rota, inclusive quando origem ou destino est\u00E3o bloqueados.",
+          "remarks": "",
+          "parameters": [],
           "returns": "",
           "examples": [],
           "related": [],

@@ -82,10 +82,17 @@
                         @onclick="() => SetEditorMode(EditorSurfaceMode.Source)">
                     Fonte
                 </button>
+                <button type="button"
+                        class="@ModeClass(EditorSurfaceMode.Split)"
+                        aria-pressed="@(Workspace.Mode == EditorSurfaceMode.Split)"
+                        @onclick="() => SetEditorMode(EditorSurfaceMode.Split)">
+                    Dividido
+                </button>
             </div>
         </div>
 
-        @if (Workspace.Mode == EditorSurfaceMode.Source)
+        <div class="editor-stage-layout @(Workspace.Mode == EditorSurfaceMode.Split ? "split" : "")">
+        @if (Workspace.Mode != EditorSurfaceMode.Visual)
         {
             <label class="editor-source-field">
                 <span class="sr-only">Markdown da nota</span>
@@ -95,8 +102,9 @@
                           spellcheck="true"></textarea>
             </label>
         }
-        else
+        @if (Workspace.Mode != EditorSurfaceMode.Source)
         {
+            <div class="editor-pane-visual">
             <div class="visual-editor" aria-label="Editor visual">
                 <div class="visual-editor-toolbar">
                     <strong>Blocos visuais</strong>
@@ -224,7 +232,10 @@
             <p class="editor-stage-note">
                 A edição Visual altera o mesmo Markdown canônico usado pelo modo Fonte. Blocos avançados não são reinterpretados silenciosamente.
             </p>
+            </div>
         }
+
+        </div>
 
         <div class="editor-relations">
             <section>
@@ -277,6 +288,8 @@
     private void OnSourceInput(ChangeEventArgs args)
     {
         Workspace.UpdateSource(args.Value?.ToString() ?? string.Empty);
+        if (Workspace.Mode == EditorSurfaceMode.Split)
+            SyncVisualModel();
     }
 
     private void Undo()
@@ -396,7 +409,7 @@
 
     private void SetEditorMode(EditorSurfaceMode mode)
     {
-        if (mode == EditorSurfaceMode.Visual)
+        if (mode != EditorSurfaceMode.Source)
             SyncVisualModel();
 
         Workspace.SetMode(mode);

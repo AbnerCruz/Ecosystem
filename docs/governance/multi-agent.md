@@ -91,3 +91,15 @@ Proteções que continuam valendo:
 ## 6. Futuro (não implementado)
 
 Quando vários agentes receberem tarefas ao mesmo tempo, o sistema poderá comparar escopo esperado, paths prováveis, componentes e arquivos de alto risco e sinalizar `LOW OVERLAP` (paralelizar) ou `HIGH OVERLAP` (coordenar) antes de começar. Hoje a coordenação acontece na integração.
+
+## 7. Roteamento de trabalho entre núcleo e Products (PLAT-001)
+
+O integrador decide **como integrar** PRs, não **qual tarefa iniciar**. A escolha de escopo acontece antes do PR e não é substituída por uma fila cheia de tarefas de Product.
+
+- **Pedido que nomeia um Product:** executar o roadmap desse Product, sem preempção automática por trabalho da plataforma.
+- **Pedido global "continue o Ecosystem":** escolher tarefa da fundação/plataforma/Hub/Registry/Runtime/Agent Workspace/Tool comum conforme o roadmap **global**, observando os bloqueios e PRs já existentes. Um commit em apps/* só conta como progresso do núcleo se a Issue global declarar o pré-requisito, houver evidência de integração contratual e o marco do Product autorizar a mudança.
+- **Trabalho em paralelo:** quem delega distribui uma frente de núcleo independente sempre que houver agentes disponíveis e item global acionável; não assume que agentes executam sozinhos entre conversas. Handoffs/Issues mostram a distribuição real (NN-008/021).
+- **Bloqueio de direção:** registrar state:waiting ou blocked e a decisão/ADR necessária; executar em paralelo apenas trabalho global independente e aprovado. Não preencher o intervalo com features de Product fingindo que avançam P6-4.
+- **Reuso:** candidate a Tool com testes de consumidor e contrato só após Extraction Review conforme ADR-0011/NN-022. Auditoria pode ocorrer antes; extração prematura, não.
+
+Sequência operacional e critérios de aceite: [platform-execution.md](../architecture/platform-execution.md). Este procedimento não altera a política de integração crítica, a autonomia dos Products ou o estado canônico dos gates.

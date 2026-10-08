@@ -6,7 +6,8 @@ namespace Urbe.UI;
 public enum EditorSurfaceMode
 {
     Visual,
-    Source
+    Source,
+    Split
 }
 
 public enum EditorOpenOriginKind
