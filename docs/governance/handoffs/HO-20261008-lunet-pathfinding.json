@@ -58,6 +58,13 @@
       "critical": false,
       "object": "apps/lunet2d/docs/guides/pathfinding.md",
       "evidence": "Rota, paredes, terreno, quatro/oito vizinhos, toque, bordas e Preview rápido/isolado offline; nenhuma validação GL/performance/aparelho inferida dos testes portáteis."
+    },
+    {
+      "kind": "automated",
+      "check": "CI/integração/release A*",
+      "result": "passed",
+      "evidence": "PR #313 integrado no commit 040dd8d0529c7546644bd5d97e0dda1b27f456c3; lunet2d-v0.0.1-dev.1000133 publicada com target exato e APK arm64. CI PR verde; metadata/assets confirmados, sem rehash local dos bytes APK.",
+      "tested_commit": "040dd8d0529c7546644bd5d97e0dda1b27f456c3"
     }
   ],
   "known_issues": [
@@ -68,9 +75,8 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar checks/integração do PR pelo integrador automático e confirmar release/APK.",
-    "Executar roteiro pathfinding.md no aparelho e registrar resultado sem inferir aprovação.",
-    "Continuar Fase 4; #302 exige autorização do proprietário por ProjectStore, #307 depende de #302."
+    "Validar roteiro pathfinding.md no aparelho com APK 1000133; registrar evidência sem inferir aprovação.",
+    "Continuar Fase 4 sem fechar gate."
   ],
   "decisions_required": [],
   "normative_sources": [

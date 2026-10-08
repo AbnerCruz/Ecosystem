@@ -11,6 +11,8 @@
 
 ### Added
 
+- APIs `SpriteAnimationClip`/`SpriteAnimator`, `Tween` e `ParticleEmitter`/`ParticleSettings`: animação, transições e partículas code-first, sem alocação no loop. Guias offline completos para projetos Em branco; novos modelos de criação seguem nos PRs #302/#307.
+
 - `Lunet.Pathfinding`: A* em grade com custos/obstáculos, quatro/oito vizinhos sem cortar cantos, buffers reutilizáveis sem alocação por busca e guia interativo offline (LUNET-406).
 
 - `Camera2D`: posição, zoom, rotação, conversão mundo/vista e toque no mundo; lote com câmera opcional em `SpriteBatch`, HUD sem câmera, terceira página do modelo Laboratório e guia offline interativo (LUNET-403).
