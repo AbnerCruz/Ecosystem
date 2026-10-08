@@ -47,12 +47,3 @@ Autoridade do escopo: P6-3 no ROADMAP; contrato candidato: ADR-0020.
 A prova local de hospedagem em dois contextos está em [docs-r3.md](docs-r3.md).
 O Workspace consome o Core; ainda não existe UI nem integração com Host real.
 Escopo: P6-4 / Issue #144; detalhes candidatos no ADR-0021.
-
-
-## Slice R4 em desenvolvimento — interface executável
-
-A primeira superfície de Product está em `src/EcosystemAi.Cli`: submissão real
-de tarefa ao `AgentWorkspace.WorkspaceSession`, com provider HTTP compatível
-em adapter separado, arquivos limitados ao projeto, orçamento, logs e verificação
-estrutural. Não contém loop de agentes paralelo ao Core, não é a UI Android final.
-Instruções e limites: [docs-r4-cli.md](docs-r4-cli.md).
