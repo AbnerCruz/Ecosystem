@@ -6368,6 +6368,90 @@
       ]
     },
     {
+      "id": "T:Lunet.Graphics.BitmapGlyph",
+      "name": "BitmapGlyph",
+      "namespace": "Lunet.Graphics",
+      "kind": "struct",
+      "signature": "public readonly struct BitmapGlyph",
+      "summary": "Regi\u00E3o e m\u00E9tricas de uma letra, s\u00EDmbolo ou espa\u00E7o em uma fonte bitmap.",
+      "remarks": "Source \u00E9 validado contra a textura em SpriteFont.FromBitmap. default representa um glifo invis\u00EDvel sem avan\u00E7o.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar glyph = new BitmapGlyph(new RectangleF(0, 0, 6, 10), 8, new Vector2(1, 2));\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.BitmapGlyph.#ctor(Lunet.RectangleF,System.Single,System.Numerics.Vector2)",
+          "name": "BitmapGlyph",
+          "kind": "constructor",
+          "signature": "public BitmapGlyph(RectangleF source, float advance, Vector2 offset = null)",
+          "summary": "Define a imagem e o avan\u00E7o horizontal do glifo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "source",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o em pixels; tamanho 0\u00D70 representa espa\u00E7o sem desenho."
+            },
+            {
+              "name": "advance",
+              "type": "float",
+              "description": "Deslocamento horizontal finito e n\u00E3o negativo at\u00E9 o pr\u00F3ximo glifo."
+            },
+            {
+              "name": "offset",
+              "type": "Vector2",
+              "description": "Deslocamento finito da imagem em rela\u00E7\u00E3o ao cursor; pode ser negativo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.BitmapGlyph.Advance",
+          "name": "Advance",
+          "kind": "property",
+          "signature": "public float Advance { get; }",
+          "summary": "Avan\u00E7o horizontal em unidades da fonte; zero permite marcas sobrepostas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.BitmapGlyph.Offset",
+          "name": "Offset",
+          "kind": "property",
+          "signature": "public Vector2 Offset { get; }",
+          "summary": "Deslocamento da imagem a partir do cursor da linha.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.BitmapGlyph.Source",
+          "name": "Source",
+          "kind": "property",
+          "signature": "public RectangleF Source { get; }",
+          "summary": "Recorte em pixels da textura.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Graphics.BlendMode",
       "name": "BlendMode",
       "namespace": "Lunet.Graphics",
@@ -9976,7 +10060,7 @@
       "namespace": "Lunet.Graphics",
       "kind": "class",
       "signature": "public sealed class SpriteFont",
-      "summary": "Fonte bitmap embutida (5\u00D77 pixels, com acentos do portugu\u00EAs). Serve para HUD e depura\u00E7\u00E3o; fontes TrueType/bitmap personalizadas vir\u00E3o depois.",
+      "summary": "Fonte bitmap embutida (5\u00D77 pixels, com acentos do portugu\u00EAs). Serve para HUD e depura\u00E7\u00E3o; SpriteFont.FromBitmap aceita fontes personalizadas; TrueType permanece separado.",
       "remarks": "",
       "examples": [
         "\u0060\u0060\u0060\nvar title = SpriteFont.CreateDefault(device);\nVector2 size = title.Measure(\u0022Ol\u00E1\u0022, 2f);\nbatch.DrawString(title, \u0022Ol\u00E1\u0022, (device.ViewSize - size) / 2, Color.White, 2f);\n\u0060\u0060\u0060"
@@ -10017,11 +10101,45 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.SpriteFont.FromBitmap(Lunet.Graphics.Texture2D,System.Collections.Generic.IReadOnlyDictionary{System.Int32,Lunet.Graphics.BitmapGlyph},System.Int32,System.Int32)",
+          "name": "FromBitmap",
+          "kind": "method",
+          "signature": "public static SpriteFont FromBitmap(Texture2D texture, IReadOnlyDictionary\u003Cint, BitmapGlyph\u003E glyphs, int lineHeight, int fallbackCodePoint = 63)",
+          "summary": "Cria uma fonte bitmap personalizada copiando o mapa de glifos.",
+          "remarks": "N\u00E3o libera a textura. Glifos podem sobrepor/ultrapassar a linha por Offset; Measure informa avan\u00E7o e passo de linhas, n\u00E3o o contorno da tinta. Sem kerning, shaping ou rasteriza\u00E7\u00E3o TrueType.",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Imagem/atlas compartilhado; o jogo ou ContentManager controla sua vida."
+            },
+            {
+              "name": "glyphs",
+              "type": "IReadOnlyDictionary\u003Cint, BitmapGlyph\u003E",
+              "description": "Mapa de escalares Unicode (inteiros, n\u00E3o \u00EDndices UTF-16) para recortes e m\u00E9tricas."
+            },
+            {
+              "name": "lineHeight",
+              "type": "int",
+              "description": "Passo vertical positivo entre linhas, em unidades da fonte."
+            },
+            {
+              "name": "fallbackCodePoint",
+              "type": "int",
+              "description": "C\u00F3digo presente no mapa usado para caracteres ausentes; padr\u00E3o \u0027?\u0027."
+            }
+          ],
+          "returns": "Fonte imut\u00E1vel pronta para Measure e SpriteBatch.DrawString.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.SpriteFont.Measure(System.String,System.Single)",
           "name": "Measure",
           "kind": "method",
           "signature": "public Vector2 Measure(string text, float scale = 1f)",
-          "summary": "Tamanho do texto em pixels virtuais para a escala dada.",
+          "summary": "Tamanho de layout do texto para a escala dada; em fontes personalizadas usa avan\u00E7os e passo de linhas.",
           "remarks": "",
           "parameters": [
             {

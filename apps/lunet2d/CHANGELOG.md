@@ -11,7 +11,9 @@
 
 ### Added
 
-- APIs `SpriteAnimationClip`/`SpriteAnimator`, `Tween` e `ParticleEmitter`/`ParticleSettings`: animação, transições e partículas code-first, sem alocação no loop. Guias offline completos para projetos Em branco; novos modelos de criação seguem nos PRs #302/#307.
+- `SpriteFont.FromBitmap` e `BitmapGlyph`: fontes bitmap personalizadas sobre textura/atlas, métricas proporcionais, deslocamento, Unicode/fallback e layout sem alocação no loop; guia offline de placar (LUNET-408).
+
+- APIs `SpriteAnimationClip`/`SpriteAnimator`, `Tween` e `ParticleEmitter`/`ParticleSettings`: animação, transições e partículas code-first, sem alocação no loop. Guias offline completos para projetos Em branco.
 
 - `Lunet.Pathfinding`: A* em grade com custos/obstáculos, quatro/oito vizinhos sem cortar cantos, buffers reutilizáveis sem alocação por busca e guia interativo offline (LUNET-406).
 

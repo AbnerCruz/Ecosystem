@@ -143,3 +143,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Build .NET 10 sem warnings/errors, suíte padrão 400/400. Testes dos guias agora criam projeto Em branco, escrevem o código pelo fluxo existente e compilam/executam no GameHost com toque físico 2×; medições de zero bytes e regressões de A*/câmera incluídas. Testes de criação dos novos modelos permanecem nos PRs protegidos originais, não foram removidos daqueles PRs.
 - Reconciliação dos PRs #302/#307 publicada separadamente, com 386/400 testes e 22 checks, sem simular autorização. A inclusão dos modelos continua crítica pela zona ProjectStore e depende do proprietário; isso não impede a entrega destas APIs sem efeito protegido.
 - Closeout de colisão/câmera conserva as aprovações canônicas #303/#304. A* recebeu evidência de integração/release; DEVICE A*/animação/partículas continua pendente, Fase 4 aberta. Próximo: integrar esta fatia pelo integrador, confirmar APK direto e entregar roteiro dos guias.
+
+
+### 20261008-codex-bitmap-fonts — Codex → próximos agentes — review
+- LUNET-408 / Issue #327, fontes da Fase 4 (§7/§23); base main `d25bcebf35ec248f474a7332dc3756e60817a01d`, branch `agent/lunet-bitmap-fonts-20261008`. Pedido explícito Lunet conforme AGENTS §1.1/PLAT-001; não é substituto de progresso global.
+- SpriteFont.FromBitmap + BitmapGlyph: mapas Unicode/recortes de atlas copiados, avanços proporcionais, offset, fallback, CR/LF/CRLF e espaços invisíveis. Reutiliza DrawString/Measure/SpriteBatch e permite Content.LoadTexture; não cria formato persistente, importador, backend ou modelo de projeto.
+- Build .NET 10 sem warnings/errors; suíte padrão 413/413, 13 casos novos incluindo UV/layout, Unicode inválido/suplementar, zero bytes, câmera/clip/state/capacity flush e guia compilado/executado com toque físico 2×. Fonte embutida e contratos anteriores preservados.
+- Roteiro `docs/guides/fontes-bitmap.md` pendente no aparelho; TrueType/kerning/shaping/bidi/wrap e item completo de fontes permanecem abertos. Handoff `HO-20261008-lunet-bitmap-fonts`; próxima ação: checks/PR/CI/integrador/release.
+- Estado anterior verificado: #316 integrado, APK 1000141 real; roadmap 404/405 reconciliado sem fechar DEVICE. #317 modelos críticos verdes pendentes e #324 nine-slice não integrados; nenhum novo APK público inferido de artefato CI.
