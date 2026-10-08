@@ -231,6 +231,8 @@ public sealed class WorkspaceSession : IDisposable
 
         foreach (var folderPath in EnumerateFolders())
         {
+            if (!includeSystem && ArtifactModel.IsSystem(folderPath))
+                continue;
             if (!folderPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 continue;
 
@@ -542,6 +544,12 @@ public sealed class WorkspaceSession : IDisposable
         var safeName = ArtifactModel.SafeName(name);
 
         var normalizedParent = DocumentModel.NormalizePath(parent);
+        if (normalizedParent.Length > 0 &&
+            (!FolderExists(normalizedParent) ||
+             ArtifactModel.IsSystem(normalizedParent) ||
+             ContainsTraversal(normalizedParent)))
+            return null;
+
         var candidate = normalizedParent.Length == 0
             ? safeName
             : normalizedParent + "/" + safeName;
@@ -569,7 +577,12 @@ public sealed class WorkspaceSession : IDisposable
         var source = DocumentModel.NormalizePath(sourcePath);
         var target = DocumentModel.NormalizePath(targetFolder);
 
-        if (source.Length == 0)
+        if (source.Length == 0 ||
+            ContainsTraversal(source) ||
+            ContainsTraversal(target) ||
+            ArtifactModel.IsSystem(source) ||
+            (target.Length > 0 &&
+             (ArtifactModel.IsSystem(target) || !FolderExists(target))))
             return false;
 
         var sourceIsFile = _paths.Contains(source);
@@ -719,6 +732,9 @@ public sealed class WorkspaceSession : IDisposable
 
         return folders;
     }
+
+    private static bool ContainsTraversal(string path) =>
+        path.Split('/').Any(segment => segment is "." or "..");
 
     private bool FolderExists(string path) =>
         _explicitFolders.Contains(path) ||
