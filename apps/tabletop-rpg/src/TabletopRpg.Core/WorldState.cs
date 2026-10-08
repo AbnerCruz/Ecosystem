@@ -222,4 +222,81 @@ public sealed partial class Campaign
             throw new ArgumentException("Key must be lowercase ASCII slug with at most 128 characters.");
         return value;
     }
+
+    internal WorldSnapshot CaptureWorld() => new(
+        _fictionMinutes,
+        _activeSceneId,
+        Scenes,
+        Quests,
+        Inventory,
+        Conditions,
+        Resources);
+
+    internal void RestoreWorld(WorldSnapshot world)
+    {
+        if (world is null || world.FictionMinutes < 0)
+            throw new CampaignStateException("Fiction clock is invalid.");
+
+        _fictionMinutes = world.FictionMinutes;
+        foreach (var scene in world.Scenes)
+        {
+            if (scene.Id.Value == Guid.Empty || string.IsNullOrWhiteSpace(scene.Title) ||
+                scene.Title.Length > 256 || scene.Description is null || scene.Description.Length > 4096 ||
+                !_scenes.TryAdd(scene.Id, scene))
+                throw new CampaignStateException("Invalid or duplicate scene.");
+        }
+        if (world.ActiveSceneId is { } sceneId && !_scenes.ContainsKey(sceneId))
+            throw new CampaignStateException("Active scene references unknown scene.");
+        _activeSceneId = world.ActiveSceneId;
+
+        foreach (var quest in world.Quests)
+        {
+            if (quest.Id.Value == Guid.Empty || string.IsNullOrWhiteSpace(quest.Title) ||
+                quest.Title.Length > 256 || !Enum.IsDefined(quest.Status) ||
+                (quest.SceneId is { } location && !_scenes.ContainsKey(location)) ||
+                !_quests.TryAdd(quest.Id, quest))
+                throw new CampaignStateException("Invalid, duplicate or dangling quest.");
+        }
+        foreach (var item in world.Inventory)
+        {
+            if (item.Id.Value == Guid.Empty || !_characters.ContainsKey(item.Owner) ||
+                !IsKey(item.ItemKey) || item.Quantity < 1 || item.Quantity > 1_000_000 ||
+                !_inventory.TryAdd(item.Id, item))
+                throw new CampaignStateException("Invalid, duplicate or dangling inventory entry.");
+        }
+        foreach (var condition in world.Conditions)
+        {
+            if (!_characters.ContainsKey(condition.CharacterId) ||
+                !IsKey(condition.Key) ||
+                (condition.ExpiresAtMinute is { } expiry && expiry <= _fictionMinutes) ||
+                !_conditions.TryAdd((condition.CharacterId, condition.Key), condition))
+                throw new CampaignStateException("Invalid or duplicate condition.");
+        }
+        foreach (var resource in world.Resources)
+        {
+            if (!_characters.ContainsKey(resource.CharacterId) || !IsKey(resource.Key) ||
+                resource.Maximum < 1 || resource.Maximum > 1_000_000 ||
+                resource.Current < 0 || resource.Current > resource.Maximum ||
+                !_resources.TryAdd((resource.CharacterId, resource.Key), resource))
+                throw new CampaignStateException("Invalid or duplicate resource.");
+        }
+    }
+
+    private static bool IsKey(string? value) =>
+        !string.IsNullOrWhiteSpace(value) && value.Length <= 128 &&
+        value.All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '-' or '_');
+
+}
+
+internal sealed record WorldSnapshot(
+    long FictionMinutes,
+    SceneId? ActiveSceneId,
+    IReadOnlyList<CampaignScene> Scenes,
+    IReadOnlyList<CampaignQuest> Quests,
+    IReadOnlyList<InventoryEntry> Inventory,
+    IReadOnlyList<CharacterCondition> Conditions,
+    IReadOnlyList<CharacterResource> Resources)
+{
+    internal static WorldSnapshot Empty { get; } =
+        new(0, null, [], [], [], [], []);
 }
