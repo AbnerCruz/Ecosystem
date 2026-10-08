@@ -234,8 +234,8 @@ public sealed class DocumentEditingTests
             d => d with { Metadata = d.Metadata with { Title = "Second" } }));
 
         var results = await Task.WhenAll(first, second);
-        Assert.Single(results.Where(r => r.Applied));
-        Assert.Single(results.Where(r => r.Problems.Any(p => p.Code == "transaction.stale")));
+        Assert.Single(results, r => r.Applied);
+        Assert.Single(results, r => r.Problems.Any(p => p.Code == "transaction.stale"));
         Assert.Equal(1, session.Revision);
         Assert.True(session.CanUndo);
         Assert.False(session.CanRedo);
