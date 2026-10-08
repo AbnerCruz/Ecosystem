@@ -29,8 +29,11 @@ publicada; `Snapshot` fornece cópia destacada para leitura.
 
 **Limites atuais:** JSON em até 1 MiB, 512 variáveis, 128 cenas, 32 perfis,
 4096 IDs por cena, AST com no máximo 10 mil nós e profundidade 32.
-O v1 não suporta versões anteriores ou futuras; uma migração futura precisará
-de adaptador versionado explícito, testado sobre cópia. Importar arquivo,
+`ProjectMigrator.Open` aceita *apenas* steps C# explicitamente registrados no Product,
+de versão N para N+1; nenhum migrador legado vem ativo por padrão. A origem
+permanece intacta e o destino passa novamente pelo parser/validador v1;
+versões futuras são recusadas, nunca rebaixadas. A primeira migração real só
+será registrada quando existir formato legado concreto. Importar arquivo,
 autosave, flush/replace atômico, backup e recuperação são parte de MA-003, não
 deste controlador em memória. O catálogo e a validação de objetos do scene
 graph entram em MA-005; não são inferidos a partir de IDs isolados.
