@@ -13967,6 +13967,436 @@
       ]
     },
     {
+      "id": "T:Lunet.Scenes.Component2D",
+      "name": "Component2D",
+      "namespace": "Lunet.Scenes",
+      "kind": "class",
+      "signature": "public abstract class Component2D",
+      "summary": "Comportamento opcional implementado pelo jogo. Recursos e descarte pertencem ao jogo.",
+      "remarks": "",
+      "examples": [
+        "\u0060\u0060\u0060\nvar entity = new Lunet.Scenes.Entity2D();\nLunet.Scenes.Component2D? first = entity.Get\u003CLunet.Scenes.Component2D\u003E();\nbool absent = first is null;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.Scenes.Component2D.Entity",
+          "name": "Entity",
+          "kind": "property",
+          "signature": "public Entity2D? Entity { get; }",
+          "summary": "Entidade atual; null quando desanexado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Component2D.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Permite receber Update.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Component2D.IsVisible",
+          "name": "IsVisible",
+          "kind": "property",
+          "signature": "public bool IsVisible { get; set; }",
+          "summary": "Permite receber Draw, independentemente de IsEnabled.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Component2D.Draw(Lunet.Graphics.SpriteBatch,Lunet.GameTime)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public virtual void Draw(SpriteBatch batch, GameTime time)",
+          "summary": "Desenha dentro do Begin/End controlado pelo jogo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote preparado pelo jogo."
+            },
+            {
+              "name": "time",
+              "type": "GameTime",
+              "description": "Tempo do desenho fornecido pela cena."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Component2D.Update(Lunet.GameTime)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public virtual void Update(GameTime time)",
+          "summary": "Atualiza comportamento. Mudan\u00E7as estruturais devem ocorrer fora do percurso.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "time",
+              "type": "GameTime",
+              "description": "Tempo do passo fornecido pela cena."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Scenes.Entity2D",
+      "name": "Entity2D",
+      "namespace": "Lunet.Scenes",
+      "kind": "class",
+      "signature": "public sealed class Entity2D",
+      "summary": "Entidade opcional com transform e componentes pr\u00F3prios, sem hierarquia impl\u00EDcita.",
+      "remarks": "Componentes s\u00E3o preservados ao remover a entidade da cena. Sem identidade persistente ou serializa\u00E7\u00E3o.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar entity = new Lunet.Scenes.Entity2D();\nentity.Transform.Position = new System.Numerics.Vector2(50, 100);\nvar scene = new Lunet.Scenes.Scene2D(); scene.Add(entity);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.Scenes.Entity2D.Transform",
+          "name": "Transform",
+          "kind": "field",
+          "signature": "public Transform2D Transform",
+          "summary": "Transform livre do jogo; componentes decidem como utiliz\u00E1-lo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Entity2D.Count",
+          "name": "Count",
+          "kind": "property",
+          "signature": "public int Count { get; }",
+          "summary": "Quantidade de componentes anexados.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Entity2D.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Permite atualiza\u00E7\u00E3o dos componentes.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Entity2D.IsVisible",
+          "name": "IsVisible",
+          "kind": "property",
+          "signature": "public bool IsVisible { get; set; }",
+          "summary": "Permite desenho dos componentes, independentemente de IsEnabled.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Entity2D.Item(System.Int32)",
+          "name": "Item",
+          "kind": "property",
+          "signature": "public Component2D this[int index] { get; }",
+          "summary": "Componente na ordem de inser\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice zero-based do componente."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Entity2D.Scene",
+          "name": "Scene",
+          "kind": "property",
+          "signature": "public Scene2D? Scene { get; }",
+          "summary": "Cena atual; null quando desanexada.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Entity2D.Add(Lunet.Scenes.Component2D)",
+          "name": "Add",
+          "kind": "method",
+          "signature": "public void Add(Component2D component)",
+          "summary": "Anexa componente sem entidade; rejeita null/duplicata/ownership concorrente.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "component",
+              "type": "Component2D",
+              "description": "Componente desanexado a adicionar."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Entity2D.Clear",
+          "name": "Clear",
+          "kind": "method",
+          "signature": "public void Clear()",
+          "summary": "Desanexa todos os componentes sem descart\u00E1-los.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Entity2D.Get\u0060\u00601",
+          "name": "Get",
+          "kind": "method",
+          "signature": "public T Get\u003CT\u003E()",
+          "summary": "Primeiro componente do tipo solicitado (inclui derivados); null se ausente.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "Primeiro componente compat\u00EDvel; null se ausente.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Entity2D.Remove(Lunet.Scenes.Component2D)",
+          "name": "Remove",
+          "kind": "method",
+          "signature": "public bool Remove(Component2D component)",
+          "summary": "Desanexa sem descartar recursos; falso se o componente n\u00E3o pertence \u00E0 entidade.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "component",
+              "type": "Component2D",
+              "description": "Componente a desanexar."
+            }
+          ],
+          "returns": "True quando removido; false quando n\u00E3o pertence \u00E0 entidade.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Scenes.Scene2D",
+      "name": "Scene2D",
+      "namespace": "Lunet.Scenes",
+      "kind": "class",
+      "signature": "public sealed class Scene2D",
+      "summary": "Organiza\u00E7\u00E3o opcional de entidades de um jogo, em ordem de inser\u00E7\u00E3o.",
+      "remarks": "Chame Update/Draw explicitamente no Game. N\u00E3o h\u00E1 ECS obrigat\u00F3rio, serializa\u00E7\u00E3o, hierarquia, propriedade de recursos gr\u00E1ficos ou callbacks de attach/dispose. A API \u00E9 da thread do jogo. Add/Remove/Clear (inclusive de componentes) s\u00E3o proibidos durante um percurso desta cena; fa\u00E7a mudan\u00E7as estruturais antes/depois. Flags e transforms podem mudar dentro dos callbacks. Exce\u00E7\u00F5es propagam ao host; o bloqueio \u00E9 liberado, sem rollback dos callbacks j\u00E1 executados.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar scene = new Lunet.Scenes.Scene2D();\nvar player = new Lunet.Scenes.Entity2D();\nscene.Add(player);\nscene.Update(time);\nbatch.Begin(); scene.Draw(batch, time); batch.End();\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.Scenes.Scene2D.Count",
+          "name": "Count",
+          "kind": "property",
+          "signature": "public int Count { get; }",
+          "summary": "N\u00FAmero de entidades, inclusive desabilitadas/invis\u00EDveis.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Scene2D.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Permite atualiza\u00E7\u00E3o. Desligar durante um callback interrompe o percurso restante.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Scene2D.IsVisible",
+          "name": "IsVisible",
+          "kind": "property",
+          "signature": "public bool IsVisible { get; set; }",
+          "summary": "Permite desenho. Desligar durante um callback interrompe o percurso restante.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Scenes.Scene2D.Item(System.Int32)",
+          "name": "Item",
+          "kind": "property",
+          "signature": "public Entity2D this[int index] { get; }",
+          "summary": "Entidade no \u00EDndice de inser\u00E7\u00E3o; acesso inv\u00E1lido lan\u00E7a exce\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice zero-based da entidade."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Scene2D.Add(Lunet.Scenes.Entity2D)",
+          "name": "Add",
+          "kind": "method",
+          "signature": "public void Add(Entity2D entity)",
+          "summary": "Adiciona uma entidade sem cena. Rejeita null, duplicata e ownership concorrente.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "entity",
+              "type": "Entity2D",
+              "description": "Entidade desanexada a adicionar."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Scene2D.Clear",
+          "name": "Clear",
+          "kind": "method",
+          "signature": "public void Clear()",
+          "summary": "Desanexa todas as entidades, preservando componentes e recursos do jogo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Scene2D.Draw(Lunet.Graphics.SpriteBatch,Lunet.GameTime)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(SpriteBatch batch, GameTime time)",
+          "summary": "Desenha entidades/componentes vis\u00EDveis em ordem de inser\u00E7\u00E3o; n\u00E3o aloca.",
+          "remarks": "O jogo controla Begin/End, c\u00E2mera, blend e clipping do SpriteBatch. IsEnabled n\u00E3o oculta.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote preparado pelo jogo."
+            },
+            {
+              "name": "time",
+              "type": "GameTime",
+              "description": "Tempo do desenho fornecido pelo jogo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Scene2D.Remove(Lunet.Scenes.Entity2D)",
+          "name": "Remove",
+          "kind": "method",
+          "signature": "public bool Remove(Entity2D entity)",
+          "summary": "Remove sem descartar recursos ou componentes. Retorna falso se n\u00E3o pertence \u00E0 cena.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "entity",
+              "type": "Entity2D",
+              "description": "Entidade a desanexar."
+            }
+          ],
+          "returns": "True quando removida; false quando n\u00E3o pertence \u00E0 cena.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Scenes.Scene2D.Update(Lunet.GameTime)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(GameTime time)",
+          "summary": "Atualiza entidades/componentes habilitados em ordem de inser\u00E7\u00E3o; n\u00E3o aloca.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "time",
+              "type": "GameTime",
+              "description": "Tempo do passo fornecido pelo jogo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Storage.DirectorySaveStore",
       "name": "DirectorySaveStore",
       "namespace": "Lunet.Storage",

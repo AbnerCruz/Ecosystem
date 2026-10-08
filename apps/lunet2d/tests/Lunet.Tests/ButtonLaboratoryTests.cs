@@ -64,7 +64,8 @@ public class ButtonLaboratoryTests
                 new TouchPoint(1, TouchPhase.Moved, loaded.Game.GraphicsDevice.VirtualToSurface(new Vector2(200, 464))),
                 new TouchPoint(2, TouchPhase.Released, loaded.Game.GraphicsDevice.VirtualToSurface(new Vector2(100, 23)))
             ]); host.Tick(1.0 / 60);
-            Assert.Equal(0, Field("page")); Assert.False(button.IsCaptured); Assert.Equal(4, Field("buttonClicks"));
+            Assert.Equal(5, Field("page")); Assert.False(button.IsCaptured); Assert.Equal(4, Field("buttonClicks"));
+            host.SetSurfaceTouches([]); host.Tick(1.0 / 60); Tap(100, 23); Assert.Equal(0, Field("page"));
             Assert.False(host.IsFaulted, host.Fault?.ToString()); host.Stop();
             Assert.Empty(backend.LiveTargets); Assert.Empty(backend.LiveShaders);
         }

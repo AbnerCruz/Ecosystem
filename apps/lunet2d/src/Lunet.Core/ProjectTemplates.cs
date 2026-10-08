@@ -167,7 +167,7 @@ public static class ProjectTemplates
         }
         """.Replace("\r\n", "\n") + "\n";
 
-    /// <summary>Laboratório: painel de testes de aparelho em cinco páginas (dispositivos, gráficos, câmera, sliders e botões de UI).</summary>
+    /// <summary>Laboratório: painel de testes de aparelho em seis páginas (dispositivos, gráficos, câmera, sliders, botões e cenas).</summary>
     public static string LabSource(string className) => $$"""
         using System.Numerics;
         using Lunet;
@@ -175,6 +175,7 @@ public static class ProjectTemplates
         using Lunet.Graphics;
         using Lunet.Input;
         using Lunet.UI;
+        using Lunet.Scenes;
 
         // Laboratório: cada bloco testa um recurso no aparelho.
         // Página 1: música, som, vibração, sensores, controle, gestos de dois dedos, joystick e botão de tela.
@@ -182,6 +183,7 @@ public static class ProjectTemplates
         // Página 3: câmera, conversão de toque, zoom, rotação e HUD fixo.
         // Página 4: sliders de UI, passos, disable e cancelamento na pausa.
         // Página 5: botões de UI, clique na soltura, disable, layout e cancelamento.
+        // Página 6: cena opcional e componentes de movimento/desenho.
         public sealed class {{className}} : Game
         {
             readonly TouchButton pageControl = new(new RectangleF(8, 8, 344, 30));
@@ -204,6 +206,31 @@ public static class ProjectTemplates
             bool buttonDisabled;
             bool buttonMoved;
             int buttonClicks;
+            readonly Scene2D scene = new();
+            readonly Entity2D sceneActor = new();
+            readonly TouchButton scenePause = new(new RectangleF(24, 352, 312, 44));
+            readonly TouchButton sceneHide = new(new RectangleF(24, 408, 312, 44));
+            readonly TouchButton sceneAttach = new(new RectangleF(24, 464, 312, 44));
+            SceneMotion sceneMotion = null!;
+            sealed class SceneMotion : Component2D
+            {
+                public float Phase;
+                public override void Update(GameTime time)
+                {
+                    Phase += time.DeltaSeconds;
+                    Entity!.Transform.Position = new Vector2(180 + 100 * System.MathF.Sin(Phase * 2), 240);
+                }
+            }
+            sealed class ScenePainter : Component2D
+            {
+                readonly Texture2D texture;
+                public ScenePainter(Texture2D texture) { this.texture = texture; }
+                public override void Draw(SpriteBatch batch, GameTime time)
+                {
+                    var position = Entity!.Transform.Position;
+                    batch.Draw(texture, new RectangleF(position.X - 24, position.Y - 24, 48, 48), null, Color.Yellow, 0, Vector2.Zero);
+                }
+            }
             readonly (string Label, RectangleF Area)[] buttons =
             {
                 ("Música liga/desliga (fade)", new RectangleF(8, 44, 344, 30)),
@@ -240,6 +267,9 @@ public static class ProjectTemplates
                 font = SpriteFont.CreateDefault(GraphicsDevice);
                 pixel = GraphicsDevice.WhiteTexture;
                 dot = Texture2D.CreateCircle(GraphicsDevice, 64, Color.White);
+                sceneActor.Transform.Position = new Vector2(180, 240);
+                sceneMotion = new SceneMotion(); sceneActor.Add(sceneMotion);
+                sceneActor.Add(new ScenePainter(dot)); scene.Add(sceneActor);
                 rainbow = MakeRainbow(64);
                 checker = MakeChecker(8);
                 beep = Content.LoadSound("Audio/beep.wav");
@@ -251,7 +281,7 @@ public static class ProjectTemplates
                     "uniform float uAmount; void main() { vec4 c = texture(uTex, vUv) * vColor; float g = dot(c.rgb, vec3(0.3, 0.59, 0.11)); outColor = vec4(mix(c.rgb, vec3(g), uAmount), c.a); }");
             }
 
-            protected override void OnPause() { radius.Cancel(); level.Cancel(); pageControl.Cancel(); clickButton.Cancel(); enableButton.Cancel(); moveButton.Cancel(); }
+            protected override void OnPause() { radius.Cancel(); level.Cancel(); pageControl.Cancel(); clickButton.Cancel(); enableButton.Cancel(); moveButton.Cancel(); scenePause.Cancel(); sceneHide.Cancel(); sceneAttach.Cancel(); }
 
             protected override void UnloadContent()
             {
@@ -292,7 +322,7 @@ public static class ProjectTemplates
             {
                 clock += time.DeltaSeconds;
                 pageControl.Update(Input);
-                if (pageControl.WasClicked) page = (page + 1) % 5;
+                if (pageControl.WasClicked) page = (page + 1) % 6;
                 foreach (var gesture in Input.Gestures)
                 {
                     lastGesture = gesture.Type.ToString();
@@ -340,6 +370,18 @@ public static class ProjectTemplates
                 enableButton.IsEnabled = page == 4; moveButton.IsEnabled = page == 4;
                 SetClickButtonBounds();
                 clickButton.Update(Input); enableButton.Update(Input); moveButton.Update(Input);
+                scenePause.IsEnabled = sceneHide.IsEnabled = sceneAttach.IsEnabled = page == 5;
+                scenePause.Update(Input); sceneHide.Update(Input); sceneAttach.Update(Input);
+                if (page == 5)
+                {
+                    if (scenePause.WasClicked) sceneMotion.IsEnabled = !sceneMotion.IsEnabled;
+                    if (sceneHide.WasClicked) sceneActor.IsVisible = !sceneActor.IsVisible;
+                    if (sceneAttach.WasClicked)
+                    {
+                        if (sceneActor.Scene is null) scene.Add(sceneActor); else scene.Remove(sceneActor);
+                    }
+                    scene.Update(time); return;
+                }
                 if (page == 4)
                 {
                     if (clickButton.WasClicked) buttonClicks++;
@@ -412,13 +454,29 @@ public static class ProjectTemplates
                 GraphicsDevice.Clear(new Color(18, 22, 40));
                 batch.Begin();
                 batch.FillRect(pageControl.Bounds, pageControl.IsPressed ? new Color(130, 90, 160) : new Color(90, 60, 120));
-                batch.DrawString(font, $"Página {page + 1}/5 (toque para trocar)", pageControl.Bounds.Position + new Vector2(6, 8), Color.White, 2);
+                batch.DrawString(font, $"Página {page + 1}/6 (toque para trocar)", pageControl.Bounds.Position + new Vector2(6, 8), Color.White, 2);
                 batch.End();
                 if (page == 0) DrawDevices();
                 else if (page == 1) DrawGraphics();
                 else if (page == 2) DrawCamera();
                 else if (page == 3) DrawSliders();
-                else DrawButtons();
+                else if (page == 4) DrawButtons();
+                else DrawScene(time);
+            }
+
+            void DrawScene(GameTime time)
+            {
+                batch.Begin();
+                batch.DrawString(font, "Cena e componentes", new Vector2(24, 64), Color.White, 2);
+                batch.DrawString(font, "Movimento e desenho separados.", new Vector2(24, 100), Color.White, 1.4f);
+                batch.DrawString(font, "Pausar nao oculta. Ocultar nao pausa.", new Vector2(24, 124), Color.White, 1.3f);
+                batch.Rect(new RectangleF(40, 190, 280, 100), Color.White);
+                scene.Draw(batch, time);
+                scenePause.Draw(batch, font, sceneMotion.IsEnabled ? "Pausar movimento" : "Retomar movimento", TouchButtonStyle.Default, 2);
+                sceneHide.Draw(batch, font, sceneActor.IsVisible ? "Ocultar entidade" : "Mostrar entidade", TouchButtonStyle.Default, 2);
+                sceneAttach.Draw(batch, font, sceneActor.Scene is null ? "Reanexar entidade" : "Remover da cena", TouchButtonStyle.Default, 2);
+                batch.DrawString(font, $"Entidades na cena: {scene.Count}", new Vector2(24, 548), Color.Yellow, 1.5f);
+                batch.End();
             }
 
             void SetClickButtonBounds()
