@@ -13,7 +13,7 @@
   "branch": "fix/portal-release-workflow-run-271",
   "base_commit": "0b541c6f642175832db40bcda98c124931d0806f",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/305",
   "files_changed": [
     ".github/workflows/pages.yml",
     "tests/consistency/Check.cs",
@@ -120,7 +120,7 @@
   },
   "reuse_assessment": [
     {
-      "subject": "Portal release refresh",
+      "subject": "portal-release-refresh",
       "status": "product-specific",
       "rationale": "Evento de publicação é responsabilidade do portal, sem Service compartilhado novo."
     }
