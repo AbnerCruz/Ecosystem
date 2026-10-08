@@ -199,6 +199,39 @@ public sealed class WorldStateTests
         Assert.Throws<CampaignFormatException>(() => codec.Decode(Encoding.UTF8.GetBytes(envelope.ToJsonString())));
     }
 
+    [Fact]
+    public async Task Local_store_loads_v1_preserves_legacy_backup_and_publishes_v2()
+    {
+        using var temp = new PersistenceTestFixture.TemporaryDirectory();
+        var (campaign, hero, _, _) = Create();
+        campaign.StartSession(SessionId.New(), "First chapter");
+        var codec = new CampaignCodec(new PersistenceTestFixture.FixedTimeProvider());
+        var envelope = JsonNode.Parse(codec.Encode(campaign))!.AsObject();
+        envelope["schemaVersion"] = 1;
+        envelope["payload"]!.AsObject().Remove("world");
+        Resign(envelope);
+
+        var path = PersistenceTestFixture.PrimaryPath(temp.Path, campaign.Id);
+        var oldBytes = Encoding.UTF8.GetBytes(envelope.ToJsonString());
+        await File.WriteAllBytesAsync(path, oldBytes, TestContext.Current.CancellationToken);
+
+        var store = new FileCampaignStore(temp.Path, codec);
+        var load = await store.LoadAsync(campaign.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(CampaignLoadSource.Primary, load.Source);
+        Assert.Equal(campaign.Id, load.Campaign.Id);
+        Assert.Equal(campaign.Clock, load.Campaign.Clock);
+        Assert.Equal(campaign.ActiveSessionId, load.Campaign.ActiveSessionId);
+
+        load.Campaign.SetResource(hero, "stamina", 4, 6);
+        await store.SaveAsync(load.Campaign, TestContext.Current.CancellationToken);
+        var backupBytes = await File.ReadAllBytesAsync(path + ".bak", TestContext.Current.CancellationToken);
+        Assert.Equal(oldBytes, backupBytes);
+        Assert.Equal(1, JsonNode.Parse(backupBytes)!["schemaVersion"]!.GetValue<int>());
+        Assert.Equal(2, JsonNode.Parse(await File.ReadAllBytesAsync(path, TestContext.Current.CancellationToken))!["schemaVersion"]!.GetValue<int>());
+        var restored = await store.LoadAsync(campaign.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(4, Assert.Single(restored.Campaign.Resources).Current);
+    }
+
     private static void Resign(JsonObject envelope)
     {
         var bytes = Encoding.UTF8.GetBytes(envelope["payload"]!.ToJsonString());
