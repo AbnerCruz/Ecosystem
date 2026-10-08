@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-platform-work-priority",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T10:39:51.214Z",
+  "timestamp": "2026-10-08T10:40:19.559Z",
   "agent": {
     "id": "chatgpt-platform-priority",
     "kind": "ai-agent"
@@ -13,7 +13,7 @@
   "branch": "fix/platform-first-execution-20261008",
   "base_commit": "320998d5a4219e029246ed3278781897786c0fad",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/325",
   "files_changed": [
     "AGENTS.md",
     "docs/governance/multi-agent.md",
