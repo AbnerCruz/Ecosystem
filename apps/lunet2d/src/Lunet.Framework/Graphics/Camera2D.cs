@@ -69,6 +69,39 @@ public sealed class Camera2D
             * Matrix3x2.CreateTranslation(viewSize * 0.5f);
     }
 
+    /// <summary>Obtém uma AABB conservadora no mundo que contém toda a vista, mesmo com rotação.</summary>
+    /// <remarks>Use com TileMap.Draw para recorte de tiles. A rotação pode incluir tiles extras nos cantos,
+    /// mas não deve descartar tiles visíveis. Usa coordenadas do mundo e tamanho virtual ou do render target.
+    /// A operação não aloca e rejeita extensões não representáveis por RectangleF finito.</remarks>
+    /// <param name="viewSize">Tamanho positivo e finito da vista virtual ou do render target.</param>
+    /// <returns>Retângulo conservador da vista em coordenadas de mundo, sem alocação.</returns>
+    public RectangleF GetWorldViewBounds(Vector2 viewSize)
+    {
+        ValidateViewSize(viewSize);
+        var topLeft = ScreenToWorld(Vector2.Zero, viewSize);
+        var topRight = ScreenToWorld(new Vector2(viewSize.X, 0), viewSize);
+        var bottomLeft = ScreenToWorld(new Vector2(0, viewSize.Y), viewSize);
+        var bottomRight = ScreenToWorld(viewSize, viewSize);
+
+        var min = Vector2.Min(Vector2.Min(topLeft, topRight), Vector2.Min(bottomLeft, bottomRight));
+        var max = Vector2.Max(Vector2.Max(topLeft, topRight), Vector2.Max(bottomLeft, bottomRight));
+        if (!float.IsFinite(min.X) || !float.IsFinite(min.Y) ||
+            !float.IsFinite(max.X) || !float.IsFinite(max.Y))
+            throw new ArgumentOutOfRangeException(nameof(viewSize), "A vista excede as coordenadas representáveis.");
+
+        // Arredondar para fora impede cortar tiles por perda de precisão nas bordas.
+        float left = MathF.BitDecrement(min.X);
+        float top = MathF.BitDecrement(min.Y);
+        float right = MathF.BitIncrement(max.X);
+        float bottom = MathF.BitIncrement(max.Y);
+        float width = MathF.BitIncrement((float)((double)right - left));
+        float height = MathF.BitIncrement((float)((double)bottom - top));
+        if (!float.IsFinite(left) || !float.IsFinite(top) ||
+            !float.IsFinite(width) || !float.IsFinite(height))
+            throw new ArgumentOutOfRangeException(nameof(viewSize), "A AABB da vista excede RectangleF.");
+        return new RectangleF(left, top, width, height);
+    }
+
     /// <summary>Converte uma posição do mundo em coordenadas virtuais da vista.</summary>
     /// <param name="world">Posição no mundo.</param>
     /// <param name="viewSize">Tamanho positivo e finito da vista virtual ou do render target.</param>

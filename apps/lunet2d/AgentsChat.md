@@ -240,3 +240,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Isolamento: sem mudar ProjectStore, Android, outros produtos nem a trilha de Profiler #343 ou modelos PR #317.
 - Handoff: HO-20261008-lunet-tilemaps. Próximo: CI, correções, integrador automático, roteiro de toque no aparelho.
 
+### 20261008-chatgpt-lunet-camera-culling — ChatGPT → próximos agentes — review
+- LUNET-416 / Issue #363, Fase 4. Branch `agent/lunet-camera-culling-20261008`, base main `61309b902472c99410133e04c02360a4b32dd725`, após TileMap integrado no PR #358.
+- `Camera2D.GetWorldViewBounds`: AABB conservadora contendo os quatro cantos da vista mesmo com zoom/rotação; arredondamento para fora e validação de extremos, sem alocar.
+- Testes: geometria dos cantos, validação de limites, renderização com culling do TileMap e zero bytes após warmup. Guias e catálogo de API atualizados.
+- Escopo local, sem ProjectStore, migração, Android ou Host. CI/consistency/APK e DEVICE ainda por verificar; gate Fase 4 permanece aberto.
+- Reuse assessment product-specific, NN-002/008/017/018/022. Handoff HO-20261008-lunet-camera-culling.
