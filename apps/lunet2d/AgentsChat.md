@@ -247,9 +247,26 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Escopo local, sem ProjectStore, migração, Android ou Host. CI/consistency/APK e DEVICE ainda por verificar; gate Fase 4 permanece aberto.
 - Reuse assessment product-specific, NN-002/008/017/018/022. Handoff HO-20261008-lunet-camera-culling.
 
+### 20261008-chatgpt-lunet-ui-themes — ChatGPT → próximos agentes — review
+- LUNET-417 / Issue #365, Fase 4. Branch `agent/lunet-ui-themes-20261008` baseada em main `61309b902472c99410133e04c02360a4b32dd725`; coordenação: PR #364 de câmera em paralelo, pode exigir reconciliação de histórico/doc.
+- `UiTheme` imutável: Dark, Light, HighContrast, estilos TouchButton/TouchSlider e cores de fundo/painel/texto em um único valor. Sem global mutable state, efeitos colaterais ou resources novos.
+- Testes de opções opacas/estados pressionados-desabilitados, personalização, desenho real dos controles no backend e zero bytes após warmup; guia offline e catálogo API atualizados.
+- Sem modificação dos controles existentes, ProjectStore, Android, formato salvo, Host ou Tools; CI/merge/release/DEVICE pendentes. Fase 4 permanece aberta.
+- Reuse assessment: product-specific; NN-002/008/017/018/022. Handoff HO-20261008-lunet-ui-themes.
+
+### 20261008-chatgpt-lunet-ui-themes-reconcile — ChatGPT → próximos agentes — review
+- PR #366 conciliado com main `5f51edac5a4a0651c585f2a3b939fe9a070e68cd` após merge do PR #364 (LUNET-416). As APIs e testes de viewport da Camera2D foram preservados.
+- Árvore mesclada com dois pais Git (branch de temas e main), sem reescrever histórico, incluindo alteração local de UI, docs API regeneradas na combinação e notas/handoffs.
+- CI combinada, integração e DEVICE seguem independentes e pendentes; política do integrador preservada. Sem alteração de ProjectStore ou Host.
+
 ### 20261008-chatgpt-lunet-laboratory-v2 — ChatGPT → próximos agentes — review
 - LUNET-418 / Issue #367 / PR #368, Fase 4, branch `agent/lunet-laboratory-v2-20261008`, base main `8a71937e9f1fda7ba986c596d8037f23f4e6ff7d`.
 - Extração do Laboratório para `Lunet.Core/LaboratoryTemplate.cs`, `ProjectTemplates.LabSource` permanece com assinatura estável. `ProjectStore.cs` permanece byte-intacto; projetos anteriores não são regravados.
 - 12 módulos: dispositivos, gráficos, câmera, sliders, botões, cenas, depuração, animação/partículas, tilemaps/pathfinding, colisão SAT, bitmap font/nine-slice e paletas de UI. Índice em grid, anterior/próximo e Run offline. Assets de exemplo procedurais.
 - Os testes das sete áreas antigas foram preservados e adaptados ao total de 12; demais testes end-to-end, CI, APK e DEVICE precisam ser verificados. Não inferir aprovação no aparelho.
 - Reuse assessment product-specific, NN-002/008/017/018/022; sem alteração em formato, ProjectStore, distribuição, build/signing, Tool ou Host.
+
+### 20261008-chatgpt-lunet-laboratory-v2-ui-merge — ChatGPT → próximos agentes — review
+- PR #368 reconciliado com main bb7f6992a53c753f4ad488f72d4a44e0ecc08f21 após integração de UiTheme pelo PR #366; histórico preservado usando commit com dois pais.
+- Demo Temas do Laboratório usa diretamente UiTheme.Dark/Light/HighContrast em vez de paletas locais duplicadas. Mantém todas as demais demos, testes regressivos e documentos da main. CI combinado e release Android devem ser reconfirmados; DEVICE permanece pendente.
+- Sem alteração dos arquivos de projeto existentes ou do ProjectStore, sem novas dependências e sem mudança nas decisões da Fase 4.

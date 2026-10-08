@@ -19,7 +19,7 @@ Crie **Novo projeto → Laboratório** e toque em **Run**, sem copiar código. O
 9. **Tilemap e A***: grade com camadas e obstáculos, busca de rota ao tocar em célula livre, câmera com zoom/rotação e viewport culling.
 10. **Colisões:** separação SAT, destino vermelho e corpo verde resolvido por colisão.
 11. **Fontes e painéis:** fonte bitmap proporcional e atlas procedural, alteração de escala e NineSlice preservando bordas.
-12. **Temas de UI:** paletas de cores locais, modo claro/escuro/alto contraste, botão e slider reais com contador e valor.
+12. **Temas de UI:** `UiTheme.Dark`, `UiTheme.Light` e `UiTheme.HighContrast` oficiais, botão e slider reais com contador e valor.
 
 Os tiles, sprites e fontes de exemplo são gerados em memória, sem arquivos externos. Música e efeitos são os assets locais do template. A página de colisão cobre **SAT geométrico**, não física contínua; TrueType, mundo físico com juntas e editor Tile Studio seguem pendentes porque ainda não existem como recursos completos.
 

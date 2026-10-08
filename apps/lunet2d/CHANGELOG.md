@@ -11,7 +11,7 @@
 
 ### Added
 
-- LUNET-418 (em revisão): Laboratório 2.0 com índice, 12 módulos offline prontos para Run, navegação anterior/próxima e testes reais de animação, partículas, tilemap/A*, SAT, bitmap fonts, nine-slice e cores de UI. Template separado do ProjectTemplates, sem alterar projetos existentes.
+- LUNET-418 (em revisão): Laboratório 2.0 com índice, 12 módulos offline prontos para Run, navegação anterior/próxima e testes reais de animação, partículas, tilemap/A*, SAT, bitmap fonts, nine-slice e UiTheme oficial. Template separado do ProjectTemplates, sem alterar projetos existentes.
 
 - LUNET-416 (em revisão): `Camera2D.GetWorldViewBounds` calcula a AABB visível sob zoom/rotação para recortar TileMap.Draw sem corte de cantos, com testes de precisão e alocação.
 
@@ -24,6 +24,8 @@
 - `Lunet.UI.TouchButton`/`TouchButtonStyle`: clique ao soltar com captura por ID, estados/cancelamento/disable e desenho de fundo/texto com cores configuráveis, sem alocação no loop; quinta página executável do Laboratório com clique, arraste, disable, pausa e reposicionamento por LayoutRect (LUNET-410).
 
 - `Lunet.UI.LayoutRect`: âncoras, pivôs, margens Fixed/Stretch e composição de retângulos aninhados, sem alocação por cálculo; guia offline de UI com redimensionamento e toque alinhado (LUNET-409).
+
+- `UiTheme`: paletas locais imutáveis Dark/Light/HighContrast aplicáveis a botões, sliders, fundo, painel e texto, sem estado global; teste de desenho e ausência de alocação por quadro (LUNET-417, em revisão).
 
 - `TouchSlider` e `TouchSliderStyle`: arraste contínuo ou em passos, captura por dedo, cancelamento e estado desabilitado; demonstração executável na página 4 do Laboratório, sem copiar código (LUNET-411).
 

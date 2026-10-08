@@ -172,22 +172,10 @@ internal static class LaboratoryTemplate
             readonly RectangleF themePickContrast = new(244, 96, 100, 56);
             int paletteIndex;
             int themeClicks;
-            readonly TouchButtonStyle[] buttonPalettes =
+            // Usa os temas oficiais do Framework, sem duplicar paletas no template.
+            readonly UiTheme[] themePresets =
             {
-                TouchButtonStyle.Default,
-                new(new Color(31, 97, 169), new Color(19, 62, 120),
-                    new Color(203, 208, 217), Color.White, new Color(69, 75, 88)),
-                new(Color.Yellow, new Color(255, 175, 0),
-                    new Color(212, 212, 212), Color.Black, Color.Black)
-            };
-            readonly TouchSliderStyle[] sliderPalettes =
-            {
-                TouchSliderStyle.Default,
-                new(new Color(178, 187, 202), new Color(29, 102, 190),
-                    new Color(24, 53, 86), new Color(6, 46, 100),
-                    new Color(202, 207, 214), new Color(133, 140, 148), Color.Black),
-                new(Color.White, Color.Yellow, Color.Black, Color.Blue,
-                    new Color(210, 210, 210), new Color(90, 90, 90), Color.Black)
+                UiTheme.Dark, UiTheme.Light, UiTheme.HighContrast
             };
 
             protected override void LoadContent()
@@ -720,8 +708,9 @@ internal static class LaboratoryTemplate
 
             void DrawThemes()
             {
-                var panel = paletteIndex == 1 ? new Color(232, 240, 250) : paletteIndex == 2 ? Color.Black : new Color(28, 38, 54);
-                var textColor = paletteIndex == 1 ? new Color(30, 45, 65) : Color.White;
+                var selectedTheme = themePresets[paletteIndex];
+                var panel = selectedTheme.Panel;
+                var textColor = selectedTheme.Text;
                 batch.Begin();
                 Title("Temas de interface", "Cores locais, toque e estados");
                 DrawAction(themePickDark, "ESCURO");
@@ -729,8 +718,8 @@ internal static class LaboratoryTemplate
                 DrawAction(themePickContrast, "CONTRASTE");
                 batch.FillRect(new RectangleF(20, 188, 320, 312), panel);
                 batch.DrawString(font, "PALETA ATIVA", new Vector2(38, 214), textColor, 2);
-                themeDemoButton.Draw(batch, font, "CLIQUE AQUI", buttonPalettes[paletteIndex], 2);
-                themeDemoSlider.Draw(batch, sliderPalettes[paletteIndex]);
+                themeDemoButton.Draw(batch, font, "CLIQUE AQUI", selectedTheme.Button, 2);
+                themeDemoSlider.Draw(batch, selectedTheme.Slider);
                 batch.DrawString(font, $"Cliques {themeClicks}  Nivel {themeDemoSlider.Value:0}", new Vector2(38, 438), textColor, 1.5f);
                 batch.DrawString(font, "Os controles continuam funcionais.", new Vector2(22, 530), Color.White, 1.4f);
                 batch.End();

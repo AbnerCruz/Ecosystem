@@ -31,7 +31,8 @@
   "work_completed": [
     "Template independente e navegável de 12 módulos pronto para Run.",
     "Demos avançadas end-to-end para animação, partículas, tilemaps, A*, SAT, fontes/nine-slice e temas de cores.",
-    "Regressão das sete áreas anteriores atualizada e teste integrado que verifica novo projeto sem alterar projeto existente."
+    "Regressão das sete áreas anteriores atualizada e teste integrado que verifica novo projeto sem alterar projeto existente.",
+    "Reconciliada a demo Temas com UiTheme oficial do PR #366 sem sobrescrever código de Camera2D ou alterações da main."
   ],
   "verification": [
     {
@@ -56,14 +57,14 @@
     }
   ],
   "known_issues": [
-    "Tema dedicado UiTheme do PR #366 pendente; demo utiliza paletas compatíveis TouchButtonStyle/TouchSliderStyle.",
+    "UiTheme oficial do PR #366 integrado na main e adotado pela demo de temas do Laboratório.",
     "Física contínua/TrueType/Tile Studio ainda não completos, não anunciar como testes existentes."
   ],
   "blockers": [],
   "next_actions": [
-    "Corrigir possíveis falhas do CI e integrar pelo mecanismo automático.",
-    "Reconciliar a interface de temas com PR #366 se integrado.",
-    "Confirmar APK publicado e orientar validação humana."
+    "Confirmar CI de combinação Lab #368 + UiTheme #366 após reconciliação da main.",
+    "Integrar somente conforme mecanismo automático e confirmar versão/artefatos publicados.",
+    "Executar roteiro de validação no aparelho quando o proprietário puder testar."
   ],
   "decisions_required": [],
   "normative_sources": [

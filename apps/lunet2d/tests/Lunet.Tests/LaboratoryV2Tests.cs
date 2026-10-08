@@ -24,6 +24,8 @@ public sealed class LaboratoryV2Tests
             Assert.Contains("PageCount = 12", source);
             Assert.Contains("TileMap.Parse", source);
             Assert.Contains("ParticleEmitter", source);
+            Assert.Contains("UiTheme.Dark", source);
+            Assert.Contains("UiTheme.HighContrast", source);
             Assert.Equal(oldSource, File.ReadAllText(Path.Combine(old.Directory, old.Manifest.EntryPoint)));
 
             var compiler = new Lunet.Compiler.GameCompiler(
