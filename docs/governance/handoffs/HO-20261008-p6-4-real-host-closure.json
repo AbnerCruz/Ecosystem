@@ -14,7 +14,7 @@
   "branch": "feat/p6-4-finalize-real-host-evidence-20261008",
   "base_commit": "97eefdeac179884478cb790339e3234e707a4915",
   "commit": null,
-  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/344",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/353",
   "files_changed": [
     "ROADMAP.md",
     "apps/ecosystem-ai/README.md",
