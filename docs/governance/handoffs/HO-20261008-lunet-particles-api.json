@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-particles-api",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T08:21:46Z",
+  "agent": {
+    "id": "codex-lunet-particles",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-405",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-advanced-api-20261008",
+  "base_commit": "040dd8d0529c7546644bd5d97e0dda1b27f456c3",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "docs/governance/handoffs/HO-20261008-lunet-camera.json",
+    "docs/governance/handoffs/HO-20261008-lunet-collision.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pathfinding.json",
+    "apps/lunet2d/docs/guides/animacao.md",
+    "apps/lunet2d/docs/guides/particulas.md",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/ParticleEmitter.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/ParticleSettings.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteAnimationClip.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteAnimator.cs",
+    "apps/lunet2d/src/Lunet.Framework/Utilities/Tween.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AnimationTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ParticleTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-animation-api.json",
+    "docs/governance/handoffs/HO-20261008-lunet-particles-api.json"
+  ],
+  "work_completed": [
+    "Entrega das APIs de particles e documentação XML/JSON, preservando implementação testada e compatibilidade existente.",
+    "Guia completo code-first para projeto Em branco, compilado e executado por GameHost com toque físico 2×; sem depender do novo modelo de criação.",
+    "Fatia protegida de criação do modelo preservada no PR #307 para autorização, sem rebaixar classificação ou alterar fiscalização."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "dotnet build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false; zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão xUnit v3: 400/400, zero falhas/erros/skips; A*/câmera/animação/partículas e guias por criação Em branco + escrita existente, compilados/executados com toque 2×. Medição de zero bytes nas APIs."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22 checks locais. Snapshot de Issues remoto segue CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "particles no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/particulas.md",
+      "evidence": "Criar projeto Em branco e substituir Game.cs pelo exemplo completo; validar roteiro offline/rápido/isolado. Testes portáteis não comprovam GL/performance/toque real."
+    }
+  ],
+  "known_issues": [
+    "Pool cheio descarta excedentes; passos diferentes sob saturação podem reter conjuntos diferentes. Seed determinística exige mesma sequência de passos/operações, sem promessa de determinismo universal.",
+    "Remoção pode reordenar quads; sem depth sorting, culling ou colisão. Origem contínua é a Position no Update, sem interpolação do caminho arrastado.",
+    "Posições fora do intervalo float são omitidas do desenho até expirar. Cor RGBA linear sem correção gamma. HUD/criação do modelo podem alocar.",
+    "Novo modelo de criação fora desta fatia: PR #307 crítico. Guia funciona pela edição normal de um projeto Em branco.",
+    "SDK Android ausente localmente; APK vem do CI, DEVICE permanece pendente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI/integração automática e confirmar release/APK desta fatia.",
+    "Validar particulas.md no aparelho sem fechar gate da Fase 4.",
+    "Após autorização dos PRs de modelos, preservar testes da criação dos modelos e reconciliar com as APIs integradas."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API local do Framework, sem dependências de outro Product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-405 / Issue #306, branch/base e handoff distintos da fatia protegida."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Roteiro DEVICE continua pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "400 testes separados de CI/integração/APK/aparelho."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem abstração compartilhada, contratos ou backend novo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "game-particles",
+      "status": "product-specific",
+      "rationale": "Efeito de jogo previsto no Framework do Lunet (§7); nenhum consumidor externo real justifica extração."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Fatia aditiva do Framework/guias prevista na Fase 4. Blobs ProjectStore/ProjectTemplates/MainActivity idênticos à main; nenhum template, formato, migração ou efeito persistente novo. Alteração protegida permanece no PR #307."
+  },
+  "cost": null
+}
