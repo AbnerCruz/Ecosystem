@@ -216,26 +216,30 @@ public sealed class PersistenceTests
         {
             var path = Path.Combine(directory, "concurrent.maproj");
             ProjectStorage.Save(path, Make(1));
-            var start = new System.Threading.ManualResetEventSlim();
+            using var start = new System.Threading.ManualResetEventSlim();
             Exception? olderError = null;
             Exception? newerError = null;
-            var older = Task.Run(() =>
+            var older = new Thread(() =>
             {
                 start.Wait();
                 try { ProjectStorage.Save(path, Make(2)); }
                 catch (InvalidDataException e) { olderError = e; }
             });
-            var newer = Task.Run(() =>
+            var newer = new Thread(() =>
             {
                 start.Wait();
                 try { ProjectStorage.Save(path, Make(3)); }
                 catch (InvalidDataException e) { newerError = e; }
             });
+            older.Start();
+            newer.Start();
             start.Set();
-            Task.WaitAll(older, newer);
+            older.Join();
+            newer.Join();
 
             Assert.Null(newerError);
-            Assert.True(olderError is null || olderError is InvalidDataException);
+            if (olderError is not null)
+                Assert.Contains("Revisão", olderError.Message, StringComparison.Ordinal);
             Assert.Equal(3, ProjectStorage.Recover(path).Project.Revision);
             using var primary = File.OpenRead(path);
             Assert.Equal(3, ProjectPackage.Read(primary).Revision);
