@@ -14,7 +14,7 @@
   "branch": "agent/lunet-pathfinding-20261008",
   "base_commit": "0dc9471293d1d17657c54b91c812e7be58f1b717",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/313",
   "files_changed": [
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/CHANGELOG.md",
