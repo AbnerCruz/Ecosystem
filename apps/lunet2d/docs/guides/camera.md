@@ -8,6 +8,7 @@
 - `Zoom`: escala positiva e finita, com inverso representável; 2 duplica o tamanho aparente e 0,5 mostra mais mundo.
 - `Rotation`: radianos da câmera; o mundo gira no sentido inverso.
 - `GetViewMatrix(viewSize)`: matriz mundo → vista virtual.
+- `GetWorldViewBounds(viewSize)`: AABB conservadora da câmera em coordenadas do mundo para `TileMap.Draw`; inclui os quatro cantos com zoom e rotação. Não aloca, usa tamanho virtual/render target e rejeita limites não representáveis.
 - `WorldToScreen` e `ScreenToWorld`: conversões entre mundo e vista virtual. **Não recebem pixels físicos**. O toque de `Input` já está convertido; para um ponto físico use primeiro `GraphicsDevice.SurfaceToVirtual`.
 - `batch.Begin(camera)` captura a câmera e o tamanho da vista no início do lote. Mudanças na câmera durante o lote valem no próximo Begin. Texture flush e limite de quads preservam a captura.
 - Sprites, texto e DebugDraw recebem a mesma transformação. Colisões continuam em coordenadas do mundo.

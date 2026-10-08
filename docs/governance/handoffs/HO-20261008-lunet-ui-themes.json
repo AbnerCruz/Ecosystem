@@ -54,12 +54,12 @@
   ],
   "known_issues": [
     "Sem visual theme editor, persistência de tema ou hierarquia de UI.",
-    "Integrar com PR #364 de câmera, se o histórico divergir; DEVICE pendente."
+    "PR #364 de câmera já integrado e reconciliado por merge commit de dois pais; CI combinado pendente e DEVICE pendente."
   ],
   "blockers": [],
   "next_actions": [
-    "Verificar CI e erros API JSON.",
-    "Integrar por automação após reconciliação e checks; manter DEVICE pendente."
+    "Verificar a suíte combinada e consistência do PR #366.",
+    "Integrar apenas por política automática; conferir release e manter DEVICE pendente."
   ],
   "decisions_required": [],
   "normative_sources": [

@@ -64,6 +64,70 @@ public class CameraTests
         }
     }
 
+    [Theory]
+    [InlineData(1f, 0f)]
+    [InlineData(2f, 0.6f)]
+    [InlineData(0.5f, -1.3f)]
+    [InlineData(4f, 1.5707963f)]
+    public void WorldViewBounds_ContainAllCornersWithZoomAndRotation(float zoom, float rotation)
+    {
+        var camera = new Camera2D { Position = new(145, -72), Zoom = zoom, Rotation = rotation };
+        var size = new Vector2(360, 640);
+        var bounds = camera.GetWorldViewBounds(size);
+        Assert.True(bounds.Width > 0 && bounds.Height > 0);
+        foreach (var corner in new[] { Vector2.Zero, new Vector2(size.X, 0), new Vector2(0, size.Y), size })
+        {
+            var world = camera.ScreenToWorld(corner, size);
+            Assert.InRange((double)world.X, (double)bounds.X, (double)bounds.X + bounds.Width);
+            Assert.InRange((double)world.Y, (double)bounds.Y, (double)bounds.Y + bounds.Height);
+        }
+    }
+
+    [Fact]
+    public void WorldViewBounds_HandleCameraTranslationAndInvalidExtents()
+    {
+        var camera = new Camera2D { Position = new(500, 400), Zoom = 2 };
+        var bounds = camera.GetWorldViewBounds(new(200, 100));
+        Assert.InRange(450f, bounds.X, bounds.X + bounds.Width);
+        Assert.InRange(550f, bounds.X, bounds.X + bounds.Width);
+        Assert.InRange(375f, bounds.Y, bounds.Y + bounds.Height);
+        Assert.InRange(425f, bounds.Y, bounds.Y + bounds.Height);
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.GetWorldViewBounds(Vector2.Zero));
+        camera.Position = new(float.MaxValue, float.MaxValue);
+        camera.Zoom = 0.0001f;
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.GetWorldViewBounds(new(320, 200)));
+    }
+
+    [Fact]
+    public void WorldViewBounds_CullsTilesUsingRotatedCamera()
+    {
+        var map = TileMap.Parse("""
+            {"version":1,"texture":"tiles.png","width":3,"height":2,
+             "tileWidth":8,"tileHeight":8,"layers":[{"name":"ground","tiles":[1,1,1,1,1,1]}]}
+            """);
+        var backend = new RecordingBackend();
+        var device = new GraphicsDevice(backend, 64, 64);
+        using var texture = Texture2D.CreateSolid(device, 8, 8, Color.White);
+        var batch = new SpriteBatch(device);
+        var camera = new Camera2D { Position = new(4, 4), Zoom = 16, Rotation = 0.7f };
+        batch.Begin(camera);
+        map.Draw(batch, texture, camera.GetWorldViewBounds(device.ViewSize), Vector2.Zero, Color.White);
+        batch.End();
+        Assert.Single(backend.Batches);
+        Assert.Equal(1, backend.Batches[0].QuadCount);
+    }
+
+    [Fact]
+    public void WorldViewBounds_DoesNotAllocateAfterWarmup()
+    {
+        var camera = new Camera2D { Position = new(120, 80), Zoom = 1.5f, Rotation = 0.4f };
+        var size = new Vector2(360, 640);
+        for (int i = 0; i < 300; i++) camera.GetWorldViewBounds(size);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++) camera.GetWorldViewBounds(size);
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
     [Fact]
     public void SpriteBatch_SnapshotsCameraAcrossTextureFlushes_AndResetsForHud()
     {

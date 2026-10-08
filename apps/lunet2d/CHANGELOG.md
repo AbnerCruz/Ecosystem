@@ -11,7 +11,9 @@
 
 ### Added
 
-- LUNET-415 (em revisão): `TileMap` JSON v1 em camadas, tileset, colisão, viewport culling e integração com A* e colisão AABB de personagens, com guia offline e testes no host portátil. Tile Studio/DEVICE pendentes.
+- LUNET-416 (em revisão): `Camera2D.GetWorldViewBounds` calcula a AABB visível sob zoom/rotação para recortar TileMap.Draw sem corte de cantos, com testes de precisão e alocação.
+
+- LUNET-415 (integrado PR #358; DEVICE pendente): `TileMap` JSON v1 em camadas, tileset, colisão, viewport culling e integração com A* e colisão AABB de personagens, com guia offline e testes no host portátil. Tile Studio/DEVICE pendentes.
 
 - Helpers `DebugDraw.Polygon`, `Ray`, `Axes` e `Grid`: geometria de depuração transformada, limites/validação antes de desenhar e zero alocação no loop; página 7 pronta no Laboratório (LUNET-413).
 

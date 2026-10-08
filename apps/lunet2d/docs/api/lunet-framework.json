@@ -6731,6 +6731,25 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.Camera2D.GetWorldViewBounds(System.Numerics.Vector2)",
+          "name": "GetWorldViewBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetWorldViewBounds(Vector2 viewSize)",
+          "summary": "Obt\u00E9m uma AABB conservadora no mundo que cont\u00E9m toda a vista, mesmo com rota\u00E7\u00E3o.",
+          "remarks": "Use com TileMap.Draw para recorte de tiles. A rota\u00E7\u00E3o pode incluir tiles extras nos cantos, mas n\u00E3o deve descartar tiles vis\u00EDveis. Usa coordenadas do mundo e tamanho virtual ou do render target. A opera\u00E7\u00E3o n\u00E3o aloca e rejeita extens\u00F5es n\u00E3o represent\u00E1veis por RectangleF finito.",
+          "parameters": [
+            {
+              "name": "viewSize",
+              "type": "Vector2",
+              "description": "Tamanho positivo e finito da vista virtual ou do render target."
+            }
+          ],
+          "returns": "Ret\u00E2ngulo conservador da vista em coordenadas de mundo, sem aloca\u00E7\u00E3o.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.Camera2D.ScreenToWorld(System.Numerics.Vector2,System.Numerics.Vector2)",
           "name": "ScreenToWorld",
           "kind": "method",

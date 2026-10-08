@@ -240,9 +240,21 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Isolamento: sem mudar ProjectStore, Android, outros produtos nem a trilha de Profiler #343 ou modelos PR #317.
 - Handoff: HO-20261008-lunet-tilemaps. Próximo: CI, correções, integrador automático, roteiro de toque no aparelho.
 
+### 20261008-chatgpt-lunet-camera-culling — ChatGPT → próximos agentes — review
+- LUNET-416 / Issue #363, Fase 4. Branch `agent/lunet-camera-culling-20261008`, base main `61309b902472c99410133e04c02360a4b32dd725`, após TileMap integrado no PR #358.
+- `Camera2D.GetWorldViewBounds`: AABB conservadora contendo os quatro cantos da vista mesmo com zoom/rotação; arredondamento para fora e validação de extremos, sem alocar.
+- Testes: geometria dos cantos, validação de limites, renderização com culling do TileMap e zero bytes após warmup. Guias e catálogo de API atualizados.
+- Escopo local, sem ProjectStore, migração, Android ou Host. CI/consistency/APK e DEVICE ainda por verificar; gate Fase 4 permanece aberto.
+- Reuse assessment product-specific, NN-002/008/017/018/022. Handoff HO-20261008-lunet-camera-culling.
+
 ### 20261008-chatgpt-lunet-ui-themes — ChatGPT → próximos agentes — review
 - LUNET-417 / Issue #365, Fase 4. Branch `agent/lunet-ui-themes-20261008` baseada em main `61309b902472c99410133e04c02360a4b32dd725`; coordenação: PR #364 de câmera em paralelo, pode exigir reconciliação de histórico/doc.
 - `UiTheme` imutável: Dark, Light, HighContrast, estilos TouchButton/TouchSlider e cores de fundo/painel/texto em um único valor. Sem global mutable state, efeitos colaterais ou resources novos.
 - Testes de opções opacas/estados pressionados-desabilitados, personalização, desenho real dos controles no backend e zero bytes após warmup; guia offline e catálogo API atualizados.
 - Sem modificação dos controles existentes, ProjectStore, Android, formato salvo, Host ou Tools; CI/merge/release/DEVICE pendentes. Fase 4 permanece aberta.
 - Reuse assessment: product-specific; NN-002/008/017/018/022. Handoff HO-20261008-lunet-ui-themes.
+
+### 20261008-chatgpt-lunet-ui-themes-reconcile — ChatGPT → próximos agentes — review
+- PR #366 conciliado com main `5f51edac5a4a0651c585f2a3b939fe9a070e68cd` após merge do PR #364 (LUNET-416). As APIs e testes de viewport da Camera2D foram preservados.
+- Árvore mesclada com dois pais Git (branch de temas e main), sem reescrever histórico, incluindo alteração local de UI, docs API regeneradas na combinação e notas/handoffs.
+- CI combinada, integração e DEVICE seguem independentes e pendentes; política do integrador preservada. Sem alteração de ProjectStore ou Host.
