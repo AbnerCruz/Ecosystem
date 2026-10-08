@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-urbe-uc18-note-templates",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T18:18:40.642Z",
+  "timestamp": "2026-10-08T18:21:04.285Z",
   "agent": {
     "id": "chatgpt-urbe-note-templates",
     "kind": "ai-agent"
@@ -22,6 +22,7 @@
     "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
     "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
     "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
     "apps/urbe/csharp/README.md",
     "apps/urbe/AGENTSCHAT.md",
     "docs/governance/handoffs/HO-20261008-urbe-uc18-note-templates.json"
@@ -30,7 +31,8 @@
     "UC-18/REQ-093/SPEC §15.1: modelos como notas Markdown comuns em Modelos/; SaveCurrentAsTemplate clona conteúdo sem alterar origem.",
     "Explorer seleciona modelo, solicita campos e cria documento pela WorkspaceSession/DocumentStore, sem filesystem.",
     "Engine preserva conteúdo fora dos marcadores, substitui valores literalmente e recusa valores faltantes/extras e excesso de campos.",
-    "Formulário responsivo, erros visíveis e suíte de domínio incluídos."
+    "Formulário responsivo, erros visíveis e suíte de domínio incluídos.",
+    "Smoke Chromium Web atualizado para percorrer criação de template a partir de nota, preencher campos e verificar o conteúdo final no editor real."
   ],
   "verification": [
     {
@@ -43,7 +45,7 @@
       "kind": "automated",
       "check": "urbe-checks Core/Web/Android/Windows/E2E",
       "result": "pending",
-      "evidence": "CI do head final do PR #352 ainda não confirmado."
+      "evidence": "CI do head final do PR #352 ainda não confirmado; novo teste de jornada web adicionado (não executado localmente)."
     },
     {
       "kind": "automated",
