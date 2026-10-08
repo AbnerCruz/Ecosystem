@@ -162,3 +162,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - PR #328 reconciliado semanticamente com main `f3392f2a3e111de7f7bcd36fc78073a84bf375e7` (NineSlice integrado pelo #324, release pública 1000150). Entradas de código e de histórico de ambos os lados preservadas; duplicação do changelog de APIs corrigida, ROADMAP 404/405/407 alinhado às integrações reais sem fechar DEVICE.
 - Código específico do PR preservado; testes completos e checks serão registrados no handoff de reconciliação. Sem alterar gates, contratos ou política de integração; nenhuma label integrar aplicada.
 - Preferência explícita do proprietário nesta sessão: demonstrações para testar no celular devem ser executáveis pelo Laboratório ou por um template, prontas para Run; não entregar copiar código de guia como roteiro principal. Não reformar documentação agora; usar esse formato nas próximas demonstrações. Isso não é aprovação de DEVICE nem autorização do PR crítico #317.
+
+
+### 20261008-codex-touch-slider — Codex → próximos agentes — review
+- LUNET-411 / Issue #335; branch `agent/lunet-touch-slider-20261008`, base main `2e62f554fdd13525e9489f07386862ee39e5d298` (fontes bitmap #328 integradas).
+- TouchSlider/TouchSliderStyle: faixa contínua ou passos, captura por ID, arraste fora da barra, Released final, cancelamento/disable, bounds mutáveis e desenho sem alocação. Reutiliza InputState/SpriteBatch; sem backend ou persistência novos.
+- Demonstração na página 4 do modelo Laboratório existente: raio, intensidade, passos de 10 e disable. Dois dedos podem controlar barras independentes; troca de página e OnPause cancelam captura. Novos projetos prontos para Run; projetos existentes preservados.
+- Preferência explícita do proprietário: exemplos executáveis no Laboratório ou template. Não reformar os guias anteriores agora. Guia novo contém roteiro da página pronta, sem exigir cópia de código.
+- Build sem warnings/errors; suíte padrão combinada 438/438 (423 da main + 15 novos casos), incluindo execução real do Laboratório com toque físico 2×, zero bytes do controle, extremos/validação e regressões das páginas anteriores. Consistency: 22 checks; snapshot ROADMAP × Issues conferido remotamente.
+- DEVICE e release ainda pendentes. Slider horizontal sem foco/teclado/layout/tema global; não conclui UI nem gate da Fase 4. Integração exclusivamente automática, sem merge manual/label integrar.

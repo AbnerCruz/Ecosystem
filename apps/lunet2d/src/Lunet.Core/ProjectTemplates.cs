@@ -167,18 +167,20 @@ public static class ProjectTemplates
         }
         """.Replace("\r\n", "\n") + "\n";
 
-    /// <summary>Laboratório: painel de testes de aparelho em três páginas (dispositivos, gráficos e câmera).</summary>
+    /// <summary>Laboratório: painel de testes de aparelho em quatro páginas (dispositivos, gráficos, câmera e sliders de UI).</summary>
     public static string LabSource(string className) => $$"""
         using System.Numerics;
         using Lunet;
         using Lunet.Audio;
         using Lunet.Graphics;
         using Lunet.Input;
+        using Lunet.UI;
 
         // Laboratório: cada bloco testa um recurso no aparelho.
         // Página 1: música, som, vibração, sensores, controle, gestos de dois dedos, joystick e botão de tela.
         // Página 2: mistura (blend), shader, recorte, alvo de desenho, amostragem, pixel perfect e área segura.
         // Página 3: câmera, conversão de toque, zoom, rotação e HUD fixo.
+        // Página 4: sliders de UI, passos, disable e cancelamento na pausa.
         public sealed class {{className}} : Game
         {
             readonly RectangleF pageButton = new(8, 8, 344, 30);
@@ -190,6 +192,11 @@ public static class ProjectTemplates
             readonly Camera2D camera = new() { Position = new Vector2(500, 400) };
             Vector2 cameraMarker = new(500, 400);
             bool altResolution;
+            readonly TouchSlider radius = new(new RectangleF(24, 170, 312, 48), 16, 72, 36, knobWidth: 24);
+            readonly TouchSlider level = new(new RectangleF(24, 274, 312, 48), 0, 100, 50, 10, 24);
+            readonly RectangleF sliderToggle = new(24, 352, 312, 44);
+            bool sliderDisabled;
+            int sliderChanges;
             readonly (string Label, RectangleF Area)[] buttons =
             {
                 ("Música liga/desliga (fade)", new RectangleF(8, 44, 344, 30)),
@@ -237,6 +244,8 @@ public static class ProjectTemplates
                     "uniform float uAmount; void main() { vec4 c = texture(uTex, vUv) * vColor; float g = dot(c.rgb, vec3(0.3, 0.59, 0.11)); outColor = vec4(mix(c.rgb, vec3(g), uAmount), c.a); }");
             }
 
+            protected override void OnPause() { radius.Cancel(); level.Cancel(); }
+
             protected override void UnloadContent()
             {
                 minimap.Dispose();
@@ -281,7 +290,12 @@ public static class ProjectTemplates
                     switch (gesture.Type)
                     {
                         case GestureType.Tap:
-                            if (pageButton.Contains(gesture.Position)) { page = (page + 1) % 3; break; }
+                            if (pageButton.Contains(gesture.Position)) { page = (page + 1) % 4; break; }
+                            if (page == 3)
+                            {
+                                if (sliderToggle.Contains(gesture.Position)) sliderDisabled = !sliderDisabled;
+                                break;
+                            }
                             if (page == 2)
                             {
                                 if (cameraZoomIn.Contains(gesture.Position)) camera.Zoom = System.Math.Clamp(camera.Zoom * 2, 0.25f, 4);
@@ -310,6 +324,14 @@ public static class ProjectTemplates
                             boxAngle += gesture.Rotation;
                             break;
                     }
+                }
+
+                radius.IsEnabled = page == 3; level.IsEnabled = page == 3 && !sliderDisabled;
+                radius.Update(Input); level.Update(Input);
+                if (page == 3)
+                {
+                    if (radius.WasChanged || level.WasChanged) sliderChanges++;
+                    return;
                 }
 
                 if (page == 2)
@@ -371,11 +393,29 @@ public static class ProjectTemplates
                 GraphicsDevice.Clear(new Color(18, 22, 40));
                 batch.Begin();
                 batch.FillRect(pageButton, new Color(90, 60, 120));
-                batch.DrawString(font, $"Página {page + 1}/3 (toque para trocar)", pageButton.Position + new Vector2(6, 8), Color.White, 2);
+                batch.DrawString(font, $"Página {page + 1}/4 (toque para trocar)", pageButton.Position + new Vector2(6, 8), Color.White, 2);
                 batch.End();
                 if (page == 0) DrawDevices();
                 else if (page == 1) DrawGraphics();
-                else DrawCamera();
+                else if (page == 2) DrawCamera();
+                else DrawSliders();
+            }
+
+            void DrawSliders()
+            {
+                batch.Begin();
+                batch.DrawString(font, "Sliders de UI", new Vector2(24, 64), Color.White, 2);
+                batch.DrawString(font, "Arraste as barras. Teste dois dedos.", new Vector2(24, 96), Color.White, 1.4f);
+                batch.DrawString(font, $"Raio continuo: {radius.Value:0.0}", new Vector2(24, 140), Color.White, 1.5f);
+                radius.Draw(batch, TouchSliderStyle.Default);
+                batch.DrawString(font, $"Passos de 10: {level.Value:0}", new Vector2(24, 244), Color.White, 1.5f);
+                level.Draw(batch, TouchSliderStyle.Default);
+                batch.FillRect(sliderToggle, new Color(60, 75, 110));
+                batch.DrawString(font, sliderDisabled ? "Habilitar passos" : "Desabilitar passos", sliderToggle.Position + new Vector2(12, 14), Color.White, 1.5f);
+                float r = radius.Value;
+                batch.Draw(dot, new RectangleF(180 - r, 490 - r, r * 2, r * 2), null, new Color(30, (byte)(80 + level.Value), 200), 0, Vector2.Zero);
+                batch.DrawString(font, $"Mudancas por toque: {sliderChanges}", new Vector2(24, 584), Color.White, 1.4f);
+                batch.End();
             }
 
             void DrawCamera()
