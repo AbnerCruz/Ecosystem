@@ -501,6 +501,42 @@ a:focus-visible {
     color: #d9f4e2;
 }
 
+.editor-source-container {
+    min-width: 0;
+}
+
+.editor-source-tools {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: .75rem;
+}
+
+.editor-source-tools button {
+    padding: .55rem .8rem;
+    border: 1px solid #436a51;
+    border-radius: .65rem;
+    color: #d8f8e3;
+    background: #203b2a;
+    cursor: pointer;
+}
+
+.editor-source-tools button:focus-visible {
+    outline: 2px solid #a7e2b8;
+    outline-offset: 2px;
+}
+
+.editor-source-tools button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.editor-source-tools span {
+    color: #a6bdae;
+    font-size: .75rem;
+}
+
 .editor-source-field {
     display: block;
     margin-top: 1rem;
