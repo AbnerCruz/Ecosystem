@@ -8096,6 +8096,144 @@
       ]
     },
     {
+      "id": "T:Lunet.Graphics.NineSlice",
+      "name": "NineSlice",
+      "namespace": "Lunet.Graphics",
+      "kind": "class",
+      "signature": "public sealed class NineSlice",
+      "summary": "Regi\u00E3o de textura dividida em nove partes para redimensionar pain\u00E9is preservando os cantos.",
+      "remarks": "Imut\u00E1vel; n\u00E3o possui nem libera a textura. Centro e bordas esticam, sem repeti\u00E7\u00E3o. N\u00E3o calcula layout, padding de conte\u00FAdo ou hit testing.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar panel = new NineSlice(texture, new RectangleF(0, 0, 24, 24), 6, 6, 6, 6);\nbatch.Begin();\nbatch.Draw(panel, new RectangleF(20, 40, 200, 80), Color.White);\nbatch.End();\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.Graphics.NineSlice.#ctor(Lunet.Graphics.Texture2D,Lunet.RectangleF,System.Single,System.Single,System.Single,System.Single)",
+          "name": "NineSlice",
+          "kind": "constructor",
+          "signature": "public NineSlice(Texture2D texture, RectangleF source, float left, float top, float right, float bottom)",
+          "summary": "Define a regi\u00E3o e as bordas em pixels da imagem.",
+          "remarks": "As somas das bordas devem deixar um centro com largura e altura positivas.",
+          "parameters": [
+            {
+              "name": "texture",
+              "type": "Texture2D",
+              "description": "Textura viva, mantida pelo jogo."
+            },
+            {
+              "name": "source",
+              "type": "RectangleF",
+              "description": "Regi\u00E3o positiva e finita dentro da textura, inclusive em atlas."
+            },
+            {
+              "name": "left",
+              "type": "float",
+              "description": "Largura n\u00E3o negativa da borda esquerda."
+            },
+            {
+              "name": "top",
+              "type": "float",
+              "description": "Altura n\u00E3o negativa da borda superior."
+            },
+            {
+              "name": "right",
+              "type": "float",
+              "description": "Largura n\u00E3o negativa da borda direita."
+            },
+            {
+              "name": "bottom",
+              "type": "float",
+              "description": "Altura n\u00E3o negativa da borda inferior."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.NineSlice.Bottom",
+          "name": "Bottom",
+          "kind": "property",
+          "signature": "public float Bottom { get; }",
+          "summary": "Borda inferior em pixels da imagem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.NineSlice.Left",
+          "name": "Left",
+          "kind": "property",
+          "signature": "public float Left { get; }",
+          "summary": "Borda esquerda em pixels da imagem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.NineSlice.Right",
+          "name": "Right",
+          "kind": "property",
+          "signature": "public float Right { get; }",
+          "summary": "Borda direita em pixels da imagem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.NineSlice.Source",
+          "name": "Source",
+          "kind": "property",
+          "signature": "public RectangleF Source { get; }",
+          "summary": "Regi\u00E3o em pixels da textura.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.NineSlice.Texture",
+          "name": "Texture",
+          "kind": "property",
+          "signature": "public Texture2D Texture { get; }",
+          "summary": "Textura compartilhada; o jogo controla sua vida.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.NineSlice.Top",
+          "name": "Top",
+          "kind": "property",
+          "signature": "public float Top { get; }",
+          "summary": "Borda superior em pixels da imagem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.Graphics.ParticleEmitter",
       "name": "ParticleEmitter",
       "namespace": "Lunet.Graphics",
@@ -9925,6 +10063,40 @@
               "name": "origin",
               "type": "Vector2",
               "description": "Ponto de rota\u00E7\u00E3o, em pixels da textura."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteBatch.Draw(Lunet.Graphics.NineSlice,Lunet.RectangleF,Lunet.Graphics.Color,System.Single)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(NineSlice slice, RectangleF destination, Color color, float borderScale = 1f)",
+          "summary": "Desenha um painel nine-slice, sem aloca\u00E7\u00E3o, no lote atual.",
+          "remarks": "Se o destino for menor que a soma das bordas, comprime-as proporcionalmente por eixo e elimina o centro nesse eixo. Usa c\u00E2mera, clip, blend e sampler do lote; at\u00E9 nove quads.",
+          "parameters": [
+            {
+              "name": "slice",
+              "type": "NineSlice",
+              "description": "Regi\u00E3o e bordas da textura."
+            },
+            {
+              "name": "destination",
+              "type": "RectangleF",
+              "description": "Destino finito com tamanho n\u00E3o negativo; tamanho zero n\u00E3o desenha."
+            },
+            {
+              "name": "color",
+              "type": "Color",
+              "description": "Cor multiplicada em todas as partes."
+            },
+            {
+              "name": "borderScale",
+              "type": "float",
+              "description": "Escala positiva e finita das bordas; 1 preserva pixels da imagem."
             }
           ],
           "returns": "",
