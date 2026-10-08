@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261007-urbe-uc18-visual-lossless-guard",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T00:34:36.149Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18-visual-lossless",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-uc18-lossless-visual-undo",
+  "base_commit": "cbd1c7a58df412feceea589ae488db6eca13de22",
+  "commit": "34939add86782e2b78326c9402618f75618785a9",
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/VisualDocumentEditor.cs",
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VisualDocumentEditorTests.cs"
+  ],
+  "work_completed": [
+    "IsLosslessRoundTrip protege edição estrutural quando o Markdown não sobreviveria a uma ida-e-volta byte a byte.",
+    "WorkspaceSession recusa escrita Visual insegura independentemente da UI.",
+    "UI explica bloqueio e desabilita apenas mutações de blocos, mantendo edição Fonte.",
+    "Undo/redo sincronizam modelo visual com DocumentStore canônico.",
+    "Testes cobrem casos canônicos e não canônicos (marcadores, indentação, fence sem fechamento, CRLF e newline final)."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests e builds Web/Android/Windows",
+      "result": "pending",
+      "evidence": "CI do PR empilhado sobre #289."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency + urbe-checks",
+      "result": "pending",
+      "evidence": "CI do PR no estado combinado."
+    },
+    {
+      "kind": "human",
+      "check": "layout/toque em dispositivo",
+      "result": "not-applicable",
+      "evidence": "G-C3 separado conforme NN-017."
+    }
+  ],
+  "known_issues": [
+    "A proteção conservadora impede edição Visual em documentos não canônicos, mesmo quando a diferença seria apenas whitespace; o modo Fonte permanece disponível.",
+    "Fatia depende da integração do PR #289; persistência dos hosts, split view e Explorer completo ficam para outros recortes."
+  ],
+  "blockers": [
+    "PR base #289 ainda não integrado; CI e integrador devem validar o estado combinado."
+  ],
+  "next_actions": [
+    "Abrir PR empilhado na branch do PR #289 e validar CI.",
+    "Após integrar #289, retarget para main e aguardar integração automática routine.",
+    "Continuar UC-18 sem declarar gate G-C3 aprovado."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Markdown/DocumentStore seguem autoridade única; nenhum formato paralelo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Tarefa, branch, arquivos, verificações e bloqueios registrados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana G-C3 não antecipada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying até CI."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Mudança local ao Product, sem abstrações compartilhadas."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Correção interna do editor sem alteração de formato persistido, migração, hosts ou publicações."
+  },
+  "cost": null
+}
