@@ -16295,6 +16295,165 @@
           "since": "0.0.1"
         }
       ]
+    },
+    {
+      "id": "T:Lunet.UI.UiTheme",
+      "name": "UiTheme",
+      "namespace": "Lunet.UI",
+      "kind": "struct",
+      "signature": "public readonly struct UiTheme",
+      "summary": "Tema de cores imut\u00E1vel para controles de toque e \u00E1reas da interface.",
+      "remarks": "Re\u00FAne paletas de TouchButton e TouchSlider sem estado global, recursos gr\u00E1ficos, atualiza\u00E7\u00E3o autom\u00E1tica de controles, estilos de fonte ou arquivo persistente. default \u00E9 transparente; prefira Dark, Light, HighContrast ou uma inst\u00E2ncia personalizada.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar theme = Lunet.UI.UiTheme.Dark;\nvar background = theme.Background;\nvar buttonStyle = theme.Button;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.UiTheme.#ctor(Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.UI.TouchButtonStyle,Lunet.UI.TouchSliderStyle)",
+          "name": "UiTheme",
+          "kind": "constructor",
+          "signature": "public UiTheme(Color background, Color panel, Color text, TouchButtonStyle button, TouchSliderStyle slider)",
+          "summary": "Cria um conjunto de cores local; n\u00E3o altera controles existentes.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "background",
+              "type": "Color",
+              "description": "Cor de fundo da tela."
+            },
+            {
+              "name": "panel",
+              "type": "Color",
+              "description": "Cor dos pain\u00E9is."
+            },
+            {
+              "name": "text",
+              "type": "Color",
+              "description": "Cor de texto normal."
+            },
+            {
+              "name": "button",
+              "type": "TouchButtonStyle",
+              "description": "Paleta de bot\u00F5es, inclusive pressionado e desabilitado."
+            },
+            {
+              "name": "slider",
+              "type": "TouchSliderStyle",
+              "description": "Paleta de sliders, inclusive pressionado e desabilitado."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiTheme.Background",
+          "name": "Background",
+          "kind": "property",
+          "signature": "public Color Background { get; }",
+          "summary": "Cor de fundo para limpar ou preencher a tela.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiTheme.Button",
+          "name": "Button",
+          "kind": "property",
+          "signature": "public TouchButtonStyle Button { get; }",
+          "summary": "Cores dos bot\u00F5es normais, pressionados e desabilitados.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiTheme.Dark",
+          "name": "Dark",
+          "kind": "property",
+          "signature": "public static UiTheme Dark { get; }",
+          "summary": "Tema escuro com azul de destaque e texto claro.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiTheme.HighContrast",
+          "name": "HighContrast",
+          "kind": "property",
+          "signature": "public static UiTheme HighContrast { get; }",
+          "summary": "Tema de alto contraste com texto branco no fundo e bot\u00F5es amarelos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiTheme.Light",
+          "name": "Light",
+          "kind": "property",
+          "signature": "public static UiTheme Light { get; }",
+          "summary": "Tema claro com superf\u00EDcies claras e controles azuis.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiTheme.Panel",
+          "name": "Panel",
+          "kind": "property",
+          "signature": "public Color Panel { get; }",
+          "summary": "Cor de fundo dos pain\u00E9is e cards.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiTheme.Slider",
+          "name": "Slider",
+          "kind": "property",
+          "signature": "public TouchSliderStyle Slider { get; }",
+          "summary": "Cores dos sliders normais, pressionados e desabilitados.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiTheme.Text",
+          "name": "Text",
+          "kind": "property",
+          "signature": "public Color Text { get; }",
+          "summary": "Cor de texto geral fora dos controles.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
     }
   ]
 }

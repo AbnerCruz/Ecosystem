@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-ui-themes",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T20:04:49Z",
+  "agent": {
+    "id": "chatgpt-lunet-ui-themes",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-417",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-ui-themes-20261008",
+  "base_commit": "61309b902472c99410133e04c02360a4b32dd725",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/src/Lunet.Framework/UI/UiTheme.cs",
+    "apps/lunet2d/tests/Lunet.Tests/UiThemeTests.cs",
+    "apps/lunet2d/docs/guides/temas-ui.md",
+    "docs/governance/handoffs/HO-20261008-lunet-ui-themes.json"
+  ],
+  "work_completed": [
+    "Novo tipo de valor UiTheme com três presets e construtor explícito para personalização.",
+    "Testes de estilos e desenho de controles reais, incluindo zero alocação por quadro.",
+    "Guia offline, documentação API, roadmap e changelog."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "Aguardar PR CI; .NET 10 SDK não disponível neste executor."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "pending",
+      "evidence": "Aguardar workflow consistency."
+    },
+    {
+      "kind": "human",
+      "check": "UI themes Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/temas-ui.md",
+      "evidence": "Legibilidade e comportamento visual exigem DEVICE."
+    }
+  ],
+  "known_issues": [
+    "Sem visual theme editor, persistência de tema ou hierarquia de UI.",
+    "Integrar com PR #364 de câmera, se o histórico divergir; DEVICE pendente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar CI e erros API JSON.",
+    "Integrar por automação após reconciliação e checks; manter DEVICE pendente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Somente Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #365, branch e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE continua pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Nenhum CI, merge ou release fictício."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Tema é API interna, sem extração para Tool."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ui-theme",
+      "status": "product-specific",
+      "rationale": "Só os controles Lunet consomem; nenhuma extração."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Nova API opcional sem alterar controles nem persistência existentes."
+  },
+  "cost": null
+}

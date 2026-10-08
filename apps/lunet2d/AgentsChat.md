@@ -240,3 +240,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Isolamento: sem mudar ProjectStore, Android, outros produtos nem a trilha de Profiler #343 ou modelos PR #317.
 - Handoff: HO-20261008-lunet-tilemaps. Próximo: CI, correções, integrador automático, roteiro de toque no aparelho.
 
+### 20261008-chatgpt-lunet-ui-themes — ChatGPT → próximos agentes — review
+- LUNET-417 / Issue #365, Fase 4. Branch `agent/lunet-ui-themes-20261008` baseada em main `61309b902472c99410133e04c02360a4b32dd725`; coordenação: PR #364 de câmera em paralelo, pode exigir reconciliação de histórico/doc.
+- `UiTheme` imutável: Dark, Light, HighContrast, estilos TouchButton/TouchSlider e cores de fundo/painel/texto em um único valor. Sem global mutable state, efeitos colaterais ou resources novos.
+- Testes de opções opacas/estados pressionados-desabilitados, personalização, desenho real dos controles no backend e zero bytes após warmup; guia offline e catálogo API atualizados.
+- Sem modificação dos controles existentes, ProjectStore, Android, formato salvo, Host ou Tools; CI/merge/release/DEVICE pendentes. Fase 4 permanece aberta.
+- Reuse assessment: product-specific; NN-002/008/017/018/022. Handoff HO-20261008-lunet-ui-themes.
