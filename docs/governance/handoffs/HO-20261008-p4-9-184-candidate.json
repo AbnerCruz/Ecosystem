@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261008-p4-9-184-candidate",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T04:12:00Z",
+  "timestamp": "2026-10-08T04:15:06.428Z",
   "agent": {
     "id": "chatgpt-ecosystem-p4-9",
     "kind": "ai-agent"
@@ -13,7 +13,7 @@
   "branch": "docs/p4-9-urbe-184-validation",
   "base_commit": "0dc9471293d1d17657c54b91c812e7be58f1b717",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/312",
   "files_changed": [
     "ROADMAP.md",
     "docs/validation/urbe/1.8.4-beta-android.json",
