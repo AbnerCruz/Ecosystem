@@ -67,4 +67,25 @@ public sealed class VisualDocumentEditorTests
         Assert.Equal("csharp", model.Blocks[0].Language);
         Assert.Contains("Console.WriteLine(1);", model.Blocks[0].Text, StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData("# Cabeçalho\n\nTexto simples.\n")]
+    [InlineData("- um\n- dois\n")]
+    [InlineData("---\ntitle: Demo\n---\n\n# Cabeçalho\n")]
+    public void LosslessGuardAllowsCanonicalMarkdown(string markdown)
+    {
+        Assert.True(VisualDocumentEditor.IsLosslessRoundTrip(markdown));
+    }
+
+    [Theory]
+    [InlineData("# Cabeçalho\n\nTexto sem quebra final")]
+    [InlineData("* item\n")]
+    [InlineData("  # Título indentado\n")]
+    [InlineData("```\nBloco sem fechamento\n")]
+    [InlineData("Texto com CRLF\r\n")]
+    public void LosslessGuardRejectsMarkdownThatWouldBeRewritten(string markdown)
+    {
+        Assert.False(VisualDocumentEditor.IsLosslessRoundTrip(markdown));
+    }
+
 }
