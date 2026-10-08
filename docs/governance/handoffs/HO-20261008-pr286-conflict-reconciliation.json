@@ -1,0 +1,73 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-pr286-conflict-reconciliation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T11:38:34.138759Z",
+  "agent": {
+    "id": "codex-pr-conflict-reconciliation",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-uc18-explorer-move",
+  "base_commit": "29fbc892197882ec8de180ba90cd90f0d344e7d8",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/286",
+  "files_changed": [
+    "docs/governance/handoffs/HO-20261008-pr286-conflict-reconciliation.json"
+  ],
+  "work_completed": [
+    "Incorporada a main atual na branch do PR sem rebase, force-push, descarte de alterações concorrentes ou integração manual.",
+    "Preservada a classificação crítica original e os gates/dependências existentes."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Preservação do código do Product",
+      "result": "passed",
+      "evidence": "git diff --cached HEAD altera apenas documentos de plataforma e handoff; nenhum arquivo apps/* mudou nesta combinação."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency após a main avançar",
+      "result": "passed",
+      "evidence": "Todos os 22 checks locais passaram; snapshot de Issues é conferido remotamente pelo integrador."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Reavaliar CI e estado combinado pelo integrador automático. Não realizar merge manual nem adicionar integrar."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/governance/multi-agent.md",
+    "apps/lunet2d/AGENTS.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Reconciliação registrada com autoria própria e PR original."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes automatizados não substituem DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Somente reconciliação da branch; integração do Product não declarada concluída."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "pr-conflict-reconciliation",
+      "status": "product-specific",
+      "rationale": "Reconciliação dos PRs existentes sem extração nem novo contrato."
+    }
+  ]
+}
