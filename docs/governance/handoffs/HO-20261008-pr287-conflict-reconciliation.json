@@ -89,8 +89,12 @@
   "reuse_assessment": [
     {
       "subject": "pr-conflict-reconciliation",
-      "status": "product-specific",
-      "rationale": "Reconciliação dos PRs existentes sem extração nem novo contrato."
+      "status": "external-consumer-exists",
+      "rationale": "Necessidade compartilhada de reconciliação semântica entre PRs de Urbe e Lunet2D (#286 e #324), com Extraction Review pendente conforme ADR-0011; nenhuma extração ou alteração de integração é executada aqui.",
+      "consumers": [
+        "lunet2d"
+      ],
+      "extraction_review": "pending"
     }
   ]
 }
