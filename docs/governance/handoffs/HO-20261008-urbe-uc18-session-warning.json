@@ -1,0 +1,101 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-urbe-uc18-session-warning",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T04:07:11.889Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18-session-safety",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-uc18-session-persistence-warning",
+  "base_commit": "087baae352153a7c7fbae38be9813751718ecc97",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/309",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Foundation.razor",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261008-urbe-uc18-session-warning.json"
+  ],
+  "work_completed": [
+    "Home da prévia C# declara falta de persistência física, alertando contra perda ao fechar ou atualizar.",
+    "Contagens no início refletem os arquivos e abas reais da WorkspaceSession sem novo armazenamento.",
+    "Status de UC-17 corrigido para integrado; acesso ao Explorer continua direto.",
+    "Smoke Web verifica aviso e contagens após jornada de três documentos/abas em base-path e offline."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "consistency, Urbe CI Web/Android/Windows/E2E",
+      "result": "pending",
+      "evidence": "PR #309 empilhado; CI pendente."
+    },
+    {
+      "kind": "human",
+      "check": "layout/toque e dados em dispositivo real",
+      "result": "not-applicable",
+      "evidence": "Aprovação humana segue G-C3/UC-29, não presumida."
+    }
+  ],
+  "known_issues": [
+    "A prévia C# ainda não salva os documentos em disco; aviso reduz falsa expectativa mas não substitui adaptadores de hosts.",
+    "Depende do PR #300 modo Dividido e de integração base; PR #286 Explorer permanece em trilha independente."
+  ],
+  "blockers": [
+    "PR #300 ainda pendente do integrador; PR #309 não deve ser integrado antes da base.",
+    "Host persistence requer decisão/exame separado das zonas críticas e testes de dados."
+  ],
+  "next_actions": [
+    "Verificar CI e corrigir falhas do smoke.",
+    "Após integrar #300, retarget #309 para main e deixar integrador de rotina assumir.",
+    "Continuar UC-18 e posteriormente host persistence sob regras críticas."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "docs/governance/integration-policy.json",
+    "docs/adr/0015-integrador-automatico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Dashboard lê a WorkspaceSession, sem storage paralelo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff lista branch, arquivos e verificações."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana reservada ao gate."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying até CI."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Alterações locais na UI do Urbe."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Apenas aviso de dados e projeção do estado de sessão, sem gravar, migrar ou alterar formato."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "session-preview-state",
+      "status": "product-specific",
+      "rationale": "UI local do Urbe sem consumidor externo independente."
+    }
+  ]
+}

@@ -143,3 +143,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Build .NET 10 sem warnings/errors, suíte padrão 400/400. Testes dos guias agora criam projeto Em branco, escrevem o código pelo fluxo existente e compilam/executam no GameHost com toque físico 2×; medições de zero bytes e regressões de A*/câmera incluídas. Testes de criação dos novos modelos permanecem nos PRs protegidos originais, não foram removidos daqueles PRs.
 - Reconciliação dos PRs #302/#307 publicada separadamente, com 386/400 testes e 22 checks, sem simular autorização. A inclusão dos modelos continua crítica pela zona ProjectStore e depende do proprietário; isso não impede a entrega destas APIs sem efeito protegido.
 - Closeout de colisão/câmera conserva as aprovações canônicas #303/#304. A* recebeu evidência de integração/release; DEVICE A*/animação/partículas continua pendente, Fase 4 aberta. Próximo: integrar esta fatia pelo integrador, confirmar APK direto e entregar roteiro dos guias.
+
+
+### 20261008-codex-demo-templates — Codex → próximos agentes — review
+- Consolidação da parte protegida dos PRs #302/#307 em uma revisão única: modelos de animação/tween e partículas. Branch `agent/lunet-demo-templates-20261008`, base API `e96e085` (PR #316); nenhuma API Framework adicionada/alterada nesta fatia.
+- ProjectStore muda somente duas entradas de seleção; ProjectTemplates contém os exemplos já executados e Android adiciona duas opções, com ScrollView. Formato lunet.json e projetos existentes preservados; alteração permanece explicitamente crítica user-data pela política da main.
+- 403 testes padrão: mantém os 400 da entrega de APIs e adiciona 3 casos de factory/compatibilidade. Novos casos verificam criação, código igual ao guia e compilável, rejeição de nome duplicado sem sobrescrever e bytes do manifest/código/assets do projeto existente preservados.
+- Após integração das APIs, publicar esta revisão pronta e encerrar os PRs redundantes apontando para ela; nunca adicionar integrar ou simular autorização. DEVICE dos modelos continua pendente; gate Fase 4 aberto.

@@ -1,0 +1,128 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-demo-templates",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T08:39:16Z",
+  "agent": {
+    "id": "codex-lunet-demo-templates",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-404",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-demo-templates-20261008",
+  "base_commit": "e96e085cd58f2ebec8cedbca16e1c253e673bfe7",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/guides/animacao.md",
+    "apps/lunet2d/docs/guides/particulas.md",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AdvancedTemplateTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-demo-templates.json"
+  ],
+  "work_completed": [
+    "Consolidado efeito protegido de criação dos modelos LUNET-404/LUNET-405 em revisão única, separado das APIs do PR #316.",
+    "Dois valores adicionais do enum preservando índices existentes, fontes procedurais oficiais e duas opções de criação Android com rolagem.",
+    "ProjectStore muda somente seleção da fonte inicial; formato, migração e projetos existentes preservados.",
+    "3 casos novos verificam índices compatíveis, criação/compilação igual aos guias, rejeição de duplicata sem sobrescrever e bytes/código/assets dos projetos existentes preservados."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "Build portátil sem warnings/errors; Android segue CI, fonte Android idêntica ao candidato já testado 10fe3bf."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Suíte padrão xUnit v3: 403/403; mantém 400 testes das APIs e adiciona 3 casos de factory/compatibilidade/preservação de projetos."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22 checks locais; snapshot de Issues segue CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Modelos na criação de projetos Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/animacao.md",
+      "evidence": "Criar ambos os modelos em telas pequenas/rotacionadas e testar animacao.md/particulas.md no Preview rápido/isolado, offline; reabrir projeto existente. Aprovação de integração crítica é separada, pelo integrador."
+    }
+  ],
+  "known_issues": [
+    "Depende da entrega das APIs do PR #316; não altera Framework, formato lunet.json, migração, importação ou projetos existentes.",
+    "ProjectStore.cs é zona protegida, mesmo com mudança limitada a seleção do template. Requer autorização do proprietário após checks verdes.",
+    "Aparência, toque e GL exigem aparelho; CI não aprova esses critérios."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Depois das APIs integradas, publicar PR pronto desta fatia; encerrar #302/#307 como substituídos preservando histórico.",
+    "Proprietário autoriza o efeito protegido pela label integrar após os checks do integrador; agente nunca adiciona essa label.",
+    "Confirmar APK e testar ambos os guias sem fechar Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Código específico Core/Android do Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Tasks LUNET-404/405, Issues #298/#306, base/branch/handoff explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente separado de testes/factory."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "403 testes não equivalem a integração/APK/aparelho."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração/contrato/backend novo."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Seleção de modelos em ProjectStore.cs toca zona protegida user-data da main. Efeito limitado à criação de projetos novos, sem alterar formato/migração/projetos existentes; revisão única para autorização."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "project-demo-templates",
+      "status": "product-specific",
+      "rationale": "Modelos próprios da criação de projetos do Lunet, exemplos das APIs oficiais."
+    }
+  ],
+  "cost": null
+}
