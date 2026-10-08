@@ -575,7 +575,7 @@ a:focus-visible {
 .editor-tab {
     flex: 0 0 auto;
     display: inline-grid;
-    grid-template-columns: minmax(0, auto) auto;
+    grid-template-columns: minmax(0, auto) auto auto;
     align-items: center;
     border: 1px solid #2d4439;
     border-radius: .7rem;
@@ -590,6 +590,7 @@ a:focus-visible {
 }
 
 .editor-tab-open,
+.editor-tab-pin,
 .editor-tab-close,
 .editor-history-actions button {
     border: 0;
@@ -613,6 +614,7 @@ a:focus-visible {
     white-space: nowrap;
 }
 
+.editor-tab-pin,
 .editor-tab-close {
     width: 2rem;
     height: 2rem;
@@ -624,6 +626,13 @@ a:focus-visible {
     cursor: pointer;
 }
 
+.editor-tab-pin[aria-pressed="true"] {
+    color: #9dd5b1;
+    background: #254433;
+}
+
+.editor-tab-pin:hover,
+.editor-tab-pin:focus-visible,
 .editor-tab-close:hover,
 .editor-tab-close:focus-visible {
     background: #294035;
