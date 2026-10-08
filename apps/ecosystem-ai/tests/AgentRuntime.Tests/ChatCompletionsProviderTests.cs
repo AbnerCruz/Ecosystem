@@ -113,6 +113,20 @@ public class ChatCompletionsProviderTests
     }
 
     [Fact]
+    public async Task Truncamento_e_filtro_falham_sem_declarar_conclusao()
+    {
+        foreach (var reason in new[] { "length", "content_filter" })
+        {
+            var json = """{"choices":[{"message":{"content":"parcial"},"finish_reason":"REASON"}],"usage":{"cost":0.01}}""".Replace("REASON", reason);
+            using var http = new HttpClient(new Handler(json));
+            var provider = new ChatCompletionsProvider(http, new Uri("https://provider.example.test/v1/chat/completions"), null, 1, 1);
+            var ex = await Assert.ThrowsAsync<ProviderException>(async () => await provider.CompleteAsync(Request(Message.User("texto")), CancellationToken.None));
+            Assert.Equal(reason == "length" ? "truncated" : "filtered", ex.Kind);
+            Assert.False(ex.IsTransient);
+        }
+    }
+
+    [Fact]
     public async Task Cli_help_e_exigencia_de_configuracao_fechada()
     {
         Assert.Equal(0, await EcosystemAiCli.RunAsync(["--help"]));
