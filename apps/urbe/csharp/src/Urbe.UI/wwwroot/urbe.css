@@ -882,3 +882,113 @@ a:focus-visible {
         margin-top: 1rem;
     }
 }
+
+
+/* UC-18 — Explorer folder actions + move mode */
+.explorer-location,
+.explorer-folder-actions,
+.explorer-move-banner {
+    margin-top: .8rem;
+    border: 1px solid #2d473a;
+    border-radius: .85rem;
+    background: #15221c;
+}
+
+.explorer-location {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .7rem .8rem;
+    color: #9fb5a8;
+}
+
+.explorer-location span {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.explorer-location strong {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #d6ecdd;
+}
+
+.explorer-location button,
+.explorer-folder-actions button,
+.explorer-move-banner button {
+    border: 1px solid #3b5b4b;
+    border-radius: .6rem;
+    padding: .45rem .65rem;
+    background: #1c2d25;
+    color: #cbe5d3;
+    font: inherit;
+    font-size: .78rem;
+    cursor: pointer;
+}
+
+.explorer-move-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .8rem;
+    padding: .7rem .8rem;
+    border-color: #6a7750;
+    background: #242a1d;
+    color: #dce8c6;
+}
+
+.explorer-folder-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .5rem;
+    padding: .75rem;
+}
+
+.explorer-folder-actions > div {
+    min-width: 0;
+    display: grid;
+    gap: .12rem;
+}
+
+.explorer-folder-actions span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #81998c;
+    font-size: .72rem;
+}
+
+.explorer-row.selected {
+    border-color: #75a386;
+    background: #20342a;
+}
+
+.explorer-row.moving {
+    border-color: #9aa86b;
+    background: #2a301f;
+}
+
+.explorer-row[draggable="true"] {
+    touch-action: pan-y;
+}
+
+.explorer-pending {
+    margin: .8rem 0 0;
+    color: #839b8e;
+    font-size: .74rem;
+}
+
+@media (min-width: 760px) {
+    .explorer-controls {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .explorer-folder-actions {
+        grid-template-columns: minmax(12rem, 1fr) auto auto auto;
+        align-items: center;
+    }
+}
