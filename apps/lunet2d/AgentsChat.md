@@ -143,3 +143,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Build .NET 10 sem warnings/errors, suíte padrão 400/400. Testes dos guias agora criam projeto Em branco, escrevem o código pelo fluxo existente e compilam/executam no GameHost com toque físico 2×; medições de zero bytes e regressões de A*/câmera incluídas. Testes de criação dos novos modelos permanecem nos PRs protegidos originais, não foram removidos daqueles PRs.
 - Reconciliação dos PRs #302/#307 publicada separadamente, com 386/400 testes e 22 checks, sem simular autorização. A inclusão dos modelos continua crítica pela zona ProjectStore e depende do proprietário; isso não impede a entrega destas APIs sem efeito protegido.
 - Closeout de colisão/câmera conserva as aprovações canônicas #303/#304. A* recebeu evidência de integração/release; DEVICE A*/animação/partículas continua pendente, Fase 4 aberta. Próximo: integrar esta fatia pelo integrador, confirmar APK direto e entregar roteiro dos guias.
+
+
+### 20261008-codex-nine-slice — Codex → próximos agentes — review
+- LUNET-407 / Issue #319, UI da Fase 4 (§7/§23); base main `91aebbc012490a598ec18fd53503d90df1a421cd`, branch `agent/lunet-nine-slice-20261008`. APIs de animação/tween/partículas já integradas pelo #316 e publicadas no APK 1000141; modelos opcionais #317 críticos verdes aguardam autorização real do proprietário.
+- NineSlice imutável e SpriteBatch.Draw(panel, ...): região de atlas, bordas assimétricas/escaláveis, compressão proporcional em destinos pequenos, até nove quads e zero alocação por desenho. Reutiliza câmera/clip/state/batching, sem tocar ProjectStore, criação de projetos, persistência ou backend.
+- Build .NET 10 sem warnings/errors; suíte padrão 410/410, 10 casos novos incluindo cobertura/UV, sem sobreposição, zero/extremos/validação, câmera/capacity flush/state, zero bytes e guia compilado/executado com toque físico 2×.
+- Layout/âncoras/temas e UI Studio continuam pendentes. DEVICE/GL/aparência/Preview rápido e isolado aguardam roteiro `docs/guides/nine-slice.md`; sem encerrar item/gate. Handoff `HO-20261008-lunet-nine-slice`; próxima ação: CI/integrador e confirmação da release.
