@@ -20,7 +20,7 @@
   Gate: round-trip preserva semântica e IDs; parse inválido não altera revisão;
   versão futura falha sem sobrescrever dados; mudanças textuais/visuais usam
   as mesmas transações. Depende de MA-001 e ADR-0030 legitimado.
-  - Slice iniciado na Issue #294: codec JSON v1 estrito, schema, validação de AST/refs/limites, sessão de edição em memória, revisões e undo/redo. Ainda requer conferência de CI/integração e fechamento da estratégia de migração explícita antes de marcar [x].
+  - Slice iniciado na Issue #294: codec JSON v1 estrito, schema, validação de AST/refs/limites, sessão de edição em memória, revisões e undo/redo. Migration hooks opt-in, copy-on-write e regressões incluídos; falta CI no head atual e integração antes de marcar [x].
 - [ ] MA-003 — Arquivo portável, assets por ID/hash, save/autosave, backup e
   recovery. Gate: falhas injetadas antes/depois de replace preservam ao menos
   uma revisão válida; reopen completo, migrations, import/export, traversal,
