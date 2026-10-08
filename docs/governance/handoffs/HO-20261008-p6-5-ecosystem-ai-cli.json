@@ -1,0 +1,119 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-p6-5-ecosystem-ai-cli",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T18:45:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-cli",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-ecosystem-ai-live-cli-slice-20261008",
+  "base_commit": "97eefdeac179884478cb790339e3234e707a4915",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/AgentRuntime.Providers.ChatCompletions.csproj",
+    "apps/ecosystem-ai/src/AgentRuntime.Providers.ChatCompletions/ChatCompletionsProvider.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/EcosystemAi.Cli.csproj",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/AgentRuntime.Tests.csproj",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/ChatCompletionsProviderTests.cs",
+    "apps/ecosystem-ai/EcosystemAI.slnx",
+    "apps/ecosystem-ai/README.md",
+    "apps/ecosystem-ai/docs-r4-cli.md",
+    "docs/governance/handoffs/HO-20261008-p6-5-ecosystem-ai-cli.json"
+  ],
+  "work_completed": [
+    "Nova porta concreta para APIs Chat Completions configuráveis fora do Core: traduz tool_calls/tool results e custos informados ou estimados por tarifa declarada.",
+    "CLI local portável que usa WorkspaceSession/AgentRunner originais com Context do projeto, tools files.read/write, grant explícito, verificação e custos; sem modelo/agent loop duplicado.",
+    "HTTP remoto somente TLS; HTTP plano só em loopback, redirecionamento desativado; segredo recebido do ambiente; sem permissão destrutiva e write somente com --allow-create.",
+    "Testes sem rede/sem chave com HttpMessageHandler falso cobrem tradução, round trip de tool calls, status HTTP, custo desconhecido, endpoint inseguro e CLI help."
+  ],
+  "verification": [
+    {
+      "check": "Ecosystem AI tests combinados",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "O CI ecosystem-ai-ci.yml executa dotnet test --project tests/AgentRuntime.Tests com compilações CLI e provider Chat Completions; confirmar após PR."
+    },
+    {
+      "check": "Ecosystem consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando checks combinados do integrador sobre a main atual."
+    },
+    {
+      "check": "Execução externa paga",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Nenhum endpoint real ou segredo é usado nesta entrega; testes mockados validam contrato. Validação de UX e tarifas reais pertence a slices posteriores."
+    }
+  ],
+  "known_issues": [
+    "Este slice é CLI local e não UI Android; P6-5 mantém estado aberto até experiência completa.",
+    "Sem histórico persistente, conversas com turnos múltiplos, gestão de equipe ou memória; tudo fica na sessão.",
+    "Tarifas configuradas são estimativas e o limite local não substitui limites reais no fornecedor.",
+    "Usuário deverá informar modelo, endpoint, custo esperado e segredo para rodar provider real."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI, corrigir builds e integração do primeiro slice.",
+    "Adicionar projeto/sessão persistente com operações seguras e fluxo de revisão/artefatos.",
+    "Planejar e implementar UI mobile do Ecosystem AI separada do Runtime, respeitando decisão de arquitetura."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "apps/ecosystem-ai/README.md",
+    "apps/ecosystem-ai/src/AgentRuntime.Core/Model.cs",
+    "apps/ecosystem-ai/src/AgentWorkspace/WorkspaceSession.cs"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Tudo local ao Product ecosystem-ai sem referências aos Products Urbe ou Lunet."
+    },
+    {
+      "id": "NN-007",
+      "evidence": "Tools via ToolHost e modelos via IModelProvider, Core desconhece Host e rede."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #354, branch, PR, testes e handoff."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "agent.act e fs.read grant efetivo, fs.write somente opt-in, delete não registrado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Slice em review até CI/merge, P6-5 continua aberta."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Usa Runner, Workspace, ledger e tools já existentes, sem um segundo laço agêntico."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "chat-completions-model-adapter",
+      "status": "product-specific",
+      "rationale": "Primeiro consumidor real é o Ecosystem AI; extração compartilhada só após segundo consumidor e review."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Novo código estritamente local ao Product ecosystem-ai; sem schema, policy, workflow, segredo gravado, UI ou pacote público."
+  },
+  "cost": null
+}
