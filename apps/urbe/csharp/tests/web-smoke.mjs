@@ -7,6 +7,18 @@ import { readFile, stat } from 'node:fs/promises';
 import { resolve, sep, extname } from 'node:path';
 import { chromium } from 'playwright';
 
+// CI watchdog: surface the last completed stage rather than spending an
+// entire runner session on a browser/Blazor interaction that never settles.
+let lastSmokeStage = 'bootstrap';
+function smokeStage(stage) {
+    lastSmokeStage = stage;
+    console.log('UC-18 Web smoke stage:', stage);
+}
+setTimeout(() => {
+    console.error('UC-18 Web smoke exceeded seven minutes at stage:', lastSmokeStage);
+    process.exit(1);
+}, 7 * 60 * 1000).unref();
+
 const root = resolve(process.argv[2] || 'artifacts/web/wwwroot');
 await stat(resolve(root, 'index.html'));
 
@@ -84,12 +96,14 @@ async function assertShell(page, journey = false) {
         'Estilos da RCL carregados');
 
     if (journey) {
+    smokeStage('explorer-open');
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
 
     // UC-18: prove that the shared in-memory workspace really connects
     // Explorer → folder actions/move → Editor → Markdown domain → Visual.
+    smokeStage('create-folder');
     await page.getByLabel('Nova pasta').fill('Destino');
     await page.getByRole('button', { name: 'Criar pasta', exact: true }).click();
     await page.getByLabel('Ações de Destino').waitFor();
@@ -99,6 +113,7 @@ async function assertShell(page, journey = false) {
     await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Editor/);
 
+    smokeStage('source-edit');
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
     const source = page.getByLabel('Markdown da nota');
     await source.fill('# Primeira versão\\n\\nTexto inicial.');
@@ -121,6 +136,7 @@ async function assertShell(page, journey = false) {
 
     // Split mode must reflect Source → canonical model and Visual → Source
     // without creating a parallel document or breaking history on mobile.
+    smokeStage('split-visual-source');
     await page.getByRole('button', { name: 'Dividido', exact: true }).click();
     const splitSource = page.getByLabel('Markdown da nota');
     await splitSource.waitFor({ state: 'visible' });
@@ -166,6 +182,7 @@ async function assertShell(page, journey = false) {
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
 
     const destinationRow = page.locator('[data-path="Destino"]');
+    smokeStage('drag-file-into-folder');
     await smokeRow.dragTo(destinationRow);
     await page.waitForFunction(
         () => !document.querySelector('[data-path="Smoke.md"]'),
@@ -200,6 +217,7 @@ async function assertShell(page, journey = false) {
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
 
     const anotherRow = page.getByRole('button', { name: /Outra\.md/ });
+    smokeStage('touch-long-press-move');
     await anotherRow.dispatchEvent('pointerdown', {
         pointerType: 'touch',
         button: 0,
@@ -223,6 +241,7 @@ async function assertShell(page, journey = false) {
 
     }
 
+    smokeStage('navigation-after-edits');
     await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
     await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Cidade/);
@@ -276,6 +295,7 @@ try {
                 console.error(response.status(), response.url());
         });
 
+        smokeStage('online-' + base);
         console.log('UC-17/18 shell + editor online:', base);
         await page.goto(origin + base);
         await assertShell(page, base === '/preview/');
@@ -314,6 +334,7 @@ try {
                 console.error(response.status(), response.url());
         });
 
+        smokeStage('offline-' + base);
         console.log('UC-17/18 shell + editor offline:', base);
         await page.goto(origin + base);
         await assertShell(page, base === '/');
