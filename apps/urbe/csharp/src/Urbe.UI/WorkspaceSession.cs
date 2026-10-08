@@ -116,6 +116,16 @@ public sealed class WorkspaceSession : IDisposable
         CurrentDocument is not null &&
         VisualDocumentEditor.IsLosslessRoundTrip(CurrentDocument.Content);
 
+    /// <summary>
+    /// HTML visual editing must not normalize any untouched Markdown.
+    /// Independent of CanEditVisualBlocks: the HTML converter has its own
+    /// fidelity boundary and only the Source mode is always lossless.
+    /// </summary>
+    public bool CanEditVisualHtml =>
+        !IsReadOnly &&
+        CurrentDocument is not null &&
+        VisualMarkdown.IsLosslessEditorRoundTrip(CurrentDocument.Content);
+
     public IReadOnlyList<EditorWorkspaceTab> Tabs =>
         Array.AsReadOnly(
             _tabs
@@ -513,7 +523,7 @@ public sealed class WorkspaceSession : IDisposable
 
     public UrbeDocument? UpdateVisualHtml(string? html)
     {
-        if (CurrentDocument is null)
+        if (!CanEditVisualHtml)
             return null;
 
         var markdown = VisualMarkdown.FromHtmlUsingEditorSource(
