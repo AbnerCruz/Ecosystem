@@ -992,3 +992,98 @@ a:focus-visible {
         align-items: center;
     }
 }
+
+/* UC-18 / REQ-094 — native C# clock, stopwatch and timer in the editor footer. */
+.editor-time-tools {
+    display: grid;
+    gap: .7rem;
+    margin-top: 1.2rem;
+    padding: .85rem;
+    border: 1px solid #355443;
+    border-radius: .9rem;
+    background: #17271f;
+    min-width: 0;
+}
+.editor-time-head,
+.editor-time-body,
+.editor-time-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .65rem;
+}
+.editor-time-head {
+    justify-content: space-between;
+}
+.editor-time-head > strong {
+    color: #d5efdd;
+}
+.editor-time-modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+}
+.editor-time-modes button,
+.editor-time-actions button {
+    min-height: 2.4rem;
+    border: 1px solid #426652;
+    border-radius: .6rem;
+    padding: .48rem .75rem;
+    background: #1c3428;
+    color: #deefe2;
+    cursor: pointer;
+}
+.editor-time-modes button[aria-pressed="true"] {
+    background: #315d43;
+    border-color: #86cca1;
+}
+.editor-time-actions button:disabled {
+    opacity: .5;
+    cursor: default;
+}
+.editor-time-display {
+    color: #e3f5e7;
+    font-size: clamp(1.4rem, 5vw, 2rem);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .05em;
+    white-space: nowrap;
+}
+.editor-time-body {
+    justify-content: space-between;
+}
+.editor-time-duration {
+    display: grid;
+    gap: .25rem;
+    color: #a8c0b1;
+    font-size: .8rem;
+}
+.editor-time-duration input {
+    width: 6.5rem;
+    min-height: 2.4rem;
+    border: 1px solid #426652;
+    border-radius: .6rem;
+    padding: .4rem .55rem;
+    background: #111e17;
+    color: #e8f6e9;
+}
+.editor-time-finished {
+    color: #f0d39c;
+    font-weight: 700;
+}
+@media (max-width: 599px) {
+    .editor-time-head,
+    .editor-time-body {
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .editor-time-modes {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .editor-time-modes button {
+        min-width: 0;
+        padding: .45rem .25rem;
+        font-size: .75rem;
+    }
+}
