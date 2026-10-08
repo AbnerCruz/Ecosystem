@@ -1,4 +1,7 @@
 @page "/editor"
+@implements IAsyncDisposable
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
 @inject WorkspaceSession Workspace
 @inject NavigationManager Navigation
 
@@ -107,13 +110,27 @@
         <div class="editor-stage-layout @(Workspace.Mode == EditorSurfaceMode.Split ? "split" : "")">
         @if (Workspace.Mode != EditorSurfaceMode.Visual)
         {
-            <label class="editor-source-field">
-                <span class="sr-only">Markdown da nota</span>
-                <textarea value="@document.Content"
-                          disabled="@Workspace.IsReadOnly"
-                          @oninput="OnSourceInput"
-                          spellcheck="true"></textarea>
-            </label>
+            <div class="editor-source-container">
+                <div class="editor-source-tools" role="toolbar" aria-label="Formatação da fonte Markdown">
+                    <button type="button"
+                            disabled="@Workspace.IsReadOnly"
+                            @onclick="ToggleInlineCode"
+                            aria-label="Código em linha">Código em linha</button>
+                    <span>Seleção: envolve com crases. Cursor: insere duas crases.</span>
+                </div>
+                @if (_inlineCodeError is not null)
+                {
+                    <p class="editor-stage-note" role="alert">@_inlineCodeError</p>
+                }
+                <label class="editor-source-field">
+                    <span class="sr-only">Markdown da nota</span>
+                    <textarea @ref="_sourceTextarea"
+                              value="@document.Content"
+                              disabled="@Workspace.IsReadOnly"
+                              @oninput="OnSourceInput"
+                              spellcheck="true"></textarea>
+                </label>
+            </div>
         }
         @if (Workspace.Mode != EditorSurfaceMode.Source)
         {
@@ -325,8 +342,81 @@
     }
 
 
+    private ElementReference _sourceTextarea;
+    private IJSObjectReference? _sourceSelectionModule;
+    private string? _inlineCodeError;
+
+    private sealed record SourceSelectionSnapshot(string Text, int Start, int End);
+
+    private async Task ToggleInlineCode()
+    {
+        var original = Workspace.CurrentDocument;
+        if (original is null || Workspace.IsReadOnly ||
+            Workspace.Mode == EditorSurfaceMode.Visual)
+            return;
+
+        try
+        {
+            _sourceSelectionModule ??= await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./_content/Urbe.UI/editor-source-selection.js");
+            var selection = await _sourceSelectionModule.InvokeAsync<SourceSelectionSnapshot?>(
+                "capture", _sourceTextarea);
+
+            // Refuse stale DOM values instead of overwriting concurrent edits.
+            if (selection is null ||
+                !string.Equals(selection.Text, original.Content, StringComparison.Ordinal) ||
+                Workspace.CurrentDocument?.Id != original.Id)
+            {
+                _inlineCodeError = "O editor mudou durante o comando. Tente novamente.";
+                return;
+            }
+
+            var changed = InlineCodeEditing.Toggle(
+                original.Content, selection.Start, selection.End);
+            if (changed is null)
+            {
+                _inlineCodeError = "Selecione texto de uma única linha para código em linha.";
+                return;
+            }
+
+            if (Workspace.UpdateSource(changed.Markdown) is null)
+                return;
+
+            _inlineCodeError = null;
+            if (Workspace.Mode == EditorSurfaceMode.Split)
+                SyncVisualModel();
+
+            await _sourceSelectionModule.InvokeVoidAsync(
+                "restore", _sourceTextarea, changed.Markdown,
+                changed.SelectionStart, changed.SelectionEnd);
+        }
+        catch (JSDisconnectedException)
+        {
+            _inlineCodeError = "Editor indisponível durante a navegação.";
+        }
+        catch (JSException)
+        {
+            _inlineCodeError = "Não foi possível acessar a seleção do editor.";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_sourceSelectionModule is null)
+            return;
+        try
+        {
+            await _sourceSelectionModule.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The native WebView or browser circuit is already gone.
+        }
+    }
+
     private void OnSourceInput(ChangeEventArgs args)
     {
+        _inlineCodeError = null;
         Workspace.UpdateSource(args.Value?.ToString() ?? string.Empty);
         if (Workspace.Mode == EditorSurfaceMode.Split)
             SyncVisualModel();
