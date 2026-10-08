@@ -102,6 +102,15 @@ public sealed class ContentManager : IDisposable
         catch (JsonException ex) { throw new InvalidDataException($"Não foi possível ler \"{path}\": {ex.Message}", ex); }
     }
 
+    /// <summary>Lê um mapa de tiles JSON v1 de Content/Data; o jogo pode carregar a textura por TexturePath.</summary>
+    /// <param name="path">Caminho relativo do JSON dentro de Content.</param>
+    /// <returns>Mapa imutável, independente de GPU e do Tile Studio.</returns>
+    public TileMap LoadTileMap(string path)
+    {
+        try { return TileMap.Parse(ReadText(path)); }
+        catch (InvalidDataException ex) { throw new InvalidDataException("Tilemap " + path + ": " + ex.Message, ex); }
+    }
+
     /// <summary>Carrega um atlas de texturas (JSON com a textura e as regiões nomeadas). Cacheado.</summary>
     /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
     /// <param name="filter">Filtro de amostragem: `Point` (pixels nítidos) ou `Linear` (suave).</param>
