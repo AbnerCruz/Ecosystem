@@ -316,9 +316,9 @@ async function assertNoteTemplates(page) {
     await page.getByRole('heading', { name: 'Modelo base', exact: true }).waitFor();
 
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
-    await page.getByLabel('Markdown da nota').fill('# {{Tema}}\\n\\nPessoa: {{Pessoa}}\\n{{Tema}}');
+    await page.getByLabel('Markdown da nota').fill('# {{Tema}}\n\nPessoa: {{Pessoa}}\n{{Tema}}');
     await page.getByRole('button', { name: 'Salvar como modelo', exact: true }).click();
-    await page.getByRole('status').filter({ hasText: /Modelo criado: Modelos\\/Modelo base\\.md/ }).waitFor();
+    await page.getByRole('status').filter({ hasText: /Modelo criado: Modelos\/Modelo base\.md/ }).waitFor();
 
     smokeStage('note-template-fill');
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
@@ -334,7 +334,7 @@ async function assertNoteTemplates(page) {
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
     assert.equal(
         await page.getByLabel('Markdown da nota').inputValue(),
-        '# Teste\\n\\nPessoa: Alice $&\\nTeste');
+        '# Teste\n\nPessoa: Alice $&\nTeste');
 
     const metrics = await page.evaluate(() => ({
         width: innerWidth,
