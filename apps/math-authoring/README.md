@@ -67,7 +67,7 @@ arquivo avariado.
 **Limites conhecidos:** o rename/replace atômico só vale no filesystem local
 que oferece essa primitiva; SAF/document providers Android têm semântica
 diferente e exigem adapter transacional próprio. Não foi realizado DEVICE.
-Não há crash-fsync de diretório garantido em todos os sistemas operacionais.
+Gravações concorrentes para **o mesmo arquivo, dentro do mesmo processo**, são serializadas por caminho, impedindo substituições concorrentes de checkpoint e rollback de revisão; isso **não** implementa lock entre processos, sincronização multiplayer nem atomicidade SAF. Não há crash-fsync de diretório garantido em todos os sistemas operacionais.
 A autenticação de autor/assinatura criptográfica não faz parte do pacote: SHA-256
 detecta corrupção, mas **não** certifica procedência contra adulteração intencional.
 Assets do Stage continuam sem nós de cena até MA-005; a lista de media types
