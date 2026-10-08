@@ -4,6 +4,7 @@
     <Project Path="src/AgentWorkspace/AgentWorkspace.csproj" />
     <Project Path="src/AgentRuntime.Providers.ChatCompletions/AgentRuntime.Providers.ChatCompletions.csproj" />
     <Project Path="src/EcosystemAi.Cli/EcosystemAi.Cli.csproj" />
+    <Project Path="src/EcosystemAi.RunJournal/EcosystemAi.RunJournal.csproj" />
     <Project Path="src/AgentRuntime.Testing/AgentRuntime.Testing.csproj" />
     <Project Path="src/AgentRuntime.Tools.Files/AgentRuntime.Tools.Files.csproj" />
   </Folder>
