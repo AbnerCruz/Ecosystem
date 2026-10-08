@@ -173,15 +173,15 @@ Gate: jogos 2D substanciais apenas com APIs oficiais.
 Integração transversal autorizada pelo Ecosystem (não altera o gate de Framework Advanced):
 - [x] **LUNET-401 — Adapter opcional da Host API do Ecosystem via Android Binder** (P5-4 / DEC-0037-A): integrado e validado. Pareamento, `text.inspect`, revogação/rotação e lifecycle/process-death foram aprovados no gate P5-4 pela Issue #225; Lunet permanece funcional sem provider. O estado idle `0 sessões IPC abertas agora` é esperado e não invalida o pareamento.
 
-- [~] **LUNET-402 — Camada simples de colisão** (§7): AABB, Rectangle, Circle, Point, Ray, overlap, intersection, distance, SAT. Issue #288; completar consultas e corrigir separação SAT em contenção. Integração e roteiro Preview pendentes; física completa é o item separado abaixo.
+- [x] **LUNET-402 — Camada simples de colisão** (§7): consultas e separação SAT integradas pelo PR #291; Issue #288 encerrada, roteiro aprovado pelo proprietário no portal (Issue #303), registro no handoff `HO-20261008-lunet-collision`. Física completa permanece no item separado abaixo.
 - [ ] Física completa (`PhysicsWorld`, `RigidBody2D`, `Collider2D`, `Fixture2D`, `Joint2D`, `Contact`, `Raycast`) sobre backend maduro (Box2D ou equivalente) sem expor tipos internos; ADR da escolha.
-- [~] **LUNET-403 — `Camera2D`** (§7): posição, zoom, rotação, conversão toque/mundo e desenho por `SpriteBatch`; Issue #293. Testes, integração e roteiro Android registrados no handoff `HO-20261008-lunet-camera`.
-- [ ] Animação de sprites e tweening.
-- [ ] Partículas.
+- [x] **LUNET-403 — `Camera2D`** (§7): posição, zoom, rotação e toque/mundo integrados pelo PR #295; Issue #293 encerrada, APK 1000126 publicado e roteiro aprovado pelo proprietário no portal (Issue #304), registro no handoff `HO-20261008-lunet-camera`.
+- [~] **LUNET-404 — Animação de sprites e tweening** (§7, §23): clips, playback e transições sem alocação por quadro; Issue #298. APIs/guias na fatia independente `HO-20261008-lunet-animation-api`; integração e validação Android pendentes. Modelo de criação separado no PR #302 (zona ProjectStore, autorização do proprietário).
+- [~] **LUNET-405 — Partículas** (§7, §23): pool fixo, burst/emissão contínua, vida, velocidade, gravidade, tamanho e cor; Issue #306. APIs/guias na fatia independente `HO-20261008-lunet-particles-api`; integração e roteiro Android pendentes. Modelo de criação separado no PR #307 (zona ProjectStore, autorização do proprietário).
 - [ ] Tilemaps (carregar formato do Tile Studio, colisão).
 - [ ] Fontes personalizadas (bitmap e TrueType).
 - [ ] UI (layout, âncoras, nine-slice, temas).
-- [ ] Pathfinding A*.
+- [~] **LUNET-406 — Pathfinding A*** (§7): grade com obstáculos/custos, quatro/oito vizinhos e buffers reutilizáveis; Issue #311. Integrado pelo PR #313 e publicado no APK 1000133; guia offline e CI verdes, aparelho pendente. Handoff `HO-20261008-lunet-pathfinding`.
 - [ ] Scene2D opcional e API entidade/componente opcional (sem obrigar ECS).
 - [ ] Debug APIs e helpers.
 - [ ] Profiler básico do framework (FPS, frame time, update/render time, draw calls, triângulos, memória, GC, audio underruns) (§23), com o painel Profiler no workspace (movido da Fase 3).

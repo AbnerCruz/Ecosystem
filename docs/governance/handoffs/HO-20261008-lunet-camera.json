@@ -9,7 +9,7 @@
   },
   "task_id": "LUNET-403",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-camera-20261008",
   "base_commit": "c0c7be02b98f91ec3d72b939312aa3d61eb8bc7a",
   "commit": null,
@@ -62,6 +62,12 @@
       "critical": false,
       "object": "apps/lunet2d/docs/guides/camera.md",
       "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-08 (Issue https://github.com/AbnerCruz/Ecosystem/issues/304); registro em docs/governance/responses/VAL-HO-20261008-lunet-camera-042634730c9c.md."
+    },
+    {
+      "check": "Integração e development release da câmera",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "PR #295 integrado em ffe80c55c58204e2490cf129c0b67372a0f17a40; release lunet2d-v0.0.1-dev.1000126 target ffe80c55, APK arm64 publicado. https://github.com/AbnerCruz/Ecosystem/releases/tag/lunet2d-v0.0.1-dev.1000126"
     }
   ],
   "known_issues": [
@@ -70,9 +76,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Acompanhar CI, integração automática e release própria do Lunet.",
-    "Validar o roteiro intermediário camera.md no aparelho; fase permanece aberta.",
-    "Continuar itens independentes da Fase 4; física completa exige escolha de backend por ADR."
+    "Continuar itens da Fase 4; fechamento de fase exige todos os itens e seu gate próprio."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -100,7 +104,7 @@
     },
     {
       "id": "NN-017",
-      "evidence": "Roteiro Android pendente e ROADMAP [~]; sem aceite inferido do continue."
+      "evidence": "Validação humana explicitamente aprovada pelo proprietário na Issue #304 e resposta canônica VAL-HO-20261008-lunet-camera-042634730c9c; não inferida do continue."
     },
     {
       "id": "NN-018",
