@@ -129,9 +129,30 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Complemento LUNET-403: nova página 3 do modelo Laboratório testa câmera sem copiar código. Suíte padrão rerodada 351/351, com regressão das páginas antigas e controles de zoom/giro/toque.
 
 
+### 20261008-codex-animation — Codex → próximos agentes — review
+- Item LUNET-404, Issue #298; branch `agent/lunet-animation-20261008`, base `9c8e799` (entrega independente do PR #295 de câmera).
+- Clips locais e imutáveis com duração por quadro; SpriteAnimator independente com pausa/reinício/Play e amostragem sem percorrer ciclos. Tween aplica cinco curvas a float/Vector2/Color, sem callbacks ou scheduler global.
+- Modelo novo **Demo: Animação e tween** disponível na criação Android, com spritesheet procedural, toque para mover/retarget, pausa/retomada e reinício. Modelos antigos permanecem intactos.
+- Build portátil sem warnings/errors; suíte xUnit e checks finais no handoff `HO-20261008-lunet-animation`. Guia e modelo compilados/executados pelo runtime real, incluindo toque físico 2×, pause/retarget/restart; teste de zero bytes no playback/tween.
+- CI e integrador seguem pelo PR; teste GL/aparelho permanece pendente em `docs/guides/animacao.md`. Nenhuma fase fechada ou física completa improvisada.
+
+- Reconciliação LUNET-404 em 2026-10-08: main `0b541c6` preservada integralmente; conflitos em AgentsChat/CHANGELOG/ROADMAP resolvidos mantendo ambas as entregas. Colisão/câmera aprovadas pelo proprietário nas Issues #303/#304; estados reconciliados para done, sem fechar Fase 4. Câmera distribuída no APK 1000126. Suíte combinada registrada no handoff.
+
+
+### 20261008-codex-particles — Codex → próximos agentes — review
+- Item LUNET-405, Issue #306; branch `agent/lunet-particles-20261008`, base `c6181b6` (PR #302 reconciliado). Entrega empilhada até integrar #302, sem forçar merge.
+- ParticleSettings imutável e ParticleEmitter com pool fixo, burst/emissão contínua, life/velocidade radial/gravidade/tamanho/cor, seed e SpriteBatch existente. Deltas grandes não percorrem nascimentos históricos; saturação descarta excedentes sem fila.
+- Novo modelo opcional **Demo: Partículas** e guia offline; usa textura procedural, toque/arraste, botões Burst/Fluxo/Parar/Limpar. Ownership da textura preservado; câmera/clip/blend do lote existentes.
+- Build portátil sem warnings/errors; suíte xUnit 388/388 (14 casos novos), incluindo zero bytes em Burst/Update/Draw e guia/modelo no compilador/runtime reais com toque físico 2×. Checks finais no handoff `HO-20261008-lunet-particles`.
+- Roteiro de aparelho pendente em `docs/guides/particulas.md`; não declarar frame time/GL aprovados por teste em memória. Fase 4 continua aberta.
+
 ### 20261008-codex-pathfinding — Codex → próximos agentes — review
 - LUNET-406 / Issue #311; base main `0dc9471293d1d17657c54b91c812e7be58f1b717`, branch `agent/lunet-pathfinding-20261008`. Entrega independente de #302/#307, sem alterar templates, ProjectStore, persistência ou formato do futuro Tile Studio.
 - GridPoint/PathStatus/PathResult/GridPathfinder: A* com custos positivos inclusive <1, obstáculos, diagonais sem cortar cantos, heap indexado e Span de saída; falha/saída pequena não escrevem rota parcial. API XML/JSON e guia offline completo.
 - Build .NET 10 sem warnings/errors; suíte padrão 363/363 (12 casos novos). Oracle Dijkstra independente em 200 grades ponderadas; zero bytes por busca, repetição/edição/cantos/buffers/validação. Guia compilado e executado com toque físico 2× no GameHost.
 - Roteiro de aparelho em `docs/guides/pathfinding.md` continua pendente; sem fechar item/gate da Fase 4. Busca síncrona O(células) para limpeza + heap de expansão, 32 bytes/célula de buffers; não é thread-safe, não faz movimento nem coordenação de agentes. Integração/release ficam com integrador.
 - Estado observado dos trabalhos anteriores: #302 testes combinados verdes, classificado crítico pela política da main por tocar ProjectStore.cs; aguarda label integrar do proprietário. #307 CI/consistency/APK verdes, empilhado sobre #302, ainda não integrado. Não simular autorização nem alterar política para liberar entrega.
+
+- Reconciliação LUNET-404 em 2026-10-08 (A*): main `040dd8d` preservada; ambas as entradas AgentsChat/CHANGELOG mantidas e API JSON regenerada. Build sem warnings/errors, 386/386 testes padrão. ProjectStore permanece classificado crítico; APIs/guias serão entregues em fatia separada sem a criação de templates.
+
+- Reconciliação LUNET-405 com main/A*: build sem warnings/errors e 400/400 testes padrão. APIs/guias serão entregues separadamente dos modelos protegidos em ProjectStore; PR #307 mantém os modelos para autorização.

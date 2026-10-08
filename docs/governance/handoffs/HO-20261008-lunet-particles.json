@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-particles",
+  "category": "RESULT",
+  "timestamp": "2026-10-08T03:57:32.771665Z",
+  "agent": {
+    "id": "codex-lunet-particles",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-405",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-particles-20261008",
+  "base_commit": "c6181b684abbe873a06a8927eb96df86701a8936",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/307",
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/particulas.md",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/ParticleSettings.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/ParticleEmitter.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/src/Lunet.Core/ProjectStore.cs",
+    "apps/lunet2d/src/Lunet.Android/MainActivity.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ParticleTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-particles.json"
+  ],
+  "work_completed": [
+    "Configuração imutável de vida/velocidade radial/gravidade/tamanho/cor com validação de entradas finitas.",
+    "Pool de capacidade fixa; Burst retorna quantas partículas nasceram, fluxo contínuo tem taxa/fração/Start/Stop/Clear. Sem fila de excedentes e sem percorrer ciclos históricos em deltas grandes.",
+    "Movimento balístico analítico e desenho pelo SpriteBatch existente, preservando câmera/clip/blend/sampler e ownership da textura; sem culling/depth sorting/colisão.",
+    "Modelo opcional Demo: Partículas na criação Android, guia completo, API XML/JSON atualizada e exemplos compilados.",
+    "14 casos novos: saturação/reuso, movimento/tamanho/RGBA/UV, seed, origem, taxa/idade, deltas enormes, estado/entradas inválidas, câmera/clip/overflow e zero bytes. Modelo/guia criados pelo ProjectStore e executados no runtime real com toque 2×.",
+    "Reconciliado com A* publicado e animação; mudanças main preservadas e entradas de documentação concatenadas semanticamente."
+  ],
+  "verification": [
+    {
+      "check": "Build portátil .NET 10",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet build apps/lunet2d/tests/Lunet.Tests/Lunet.Tests.csproj --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false; zero warnings/errors."
+    },
+    {
+      "check": "Lunet.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Suíte padrão xUnit v3 .NET 10: 400/400 após reconciliação com main 040dd8d/A*, incluindo câmera/animação/partículas, exemplos compilados, guias no runtime e medição de zero bytes."
+    },
+    {
+      "check": "Consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "dotnet run tests/consistency/Check.cs: 22 checks; snapshot de Issues remoto segue CI/integrador."
+    },
+    {
+      "check": "Partículas no Preview Android",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/particulas.md",
+      "evidence": "Demo: Partículas; verificar aparência, toque/arraste, Burst/Fluxo/Parar/Limpar, capacidade, rápido/isolado, offline e projeto antigo. Sem inferir GL/frame time no aparelho do backend em memória."
+    }
+  ],
+  "known_issues": [
+    "Pool cheio descarta excedentes; passos diferentes sob saturação podem reter conjuntos diferentes. Seed determinística exige mesma sequência de passos/operações, sem promessa de determinismo universal.",
+    "Remoção pode reordenar quads; sem depth sorting, culling ou colisão. Origem contínua é a Position no Update, sem interpolação do caminho arrastado.",
+    "Posições fora do intervalo float são omitidas do desenho até expirar. Cor RGBA linear sem correção gamma. HUD/criação do modelo podem alocar.",
+    "SDK Android ausente localmente; build APK e validação real seguem CI/aparelho."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar integração do PR #302 e depois finalizar a entrega de partículas pelo integrador.",
+    "Confirmar CI/integração/APK e validar particulas.md no aparelho.",
+    "Continuar Fase 4 sem fechar gate ou implementar backend físico sem ADR."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Código local Framework/Core/Android, sem referência a outro Product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #306 / LUNET-405, branch, base/handoff explícitos e dependência de entrega #302 registrada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE separado e pendente; Fase 4 permanece aberta."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/testes/checks distintos de integração/release/GL e performance percebida."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração/dependência; sistema de partículas é responsabilidade do Framework local."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "game-particles",
+      "status": "product-specific",
+      "rationale": "Efeito de jogo previsto no Framework do Lunet (§7); nenhum consumidor externo real justifica extração."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "A seleção do novo template Particles em ProjectStore.cs toca zona protegida pela política da main; formato e projetos existentes preservados. APIs/guias serão entregues sem esse efeito protegido em PR independente."
+  },
+  "cost": null
+}
