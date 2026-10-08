@@ -120,6 +120,13 @@ async function assertShell(page) {
     const splitSource = page.getByLabel('Markdown da nota');
     await splitSource.waitFor({ state: 'visible' });
     assert.equal(await page.locator('.editor-stage-layout.split').count(), 1);
+    const previousViewport = page.viewportSize();
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - innerWidth);
+    assert.ok(mobileOverflow <= 0, 'Modo dividido não pode causar overflow no celular');
+    await page.setViewportSize(previousViewport);
+
     const canonical = '# Título smoke\n\nTexto **forte**. [[Nova ligada]]\n';
     await splitSource.fill(canonical);
     await page.locator('.editor-visual h1', { hasText: 'Título smoke' }).waitFor();
