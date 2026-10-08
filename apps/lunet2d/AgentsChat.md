@@ -231,3 +231,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Build sem warnings/errors, 485/485 testes (main 475 + 10 novos casos). Geometria registrada pelo backend, falhas sem desenho parcial, extremos/limites, ordem/reflexão/matriz, batching/câmera/clipping e zero bytes; projeto gerado compilado/executado com toque físico 2×. API JSON e XML cobertura verdes.
 - Proprietário adiou o teste no aparelho em 2026-10-08 e autorizou continuar desenvolvimento independente. Isso não é aprovação DEVICE, nem fecha Fase 4, nem autoriza pular seu gate. LUNET-412 já integrado/publicado no APK 1000169; validação de ambos permanece pendente.
 - Handoff HO-20261008-lunet-debug-shapes; guia laboratorio-debug.md. Próximo: CI/integrador/release, continuar pendências independentes da Fase 4 sem pedir teste agora.
+
+### 20261008-chatgpt-tilemaps — 2026-10-08 (America/Sao_Paulo) — ChatGPT → próximos agentes — em revisão
+- Item: LUNET-415, Issue #355, Fase 4 (SPEC §7, §13, §23).
+- Base: main 97eefdeac179884478cb790339e3234e707a4915; branch agent/lunet-tilemaps-20261008.
+- Trabalho: TileMap JSON local, camada collision/visible, viewport culling, conversão do A*, ContentManager.LoadTileMap, testes de casos inválidos e demonstração compilável do guia; ROADMAP/CHANGELOG e documentação offline.
+- Verificação: SDK .NET 10 e Android indisponíveis nesta sessão; CI e DEVICE pendentes. Não declarar merge, release ou aprovação.
+- Isolamento: sem mudar ProjectStore, Android, Hub nem a trilha de Profiler #343 ou modelos PR #317.
+- Handoff: HO-20261008-lunet-tilemaps. Próximo: CI, correções, integrador automático, roteiro de toque no aparelho.
+

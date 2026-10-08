@@ -140,3 +140,30 @@ public class TileMapTests
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
     }
 }
+
+
+public class TileMapGuideTests
+{
+    [Fact]
+    public void OfflineGuide_CompilesAndRunsInPreviewHost()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "docs", "guides", "tilemaps.md"))) root = root.Parent;
+        Assert.NotNull(root);
+        var guide = File.ReadAllText(Path.Combine(root!.FullName, "docs", "guides", "tilemaps.md"));
+        var source = guide.Split("```csharp\n")[1].Split("```")[0];
+        var compiler = new Lunet.Compiler.GameCompiler(new Lunet.Compiler.LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
+        var result = compiler.Compile("TileMapDemo", [new Lunet.Compiler.SourceFile("Game.cs", source)]);
+        Assert.True(result.Success, string.Join("\n", result.Diagnostics));
+        using var loaded = Lunet.Runtime.GameLoader.Load(result.Assembly!, result.Symbols);
+        var backend = new RecordingBackend();
+        var host = new GameHost(loaded.Game, backend);
+        Assert.True(host.Start(360, 640));
+        host.Tick(1.0 / 60);
+        Assert.NotEmpty(backend.Batches);
+        Assert.False(host.IsFaulted);
+        host.SetSurfaceTouches([new Lunet.Input.TouchPoint(1, Lunet.Input.TouchPhase.Pressed, new Vector2(28 + 5 * 48 + 24, 150 + 5 * 48 + 24))]);
+        host.Tick(1.0 / 60);
+        Assert.False(host.IsFaulted);
+    }
+}
