@@ -91,3 +91,23 @@ A persistência **não é memória automática do modelo** e ainda não reconsti
 um run interrompido ou o ledger. Ela apenas permite consulta posterior da
 conversa e comprovantes mínimos. A escolha da pasta é opt-in.
 Detalhes: [docs-r4-local-store.md](docs-r4-local-store.md).
+
+
+## Auditoria persistente de execuções (opt-in)
+
+Por padrão, a execução e o log continuam efêmeros. Para guardar eventos
+validados do próprio Runtime, adicione `--journal /pasta/privada/runs` à
+execução normal; o diretório deve estar fora de `--project`.
+A CLI imprime o `cli-run-...` necessário para consulta posterior.
+
+```bash
+dotnet run --project src/EcosystemAi.Cli -- \
+  --show-run --journal /pasta/privada/runs --run-id cli-run-ID
+```
+
+`--show-run` dispensa `--project`, endpoint, modelo e chave. Reconstitui
+o estado pelo mesmo `RunState.Replay`, exibindo apenas metadados de eventos
+sem payload, argumentos de tools nem respostas; não executa modelo, não
+retoma tarefas e não modifica journals ausentes. O arquivo do journal **não
+é criptografado**; dados enviados/retornados durante execuções podem ser
+sensíveis. Veja [docs-r4-run-journal.md](docs-r4-run-journal.md).
