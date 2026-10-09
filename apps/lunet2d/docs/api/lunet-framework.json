@@ -6712,6 +6712,59 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Graphics.Camera2D.ClampToWorld(Lunet.RectangleF,System.Numerics.Vector2)",
+          "name": "ClampToWorld",
+          "kind": "method",
+          "signature": "public void ClampToWorld(RectangleF worldBounds, Vector2 viewSize)",
+          "summary": "Limita a c\u00E2mera a um mundo retangular considerando o zoom e a rota\u00E7\u00E3o da vista.",
+          "remarks": "Se o mundo \u00E9 menor do que a extens\u00E3o vis\u00EDvel em um eixo, centraliza esse eixo em vez de prometer esconder espa\u00E7o externo. N\u00E3o modifica o zoom nem a rota\u00E7\u00E3o.",
+          "parameters": [
+            {
+              "name": "worldBounds",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo do mundo, de tamanho positivo e coordenadas finitas."
+            },
+            {
+              "name": "viewSize",
+              "type": "Vector2",
+              "description": "Tamanho virtual positivo e finito da vista ou do render target."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.Camera2D.Follow(System.Numerics.Vector2,System.Single,System.Single)",
+          "name": "Follow",
+          "kind": "method",
+          "signature": "public void Follow(Vector2 target, float response, float deltaSeconds)",
+          "summary": "Segue um destino com amortecimento exponencial est\u00E1vel em qualquer taxa de atualiza\u00E7\u00E3o.",
+          "remarks": "Para teletransporte imediato, atribua Position diretamente. A opera\u00E7\u00E3o n\u00E3o aloca.",
+          "parameters": [
+            {
+              "name": "target",
+              "type": "Vector2",
+              "description": "Destino finito em coordenadas do mundo."
+            },
+            {
+              "name": "response",
+              "type": "float",
+              "description": "Velocidade de resposta em segundos inversos (0 mant\u00E9m a posi\u00E7\u00E3o)."
+            },
+            {
+              "name": "deltaSeconds",
+              "type": "float",
+              "description": "Tempo finito e n\u00E3o negativo do passo, em segundos."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Graphics.Camera2D.GetViewMatrix(System.Numerics.Vector2)",
           "name": "GetViewMatrix",
           "kind": "method",

@@ -1,0 +1,121 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-camera-follow-bounds",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T01:06:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-camera-follow",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-421",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-camera-follow-bounds-20261008",
+  "base_commit": "9edfec3a586414244a3feeeb3874180f7c0c179a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Graphics/Camera2D.cs",
+    "apps/lunet2d/src/Lunet.Core/LaboratoryTemplate.cs",
+    "apps/lunet2d/tests/Lunet.Tests/CameraTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/camera.md",
+    "apps/lunet2d/docs/guides/laboratorio.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261008-lunet-camera-follow-bounds.json"
+  ],
+  "work_completed": [
+    "Seguimento exponencial frame-rate independent e clamp de câmera rotacionada/zoom ao mundo.",
+    "Demonstração integrada na página Câmera do Laboratório, sem alteração de projetos salvos.",
+    "Testes de estabilidade, entrada, limites, alocação e interação do template.",
+    "Doc API JSON e guias offline atualizados."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "Aguardar lunet2d-ci do PR Camera."
+    },
+    {
+      "kind": "automated",
+      "check": "APK Android",
+      "result": "pending",
+      "evidence": "Aguardar lunet2d-release."
+    },
+    {
+      "kind": "automated",
+      "check": "Ecosystem consistency",
+      "result": "pending",
+      "evidence": "Aguardar consistency."
+    },
+    {
+      "kind": "human",
+      "check": "Camera follow+clamp no aparelho",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/camera.md",
+      "evidence": "Toque, FPS e limites visuais em dispositivo real permanecem em validação."
+    }
+  ],
+  "known_issues": [
+    "PR #372 altera o mesmo catálogo de API e documentação da Fase 4; reconciliar antes de integração do #373.",
+    "ClampToWorld não promete esconder áreas externas ao mundo quando a câmera enxerga além do cenário."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI, corrigir falhas de precisão ou navegação.",
+    "Conciliar main pós-PR372 via dois pais Git, preservar docs API de ambos.",
+    "Publicar APK após integração automática e fornecer roteiro de DEVICE."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Camera local ao framework do Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #373, branch, handoff, PR."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Não infere aprovação CI."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem Tool multi-produto."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "camera-world-clamp",
+      "status": "product-specific",
+      "rationale": "API comum a jogos Lunet, sem consumidores de outros produtos."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Dois métodos aditivos e teste em template do Lab, sem reescrita nem dados existentes."
+  },
+  "cost": null
+}

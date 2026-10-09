@@ -11,6 +11,8 @@
 
 ### Added
 
+- LUNET-421 (em revisão): Camera2D.Follow estável entre taxas de atualização, ClampToWorld com zoom/rotação e opção LIMITES na página Câmera do Laboratório, com testes de qualidade e alocação.
+
 - LUNET-419 (em revisão): botão Perf no Preview Android, com janela de métricas reais de FPS, CPU Tick, draw calls, triângulos, alocações gerenciadas, heap e GC. Dados coletados só quando ligado; não inventa tempo GPU, métricas de áudio ou custo separado de Update/Draw.
 
 - LUNET-418 (em revisão): Laboratório 2.0 com índice, 12 módulos offline prontos para Run, navegação anterior/próxima e testes reais de animação, partículas, tilemap/A*, SAT, bitmap fonts, nine-slice e UiTheme oficial. Template separado do ProjectTemplates, sem alterar projetos existentes.

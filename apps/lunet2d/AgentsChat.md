@@ -283,3 +283,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Evidência persistida na Issue #367, comentário 6071609183; issue encerrada como concluída. PR #368 integrado na main c00ae11dfdbdcd9ba671a9704673203fbd24b2a2, release pública confirmada. CI integrado 521/521 Lunet.Tests, 9/9 inspeção de texto.
 - Aprovação de DEVICE específica do Laboratório e seus testes funcionais. O proprietário não informou modelo do aparelho ou medições numéricas; nenhuma foi inferida. Fase 4 ainda aberta para física completa, TrueType, Tile Studio e Profiler.
 - O Profiler LUNET-419 (Issue #369 / PR #370) ainda não foi incluído no APK testado, portanto permanece com DEVICE pendente.
+
+### 20261008-chatgpt-lunet-camera-follow — ChatGPT → próximos agentes — review
+- LUNET-421 / Issue #373 / Fase 4, branch `agent/lunet-camera-follow-bounds-20261008` baseada na main `9edfec3a586414244a3feeeb3874180f7c0c179a`. PR #372 CPU Profiler em integração concorrente; reconciliar docs API e ROADMAP com duas histórias quando entrar.
+- `Camera2D.Follow` faz amortecimento exponencial por passo sem GC; `ClampToWorld` limita ao mundo levando zoom/rotação em consideração e centraliza a câmera quando o cenário for menor do que a extensão da vista. Entradas não finitas são rejeitadas.
+- No Laboratório novo, página Câmera preserva zoom/giro/arrastar existentes, substitui suavização manual pela API oficial e acrescenta botão de LIMITES desligado por padrão. Projetos anteriores não são regravados; ProjectStore intacto.
+- Testes matemáticos de frame rate, ângulos, limites, validação, no alloc e demonstração de toque. API snapshot, guia e roteiro offline atualizados. Sem backend, persistência, permissões ou Tools novos.
+- Reuse assessment product-specific, NN-002/008/017/018/022; CI/consistency/APK/DEVICE ainda por verificar. Não fecha Fase 4.
