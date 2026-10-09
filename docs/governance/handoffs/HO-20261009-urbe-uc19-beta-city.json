@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-urbe-uc19-beta-city",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T18:54:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-beta-city",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc19-interactive-city-beta",
+  "base_commit": "e96fee5c964b933e85b49d4796747066d12f4275",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/385",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/CityLayoutBuilder.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/World.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Foundation.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/CityLayoutBuilderTests.cs",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261009-urbe-uc19-beta-city.json"
+  ],
+  "work_completed": [
+    "UC-19 fatia de beta: mapa SVG interativo das notas/casas, pastas/bairros e wikilinks/estradas, sem JavaScript de domínio.",
+    "Pan nativo no viewport mobile, zoom 75–200%, acionamento por click/teclado, criação de casas/notas no bairro e abertura no Editor com retorno para a Cidade.",
+    "Layout C# determinístico e efêmero, limite explícito de notas sem silenciar omissões; modelos e arquivos internos não viram casas.",
+    "Testes Core e smoke Web de construção, navegação, zoom, limites e mobile; link para Cidade no início."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet build Urbe.Portable.slnx",
+      "result": "pass",
+      "evidence": "urbe-checks run 37976246078, build completou antes da falha de expectativa do teste."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests",
+      "result": "pending",
+      "evidence": "Primeiro run 37976246078: 308/309; teste novo esperava 4 bairros mas eram corretamente 3; expectativa corrigida na branch. Reexecução CI do head final requerida."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks Web smoke, Android, Windows, E2E",
+      "result": "pending",
+      "evidence": "Ainda não confirmado no head final."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency e integrador combinado",
+      "result": "pending",
+      "evidence": "Aguardando checks e integração automática."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3 Android físico Cidade",
+      "result": "not-applicable",
+      "evidence": "Nenhum teste DEVICE realizado, não declarar gate aprovado."
+    }
+  ],
+  "known_issues": [
+    "Cidade usa layout visual não persistido; host deve carregar posições do mapa canônico em outro recorte UC-19.",
+    "Este PR não implementa persistência física nem APK beta; trabalho paralelo rastreado na Issue #386.",
+    "Paridade total de visual, ruas, NPCs e movimento do mundo 1.x segue pendente; UC-19 e G-C3 abertos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar CI novo e corrigir falhas, especialmente smoke Chrome offline/mobile.",
+    "Integrar PR #385 automaticamente só após checks; não alterar política ou publicar release por efeito colateral.",
+    "Delegar a outros agentes Issue #386 de persistência real e beta Android opt-in; próxima fatia UC-19: posições persistidas, mapas, interação e desempenho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "WorldProjection e KnowledgeIndex/WorkspaceSession continuam fontes únicas, sem registro paralelo de documentos."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "UC-19 slice no cliente C#, não modifica Urbe JS legado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch, PR #385, Issue #386 e verificação registrados."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum schema persistido, permissão, boundary, identidade ou release alterado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste físico e gate G-C3 continuam pendentes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Implementação visual inicial não encerra UC-19."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Apenas domínio visual derivado, UI, testes e home link, sem user-data/backup/migração/distribuição."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-city-layout",
+      "status": "product-specific",
+      "rationale": "Uso atual apenas para o mapa de notas do Urbe. Sem segundo consumidor ou exigência de ferramenta global."
+    }
+  ]
+}
