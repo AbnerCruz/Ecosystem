@@ -13,7 +13,8 @@ namespace EcosystemAi.Cli;
 /// </summary>
 public sealed record VisualRunDetails(
     string RunId, string State, bool Verified, int Steps, int ToolCalls,
-    string Agent, string? Model, IReadOnlyList<VisualArtifact> Artifacts);
+    string Agent, string? Model, IReadOnlyList<VisualArtifact> Artifacts,
+    string TaskId = "");
 
 public sealed record VisualArtifact(string Kind, string Name, string? TextPreview = null);
 
@@ -72,7 +73,8 @@ public static class CliVisualRunDetails
                 artifacts.Add(new VisualArtifact(artifact.Kind, SafeFileName(artifact.Location), preview));
             }
             result.Add(id, new VisualRunDetails(id, state.Status.ToString(), state.Verified,
-                state.Steps, state.ToolCalls, agent, model, artifacts));
+                state.Steps, state.ToolCalls, agent, model, artifacts,
+                entries[0].ReasonRef));
         }
         return result;
     }

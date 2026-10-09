@@ -36,8 +36,9 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --create-session --catalog /pasta/historico --project-id ID --session-title "Nova sessão"
   cria sessão no projeto registrado sem executar agente ou modelo.
 --manage --catalog /pasta/historico abre menu local de projetos e sessões.
---web-ui --catalog /pasta/historico [--port 8765] abre painel gráfico local
-  somente em 127.0.0.1; permite criar projetos/sessões sem executar IA.
+--web-ui --catalog /pasta/historico [--port 8765] [--journal /pasta/runs]
+  abre painel gráfico local em 127.0.0.1; --journal mostra agentes, tarefas
+  e artefatos auditados do Runtime sem executar IA.
 --chat --catalog DIR --project DIR --project-id ID --session-id ID com as opções
   de provedor/modelo/orçamento de execução abre um chat interativo no terminal.
   Cada mensagem gera um run real; histórico é reutilizado explicitamente nesse modo.
@@ -114,12 +115,13 @@ histórico local existe somente mediante --catalog explícito.
             {
                 if (listHistory || showHistory || showRun || exportHtml || allowCreate
                     || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog || chatMode
-                    || fields.Keys.Any(k => k is not ("--catalog" or "--port")))
-                    throw new ArgumentException("--web-ui aceita apenas --catalog e --port.");
+                    || fields.Keys.Any(k => k is not ("--catalog" or "--port" or "--journal")))
+                    throw new ArgumentException("--web-ui aceita apenas --catalog, --port e --journal.");
                 var port = fields.TryGetValue("--port", out var rawPort)
                     ? int.Parse(rawPort, NumberStyles.None, CultureInfo.InvariantCulture)
                     : CliWebUi.DefaultPort;
-                await CliWebUi.ServeAsync(Need("--catalog"), port);
+                await CliWebUi.ServeAsync(Need("--catalog"), port,
+                    journalDirectory: fields.GetValueOrDefault("--journal"));
                 return 0;
             }
             if (fields.ContainsKey("--port"))
