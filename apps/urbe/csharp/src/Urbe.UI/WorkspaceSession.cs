@@ -103,6 +103,16 @@ public sealed class WorkspaceSession : IDisposable
     public IReadOnlyList<WorkspaceMutation> PendingMutations =>
         new ReadOnlyCollection<WorkspaceMutation>(_pendingMutations.ToArray());
 
+    /// <summary>Called by a host only after filesystem writes were verified.</summary>
+    public void MarkSaved()
+    {
+        if (_pendingMutations.Count == 0)
+            return;
+        _pendingMutations.Clear();
+        Revision++;
+    }
+
+
     // Derived from ordinary Markdown in Modelos/. DocumentStore stays the
     // single authority; no second registry or persisted schema.
     public IReadOnlyList<UrbeDocument> Templates =>
