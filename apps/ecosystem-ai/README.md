@@ -66,3 +66,14 @@ agentes, acessar rede ou exigir token. Os registros são do mesmo
 Comandos `--create-project`, `--create-session` e `--manage`, limites e exemplos:
 [docs-r4-catalog-management.md](docs-r4-catalog-management.md).
 É um passo funcional intermediário, **não** a UI Android definitiva.
+
+## Chat interativo no terminal (R4)
+
+O modo `--chat` permite enviar várias mensagens em uma sessão existente, usando
+**o mesmo `AgentWorkspace.WorkspaceSession`** e as políticas de cada execução.
+Cada mensagem gera seu próprio run/receipt; o histórico anterior só é reenviado
+ao provider no modo chat solicitado, com limites explícitos. A interface C# de
+terminal não substitui a futura UI gráfica mobile-first.
+
+Exemplo de comandos, isolamento, custos por mensagem e restrições:
+[docs-r4-interactive-chat.md](docs-r4-interactive-chat.md).
