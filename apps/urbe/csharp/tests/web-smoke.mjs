@@ -361,6 +361,18 @@ async function assertShell(page, journey = false) {
         rows: await page.locator('[data-path]').evaluateAll(nodes => nodes.map(n => n.getAttribute('data-path'))),
         query: await page.getByLabel('Buscar').inputValue()
     }));
+    console.log('UC-18 deep file render diagnostics', JSON.stringify(
+        await page.locator('[data-path="Destino/Profunda/Outra.md"]').evaluate(element => ({
+            html: element.outerHTML.slice(0, 380),
+            style: {
+                display: getComputedStyle(element).display,
+                visibility: getComputedStyle(element).visibility,
+                opacity: getComputedStyle(element).opacity,
+                parentDisplay: getComputedStyle(element.parentElement).display,
+                grandparentDisplay: getComputedStyle(element.parentElement.parentElement).display
+            },
+            rect: element.getBoundingClientRect().toJSON()
+        }))));
     await page.locator('[data-path="Destino/Profunda/Outra.md"]').waitFor();
 
     await page.setViewportSize({ width: 390, height: 844 });
