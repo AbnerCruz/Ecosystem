@@ -1,6 +1,7 @@
 @page "/explorer"
 @implements IDisposable
 @inject WorkspaceSession Workspace
+@inject IVaultHost Vault
 @inject NavigationManager Navigation
 
 <section class="surface explorer-surface" data-surface="explorer">
@@ -183,7 +184,7 @@
                 <button type="button"
                         class="@RowClass(entry)"
                         data-path="@entry.Path"
-                        draggable="@(Workspace.IsReadOnly ? "false" : "true")"
+                        draggable="@(CanArmMove(entry.Path) ? "true" : "false")"
                         disabled="@(!entry.IsFolder && !entry.Editable)"
                         @onclick="() => Activate(entry)"
                         @ondragstart="() => BeginDrag(entry.Path)"
@@ -469,7 +470,7 @@
 
     private void BeginDrag(string path)
     {
-        if (Workspace.IsReadOnly)
+        if (!CanArmMove(path))
             return;
 
         // Desktop drag should not arm the touch move banner. That banner
@@ -515,8 +516,19 @@
         Move(_moveSource, _selectedFolder.Path);
     }
 
+    private bool CanArmMove(string path) =>
+        !Workspace.IsReadOnly &&
+        !(Vault.IsAvailable && Workspace.Folders.Any(folder =>
+            string.Equals(folder, path, StringComparison.OrdinalIgnoreCase)));
+
     private void Move(string source, string targetFolder)
     {
+        if (!CanArmMove(source))
+        {
+            _createError = "Mover pastas ainda não está disponível no Android; as notas Markdown podem ser movidas.";
+            return;
+        }
+
         if (!Workspace.MoveItem(source, targetFolder))
         {
             _createError = "Não foi possível mover. Verifique se o destino existe, não é protegido nem contém outro item com o mesmo nome.";
@@ -532,7 +544,7 @@
 
     private void ArmMove(string path)
     {
-        if (Workspace.IsReadOnly)
+        if (!CanArmMove(path))
             return;
 
         CancelLongPress();
@@ -548,7 +560,7 @@
         // A held mouse click is not a touch gesture. A finger scrolling
         // the file list must never silently arm a move.
         CancelLongPress();
-        if (Workspace.IsReadOnly || (args.PointerType != "touch" && args.PointerType != "pen"))
+        if (!CanArmMove(entry.Path) || (args.PointerType != "touch" && args.PointerType != "pen"))
             return;
 
         _pressX = args.ClientX;
