@@ -400,6 +400,44 @@ a:focus-visible {
     margin-top: .75rem;
 }
 
+.explorer-list-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: .45rem;
+    min-width: 0;
+}
+
+.explorer-row-action {
+    min-width: 3.75rem;
+    min-height: 2.75rem;
+    padding: .6rem .65rem;
+    border: 1px solid #355445;
+    border-radius: .8rem;
+    background: #1b3026;
+    color: #c5e5ce;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.explorer-row-action:focus-visible {
+    outline: 3px solid #b6efcd;
+    outline-offset: 2px;
+}
+
+.explorer-row-action:disabled {
+    cursor: default;
+    opacity: .45;
+}
+
+.explorer-row-action[aria-pressed="true"] {
+    border-color: #9aa86b;
+    background: #2a301f;
+}
+
 .explorer-row {
     width: 100%;
     min-width: 0;

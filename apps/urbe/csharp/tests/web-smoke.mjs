@@ -104,9 +104,12 @@ async function assertShell(page, journey = false) {
     // UC-18: prove that the shared in-memory workspace really connects
     // Explorer → folder actions/move → Editor → Markdown domain → Visual.
     smokeStage('create-folder');
+    await page.getByRole('button', { name: 'Criar pasta', exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: /Não foi possível criar a pasta/ }).waitFor();
     await page.getByLabel('Nova pasta').fill('Destino');
     await page.getByRole('button', { name: 'Criar pasta', exact: true }).click();
     await page.getByLabel('Ações de Destino').waitFor();
+    assert.equal(await page.getByRole('alert').filter({ hasText: /Não foi possível criar a pasta/ }).count(), 0);
 
     await page.getByLabel('Nova nota').fill('Smoke');
     await page.getByRole('button', { name: 'Criar', exact: true }).click();
@@ -241,7 +244,7 @@ async function assertShell(page, journey = false) {
 
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
-    const smokeRow = page.getByRole('button', { name: /Smoke\.md/ });
+    const smokeRow = page.locator('.explorer-row').filter({ hasText: 'Smoke.md' });
     await smokeRow.waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
 
@@ -280,7 +283,25 @@ async function assertShell(page, journey = false) {
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
 
-    const anotherRow = page.getByRole('button', { name: /Outra\.md/ });
+    const anotherRow = page.locator('.explorer-row').filter({ hasText: 'Outra.md' });
+    smokeStage('touch-gesture-safety');
+    await anotherRow.dispatchEvent('pointerdown', {
+        pointerType: 'mouse', button: 0, isPrimary: true
+    });
+    await page.waitForTimeout(650);
+    await anotherRow.dispatchEvent('pointerup', { pointerType: 'mouse' });
+    assert.equal(await page.locator('.explorer-move-banner').count(), 0, 'Segurar mouse não arma movimentação');
+    await anotherRow.dispatchEvent('pointerdown', {
+        pointerType: 'touch', button: 0, isPrimary: true,
+        clientX: 0, clientY: 0
+    });
+    await anotherRow.dispatchEvent('pointermove', {
+        pointerType: 'touch', clientX: 0, clientY: 24
+    });
+    await page.waitForTimeout(650);
+    await anotherRow.dispatchEvent('pointerup', { pointerType: 'touch' });
+    assert.equal(await page.locator('.explorer-move-banner').count(), 0, 'Rolagem por toque não arma movimentação');
+
     smokeStage('touch-long-press-move');
     await anotherRow.dispatchEvent('pointerdown', {
         pointerType: 'touch',
@@ -300,8 +321,16 @@ async function assertShell(page, journey = false) {
     await movedFolder.click();
     await page.getByLabel('Ações de Destino').waitFor();
     await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
-    await page.getByRole('button', { name: /Outra\.md/ }).waitFor();
-    await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
+    await page.locator('.explorer-row').filter({ hasText: 'Outra.md' }).waitFor();
+    await page.locator('.explorer-row').filter({ hasText: 'Smoke.md' }).waitFor();
+
+    smokeStage('explicit-move-action');
+    await page.getByRole('button', { name: 'Mover Smoke.md', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: /Movendo Smoke\.md/ }).waitFor();
+    await page.getByRole('button', { name: '← Raiz', exact: true }).click();
+    await page.getByRole('button', { name: 'Mover aqui', exact: true }).click();
+    await page.locator('[data-path="Smoke.md"]').waitFor();
+    assert.equal(await page.locator('[data-path="Destino/Smoke.md"]').count(), 0);
 
     }
 

@@ -179,6 +179,7 @@
         <div class="explorer-list" aria-label="Arquivos do vault">
             @foreach (var entry in entries)
             {
+                <div class="explorer-list-item">
                 <button type="button"
                         class="@RowClass(entry)"
                         data-path="@entry.Path"
@@ -189,7 +190,8 @@
                         @ondragend="EndDrag"
                         @ondragover:preventDefault
                         @ondrop="() => DropOn(entry)"
-                        @onpointerdown="() => BeginLongPress(entry)"
+                        @onpointerdown="args => BeginLongPress(entry, args)"
+                        @onpointermove="MoveLongPress"
                         @onpointerup="CancelLongPress"
                         @onpointercancel="CancelLongPress"
                         @onpointerleave="CancelLongPress">
@@ -200,6 +202,15 @@
                     </span>
                     <span class="explorer-open" aria-hidden="true">@(entry.IsFolder ? "…" : entry.Editable ? "↗" : "")</span>
                 </button>
+                <button type="button"
+                        class="explorer-row-action"
+                        disabled="@Workspace.IsReadOnly"
+                        aria-label="@($"Mover {entry.Name}")"
+                        aria-pressed="@(string.Equals(_moveSource, entry.Path, StringComparison.OrdinalIgnoreCase))"
+                        @onclick="() => ArmMove(entry.Path)">
+                    Mover
+                </button>
+                </div>
             }
         </div>
     }
@@ -238,6 +249,9 @@
     private string? _moveSource;
     private string? _suppressClickPath;
     private CancellationTokenSource? _longPressCancellation;
+    private double _pressX;
+    private double _pressY;
+    private DateTimeOffset _suppressClickUntil = DateTimeOffset.MinValue;
 
     protected override void OnParametersSet()
     {
@@ -316,12 +330,14 @@
         if (string.Equals(
                 _suppressClickPath,
                 entry.Path,
-                StringComparison.OrdinalIgnoreCase))
+                StringComparison.OrdinalIgnoreCase) &&
+            DateTimeOffset.UtcNow <= _suppressClickUntil)
         {
             _suppressClickPath = null;
             return;
         }
 
+        _suppressClickPath = null;
         if (_moveSource is not null && entry.IsFolder)
         {
             Move(_moveSource, entry.Path);
@@ -433,8 +449,12 @@
             Workspace.CurrentFolder);
 
         if (created is null)
+        {
+            _createError = "Não foi possível criar a pasta. Informe um nome válido e confira a pasta atual.";
             return;
+        }
 
+        _createError = null;
         NewFolderName = string.Empty;
         _selectedFolder = Workspace
             .ExplorerEntries(Workspace.CurrentFolder)
@@ -498,20 +518,41 @@
     private void Move(string source, string targetFolder)
     {
         if (!Workspace.MoveItem(source, targetFolder))
+        {
+            _createError = "Não foi possível mover. Verifique se o destino existe, não é protegido nem contém outro item com o mesmo nome.";
             return;
+        }
 
+        _createError = null;
         _dragSource = null;
         _moveSource = null;
         _suppressClickPath = null;
         _selectedFolder = null;
     }
 
-    private async Task BeginLongPress(WorkspaceExplorerEntry entry)
+    private void ArmMove(string path)
     {
         if (Workspace.IsReadOnly)
             return;
 
         CancelLongPress();
+        _dragSource = null;
+        _selectedFolder = null;
+        _suppressClickPath = null;
+        _createError = null;
+        _moveSource = path;
+    }
+
+    private async Task BeginLongPress(WorkspaceExplorerEntry entry, PointerEventArgs args)
+    {
+        // A held mouse click is not a touch gesture. A finger scrolling
+        // the file list must never silently arm a move.
+        CancelLongPress();
+        if (Workspace.IsReadOnly || (args.PointerType != "touch" && args.PointerType != "pen"))
+            return;
+
+        _pressX = args.ClientX;
+        _pressY = args.ClientY;
         var cancellation = new CancellationTokenSource();
         _longPressCancellation = cancellation;
 
@@ -523,11 +564,23 @@
 
             _moveSource = entry.Path;
             _suppressClickPath = entry.Path;
+            _suppressClickUntil = DateTimeOffset.UtcNow.AddMilliseconds(800);
             await InvokeAsync(StateHasChanged);
         }
         catch (OperationCanceledException)
         {
         }
+    }
+
+    private void MoveLongPress(PointerEventArgs args)
+    {
+        if (_longPressCancellation is null)
+            return;
+
+        const double scrollThreshold = 12;
+        if (Math.Abs(args.ClientX - _pressX) > scrollThreshold ||
+            Math.Abs(args.ClientY - _pressY) > scrollThreshold)
+            CancelLongPress();
     }
 
     private void CancelLongPress()

@@ -573,3 +573,11 @@
 - Testes: nova suíte InlineCodeEditingTests e smoke Web real; aguarda execução CI e estado combinado.
 - Limites: modo Visual rich inline e estado da barra sob o cursor permanecem pendentes; não fecha REQ-090/095/UC-18/G-C3, não implementa adapter de persistência.
 - Próximos passos: validar PR, revisar falhas e integrar apenas por integrador automático; PR #334 continua responsável pela corrida no renderer matemático.
+
+### 2026-10-09 — ChatGPT — UC-18 / REQ-096 Explorer com ação explícita de mover
+- Estado: verifying; PR #379 sobre main; integração somente pelo integrador após CI combinado.
+- Fato: Explorer C# exigia drag/drop ou toque longo para mover, acionava press hold também com mouse e não sinalizava falha ao criar pasta inválida.
+- Feito: botão Mover por item, acionável por toque/teclado; toque longo limitado a touch/pen e cancelado se houver deslocamento de rolagem; supressão temporária de clique fantasma; mensagens de erro para criar pasta/movimentar.
+- Testes: csharp/tests/web-smoke.mjs cobre os gestos, o botão explícito e o feedback; .NET SDK indisponível no ambiente de edição, CI do PR pendente. Handoff HO-20261009-urbe-uc18-explorer-touch-actions.
+- Invariantes: DocumentStore/WorkspaceSession são autoridade única; nenhuma persistência física, schema, migração, release ou autorização de gate humano foi antecipada.
+- Próximos passos: revisar urbe-checks e consistency combinados, corrigir falhas e permitir apenas integração automática; prosseguir UC-18 e G-C3 com validação real no dispositivo.
