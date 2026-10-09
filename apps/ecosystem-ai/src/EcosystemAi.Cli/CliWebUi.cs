@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 
 namespace EcosystemAi.Cli;
 
@@ -134,7 +135,7 @@ public static class CliWebUi
         await using var app = CreateApp(catalogDirectory, port);
         Console.WriteLine($"Ecosystem AI — UI local: http://127.0.0.1:{port}");
         Console.WriteLine("Somente neste dispositivo, sem IA, rede externa ou gasto de modelo. Ctrl+C encerra.");
-        await app.RunAsync(cancellationToken);
+        await ((IHost)app).RunAsync(cancellationToken);
     }
 
     private static bool IsTrustedHost(HttpContext context, int port) =>
