@@ -31,6 +31,49 @@ public sealed class WorkspacePhysicalFoldersTests
         Assert.Empty(session.PendingMutations);
     }
 
+
+    [Fact]
+    public void ActualEditsBecomeDirtyButNavigationAndLoadingDoNot()
+    {
+        using var session = new WorkspaceSession();
+        var clean = VaultReader.Read([
+            new VaultFile("Notas/Primeira.md", Encoding.UTF8.GetBytes("Versão inicial"))
+        ]);
+
+        session.Load(clean, ["Notas", "Vazio"]);
+        Assert.False(session.HasUnsavedChanges);
+        Assert.True(session.SetFolder("Notas"));
+        Assert.True(session.Restore("Notas/Primeira.md"));
+        Assert.False(session.HasUnsavedChanges);
+
+        var before = session.PersistenceRevision;
+        Assert.NotNull(session.UpdateSource("Versão editada"));
+        Assert.True(session.HasUnsavedChanges);
+        Assert.True(session.PersistenceRevision > before);
+
+        session.MarkSaved();
+        Assert.False(session.HasUnsavedChanges);
+        Assert.Empty(session.PendingMutations);
+
+        Assert.NotNull(session.CreateNote("Segunda", "Notas"));
+        Assert.True(session.HasUnsavedChanges);
+        session.MarkSaved();
+        Assert.False(session.HasUnsavedChanges);
+
+        Assert.NotNull(session.CreateFolder("Nova"));
+        Assert.True(session.HasUnsavedChanges);
+        session.MarkSaved();
+        Assert.False(session.HasUnsavedChanges);
+
+        Assert.True(session.MoveItem("Notas/Primeira.md", "Nova"));
+        Assert.True(session.HasUnsavedChanges);
+        session.MarkSaved();
+        Assert.False(session.HasUnsavedChanges);
+
+        session.Load(clean, ["Notas", "Vazio"]);
+        Assert.False(session.HasUnsavedChanges);
+    }
+
     [Fact]
     public void IgnoreSystemTraversalAndMalformedPhysicalFolderPaths()
     {
