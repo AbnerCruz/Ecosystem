@@ -106,7 +106,7 @@ public sealed class VirtualStick
     /// <summary>Direção normalizada por <see cref="Radius"/> (comprimento 0–1); zero dentro da zona morta.</summary>
     public Vector2 Direction { get; private set; }
 
-    /// <summary>Posição do botão do joystick, para desenhar.</summary>
+    /// <summary>Posição do "botão" do joystick, para desenhar.</summary>
     public Vector2 Knob => Center + Direction * Radius;
 
     /// <summary>Solta o dedo, zera a direção e retorna ao centro de repouso.</summary>
@@ -220,7 +220,7 @@ public sealed class VirtualButton
     /// <summary>Verdadeiro enquanto um dedo o segura.</summary>
     public bool IsDown { get; private set; }
 
-    /// <summary>Verdadeiro no primeiro Update depois de pressionado.</summary>
+    /// <summary>Verdadeiro no primeiro <see cref="Update"/> depois de pressionado.</summary>
     public bool WasPressed { get; private set; }
 
     /// <summary>Solta o dedo e zera o estado, inclusive o evento de pressão.</summary>
