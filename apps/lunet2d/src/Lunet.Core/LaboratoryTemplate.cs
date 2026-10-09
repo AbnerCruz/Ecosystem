@@ -40,6 +40,7 @@ internal static class LaboratoryTemplate
             };
             readonly RectangleF pixelButton = new(8, 440, 344, 30);
             readonly RectangleF resolutionButton = new(8, 474, 344, 30);
+            readonly RectangleF viewportModeButton = new(8, 280, 344, 37);
             readonly RectangleF cameraZoomIn = new(8, 44, 80, 46);
             readonly RectangleF cameraZoomOut = new(96, 44, 80, 46);
             readonly RectangleF cameraRotate = new(184, 44, 168, 46);
@@ -397,6 +398,12 @@ internal static class LaboratoryTemplate
                                 else if (cameraZoomOut.Contains(gesture.Position)) camera.Zoom = System.Math.Clamp(camera.Zoom / 2, 0.25f, 4);
                                 else if (cameraRotate.Contains(gesture.Position)) camera.Rotation += System.MathF.PI / 4;
                                 else if (cameraClampToggle.Contains(gesture.Position)) cameraBounded = !cameraBounded;
+                                break;
+                            }
+                            if (page == 1 && viewportModeButton.Contains(gesture.Position))
+                            {
+                                GraphicsDevice.ViewportScaling = GraphicsDevice.ViewportScaling == ViewportScalingMode.Fit
+                                    ? ViewportScalingMode.Fill : ViewportScalingMode.Fit;
                                 break;
                             }
                             if (page == 1 && pixelButton.Contains(gesture.Position)) { GraphicsDevice.PixelPerfect = !GraphicsDevice.PixelPerfect; break; }
@@ -950,6 +957,15 @@ internal static class LaboratoryTemplate
                 batch.End();
                 batch.Begin(sampler: SamplerState.LinearClamp);
                 batch.Draw(checker, new RectangleF(220, 200, 64, 64), null, white, 0, Vector2.Zero);
+                batch.End();
+
+                // Ajuste ao tamanho do celular: Fit pode ter barras, Fill cobre tudo com recorte proporcional.
+                batch.Begin();
+                bool filled = GraphicsDevice.ViewportScaling == ViewportScalingMode.Fill;
+                batch.FillRect(viewportModeButton, filled ? new Color(39, 119, 86) : new Color(56, 70, 108));
+                batch.DrawString(font, filled ? "TELA: FILL (sem borda; recorta laterais)"
+                    : "TELA: FIT (tudo visivel; pode ter bordas)",
+                    viewportModeButton.Position + new Vector2(10, 12), Color.White, 1.3f);
                 batch.End();
 
                 // Recorte: só o que está dentro do retângulo aparece.

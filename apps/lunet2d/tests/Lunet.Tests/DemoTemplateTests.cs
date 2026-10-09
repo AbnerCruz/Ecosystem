@@ -233,6 +233,12 @@ public class LabTemplateTests : IDisposable
         Tap(100, 489);
         Assert.Equal((360, 640), (host.GraphicsDevice.VirtualWidth, host.GraphicsDevice.VirtualHeight));
 
+        // Modo Fit/Fill: a escolha visual preserva os toques e pode ser revertida sem alterar o projeto.
+        Tap(170, 300);
+        Assert.Equal(ViewportScalingMode.Fill, host.GraphicsDevice.ViewportScaling);
+        Tap(170, 300);
+        Assert.Equal(ViewportScalingMode.Fit, host.GraphicsDevice.ViewportScaling);
+
         // Página 3: câmera testável sem copiar código. Preserva as páginas 1/2.
         Tap(100, 23);
         var type = loaded.Game.GetType();

@@ -107,6 +107,7 @@ public sealed class GameHost
             _game.RunInitialize();
             configuration.Validate();
             GraphicsDevice.SetVirtualResolution(configuration.VirtualWidth, configuration.VirtualHeight);
+            GraphicsDevice.ViewportScaling = configuration.ViewportScaling;
             GraphicsDevice.Resize(surfaceWidth, surfaceHeight);
             _loop = new FixedTimestepLoop(configuration.UpdatesPerSecond, configuration.MaxFrameSeconds);
             _game.RunLoadContent();
