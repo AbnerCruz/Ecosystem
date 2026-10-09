@@ -29,6 +29,9 @@ public class VirtualControlPrecisionTests
         stick.Update(State(Finger(2, TouchPhase.Moved, 150, 100)));
         Assert.Equal(2, stick.TouchId);
         Assert.Equal(0.5f, stick.Direction.X, 0.001f);
+        // A borda exata da DeadZone mantém o comportamento da implementação anterior.
+        stick.Update(State(Finger(2, TouchPhase.Moved, 115, 100)));
+        Assert.Equal(0.15f, stick.Direction.X, 0.001f);
         stick.Update(State(Finger(2, TouchPhase.Moved, 400, 100)));
         Assert.Equal(1f, stick.Direction.X, 0.001f);
         stick.Update(State(Finger(2, TouchPhase.Released, 400, 100)));
