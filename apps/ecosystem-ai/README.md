@@ -50,7 +50,7 @@ O Workspace consome o Core. A prova técnica P6-4 foi concluída com o **Host re
 ## Superfície visual offline (R4, incremento de leitura)
 
 O Product já pode gerar uma visualização HTML **estática, mobile-first e somente leitura**
-a partir do catálogo local, sem servidor, modelo ou Hub. Os projetos, sessões,
+a partir do catálogo local, sem servidor nem modelo. Os projetos, sessões,
 mensagens e recibos são lidos do `EcosystemAi.ProjectStore`, não do Runtime.
 Essa projeção não encerra P6-5 nem substitui a futura UI interativa.
 
