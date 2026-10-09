@@ -425,12 +425,18 @@ async function assertWorldCity(page) {
     await page.getByRole('button', { name: 'Diminuir zoom' }).click();
 
     smokeStage('uc19-city-create');
+    await page.getByRole('button', { name: 'Criar bairro', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: /Informe o nome do bairro/ }).waitFor();
+    await page.getByLabel('Nome do novo bairro').fill('Jardim');
+    await page.getByRole('button', { name: 'Criar bairro', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: /Bairro criado: Jardim/ }).waitFor();
+    await map.getByRole('button', { name: 'Selecionar bairro Jardim' }).waitFor();
     await page.getByRole('button', { name: 'Criar casa', exact: true }).click();
     await page.getByRole('status').filter({ hasText: /Dê um nome à nova casa/ }).waitFor();
     await page.getByLabel('Título da nota').fill('Casa de teste');
     await page.getByRole('button', { name: 'Criar casa', exact: true }).click();
-    await page.getByRole('status').filter({ hasText: /Casa criada: Casa de teste.md/ }).waitFor();
-    const createdHouse = map.locator('[data-note-path="Casa de teste.md"]');
+    await page.getByRole('status').filter({ hasText: /Casa criada: Jardim\/Casa de teste.md/ }).waitFor();
+    const createdHouse = map.locator('[data-note-path="Jardim/Casa de teste.md"]');
     await createdHouse.waitFor();
     assert.equal(await map.locator('[data-note-path]').count(), housesBefore + 1);
 
@@ -439,7 +445,7 @@ async function assertWorldCity(page) {
     await page.getByRole('heading', { name: 'Casa de teste', exact: true }).waitFor();
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
-    await page.locator('[data-note-path="Casa de teste.md"]').waitFor();
+    await page.locator('[data-note-path="Jardim/Casa de teste.md"]').waitFor();
 
     const previous = page.viewportSize();
     await page.setViewportSize({ width: 390, height: 844 });
