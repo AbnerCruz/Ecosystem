@@ -315,3 +315,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação: .NET 10 SDK não disponível no ambiente da sessão; testes, consistency e APK Android deverão ser conferidos pelo CI do PR. Não declarar dispositivo aprovado.
 - Riscos/escopo: um único ID reservado por Update; não mexe em ProjectStore, MainActivity, configuração persistida nem código dos jogos. Defaults legados preservados.
 - Próximo passo: verificar e corrigir CI, integrar pela política do repositório; confirmar APK e solicitar roteiro DEVICE no celular.
+
+### 20261009-chatgpt-lunet-default-font — ChatGPT → próximos agentes — review
+- LUNET-426 / Issue #390 / Fase 4 §7; branch `agent/lunet-default-font-text-fix-20261009`, base main `e96fee5c964b933e85b49d4796747066d12f4275`.
+- `SpriteFont.CreateDefault` agora usa o mesmo CR/LF/CRLF e escalares Unicode do caminho FromBitmap: CR não vira '?', emoji e UTF-16 inválido fazem um fallback único; layout extremo protegido contra overflow e GPU não recebe geometria infinita. Sem alocação no caminho quente.
+- Preservadas métricas 5×7, glifos acentuados, batching/câmera, API pública e projetos existentes; sem TrueType, wrapping ou mudanças de formatos.
+- Novos testes para newline/emoji/acentos, validação, escala extrema, batching e ausência de alocação; CI/APK/DEVICE a verificar. PRs #384 e #388 independentes; reconciliar ROADMAP/CHANGELOG quando integrarem.
+- Reuso product-specific; NN-002, NN-008, NN-017, NN-018, NN-022; ProjectStore e origem espelho intactos.

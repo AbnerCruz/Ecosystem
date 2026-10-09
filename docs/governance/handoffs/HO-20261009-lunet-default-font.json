@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-lunet-default-font",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T19:01:48Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-426",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-default-font-text-fix-20261009",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteFont.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/docs/guides/fontes-bitmap.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/tests/Lunet.Tests/DefaultBitmapFontTests.cs",
+    "docs/governance/handoffs/HO-20261009-lunet-default-font.json"
+  ],
+  "work_completed": [
+    "SpriteFont embutida trata CR, LF e CRLF conforme fonte personalizada, com Unicode escalar e fallback único.",
+    "Valida escala/posição e evita quads não representáveis em float no backend GL.",
+    "Testes de layout/acentos/Unicode, limites e zero GC por frame; guia e roadmap."
+  ],
+  "verification": [
+    {
+      "check": "Lunet CI + consistency",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Build APK Android",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Preview real: CRLF, acentos e legibilidade no telefone",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/fontes-bitmap.md"
+    }
+  ],
+  "known_issues": [
+    "Fonte 5x7 pequena não é TrueType; item completo de fontes continua pendente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir falhas de CI e integrar pela fila automática após checks.",
+    "Confirmar APK e obter validação Android antes de encerrar item."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Implementação no componente Lunet sem duplicação de ferramenta."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #390, roadmap, changelog, AgentsChat e handoff auditáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE explícitos como pendentes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Handoff review, sem reivindicar done/fechamento Fase 4."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem mudanças em fronteiras nem outros produtos."
+    }
+  ],
+  "base_commit": "e96fee5c964b933e85b49d4796747066d12f4275",
+  "criticality": {
+    "declared": "routine"
+  },
+  "reuse_assessment": [
+    {
+      "subject": "lunet-default-bitmap-font",
+      "status": "product-specific",
+      "rationale": "Compatibilidade de glifos na fonte do Lunet sem consumidores extra produto."
+    }
+  ]
+}
