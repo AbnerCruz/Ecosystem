@@ -19,13 +19,15 @@ public static class CliWebUi
     public const int DefaultPort = 8765;
     public const int MaxFormBytes = 32 * 1024;
 
-    public static WebApplication CreateApp(string catalogDirectory, int port = DefaultPort)
+    public static WebApplication CreateApp(string catalogDirectory, int port = DefaultPort,
+        string? journalDirectory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(catalogDirectory);
         if (port is < 1024 or > 65535)
             throw new ArgumentOutOfRangeException(nameof(port), "Porta permitida: 1024–65535.");
 
         var catalogPath = Path.GetFullPath(catalogDirectory);
+        var journalPath = journalDirectory is null ? null : Path.GetFullPath(journalDirectory);
         // A fonte de verdade é exclusivamente o catálogo canônico. Se já
         // houver projetos, recusar catálogos acidentalmente expostos aos agentes.
         var store = new LocalProjectStore(catalogPath);
@@ -33,10 +35,16 @@ public static class CliWebUi
         {
             var result = store.Read();
             foreach (var project in result.Projects)
+            {
                 CliRunJournalCommands.RequireOutsideWorkspace(catalogPath, project.WorkspaceDirectory);
+                if (journalPath is not null)
+                    CliRunJournalCommands.RequireOutsideWorkspace(journalPath, project.WorkspaceDirectory);
+            }
             return result;
         }
         _ = ReadCatalog();
+        if (journalPath is not null && !Directory.Exists(journalPath))
+            throw new DirectoryNotFoundException("Journal auditável não encontrado.");
 
         // Token apenas em RAM; não vai à URL, a arquivo nem a log.
         var csrfToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
@@ -69,7 +77,10 @@ public static class CliWebUi
             try
             {
                 var snapshot = ReadCatalog();
-                await RespondHtml(ctx, CliWebUiHtml.Render(snapshot, csrfToken));
+                var audited = journalPath is null ? null
+                    : await CliVisualRunDetails.ReadAsync(snapshot, journalPath,
+                        cancellationToken: ctx.RequestAborted);
+                await RespondHtml(ctx, CliWebUiHtml.Render(snapshot, csrfToken, audited));
             }
             catch (Exception e) when (IsExpectedError(e))
             {
@@ -130,11 +141,13 @@ public static class CliWebUi
     }
 
     public static async Task ServeAsync(string catalogDirectory, int port = DefaultPort,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default, string? journalDirectory = null)
     {
-        await using var app = CreateApp(catalogDirectory, port);
+        await using var app = CreateApp(catalogDirectory, port, journalDirectory);
         Console.WriteLine($"Ecosystem AI — UI local: http://127.0.0.1:{port}");
         Console.WriteLine("Somente neste dispositivo, sem IA, rede externa ou gasto de modelo. Ctrl+C encerra.");
+        if (journalDirectory is not null)
+            Console.WriteLine("Auditoria do Runtime ativa: agentes, tarefas, verificações e artefatos, sem payloads.");
         await ((IHost)app).RunAsync(cancellationToken);
     }
 
