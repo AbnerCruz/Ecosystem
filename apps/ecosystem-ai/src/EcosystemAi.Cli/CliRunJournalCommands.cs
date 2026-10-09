@@ -17,11 +17,22 @@ public static class CliRunJournalCommands
         ArgumentException.ThrowIfNullOrWhiteSpace(workspaceDirectory);
         var journal = Path.GetFullPath(journalDirectory);
         var workspace = Path.GetFullPath(workspaceDirectory);
+        // Paths lexicalmente fora do workspace podem entrar nele por um
+        // ancestral simbólico; recusar esse alias antes de criar o journal.
+        EnsureNoLinkAncestors(journal);
+        EnsureNoLinkAncestors(workspace);
         var relative = Path.GetRelativePath(workspace, journal);
         if (relative == "." || (!Path.IsPathRooted(relative)
             && relative != ".."
             && !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)))
             throw new ArgumentException("O journal precisa ficar fora do projeto autorizado ao agente.");
+    }
+
+    private static void EnsureNoLinkAncestors(string fullPath)
+    {
+        for (DirectoryInfo? current = new(fullPath); current is not null; current = current.Parent)
+            if (current.LinkTarget is not null)
+                throw new ArgumentException("Journal e workspace não podem utilizar ancestral simbólico.");
     }
 
     public static async Task<IReadOnlyList<string>> ShowAsync(string directory, string runId)
