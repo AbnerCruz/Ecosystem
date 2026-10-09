@@ -189,7 +189,9 @@ public sealed class WorkspaceSession : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public void Load(VaultSnapshot snapshot)
+    public void Load(
+        VaultSnapshot snapshot,
+        IEnumerable<string>? physicalFolders = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
@@ -198,6 +200,21 @@ public sealed class WorkspaceSession : IDisposable
         _pendingMutations.Clear();
         foreach (var path in snapshot.Files.Keys)
             _paths.Add(DocumentModel.NormalizePath(path));
+
+        // SAF can contain directories with no notes. Do not fabricate a
+        // sentinel Markdown file merely to make an empty bairro visible.
+        foreach (var folder in physicalFolders ?? Array.Empty<string>())
+        {
+            var normalized = DocumentModel.NormalizePath(folder);
+            if (normalized.Length == 0 ||
+                !string.Equals(normalized, folder.Replace('\\', '/'), StringComparison.Ordinal) ||
+                ContainsTraversal(normalized) ||
+                ArtifactModel.IsSystem(normalized) ||
+                _paths.Contains(normalized))
+                continue;
+
+            _explicitFolders.Add(normalized);
+        }
 
         Documents.ReplaceFromVault(snapshot, "workspace-load");
         IsReadOnly = snapshot.IsReadOnly;
