@@ -26,21 +26,25 @@
     "apps/urbe/csharp/src/Urbe.App/Platforms/Android/MainActivity.cs",
     "apps/urbe/csharp/src/Urbe.App/Platforms/Android/AndroidVaultHost.cs",
     "apps/urbe/csharp/src/Urbe.Web/Program.cs",
-    "docs/governance/handoffs/HO-20261009-urbe-uc25-android-saf-vault.json"
+    "docs/governance/handoffs/HO-20261009-urbe-uc25-android-saf-vault.json",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultWriterTests.cs"
   ],
   "work_completed": [
     "Implementado primeiro boundary Android Storage Access Framework em C# para selecionar diretório do dispositivo com permissão de leitura/escrita persistente e reabrir a pasta.",
     "VaultReader monta o WorkspaceSession diretamente dos arquivos reais .md e metadados do vault, sem IndexedDB nem cópia canônica interna.",
     "Ação explícita de Salvar usa VaultWriter.Plan; verifica que a pasta não mudou externamente antes de aplicar alterações, lê de volta arquivos gravados e tenta preservar backup recuperável de arquivo substituído.",
     "Preview Web registra fallback sem persistência; prévia Android informa limitação e salvamento manual no layout compartilhado.",
-    "Movimentação física ainda não implementada é recusada com erro explícito em vez de confirmar falsamente o salvamento."
+    "Movimentação física ainda não implementada é recusada com erro explícito em vez de confirmar falsamente o salvamento.",
+    "Movimentação de notas .md/.markdown individuais agora usa plano do VaultWriter e valida bytes do destino físico antes de excluir original; não são permitidos movimentos em cadeia ou pastas nesta fatia.",
+    "Explorer Android desabilita a ação Mover em pastas, preservando comportamento do Explorer Web; teste portátil de plano comprova gravação do novo caminho antes da remoção do anterior."
   ],
   "verification": [
     {
       "check": "urbe-checks: Core, Web, Android, Windows, E2E",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Pendente de CI no PR; ambiente atual sem .NET SDK; compilação nativa não foi alegada."
+      "evidence": "PR #397: último estado anterior verde (builds Android/Windows/Web, smoke e consistency); nova revisão com movimento de notas aguarda CI."
     },
     {
       "check": "Foundation consistency",
@@ -59,7 +63,7 @@
   ],
   "known_issues": [
     "Não há autosave: o usuário precisa tocar no botão Salvar arquivos. Fechar o app antes de salvar descarta alterações em memória.",
-    "Mover arquivos e pastas pelo Explorer ainda não persiste no host Android; é recusado no salvamento para evitar perda silenciosa.",
+    "Mover NOTAS individuais agora possui implementação física, ainda sem teste no dispositivo; pastas, cadeias de movimentos e anexos continuam sem movimentação Android e são bloqueados explicitamente.",
     "Leitura Android desta fatia cobre textos usuais e .urbe; outros assets no disco não são alterados nem carregados para Core; limites de tamanho protegem memória do beta.",
     "Sem suporte de acesso físico Web ou Windows nesta fatia; PreviewVaultHost declara a limitação.",
     "Escrita SAF não é transação atômica; backup de arquivo anterior é criado antes de truncar e mantido se houver falha de recuperação. Precisa de smoke real em aparelho.",
@@ -69,7 +73,7 @@
   "next_actions": [
     "Corrigir erros de compilação CI e verificar status combinado.",
     "Executar teste Android físico de selecionar pasta vazia, criar nota, salvar, fechar, reabrir e comprovar bytes no filesystem.",
-    "Implementar operações físicas de movimentação em fatia posterior com proteção a arquivos não-nota e testes; só depois desabilitar guarda.",
+    "Executar no Android físico: mover uma nota .md entre bairros e verificar conteúdo original somente removido após confirmação do novo caminho; depois ampliar movimentação de pastas e anexos.",
     "Conectar autosave seguro debounced e preservar alterações em mudanças de pasta com aviso antes do beta de distribuição.",
     "Não publicar release ou declarar gates concluídos sem validação física e autorização crítica."
   ],
