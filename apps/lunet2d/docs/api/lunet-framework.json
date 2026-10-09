@@ -16234,7 +16234,7 @@
       "summary": "\u00C1rea de conte\u00FAdo vertical rol\u00E1vel por toque, com arraste e in\u00E9rcia limitada.",
       "remarks": "Use SpriteBatch.Begin(clip: area.Bounds) e subtraia area.OffsetY das posi\u00E7\u00F5es dos filhos. N\u00E3o consome eventos nem arbitra bot\u00F5es filhos; use IsDragging e WasDragged para evitar cliques durante arraste. N\u00E3o cria texturas nem altera dados de projetos. Sem aloca\u00E7\u00F5es no Update.",
       "examples": [
-        "\u0060\u0060\u0060\nvar area = new Lunet.UI.TouchScrollArea(new RectangleF(12, 72, 336, 400), 900);\narea.Update(input, (float)time.DeltaSeconds);\nif (area.IsDragging) log.Info(\"rolando\");\n\u0060\u0060\u0060"
+        "\u0060\u0060\u0060\nvar area = new Lunet.UI.TouchScrollArea(new RectangleF(12, 72, 336, 400), 900);\narea.Update(input, (float)time.DeltaSeconds);\nif (area.IsDragging) log.Info(\u0022rolando\u0022);\n\u0060\u0060\u0060"
       ],
       "related": [],
       "since": "0.0.1",

@@ -94,16 +94,16 @@ public sealed class TouchScrollAreaTests
     {
         var area = new TouchScrollArea(new(0, 0, 200, 150), 800);
         var input = new InputState();
-        Frame(area, input, points: [T(1, TouchPhase.Pressed)]);
+        Frame(area, input, points: [T(1, TouchPhase.Pressed, y: 90)]);
         area.IsEnabled = false;
         Assert.False(area.IsCaptured);
         area.IsEnabled = true;
         area.Update(input, 1f / 60);
         Assert.False(area.IsCaptured);
-        Frame(area, input, points: [T(1, TouchPhase.Moved)]);
+        Frame(area, input, points: [T(1, TouchPhase.Moved, y: 90)]);
         Assert.False(area.IsCaptured);
         Frame(area, input);
-        Frame(area, input, points: [T(2, TouchPhase.Pressed)]);
+        Frame(area, input, points: [T(2, TouchPhase.Pressed, y: 90)]);
         Assert.True(area.IsCaptured);
         area.Cancel();
         area.Update(input, 1f / 60);
@@ -120,15 +120,40 @@ public sealed class TouchScrollAreaTests
             var area = new TouchScrollArea(new(0, 0, 100, 100), 1000);
             var input = new InputState();
             Frame(area, input, dt, T(1, TouchPhase.Pressed, y: 95));
-            Frame(area, input, dt, T(1, TouchPhase.Moved, y: 75));
-            Frame(area, input, dt, T(1, TouchPhase.Released, y: 75));
+            float releaseY = 95 - 1200 * dt; // mesma velocidade física nos dois refresh rates.
+            Frame(area, input, dt, T(1, TouchPhase.Moved, y: releaseY));
+            Frame(area, input, dt, T(1, TouchPhase.Released, y: releaseY));
             for (int i = 0; i < (int)(1f / dt); i++) Frame(area, input, dt);
             return area.OffsetY;
         }
         float a = Final(1f / 60), b = Final(1f / 120);
-        Assert.InRange(a, 20, 100);
-        Assert.InRange(b, 20, 100);
+        Assert.InRange(a, 70, 110);
+        Assert.InRange(b, 70, 110);
+        Assert.InRange(Math.Abs(a - b), 0, 15); // diferença somente do primeiro passo de arraste.
         Assert.True(float.IsFinite(a) && float.IsFinite(b));
+    }
+
+    [Fact]
+    public void InertiaSurvivesReleaseAtSamePositionButNotLongStationaryHold()
+    {
+        var area = new TouchScrollArea(new(0, 0, 200, 120), 1200);
+        var input = new InputState();
+        Frame(area, input, points: [T(1, TouchPhase.Pressed, y: 110)]);
+        Frame(area, input, points: [T(1, TouchPhase.Moved, y: 80)]);
+        Frame(area, input, points: [T(1, TouchPhase.Released, y: 80)]);
+        Assert.Equal(30, area.OffsetY);
+        Frame(area, input);
+        Assert.True(area.OffsetY > 30); // evento Up reaproveita a velocidade da última amostra útil.
+
+        area.ScrollTo(0);
+        Frame(area, input, points: [T(2, TouchPhase.Pressed, y: 110)]);
+        Frame(area, input, points: [T(2, TouchPhase.Moved, y: 80)]);
+        for (int i = 0; i < 80; i++)
+            Frame(area, input, points: [T(2, TouchPhase.Moved, y: 80)]);
+        Frame(area, input, points: [T(2, TouchPhase.Released, y: 80)]);
+        float stopped = area.OffsetY;
+        Frame(area, input);
+        Assert.InRange(area.OffsetY - stopped, 0, 0.01f); // manter dedo parado não cria fling.
     }
 
     [Fact]

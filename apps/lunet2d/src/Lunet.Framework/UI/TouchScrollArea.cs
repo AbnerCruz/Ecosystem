@@ -1,4 +1,3 @@
-using System.Numerics;
 using Lunet.Input;
 
 namespace Lunet.UI;
@@ -142,10 +141,18 @@ public sealed class TouchScrollArea
                     double prior = _offsetY;
                     SetOffset(prior - movement);
                     // Não projeta inércia quando o dedo pressiona contra um limite.
-                    if (deltaSeconds > 0 && _offsetY != prior)
-                        _velocity = Math.Clamp(-movement / deltaSeconds, -6000d, 6000d);
-                    else
-                        _velocity = 0;
+                    if (movement != 0)
+                    {
+                        if (deltaSeconds > 0 && _offsetY != prior)
+                            _velocity = Math.Clamp(-movement / deltaSeconds, -6000d, 6000d);
+                        else
+                            _velocity = 0;
+                    }
+                    else if (touch.Phase != TouchPhase.Released)
+                    {
+                        // Dedo parado reduz a velocidade; Released sem deslocamento não a apaga.
+                        _velocity *= Math.Exp(-16d * deltaSeconds);
+                    }
                 }
                 _lastY = touch.Position.Y;
                 if (touch.Phase == TouchPhase.Released)
@@ -179,8 +186,10 @@ public sealed class TouchScrollArea
         if (!_captured && !justReleased && _enabled && deltaSeconds > 0 && _velocity != 0)
         {
             double before = _offsetY;
-            SetOffset(before + _velocity * deltaSeconds);
-            _velocity *= Math.Exp(-9d * deltaSeconds);
+            // Integral exata da velocidade exponencial: distância consistente em 60/90/120 Hz.
+            double decay = Math.Exp(-16d * deltaSeconds);
+            SetOffset(before + _velocity * (1d - decay) / 16d);
+            _velocity *= decay;
             if (Math.Abs(_velocity) < 2d || _offsetY == before)
                 _velocity = 0;
         }
