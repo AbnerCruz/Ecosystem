@@ -13,6 +13,10 @@
 
 ### Added
 
+- LUNET-428 (em revisão): TouchToggle para menus mobile de opções, com paletas on/off, captura por dedo, testes e guia offline executável.
+
+### Added
+
 - LUNET-423 (em revisão): precisão dos controles virtuais, resposta exponencial/sensibilidade, zona morta contínua opcional, identificação/reserva do dedo multitouch e cancelamento; padrões antigos preservados.
 
 - LUNET-422 (em revisão): escala Fit/Fill em GraphicsDevice e GameConfiguration para preencher a tela preservando proporção (Fill recorta excedentes); alternância testável no módulo Gráficos do Laboratório 2.0 e compatibilidade dos toques.

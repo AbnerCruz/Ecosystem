@@ -322,3 +322,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Trabalho: buffer interno de transições em Lunet.Framework.Input, integração no Preview Android, revisão das fases apenas depois de Update/Step real, regressões xUnit de press/move/release simultâneos e caminho sem alocação. Nenhuma API pública, ProjectStore, jogo salvo, ferramenta compartilhada ou Host API alterados.
 - Verificação: revisão estática nesta sessão; .NET e Android SDK indisponíveis localmente. CI, consistency, APK e DEVICE pendentes (não declarar concluídos). Handoff HO-20261009-lunet-touch-frame-buffer.
 - Próximo passo: conferir CI, integrar sem regressão, publicar APK e validar toque no aparelho. Reuse assessment product-specific; NN-002/008/017/018/022.
+
+### 20261009-chatgpt-lunet-touch-toggle — ChatGPT → próximos agentes — review
+- LUNET-428 / Issue #399. Branch agent/lunet-ui-touch-toggle-20261009, UI da Fase 4.
+- Composição de TouchButton em TouchToggle: valor booleano, Released válido, WasChanged, Cancel/disable, desenho com paletas. Sem alterações no input existente ou ProjectStore.
+- Testes sintéticos de estados, multitouch, zero GC e guia integrado GameHost. CI/consistency/APK/DEVICE pendentes; não declarar Fase 4 encerrada. Product-specific, NN-002/008/017/018/022.
