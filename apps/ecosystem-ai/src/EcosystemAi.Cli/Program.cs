@@ -36,6 +36,8 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --create-session --catalog /pasta/historico --project-id ID --session-title "Nova sessão"
   cria sessão no projeto registrado sem executar agente ou modelo.
 --manage --catalog /pasta/historico abre menu local de projetos e sessões.
+--web-ui --catalog /pasta/historico [--port 8765] abre painel gráfico local
+  somente em 127.0.0.1; permite criar projetos/sessões sem executar IA.
 --chat --catalog DIR --project DIR --project-id ID --session-id ID com as opções
   de provedor/modelo/orçamento de execução abre um chat interativo no terminal.
   Cada mensagem gera um run real; histórico é reutilizado explicitamente nesse modo.
@@ -67,6 +69,7 @@ histórico local existe somente mediante --catalog explícito.
         bool createProject = false;
         bool createSession = false;
         bool manageCatalog = false;
+        bool webUi = false;
         bool chatMode = false;
         bool listHistory = false;
         bool showHistory = false;
@@ -80,6 +83,7 @@ histórico local existe somente mediante --catalog explícito.
             if (args[i] == "--create-project") { createProject = true; continue; }
             if (args[i] == "--create-session") { createSession = true; continue; }
             if (args[i] == "--manage") { manageCatalog = true; continue; }
+            if (args[i] == "--web-ui") { webUi = true; continue; }
             if (args[i] == "--chat") { chatMode = true; continue; }
             if (args[i] == "--list") { listHistory = true; continue; }
             if (args[i] == "--show") { showHistory = true; continue; }
@@ -101,11 +105,25 @@ histórico local existe somente mediante --catalog explícito.
             var allowed = new[] { "--project", "--goal", "--endpoint", "--model", "--budget-cents",
                 "--max-call-cents", "--input-usd-per-million", "--output-usd-per-million", "--accept-exists",
                 "--catalog", "--project-id", "--session-id", "--project-name", "--session-title",
-                "--journal", "--run-id", "--output" };
+                "--journal", "--run-id", "--output", "--port" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
-            if ((createProject ? 1 : 0) + (createSession ? 1 : 0) + (manageCatalog ? 1 : 0) + (chatMode ? 1 : 0) > 1)
+            if ((createProject ? 1 : 0) + (createSession ? 1 : 0) + (manageCatalog ? 1 : 0) + (chatMode ? 1 : 0) + (webUi ? 1 : 0) > 1)
                 throw new ArgumentException("Escolha apenas um modo de gestão do catálogo.");
+            if (webUi)
+            {
+                if (listHistory || showHistory || showRun || exportHtml || allowCreate
+                    || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog || chatMode
+                    || fields.Keys.Any(k => k is not ("--catalog" or "--port")))
+                    throw new ArgumentException("--web-ui aceita apenas --catalog e --port.");
+                var port = fields.TryGetValue("--port", out var rawPort)
+                    ? int.Parse(rawPort, NumberStyles.None, CultureInfo.InvariantCulture)
+                    : CliWebUi.DefaultPort;
+                await CliWebUi.ServeAsync(Need("--catalog"), port);
+                return 0;
+            }
+            if (fields.ContainsKey("--port"))
+                throw new ArgumentException("--port exige --web-ui.");
             if (chatMode)
             {
                 if (listHistory || showHistory || showRun || exportHtml || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog)
