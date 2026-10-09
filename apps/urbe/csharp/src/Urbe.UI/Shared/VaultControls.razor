@@ -146,20 +146,23 @@
         if (_busy)
             return;
 
+        if (Host.IsConnected && !_confirmSwitch)
+        {
+            // Merely opening the confirmation must not cancel a queued save.
+            // The user can ignore the prompt without silently losing edits.
+            _confirmSwitch = true;
+            _error = null;
+            _message = "Trocar a pasta descarta alterações ainda não salvas. " +
+                       "Salve primeiro ou toque em Confirmar troca para continuar.";
+            return;
+        }
+
         _busy = true;
         CancelAutoSave();
         _error = null;
         _message = null;
         try
         {
-            if (Host.IsConnected && !_confirmSwitch)
-            {
-                _confirmSwitch = true;
-                _message = "Trocar a pasta descarta alterações ainda não salvas. " +
-                           "Salve primeiro ou toque em Confirmar troca para continuar.";
-                return;
-            }
-
             var snapshot = await Host.PickAsync();
             if (snapshot is null)
             {
