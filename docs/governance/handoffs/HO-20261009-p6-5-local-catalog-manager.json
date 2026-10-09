@@ -1,0 +1,134 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-local-catalog-manager",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T21:06:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-local-catalog",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-local-catalog-management-20261009",
+  "base_commit": "5f0fedbf7c2623293e8b9c0198fcf0d9608de8ec",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliCatalogManagement.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4CatalogManagementTests.cs",
+    "apps/ecosystem-ai/docs-r4-catalog-management.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-local-catalog-manager.json"
+  ],
+  "work_completed": [
+    "P6-5 já tinha execução de agente, catálogo local, painel HTML e artefatos textuais; faltavam operações explícitas para cadastrar projetos e sessões sem iniciar um modelo.",
+    "Criado menu interativo C# de terminal --manage com listagem, criação de projetos, criação de sessões e leitura de conversas do LocalProjectStore existente.",
+    "Adicionados comandos não interativos --create-project e --create-session, com IDs retornados para uso no mesmo Product CLI; nenhum runtime ou rede envolvido.",
+    "Cadastro vincula apenas workspace preexistente e mantém seus arquivos intocados; catálogo explicitamente escolhido fica fora do workspace e recusa diretórios com symlinks.",
+    "Testes de criação real e revisão, modo interativo, flags contraditórias, caminho inválido e encerramento por EOF sem gravação."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI GitHub da PR, sem execução local comprovada."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI GitHub da PR, sem execução local comprovada."
+    },
+    {
+      "check": "Android DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Gestor é um menu de terminal C# e não uma interface Android publicada."
+    }
+  ],
+  "known_issues": [
+    "Gestor terminal não substitui a UI mobile-first exigida por P6-5.",
+    "Gerenciamento visual de agentes, equipes, tarefas, capabilities, secret store e execução na interface continuam pendentes.",
+    "Nenhuma alteração em schemas, nem migração de histórico, nem download de APK."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI do Product e consistency e corrigir regressões.",
+    "Integrar a PR se os gates e a política permitirem.",
+    "Avançar rumo à UI gráfica C# de projetos/agentes/equipes/tarefas e execução usando WorkspaceSession, com fronteira da plataforma."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-local-store.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Operações de Product delegam ao LocalProjectStore já canônico, sem dados paralelos."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "CLI standalone .NET 10; sem dependência de inicialização do launcher."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Comandos imediatos executam apenas no terminal do usuário, sem agente autônomo de background."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "ROADMAP P6-5, Issue #354, documentação de comandos, testes e handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Novas operações opcionais sem modificar contratos persistidos nem permissões."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Catálogo opt-in fora do workspace, sem credential e sem chamadas de provedor; escrita via Store existente."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegar validação de Android nem conclusão de UX."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "State review até CI e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reusa Store e CLI atuais; sem servidor, loop de agente, ledger ou novo runtime."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Comandos específicos do Product, sem extração prematura de Tool/Service."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "catalog-project-session-management",
+      "status": "product-specific",
+      "rationale": "Novo controlador de interações com LocalProjectStore existente; não generalizar sem segundo consumidor real."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Cadastro opt-in usando operações existentes do catálogo e sem alterar schema/controle de acesso ou protocolo da plataforma."
+  },
+  "cost": null
+}
