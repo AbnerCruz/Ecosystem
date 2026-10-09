@@ -67,7 +67,8 @@ public sealed class AndroidVaultHost : IVaultHost
         await _gate.WaitAsync(cancellationToken);
         try
         {
-            var tree = AndroidUri.Parse(stored);
+            var tree = AndroidUri.Parse(stored)
+                ?? throw new IOException("Identificador da pasta Android inválido.");
             var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
             var snapshot = VaultReader.Read(files);
             _tree = tree;
@@ -185,7 +186,8 @@ public sealed class AndroidVaultHost : IVaultHost
     private static IReadOnlyList<Entry> Children(AndroidUri tree, AndroidUri parent)
     {
         var id = DocumentsContract.GetDocumentId(parent);
-        var children = DocumentsContract.BuildChildDocumentsUriUsingTree(tree, id);
+        var children = DocumentsContract.BuildChildDocumentsUriUsingTree(tree, id)
+            ?? throw new IOException("O provedor não retornou a pasta de documentos.");
         using var cursor = Resolver.Query(children,
             [DocumentIdColumn, DisplayNameColumn, MimeTypeColumn],
             null, null, null)
