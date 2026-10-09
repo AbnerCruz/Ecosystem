@@ -581,3 +581,11 @@
 - Testes: csharp/tests/web-smoke.mjs cobre os gestos, o botão explícito e o feedback; .NET SDK indisponível no ambiente de edição, CI do PR pendente. Handoff HO-20261009-urbe-uc18-explorer-touch-actions.
 - Invariantes: DocumentStore/WorkspaceSession são autoridade única; nenhuma persistência física, schema, migração, release ou autorização de gate humano foi antecipada.
 - Próximos passos: revisar urbe-checks e consistency combinados, corrigir falhas e permitir apenas integração automática; prosseguir UC-18 e G-C3 com validação real no dispositivo.
+
+### 2026-10-09 — ChatGPT — UC-19 Cidade interativa no beta C#
+- Estado: verifying; PR #385; integração automática após CI combinado, não há release nem gate G-C3 aprovado.
+- Feito: CityLayoutBuilder puro em C# projeta pastas como bairros, notas como casas, wikilinks como estradas. World.razor agora oferece mapa SVG tocável, pan/zoom, criação de nota no bairro, abertura pelo editor e retorno da origem Cidade; início ganha acesso direto.
+- Testes: Core cobre mapa vazio, links recíprocos, deterministicidade, teto de 240 notas; smoke Web cobre zoom, criação de casa, ida/volta Editor e viewport 390px.
+- Verificação parcial: primeiro CI compilou C# mas 1/309 testes falhou por expectativa incorreta de 4 bairros (eram 3); corrigida no head seguinte. Reexecutar e verificar CI final. Sem validação Android físico.
+- Limites: layout da cidade é visual e efêmero até a integração de posições do mapa real; sem novo formato persistido ou host adapter. Persistência e APK beta opt-in estão em trilha de outros agentes na Issue #386.
+- Handoff: HO-20261009-urbe-uc19-beta-city. Próximos passos: CI + integração automática, então completar UC-19 e acelerar beta distribuível em paralelo.
