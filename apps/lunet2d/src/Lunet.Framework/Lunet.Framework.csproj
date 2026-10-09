@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Lunet.Tests" />
+    <InternalsVisibleTo Include="Lunet.Android" />
   </ItemGroup>
 </Project>
