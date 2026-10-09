@@ -30,7 +30,8 @@
     "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultWriterTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/Urbe.Core.Tests.csproj",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspacePhysicalFoldersTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspacePhysicalFoldersTests.cs",
+    ".github/workflows/urbe-checks.yml"
   ],
   "work_completed": [
     "Implementado primeiro boundary Android Storage Access Framework em C# para selecionar diretório do dispositivo com permissão de leitura/escrita persistente e reabrir a pasta.",
@@ -44,7 +45,8 @@
     "Novos testes de sessão UI para diretórios vazios e rejeição de caminhos anômalos/protegidos, sem alterar o contrato público de arquivos Markdown.",
     "Autosave Android com debounce de 1,6s após alterações reais de documentos/pastas; navegação, troca de abas e abertura de vault não disparam escrita; botão Salvar manual preservado.",
     "WorkspaceSession agora publica PersistenceRevision/HasUnsavedChanges, distingue revisão de dados de revisão visual, e sinaliza conflitos durante gravação sem falso positivo de mudança de aba.",
-    "Testes de sessão adicionados para eventos dirty/clean de edição, criação, mudança de pasta, movimento, MarkSaved e Reload."
+    "Testes de sessão adicionados para eventos dirty/clean de edição, criação, mudança de pasta, movimento, MarkSaved e Reload.",
+    "CI urbe-checks Android agora tenta gerar APK de depuração separado (app.urbe.csharp.dev) e anexar ZIP de artifact ao workflow, sem alterar canal de release ou assinar para produção."
   ],
   "verification": [
     {
@@ -75,10 +77,12 @@
     "Sem suporte de acesso físico Web ou Windows nesta fatia; PreviewVaultHost declara a limitação.",
     "Escrita SAF não é transação atômica; backup de arquivo anterior é criado antes de truncar e mantido se houver falha de recuperação. Precisa de smoke real em aparelho.",
     "A diretiva DEC-0042/ADD-0019 está em PR #392 ainda não integrado; este handoff referencia apenas fontes normativas já existentes na main.",
-    "Lista de pastas físicas é atualizada após seleção, reabertura e salvamento explícito; outros provedores SAF ainda exigem teste em dispositivo antes de liberar o beta."
+    "Lista de pastas físicas é atualizada após seleção, reabertura e salvamento explícito; outros provedores SAF ainda exigem teste em dispositivo antes de liberar o beta.",
+    "A entrega de APK debug como artifact do GitHub Actions não é uma release nem arquivo de instalação por link direto; APK exige CI verde do empacotamento e teste físico."
   ],
   "blockers": [],
   "next_actions": [
+    "Verificar publicação do APK debug do workflow em PR #397, extraí-lo e instalar em um aparelho Android após autorização/consentimento explícito do proprietário para teste.",
     "Corrigir erros de compilação CI e verificar status combinado.",
     "Executar teste Android físico de selecionar pasta vazia, criar nota, salvar, fechar, reabrir e comprovar bytes no filesystem.",
     "Executar no Android físico: mover uma nota .md entre bairros e verificar conteúdo original somente removido após confirmação do novo caminho; depois ampliar movimentação de pastas e anexos.",
@@ -145,8 +149,9 @@
     "classes": [
       "user-data",
       "security",
-      "distribution"
+      "distribution",
+      "control-plane"
     ],
-    "reason": "Host Android usa permissão persistente SAF e aplica escrita física a documentos do usuário; integração deve aguardar autorização do proprietário e CI verde."
+    "reason": "PR altera acesso e escrita Android SAF e passa a empacotar APK debug isolado em urbe-checks; controle de CI/distribuição exige autorização de integração do proprietário."
   }
 }
