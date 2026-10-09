@@ -34,6 +34,8 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --show --catalog /pasta/historico --project-id ID --session-id ID mostra o histórico.
 --export-html --catalog /pasta/historico --output /outra/pasta/historico.html
   gera um snapshot offline e responsivo, sem servidor, rede nem código executável.
+--export-html ... --journal /pasta/privada/runs inclui auditoria e índice dos artefatos
+  dos runs salvos, sem copiar arquivos nem payloads.
 --journal /pasta/privada salva eventos do Runtime (opt-in, em texto claro, fora do projeto).
 --show-run --journal /pasta/privada --run-id ID audita um run sem modelo ou rede.
 Preços são fornecidos pelo operador; quando o provider nao devolve usage.cost,
@@ -81,9 +83,10 @@ histórico local existe somente mediante --catalog explícito.
             if (exportHtml)
             {
                 if (listHistory || showHistory || showRun || allowCreate
-                    || fields.Keys.Any(k => k is not ("--catalog" or "--output")))
-                    throw new ArgumentException("Exportação visual aceita apenas --catalog e --output.");
-                Console.WriteLine("Snapshot offline: " + CliHtmlSnapshot.Export(Need("--catalog"), Need("--output")));
+                    || fields.Keys.Any(k => k is not ("--catalog" or "--output" or "--journal")))
+                    throw new ArgumentException("Exportação visual aceita apenas --catalog, --output e --journal.");
+                Console.WriteLine("Snapshot offline: " + await CliHtmlSnapshot.ExportAsync(
+                    Need("--catalog"), Need("--output"), fields.GetValueOrDefault("--journal")));
                 return 0;
             }
             if (fields.ContainsKey("--output"))
