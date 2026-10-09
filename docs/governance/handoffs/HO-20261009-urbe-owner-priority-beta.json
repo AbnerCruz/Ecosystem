@@ -14,7 +14,7 @@
   "branch": "docs/urbe-dec0042-owner-beta-no-legacy-data-20261009",
   "base_commit": "e96fee5c964b933e85b49d4796747066d12f4275",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/392",
   "files_changed": [
     "docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md",
     "docs/governance/decisions.json",
