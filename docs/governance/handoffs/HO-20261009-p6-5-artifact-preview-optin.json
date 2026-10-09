@@ -14,7 +14,7 @@
   "branch": "feat/p6-5-optin-artifact-text-previews-20261009",
   "base_commit": "a8cf368b4d72951e6671f90e7e0d42cc402bb8ff",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/396",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliArtifactTextPreview.cs",
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliVisualRunDetails.cs",
