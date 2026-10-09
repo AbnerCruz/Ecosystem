@@ -14,7 +14,7 @@
   "branch": "feat/p6-5-readonly-mobile-html-snapshot-20261009",
   "base_commit": "ac600f84c215678016e347e9890050e125735066",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/383",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliHtmlSnapshot.cs",
     "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
