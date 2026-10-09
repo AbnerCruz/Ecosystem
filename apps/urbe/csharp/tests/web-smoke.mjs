@@ -354,6 +354,13 @@ async function assertShell(page, journey = false) {
     await page.getByRole('button', { name: 'Criar', exact: true }).click();
     await page.getByRole('heading', { name: 'Outra', exact: true }).waitFor();
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
+    console.log('UC-18 folder roundtrip diagnostics', JSON.stringify({
+        url: page.url(),
+        folder: await page.locator('.explorer-location strong').innerText(),
+        rows: await page.locator('[data-path]').evaluateAll(nodes => nodes.map(n => n.getAttribute('data-path'))),
+        query: await page.getByLabel('Buscar').inputValue()
+    }));
     await page.locator('[data-path="Destino/Profunda/Outra.md"]').waitFor();
 
     await page.setViewportSize({ width: 390, height: 844 });
