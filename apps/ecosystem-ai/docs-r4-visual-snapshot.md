@@ -59,3 +59,40 @@ preservação da revisão canônica, rejeição de catálogos ausentes, sobrescr
 saída dentro do sandbox e aliases simbólicos.
 
 Escopo: Issue #354 (P6-5). Handoff no diretório canônico de governança.
+
+
+## Auditoria opcional e artefatos do Runtime
+
+Para enriquecer o HTML com dados **verificados por replay do journal**, especifique
+também a pasta de runs configurada durante execuções anteriores:
+
+```bash
+dotnet run --project src/EcosystemAi.Cli -- \
+  --export-html --catalog /diretorio/privado/catalogo \
+  --journal /diretorio/privado/runs \
+  --output /diretorio/privado/exports/auditoria.html
+```
+
+O relatório inclui, em seções expansíveis por run: estado reconstruído do
+`RunState.Replay`, verificação, agente, modelo, passos, quantidade de chamadas
+de ferramentas e **índice dos artefatos referenciados**. Somente nome-base e
+tipo dos artefatos são mostrados; diretórios, argumentos de ferramenta,
+payloads, resultados, textos internos e conteúdo dos arquivos ficam de fora.
+Os artefatos são **referências**, não anexos navegáveis ou uma cópia dos arquivos.
+
+O journal é obrigatório para esse modo. Cada run precisa existir no catálogo;
+runs sem arquivo de journal são rotulados como ausência de evidência, e
+não como sucesso. Um journal presente mas adulterado, inválido ou acima do
+limite é **recusado**, nunca ignorado ou reparado. Divergência entre receipt
+e estado reconstituído é sinalizada explicitamente. Máximo de 250 runs
+distintos por exportação auditada para limitar memória/trabalho.
+
+A pasta do journal não pode estar dentro de um workspace acessível ao agente
+nem usar ancestrais simbólicos; a saída continua fora do workspace e do
+catálogo. A operação não chama modelos, não lê conteúdo dos arquivos
+referenciados, não cria sessões e não grava no catálogo ou no journal.
+O JSON original do journal permanece a fonte dos eventos e o Runtime permanece
+a autoridade do estado.
+
+Esta entrega **não implementa** a navegação/abertura real dos artefatos,
+gestão de tarefas nem UI interativa. Essas etapas permanecem em P6-5.
