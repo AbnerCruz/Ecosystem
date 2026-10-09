@@ -307,3 +307,11 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Mapeamento de toques, clipping GL, SafeArea e resize recalculados no mesmo caminho de projeção original; sem alterar entrada de toque ou conteúdo do Game.cs persistido. Painel Gráficos do Laboratório 2.0 demonstra Fit/Fill diretamente sem edição de código.
 - Testes de aspect portrait/landscape, crop, toque round-trip, PixelPerfect, rejeição de valores inválidos, scissor/render target e caminho sem alocação. Catálogo de API offline/guia/regressões. CI/DEVICE ainda pendentes; não declarar concluída a Fase 4.
 - Reuse assessment product-specific, NN-002/008/017/018/022, paths de ProjectStore, Host Android e ferramentas compartilhadas intactos.
+
+### 20261009-chatgpt-lunet-423 — 2026-10-09 (America/Sao_Paulo) — ChatGPT → próximos agentes — em revisão
+- Item: LUNET-423, Issue #377, Fase 4 §7/§23, ergonomia de joysticks virtuais e botões com dois dedos.
+- Base: `main` em `61a9682fda8ce6bb36e932085cc22ca6f7c45a13`; branch `agent/lunet-virtual-controls-20261009`. PR #317 de ProjectStore continua isolado.
+- Trabalho: ajustes opt-in no `VirtualStick`, captura `TouchId`/exclusão, atualização do `VirtualButton`, testes de precisão/multitouch e alocação, guia `entrada.md`, changelog, roadmap e handoff.
+- Verificação: .NET 10 SDK não disponível no ambiente da sessão; testes, consistency e APK Android deverão ser conferidos pelo CI do PR. Não declarar dispositivo aprovado.
+- Riscos/escopo: um único ID reservado por Update; não mexe em ProjectStore, MainActivity, configuração persistida nem código dos jogos. Defaults legados preservados.
+- Próximo passo: verificar e corrigir CI, integrar pela política do repositório; confirmar APK e solicitar roteiro DEVICE no celular.
