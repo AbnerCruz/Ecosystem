@@ -1,0 +1,140 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-urbe-uc25-android-saf-vault",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T19:38:27.529Z",
+  "agent": {
+    "id": "chatgpt-urbe-android-saf",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-25",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc25-android-saf-vault-20261009",
+  "base_commit": "a8cf368b4d72951e6671f90e7e0d42cc402bb8ff",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/VaultHost.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Shared/VaultControls.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Shared/MainLayout.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Foundation.razor",
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/src/Urbe.App/MauiProgram.cs",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Android/AndroidVaultHost.cs",
+    "apps/urbe/csharp/src/Urbe.Web/Program.cs",
+    "docs/governance/handoffs/HO-20261009-urbe-uc25-android-saf-vault.json"
+  ],
+  "work_completed": [
+    "Implementado primeiro boundary Android Storage Access Framework em C# para selecionar diretório do dispositivo com permissão de leitura/escrita persistente e reabrir a pasta.",
+    "VaultReader monta o WorkspaceSession diretamente dos arquivos reais .md e metadados do vault, sem IndexedDB nem cópia canônica interna.",
+    "Ação explícita de Salvar usa VaultWriter.Plan; verifica que a pasta não mudou externamente antes de aplicar alterações, lê de volta arquivos gravados e tenta preservar backup recuperável de arquivo substituído.",
+    "Preview Web registra fallback sem persistência; prévia Android informa limitação e salvamento manual no layout compartilhado.",
+    "Movimentação física ainda não implementada é recusada com erro explícito em vez de confirmar falsamente o salvamento."
+  ],
+  "verification": [
+    {
+      "check": "urbe-checks: Core, Web, Android, Windows, E2E",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Pendente de CI no PR; ambiente atual sem .NET SDK; compilação nativa não foi alegada."
+    },
+    {
+      "check": "Foundation consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Pendente de CI do PR e ref combinado."
+    },
+    {
+      "check": "Android real — permissões SAF, escrita e reabertura",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.App/Platforms/Android/AndroidVaultHost.cs",
+      "evidence": "Dispositivo Android real não disponível nesta execução; bloquear declaração de gate G-C4 e publicação beta até validação."
+    }
+  ],
+  "known_issues": [
+    "Não há autosave: o usuário precisa tocar no botão Salvar arquivos. Fechar o app antes de salvar descarta alterações em memória.",
+    "Mover arquivos e pastas pelo Explorer ainda não persiste no host Android; é recusado no salvamento para evitar perda silenciosa.",
+    "Leitura Android desta fatia cobre textos usuais e .urbe; outros assets no disco não são alterados nem carregados para Core; limites de tamanho protegem memória do beta.",
+    "Sem suporte de acesso físico Web ou Windows nesta fatia; PreviewVaultHost declara a limitação.",
+    "Escrita SAF não é transação atômica; backup de arquivo anterior é criado antes de truncar e mantido se houver falha de recuperação. Precisa de smoke real em aparelho."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir erros de compilação CI e verificar status combinado.",
+    "Executar teste Android físico de selecionar pasta vazia, criar nota, salvar, fechar, reabrir e comprovar bytes no filesystem.",
+    "Implementar operações físicas de movimentação em fatia posterior com proteção a arquivos não-nota e testes; só depois desabilitar guarda.",
+    "Conectar autosave seguro debounced e preservar alterações em mudanças de pasta com aviso antes do beta de distribuição.",
+    "Não publicar release ou declarar gates concluídos sem validação física e autorização crítica."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/adr/0026-urbe-transicao-cliente-csharp.md",
+    "docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Arquivos da pasta escolhida via SAF são a autoridade canônica; sessão C# é representação editável."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "App independente do Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch, base, PR, verificações e limitações explícitas."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escopo DEC-0042 aplicado sem alterar decisões canônicas nesta fatia."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "ADR, roadmap e contratos lidos diretamente antes da implementação."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum formato de dados alterado; VaultWriter usa formato existente; host é implementação física sob contrato atual."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Permissão de leitura/escrita somente para pasta concedida pelo seletor SAF Android."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana de aparelho segue pendente e crítica."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem declarar build, CI ou release concluídos prematuramente."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "O cliente nativo se instala e funciona sem Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data",
+      "security",
+      "distribution"
+    ],
+    "reason": "Host Android usa permissão persistente SAF e aplica escrita física a documentos do usuário; integração deve aguardar autorização do proprietário e CI verde."
+  }
+}
