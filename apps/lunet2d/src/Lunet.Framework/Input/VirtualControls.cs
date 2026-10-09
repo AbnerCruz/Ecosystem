@@ -3,20 +3,14 @@ using System.Numerics;
 namespace Lunet.Input;
 
 /// <summary>
-/// Joystick virtual de tela. Captura um dedo por ID até soltar ou cancelar.
+/// Joystick virtual de tela. Fica ativo enquanto um dedo que começou dentro de <see cref="Area"/> continua pressionado.
 /// Em modo flutuante, o centro passa a ser onde o dedo tocou primeiro.
 /// </summary>
 /// <example>
 /// <code>
-/// var move = new VirtualStick(new Vector2(70, 560), 50)
-/// {
-///     RescaleDeadZone = true,
-///     ResponseExponent = 1.5f,
-///     Sensitivity = 1.1f,
-///     RequireFreshPress = true
-/// };
-/// move.Update(input);
-/// position += move.Direction * 120 * time.DeltaSeconds;
+/// var stick = new VirtualStick(new Vector2(70, 560), 50);
+/// stick.Update(input);
+/// position += stick.Direction * 120 * time.DeltaSeconds;
 /// </code>
 /// </example>
 public sealed class VirtualStick
@@ -29,7 +23,7 @@ public sealed class VirtualStick
     /// <summary>Cria um joystick de tela.</summary>
     /// <param name="center">Centro do joystick.</param>
     /// <param name="radius">Raio do movimento.</param>
-    /// <param name="area">Área que ativa o toque.</param>
+    /// <param name="area">Área que ativa o toque</param>
     /// <param name="floating">Se verdadeiro, o centro passa a ser onde o dedo tocou.</param>
     public VirtualStick(Vector2 center, float radius, RectangleF? area = null, bool floating = false)
     {
@@ -52,7 +46,7 @@ public sealed class VirtualStick
     /// <summary>Se o centro segue o primeiro toque.</summary>
     public bool Floating { get; }
 
-    /// <summary>Fração do raio ignorada perto do centro (0–1).</summary>
+    /// <summary>Fração do raio ignorada perto do centro.</summary>
     public float DeadZone
     {
         get => _deadZone;
@@ -109,7 +103,7 @@ public sealed class VirtualStick
     /// <summary>ID do dedo capturado, ou -1 quando livre. Útil para controles simultâneos.</summary>
     public int TouchId => _touchId;
 
-    /// <summary>Direção com intensidade 0–1 após zona morta, curva e sensibilidade.</summary>
+    /// <summary>Direção normalizada por <see cref="Radius"/> (comprimento 0–1); zero dentro da zona morta.</summary>
     public Vector2 Direction { get; private set; }
 
     /// <summary>Posição do botão do joystick, para desenhar.</summary>
@@ -123,7 +117,7 @@ public sealed class VirtualStick
         Center = HomeCenter;
     }
 
-    /// <summary>Atualiza com os toques atuais. Chame uma vez por passo.</summary>
+    /// <summary>Atualiza a direção com os toques atuais. Chame uma vez por passo.</summary>
     /// <param name="input">Estado de entrada.</param>
     public void Update(InputState input) => Update(input, -1);
 
@@ -195,7 +189,7 @@ public sealed class VirtualStick
     }
 }
 
-/// <summary>Botão circular de tela com captura independente por ID de dedo.</summary>
+/// <summary>Botão circular de tela.</summary>
 /// <example>
 /// <code>
 /// var jump = new VirtualButton(new Circle(new Vector2(300, 560), 40));
