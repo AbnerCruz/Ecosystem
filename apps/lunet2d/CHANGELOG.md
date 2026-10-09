@@ -11,6 +11,9 @@
 
 ### Added
 
+- LUNET-427 (em revisão): TouchScrollArea para painéis verticais de inventário, missão e menus mobile, com inércia, limites, multitoque e clip por SpriteBatch; testes e guia de uso offline.
+### Added
+
 - LUNET-423 (em revisão): precisão dos controles virtuais, resposta exponencial/sensibilidade, zona morta contínua opcional, identificação/reserva do dedo multitouch e cancelamento; padrões antigos preservados.
 
 - LUNET-422 (em revisão): escala Fit/Fill em GraphicsDevice e GameConfiguration para preencher a tela preservando proporção (Fill recorta excedentes); alternância testável no módulo Gráficos do Laboratório 2.0 e compatibilidade dos toques.

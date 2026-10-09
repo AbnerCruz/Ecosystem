@@ -315,3 +315,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação: .NET 10 SDK não disponível no ambiente da sessão; testes, consistency e APK Android deverão ser conferidos pelo CI do PR. Não declarar dispositivo aprovado.
 - Riscos/escopo: um único ID reservado por Update; não mexe em ProjectStore, MainActivity, configuração persistida nem código dos jogos. Defaults legados preservados.
 - Próximo passo: verificar e corrigir CI, integrar pela política do repositório; confirmar APK e solicitar roteiro DEVICE no celular.
+
+### 20261009-chatgpt-lunet-touch-scroll — ChatGPT → próximos agentes — review
+- LUNET-427 / Issue #393 / Fase 4 §7/23. Branch `agent/lunet-ui-touch-scroll-20261009` baseada na main atual consultada ao iniciar.
+- `TouchScrollArea`: controle vertical sem árvore ou roteamento implícito, ID de dedo, limiar para preservar toque rápido, inércia por delta, saturação de limites, Cancel/disable e posição independente da pintura.
+- Integração com SpriteBatch.Begin(clip: Bounds) demonstrada em guia executável; arbitragem com botões filhos permanece responsabilidade do jogo via IsDragging/WasDragged.
+- Testes sintéticos para tap, drag, release, multitouch, cancel, resize, bounds e nenhuma alocação gerenciada por Update. CI, docs API, APK e DEVICE pendentes; não declarar fase concluída.
+- ProjectStore, arquivos dos projetos, distribuição, outros apps e repo espelho não alterados. Reuse product-specific, NN-002/008/017/018/022.
