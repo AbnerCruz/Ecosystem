@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 using Android.Content;
-using Android.Net;
+using AndroidUri = Android.Net.Uri;
 using Android.Provider;
 using Microsoft.Maui.ApplicationModel;
 using Microsoft.Maui.Storage;
@@ -25,7 +25,7 @@ public sealed class AndroidVaultHost : IVaultHost
     private const int MaxEntries = 10000;
 
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private Uri? _tree;
+    private AndroidUri? _tree;
     private IReadOnlyDictionary<string, VaultFile>? _baseline;
 
     public bool IsAvailable => true;
@@ -67,7 +67,7 @@ public sealed class AndroidVaultHost : IVaultHost
         await _gate.WaitAsync(cancellationToken);
         try
         {
-            var tree = Uri.Parse(stored);
+            var tree = AndroidUri.Parse(stored);
             var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
             var snapshot = VaultReader.Read(files);
             _tree = tree;
@@ -178,11 +178,11 @@ public sealed class AndroidVaultHost : IVaultHost
 
     private sealed record Entry(string Name, string DocumentId, string MimeType);
 
-    private static Uri Root(Uri tree) =>
+    private static AndroidUri Root(AndroidUri tree) =>
         DocumentsContract.BuildDocumentUriUsingTree(tree, DocumentsContract.GetTreeDocumentId(tree))
         ?? throw new IOException("Não foi possível acessar a raiz da pasta selecionada.");
 
-    private static IReadOnlyList<Entry> Children(Uri tree, Uri parent)
+    private static IReadOnlyList<Entry> Children(AndroidUri tree, AndroidUri parent)
     {
         var id = DocumentsContract.GetDocumentId(parent);
         var children = DocumentsContract.BuildChildDocumentsUriUsingTree(tree, id);
@@ -205,15 +205,15 @@ public sealed class AndroidVaultHost : IVaultHost
         return result;
     }
 
-    private static Uri DocumentUri(Uri tree, string id) =>
+    private static AndroidUri DocumentUri(AndroidUri tree, string id) =>
         DocumentsContract.BuildDocumentUriUsingTree(tree, id)
         ?? throw new IOException("URI do documento não pôde ser construída.");
 
-    private static List<VaultFile> ReadFiles(Uri tree, CancellationToken token)
+    private static List<VaultFile> ReadFiles(AndroidUri tree, CancellationToken token)
     {
         var files = new List<VaultFile>();
         long total = 0;
-        void Walk(Uri dir, string prefix, int depth)
+        void Walk(AndroidUri dir, string prefix, int depth)
         {
             token.ThrowIfCancellationRequested();
             if (depth > 32)
@@ -258,7 +258,7 @@ public sealed class AndroidVaultHost : IVaultHost
                 ".html", ".htm", ".css", ".js", ".mjs", ".csv" }
             .Contains(System.IO.Path.GetExtension(path), StringComparer.OrdinalIgnoreCase);
 
-    private static byte[] ReadBytes(Uri uri)
+    private static byte[] ReadBytes(AndroidUri uri)
     {
         using var stream = Resolver.OpenInputStream(uri)
             ?? throw new IOException("Arquivo não pode ser lido: " + uri);
@@ -298,14 +298,14 @@ public sealed class AndroidVaultHost : IVaultHost
         return segments;
     }
 
-    private static Uri? FindChild(Uri tree, Uri parent, string name)
+    private static AndroidUri? FindChild(AndroidUri tree, AndroidUri parent, string name)
     {
         var child = Children(tree, parent)
             .FirstOrDefault(x => string.Equals(x.Name, name, StringComparison.Ordinal));
         return child is null ? null : DocumentUri(tree, child.DocumentId);
     }
 
-    private static Uri? FindDocument(Uri tree, string path)
+    private static AndroidUri? FindDocument(AndroidUri tree, string path)
     {
         var parent = Root(tree);
         foreach (var segment in Segments(path))
@@ -318,7 +318,7 @@ public sealed class AndroidVaultHost : IVaultHost
         return parent;
     }
 
-    private static Uri EnsureDirectory(Uri tree, string path)
+    private static AndroidUri EnsureDirectory(AndroidUri tree, string path)
     {
         var parent = Root(tree);
         foreach (var segment in Segments(path))
@@ -331,7 +331,7 @@ public sealed class AndroidVaultHost : IVaultHost
         return parent;
     }
 
-    private static void PutBytes(Uri uri, byte[] bytes)
+    private static void PutBytes(AndroidUri uri, byte[] bytes)
     {
         using var stream = Resolver.OpenOutputStream(uri, "wt")
             ?? throw new IOException("O provedor recusou gravação.");
@@ -339,7 +339,7 @@ public sealed class AndroidVaultHost : IVaultHost
         stream.Flush();
     }
 
-    private static void WriteVerified(Uri tree, string path, byte[] content)
+    private static void WriteVerified(AndroidUri tree, string path, byte[] content)
     {
         var pieces = Segments(path);
         var fileName = pieces[^1];
