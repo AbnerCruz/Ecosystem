@@ -31,6 +31,16 @@ A pasta precisa existir. Somente files.read por padrão.
 --project-name NOME e --session-title TITULO personalizam novos registros.
 Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --list --catalog /pasta/historico lista projetos/sessões, sem modelo nem rede.
+--create-project --catalog /pasta/historico --project /pasta/existente --project-name "Meu projeto"
+  vincula pasta existente sem executar agente ou modelo.
+--create-session --catalog /pasta/historico --project-id ID --session-title "Nova sessão"
+  cria sessão no projeto registrado sem executar agente ou modelo.
+--manage --catalog /pasta/historico abre menu local de projetos e sessões.
+--web-ui --catalog /pasta/historico [--port 8765] abre painel gráfico local
+  somente em 127.0.0.1; permite criar projetos/sessões sem executar IA.
+--chat --catalog DIR --project DIR --project-id ID --session-id ID com as opções
+  de provedor/modelo/orçamento de execução abre um chat interativo no terminal.
+  Cada mensagem gera um run real; histórico é reutilizado explicitamente nesse modo.
 --show --catalog /pasta/historico --project-id ID --session-id ID mostra o histórico.
 --export-html --catalog /pasta/historico --output /outra/pasta/historico.html
   gera um snapshot offline e responsivo, sem servidor, rede nem código executável.
@@ -56,6 +66,11 @@ histórico local existe somente mediante --catalog explícito.
         }
         Dictionary<string, string> fields = new(StringComparer.Ordinal);
         bool allowCreate = false;
+        bool createProject = false;
+        bool createSession = false;
+        bool manageCatalog = false;
+        bool webUi = false;
+        bool chatMode = false;
         bool listHistory = false;
         bool showHistory = false;
         bool exportHtml = false;
@@ -65,6 +80,11 @@ histórico local existe somente mediante --catalog explícito.
         for (var i = 0; i < args.Length; i++)
         {
             if (args[i] == "--allow-create") { allowCreate = true; continue; }
+            if (args[i] == "--create-project") { createProject = true; continue; }
+            if (args[i] == "--create-session") { createSession = true; continue; }
+            if (args[i] == "--manage") { manageCatalog = true; continue; }
+            if (args[i] == "--web-ui") { webUi = true; continue; }
+            if (args[i] == "--chat") { chatMode = true; continue; }
             if (args[i] == "--list") { listHistory = true; continue; }
             if (args[i] == "--show") { showHistory = true; continue; }
             if (args[i] == "--export-html") { exportHtml = true; continue; }
@@ -85,9 +105,59 @@ histórico local existe somente mediante --catalog explícito.
             var allowed = new[] { "--project", "--goal", "--endpoint", "--model", "--budget-cents",
                 "--max-call-cents", "--input-usd-per-million", "--output-usd-per-million", "--accept-exists",
                 "--catalog", "--project-id", "--session-id", "--project-name", "--session-title",
-                "--journal", "--run-id", "--output" };
+                "--journal", "--run-id", "--output", "--port" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
+            if ((createProject ? 1 : 0) + (createSession ? 1 : 0) + (manageCatalog ? 1 : 0) + (chatMode ? 1 : 0) + (webUi ? 1 : 0) > 1)
+                throw new ArgumentException("Escolha apenas um modo de gestão do catálogo.");
+            if (webUi)
+            {
+                if (listHistory || showHistory || showRun || exportHtml || allowCreate
+                    || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog || chatMode
+                    || fields.Keys.Any(k => k is not ("--catalog" or "--port")))
+                    throw new ArgumentException("--web-ui aceita apenas --catalog e --port.");
+                var port = fields.TryGetValue("--port", out var rawPort)
+                    ? int.Parse(rawPort, NumberStyles.None, CultureInfo.InvariantCulture)
+                    : CliWebUi.DefaultPort;
+                await CliWebUi.ServeAsync(Need("--catalog"), port);
+                return 0;
+            }
+            if (fields.ContainsKey("--port"))
+                throw new ArgumentException("--port exige --web-ui.");
+            if (chatMode)
+            {
+                if (listHistory || showHistory || showRun || exportHtml || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog)
+                    throw new ArgumentException("--chat não combina com modos de consulta, exportação ou gestão.");
+                return await CliInteractiveChat.RunAsync(fields, allowCreate,
+                    Console.In, Console.Out, RunAsync);
+            }
+            if (createProject || createSession || manageCatalog)
+            {
+                if (listHistory || showHistory || showRun || exportHtml || allowCreate
+                    || embedTextArtifacts || useHistory)
+                    throw new ArgumentException("Modos de gestão não executam agente nem aceitam modos de consulta/execução.");
+                if (manageCatalog)
+                {
+                    if (fields.Keys.Any(k => k != "--catalog"))
+                        throw new ArgumentException("--manage aceita somente --catalog.");
+                    return CliCatalogManagement.Manage(Need("--catalog"), Console.In, Console.Out);
+                }
+                if (createProject)
+                {
+                    if (fields.Keys.Any(k => k is not ("--catalog" or "--project" or "--project-name")))
+                        throw new ArgumentException("--create-project aceita somente --catalog, --project e --project-name.");
+                    var project = CliCatalogManagement.CreateProject(Need("--catalog"),
+                        Need("--project"), Need("--project-name"));
+                    Console.WriteLine($"Projeto criado: {project.Id} — {project.Name}");
+                    return 0;
+                }
+                if (fields.Keys.Any(k => k is not ("--catalog" or "--project-id" or "--session-title")))
+                    throw new ArgumentException("--create-session aceita somente --catalog, --project-id e --session-title.");
+                var session = CliCatalogManagement.CreateSession(Need("--catalog"),
+                    Need("--project-id"), Need("--session-title"));
+                Console.WriteLine($"Sessão criada: {session.Id} — {session.Title}");
+                return 0;
+            }
             if (exportHtml)
             {
                 if (listHistory || showHistory || showRun || allowCreate || useHistory
