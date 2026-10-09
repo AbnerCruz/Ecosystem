@@ -91,6 +91,10 @@ public sealed class AndroidVaultHost : IVaultHost
                 document.Id, document.Path, document.Content))
             .ToArray();
         var mutations = session.PendingMutations.ToArray();
+        if (mutations.Any(mutation => mutation.Kind == WorkspaceMutationKind.Move))
+            throw new NotSupportedException(
+                "Mover notas e pastas ainda não é gravado por esta beta Android. " +
+                "Reabra a pasta para descartar a movimentação temporária antes de salvar.");
         var initialRevision = session.Revision;
 
         await _gate.WaitAsync(cancellationToken);
