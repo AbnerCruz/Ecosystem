@@ -134,7 +134,7 @@ public sealed class AndroidVaultHost : IVaultHost
                     if (operation.Bytes is not { } payload)
                         throw new InvalidDataException("Operação de escrita sem bytes.");
 
-                    WriteVerified(tree, operation.Path, payload.Value.ToArray());
+                    WriteVerified(tree, operation.Path, payload.ToArray());
                 }
 
                 foreach (var path in removals)
