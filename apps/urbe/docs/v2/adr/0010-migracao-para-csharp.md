@@ -28,3 +28,10 @@ O Urbe passa a ter um programa de migração para C# regido por [`docs/csharp/`]
 ## Alternativas consideradas
 
 As quatro do Ecosystem ADR-0016 (A incremental pelo núcleo, B reescrita completa, C por superfície, D manter JavaScript). **B** foi a escolhida pelo proprietário.
+## Adendo — DEC-0042 (2026-10-09): compatibilidade histórica fora do caminho crítico do cliente C#
+
+O proprietário **mantém a reescrita integral das funcionalidades em C# e a paridade de comportamento do produto final**, mas **dispensa para o cliente C# novo** a migração automática de instalações, preferências, histórico, lixeira, layouts, `IndexedDB`, metadados/IDs antigos e formatos 1.x/2.x como pré-condição de beta ou corte. Seus arquivos `.md` importantes serão copiados manualmente para um vault novo quando necessário. **Não interpretar esta ordem como licença para perder arquivos ou dados criados pelo C#**: escrita no filesystem real, reabertura, integridade do vault atual e metadados novos da cidade são obrigatórios.
+
+O ADR-0004 e sua proteção forward **permanecem vigentes para o cliente JS legado**, sem alterar a política do produto que já foi distribuído. No C# podem permanecer leitor, testes, fixtures e mecanismos históricos já escritos, mas sua expansão/aceite para todos os estados antigos **não bloqueia** beta opt-in nem substitui o objetivo de funcionalidades. Vault antigo incompatível nunca é convertido/sobrescrito silenciosamente: o usuário seleciona um vault limpo e leva os `.md` por cópia manual.
+
+Precedência deste adendo: DEC-0042, ADD-0019 do Ecosystem e adendo do Ecosystem ADR-0026. A publicação do beta C# opt-in é independente do **corte** de distribuição UC-31/G-C5 (paridade funcional + validação humana ainda exigidas).
