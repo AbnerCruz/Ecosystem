@@ -54,3 +54,10 @@ Budgets absolutos de performance (após o baseline); qualquer quebra de compatib
 - Pendências / bloqueios: ...
 - Próximos passos: ...
 ```
+## 8. Ordem do proprietário para Urbe C# — DEC-0042 (2026-10-09)
+
+**DECISÃO CONSOLIDADA — NÃO É PROPOSTA DE AGENTE.** Antes de selecionar ou continuar trabalho no Urbe C#, ler `docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md`, DEC-0042 em `docs/governance/decisions.json`, o adendo do Ecosystem ADR-0026 e `docs/csharp/ROADMAP.md`.
+
+O proprietário exige **migração e paridade de funcionalidades** do Urbe JavaScript para C#, mas **dispensa retrocompatibilidade/migração automática do estado de instalações antigas** como requisito de beta e corte C#. Priorizar **filesystem/vault real no Android, Editor/Explorer, Cidade e beta opt-in instalável**, depois concluir as demais funcionalidades. Um vault limpo com cópia manual de `.md` é aceito pelo proprietário. Não abrir tarefas para reconstruir versões antigas, configurações, bancos ou mapas legados a menos que haja defeito concreto com os arquivos Markdown atuais. Código/fixtures de compatibilidade já prontos não precisam ser apagados.
+
+A regra de dados do §3 continua protegendo `.md`, gravações e metadados **atuais**: nada de apagar automaticamente vault legado, fingir que dados em memória foram salvos ou sacrificar segurança de escrita. O JS 1.8.4-beta permanece canal existente enquanto o C# experimental for validado. **DEC-0042 autoriza a direção; PRs críticos ainda seguem o integrador e a label `integrar` aplicada pelo proprietário.** Não declarar gates de release aprovados sem CI/dispositivo quando requeridos.
