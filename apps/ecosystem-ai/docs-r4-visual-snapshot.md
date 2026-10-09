@@ -18,7 +18,7 @@ dotnet run --project src/EcosystemAi.Cli -- \
 ```
 
 Abra o HTML em qualquer navegador, inclusive no celular depois de transferi-lo
-manualmente. O arquivo é independente do Hub, funciona offline e adapta a largura
+manualmente. O arquivo é funciona offline de forma independente e adapta a largura
 a telas pequenas: links internos para projetos, sessões expansíveis, mensagens
 com origem e horário, estados de runs, verificação, custos registrados
 por moeda (unidades mínimas, não fatura) e indicativo de estimativa.
