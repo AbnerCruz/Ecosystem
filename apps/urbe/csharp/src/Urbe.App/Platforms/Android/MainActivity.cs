@@ -1,7 +1,7 @@
 using Android.App;
 using Android.Content;
 using Android.Content.PM;
-using Android.Net;
+using AndroidUri = Android.Net.Uri;
 
 namespace Urbe.App;
 
@@ -11,14 +11,14 @@ namespace Urbe.App;
 public class MainActivity : MauiAppCompatActivity
 {
     private const int OpenVaultTreeRequest = 8416;
-    private TaskCompletionSource<Uri?>? _folderPicker;
+    private TaskCompletionSource<AndroidUri?>? _folderPicker;
 
-    public Task<Uri?> PickVaultFolderAsync()
+    public Task<AndroidUri?> PickVaultFolderAsync()
     {
         if (_folderPicker is not null)
             throw new InvalidOperationException("Já existe uma seleção de pasta em andamento.");
 
-        _folderPicker = new TaskCompletionSource<Uri?>(
+        _folderPicker = new TaskCompletionSource<AndroidUri?>(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
         try
