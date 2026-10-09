@@ -244,7 +244,7 @@ async function assertShell(page, journey = false) {
 
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
-    const smokeRow = page.getByRole('button', { name: /Smoke\.md/ });
+    const smokeRow = page.locator('.explorer-row').filter({ hasText: 'Smoke.md' });
     await smokeRow.waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
 
@@ -283,7 +283,7 @@ async function assertShell(page, journey = false) {
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
 
-    const anotherRow = page.getByRole('button', { name: /Outra\.md/ });
+    const anotherRow = page.locator('.explorer-row').filter({ hasText: 'Outra.md' });
     smokeStage('touch-gesture-safety');
     await anotherRow.dispatchEvent('pointerdown', {
         pointerType: 'mouse', button: 0, isPrimary: true
@@ -321,8 +321,8 @@ async function assertShell(page, journey = false) {
     await movedFolder.click();
     await page.getByLabel('Ações de Destino').waitFor();
     await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
-    await page.getByRole('button', { name: /Outra\.md/ }).waitFor();
-    await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
+    await page.locator('.explorer-row').filter({ hasText: 'Outra.md' }).waitFor();
+    await page.locator('.explorer-row').filter({ hasText: 'Smoke.md' }).waitFor();
 
     smokeStage('explicit-move-action');
     await page.getByRole('button', { name: 'Mover Smoke.md', exact: true }).click();
