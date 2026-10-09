@@ -27,7 +27,9 @@ public sealed class AndroidVaultHost : IVaultHost
     private readonly SemaphoreSlim _gate = new(1, 1);
     private AndroidUri? _tree;
     private IReadOnlyDictionary<string, VaultFile>? _baseline;
+    private IReadOnlyList<string> _folders = Array.Empty<string>();
 
+    public IReadOnlyList<string> Folders => _folders;
     public bool IsAvailable => true;
     public bool IsConnected => _tree is not null && _baseline is not null;
     public string? DisplayName => IsConnected ? "Pasta do dispositivo (Android)" : null;
@@ -43,10 +45,13 @@ public sealed class AndroidVaultHost : IVaultHost
         await _gate.WaitAsync(cancellationToken);
         try
         {
-            var files = await Task.Run(() => ReadFiles(selected, cancellationToken), cancellationToken);
-            var snapshot = VaultReader.Read(files);
+            var loaded = await Task.Run(() => (
+                Files: ReadFiles(selected, cancellationToken),
+                Folders: ReadFolders(selected, cancellationToken)), cancellationToken);
+            var snapshot = VaultReader.Read(loaded.Files);
             _tree = selected;
-            _baseline = Snapshot(files);
+            _baseline = Snapshot(loaded.Files);
+            _folders = loaded.Folders;
             Preferences.Default.Set(PreferenceKey, selected.ToString());
             return snapshot;
         }
@@ -69,10 +74,13 @@ public sealed class AndroidVaultHost : IVaultHost
         {
             var tree = AndroidUri.Parse(stored)
                 ?? throw new IOException("Identificador da pasta Android inválido.");
-            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
-            var snapshot = VaultReader.Read(files);
+            var loaded = await Task.Run(() => (
+                Files: ReadFiles(tree, cancellationToken),
+                Folders: ReadFolders(tree, cancellationToken)), cancellationToken);
+            var snapshot = VaultReader.Read(loaded.Files);
             _tree = tree;
-            _baseline = Snapshot(files);
+            _baseline = Snapshot(loaded.Files);
+            _folders = loaded.Folders;
             return snapshot;
         }
         finally
@@ -194,10 +202,12 @@ public sealed class AndroidVaultHost : IVaultHost
                         !file.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span))
                         throw new IOException("Falhou a verificação pós-salvamento: " + pair.Key);
                 }
-                return (Files: persisted, Snapshot: observed);
+                return (Snapshot: observed,
+                    Folders: ReadFolders(tree, cancellationToken));
             }, cancellationToken);
 
             _baseline = updated.Snapshot;
+            _folders = updated.Folders;
             if (session.Revision != initialRevision)
                 throw new IOException(
                     "O conteúdo anterior foi salvo, mas houve novas alterações " +
@@ -291,6 +301,45 @@ public sealed class AndroidVaultHost : IVaultHost
         if (size > MaxVaultBytes)
             throw new IOException("Vault excede o limite temporário de leitura da beta.");
         return files;
+    }
+
+    private static IReadOnlyList<string> ReadFolders(
+        AndroidUri tree, CancellationToken token)
+    {
+        var folders = new List<string>();
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        var entries = 0;
+
+        void Walk(AndroidUri parent, string prefix, int depth)
+        {
+            token.ThrowIfCancellationRequested();
+            if (depth > 32)
+                throw new IOException("O vault ultrapassa 32 níveis de pastas.");
+
+            var parentId = DocumentsContract.GetDocumentId(parent);
+            if (!visited.Add(parentId))
+                throw new IOException("Estrutura circular de pastas no provedor Android.");
+
+            foreach (var child in Children(tree, parent))
+            {
+                token.ThrowIfCancellationRequested();
+                if (++entries > MaxEntries)
+                    throw new IOException("Limite de pastas/arquivos excedido.");
+
+                if (child.MimeType != DirectoryMime)
+                    continue;
+
+                var path = prefix + child.Name;
+                if (path.Split('/').Any(segment => segment.StartsWith('.')))
+                    continue; // Internal .urbe tree is not an Explorer bairro.
+
+                folders.Add(path);
+                Walk(DocumentUri(tree, child.DocumentId), path + "/", depth + 1);
+            }
+        }
+
+        Walk(Root(tree), string.Empty, 0);
+        return folders.AsReadOnly();
     }
 
     private static bool IsSupportedNote(string path) =>
