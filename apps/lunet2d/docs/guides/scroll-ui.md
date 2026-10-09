@@ -44,6 +44,15 @@ public sealed class ScrollDemo : Game
             batch.DrawString(font, "MISSAO " + i, new Vector2(38, y + 15), Color.White);
         }
         batch.End();
+
+        // Indicador de posição visual; sem textura nova, recorte ou toque próprio.
+        var thumb = scroll.GetThumbBounds();
+        if (thumb.Width > 0)
+        {
+            batch.Begin();
+            batch.FillRect(thumb, new Color(230, 238, 248));
+            batch.End();
+        }
     }
 }
 ```

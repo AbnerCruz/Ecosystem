@@ -16381,6 +16381,30 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.UI.TouchScrollArea.GetThumbBounds(System.Single,System.Single)",
+          "name": "GetThumbBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetThumbBounds(float width = 5f, float minimumHeight = 24f)",
+          "summary": "Geometria do indicador vertical de rolagem; default quando n\u00E3o h\u00E1 transbordamento.",
+          "remarks": "Desenhe por cima do conte\u00FAdo usando SpriteBatch.FillRect(GetThumbBounds(), color) somente se Width maior que zero. O indicador n\u00E3o captura input; arraste permanece na \u00E1rea do conte\u00FAdo.",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "float",
+              "description": "Largura positiva da barra, limitada \u00E0 largura da \u00E1rea."
+            },
+            {
+              "name": "minimumHeight",
+              "type": "float",
+              "description": "Altura visual m\u00EDnima positiva, limitada \u00E0 \u00E1rea."
+            }
+          ],
+          "returns": "Ret\u00E2ngulo do indicador dentro de Bounds, sem gerar aloca\u00E7\u00F5es.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.UI.TouchScrollArea.ScrollTo(System.Single)",
           "name": "ScrollTo",
           "kind": "method",

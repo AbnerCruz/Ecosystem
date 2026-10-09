@@ -89,6 +89,31 @@ public sealed class TouchScrollArea
     /// <summary>Pulso no Update em que um arraste terminou com Released; útil para inibir clique de filhos.</summary>
     public bool WasDragged { get; private set; }
 
+    /// <summary>Geometria do indicador vertical de rolagem; default quando não há transbordamento.</summary>
+    /// <param name="width">Largura positiva da barra, limitada à largura da área.</param>
+    /// <param name="minimumHeight">Altura visual mínima positiva, limitada à área.</param>
+    /// <returns>Retângulo do indicador dentro de Bounds, sem gerar alocações.</returns>
+    /// <remarks>Desenhe por cima do conteúdo usando SpriteBatch.FillRect(GetThumbBounds(), color) somente se Width maior que zero.
+    /// O indicador não captura input; arraste permanece na área do conteúdo.</remarks>
+    public RectangleF GetThumbBounds(float width = 5f, float minimumHeight = 24f)
+    {
+        if (!float.IsFinite(width) || width <= 0)
+            throw new ArgumentOutOfRangeException(nameof(width));
+        if (!float.IsFinite(minimumHeight) || minimumHeight <= 0)
+            throw new ArgumentOutOfRangeException(nameof(minimumHeight));
+        float max = MaximumOffsetY;
+        if (_bounds.Width == 0 || _bounds.Height == 0 || max <= 0)
+            return default;
+
+        float barWidth = MathF.Min(width, _bounds.Width);
+        float proportionalHeight = (float)((double)_bounds.Height * _bounds.Height / _contentHeight);
+        float height = MathF.Min(_bounds.Height, MathF.Max(proportionalHeight, minimumHeight));
+        float travel = _bounds.Height - height;
+        float fraction = (float)((double)_offsetY / max);
+        float y = MathF.Min(_bounds.Bottom - height, _bounds.Y + travel * fraction);
+        return new RectangleF(_bounds.Right - barWidth, y, barWidth, height);
+    }
+
     /// <summary>Define posição de rolagem e zera a inércia, respeitando o topo e a base.</summary>
     /// <param name="offsetY">Distância finita desejada desde o topo.</param>
     public void ScrollTo(float offsetY)

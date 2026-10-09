@@ -218,6 +218,35 @@ public sealed class TouchScrollAreaTests
     }
 
     [Fact]
+    public void ScrollThumbTracksOffsetAndFitsViewportWithoutAllocating()
+    {
+        var area = new TouchScrollArea(new(10, 20, 100, 200), 800);
+        Assert.Equal(new RectangleF(105, 20, 5, 50), area.GetThumbBounds());
+        area.ScrollTo(300);
+        Assert.Equal(new RectangleF(105, 95, 5, 50), area.GetThumbBounds());
+        area.ScrollTo(600);
+        Assert.Equal(new RectangleF(105, 170, 5, 50), area.GetThumbBounds());
+
+        area.ScrollTo(300);
+        Assert.Equal(new RectangleF(102, 75, 8, 90), area.GetThumbBounds(8, 90));
+        area.Bounds = new(10, 20, 2, 200);
+        Assert.Equal(2, area.GetThumbBounds(5).Width);
+        area.ContentHeight = 200;
+        Assert.Equal(default(RectangleF), area.GetThumbBounds());
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => area.GetThumbBounds(float.NaN));
+        Assert.Throws<ArgumentOutOfRangeException>(() => area.GetThumbBounds(0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => area.GetThumbBounds(5, float.PositiveInfinity));
+        Assert.Throws<ArgumentOutOfRangeException>(() => area.GetThumbBounds(5, -2));
+
+        area.ContentHeight = 1000;
+        for (int i = 0; i < 200; i++) _ = area.GetThumbBounds();
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 500; i++) _ = area.GetThumbBounds();
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
     public void UpdateAndScrollingDoNotAllocateAfterWarmup()
     {
         var area = new TouchScrollArea(new(0, 0, 200, 120), 800);
