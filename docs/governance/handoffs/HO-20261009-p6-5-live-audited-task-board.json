@@ -1,0 +1,143 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-live-audited-task-board",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T22:05:00.265Z",
+  "agent": {
+    "id": "chatgpt-p6-5-audited-task-board",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-live-audited-task-board-20261009",
+  "base_commit": "104f713b779d9d98c03fe96a3e359bb186debde1",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliVisualRunDetails.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4WebAuditTests.cs",
+    "apps/ecosystem-ai/docs-r4-live-task-board.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-live-audited-task-board.json"
+  ],
+  "work_completed": [
+    "Após #402, a UI local criava projetos/sessões e mostrava receipts; nenhuma identidade/tarefa/artefato era exibida com proveniência auditada.",
+    "Adicionado --web-ui --catalog DIR --journal DIR: releitura a cada GET do LocalRunEventLog e reconstrução validada com o RunState.Replay do AgentRuntime.Core.",
+    "Exibe quadro de agentes reais e referências de tarefa ligadas a runs, detalhamento de agente/modelo, resultado, verificação, passos, tool calls e nomes/tipos de artefatos.",
+    "Sem journal a UI padrão não sofre regressão; run sem journal é rotulado como falta de evidência, divergência receipt/eventos sinalizada.",
+    "Sem novas APIs de execução de modelo, permissões, loops agênticos, banco de dados ou schemas; nenhuma operação de agente disparada pela web.",
+    "Testes reais HTTP e Store/EventLog, XSS/privacidade, log corrompido, diretório do journal inseguro, não mutação de catálogo e modo CLI."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI; .NET SDK indisponível localmente."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI do GitHub."
+    },
+    {
+      "check": "Android DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Interface web local e não APK Android; dispositivo não verificado."
+    }
+  ],
+  "known_issues": [
+    "P6-5 permanece aberta: agentes/equipes configuráveis, tarefas futuras e execução pelo painel ainda não entregues.",
+    "Exibição de tarefas = referências ReasonRef em runs reais; sem fila de tarefas nem input de novos jobs.",
+    "GET opcional revalida journal completo; limite de 250 runs como no exportador anterior.",
+    "Painel segue localhost do dispositivo executando .NET e não é aplicativo Android distribuído."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI produto e consistência e corrigir erros, se presentes.",
+    "Integrar quando verde como mudança de Product routine.",
+    "Planejar fluxo autorizado de gestão/submissão de tarefas e equipes sem expor credenciais/grants via HTTP."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-local-web-ui.md",
+    "apps/ecosystem-ai/docs-r4-live-task-board.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Projetos/sessões no LocalProjectStore e estado de execução reconstituído do journal do Runtime; sem cópia persistente."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Product segue executável standalone em loopback, não exige Hub."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "UI sem grant ou execução; só permissões existentes no runner CLI."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Sem tarefas de background: GET explícito refaz leitura; ociosidade custa zero."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Issue #354 ROADMAP P6-5, testes, documentação, PR e handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Parâmetro CLI opcional e UI aditiva; não altera contrato persistido."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Journal fora de workspaces; HTML escaping; sem payload/model text e sem acesso remoto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegar UI Android/DEVICE nem avanço para Fase 7."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Aguardando CI e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Consumo de RunState.Replay; sem segundo executor, ledger, provider ou log."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Painel específico do Product; não extrair componentes compartilhados prematuramente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "audited-agent-task-board",
+      "status": "product-specific",
+      "rationale": "UI exclusiva do Ecosystem AI; usa projection já existente do Runtime, nenhum novo componente de plataforma."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Somente consulta opcional de eventos já auditados, sem criar trust boundary de execução remota, segredo, schema ou controle de acesso."
+  },
+  "cost": null
+}
