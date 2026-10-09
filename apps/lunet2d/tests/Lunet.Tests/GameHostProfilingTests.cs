@@ -18,7 +18,12 @@ public sealed class GameHostProfilingTests
             if (FailOnUpdate) throw new InvalidOperationException("Falha de atualização simulada");
         }
 
-        protected override void Draw(GameTime time) => Draws++;
+        protected override void Draw(GameTime time)
+        {
+            Draws++;
+            // A carga mínima torna a medição observável mesmo em runners muito rápidos.
+            Thread.SpinWait(1000);
+        }
     }
 
     [Fact]
