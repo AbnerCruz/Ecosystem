@@ -32,12 +32,12 @@ public static class CliArtifactTextPreview
 
         var root = Path.GetFullPath(workspaceDirectory);
         // Não atravessar links nem no workspace, nem nos ancestrais da raiz.
-        if (!Directory.Exists(root) || HasSymlinkAncestor(root)) return null;
+        if (!Directory.Exists(root) || HasSymlinkAncestor(root, isDirectory: true)) return null;
 
         string? target;
         try { target = new FileSandbox(root).Resolve(artifact.Location, out _); }
         catch (Exception e) when (e is IOException or ArgumentException or UnauthorizedAccessException) { return null; }
-        if (target is null || !File.Exists(target) || HasSymlinkAncestor(target)) return null;
+        if (target is null || !File.Exists(target) || HasSymlinkAncestor(target, isDirectory: false)) return null;
 
         try
         {
@@ -66,12 +66,19 @@ public static class CliArtifactTextPreview
         }
     }
 
-    private static bool HasSymlinkAncestor(string fullPath)
+    private static bool HasSymlinkAncestor(string fullPath, bool isDirectory)
     {
-        for (FileSystemInfo? node = new FileInfo(fullPath); node is not null;
-             node = node is DirectoryInfo directory ? directory.Parent : new FileInfo(node.FullName).Directory)
+        FileSystemInfo? current = isDirectory
+            ? new DirectoryInfo(fullPath) : new FileInfo(fullPath);
+        while (current is not null)
         {
-            if (node.LinkTarget is not null) return true;
+            if (current.LinkTarget is not null) return true;
+            current = current switch
+            {
+                DirectoryInfo directory => directory.Parent,
+                FileInfo file => file.Directory,
+                _ => null
+            };
         }
         return false;
     }
