@@ -171,4 +171,19 @@ public sealed class PreviewFrameStatisticsTests
         Assert.Equal(19, snapshot.P95FrameMilliseconds, 5);
         Assert.Equal(0, snapshot.HitchFrames); // 19ms < 1.75 * 11.5ms
     }
+
+    [Fact]
+    public void HitchAt120HzCanBeDetectedBelowLegacyThirtyThreeMillisecondCutoff()
+    {
+        var stats = new PreviewFrameStatistics(50);
+        for (int i = 0; i < 49; i++)
+            stats.Record(1.0 / 120, 1, 1, 2, 0);
+        stats.Record(1.0 / 60, 2, 1, 2, 0); // Perda de um refresh, mas não chega a 33 ms.
+
+        var snapshot = stats.Snapshot();
+        Assert.Equal(1, snapshot.HitchFrames);
+        Assert.Equal(0, snapshot.SlowFrames);
+        Assert.Equal(1000.0 / 120, snapshot.P95FrameMilliseconds, 5);
+        Assert.Equal(1000.0 / 60, snapshot.WorstFrameMilliseconds, 5);
+    }
 }

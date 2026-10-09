@@ -105,7 +105,9 @@ public sealed class PreviewFrameStatistics
                 ? intervals[_count / 2]
                 : (intervals[_count / 2 - 1] + intervals[_count / 2]) * 0.5;
             int p95Index = (int)Math.Ceiling(_count * 0.95) - 1;
-            double hitchThreshold = Math.Max(median * 1.75, median + 0.002);
+            const double HitchFactor = 1.75; // Adapta-se a 60/90/120 Hz.
+            const double HitchSlackSeconds = 0.002; // Ignora jitter ínfimo.
+            double hitchThreshold = Math.Max(median * HitchFactor, median + HitchSlackSeconds);
             int hitches = 0;
             for (int i = 0; i < _count; i++)
                 if (intervals[i] > hitchThreshold) hitches++;
