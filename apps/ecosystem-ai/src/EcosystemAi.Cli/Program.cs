@@ -176,6 +176,7 @@ histórico local existe somente mediante --catalog explícito.
                 if (history is not null)
                     Console.WriteLine($"Histórico local — projeto: {history.ProjectId} / sessão: {history.SessionId}");
                 var runId = "cli-run-" + Guid.NewGuid().ToString("N");
+                Console.WriteLine($"Execução: {runId}");
                 var result = await workspace.ExecuteAsync(runId, task, agent,
                     cancellationToken: cancel.Token);
                 var events = await log.ReadRunAsync(runId, CancellationToken.None);
