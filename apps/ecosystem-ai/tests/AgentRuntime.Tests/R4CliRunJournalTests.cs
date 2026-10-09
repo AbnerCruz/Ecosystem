@@ -54,6 +54,27 @@ public sealed class R4CliRunJournalTests
     }
 
     [Fact]
+    public void Journal_nao_aceita_alias_simbólico_para_dentro_do_workspace()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        var root = Path.Combine(Path.GetTempPath(), "r4-cli-links-" + Guid.NewGuid().ToString("N"));
+        var workspace = Path.Combine(root, "workspace");
+        var link = Path.Combine(root, "alias");
+        Directory.CreateDirectory(workspace);
+        try
+        {
+            Directory.CreateSymbolicLink(link, workspace);
+            Assert.Throws<ArgumentException>(() => CliRunJournalCommands.RequireOutsideWorkspace(
+                Path.Combine(link, "journal"), workspace));
+        }
+        finally
+        {
+            if (Directory.Exists(link)) Directory.Delete(link);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Consulta_de_run_recusa_flags_de_execucao_e_entrada_malformada()
     {
         Assert.Equal(2, await EcosystemAiCli.RunAsync(
