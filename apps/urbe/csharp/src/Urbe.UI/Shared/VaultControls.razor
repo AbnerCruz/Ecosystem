@@ -6,7 +6,7 @@
     <section class="vault-host-controls" aria-label="Pasta física do vault">
         <div class="vault-host-actions">
             <button type="button" @onclick="Pick" disabled="@_busy">
-                @(Host.IsConnected ? "Trocar pasta" : "Selecionar pasta do vault")
+                @(Host.IsConnected ? (_confirmSwitch ? "Confirmar troca" : "Trocar pasta") : "Selecionar pasta do vault")
             </button>
             <button type="button" @onclick="Save" disabled="@(_busy || !Host.IsConnected || Workspace.IsReadOnly)">
                 Salvar arquivos
@@ -27,6 +27,7 @@
 
 @code {
     private bool _busy;
+    private bool _confirmSwitch;
     private string? _error;
     private string? _message;
 
@@ -58,10 +59,13 @@
         _message = null;
         try
         {
-            // Do not discard edits in a connected workspace without warning.
-            if (Host.IsConnected)
+            // Switching folders discards in-memory changes, so require an
+            // explicit second tap. No state changes if the system picker is cancelled.
+            if (Host.IsConnected && !_confirmSwitch)
             {
-                _error = "Antes de trocar de pasta, salve seus arquivos. Reinicie o aplicativo para trocar o vault nesta beta.";
+                _confirmSwitch = true;
+                _message = "Atenção: trocar a pasta descarta alterações ainda não salvas. " +
+                           "Salve primeiro ou toque em Confirmar troca para continuar.";
                 return;
             }
 
@@ -72,6 +76,7 @@
                 return;
             }
             Workspace.Load(snapshot);
+            _confirmSwitch = false;
             _message = snapshot.IsReadOnly
                 ? "Formato não suportado: vault aberto em somente leitura."
                 : "Pasta conectada. Edite seus documentos e use Salvar arquivos para gravar.";
@@ -91,6 +96,7 @@
         if (_busy || !Host.IsConnected)
             return;
         _busy = true;
+        _confirmSwitch = false;
         _error = null;
         _message = null;
         try
