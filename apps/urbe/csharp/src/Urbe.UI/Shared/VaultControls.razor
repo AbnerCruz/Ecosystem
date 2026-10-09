@@ -72,7 +72,8 @@
             var snapshot = await Host.PickAsync();
             if (snapshot is null)
             {
-                _message = "Seleção cancelada.";
+                _confirmSwitch = false;
+                _message = "Seleção cancelada; os documentos abertos não foram alterados.";
                 return;
             }
             Workspace.Load(snapshot);
