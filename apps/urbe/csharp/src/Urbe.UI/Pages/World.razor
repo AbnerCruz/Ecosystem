@@ -27,6 +27,9 @@
         <span role="status" class="world-zoom-level">Zoom @((int)(_zoom * 100))%</span>
         <button type="button" aria-label="Aumentar zoom"
                 disabled="@(_zoom >= 2.0)" @onclick="ZoomIn">+</button>
+        <button type="button" @onclick="ExploreDistrict" aria-label="Abrir bairro selecionado no Explorer">
+            Abrir bairro
+        </button>
         <a href="explorer" class="world-explorer-link">Explorar arquivos</a>
     </div>
 
@@ -197,6 +200,13 @@
         }
 
         Navigation.NavigateTo("editor?path=" + Uri.EscapeDataString(building.Path));
+    }
+
+    private void ExploreDistrict()
+    {
+        Workspace.SetFolder(_selectedFolder);
+        Navigation.NavigateTo(
+            "explorer?folder=" + Uri.EscapeDataString(_selectedFolder));
     }
 
     private void CreateHouse()
