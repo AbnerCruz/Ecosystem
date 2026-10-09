@@ -270,3 +270,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - PR #368 reconciliado com main bb7f6992a53c753f4ad488f72d4a44e0ecc08f21 após integração de UiTheme pelo PR #366; histórico preservado usando commit com dois pais.
 - Demo Temas do Laboratório usa diretamente UiTheme.Dark/Light/HighContrast em vez de paletas locais duplicadas. Mantém todas as demais demos, testes regressivos e documentos da main. CI combinado e release Android devem ser reconfirmados; DEVICE permanece pendente.
 - Sem alteração dos arquivos de projeto existentes ou do ProjectStore, sem novas dependências e sem mudança nas decisões da Fase 4.
+
+### 20261008-chatgpt-lunet-live-profiler — ChatGPT → próximos agentes — review
+- LUNET-419 / Issue #369 / Fase 4. Branch `agent/lunet-live-profiler-20261008`; base main `c00ae11dfdbdcd9ba671a9704673203fbd24b2a2`, após release Laboratório 2.0 dev.1000193.
+- Incremento real no Preview Android: botão `Perf`, painel de janela móvel com FPS/cadência, custo CPU de `GameHost.Tick` (Update+Draw juntos), draw calls, triângulos, alocações da thread GL, heap gerenciado e GC 0/1/2. Instrumentação opt-in no GlesBackend/PreviewRenderer, sem alteração no Framework, GameHost, assinatura das APIs ou ProjectStore.
+- Modelo portátil em `Lunet.Runtime.Profiling.PreviewFrameStatistics`, com testes de janela/validação/ausência de alocação; UI atualizada a cada 300 ms quando visível, desligando coleta quando ocultada. Reiniciar/loss de contexto zera a janela; pause/Step continuam funcionando.
+- Separação de trabalho: LUNET-414 Issue #343 ainda propõe profiler framework completo, com medições Update/Draw, audio etc, e não possui branch ativa; não confundir implementação parcial com conclusão da Fase 4.
+- Verificação: CI Lunet Android, consistency, APK e DEVICE a verificar após abrir PR. Reuse assessment product-specific, NN-002/008/017/018/022; sem novo backend, telemetry remota, API pública do Framework, dados persistidos ou dependência externa.

@@ -5,6 +5,7 @@ using Lunet.Audio;
 using Lunet.Content;
 using Lunet.Input;
 using Lunet.Runtime;
+using Lunet.Runtime.Profiling;
 using Lunet.Storage;
 using EGLConfig = Javax.Microedition.Khronos.Egl.EGLConfig;
 
@@ -41,6 +42,18 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private volatile bool _stepRequested;
     private volatile bool _paused;
     private volatile bool _restartRequested;
+    private volatile bool _profilingEnabled;
+    private readonly PreviewFrameStatistics _performance = new();
+
+    /// <summary>Janela de medições opcional, lida pela UI sem tocar no estado do Game.</summary>
+    public PreviewFrameSnapshot Performance => _performance.Snapshot();
+    public bool ProfilerIsPaused => _paused || _appPaused;
+
+    public void SetProfilingEnabled(bool enabled)
+    {
+        _profilingEnabled = enabled;
+        _performance.Reset();
+    }
 
     public PreviewRenderer(byte[] assembly, byte[]? symbols, IContentSource content, Func<IAudioBackend> audioFactory, ISaveStore save, IHaptics haptics, Action<LogLevel, string> log)
     {
@@ -98,6 +111,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     {
         // O contexto GL é novo (primeira vez ou após voltar do segundo plano): recursos antigos são inválidos.
         DisposeSession();
+        _performance.Reset();
         try
         {
             _backend = new GlesBackend();
@@ -153,6 +167,14 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         {
             if (wantPaused) host.Pause(); else host.Resume();
         }
+        bool profile = _profilingEnabled;
+        long start = 0, allocationStart = 0;
+        if (profile)
+        {
+            _backend.BeginProfileFrame();
+            start = Stopwatch.GetTimestamp();
+            allocationStart = GC.GetAllocatedBytesForCurrentThread();
+        }
         if (_stepRequested)
         {
             _stepRequested = false;
@@ -161,6 +183,13 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         else
         {
             host.Tick(elapsed);
+        }
+        if (profile && elapsed > 0 && double.IsFinite(elapsed))
+        {
+            double cpuMilliseconds = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+            long bytes = GC.GetAllocatedBytesForCurrentThread() - allocationStart;
+            _performance.Record(elapsed, cpuMilliseconds, _backend.FrameDrawCalls,
+                _backend.FrameTriangles, Math.Max(0, bytes));
         }
 
         if (host.IsFaulted && !_reportedFault)
@@ -200,6 +229,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
 
     private void DisposeSession()
     {
+        _performance.Reset();
         try { _host?.Stop(); } catch (Exception ex) { _log(LogLevel.Error, ex.Message); }
         _host = null;
         _loaded?.Dispose();
