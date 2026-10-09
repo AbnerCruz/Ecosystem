@@ -407,6 +407,51 @@ async function assertNoteTemplates(page) {
     await page.getByRole('heading', { name: 'Urbe', exact: true }).waitFor();
 }
 
+async function assertWorldCity(page) {
+    smokeStage('uc19-city-map');
+    const nav = page.getByRole('navigation', { name: 'Navegação principal' });
+    await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
+    await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
+
+    const map = page.getByRole('group', { name: 'Bairros e casas do vault' });
+    await map.waitFor();
+    const housesBefore = await map.locator('[data-note-path]').count();
+    assert.ok(housesBefore >= 2, 'Notas existentes devem surgir como casas');
+    assert.ok(await map.locator('.city-district').count() >= 1);
+
+    smokeStage('uc19-city-zoom');
+    await page.getByRole('button', { name: 'Aumentar zoom' }).click();
+    assert.match(await page.getByRole('status').filter({ hasText: /Zoom/ }).innerText(), /125%/);
+    await page.getByRole('button', { name: 'Diminuir zoom' }).click();
+
+    smokeStage('uc19-city-create');
+    await page.getByRole('button', { name: 'Criar casa', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: /Dê um nome à nova casa/ }).waitFor();
+    await page.getByLabel('Título da nota').fill('Casa de teste');
+    await page.getByRole('button', { name: 'Criar casa', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: /Casa criada: Casa de teste.md/ }).waitFor();
+    const createdHouse = map.locator('[data-note-path="Casa de teste.md"]');
+    await createdHouse.waitFor();
+    assert.equal(await map.locator('[data-note-path]').count(), housesBefore + 1);
+
+    smokeStage('uc19-city-editor-roundtrip');
+    await createdHouse.dispatchEvent('click');
+    await page.getByRole('heading', { name: 'Casa de teste', exact: true }).waitFor();
+    await page.getByRole('button', { name: '← Voltar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
+    await page.locator('[data-note-path="Casa de teste.md"]').waitFor();
+
+    const previous = page.viewportSize();
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.ok(await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth),
+        'A cidade deve permitir pan interno sem overflow da página móvel');
+    await page.setViewportSize(previous);
+
+    await nav.getByRole('link', { name: 'Início', exact: true }).click();
+    await page.getByRole('heading', { name: 'Urbe', exact: true }).waitFor();
+}
+
 let browser;
 try {
     browser = await chromium.launch({ headless: true });
@@ -436,8 +481,10 @@ try {
         console.log('UC-17/18 shell + editor online:', base);
         await page.goto(origin + base);
         await assertShell(page, base === '/preview/');
-        if (base === '/preview/')
+        if (base === '/preview/') {
             await assertNoteTemplates(page);
+            await assertWorldCity(page);
+        }
 
         await page.evaluate(async () => {
             await Promise.race([
