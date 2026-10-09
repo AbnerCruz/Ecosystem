@@ -410,6 +410,49 @@ public sealed class VaultWriterTests
                 appVersion: "1.8.3-beta"));
     }
 
+    [Fact]
+    public void MovingMarkdownWritesAndVerifiesDestinationBeforeRemovingSourceAndKeepsAssets()
+    {
+        var files = LoadFixture("v1-mapa-v4")
+            .Append(TextFile("Bairro/foto.png", "imagem conservada"))
+            .ToArray();
+        var original = VaultReader.Read(files);
+        var documents = ToWriteDocuments(original)
+            .Select(note => string.Equals(note.Path, "Alfa.md", StringComparison.Ordinal)
+                ? note with { Path = "Bairro/Alfa.md" }
+                : note)
+            .ToArray();
+
+        var plan = VaultWriter.Plan(new VaultWriteRequest
+        {
+            Files = files,
+            Documents = documents,
+            AppVersion = "urbe-csharp-beta",
+            Now = new DateTimeOffset(2026, 10, 9, 12, 0, 0, TimeSpan.Zero)
+        });
+
+        Assert.True(plan.Writable);
+        Assert.True(plan.Files.ContainsKey("Bairro/Alfa.md"));
+        Assert.False(plan.Files.ContainsKey("Alfa.md"));
+        Assert.Equal(
+            Text(files, "Alfa.md"),
+            Encoding.UTF8.GetString(plan.Files["Bairro/Alfa.md"].Bytes.Span));
+        Assert.Equal(
+            "imagem conservada",
+            Encoding.UTF8.GetString(plan.Files["Bairro/foto.png"].Bytes.Span));
+
+        var writeAt = plan.Operations.ToList().FindIndex(operation =>
+            operation.Kind == VaultOperationKind.Write &&
+            operation.Path == "Bairro/Alfa.md");
+        var removeAt = plan.Operations.ToList().FindIndex(operation =>
+            operation.Kind == VaultOperationKind.Remove &&
+            operation.Path == "Alfa.md");
+
+        Assert.True(writeAt >= 0, "Nova nota deve constar do plano");
+        Assert.True(removeAt > writeAt,
+            "O original não pode ser removido antes de o destino ser gravado.");
+    }
+
     private static VaultWriteDocument[] ToWriteDocuments(VaultSnapshot snapshot) =>
         snapshot.Documents.Select(document =>
             new VaultWriteDocument(
