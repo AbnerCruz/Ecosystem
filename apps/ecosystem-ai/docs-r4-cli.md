@@ -112,7 +112,6 @@ retoma tarefas e não modifica journals ausentes. O arquivo do journal **não
 é criptografado**; dados enviados/retornados durante execuções podem ser
 sensíveis. Veja [docs-r4-run-journal.md](docs-r4-run-journal.md).
 
-
 ## Continuação explícita de uma sessão (slice R4)
 
 A CLI salva conversas no catálogo apenas com `--catalog`. Por padrão,

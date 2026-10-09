@@ -46,3 +46,12 @@ Autoridade do escopo: P6-3 no ROADMAP; contrato candidato: ADR-0020.
 
 A prova local de hospedagem em dois contextos está em [docs-r3.md](docs-r3.md).
 O Workspace consome o Core. A prova técnica P6-4 foi concluída com o **Host real Lunet Core** por composição headless em `tests/integration/p6-lunet-host` (PR #344, ADR-0031, DEC-0041), sem UX de agentes no APK ou dependência entre Products. A interface do Ecosystem AI é escopo P6-5; o Agentic Workspace visual do Lunet continua na Fase 8.
+
+## Superfície visual offline (R4, incremento de leitura)
+
+O Product já pode gerar uma visualização HTML **estática, mobile-first e somente leitura**
+a partir do catálogo local, sem servidor nem modelo. Os projetos, sessões,
+mensagens e recibos são lidos do `EcosystemAi.ProjectStore`, não do Runtime.
+Essa projeção não encerra P6-5 nem substitui a futura UI interativa.
+
+Uso, segurança e limitações: [docs-r4-visual-snapshot.md](docs-r4-visual-snapshot.md).
