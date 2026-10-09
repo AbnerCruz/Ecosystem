@@ -103,4 +103,72 @@ public sealed class PreviewFrameStatisticsTests
         }
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
     }
+
+    [Theory]
+    [InlineData(60)]
+    [InlineData(90)]
+    [InlineData(120)]
+    public void SteadyRefreshRatesDoNotReportFalseHitches(int refreshRate)
+    {
+        var stats = new PreviewFrameStatistics(60);
+        for (int i = 0; i < 60; i++)
+            stats.Record(1.0 / refreshRate, 1, 2, 4, 0);
+        var snapshot = stats.Snapshot();
+        Assert.Equal(1000.0 / refreshRate, snapshot.P50FrameMilliseconds, 5);
+        Assert.Equal(1000.0 / refreshRate, snapshot.P95FrameMilliseconds, 5);
+        Assert.Equal(1000.0 / refreshRate, snapshot.WorstFrameMilliseconds, 5);
+        Assert.Equal(0, snapshot.HitchFrames);
+    }
+
+    [Fact]
+    public void PercentilesRevealRareFortyMillisecondSpikeAt120Hz()
+    {
+        var stats = new PreviewFrameStatistics(20);
+        for (int i = 0; i < 19; i++)
+            stats.Record(1.0 / 120, 1, 1, 2, 0);
+        stats.Record(0.04, 5, 2, 4, 100);
+        var snapshot = stats.Snapshot();
+        Assert.Equal(20, snapshot.Samples);
+        Assert.Equal(1000.0 / 120, snapshot.P50FrameMilliseconds, 5);
+        Assert.Equal(1000.0 / 120, snapshot.P95FrameMilliseconds, 5);
+        Assert.Equal(40, snapshot.WorstFrameMilliseconds, 5);
+        Assert.Equal(1, snapshot.HitchFrames);
+        Assert.Equal(1, snapshot.SlowFrames);
+        Assert.True(snapshot.FrameMilliseconds < 12); // A média esconde o pico.
+    }
+
+    [Fact]
+    public void HitchesDisappearWhenRollingWindowEvictsOldFrames()
+    {
+        var stats = new PreviewFrameStatistics(4);
+        stats.Record(.01, 1, 1, 2, 0);
+        stats.Record(.01, 1, 1, 2, 0);
+        stats.Record(.01, 1, 1, 2, 0);
+        stats.Record(.04, 1, 1, 2, 0);
+        var first = stats.Snapshot();
+        Assert.Equal(1, first.HitchFrames);
+        Assert.Equal(40, first.P95FrameMilliseconds, 5);
+        for (int i = 0; i < 4; i++)
+            stats.Record(.01, 1, 1, 2, 0);
+        var last = stats.Snapshot();
+        Assert.Equal(0, last.HitchFrames);
+        Assert.Equal(10, last.P95FrameMilliseconds, 5);
+        Assert.Equal(10, last.WorstFrameMilliseconds, 5);
+        stats.Reset();
+        Assert.Equal(default, stats.Snapshot());
+    }
+
+    [Fact]
+    public void EvenSizedWindowUsesInterpolatedMedianAndAdaptiveHitchThreshold()
+    {
+        var stats = new PreviewFrameStatistics(4);
+        stats.Record(.010, 1, 1, 2, 0);
+        stats.Record(.011, 1, 1, 2, 0);
+        stats.Record(.012, 1, 1, 2, 0);
+        stats.Record(.019, 1, 1, 2, 0);
+        var snapshot = stats.Snapshot();
+        Assert.Equal(11.5, snapshot.P50FrameMilliseconds, 5);
+        Assert.Equal(19, snapshot.P95FrameMilliseconds, 5);
+        Assert.Equal(0, snapshot.HitchFrames); // 19ms < 1.75 * 11.5ms
+    }
 }

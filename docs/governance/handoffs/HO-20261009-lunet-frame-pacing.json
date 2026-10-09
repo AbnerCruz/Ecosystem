@@ -1,0 +1,102 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-lunet-frame-pacing",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T18:53:36Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-425",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-profiler-frame-pacing-20261009",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Runtime/Profiling/PreviewFrameStatistics.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PreviewFrameStatisticsTests.cs",
+    "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
+    "apps/lunet2d/docs/guides/profiler-preview.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261009-lunet-frame-pacing.json"
+  ],
+  "work_completed": [
+    "Janela de medição de frame pacing P50/P95/máximo e hitch relativo ao refresh observado, sem alocação gerenciada em Record ou Snapshot.",
+    "Overlay Android Perf e guia offline explicando interpretação, limites e roteiro de validação.",
+    "Testes automatizados para estabilidade 60/90/120 Hz, pico raro, rolagem da janela e mediana interpolada; compatibilidade das médias existentes."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests e consistência no PR",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "APK Android do Lunet2D",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Leitura e ergonomia do Perf em aparelho",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/profiler-preview.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Picos são intervalos entre chamadas do Preview; não localizam causa, tempo GPU, swap, áudio ou jank do sistema.",
+    "Janela curta pode criar percentis instáveis; painel ocupa área visual e exige teste DEVICE."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI e corrigir falhas sem ignorar testes.",
+    "Integrar PR como rotina pelo integrador do Ecosystem, confirmar APK e registrar avaliação no telefone."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Solução local ao Produto Lunet2D e docs do handoff, nenhuma duplicação de ferramenta compartilhada."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue, ROADMAP, AgentsChat e handoff com teste e aprovação explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE e CI pendentes; sem atribuir validação humana ao build."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Fase 4 e tarefa em review até integração e teste físico."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhum contrato transversal, boundary ou manifesto alterado."
+    }
+  ],
+  "base_commit": "e96fee5c964b933e85b49d4796747066d12f4275",
+  "criticality": {
+    "declared": "routine"
+  },
+  "reuse_assessment": [
+    {
+      "subject": "lunet-frame-pacing-profiler",
+      "status": "product-specific",
+      "rationale": "Medição vinculada ao loop OpenGL Android do Preview Lunet; não há consumidor de outro Product ou necessidade de extração compartilhada."
+    }
+  ]
+}

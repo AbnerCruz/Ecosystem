@@ -315,3 +315,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação: .NET 10 SDK não disponível no ambiente da sessão; testes, consistency e APK Android deverão ser conferidos pelo CI do PR. Não declarar dispositivo aprovado.
 - Riscos/escopo: um único ID reservado por Update; não mexe em ProjectStore, MainActivity, configuração persistida nem código dos jogos. Defaults legados preservados.
 - Próximo passo: verificar e corrigir CI, integrar pela política do repositório; confirmar APK e solicitar roteiro DEVICE no celular.
+
+### 20261009-chatgpt-lunet-frame-pacing — ChatGPT → próximos agentes — review
+- LUNET-425 / Issue #387 / Fase 4, branch `agent/lunet-profiler-frame-pacing-20261009`, base main `e96fee5c964b933e85b49d4796747066d12f4275`.
+- Profiler do Preview ganha P50/P95, pior quadro e contagem de hitches em janela circular de até 600 frames; detecção usa 1,75× a mediana e margem absoluta mínima de 2 ms para não assumir 60 Hz em telas 90/120 Hz. Medidas incluem todos os frames desenhados, inclusive Preview pausado.
+- Métricas calculadas em Span alocado na pilha dentro de Snapshot; nenhum novo heap/telemetria/alteração persistida; painel Perf permanece opt-in.
+- Testes de 60/90/120 Hz, pico raro, rolling window, mediana par e GC; suite/CI/aparelho pendentes. Não atribuir os hitches à GPU/Android/GC sem diagnóstico independente.
+- Reuse assessment product-specific, NN-002/008/017/018/022; não altera ProjectStore, assinatura APK, workflow, outro Product ou API pública do Framework.

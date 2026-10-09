@@ -146,6 +146,8 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
             _profiler.Text =
                 $"PROFILER  |  {current.Samples} quadros{paused}\n" +
                 $"FPS: {current.FramesPerSecond:F1}  Frame: {current.FrameMilliseconds:F2} ms\n" +
+                $"Frame P50/P95: {current.P50FrameMilliseconds:F1}/{current.P95FrameMilliseconds:F1} ms\n" +
+                $"Pior: {current.WorstFrameMilliseconds:F1} ms | engasgos: {current.HitchFrames}\n" +
                 $"CPU Tick: {current.CpuTickMilliseconds:F2} ms\n" +
                 (current.PhasedSamples == 0 ? "CPU Update/Draw: nao medidos\n"
                     : $"CPU Update: {current.UpdateCpuMilliseconds:F2} ms  ({current.UpdateStepsPerFrame:F1} passos)\n" +
