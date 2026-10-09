@@ -12,13 +12,26 @@ public sealed class DefaultBitmapFontTests
     [InlineData("A\r\nB", 5, 22)]
     [InlineData("\r\n\n", 0, 33)]
     [InlineData("A😀\r\nB", 11, 22)]
-    [InlineData("A\uD800B", 17, 11)]
     [InlineData("", 0, 11)]
     public void MeasureUsesUnicodeScalarsAndOneLineForCrLf(string text, int width, int height)
     {
         var device = new GraphicsDevice(new NoOpBackend(), 360, 640);
         var font = SpriteFont.CreateDefault(device);
         Assert.Equal(new Vector2(width, height), font.Measure(text));
+    }
+
+    [Fact]
+    public void MalformedUtf16ProducesSingleFallbackWithoutXunitSerialization()
+    {
+        // xUnit InlineData normaliza um surrogate isolado durante a descoberta, tornando o caso inválido.
+        string invalid = "A" + new string((char)0xD800, 1) + "B";
+        var backend = new RecordingBackend();
+        var device = new GraphicsDevice(backend, 360, 640);
+        var font = SpriteFont.CreateDefault(device);
+        var batch = new SpriteBatch(device);
+        Assert.Equal(new Vector2(17, 11), font.Measure(invalid));
+        batch.Begin(); batch.DrawString(font, invalid, Vector2.Zero, Color.White); batch.End();
+        Assert.Equal(3, Assert.Single(backend.Batches).QuadCount);
     }
 
     [Fact]
