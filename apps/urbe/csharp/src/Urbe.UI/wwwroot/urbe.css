@@ -1125,3 +1125,13 @@ a:focus-visible {
         align-items: center;
     }
 }
+
+/* Android SAF vault: compact tap targets on horizontal phones and desktop. */
+.vault-host-controls { padding: .5rem 1rem; border-bottom: 1px solid rgba(255,255,255,.12); }
+.vault-host-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.vault-host-actions button { min-height: 42px; padding: .45rem .8rem; border: 1px solid rgba(255,255,255,.24); border-radius: .5rem; background: #263b37; color: #fff; cursor: pointer; }
+.vault-host-actions button:disabled { opacity: .55; cursor: default; }
+.vault-host-actions span { font-size: .83rem; opacity: .8; }
+.vault-host-status, .vault-host-error { margin: .35rem 0 0; font-size: .85rem; }
+.vault-host-error { color: #ffb9b9; }
+@media (max-width: 700px) { .vault-host-controls { padding: .35rem .6rem; } .vault-host-actions button { flex: 1 1 auto; } .vault-host-actions span { flex: 1 0 100%; } }
