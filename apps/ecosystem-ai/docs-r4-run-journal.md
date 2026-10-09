@@ -30,3 +30,35 @@ de tarefas e reconciliação de side effects são slices posteriores. Nenhum
 background service, sync ou deploy foi implementado.
 
 Teste: `dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests`.
+
+
+## Integração opcional na CLI do Product
+
+Uma execução normal continua usando log efêmero em memória. Para persistir os eventos
+do mesmo `AgentRunner`/`WorkspaceSession`, indique uma pasta privada **fora do
+workspace autorizado ao agente**:
+
+```text
+--project /pasta/projeto --goal "..." --endpoint https://... --model ... [demais flags] --journal /pasta/privada/runs
+```
+
+O run recebe um ID impresso na saída, e seus eventos são gravados e validados
+pelo `LocalRunEventLog`. O conteúdo do journal pode incluir prompts, argumentos,
+resultados e texto de ferramentas, portanto fica **em claro e não deve ser
+armazenado dentro do projeto que o agente pode ler ou em pasta sincronizada
+sem proteção**. Nenhuma escrita de eventos é ativada sem `--journal`.
+
+Consulta local, sem chave, provedor ou rede:
+
+```text
+--show-run --journal /pasta/privada/runs --run-id cli-run-ID
+```
+
+A consulta verifica checksum, contrato e replay do Core antes de devolver somente
+metadados (status, verificação, passos, ferramentas, custo registrado e tipo de
+cada evento). **Não imprime payload, mensagens, argumentos ou resultados**;
+um run ausente não cria novo arquivo. Isso é auditoria, não execução de retomada:
+o comando `--show-run` nunca chama modelo ou reexecuta tools. A persistência
+do log ainda não restaura automaticamente orçamento, side effects ou uma
+execução interrompida. O catálogo de sessões e o journal continuam opt-ins
+independentes, sem segunda autoridade de estado.
