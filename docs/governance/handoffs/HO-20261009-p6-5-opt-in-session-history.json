@@ -1,0 +1,131 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-opt-in-session-history",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T18:56:12.289Z",
+  "agent": {
+    "id": "chatgpt-ecosystem-ai-session-context",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-cli-explicit-session-context-20261009",
+  "base_commit": "e96fee5c964b933e85b49d4796747066d12f4275",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliSessionContext.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4SessionContextTests.cs",
+    "apps/ecosystem-ai/docs-r4-cli.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-opt-in-session-history.json"
+  ],
+  "work_completed": [
+    "Histórico explícito de sessões pode ser enviado ao mesmo AgentRunner/WorkspaceSession com --use-history, somente quando projeto e sessão existentes são escolhidos.",
+    "A CLI captura o snapshot do catálogo ANTES de gravar a pergunta atual, evitando duplicar turnos; seleciona mensagens recentes contíguas (10 mensagens/12.000 caracteres JSON) sem resumo artificial.",
+    "Transcrição histórica é tratada como conteúdo JSON não confiável, não política, não permissão, sem memória canônica adicional e sem modificação do esquema de catálogo.",
+    "Histórico pode conter conteúdo sensível; flag é opt-in e documented; redactor da CLI continua aplicado ao contexto.",
+    "Testes cobrem sessões reabertas, limites, falta de histórico, sessão inexistente e rejeição de flags contraditórias."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando GitHub Actions da PR."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando GitHub Actions da PR."
+    },
+    {
+      "check": "DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Alteração só na CLI C# portátil e no contexto explícito; sem mudança visual de Android."
+    }
+  ],
+  "known_issues": [
+    "Ainda falta um aplicativo interativo mobile-first com gerenciamento de agentes/equipes/tarefas/artefatos.",
+    "Repassar mensagens antigas pode elevar custo e transmitir dados privados ao provedor escolhido; opt-in não equivale a redator universal.",
+    "PR #383 altera Program.cs também e pode exigir reconciliação se integrar primeiro.",
+    "O limite de orçamento atual continua por execução, não controle financeiro cumulativo por sessão."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Rodar checks do Product e do repositório no estado combinado e corrigir falhas.",
+    "Reconciliar semântica de Program.cs caso PR #383 integre.",
+    "Prosseguir P6-5 com visual real e grants de tarefas sem novo loop."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-local-store.md",
+    "apps/ecosystem-ai/docs-r4-cli.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mensagens são lidas da autoridade LocalProjectStore; não há segundo armazenamento nem memória automática."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Mesmo Workspace/AgentRunner e run log existente; handoff e PR rastreáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escopo já autorizado por Issue #354/ROADMAP P6-5 e documentação de comportamento persistida."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança aditiva em entrada opt-in da CLI, sem novo contrato público, formato ou boundary."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Histórico só sai para o provedor após flag explícita e vínculo de identidade da sessão; não altera grants."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes de CLI não são apresentados como validação de aplicativo Android."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review até integração e CI; não declara done."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reusa catálogo, Runner, Workspace, ledger e provider existentes; sem nova infraestrutura."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Implementação específica do Product; nenhuma abstração promovida para platform."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "session-context-reuse",
+      "status": "product-specific",
+      "rationale": "Composição de transcript é específica da UX da CLI e não justifica um serviço ou contrato novo."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Leitura opt-in do catálogo existente e composição efêmera do TaskSpec, sem migração/contrato/grant/segredo novo."
+  },
+  "cost": null
+}
