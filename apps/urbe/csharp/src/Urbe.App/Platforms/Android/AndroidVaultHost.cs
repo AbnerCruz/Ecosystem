@@ -198,8 +198,12 @@ public sealed class AndroidVaultHost : IVaultHost
             }, cancellationToken);
 
             _baseline = updated.Snapshot;
-            if (session.Revision == initialRevision)
-                session.MarkSaved();
+            if (session.Revision != initialRevision)
+                throw new IOException(
+                    "O conteúdo anterior foi salvo, mas houve novas alterações " +
+                    "durante a gravação. Toque em Salvar arquivos novamente.");
+
+            session.MarkSaved();
 
         }
         finally
