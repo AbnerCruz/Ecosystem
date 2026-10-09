@@ -394,6 +394,69 @@ a:focus-visible {
     cursor: pointer;
 }
 
+.explorer-search-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: .5rem;
+    min-width: 0;
+}
+
+.explorer-clear-search,
+.explorer-breadcrumb {
+    min-height: 2.75rem;
+    padding: .55rem .75rem;
+    border: 1px solid #355445;
+    border-radius: .7rem;
+    background: #1b3026;
+    color: #c5e5ce;
+    font: inherit;
+    font-size: .8rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.explorer-clear-search:focus-visible,
+.explorer-breadcrumb:focus-visible {
+    outline: 3px solid #b6efcd;
+    outline-offset: 2px;
+}
+
+.explorer-breadcrumbs {
+    display: flex;
+    gap: .4rem;
+    min-width: 0;
+    margin-top: .8rem;
+    padding: .2rem 0 .4rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+
+.explorer-breadcrumb {
+    flex: 0 0 auto;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.explorer-breadcrumb[aria-current="location"] {
+    border-color: #75a386;
+    background: #20342a;
+}
+
+.explorer-search-caption {
+    margin: .7rem 0 -.3rem;
+    font-size: .76rem;
+    color: #9fb5a8;
+}
+
+.explorer-row.search-result .explorer-main small {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
 .explorer-list {
     display: grid;
     gap: .45rem;
