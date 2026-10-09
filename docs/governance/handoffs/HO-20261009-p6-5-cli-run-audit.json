@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-cli-run-audit",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T18:17:16.337Z",
+  "agent": {
+    "id": "chatgpt-p6-5-cli-audit",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-cli-optin-run-audit-20261009",
+  "base_commit": "c26498dd1898e2b85383b883afa416f1ee5894ac",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliRunJournalCommands.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/EcosystemAi.Cli.csproj",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4CliRunJournalTests.cs",
+    "apps/ecosystem-ai/docs-r4-cli.md",
+    "apps/ecosystem-ai/docs-r4-run-journal.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-cli-run-audit.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: a CLI R4 usava LocalRunEvents em memória, enquanto LocalRunEventLog durável já implementava IEventLog sem integração na superfície Product.",
+    "A CLI permite --journal fora do diretório autorizado para usar o adapter durável existente, mantendo memória efêmera como padrão e expondo runId identificável.",
+    "Consulta --show-run realiza replay do Core e mostra somente metadados de eventos, sem body, payload, resultados, argumentos ou conteúdo de tools.",
+    "Testes adicionados para leitura/replay, privacidade da consulta, isolamento do workspace, flags inválidas e modo consulta sem criação de diretório."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR; dotnet SDK não está presente na sessão de edição."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR; dotnet SDK não está presente na sessão de edição."
+    },
+    {
+      "check": "Android/device",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "CLI portátil sem alteração de APK, UI mobile, toque ou lifecycle."
+    }
+  ],
+  "known_issues": [
+    "R4 P6-5 ainda não conclui interface mobile, equipes, artefatos navegáveis, memória ou recuperação de side effects.",
+    "O journal local contém payloads em texto claro; a CLI exige opt-in e localização fora do sandbox, sem oferecer criptografia.",
+    "Não foi possível executar os testes localmente, pois .NET SDK não está instalado no ambiente desta sessão."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Observar CI do PR; corrigir falhas reais antes de integrar.",
+    "Após integração, continuar P6-5 com UX de tarefas/projetos sem novo loop agêntico."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-cli.md",
+    "apps/ecosystem-ai/docs-r4-run-journal.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "RunState.Replay continua a autoridade do estado; o adapter não armazena RunStatus paralelo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Execuções recebem runId impresso, eventos IEventLog e handoff rastreável."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Alteração aditiva ao Product já aprovado por P6-5, sem nova arquitetura ou contrato."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Journal só com flag explícita e fora do projeto onde o agente possui files.read."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara validação de dispositivo."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Review e CI pending até evidência real; não declara done."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reutiliza LocalRunEventLog e RunState.Replay, sem novo runtime paralelo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma extração para platform ou dependência entre Products."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Integração aditiva e opcional na CLI do Product, sem alterar formato de dados do journal, contrato público, permissões ou migração."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "cli-run-audit",
+      "status": "product-specific",
+      "rationale": "UI de terminal é específica do Ecosystem AI; IEventLog/RunState existentes permanecem internos sem novo segundo consumidor."
+    }
+  ],
+  "cost": null
+}
