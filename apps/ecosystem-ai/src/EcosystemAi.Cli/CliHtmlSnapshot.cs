@@ -34,6 +34,9 @@ public static class CliHtmlSnapshot
         var catalog = new LocalProjectStore(sourceDirectory).Read();
         foreach (var project in catalog.Projects)
         {
+            // Recusar workspace que atravesse link: um alias pode apontar
+            // para a saída sem parecer contido no path lexical.
+            EnsureNoSymlinkAncestors(project.WorkspaceDirectory);
             if (IsWithin(output, project.WorkspaceDirectory))
                 throw new ArgumentException("Não salve conversas exportadas dentro de um workspace acessível ao agente.", nameof(outputFile));
         }
