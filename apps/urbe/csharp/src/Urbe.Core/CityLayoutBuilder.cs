@@ -47,6 +47,7 @@ public static class CityLayoutBuilder
         var notes = allNotes.Take(MaxNotes).ToArray();
         var paths = notes.Select(note => note.Folder)
             .Concat(folders ?? [])
+            .Append(string.Empty)
             .Select(DocumentModel.NormalizePath)
             .Where(path => !ArtifactModel.IsSystem(path))
             .Distinct(StringComparer.OrdinalIgnoreCase)
