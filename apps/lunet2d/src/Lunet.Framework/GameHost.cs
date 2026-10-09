@@ -33,6 +33,9 @@ public sealed class GameHost
     private bool _started;
     private bool _profileFrameTimings;
 
+    // Usado pelo Preview para consumir bordas de toque apenas após um Update real.
+    internal long CompletedUpdateSteps { get; private set; }
+
     /// <param name="contentSource">Origem dos arquivos de <c>Content/</c>; sem ela, o jogo não encontra arquivos.</param>
     /// <param name="game">Jogo a executar.</param>
     /// <param name="backend">Backend gráfico (OpenGL ES no Android).</param>
@@ -188,6 +191,7 @@ public sealed class GameHost
                 for (var i = 0; i < steps; i++)
                 {
                     _game.RunUpdate(_loop.CompleteStep());
+                    CompletedUpdateSteps++;
                     Input.ClearGestures(); // cada gesto é entregue a um único passo
                 }
                 if (profile)
@@ -221,6 +225,7 @@ public sealed class GameHost
             }
             var updateStart = profile ? Stopwatch.GetTimestamp() : 0;
             _game.RunUpdate(_loop.CompleteStep());
+            CompletedUpdateSteps++;
             if (profile)
             {
                 LastUpdateCpuMilliseconds = Stopwatch.GetElapsedTime(updateStart).TotalMilliseconds;
