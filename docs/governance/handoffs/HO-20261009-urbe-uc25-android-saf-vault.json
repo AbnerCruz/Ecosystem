@@ -41,14 +41,17 @@
     "Movimentação de notas .md/.markdown individuais agora usa plano do VaultWriter e valida bytes do destino físico antes de excluir original; não são permitidos movimentos em cadeia ou pastas nesta fatia.",
     "Explorer Android desabilita a ação Mover em pastas, preservando comportamento do Explorer Web; teste portátil de plano comprova gravação do novo caminho antes da remoção do anterior.",
     "Host Android agora enumera diretórios físicos do SAF e os comunica à WorkspaceSession, inclusive pastas vazias após fechar e reabrir, sem sentinelas no vault.",
-    "Novos testes de sessão UI para diretórios vazios e rejeição de caminhos anômalos/protegidos, sem alterar o contrato público de arquivos Markdown."
+    "Novos testes de sessão UI para diretórios vazios e rejeição de caminhos anômalos/protegidos, sem alterar o contrato público de arquivos Markdown.",
+    "Autosave Android com debounce de 1,6s após alterações reais de documentos/pastas; navegação, troca de abas e abertura de vault não disparam escrita; botão Salvar manual preservado.",
+    "WorkspaceSession agora publica PersistenceRevision/HasUnsavedChanges, distingue revisão de dados de revisão visual, e sinaliza conflitos durante gravação sem falso positivo de mudança de aba.",
+    "Testes de sessão adicionados para eventos dirty/clean de edição, criação, mudança de pasta, movimento, MarkSaved e Reload."
   ],
   "verification": [
     {
       "check": "urbe-checks: Core, Web, Android, Windows, E2E",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Antes da mudança de bairros vazios, CI completo anterior estava verde em #397 (Android, Windows, Web, portátil, E2E e consistency); nova revisão inclui testes e aguarda CI."
+      "evidence": "Revisão antes do autosave passou Android, Windows, Web, Core, E2E e foundation; esta revisão com autosave exige novo CI."
     },
     {
       "check": "Foundation consistency",
@@ -66,7 +69,7 @@
     }
   ],
   "known_issues": [
-    "Não há autosave: o usuário precisa tocar no botão Salvar arquivos. Fechar o app antes de salvar descarta alterações em memória.",
+    "Autosave de 1,6s foi implementado nesta revisão, mas ainda precisa de CI e validação Android físico; fechar imediatamente após a última tecla ainda pode perder edições, conforme indicador 'alterações ainda não salvas'.",
     "Mover NOTAS individuais agora possui implementação física, ainda sem teste no dispositivo; pastas, cadeias de movimentos e anexos continuam sem movimentação Android e são bloqueados explicitamente.",
     "Leitura Android desta fatia cobre textos usuais e .urbe; outros assets no disco não são alterados nem carregados para Core; limites de tamanho protegem memória do beta.",
     "Sem suporte de acesso físico Web ou Windows nesta fatia; PreviewVaultHost declara a limitação.",
@@ -79,7 +82,7 @@
     "Corrigir erros de compilação CI e verificar status combinado.",
     "Executar teste Android físico de selecionar pasta vazia, criar nota, salvar, fechar, reabrir e comprovar bytes no filesystem.",
     "Executar no Android físico: mover uma nota .md entre bairros e verificar conteúdo original somente removido após confirmação do novo caminho; depois ampliar movimentação de pastas e anexos.",
-    "Conectar autosave seguro debounced e preservar alterações em mudanças de pasta com aviso antes do beta de distribuição.",
+    "Validar autosave Android com pausa de digitação, status de falha, edição durante gravação e botão manual antes da distribuição de beta.",
     "Não publicar release ou declarar gates concluídos sem validação física e autorização crítica."
   ],
   "decisions_required": [],
