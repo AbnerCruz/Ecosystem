@@ -62,7 +62,8 @@
     "Mover arquivos e pastas pelo Explorer ainda não persiste no host Android; é recusado no salvamento para evitar perda silenciosa.",
     "Leitura Android desta fatia cobre textos usuais e .urbe; outros assets no disco não são alterados nem carregados para Core; limites de tamanho protegem memória do beta.",
     "Sem suporte de acesso físico Web ou Windows nesta fatia; PreviewVaultHost declara a limitação.",
-    "Escrita SAF não é transação atômica; backup de arquivo anterior é criado antes de truncar e mantido se houver falha de recuperação. Precisa de smoke real em aparelho."
+    "Escrita SAF não é transação atômica; backup de arquivo anterior é criado antes de truncar e mantido se houver falha de recuperação. Precisa de smoke real em aparelho.",
+    "A diretiva DEC-0042/ADD-0019 está em PR #392 ainda não integrado; este handoff referencia apenas fontes normativas já existentes na main."
   ],
   "blockers": [],
   "next_actions": [
@@ -79,7 +80,6 @@
     "apps/urbe/AGENTS.md",
     "docs/adr/0016-migracao-do-urbe-para-csharp.md",
     "docs/adr/0026-urbe-transicao-cliente-csharp.md",
-    "docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md",
     "apps/urbe/docs/csharp/ROADMAP.md",
     "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
     "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
