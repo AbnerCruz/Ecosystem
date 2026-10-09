@@ -220,7 +220,7 @@ public sealed class VirtualButton
     /// <summary>Verdadeiro enquanto um dedo o segura.</summary>
     public bool IsDown { get; private set; }
 
-    /// <summary>Verdadeiro no primeiro <see cref="Update"/> depois de pressionado.</summary>
+    /// <summary>Verdadeiro no primeiro <see cref="Update(InputState)"/> depois de pressionado.</summary>
     public bool WasPressed { get; private set; }
 
     /// <summary>Solta o dedo e zera o estado, inclusive o evento de pressão.</summary>
