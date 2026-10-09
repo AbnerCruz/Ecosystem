@@ -101,6 +101,31 @@ public sealed class R4VisualSnapshotTests
     }
 
     [Fact]
+    public void Workspace_vinculado_por_symlink_nao_pode_ocultar_destino()
+    {
+        if (OperatingSystem.IsWindows()) return;
+        var root = NewRoot();
+        Directory.CreateDirectory(root);
+        var actualWorkspace = Path.Combine(root, "workspace");
+        var linkedWorkspace = Path.Combine(root, "linked-workspace");
+        var catalog = Path.Combine(root, "catalog");
+        Directory.CreateDirectory(actualWorkspace);
+        try
+        {
+            Directory.CreateSymbolicLink(linkedWorkspace, actualWorkspace);
+            var store = new LocalProjectStore(catalog);
+            store.CreateProject("Ligado", linkedWorkspace);
+            Assert.Throws<IOException>(() => CliHtmlSnapshot.Export(
+                catalog, Path.Combine(actualWorkspace, "historico.html")));
+        }
+        finally
+        {
+            if (Directory.Exists(linkedWorkspace)) Directory.Delete(linkedWorkspace);
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public void Saida_atraves_de_symlink_e_recusada()
     {
         if (OperatingSystem.IsWindows()) return;
