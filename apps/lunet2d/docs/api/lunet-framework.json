@@ -14197,7 +14197,7 @@
             {
               "name": "excludedTouchId",
               "type": "int",
-              "description": "ID de dedo reservado, ou -1 para nenhum."
+              "description": "ID reservado, ou -1 para nenhum."
             }
           ],
           "returns": "",
