@@ -64,11 +64,13 @@ public static class CliVisualRunDetails
             var model = entries.LastOrDefault(e => e.Model is not null)?.Model;
             var workspace = includeTextPreviews
                 ? references.First(r => r.RunId == id).WorkspaceDirectory : null;
-            var artifacts = state.Artifacts
-                .Select(a => new VisualArtifact(a.Kind, SafeFileName(a.Location),
-                    workspace is null ? null : CliArtifactTextPreview.Read(
-                        a, workspace, ref totalPreviewBytes, ref previewCount)))
-                .ToArray();
+            var artifacts = new List<VisualArtifact>();
+            foreach (var artifact in state.Artifacts)
+            {
+                var preview = workspace is null ? null : CliArtifactTextPreview.Read(
+                    artifact, workspace, ref totalPreviewBytes, ref previewCount);
+                artifacts.Add(new VisualArtifact(artifact.Kind, SafeFileName(artifact.Location), preview));
+            }
             result.Add(id, new VisualRunDetails(id, state.Status.ToString(), state.Verified,
                 state.Steps, state.ToolCalls, agent, model, artifacts));
         }
