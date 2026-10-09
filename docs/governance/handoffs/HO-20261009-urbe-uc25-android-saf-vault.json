@@ -46,14 +46,15 @@
     "Autosave Android com debounce de 1,6s após alterações reais de documentos/pastas; navegação, troca de abas e abertura de vault não disparam escrita; botão Salvar manual preservado.",
     "WorkspaceSession agora publica PersistenceRevision/HasUnsavedChanges, distingue revisão de dados de revisão visual, e sinaliza conflitos durante gravação sem falso positivo de mudança de aba.",
     "Testes de sessão adicionados para eventos dirty/clean de edição, criação, mudança de pasta, movimento, MarkSaved e Reload.",
-    "CI urbe-checks Android agora tenta gerar APK de depuração separado (app.urbe.csharp.dev) e anexar ZIP de artifact ao workflow, sem alterar canal de release ou assinar para produção."
+    "CI urbe-checks Android agora tenta gerar APK de depuração separado (app.urbe.csharp.dev) e anexar ZIP de artifact ao workflow, sem alterar canal de release ou assinar para produção.",
+    "Autosave agora distingue exceção de edição durante I/O (reagenda após debounce) de conflito externo no vault (NÃO tenta repetir em loop), preservando feedback e evitando falsas confirmações."
   ],
   "verification": [
     {
       "check": "urbe-checks: Core, Web, Android, Windows, E2E",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Revisão antes do autosave passou Android, Windows, Web, Core, E2E e foundation; esta revisão com autosave exige novo CI."
+      "evidence": "Revisão anterior sem empacotamento passou todos os sete checks; revisão atual incluindo APK de depuração e exceção de edição concorrente exige CI de novo."
     },
     {
       "check": "Foundation consistency",
@@ -78,7 +79,8 @@
     "Escrita SAF não é transação atômica; backup de arquivo anterior é criado antes de truncar e mantido se houver falha de recuperação. Precisa de smoke real em aparelho.",
     "A diretiva DEC-0042/ADD-0019 está em PR #392 ainda não integrado; este handoff referencia apenas fontes normativas já existentes na main.",
     "Lista de pastas físicas é atualizada após seleção, reabertura e salvamento explícito; outros provedores SAF ainda exigem teste em dispositivo antes de liberar o beta.",
-    "A entrega de APK debug como artifact do GitHub Actions não é uma release nem arquivo de instalação por link direto; APK exige CI verde do empacotamento e teste físico."
+    "A entrega de APK debug como artifact do GitHub Actions não é uma release nem arquivo de instalação por link direto; APK exige CI verde do empacotamento e teste físico.",
+    "O empacotamento de APK debug no urbe-checks ainda está sujeito ao job Android; não existe APK baixável até o CI concluir esse job com artifact."
   ],
   "blockers": [],
   "next_actions": [
