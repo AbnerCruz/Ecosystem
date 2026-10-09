@@ -31,20 +31,26 @@
   ],
   "verification": [
     {
-      "check": "CI",
+      "check": "Lunet.Tests",
+      "kind": "automated",
       "result": "pending"
     },
     {
-      "check": "consistency",
+      "check": "Foundation consistency",
+      "kind": "automated",
       "result": "pending"
     },
     {
-      "check": "APK",
+      "check": "Android APK CI build",
+      "kind": "automated",
       "result": "pending"
     },
     {
-      "check": "DEVICE",
-      "result": "pending"
+      "check": "Opções on/off, toque real e regressão no aparelho",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/toggle-ui.md",
+      "critical": false
     }
   ],
   "known_issues": [
