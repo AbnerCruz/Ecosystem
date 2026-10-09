@@ -40,7 +40,7 @@
             var restored = await Host.RestoreAsync();
             if (restored is not null)
             {
-                Workspace.Load(restored);
+                Workspace.Load(restored, Host.Folders);
                 _message = "Pasta reaberta. Alterações são gravadas apenas ao tocar em Salvar arquivos.";
             }
         }
@@ -76,7 +76,7 @@
                 _message = "Seleção cancelada; os documentos abertos não foram alterados.";
                 return;
             }
-            Workspace.Load(snapshot);
+            Workspace.Load(snapshot, Host.Folders);
             _confirmSwitch = false;
             _message = snapshot.IsReadOnly
                 ? "Formato não suportado: vault aberto em somente leitura."
