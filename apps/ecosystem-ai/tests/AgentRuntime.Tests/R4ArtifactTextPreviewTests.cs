@@ -151,9 +151,11 @@ public sealed class R4ArtifactTextPreviewTests
             File.WriteAllText(path, new string('x', 16 * 1024));
             var total = 0;
             var count = 0;
-            for (var i = 0; i < CliArtifactTextPreview.MaxPreviews; i++)
+            for (var i = 0; i < CliArtifactTextPreview.MaxTotalPreviewBytes / 16384; i++)
                 Assert.NotNull(CliArtifactTextPreview.Read(
                     new ArtifactRef("f", "file", "texto.md"), root, ref total, ref count));
+            Assert.Null(CliArtifactTextPreview.Read(
+                new ArtifactRef("f", "file", "texto.md"), root, ref total, ref count));
             Assert.Equal(CliArtifactTextPreview.MaxTotalPreviewBytes, total);
             Assert.Equal(8, count);
         }
