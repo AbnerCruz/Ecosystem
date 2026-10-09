@@ -1,0 +1,120 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-lunet-touch-frame-buffer",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T18:00:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-touch-frame-buffer",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-424",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-touch-frame-buffer-20261009",
+  "base_commit": "ac600f84c215678016e347e9890050e125735066",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/GameHost.cs",
+    "apps/lunet2d/src/Lunet.Framework/Lunet.Framework.csproj",
+    "apps/lunet2d/src/Lunet.Android/Gles/PreviewRenderer.cs",
+    "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/docs/guides/entrada.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/src/Lunet.Framework/Input/TouchFrameBuffer.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchFrameBufferTests.cs",
+    "docs/governance/handoffs/HO-20261009-lunet-touch-frame-buffer.json"
+  ],
+  "work_completed": [
+    "Preservadas bordas Pressed/Released/Cancelled até o primeiro Update/Step real, inclusive quando há múltiplos MotionEvents entre frames GL.",
+    "Eliminadas alocações List/ToArray no PreviewHost.OnTouch; buffer fixo MaxTouches e troca sincronizada entre thread UI/GL.",
+    "Adicionados testes portáteis de toque curto, simultâneo, pausa entre quadros, missing/cancel e zero alocação; guia, roadmap e changelog."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "SDK .NET 10 não disponível no executor; conferir CI do PR."
+    },
+    {
+      "kind": "automated",
+      "check": "Ecosystem consistency",
+      "result": "pending",
+      "evidence": "Conferir GitHub Actions."
+    },
+    {
+      "kind": "automated",
+      "check": "Android APK",
+      "result": "pending",
+      "evidence": "Aguardando CI e integração."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE — precisão do Preview",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/entrada.md",
+      "evidence": "Toque curtíssimo e dois polegares, 60/90/120 Hz, reinício sem captura presa."
+    }
+  ],
+  "known_issues": [
+    "A entrega de duas bordas em updates consecutivos estende toques extremamente curtos por até dois passos fixos, em vez de descartá-los.",
+    "IDs Android reciclados antes da confirmação de evento anterior são um caso limite para análise posterior.",
+    "Sem SDK Android local para testar a integração real; DEVICE permanece pendente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI Lunet.Tests, consistency e Android.",
+    "Conciliar se main avançar, integrar pelo integrador automático.",
+    "Validar APK no aparelho sem inferir aprovação humana."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/governance/communication.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças restritas ao produto Lunet e Preview Android."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #381, branch, handoff e PR rastreáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste DEVICE pendente e explícito."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Nenhum CI nem APK declarado aprovado nesta sessão."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Implementação interna ao produto; nenhuma nova Tool compartilhada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "android-preview-touch-buffer",
+      "status": "product-specific",
+      "rationale": "Consolida MotionEvents no runtime do Preview do Lunet; nenhum segundo consumidor nem contrato transversal."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Correção interna de entrada, API pública e projetos persistidos intocados."
+  },
+  "cost": null
+}

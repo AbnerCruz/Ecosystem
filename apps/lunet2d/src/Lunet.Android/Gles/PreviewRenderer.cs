@@ -31,7 +31,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private System.Numerics.Vector3 _accelerometer;
     private readonly object _inputLock = new();
     private readonly Stopwatch _clock = new();
-    private TouchPoint[] _touches = [];
+    private readonly TouchFrameBuffer _touches = new();
 
     private GlesBackend? _backend;
     private LoadedGame? _loaded;
@@ -69,9 +69,9 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     /// <summary>Instância do jogo em execução (nula antes de iniciar ou após parar); o Inspector lê dela.</summary>
     public Game? CurrentGame => _loaded?.Game;
 
-    public void SetTouches(TouchPoint[] touches)
+    public void SetTouches(ReadOnlySpan<TouchPoint> touches)
     {
-        lock (_inputLock) _touches = touches;
+        lock (_inputLock) _touches.Submit(touches);
     }
 
     public void SetKey(Keys key, bool down) => _keys.Enqueue((key, down));
@@ -143,9 +143,10 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         var elapsed = _clock.Elapsed.TotalSeconds;
         _clock.Restart();
 
-        TouchPoint[] touches;
-        lock (_inputLock) touches = _touches;
-        host.SetSurfaceTouches(touches);
+        Span<TouchPoint> touches = stackalloc TouchPoint[InputState.MaxTouches];
+        int touchCount;
+        lock (_inputLock) touchCount = _touches.CopyFrame(touches);
+        host.SetSurfaceTouches(touches[..touchCount]);
         while (_keys.TryDequeue(out var key)) host.Input.SetKey(key.Key, key.Down);
         System.Numerics.Vector3 acceleration;
         lock (_inputLock) acceleration = _accelerometer;
@@ -176,6 +177,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
             start = Stopwatch.GetTimestamp();
             allocationStart = GC.GetAllocatedBytesForCurrentThread();
         }
+        var updateBefore = host.CompletedUpdateSteps;
         if (_stepRequested)
         {
             _stepRequested = false;
@@ -184,6 +186,12 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         else
         {
             host.Tick(elapsed);
+        }
+        // Um frame OpenGL em 90/120 Hz pode não ter passo de simulação a 60 Hz.
+        // Não consumir Pressed/Released antes de o código do jogo receber um Update.
+        if (host.CompletedUpdateSteps != updateBefore)
+        {
+            lock (_inputLock) _touches.AcknowledgeFrame();
         }
         if (profile)
         {
@@ -236,6 +244,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     private void DisposeSession()
     {
         _performance.Reset();
+        lock (_inputLock) _touches.Clear();
         try { _host?.Stop(); } catch (Exception ex) { _log(LogLevel.Error, ex.Message); }
         _host = null;
         _loaded?.Dispose();

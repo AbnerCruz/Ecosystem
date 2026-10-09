@@ -11,10 +11,17 @@ namespace EcosystemAi.Cli;
 /// </summary>
 public static class CliHtmlSnapshot
 {
-    public static string Export(string catalogDirectory, string outputFile)
+    public static string Export(string catalogDirectory, string outputFile) =>
+        ExportAsync(catalogDirectory, outputFile).GetAwaiter().GetResult();
+
+    public static async Task<string> ExportAsync(string catalogDirectory, string outputFile,
+        string? journalDirectory = null, bool embedTextPreviews = false,
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(catalogDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputFile);
+        if (embedTextPreviews && journalDirectory is null)
+            throw new ArgumentException("Preview exige --journal, além de --export-html.", nameof(journalDirectory));
         var sourceDirectory = Path.GetFullPath(catalogDirectory);
         // Ausência não é um catálogo vazio: não inicializar armazenamento em modo consulta.
         if (!File.Exists(Path.Combine(sourceDirectory, "catalog.json")))
@@ -41,10 +48,13 @@ public static class CliHtmlSnapshot
                 throw new ArgumentException("Não salve conversas exportadas dentro de um workspace acessível ao agente.", nameof(outputFile));
         }
 
+        var runDetails = journalDirectory is null ? null
+            : await CliVisualRunDetails.ReadAsync(catalog, journalDirectory, embedTextPreviews, cancellationToken);
+
         // Nunca sobrescrever exportações ou seguir arquivo de destino simbólico.
         if (File.Exists(output) || new FileInfo(output).LinkTarget is not null)
             throw new IOException("O destino já existe; escolha outro nome para o snapshot.");
-        var bytes = new UTF8Encoding(false).GetBytes(Render(catalog));
+        var bytes = new UTF8Encoding(false).GetBytes(Render(catalog, runDetails));
         var temporary = Path.Combine(parent, ".ecosystem-ai-" + Guid.NewGuid().ToString("N") + ".tmp");
         try
         {
@@ -62,7 +72,8 @@ public static class CliHtmlSnapshot
         return output;
     }
 
-    public static string Render(ProjectCatalog catalog)
+    public static string Render(ProjectCatalog catalog,
+        IReadOnlyDictionary<string, VisualRunDetails>? runDetails = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         var sb = new StringBuilder();
@@ -102,6 +113,7 @@ summary:focus-visible,a:focus-visible{outline:3px solid #92bfff;outline-offset:2
 .scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:560px;font-size:.88rem}th,td{text-align:left;border-bottom:1px solid #354054;padding:11px 8px;vertical-align:top;overflow-wrap:anywhere}th{color:#c6d1e4}
 .tag{border-radius:7px;background:#2d3a50;padding:3px 7px;font-size:.77rem;white-space:nowrap}
 .ok{background:#174c3d}.bad{background:#53313b}
+pre.artifact-preview{white-space:pre-wrap;overflow-wrap:anywhere;max-height:45vh;overflow:auto;padding:14px;border-radius:10px;border:1px solid #46536a;background:#0a101a;color:#e4ebf7;font-size:.86rem}
 footer{margin-top:35px;color:#a4b0c6;font-size:.88rem}
 @media(min-width:700px){main{padding-top:18px}.project{padding:24px}}
 @media(prefers-reduced-motion:no-preference){a,summary{scroll-margin-top:14px}}
@@ -130,6 +142,9 @@ footer{margin-top:35px;color:#a4b0c6;font-size:.88rem}
                 + " unidades mínimas " + E(x.Currency))));
             sb.Append(" <small>(podem incluir estimativas; não são faturas)</small></p>");
         }
+        if (runDetails is not null)
+            sb.Append("<p class=\"muted\">Journal consultado: ").Append(runDetails.Count.ToString(CultureInfo.InvariantCulture))
+                .Append(" execuções com evidência. Ausências não significam sucesso.</p>");
         sb.Append("</section>");
 
         if (catalog.Projects.Count == 0) sb.Append("<p>Nenhum projeto salvo neste catálogo.</p>");
@@ -184,6 +199,45 @@ footer{margin-top:35px;color:#a4b0c6;font-size:.88rem}
                             .Append(run.CostMinor.ToString(CultureInfo.InvariantCulture))
                             .Append(" unidades mínimas ").Append(E(run.Currency)).Append("</td><td>")
                             .Append(E(Date(run.At))).Append("</td></tr>");
+                        if (runDetails is not null)
+                        {
+                            sb.Append("<tr><td colspan=\"5\">");
+                            if (runDetails.TryGetValue(run.RunId, out var audited))
+                            {
+                                sb.Append("<details><summary>Auditoria do Runtime — ")
+                                    .Append(E(audited.State)).Append("</summary><div class=\"session-body\">")
+                                    .Append("<p>Estado do journal: ").Append(E(audited.State))
+                                    .Append(" · verificação: ").Append(audited.Verified ? "aprovada" : "não aprovada")
+                                    .Append(" · passos: ").Append(audited.Steps.ToString(CultureInfo.InvariantCulture))
+                                    .Append(" · chamadas de ferramenta: ").Append(audited.ToolCalls.ToString(CultureInfo.InvariantCulture))
+                                    .Append("</p><p>Agente: ").Append(E(audited.Agent));
+                                if (!string.IsNullOrWhiteSpace(audited.Model))
+                                    sb.Append(" · modelo: ").Append(E(audited.Model));
+                                sb.Append("</p>");
+                                if (!string.Equals(run.Status, audited.State, StringComparison.OrdinalIgnoreCase)
+                                    || run.Verified != audited.Verified)
+                                    sb.Append("<p><strong>Atenção: recibo e journal divergem.</strong></p>");
+                                if (audited.Artifacts.Count != 0)
+                                {
+                                    sb.Append("<h3>Artefatos referenciados</h3><ul>");
+                                    foreach (var artifact in audited.Artifacts)
+                                    {
+                                        sb.Append("<li>").Append(E(artifact.Kind)).Append(" — ")
+                                            .Append(E(artifact.Name));
+                                        if (artifact.TextPreview is not null)
+                                            sb.Append("<details><summary>Visualizar texto atual do arquivo</summary>")
+                                                .Append("<pre class=\"artifact-preview\">").Append(E(artifact.TextPreview))
+                                                .Append("</pre></details>");
+                                        sb.Append("</li>");
+                                    }
+                                    sb.Append("</ul><p class=\"muted\">Os previews autorizados mostram o texto atual no disco, não uma cópia histórica verificada. Arquivos indisponíveis, grandes, binários ou não autorizados mostram apenas o nome.</p>");
+                                }
+                                else sb.Append("<p class=\"muted\">Este run não registrou artefatos.</p>");
+                                sb.Append("</div></details>");
+                            }
+                            else sb.Append("<small class=\"muted\">Sem journal disponível para este run; verificação não reconstituída.</small>");
+                            sb.Append("</td></tr>");
+                        }
                     }
                     sb.Append("</tbody></table></div>");
                 }
@@ -194,7 +248,7 @@ footer{margin-top:35px;color:#a4b0c6;font-size:.88rem}
         sb.Append("""
 <footer>
 <p>Conteúdo derivado do catálogo salvo localmente. Mensagens e evidências podem conter dados privados: mantenha este HTML em local protegido e não o publique.</p>
-<p>Snapshot estático — alterar este arquivo não altera o catálogo e nenhuma verificação de execução é refeita.</p>
+<p>Snapshot estático — alterar este arquivo não altera o catálogo. Auditorias opcionais usam somente o replay validado do Runtime e não reexecutam tarefas.</p>
 </footer></main></body></html>
 """);
         return sb.ToString();
