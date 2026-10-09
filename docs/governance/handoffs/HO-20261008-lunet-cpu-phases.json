@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-cpu-phases",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T00:26:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-profiler-phases",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-420",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-cpu-phase-profiling-20261008",
+  "base_commit": "9edfec3a586414244a3feeeb3874180f7c0c179a",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/GameHost.cs",
+    "apps/lunet2d/src/Lunet.Runtime/Profiling/PreviewFrameStatistics.cs",
+    "apps/lunet2d/src/Lunet.Android/Gles/PreviewRenderer.cs",
+    "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
+    "apps/lunet2d/tests/Lunet.Tests/GameHostProfilingTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PreviewFrameStatisticsTests.cs",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/profiler-preview.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261008-lunet-cpu-phases.json"
+  ],
+  "work_completed": [
+    "Medições CPU Update/Draw por Stopwatch monotônico e passos fixos em GameHost opt-in, com reset ao desligar.",
+    "PreviewRenderer integra métricas separadas ao histórico circular mantendo Record legado compatível e nenhum custo quando desligado.",
+    "Overlay Android informa médias reais de CPU Update, CPU Draw e passos; mostra n/a quando não houver amostra instrumentada.",
+    "Casos unitários e end-to-end de Tick normal/pausado, Step, falha, reset, alocação e janela circular.",
+    "Catálogo offline da API GameHost e guia atualizados."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "Aguardar CI do PR LUNET-420."
+    },
+    {
+      "kind": "automated",
+      "check": "Ecosystem consistency",
+      "result": "pending",
+      "evidence": "Aguardar CI consistency."
+    },
+    {
+      "kind": "automated",
+      "check": "APK Android",
+      "result": "pending",
+      "evidence": "Aguardar pipeline de build."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE Profiler CPU phases",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/profiler-preview.md",
+      "evidence": "Retorno de dispositivo para overlay e timings precisa ser confirmado."
+    }
+  ],
+  "known_issues": [
+    "CPU desenha apenas parte síncrona da chamada de Draw; tempo de apresentação e GPU não foram medidos.",
+    "Audio underruns, memory GPU, e painel Profiler do workspace ainda pendentes no #343.",
+    "Física completa/TrueType/UI tree e Tile Studio mantêm Fase 4 aberta."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir CI em caso de erro de documentação/testes e aguardar integração automática.",
+    "Confirmar release da main e link de APK.",
+    "Solicitar DEVICE para novo Profiler, não repetir aprovações do Lab anterior."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API local Lunet, nenhuma dependência em outro produto."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #371, branch, handoff e PR."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem declaração de CI verde antes da verificação."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Profiler local ao produto; sem Tool transversal."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "phase-cpu-frame-profiler",
+      "status": "product-specific",
+      "rationale": "GameHost e Preview do Lunet. Sem novo contrato multi-host."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Instrumentação aditiva opt-in sem alteração de dados persistidos, backend ou arquitetura; quatro membros públicos documentados."
+  },
+  "cost": null
+}

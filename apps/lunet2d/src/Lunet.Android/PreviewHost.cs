@@ -147,6 +147,9 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
                 $"PROFILER  |  {current.Samples} quadros{paused}\n" +
                 $"FPS: {current.FramesPerSecond:F1}  Frame: {current.FrameMilliseconds:F2} ms\n" +
                 $"CPU Tick: {current.CpuTickMilliseconds:F2} ms\n" +
+                (current.PhasedSamples == 0 ? "CPU Update/Draw: nao medidos\n"
+                    : $"CPU Update: {current.UpdateCpuMilliseconds:F2} ms  ({current.UpdateStepsPerFrame:F1} passos)\n" +
+                      $"CPU Draw: {current.DrawCpuMilliseconds:F2} ms\n") +
                 $"Draw calls: {current.DrawCallsPerFrame:F1}  Tris: {current.TrianglesPerFrame:F0}\n" +
                 $"Alloc GL: {current.AllocatedBytesPerFrame:F0} B/frame\n" +
                 $"Heap .NET: {heapMb:F1} MiB\n" +

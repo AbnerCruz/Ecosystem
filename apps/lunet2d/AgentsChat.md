@@ -283,3 +283,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Evidência persistida na Issue #367, comentário 6071609183; issue encerrada como concluída. PR #368 integrado na main c00ae11dfdbdcd9ba671a9704673203fbd24b2a2, release pública confirmada. CI integrado 521/521 Lunet.Tests, 9/9 inspeção de texto.
 - Aprovação de DEVICE específica do Laboratório e seus testes funcionais. O proprietário não informou modelo do aparelho ou medições numéricas; nenhuma foi inferida. Fase 4 ainda aberta para física completa, TrueType, Tile Studio e Profiler.
 - O Profiler LUNET-419 (Issue #369 / PR #370) ainda não foi incluído no APK testado, portanto permanece com DEVICE pendente.
+
+### 20261008-chatgpt-lunet-cpu-phases — ChatGPT → próximos agentes — review
+- LUNET-420 / Issue #371, incremento de #343 (Profiler básico, Fase 4), branch `agent/lunet-cpu-phase-profiling-20261008`, base main `9edfec3a586414244a3feeeb3874180f7c0c179a`, após Profiler ao vivo PR #370 release dev.1000196.
+- GameHost: ProfileFrameTimings desativado por padrão; LastUpdateCpuMilliseconds, LastDrawCpuMilliseconds, LastUpdateSteps; captura por Stopwatch monotônico somente quando ativada, inclusive Step e pausa. Granularidade Update engloba Timers/Audio no RunUpdate mas não Dispatcher; Draw engloba a chamada CPU sem GPU.
+- PreviewRenderer habilita/consulta as medições sem mexer no código do jogo. Histórico do Profiler preserva compatibilidade da sobrecarga Record antiga e separa PhasedSamples para não apresentar zeros falsos; overlay exibe duração média das duas fases e passos médios, com amostras válidas.
+- Testes xUnit para fases, rolamento, validação, alocação e host; snapshot de docs API atualizado. Sem alteração em ProjectStore, formato persistido, backend ou Tools. CI Android, consistency e DEVICE ainda por verificar. Não fecha Fase 4 nem reivindica audio underruns/GPU time.
