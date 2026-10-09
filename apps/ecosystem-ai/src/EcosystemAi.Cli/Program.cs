@@ -36,6 +36,9 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --create-session --catalog /pasta/historico --project-id ID --session-title "Nova sessão"
   cria sessão no projeto registrado sem executar agente ou modelo.
 --manage --catalog /pasta/historico abre menu local de projetos e sessões.
+--chat --catalog DIR --project DIR --project-id ID --session-id ID com as opções
+  de provedor/modelo/orçamento de execução abre um chat interativo no terminal.
+  Cada mensagem gera um run real; histórico é reutilizado explicitamente nesse modo.
 --show --catalog /pasta/historico --project-id ID --session-id ID mostra o histórico.
 --export-html --catalog /pasta/historico --output /outra/pasta/historico.html
   gera um snapshot offline e responsivo, sem servidor, rede nem código executável.
@@ -64,6 +67,7 @@ histórico local existe somente mediante --catalog explícito.
         bool createProject = false;
         bool createSession = false;
         bool manageCatalog = false;
+        bool chatMode = false;
         bool listHistory = false;
         bool showHistory = false;
         bool exportHtml = false;
@@ -76,6 +80,7 @@ histórico local existe somente mediante --catalog explícito.
             if (args[i] == "--create-project") { createProject = true; continue; }
             if (args[i] == "--create-session") { createSession = true; continue; }
             if (args[i] == "--manage") { manageCatalog = true; continue; }
+            if (args[i] == "--chat") { chatMode = true; continue; }
             if (args[i] == "--list") { listHistory = true; continue; }
             if (args[i] == "--show") { showHistory = true; continue; }
             if (args[i] == "--export-html") { exportHtml = true; continue; }
@@ -99,8 +104,16 @@ histórico local existe somente mediante --catalog explícito.
                 "--journal", "--run-id", "--output" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
-            if ((createProject ? 1 : 0) + (createSession ? 1 : 0) + (manageCatalog ? 1 : 0) > 1)
+            if ((createProject ? 1 : 0) + (createSession ? 1 : 0) + (manageCatalog ? 1 : 0) + (chatMode ? 1 : 0) > 1)
                 throw new ArgumentException("Escolha apenas um modo de gestão do catálogo.");
+            if (chatMode)
+            {
+                if (listHistory || showHistory || showRun || exportHtml || allowCreate && fields.ContainsKey("--allow-create")
+                    || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog)
+                    throw new ArgumentException("--chat não combina com modos de consulta, exportação ou gestão.");
+                return await CliInteractiveChat.RunAsync(fields, allowCreate,
+                    Console.In, Console.Out, RunAsync);
+            }
             if (createProject || createSession || manageCatalog)
             {
                 if (listHistory || showHistory || showRun || exportHtml || allowCreate
