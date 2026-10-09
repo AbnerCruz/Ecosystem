@@ -35,7 +35,7 @@
     {
       "kind": "automated",
       "check": "dotnet build Urbe.Portable.slnx",
-      "result": "pass",
+      "result": "passed",
       "evidence": "urbe-checks run 37976246078, build completou antes da falha de expectativa do teste."
     },
     {
