@@ -111,3 +111,41 @@ sem payload, argumentos de tools nem respostas; não executa modelo, não
 retoma tarefas e não modifica journals ausentes. O arquivo do journal **não
 é criptografado**; dados enviados/retornados durante execuções podem ser
 sensíveis. Veja [docs-r4-run-journal.md](docs-r4-run-journal.md).
+
+## Continuação explícita de uma sessão (slice R4)
+
+A CLI salva conversas no catálogo apenas com `--catalog`. Por padrão,
+**cada execução continua independente**, mesmo ao reutilizar uma sessão.
+Para fornecer ao modelo o contexto recente já salvo, use `--use-history`:
+
+```bash
+dotnet run --project src/EcosystemAi.Cli -- \
+  --project ./meu-projeto --goal "Continue a análise anterior" \
+  --catalog /pasta/privada/historico --project-id ID_PROJETO --session-id ID_SESSAO \
+  --use-history --endpoint https://SEU-ENDPOINT/chat/completions \
+  --model ID_MODELO --budget-cents 30 --max-call-cents 5 \
+  --input-usd-per-million 1 --output-usd-per-million 3
+```
+
+`--use-history` exige projeto e sessão existentes, vinculados ao mesmo
+workspace. Antes de gravar a pergunta atual, a CLI lê o catálogo validado
+e envia ao provedor no prompt **no máximo dez mensagens anteriores, até
+12.000 caracteres serializados**. Mensagens são incluídas por ordem,
+marcadas com papéis `user`/`assistant` conforme o catálogo, serializadas
+como JSON e tratadas como dados, não como instruções do sistema.
+Se o registro mais recente ultrapassa o orçamento de contexto, a execução
+é recusada em vez de escolher conversas antigas fora de ordem.
+
+**Privacidade e custos:** o usuário precisa ativar a flag conscientemente.
+Todo texto histórico selecionado será enviado ao endpoint configurado.
+O redator de chaves conhecidas continua aplicado, mas não detecta todo
+dado sensível eventualmente escrito nas mensagens. Histórico consome tokens
+e pode elevar o custo real de cada chamada. O limite de orçamento da CLI
+continua por execução, não por sessão; nunca é divulgado como limite da
+conta do provedor.
+
+O catálogo não ganha outro schema, índice, memória automática, vetor ou
+resumo gerado. O Workspace e o AgentRunner são os mesmos; o transcript
+é apenas conteúdo explícito do próximo `TaskSpec.Goal`.
+`--list`, `--show`, `--show-run` e a exportação visual são consultas,
+não levam históricos ao modelo.

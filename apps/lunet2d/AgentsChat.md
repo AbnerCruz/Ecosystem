@@ -316,6 +316,13 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Riscos/escopo: um único ID reservado por Update; não mexe em ProjectStore, MainActivity, configuração persistida nem código dos jogos. Defaults legados preservados.
 - Próximo passo: verificar e corrigir CI, integrar pela política do repositório; confirmar APK e solicitar roteiro DEVICE no celular.
 
+### 20261009-chatgpt-lunet-424 — 2026-10-09 (America/Sao_Paulo) — ChatGPT → próximos agentes — em revisão
+- Item LUNET-424 / Issue #381 / Fase 4 §7/§23. Base main `ac600f84c215`, branch `agent/lunet-touch-frame-buffer-20261009`.
+- FATO OBSERVADO: `PreviewHost.OnTouch` alocava List/ToArray por MotionEvent e `PreviewRenderer.SetTouches` substituía o último snapshot; `Pressed` podia ser perdido antes de Update fixo.
+- Trabalho: buffer interno de transições em Lunet.Framework.Input, integração no Preview Android, revisão das fases apenas depois de Update/Step real, regressões xUnit de press/move/release simultâneos e caminho sem alocação. Nenhuma API pública, ProjectStore, jogo salvo, ferramenta compartilhada ou Host API alterados.
+- Verificação: revisão estática nesta sessão; .NET e Android SDK indisponíveis localmente. CI, consistency, APK e DEVICE pendentes (não declarar concluídos). Handoff HO-20261009-lunet-touch-frame-buffer.
+- Próximo passo: conferir CI, integrar sem regressão, publicar APK e validar toque no aparelho. Reuse assessment product-specific; NN-002/008/017/018/022.
+
 ### 20261009-chatgpt-lunet-default-font — ChatGPT → próximos agentes — review
 - LUNET-426 / Issue #390 / Fase 4 §7; branch `agent/lunet-default-font-text-fix-20261009`, base main `e96fee5c964b933e85b49d4796747066d12f4275`.
 - `SpriteFont.CreateDefault` agora usa o mesmo CR/LF/CRLF e escalares Unicode do caminho FromBitmap: CR não vira '?', emoji e UTF-16 inválido fazem um fallback único; layout extremo protegido contra overflow e GPU não recebe geometria infinita. Sem alocação no caminho quente.

@@ -5,6 +5,8 @@
 ### Fixed
 
 - LUNET-426 (em revisão): corrigir CRLF, Unicode fora do BMP e validação de layout/escala na fonte bitmap embutida; medida e desenho coerentes, sem enviar coordenadas infinitas ao OpenGL.
+- LUNET-424 (em revisão): Preview Android agora preserva o início e o fim de toques rápidos entre eventos de 90/120 Hz e os Updates fixos, mesmo quando o dedo move antes da atualização. Buffer interno sem List/ToArray por MotionEvent; evita falhas intermitentes de captura Pressed nos joysticks opt-in.
+
 - SAT calcula separação correta quando um polígono contém outro; polígonos sem área não produzem empurrão inválido.
 - Medições de alocação isoladas de outras coleções de testes, preservando a exigência de zero bytes no loop; falha concorrente reproduzida também na base anterior.
 - Correções rápidas removem apenas a diretiva using, preservando código na mesma linha e comentários; ordenação preserva global using, CRLF e comentários, e recusa blocos ambíguos/condicionais.

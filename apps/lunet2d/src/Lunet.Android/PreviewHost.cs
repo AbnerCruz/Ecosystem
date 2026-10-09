@@ -350,18 +350,20 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
     {
         var e = args.Event;
         if (e is null) return;
-        var touches = new List<TouchPoint>(e.PointerCount);
+        // Evita List/ToArray por MotionEvent e preserva Pressed até o Update fixo.
+        Span<TouchPoint> touches = stackalloc TouchPoint[InputState.MaxTouches];
+        var count = Math.Min(e.PointerCount, InputState.MaxTouches);
         var action = e.ActionMasked;
         var index = e.ActionIndex;
-        for (var i = 0; i < e.PointerCount; i++)
+        for (var i = 0; i < count; i++)
         {
             var phase = TouchPhase.Moved;
             if (action is MotionEventActions.Down or MotionEventActions.PointerDown && i == index) phase = TouchPhase.Pressed;
             else if (action is MotionEventActions.Up or MotionEventActions.PointerUp && i == index) phase = TouchPhase.Released;
             else if (action == MotionEventActions.Cancel) phase = TouchPhase.Cancelled;
-            touches.Add(new TouchPoint(e.GetPointerId(i), phase, new System.Numerics.Vector2(e.GetX(i), e.GetY(i))));
+            touches[i] = new TouchPoint(e.GetPointerId(i), phase, new System.Numerics.Vector2(e.GetX(i), e.GetY(i)));
         }
-        _renderer.SetTouches(touches.ToArray());
+        _renderer.SetTouches(touches[..count]);
         args.Handled = true;
     }
 }
