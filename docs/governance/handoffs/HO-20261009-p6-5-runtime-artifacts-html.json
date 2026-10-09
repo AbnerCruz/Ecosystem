@@ -1,0 +1,133 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-runtime-artifacts-html",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T19:13:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-runtime-artifacts",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-journal-artifact-report-20261009",
+  "base_commit": "cd6a9926c2de0005628183be2b2d0c58322487b6",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliVisualRunDetails.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliHtmlSnapshot.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4JournalVisualReportTests.cs",
+    "apps/ecosystem-ai/docs-r4-visual-snapshot.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-runtime-artifacts-html.json"
+  ],
+  "work_completed": [
+    "A P6-5 já possuía painel HTML read-only (#383) e auditoria de runs pelo mesmo IEventLog (#380), mas não conectava os artefatos ou estado dos runs auditados ao painel.",
+    "Criada projeção em memória de eventos do LocalRunEventLog; o RunState.Replay continua sendo a única autoridade de status, verificação e artefatos.",
+    "Export HTML opt-in --journal lista status, agente, modelo, passos, tools e apenas nomes-base/tipos de artefatos; não exporta payloads, argumentos, resultados nem conteúdos de arquivos.",
+    "Runs sem journal aparecem sem evidência; corrupção/violação de eventos é recusada; divergências de receipt vs journal são sinalizadas.",
+    "Limites explícitos de 250 runs distintos por snapshot, journal fora de workspaces com rejeição de aliases simbólicos, nenhum estado canônico novo."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Validação depende do CI na PR; sem alegar teste local."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Validação depende do CI na PR; sem alegar teste local."
+    },
+    {
+      "check": "Android DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Funcionalidade gera HTML offline de leitura; não distribui APK."
+    }
+  ],
+  "known_issues": [
+    "P6-5 ainda não tem interface interativa para gerenciar agents/teams/tasks, revisão/aprovação e artefatos navegáveis.",
+    "Artefatos são referências do journal, não cópias ou links para arquivos no disco.",
+    "Snapshots incluem mensagens e evidência do catálogo em texto claro; não se deve publicar sem revisão.",
+    "A PR #389 também altera Program.cs; reconciliar --use-history se for integrada primeiro."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar falhas de CI e corrigir antes de integração.",
+    "Reconciliar --use-history com --export-html se PR #389 mudar main.",
+    "Prosseguir UI interativa da P6-5 após esse incremento."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-local-store.md",
+    "apps/ecosystem-ai/docs-r4-run-journal.md",
+    "apps/ecosystem-ai/docs-r4-visual-snapshot.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Journal e catalogo existentes são as únicas fontes de eventos e receipts; HTML é projeção descartável."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Metadados auditados com replay do Runtime, sem payload; handoff rastreável."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "ROADMAP P6-5/Issue #354, documentação e testes no mesmo incremento."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem alteração do formato de catálogo, contratos ou de boundaries de runtime."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Journal explicitamente fornecido, fora do workspace; nunca copia arquivos nem executa ações."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem declarar UX Android testada ou release instalável."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Revisão aberta até CI e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Sem segundo estado de tarefas nem execução paralela."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Feature de projeção no Product, sem abstração compartilhada prematura."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "runtime-journal-visual-projection",
+      "status": "product-specific",
+      "rationale": "Visualização de journals pelo Product atual; não promove novo serviço sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Adição opt-in read-only sem alteração dos dados canônicos, permissões, protocolo ou build de distribuição."
+  },
+  "cost": null
+}
