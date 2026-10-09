@@ -1,0 +1,110 @@
+@inject IVaultHost Host
+@inject WorkspaceSession Workspace
+
+@if (Host.IsAvailable)
+{
+    <section class="vault-host-controls" aria-label="Pasta física do vault">
+        <div class="vault-host-actions">
+            <button type="button" @onclick="Pick" disabled="@_busy">
+                @(Host.IsConnected ? "Trocar pasta" : "Selecionar pasta do vault")
+            </button>
+            <button type="button" @onclick="Save" disabled="@(_busy || !Host.IsConnected || Workspace.IsReadOnly)">
+                Salvar arquivos
+            </button>
+            <span role="status">@(_busy ? "Acessando pasta..." :
+                Host.IsConnected ? Host.DisplayName : "Nenhuma pasta conectada")</span>
+        </div>
+        @if (_message is not null)
+        {
+            <p role="status" class="vault-host-status">@_message</p>
+        }
+        @if (_error is not null)
+        {
+            <p role="alert" class="vault-host-error">@_error</p>
+        }
+    </section>
+}
+
+@code {
+    private bool _busy;
+    private string? _error;
+    private string? _message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Host.IsAvailable)
+            return;
+        try
+        {
+            var restored = await Host.RestoreAsync();
+            if (restored is not null)
+            {
+                Workspace.Load(restored);
+                _message = "Pasta reaberta. Alterações são gravadas apenas ao tocar em Salvar arquivos.";
+            }
+        }
+        catch (Exception exception)
+        {
+            _error = "Não foi possível reabrir a pasta: " + exception.Message;
+        }
+    }
+
+    private async Task Pick()
+    {
+        if (_busy)
+            return;
+        _busy = true;
+        _error = null;
+        _message = null;
+        try
+        {
+            // Do not discard edits in a connected workspace without warning.
+            if (Host.IsConnected)
+            {
+                _error = "Antes de trocar de pasta, salve seus arquivos. Reinicie o aplicativo para trocar o vault nesta beta.";
+                return;
+            }
+
+            var snapshot = await Host.PickAsync();
+            if (snapshot is null)
+            {
+                _message = "Seleção cancelada.";
+                return;
+            }
+            Workspace.Load(snapshot);
+            _message = snapshot.IsReadOnly
+                ? "Formato não suportado: vault aberto em somente leitura."
+                : "Pasta conectada. Edite seus documentos e use Salvar arquivos para gravar.";
+        }
+        catch (Exception exception)
+        {
+            _error = "Falha ao acessar o vault: " + exception.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task Save()
+    {
+        if (_busy || !Host.IsConnected)
+            return;
+        _busy = true;
+        _error = null;
+        _message = null;
+        try
+        {
+            await Host.SaveAsync(Workspace);
+            _message = "Gravação concluída e verificada na pasta selecionada.";
+        }
+        catch (Exception exception)
+        {
+            _error = "Não foi possível confirmar o salvamento: " + exception.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
