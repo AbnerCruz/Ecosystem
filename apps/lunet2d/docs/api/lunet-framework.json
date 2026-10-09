@@ -14150,7 +14150,7 @@
           "since": "0.0.1"
         },
         {
-          "id": "M:Lunet.Input.VirtualButton.Cancel()",
+          "id": "M:Lunet.Input.VirtualButton.Cancel",
           "name": "Cancel",
           "kind": "method",
           "signature": "public void Cancel()",
@@ -14442,7 +14442,7 @@
           "since": "0.0.1"
         },
         {
-          "id": "M:Lunet.Input.VirtualStick.Cancel()",
+          "id": "M:Lunet.Input.VirtualStick.Cancel",
           "name": "Cancel",
           "kind": "method",
           "signature": "public void Cancel()",
