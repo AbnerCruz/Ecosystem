@@ -55,3 +55,14 @@ mensagens e recibos são lidos do `EcosystemAi.ProjectStore`, não do Runtime.
 Essa projeção não encerra P6-5 nem substitui a futura UI interativa.
 
 Uso, segurança e limitações: [docs-r4-visual-snapshot.md](docs-r4-visual-snapshot.md).
+
+## Gestão local de projetos e sessões (R4)
+
+A CLI também permite vincular um workspace existente como projeto, criar sessões
+independentes e navegar nos registros do catálogo pelo terminal sem executar
+agentes, acessar rede ou exigir token. Os registros são do mesmo
+`LocalProjectStore` usado por runs, histórico e visualização offline.
+
+Comandos `--create-project`, `--create-session` e `--manage`, limites e exemplos:
+[docs-r4-catalog-management.md](docs-r4-catalog-management.md).
+É um passo funcional intermediário, **não** a UI Android definitiva.
