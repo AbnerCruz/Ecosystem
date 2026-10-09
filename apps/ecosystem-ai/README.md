@@ -92,3 +92,14 @@ permite vincular pastas preexistentes como projetos, criar sessões, ler
 conversas, execuções e custos; grava diretamente no `LocalProjectStore` atual.
 Isso **não é APK nem acesso remoto** e ainda não habilita execução de agentes
 no navegador. Documentação e riscos: [docs-r4-local-web-ui.md](docs-r4-local-web-ui.md).
+
+## Quadro de atividade real de agentes e tarefas (R4)
+
+Com `--web-ui --catalog /dados/privados/catalogo --journal /dados/privados/runs`
+o painel local exibe agentes, tarefas, verificações, ferramentas e artefatos
+**de execuções reais**, reconstruídos diretamente do `RunState.Replay`.
+Não lê prompts/payloads nem cria motor, ledger ou armazenamento paralelo;
+ainda não permite disparar agentes pelo navegador. Ausências ou divergências de
+journal são sinalizadas, e a UI padrão sem `--journal` não é alterada.
+
+Uso, limites e testes: [docs-r4-live-task-board.md](docs-r4-live-task-board.md).
