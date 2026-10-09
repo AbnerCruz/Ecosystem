@@ -28,7 +28,9 @@
     "apps/urbe/csharp/src/Urbe.Web/Program.cs",
     "docs/governance/handoffs/HO-20261009-urbe-uc25-android-saf-vault.json",
     "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultWriterTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultWriterTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/Urbe.Core.Tests.csproj",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspacePhysicalFoldersTests.cs"
   ],
   "work_completed": [
     "Implementado primeiro boundary Android Storage Access Framework em C# para selecionar diretório do dispositivo com permissão de leitura/escrita persistente e reabrir a pasta.",
@@ -37,14 +39,16 @@
     "Preview Web registra fallback sem persistência; prévia Android informa limitação e salvamento manual no layout compartilhado.",
     "Movimentação física ainda não implementada é recusada com erro explícito em vez de confirmar falsamente o salvamento.",
     "Movimentação de notas .md/.markdown individuais agora usa plano do VaultWriter e valida bytes do destino físico antes de excluir original; não são permitidos movimentos em cadeia ou pastas nesta fatia.",
-    "Explorer Android desabilita a ação Mover em pastas, preservando comportamento do Explorer Web; teste portátil de plano comprova gravação do novo caminho antes da remoção do anterior."
+    "Explorer Android desabilita a ação Mover em pastas, preservando comportamento do Explorer Web; teste portátil de plano comprova gravação do novo caminho antes da remoção do anterior.",
+    "Host Android agora enumera diretórios físicos do SAF e os comunica à WorkspaceSession, inclusive pastas vazias após fechar e reabrir, sem sentinelas no vault.",
+    "Novos testes de sessão UI para diretórios vazios e rejeição de caminhos anômalos/protegidos, sem alterar o contrato público de arquivos Markdown."
   ],
   "verification": [
     {
       "check": "urbe-checks: Core, Web, Android, Windows, E2E",
       "kind": "automated",
       "result": "pending",
-      "evidence": "PR #397: último estado anterior verde (builds Android/Windows/Web, smoke e consistency); nova revisão com movimento de notas aguarda CI."
+      "evidence": "Antes da mudança de bairros vazios, CI completo anterior estava verde em #397 (Android, Windows, Web, portátil, E2E e consistency); nova revisão inclui testes e aguarda CI."
     },
     {
       "check": "Foundation consistency",
@@ -67,7 +71,8 @@
     "Leitura Android desta fatia cobre textos usuais e .urbe; outros assets no disco não são alterados nem carregados para Core; limites de tamanho protegem memória do beta.",
     "Sem suporte de acesso físico Web ou Windows nesta fatia; PreviewVaultHost declara a limitação.",
     "Escrita SAF não é transação atômica; backup de arquivo anterior é criado antes de truncar e mantido se houver falha de recuperação. Precisa de smoke real em aparelho.",
-    "A diretiva DEC-0042/ADD-0019 está em PR #392 ainda não integrado; este handoff referencia apenas fontes normativas já existentes na main."
+    "A diretiva DEC-0042/ADD-0019 está em PR #392 ainda não integrado; este handoff referencia apenas fontes normativas já existentes na main.",
+    "Lista de pastas físicas é atualizada após seleção, reabertura e salvamento explícito; outros provedores SAF ainda exigem teste em dispositivo antes de liberar o beta."
   ],
   "blockers": [],
   "next_actions": [
