@@ -77,3 +77,18 @@ terminal não substitui a futura UI gráfica mobile-first.
 
 Exemplo de comandos, isolamento, custos por mensagem e restrições:
 [docs-r4-interactive-chat.md](docs-r4-interactive-chat.md).
+
+## Painel gráfico local (R4)
+
+A interface responsiva de projetos/sessões agora pode ser servida **somente em loopback**
+pelo próprio Product C# (sem modelo ou JavaScript):
+
+```bash
+dotnet run --project src/EcosystemAi.Cli -- --web-ui --catalog /dados/privados/catalogo --port 8765
+```
+
+No mesmo dispositivo, abra `http://127.0.0.1:8765/` no navegador. A tela
+permite vincular pastas preexistentes como projetos, criar sessões, ler
+conversas, execuções e custos; grava diretamente no `LocalProjectStore` atual.
+Isso **não é APK nem acesso remoto** e ainda não habilita execução de agentes
+no navegador. Documentação e riscos: [docs-r4-local-web-ui.md](docs-r4-local-web-ui.md).
