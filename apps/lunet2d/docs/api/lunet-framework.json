@@ -14109,6 +14109,32 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Input.VirtualButton.RequireFreshPress",
+          "name": "RequireFreshPress",
+          "kind": "property",
+          "signature": "public bool RequireFreshPress { get; set; }",
+          "summary": "Exige um Pressed dentro da \u00E1rea para iniciar captura; por padr\u00E3o, permite capturar dedos j\u00E1 movidos para preservar jogos existentes.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Input.VirtualButton.TouchId",
+          "name": "TouchId",
+          "kind": "property",
+          "signature": "public int TouchId { get; }",
+          "summary": "ID do dedo capturado, ou -1 quando livre.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "P:Lunet.Input.VirtualButton.WasPressed",
           "name": "WasPressed",
           "kind": "property",
@@ -14124,6 +14150,19 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Input.VirtualButton.Cancel",
+          "name": "Cancel",
+          "kind": "method",
+          "signature": "public void Cancel()",
+          "summary": "Solta o dedo e zera o estado, inclusive o evento de press\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Input.VirtualButton.Update(Lunet.Input.InputState)",
           "name": "Update",
           "kind": "method",
@@ -14135,6 +14174,30 @@
               "name": "input",
               "type": "InputState",
               "description": "Estado de entrada."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Input.VirtualButton.Update(Lunet.Input.InputState,System.Int32)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(InputState input, int excludedTouchId)",
+          "summary": "Atualiza ignorando um dedo reservado para outro controle.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Estado de entrada."
+            },
+            {
+              "name": "excludedTouchId",
+              "type": "int",
+              "description": "ID reservado, ou -1 para nenhum."
             }
           ],
           "returns": "",
@@ -14314,6 +14377,84 @@
           "since": "0.0.1"
         },
         {
+          "id": "P:Lunet.Input.VirtualStick.RequireFreshPress",
+          "name": "RequireFreshPress",
+          "kind": "property",
+          "signature": "public bool RequireFreshPress { get; set; }",
+          "summary": "Capturar apenas um dedo na fase Pressed impede que um arrasto iniciado fora da \u00E1rea ative o controle. Desativado por padr\u00E3o por compatibilidade.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Input.VirtualStick.RescaleDeadZone",
+          "name": "RescaleDeadZone",
+          "kind": "property",
+          "signature": "public bool RescaleDeadZone { get; set; }",
+          "summary": "Quando verdadeiro, a intensidade cresce continuamente de zero ap\u00F3s a zona morta. Por padr\u00E3o \u00E9 falso para preservar o comportamento anterior.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Input.VirtualStick.ResponseExponent",
+          "name": "ResponseExponent",
+          "kind": "property",
+          "signature": "public float ResponseExponent { get; set; }",
+          "summary": "Curva da intensidade: 1 \u00E9 linear, maior que 1 facilita movimentos finos e menor que 1 responde mais cedo. Deve ser positivo e finito.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Input.VirtualStick.Sensitivity",
+          "name": "Sensitivity",
+          "kind": "property",
+          "signature": "public float Sensitivity { get; set; }",
+          "summary": "Multiplicador de intensidade, limitado ao raio. Zero desativa a sa\u00EDda.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Input.VirtualStick.TouchId",
+          "name": "TouchId",
+          "kind": "property",
+          "signature": "public int TouchId { get; }",
+          "summary": "ID do dedo capturado, ou -1 quando livre. \u00DAtil para controles simult\u00E2neos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Input.VirtualStick.Cancel",
+          "name": "Cancel",
+          "kind": "method",
+          "signature": "public void Cancel()",
+          "summary": "Solta o dedo, zera a dire\u00E7\u00E3o e retorna ao centro de repouso.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Input.VirtualStick.Update(Lunet.Input.InputState)",
           "name": "Update",
           "kind": "method",
@@ -14325,6 +14466,30 @@
               "name": "input",
               "type": "InputState",
               "description": "Estado de entrada."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Input.VirtualStick.Update(Lunet.Input.InputState,System.Int32)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(InputState input, int excludedTouchId)",
+          "summary": "Atualiza o controle sem capturar \u0060excludedTouchId\u0060. Passe o TouchId de outro controle para evitar que dois anal\u00F3gicos utilizem o mesmo dedo, e atualize primeiro o controle priorit\u00E1rio.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Estado de entrada."
+            },
+            {
+              "name": "excludedTouchId",
+              "type": "int",
+              "description": "ID de dedo reservado, ou -1 para nenhum."
             }
           ],
           "returns": "",
