@@ -1,0 +1,140 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-local-web-ui",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T21:43:43.499Z",
+  "agent": {
+    "id": "chatgpt-p6-5-local-web-ui",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-local-web-console-20261009",
+  "base_commit": "b45a3c4f15352a0114ff83b6887f60f8da91fc01",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/EcosystemAi.Cli.csproj",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4WebUiTests.cs",
+    "apps/ecosystem-ai/docs-r4-local-web-ui.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-local-web-ui.json"
+  ],
+  "work_completed": [
+    "Após PR #400, P6-5 tem gestão real do catálogo e chat CLI; ainda faltava UI visual para criar e consultar projetos/sessões.",
+    "Criado host web local com ASP.NET Core do SDK .NET 10 sob comando --web-ui --catalog [--port], bind 127.0.0.1, sem rede externa e sem execução de modelos.",
+    "Painel SSR responsivo sem JavaScript oferece formulário de criação de projetos (pasta preexistente) e sessões, conversa e receipts de runs/custos no mesmo LocalProjectStore.",
+    "Restrições de segurança: Host loopback exato contra DNS rebinding, token CSRF em RAM, Origin do POST, sem cache/referer/frames/scripts, corpo/Content-Type/fields limitados, strings HTML-escaped e catálogo fora de workspaces.",
+    "Testes C# cobrem loopback HTTP completo, render móvel, escaping de HTML, CSRF/Origin/Host inválidos, campos e modo de CLI, integridade do workspace."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI no GitHub para PR, sem .NET SDK no ambiente desta sessão."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI no GitHub; verificação de base e handoff aguardada."
+    },
+    {
+      "check": "Android DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Interface web local mobile-first não é APK; distribuição Android ainda não decidida."
+    }
+  ],
+  "known_issues": [
+    "Experiência ainda não gerencia agentes/equipes/tarefas nem invoca modelos a partir do navegador.",
+    "Host local exige .NET SDK/runtime no dispositivo e não aceita acesso remoto; não é APK Android.",
+    "Dados privados das conversas são exibidos em texto claro ao navegador local; não publicar nem abrir na rede."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI do Product e checks globais; corrigir falhas.",
+    "Integrar PR somente após checks verdes.",
+    "Prosseguir com agentes, equipes, tarefas e decisão de UI móvel mantendo o Runtime existente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-local-web-ui.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Read/POSTs só em LocalProjectStore canônico; nenhum novo schema, ledger, runner ou memória."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Host é Product opt-in standalone em loopback, não Hub ou infraestrutura obrigatória."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Sem endpoints de ferramentas/permissões; UI não expõe operações do AgentRuntime."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Servidor acionado manualmente; sem tarefas agendadas nem execução autônoma."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Issue #354 e roadmap P6-5; docs, testes, handoff e PR."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Modificação aditiva no Product, sem mudança nos contratos públicos persistidos."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Bind loopback, Host check, CSRF e Origin, CSP, encoding, nenhum token de modelo."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegar teste dispositivo/Android ou conclusão de P6-5."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Review até tests/integration verdes e merge."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Gerenciador e armazenamento existentes: nenhuma alternativa de Agent Runtime."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Interface específica do Ecosystem AI; não extrair sem segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ecosystem-ai-local-web-ui",
+      "status": "product-specific",
+      "rationale": "Somente interface do Product, usa FrameworkReference do runtime e Store existente; não criar Service da plataforma."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Serviço HTTP somente loopback opt-in e endpoints locais de criação já existente; sem API de modelo/grant/gasto externo, schema ou alterações normativas."
+  },
+  "cost": null
+}
