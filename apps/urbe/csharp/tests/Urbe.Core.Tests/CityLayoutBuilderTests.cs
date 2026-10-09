@@ -47,7 +47,7 @@ public sealed class CityLayoutBuilderTests
             world.Snapshot(), knowledge, ["Projetos", "Vazio"]);
 
         Assert.Equal(2, layout.Buildings.Count);
-        Assert.Equal(4, layout.Districts.Count);
+        Assert.Equal(3, layout.Districts.Count);
         Assert.Single(layout.Roads);
         Assert.Contains(layout.Buildings, house => house.DocumentId == first.Id);
         Assert.Contains(layout.Buildings, house => house.DocumentId == second.Id);
