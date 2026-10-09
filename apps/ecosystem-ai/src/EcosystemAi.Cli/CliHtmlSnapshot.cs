@@ -15,10 +15,13 @@ public static class CliHtmlSnapshot
         ExportAsync(catalogDirectory, outputFile).GetAwaiter().GetResult();
 
     public static async Task<string> ExportAsync(string catalogDirectory, string outputFile,
-        string? journalDirectory = null, CancellationToken cancellationToken = default)
+        string? journalDirectory = null, bool embedTextPreviews = false,
+        CancellationToken cancellationToken = default
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(catalogDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputFile);
+        if (embedTextPreviews && journalDirectory is null)
+            throw new ArgumentException("Preview exige --journal, além de --export-html.", nameof(journalDirectory));
         var sourceDirectory = Path.GetFullPath(catalogDirectory);
         // Ausência não é um catálogo vazio: não inicializar armazenamento em modo consulta.
         if (!File.Exists(Path.Combine(sourceDirectory, "catalog.json")))
@@ -46,7 +49,7 @@ public static class CliHtmlSnapshot
         }
 
         var runDetails = journalDirectory is null ? null
-            : await CliVisualRunDetails.ReadAsync(catalog, journalDirectory, cancellationToken);
+            : await CliVisualRunDetails.ReadAsync(catalog, journalDirectory, embedTextPreviews, cancellationToken);
 
         // Nunca sobrescrever exportações ou seguir arquivo de destino simbólico.
         if (File.Exists(output) || new FileInfo(output).LinkTarget is not null)
@@ -110,6 +113,7 @@ summary:focus-visible,a:focus-visible{outline:3px solid #92bfff;outline-offset:2
 .scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:560px;font-size:.88rem}th,td{text-align:left;border-bottom:1px solid #354054;padding:11px 8px;vertical-align:top;overflow-wrap:anywhere}th{color:#c6d1e4}
 .tag{border-radius:7px;background:#2d3a50;padding:3px 7px;font-size:.77rem;white-space:nowrap}
 .ok{background:#174c3d}.bad{background:#53313b}
+pre.artifact-preview{white-space:pre-wrap;overflow-wrap:anywhere;max-height:45vh;overflow:auto;padding:14px;border-radius:10px;border:1px solid #46536a;background:#0a101a;color:#e4ebf7;font-size:.86rem}
 footer{margin-top:35px;color:#a4b0c6;font-size:.88rem}
 @media(min-width:700px){main{padding-top:18px}.project{padding:24px}}
 @media(prefers-reduced-motion:no-preference){a,summary{scroll-margin-top:14px}}
@@ -217,9 +221,16 @@ footer{margin-top:35px;color:#a4b0c6;font-size:.88rem}
                                 {
                                     sb.Append("<h3>Artefatos referenciados</h3><ul>");
                                     foreach (var artifact in audited.Artifacts)
+                                    {
                                         sb.Append("<li>").Append(E(artifact.Kind)).Append(" — ")
-                                            .Append(E(artifact.Name)).Append("</li>");
-                                    sb.Append("</ul><p class=\"muted\">Referências apenas; não copia nem abre arquivos do projeto.</p>");
+                                            .Append(E(artifact.Name));
+                                        if (artifact.TextPreview is not null)
+                                            sb.Append("<details><summary>Visualizar texto atual do arquivo</summary>")
+                                                .Append("<pre class=\"artifact-preview\">").Append(E(artifact.TextPreview))
+                                                .Append("</pre></details>");
+                                        sb.Append("</li>");
+                                    }
+                                    sb.Append("</ul><p class=\"muted\">Os previews autorizados mostram o texto atual no disco, não uma cópia histórica verificada. Arquivos indisponíveis, grandes, binários ou não autorizados mostram apenas o nome.</p>");
                                 }
                                 else sb.Append("<p class=\"muted\">Este run não registrou artefatos.</p>");
                                 sb.Append("</div></details>");
