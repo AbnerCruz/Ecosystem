@@ -71,6 +71,7 @@ public class VirtualControlPrecisionTests
             Sensitivity = 1.5f
         };
         stick.Update(State(Finger(1, TouchPhase.Pressed, 100, 100)));
+        Assert.Equal(Vector2.Zero, stick.Direction); // zona morta zero não gera NaN
         stick.Update(State(Finger(1, TouchPhase.Moved, 150, 100)));
         Assert.Equal(0.375f, stick.Direction.X, 0.001f);
         Assert.Equal(0f, stick.Direction.Y);
