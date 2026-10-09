@@ -31,7 +31,8 @@
     "Instrumentação GL opt-in de submissões de desenho e triângulos por quadro, sem mexer no framework ou em jogos.",
     "Medição de cadência, duração CPU Tick e alocações da thread GL em buffer circular fixo e thread-safe.",
     "Overlay de Profiler com memória e contadores de coleta GC no Preview Android; controles show/hide, Pause/Step, reinício.",
-    "Casos determinísticos de janela, validação, reset e ausência de alocações no fluxo crítico."
+    "Casos determinísticos de janela, validação, reset e ausência de alocações no fluxo crítico.",
+    "Registrada aprovação humana dos 12 módulos do Laboratório 2.0, APK 1000193, encerrando Issue #367 e atualizando ROADMAP."
   ],
   "verification": [
     {
@@ -63,7 +64,8 @@
   ],
   "known_issues": [
     "Update e Draw ainda não medidos separadamente; GPU timer query, audio underrun, memória nativa/GPU e painel persistente no workspace ainda não existem.",
-    "LUNET-414 Issue #343 continua aberto para instrumentação mais completa do GameHost/Framework; implementação LUNET-419 não reivindica esse escopo."
+    "LUNET-414 Issue #343 continua aberto para instrumentação mais completa do GameHost/Framework; implementação LUNET-419 não reivindica esse escopo.",
+    "DEVICE do Laboratório 2.0 aprovado explicitamente pelo proprietário na Issue #367; isso não valida o novo overlay do Profiler nem fecha a Fase 4."
   ],
   "blockers": [],
   "next_actions": [

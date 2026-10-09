@@ -184,12 +184,16 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
         {
             host.Tick(elapsed);
         }
-        if (profile && elapsed > 0 && double.IsFinite(elapsed))
+        if (profile)
         {
-            double cpuMilliseconds = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
-            long bytes = GC.GetAllocatedBytesForCurrentThread() - allocationStart;
-            _performance.Record(elapsed, cpuMilliseconds, _backend.FrameDrawCalls,
-                _backend.FrameTriangles, Math.Max(0, bytes));
+            _backend.EndProfileFrame();
+            if (elapsed > 0 && double.IsFinite(elapsed))
+            {
+                double cpuMilliseconds = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+                long bytes = GC.GetAllocatedBytesForCurrentThread() - allocationStart;
+                _performance.Record(elapsed, cpuMilliseconds, _backend.FrameDrawCalls,
+                    _backend.FrameTriangles, Math.Max(0, bytes));
+            }
         }
 
         if (host.IsFaulted && !_reportedFault)
