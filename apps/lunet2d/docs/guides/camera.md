@@ -92,3 +92,17 @@ public sealed class CameraDemo : Game
 5. Pare/execute novamente; confira Preview rápido e isolado. Abra também um projeto anterior sem câmera e confira se continua desenhando no mesmo lugar.
 
 Roteiro intermediário LUNET-403: resultado no aparelho e build usado devem ser registrados separadamente dos testes automáticos. Não fecha o gate da Fase 4.
+
+## Seguimento e limites do cenário
+
+A API `Camera2D.Follow(target, response, deltaSeconds)` usa amortecimento exponencial estável em diferentes FPS, sem alocação. `response = 0` deixa a câmera parada e `Position = target` teletransporta imediatamente.
+
+```csharp
+// Dentro de Update(GameTime time), com camera e playerPosition já inicializados:
+camera.Follow(playerPosition, 5f, time.DeltaSeconds);
+camera.ClampToWorld(new RectangleF(0, 0, 2000, 2000), GraphicsDevice.ViewSize);
+```
+
+`ClampToWorld` leva em conta zoom e rotação; quando a vista é maior do que o cenário em algum eixo, centraliza esse eixo. Não modifica a posição do jogador nem a configuração da câmera.
+
+**Demonstração executável:** No Laboratório 2.0, abra a página Câmera (3/12), arraste o marcador, teste Zoom/Girar e toque em **LIMITE DE MUNDO** na base. Esse botão ativa/desativa confinamento ao mundo quadrado de 2000×2000, sem editar código.

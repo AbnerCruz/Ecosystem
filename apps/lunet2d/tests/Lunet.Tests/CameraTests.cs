@@ -13,6 +13,68 @@ public class CameraTests
     }
 
     [Fact]
+    public void FollowIsFrameRateIndependentAndValidatesInputs()
+    {
+        var once = new Camera2D();
+        var many = new Camera2D();
+        once.Follow(new(100, 200), 4, 1);
+        for (int i = 0; i < 4; i++) many.Follow(new(100, 200), 4, .25f);
+        Close(once.Position, many.Position, .0001f);
+        Vector2 old = once.Position;
+        once.Follow(new(10, 20), 0, 1);
+        once.Follow(new(10, 20), 5, 0);
+        Assert.Equal(old, once.Position);
+        Assert.Throws<ArgumentOutOfRangeException>(() => once.Follow(new(float.NaN, 0), 1, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => once.Follow(new(1, 2), -1, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => once.Follow(new(1, 2), float.NaN, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => once.Follow(new(1, 2), 1, -1));
+        Assert.Equal(old, once.Position);
+    }
+
+    [Theory]
+    [InlineData(1f, 0f)]
+    [InlineData(2f, .7f)]
+    [InlineData(.75f, -1.3f)]
+    public void ClampToWorldKeepsRotatedCornersInWorld(float zoom, float rotation)
+    {
+        var camera = new Camera2D { Position = new(-1000, 9000), Zoom = zoom, Rotation = rotation };
+        var size = new Vector2(360, 640);
+        var world = new RectangleF(0, 0, 2000, 2000);
+        camera.ClampToWorld(world, size);
+        foreach (var corner in new[] { Vector2.Zero, new Vector2(size.X, 0), new Vector2(0, size.Y), size })
+        {
+            var p = camera.ScreenToWorld(corner, size);
+            Assert.InRange(p.X, world.X - .002f, world.Right + .002f);
+            Assert.InRange(p.Y, world.Y - .002f, world.Bottom + .002f);
+        }
+    }
+
+    [Fact]
+    public void ClampToWorldCentersSmallScenesAndRejectsInvalidBounds()
+    {
+        var camera = new Camera2D { Position = new(-100, 800), Rotation = .4f };
+        camera.ClampToWorld(new RectangleF(10, 20, 40, 50), new Vector2(360, 640));
+        Close(new Vector2(30, 45), camera.Position);
+        var old = camera.Position;
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.ClampToWorld(new RectangleF(0, 0, 0, 1), new Vector2(360, 640)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.ClampToWorld(new RectangleF(float.NaN, 0, 20, 20), new Vector2(360, 640)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.ClampToWorld(new RectangleF(0, 0, 20, 20), Vector2.Zero));
+        Assert.Equal(old, camera.Position);
+    }
+
+    [Fact]
+    public void FollowAndClampAreAllocationFree()
+    {
+        var camera = new Camera2D { Position = new(500, 500), Zoom = 1.5f, Rotation = .7f };
+        var world = new RectangleF(0, 0, 2000, 2000);
+        var size = new Vector2(360, 640);
+        for (int i = 0; i < 100; i++) { camera.Follow(new(100, 300), 5, 1f / 60); camera.ClampToWorld(world, size); }
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++) { camera.Follow(new(100, 300), 5, 1f / 60); camera.ClampToWorld(world, size); }
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
     public void Camera_CentersPosition_AndZoomsAroundTheCenter()
     {
         var camera = new Camera2D { Position = new(500, 400), Zoom = 2 };

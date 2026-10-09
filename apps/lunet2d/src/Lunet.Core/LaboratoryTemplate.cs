@@ -43,6 +43,8 @@ internal static class LaboratoryTemplate
             readonly RectangleF cameraZoomIn = new(8, 44, 80, 46);
             readonly RectangleF cameraZoomOut = new(96, 44, 80, 46);
             readonly RectangleF cameraRotate = new(184, 44, 168, 46);
+            readonly RectangleF cameraClampToggle = new(8, 530, 344, 48);
+            bool cameraBounded;
             readonly Camera2D camera = new() { Position = new Vector2(500, 400) };
             Vector2 cameraMarker = new(500, 400);
             bool altResolution;
@@ -394,6 +396,7 @@ internal static class LaboratoryTemplate
                                 if (cameraZoomIn.Contains(gesture.Position)) camera.Zoom = System.Math.Clamp(camera.Zoom * 2, 0.25f, 4);
                                 else if (cameraZoomOut.Contains(gesture.Position)) camera.Zoom = System.Math.Clamp(camera.Zoom / 2, 0.25f, 4);
                                 else if (cameraRotate.Contains(gesture.Position)) camera.Rotation += System.MathF.PI / 4;
+                                else if (cameraClampToggle.Contains(gesture.Position)) cameraBounded = !cameraBounded;
                                 break;
                             }
                             if (page == 1 && pixelButton.Contains(gesture.Position)) { GraphicsDevice.PixelPerfect = !GraphicsDevice.PixelPerfect; break; }
@@ -472,9 +475,11 @@ internal static class LaboratoryTemplate
 
                 if (page == 2)
                 {
-                    if (Input.TryGetPointer(out var touch) && touch.Y >= 120)
+                    if (Input.TryGetPointer(out var touch) && touch.Y >= 120 && !cameraClampToggle.Contains(touch))
                         cameraMarker = camera.ScreenToWorld(touch, GraphicsDevice.ViewSize);
-                    camera.Position = Vector2.Lerp(camera.Position, cameraMarker, System.Math.Clamp(time.DeltaSeconds * 5, 0, 1));
+                    camera.Follow(cameraMarker, 5, time.DeltaSeconds);
+                    if (cameraBounded)
+                        camera.ClampToWorld(new RectangleF(0, 0, 2000, 2000), GraphicsDevice.ViewSize);
                     return;
                 }
 
@@ -878,6 +883,9 @@ internal static class LaboratoryTemplate
                 batch.DrawString(font, "+ Zoom", cameraZoomIn.Position + new Vector2(6, 14), Color.White, 1.5f);
                 batch.DrawString(font, "- Zoom", cameraZoomOut.Position + new Vector2(6, 14), Color.White, 1.5f);
                 batch.DrawString(font, "Girar 45 graus", cameraRotate.Position + new Vector2(6, 14), Color.White, 1.5f);
+                batch.FillRect(cameraClampToggle, cameraBounded ? new Color(37, 117, 83) : new Color(52, 64, 110));
+                batch.DrawString(font, cameraBounded ? "LIMITE DE MUNDO: ON" : "LIMITE DE MUNDO: OFF",
+                    cameraClampToggle.Position + new Vector2(12, 16), Color.White, 1.55f);
                 batch.DrawString(font, "Toque/arraste na grade. Os controles ficam fixos.", new Vector2(8, 102), Color.White, 1.1f);
                 batch.End();
             }

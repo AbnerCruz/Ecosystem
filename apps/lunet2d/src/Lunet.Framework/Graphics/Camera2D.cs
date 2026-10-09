@@ -57,6 +57,53 @@ public sealed class Camera2D
         }
     }
 
+    /// <summary>Segue um destino com amortecimento exponencial estável em qualquer taxa de atualização.</summary>
+    /// <param name="target">Destino finito em coordenadas do mundo.</param>
+    /// <param name="response">Velocidade de resposta em segundos inversos (0 mantém a posição).</param>
+    /// <param name="deltaSeconds">Tempo finito e não negativo do passo, em segundos.</param>
+    /// <remarks>Para teletransporte imediato, atribua Position diretamente. A operação não aloca.</remarks>
+    public void Follow(Vector2 target, float response, float deltaSeconds)
+    {
+        if (!float.IsFinite(target.X) || !float.IsFinite(target.Y))
+            throw new ArgumentOutOfRangeException(nameof(target));
+        if (!float.IsFinite(response) || response < 0)
+            throw new ArgumentOutOfRangeException(nameof(response));
+        if (!float.IsFinite(deltaSeconds) || deltaSeconds < 0)
+            throw new ArgumentOutOfRangeException(nameof(deltaSeconds));
+        if (response == 0 || deltaSeconds == 0) return;
+        Position = Vector2.Lerp(_position, target, 1f - MathF.Exp(-response * deltaSeconds));
+    }
+
+    /// <summary>Limita a câmera a um mundo retangular considerando o zoom e a rotação da vista.</summary>
+    /// <param name="worldBounds">Retângulo do mundo, de tamanho positivo e coordenadas finitas.</param>
+    /// <param name="viewSize">Tamanho virtual positivo e finito da vista ou do render target.</param>
+    /// <remarks>Se o mundo é menor do que a extensão visível em um eixo, centraliza esse eixo
+    /// em vez de prometer esconder espaço externo. Não modifica o zoom nem a rotação.</remarks>
+    public void ClampToWorld(RectangleF worldBounds, Vector2 viewSize)
+    {
+        ValidateViewSize(viewSize);
+        if (!float.IsFinite(worldBounds.X) || !float.IsFinite(worldBounds.Y) ||
+            !float.IsFinite(worldBounds.Width) || !float.IsFinite(worldBounds.Height) ||
+            worldBounds.Width <= 0 || worldBounds.Height <= 0)
+            throw new ArgumentOutOfRangeException(nameof(worldBounds));
+        double left = worldBounds.X, top = worldBounds.Y;
+        double right = left + worldBounds.Width, bottom = top + worldBounds.Height;
+        if (right > float.MaxValue || bottom > float.MaxValue || right < -float.MaxValue || bottom < -float.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(worldBounds));
+
+        double cos = Math.Abs(MathF.Cos(_rotation));
+        double sin = Math.Abs(MathF.Sin(_rotation));
+        double halfX = (cos * viewSize.X + sin * viewSize.Y) / (2.0 * _zoom);
+        double halfY = (sin * viewSize.X + cos * viewSize.Y) / (2.0 * _zoom);
+
+        static float Axis(float current, double minimum, double maximum, double extent)
+        {
+            double lower = minimum + extent, upper = maximum - extent;
+            return (float)(lower > upper ? (minimum + maximum) / 2 : Math.Clamp((double)current, lower, upper));
+        }
+        Position = new Vector2(Axis(_position.X, left, right, halfX), Axis(_position.Y, top, bottom, halfY));
+    }
+
     /// <summary>Matriz mundo→vista: deslocamento, rotação inversa, zoom e centralização.</summary>
     /// <param name="viewSize">Tamanho positivo e finito da vista virtual ou do render target.</param>
     /// <returns>Matriz para desenhar pontos do mundo na vista; sem alocação.</returns>

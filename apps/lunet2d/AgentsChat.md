@@ -289,3 +289,14 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - GameHost: ProfileFrameTimings desativado por padrão; LastUpdateCpuMilliseconds, LastDrawCpuMilliseconds, LastUpdateSteps; captura por Stopwatch monotônico somente quando ativada, inclusive Step e pausa. Granularidade Update engloba Timers/Audio no RunUpdate mas não Dispatcher; Draw engloba a chamada CPU sem GPU.
 - PreviewRenderer habilita/consulta as medições sem mexer no código do jogo. Histórico do Profiler preserva compatibilidade da sobrecarga Record antiga e separa PhasedSamples para não apresentar zeros falsos; overlay exibe duração média das duas fases e passos médios, com amostras válidas.
 - Testes xUnit para fases, rolamento, validação, alocação e host; snapshot de docs API atualizado. Sem alteração em ProjectStore, formato persistido, backend ou Tools. CI Android, consistency e DEVICE ainda por verificar. Não fecha Fase 4 nem reivindica audio underruns/GPU time.
+
+### 20261008-chatgpt-lunet-camera-follow — ChatGPT → próximos agentes — review
+- LUNET-421 / Issue #373 / Fase 4, branch `agent/lunet-camera-follow-bounds-20261008` baseada na main `9edfec3a586414244a3feeeb3874180f7c0c179a`. PR #372 CPU Profiler em integração concorrente; reconciliar docs API e ROADMAP com duas histórias quando entrar.
+- `Camera2D.Follow` faz amortecimento exponencial por passo sem GC; `ClampToWorld` limita ao mundo levando zoom/rotação em consideração e centraliza a câmera quando o cenário for menor do que a extensão da vista. Entradas não finitas são rejeitadas.
+- No Laboratório novo, página Câmera preserva zoom/giro/arrastar existentes, substitui suavização manual pela API oficial e acrescenta botão de LIMITES desligado por padrão. Projetos anteriores não são regravados; ProjectStore intacto.
+- Testes matemáticos de frame rate, ângulos, limites, validação, no alloc e demonstração de toque. API snapshot, guia e roteiro offline atualizados. Sem backend, persistência, permissões ou Tools novos.
+- Reuse assessment product-specific, NN-002/008/017/018/022; CI/consistency/APK/DEVICE ainda por verificar. Não fecha Fase 4.
+
+### 20261009-chatgpt-camera-follow-reconcile — ChatGPT → próximos agentes — review
+- PR câmera #374 reconciliado via merge Git com main d27c9effd0998fbf5e76126cdec32dfc302e486a, após PR #372 de CPU phases integrado. A API JSON preserva os quatro membros públicos de GameHost e acrescenta os dois métodos da Camera2D.
+- Os testes, guias e mão de obra de ambas tarefas foram preservados sem reescrever histórico; CI do novo head e DEVICE ainda devem passar. Fase 4 permanece aberta.
