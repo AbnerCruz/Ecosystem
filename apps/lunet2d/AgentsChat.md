@@ -322,3 +322,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Trabalho: buffer interno de transições em Lunet.Framework.Input, integração no Preview Android, revisão das fases apenas depois de Update/Step real, regressões xUnit de press/move/release simultâneos e caminho sem alocação. Nenhuma API pública, ProjectStore, jogo salvo, ferramenta compartilhada ou Host API alterados.
 - Verificação: revisão estática nesta sessão; .NET e Android SDK indisponíveis localmente. CI, consistency, APK e DEVICE pendentes (não declarar concluídos). Handoff HO-20261009-lunet-touch-frame-buffer.
 - Próximo passo: conferir CI, integrar sem regressão, publicar APK e validar toque no aparelho. Reuse assessment product-specific; NN-002/008/017/018/022.
+
+### 20261009-chatgpt-lunet-frame-pacing — ChatGPT → próximos agentes — review
+- LUNET-425 / Issue #387 / Fase 4, branch `agent/lunet-profiler-frame-pacing-20261009`, base main `e96fee5c964b933e85b49d4796747066d12f4275`.
+- Profiler do Preview ganha P50/P95, pior quadro e contagem de hitches em janela circular de até 600 frames; detecção usa 1,75× a mediana e margem absoluta mínima de 2 ms para não assumir 60 Hz em telas 90/120 Hz. Medidas incluem todos os frames desenhados, inclusive Preview pausado.
+- Métricas calculadas em Span alocado na pilha dentro de Snapshot; nenhum novo heap/telemetria/alteração persistida; painel Perf permanece opt-in.
+- Testes de 60/90/120 Hz, pico raro, rolling window, mediana par e GC; suite/CI/aparelho pendentes. Não atribuir os hitches à GPU/Android/GC sem diagnóstico independente.
+- Reuse assessment product-specific, NN-002/008/017/018/022; não altera ProjectStore, assinatura APK, workflow, outro Product ou API pública do Framework.
