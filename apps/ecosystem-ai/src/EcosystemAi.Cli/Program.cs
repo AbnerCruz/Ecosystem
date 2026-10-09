@@ -32,6 +32,8 @@ A pasta precisa existir. Somente files.read por padrão.
 Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --list --catalog /pasta/historico lista projetos/sessões, sem modelo nem rede.
 --show --catalog /pasta/historico --project-id ID --session-id ID mostra o histórico.
+--export-html --catalog /pasta/historico --output /outra/pasta/historico.html
+  gera um snapshot offline e responsivo, sem servidor, rede nem código executável.
 --journal /pasta/privada salva eventos do Runtime (opt-in, em texto claro, fora do projeto).
 --show-run --journal /pasta/privada --run-id ID audita um run sem modelo ou rede.
 Preços são fornecidos pelo operador; quando o provider nao devolve usage.cost,
@@ -50,12 +52,14 @@ histórico local existe somente mediante --catalog explícito.
         bool allowCreate = false;
         bool listHistory = false;
         bool showHistory = false;
+        bool exportHtml = false;
         bool showRun = false;
         for (var i = 0; i < args.Length; i++)
         {
             if (args[i] == "--allow-create") { allowCreate = true; continue; }
             if (args[i] == "--list") { listHistory = true; continue; }
             if (args[i] == "--show") { showHistory = true; continue; }
+            if (args[i] == "--export-html") { exportHtml = true; continue; }
             if (args[i] == "--show-run") { showRun = true; continue; }
             if (!args[i].StartsWith("--", StringComparison.Ordinal) || i + 1 >= args.Length
                 || args[i + 1].StartsWith("--", StringComparison.Ordinal) || !fields.TryAdd(args[i], args[++i]))
@@ -71,9 +75,19 @@ histórico local existe somente mediante --catalog explícito.
             var allowed = new[] { "--project", "--goal", "--endpoint", "--model", "--budget-cents",
                 "--max-call-cents", "--input-usd-per-million", "--output-usd-per-million", "--accept-exists",
                 "--catalog", "--project-id", "--session-id", "--project-name", "--session-title",
-                "--journal", "--run-id" };
+                "--journal", "--run-id", "--output" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
+            if (exportHtml)
+            {
+                if (listHistory || showHistory || showRun || allowCreate
+                    || fields.Keys.Any(k => k is not ("--catalog" or "--output")))
+                    throw new ArgumentException("Exportação visual aceita apenas --catalog e --output.");
+                Console.WriteLine("Snapshot offline: " + CliHtmlSnapshot.Export(Need("--catalog"), Need("--output")));
+                return 0;
+            }
+            if (fields.ContainsKey("--output"))
+                throw new ArgumentException("--output exige --export-html.");
             if (showRun)
             {
                 if (listHistory || showHistory || allowCreate || fields.Keys.Any(k => k is not ("--journal" or "--run-id")))
