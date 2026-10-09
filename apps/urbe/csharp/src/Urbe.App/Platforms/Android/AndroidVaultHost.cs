@@ -103,7 +103,7 @@ public sealed class AndroidVaultHost : IVaultHost
         var moves = mutations
             .Where(mutation => mutation.Kind == WorkspaceMutationKind.Move)
             .ToArray();
-        var initialRevision = session.Revision;
+        var initialRevision = session.PersistenceRevision;
 
         await _gate.WaitAsync(cancellationToken);
         try
@@ -208,7 +208,7 @@ public sealed class AndroidVaultHost : IVaultHost
 
             _baseline = updated.Snapshot;
             _folders = updated.Folders;
-            if (session.Revision != initialRevision)
+            if (session.PersistenceRevision != initialRevision)
                 throw new IOException(
                     "O conteúdo anterior foi salvo, mas houve novas alterações " +
                     "durante a gravação. Toque em Salvar arquivos novamente.");
