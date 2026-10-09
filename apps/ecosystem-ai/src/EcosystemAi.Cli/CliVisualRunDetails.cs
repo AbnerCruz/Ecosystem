@@ -15,7 +15,7 @@ public sealed record VisualRunDetails(
     string RunId, string State, bool Verified, int Steps, int ToolCalls,
     string Agent, string? Model, IReadOnlyList<VisualArtifact> Artifacts);
 
-public sealed record VisualArtifact(string Kind, string Name);
+public sealed record VisualArtifact(string Kind, string Name, string? TextPreview = null);
 
 public static class CliVisualRunDetails
 {
@@ -26,7 +26,8 @@ public static class CliVisualRunDetails
     /// journal não é tratado como verificado. Journal inválido falha fechado.
     /// </summary>
     public static async Task<IReadOnlyDictionary<string, VisualRunDetails>> ReadAsync(
-        ProjectCatalog catalog, string journalDirectory, CancellationToken cancellationToken = default)
+        ProjectCatalog catalog, string journalDirectory, bool includeTextPreviews = false,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentException.ThrowIfNullOrWhiteSpace(journalDirectory);
@@ -36,9 +37,17 @@ public static class CliVisualRunDetails
         foreach (var project in catalog.Projects)
             CliRunJournalCommands.RequireOutsideWorkspace(journal, project.WorkspaceDirectory);
 
-        var ids = catalog.Projects.SelectMany(p => p.Sessions)
-            .SelectMany(s => s.Runs).Select(r => r.RunId)
-            .Distinct(StringComparer.Ordinal).ToArray();
+        var references = catalog.Projects.SelectMany(p => p.Sessions
+            .SelectMany(s => s.Runs.Select(r => (r.RunId, p.WorkspaceDirectory)))).ToArray();
+        var ids = references.Select(r => r.RunId).Distinct(StringComparer.Ordinal).ToArray();
+        // Mesmo run referenciado por múltiplos workspaces não tem uma origem
+        // única: é seguro auditar, mas nunca escolher de onde ler o arquivo.
+        if (includeTextPreviews && references.GroupBy(r => r.RunId, StringComparer.Ordinal)
+            .Any(g => g.Select(r => r.WorkspaceDirectory).Distinct(
+                OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal).Count() > 1))
+            throw new InvalidDataException("Run associado a mais de um workspace; previews recusados.");
+        var totalPreviewBytes = 0;
+        var previewCount = 0;
         if (ids.Length > MaxReceiptsPerExport)
             throw new InvalidOperationException("Snapshot de auditoria excede o limite de 250 runs.");
         var log = new LocalRunEventLog(journal);
@@ -53,8 +62,12 @@ public static class CliVisualRunDetails
             var state = RunState.Replay(entries);
             var agent = entries[0].Agent.Id;
             var model = entries.LastOrDefault(e => e.Model is not null)?.Model;
+            var workspace = includeTextPreviews
+                ? references.First(r => r.RunId == id).WorkspaceDirectory : null;
             var artifacts = state.Artifacts
-                .Select(a => new VisualArtifact(a.Kind, SafeFileName(a.Location)))
+                .Select(a => new VisualArtifact(a.Kind, SafeFileName(a.Location),
+                    workspace is null ? null : CliArtifactTextPreview.Read(
+                        a, workspace, ref totalPreviewBytes, ref previewCount)))
                 .ToArray();
             result.Add(id, new VisualRunDetails(id, state.Status.ToString(), state.Verified,
                 state.Steps, state.ToolCalls, agent, model, artifacts));
