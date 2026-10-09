@@ -123,6 +123,13 @@
         </label>
         <button type="button" class="surface-action" @onclick="CreateHouse"
                 disabled="@Workspace.IsReadOnly">Criar casa</button>
+        <label class="field">
+            <span>Nome do novo bairro</span>
+            <input value="@_newDistrict" @oninput="args => _newDistrict = args.Value?.ToString() ?? string.Empty"
+                   placeholder="Bairro novo" disabled="@Workspace.IsReadOnly" />
+        </label>
+        <button type="button" class="surface-action" @onclick="CreateDistrict"
+                disabled="@Workspace.IsReadOnly">Criar bairro</button>
         @if (!string.IsNullOrEmpty(_status))
         {
             <p class="world-notice" role="status">@_status</p>
@@ -141,6 +148,7 @@
     private double _zoom = 1;
     private string _selectedFolder = string.Empty;
     private string _newTitle = string.Empty;
+    private string _newDistrict = string.Empty;
     private string? _status;
 
     protected override void OnInitialized()
@@ -208,6 +216,26 @@
 
         _status = "Casa criada: " + created.Path;
         _newTitle = string.Empty;
+    }
+
+    private void CreateDistrict()
+    {
+        if (string.IsNullOrWhiteSpace(_newDistrict))
+        {
+            _status = "Informe o nome do bairro.";
+            return;
+        }
+
+        var created = Workspace.CreateFolder(_newDistrict, _selectedFolder);
+        if (created is null)
+        {
+            _status = "Não foi possível criar este bairro.";
+            return;
+        }
+
+        _selectedFolder = created;
+        _newDistrict = string.Empty;
+        _status = "Bairro criado: " + created;
     }
 
     private static string ShortTitle(string title) =>
