@@ -121,3 +121,33 @@ jobs:
           java-version: '21'
       - run: dotnet workload install ${{ matrix.workload }}
       - run: dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f ${{ matrix.framework }} -p:UrbeBuildTarget=${{ matrix.framework }}
+
+      # UC-25: validation-only Android artifact for owner-run phone smoke tests.
+      # Never sign a production channel or publish a Release from PR CI.
+      - name: Package isolated C# Android development APK
+        if: matrix.framework == 'net10.0-android'
+        run: |
+          dotnet publish src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-android -p:UrbeBuildTarget=net10.0-android -p:AndroidPackageFormat=apk -p:AndroidCreatePackagePerAbi=false
+          mkdir -p artifacts/android-apk
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          root = Path("src/Urbe.App/bin/Debug/net10.0-android")
+          candidates = sorted(root.rglob("*-Signed.apk"))
+          if not candidates:
+              candidates = sorted(root.rglob("*.apk"))
+          if not candidates:
+              raise SystemExit("ERROR: .NET Android did not produce an APK")
+          preferred = [p for p in candidates if "publish" in p.parts]
+          chosen = (preferred or candidates)[-1]
+          output = Path("artifacts/android-apk/Urbe-CSharp-Android-Dev.apk")
+          shutil.copy2(chosen, output)
+          print(f"APK de desenvolvimento: {chosen} -> {output} ({output.stat().st_size} bytes)")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: matrix.framework == 'net10.0-android'
+        with:
+          name: urbe-csharp-android-dev-apk
+          path: apps/urbe/csharp/artifacts/android-apk/Urbe-CSharp-Android-Dev.apk
+          if-no-files-found: error
+          retention-days: 7
