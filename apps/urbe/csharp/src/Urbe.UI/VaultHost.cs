@@ -11,6 +11,7 @@ public interface IVaultHost
     bool IsAvailable { get; }
     bool IsConnected { get; }
     string? DisplayName { get; }
+    IReadOnlyList<string> Folders { get; }
 
     Task<VaultSnapshot?> PickAsync(CancellationToken cancellationToken = default);
     Task<VaultSnapshot?> RestoreAsync(CancellationToken cancellationToken = default);
@@ -26,6 +27,7 @@ public sealed class PreviewVaultHost : IVaultHost
     public bool IsAvailable => false;
     public bool IsConnected => false;
     public string? DisplayName => null;
+    public IReadOnlyList<string> Folders => Array.Empty<string>();
 
     public Task<VaultSnapshot?> PickAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult<VaultSnapshot?>(null);
