@@ -14,7 +14,7 @@
   "branch": "feat/p6-5-local-catalog-management-20261009",
   "base_commit": "5f0fedbf7c2623293e8b9c0198fcf0d9608de8ec",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/398",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliCatalogManagement.cs",
     "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
