@@ -14,9 +14,9 @@
         <span>O domínio C# está fechado até G-C2. As superfícies são portadas incrementalmente sem cortar o cliente atual.</span>
     </div>
 
-    <section class="surface-planned" aria-label="Acesso aos documentos">
-        @if (Vault.IsAvailable)
-        {
+    @if (Vault.IsAvailable)
+    {
+        <section class="surface-planned" aria-label="Vault físico Android">
             <strong>Beta Android: pasta física do dispositivo</strong>
             <span>
                 Conecte a pasta acima. Os documentos carregados ficam em uma sessão de edição
@@ -24,17 +24,20 @@
                 gravados no diretório físico. Faça backup manual antes de testar esta beta.
                 A versão 1.8.4-beta permanece independente.
             </span>
-        }
-        else
-        {
-            <strong>Prévia Web sem salvamento permanente</strong>
+        </section>
+    }
+    else
+    {
+        <section class="surface-planned" aria-label="Persistência da prévia C#">
+            <strong>Prévia sem salvamento permanente</strong>
             <span>
-                O Editor e o Explorer Web C# ainda funcionam somente em memória.
-                Recarregar ou fechar a prévia descarta alterações. Não use como armazenamento
-                único de documentos importantes.
+                O Editor e o Explorer C# ainda funcionam sobre uma sessão em memória.
+                Recarregar ou fechar esta prévia pode descartar alterações.
+                Não use esta prévia como armazenamento único de documentos importantes;
+                mantenha seus dados no cliente Urbe publicado até a integração dos hosts.
             </span>
-        }
-    </section>
+        </section>
+    }
 
     <div class="surface-grid" role="group" aria-label="Sessão de trabalho">
         <article>
