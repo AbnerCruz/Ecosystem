@@ -108,8 +108,7 @@ histórico local existe somente mediante --catalog explícito.
                 throw new ArgumentException("Escolha apenas um modo de gestão do catálogo.");
             if (chatMode)
             {
-                if (listHistory || showHistory || showRun || exportHtml || allowCreate && fields.ContainsKey("--allow-create")
-                    || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog)
+                if (listHistory || showHistory || showRun || exportHtml || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog)
                     throw new ArgumentException("--chat não combina com modos de consulta, exportação ou gestão.");
                 return await CliInteractiveChat.RunAsync(fields, allowCreate,
                     Console.In, Console.Out, RunAsync);
