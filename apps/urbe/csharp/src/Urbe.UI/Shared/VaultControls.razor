@@ -1,3 +1,4 @@
+@implements IDisposable
 @inject IVaultHost Host
 @inject WorkspaceSession Workspace
 
@@ -13,6 +14,10 @@
             </button>
             <span role="status">@(_busy ? "Acessando pasta..." :
                 Host.IsConnected ? Host.DisplayName : "Nenhuma pasta conectada")</span>
+            @if (Host.IsConnected && Workspace.HasUnsavedChanges)
+            {
+                <span class="vault-unsaved" role="status">Alterações ainda não salvas</span>
+            }
         </div>
         @if (_message is not null)
         {
@@ -26,13 +31,18 @@
 }
 
 @code {
+    private const int AutoSaveDelayMilliseconds = 1600;
     private bool _busy;
+    private bool _disposed;
     private bool _confirmSwitch;
+    private bool _changedWhileBusy;
     private string? _error;
     private string? _message;
+    private CancellationTokenSource? _scheduledSave;
 
     protected override async Task OnInitializedAsync()
     {
+        Workspace.PersistenceChanged += OnPersistenceChanged;
         if (!Host.IsAvailable)
             return;
         try
@@ -41,7 +51,7 @@
             if (restored is not null)
             {
                 Workspace.Load(restored, Host.Folders);
-                _message = "Pasta reaberta. Alterações são gravadas apenas ao tocar em Salvar arquivos.";
+                _message = "Pasta reaberta. O salvamento automático só atua após edições; o botão Salvar continua disponível.";
             }
         }
         catch (Exception exception)
@@ -50,21 +60,102 @@
         }
     }
 
+    private void OnPersistenceChanged(object? sender, EventArgs args)
+    {
+        if (_disposed)
+            return;
+
+        _ = InvokeAsync(() =>
+        {
+            if (_disposed)
+                return;
+
+            if (_busy)
+            {
+                _changedWhileBusy = true;
+            }
+            else if (Host.IsConnected && !Workspace.IsReadOnly &&
+                     Workspace.HasUnsavedChanges)
+            {
+                ScheduleAutoSave();
+            }
+            else
+            {
+                CancelAutoSave();
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void CancelAutoSave()
+    {
+        var previous = _scheduledSave;
+        _scheduledSave = null;
+        if (previous is null)
+            return;
+        previous.Cancel();
+        previous.Dispose();
+    }
+
+    private void ScheduleAutoSave()
+    {
+        CancelAutoSave();
+        if (_disposed || !Host.IsConnected || Workspace.IsReadOnly ||
+            !Workspace.HasUnsavedChanges)
+            return;
+
+        var scheduled = new CancellationTokenSource();
+        _scheduledSave = scheduled;
+        _ = RunAutoSaveAsync(scheduled.Token);
+    }
+
+    private async Task RunAutoSaveAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(AutoSaveDelayMilliseconds, cancellationToken);
+            await InvokeAsync(async () =>
+            {
+                if (_disposed || cancellationToken.IsCancellationRequested ||
+                    !Host.IsConnected || !Workspace.HasUnsavedChanges ||
+                    Workspace.IsReadOnly)
+                    return;
+
+                await SaveCoreAsync(automatic: true);
+                StateHasChanged();
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            // Another edit or a manual Save replaced this pending attempt.
+        }
+        catch (Exception exception)
+        {
+            if (_disposed)
+                return;
+            await InvokeAsync(() =>
+            {
+                _error = "Falha no salvamento automático: " + exception.Message;
+                StateHasChanged();
+            });
+        }
+    }
+
     private async Task Pick()
     {
         if (_busy)
             return;
+
         _busy = true;
+        CancelAutoSave();
         _error = null;
         _message = null;
         try
         {
-            // Switching folders discards in-memory changes, so require an
-            // explicit second tap. No state changes if the system picker is cancelled.
             if (Host.IsConnected && !_confirmSwitch)
             {
                 _confirmSwitch = true;
-                _message = "Atenção: trocar a pasta descarta alterações ainda não salvas. " +
+                _message = "Trocar a pasta descarta alterações ainda não salvas. " +
                            "Salve primeiro ou toque em Confirmar troca para continuar.";
                 return;
             }
@@ -80,7 +171,7 @@
             _confirmSwitch = false;
             _message = snapshot.IsReadOnly
                 ? "Formato não suportado: vault aberto em somente leitura."
-                : "Pasta conectada. Edite seus documentos e use Salvar arquivos para gravar.";
+                : "Pasta conectada. Suas alterações serão salvas automaticamente; o botão Salvar continua disponível.";
         }
         catch (Exception exception)
         {
@@ -89,29 +180,57 @@
         finally
         {
             _busy = false;
+            if (_changedWhileBusy && Workspace.HasUnsavedChanges)
+                ScheduleAutoSave();
+            _changedWhileBusy = false;
         }
     }
 
-    private async Task Save()
+    private Task Save()
     {
-        if (_busy || !Host.IsConnected)
+        CancelAutoSave();
+        return SaveCoreAsync(automatic: false);
+    }
+
+    private async Task SaveCoreAsync(bool automatic)
+    {
+        if (_busy || !Host.IsConnected || Workspace.IsReadOnly)
             return;
+
         _busy = true;
         _confirmSwitch = false;
         _error = null;
-        _message = null;
+        _message = automatic ? "Salvando alterações..." : null;
         try
         {
             await Host.SaveAsync(Workspace);
-            _message = "Gravação concluída e verificada na pasta selecionada.";
+            _message = Workspace.HasUnsavedChanges
+                ? "Uma gravação terminou, mas há novas edições pendentes."
+                : automatic
+                    ? "Alterações salvas automaticamente e verificadas no dispositivo."
+                    : "Gravação concluída e verificada na pasta selecionada.";
         }
         catch (Exception exception)
         {
-            _error = "Não foi possível confirmar o salvamento: " + exception.Message;
+            _error = (automatic
+                ? "Salvamento automático não confirmado: "
+                : "Não foi possível confirmar o salvamento: ") +
+                exception.Message;
         }
         finally
         {
             _busy = false;
+            if (_changedWhileBusy && Workspace.HasUnsavedChanges &&
+                _error is null)
+                ScheduleAutoSave();
+            _changedWhileBusy = false;
         }
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        Workspace.PersistenceChanged -= OnPersistenceChanged;
+        CancelAutoSave();
     }
 }
