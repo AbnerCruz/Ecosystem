@@ -12,7 +12,8 @@ namespace EcosystemAi.Cli;
 /// </summary>
 public static class CliWebUiHtml
 {
-    public static string Render(ProjectCatalog catalog, string csrf)
+    public static string Render(ProjectCatalog catalog, string csrf,
+        IReadOnlyDictionary<string, VisualRunDetails>? auditDetails = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentException.ThrowIfNullOrWhiteSpace(csrf);
@@ -20,6 +21,9 @@ public static class CliWebUiHtml
         var output = new StringBuilder();
         var sessions = catalog.Projects.SelectMany(p => p.Sessions).ToArray();
         var runs = sessions.SelectMany(s => s.Runs).ToArray();
+        var audited = auditDetails?.Values.ToArray() ?? [];
+        var agents = audited.GroupBy(x => x.Agent, StringComparer.Ordinal)
+            .OrderBy(g => g.Key, StringComparer.Ordinal).ToArray();
         var costs = runs.GroupBy(r => r.Currency, StringComparer.Ordinal)
             .OrderBy(g => g.Key, StringComparer.Ordinal)
             .Select(g => g.Sum(r => (decimal)r.CostMinor).ToString(CultureInfo.InvariantCulture)
@@ -38,7 +42,39 @@ public static class CliWebUiHtml
         Metric(output, "Sessões", sessions.Length.ToString(CultureInfo.InvariantCulture));
         Metric(output, "Execuções", runs.Length.ToString(CultureInfo.InvariantCulture));
         Metric(output, "Custo registrado", costs.Length == 0 ? "Nenhum" : string.Join(" · ", costs));
-        output.Append("</section><div class='layout'><section class='panel creation'>")
+        if (auditDetails is not null)
+        {
+            output.Append("<section class='audit-board' aria-label='Quadro de tarefas e agentes'>")
+                .Append("<div class='board-heading'><div><p class='eyebrow'>RUNTIME / JOURNAL</p>")
+                .Append("<h2>Atividade verificada de agentes</h2>")
+                .Append("<p>Somente referências e estado reconstruídos do log do Runtime. Sem prompts nem arquivos.</p>")
+                .Append("</div><span class='pill ok'>Auditoria ativa</span></div>")
+                .Append("<div class='board-metrics'>");
+            Metric(output, "Agentes com execuções", agents.Length.ToString(CultureInfo.InvariantCulture));
+            Metric(output, "Tarefas auditadas", audited.Length.ToString(CultureInfo.InvariantCulture));
+            Metric(output, "Verificações aprovadas", audited.Count(r => r.Verified).ToString(CultureInfo.InvariantCulture));
+            Metric(output, "Sem evidência no journal", runs.Count(r => !auditDetails.ContainsKey(r.RunId))
+                .ToString(CultureInfo.InvariantCulture));
+            output.Append("</div>");
+            if (agents.Length == 0)
+                output.Append("<p class='hint'>Nenhum run auditado. Os recibos sem journal não provam conclusão.</p>");
+            foreach (var agent in agents)
+            {
+                output.Append("<details class='agent-card'><summary><span><strong>Agente: ")
+                    .Append(Escape(agent.Key)).Append("</strong><small>")
+                    .Append(agent.Count().ToString(CultureInfo.InvariantCulture))
+                    .Append(" execuções · ").Append(agent.Count(x => x.Verified).ToString(CultureInfo.InvariantCulture))
+                    .Append(" verificadas</small></span><span class='chevron'>⌄</span></summary>")
+                    .Append("<div class='agent-tasks'>");
+                foreach (var run in agent)
+                    output.Append("<a href='#r-").Append(Escape(run.RunId)).Append("'>Tarefa ")
+                        .Append(Escape(run.TaskId)).Append(" · ").Append(Escape(run.State))
+                        .Append("</a>");
+                output.Append("</div></details>");
+            }
+            output.Append("</section>");
+        }
+        output.Append("<div class='layout'><section class='panel creation'>")
             .Append("<div class='panel-heading'><p class='eyebrow'>CRIAR / VINCULAR</p><h2>Novo projeto</h2></div>")
             .Append("<p>Selecione uma pasta já existente no dispositivo que executa o servidor local.</p>")
             .Append("<form method='post' action='/projects'>")
@@ -98,16 +134,52 @@ public static class CliWebUiHtml
                     foreach (var run in session.Runs)
                     {
                         var pill = run.Status == "succeeded" ? "ok" : run.Status == "failed" ? "bad" : "waiting";
-                        output.Append("<div class='run'><span class='pill ").Append(pill)
-                            .Append("'>").Append(Escape(run.Status)).Append("</span><div>")
+                        output.Append("<div class='run' id='r-").Append(Escape(run.RunId))
+                            .Append("'><span class='pill ").Append(pill)
+                            .Append("'>").Append(Escape(run.Status)).Append("</span><div class='run-body'>")
                             .Append("<strong>").Append(Escape(run.RunId))
                             .Append("</strong><small>")
                             .Append(run.CostEstimated ? "Custo estimado · " : "Custo registrado · ")
                             .Append(run.CostMinor.ToString(CultureInfo.InvariantCulture)).Append(" ")
                             .Append(Escape(run.Currency)).Append(" minor · ")
-                            .Append(run.Verified ? "Verificado" : "Não verificado")
+                            .Append(run.Verified ? "Verificado no recibo" : "Não verificado no recibo")
                             .Append(" · ").Append(Escape(Date(run.At)))
-                            .Append("</small></div></div>");
+                            .Append("</small>");
+                        if (auditDetails is not null)
+                        {
+                            if (auditDetails.TryGetValue(run.RunId, out var details))
+                            {
+                                output.Append("<details class='run-audit'><summary>Ver auditoria da tarefa</summary>")
+                                    .Append("<div><p><strong>Tarefa:</strong> ").Append(Escape(details.TaskId))
+                                    .Append(" · <strong>Agente:</strong> ").Append(Escape(details.Agent));
+                                if (!string.IsNullOrWhiteSpace(details.Model))
+                                    output.Append(" · <strong>Modelo:</strong> ").Append(Escape(details.Model));
+                                output.Append("</p><p><strong>Estado do Runtime:</strong> ")
+                                    .Append(Escape(details.State))
+                                    .Append(" · <strong>Verificação:</strong> ")
+                                    .Append(details.Verified ? "aprovada" : "não aprovada")
+                                    .Append(" · passos: ")
+                                    .Append(details.Steps.ToString(CultureInfo.InvariantCulture))
+                                    .Append(" · ferramentas: ")
+                                    .Append(details.ToolCalls.ToString(CultureInfo.InvariantCulture))
+                                    .Append("</p>");
+                                if (!string.Equals(run.Status, details.State, StringComparison.OrdinalIgnoreCase)
+                                    || run.Verified != details.Verified)
+                                    output.Append("<p class='warning'>Atenção: recibo e replay do journal divergem.</p>");
+                                if (details.Artifacts.Count != 0)
+                                {
+                                    output.Append("<p><strong>Artefatos referenciados:</strong></p><ul>");
+                                    foreach (var item in details.Artifacts)
+                                        output.Append("<li>").Append(Escape(item.Kind)).Append(" — ")
+                                            .Append(Escape(item.Name)).Append("</li>");
+                                    output.Append("</ul>");
+                                }
+                                else output.Append("<p class='hint'>Nenhum artefato referenciado.</p>");
+                                output.Append("</div></details>");
+                            }
+                            else output.Append("<p class='warning'>Sem evidência de journal para este run.</p>");
+                        }
+                        output.Append("</div></div>");
                     }
                 }
                 output.Append("</div></details>");
@@ -166,8 +238,8 @@ summary{cursor:pointer;list-style:none}summary::-webkit-details-marker{display:n
 .turn{border:1px solid #2f4159;background:#172335;padding:12px;border-radius:10px;margin-bottom:9px;overflow-wrap:anywhere}.turn.assistant{border-left:3px solid #5bbaff}.turn.user{border-left:3px solid #8a9fb8}
 .turn>div{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:.8rem}.turn time{color:#afbed3}.turn p{white-space:pre-wrap;margin:8px 0 0}
 .run{display:flex;gap:10px;align-items:start;padding:12px 3px;border-top:1px solid #344459}.run strong{overflow-wrap:anywhere;font-size:.77rem}.run small{display:block;overflow-wrap:anywhere}.empty{padding:20px;border:1px dashed #3a4c63;border-radius:12px}
-footer{margin:30px 0 0;color:#9daec5;font-size:.79rem;border-top:1px solid #253449;padding-top:20px}.error{max-width:750px;margin:auto;padding:40px 18px}.error p{white-space:pre-wrap;overflow-wrap:anywhere}
-@media(max-width:760px){.top{align-items:flex-start}.status{font-size:.65rem;max-width:145px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:minmax(0,1fr)}.panel{padding:15px}}
+.audit-board{border:1px solid #325478;background:linear-gradient(135deg,#12243a,#101a2a);border-radius:16px;padding:20px;margin:0 0 22px}.board-heading{display:flex;justify-content:space-between;align-items:start;gap:12px}.board-heading h2{margin:0}.board-heading p:last-child{color:#b8cce0;margin:8px 0}.board-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.agent-card{border:1px solid #355473;border-radius:12px;margin:8px 0;background:#132336}.agent-card>summary{display:flex;justify-content:space-between;gap:12px;padding:13px}.agent-card>summary span:first-child{display:grid;gap:4px;overflow-wrap:anywhere}.agent-tasks{display:flex;flex-wrap:wrap;gap:9px;padding:12px;border-top:1px solid #355473}.agent-tasks a{display:inline-block;border:1px solid #426187;border-radius:9px;padding:9px 12px;text-decoration:none}.run-body{min-width:0;flex:1}.run-audit{border:1px solid #3a526d;border-radius:10px;margin:9px 0 0;overflow:hidden}.run-audit>summary{padding:10px 12px;color:#aad8ff}.run-audit>div{padding:10px 13px;border-top:1px solid #3a526d}.run-audit p{margin:5px 0;overflow-wrap:anywhere}.run-audit li{overflow-wrap:anywhere}.warning{color:#ffd394!important}.run:target,.session:target{outline:2px solid #6bb3ff;outline-offset:2px}footer{margin:30px 0 0;color:#9daec5;font-size:.79rem;border-top:1px solid #253449;padding-top:20px}.error{max-width:750px;margin:auto;padding:40px 18px}.error p{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:760px){.board-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.board-heading{flex-direction:column}.top{align-items:flex-start}.status{font-size:.65rem;max-width:145px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:minmax(0,1fr)}.panel{padding:15px}}
 @media(max-width:370px){.inline{flex-direction:column}.status{display:none}.top{padding:16px}}
 </style></head><body>
 """;
