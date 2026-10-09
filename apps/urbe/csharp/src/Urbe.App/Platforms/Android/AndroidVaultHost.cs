@@ -265,9 +265,14 @@ public sealed class AndroidVaultHost : IVaultHost
         using var stream = Resolver.OpenInputStream(uri)
             ?? throw new IOException("Arquivo não pode ser lido: " + uri);
         using var buffer = new MemoryStream();
-        stream.CopyTo(buffer);
-        if (buffer.Length > MaxFileBytes)
-            throw new IOException("Arquivo acima do limite de segurança da beta.");
+        var chunk = new byte[64 * 1024];
+        int read;
+        while ((read = stream.Read(chunk, 0, chunk.Length)) > 0)
+        {
+            if (buffer.Length + read > MaxFileBytes)
+                throw new IOException("Arquivo acima do limite de segurança da beta.");
+            buffer.Write(chunk, 0, read);
+        }
         return buffer.ToArray();
     }
 
