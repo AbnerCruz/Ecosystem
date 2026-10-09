@@ -852,7 +852,7 @@
       "summary": "Configura\u00E7\u00E3o de um jogo: passo de atualiza\u00E7\u00E3o e resolu\u00E7\u00E3o virtual.",
       "remarks": "",
       "examples": [
-        "\u0060\u0060\u0060\nConfiguration.VirtualWidth = 720;\nConfiguration.VirtualHeight = 1280;\nConfiguration.UpdatesPerSecond = 60;\n\u0060\u0060\u0060"
+        "\u0060\u0060\u0060\nConfiguration.VirtualWidth = 720;\nConfiguration.VirtualHeight = 1280;\nConfiguration.UpdatesPerSecond = 60;\nConfiguration.ViewportScaling = ViewportScalingMode.Fill;\n\u0060\u0060\u0060"
       ],
       "related": [],
       "since": "0.0.1",
