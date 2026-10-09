@@ -254,6 +254,12 @@ public class LabTemplateTests : IDisposable
         Assert.Equal(expected.Y, actual.Y, 3);
         host.SetSurfaceTouches([]);
         Frame();
+        Tap(100, 554);
+        Assert.True((bool)type.GetField("cameraBounded", fields)!.GetValue(loaded.Game)!);
+        Assert.InRange(camera.Position.X, 0, 2000);
+        Assert.InRange(camera.Position.Y, 0, 2000);
+        Tap(100, 554);
+        Assert.False((bool)type.GetField("cameraBounded", fields)!.GetValue(loaded.Game)!);
         Tap(100, 23);
         Assert.Equal(3, type.GetField("page", fields)!.GetValue(loaded.Game));
         Tap(100, 23);
