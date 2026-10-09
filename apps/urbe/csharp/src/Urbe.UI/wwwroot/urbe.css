@@ -1135,3 +1135,5 @@ a:focus-visible {
 .vault-host-status, .vault-host-error { margin: .35rem 0 0; font-size: .85rem; }
 .vault-host-error { color: #ffb9b9; }
 @media (max-width: 700px) { .vault-host-controls { padding: .35rem .6rem; } .vault-host-actions button { flex: 1 1 auto; } .vault-host-actions span { flex: 1 0 100%; } }
+
+.vault-unsaved { border-radius: .35rem; padding: .15rem .45rem; color: #ffe9ac; background: rgba(178,114,16,.18); font-weight: 600; }
