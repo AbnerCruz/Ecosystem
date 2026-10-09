@@ -316,7 +316,8 @@ public sealed class AndroidVaultHost : IVaultHost
             if (depth > 32)
                 throw new IOException("O vault ultrapassa 32 níveis de pastas.");
 
-            var parentId = DocumentsContract.GetDocumentId(parent);
+            var parentId = DocumentsContract.GetDocumentId(parent)
+                ?? throw new IOException("Identificador de pasta Android indisponível.");
             if (!visited.Add(parentId))
                 throw new IOException("Estrutura circular de pastas no provedor Android.");
 
