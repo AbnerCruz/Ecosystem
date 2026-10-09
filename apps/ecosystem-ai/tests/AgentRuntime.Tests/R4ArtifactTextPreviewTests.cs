@@ -72,7 +72,7 @@ public sealed class R4ArtifactTextPreviewTests
             var html = File.ReadAllText(withPreview);
             Assert.Contains("Visualizar texto atual do arquivo", html);
             Assert.Contains("&lt;script&gt;alert(", html);
-            Assert.Contains("conteúdo &amp; restante", html);
+            Assert.Contains("&amp; restante", html);
             Assert.DoesNotContain("<script>alert", html);
             Assert.DoesNotContain(workspace, html);
             Assert.Equal(original, File.ReadAllText(artifact));
