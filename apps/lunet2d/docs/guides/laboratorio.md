@@ -9,7 +9,7 @@ Crie **Novo projeto → Laboratório** e toque em **Run**, sem copiar código. O
 ## Os 12 módulos
 
 1. **Dispositivos:** música com fade, volume, som, vibração, sensores, controle, joystick, botão virtual, pinça e rotação.
-2. **Gráficos:** blend, shader, render target, filtros, clipping, pixel-perfect, resolução virtual e área segura.
+2. **Gráficos:** blend, shader, render target, filtros, clipping, pixel-perfect, resolução virtual, área segura e botão Fit/Fill para testar preenchimento de tela sem deformação.
 3. **Câmera:** zoom, giro, conversão entre toque/tela/mundo, HUD fixo, suavização via `Camera2D.Follow` e botão de confinamento com `ClampToWorld`.
 4. **Sliders:** arraste com dois dedos, intervalos contínuos/discretos, captura e desabilitação.
 5. **Botões:** clique ao soltar, arraste para fora, disable e mudança de posição por âncoras.

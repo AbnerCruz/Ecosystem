@@ -852,7 +852,7 @@
       "summary": "Configura\u00E7\u00E3o de um jogo: passo de atualiza\u00E7\u00E3o e resolu\u00E7\u00E3o virtual.",
       "remarks": "",
       "examples": [
-        "\u0060\u0060\u0060\nConfiguration.VirtualWidth = 720;\nConfiguration.VirtualHeight = 1280;\nConfiguration.UpdatesPerSecond = 60;\n\u0060\u0060\u0060"
+        "\u0060\u0060\u0060\nConfiguration.VirtualWidth = 720;\nConfiguration.VirtualHeight = 1280;\nConfiguration.UpdatesPerSecond = 60;\nConfiguration.ViewportScaling = ViewportScalingMode.Fill;\n\u0060\u0060\u0060"
       ],
       "related": [],
       "since": "0.0.1",
@@ -876,6 +876,19 @@
           "kind": "property",
           "signature": "public int UpdatesPerSecond { get; set; }",
           "summary": "Atualiza\u00E7\u00F5es por segundo. Padr\u00E3o: 60.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.GameConfiguration.ViewportScaling",
+          "name": "ViewportScaling",
+          "kind": "property",
+          "signature": "public ViewportScalingMode ViewportScaling { get; set; }",
+          "summary": "Ajuste de tela: Fit (padr\u00E3o retrocompat\u00EDvel) ou Fill (sem barras, com recorte).",
           "remarks": "",
           "parameters": [],
           "returns": "",
@@ -7686,7 +7699,7 @@
       "namespace": "Lunet.Graphics",
       "kind": "class",
       "signature": "public sealed class GraphicsDevice",
-      "summary": "Dispositivo gr\u00E1fico do jogo. Desenha numa resolu\u00E7\u00E3o virtual fixa, centralizada na tela com barras (letterbox), ou num \u0060RenderTarget2D\u0060 (espa\u00E7o em pixels do alvo).",
+      "summary": "Dispositivo gr\u00E1fico do jogo. Desenha numa resolu\u00E7\u00E3o virtual fixa, escalada em Fit (barras) ou Fill (recorte), ou num \u0060RenderTarget2D\u0060 (espa\u00E7o em pixels do alvo).",
       "remarks": "",
       "examples": [
         "\u0060\u0060\u0060\ndevice.Clear(Color.Black);\ndevice.PixelPerfect = true;\nVector2 virtualPoint = device.SurfaceToVirtual(new Vector2(540, 960));\n\u0060\u0060\u0060"
@@ -7849,8 +7862,21 @@
           "name": "Viewport",
           "kind": "property",
           "signature": "public Viewport Viewport { get; }",
-          "summary": "\u00C1rea da superf\u00EDcie ocupada pela resolu\u00E7\u00E3o virtual (sem as barras), em pixels.",
+          "summary": "Viewport em pixels f\u00EDsicos. Em modo Fill, a origem pode ser negativa e a \u00E1rea maior que a superf\u00EDcie: o GL recorta fora da tela.",
           "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.Graphics.GraphicsDevice.ViewportScaling",
+          "name": "ViewportScaling",
+          "kind": "property",
+          "signature": "public ViewportScalingMode ViewportScaling { get; set; }",
+          "summary": "Como escalar a resolu\u00E7\u00E3o virtual para a superf\u00EDcie f\u00EDsica: Fit preserva todo o jogo; Fill cobre a tela sem distorcer, mas pode cortar o conte\u00FAdo nas bordas.",
+          "remarks": "Alter\u00E1vel em runtime. O padr\u00E3o Fit mant\u00E9m os jogos anteriores intactos.",
           "parameters": [],
           "returns": "",
           "examples": [],
@@ -7901,7 +7927,7 @@
           "name": "Clear",
           "kind": "method",
           "signature": "public void Clear(Color color)",
-          "summary": "Limpa o alvo atual com \u0060color\u0060. Na tela, as barras laterais ficam pretas.",
+          "summary": "Limpa o alvo com a cor fornecida. Em Fit, as barras ficam pretas; em Fill, o desenho cobre toda a superf\u00EDcie.",
           "remarks": "",
           "parameters": [
             {
@@ -11726,6 +11752,48 @@
           "kind": "property",
           "signature": "public int Y { get; init; }",
           "summary": "Dist\u00E2ncia da borda superior da superf\u00EDcie at\u00E9 a \u00E1rea do jogo, em pixels.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.Graphics.ViewportScalingMode",
+      "name": "ViewportScalingMode",
+      "namespace": "Lunet.Graphics",
+      "kind": "enum",
+      "signature": "public enum ViewportScalingMode",
+      "summary": "Pol\u00EDtica de ajuste do espa\u00E7o virtual do jogo \u00E0 tela f\u00EDsica, preservando a propor\u00E7\u00E3o.",
+      "remarks": "Fit n\u00E3o recorta e pode criar barras; Fill recorta bordas para cobrir toda a tela, sem distorcer sprites.",
+      "examples": [
+        "\u0060\u0060\u0060\nConfiguration.ViewportScaling = ViewportScalingMode.Fill;\n// Em runtime: GraphicsDevice.ViewportScaling = ViewportScalingMode.Fit;\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.Graphics.ViewportScalingMode.Fill",
+          "name": "Fill",
+          "kind": "enum value",
+          "signature": "public const ViewportScalingMode Fill = 1",
+          "summary": "Preenche a superf\u00EDcie f\u00EDsica, cortando as bordas excedentes sem alterar as propor\u00E7\u00F5es.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.Graphics.ViewportScalingMode.Fit",
+          "name": "Fit",
+          "kind": "enum value",
+          "signature": "public const ViewportScalingMode Fit = 0",
+          "summary": "Mostra todo o mundo virtual (letterbox), preservando a propor\u00E7\u00E3o. Padr\u00E3o.",
           "remarks": "",
           "parameters": [],
           "returns": "",

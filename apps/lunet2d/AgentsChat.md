@@ -300,3 +300,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 ### 20261009-chatgpt-camera-follow-reconcile — ChatGPT → próximos agentes — review
 - PR câmera #374 reconciliado via merge Git com main d27c9effd0998fbf5e76126cdec32dfc302e486a, após PR #372 de CPU phases integrado. A API JSON preserva os quatro membros públicos de GameHost e acrescenta os dois métodos da Camera2D.
 - Os testes, guias e mão de obra de ambas tarefas foram preservados sem reescrever histórico; CI do novo head e DEVICE ainda devem passar. Fase 4 permanece aberta.
+
+### 20261009-chatgpt-lunet-viewport-fit-fill — ChatGPT → próximos agentes — review
+- LUNET-422 / Issue #375, Fase 4. Branch `agent/lunet-viewport-fit-fill-20261009`, base main `d5eae81b7d832157397414c9de9efedafefeccb8` após releases 1000200 e 1000202; PR #372/#374 já integrados.
+- `ViewportScalingMode.Fit` mantém comportamento legado. `Fill` amplia viewport proporcionalmente sem distorcer, podendo recortar bordas. `GameConfiguration.ViewportScaling` opt-in na inicialização e `GraphicsDevice.ViewportScaling` editável em runtime. Com PixelPerfect, Fill usa escala inteira ceil quando >=1 para não voltar a criar barras.
+- Mapeamento de toques, clipping GL, SafeArea e resize recalculados no mesmo caminho de projeção original; sem alterar entrada de toque ou conteúdo do Game.cs persistido. Painel Gráficos do Laboratório 2.0 demonstra Fit/Fill diretamente sem edição de código.
+- Testes de aspect portrait/landscape, crop, toque round-trip, PixelPerfect, rejeição de valores inválidos, scissor/render target e caminho sem alocação. Catálogo de API offline/guia/regressões. CI/DEVICE ainda pendentes; não declarar concluída a Fase 4.
+- Reuse assessment product-specific, NN-002/008/017/018/022, paths de ProjectStore, Host Android e ferramentas compartilhadas intactos.

@@ -3,7 +3,7 @@ using System.Numerics;
 namespace Lunet.Graphics;
 
 /// <summary>
-/// Dispositivo gráfico do jogo. Desenha numa resolução virtual fixa, centralizada na tela com barras (letterbox),
+/// Dispositivo gráfico do jogo. Desenha numa resolução virtual fixa, escalada em Fit (barras) ou Fill (recorte),
 /// ou num <see cref="RenderTarget2D"/> (espaço em pixels do alvo).
 /// </summary>
 /// <example>
@@ -21,6 +21,7 @@ public sealed class GraphicsDevice
     private float _offsetX;
     private float _offsetY;
     private bool _pixelPerfect;
+    private ViewportScalingMode _viewportScaling;
     private RectI _insets;
     private Texture2D? _white;
 
@@ -54,9 +55,25 @@ public sealed class GraphicsDevice
     /// <summary>Projeção ortográfica: (0,0) no canto superior esquerdo até o tamanho de <see cref="ViewSize"/> no inferior direito.</summary>
     public Matrix4x4 Projection { get; private set; }
 
-    /// <summary>Área da superfície ocupada pela resolução virtual (sem as barras), em pixels.</summary>
+    /// <summary>Viewport em pixels físicos. Em modo Fill, a origem pode ser negativa e a área maior que a superfície: o GL recorta fora da tela.</summary>
     public Viewport Viewport => new((int)MathF.Round(_offsetX), (int)MathF.Round(_offsetY),
         (int)MathF.Round(VirtualWidth * _scale), (int)MathF.Round(VirtualHeight * _scale));
+
+    /// <summary>Como escalar a resolução virtual para a superfície física: Fit preserva todo o jogo;
+    /// Fill cobre a tela sem distorcer, mas pode cortar o conteúdo nas bordas.</summary>
+    /// <remarks>Alterável em runtime. O padrão Fit mantém os jogos anteriores intactos.</remarks>
+    public ViewportScalingMode ViewportScaling
+    {
+        get => _viewportScaling;
+        set
+        {
+            if (value is not (ViewportScalingMode.Fit or ViewportScalingMode.Fill))
+                throw new ArgumentOutOfRangeException(nameof(value));
+            if (_viewportScaling == value) return;
+            _viewportScaling = value;
+            Recompute();
+        }
+    }
 
     /// <summary>Densidade de pixels do aparelho (1 = 160 dpi). Informada pelo host.</summary>
     public float Density { get; private set; } = 1f;
@@ -117,8 +134,12 @@ public sealed class GraphicsDevice
 
     private void Recompute()
     {
-        var fit = MathF.Min((float)_surfaceWidth / VirtualWidth, (float)_surfaceHeight / VirtualHeight);
-        _scale = _pixelPerfect && fit >= 1f ? MathF.Floor(fit) : fit;
+        var sx = (float)_surfaceWidth / VirtualWidth;
+        var sy = (float)_surfaceHeight / VirtualHeight;
+        var raw = _viewportScaling == ViewportScalingMode.Fill ? MathF.Max(sx, sy) : MathF.Min(sx, sy);
+        _scale = _pixelPerfect && raw >= 1f
+            ? _viewportScaling == ViewportScalingMode.Fill ? MathF.Ceiling(raw) : MathF.Floor(raw)
+            : raw;
         var width = VirtualWidth * _scale;
         var height = VirtualHeight * _scale;
         _offsetX = (_surfaceWidth - width) * 0.5f;
@@ -155,12 +176,18 @@ public sealed class GraphicsDevice
         if (target is { IsDisposed: true }) throw new ObjectDisposedException(nameof(RenderTarget2D));
         RenderTarget = target;
         Backend.SetRenderTarget(target?.Handle ?? 0, target?.Width ?? _surfaceWidth, target?.Height ?? _surfaceHeight);
-        if (target is null) Backend.SetViewport(0, 0, _surfaceWidth, _surfaceHeight);
+        if (target is null)
+        {
+            // Ao sair do render target, restaura o viewport Fit ou Fill real;
+            // não voltar ao viewport físico integral (isso distorceria o desenho até o próximo Clear).
+            var v = Viewport;
+            Backend.SetViewport(v.X, v.Y, v.Width, v.Height);
+        }
         else Backend.SetViewport(0, 0, target.Width, target.Height);
         UpdateProjection();
     }
 
-    /// <summary>Limpa o alvo atual com <paramref name="color"/>. Na tela, as barras laterais ficam pretas.</summary>
+    /// <summary>Limpa o alvo com a cor fornecida. Em Fit, as barras ficam pretas; em Fill, o desenho cobre toda a superfície.</summary>
     /// <param name="color">Cor de tinta (multiplica as cores da imagem).</param>
     public void Clear(Color color)
     {
