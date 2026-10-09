@@ -168,6 +168,7 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
             if (wantPaused) host.Pause(); else host.Resume();
         }
         bool profile = _profilingEnabled;
+        host.ProfileFrameTimings = profile;
         long start = 0, allocationStart = 0;
         if (profile)
         {
@@ -192,7 +193,8 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
                 double cpuMilliseconds = Stopwatch.GetElapsedTime(start).TotalMilliseconds;
                 long bytes = GC.GetAllocatedBytesForCurrentThread() - allocationStart;
                 _performance.Record(elapsed, cpuMilliseconds, _backend.FrameDrawCalls,
-                    _backend.FrameTriangles, Math.Max(0, bytes));
+                    _backend.FrameTriangles, Math.Max(0, bytes),
+                    host.LastUpdateCpuMilliseconds, host.LastDrawCpuMilliseconds, host.LastUpdateSteps);
             }
         }
 

@@ -32,7 +32,8 @@
     "Seguimento exponencial frame-rate independent e clamp de câmera rotacionada/zoom ao mundo.",
     "Demonstração integrada na página Câmera do Laboratório, sem alteração de projetos salvos.",
     "Testes de estabilidade, entrada, limites, alocação e interação do template.",
-    "Doc API JSON e guias offline atualizados."
+    "Doc API JSON e guias offline atualizados.",
+    "Reconciliados os dois incrementos de GameHost CPU profiling #372 e Camera2D #374 por merge preservando histórico; docs API refletem ambos."
   ],
   "verification": [
     {
@@ -63,7 +64,7 @@
     }
   ],
   "known_issues": [
-    "PR #372 altera o mesmo catálogo de API e documentação da Fase 4; reconciliar antes de integração do #373.",
+    "PR #372 de CPU Profiling integrado na main e conciliado neste merge, incluindo a documentação pública; novos checks combinados ainda pendentes.",
     "ClampToWorld não promete esconder áreas externas ao mundo quando a câmera enxerga além do cenário."
   ],
   "blockers": [],

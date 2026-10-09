@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Lunet.Audio;
 using Lunet.Content;
 using Lunet.Graphics;
@@ -30,6 +31,7 @@ public sealed class GameHost
     private (float Density, int Left, int Top, int Right, int Bottom) _display = (1f, 0, 0, 0, 0);
     private bool _paused;
     private bool _started;
+    private bool _profileFrameTimings;
 
     /// <param name="contentSource">Origem dos arquivos de <c>Content/</c>; sem ela, o jogo não encontra arquivos.</param>
     /// <param name="game">Jogo a executar.</param>
@@ -59,6 +61,31 @@ public sealed class GameHost
     public bool IsPaused => _paused;
     /// <summary>Registro do jogo em execução.</summary>
     public GameLog Log => _game.Log;
+
+    /// <summary>Ativa a medição opt-in dos tempos CPU de Update e Draw; desligado por padrão.</summary>
+    /// <remarks>Usa cronômetro monotônico na thread do jogo, sem espera pela GPU. Desativar limpa os últimos valores.</remarks>
+    public bool ProfileFrameTimings
+    {
+        get => _profileFrameTimings;
+        set
+        {
+            if (_profileFrameTimings == value) return;
+            _profileFrameTimings = value;
+            LastUpdateCpuMilliseconds = 0;
+            LastDrawCpuMilliseconds = 0;
+            LastUpdateSteps = 0;
+        }
+    }
+
+    /// <summary>Duração CPU do último grupo de atualizações fixas em milissegundos, incluindo Timers e Audio.Update.</summary>
+    /// <remarks>Zero quando pausado, sem passos ou medição desligada. Não inclui Dispatcher nem Draw.</remarks>
+    public double LastUpdateCpuMilliseconds { get; private set; }
+
+    /// <summary>Duração CPU da última chamada síncrona de Draw, em milissegundos; não inclui GPU/present.</summary>
+    public double LastDrawCpuMilliseconds { get; private set; }
+
+    /// <summary>Número real de passos Update executados no último quadro medido (0 em pausa).</summary>
+    public int LastUpdateSteps { get; private set; }
 
     /// <summary>Inicializa o jogo. Retorna falso se o código do jogo lançou exceção.</summary>
     /// <param name="surfaceWidth">Largura da superfície de desenho, em pixels.</param>
@@ -145,17 +172,32 @@ public sealed class GameHost
         Input.RecognizeGestures(_clock);
         try
         {
+            var profile = _profileFrameTimings;
+            if (profile)
+            {
+                LastUpdateCpuMilliseconds = 0;
+                LastDrawCpuMilliseconds = 0;
+                LastUpdateSteps = 0;
+            }
             _game.RunDispatcher();
             if (!_paused)
             {
                 var steps = _loop.Advance(elapsedSeconds);
+                var updateStart = profile ? Stopwatch.GetTimestamp() : 0;
                 for (var i = 0; i < steps; i++)
                 {
                     _game.RunUpdate(_loop.CompleteStep());
                     Input.ClearGestures(); // cada gesto é entregue a um único passo
                 }
+                if (profile)
+                {
+                    LastUpdateSteps = steps;
+                    if (steps > 0) LastUpdateCpuMilliseconds = Stopwatch.GetElapsedTime(updateStart).TotalMilliseconds;
+                }
             }
+            var drawStart = profile ? Stopwatch.GetTimestamp() : 0;
             _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)elapsedSeconds, _loop.Interpolation));
+            if (profile) LastDrawCpuMilliseconds = Stopwatch.GetElapsedTime(drawStart).TotalMilliseconds;
         }
         catch (Exception ex)
         {
@@ -169,8 +211,23 @@ public sealed class GameHost
         if (!_started || IsFaulted || _loop is null) return;
         try
         {
+            var profile = _profileFrameTimings;
+            if (profile)
+            {
+                LastUpdateCpuMilliseconds = 0;
+                LastDrawCpuMilliseconds = 0;
+                LastUpdateSteps = 0;
+            }
+            var updateStart = profile ? Stopwatch.GetTimestamp() : 0;
             _game.RunUpdate(_loop.CompleteStep());
+            if (profile)
+            {
+                LastUpdateCpuMilliseconds = Stopwatch.GetElapsedTime(updateStart).TotalMilliseconds;
+                LastUpdateSteps = 1;
+            }
+            var drawStart = profile ? Stopwatch.GetTimestamp() : 0;
             _game.RunDraw(new GameTime(_loop.TotalSeconds, (float)_loop.StepSeconds, 0f));
+            if (profile) LastDrawCpuMilliseconds = Stopwatch.GetElapsedTime(drawStart).TotalMilliseconds;
         }
         catch (Exception ex)
         {
@@ -183,6 +240,7 @@ public sealed class GameHost
     {
         if (!_started) return;
         _started = false;
+        ProfileFrameTimings = false;
         Guard(_game.RunUnloadContent);
         _content?.Dispose();
         _content = null;

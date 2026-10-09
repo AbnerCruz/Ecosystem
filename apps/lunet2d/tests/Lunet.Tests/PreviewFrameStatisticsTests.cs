@@ -18,6 +18,7 @@ public sealed class PreviewFrameStatisticsTests
         Assert.Equal(30, initial.TrianglesPerFrame);
         Assert.Equal(200, initial.AllocatedBytesPerFrame);
         Assert.Equal(0, initial.SlowFrames);
+        Assert.Equal(0, initial.PhasedSamples);
 
         stats.Record(0.05, 6, 3, 30, 200);
         stats.Record(0.01, 3, 1, 10, 400);
@@ -45,6 +46,9 @@ public sealed class PreviewFrameStatisticsTests
         Assert.Throws<ArgumentOutOfRangeException>(() => stats.Record(0.01, 1, -1, 4, 50));
         Assert.Throws<ArgumentOutOfRangeException>(() => stats.Record(0.01, 1, 2, -1, 50));
         Assert.Throws<ArgumentOutOfRangeException>(() => stats.Record(0.01, 1, 2, 4, -1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => stats.Record(0.01, 1, 2, 4, 1, -1, 1, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => stats.Record(0.01, 1, 2, 4, 1, 1, double.NaN, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => stats.Record(0.01, 1, 2, 4, 1, 1, 1, -1));
         Assert.Equal(1, stats.Snapshot().Samples);
     }
 
@@ -58,6 +62,43 @@ public sealed class PreviewFrameStatisticsTests
         for (int i = 0; i < 2000; i++)
         {
             stats.Record(1.0 / 60, 2, 4, 12, 50);
+            _ = stats.Snapshot();
+        }
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
+    public void PhasesTrackOnlyInstrumentedFramesWithinRollingWindow()
+    {
+        var stats = new PreviewFrameStatistics(3);
+        stats.Record(0.01, 3, 4, 8, 20);
+        stats.Record(0.02, 6, 5, 10, 30, 2, 1, 2);
+        stats.Record(0.02, 8, 8, 16, 40, 3, 2, 0);
+        var first = stats.Snapshot();
+        Assert.Equal(2, first.PhasedSamples);
+        Assert.Equal(2.5, first.UpdateCpuMilliseconds);
+        Assert.Equal(1.5, first.DrawCpuMilliseconds);
+        Assert.Equal(1, first.UpdateStepsPerFrame);
+        stats.Record(0.02, 10, 2, 4, 50, 4, 3, 1);
+        var after = stats.Snapshot();
+        Assert.Equal(3, after.PhasedSamples);
+        Assert.Equal(3, after.UpdateCpuMilliseconds);
+        Assert.Equal(2, after.DrawCpuMilliseconds);
+        Assert.Equal(1.0, after.UpdateStepsPerFrame);
+        stats.Reset();
+        Assert.Equal(0, stats.Snapshot().PhasedSamples);
+    }
+
+    [Fact]
+    public void PhaseMetricsRecordAndSnapshotDoNotAllocatePerFrame()
+    {
+        var stats = new PreviewFrameStatistics();
+        for (int i = 0; i < 100; i++) stats.Record(1.0 / 60, 3, 1, 2, 10, 1, 1, 1);
+        _ = stats.Snapshot();
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 2000; i++)
+        {
+            stats.Record(1.0 / 60, 3, 1, 2, 10, 1, 1, 1);
             _ = stats.Snapshot();
         }
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
