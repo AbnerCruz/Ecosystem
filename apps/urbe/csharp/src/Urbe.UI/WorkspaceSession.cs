@@ -66,12 +66,40 @@ public sealed class WorkspaceSession : IDisposable
     private readonly HashSet<string> _explicitFolders =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly List<WorkspaceMutation> _pendingMutations = [];
+    private bool _loading;
+    private long _persistenceRevision;
+    private long _savedPersistenceRevision;
+
+    /// <summary>Raised for actual note/folder changes, not navigation or editor tabs.</summary>
+    public event EventHandler? PersistenceChanged;
+
+    public long PersistenceRevision => _persistenceRevision;
+    public bool HasUnsavedChanges =>
+        _persistenceRevision != _savedPersistenceRevision ||
+        _pendingMutations.Count != 0;
+
+    private void OnDocumentChanged(object? sender, DocumentStoreChangedEventArgs change)
+    {
+        if (_loading)
+            return;
+
+        _persistenceRevision++;
+        PersistenceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnMutationChanged()
+    {
+        _persistenceRevision++;
+        PersistenceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private const int MaxTabs = 12;
     private const int HistoryLimit = 100;
 
     public WorkspaceSession()
     {
         Knowledge = new KnowledgeIndex(Documents);
+        Documents.Changed += OnDocumentChanged;
     }
 
     public DocumentStore Documents { get; } = new();
@@ -106,10 +134,10 @@ public sealed class WorkspaceSession : IDisposable
     /// <summary>Called by a host only after filesystem writes were verified.</summary>
     public void MarkSaved()
     {
-        if (_pendingMutations.Count == 0)
-            return;
+        _savedPersistenceRevision = _persistenceRevision;
         _pendingMutations.Clear();
         Revision++;
+        PersistenceChanged?.Invoke(this, EventArgs.Empty);
     }
 
 
@@ -185,6 +213,7 @@ public sealed class WorkspaceSession : IDisposable
 
     public void Dispose()
     {
+        Documents.Changed -= OnDocumentChanged;
         Knowledge.Dispose();
         GC.SuppressFinalize(this);
     }
@@ -216,12 +245,22 @@ public sealed class WorkspaceSession : IDisposable
             _explicitFolders.Add(normalized);
         }
 
-        Documents.ReplaceFromVault(snapshot, "workspace-load");
+        _loading = true;
+        try
+        {
+            Documents.ReplaceFromVault(snapshot, "workspace-load");
+        }
+        finally
+        {
+            _loading = false;
+        }
+        _savedPersistenceRevision = _persistenceRevision;
         IsReadOnly = snapshot.IsReadOnly;
         CurrentDocument = null;
         CurrentFolder = string.Empty;
         ResetEditorState();
         Revision++;
+        PersistenceChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -233,7 +272,16 @@ public sealed class WorkspaceSession : IDisposable
         ArgumentNullException.ThrowIfNull(documents);
 
         var materialized = documents.ToArray();
-        Documents.ReplaceAll(materialized, "workspace-load-documents");
+        _loading = true;
+        try
+        {
+            Documents.ReplaceAll(materialized, "workspace-load-documents");
+        }
+        finally
+        {
+            _loading = false;
+        }
+        _savedPersistenceRevision = _persistenceRevision;
 
         _paths.Clear();
         _explicitFolders.Clear();
@@ -613,6 +661,7 @@ public sealed class WorkspaceSession : IDisposable
                 WorkspaceMutationKind.CreateFolder,
                 null,
                 candidate));
+        OnMutationChanged();
         Revision++;
         return candidate;
     }
@@ -663,6 +712,7 @@ public sealed class WorkspaceSession : IDisposable
                 WorkspaceMutationKind.Move,
                 source,
                 destination));
+        OnMutationChanged();
         Revision++;
         return true;
     }
