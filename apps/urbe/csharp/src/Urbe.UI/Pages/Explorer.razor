@@ -165,8 +165,16 @@
         <div class="surface-planned" role="status">
             @if (Workspace.Paths.Count == 0 && Workspace.Folders.Count == 0)
             {
-                <strong>Nenhum vault conectado</strong>
-                <span>A superfície está funcional; os hosts ainda precisam entregar um <code>VaultSnapshot</code> à sessão.</span>
+                @if (Vault.IsConnected)
+                {
+                    <strong>Vault vazio</strong>
+                    <span>A pasta do dispositivo está conectada. Crie sua primeira nota ou bairro para começar.</span>
+                }
+                else
+                {
+                    <strong>Nenhum vault conectado</strong>
+                    <span>A superfície está funcional; os hosts ainda precisam entregar um <code>VaultSnapshot</code> à sessão.</span>
+                }
             }
             else
             {
