@@ -36,6 +36,8 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
   gera um snapshot offline e responsivo, sem servidor, rede nem código executável.
 --export-html ... --journal /pasta/privada/runs inclui auditoria e índice dos artefatos
   dos runs salvos, sem copiar arquivos nem payloads.
+--embed-text-artifacts com --export-html e --journal inclui previews de texto dos
+  arquivos atuais (opt-in, potencialmente privados; até 16 arquivos de 16 KiB).
 --journal /pasta/privada salva eventos do Runtime (opt-in, em texto claro, fora do projeto).
 --show-run --journal /pasta/privada --run-id ID audita um run sem modelo ou rede.
 --use-history exige --catalog, --project-id e --session-id: reenvia até 10 mensagens
@@ -57,6 +59,7 @@ histórico local existe somente mediante --catalog explícito.
         bool listHistory = false;
         bool showHistory = false;
         bool exportHtml = false;
+        bool embedTextArtifacts = false;
         bool showRun = false;
         bool useHistory = false;
         for (var i = 0; i < args.Length; i++)
@@ -65,6 +68,7 @@ histórico local existe somente mediante --catalog explícito.
             if (args[i] == "--list") { listHistory = true; continue; }
             if (args[i] == "--show") { showHistory = true; continue; }
             if (args[i] == "--export-html") { exportHtml = true; continue; }
+            if (args[i] == "--embed-text-artifacts") { embedTextArtifacts = true; continue; }
             if (args[i] == "--show-run") { showRun = true; continue; }
             if (args[i] == "--use-history") { useHistory = true; continue; }
             if (!args[i].StartsWith("--", StringComparison.Ordinal) || i + 1 >= args.Length
@@ -89,10 +93,14 @@ histórico local existe somente mediante --catalog explícito.
                 if (listHistory || showHistory || showRun || allowCreate || useHistory
                     || fields.Keys.Any(k => k is not ("--catalog" or "--output" or "--journal")))
                     throw new ArgumentException("Exportação visual aceita apenas --catalog, --output e --journal.");
+                if (embedTextArtifacts && !fields.ContainsKey("--journal"))
+                    throw new ArgumentException("--embed-text-artifacts exige --journal.");
                 Console.WriteLine("Snapshot offline: " + await CliHtmlSnapshot.ExportAsync(
-                    Need("--catalog"), Need("--output"), fields.GetValueOrDefault("--journal")));
+                    Need("--catalog"), Need("--output"), fields.GetValueOrDefault("--journal"), embedTextArtifacts));
                 return 0;
             }
+            if (embedTextArtifacts)
+                throw new ArgumentException("--embed-text-artifacts exige --export-html.");
             if (fields.ContainsKey("--output"))
                 throw new ArgumentException("--output exige --export-html.");
             if (showRun)
