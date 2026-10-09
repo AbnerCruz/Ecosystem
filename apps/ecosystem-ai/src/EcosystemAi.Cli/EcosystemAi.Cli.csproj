@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="../AgentRuntime.Core/AgentRuntime.Core.csproj" />
     <ProjectReference Include="../EcosystemAi.ProjectStore/EcosystemAi.ProjectStore.csproj" />
+    <ProjectReference Include="../EcosystemAi.RunJournal/EcosystemAi.RunJournal.csproj" />
     <ProjectReference Include="../AgentWorkspace/AgentWorkspace.csproj" />
     <ProjectReference Include="../AgentRuntime.Tools.Files/AgentRuntime.Tools.Files.csproj" />
     <ProjectReference Include="../AgentRuntime.Providers.ChatCompletions/AgentRuntime.Providers.ChatCompletions.csproj" />

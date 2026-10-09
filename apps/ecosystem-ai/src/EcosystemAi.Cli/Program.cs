@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using EcosystemAi.Cli;
 using EcosystemAi.ProjectStore;
+using EcosystemAi.RunJournal;
 using AgentRuntime;
 using AgentRuntime.Providers.ChatCompletions;
 using AgentRuntime.Tools.Files;
@@ -31,6 +32,8 @@ A pasta precisa existir. Somente files.read por padrão.
 Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --list --catalog /pasta/historico lista projetos/sessões, sem modelo nem rede.
 --show --catalog /pasta/historico --project-id ID --session-id ID mostra o histórico.
+--journal /pasta/privada salva eventos do Runtime (opt-in, em texto claro, fora do projeto).
+--show-run --journal /pasta/privada --run-id ID audita um run sem modelo ou rede.
 Preços são fornecidos pelo operador; quando o provider nao devolve usage.cost,
 o custo é ESTIMADO, não garantido. Sem background job ou memória automática;
 histórico local existe somente mediante --catalog explícito.
@@ -47,11 +50,13 @@ histórico local existe somente mediante --catalog explícito.
         bool allowCreate = false;
         bool listHistory = false;
         bool showHistory = false;
+        bool showRun = false;
         for (var i = 0; i < args.Length; i++)
         {
             if (args[i] == "--allow-create") { allowCreate = true; continue; }
             if (args[i] == "--list") { listHistory = true; continue; }
             if (args[i] == "--show") { showHistory = true; continue; }
+            if (args[i] == "--show-run") { showRun = true; continue; }
             if (!args[i].StartsWith("--", StringComparison.Ordinal) || i + 1 >= args.Length
                 || args[i + 1].StartsWith("--", StringComparison.Ordinal) || !fields.TryAdd(args[i], args[++i]))
             {
@@ -65,9 +70,18 @@ histórico local existe somente mediante --catalog explícito.
                 ? value : throw new ArgumentException($"Falta {name}.");
             var allowed = new[] { "--project", "--goal", "--endpoint", "--model", "--budget-cents",
                 "--max-call-cents", "--input-usd-per-million", "--output-usd-per-million", "--accept-exists",
-                "--catalog", "--project-id", "--session-id", "--project-name", "--session-title" };
+                "--catalog", "--project-id", "--session-id", "--project-name", "--session-title",
+                "--journal", "--run-id" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
+            if (showRun)
+            {
+                if (listHistory || showHistory || allowCreate || fields.Keys.Any(k => k is not ("--journal" or "--run-id")))
+                    throw new ArgumentException("Consulta de run aceita apenas --journal e --run-id.");
+                foreach (var line in await CliRunJournalCommands.ShowAsync(Need("--journal"), Need("--run-id")))
+                    Console.WriteLine(line);
+                return 0;
+            }
             if (listHistory || showHistory)
             {
                 if (listHistory && showHistory || allowCreate || fields.Keys.Any(k => k is not (
@@ -80,7 +94,11 @@ histórico local existe somente mediante --catalog explícito.
                 return 0;
             }
 
+            if (fields.ContainsKey("--run-id"))
+                throw new ArgumentException("--run-id exige --show-run.");
             var root = Path.GetFullPath(Need("--project"));
+            if (fields.TryGetValue("--journal", out var journalDirectory))
+                CliRunJournalCommands.RequireOutsideWorkspace(journalDirectory, root);
             if (!Directory.Exists(root)) throw new ArgumentException("O diretório de projeto precisa existir.");
             var goal = Need("--goal");
             var endpoint = new Uri(Need("--endpoint"), UriKind.Absolute);
@@ -128,7 +146,7 @@ histórico local existe somente mediante --catalog explícito.
             var scope = new BudgetScope(BudgetScopeKind.Project, contextId);
             ledger.SetLimits(scope, new BudgetLimits(Total: new Money(budgetCents, "USD"),
                 PerOperation: new Money(callCents, "USD")));
-            var log = new LocalRunEvents();
+            IEventLog log = journalDirectory is null ? new LocalRunEvents() : new LocalRunEventLog(journalDirectory);
             IVerifier verifier = fields.TryGetValue("--accept-exists", out var file)
                 ? new FileExistsVerifier(sandbox)
                 : new ResponsePresentVerifier();
@@ -158,6 +176,7 @@ histórico local existe somente mediante --catalog explícito.
                 if (history is not null)
                     Console.WriteLine($"Histórico local — projeto: {history.ProjectId} / sessão: {history.SessionId}");
                 var runId = "cli-run-" + Guid.NewGuid().ToString("N");
+                Console.WriteLine($"Execução: {runId}");
                 var result = await workspace.ExecuteAsync(runId, task, agent,
                     cancellationToken: cancel.Token);
                 var events = await log.ReadRunAsync(runId, CancellationToken.None);
