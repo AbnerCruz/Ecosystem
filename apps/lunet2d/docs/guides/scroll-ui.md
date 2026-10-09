@@ -61,3 +61,5 @@ O controle **não** implementa árvore de UI, roteamento automático de toque ou
 5. Valide a API em projetos anteriores: abrir/editar/Run e controles existentes sem regressão.
 
 Registre passou/falhou/não testado e a versão do APK. CI não valida inércia percebida, latência ou precisão real do toque.
+
+A suíte agora compila este exemplo pelo compilador C# embutido e o executa no GameHost com toque sintético, além de verificar fases inválidas (não permite movimento nem inércia). Isso não substitui a validação visual do recorte e da ergonomia no Android.

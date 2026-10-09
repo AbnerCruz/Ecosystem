@@ -124,7 +124,7 @@ public sealed class TouchScrollArea
         {
             if (!input.TouchCollection.TryGetById(_touchId, out var touch)
                 || !float.IsFinite(touch.Position.X) || !float.IsFinite(touch.Position.Y)
-                || touch.Phase == TouchPhase.Cancelled)
+                || (!touch.IsDown && touch.Phase != TouchPhase.Released))
                 Cancel();
             else
             {

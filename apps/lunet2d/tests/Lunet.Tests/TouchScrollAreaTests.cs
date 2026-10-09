@@ -156,6 +156,67 @@ public sealed class TouchScrollAreaTests
         Assert.InRange(area.OffsetY - stopped, 0, 0.01f); // manter dedo parado não cria fling.
     }
 
+
+    [Theory]
+    [InlineData(TouchPhase.Cancelled)]
+    [InlineData((TouchPhase)99)]
+    public void CancelOrUnknownTouchPhaseCannotScrollOrCreateInertia(TouchPhase phase)
+    {
+        var area = new TouchScrollArea(new(0, 0, 200, 200), 1000);
+        var input = new InputState();
+        Frame(area, input, points: [T(1, TouchPhase.Pressed, y: 120)]);
+        Frame(area, input, points: [T(1, TouchPhase.Moved, y: 90)]);
+        Assert.Equal(30, area.OffsetY);
+        Frame(area, input, points: [T(1, phase, y: 40)]);
+        Assert.False(area.IsCaptured);
+        Assert.False(area.WasDragged);
+        Assert.Equal(30, area.OffsetY);
+        for (var i = 0; i < 20; i++) Frame(area, input);
+        Assert.Equal(30, area.OffsetY);
+    }
+
+    [Fact]
+    public void OfflineScrollGuideCompilesAndRunsInRealGameHostWithTouches()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "docs", "guides", "scroll-ui.md")))
+            root = root.Parent;
+        Assert.NotNull(root);
+        var guide = File.ReadAllText(Path.Combine(root!.FullName, "docs", "guides", "scroll-ui.md"));
+        var fence = new string((char)96, 3);
+        var source = guide.Split(fence + "csharp\n")[1].Split(fence)[0];
+        var compiler = new Lunet.Compiler.GameCompiler(
+            new Lunet.Compiler.LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
+        var result = compiler.Compile("ScrollGuide", [new Lunet.Compiler.SourceFile("Game.cs", source)]);
+        Assert.True(result.Success, string.Join("\n", result.Diagnostics));
+        Assert.DoesNotContain(result.Diagnostics, d => d.Severity == Lunet.Compiler.DiagnosticSeverity.Warning);
+
+        using var loaded = Lunet.Runtime.GameLoader.Load(result.Assembly!, result.Symbols);
+        var backend = new RecordingBackend();
+        var host = new GameHost(loaded.Game, backend);
+        Assert.True(host.Start(360, 640), host.Fault?.ToString());
+        host.Tick(1.0 / 60);
+
+        var field = loaded.Game.GetType().GetField(
+            "scroll", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        var area = Assert.IsType<TouchScrollArea>(field!.GetValue(loaded.Game));
+        Assert.Equal(0, area.OffsetY);
+
+        host.SetSurfaceTouches([T(8, TouchPhase.Pressed, x: 80, y: 190)]);
+        host.Tick(1.0 / 60);
+        host.SetSurfaceTouches([T(8, TouchPhase.Moved, x: 80, y: 140)]);
+        host.Tick(1.0 / 60);
+        Assert.Equal(50, area.OffsetY);
+
+        host.SetSurfaceTouches([T(8, TouchPhase.Released, x: 80, y: 140)]);
+        host.Tick(1.0 / 60);
+        Assert.False(area.IsCaptured);
+        Assert.NotEmpty(backend.Batches);
+        Assert.False(host.IsFaulted, host.Fault?.ToString());
+        host.Stop();
+    }
+
     [Fact]
     public void UpdateAndScrollingDoNotAllocateAfterWarmup()
     {

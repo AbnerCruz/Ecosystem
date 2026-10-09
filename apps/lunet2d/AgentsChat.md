@@ -329,3 +329,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Integração com SpriteBatch.Begin(clip: Bounds) demonstrada em guia executável; arbitragem com botões filhos permanece responsabilidade do jogo via IsDragging/WasDragged.
 - Testes sintéticos para tap, drag, release, multitouch, cancel, resize, bounds e nenhuma alocação gerenciada por Update. CI, docs API, APK e DEVICE pendentes; não declarar fase concluída.
 - ProjectStore, arquivos dos projetos, distribuição, outros apps e repo espelho não alterados. Reuse product-specific, NN-002/008/017/018/022.
+
+### 20261009-chatgpt-lunet-touch-scroll-runtime — ChatGPT → próximos agentes — review
+- Complemento LUNET-427 / PR #394: correção de fase de toque desconhecida e Cancelled, mantendo a mesma semântica de TouchButton/TouchSlider.
+- Regressão adicional: o exemplo do guia é compilado por GameCompiler e rodado em GameHost real com eventos de toque e backend de desenho, além de teste de inércia cancelada.
+- Revisão estática; CI/release/DEVICE continuam sujeitos a execução e aprovação. Nenhum arquivo de projeto, plataforma ou formato alterado.
