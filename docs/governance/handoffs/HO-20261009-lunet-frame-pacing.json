@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "agent/lunet-profiler-frame-pacing-20261009",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/388",
   "files_changed": [
     "apps/lunet2d/src/Lunet.Runtime/Profiling/PreviewFrameStatistics.cs",
     "apps/lunet2d/tests/Lunet.Tests/PreviewFrameStatisticsTests.cs",
