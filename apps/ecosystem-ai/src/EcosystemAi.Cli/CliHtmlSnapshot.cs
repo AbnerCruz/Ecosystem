@@ -11,7 +11,11 @@ namespace EcosystemAi.Cli;
 /// </summary>
 public static class CliHtmlSnapshot
 {
-    public static string Export(string catalogDirectory, string outputFile)
+    public static string Export(string catalogDirectory, string outputFile) =>
+        ExportAsync(catalogDirectory, outputFile).GetAwaiter().GetResult();
+
+    public static async Task<string> ExportAsync(string catalogDirectory, string outputFile,
+        string? journalDirectory = null, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(catalogDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputFile);
@@ -41,10 +45,13 @@ public static class CliHtmlSnapshot
                 throw new ArgumentException("Não salve conversas exportadas dentro de um workspace acessível ao agente.", nameof(outputFile));
         }
 
+        var runDetails = journalDirectory is null ? null
+            : await CliVisualRunDetails.ReadAsync(catalog, journalDirectory, cancellationToken);
+
         // Nunca sobrescrever exportações ou seguir arquivo de destino simbólico.
         if (File.Exists(output) || new FileInfo(output).LinkTarget is not null)
             throw new IOException("O destino já existe; escolha outro nome para o snapshot.");
-        var bytes = new UTF8Encoding(false).GetBytes(Render(catalog));
+        var bytes = new UTF8Encoding(false).GetBytes(Render(catalog, runDetails));
         var temporary = Path.Combine(parent, ".ecosystem-ai-" + Guid.NewGuid().ToString("N") + ".tmp");
         try
         {
@@ -62,7 +69,8 @@ public static class CliHtmlSnapshot
         return output;
     }
 
-    public static string Render(ProjectCatalog catalog)
+    public static string Render(ProjectCatalog catalog,
+        IReadOnlyDictionary<string, VisualRunDetails>? runDetails = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         var sb = new StringBuilder();
@@ -130,6 +138,9 @@ footer{margin-top:35px;color:#a4b0c6;font-size:.88rem}
                 + " unidades mínimas " + E(x.Currency))));
             sb.Append(" <small>(podem incluir estimativas; não são faturas)</small></p>");
         }
+        if (runDetails is not null)
+            sb.Append("<p class=\"muted\">Journal consultado: ").Append(runDetails.Count.ToString(CultureInfo.InvariantCulture))
+                .Append(" execuções com evidência. Ausências não significam sucesso.</p>");
         sb.Append("</section>");
 
         if (catalog.Projects.Count == 0) sb.Append("<p>Nenhum projeto salvo neste catálogo.</p>");
@@ -184,6 +195,38 @@ footer{margin-top:35px;color:#a4b0c6;font-size:.88rem}
                             .Append(run.CostMinor.ToString(CultureInfo.InvariantCulture))
                             .Append(" unidades mínimas ").Append(E(run.Currency)).Append("</td><td>")
                             .Append(E(Date(run.At))).Append("</td></tr>");
+                        if (runDetails is not null)
+                        {
+                            sb.Append("<tr><td colspan=\"5\">");
+                            if (runDetails.TryGetValue(run.RunId, out var audited))
+                            {
+                                sb.Append("<details><summary>Auditoria do Runtime — ")
+                                    .Append(E(audited.State)).Append("</summary><div class=\"session-body\">")
+                                    .Append("<p>Estado do journal: ").Append(E(audited.State))
+                                    .Append(" · verificação: ").Append(audited.Verified ? "aprovada" : "não aprovada")
+                                    .Append(" · passos: ").Append(audited.Steps.ToString(CultureInfo.InvariantCulture))
+                                    .Append(" · chamadas de ferramenta: ").Append(audited.ToolCalls.ToString(CultureInfo.InvariantCulture))
+                                    .Append("</p><p>Agente: ").Append(E(audited.Agent));
+                                if (!string.IsNullOrWhiteSpace(audited.Model))
+                                    sb.Append(" · modelo: ").Append(E(audited.Model));
+                                sb.Append("</p>");
+                                if (!string.Equals(run.Status, audited.State, StringComparison.OrdinalIgnoreCase)
+                                    || run.Verified != audited.Verified)
+                                    sb.Append("<p><strong>Atenção: recibo e journal divergem.</strong></p>");
+                                if (audited.Artifacts.Count != 0)
+                                {
+                                    sb.Append("<h3>Artefatos referenciados</h3><ul>");
+                                    foreach (var artifact in audited.Artifacts)
+                                        sb.Append("<li>").Append(E(artifact.Kind)).Append(" — ")
+                                            .Append(E(artifact.Name)).Append("</li>");
+                                    sb.Append("</ul><p class=\"muted\">Referências apenas; não copia nem abre arquivos do projeto.</p>");
+                                }
+                                else sb.Append("<p class=\"muted\">Este run não registrou artefatos.</p>");
+                                sb.Append("</div></details>");
+                            }
+                            else sb.Append("<small class=\"muted\">Sem journal disponível para este run; verificação não reconstituída.</small>");
+                            sb.Append("</td></tr>");
+                        }
                     }
                     sb.Append("</tbody></table></div>");
                 }
@@ -194,7 +237,7 @@ footer{margin-top:35px;color:#a4b0c6;font-size:.88rem}
         sb.Append("""
 <footer>
 <p>Conteúdo derivado do catálogo salvo localmente. Mensagens e evidências podem conter dados privados: mantenha este HTML em local protegido e não o publique.</p>
-<p>Snapshot estático — alterar este arquivo não altera o catálogo e nenhuma verificação de execução é refeita.</p>
+<p>Snapshot estático — alterar este arquivo não altera o catálogo. Auditorias opcionais usam somente o replay validado do Runtime e não reexecutam tarefas.</p>
 </footer></main></body></html>
 """);
         return sb.ToString();
