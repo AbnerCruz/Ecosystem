@@ -158,6 +158,28 @@ public static class VaultWriter
         {
             if (future.Contains(document.Path))
                 continue;
+
+            if (working.TryGetValue(document.Path, out var original))
+            {
+                var originalBytes = original.Bytes.ToArray();
+                // Do not re-encode untouched user files. In particular, an
+                // ANSI/Latin-1 Markdown file would otherwise have invalid
+                // bytes converted to UTF-8 replacement characters merely
+                // because a different note was edited.
+                if (string.Equals(Encoding.UTF8.GetString(originalBytes),
+                    document.Content, StringComparison.Ordinal))
+                {
+                    desired[document.Path] = originalBytes;
+                    continue;
+                }
+
+                if (!IsValidUtf8(originalBytes))
+                    throw new InvalidDataException(
+                        "O arquivo foi alterado, mas sua codificação original " +
+                        "não é UTF-8 válida. Converta-o explicitamente antes de editar: " +
+                        document.Path);
+            }
+
             desired[document.Path] = Encoding.UTF8.GetBytes(document.Content);
         }
 
@@ -198,7 +220,14 @@ public static class VaultWriter
             .ToList();
 
         var journalIsFuture = future.Contains(JournalV2);
-        var journalUsed = !journalIsFuture && changedUserPaths.Count + removedUserPaths.Count > 1;
+        // A journal serializes document contents as Unicode strings. Do not
+        // create a lossy recovery journal when any untouched source file
+        // contains non-UTF-8 bytes that the reader can only approximate.
+        var hasNonUtf8Documents = documents.Any(document =>
+            working.TryGetValue(document.Path, out var original) &&
+            !IsValidUtf8(original.Bytes.Span));
+        var journalUsed = !journalIsFuture && !hasNonUtf8Documents &&
+            changedUserPaths.Count + removedUserPaths.Count > 1;
         if (journalUsed)
         {
             var journalBytes = BuildJournal(
@@ -348,6 +377,19 @@ public static class VaultWriter
             log.RemoveAt(0);
         root["maintenance"] = log;
         return Serialize(root, indented: true);
+    }
+
+    private static bool IsValidUtf8(ReadOnlySpan<byte> bytes)
+    {
+        try
+        {
+            _ = new UTF8Encoding(false, true).GetCharCount(bytes);
+            return true;
+        }
+        catch (DecoderFallbackException)
+        {
+            return false;
+        }
     }
 
     private static IReadOnlyList<VaultWriteDocument> NormalizeDocuments(IEnumerable<VaultWriteDocument> documents)
