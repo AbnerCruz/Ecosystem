@@ -179,6 +179,18 @@ public static class VaultWriter
                         "não é UTF-8 válida. Converta-o explicitamente antes de editar: " +
                         document.Path);
             }
+            else
+            {
+                // A move/rename keeps the document identity but changes its
+                // path. The new target cannot be reconstructed faithfully
+                // from replacement characters if the source was non-UTF-8.
+                var movedFrom = snapshot.Documents.FirstOrDefault(existing =>
+                    string.Equals(existing.Id, document.Id, StringComparison.Ordinal));
+                if (movedFrom is not null && !IsValidUtf8(movedFrom.Bytes.Span))
+                    throw new InvalidDataException(
+                        "Não é seguro mover uma nota com codificação não UTF-8. " +
+                        "Converta o arquivo explicitamente: " + movedFrom.Path);
+            }
 
             desired[document.Path] = Encoding.UTF8.GetBytes(document.Content);
         }
