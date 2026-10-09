@@ -209,9 +209,7 @@ public sealed class AndroidVaultHost : IVaultHost
             _baseline = updated.Snapshot;
             _folders = updated.Folders;
             if (session.PersistenceRevision != initialRevision)
-                throw new IOException(
-                    "O conteúdo anterior foi salvo, mas houve novas alterações " +
-                    "durante a gravação. Toque em Salvar arquivos novamente.");
+                throw new WorkspaceEditedDuringSaveException();
 
             session.MarkSaved();
 
