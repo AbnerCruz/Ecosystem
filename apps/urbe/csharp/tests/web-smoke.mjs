@@ -446,6 +446,12 @@ async function assertWorldCity(page) {
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
     await page.locator('[data-note-path="Jardim/Casa de teste.md"]').waitFor();
+    await page.getByRole('button', { name: 'Abrir bairro selecionado no Explorer' }).click();
+    await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
+    assert.equal(await page.locator('.explorer-location strong').innerText(), 'Jardim');
+    await page.locator('[data-path="Jardim/Casa de teste.md"]').waitFor({ state: 'attached' });
+    await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
+    await page.getByRole('heading', { name: 'Cidade', exact: true }).waitFor();
 
     const previous = page.viewportSize();
     await page.setViewportSize({ width: 390, height: 844 });
