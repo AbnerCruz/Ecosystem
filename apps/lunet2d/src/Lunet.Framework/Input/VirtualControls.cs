@@ -173,7 +173,7 @@ public sealed class VirtualStick
         var offset = (mine!.Value.Position - Center) / Radius;
         var length = offset.Length();
         var magnitude = MathF.Min(length, 1f);
-        if (magnitude <= DeadZone)
+        if (magnitude < DeadZone || (RescaleDeadZone && DeadZone >= 1f))
         {
             Direction = Vector2.Zero;
             return;
