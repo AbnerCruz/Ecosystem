@@ -213,6 +213,15 @@
                     ? "Alterações salvas automaticamente e verificadas no dispositivo."
                     : "Gravação concluída e verificada na pasta selecionada.";
         }
+        catch (WorkspaceEditedDuringSaveException)
+        {
+            // The host has already verified the earlier on-disk snapshot.
+            // Another in-memory edit arrived during I/O: queue exactly one
+            // delayed follow-up save, rather than losing it or spinning on a
+            // genuine external filesystem conflict.
+            _message = "Novas edições detectadas. Concluindo salvamento adicional...";
+            _changedWhileBusy = true;
+        }
         catch (Exception exception)
         {
             _error = (automatic
