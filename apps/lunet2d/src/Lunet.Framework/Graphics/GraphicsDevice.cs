@@ -176,7 +176,13 @@ public sealed class GraphicsDevice
         if (target is { IsDisposed: true }) throw new ObjectDisposedException(nameof(RenderTarget2D));
         RenderTarget = target;
         Backend.SetRenderTarget(target?.Handle ?? 0, target?.Width ?? _surfaceWidth, target?.Height ?? _surfaceHeight);
-        if (target is null) Backend.SetViewport(0, 0, _surfaceWidth, _surfaceHeight);
+        if (target is null)
+        {
+            // Ao sair do render target, restaura o viewport Fit ou Fill real;
+            // não voltar ao viewport físico integral (isso distorceria o desenho até o próximo Clear).
+            var v = Viewport;
+            Backend.SetViewport(v.X, v.Y, v.Width, v.Height);
+        }
         else Backend.SetViewport(0, 0, target.Width, target.Height);
         UpdateProjection();
     }

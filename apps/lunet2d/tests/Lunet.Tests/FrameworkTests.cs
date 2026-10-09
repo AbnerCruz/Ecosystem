@@ -119,6 +119,24 @@ public class FrameworkTests
     }
 
     [Fact]
+    public void RenderTargetRestoreUsesScreenViewportForFitAndFillWithoutClear()
+    {
+        var backend = new RecordingBackend();
+        var device = new GraphicsDevice(backend, 360, 640);
+        device.Resize(1920, 1080);
+        using var target = new RenderTarget2D(device, 64, 64);
+        foreach (var mode in new[] { ViewportScalingMode.Fit, ViewportScalingMode.Fill })
+        {
+            device.ViewportScaling = mode;
+            var expected = device.Viewport;
+            device.SetRenderTarget(target);
+            Assert.Equal((0, 0, 64, 64), backend.Viewports[^1]);
+            device.SetRenderTarget(null); // sem Clear entre a volta e o próximo desenho
+            Assert.Equal((expected.X, expected.Y, expected.Width, expected.Height), backend.Viewports[^1]);
+        }
+    }
+
+    [Fact]
     public void ViewportScaling_NoPerFrameAllocationAfterWarmup()
     {
         var device = new GraphicsDevice(new NoOpBackend(), 360, 640);
