@@ -8,6 +8,7 @@ namespace Lunet;
 /// Configuration.VirtualWidth = 720;
 /// Configuration.VirtualHeight = 1280;
 /// Configuration.UpdatesPerSecond = 60;
+/// Configuration.ViewportScaling = ViewportScalingMode.Fill;
 /// </code>
 /// </example>
 public sealed class GameConfiguration

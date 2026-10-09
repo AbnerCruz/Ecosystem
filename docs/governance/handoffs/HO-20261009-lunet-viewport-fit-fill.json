@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-lunet-viewport-fit-fill",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T01:02:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-viewport",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-422",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-viewport-fit-fill-20261009",
+  "base_commit": "d5eae81b7d832157397414c9de9efedafefeccb8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Graphics/ViewportScalingMode.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/GraphicsDevice.cs",
+    "apps/lunet2d/src/Lunet.Framework/GameConfiguration.cs",
+    "apps/lunet2d/src/Lunet.Framework/GameHost.cs",
+    "apps/lunet2d/src/Lunet.Core/LaboratoryTemplate.cs",
+    "apps/lunet2d/tests/Lunet.Tests/FrameworkTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/graficos.md",
+    "apps/lunet2d/docs/guides/laboratorio.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261009-lunet-viewport-fit-fill.json"
+  ],
+  "work_completed": [
+    "Implementado modo Fit/Fill sem distorcer conteúdo; default Fit preserva todos os jogos antigos.",
+    "Ativação via GameConfiguration e GraphicsDevice runtime, incluindo PixelPerfect ceil em Fill.",
+    "Página Gráficos do Laboratório 2.0 permite alternar os modos por toque; testes de recorte, viewport, safe area, scissor, orientação, entradas e alocação.",
+    "Documentação da API e guia de uso por código e Laboratório."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "Aguardar CI após PR."
+    },
+    {
+      "kind": "automated",
+      "check": "Android APK",
+      "result": "pending",
+      "evidence": "Aguardar build após PR."
+    },
+    {
+      "kind": "automated",
+      "check": "Ecosystem consistency",
+      "result": "pending",
+      "evidence": "Aguardar consistency após PR."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE no celular",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/graficos.md",
+      "evidence": "Conferir HUD recortado, orientação e touch no aparelho; CI não valida ergonomia."
+    }
+  ],
+  "known_issues": [
+    "Fill ocupa tela sem barras mas pode esconder HUD; usar GraphicsDevice.SafeArea.",
+    "O Preview continua com controles nativos próprios; Fill não promete ocultar a barra da IDE nem forçar fullscreen Android.",
+    "Física completa, TrueType e UI tree seguem pendentes no gate Fase 4."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar CI e ajustar bugs reais.",
+    "Integrar pelo fluxo automático e publicar APK na main.",
+    "Obter teste DEVICE específico do Fit/Fill sem repetir outras validações."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Produto Lunet apenas."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #375, branch, handoff e PR."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE não presumido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CI/release separados de aprovação humana."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem contrato transversal."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "viewport-fit-fill",
+      "status": "product-specific",
+      "rationale": "Escala da superfície gráfica exclusiva do engine Lunet sem consumidor externo."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Novas APIs aditivas opt-in e padrão retrocompatível. Sem ProjectStore, dados existentes, backend ou alterações de segurança."
+  },
+  "cost": null
+}

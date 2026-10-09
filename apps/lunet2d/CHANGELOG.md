@@ -11,6 +11,8 @@
 
 ### Added
 
+- LUNET-422 (em revisão): escala Fit/Fill em GraphicsDevice e GameConfiguration para preencher a tela preservando proporção (Fill recorta excedentes); alternância testável no módulo Gráficos do Laboratório 2.0 e compatibilidade dos toques.
+
 - LUNET-421 (em revisão): Camera2D.Follow estável entre taxas de atualização, ClampToWorld com zoom/rotação e opção LIMITES na página Câmera do Laboratório, com testes de qualidade e alocação.
 
 - LUNET-420 (em revisão): instrumentação opt-in de tempos CPU Update/Draw e contagem de passos do GameHost, exibidas e agregadas no Profiler Android; não mede GPU e não altera projetos existentes.
