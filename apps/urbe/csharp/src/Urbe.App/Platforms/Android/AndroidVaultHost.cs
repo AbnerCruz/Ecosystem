@@ -92,10 +92,9 @@ public sealed class AndroidVaultHost : IVaultHost
                 document.Id, document.Path, document.Content))
             .ToArray();
         var mutations = session.PendingMutations.ToArray();
-        if (mutations.Any(mutation => mutation.Kind == WorkspaceMutationKind.Move))
-            throw new NotSupportedException(
-                "Mover notas e pastas ainda não é gravado por esta beta Android. " +
-                "Reabra a pasta para descartar a movimentação temporária antes de salvar.");
+        var moves = mutations
+            .Where(mutation => mutation.Kind == WorkspaceMutationKind.Move)
+            .ToArray();
         var initialRevision = session.Revision;
 
         await _gate.WaitAsync(cancellationToken);
@@ -108,6 +107,27 @@ public sealed class AndroidVaultHost : IVaultHost
             {
                 var current = ReadFiles(tree, cancellationToken);
                 EnsureUnchanged(baseline, current);
+
+                // The original source must be an actual note file in the
+                // loaded vault. Moving folders (including assets), chained
+                // moves and stale paths require their own SAF-safe flow.
+                // Never let VaultWriter remove an original on this basis.
+                foreach (var move in moves)
+                {
+                    var source = move.SourcePath;
+                    if (source is null || !baseline.ContainsKey(source) ||
+                        !IsSupportedNote(source) || !IsSupportedNote(move.TargetPath) ||
+                        baseline.ContainsKey(move.TargetPath) ||
+                        moves.Count(m => string.Equals(m.TargetPath, source,
+                            StringComparison.OrdinalIgnoreCase)) > 0 ||
+                        !documents.Any(doc => string.Equals(doc.Path,
+                            move.TargetPath, StringComparison.OrdinalIgnoreCase)))
+                        throw new NotSupportedException(
+                            "Nesta beta Android, apenas uma nota .md existente pode ser " +
+                            "movida por vez (sem mover pastas ou encadear movimentos). " +
+                            "Reabra o vault para desfazer uma movimentação não suportada.");
+                }
+
                 var plan = VaultWriter.Plan(new VaultWriteRequest
                 {
                     Files = current,
@@ -140,6 +160,21 @@ public sealed class AndroidVaultHost : IVaultHost
                         throw new InvalidDataException("Operação de escrita sem bytes.");
 
                     WriteVerified(tree, operation.Path, payload.ToArray());
+                }
+
+                // A moved note is safe to remove only if the newly written
+                // destination is present with the exact expected bytes.
+                foreach (var move in moves)
+                {
+                    if (!plan.Files.TryGetValue(move.TargetPath, out var expected) ||
+                        FindDocument(tree, move.TargetPath) is not { } destination ||
+                        !ReadBytes(destination).AsSpan().SequenceEqual(expected.Bytes.Span))
+                        throw new IOException(
+                            "Destino da movimentação não foi verificado: " + move.TargetPath);
+                    if (!removals.Contains(move.SourcePath!,
+                            StringComparer.OrdinalIgnoreCase))
+                        throw new IOException(
+                            "Plano não confirmou a remoção da origem: " + move.SourcePath);
                 }
 
                 foreach (var path in removals)
@@ -253,6 +288,10 @@ public sealed class AndroidVaultHost : IVaultHost
             throw new IOException("Vault excede o limite temporário de leitura da beta.");
         return files;
     }
+
+    private static bool IsSupportedNote(string path) =>
+        path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
+        path.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsIncluded(string path) =>
         path.StartsWith(".urbe/", StringComparison.OrdinalIgnoreCase) ||
