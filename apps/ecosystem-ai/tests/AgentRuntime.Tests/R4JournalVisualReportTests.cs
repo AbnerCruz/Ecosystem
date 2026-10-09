@@ -96,7 +96,7 @@ public sealed class R4JournalVisualReportTests
                 new RunReceipt(runId, "failed", 0, "USD", false, null, DateTimeOffset.UtcNow));
             var inside = Path.Combine(workspace, "runs");
             Directory.CreateDirectory(inside);
-            Assert.ThrowsAsync<ArgumentException>(async () =>
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await CliHtmlSnapshot.ExportAsync(catalog, Path.Combine(export, "inside.html"), inside));
             Assert.False(File.Exists(Path.Combine(export, "inside.html")));
 
