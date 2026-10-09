@@ -47,14 +47,17 @@
     "WorkspaceSession agora publica PersistenceRevision/HasUnsavedChanges, distingue revisão de dados de revisão visual, e sinaliza conflitos durante gravação sem falso positivo de mudança de aba.",
     "Testes de sessão adicionados para eventos dirty/clean de edição, criação, mudança de pasta, movimento, MarkSaved e Reload.",
     "CI urbe-checks Android agora tenta gerar APK de depuração separado (app.urbe.csharp.dev) e anexar ZIP de artifact ao workflow, sem alterar canal de release ou assinar para produção.",
-    "Autosave agora distingue exceção de edição durante I/O (reagenda após debounce) de conflito externo no vault (NÃO tenta repetir em loop), preservando feedback e evitando falsas confirmações."
+    "Autosave agora distingue exceção de edição durante I/O (reagenda após debounce) de conflito externo no vault (NÃO tenta repetir em loop), preservando feedback e evitando falsas confirmações.",
+    "VaultWriter C# agora preserva bytes originais quando conteúdo da nota não mudou; alterações/movimentos de notas com codificação não UTF-8 são recusados explicitamente, em vez de gerar substituições U+FFFD e corromper arquivos.",
+    "Journal de recuperação não é emitido ao serializar estado contendo documentos existentes com bytes inválidos em UTF-8; evitamos a recuperação com conteúdo degradado.",
+    "Novos testes provam preservação de bytes Latin-1 inalterados, rejeição de edição/movimento de nota não UTF-8 e ausência de journal textual com dados incompatíveis."
   ],
   "verification": [
     {
       "check": "urbe-checks: Core, Web, Android, Windows, E2E",
       "kind": "automated",
       "result": "pending",
-      "evidence": "Revisão anterior sem empacotamento passou todos os sete checks; revisão atual incluindo APK de depuração e exceção de edição concorrente exige CI de novo."
+      "evidence": "Última revisão com autosave antes do CI de APK estava verde; esta revisão de integridade de bytes precisa executar todos os checks, inclusive build Android de APK e testes."
     },
     {
       "check": "Foundation consistency",
@@ -84,6 +87,7 @@
   ],
   "blockers": [],
   "next_actions": [
+    "Validar os novos testes de byte fidelity + empacotamento APK Android debug no CI deste PR antes de apresentar instalável de teste.",
     "Verificar publicação do APK debug do workflow em PR #397, extraí-lo e instalar em um aparelho Android após autorização/consentimento explícito do proprietário para teste.",
     "Corrigir erros de compilação CI e verificar status combinado.",
     "Executar teste Android físico de selecionar pasta vazia, criar nota, salvar, fechar, reabrir e comprovar bytes no filesystem.",
