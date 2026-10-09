@@ -38,6 +38,8 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
   dos runs salvos, sem copiar arquivos nem payloads.
 --journal /pasta/privada salva eventos do Runtime (opt-in, em texto claro, fora do projeto).
 --show-run --journal /pasta/privada --run-id ID audita um run sem modelo ou rede.
+--use-history exige --catalog, --project-id e --session-id: reenvia até 10 mensagens
+  anteriores da sessão ao provedor desta execução (opt-in, não é memória automática).
 Preços são fornecidos pelo operador; quando o provider nao devolve usage.cost,
 o custo é ESTIMADO, não garantido. Sem background job ou memória automática;
 histórico local existe somente mediante --catalog explícito.
@@ -56,6 +58,7 @@ histórico local existe somente mediante --catalog explícito.
         bool showHistory = false;
         bool exportHtml = false;
         bool showRun = false;
+        bool useHistory = false;
         for (var i = 0; i < args.Length; i++)
         {
             if (args[i] == "--allow-create") { allowCreate = true; continue; }
@@ -63,6 +66,7 @@ histórico local existe somente mediante --catalog explícito.
             if (args[i] == "--show") { showHistory = true; continue; }
             if (args[i] == "--export-html") { exportHtml = true; continue; }
             if (args[i] == "--show-run") { showRun = true; continue; }
+            if (args[i] == "--use-history") { useHistory = true; continue; }
             if (!args[i].StartsWith("--", StringComparison.Ordinal) || i + 1 >= args.Length
                 || args[i + 1].StartsWith("--", StringComparison.Ordinal) || !fields.TryAdd(args[i], args[++i]))
             {
@@ -82,7 +86,7 @@ histórico local existe somente mediante --catalog explícito.
                 throw new ArgumentException("Parâmetro desconhecido.");
             if (exportHtml)
             {
-                if (listHistory || showHistory || showRun || allowCreate
+                if (listHistory || showHistory || showRun || allowCreate || useHistory
                     || fields.Keys.Any(k => k is not ("--catalog" or "--output" or "--journal")))
                     throw new ArgumentException("Exportação visual aceita apenas --catalog, --output e --journal.");
                 Console.WriteLine("Snapshot offline: " + await CliHtmlSnapshot.ExportAsync(
@@ -93,7 +97,7 @@ histórico local existe somente mediante --catalog explícito.
                 throw new ArgumentException("--output exige --export-html.");
             if (showRun)
             {
-                if (listHistory || showHistory || allowCreate || fields.Keys.Any(k => k is not ("--journal" or "--run-id")))
+                if (listHistory || showHistory || allowCreate || useHistory || fields.Keys.Any(k => k is not ("--journal" or "--run-id")))
                     throw new ArgumentException("Consulta de run aceita apenas --journal e --run-id.");
                 foreach (var line in await CliRunJournalCommands.ShowAsync(Need("--journal"), Need("--run-id")))
                     Console.WriteLine(line);
@@ -101,7 +105,7 @@ histórico local existe somente mediante --catalog explícito.
             }
             if (listHistory || showHistory)
             {
-                if (listHistory && showHistory || allowCreate || fields.Keys.Any(k => k is not (
+                if (listHistory && showHistory || allowCreate || useHistory || fields.Keys.Any(k => k is not (
                     "--catalog" or "--project-id" or "--session-id")))
                     throw new ArgumentException("Modo de consulta aceita apenas --catalog, --project-id e --session-id.");
                 var catalog = Need("--catalog");
@@ -132,6 +136,10 @@ histórico local existe somente mediante --catalog explícito.
                 throw new ArgumentException("Opções de histórico exigem --catalog.");
             if (fields.ContainsKey("--session-id") && !fields.ContainsKey("--project-id"))
                 throw new ArgumentException("--session-id exige --project-id.");
+            if (useHistory && (!fields.ContainsKey("--catalog")
+                || !fields.ContainsKey("--project-id") || !fields.ContainsKey("--session-id")
+                || fields.ContainsKey("--project-name") || fields.ContainsKey("--session-title")))
+                throw new ArgumentException("--use-history exige sessão existente: --catalog, --project-id e --session-id, sem nomes de nova sessão.");
 
             var secret = Environment.GetEnvironmentVariable("ECOAI_API_KEY");
             if (string.IsNullOrWhiteSpace(secret) && !endpoint.IsLoopback)
@@ -183,7 +191,12 @@ histórico local existe somente mediante --catalog explícito.
                 new AgentIdentity("cli-assistant", "Assistente", "executor"), profile,
                 "Você opera no projeto autorizado. Use apenas as ferramentas anunciadas; sem autorização para sobrescrever ou excluir. Relate resultados e limites. Não invente testes ou verificações.",
                 8, grant);
-            var task = new TaskSpec("cli-task", goal, file is null ? ["response-present"] : ["exists:" + file]);
+            // Captura um snapshot ANTES de adicionar a solicitação atual ao catálogo.
+            // O histórico só vira contexto do modelo quando o usuário pede explicitamente.
+            var taskGoal = useHistory
+                ? redactor.Redact(CliSessionContext.Compose(history!.Read(), history.ProjectId, history.SessionId, goal))
+                : goal;
+            var task = new TaskSpec("cli-task", taskGoal, file is null ? ["response-present"] : ["exists:" + file]);
             using var cancel = new CancellationTokenSource();
             ConsoleCancelEventHandler handler = (_, e) => { e.Cancel = true; cancel.Cancel(); };
             Console.CancelKeyPress += handler;
