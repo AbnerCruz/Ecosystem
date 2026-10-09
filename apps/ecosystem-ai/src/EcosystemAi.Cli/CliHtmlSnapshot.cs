@@ -16,7 +16,7 @@ public static class CliHtmlSnapshot
 
     public static async Task<string> ExportAsync(string catalogDirectory, string outputFile,
         string? journalDirectory = null, bool embedTextPreviews = false,
-        CancellationToken cancellationToken = default
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(catalogDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputFile);
