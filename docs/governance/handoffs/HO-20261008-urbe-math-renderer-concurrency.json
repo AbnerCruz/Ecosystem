@@ -13,7 +13,7 @@
   "state": "verifying",
   "branch": "fix/urbe-math-renderer-concurrent-typesetting",
   "base_commit": "85006817ff8dcd6258913a20566a28722133e95b",
-  "commit": "a70314e41f218091784d1d4e19099438ba323463",
+  "commit": "5c78592d69dcdd951607f00837123ec8d8c9d50b",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/334",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/MathRenderer.cs",
