@@ -28,7 +28,7 @@ sensor.SetCollisionFilter(categoryBits: 2, maskBits: 1);
 var capsule = ball.AddFixture(Collider2D.Capsule(0.2f, 1f));
 var hinge = world.CreateRevoluteJoint(floor, ball, Vector2.Zero);
 var guide = world.CreatePrismaticJoint(floor, ball, Vector2.Zero, Vector2.UnitX);
-Span<Contact> contacts = stackalloc Contact[8];
+var contacts = new Contact[8];
 int starts = world.CopySensorBegins(contacts);
 int finishes = world.CopySensorEnds(contacts);
 int physicalEnds = world.CopyContactEnds(contacts);
