@@ -113,6 +113,7 @@ public sealed class MainView : Grid
     public void ShowNotes()
     {
         if (Editor.IsVisible) return;
+        CityMap.IsVisible = false;
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
         _housePanel.IsVisible = false;
         Explorer.IsVisible = true;
