@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-urbe-uc18-explorer-breadcrumb-search",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T18:41:54Z",
+  "agent": {
+    "id": "chatgpt-urbe-explorer-breadcrumbs",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc18-explorer-breadcrumb-search-20261009",
+  "base_commit": "ac600f84c215678016e347e9890050e125735066",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/382",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261009-urbe-uc18-explorer-breadcrumb-search.json"
+  ],
+  "work_completed": [
+    "Breadcrumbs acessíveis com navegação para cada ancestral, mantendo a WorkspaceSession como autoridade de pasta.",
+    "Resultados da busca global mostram diretório de origem e contagem, distinguindo documentos homônimos.",
+    "Botão Limpar busca remove filtro e preserva pasta corrente; navegação por breadcrumb limpa filtro sem mudar dados.",
+    "Smoke Web cobre pastas aninhadas, duplicidade de nomes, rota Explorer-Editor-Explorer, retorno de busca e viewport móvel."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks C# portable, Web smoke, Android, Windows e E2E",
+      "result": "pending",
+      "evidence": "CI aberto no PR #382; SDK .NET não executado localmente."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency e integrador combinado",
+      "result": "pending",
+      "evidence": "Exigir checks verdes antes da integração automática."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3 Android toque e navegação profunda",
+      "result": "not-applicable",
+      "evidence": "Validação física não realizada nesta etapa."
+    }
+  ],
+  "known_issues": [
+    "UC-18 permanece aberta: sessão C# ainda volátil até integração segura de persistência dos hosts.",
+    "PRs de editor Visual e outros recortes UC-18 paralelos não foram tocados.",
+    "G-C3 requer validação real Android/Windows/Web, nenhuma release publicada."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar CI do PR #382 e corrigir regressões, principalmente smoke Razor/Playwright.",
+    "Manter classificação routine e delegar merge ao integrador do Ecosystem.",
+    "Prosseguir com fluxos faltantes UC-18 sem migrar dados nem alterar corte de distribuição."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "WorkspaceSession/DocumentStore permanecem a única autoridade da sessão e documentos."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Incremento de UI limitado ao escopo UC-18 existente, sem reescrita."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #382, branch, arquivos e verificações registrados neste handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Não há mudança de dados, identidade, segurança, formato ou interfaces de host."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhum gate humano aprovado sem DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "REQ-096/UC-18 e G-C3 continuam abertos."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Apenas navegação/metadata de apresentação no Explorer C# e seus testes, sem boundary, persistência, confiança ou distribuição."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "explorer-breadcrumbs-and-search-ui",
+      "status": "product-specific",
+      "rationale": "Interface do Explorer C# Urbe, sem segundo consumidor para extração em ferramenta global."
+    }
+  ]
+}

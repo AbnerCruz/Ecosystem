@@ -19,10 +19,19 @@
     </p>
 
     <div class="explorer-controls">
-        <label class="field">
-            <span>Buscar</span>
-            <input value="@Query" @oninput="OnQueryInput" placeholder="nome ou caminho" />
-        </label>
+        <div class="explorer-search-control">
+            <label class="field">
+                <span>Buscar</span>
+                <input value="@Query" @oninput="OnQueryInput" placeholder="nome ou caminho" />
+            </label>
+            @if (Query.Length > 0)
+            {
+                <button type="button" class="explorer-clear-search"
+                        @onclick="ClearSearch" aria-label="Limpar busca">
+                    Limpar
+                </button>
+            }
+        </div>
 
         <div class="new-note">
             <label class="field">
@@ -124,12 +133,17 @@
         </div>
     }
 
-    @if (Workspace.CurrentFolder.Length > 0 && Query.Length == 0)
-    {
-        <button type="button" class="folder-back" @onclick="GoParent">
-            ← @ParentLabel
-        </button>
-    }
+    <nav class="explorer-breadcrumbs" aria-label="Caminho da pasta">
+        @foreach (var crumb in FolderBreadcrumbs())
+        {
+            <button type="button"
+                    class="explorer-breadcrumb"
+                    aria-current="@(string.Equals(crumb.Path, Workspace.CurrentFolder, StringComparison.OrdinalIgnoreCase) ? "location" : null)"
+                    @onclick="() => NavigateFolder(crumb.Path)">
+                @crumb.Label
+            </button>
+        }
+    </nav>
 
     @if (_selectedFolder is not null)
     {
@@ -158,6 +172,11 @@
 
     @{
         var entries = Workspace.ExplorerEntries(Workspace.CurrentFolder, Query);
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Query))
+    {
+        <p class="explorer-search-caption" role="status">@entries.Count resultado(s) em todo o vault</p>
     }
 
     @if (entries.Count == 0)
@@ -282,13 +301,33 @@
             ? "Raiz"
             : Workspace.CurrentFolder;
 
-    private string ParentLabel
+    private sealed record FolderBreadcrumb(string Label, string Path);
+
+    private IEnumerable<FolderBreadcrumb> FolderBreadcrumbs()
     {
-        get
+        yield return new FolderBreadcrumb("Raiz", string.Empty);
+
+        var path = string.Empty;
+        foreach (var segment in Workspace.CurrentFolder.Split(
+                     '/', StringSplitOptions.RemoveEmptyEntries))
         {
-            var slash = Workspace.CurrentFolder.LastIndexOf('/');
-            return slash < 0 ? "Raiz" : Workspace.CurrentFolder[..slash];
+            path = path.Length == 0 ? segment : path + "/" + segment;
+            yield return new FolderBreadcrumb(segment, path);
         }
+    }
+
+    private void NavigateFolder(string path)
+    {
+        Workspace.SetFolder(path);
+        Query = string.Empty;
+        _selectedFolder = null;
+        _createError = null;
+    }
+
+    private void ClearSearch()
+    {
+        Query = string.Empty;
+        _selectedFolder = null;
     }
 
     private void OnQueryInput(ChangeEventArgs args)
@@ -387,16 +426,7 @@
         if (_selectedFolder is null)
             return;
 
-        Workspace.SetFolder(_selectedFolder.Path);
-        _selectedFolder = null;
-        Query = string.Empty;
-    }
-
-    private void GoParent()
-    {
-        var slash = Workspace.CurrentFolder.LastIndexOf('/');
-        Workspace.SetFolder(slash < 0 ? string.Empty : Workspace.CurrentFolder[..slash]);
-        _selectedFolder = null;
+        NavigateFolder(_selectedFolder.Path);
     }
 
     private void CreateNote()
@@ -672,7 +702,8 @@
 
         return "explorer-row" +
                (selected ? " selected" : string.Empty) +
-               (moving ? " moving" : string.Empty);
+               (moving ? " moving" : string.Empty) +
+               (!string.IsNullOrWhiteSpace(Query) ? " search-result" : string.Empty);
     }
 
     private static string FileName(string path)
@@ -681,14 +712,21 @@
         return slash >= 0 ? path[(slash + 1)..] : path;
     }
 
-    private static string EntryMeta(WorkspaceExplorerEntry entry)
+    private string EntryMeta(WorkspaceExplorerEntry entry)
     {
         if (entry.IsFolder)
             return "pasta";
 
         var kind = entry.Type?.ToString().ToLowerInvariant() ?? "arquivo";
-        return entry.Extension.Length == 0
+        var description = entry.Extension.Length == 0
             ? kind
             : kind + " · " + entry.Extension;
+
+        if (string.IsNullOrWhiteSpace(Query))
+            return description;
+
+        var slash = entry.Path.LastIndexOf('/');
+        var parent = slash < 0 ? "Raiz" : entry.Path[..slash];
+        return description + " · em " + parent;
     }
 }
