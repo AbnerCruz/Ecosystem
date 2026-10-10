@@ -112,8 +112,8 @@ public sealed class UiStackLayoutTests
         Assert.Throws<ArgumentException>(() => layout.Arrange(new(0, 0, 100, 100), specs, one));
         Assert.Throws<ArgumentOutOfRangeException>(() => layout.Arrange(new(float.NaN, 0, 100, 50), specs, new RectangleF[2]));
         Assert.Throws<ArgumentOutOfRangeException>(() => layout.Arrange(new(0, 0, -1, 50), specs, new RectangleF[2]));
-        Assert.Throws<OverflowException>(() => layout.Arrange(new(float.MaxValue, 0, float.MaxValue, 50), specs, new RectangleF[2]));
-        Assert.Throws<OverflowException>(() => layout.Arrange(new(0, float.MaxValue - 64, 100, 64), [UiStackItem.Fixed(500)], new RectangleF[1]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => layout.Arrange(new(float.MaxValue, 0, float.MaxValue, 50), specs, new RectangleF[2]));
+        Assert.Throws<OverflowException>(() => layout.Arrange(new(0, 0, 100, 100), [UiStackItem.Fixed(float.MaxValue), UiStackItem.Fixed(float.MaxValue)], new RectangleF[2]));
     }
 
     [Fact]
