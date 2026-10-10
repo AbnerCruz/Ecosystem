@@ -132,7 +132,9 @@ public sealed class MainView : Grid
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var notes = snapshot.Documents.Where(d => d.Text is not null)
             .Select(d => new CityNote(d.Path, d.Text!)).ToArray();
-        await LoadAsync(notes, snapshot.Mundo ?? "urbe", snapshot);
+        // app.js uses createWorld("urbe"); .urbe/mapa.json "mundo" is
+        // a world FORMAT marker (e.g. "placas-1"), never a procedural seed.
+        await LoadAsync(notes, "urbe", snapshot);
         _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "Pasta conectada";
     }
 
