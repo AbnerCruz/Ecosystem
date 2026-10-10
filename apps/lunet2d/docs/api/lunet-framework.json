@@ -5896,7 +5896,7 @@
             },
             {
               "name": "characters",
-              "type": "string?",
+              "type": "string",
               "description": "Conjunto de glifos pr\u00E9-rasterizados; fallback \u0027?\u0027 autom\u00E1tico."
             },
             {
@@ -11421,7 +11421,7 @@
             },
             {
               "name": "characters",
-              "type": "string?",
+              "type": "string",
               "description": "Escalares Unicode que ser\u00E3o pr\u00E9-rasterizados; \u0027?\u0027 \u00E9 sempre inclu\u00EDdo."
             },
             {
