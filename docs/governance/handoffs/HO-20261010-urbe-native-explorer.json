@@ -1,0 +1,80 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-native-explorer",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T18:50:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-native-explorer",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-notes-explorer-20261010",
+  "base_commit": "b0e1cb717062668b7c90361599ae218b28fc98f8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/NotesExplorer.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261010-urbe-native-explorer.json"
+  ],
+  "work_completed": [
+    "Criado explorer Avalonia puro com pastas hierárquicas, navegação de retorno, busca e seleção de notas a partir do snapshot canônico.",
+    "Ligada aba Notas no dock/rail nativos à abertura real de documentos no EditorOverlay, sem WebView/Blazor.",
+    "Testes headless cobrem UI no celular, pastas, seleção, busca e recusa de caminhos invisíveis."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks (portable + Android/Windows Avalonia + headless)",
+      "result": "pending",
+      "evidence": "Aguardar CI do PR."
+    }
+  ],
+  "known_issues": [
+    "Editor visual WYSIWYG e edição de arquivos não Markdown seguem UC-18; explorer inicial lista documentos presentes (não exibe pastas vazias).",
+    "Outra PR (#467) altera MainView; o integrador deve reconciliar diffs ao compor com a main mais nova."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar via CI verde, sem autorização extra por não tocar persistência.",
+    "Completar editor visual e pastas vazias; preservar estilo 1.8.4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Explorer consome CityNote do VaultSnapshot, não guarda outro formato."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "UI original Cidade/Notas no dock, sem reimaginar navegação."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff de trabalho + testes."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Headless não substitui DEVICE."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18 permanece em review até Visual + recursos originais."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI Avalonia e testes apenas; não altera persistência, APIs do vault, schema nem controle de integração."
+  }
+}
