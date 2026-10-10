@@ -162,7 +162,9 @@ public sealed class R4PlannedTaskBoardTests
             Assert.Throws<InvalidOperationException>(() =>
                 tasks.RecordAttempt(created.Id, "failed", []));
             var file = Path.Combine(cat, "planned-tasks.json");
-            File.WriteAllText(file, File.ReadAllText(file).Replace("Revisão", "Adulterado"));
+            var raw = File.ReadAllText(file);
+            Assert.Contains("\\"default\\"", raw);
+            File.WriteAllText(file, raw.Replace("\\"default\\"", "\\"other\\""));
             Assert.Throws<InvalidDataException>(() => new LocalPlannedTaskStore(cat).Read());
             Assert.Equal(revision, store.Read().Revision);
         }
