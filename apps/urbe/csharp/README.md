@@ -1,8 +1,10 @@
-# Urbe C# — somente Android e Windows (beta 2.0.0-beta.7)
+**Diretriz visual:** manter o visual EXATO do Urbe 1.8.4-beta, sem redesenho. Sprites/texturas são extraídos no build a partir do código original via `tools/export-legacy-v184.mjs` e empacotados no Android C#. O mundo contínuo e a HUD ainda requerem portabilidade fiel C#; ver `../docs/csharp/UC19-VISUAL-ACCEPTANCE.md`.
+
+# Urbe C# — somente Android e Windows (beta 2.0.0-beta.8)
 
 **Direção do proprietário (09/10/2026):** não criar ou distribuir uma versão Web/PWA do cliente C#. Android é prioridade; desktop/Windows vem depois. O MAUI Blazor Hybrid renderiza os componentes em uma WebView interna, não em um site com backend. O vault Android é uma pasta real, selecionada pelo usuário.
 
-**Release Android:** versão `2.0.0-beta.7`, identificador `app.urbe.csharp`, código `2000007`, tag `urbe-csharp-v2.0.0-beta.7`. Beta.7 inaugura a **fatia ART-1 de UC-19**, substituindo a cena CSS de casas em forma de cards por pixels 2D medievais (casas em três materiais, prefeitura de bairro, terreno, árvores e ruas). As imagens são SVGs estáticos embutidos em Urbe.UI; identidade visual final, cenário contínuo, animações, câmera e HUD aguardam ART-2 a ART-4 e validação Android físico. Detalhes em `../docs/csharp/UC19-VISUAL-ACCEPTANCE.md`. A cada versão, incrementar `ApplicationDisplayVersion` e `ApplicationVersion` em `src/Urbe.App/Urbe.App.csproj`. Publicação do APK + SHA256SUMS no GitHub Releases por `.github/workflows/urbe-csharp-mobile-release.yml`, com assinatura beta fixa e testes C#.
+**Release Android:** versão `2.0.0-beta.8`, ID `app.urbe.csharp`, versionCode `2000008`. PNGs dos sprites/terrenos gerados diretamente de 1.8.4-beta. Ainda não é a paridade completa do mundo/câmera/HUD; tais itens continuam UC-19.
 
 **Verificação:** `dotnet restore Urbe.Portable.slnx && dotnet test --project tests/Urbe.Core.Tests -c Release`. Build Android: `dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-android -p:UrbeBuildTarget=net10.0-android`. Windows usa `net10.0-windows10.0.19041.0`. Não há build ou release C# para Web.
 
