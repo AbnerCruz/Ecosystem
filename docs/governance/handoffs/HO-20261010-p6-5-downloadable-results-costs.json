@@ -14,7 +14,7 @@
   "branch": "feat/p6-5-downloadable-results-costs-20261010",
   "base_commit": "785e0d3e032ecf9bfe749871cd18785096c46ebc",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/416",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliProductDownloads.cs",
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
