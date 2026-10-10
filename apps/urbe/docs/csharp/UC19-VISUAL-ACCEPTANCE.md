@@ -20,7 +20,7 @@ O aplicativo distribuído continua **C# MAUI Android** e depois Windows. Não co
 ## Etapas obrigatórias, em ordem
 
 - [~] **LEGACY-1 — Arte original:** exportar PNGs fiéis de `pixel-art.js` (todas as variantes, árvores e texturas), mapear metadado `sprite=house1/house2/house3`, preservar e comparar hashes. Em andamento; não equivale à interface toda.
-- [ ] **LEGACY-2 — Mundo original:** reproduzir em C# os algoritmos e parâmetros do terreno de `terrain.js`, a disposição/regiões, ruas de links, vegetação, cidadãos e regras do desenho de `app.js`; cenário top-down contínuo. O tabuleiro 8×8 é scaffolding, não o mapa final.
+- [~] **LEGACY-2 — Mundo original:** implementação C# em andamento. Portados e testados contra valores reais do `terrain.js`: hash UTF-16, mulberry32, ruído de gradiente/FBM, 19 biomas, placas/limites, relevo, mar, clima, priority-flood, lagos, acumulação fluvial e seleção do ponto de início. Código `LegacyTerrainMath`, `LegacyTectonicField`, `LegacyElevationClimateField`, `LegacyHydrologyField`, `LegacyWorldSpawn`. **Ainda faltam** segmentos/renderização dos rios, amostragem por tile, biomas locais, vegetação, vias, regiões, prédios e cidadãos; tabuleiro 8×8 não é o mundo definitivo. Não trocar a tela enquanto não reproduzir exatamente a referência.
 - [ ] **LEGACY-3 — Interface original:** copiar o aspecto de 1.8.4-beta dos painéis, HUD, toolbar, telas, ícones, cores e CSS sem reformular a composição; adaptar apenas os handlers para C#.
 - [ ] **LEGACY-4 — Aceite pixel a pixel:** capturas do mesmo cenário no mesmo viewport, densidade e dispositivo (Android horizontal), comparação de cores/pixels, pan, zoom e fluidez. G-C3 fica não aprovado até validação humana do proprietário.
 
