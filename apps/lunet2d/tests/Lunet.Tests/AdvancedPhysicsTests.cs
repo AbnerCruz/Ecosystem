@@ -37,7 +37,7 @@ public sealed class AdvancedPhysicsTests
             world.Step(1f / 60f);
             if (world.SensorBeginCount > 0)
             {
-                Span<Contact> buffer = stackalloc Contact[1];
+                var buffer = new Contact[1];
                 Assert.Equal(1, world.CopySensorBegins(buffer));
                 Assert.Same(sensor, buffer[0].A);
                 Assert.Same(visitor, buffer[0].B);
