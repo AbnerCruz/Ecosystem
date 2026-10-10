@@ -33,7 +33,8 @@
     "Carregamento via ContentManager cacheado por path/opções e gerenciamento de vida da textura.",
     "Testes unitários de opções inválidas, atlas, medidas proporcionais, fallback Unicode, Dispose, cache e GameCompiler; guia Android offline, metadata pública e ADR.",
     "Após regressão do CI, removida dependência NuGet do Framework por código-fonte público versionado com STBSHARP_INTERNAL; estrutura arquitetural preservada.",
-    "Correções de warnings em código vendorizado: buffers stackalloc fora de loops e contrato nullable correto."
+    "Correções de warnings em código vendorizado: buffers stackalloc fora de loops e contrato nullable correto.",
+    "Reconciliado com main preservando APIs e histórico integrado."
   ],
   "verification": [
     {
@@ -67,9 +68,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Revisar CI e corrigir problemas de compilação/API snapshot.",
-    "Integrar pela política automática e confirmar a nova release com APK.",
-    "Solicitar validação em aparelho para fonte, acentos, desempenho e regressão."
+    "Verificar CI completo da revisão reconciliada.",
+    "Integração automática pelos gates do Ecosystem.",
+    "Confirmar release Android e avaliar legibilidade com fonte TTF real."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -103,7 +104,7 @@
       "evidence": "Código limitado ao Product Lunet2D; sem alterações em dados salvos ou contratos da plataforma."
     }
   ],
-  "base_commit": "66377a83547a3db92dc2129646d45d1776a020f5",
+  "base_commit": "785e0d3e032ecf9bfe749871cd18785096c46ebc",
   "reuse_assessment": [
     {
       "subject": "true-type-font",

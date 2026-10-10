@@ -15,6 +15,8 @@
 
 ### Added
 
+- LUNET-430 (em revisão): font atlas TrueType gerado offline em C# (`TrueTypeFont.Bake` e `Content.LoadTrueTypeFont`), integração com SpriteBatch, métricas proporcionais, cache de fonte, testes e limites de memória.
+
 - LUNET-429 (em revisão): `TouchListView` para listas grandes de missão/inventário com scroll inercial, hit-test por linha, seleção sem clique acidental ao arrastar e desenho apenas das linhas visíveis.
 
 - LUNET-428 (em revisão): TouchToggle para menus mobile de opções, com paletas on/off, captura por dedo, testes e guia offline executável.

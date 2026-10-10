@@ -182,6 +182,7 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [~] **LUNET-416 — Camera2D viewport de mundo para tilemap culling** (§7, §23): Issue #363; AABB da vista conservadora com zoom/rotação, testes e guia offline em revisão; CI/DEVICE pendentes. Não conclui Tile Studio.
 - [ ] Tilemaps completos (conexão com formato definitivo do Tile Studio, colisão e validação em aparelho) — Fase 4 continua aberta.
 - [ ] Fontes personalizadas (bitmap e TrueType).
+- [~] **LUNET-430 — Fontes TrueType offline** (§7, §23): Issue #414; baker TTF portátil em C# para atlas de glifos Unicode (inclui português) e `SpriteFont`, com cache no `ContentManager`, fallback, limites de memória, descarte de textura, testes e guia. CI/integração/APK/DEVICE pendentes. Não inclui kerning, shaping complexo, CFF ou editor visual; Fase 4 permanece aberta.
 - [~] **LUNET-426 — Correção da fonte bitmap embutida** (§7, §23): Issue #390; CR/LF/CRLF, fallback Unicode por escalar e validação consistente de layout/escala sem geometria infinita ou GC. CI/integração/APK/DEVICE pendentes. Não conclui TrueType ou o item de fontes.
 - [~] **LUNET-408 — Fontes bitmap personalizadas** (§7, §23): imagem/atlas, métricas proporcionais e fallback Unicode em SpriteFont/DrawString; Issue #327; Integrado pelo PR #328 e publicado no APK 1000155; roteiro Android pendente. TrueType permanece pendente; não conclui o item completo de fontes.
 - [ ] UI (layout, âncoras, nine-slice, temas).
