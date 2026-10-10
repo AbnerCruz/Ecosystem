@@ -86,8 +86,9 @@ public static class CliWebUi
                         includeTextPreviews: embedTextPreviews,
                         cancellationToken: ctx.RequestAborted);
                 var roster = new LocalAgentRosterStore(catalogPath).Read();
+                var reviews = new LocalTeamReviewStore(catalogPath).Read();
                 await RespondHtml(ctx, CliWebUiHtml.Render(snapshot, csrfToken, audited,
-                    taskRunner?.Board, roster));
+                    taskRunner?.Board, roster, reviews));
             }
             catch (Exception e) when (IsExpectedError(e))
             {
@@ -194,6 +195,33 @@ public static class CliWebUi
             {
                 await RespondHtml(ctx, CliWebUiHtml.RenderError(
                     "Equipe não criada.", "Selecione dois agentes diferentes do mesmo projeto."),
+                    StatusCodes.Status400BadRequest);
+            }
+        });
+
+        app.MapPost("/review-decisions", async ctx =>
+        {
+            if (!await VerifyPost(ctx, port, csrfToken)) return;
+            try
+            {
+                _ = ReadCatalog();
+                var form = await ctx.Request.ReadFormAsync();
+                if (!ValidForm(form, "csrf", "reviewId", "decision", "note"))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    return;
+                }
+                var selected = new LocalTeamReviewStore(catalogPath).Decide(
+                    form["reviewId"].ToString(), form["decision"].ToString(),
+                    form["note"].ToString());
+                ctx.Response.StatusCode = StatusCodes.Status303SeeOther;
+                ctx.Response.Headers.Location = "/#s-" + Uri.EscapeDataString(selected.SessionId);
+            }
+            catch (Exception e) when (IsExpectedError(e))
+            {
+                await RespondHtml(ctx, CliWebUiHtml.RenderError(
+                    "Parecer não decidido.",
+                    "Confira o parecer pendente, seus recibos e a justificativa. Nenhum arquivo foi integrado."),
                     StatusCodes.Status400BadRequest);
             }
         });
