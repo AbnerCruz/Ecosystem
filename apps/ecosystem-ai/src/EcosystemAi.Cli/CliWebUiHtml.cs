@@ -86,7 +86,10 @@ public static class CliWebUiHtml
                 .Append(taskBoard.RemainingRuns.ToString(CultureInfo.InvariantCulture))
                 .Append("</strong></span><span>Limite por tarefa: <strong>")
                 .Append(taskBoard.RunBudgetCents.ToString(CultureInfo.InvariantCulture))
-                .Append(" centavos USD</strong></span></div></section>");
+                .Append(" centavos USD</strong></span></div>")
+                .Append(taskBoard.ReviewTeams
+                    ? "<p>Revisão de equipe ativa: dois runs independentes; parecer não aprova nem integra arquivos.</p>"
+                    : "").Append("</section>");
         }
         output.Append("<div class='layout'><section class='panel creation'>")
             .Append("<div class='panel-heading'><p class='eyebrow'>CRIAR / VINCULAR</p><h2>Novo projeto</h2></div>")
@@ -201,7 +204,9 @@ public static class CliWebUiHtml
                             .Append(Escape(agent.Name)).Append("</option>");
                     foreach (var team in projectTeams)
                         output.Append("<option value='team:").Append(Escape(team.Id)).Append("'>Equipe: ")
-                            .Append(Escape(team.Name)).Append(" (produtor)</option>");
+                            .Append(Escape(team.Name)).Append(taskBoard.ReviewTeams
+                                ? " (produtor + revisor independente)</option>"
+                                : " (produtor)</option>");
                     output.Append("</select>")
                         .Append("<label for='goal-").Append(Escape(session.Id)).Append("'>Nova tarefa supervisionada</label>")
                         .Append("<textarea id='goal-").Append(Escape(session.Id))
@@ -216,6 +221,9 @@ public static class CliWebUiHtml
                         .Append("<p class='hint'>Somente leitura do workspace. ")
                         .Append(taskBoard.UseHistory ? "Histórico reenviado ao modelo conforme autorização do operador. "
                             : "Histórico anterior não é enviado ao modelo. ")
+                        .Append(taskBoard.ReviewTeams
+                            ? "Equipes: dois runs pagos, produtor + revisor; parecer não é aprovação. "
+                            : "Equipes: somente o produtor executa. ")
                         .Append("Cada envio reserva orçamento. Sem retry automático.</p></form>");
                 }
                 if (session.Turns.Count == 0)

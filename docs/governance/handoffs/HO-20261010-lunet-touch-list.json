@@ -27,7 +27,8 @@
   "work_completed": [
     "Lista mobile selecionável por toque com Viewport, linhas virtuais, rolagem com inércia, seleção em Released, cancelamento, multitouch e faixa visível.",
     "Desenho SpriteBatch recortado com rótulos fornecidos pelo jogo e estado visual selecionado, sem persistência nem asset novo.",
-    "Testes portáteis de input/multitouch/scroll/no-GC e guia C# testado por GameCompiler/GameHost; metadata API, roadmap e changelog."
+    "Testes portáteis de input/multitouch/scroll/no-GC e guia C# testado por GameCompiler/GameHost; metadata API, roadmap e changelog.",
+    "Reconciliação com a main atual sem sobrescrever TouchToggle já integrado."
   ],
   "verification": [
     {
@@ -59,8 +60,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Validar CI do PR e corrigir eventuais regressões antes da integração automática.",
-    "Confirmar release Lunet após integração e solicitar validação no aparelho."
+    "Verificar CI combinado após a reconciliação.",
+    "Integrar pelo integrador automático após checks verdes.",
+    "Publicar release APK e validar a ergonomia no dispositivo Android."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -94,7 +96,7 @@
       "evidence": "Código permanece em UI do Product, sem extração de infraestrutura."
     }
   ],
-  "base_commit": "3f4b6422a4b4d68b22126a4bcb1f453934319050",
+  "base_commit": "b8a0bdb7cad30bbbf39dee610bf487af4d57ed8d",
   "criticality": {
     "declared": "routine"
   },

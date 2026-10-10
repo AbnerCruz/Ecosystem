@@ -354,8 +354,18 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Guia exibe a barra por cima do conteúdo com SpriteBatch.FillRect; sem nova textura, estado persistido ou consumo de input. Testes verificam geometria exata e ausência de GC.
 - CI/API docs/APK/DEVICE devem ser revalidados nesta revisão, sem afirmar resultado antes dos jobs.
 
+### 20261009-chatgpt-lunet-touch-toggle — ChatGPT → próximos agentes — review
+- LUNET-428 / Issue #399. Branch agent/lunet-ui-touch-toggle-20261009, UI da Fase 4.
+- Composição de TouchButton em TouchToggle: valor booleano, Released válido, WasChanged, Cancel/disable, desenho com paletas. Sem alterações no input existente ou ProjectStore.
+- Testes sintéticos de estados, multitouch, zero GC e guia integrado GameHost. CI/consistency/APK/DEVICE pendentes; não declarar Fase 4 encerrada. Product-specific, NN-002/008/017/018/022.
+
 ### 20261010-chatgpt-lunet-touch-list — ChatGPT → integrador — review
 - LUNET-429 / Issue #410: lista 2D mobile por composição de `TouchScrollArea` existente, em branch `chatgpt/lunet-touch-list-20261010` baseada em main `3f4b6422a4b4d68b22126a4bcb1f453934319050`.
 - `TouchListView` separa tap/drag/multitouch, expõe seleção, hit-test, viewport, scrolling, range de render e Draw com clip. Os itens e a fonte continuam pertencendo ao jogo.
 - Testes de precisão, Cancel, desabilitação, boundaries, zero GC e compilação/execução real de Game.cs no GameHost; verificação do CI/APK/DEVICE deve ser observada após abertura do PR.
 - Sem alteração de ProjectStore, arquivos do usuário, Android, workflows ou contratos de plataforma. Reuso específico do Lunet; NN-002/008/017/018/022. A Fase 4 permanece aberta.
+
+### 20261010-chatgpt-lunet-touch-list-reconciled — ChatGPT → integrador — review
+- PR #411 sincronizado à main `b8a0bdb7cad30bbbf39dee610bf487af4d57ed8d` com catálogo API aditivo e histórico de agentes preservado, sem sobrescrever integração existente do TouchToggle/LUNET-428.
+- CI original do PR #411: Lunet.Tests, consistency e APK verdes; CI de versão reconciliada deve ser verificado. DEVICE pendente.
+- Somente Product Lunet2D e handoff, sem dados do usuário nem contratos alterados. NN-002/008/017/018/022.
