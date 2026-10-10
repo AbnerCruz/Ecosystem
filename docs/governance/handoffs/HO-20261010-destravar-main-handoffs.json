@@ -1,0 +1,63 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-destravar-main-handoffs",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T17:37:22Z",
+  "agent": {
+    "id": "claude-code-urbe-native",
+    "kind": "ai-agent"
+  },
+  "task_id": "P1-19",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "fix/destravar-main-handoffs",
+  "base_commit": "01a39bd641c14d37551761e56e2a0c5bc9c6c5fe",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/governance/handoffs/HO-20261008-urbe-math-renderer-concurrency.json",
+    "docs/governance/handoffs/HO-20261008-urbe-uc18-pin-tabs.json",
+    "docs/governance/handoffs/HO-20261010-urbe-procedural-city.json",
+    "docs/governance/handoffs/HO-20261010-destravar-main-handoffs.json"
+  ],
+  "work_completed": [
+    "A simulação do integrador (consistency.yml) falhava em 17 cenários na main desde #337 porque CHK-HANDOFFS, com histórico completo, reprovava três handoffs que citavam commits só existentes nas branches de origem (squash merge). Referências trocadas pelos commits equivalentes na main (#334, #337, #397); nenhum conteúdo alterado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "passed",
+      "evidence": "22/22 local."
+    },
+    {
+      "kind": "automated",
+      "check": "bash .github/integrator/simulate.sh (histórico completo)",
+      "result": "passed",
+      "evidence": "Sem falhas local; antes 17 falhas, iguais às da main."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "CI e integrador automático."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "docs/governance/multi-agent.md",
+    "docs/adr/0014-fluxo-multiagente-minimo.md",
+    "docs/adr/0015-integrador-automatico.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Referências apontam para o commit canônico na main."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoffs verificáveis com histórico completo."
+    }
+  ]
+}

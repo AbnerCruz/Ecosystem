@@ -12,7 +12,7 @@
   "component": "urbe",
   "state": "verifying",
   "branch": "feat/urbe-uc19-procedural-render-20261010",
-  "base_commit": "1f99d4f4a9b32f3ffb4686f12bedb70d3bf6fd2c",
+  "base_commit": "e675da8ef0dcc95df6bfba855c3536bbc613f715",
   "commit": null,
   "pr": null,
   "files_changed": [

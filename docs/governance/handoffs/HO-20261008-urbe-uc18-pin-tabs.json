@@ -13,7 +13,7 @@
   "state": "verifying",
   "branch": "feat/urbe-uc18-pin-tabs",
   "base_commit": "4966481372efcdb2dedd7816806621d48ba51eab",
-  "commit": "8b874d391f0bbb02d65114f5c3015a6bb89f92e9",
+  "commit": "60b854d43a76ed3d6db8ab97ba7cda4c1d0632c8",
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/337",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
