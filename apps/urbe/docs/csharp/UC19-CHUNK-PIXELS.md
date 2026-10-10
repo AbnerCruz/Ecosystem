@@ -16,14 +16,14 @@ Nenhum formato de arquivo, contrato de vault, saída de release, UI, host, impor
 
 ## Testes e limites
 
-`LegacyChunkPixelsTests` confere comprimento/alpha, pixels de textura em água profunda com sombreamento, coordenadas negativas, determinismo, diferenças entre chunks, transição água/terra, decoração por tile e proteção de entradas. **A equivalência pixel a pixel de todo o chunk ainda precisa de oráculo JS e screenshots do mesmo cenário**; os testes desta fatia não a certificam.
+`LegacyChunkPixelsTests` confere comprimento/alpha, pixels de textura em água profunda com sombreamento, coordenadas negativas, determinismo, diferenças entre chunks, transição água/terra, decoração por tile e proteção de entradas. O teste `LegacyChunkPixelOracleTests` invoca **somente no CI/teste** o `pixel-art.js::chunkPixels` congelado, executado pelo `chunk-pixels-oracle.mjs` via Node, e compara **todos os bytes RGBA** de quatro cenários canônicos (oceano profundo, costa com decoração, misturas de bioma/relevo e chunks negativos). A equivalência depende de passar no CI; screenshots do mesmo cenário e aceite Android físico continuam pendentes.
 
 A Cidade atualmente exibida em `World.razor` ainda usa `CityTileLayout` 8×8 e não foi substituída nesta fatia: mudar a tela antes de validar a composição, câmera, árvores, ruas, cidadãos, camadas e posicionamento quebraria a ordem de LEGACY-2 a LEGACY-4. Nenhum PNG estático será tomado como arte-fonte; data URI eventual é somente transporte de pixels de C# ao MAUI WebView.
 
 ## Próxima ação
 
 1. Executar o CI .NET e consistency no estado combinado da PR, corrigindo regressões.
-2. Gerar corpus byte a byte diretamente de `pixel-art.js::chunkPixels`, cotejar com a saída C# em sementes/biomas/costas idênticos e corrigir discrepâncias, sem alterar o oráculo.
+2. Conferir o resultado da comparação byte a byte do oráculo JS `chunk-pixels-oracle.mjs` contra o C# e corrigir qualquer discrepância sem alterar os algoritmos ou as expectativas legadas.
 3. Conectar buffers/chunks contínuos à Cidade com viewport/câmera e cache limitado, sem perder cliques e escrita SAF nem substituir o JS como referência.
 4. Integrar estradas e árvores procedurais e restaurar o layout/HUD originais; concluir apenas após DEVICE Android e paridade visual G-C3.
 
