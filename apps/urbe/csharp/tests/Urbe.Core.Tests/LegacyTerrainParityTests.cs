@@ -156,6 +156,42 @@ public sealed class LegacyTerrainParityTests
         AssertClose(expectedMoisture, stage4.MoistureAt(x, y), 5e-4);
     }
 
+    [Theory]
+    [InlineData("urbe", 19.00237274169922, 9)]
+    [InlineData("Cidade Alpha", 9.86111068725586, 0)]
+    public void LegacyPriorityFloodAndLakeCountsMatchOriginal(
+        string seed, double riverQuantile, int expectedLakes)
+    {
+        var field = LegacyHydrologyField.Generate(
+            LegacyElevationClimateField.Generate(seed, gridSize: 64));
+        AssertClose(riverQuantile, field.RiverThreshold, 0.02);
+        int lakes = 0;
+        for (int y = 0; y < 64; y++)
+        for (int x = 0; x < 64; x++)
+            if (field.IsLakeAt(x, y))
+                lakes++;
+        Assert.Equal(expectedLakes, lakes);
+    }
+
+    [Theory]
+    [InlineData("urbe", 20, 30, 1875, 0.4486551284790039, 5.9408135414123535)]
+    [InlineData("urbe", 45, 49, 3246, 0.6181797385215759, 1.3399215936660767)]
+    [InlineData("Cidade Alpha", 20, 30, 1939, 0.4414214491844177, 8.971911430358887)]
+    [InlineData("Cidade Alpha", 37, 17, 1188, 0.471574604511261, 4.150937557220459)]
+    [InlineData("Cidade Alpha", 45, 49, 3246, 0.6714854836463928, 3.362109661102295)]
+    public void LegacyWaterFlowMatchesTheOriginalReference(
+        string seed, int x, int y, int downstreamIndex,
+        double expectedMicro, double expectedAccumulation)
+    {
+        // Reference from actual terrain.js Float32Arrays immediately after
+        // priority-flood and accumulation, before river segment creation.
+        var field = LegacyHydrologyField.Generate(
+            LegacyElevationClimateField.Generate(seed, gridSize: 64));
+        Assert.Equal(downstreamIndex, field.DownstreamAt(x, y));
+        AssertClose(expectedMicro, field.MicroReliefAt(x, y), 5e-4);
+        AssertClose(expectedAccumulation, field.AccumulationAt(x, y), 0.02);
+    }
+
     [Fact]
     public void SeedOrGridNeverChangesTheStoredVault()
     {
