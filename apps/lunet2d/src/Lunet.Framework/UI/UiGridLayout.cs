@@ -79,6 +79,41 @@ public readonly struct UiGridLayout
     }
 
 
+    /// <summary>Identifica uma célula tocada em uma grade rolável, sem percorrer itens.</summary>
+    /// <param name="area">Viewport do controle em coordenadas virtuais.</param>
+    /// <param name="itemCount">Número total de células.</param>
+    /// <param name="offsetY">Deslocamento vertical finito não negativo do conteúdo.</param>
+    /// <param name="position">Posição do dedo no espaço do viewport.</param>
+    /// <returns>Índice da célula ou -1 para fora da área, entre células ou em espaço vazio.</returns>
+    /// <remarks>Consulta O(1) sem alocação. O toque precisa estar dentro do viewport e da célula.
+    /// Não consome entrada, nem confere fases/captura de dedo; combine com TouchGridView.</remarks>
+    public int HitTest(RectangleF area, int itemCount, float offsetY, System.Numerics.Vector2 position)
+    {
+        int columns = GetColumnCount(area, itemCount);
+        if (!float.IsFinite(offsetY) || offsetY < 0)
+            throw new ArgumentOutOfRangeException(nameof(offsetY));
+        if (columns == 0 || area.Width == 0 || area.Height == 0 || !area.Contains(position))
+            return -1;
+
+        double inset = Math.Min(Padding, (double)area.Width / 2d);
+        double width = Math.Max(0d, (Math.Max(0d, area.Width - 2d * inset) - (columns - 1d) * Spacing) / columns);
+        if (width <= 0) return -1;
+        double x = (double)position.X - area.X - inset;
+        double y = (double)position.Y - area.Y + offsetY - Padding;
+        if (x < 0 || y < 0) return -1;
+
+        double pitchX = width + Spacing;
+        double pitchY = CellHeight + (double)Spacing;
+        double column = Math.Floor(x / pitchX);
+        double row = Math.Floor(y / pitchY);
+        if (column >= columns || row < 0 || row >= (itemCount - 1d) / columns + 1d)
+            return -1;
+        if (x - column * pitchX >= width || y - row * pitchY >= CellHeight)
+            return -1;
+        double index = row * columns + column;
+        return index < itemCount ? (int)index : -1;
+    }
+
     /// <summary>Calcula o intervalo de índices com células visíveis em uma janela rolável.</summary>
     /// <param name="area">Viewport de referência; Width calcula colunas, Height é altura visível.</param>
     /// <param name="itemCount">Número total de células, inclusive as fora da janela.</param>

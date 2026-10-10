@@ -180,6 +180,25 @@ public sealed class UiGridLayoutTests
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
     }
 
+
+    [Fact]
+    public void GridHitTestHonorsCellsGapsScrollAndVirtualizedIndices()
+    {
+        var grid = new UiGridLayout(60, 40, spacing: 10, padding: 10);
+        RectangleF bounds = new(20, 30, 200, 130);
+        Assert.Equal(0, grid.HitTest(bounds, 100, 0, new Vector2(40, 60)));
+        Assert.Equal(1, grid.HitTest(bounds, 100, 0, new Vector2(150, 60)));
+        Assert.Equal(-1, grid.HitTest(bounds, 100, 0, new Vector2(111, 60))); // horizontal gap
+        Assert.Equal(-1, grid.HitTest(bounds, 100, 0, new Vector2(40, 82))); // vertical gap
+        Assert.Equal(-1, grid.HitTest(bounds, 100, 0, new Vector2(10, 60))); // outside viewport
+        Assert.Equal(4, grid.HitTest(bounds, 100, 100, new Vector2(40, 60)));
+        Assert.Equal(-1, grid.HitTest(bounds, 3, 100, new Vector2(40, 60)));
+        Assert.Equal(-1, grid.HitTest(bounds, 0, 0, new Vector2(40, 60)));
+        Assert.Equal(-1, grid.HitTest(new(20, 30, 0, 0), 3, 0, new Vector2(20, 30)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => grid.HitTest(bounds, 100, float.NaN, Vector2.Zero));
+        Assert.Throws<ArgumentOutOfRangeException>(() => grid.HitTest(bounds, 100, -1, Vector2.Zero));
+    }
+
     [Fact]
     public void OfflineInventoryExampleCompilesAndRunsInGameHost()
     {
