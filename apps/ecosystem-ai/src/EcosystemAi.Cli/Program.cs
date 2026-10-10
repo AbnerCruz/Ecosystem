@@ -39,6 +39,8 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --web-ui --catalog /pasta/historico [--port 8765] [--journal /pasta/runs]
   abre painel gráfico local em 127.0.0.1; --journal mostra agentes, tarefas
   e artefatos auditados do Runtime sem executar IA.
+--web-ui ... --journal /pasta/runs --embed-text-artifacts habilita prévias
+  dos arquivos textuais ATUAIS (opt-in; potencialmente privados) no navegador local.
 --chat --catalog DIR --project DIR --project-id ID --session-id ID com as opções
   de provedor/modelo/orçamento de execução abre um chat interativo no terminal.
   Cada mensagem gera um run real; histórico é reutilizado explicitamente nesse modo.
@@ -114,14 +116,17 @@ histórico local existe somente mediante --catalog explícito.
             if (webUi)
             {
                 if (listHistory || showHistory || showRun || exportHtml || allowCreate
-                    || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog || chatMode
+                    || useHistory || createProject || createSession || manageCatalog || chatMode
                     || fields.Keys.Any(k => k is not ("--catalog" or "--port" or "--journal")))
                     throw new ArgumentException("--web-ui aceita apenas --catalog, --port e --journal.");
+                if (embedTextArtifacts && !fields.ContainsKey("--journal"))
+                    throw new ArgumentException("--embed-text-artifacts exige --journal.");
                 var port = fields.TryGetValue("--port", out var rawPort)
                     ? int.Parse(rawPort, NumberStyles.None, CultureInfo.InvariantCulture)
                     : CliWebUi.DefaultPort;
                 await CliWebUi.ServeAsync(Need("--catalog"), port,
-                    journalDirectory: fields.GetValueOrDefault("--journal"));
+                    journalDirectory: fields.GetValueOrDefault("--journal"),
+                    embedTextPreviews: embedTextArtifacts);
                 return 0;
             }
             if (fields.ContainsKey("--port"))
