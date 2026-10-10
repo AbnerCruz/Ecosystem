@@ -5,12 +5,16 @@ public sealed class SessionEngine
     private readonly Campaign _campaign;
     private readonly IRuleSystem _rules;
     private readonly IDiceRoller _dice;
+    private readonly CombatEncounter? _combat;
 
-    public SessionEngine(Campaign campaign, IRuleSystem rules, IDiceRoller dice)
+    public SessionEngine(Campaign campaign, IRuleSystem rules, IDiceRoller dice, CombatEncounter? combat = null)
     {
         _campaign = campaign ?? throw new ArgumentNullException(nameof(campaign));
         _rules = rules ?? throw new ArgumentNullException(nameof(rules));
         _dice = dice ?? throw new ArgumentNullException(nameof(dice));
+        if (combat is not null && !ReferenceEquals(combat.Campaign, _campaign))
+            throw new ArgumentException("Combat must belong to this campaign.", nameof(combat));
+        _combat = combat;
     }
 
     public ActionResolution Execute(GameIntent intent)
@@ -30,6 +34,12 @@ public sealed class SessionEngine
         {
             SpeakIntent speak => ResolveSpeak(participant, character, speak),
             SkillCheckIntent check => ResolveSkillCheck(participant, character, check),
+            AttackIntent attack => _combat is null
+                ? ActionResolution.Reject("No combat encounter is active.")
+                : _combat.Attack(attack, _dice),
+            EndCombatTurnIntent endTurn => _combat is null
+                ? ActionResolution.Reject("No combat encounter is active.")
+                : _combat.EndTurn(endTurn),
             _ => ActionResolution.Reject($"Unsupported intent type: {intent.GetType().Name}.")
         };
     }

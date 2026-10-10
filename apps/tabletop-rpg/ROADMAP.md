@@ -12,7 +12,8 @@ Objetivo: provar o modelo de mesa sem UI e sem provedor real.
 - [x] RPG-002 — Persistência local v1: campanha/sessão, versionamento, save atômico, export/import e recuperação. Integrado no PR #168 (`46c295a`), com 22 testes e consistency/simulação verdes; Issue #159.
 - [~] RPG-003 — Modelo de cena, relógio de campanha, quests, inventário, condições e recursos.
   - Issue #308: Core headless e codec v2 com leitura segura de v1; testes de semântica, round-trip e corrupção. CI, revisão e integração **critical/user-data** ainda pendentes; não marcar [x] antes dos gates.
-- [ ] RPG-004 — Runtime de combate independente de sistema específico.
+- [~] RPG-004 — Runtime de combate independente de sistema específico.
+  - Issue #314: encontros headless com ICombatRules, ações e turnos autorizados, HP na campanha e testes de determinismo. **Branch empilhada sobre RPG-003 PR #310 ainda crítico**, não integrável antes da dependência. CI/revisão/integrador pendentes; o cursor de turno é transitório (RPG-032 aprofunda a persistência tática).
 
 **Gate G-R0:** Core salva/retoma uma campanha e executa um fluxo solo determinístico sem UI nem rede.
 
