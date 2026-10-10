@@ -145,12 +145,8 @@
     private IReadOnlyList<WorkspaceExplorerEntry> VisiblePlots =>
         AllPlots.Take(MaxVisiblePlots).ToArray();
 
-    protected override void OnInitialized()
-    {
-        var existing = Workspace.CurrentFolder;
-        CurrentBairro = existing.Length == 0 || !Workspace.SetFolder(existing)
-            ? string.Empty : existing;
-    }
+    protected override void OnInitialized() =>
+        CurrentBairro = Workspace.CurrentFolder;
 
     private void EnterBairro(string path)
     {
