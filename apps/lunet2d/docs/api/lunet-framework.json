@@ -5858,6 +5858,25 @@
           "since": "0.0.1"
         },
         {
+          "id": "M:Lunet.Content.ContentManager.LoadTileMap(System.String)",
+          "name": "LoadTileMap",
+          "kind": "method",
+          "signature": "public TileMap LoadTileMap(string path)",
+          "summary": "L\u00EA um mapa de tiles JSON v1 de Content/Data; o jogo pode carregar a textura por TexturePath.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "path",
+              "type": "string",
+              "description": "Caminho relativo do JSON dentro de Content."
+            }
+          ],
+          "returns": "Mapa imut\u00E1vel, independente de GPU e do Tile Studio.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
           "id": "M:Lunet.Content.ContentManager.LoadTrueTypeFont(System.String,System.Single,System.String,System.Int32)",
           "name": "LoadTrueTypeFont",
           "kind": "method",
@@ -5887,25 +5906,6 @@
             }
           ],
           "returns": "Fonte/atlas compartilhados at\u00E9 ContentManager.Dispose, sem reprocessamento em chamadas iguais.",
-          "examples": [],
-          "related": [],
-          "since": "0.0.1"
-        },
-        {
-          "id": "M:Lunet.Content.ContentManager.LoadTileMap(System.String)",
-          "name": "LoadTileMap",
-          "kind": "method",
-          "signature": "public TileMap LoadTileMap(string path)",
-          "summary": "L\u00EA um mapa de tiles JSON v1 de Content/Data; o jogo pode carregar a textura por TexturePath.",
-          "remarks": "",
-          "parameters": [
-            {
-              "name": "path",
-              "type": "string",
-              "description": "Caminho relativo do JSON dentro de Content."
-            }
-          ],
-          "returns": "Mapa imut\u00E1vel, independente de GPU e do Tile Studio.",
           "examples": [],
           "related": [],
           "since": "0.0.1"

@@ -46,7 +46,7 @@ public sealed class TrueTypeFontTests
         if (bytes is null) return; // Fontes do SO não são requisito para compilação/Android.
         var backend = new RecordingBackend();
         var device = new GraphicsDevice(backend, 360, 640);
-        using var baked = TrueTypeFont.Bake(device, bytes, 26, "Olá!çÁ? Mw €", 512);
+        using var baked = TrueTypeFont.Bake(device, bytes, 26, "Olá!çÁ? Mwi €", 512);
         Assert.Equal(512, baked.Atlas.Width);
         Assert.Equal(512, baked.Atlas.Height);
         Assert.False(baked.IsDisposed);

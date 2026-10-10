@@ -372,7 +372,12 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ### 20261010-chatgpt-lunet-truetype — ChatGPT → integrador — review
 - LUNET-430 / Issue #414 / Fase 4 §7: introduz fontes TrueType pré-rasterizadas ao carregar o jogo, integração direta com SpriteFont e SpriteBatch já existentes.
-- Backend StbTrueTypeSharp 1.26.13 no Framework (.NET 10), C# portátil/sem bridge, uso de unsafe localizado ao baker; pacote sob MIT/Unlicense. Decisão detalhada no ADR 0008 do Lunet.
+- Backend C# StbTrueTypeSharp vendorizado a partir do upstream público no commit 5985efc, compilado com STBSHARP_INTERNAL sem PackageReference no Framework; uso de unsafe localizado. Decisão ADR 0008.
 - `TrueTypeFont.Bake` aceita bytes TTF, charset Unicode explícito, altura e atlas limitados; `ContentManager.LoadTrueTypeFont` cacheia por arquivo/opções e gerencia Dispose automaticamente. Sem fonte do sistema no dispositivo; TTF deve estar no Content ou fornecido pelo jogo.
 - Testes de atlas/corretude/fallback/medida, cache e descarte, ausência de GC no Measure/Draw e exemplo Game.cs compilado com GameCompiler; CI e APK pendentes até verificação. DEVICE ainda não validado.
 - Sem alterar ProjectStore, jogos existentes, formato de projeto, contratos externos ou sistema de exportação; compatibilidade de fontes bitmap preservada. Reuso product-specific. NN-002/008/017/018/022.
+
+### 20261010-chatgpt-lunet-truetype-architecture-fix — ChatGPT → integrador — review
+- A primeira execução do PR #415 acusou ArchitectureTests.FrameworkHasNoPackageReferences. Resolvido sem enfraquecer o teste: código upstream público integrado como fonte interna pinada, nenhum pacote externo no Framework.
+- Corrigidos a ordenação de LoadTrueTypeFont após LoadTileMap na snapshot API e o charset dos testes de métricas proporcionais; testes e consistency da nova revisão pendentes.
+- Não mudou ProjectStore, projetos do usuário, API antiga nem versões de contrato. NN-002/008/017/018/022.

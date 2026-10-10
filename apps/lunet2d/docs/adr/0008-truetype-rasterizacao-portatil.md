@@ -8,7 +8,7 @@ O Lunet já usa `SpriteFont.FromBitmap` e `SpriteBatch.DrawString`, mas não con
 
 ## Decisão
 
-Usar `StbTrueTypeSharp` **1.26.13**, pacote NuGet em C# para parser/bitmap de glifos TTF, licenciado sob MIT/Unlicense. O package é uma dependência interna do `Lunet.Framework` e seus tipos não aparecem na API pública. O código unsafe fica isolado em `TrueTypeFont.Bake`. Glyph sets limitados são rasterizados na carga em atlas RGBA; a fonte renderizável reutiliza a API pública `SpriteFont.FromBitmap`.
+Usar o código-fonte C# de `StbTrueTypeSharp` fixado no commit `5985efcf9ae295508cda180a15dfcf11ba18578d`, em `Lunet.Framework/ThirdParty`, sob domínio público conforme README upstream. Em vez de dependência NuGet, o código é compilado com `STBSHARP_INTERNAL`, preservando a regra de zero PackageReferences do Framework; nenhum tipo de terceiros aparece na API pública. O código unsafe é restrito ao parser interno e ao `TrueTypeFont.Bake`. Glyph sets limitados são rasterizados na carga em atlas RGBA; a fonte renderizável reutiliza a API pública `SpriteFont.FromBitmap`.
 
 `ContentManager.LoadTrueTypeFont` cacheia o arquivo dentro de `Content` e libera texturas no mesmo ciclo dos assets existentes. `TrueTypeFont.Bake` permite bytes vindos de outras fontes e devolve um objeto IDisposable dono do atlas. Código existente de fontes bitmap não é alterado.
 

@@ -25,12 +25,14 @@
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/AgentsChat.md",
     "apps/lunet2d/docs/adr/0008-truetype-rasterizacao-portatil.md",
-    "docs/governance/handoffs/HO-20261010-lunet-truetype.json"
+    "docs/governance/handoffs/HO-20261010-lunet-truetype.json",
+    "apps/lunet2d/src/Lunet.Framework/ThirdParty/StbTrueTypeSharp/"
   ],
   "work_completed": [
     "Backend managed TTF com StbTrueTypeSharp, rasterizado uma vez em atlas RGBA para SpriteFont.FromBitmap, sem alocar no loop Draw/Measure.",
     "Carregamento via ContentManager cacheado por path/opções e gerenciamento de vida da textura.",
-    "Testes unitários de opções inválidas, atlas, medidas proporcionais, fallback Unicode, Dispose, cache e GameCompiler; guia Android offline, metadata pública e ADR."
+    "Testes unitários de opções inválidas, atlas, medidas proporcionais, fallback Unicode, Dispose, cache e GameCompiler; guia Android offline, metadata pública e ADR.",
+    "Após regressão do CI, removida dependência NuGet do Framework por código-fonte público versionado com STBSHARP_INTERNAL; estrutura arquitetural preservada."
   ],
   "verification": [
     {
@@ -59,7 +61,8 @@
   "known_issues": [
     "Somente .ttf de contornos TrueType; sem OpenType/CFF, shaping complexo, kerning, hinting, ligaduras e fonts variáveis.",
     "Os jogos precisam incluir a fonte no Content e rasterizar somente caracteres previamente escolhidos.",
-    "Testes com TTF real usam fontes do SO presentes no CI; ausência no ambiente de testes resulta em teste de integração não exercitado."
+    "Testes com TTF real usam fontes do SO presentes no CI; ausência no ambiente de testes resulta em teste de integração não exercitado.",
+    "O código-fonte do rasterizador de domínio público está vendorizado no Framework, fixado em commit upstream; atualizações exigem revisão."
   ],
   "blockers": [],
   "next_actions": [
