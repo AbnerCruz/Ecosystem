@@ -56,10 +56,10 @@
     {
       "kind": "human",
       "check": "Profiler no Android real",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/profiler-preview.md",
-      "evidence": "Frequência de refresh, interações Android, desempenho real e layout não podem ser fechados por CI."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/450); registro em docs/governance/responses/VAL-HO-20261008-lunet-live-profiler-6332c08de3b3.md."
     }
   ],
   "known_issues": [

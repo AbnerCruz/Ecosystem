@@ -35,12 +35,31 @@
     "docs/governance/handoffs/HO-20261008-lunet-tilemaps.json",
     "docs/governance/responses/VAL-HO-20261008-lunet-tilemaps-636ac6157f1f.md",
     "docs/governance/handoffs/HO-20261010-owner-approved-validation-reconciliation.json",
-    ".github/workflows/decision.yml"
+    ".github/workflows/decision.yml",
+    "docs/governance/handoffs/HO-20261008-lunet-pr330-slider-reconciliation.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-pr330-slider-reconciliation-d29456abd471.md",
+    "docs/governance/handoffs/HO-20261008-lunet-pathfinding.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-pathfinding-72d99bbc5c1a.md",
+    "docs/governance/handoffs/HO-20261008-lunet-live-profiler.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-live-profiler-6332c08de3b3.md",
+    "docs/governance/handoffs/HO-20261008-lunet-laboratory-v2.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-laboratory-v2-867066729e8c.md",
+    "docs/governance/handoffs/HO-20261008-lunet-debug-shapes.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-debug-shapes-c47f4dfe79c9.md",
+    "docs/governance/handoffs/HO-20261008-lunet-camera-follow-bounds.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-camera-follow-bounds-f15231e58e2e.md",
+    "docs/governance/handoffs/HO-20261008-lunet-camera-culling.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-camera-culling-2ce740972b78.md",
+    "docs/governance/handoffs/HO-20261008-lunet-buttons-laboratory.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-buttons-laboratory-ce5ed1025be4.md",
+    "docs/governance/handoffs/HO-20261008-lunet-animation-api.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-animation-api-423c7e822cd6.md"
   ],
   "work_completed": [
     "Reconciliadas as aprovações humanas de Issues #432, #433, #435, #436, #438, #440, #442, #444, #445; origem é a resposta explícita do dono no GitHub, nunca declaração do agente.",
     "Verificadas origem OWNER, task_id, check_hash SHA256(check+newline+object) e estado pending; sem promoção dos gates.",
-    "Corrigido controle de concorrência que cancelava aprovações de Issues diferentes no workflow decision."
+    "Corrigido controle de concorrência que cancelava aprovações de Issues diferentes no workflow decision.",
+    "Reconciliadas também as aprovações das Issues #447, #448, #450, #451, #452, #454, #455, #456, #458; total de 18 validações únicas com hashes conferidos. A segunda Issue #441 é duplicata da #440 e não é gravada duas vezes."
   ],
   "verification": [
     {
