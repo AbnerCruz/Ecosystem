@@ -107,5 +107,5 @@ public sealed class CityWorldLayoutTests
     }
 
     private static VaultFile File(string path, string value) =>
-        new(path, Encoding.UTF8.GetBytes(value), "text/plain");
+        new(path, Encoding.UTF8.GetBytes(value));
 }
