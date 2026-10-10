@@ -14,7 +14,7 @@ public static class CliWebUiHtml
 {
     public static string Render(ProjectCatalog catalog, string csrf,
         IReadOnlyDictionary<string, VisualRunDetails>? auditDetails = null,
-        WebTaskBoard? taskBoard = null)
+        WebTaskBoard? taskBoard = null, AgentRoster? roster = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentException.ThrowIfNullOrWhiteSpace(csrf);
@@ -109,6 +109,10 @@ public static class CliWebUiHtml
         }
         foreach (var project in catalog.Projects)
         {
+            var projectAgents = roster?.Agents.Where(a => a.ProjectId == project.Id).ToArray()
+                ?? Array.Empty<LocalAgentProfile>();
+            var projectTeams = roster?.Teams.Where(t => t.ProjectId == project.Id).ToArray()
+                ?? Array.Empty<LocalAgentTeam>();
             output.Append("<article class='project' id='p-").Append(Escape(project.Id))
                 .Append("'><div class='project-header'><div><h3>").Append(Escape(project.Name))
                 .Append("</h3><small>")
@@ -123,6 +127,57 @@ public static class CliWebUiHtml
                 .Append("<div class='inline'><input id='session-").Append(Escape(project.Id))
                 .Append("' name='title' maxlength='120' required placeholder='Nova conversa'>")
                 .Append("<button type='submit'>+ Sessão</button></div></form>");
+            if (roster is not null)
+            {
+                output.Append("<section class='roster'><h4>Agentes · ")
+                    .Append(projectAgents.Length.ToString(CultureInfo.InvariantCulture))
+                    .Append("</h4>");
+                foreach (var agent in projectAgents)
+                    output.Append("<div class='roster-item'><strong>")
+                        .Append(Escape(agent.Name)).Append("</strong><small>")
+                        .Append(Escape(agent.Instructions)).Append("</small></div>");
+                output.Append("<form method='post' action='/agents' class='roster-form'>")
+                    .Append("<input type='hidden' name='csrf' value='").Append(Escape(csrf)).Append("'>")
+                    .Append("<input type='hidden' name='projectId' value='").Append(Escape(project.Id)).Append("'>")
+                    .Append("<label for='agent-name-").Append(Escape(project.Id)).Append("'>Nome do agente</label>")
+                    .Append("<input id='agent-name-").Append(Escape(project.Id))
+                    .Append("' name='name' maxlength='80' required placeholder='Desenvolvedor'>")
+                    .Append("<label for='agent-prompt-").Append(Escape(project.Id)).Append("'>Instruções (não inclua segredos)</label>")
+                    .Append("<textarea id='agent-prompt-").Append(Escape(project.Id))
+                    .Append("' name='instructions' maxlength='2048' required rows='3' ")
+                    .Append("placeholder='Atue na especialidade informada sem ampliar permissões'></textarea>")
+                    .Append("<button type='submit'>+ Agente</button></form>")
+                    .Append("<h4>Equipes · ").Append(projectTeams.Length.ToString(CultureInfo.InvariantCulture))
+                    .Append("</h4>");
+                foreach (var team in projectTeams)
+                {
+                    var producer = projectAgents.First(a => a.Id == team.ProducerId);
+                    var reviewer = projectAgents.First(a => a.Id == team.ReviewerId);
+                    output.Append("<div class='roster-item'><strong>").Append(Escape(team.Name))
+                        .Append("</strong><small>Produção: ").Append(Escape(producer.Name))
+                        .Append(" · Revisão designada: ").Append(Escape(reviewer.Name))
+                        .Append("</small></div>");
+                }
+                if (projectAgents.Length >= 2)
+                {
+                    output.Append("<form method='post' action='/teams' class='roster-form'>")
+                        .Append("<input type='hidden' name='csrf' value='").Append(Escape(csrf)).Append("'>")
+                        .Append("<input type='hidden' name='projectId' value='").Append(Escape(project.Id)).Append("'>")
+                        .Append("<label>Nome da equipe</label><input name='name' maxlength='80' required>")
+                        .Append("<label>Produtor</label><select name='producerId'>");
+                    foreach (var agent in projectAgents)
+                        output.Append("<option value='").Append(Escape(agent.Id)).Append("'>")
+                            .Append(Escape(agent.Name)).Append("</option>");
+                    output.Append("</select><label>Revisor independente</label><select name='reviewerId'>");
+                    foreach (var agent in projectAgents)
+                        output.Append("<option value='").Append(Escape(agent.Id)).Append("'>")
+                            .Append(Escape(agent.Name)).Append("</option>");
+                    output.Append("</select><button type='submit'>+ Equipe</button></form>");
+                }
+                else
+                    output.Append("<p class='hint'>Cadastre dois agentes para formar uma equipe com revisão independente.</p>");
+                output.Append("<p class='hint'>Equipe designa funções; revisão automática ainda não está habilitada.</p></section>");
+            }
             if (project.Sessions.Count == 0)
                 output.Append("<p class='hint'>Nenhuma sessão. Crie a primeira acima.</p>");
             foreach (var session in project.Sessions)
@@ -139,6 +194,15 @@ public static class CliWebUiHtml
                         .Append("<input type='hidden' name='csrf' value='").Append(Escape(csrf)).Append("'>")
                         .Append("<input type='hidden' name='projectId' value='").Append(Escape(project.Id)).Append("'>")
                         .Append("<input type='hidden' name='sessionId' value='").Append(Escape(session.Id)).Append("'>")
+                        .Append("<label>Executor</label><select name='assignee'>")
+                        .Append("<option value='default'>Assistente padrão</option>");
+                    foreach (var agent in projectAgents)
+                        output.Append("<option value='agent:").Append(Escape(agent.Id)).Append("'>Agente: ")
+                            .Append(Escape(agent.Name)).Append("</option>");
+                    foreach (var team in projectTeams)
+                        output.Append("<option value='team:").Append(Escape(team.Id)).Append("'>Equipe: ")
+                            .Append(Escape(team.Name)).Append(" (produtor)</option>");
+                    output.Append("</select>")
                         .Append("<label for='goal-").Append(Escape(session.Id)).Append("'>Nova tarefa supervisionada</label>")
                         .Append("<textarea id='goal-").Append(Escape(session.Id))
                         .Append("' name='goal' rows='3' maxlength='16384' required ")
@@ -281,7 +345,7 @@ summary{cursor:pointer;list-style:none}summary::-webkit-details-marker{display:n
 .turn{border:1px solid #2f4159;background:#172335;padding:12px;border-radius:10px;margin-bottom:9px;overflow-wrap:anywhere}.turn.assistant{border-left:3px solid #5bbaff}.turn.user{border-left:3px solid #8a9fb8}
 .turn>div{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:.8rem}.turn time{color:#afbed3}.turn p{white-space:pre-wrap;margin:8px 0 0}
 .run{display:flex;gap:10px;align-items:start;padding:12px 3px;border-top:1px solid #344459}.run strong{overflow-wrap:anywhere;font-size:.77rem}.run small{display:block;overflow-wrap:anywhere}.empty{padding:20px;border:1px dashed #3a4c63;border-radius:12px}
-.audit-board{border:1px solid #325478;background:linear-gradient(135deg,#12243a,#101a2a);border-radius:16px;padding:20px;margin:0 0 22px}.board-heading{display:flex;justify-content:space-between;align-items:start;gap:12px}.board-heading h2{margin:0}.board-heading p:last-child{color:#b8cce0;margin:8px 0}.board-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.agent-card{border:1px solid #355473;border-radius:12px;margin:8px 0;background:#132336}.agent-card>summary{display:flex;justify-content:space-between;gap:12px;padding:13px}.agent-card>summary span:first-child{display:grid;gap:4px;overflow-wrap:anywhere}.agent-tasks{display:flex;flex-wrap:wrap;gap:9px;padding:12px;border-top:1px solid #355473}.agent-tasks a{display:inline-block;border:1px solid #426187;border-radius:9px;padding:9px 12px;text-decoration:none}.execution-status{border:1px solid #335e79;border-radius:16px;padding:18px;margin-bottom:22px;background:#14283a}.execution-status h2{margin:0}.execution-status p:last-child{color:#b9d5e6}.execution-budget{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.execution-budget span{background:#092035;border:1px solid #365d79;border-radius:9px;padding:9px 12px;font-size:.85rem}.task-form{border:1px solid #426483;background:#112538;border-radius:10px;padding:12px;margin-bottom:12px}.task-form label{margin:0 0 8px}.task-form textarea{display:block;min-height:96px;width:100%;background:#0d1421;color:#fff;border:1px solid #53647e;border-radius:9px;padding:12px;resize:vertical;font:inherit}.task-form button{margin-top:10px}.task-form button:disabled,.task-form textarea:disabled{opacity:.5;cursor:not-allowed}.task-form .hint{margin:8px 0 0;font-size:.8rem}.task-form textarea:focus-visible{outline:3px solid #6bb3ff;outline-offset:3px}.run-body{min-width:0;flex:1}.run-audit{border:1px solid #3a526d;border-radius:10px;margin:9px 0 0;overflow:hidden}.run-audit>summary{padding:10px 12px;color:#aad8ff}.run-audit>div{padding:10px 13px;border-top:1px solid #3a526d}.run-audit p{margin:5px 0;overflow-wrap:anywhere}.run-audit li{overflow-wrap:anywhere}.artifact-preview-wrap{margin:7px 0;border:1px solid #34587a;border-radius:9px}.artifact-preview-wrap>summary{padding:10px 12px;color:#b8dbff}.artifact-preview{margin:0;padding:13px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.82rem;background:#0a1422;border-top:1px solid #34587a;max-height:440px;overflow-y:auto}.warning{color:#ffd394!important}.run:target,.session:target{outline:2px solid #6bb3ff;outline-offset:2px}footer{margin:30px 0 0;color:#9daec5;font-size:.79rem;border-top:1px solid #253449;padding-top:20px}.error{max-width:750px;margin:auto;padding:40px 18px}.error p{white-space:pre-wrap;overflow-wrap:anywhere}
+.audit-board{border:1px solid #325478;background:linear-gradient(135deg,#12243a,#101a2a);border-radius:16px;padding:20px;margin:0 0 22px}.board-heading{display:flex;justify-content:space-between;align-items:start;gap:12px}.board-heading h2{margin:0}.board-heading p:last-child{color:#b8cce0;margin:8px 0}.board-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.agent-card{border:1px solid #355473;border-radius:12px;margin:8px 0;background:#132336}.agent-card>summary{display:flex;justify-content:space-between;gap:12px;padding:13px}.agent-card>summary span:first-child{display:grid;gap:4px;overflow-wrap:anywhere}.agent-tasks{display:flex;flex-wrap:wrap;gap:9px;padding:12px;border-top:1px solid #355473}.agent-tasks a{display:inline-block;border:1px solid #426187;border-radius:9px;padding:9px 12px;text-decoration:none}.execution-status{border:1px solid #335e79;border-radius:16px;padding:18px;margin-bottom:22px;background:#14283a}.execution-status h2{margin:0}.execution-status p:last-child{color:#b9d5e6}.execution-budget{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.execution-budget span{background:#092035;border:1px solid #365d79;border-radius:9px;padding:9px 12px;font-size:.85rem}.task-form{border:1px solid #426483;background:#112538;border-radius:10px;padding:12px;margin-bottom:12px}.task-form label{margin:0 0 8px}.task-form textarea{display:block;min-height:96px;width:100%;background:#0d1421;color:#fff;border:1px solid #53647e;border-radius:9px;padding:12px;resize:vertical;font:inherit}.task-form button{margin-top:10px}.task-form button:disabled,.task-form textarea:disabled{opacity:.5;cursor:not-allowed}.task-form .hint{margin:8px 0 0;font-size:.8rem}.task-form textarea:focus-visible{outline:3px solid #6bb3ff;outline-offset:3px}.run-body{min-width:0;flex:1}.run-audit{border:1px solid #3a526d;border-radius:10px;margin:9px 0 0;overflow:hidden}.run-audit>summary{padding:10px 12px;color:#aad8ff}.run-audit>div{padding:10px 13px;border-top:1px solid #3a526d}.run-audit p{margin:5px 0;overflow-wrap:anywhere}.run-audit li{overflow-wrap:anywhere}.artifact-preview-wrap{margin:7px 0;border:1px solid #34587a;border-radius:9px}.artifact-preview-wrap>summary{padding:10px 12px;color:#b8dbff}.artifact-preview{margin:0;padding:13px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.82rem;background:#0a1422;border-top:1px solid #34587a;max-height:440px;overflow-y:auto}.warning{color:#ffd394!important}.run:target,.session:target{outline:2px solid #6bb3ff;outline-offset:2px}.roster{margin:15px 0;padding:13px;background:#101e2e;border:1px solid #385575;border-radius:11px}.roster h4{margin:14px 0 9px}.roster-item{padding:9px 0;border-bottom:1px solid #2f475e}.roster-item strong,.roster-item small{display:block;overflow-wrap:anywhere}.roster-form{margin:12px 0;padding:12px;border:1px dashed #48617c;border-radius:10px}.roster-form button{margin-top:12px}.roster textarea,.roster select,.task-form select{display:block;width:100%;min-height:43px;padding:10px;background:#0d1421;color:#f4f7ff;border:1px solid #53647e;border-radius:8px;font:inherit}.roster textarea{resize:vertical}.roster textarea:focus-visible,.roster select:focus-visible,.task-form select:focus-visible{outline:3px solid #6bb3ff;outline-offset:2px}footer{margin:30px 0 0;color:#9daec5;font-size:.79rem;border-top:1px solid #253449;padding-top:20px}.error{max-width:750px;margin:auto;padding:40px 18px}.error p{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:760px){.board-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.board-heading{flex-direction:column}.top{align-items:flex-start}.status{font-size:.65rem;max-width:145px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:minmax(0,1fr)}.panel{padding:15px}}
 @media(max-width:370px){.inline{flex-direction:column}.status{display:none}.top{padding:16px}}
 </style></head><body>

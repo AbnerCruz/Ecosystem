@@ -85,8 +85,9 @@ public static class CliWebUi
                     : await CliVisualRunDetails.ReadAsync(snapshot, journalPath,
                         includeTextPreviews: embedTextPreviews,
                         cancellationToken: ctx.RequestAborted);
+                var roster = new LocalAgentRosterStore(catalogPath).Read();
                 await RespondHtml(ctx, CliWebUiHtml.Render(snapshot, csrfToken, audited,
-                    taskRunner?.Board));
+                    taskRunner?.Board, roster));
             }
             catch (Exception e) when (IsExpectedError(e))
             {
@@ -143,6 +144,60 @@ public static class CliWebUi
             }
         });
 
+        app.MapPost("/agents", async ctx =>
+        {
+            if (!await VerifyPost(ctx, port, csrfToken)) return;
+            try
+            {
+                _ = ReadCatalog();
+                var form = await ctx.Request.ReadFormAsync();
+                if (!ValidForm(form, "csrf", "projectId", "name", "instructions"))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    return;
+                }
+                new LocalAgentRosterStore(catalogPath).CreateAgent(
+                    form["projectId"].ToString(), form["name"].ToString(),
+                    form["instructions"].ToString());
+                ctx.Response.StatusCode = StatusCodes.Status303SeeOther;
+                ctx.Response.Headers.Location = "/#p-" +
+                    Uri.EscapeDataString(form["projectId"].ToString());
+            }
+            catch (Exception e) when (IsExpectedError(e))
+            {
+                await RespondHtml(ctx, CliWebUiHtml.RenderError(
+                    "Agente não criado.", "Verifique os campos e os limites do projeto."),
+                    StatusCodes.Status400BadRequest);
+            }
+        });
+
+        app.MapPost("/teams", async ctx =>
+        {
+            if (!await VerifyPost(ctx, port, csrfToken)) return;
+            try
+            {
+                _ = ReadCatalog();
+                var form = await ctx.Request.ReadFormAsync();
+                if (!ValidForm(form, "csrf", "projectId", "name", "producerId", "reviewerId"))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    return;
+                }
+                new LocalAgentRosterStore(catalogPath).CreateTeam(
+                    form["projectId"].ToString(), form["name"].ToString(),
+                    form["producerId"].ToString(), form["reviewerId"].ToString());
+                ctx.Response.StatusCode = StatusCodes.Status303SeeOther;
+                ctx.Response.Headers.Location = "/#p-" +
+                    Uri.EscapeDataString(form["projectId"].ToString());
+            }
+            catch (Exception e) when (IsExpectedError(e))
+            {
+                await RespondHtml(ctx, CliWebUiHtml.RenderError(
+                    "Equipe não criada.", "Selecione dois agentes diferentes do mesmo projeto."),
+                    StatusCodes.Status400BadRequest);
+            }
+        });
+
         if (taskRunner is not null)
         {
             app.MapPost("/tasks", async ctx =>
@@ -152,7 +207,8 @@ public static class CliWebUi
                 {
                     _ = ReadCatalog(); // Mesmo guard do GET, antes da execução.
                     var form = await ctx.Request.ReadFormAsync();
-                    if (!ValidForm(form, "csrf", "projectId", "sessionId", "goal"))
+                    if (!ValidForm(form, "csrf", "projectId", "sessionId", "goal")
+                        && !ValidForm(form, "csrf", "projectId", "sessionId", "goal", "assignee"))
                     {
                         ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
                         return;
@@ -160,7 +216,9 @@ public static class CliWebUi
                     var result = await taskRunner.SubmitAsync(
                         form["projectId"].ToString(),
                         form["sessionId"].ToString(),
-                        form["goal"].ToString());
+                        form["goal"].ToString(),
+                        form.TryGetValue("assignee", out var assignee)
+                            ? assignee.ToString() : "default");
                     switch (result.State)
                     {
                         case WebTaskState.Succeeded:
