@@ -11339,7 +11339,7 @@
       "summary": "Atlas de glifos TrueType gerado offline, compat\u00EDvel com SpriteBatch.DrawString.",
       "remarks": "Rasteriza\u00E7\u00E3o feita apenas ao carregar, sem servi\u00E7o de rede nem depend\u00EAncia de c\u00F3digo nativo do Android. O jogo fornece os bytes .ttf e controla a vida do objeto. Libere-o ao descarregar o jogo. N\u00E3o oferece shaping complexo, kerning, fontes coloridas ou OTF/CFF; glifos ausentes usam \u0027?\u0027. O SpriteFont antigo continua compat\u00EDvel e n\u00E3o assume a posse de outras texturas.",
       "examples": [
-        "\u0060\u0060\u0060\nusing var baked = TrueTypeFont.Bake(device, System.IO.File.ReadAllBytes(\u0022Content/Fonts/ui.ttf\u0022), 28);\nbatch.Begin();\nbatch.DrawString(baked.Font, \u0022Ol\u00E1!\u0022, new Vector2(16, 16), Color.White);\nbatch.End();\n\u0060\u0060\u0060"
+        "\u0060\u0060\u0060\nvar baked = content.LoadTrueTypeFont(\u0022Fonts/ui.ttf\u0022, 28);\nbatch.Begin();\nbatch.DrawString(baked.Font, \u0022Ol\u00E1!\u0022, new Vector2(16, 16), Color.White);\nbatch.End();\n\u0060\u0060\u0060"
       ],
       "related": [],
       "since": "0.0.1",
