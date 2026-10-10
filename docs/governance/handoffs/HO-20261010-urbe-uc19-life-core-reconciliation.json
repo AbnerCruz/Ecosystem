@@ -1,0 +1,79 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-uc19-life-core-reconciliation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T18:43:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-native-reconciliation",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-legacy-life-core-20261010",
+  "base_commit": "f1db20f4ccdb1f39b8f0459e02cb51da12aa3794",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldLife.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldLifeTests.cs",
+    "docs/governance/handoffs/HO-20261010-urbe-uc19-life-core-reconciliation.json"
+  ],
+  "work_completed": [
+    "Recuperado LegacyWorldLife de PR #428 sem trazer Urbe.UI/World.razor/Blazor obsoletos; relógio/dia-noite/chuva/neblina em Urbe.Core independente do renderer.",
+    "Adicionados testes de keyframes reais, ciclo do relógio, avanço determinístico, clima e rejeição de argumentos inválidos.",
+    "Este é um subset do simulador vivo: habitantes, fauna, eventos, neve visual, renderização e integração Avalonia seguem pendentes em UC-19."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (LegacyWorldLifeTests)",
+      "result": "pending",
+      "evidence": "CI urbe-checks do PR."
+    }
+  ],
+  "known_issues": [
+    "Classe não está ainda ligada à UI Avalonia; não declarar simulação completa ou gate DEVICE."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar pelo mecanismo governado após CI.",
+    "Ligar relógio/luz/clima ao WorldView nativo e continuar moradores/animais/eventos com oráculo da 1.8.4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Simulação portável Core canônica, sem duplicação em Blazor."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Porte direto do código já produzido na PR #428 com testes."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff e referência do PR original preservados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma validação em aparelho presumida."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 permanece aberta."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Código novo de domínio dentro de Urbe.Core sem schema/persistência/interface/distribuição."
+  }
+}
