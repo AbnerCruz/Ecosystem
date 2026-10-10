@@ -14,7 +14,7 @@
   "branch": "feat/urbe-native-create-note-20261010",
   "base_commit": "b0e1cb717062668b7c90361599ae218b28fc98f8",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/467",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
     "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
