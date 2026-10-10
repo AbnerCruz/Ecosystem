@@ -26,10 +26,14 @@ public sealed class MainView : Grid
     private readonly Image _houseImage = new() { Width = 72, Height = 84, Stretch = Stretch.Uniform };
     private readonly TextBlock _loading = new();
     private readonly Dictionary<string, string> _contents = new(StringComparer.Ordinal);
+    private readonly IUrbeVaultStorage? _vault;
+    private readonly TextBlock _vaultName = new();
+    private VaultSnapshot? _snapshot;
     private string _today = DateTime.Now.ToString("yyyy-MM-dd");
 
-    public MainView()
+    public MainView(IUrbeVaultStorage? storage = null)
     {
+        _vault = storage ?? UrbeApp.VaultStorageFactory?.Invoke();
         Background = UrbeTheme.Brush(UrbeTheme.Bg);
         ColumnDefinitions = new ColumnDefinitions("Auto,*");
         RowDefinitions = new RowDefinitions("*,Auto");
@@ -37,6 +41,7 @@ public sealed class MainView : Grid
         World = new WorldView();
         Editor = new EditorOverlay { IsVisible = false };
         Editor.Closed += (_, _) => SaveEditorToMemory();
+        if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
 
         _stage.Children.Add(World);
         _stage.Children.Add(TopBar());
@@ -62,12 +67,62 @@ public sealed class MainView : Grid
     public WorldView World { get; }
     public EditorOverlay Editor { get; }
 
+    public async Task InitializeAsync()
+    {
+        if (_vault is not null)
+        {
+            try
+            {
+                var snapshot = await _vault.RestoreAsync();
+                if (snapshot is not null) { await ShowVaultAsync(snapshot); return; }
+            }
+            catch (Exception ex) { _loading.Text = "Vault indisponível: " + ex.Message; }
+        }
+        await LoadAsync(TutorialNotes.Load());
+    }
+
+    public async Task OpenVaultAsync()
+    {
+        if (_vault is null) return;
+        try
+        {
+            var snapshot = await _vault.PickAsync();
+            if (snapshot is not null) await ShowVaultAsync(snapshot);
+        }
+        catch (Exception ex)
+        {
+            _loading.Text = "Não foi possível abrir a pasta: " + ex.Message;
+            _loading.IsVisible = true;
+        }
+    }
+
+    private async Task ShowVaultAsync(VaultSnapshot snapshot)
+    {
+        _snapshot = snapshot;
+        Editor.SaveOnClose = !snapshot.IsReadOnly;
+        var notes = snapshot.Documents.Where(d => d.Text is not null)
+            .Select(d => new CityNote(d.Path, d.Text!)).ToArray();
+        await LoadAsync(notes, snapshot.Mundo ?? "urbe");
+        _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "Pasta conectada";
+    }
+
+    private async Task SaveNoteAsync(CityNote note)
+    {
+        if (_vault is null || !_vault.IsConnected || _snapshot is null)
+            throw new InvalidOperationException("Selecione uma pasta real para gravar.");
+        if (_snapshot.IsReadOnly)
+            throw new InvalidOperationException("Vault em modo somente leitura.");
+        await _vault.SaveExistingNoteAsync(note.Path, note.Content);
+        _contents[note.Path] = note.Content;
+    }
+
     /// <summary>
     /// Generates the 1.8.4 world and opens the files as on the first open of a vault
     /// (LegacyCity.OpenFirstTime), off the UI thread; then frames all houses (city.fit).
     /// </summary>
     public async Task LoadAsync(IReadOnlyList<CityNote> files, string seed = "urbe")
     {
+        _contents.Clear();
         foreach (var f in files) _contents[f.Path] = f.Content;
         _today = DateTime.Now.ToString("yyyy-MM-dd");
         try
@@ -107,6 +162,10 @@ public sealed class MainView : Grid
     {
         var dot = new Border { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), Background = UrbeTheme.Brush(UrbeTheme.Ok), VerticalAlignment = VerticalAlignment.Center };
         var name = new TextBlock { Text = "Urbe", FontWeight = FontWeight.SemiBold, FontSize = 14, Foreground = UrbeTheme.Brush(UrbeTheme.Text), VerticalAlignment = VerticalAlignment.Center };
+        _vaultName.Text = "Tutorial · prévia";
+        _vaultName.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        _vaultName.FontSize = 11;
+        _vaultName.VerticalAlignment = VerticalAlignment.Center;
         var sep = new TextBlock { Text = "·", Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center };
         _biome.Foreground = UrbeTheme.Brush(UrbeTheme.Text2);
         _biome.FontSize = 14;
@@ -117,20 +176,28 @@ public sealed class MainView : Grid
             CornerRadius = new CornerRadius(22),
             Padding = new Thickness(14, 0, 16, 0),
             Height = 42,
-            Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { dot, name, sep, _biome } }
+            Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { dot, name, sep, _biome, _vaultName } }
         };
         var buttons = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Children = { RoundButton(UrbeTheme.Icons.Search, "Buscar"), RoundButton(UrbeTheme.Icons.Map, "Mapa"), RoundButton(UrbeTheme.Icons.Sliders, "Personalizar") }
+            Children = { RoundButton(UrbeTheme.Icons.Search, "Buscar"), RoundButton(UrbeTheme.Icons.Map, "Mapa"), RoundButton(UrbeTheme.Icons.Sliders, "Personalizar"), VaultButton() }
         };
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10), VerticalAlignment = VerticalAlignment.Top };
         SetColumn(buttons, 2);
         bar.Children.Add(pill);
         bar.Children.Add(buttons);
         return bar;
+    }
+
+    private Button VaultButton()
+    {
+        var button = RoundButton(UrbeTheme.Icons.Notes, "Cidades · selecionar pasta do vault");
+        button.IsEnabled = _vault is not null;
+        button.Click += async (_, _) => await OpenVaultAsync();
+        return button;
     }
 
     private static Button RoundButton(string icon, string tip)
