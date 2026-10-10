@@ -101,7 +101,7 @@
     {
         <div class="world-map-frame" aria-label="Mapa top-down da cidade e dos bairros"
              tabindex="0" style="@ZoomStyle">
-            <div class="world-map">
+            <div class="world-map" style="@WorldArt.BoardBackgroundStyle">
                 <div class="world-plots world-tiles">
                     @foreach (var tile in CityTiles)
                     {
@@ -109,22 +109,26 @@
                         if (entry is null)
                         {
                             <button type="button" class="world-plot world-empty-lot @WorldArt.TerrainClass(tile.Column, tile.Row)"
+                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
                                     disabled="@(!CanCreate || (_positionMode && _selectedHouse is null))"
                                     aria-label="@($"Terreno vazio, coluna {tile.Column + 1}, linha {tile.Row + 1}. " +
                                         (_positionMode ? "Reposicionar casa" : "Construir casa"))"
                                     @onclick="() => ActivateEmptyLot(tile)">
-                                <span aria-hidden="true" class="world-grass"></span>
+                                <span aria-hidden="true" class="world-grass"
+                                      style="@WorldArt.DecorationBackgroundStyle(tile.Column, tile.Row)"></span>
                                 <span class="world-plot-kind">@(_positionMode ? "Posicionar aqui" : "Construir aqui")</span>
                             </button>
                         }
                         else if (entry.IsFolder)
                         {
                             <button type="button" class="world-plot world-district"
+                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
                                     title="@entry.Path"
                                     disabled="@_positionMode"
                                     aria-label="@($"Entrar no bairro {entry.Name}")"
                                     @onclick="() => EnterBairro(entry.Path)">
-                                <span class="world-building world-sprite-hall" aria-hidden="true"></span>
+                                <span class="world-building world-sprite-hall" aria-hidden="true"
+                                      style="@WorldArt.BuildingBackgroundStyle(entry.Path, true)"></span>
                                 <span class="world-plot-label">@entry.Name</span>
                                 <span class="world-plot-kind">Bairro</span>
                             </button>
@@ -133,12 +137,14 @@
                         {
                             <button type="button"
                                     class="world-plot world-house @(string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase) ? "world-plot-selected" : "")"
+                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
                                     title="@entry.Path"
                                     disabled="@(!entry.Editable)"
                                     aria-pressed="@(_positionMode && string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase))"
                                     aria-label="@(_positionMode ? $"Selecionar casa {entry.Name} para reposicionar" : $"Abrir nota {entry.Name}")"
                                     @onclick="() => SelectOrOpenHouse(entry.Path)">
-                                <span class="world-building @WorldArt.BuildingClass(entry.Path, false, Workspace.World.ProjectDocument(entry.Path)?.Sprite)" aria-hidden="true"></span>
+                                <span class="world-building @WorldArt.BuildingClass(entry.Path, false, Workspace.World.ProjectDocument(entry.Path)?.Sprite)" aria-hidden="true"
+                                      style="@WorldArt.BuildingBackgroundStyle(entry.Path, false, Workspace.World.ProjectDocument(entry.Path)?.Sprite)"></span>
                                 <span class="world-plot-label">@entry.Name</span>
                                 <span class="world-plot-kind">@(_positionMode ? "Selecionar" : "Abrir nota")</span>
                             </button>
