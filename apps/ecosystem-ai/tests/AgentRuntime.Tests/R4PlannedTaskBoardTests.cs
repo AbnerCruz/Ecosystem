@@ -110,7 +110,9 @@ public sealed class R4PlannedTaskBoardTests
                 Assert.Single(store.Read().Projects.Single().Sessions.Single().Runs);
                 var updatedHtml = await http.GetStringAsync("/");
                 Assert.Contains("Resposta presente e verificada", updatedHtml);
-                Assert.Contains("Critério: Citar evidências em texto", updatedHtml);
+                Assert.Contains("Critério: ", updatedHtml);
+                Assert.Contains(System.Text.Encodings.Web.HtmlEncoder.Default.Encode(
+                    "Citar evidências em texto"), updatedHtml);
 
                 using (var cancel = await http.PostAsync("/task-cancel",
                     new FormUrlEncodedContent(new Dictionary<string, string>
