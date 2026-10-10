@@ -20,11 +20,14 @@ public static class CliWebUi
     public const int MaxFormBytes = 32 * 1024;
 
     public static WebApplication CreateApp(string catalogDirectory, int port = DefaultPort,
-        string? journalDirectory = null)
+        string? journalDirectory = null, bool embedTextPreviews = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(catalogDirectory);
         if (port is < 1024 or > 65535)
             throw new ArgumentOutOfRangeException(nameof(port), "Porta permitida: 1024–65535.");
+
+        if (embedTextPreviews && journalDirectory is null)
+            throw new ArgumentException("Prévia de texto exige --journal.");
 
         var catalogPath = Path.GetFullPath(catalogDirectory);
         var journalPath = journalDirectory is null ? null : Path.GetFullPath(journalDirectory);
@@ -79,6 +82,7 @@ public static class CliWebUi
                 var snapshot = ReadCatalog();
                 var audited = journalPath is null ? null
                     : await CliVisualRunDetails.ReadAsync(snapshot, journalPath,
+                        includeTextPreviews: embedTextPreviews,
                         cancellationToken: ctx.RequestAborted);
                 await RespondHtml(ctx, CliWebUiHtml.Render(snapshot, csrfToken, audited));
             }
@@ -141,13 +145,16 @@ public static class CliWebUi
     }
 
     public static async Task ServeAsync(string catalogDirectory, int port = DefaultPort,
-        CancellationToken cancellationToken = default, string? journalDirectory = null)
+        CancellationToken cancellationToken = default, string? journalDirectory = null,
+        bool embedTextPreviews = false)
     {
-        await using var app = CreateApp(catalogDirectory, port, journalDirectory);
+        await using var app = CreateApp(catalogDirectory, port, journalDirectory, embedTextPreviews);
         Console.WriteLine($"Ecosystem AI — UI local: http://127.0.0.1:{port}");
         Console.WriteLine("Somente neste dispositivo, sem IA, rede externa ou gasto de modelo. Ctrl+C encerra.");
         if (journalDirectory is not null)
             Console.WriteLine("Auditoria do Runtime ativa: agentes, tarefas, verificações e artefatos, sem payloads.");
+        if (embedTextPreviews)
+            Console.WriteLine("PRÉVIAS ATIVADAS: conteúdo de arquivos textuais atuais será exibido no browser local.");
         await ((IHost)app).RunAsync(cancellationToken);
     }
 
