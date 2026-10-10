@@ -69,6 +69,11 @@ public sealed class WorkspaceSession : IDisposable
     private bool _loading;
     private long _persistenceRevision;
     private long _savedPersistenceRevision;
+    private bool _spatialChanges;
+
+    /// <summary>True only if the physical map file needs a new write.</summary>
+    public bool HasSpatialChanges => _spatialChanges;
+    public WorldProjection World { get; }
 
     /// <summary>Raised for actual note/folder changes, not navigation or editor tabs.</summary>
     public event EventHandler? PersistenceChanged;
@@ -99,6 +104,7 @@ public sealed class WorkspaceSession : IDisposable
     public WorkspaceSession()
     {
         Knowledge = new KnowledgeIndex(Documents);
+        World = new WorldProjection(Documents);
         Documents.Changed += OnDocumentChanged;
     }
 
@@ -136,6 +142,7 @@ public sealed class WorkspaceSession : IDisposable
     {
         _savedPersistenceRevision = _persistenceRevision;
         _pendingMutations.Clear();
+        _spatialChanges = false;
         Revision++;
         PersistenceChanged?.Invoke(this, EventArgs.Empty);
     }
@@ -214,6 +221,7 @@ public sealed class WorkspaceSession : IDisposable
     public void Dispose()
     {
         Documents.Changed -= OnDocumentChanged;
+        World.Dispose();
         Knowledge.Dispose();
         GC.SuppressFinalize(this);
     }
@@ -255,6 +263,10 @@ public sealed class WorkspaceSession : IDisposable
             _loading = false;
         }
         _savedPersistenceRevision = _persistenceRevision;
+        _spatialChanges = false;
+        World.Load(snapshot.RecoveredFromJournal
+            ? WorldMapMetadata.Empty(true)
+            : WorldMapMetadata.FromVault(snapshot));
         IsReadOnly = snapshot.IsReadOnly;
         CurrentDocument = null;
         CurrentFolder = string.Empty;
@@ -282,6 +294,8 @@ public sealed class WorkspaceSession : IDisposable
             _loading = false;
         }
         _savedPersistenceRevision = _persistenceRevision;
+        _spatialChanges = false;
+        World.Load(WorldMapMetadata.Empty(readOnly));
 
         _paths.Clear();
         _explicitFolders.Clear();
@@ -712,6 +726,46 @@ public sealed class WorkspaceSession : IDisposable
                 WorkspaceMutationKind.Move,
                 source,
                 destination));
+        OnMutationChanged();
+        Revision++;
+        return true;
+    }
+
+    /// <summary>
+    /// Places one Markdown house on the eight-by-eight City tile map.
+    /// No bytes are written until the native host commits metadata.json.
+    /// </summary>
+    public bool PlaceHouse(string? path, int column, int row)
+    {
+        if (IsReadOnly || World.IsReadOnly ||
+            column is < 0 or >= 8 || row is < 0 or >= 8)
+            return false;
+
+        var document = Documents.Get(path);
+        if (document is null || !ArtifactModel.IsNote(document.Path))
+            return false;
+
+        var current = World.ProjectDocument(document.Id);
+        if (current is null)
+            return false;
+        if (current.X == column && current.Y == row)
+            return true;
+
+        // The UI resolves the visible tile occupancy. Repeat the collision
+        // guard here so other callers cannot overlap two saved coordinates.
+        if (Documents.List().Any(other =>
+        {
+            if (other.Id == document.Id)
+                return false;
+            var position = World.ProjectDocument(other.Id);
+            return position?.X == column && position.Y == row;
+        }))
+            return false;
+
+        if (World.SetSpatial(document.Id, column, row) is null)
+            return false;
+
+        _spatialChanges = true;
         OnMutationChanged();
         Revision++;
         return true;
