@@ -250,6 +250,10 @@ public sealed class LocalTeamReviewStore
         }
     }
 
+    private static string Hash(ReviewBody body) =>
+        Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(body, Json)))
+            .ToLowerInvariant();
+
     private static string Digest(string text) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(text))).ToLowerInvariant();
 
