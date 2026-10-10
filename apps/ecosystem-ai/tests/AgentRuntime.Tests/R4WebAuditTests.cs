@@ -128,7 +128,7 @@ public sealed class R4WebAuditTests
                 var error = await http.GetAsync("/");
                 Assert.Equal(HttpStatusCode.BadRequest, error.StatusCode);
                 var body = await error.Content.ReadAsStringAsync();
-                Assert.Contains("Catálogo indisponível", body);
+                Assert.Contains("Catálogo indisponível", WebUtility.HtmlDecode(body));
                 Assert.DoesNotContain("PRIVATE-", body);
             }
             finally { await app.StopAsync(); }
