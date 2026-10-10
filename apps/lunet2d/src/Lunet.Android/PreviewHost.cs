@@ -155,9 +155,11 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
                 $"Draw calls: {current.DrawCallsPerFrame:F1}  Tris: {current.TrianglesPerFrame:F0}\n" +
                 $"Alloc GL: {current.AllocatedBytesPerFrame:F0} B/frame\n" +
                 $"Heap .NET: {heapMb:F1} MiB\n" +
+                $"GPU texturas RGBA8 (estim.): {_renderer.EstimatedTextureBytes / 1048576.0:F2} MiB, {_renderer.LiveTextureCount} vivas\n" +
+                $"Pico texturas: {_renderer.PeakTextureBytes / 1048576.0:F2} MiB\n" +
                 $"GC (0/1/2): {GC.CollectionCount(0) - _gc0}/{GC.CollectionCount(1) - _gc1}/{GC.CollectionCount(2) - _gc2}\n" +
                 $"Frames > 33 ms: {current.SlowFrames}/{current.Samples}\n" +
-                "GPU e audio underruns: nao medidos";
+                "GPU total/tempo e audio underruns: nao medidos";
         }
         _profilerHandler.PostDelayed(RefreshProfiler, 300);
     }

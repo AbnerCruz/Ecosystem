@@ -1,0 +1,97 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-profiler-gpu-textures",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T23:13:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-414",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-profiler-gpu-texture-budget-20261010",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/485",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Runtime/Profiling/TextureAllocationTracker.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TextureAllocationTrackerTests.cs",
+    "apps/lunet2d/src/Lunet.Android/Gles/GlesBackend.cs",
+    "apps/lunet2d/src/Lunet.Android/Gles/PreviewRenderer.cs",
+    "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261010-lunet-profiler-gpu-textures.json"
+  ],
+  "work_completed": [
+    "Continuado item preexistente Profiler Fase 4 (Issue #343): total RGBA8 de texturas OpenGL rastreadas em tempo real, vida util, peak, render targets contados apenas uma vez.",
+    "Integração no Preview Android sem alterar API publica do Framework, projetos salvos ou outros produtos.",
+    "Tests portable verificam dupla liberacao, reutilizacao de IDs, armazenamento >4GB e leituras sem alocacoes."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests + Android syntax/build",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Ecosystem consistency + integracao automatica",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Profiler Preview GPU RGBA8 Android device",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Nao medidos: VRAM total do driver, outros buffers native, tempo GPU, audio underruns; painel persistente do Workspace e DEVICE permanecem pendentes.",
+    "Outro PR #484 da pagina fisica do Laboratorio foi preparado separadamente; nao duplicar ou conflitar."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Ajustar qualquer falha de CI; integrar PR #485 via integrador automatico.",
+    "Retomar roadmap da Fase 4, preservando que pendencias de DEVICE nao implicam sistema validado."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Codigo limitado ao Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #343, PR #485 e handoff de rastreabilidade."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE ainda nao aprovados."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Fase 4 permanece aberta."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhuma mudanca em saves ou projetos existentes."
+    }
+  ],
+  "base_commit": "f045aa2cc293f23f736e84552dff86ae165e0e4f",
+  "criticality": {
+    "declared": "routine"
+  }
+}

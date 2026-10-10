@@ -17,6 +17,8 @@
 
 ### Added
 
+- LUNET-414 (em revisão): métrica opt-in visível no Profiler do Preview para tamanho estimado RGBA8 de texturas vivas, pico e quantidade de objetos GL (inclui render targets sem double count), com testes. VRAM total, buffers, GPU time e áudio underruns continuam não medidos.
+
 - LUNET-435 (Fase 4, Laboratório em revisão): tela Colisões alterna SAT original e simulação real Box2D (bola, chão, sensor e reset) no mesmo módulo 10/12, sem alterar projetos existentes.
 
 - LUNET-435 (Fase 4, expansão em revisão): cápsulas/segmentos, juntas revoluta/prismática, rotação e força de corpos, filtro por categoria, remoção de fixtures, contatos de fim e eventos de sensores (início/fim), com testes e documentação gerada; não altera projetos existentes.
