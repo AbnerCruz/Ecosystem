@@ -6,7 +6,7 @@ namespace Lunet.Graphics;
 
 /// <summary>Atlas de glifos TrueType gerado offline, compatível com SpriteBatch.DrawString.</summary>
 /// <example><code>
-/// using var baked = TrueTypeFont.Bake(device, ttfBytes, 28);
+/// using var baked = TrueTypeFont.Bake(device, System.IO.File.ReadAllBytes("Content/Fonts/ui.ttf"), 28);
 /// batch.Begin();
 /// batch.DrawString(baked.Font, "Olá!", new Vector2(16, 16), Color.White);
 /// batch.End();
