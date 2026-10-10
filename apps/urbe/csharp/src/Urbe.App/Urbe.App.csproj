@@ -12,8 +12,8 @@
     <ApplicationTitle>Urbe</ApplicationTitle>
     <ApplicationId>app.urbe.csharp</ApplicationId>
     <!-- UC-25/UC-27: canal nativo Android beta, identidade própria e código crescente. -->
-    <ApplicationDisplayVersion>2.0.0-beta.2</ApplicationDisplayVersion>
-    <ApplicationVersion>2000002</ApplicationVersion>
+    <ApplicationDisplayVersion>2.0.0-beta.3</ApplicationDisplayVersion>
+    <ApplicationVersion>2000003</ApplicationVersion>
     <WindowsPackageType>None</WindowsPackageType>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
