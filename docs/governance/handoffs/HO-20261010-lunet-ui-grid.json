@@ -52,9 +52,10 @@
     {
       "check": "Layout/inventário e toque em aparelho",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/lunet2d/docs/guides/grade-ui.md"
+      "object": "apps/lunet2d/docs/guides/grade-ui.md",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/474); registro em docs/governance/responses/VAL-HO-20261010-lunet-ui-grid-2e6de9f7b5f0.md."
     }
   ],
   "known_issues": [
