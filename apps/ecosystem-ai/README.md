@@ -184,3 +184,14 @@ também oferece exportação **`.csv` dos RunReceipts** (status, verificação,
 moeda, valor registrado e indicação de estimativa). Downloads não chamam
 modelos, não escrevem no workspace e só permitem IDs de projetos/sessões
 já existentes. [Garantias e testes](docs-r4-downloadable-results.md).
+
+## Executáveis autossuficientes desktop — P6-5
+
+Após autorização crítica da distribuição e CI verde, as releases de
+**desenvolvimento** oferecem pacotes do Ecosystem AI para Windows x64, Linux
+x64 e macOS Apple Silicon sem instalar o SDK .NET. Em PR são disponibilizados
+apenas artefatos de build; releases são criadas na `main` quando o workflow
+for integrado. O Runtime e o catálogo não mudam; a chave de API é configurada
+somente pelo operador. **Ainda não há APK Android** ou executáveis assinados.
+
+[Instruções de uso e limites](docs-r4-desktop-distribution.md).
