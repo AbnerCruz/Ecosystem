@@ -17719,151 +17719,6 @@
           "since": "0.0.1"
         },
         {
-          "id": "M:Lunet.UI.UiGridLayout.Arrange(Lunet.RectangleF,System.Int32,System.Span{Lunet.RectangleF})",
-          "name": "Arrange",
-          "kind": "method",
-          "signature": "public int Arrange(RectangleF area, int itemCount, Span\u003CRectangleF\u003E results)",
-          "summary": "Preenche ret\u00E2ngulos na ordem linha/coluna sem alocar mem\u00F3ria gerenciada.",
-          "remarks": "Usa linhas de altura fixa, e colunas igualmente largas. A largura m\u00EDnima cede quando n\u00E3o cabe nem uma c\u00E9lula. N\u00E3o h\u00E1 clipping vertical nem cria\u00E7\u00E3o de arrays. Limites inv\u00E1lidos ou falta de buffer s\u00E3o rejeitados antes de escrever resultados.",
-          "parameters": [
-            {
-              "name": "area",
-              "type": "RectangleF",
-              "description": "Ret\u00E2ngulo de refer\u00EAncia no mesmo espa\u00E7o dos toques."
-            },
-            {
-              "name": "itemCount",
-              "type": "int",
-              "description": "Quantidade de c\u00E9lulas a distribuir."
-            },
-            {
-              "name": "results",
-              "type": "Span\u003CRectangleF\u003E",
-              "description": "Buffer pr\u00E9-alocado com espa\u00E7o para todos os itens; sobra preservada."
-            }
-          ],
-          "returns": "Quantidade de colunas usadas; zero se n\u00E3o houver itens.",
-          "examples": [],
-          "related": [],
-          "since": "0.0.1"
-        },
-        {
-          "id": "M:Lunet.UI.UiGridLayout.GetCellBounds(Lunet.RectangleF,System.Int32,System.Int32)",
-          "name": "GetCellBounds",
-          "kind": "method",
-          "signature": "public RectangleF GetCellBounds(RectangleF area, int itemCount, int index)",
-          "summary": "Retorna a geometria de um item sem calcular os demais.",
-          "remarks": "Consulta O(1) sem aloca\u00E7\u00E3o; use com GetVisibleRange para invent\u00E1rios grandes.",
-          "parameters": [
-            {
-              "name": "area",
-              "type": "RectangleF",
-              "description": "Viewport de refer\u00EAncia."
-            },
-            {
-              "name": "itemCount",
-              "type": "int",
-              "description": "Quantidade total de itens."
-            },
-            {
-              "name": "index",
-              "type": "int",
-              "description": "\u00CDndice do item."
-            }
-          ],
-          "returns": "Ret\u00E2ngulo em coordenadas do conte\u00FAdo, antes de aplicar OffsetY.",
-          "examples": [],
-          "related": [],
-          "since": "0.0.1"
-        },
-        {
-          "id": "M:Lunet.UI.UiGridLayout.GetColumnCount(Lunet.RectangleF,System.Int32)",
-          "name": "GetColumnCount",
-          "kind": "method",
-          "signature": "public int GetColumnCount(RectangleF area, int itemCount)",
-          "summary": "Calcula o n\u00FAmero de colunas para o espa\u00E7o horizontal dispon\u00EDvel.",
-          "remarks": "",
-          "parameters": [
-            {
-              "name": "area",
-              "type": "RectangleF",
-              "description": "Ret\u00E2ngulo finito de tamanho n\u00E3o negativo."
-            },
-            {
-              "name": "itemCount",
-              "type": "int",
-              "description": "Quantidade n\u00E3o negativa de c\u00E9lulas."
-            }
-          ],
-          "returns": "Zero quando n\u00E3o h\u00E1 itens; ao menos uma coluna para itens existentes.",
-          "examples": [],
-          "related": [],
-          "since": "0.0.1"
-        },
-        {
-          "id": "M:Lunet.UI.UiGridLayout.GetContentHeight(Lunet.RectangleF,System.Int32)",
-          "name": "GetContentHeight",
-          "kind": "method",
-          "signature": "public float GetContentHeight(RectangleF area, int itemCount)",
-          "summary": "Obt\u00E9m a altura total necess\u00E1ria para uma \u00E1rea rol\u00E1vel.",
-          "remarks": "Use em TouchScrollArea.ContentHeight ap\u00F3s qualquer mudan\u00E7a de largura. Lan\u00E7a OverflowException para alturas fora da faixa de float.",
-          "parameters": [
-            {
-              "name": "area",
-              "type": "RectangleF",
-              "description": "\u00C1rea cujo tamanho horizontal determina as colunas."
-            },
-            {
-              "name": "itemCount",
-              "type": "int",
-              "description": "Quantidade n\u00E3o negativa de c\u00E9lulas."
-            }
-          ],
-          "returns": "Altura do conte\u00FAdo incluindo padding superior/inferior, ou zero para vazio.",
-          "examples": [],
-          "related": [],
-          "since": "0.0.1"
-        },
-        {
-          "id": "M:Lunet.UI.UiGridLayout.GetVisibleRange(Lunet.RectangleF,System.Int32,System.Single,System.Int32@,System.Int32@)",
-          "name": "GetVisibleRange",
-          "kind": "method",
-          "signature": "public void GetVisibleRange(RectangleF area, int itemCount, float offsetY, out int firstIndex, out int endExclusive)",
-          "summary": "Calcula \u00EDndices com c\u00E9lulas vis\u00EDveis em um viewport rol\u00E1vel.",
-          "remarks": "Consulta O(1), sem aloca\u00E7\u00F5es. Interse\u00E7\u00E3o estrita; linhas exatamente fora da janela n\u00E3o contam. Retorna ambos zero se n\u00E3o houver c\u00E9lulas vis\u00EDveis.",
-          "parameters": [
-            {
-              "name": "area",
-              "type": "RectangleF",
-              "description": "Viewport cuja largura determina as colunas e altura determina a janela."
-            },
-            {
-              "name": "itemCount",
-              "type": "int",
-              "description": "Quantidade total de itens."
-            },
-            {
-              "name": "offsetY",
-              "type": "float",
-              "description": "Deslocamento n\u00E3o negativo finito desde o in\u00EDcio do conte\u00FAdo."
-            },
-            {
-              "name": "firstIndex",
-              "type": "out int",
-              "description": "Primeiro item vis\u00EDvel, inclusive."
-            },
-            {
-              "name": "endExclusive",
-              "type": "out int",
-              "description": "Limite superior exclusivo; zero quando n\u00E3o h\u00E1 c\u00E9lulas vis\u00EDveis."
-            }
-          ],
-          "returns": "",
-          "examples": [],
-          "related": [],
-          "since": "0.0.1"
-        },
-        {
           "id": "P:Lunet.UI.UiGridLayout.CellHeight",
           "name": "CellHeight",
           "kind": "property",
@@ -17923,6 +17778,151 @@
           "summary": "Espa\u00E7amento comum entre linhas e colunas.",
           "remarks": "",
           "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiGridLayout.Arrange(Lunet.RectangleF,System.Int32,System.Span{Lunet.RectangleF})",
+          "name": "Arrange",
+          "kind": "method",
+          "signature": "public int Arrange(RectangleF area, int itemCount, Span\u003CRectangleF\u003E results)",
+          "summary": "Preenche ret\u00E2ngulos na ordem linha/coluna sem alocar mem\u00F3ria gerenciada.",
+          "remarks": "Usa linhas de altura fixa, e colunas igualmente largas. A largura m\u00EDnima cede quando n\u00E3o cabe nem uma c\u00E9lula. N\u00E3o h\u00E1 clipping vertical nem cria\u00E7\u00E3o de arrays. Limites inv\u00E1lidos ou falta de buffer s\u00E3o rejeitados antes de escrever resultados.",
+          "parameters": [
+            {
+              "name": "area",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo de refer\u00EAncia no mesmo espa\u00E7o dos toques."
+            },
+            {
+              "name": "itemCount",
+              "type": "int",
+              "description": "Quantidade de c\u00E9lulas a distribuir."
+            },
+            {
+              "name": "results",
+              "type": "Span\u003CRectangleF\u003E",
+              "description": "Buffer pr\u00E9-alocado com espa\u00E7o para todos os itens; sobra preservada."
+            }
+          ],
+          "returns": "Quantidade de colunas usadas; zero se n\u00E3o houver itens.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiGridLayout.GetCellBounds(Lunet.RectangleF,System.Int32,System.Int32)",
+          "name": "GetCellBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetCellBounds(RectangleF area, int itemCount, int index)",
+          "summary": "Retorna a geometria de um item sem precisar organizar todos os anteriores.",
+          "remarks": "Consulta O(1) sem aloca\u00E7\u00E3o e sem controle de input. N\u00E3o modifica buffers.",
+          "parameters": [
+            {
+              "name": "area",
+              "type": "RectangleF",
+              "description": "\u00C1rea de refer\u00EAncia em coordenadas virtuais, antes da rolagem."
+            },
+            {
+              "name": "itemCount",
+              "type": "int",
+              "description": "N\u00FAmero total de c\u00E9lulas."
+            },
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice zero-based, menor que itemCount."
+            }
+          ],
+          "returns": "Ret\u00E2ngulo de uma c\u00E9lula na \u00E1rea de conte\u00FAdo; subtraia OffsetY no desenho e hit-test.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiGridLayout.GetColumnCount(Lunet.RectangleF,System.Int32)",
+          "name": "GetColumnCount",
+          "kind": "method",
+          "signature": "public int GetColumnCount(RectangleF area, int itemCount)",
+          "summary": "Calcula o n\u00FAmero de colunas para o espa\u00E7o horizontal dispon\u00EDvel.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "area",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo finito de tamanho n\u00E3o negativo."
+            },
+            {
+              "name": "itemCount",
+              "type": "int",
+              "description": "Quantidade n\u00E3o negativa de c\u00E9lulas."
+            }
+          ],
+          "returns": "Zero quando n\u00E3o h\u00E1 itens; ao menos uma coluna para itens existentes.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiGridLayout.GetContentHeight(Lunet.RectangleF,System.Int32)",
+          "name": "GetContentHeight",
+          "kind": "method",
+          "signature": "public float GetContentHeight(RectangleF area, int itemCount)",
+          "summary": "Obt\u00E9m a altura total necess\u00E1ria para uma \u00E1rea rol\u00E1vel.",
+          "remarks": "Use em TouchScrollArea.ContentHeight ap\u00F3s qualquer mudan\u00E7a de largura. Lan\u00E7a OverflowException para alturas fora da faixa de float.",
+          "parameters": [
+            {
+              "name": "area",
+              "type": "RectangleF",
+              "description": "\u00C1rea cujo tamanho horizontal determina as colunas."
+            },
+            {
+              "name": "itemCount",
+              "type": "int",
+              "description": "Quantidade n\u00E3o negativa de c\u00E9lulas."
+            }
+          ],
+          "returns": "Altura do conte\u00FAdo incluindo padding superior/inferior, ou zero para vazio.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiGridLayout.GetVisibleRange(Lunet.RectangleF,System.Int32,System.Single,System.Int32@,System.Int32@)",
+          "name": "GetVisibleRange",
+          "kind": "method",
+          "signature": "public void GetVisibleRange(RectangleF area, int itemCount, float offsetY, out int firstIndex, out int endExclusive)",
+          "summary": "Calcula o intervalo de \u00EDndices com c\u00E9lulas vis\u00EDveis em uma janela rol\u00E1vel.",
+          "remarks": "Interse\u00E7\u00E3o estrita com o viewport: linha exatamente fora da janela n\u00E3o \u00E9 vis\u00EDvel. A consulta \u00E9 O(1), sem percorrer c\u00E9lulas ou alocar mem\u00F3ria.",
+          "parameters": [
+            {
+              "name": "area",
+              "type": "RectangleF",
+              "description": "Viewport de refer\u00EAncia; Width calcula colunas, Height \u00E9 altura vis\u00EDvel."
+            },
+            {
+              "name": "itemCount",
+              "type": "int",
+              "description": "N\u00FAmero total de c\u00E9lulas, inclusive as fora da janela."
+            },
+            {
+              "name": "offsetY",
+              "type": "float",
+              "description": "Deslocamento vertical finito n\u00E3o negativo, como TouchScrollArea.OffsetY."
+            },
+            {
+              "name": "firstIndex",
+              "type": "int",
+              "description": "Primeiro \u00EDndice vis\u00EDvel, inclusivo; zero se n\u00E3o houver nenhum."
+            },
+            {
+              "name": "endExclusive",
+              "type": "int",
+              "description": "Limite superior exclusivo; zero quando vazio."
+            }
+          ],
           "returns": "",
           "examples": [],
           "related": [],
