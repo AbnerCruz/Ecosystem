@@ -18,9 +18,12 @@ namespace Lunet.Graphics;
 public sealed class TrueTypeFont : IDisposable
 {
     /// <summary>Conjunto inicial para texto comum, incluindo caracteres portugueses e símbolos monetários.</summary>
-    public const string DefaultCharacters =
+    private const string StandardCharset =
         " !\\\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" +
         "ÁÀÂÃÄÇÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÝÑáàâãäçéèêëíìîïóòôõöúùûüýÿñºª€£¥°–—…";
+
+    /// <summary>Conjunto inicial de caracteres para fontes TTF, com ASCII e português.</summary>
+    public static string DefaultCharacters => StandardCharset;
 
     private TrueTypeFont(Texture2D atlas, SpriteFont font)
     {
@@ -48,11 +51,11 @@ public sealed class TrueTypeFont : IDisposable
     /// Não baixa fontes, não gera arquivos e não modifica os projetos existentes. Se os glifos não couberem,
     /// rejeita explicitamente em vez de criar caracteres invisíveis.</remarks>
     public static unsafe TrueTypeFont Bake(GraphicsDevice device, byte[] ttfBytes, float pixelHeight,
-        string characters = DefaultCharacters, int atlasSize = 1024)
+        string? characters = null, int atlasSize = 1024)
     {
         ArgumentNullException.ThrowIfNull(device);
         ArgumentNullException.ThrowIfNull(ttfBytes);
-        ArgumentNullException.ThrowIfNull(characters);
+        characters ??= StandardCharset;
         if (ttfBytes.Length is < 12 or > 8_388_608)
             throw new ArgumentOutOfRangeException(nameof(ttfBytes), "TTF deve ter entre 12 bytes e 8 MiB.");
         if (!float.IsFinite(pixelHeight) || pixelHeight < 4 || pixelHeight > 192)
