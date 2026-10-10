@@ -67,8 +67,18 @@ public sealed class LocalTeamReviewStore
             || producerTurnIndex < 0 || reviewerTurnIndex <= producerTurnIndex
             || reviewerTurnIndex >= session.Turns.Count)
             throw new ArgumentException("Par de runs/turnos inválido.");
-        if (!PairPresent(session, producerRunId, reviewerRunId, producerTurnIndex, reviewerTurnIndex))
-            throw new InvalidOperationException("Parecer não comprovado por dois recibos verificados e duas respostas.");
+        // Ao registrar, a dupla precisa ser o par mais recente e contíguo
+        // produzido pelo fluxo supervisionado, não respostas antigas
+        // escolhidas arbitrariamente em uma sessão longa.
+        if (session.Runs.Count < 2 || session.Turns.Count < 4
+            || session.Runs[^2].RunId != producerRunId
+            || session.Runs[^1].RunId != reviewerRunId
+            || producerTurnIndex != session.Turns.Count - 3
+            || reviewerTurnIndex != session.Turns.Count - 1
+            || !PairPresent(session, producerRunId, reviewerRunId,
+                producerTurnIndex, reviewerTurnIndex))
+            throw new InvalidOperationException(
+                "Parecer não comprovado por dois runs contíguos verificados e duas respostas.");
 
         var entry = new LocalTeamReview(Guid.NewGuid().ToString("N"), project.Id, session.Id,
             team.Id, team.ProducerId, team.ReviewerId, producerRunId, reviewerRunId,
