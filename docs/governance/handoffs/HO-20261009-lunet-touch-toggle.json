@@ -1,0 +1,106 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-lunet-touch-toggle",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T21:00:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-428",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-ui-touch-toggle-20261009",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/401",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchToggle.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchToggleTests.cs",
+    "apps/lunet2d/docs/guides/toggle-ui.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "docs/governance/handoffs/HO-20261009-lunet-touch-toggle.json"
+  ],
+  "work_completed": [
+    "TouchToggle composto de TouchButton, Value, WasChanged, estilos visuais e Cancel/disable.",
+    "Testes para multitouch, desenho, zero GC e compilação/execução de exemplo no GameHost.",
+    "Guia offline, referência API, roadmap e changelog."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Foundation consistency",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Android APK CI build",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Opções on/off, toque real e regressão no aparelho",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/toggle-ui.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Sem árvore UI ou prioridade implícita entre controles sobrepostos.",
+    "Persistência automática não fornecida."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir eventuais falhas CI e integrar automaticamente.",
+    "Verificar publicação APK e solicitar validação no aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Reutiliza TouchButton."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue, docs, testes, handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Verificação pendente não é aprovada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Fase 4 não encerrada."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Somente produto Lunet e handoff."
+    }
+  ],
+  "base_commit": "5f0fedbf7c2623293e8b9c0198fcf0d9608de8ec",
+  "criticality": {
+    "declared": "routine"
+  },
+  "reuse_assessment": [
+    {
+      "subject": "lunet-touch-toggle",
+      "status": "product-specific",
+      "rationale": "Controle de input e desenho próprio do Lunet."
+    }
+  ]
+}

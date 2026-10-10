@@ -16878,6 +16878,205 @@
       ]
     },
     {
+      "id": "T:Lunet.UI.TouchToggle",
+      "name": "TouchToggle",
+      "namespace": "Lunet.UI",
+      "kind": "class",
+      "signature": "public sealed class TouchToggle",
+      "summary": "Controle on/off por toque com mudan\u00E7a somente ao soltar dentro da \u00E1rea.",
+      "remarks": "Reutiliza captura por dedo de TouchButton. N\u00E3o arbitra sobreposi\u00E7\u00F5es nem salva Value; sem aloca\u00E7\u00F5es no loop.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar toggle = new Lunet.UI.TouchToggle(new RectangleF(24, 100, 180, 52));\ntoggle.Update(input);\nif (toggle.WasChanged) log.Info(\u0022alternado\u0022);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.TouchToggle.#ctor(Lunet.RectangleF,System.Boolean)",
+          "name": "TouchToggle",
+          "kind": "constructor",
+          "signature": "public TouchToggle(RectangleF bounds, bool value = false)",
+          "summary": "Cria uma altern\u00E2ncia com estado inicial.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "bounds",
+              "type": "RectangleF",
+              "description": "\u00C1rea finita do controle."
+            },
+            {
+              "name": "value",
+              "type": "bool",
+              "description": "Valor inicial ligado/desligado."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchToggle.Bounds",
+          "name": "Bounds",
+          "kind": "property",
+          "signature": "public RectangleF Bounds { get; set; }",
+          "summary": "\u00C1rea de desenho e toque; acompanha novo layout.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchToggle.IsCaptured",
+          "name": "IsCaptured",
+          "kind": "property",
+          "signature": "public bool IsCaptured { get; }",
+          "summary": "Capturou um dedo, mesmo se saiu da \u00E1rea.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchToggle.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Desabilitar cancela captura sem alterar valor.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchToggle.IsPressed",
+          "name": "IsPressed",
+          "kind": "property",
+          "signature": "public bool IsPressed { get; }",
+          "summary": "Dedo capturado ainda est\u00E1 dentro.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchToggle.Value",
+          "name": "Value",
+          "kind": "property",
+          "signature": "public bool Value { get; set; }",
+          "summary": "Estado da op\u00E7\u00E3o, que pode ser definido por c\u00F3digo sem disparar evento.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchToggle.WasChanged",
+          "name": "WasChanged",
+          "kind": "property",
+          "signature": "public bool WasChanged { get; }",
+          "summary": "Pulso de altera\u00E7\u00E3o somente no Update que confirmou Released v\u00E1lido.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchToggle.Cancel",
+          "name": "Cancel",
+          "kind": "method",
+          "signature": "public void Cancel()",
+          "summary": "Cancela a captura sem alterar valor.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchToggle.Draw(Lunet.Graphics.SpriteBatch,Lunet.Graphics.SpriteFont,System.String,System.String,Lunet.UI.TouchButtonStyle,Lunet.UI.TouchButtonStyle,System.Single)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(SpriteBatch batch, SpriteFont font, string offText, string onText, TouchButtonStyle offStyle, TouchButtonStyle onStyle, float textScale = 1f)",
+          "summary": "Desenha estado ligado/desligado e pressionado/desabilitado, usando as paletas existentes.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "SpriteBatch em Begin/End."
+            },
+            {
+              "name": "font",
+              "type": "SpriteFont",
+              "description": "Fonte pertencente ao jogo."
+            },
+            {
+              "name": "offText",
+              "type": "string",
+              "description": "R\u00F3tulo desligado."
+            },
+            {
+              "name": "onText",
+              "type": "string",
+              "description": "R\u00F3tulo ligado."
+            },
+            {
+              "name": "offStyle",
+              "type": "TouchButtonStyle",
+              "description": "Estilo desligado."
+            },
+            {
+              "name": "onStyle",
+              "type": "TouchButtonStyle",
+              "description": "Estilo ligado."
+            },
+            {
+              "name": "textScale",
+              "type": "float",
+              "description": "Escala finita positiva."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchToggle.Update(Lunet.Input.InputState)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(InputState input)",
+          "summary": "Processa toques e alterna somente ao soltar o dedo capturado dentro da \u00E1rea.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Toques nas coordenadas de Bounds."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.UI.UiTheme",
       "name": "UiTheme",
       "namespace": "Lunet.UI",
