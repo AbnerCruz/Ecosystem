@@ -14,7 +14,7 @@
   "branch": "feat/urbe-native-legacy-life-core-20261010",
   "base_commit": "f1db20f4ccdb1f39b8f0459e02cb51da12aa3794",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/466",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyWorldLife.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldLifeTests.cs",
