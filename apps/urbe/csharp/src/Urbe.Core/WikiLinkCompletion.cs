@@ -45,8 +45,10 @@ public static class WikiLinkCompletion
                 end += 2;
                 break;
             }
+            // Aliased [[target|label]] syntax is not part of this completion.
+            // Refuse it rather than leaving a dangling alias after replacement.
             if (markdown[end] == '|')
-                break;
+                return null;
             end++;
         }
 
