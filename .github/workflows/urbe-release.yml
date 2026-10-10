@@ -72,7 +72,7 @@ jobs:
           [ -s notas.md ] || { echo "::error::CHANGELOG.md sem notas para v$V"; exit 1; }
           printf '\n---\n**Instalar:** Windows → `Urbe-Setup-%s.exe` · Android → `Urbe-%s.apk`\n' "$V" "$V" >> notas.md
           cat notas.md
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           tag_name: urbe-v${{ needs.verificar.outputs.version }}
           name: Urbe ${{ needs.verificar.outputs.version }}
