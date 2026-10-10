@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261010-urbe-v184-assets",
   "category": "HANDOFF",
-  "timestamp": "2026-10-10T12:30:00Z",
+  "timestamp": "2026-10-10T11:35:00Z",
   "agent": {
     "id": "chatgpt-urbe-v184-asset-delivery",
     "kind": "ai-agent"

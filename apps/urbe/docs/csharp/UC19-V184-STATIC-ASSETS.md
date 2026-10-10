@@ -20,5 +20,5 @@ A validação de empacotamento é feita em `tests/web-smoke.mjs`, conferindo ass
 - PR independente contra `main`, apenas recursos estáticos e teste. Não mexer no `World.razor` ou no `urbe.css` que o agente Android edita em #397.
 - O PR #397 deve consumir os mesmos URLs **após** a entrada dos recursos na base comum e reconstruir o APK para carregá-los.
 - O PR #421 mantém a implementação do gerador C# de texturas/edifícios para evolução dos cenários; este pacote cobre somente os seis URLs hoje efetivamente referenciados na UI.
-- Ausência de release nova; sem alteração da estrutura do vault, permissões SAF, armazenamento, tecnologias de execução, ou protocolos do Hub.
+- Ausência de release nova; sem alteração da estrutura do vault, permissões SAF, armazenamento, tecnologias de execução, ou protocolos externos.
 - Próximo passo visual: comparar screenshots da 1.8.4-beta ao mapa Android real; corrigir sprites, disposição, renderização de chunk, zoom, transparências e redimensionamento até paridade; ampliar o pacote conforme os elementos visuais de fato consumidos.
