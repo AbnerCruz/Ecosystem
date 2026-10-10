@@ -95,6 +95,24 @@ async function assertShell(page, journey = false) {
         'rgb(18, 26, 25)',
         'Estilos da RCL carregados');
 
+
+    // UC-19: the installed RCL must render procedural C# art at runtime,
+    // not request baked PNG files or silently show CSS fallback blocks.
+    smokeStage('city-procedural-pixels');
+    await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
+    const tile = page.locator('.world-tiles .world-empty-lot').first();
+    await tile.waitFor();
+    assert.match(await tile.getAttribute('style'),
+        /data:image\/png;base64,/, 'Terrain pixels must come from C# runtime');
+    const tree = page.locator('.world-terrain-tree .world-grass').first();
+    await tree.waitFor();
+    assert.match(await tree.getAttribute('style'),
+        /data:image\/png;base64,/, 'Tree pixels must come from C# runtime');
+    assert.match(await page.locator('.world-map').getAttribute('style'),
+        /data:image\/png;base64,/, 'Map background must be procedural');
+    await nav.getByRole('link', { name: 'Início', exact: true }).click();
+    await page.getByRole('heading', { name: 'Urbe', exact: true }).waitFor();
+
     if (journey) {
     smokeStage('explorer-open');
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
