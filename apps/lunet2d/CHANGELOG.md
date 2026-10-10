@@ -17,6 +17,8 @@
 
 ### Added
 
+- LUNET-435 (Fase 4, expansão em revisão): cápsulas/segmentos, juntas revoluta/prismática, rotação e força de corpos, filtro por categoria, remoção de fixtures, contatos de fim e eventos de sensores (início/fim), com testes e documentação gerada; não altera projetos existentes.
+
 - LUNET-435 (em revisão): primeiro incremento de física completa com backend Box2D.NET em C# gerenciado, corpos, fixtures de círculo/caixa, gravidade, juntas de distância, contatos iniciados e raycast. Sem alterar jogos salvos; validação Android e itens avançados pendentes.
 
 - LUNET-433 (em revisão): grade de interface 2D responsiva para menus e inventários, com cálculo de colunas por largura, altura total e consulta virtualizada O(1), hit-test e TouchGridView com seleção, rolagem e renderização de janela, compatível com TouchScrollArea; exemplo C# offline e sem alocação no layout.
