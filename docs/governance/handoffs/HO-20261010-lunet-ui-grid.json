@@ -27,7 +27,8 @@
   "work_completed": [
     "UiGridLayout responsivo com colunas automáticas, altura fixa, spacing/padding/MaxColumns, buffers Span e GetContentHeight.",
     "Testes de retrato/paisagem, clipping externo, overflow, entradas inválidas, zero GC e compilação do guia pelo GameCompiler + GameHost.",
-    "API offline e ROADMAP/CHANGELOG/AgentsChat atualizados."
+    "API offline e ROADMAP/CHANGELOG/AgentsChat atualizados.",
+    "GetVisibleRange e GetCellBounds O(1) para virtualização de inventários com 100 milhões de itens; testes sem alocação."
   ],
   "verification": [
     {
@@ -55,13 +56,15 @@
   ],
   "known_issues": [
     "Não cria UI Studio nem árvore de UI, gerenciamento de input compartilhado, rolagem ou clipping implícito.",
-    "Telas estreitas podem produzir uma única célula menor que MinimumCellWidth; este é o comportamento intencional."
+    "Telas estreitas podem produzir uma única célula menor que MinimumCellWidth; este é o comportamento intencional.",
+    "CI da main anterior ao PR já falha em 17 simulações do integrador; incidente de governança fora do escopo deste Product."
   ],
   "blockers": [],
   "next_actions": [
     "Confirmar CI e corrigir falhas de snapshot/API/build.",
     "Integrar PR após checks verdes pelo integrador.",
-    "Validar exemplo no aparelho Android."
+    "Validar exemplo no aparelho Android.",
+    "Reconciliar problema herdado do integrador na zona de governança por fluxo crítico separado, sem enfraquecer check do Lunet."
   ],
   "decisions_required": [],
   "normative_sources": [

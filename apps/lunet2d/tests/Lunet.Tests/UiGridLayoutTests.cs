@@ -116,6 +116,70 @@ public sealed class UiGridLayoutTests
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
     }
 
+
+    [Fact]
+    public void VisibleWindowReturnsOnlyIntersectingRowsAndCellBoundsMatchFullLayout()
+    {
+        var grid = new UiGridLayout(60, 40, spacing: 10, padding: 10);
+        var area = new RectangleF(0, 0, 200, 110);
+        var all = new RectangleF[100];
+        Assert.Equal(2, grid.Arrange(area, 100, all));
+        grid.GetVisibleRange(area, 100, 0, out int first, out int end);
+        Assert.Equal((0, 4), (first, end));
+        grid.GetVisibleRange(area, 100, 55, out first, out end);
+        Assert.Equal((2, 8), (first, end));
+        grid.GetVisibleRange(area, 100, 50, out first, out end);
+        Assert.Equal((2, 6), (first, end));
+        grid.GetVisibleRange(area, 100, 100, out first, out end);
+        Assert.Equal((4, 8), (first, end));
+        grid.GetVisibleRange(area, 100, 6000, out first, out end);
+        Assert.Equal((0, 0), (first, end));
+        for (int i = 0; i < all.Length; i++)
+            Assert.Equal(all[i], grid.GetCellBounds(area, 100, i));
+        Near(grid.GetCellBounds(area, 100, 5), 105, 110, 85, 40);
+    }
+
+    [Fact]
+    public void VisibleWindowHandlesEmptyAndGapOnlyViewport()
+    {
+        var grid = new UiGridLayout(60, 40, spacing: 10, padding: 10);
+        grid.GetVisibleRange(new(0, 0, 200, 100), 0, 0, out int first, out int end);
+        Assert.Equal((0, 0), (first, end));
+        grid.GetVisibleRange(new(0, 0, 200, 0), 100, 5, out first, out end);
+        Assert.Equal((0, 0), (first, end));
+        grid.GetVisibleRange(new(0, 0, 200, 5), 100, 52, out first, out end);
+        Assert.Equal((0, 0), (first, end));
+        grid.GetVisibleRange(new(0, 0, 200, 5), 100, 61, out first, out end);
+        Assert.Equal((2, 4), (first, end));
+        Assert.Throws<ArgumentOutOfRangeException>(() => grid.GetVisibleRange(new(0, 0, 200, 100), 100, float.NaN, out _, out _));
+        Assert.Throws<ArgumentOutOfRangeException>(() => grid.GetVisibleRange(new(0, 0, 200, 100), 100, -1, out _, out _));
+        Assert.Throws<ArgumentOutOfRangeException>(() => grid.GetCellBounds(new(0, 0, 200, 100), 100, 100));
+        Assert.Throws<ArgumentOutOfRangeException>(() => grid.GetCellBounds(new(0, 0, 200, 100), 100, -1));
+    }
+
+    [Fact]
+    public void HugeInventoryVisibleQueriesAreConstantTimeAndAllocationFree()
+    {
+        var grid = new UiGridLayout(48, 48, spacing: 4, padding: 8);
+        var area = new RectangleF(0, 0, 300, 160);
+        void Probe()
+        {
+            grid.GetVisibleRange(area, 100_000_000, 10_000_000, out int first, out int end);
+            Assert.True(end - first <= 25);
+            Assert.True(first >= 0 && end <= 100_000_000);
+            _ = grid.GetCellBounds(area, 100_000_000, first);
+        }
+        Probe();
+        for (int i = 0; i < 100; i++) Probe();
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 100; i++)
+        {
+            grid.GetVisibleRange(area, 100_000_000, 10_000_000, out int first, out int end);
+            _ = grid.GetCellBounds(area, 100_000_000, first);
+        }
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
     [Fact]
     public void OfflineInventoryExampleCompilesAndRunsInGameHost()
     {

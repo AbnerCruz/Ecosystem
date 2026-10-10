@@ -78,6 +78,56 @@ public readonly struct UiGridLayout
         return ToFloat((double)Padding * 2d + rows * (double)CellHeight + (rows - 1d) * Spacing);
     }
 
+
+    /// <summary>Calcula o intervalo de índices com células visíveis em uma janela rolável.</summary>
+    /// <param name="area">Viewport de referência; Width calcula colunas, Height é altura visível.</param>
+    /// <param name="itemCount">Número total de células, inclusive as fora da janela.</param>
+    /// <param name="offsetY">Deslocamento vertical finito não negativo, como TouchScrollArea.OffsetY.</param>
+    /// <param name="firstIndex">Primeiro índice visível, inclusivo; zero se não houver nenhum.</param>
+    /// <param name="endExclusive">Limite superior exclusivo; zero quando vazio.</param>
+    /// <remarks>Interseção estrita com o viewport: linha exatamente fora da janela não é visível.
+    /// A consulta é O(1), sem percorrer células ou alocar memória.</remarks>
+    public void GetVisibleRange(RectangleF area, int itemCount, float offsetY,
+        out int firstIndex, out int endExclusive)
+    {
+        int columns = GetColumnCount(area, itemCount);
+        if (!float.IsFinite(offsetY) || offsetY < 0)
+            throw new ArgumentOutOfRangeException(nameof(offsetY));
+        firstIndex = endExclusive = 0;
+        if (columns == 0 || area.Height == 0) return;
+
+        int rows = (itemCount - 1) / columns + 1;
+        double stride = CellHeight + (double)Spacing;
+        // Intervalos de células [top,bottom) intersectam a área [offset,offset+height).
+        double first = Math.Floor(((double)offsetY - Padding - CellHeight) / stride) + 1d;
+        double end = Math.Ceiling(((double)offsetY + area.Height - Padding) / stride);
+        int firstRow = (int)Math.Clamp(first, 0d, rows);
+        int endRow = (int)Math.Clamp(end, 0d, rows);
+        if (endRow <= firstRow) return;
+        firstIndex = (int)Math.Min((long)itemCount, (long)firstRow * columns);
+        endExclusive = (int)Math.Min((long)itemCount, (long)endRow * columns);
+    }
+
+    /// <summary>Retorna a geometria de um item sem precisar organizar todos os anteriores.</summary>
+    /// <param name="area">Área de referência em coordenadas virtuais, antes da rolagem.</param>
+    /// <param name="itemCount">Número total de células.</param>
+    /// <param name="index">Índice zero-based, menor que itemCount.</param>
+    /// <returns>Retângulo de uma célula na área de conteúdo; subtraia OffsetY no desenho e hit-test.</returns>
+    /// <remarks>Consulta O(1) sem alocação e sem controle de input. Não modifica buffers.</remarks>
+    public RectangleF GetCellBounds(RectangleF area, int itemCount, int index)
+    {
+        int columns = GetColumnCount(area, itemCount);
+        if (index < 0 || index >= itemCount)
+            throw new ArgumentOutOfRangeException(nameof(index));
+        double inset = Math.Min(Padding, (double)area.Width / 2d);
+        double innerWidth = Math.Max(0d, area.Width - 2d * inset);
+        double cellWidth = Math.Max(0d, (innerWidth - (columns - 1d) * Spacing) / columns);
+        double x = area.X + inset + (index % columns) * (cellWidth + Spacing);
+        double y = area.Y + (double)Padding + (index / columns) * (CellHeight + (double)Spacing);
+        ToFloat(x + cellWidth); ToFloat(y + CellHeight);
+        return new RectangleF(ToFloat(x), ToFloat(y), ToFloat(cellWidth), CellHeight);
+    }
+
     /// <summary>Preenche retângulos na ordem linha/coluna sem alocar memória gerenciada.</summary>
     /// <param name="area">Retângulo de referência no mesmo espaço dos toques.</param>
     /// <param name="itemCount">Quantidade de células a distribuir.</param>
