@@ -46,6 +46,11 @@ internal sealed class GlesBackend : IGraphicsBackend, IDisposable
     private readonly ShaderProgram _defaultProgram;
     private readonly Dictionary<int, ShaderProgram> _shaders = new();
     private readonly Dictionary<int, (int Fbo, int Texture)> _targets = new();
+    // Bytes RGBA8 conhecidos; não mede a VRAM total do driver ou custos de buffers.
+    private readonly Lunet.Runtime.Profiling.TextureAllocationTracker _textureMemory = new();
+    internal long EstimatedTextureBytes => _textureMemory.LiveBytes;
+    internal long PeakTextureBytes => _textureMemory.PeakBytes;
+    internal int LiveTextureCount => _textureMemory.LiveCount;
     private readonly Dictionary<int, TextureFilter> _textureFilters = new();
     private readonly Dictionary<int, (TextureFilter Filter, TextureWrap Wrap)> _appliedSampler = new();
     private ShaderProgram _current;
@@ -136,11 +141,13 @@ internal sealed class GlesBackend : IGraphicsBackend, IDisposable
         GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureMagFilter, glFilter);
         GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapS, GLES30.GlClampToEdge);
         GLES30.GlTexParameteri(GLES30.GlTexture2d, GLES30.GlTextureWrapT, GLES30.GlClampToEdge);
+        _textureMemory.Track(ids[0], width, height);
         return ids[0];
     }
 
     public void DeleteTexture(int handle)
     {
+        _textureMemory.Untrack(handle);
         _textureFilters.Remove(handle);
         _appliedSampler.Remove(handle);
         GLES30.GlDeleteTextures(1, [handle], 0);
@@ -274,10 +281,13 @@ internal sealed class GlesBackend : IGraphicsBackend, IDisposable
         {
             GLES30.GlDeleteFramebuffers(1, [fbo], 0);
             GLES30.GlDeleteTextures(1, [texture], 0);
+            _textureFilters.Remove(texture);
+            _appliedSampler.Remove(texture);
             throw new InvalidOperationException($"Não foi possível criar o alvo de desenho {width}×{height} (status GL 0x{status:X}).");
         }
         var handle = _nextTarget++;
         _targets[handle] = (fbo, texture);
+        _textureMemory.Track(texture, width, height); // backing do FBO não duplica memória
         textureHandle = texture;
         return handle;
     }
@@ -331,6 +341,9 @@ internal sealed class GlesBackend : IGraphicsBackend, IDisposable
             GLES30.GlDeleteTextures(1, [target.Texture], 0);
         }
         _targets.Clear();
+        _textureFilters.Clear();
+        _appliedSampler.Clear();
+        _textureMemory.Reset();
         GLES30.GlDeleteProgram(_defaultProgram.Id);
         GLES30.GlDeleteBuffers(2, [_vbo, _ibo], 0);
         GLES30.GlDeleteVertexArrays(1, [_vao], 0);

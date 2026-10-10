@@ -422,3 +422,5 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 
 - 2026-10-10 — ChatGPT / LUNET-435 fase 4: continuação da física existente #477; desenvolvimento de cápsulas/segmentos, juntas revoluta/prismática, contatos de fim/sensores, filtros e controle de corpo; testes de regressão e API, entrega por PR e CI. Não é função nova fora do roadmap. DEVICE e gate da Fase 4 continuam pendentes.
+
+- 2026-10-10 — ChatGPT / LUNET-414 (#343): complemento do Profiler previsto na Fase 4, contando somente texturas RGBA8 conhecidas pelo GlesBackend; pico e recursos liberados no overlay do Preview. Contagem não promete VRAM nativa, GPU time ou audio underruns. CI e DEVICE pendentes; sem alterações em outros produtos ou projetos salvos.

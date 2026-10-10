@@ -48,6 +48,10 @@ internal sealed class PreviewRenderer : Java.Lang.Object, GLSurfaceView.IRendere
     /// <summary>Janela de medições opcional, lida pela UI sem tocar no estado do Game.</summary>
     public PreviewFrameSnapshot Performance => _performance.Snapshot();
     public bool ProfilerIsPaused => _paused || _appPaused;
+    // Leituras atômicas da GL thread; não usar para inferir VRAM total.
+    public long EstimatedTextureBytes => _backend?.EstimatedTextureBytes ?? 0;
+    public long PeakTextureBytes => _backend?.PeakTextureBytes ?? 0;
+    public int LiveTextureCount => _backend?.LiveTextureCount ?? 0;
 
     public void SetProfilingEnabled(bool enabled)
     {
