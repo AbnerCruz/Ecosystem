@@ -1,0 +1,113 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-truetype",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T08:26:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-430",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "chatgpt/lunet-truetype-20261010",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Lunet.Framework.csproj",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/TrueTypeFont.cs",
+    "apps/lunet2d/src/Lunet.Framework/Content/ContentManager.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TrueTypeFontTests.cs",
+    "apps/lunet2d/docs/guides/fontes-truetype.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/adr/0008-truetype-rasterizacao-portatil.md",
+    "docs/governance/handoffs/HO-20261010-lunet-truetype.json"
+  ],
+  "work_completed": [
+    "Backend managed TTF com StbTrueTypeSharp, rasterizado uma vez em atlas RGBA para SpriteFont.FromBitmap, sem alocar no loop Draw/Measure.",
+    "Carregamento via ContentManager cacheado por path/opções e gerenciamento de vida da textura.",
+    "Testes unitários de opções inválidas, atlas, medidas proporcionais, fallback Unicode, Dispose, cache e GameCompiler; guia Android offline, metadata pública e ADR."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test Lunet.Tests / docs API snapshot",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Foundation consistency + integration policy",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Compilação arm64 APK Lunet",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Fonte real, acentos, UI e memória no Preview Android",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/fontes-truetype.md"
+    }
+  ],
+  "known_issues": [
+    "Somente .ttf de contornos TrueType; sem OpenType/CFF, shaping complexo, kerning, hinting, ligaduras e fonts variáveis.",
+    "Os jogos precisam incluir a fonte no Content e rasterizar somente caracteres previamente escolhidos.",
+    "Testes com TTF real usam fontes do SO presentes no CI; ausência no ambiente de testes resulta em teste de integração não exercitado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar CI e corrigir problemas de compilação/API snapshot.",
+    "Integrar pela política automática e confirmar a nova release com APK.",
+    "Solicitar validação em aparelho para fonte, acentos, desempenho e regressão."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json",
+    "apps/lunet2d/docs/adr/0008-truetype-rasterizacao-portatil.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Rastreador de fontes integrado apenas ao framework Lunet; sem referência direta a outros Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #414, ADR 0008, documentação API, guia, testes e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Build e teste físico registrados separadamente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review até CI, merge, release e DEVICE aprovados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código limitado ao Product Lunet2D; sem alterações em dados salvos ou contratos da plataforma."
+    }
+  ],
+  "base_commit": "66377a83547a3db92dc2129646d45d1776a020f5",
+  "reuse_assessment": [
+    {
+      "subject": "TrueTypeFont",
+      "status": "product-specific",
+      "rationale": "Font atlas integrado a Texture2D e SpriteFont do Lunet, sem consumidor comprovado fora dele."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

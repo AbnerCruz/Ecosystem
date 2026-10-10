@@ -369,3 +369,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - PR #411 sincronizado à main `b8a0bdb7cad30bbbf39dee610bf487af4d57ed8d` com catálogo API aditivo e histórico de agentes preservado, sem sobrescrever integração existente do TouchToggle/LUNET-428.
 - CI original do PR #411: Lunet.Tests, consistency e APK verdes; CI de versão reconciliada deve ser verificado. DEVICE pendente.
 - Somente Product Lunet2D e handoff, sem dados do usuário nem contratos alterados. NN-002/008/017/018/022.
+
+### 20261010-chatgpt-lunet-truetype — ChatGPT → integrador — review
+- LUNET-430 / Issue #414 / Fase 4 §7: introduz fontes TrueType pré-rasterizadas ao carregar o jogo, integração direta com SpriteFont e SpriteBatch já existentes.
+- Backend StbTrueTypeSharp 1.26.13 no Framework (.NET 10), C# portátil/sem bridge, uso de unsafe localizado ao baker; pacote sob MIT/Unlicense. Decisão detalhada no ADR 0008 do Lunet.
+- `TrueTypeFont.Bake` aceita bytes TTF, charset Unicode explícito, altura e atlas limitados; `ContentManager.LoadTrueTypeFont` cacheia por arquivo/opções e gerencia Dispose automaticamente. Sem fonte do sistema no dispositivo; TTF deve estar no Content ou fornecido pelo jogo.
+- Testes de atlas/corretude/fallback/medida, cache e descarte, ausência de GC no Measure/Draw e exemplo Game.cs compilado com GameCompiler; CI e APK pendentes até verificação. DEVICE ainda não validado.
+- Sem alterar ProjectStore, jogos existentes, formato de projeto, contratos externos ou sistema de exportação; compatibilidade de fontes bitmap preservada. Reuso product-specific. NN-002/008/017/018/022.
