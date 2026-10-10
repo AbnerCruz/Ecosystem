@@ -12,4 +12,7 @@ public interface IUrbeVaultStorage
     /// <summary>First safe slice: update one EXISTING Markdown file, with conflict checks,
     /// recovery copy, byte verification and no modifications to other vault entries.</summary>
     Task SaveExistingNoteAsync(string path, string content, CancellationToken cancellationToken = default);
+    /// <summary>Create a new Markdown note in the selected vault root, never overwrite existing data.
+    /// Returns an updated canonical snapshot only after filesystem verification.</summary>
+    Task<VaultSnapshot> CreateNoteAsync(string path, string content, CancellationToken cancellationToken = default);
 }

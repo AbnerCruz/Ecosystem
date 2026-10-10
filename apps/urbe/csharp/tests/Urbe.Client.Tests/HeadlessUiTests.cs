@@ -199,6 +199,53 @@ public sealed class HeadlessUiTests : IDisposable
             return true;
         }, CancellationToken.None));
 
+    [Fact]
+    public async Task NewNote_RequiresRealVaultAndOpensOnlyAfterSaveConfirmation() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var storage = new TestVaultStorage();
+            var view = new MainView(storage);
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            await view.InitializeAsync();
+            await view.CreateNoteAsync();
+            Assert.Equal("Nova nota.md", storage.CreatedPath);
+            Assert.True(view.Editor.IsVisible);
+            Assert.Equal("Nova nota.md", view.Editor.Current?.Path);
+            Assert.Contains(view.World.City!.Buildings, b => b.Path == "Nova nota.md");
+            await view.CreateNoteAsync();
+            Assert.Equal("Nova nota 2.md", storage.CreatedPath);
+            return true;
+        }, CancellationToken.None));
+
+    private sealed class TestVaultStorage : IUrbeVaultStorage
+    {
+        private readonly Dictionary<string, byte[]> _notes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Exemplo.md"] = System.Text.Encoding.UTF8.GetBytes("# Exemplo")
+        };
+        public bool IsConnected => true;
+        public string? CreatedPath { get; private set; }
+        public Task<VaultSnapshot?> PickAsync(CancellationToken token = default) =>
+            Task.FromResult<VaultSnapshot?>(Snapshot());
+        public Task<VaultSnapshot?> RestoreAsync(CancellationToken token = default) =>
+            Task.FromResult<VaultSnapshot?>(Snapshot());
+        public Task SaveExistingNoteAsync(string path, string content, CancellationToken token = default)
+        {
+            if (!_notes.ContainsKey(path)) throw new IOException("Nota inexistente");
+            _notes[path] = System.Text.Encoding.UTF8.GetBytes(content);
+            return Task.CompletedTask;
+        }
+        public Task<VaultSnapshot> CreateNoteAsync(string path, string content, CancellationToken token = default)
+        {
+            if (!_notes.TryAdd(path, System.Text.Encoding.UTF8.GetBytes(content)))
+                throw new IOException("Arquivo já existe");
+            CreatedPath = path;
+            return Task.FromResult(Snapshot());
+        }
+        private VaultSnapshot Snapshot() => VaultReader.Read(_notes.Select(n => new VaultFile(n.Key, n.Value)));
+    }
+
     private static async Task Settle(Window window, MainView view)
     {
         for (int i = 0; i < 600; i++)

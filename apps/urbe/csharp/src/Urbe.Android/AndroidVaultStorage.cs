@@ -142,6 +142,82 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+
+    /// <summary>
+    /// Create exactly one root Markdown note via Android SAF. No hidden database, directory creation,
+    /// legacy metadata rewrite or silent overwrite. The Core writer validates the proposed file.
+    /// </summary>
+    public async Task<VaultSnapshot> CreateNoteAsync(string path, string content, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        var segments = Segments(path);
+        if (segments.Length != 1 || !path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith(".", StringComparison.Ordinal) ||
+            path.Length > 120 || path.Any(char.IsControl))
+            throw new InvalidDataException("A primeira etapa permite apenas uma nota .md na raiz, sem nomes especiais.");
+        var expectedBytes = Encoding.UTF8.GetBytes(content);
+        if (expectedBytes.LongLength > MaxFileBytes)
+            throw new IOException("A nota ultrapassa o limite de tamanho permitido.");
+
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione uma pasta real.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var existing = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, existing);
+            var snapshot = VaultReader.Read(existing);
+            if (snapshot.IsReadOnly)
+                throw new InvalidOperationException("Vault protegido: criação de notas não autorizada.");
+            // SAF may hold files whose extensions the snapshot does not include. Reject collisions
+            // against the provider's actual directory, not just the logical Markdown catalog.
+            if (Children(tree, Root(tree)).Any(child =>
+                    string.Equals(child.Name, path, StringComparison.OrdinalIgnoreCase)))
+                throw new IOException("Já existe um arquivo com esse nome na pasta.");
+            if (existing.Sum(f => (long)f.Bytes.Length) + expectedBytes.LongLength > MaxVaultBytes)
+                throw new IOException("O vault ultrapassaria o limite temporário de segurança.");
+
+            var documents = snapshot.Documents.Where(d => d.Text is not null)
+                .Select(d => new VaultWriteDocument(d.Id, d.Path, d.Text!))
+                .Append(new VaultWriteDocument(Guid.NewGuid().ToString("N"), path, content))
+                .ToArray();
+            var plan = VaultWriter.Plan(new VaultWriteRequest
+            {
+                Files = existing,
+                Documents = documents,
+                AppVersion = "urbe-native-preview"
+            });
+            if (!plan.Writable || !plan.Files.TryGetValue(path, out var plannedFile) ||
+                !plannedFile.Bytes.Span.SequenceEqual(expectedBytes))
+                throw new InvalidDataException("O plano canônico não autorizou a criação da nota.");
+
+            return await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                // A second collision check limits accidental overwrite if an external file appeared.
+                if (Children(tree, Root(tree)).Any(child =>
+                        string.Equals(child.Name, path, StringComparison.OrdinalIgnoreCase)))
+                    throw new IOException("Um arquivo com esse nome apareceu. Criação interrompida.");
+                WriteVerified(tree, path, expectedBytes);
+                var persisted = ReadFiles(tree, cancellationToken);
+                var observed = Snapshot(persisted);
+                if (observed.Count != baseline.Count + 1 ||
+                    !observed.TryGetValue(path, out var created) ||
+                    !created.Bytes.Span.SequenceEqual(expectedBytes) ||
+                    baseline.Any(pair => !observed.TryGetValue(pair.Key, out var current) ||
+                        !current.Bytes.Span.SequenceEqual(pair.Value.Bytes.Span)))
+                    throw new IOException("A nota foi criada, mas a verificação do vault detectou alterações inesperadas. Reabra a pasta antes de prosseguir.");
+                var updated = VaultReader.Read(persisted);
+                if (updated.IsReadOnly || !updated.Documents.Any(d =>
+                    string.Equals(d.Path, path, StringComparison.OrdinalIgnoreCase) && d.Text == content))
+                    throw new IOException("A nota criada não foi reconhecida pelo leitor canônico.");
+                _baseline = observed;
+                return updated;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     private static ContentResolver Resolver =>
         Android.App.Application.Context.ContentResolver
         ?? throw new IOException("ContentResolver indisponível.");
