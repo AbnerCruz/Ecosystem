@@ -597,3 +597,10 @@
 - Testes: web-smoke cobre notas homônimas em pastas diferentes, navegação por ancestrais, retorno Editor→busca, filtros e viewport móvel de 390px. CI e validação física ainda pendentes.
 - Invariantes: sem mudanças de vault físico, migração, backup, release, JS de domínio, plugins ou dados do usuário. G-C3 e UC-18 continuam abertos.
 - Handoff: HO-20261009-urbe-uc18-explorer-breadcrumb-search. Próximos passos: CI combinado, correções, integração automática e continuidade dos recortes UC-18.
+
+### 2026-10-10 — ChatGPT — UC-18/UC-19, contrato de continuidade do proprietário
+- Estado: verifying; branch docs/urbe-single-continuation-protocol-20261010; PR e CI a confirmar.
+- Fato: #397/#421/#425 foram integrados; a UI Android ainda usa grade transitória 8×8. Contrato UC19-VISUAL-ACCEPTANCE descrevia equivocadamente assets PNG estáticos em vez de geração procedural C# runtime; #385 aberto e conflitante com a Cidade integrada.
+- Feito: contrato no ROADMAP para pedido genérico "continue o Urbe", seleção automática por estado vivo, preservação 1.8.4-beta, reconciliação de PR antes de novo trabalho; harmonização do contrato de arte; atualização da descrição procedural e teste automatizado de regressão de direção.
+- Próximos passos: CI, integração governada; verificar status do PR #385 e das fatias Editor antes de desenvolver o próximo incremento UC-19 (terrain.js/chunkPixels contínuos); aceite físico permanece obrigatório.
+- Invariantes: NN-001/005/008/009/017/018/023; não alterados vault, releases, login, assinaturas ou controle de integração.
