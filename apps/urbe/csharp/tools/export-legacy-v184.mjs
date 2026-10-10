@@ -16,6 +16,11 @@ const pkg = JSON.parse(await readFile(manifest, 'utf8'));
 if (pkg.version !== '1.8.4-beta')
   throw new Error('A fonte visual deixou de ser Urbe 1.8.4-beta; bloqueado.');
 const sourceDigest = createHash('sha256').update(source).digest('hex');
+const gitBlob = createHash('sha1')
+  .update(Buffer.from('blob ' + source.length + '\0'))
+  .update(source).digest('hex');
+if (gitBlob !== 'd47cf2902e8aeb5ca2c529d2e4c9617fb71ca931')
+  throw new Error('Fonte original de pixel art mudou: aprovação necessária para alterar o visual.');
 await mkdir(out, { recursive: true });
 
 const browser = await chromium.launch({ headless: true });
