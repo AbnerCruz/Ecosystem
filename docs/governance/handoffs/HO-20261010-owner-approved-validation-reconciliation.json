@@ -14,7 +14,7 @@
   "branch": "fix/owner-validation-backlog-20261010",
   "base_commit": "f1db20f4ccdb1f39b8f0459e02cb51da12aa3794",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/465",
   "files_changed": [
     "docs/governance/handoffs/HO-20261010-lunet-touch-relayout.json",
     "docs/governance/responses/VAL-HO-20261010-lunet-touch-relayout-e52d9f8b4894.md",
@@ -59,7 +59,8 @@
     "Reconciliadas as aprovações humanas de Issues #432, #433, #435, #436, #438, #440, #442, #444, #445; origem é a resposta explícita do dono no GitHub, nunca declaração do agente.",
     "Verificadas origem OWNER, task_id, check_hash SHA256(check+newline+object) e estado pending; sem promoção dos gates.",
     "Corrigido controle de concorrência que cancelava aprovações de Issues diferentes no workflow decision.",
-    "Reconciliadas também as aprovações das Issues #447, #448, #450, #451, #452, #454, #455, #456, #458; total de 18 validações únicas com hashes conferidos. A segunda Issue #441 é duplicata da #440 e não é gravada duas vezes."
+    "Reconciliadas também as aprovações das Issues #447, #448, #450, #451, #452, #454, #455, #456, #458; total de 18 validações únicas com hashes conferidos. A segunda Issue #441 é duplicata da #440 e não é gravada duas vezes.",
+    "A PR de reconciliação é #465; 18 aprovações únicas com verificação de hash e questão duplicada #441 discriminada."
   ],
   "verification": [
     {
