@@ -1,0 +1,93 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-native-create-root-note",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T18:40:00Z",
+  "agent": {
+    "id": "chatgpt-native-note-creator",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-25",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-create-note-20261010",
+  "base_commit": "b0e1cb717062668b7c90361599ae218b28fc98f8",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/467",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261010-urbe-native-create-root-note.json"
+  ],
+  "work_completed": [
+    "Botão + nativo cria nota Markdown raiz no vault físico selecionado pelo SAF Android e abre editor somente após confirmação.",
+    "Precondições: vault conectado e gravável, colisões verificadas no diretório real, mudanças externas recusadas, tamanho limitado e bytes validados pelo VaultWriter/VaultReader.",
+    "Após criação, reconstrói cidade fiel a partir do snapshot atualizado; teste headless com storage realista testa duas criações e nomes distintos."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI Urbe Android/Windows, portable, headless",
+      "result": "pending",
+      "evidence": "Aguardando CI."
+    },
+    {
+      "kind": "human",
+      "check": "Criar duas notas Android; fechar/reabrir; não perder alterações",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+      "evidence": "Novo fluxo de escrita não testado em aparelho; o aceite prévio do usuário não valida a funcionalidade recém-implementada."
+    }
+  ],
+  "known_issues": [
+    "Criação inicial só em raiz; criação/renomeação de pasta e edição de mapa.json fora do escopo.",
+    "Se SAF falhar após criar o arquivo e antes da verificação, arquivo pode permanecer fisicamente presente; erro orienta reabrir vault, sem apagar dados automaticamente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI e integrar sob aprovação crítica de dados após checagens.",
+    "Implementar pastas/metadata/câmera persistente e editor visual fiel a 1.8.4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "VaultReader e VaultWriter permanecem canônicos, sem sidecar paralelo."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Portou FAB da 1.8.4, sem redesenho."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff e CI por produto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana da nova operação permanece pendente até prova física."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-25 e beta final permanecem abertos."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Grava novo arquivo de usuário via SAF Android, sujeito a validação de integridade e autorização de integração."
+  }
+}
