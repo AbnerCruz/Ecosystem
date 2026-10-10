@@ -32,7 +32,6 @@ public sealed class LegacyWorldLife
     public Light CurrentLight { get; private set; }
 
     private double _rainTarget, _fogTarget, _rainUntil, _fogUntil;
-    private double _nextWeather = 20;
 
     public LegacyWorldLife() =>
         CurrentLight = LightAt(12.5);
