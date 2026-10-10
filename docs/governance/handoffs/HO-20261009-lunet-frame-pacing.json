@@ -43,9 +43,10 @@
     {
       "check": "Leitura e ergonomia do Perf em aparelho",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/profiler-preview.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/440); registro em docs/governance/responses/VAL-HO-20261009-lunet-frame-pacing-75a930c65fd0.md."
     }
   ],
   "known_issues": [

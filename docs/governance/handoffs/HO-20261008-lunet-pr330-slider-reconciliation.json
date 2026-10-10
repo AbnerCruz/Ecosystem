@@ -63,10 +63,10 @@
     {
       "kind": "human",
       "check": "Layout UI no Preview Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/layout-ui.md",
-      "evidence": "Alternar área, botão fixo/canto, centro/margens/cabeçalho, toque fora da posição antiga, Preview rápido/isolado offline e regressão. Testes portáteis não comprovam GL/aparelho."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/447); registro em docs/governance/responses/VAL-HO-20261008-lunet-pr330-slider-reconciliation-d29456abd471.md."
     }
   ],
   "known_issues": [

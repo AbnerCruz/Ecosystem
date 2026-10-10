@@ -54,10 +54,10 @@
     {
       "kind": "human",
       "check": "Pathfinding no Preview Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/pathfinding.md",
-      "evidence": "Rota, paredes, terreno, quatro/oito vizinhos, toque, bordas e Preview rápido/isolado offline; nenhuma validação GL/performance/aparelho inferida dos testes portáteis."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/448); registro em docs/governance/responses/VAL-HO-20261008-lunet-pathfinding-72d99bbc5c1a.md."
     },
     {
       "kind": "automated",
