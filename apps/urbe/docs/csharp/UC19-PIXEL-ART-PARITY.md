@@ -40,3 +40,11 @@ O painter recebe um buffer RGBA **quadrado**, a posição pixel do tile no desti
 O teste `LegacyWorldGroundDecorTests` tem oráculos FNV-1a32 extraídos executando a própria rotina JavaScript antiga: **20 tipos × 3 coordenadas/slots = 60 amostras** de imagem RGBA 16×16, mais teste de canvas RGBA 32×32 com duas decorações em tiles distintos e validação de entradas inválidas. Hash FNV complementa, **não substitui**, o teste SHA-256 das 76 texturas base.
 
 O desenho de **árvores, prédios, personagens, terreno composto/chunks e HUD** continua pendente. A função nova não modifica a Cidade Razor nem publica APK; a aparência final só pode ser aprovada por validação de screenshots + toque em Android real.
+
+## Terceira fatia: sprites de árvores e ponte
+
+`LegacyWorldSprites` gera no Core C# as **oito espécies do legacy** (`oak`, `birch`, `willow`, `pine`, `deadpine`, `acacia`, `palm`, `cactus`) em três variantes com/sem neve (24×32 RGBA), além da ponte de madeira 16×16 RGBA. Cores, geometria de tronco/copa, sombra, sementes e dimensão seguem `pixel-art.js`; retorno isolado para cache por sprite/zoom no cliente nativo. O novo `EncodePng` encapsula RGBA em PNG lossless, sem bibliotecas de imagem nem runtime JS. Tests validam 48 combinações de árvore, pontos determinísticos, PNG roundtrip e entradas inválidas.
+
+**Precisão visual:** a primitiva `Polygon` usa rasterização de pixels-centro, enquanto o Canvas2D legado suaviza contornos das formas poligonais. A paridade geométrica de pinheiros **ainda não equivale a igualdade byte a byte**; validação por imagem real Android/Chrome e eventual correção dos contornos são necessárias antes do aceite. Nenhum componente Razor consome as imagens nesta fatia: a entrega é **C# Core**, não alteração visível no APK.
+
+**Próximas ações:** integrar sprites de edifícios 48×56; conectar RGBA/PNG ao renderer mobile, conferir zoom nearest-neighbor, posição de construção, clipping e screenshot comparativo contra o cliente 1.8.4-beta. Não remover o JS antes do gate de corte aprovado.
