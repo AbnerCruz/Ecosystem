@@ -103,3 +103,13 @@ ainda não permite disparar agentes pelo navegador. Ausências ou divergências 
 journal são sinalizadas, e a UI padrão sem `--journal` não é alterada.
 
 Uso, limites e testes: [docs-r4-live-task-board.md](docs-r4-live-task-board.md).
+
+## Prévias textuais opcionais no painel local (R4)
+
+A flag `--web-ui --catalog DIR --journal DIR --embed-text-artifacts` habilita
+prévia **do conteúdo atual** de arquivos textuais referenciados nos runs do
+Runtime. O leitor reutiliza os limites já testados de 16 KiB por arquivo,
+128 KiB por consulta e 16 arquivos, sem acesso fora do workspace ou por
+symlinks, e HTML escapado. Desativada por padrão; pode revelar dados privados.
+
+Limites e uso: [docs-r4-live-artifact-previews.md](docs-r4-live-artifact-previews.md).
