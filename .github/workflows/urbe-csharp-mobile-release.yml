@@ -11,7 +11,7 @@ on:
       - feat/urbe-uc25-android-saf-vault-20261009
     paths:
       - '.github/workflows/urbe-csharp-mobile-release.yml'
-      - 'apps/urbe/csharp/**'
+      - 'apps/urbe/csharp/src/Urbe.App/Urbe.App.csproj'
   workflow_dispatch:
 
 concurrency:
@@ -156,7 +156,8 @@ jobs:
           - criar bairros/pastas (inclusive vazias) e notas;
           - salvamento automático com atraso curto e salvamento manual com verificação;
           - movimentação individual de notas Markdown, com guardas contra sobrescrita;
-          - proteção de arquivos não UTF-8 e backup antes de regravações.
+          - proteção de arquivos não UTF-8 e backup antes de regravações;
+          - **Cidade 2D navegável:** pastas são bairros, notas Markdown são casas; toque para entrar, abrir o editor ou construir uma casa, com mapa responsivo para Android.
 
           **Beta inicial:** teste primeiro com uma pasta vazia e faça backup das notas. O comportamento real ainda depende de validação em aparelho; nem todas as funções do Urbe antigo estão implementadas. O app usa uma identidade Android própria (app.urbe.csharp), sem substituir o Urbe 1.8.4-beta.
 

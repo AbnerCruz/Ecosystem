@@ -33,6 +33,34 @@ public sealed class WorkspacePhysicalFoldersTests
 
 
     [Fact]
+    public void CityLotsRepresentPhysicalBairrosAndMarkdownHouses()
+    {
+        using var session = new WorkspaceSession();
+        session.Load(VaultReader.Read([
+            new VaultFile("Centro/Casa.md", Encoding.UTF8.GetBytes("# Minha casa")),
+            new VaultFile("Centro/Rua/Fundo.md", Encoding.UTF8.GetBytes("# Outra casa"))
+        ]), ["Centro", "Centro/Praca", "Vazio"]);
+
+        var city = session.ExplorerEntries();
+        Assert.Contains(city, item => item.IsFolder && item.Path == "Centro");
+        Assert.Contains(city, item => item.IsFolder && item.Path == "Vazio");
+
+        var centro = session.ExplorerEntries("Centro");
+        Assert.Contains(centro, item => item.IsFolder && item.Path == "Centro/Praca");
+        Assert.Contains(centro, item => item.IsFolder && item.Path == "Centro/Rua");
+        Assert.Contains(centro, item => !item.IsFolder && item.Path == "Centro/Casa.md");
+
+        var created = session.CreateNote("Nova casa", "Centro");
+        Assert.NotNull(created);
+        Assert.True(session.HasUnsavedChanges);
+        Assert.Contains(session.ExplorerEntries("Centro"), item =>
+            !item.IsFolder && item.Path == created!.Path);
+        Assert.True(session.Open(created!.Path,
+            new EditorOpenOrigin(EditorOpenOriginKind.Explorer, "cidade")));
+        Assert.Equal(created.Id, session.CurrentDocument?.Id);
+    }
+
+    [Fact]
     public void ActualEditsBecomeDirtyButNavigationAndLoadingDoNot()
     {
         using var session = new WorkspaceSession();

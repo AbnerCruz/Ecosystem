@@ -1,8 +1,8 @@
-# Urbe C# — somente Android e Windows (início 2.0.0-beta.1)
+# Urbe C# — somente Android e Windows (beta 2.0.0-beta.2)
 
 **Direção do proprietário (09/10/2026):** não criar ou distribuir uma versão Web/PWA do cliente C#. Android é prioridade; desktop/Windows vem depois. O MAUI Blazor Hybrid renderiza os componentes em uma WebView interna, não em um site com backend. O vault Android é uma pasta real, selecionada pelo usuário.
 
-**Release Android:** versão `2.0.0-beta.1`, identificador `app.urbe.csharp`, código `2000001`, tag `urbe-csharp-v2.0.0-beta.1`. A cada versão, incrementar `ApplicationDisplayVersion` e `ApplicationVersion` em `src/Urbe.App/Urbe.App.csproj`. Publicação do APK + SHA256SUMS no GitHub Releases por `.github/workflows/urbe-csharp-mobile-release.yml`, com assinatura beta fixa e testes C#.
+**Release Android:** versão `2.0.0-beta.2`, identificador `app.urbe.csharp`, código `2000002`, tag `urbe-csharp-v2.0.0-beta.2`. Beta.2: cidade 2D navegável com bairros físicos e casas Markdown, atalhos para editor, criação de notas e bloqueio de edição sem vault físico. A cada versão, incrementar `ApplicationDisplayVersion` e `ApplicationVersion` em `src/Urbe.App/Urbe.App.csproj`. Publicação do APK + SHA256SUMS no GitHub Releases por `.github/workflows/urbe-csharp-mobile-release.yml`, com assinatura beta fixa e testes C#.
 
 **Verificação:** `dotnet restore Urbe.Portable.slnx && dotnet test --project tests/Urbe.Core.Tests -c Release`. Build Android: `dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-android -p:UrbeBuildTarget=net10.0-android`. Windows usa `net10.0-windows10.0.19041.0`. Não há build ou release C# para Web.
 

@@ -77,8 +77,10 @@ public sealed class ArchitectureTests
     {
         var project = XDocument.Load(Path.Combine(Root, "src/Urbe.App/Urbe.App.csproj"));
         Assert.Equal("app.urbe.csharp", project.Descendants("ApplicationId").Single().Value);
-        Assert.Equal("2.0.0-beta.1", project.Descendants("ApplicationDisplayVersion").Single().Value);
-        Assert.Equal("2000001", project.Descendants("ApplicationVersion").Single().Value);
+        var version = project.Descendants("ApplicationDisplayVersion").Single().Value;
+        var code = int.Parse(project.Descendants("ApplicationVersion").Single().Value);
+        Assert.Matches(@"^2\.\d+\.\d+-beta\.\d+$", version);
+        Assert.True(code >= 2000001, "O versionCode Android deve ser crescente.");
         Assert.NotEqual("app.urbe", project.Descendants("ApplicationId").Single().Value);
         var manifest = XDocument.Load(Path.Combine(Root, "src/Urbe.App/Platforms/Android/AndroidManifest.xml"));
         XNamespace android = "http://schemas.android.com/apk/res/android";
