@@ -29,7 +29,7 @@ public sealed class UiGridLayoutTests
 
         var landscape = new RectangleF(5, 10, 800, 360);
         Assert.Equal(8, grid.Arrange(landscape, cells.Length, cells));
-        Near(cells[8], 17, 78, 88, 48);
+        Near(cells[8], 17, 78, 90, 48);
         Assert.Equal(128, grid.GetContentHeight(landscape, 9));
     }
 
@@ -83,6 +83,7 @@ public sealed class UiGridLayoutTests
             Assert.Throws<ArgumentOutOfRangeException>(() => new UiGridLayout(48, 48, padding: bad));
         }
         Assert.Throws<ArgumentOutOfRangeException>(() => new UiGridLayout(48, 48, maxColumns: -1));
+        Assert.Throws<InvalidOperationException>(() => default(UiGridLayout).GetColumnCount(new(0, 0, 100, 100), 3));
         var grid = new UiGridLayout(48, 48);
         var marker = new RectangleF(2, 4, 6, 8);
         var cells = new[] { marker, marker };

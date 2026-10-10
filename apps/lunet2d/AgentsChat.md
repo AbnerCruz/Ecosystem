@@ -402,3 +402,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 ### 20261010-chatgpt-lunet-432-slider-compat — ChatGPT → integrador — review
 - CI inicial da PR #424 detectou falha em TouchSliderTests.NewBoundsApplyOnNextUpdateAndNoTravelCancels: comportamento preexistente é continuar arraste sobre novos Bounds. Reconciliado: slider preserva contrato, controle de captura deve usar Cancel() pelo jogo ao ocultar UI.
 - Teste novo LUNET-432 alterado para cobrir continuidade intencional, sem enfraquecer teste preexistente. Botões/listas/scroll permanecem protegidos contra interação fantasma ao relayout. Revalidar CI; DEVICE pendente.
+
+### 20261010-chatgpt-lunet-grid — ChatGPT → integrador — review
+- LUNET-433 / Issue #427 / Fase 4: UiGridLayout para distribuição responsiva de itens de inventário/menu, com colunas automáticas, altura fixa, padding, spacing, maxColumns e GetContentHeight para TouchScrollArea.
+- Testes de colunas retrato/paisagem, limites, geometria nula, prevenção de overflow/escrita parcial e hot path zero GC; exemplo offline Game.cs compilado e executado em GameHost, sem fontes/servidores externos.
+- Product-specific; sem alterar ProjectStore, Android, dados persistidos, outros Products ou contratos de plataforma. NN-002/008/017/018/022. CI e DEVICE pendentes até checagem externa; apenas o agente nesta tarefa, nenhum paralelismo presumido.

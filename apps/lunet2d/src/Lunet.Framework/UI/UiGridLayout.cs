@@ -54,6 +54,8 @@ public readonly struct UiGridLayout
     public int GetColumnCount(RectangleF area, int itemCount)
     {
         Validate(area, itemCount);
+        if (MinimumCellWidth <= 0 || CellHeight <= 0)
+            throw new InvalidOperationException("Inicialize a grade com largura e altura positivas.");
         if (itemCount == 0) return 0;
         double inset = Math.Min(Padding, (double)area.Width / 2d);
         double available = Math.Max(0d, area.Width - 2d * inset);
