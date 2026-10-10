@@ -273,10 +273,18 @@ public static class LegacyWorldGroundDecor
             if ((uint)x >= (uint)side || (uint)y >= (uint)side)
                 return;
             var offset = (y * side + x) * 4;
-            pixels[offset] = Convert.ToByte(hex.Substring(1, 2), 16);
-            pixels[offset + 1] = Convert.ToByte(hex.Substring(3, 2), 16);
-            pixels[offset + 2] = Convert.ToByte(hex.Substring(5, 2), 16);
+            // Fixed palette: decode hex without per-pixel Substring allocations.
+            pixels[offset] = HexByte(hex, 1);
+            pixels[offset + 1] = HexByte(hex, 3);
+            pixels[offset + 2] = HexByte(hex, 5);
             pixels[offset + 3] = 255;
+        }
+
+        private static byte HexByte(string hex, int index)
+        {
+            static int Nibble(char c) =>
+                c <= '9' ? c - '0' : (c | (char)0x20) - 'a' + 10;
+            return (byte)((Nibble(hex[index]) << 4) | Nibble(hex[index + 1]));
         }
 
         public void Dim(int x, int y, double factor)
