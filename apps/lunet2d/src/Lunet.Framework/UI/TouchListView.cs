@@ -5,6 +5,10 @@ using Lunet.Input;
 namespace Lunet.UI;
 
 /// <summary>Lista vertical de seleção por toque, com linhas virtuais e rolagem por inércia.</summary>
+/// <example><code>
+/// var list = new Lunet.UI.TouchListView(new RectangleF(0, 0, 200, 120), 8, 40);
+/// list.Update(input, (float)time.DeltaSeconds);
+/// </code></example>
 /// <remarks>Não guarda os itens, não consome input de outros controles e não altera arquivos de jogos.
 /// Um toque breve ativa a linha; arrastar rola sem ativá-la. Atualize mesmo desabilitada.
 /// O desenho abre seus próprios lotes SpriteBatch com clipping; chame Draw fora de Begin/End.
@@ -94,6 +98,7 @@ public sealed class TouchListView
     public bool WasSelectionChanged { get; private set; }
 
     /// <summary>Altera a seleção por código, sem emitir pulsos de ativação.</summary>
+    /// <param name="index">Índice da seleção, ou -1 para limpar.</param>
     public void Select(int index)
     {
         if (index < -1 || index >= _count) throw new ArgumentOutOfRangeException(nameof(index));
@@ -101,9 +106,12 @@ public sealed class TouchListView
     }
 
     /// <summary>Posiciona a lista dentro dos limites, cancelando momentum.</summary>
+    /// <param name="offsetY">Distância finita desejada a partir do topo.</param>
     public void ScrollTo(float offsetY) => _scroll.ScrollTo(offsetY);
 
     /// <summary>Torna uma linha visível, opcionalmente centralizada.</summary>
+    /// <param name="index">Índice da linha.</param>
+    /// <param name="center">Centraliza a linha quando verdadeiro.</param>
     public void ScrollToItem(int index, bool center = false)
     {
         ValidateIndex(index);
@@ -116,6 +124,8 @@ public sealed class TouchListView
     }
 
     /// <summary>Retorna o retângulo virtual de uma linha, deslocado pelo scroll.</summary>
+    /// <param name="index">Índice a consultar.</param>
+    /// <returns>Retângulo virtual deslocado pelo scroll.</returns>
     public RectangleF GetItemBounds(int index)
     {
         ValidateIndex(index);
@@ -125,6 +135,8 @@ public sealed class TouchListView
     }
 
     /// <summary>Retorna a linha sob um ponto, ou -1 fora do viewport, sobre intervalo ou área vazia.</summary>
+    /// <param name="position">Coordenadas virtuais do toque.</param>
+    /// <returns>Índice atingido, ou -1 se não houver linha.</returns>
     public int HitTest(Vector2 position)
     {
         if (_count == 0 || !Bounds.Contains(position)) return -1;
@@ -135,6 +147,8 @@ public sealed class TouchListView
     }
 
     /// <summary>Intervalo [first, endExclusive) de linhas que podem intersectar o viewport.</summary>
+    /// <param name="first">Primeiro índice potencialmente visível.</param>
+    /// <param name="endExclusive">Índice final exclusivo.</param>
     public void GetVisibleRange(out int first, out int endExclusive)
     {
         if (_count == 0 || Bounds.Width == 0 || Bounds.Height == 0)
@@ -148,6 +162,9 @@ public sealed class TouchListView
     }
 
     /// <summary>Geometria proporcional da barra, vazia se não há overflow.</summary>
+    /// <param name="width">Largura solicitada da barra.</param>
+    /// <param name="minimumHeight">Altura mínima da barra.</param>
+    /// <returns>Retângulo da barra ou valor default sem overflow.</returns>
     public RectangleF GetThumbBounds(float width = 5, float minimumHeight = 24) =>
         _scroll.GetThumbBounds(width, minimumHeight);
 
@@ -162,6 +179,8 @@ public sealed class TouchListView
     }
 
     /// <summary>Atualiza seleção e arraste uma vez por passo fixo, preservando o ID de dedo original.</summary>
+    /// <param name="input">Snapshot de toque em coordenadas virtuais.</param>
+    /// <param name="deltaSeconds">Delta finito não negativo do passo, em segundos.</param>
     public void Update(InputState input, float deltaSeconds)
     {
         ArgumentNullException.ThrowIfNull(input);
@@ -219,6 +238,12 @@ public sealed class TouchListView
     /// <summary>Desenha apenas linhas visíveis e a barra, recortadas na área, com dados fornecidos pelo jogo.</summary>
     /// <remarks>Inicia e encerra os próprios lotes, portanto não pode ser chamado entre Begin/End.
     /// Não cria ou libera fonte/textura. O chamador controla o conteúdo e a paleta.</remarks>
+    /// <param name="batch">Lote gráfico próprio do jogo.</param>
+    /// <param name="font">Fonte de propriedade do jogo.</param>
+    /// <param name="labels">Rótulos de cada linha, sem rótulos nulos.</param>
+    /// <param name="style">Paleta de fundo e primeiro plano.</param>
+    /// <param name="selectedBackground">Cor da linha selecionada e da barra.</param>
+    /// <param name="textScale">Escala positiva finita do texto.</param>
     public void Draw(SpriteBatch batch, SpriteFont font, IReadOnlyList<string> labels,
         TouchButtonStyle style, Color selectedBackground, float textScale = 1)
     {
