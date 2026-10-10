@@ -15,7 +15,7 @@ public static class CliWebUiHtml
     public static string Render(ProjectCatalog catalog, string csrf,
         IReadOnlyDictionary<string, VisualRunDetails>? auditDetails = null,
         WebTaskBoard? taskBoard = null, AgentRoster? roster = null,
-        TeamReviewBoard? teamReviews = null)
+        TeamReviewBoard? teamReviews = null, PlannedTaskBoard? planned = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentException.ThrowIfNullOrWhiteSpace(csrf);
@@ -236,6 +236,81 @@ public static class CliWebUiHtml
                     }
                     output.Append("</section>");
                 }
+                if (planned is not null)
+                {
+                    var queue = planned.Tasks.Where(t =>
+                        t.ProjectId == project.Id && t.SessionId == session.Id)
+                        .OrderBy(t => t.Cancelled).ThenByDescending(t => t.CreatedAt).ToArray();
+                    output.Append("<section class='planned-board' aria-label='Tarefas planejadas'>")
+                        .Append("<h4>Quadro de tarefas · ")
+                        .Append(queue.Length.ToString(CultureInfo.InvariantCulture))
+                        .Append("</h4><p class='hint'>Planejar não executa modelos. ")
+                        .Append("Critério informado não significa aceite automático.</p>");
+                    foreach (var task in queue)
+                    {
+                        output.Append("<article class='planned-item' id='task-").Append(Escape(task.Id))
+                            .Append("'><strong>").Append(Escape(task.Title))
+                            .Append("</strong><small>").Append(task.Cancelled
+                                ? "Cancelada" : task.Attempts.Count == 0
+                                    ? "Planejada, não executada" : "Com histórico de tentativas")
+                            .Append(" · Executor: ").Append(Escape(task.Assignee)).Append("</small>")
+                            .Append("<p>").Append(Escape(task.Goal)).Append("</p>")
+                            .Append("<p class='hint'>Critério: ").Append(Escape(task.Acceptance)).Append("</p>");
+                        foreach (var attempt in task.Attempts)
+                        {
+                            var status = attempt.Outcome switch
+                            {
+                                "response_verified" => "Resposta presente e verificada",
+                                "review_recorded" => "Revisão independente registrada",
+                                "failed" => "Tentativa falhou",
+                                _ => "Sem evidência suficiente"
+                            };
+                            output.Append("<div class='planned-attempt'><small>")
+                                .Append(Escape(status)).Append(" · ")
+                                .Append(attempt.RunIds.Count.ToString(CultureInfo.InvariantCulture))
+                                .Append(" recibos vinculados</small></div>");
+                        }
+                        if (!task.Cancelled)
+                        {
+                            output.Append("<div class='planned-actions'>");
+                            if (taskBoard is not null && task.Attempts.Count < 20)
+                            {
+                                output.Append("<form action='/task-run' method='post'>")
+                                    .Append("<input type='hidden' name='csrf' value='").Append(Escape(csrf)).Append("'>")
+                                    .Append("<input type='hidden' name='taskId' value='").Append(Escape(task.Id)).Append("'>")
+                                    .Append("<button type='submit' ")
+                                    .Append(taskBoard.RemainingRuns == 0 || taskBoard.RemainingCents == 0
+                                        ? "disabled " : "")
+                                    .Append(">Executar agora</button></form>");
+                            }
+                            output.Append("<form method='post' action='/task-cancel'>")
+                                .Append("<input type='hidden' name='csrf' value='").Append(Escape(csrf)).Append("'>")
+                                .Append("<input type='hidden' name='taskId' value='").Append(Escape(task.Id)).Append("'>")
+                                .Append("<button type='submit'>Cancelar planejamento</button></form>")
+                                .Append("</div>");
+                        }
+                        output.Append("</article>");
+                    }
+                    output.Append("<form method='post' action='/planned-tasks' class='planned-form'>")
+                        .Append("<input type='hidden' name='csrf' value='").Append(Escape(csrf)).Append("'>")
+                        .Append("<input type='hidden' name='projectId' value='").Append(Escape(project.Id)).Append("'>")
+                        .Append("<input type='hidden' name='sessionId' value='").Append(Escape(session.Id)).Append("'>")
+                        .Append("<label>Título da tarefa</label><input name='title' maxlength='120' required ")
+                        .Append("placeholder='Ex.: revisar arquitetura'>")
+                        .Append("<label>Executor</label><select name='assignee'>")
+                        .Append("<option value='default'>Assistente padrão</option>");
+                    foreach (var agent in projectAgents)
+                        output.Append("<option value='agent:").Append(Escape(agent.Id)).Append("'>")
+                            .Append(Escape(agent.Name)).Append("</option>");
+                    foreach (var team in projectTeams)
+                        output.Append("<option value='team:").Append(Escape(team.Id)).Append("'>")
+                            .Append(Escape(team.Name)).Append("</option>");
+                    output.Append("</select><label>Objetivo</label><textarea name='goal' rows='3' ")
+                        .Append("maxlength='16384' required placeholder='Descreva a tarefa'></textarea>")
+                        .Append("<label>Critério de aceite</label><textarea name='acceptance' rows='2' ")
+                        .Append("maxlength='512' required placeholder='Como você verificará o resultado?'></textarea>")
+                        .Append("<button type='submit'>+ Planejar tarefa</button></form></section>");
+                }
                 if (taskBoard is not null)
                 {
                     output.Append("<form class='task-form' method='post' action='/tasks'>")
@@ -398,7 +473,7 @@ summary{cursor:pointer;list-style:none}summary::-webkit-details-marker{display:n
 .turn{border:1px solid #2f4159;background:#172335;padding:12px;border-radius:10px;margin-bottom:9px;overflow-wrap:anywhere}.turn.assistant{border-left:3px solid #5bbaff}.turn.user{border-left:3px solid #8a9fb8}
 .turn>div{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap;font-size:.8rem}.turn time{color:#afbed3}.turn p{white-space:pre-wrap;margin:8px 0 0}
 .run{display:flex;gap:10px;align-items:start;padding:12px 3px;border-top:1px solid #344459}.run strong{overflow-wrap:anywhere;font-size:.77rem}.run small{display:block;overflow-wrap:anywhere}.empty{padding:20px;border:1px dashed #3a4c63;border-radius:12px}
-.audit-board{border:1px solid #325478;background:linear-gradient(135deg,#12243a,#101a2a);border-radius:16px;padding:20px;margin:0 0 22px}.board-heading{display:flex;justify-content:space-between;align-items:start;gap:12px}.board-heading h2{margin:0}.board-heading p:last-child{color:#b8cce0;margin:8px 0}.board-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.agent-card{border:1px solid #355473;border-radius:12px;margin:8px 0;background:#132336}.agent-card>summary{display:flex;justify-content:space-between;gap:12px;padding:13px}.agent-card>summary span:first-child{display:grid;gap:4px;overflow-wrap:anywhere}.agent-tasks{display:flex;flex-wrap:wrap;gap:9px;padding:12px;border-top:1px solid #355473}.agent-tasks a{display:inline-block;border:1px solid #426187;border-radius:9px;padding:9px 12px;text-decoration:none}.execution-status{border:1px solid #335e79;border-radius:16px;padding:18px;margin-bottom:22px;background:#14283a}.execution-status h2{margin:0}.execution-status p:last-child{color:#b9d5e6}.execution-budget{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.execution-budget span{background:#092035;border:1px solid #365d79;border-radius:9px;padding:9px 12px;font-size:.85rem}.task-form{border:1px solid #426483;background:#112538;border-radius:10px;padding:12px;margin-bottom:12px}.task-form label{margin:0 0 8px}.task-form textarea{display:block;min-height:96px;width:100%;background:#0d1421;color:#fff;border:1px solid #53647e;border-radius:9px;padding:12px;resize:vertical;font:inherit}.task-form button{margin-top:10px}.task-form button:disabled,.task-form textarea:disabled{opacity:.5;cursor:not-allowed}.task-form .hint{margin:8px 0 0;font-size:.8rem}.task-form textarea:focus-visible{outline:3px solid #6bb3ff;outline-offset:3px}.run-body{min-width:0;flex:1}.run-audit{border:1px solid #3a526d;border-radius:10px;margin:9px 0 0;overflow:hidden}.run-audit>summary{padding:10px 12px;color:#aad8ff}.run-audit>div{padding:10px 13px;border-top:1px solid #3a526d}.run-audit p{margin:5px 0;overflow-wrap:anywhere}.run-audit li{overflow-wrap:anywhere}.artifact-preview-wrap{margin:7px 0;border:1px solid #34587a;border-radius:9px}.artifact-preview-wrap>summary{padding:10px 12px;color:#b8dbff}.artifact-preview{margin:0;padding:13px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.82rem;background:#0a1422;border-top:1px solid #34587a;max-height:440px;overflow-y:auto}.warning{color:#ffd394!important}.run:target,.session:target{outline:2px solid #6bb3ff;outline-offset:2px}.roster{margin:15px 0;padding:13px;background:#101e2e;border:1px solid #385575;border-radius:11px}.roster h4{margin:14px 0 9px}.roster-item{padding:9px 0;border-bottom:1px solid #2f475e}.roster-item strong,.roster-item small{display:block;overflow-wrap:anywhere}.roster-form{margin:12px 0;padding:12px;border:1px dashed #48617c;border-radius:10px}.roster-form button{margin-top:12px}.roster textarea,.roster select,.task-form select{display:block;width:100%;min-height:43px;padding:10px;background:#0d1421;color:#f4f7ff;border:1px solid #53647e;border-radius:8px;font:inherit}.roster textarea{resize:vertical}.roster textarea:focus-visible,.roster select:focus-visible,.task-form select:focus-visible{outline:3px solid #6bb3ff;outline-offset:2px}.review-inbox{margin:12px 0 18px;padding:13px;border:1px solid #49647b;background:#122333;border-radius:12px}.review-inbox h4{margin:0 0 10px}.review-entry{border-top:1px solid #3c536a;padding:12px 0}.review-entry strong,.review-entry small{display:block;overflow-wrap:anywhere}.review-form textarea{display:block;width:100%;min-height:65px;background:#0d1421;color:#fff;border:1px solid #53647e;border-radius:8px;font:inherit;padding:10px;resize:vertical}.review-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px}.review-actions button{flex:1;min-width:150px}.review-form textarea:focus-visible{outline:3px solid #6bb3ff;outline-offset:2px}footer{margin:30px 0 0;color:#9daec5;font-size:.79rem;border-top:1px solid #253449;padding-top:20px}.error{max-width:750px;margin:auto;padding:40px 18px}.error p{white-space:pre-wrap;overflow-wrap:anywhere}
+.audit-board{border:1px solid #325478;background:linear-gradient(135deg,#12243a,#101a2a);border-radius:16px;padding:20px;margin:0 0 22px}.board-heading{display:flex;justify-content:space-between;align-items:start;gap:12px}.board-heading h2{margin:0}.board-heading p:last-child{color:#b8cce0;margin:8px 0}.board-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}.agent-card{border:1px solid #355473;border-radius:12px;margin:8px 0;background:#132336}.agent-card>summary{display:flex;justify-content:space-between;gap:12px;padding:13px}.agent-card>summary span:first-child{display:grid;gap:4px;overflow-wrap:anywhere}.agent-tasks{display:flex;flex-wrap:wrap;gap:9px;padding:12px;border-top:1px solid #355473}.agent-tasks a{display:inline-block;border:1px solid #426187;border-radius:9px;padding:9px 12px;text-decoration:none}.execution-status{border:1px solid #335e79;border-radius:16px;padding:18px;margin-bottom:22px;background:#14283a}.execution-status h2{margin:0}.execution-status p:last-child{color:#b9d5e6}.execution-budget{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}.execution-budget span{background:#092035;border:1px solid #365d79;border-radius:9px;padding:9px 12px;font-size:.85rem}.task-form{border:1px solid #426483;background:#112538;border-radius:10px;padding:12px;margin-bottom:12px}.task-form label{margin:0 0 8px}.task-form textarea{display:block;min-height:96px;width:100%;background:#0d1421;color:#fff;border:1px solid #53647e;border-radius:9px;padding:12px;resize:vertical;font:inherit}.task-form button{margin-top:10px}.task-form button:disabled,.task-form textarea:disabled{opacity:.5;cursor:not-allowed}.task-form .hint{margin:8px 0 0;font-size:.8rem}.task-form textarea:focus-visible{outline:3px solid #6bb3ff;outline-offset:3px}.run-body{min-width:0;flex:1}.run-audit{border:1px solid #3a526d;border-radius:10px;margin:9px 0 0;overflow:hidden}.run-audit>summary{padding:10px 12px;color:#aad8ff}.run-audit>div{padding:10px 13px;border-top:1px solid #3a526d}.run-audit p{margin:5px 0;overflow-wrap:anywhere}.run-audit li{overflow-wrap:anywhere}.artifact-preview-wrap{margin:7px 0;border:1px solid #34587a;border-radius:9px}.artifact-preview-wrap>summary{padding:10px 12px;color:#b8dbff}.artifact-preview{margin:0;padding:13px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:.82rem;background:#0a1422;border-top:1px solid #34587a;max-height:440px;overflow-y:auto}.warning{color:#ffd394!important}.run:target,.session:target{outline:2px solid #6bb3ff;outline-offset:2px}.roster{margin:15px 0;padding:13px;background:#101e2e;border:1px solid #385575;border-radius:11px}.roster h4{margin:14px 0 9px}.roster-item{padding:9px 0;border-bottom:1px solid #2f475e}.roster-item strong,.roster-item small{display:block;overflow-wrap:anywhere}.roster-form{margin:12px 0;padding:12px;border:1px dashed #48617c;border-radius:10px}.roster-form button{margin-top:12px}.roster textarea,.roster select,.task-form select{display:block;width:100%;min-height:43px;padding:10px;background:#0d1421;color:#f4f7ff;border:1px solid #53647e;border-radius:8px;font:inherit}.roster textarea{resize:vertical}.roster textarea:focus-visible,.roster select:focus-visible,.task-form select:focus-visible{outline:3px solid #6bb3ff;outline-offset:2px}.review-inbox{margin:12px 0 18px;padding:13px;border:1px solid #49647b;background:#122333;border-radius:12px}.review-inbox h4{margin:0 0 10px}.review-entry{border-top:1px solid #3c536a;padding:12px 0}.review-entry strong,.review-entry small{display:block;overflow-wrap:anywhere}.review-form textarea{display:block;width:100%;min-height:65px;background:#0d1421;color:#fff;border:1px solid #53647e;border-radius:8px;font:inherit;padding:10px;resize:vertical}.review-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:9px}.review-actions button{flex:1;min-width:150px}.review-form textarea:focus-visible{outline:3px solid #6bb3ff;outline-offset:2px}.planned-board{margin:14px 0;padding:13px;border:1px solid #49647b;border-radius:12px;background:#102537}.planned-board h4{margin:0 0 8px}.planned-item{padding:12px;border:1px solid #41556b;border-radius:9px;margin:10px 0;background:#112032}.planned-item strong,.planned-item small{display:block;overflow-wrap:anywhere}.planned-item p{white-space:pre-wrap;overflow-wrap:anywhere}.planned-attempt{margin-top:5px}.planned-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.planned-actions form{flex:1;min-width:125px}.planned-actions button{width:100%}.planned-form{padding:12px;border-top:1px solid #456075}.planned-form textarea,.planned-form select{display:block;width:100%;min-height:46px;background:#0d1421;color:#fff;border:1px solid #53647e;border-radius:8px;font:inherit;padding:10px;resize:vertical}.planned-form textarea:focus-visible,.planned-form select:focus-visible{outline:3px solid #6bb3ff;outline-offset:2px}.planned-form button{margin-top:10px}footer{margin:30px 0 0;color:#9daec5;font-size:.79rem;border-top:1px solid #253449;padding-top:20px}.error{max-width:750px;margin:auto;padding:40px 18px}.error p{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:760px){.board-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.board-heading{flex-direction:column}.top{align-items:flex-start}.status{font-size:.65rem;max-width:145px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.layout{grid-template-columns:minmax(0,1fr)}.panel{padding:15px}}
 @media(max-width:370px){.inline{flex-direction:column}.status{display:none}.top{padding:16px}}
 </style></head><body>
