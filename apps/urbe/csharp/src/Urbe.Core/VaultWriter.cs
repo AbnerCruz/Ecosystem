@@ -231,6 +231,19 @@ public static class VaultWriter
             .Where(path => !future.Contains(path))
             .ToList();
 
+        // A moved/renamed document can have a newly generated temporary
+        // identity in a vault with no identity sidecar. Looking up its ID is
+        // not sufficient to prove the source bytes survived the move.
+        // Explicitly fail closed if any source being removed is non-UTF-8:
+        // deleting/moving it is not guaranteed to be lossless.
+        foreach (var removedPath in removedUserPaths)
+        {
+            if (!IsValidUtf8(working[removedPath].Bytes.Span))
+                throw new InvalidDataException(
+                    "Não é seguro mover ou excluir uma nota de codificação não UTF-8. " +
+                    "Converta o arquivo explicitamente: " + removedPath);
+        }
+
         var journalIsFuture = future.Contains(JournalV2);
         // A journal serializes document contents as Unicode strings. Do not
         // create a lossy recovery journal when any untouched source file
