@@ -1,6 +1,6 @@
 # Lista de UI com seleção por toque — LUNET-429
 
-`TouchListView` combina a rolagem de `TouchScrollArea` com seleção segura de linhas. É um controle reutilizável do Lunet para menus, missões, inventário e configurações, sem criar árvore de interface ou depender do Hub. O jogo continua dono das listas e de seus dados.
+`TouchListView` combina a rolagem de `TouchScrollArea` com seleção segura de linhas. É um controle reutilizável do Lunet para menus, missões, inventário e configurações, sem criar árvore de interface ou serviços externos. O jogo continua dono das listas e de seus dados.
 
 Cole este exemplo completo em `Game.cs` de um projeto em branco:
 
