@@ -1,0 +1,98 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-physics-box2d",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T22:32:12Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-435",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-physics-box2d-phase4-20261010",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/478",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Lunet.Framework.csproj",
+    "apps/lunet2d/src/Lunet.Framework/Physics/PhysicsWorld.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PhysicsWorldTests.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/adr/0009-physics-backend.md",
+    "apps/lunet2d/docs/guides/fisica-box2d.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "docs/governance/handoffs/HO-20261010-lunet-physics-box2d.json"
+  ],
+  "work_completed": [
+    "Retomado o item ORIGINAL Física completa Fase 4, sem nova funcionalidade arbitrária.",
+    "Implementado primeiro incremento de PhysicsWorld com backend puro C# Box2D.NET, corpos, fixtures, contatos, junta de distância, raycast, testes e ADR 0009.",
+    "Escopo do incremento preserva jogos existentes e API gráfica; não antecipa encerramento da Fase 4."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests incluindo testes de Física e API JSON",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Consistency e CI integrado",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "PhysicsWorld em Android no Laboratório",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/fisica-box2d.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Física completa ainda não fechada: joints e geometrias avançadas, filtros de colisão, sensor/end events, demo no Laboratório e validação Android.",
+    "NuGet restore do Box2D.NET no CI necessita confirmação."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir qualquer falha de CI sem omitir testes.",
+    "Expandir física da Fase 4 de forma incremental, sem avançar fases."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Código de produto estritamente em apps/lunet2d; handoff transversal apenas."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #477, PR #478, handoff de implementação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE permanecem pendentes."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Item pai Física completa permanece em aberto."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem alterações persistentes nos projetos ou arquivos existentes."
+    }
+  ],
+  "base_commit": "1d9bb03f1a7efdf3dbca1b4b42111d86743bd974",
+  "criticality": {
+    "declared": "routine"
+  }
+}

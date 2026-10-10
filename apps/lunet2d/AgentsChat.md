@@ -417,3 +417,5 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - PR #429, Issue #427, Fase 4: TouchGridView com seleção e ativação por toque, rolagem inercial, captura de dedo, redimensionamento seguro, hit-test O(1), desenho recortado de itens visíveis, sem arrays por célula.
 - Testes de multitouch, cancelamento, arraste, layouts, milhões de itens, invalid bounds, clipping e GC. Guia Game.cs interativo compilado via GameCompiler/GameHost, API JSON atualizada.
 - Sem ProjectStore ou dependência externa; CI de revisão e DEVICE pendentes. Issue #430 registra bloqueio de consistency preexistente na main.
+
+- 2026-10-10 — ChatGPT / LUNET-435: após reversão #476, retomado o próximo item REAL da Fase 4, física completa (SPEC §7). Backend Box2D.NET gerenciado; primeiro incremento com PhysicsWorld, corpos/fixtures, gravidade, colisão, raycast e junta de distância; CI/DEVICE pendentes, não encerrar gate. Issue #477; sem mudanças em outros produtos ou projetos salvos.
