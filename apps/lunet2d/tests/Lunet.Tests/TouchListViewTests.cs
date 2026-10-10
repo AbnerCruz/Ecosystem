@@ -148,7 +148,8 @@ public sealed class TouchListViewTests
         Assert.Throws<ArgumentOutOfRangeException>(() => new TouchListView(new(0, 0, 100, 100), int.MaxValue, float.MaxValue));
         var list = new TouchListView(new(0, 0, 100, 120), 3, 30, 4);
         Assert.Throws<ArgumentOutOfRangeException>(() => list.ItemCount = -1);
-        Assert.Throws<ArgumentOutOfRangeException>(() => list.ItemCount = int.MaxValue);
+        var huge = new TouchListView(new(0, 0, 100, 120), 1, float.MaxValue);
+        Assert.Throws<ArgumentOutOfRangeException>(() => huge.ItemCount = 2);
         Assert.Equal(3, list.ItemCount);
         Assert.Throws<ArgumentOutOfRangeException>(() => list.Select(3));
         Assert.Throws<ArgumentOutOfRangeException>(() => list.Select(-2));
