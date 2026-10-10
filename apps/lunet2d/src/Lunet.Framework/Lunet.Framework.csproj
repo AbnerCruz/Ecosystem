@@ -6,6 +6,9 @@
     <DefineConstants>$(DefineConstants);STBSHARP_INTERNAL</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Box2D.NET" Version="3.1.654" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Lunet.Tests" />
     <InternalsVisibleTo Include="Lunet.Android" />
   </ItemGroup>

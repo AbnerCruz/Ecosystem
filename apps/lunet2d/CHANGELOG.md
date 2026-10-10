@@ -17,6 +17,8 @@
 
 ### Added
 
+- LUNET-435 (em revisão): primeiro incremento de física completa com backend Box2D.NET em C# gerenciado, corpos, fixtures de círculo/caixa, gravidade, juntas de distância, contatos iniciados e raycast. Sem alterar jogos salvos; validação Android e itens avançados pendentes.
+
 - LUNET-433 (em revisão): grade de interface 2D responsiva para menus e inventários, com cálculo de colunas por largura, altura total e consulta virtualizada O(1), hit-test e TouchGridView com seleção, rolagem e renderização de janela, compatível com TouchScrollArea; exemplo C# offline e sem alocação no layout.
 
 - LUNET-430 (em revisão): font atlas TrueType gerado offline em C# (`TrueTypeFont.Bake` e `Content.LoadTrueTypeFont`), integração com SpriteBatch, métricas proporcionais, cache de fonte, testes e limites de memória.
