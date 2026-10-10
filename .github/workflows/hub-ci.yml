@@ -75,7 +75,7 @@ jobs:
           expected=$(tr -d '[:space:]' < apps/hub/tools/hub-dev.keystore.sha256)
           keytool -printcert -jarfile dist/hub-debug.apk | grep -E "Owner|SHA256"
           keytool -printcert -jarfile dist/hub-debug.apk | grep -q "SHA256: $expected" || { echo "APK não está assinado com a chave de desenvolvimento estável do Hub"; exit 1; }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: hub-debug-apk
           path: dist/hub-debug.apk
