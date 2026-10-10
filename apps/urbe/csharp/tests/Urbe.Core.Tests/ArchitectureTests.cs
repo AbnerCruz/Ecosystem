@@ -77,7 +77,10 @@ public sealed class ArchitectureTests
     public void NativeBuildCannotReplaceExistingAndroidInstallation()
     {
         var project = XDocument.Load(Path.Combine(Root, "src/Urbe.App/Urbe.App.csproj"));
-        Assert.Equal("app.urbe.csharp.dev", project.Descendants("ApplicationId").Single().Value);
+        Assert.Equal("app.urbe.csharp", project.Descendants("ApplicationId").Single().Value);
+        Assert.Equal("2.0.0-beta.1", project.Descendants("ApplicationDisplayVersion").Single().Value);
+        Assert.Equal("2000001", project.Descendants("ApplicationVersion").Single().Value);
+        Assert.NotEqual("app.urbe", project.Descendants("ApplicationId").Single().Value);
         var manifest = XDocument.Load(Path.Combine(Root, "src/Urbe.App/Platforms/Android/AndroidManifest.xml"));
         XNamespace android = "http://schemas.android.com/apk/res/android";
         Assert.Equal("false", manifest.Descendants("application").Single().Attribute(android + "allowBackup")?.Value);
