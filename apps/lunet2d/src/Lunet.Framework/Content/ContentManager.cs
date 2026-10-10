@@ -74,10 +74,10 @@ public sealed class ContentManager : IDisposable
     /// <remarks>O rasterizador é portátil e só roda no carregamento. Não requer fontes do sistema Android.
     /// Trate o resultado como emprestado: ao descarregar o conteúdo, o atlas é liberado.</remarks>
     public TrueTypeFont LoadTrueTypeFont(string path, float pixelHeight,
-        string characters = TrueTypeFont.DefaultCharacters, int atlasSize = 1024)
+        string? characters = null, int atlasSize = 1024)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        ArgumentNullException.ThrowIfNull(characters);
+        characters ??= TrueTypeFont.DefaultCharacters;
         var key = (path, pixelHeight, characters, atlasSize);
         if (_trueTypeFonts.TryGetValue(key, out var cached) && !cached.IsDisposed) return cached;
         using var input = _source.Open(path);
