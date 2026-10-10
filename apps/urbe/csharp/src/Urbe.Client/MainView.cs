@@ -41,6 +41,15 @@ public sealed class MainView : Grid
         RowDefinitions = new RowDefinitions("*,Auto");
 
         World = new WorldView();
+        CityMap = new CityMapOverlay { IsVisible = false };
+        CityMap.Navigated += (tileX, tileY) =>
+        {
+            World.Camera.X = tileX * LegacyWorld.Tile;
+            World.Camera.Y = tileY * LegacyWorld.Tile;
+            World.InvalidateVisual();
+            _biome.Text = World.BiomeNameAtCentre();
+            CityMap.IsVisible = false;
+        };
         Explorer = new NotesExplorer { IsVisible = false };
         Editor = new EditorOverlay { IsVisible = false };
         Explorer.Closed += () => Explorer.IsVisible = false;
@@ -67,6 +76,7 @@ public sealed class MainView : Grid
         _stage.Children.Add(Fab());
         _stage.Children.Add(HousePanel());
         _stage.Children.Add(LoadingLabel());
+        _stage.Children.Add(CityMap);
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
         SetColumn(_stage, 1);
@@ -85,6 +95,17 @@ public sealed class MainView : Grid
     }
 
     public WorldView World { get; }
+    public CityMapOverlay CityMap { get; }
+
+    /// <summary>The 1.8.4 full city map, not a second world or grid of notes.</summary>
+    public void ShowMap()
+    {
+        if (Editor.IsVisible || World.World is null || World.City is null) return;
+        Explorer.IsVisible = false;
+        _housePanel.IsVisible = false;
+        CityMap.Open(World.World, World.City, World.Camera);
+    }
+
     public NotesExplorer Explorer { get; }
     public EditorOverlay Editor { get; }
 
@@ -92,6 +113,7 @@ public sealed class MainView : Grid
     public void ShowNotes()
     {
         if (Editor.IsVisible) return;
+        CityMap.IsVisible = false;
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
         _housePanel.IsVisible = false;
         Explorer.IsVisible = true;
@@ -167,6 +189,7 @@ public sealed class MainView : Grid
                 return (w, city);
             });
             World.Load(world, city);
+            CityMap.IsVisible = false;
             Explorer.SetNotes(files);
             World.FitNotes();
             _biome.Text = World.BiomeNameAtCentre();
@@ -214,13 +237,21 @@ public sealed class MainView : Grid
             Orientation = Orientation.Horizontal,
             Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Children = { RoundButton(UrbeTheme.Icons.Search, "Buscar"), RoundButton(UrbeTheme.Icons.Map, "Mapa"), RoundButton(UrbeTheme.Icons.Sliders, "Personalizar"), VaultButton() }
+            Children = { RoundButton(UrbeTheme.Icons.Search, "Buscar"), MapButton(), RoundButton(UrbeTheme.Icons.Sliders, "Personalizar"), VaultButton() }
         };
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10), VerticalAlignment = VerticalAlignment.Top };
         SetColumn(buttons, 2);
         bar.Children.Add(pill);
         bar.Children.Add(buttons);
         return bar;
+    }
+
+    private Button MapButton()
+    {
+        var button = RoundButton(UrbeTheme.Icons.Map, "Mapa da cidade");
+        ToolTip.SetTip(button, "Mapa da cidade");
+        button.Click += (_, _) => ShowMap();
+        return button;
     }
 
     private Button VaultButton()

@@ -199,6 +199,48 @@ public sealed class HeadlessUiTests : IDisposable
             return true;
         }, CancellationToken.None));
 
+    [Fact]
+    public async Task CityMap_OnPhoneNavigatesOriginalWorldWithoutChangingZoom() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var view = new MainView();
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            await view.LoadAsync(TutorialNotes.Load());
+            await Settle(window, view);
+            view.ShowMap();
+            Dispatcher.UIThread.RunJobs();
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+            Assert.True(view.CityMap.IsVisible);
+            Assert.True(view.CityMap.HasWorld);
+            Assert.True(view.CityMap.MapSize.Width > 100);
+            Assert.False(view.CityMap.TryNavigate(new Point(-5, -5)));
+            var zoom = view.World.Camera.Zoom;
+            var lim = MapSurface.MapLimits(view.World.City!, view.World.Camera,
+                view.CityMap.MapSize.Width / view.CityMap.MapSize.Height);
+            var targetX = (lim.X0 + lim.X1) / 2 * Urbe.Client.World.LegacyWorld.Tile;
+            var targetY = (lim.Y0 + lim.Y1) / 2 * Urbe.Client.World.LegacyWorld.Tile;
+            Assert.True(view.CityMap.TryNavigate(new Point(
+                view.CityMap.MapSize.Width / 2, view.CityMap.MapSize.Height / 2)));
+            Assert.False(view.CityMap.IsVisible);
+            Assert.Equal(zoom, view.World.Camera.Zoom);
+            Assert.InRange(Math.Abs(view.World.Camera.X - targetX), 0, .01);
+            Assert.InRange(Math.Abs(view.World.Camera.Y - targetY), 0, .01);
+            return true;
+        }, CancellationToken.None));
+
+    [Fact]
+    public void CityMap_LimitsIncludeTheCameraAndRespectAspect()
+    {
+        var city = new LegacyCity(new LegacyCityTerrain((_, _) => LegacyBiome.Grass),
+            prefix => prefix + "1");
+        var camera = new Urbe.Client.World.Camera { X = 720 * 32, Y = -400 * 32 };
+        var limits = MapSurface.MapLimits(city, camera, 16.0 / 9);
+        Assert.True(limits.X0 < 720 && limits.X1 > 720);
+        Assert.True(limits.Y0 < -400 && limits.Y1 > -400);
+        Assert.InRange(limits.Width / limits.Height, 1.7777, 1.7779);
+    }
+
     private static async Task Settle(Window window, MainView view)
     {
         for (int i = 0; i < 600; i++)
