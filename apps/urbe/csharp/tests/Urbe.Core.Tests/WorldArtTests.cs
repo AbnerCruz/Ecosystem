@@ -20,7 +20,7 @@ public sealed class WorldArtTests
         const string path = "Centro/Casa.md";
         Assert.Equal(WorldArt.LegacySeed(path), WorldArt.LegacySeed(path));
         Assert.NotEqual(WorldArt.LegacySeed(path), WorldArt.LegacySeed("centro/Casa.md"));
-        var expected = WorldArt.LegacySeed(path) % 3u switch
+        var expected = (WorldArt.LegacySeed(path) % 3u) switch
         {
             0 => "world-sprite-red",
             1 => "world-sprite-ochre",
