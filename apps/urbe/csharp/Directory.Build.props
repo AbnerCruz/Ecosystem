@@ -3,5 +3,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- ADR-0032: versão única e fixa do Avalonia para o cliente nativo. -->
+    <AvaloniaVersion>12.1.3</AvaloniaVersion>
   </PropertyGroup>
 </Project>

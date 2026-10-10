@@ -1,3 +1,5 @@
+**Direção atual (DEC-0043 / ADR-0032, 10/10/2026):** o Urbe é a 1.8.4-beta, em C# **nativo sem WebView** (Avalonia: `src/Urbe.Client`, `src/Urbe.Desktop`, `src/Urbe.Android`). A casca Blazor (`Urbe.UI`, `Urbe.App`, `Urbe.Web`) descrita abaixo está congelada e será removida no UC-34. Ver `../docs/csharp/PRODUCT-DIRECTION.md`.
+
 **Diretriz visual:** manter o visual EXATO do Urbe 1.8.4-beta, sem redesenho. Sprites/texturas são extraídos no build a partir do código original via `tools/export-legacy-v184.mjs` e empacotados no Android C#. O mundo contínuo e a HUD ainda requerem portabilidade fiel C#; ver `../docs/csharp/UC19-VISUAL-ACCEPTANCE.md`.
 
 # Urbe C# — somente Android e Windows (beta 2.0.0-beta.8)

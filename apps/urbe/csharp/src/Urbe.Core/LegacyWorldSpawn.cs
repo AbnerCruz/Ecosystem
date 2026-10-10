@@ -69,8 +69,7 @@ public sealed class LegacyWorldSpawn
                 -Math.Max(0, 6 - distanceLake[i]) * .6
                 -Math.Max(0, 5 - distanceRiver[i]) * 2;
             int x = i % n, y = i / n;
-            score -= Math.Sqrt((x - n / 2.0) * (x - n / 2.0) +
-                               (y - n / 2.0) * (y - n / 2.0)) / n * 1.5;
+            score -= LegacyJsMath.Hypot(x - n / 2.0, y - n / 2.0) / n * 1.5; // terrain.js Math.hypot (V8)
             if (score > highest)
             {
                 highest = score;

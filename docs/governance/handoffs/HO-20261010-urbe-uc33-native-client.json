@@ -1,0 +1,189 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-uc33-native-client",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T16:58:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-33",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "ce9cda92ed51e2cb7f8e00ce927d18fe3cc2b6f2",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/461",
+  "files_changed": [
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/decisions.json",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+    "docs/adr/README.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/DEPENDENCIES.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/csharp/Directory.Build.props",
+    "apps/urbe/csharp/Urbe.Portable.slnx",
+    "apps/urbe/csharp/src/Urbe.Client/**",
+    "apps/urbe/csharp/src/Urbe.Desktop/**",
+    "apps/urbe/csharp/src/Urbe.Android/**",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/**",
+    ".github/workflows/urbe-checks.yml",
+    "docs/governance/handoffs/HO-20261010-urbe-uc33-native-client.json",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyJsMath.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyChunkPixels.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyChunkFarPixels.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyElevationClimateField.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldSpawn.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyRiverField.cs",
+    "apps/urbe/csharp/tools/legacy-city-oracle.mjs",
+    "apps/urbe/csharp/tools/world-chunks-oracle.mjs",
+    "apps/urbe/csharp/tools/chunk-pixels-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/**",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyCityOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldChunksOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelsTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/RegionShape.cs"
+  ],
+  "work_completed": [
+    "Registrada a ordem do proprietário de 2026-10-10 (ADD-0020, DEC-0043): o Urbe é a 1.8.4-beta; interface C# nativa sem tecnologia web; pilha delegada; direção de produção de artefatos após a paridade.",
+    "ADR-0032 aceito: Avalonia sobre Urbe.Core, condicionado ao gate G-N0; ADR-0025 substituído na parte de UI/hosts; casca Blazor congelada (UC-34 a remove).",
+    "Cliente nativo criado (Urbe.Client/Urbe.Desktop/Urbe.Android): cidade em tela cheia desenhada do motor 1.8.4 do Urbe.Core (createWorld('urbe'), texturas, decoração, árvores e prédios originais), câmera com arrastar/pinça/roda e limites originais, seleção de casa, painel, editor Fonte sobreposto com barra Markdown, pílula de bioma, botões e trilho/dock da 1.8.4.",
+    "CI: testes do cliente com renderização Skia headless e capturas como artefato; job novo gera APK de prévia (identidade app.urbe.nativepreview, lado a lado com as versões atuais) e pacote Windows, sem publicar release.",
+    "Pedido do proprietário ('é só ver o código dessa versão'): removidas as aproximações (chão em tiles uniformes e layout em blocos). Cidade portada das definições em vigor do app.js 1.8.4 (LegacyCity: bairros, cores, lotes orgânicos, casas, ruas A* v22) e desenho portado de drawGround/drawRegions(urbeForma+Chaikin)/drawRoads+pontes/drawTrees/drawBuildings/urbeRotulo/urbePilulaBairro, enquadramento city.fit e painel ARQUIVO.",
+    "Oráculo da cidade: tools/legacy-city-oracle.mjs roda a 1.8.4 sem modificações no Chromium (primeira abertura com Math.random/Date.now fixos); duas execuções viraram fixtures e o C#, com os mesmos ids, reproduz exatamente células, cores, casas, links e cada tile de rua.",
+    "Terreno corrigido: 525/225000 tiles divergiam do terrain.js (rios) porque o port fazia em float contas que o JS faz em double (blur, mar, chuva). Agora E/T/M/escoamento/vazão/lagos batem em 262144 células e biomas em 100% de 300x300 tiles. LegacyChunkFarPixels portado (chão de longe com copas).",
+    "LegacyChunkPixels adotado sem alterações do PR #428 (mesmo conteúdo, mescla sem conflito) e conferido contra o JS no mundo real."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test tests/Urbe.Client.Tests -c Release (7 testes: mundo, tutorial na ordem do content.js, primeira abertura com casas dentro dos bairros, câmera, UI headless com toque na casa, painel e digitação acentuada)",
+      "result": "passed",
+      "evidence": "Execução local 2026-10-10: 7/7."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test tests/Urbe.Core.Tests -c Release (inclui oráculos JS: cidade da primeira abertura em 2 fixtures, chão perto/longe e biomas do mundo real)",
+      "result": "passed",
+      "evidence": "Execução local: 472/472; mutações (LOTE_GAP=3; blur em float) fazem os oráculos falharem."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "passed",
+      "evidence": "Execução local: 22/22 checks."
+    },
+    {
+      "kind": "automated",
+      "check": "Build Android (Urbe.Android) e Windows (Urbe.Desktop win-x64) no CI",
+      "result": "pending",
+      "evidence": "Sem Android SDK no ambiente do agente (download bloqueado); o job csharp-client-native do urbe-checks compila e empacota."
+    },
+    {
+      "kind": "human",
+      "check": "Gate G-N0 no aparelho: instalar a prévia nativa (APK do CI), mover/pinçar a cidade, tocar numa casa, abrir a nota e digitar com o teclado do Android (acentos, seleção, colar). Comparar a aparência com a 1.8.4.",
+      "result": "pending",
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/461",
+      "critical": true,
+      "evidence": "Pendente: depende do APK gerado pelo CI deste PR."
+    }
+  ],
+  "known_issues": [
+    "Vida do mundo ainda não portada (life.js e app.js: moradores, fauna, dia/noite, clima, luzes).",
+    "Mapa/minimapa, busca, personalização, edição de bairro/casa (mover/copiar/excluir), .urbe/mapa.json e pasta real do vault ainda não portados; Copiar/Excluir aparecem como na 1.8.4, sem ação.",
+    "Ids do cliente são determinísticos (prefixo + contador); na 1.8.4 eram aleatórios (Date.now+Math.random), por isso a cidade original mudava a cada abertura. Mesmo algoritmo; ids persistidos virão do mapa.json.",
+    "Editor Visual nativo ainda não portado (UC-18).",
+    "Autores dos PRs #421/#428: o terreno de main tinha divergência de float × double; corrigido aqui com oráculo. O LegacyChunkPixels do #428 entra idêntico."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "CI do PR #461 (APK e Windows de prévia).",
+    "Proprietário: G-N0 no aparelho.",
+    "Portar life.js (moradores, fauna, dia/noite, clima, luzes) com oráculo.",
+    "Portar mapa/minimapa e busca; depois pasta real e .urbe/mapa.json."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/decisions.json",
+    "docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+    "docs/adr/0026-urbe-transicao-cliente-csharp.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma UI ativa por decisão: a casca Blazor é congelada e tem item de remoção (UC-34); o domínio continua só no Urbe.Core."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "O cliente nativo não referencia o Hub nem nada do plano de controle."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Nenhum código de domínio reescrito: o cliente reaproveita o Urbe.Core e seus 464 casos de teste continuam verdes."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff, Issue #460 e entrada no AGENTSCHAT com branch, base, arquivos, verificação e próxima ação."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "A ordem do proprietário dada em conversa foi persistida em ADD-0020/DEC-0043 antes de sustentar código."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas lidas diretamente (lista acima)."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Troca de pilha registrada em ADR-0032 com status do ADR-0025 atualizado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes headless não substituem o aparelho: G-N0 tem validação humana pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-33 continua [ ] no ROADMAP; nada marcado como concluído sem DEVICE."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Tudo nasce local em apps/urbe; nenhuma extração para platform/."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Prévia é artefato de CI do Product; não exige Hub nem publica release."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "native-world-renderer",
+      "status": "product-specific",
+      "rationale": "Desenha a cidade do Urbe a partir do motor de mundo do Urbe.Core; nenhum outro Product consome esse mundo. O Lunet tem renderização própria (OpenGL) com outro modelo."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution"
+    ],
+    "reason": "Registra decisão do proprietário, aceita ADR-0032 e substitui ADR-0025; altera workflow de CI. A ordem de direção não é autorização de integração: o PR espera a autorização do proprietário."
+  }
+}

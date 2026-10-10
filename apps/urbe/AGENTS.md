@@ -61,3 +61,12 @@ Budgets absolutos de performance (após o baseline); qualquer quebra de compatib
 O proprietário exige **migração e paridade de funcionalidades** do Urbe JavaScript para C#, mas **dispensa retrocompatibilidade/migração automática do estado de instalações antigas** como requisito de beta e corte C#. Priorizar **filesystem/vault real no Android, Editor/Explorer, Cidade e beta opt-in instalável**, depois concluir as demais funcionalidades. Um vault limpo com cópia manual de `.md` é aceito pelo proprietário. Não abrir tarefas para reconstruir versões antigas, configurações, bancos ou mapas legados a menos que haja defeito concreto com os arquivos Markdown atuais. Código/fixtures de compatibilidade já prontos não precisam ser apagados.
 
 A regra de dados do §3 continua protegendo `.md`, gravações e metadados **atuais**: nada de apagar automaticamente vault legado, fingir que dados em memória foram salvos ou sacrificar segurança de escrita. O JS 1.8.4-beta permanece canal existente enquanto o C# experimental for validado. **DEC-0042 autoriza a direção; PRs críticos ainda seguem o integrador e a label `integrar` aplicada pelo proprietário.** Não declarar gates de release aprovados sem CI/dispositivo quando requeridos.
+
+## 9. Ordem do proprietário — o Urbe é a 1.8.4-beta, em C# nativo (DEC-0043, 2026-10-10)
+
+**DECISÃO CONSOLIDADA — NÃO É PROPOSTA DE AGENTE.** Leia `docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md`, o ADR-0032 do Ecosystem e `docs/csharp/PRODUCT-DIRECTION.md` antes de trabalhar no cliente C#.
+
+- A **1.8.4-beta é a especificação** de experiência e visual: a cidade em tela cheia é o aplicativo; painéis e editor aparecem por cima dela. Não crie telas que não existam na 1.8.4 sem aprovação.
+- A interface C# é **nativa, sem WebView/HTML/CSS** (Avalonia: `csharp/src/Urbe.Client`, `Urbe.Desktop`, `Urbe.Android`). **Não acrescente funcionalidade a `Urbe.UI`, `Urbe.App` ou `Urbe.Web`** (casca Blazor congelada; sai no UC-34).
+- Regras de domínio continuam somente em `Urbe.Core`; o cliente nativo apenas desenha e encaminha entrada.
+- Depois da paridade, a direção é o Urbe como **produtor de artefatos** sobre o editor Visual (UC-35).

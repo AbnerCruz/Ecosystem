@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- DEC-0043 / ADR-0032: interface nativa do Urbe (sem WebView), compartilhada por Desktop e Android. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Urbe.Client</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Conteúdo da prévia UC-33: a pasta Tutorial da 1.8.4, somente leitura. -->
+    <EmbeddedResource Include="../../../tutorial/**/*" LogicalName="tutorial/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Urbe.Core/Urbe.Core.csproj" />
+  </ItemGroup>
+</Project>
