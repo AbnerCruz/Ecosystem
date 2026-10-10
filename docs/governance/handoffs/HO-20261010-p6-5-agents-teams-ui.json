@@ -1,0 +1,137 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-p6-5-agents-teams-ui",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T03:40:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-agents-teams",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-project-agent-teams-20261010",
+  "base_commit": "4a39ec28b2c0296f86dbe0b7adac9407ebe89f4c",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.ProjectStore/LocalAgentRosterStore.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebTaskRunner.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4WebAgentTeamsTests.cs",
+    "apps/ecosystem-ai/docs-r4-project-agents-teams.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261010-p6-5-agents-teams-ui.json"
+  ],
+  "work_completed": [
+    "Na sequência da PR #406 integrada à main com autorização expressa do proprietário, P6-5 ganhou gestão de perfis de agentes e equipes por projeto.",
+    "Roster local de Product com SHA-256, revisão e persistência atômica em roster.json ao lado do catálogo, sem migrar/alterar schema v1 de catalog.json.",
+    "Interface localhost e C# permite criar perfis com instruções, criar equipes com produtor e revisor distintos, e selecionar assistente/agente/produtor da equipe para executar tarefas supervisionadas.",
+    "Seleção pelo browser só aceita IDs de agentes/equipes que pertencem ao projeto. Program --agent-profile-id carrega identidade e instruções do roster, mantendo modelo, budget e ToolGrant do executor existente.",
+    "Não concede fs.write, não executa automaticamente revisor e não marca TeamPlan como integrado; não cria engine/scheduler/provedor/ledger paralelos.",
+    "Testes C# com HTTP real de criação, isolamento, auditoria do payload, escaping, concorrência/CSRF e seleção de executor com callback mockado sem rede."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI GitHub iniciará após PR; .NET não disponível no agente."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI GitHub."
+    }
+  ],
+  "known_issues": [
+    "Não existe revisão automática ou multitarefa de equipe; produtor executa, revisor é apenas designado.",
+    "roster.json é armazenado em diretório privado do Product, junto do catálogo, mas independente do envelope v1.",
+    "Perfis podem alterar instruções do modelo a partir do painel local; configuração/servidor continuam loopback e o Runtime mantém os mesmos grants/budget.",
+    "P6-5 ainda requer workflow de revisão/integração por TeamPlan, perfis mais ricos e Android distribuível."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar testes CI e consistência, corrigir falhas.",
+    "Integrar quando verificações forem aprovadas, respeitando política crítica.",
+    "Continuar fluxo de revisor independente com TeamPlan e IntegrationReceipt reais."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-project-agents-teams.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "LocalProjectStore catalog v1 inalterado; roster apenas dados do Product. Execução continua Runner atual."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Product standalone, sem dependência obrigatória do Hub."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Nenhum grant novo: execução seleciona identidade e instruções, não capability."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Sem execução autônoma: todo run somente após POST explícito."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "ROADMAP P6-5/Issue #354 com PR, docs, testes/handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Schema v1 histórico sem migração nem mudança, recurso aditivo."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Roster fora do workspace; checksums/locks; CSRF, Origin e Host loopback no UI; HTML-encoded."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara equipe multiagente automática, APK nem P6-5 fechada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Aguardar checks antes de integrar."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Nenhum outro runner/ledger; mesmo AgentDefinition/Core e CLI."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Dados UI exclusivos de Ecosystem AI Product; sem serviço compartilhado prematuro."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "product-project-roster",
+      "status": "product-specific",
+      "rationale": "Roster de perfis/equipes por projeto para a UI Ecosystem AI, consumido pelo executor e pelo mesmo AgentRuntime.Core."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "CRUD de configuração local de Product, só altera identidade e instruções sob mesmos grants read-only, budget e Host localhost já autorizados na PR #406, sem nova permissão ou execução em background."
+  },
+  "cost": null
+}
