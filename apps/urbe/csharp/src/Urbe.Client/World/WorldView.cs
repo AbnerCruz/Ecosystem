@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Urbe.Core;
 
 namespace Urbe.Client.World;
@@ -40,6 +41,11 @@ public sealed class WorldView : Control
     private bool _dragged;
     private double _pinchDistance;
     private int _worldGeneration;
+    private readonly LegacyWorldLife _life = new();
+    private readonly DispatcherTimer _lightTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private Bitmap? _lightTint;
+    private int _lightKey = -1;
+
 
     private sealed record ChunkImage(Bitmap Near, Bitmap Far, (int X, int Y, LegacyVegetation.Tree Tree)[] Trees);
 
@@ -47,6 +53,65 @@ public sealed class WorldView : Control
     {
         ClipToBounds = true;
         Focusable = true;
+        _lightTimer.Tick += (_, _) => RefreshLighting();
+        RefreshLighting();
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        RefreshLighting();
+        _lightTimer.Start();
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        _lightTimer.Stop();
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    /// <summary>The same 'ambiente' modes as the original 1.8.4 world/life.js.</summary>
+    public string LightingMode
+    {
+        get => _life.TimeMode;
+        set
+        {
+            if (value is not ("real" or "ciclo" or "dia" or "entardecer" or "noite"))
+                throw new ArgumentOutOfRangeException(nameof(value));
+            _life.TimeMode = value;
+            RefreshLighting();
+        }
+    }
+
+    public LegacyWorldLife.Light CurrentLight => _life.CurrentLight;
+
+    private void RefreshLighting()
+    {
+        // The light is sampled from the real clock; the timestep only advances weather
+        // easing. Do not tie the day/night clock to frame rate or create render loops.
+        _life.Advance(.1, DateTimeOffset.Now);
+        var light = _life.CurrentLight;
+        int key = (light.Red << 16) | (light.Green << 8) | light.Blue;
+        if (key == _lightKey) return;
+        _lightKey = key;
+        _lightTint?.Dispose();
+        _lightTint = key >= 0 && light.Red + light.Green + light.Blue < 762
+            ? Pixels.ToBitmap([(byte)light.Red, (byte)light.Green, (byte)light.Blue, 255], 1, 1)
+            : null;
+        InvalidateVisual();
+    }
+
+    private void DrawWorldLighting(DrawingContext context)
+    {
+        if (_lightTint is null || Bounds.Width <= 0 || Bounds.Height <= 0) return;
+        // app.js: globalCompositeOperation='multiply', full world canvas, BEFORE
+        // urbeRotulo/urbePilulaBairro. A 1x1 opaque bitmap is cached until RGB changes.
+        using (context.PushRenderOptions(new RenderOptions
+               {
+                   BitmapBlendingMode = BitmapBlendingMode.Multiply,
+                   BitmapInterpolationMode = BitmapInterpolationMode.None
+               }))
+            context.DrawImage(_lightTint, new Rect(0, 0, 1, 1), new Rect(Bounds.Size));
     }
 
     public LegacyWorld? World { get; private set; }
@@ -122,6 +187,8 @@ public sealed class WorldView : Control
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
             DrawTrees(context);
         DrawBuildings(context);
+        DrawWorldLighting(context);
+        DrawWorldLabels(context);
         RequestChunks(missing);
     }
 
@@ -344,7 +411,6 @@ public sealed class WorldView : Control
         var city = City!;
         var (x0, y0, x1, y1) = Camera.VisibleTiles();
         double z = Camera.Zoom, s = T * z / LegacyWorld.TilePixels;
-        var labels = new List<LegacyCityBuilding>();
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
             foreach (var b in city.Buildings)
             {
@@ -360,8 +426,18 @@ public sealed class WorldView : Control
                 double w = 48 * s * (b.W / 3.0), h = 56 * s * (b.H / 3.0);
                 context.DrawImage(Art(b), new Rect(0, 0, LegacyWorldBuildings.Width, LegacyWorldBuildings.Height),
                     new Rect(Math.Round(p.X), Math.Round(p.Y + b.H * T * z - h), Math.Ceiling(w), Math.Ceiling(h)));
-                if (z >= .42 || b == Selected) labels.Add(b);
             }
+    }
+
+    /// <summary>Names are intentionally AFTER lighting, identical to app.js 'urbeAntesDosRotulos'.</summary>
+    private void DrawWorldLabels(DrawingContext context)
+    {
+        var city = City!;
+        var (x0, y0, x1, y1) = Camera.VisibleTiles();
+        double z = Camera.Zoom;
+        var labels = city.Buildings.Where(b =>
+            !(b.X > x1 || b.X + b.W < x0 || b.Y > y1 || b.Y + b.H < y0) &&
+            (z >= .42 || b == Selected)).ToList();
         var used = DistrictLabelLayout();
         var districts = used.ToList();
         labels = labels.Select((b, i) => (b, i)).OrderBy(p => p.b == Selected ? 0 : 1).ThenBy(p => p.i).Select(p => p.b).ToList();

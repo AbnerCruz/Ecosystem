@@ -1,0 +1,81 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-native-day-night-multiply",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T18:57:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-legacy-world-light",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-day-night-multiply-20261010",
+  "base_commit": "a6be7fec1bc6f8c394b406107405da7f11923788",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261010-urbe-native-day-night-multiply.json"
+  ],
+  "work_completed": [
+    "Conectado LegacyWorldLife da PR #466 a WorldView nativa; cinco modos do 1.8.4 (real/ciclo/dia/entardecer/noite) e atualização por relógio independente de frames.",
+    "Tint RGB correto com composição Multiply em imagem 1x1 retida/cached, antes de renderizar rótulos; nomes ficam luminosos como no app.js original.",
+    "Timer ativo apenas durante visualização do controle, não redesenha a cada frame; testes headless cobrem keyframes e rejeição de modo inválido."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks CI + testes headless",
+      "result": "pending",
+      "evidence": "Aguardar CI da PR."
+    }
+  ],
+  "known_issues": [
+    "Efeitos de janelas acesas, chuva/neblina visual, fauna, céu, partículas e modo de ambiente selecionável pela UI continuam pendentes em UC-19.",
+    "Validação de aparência no Android precisa ser feita após APK do cliente nativo; não presumir paridade G-C3."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Completar céu, chuva/neve e janelas acesas do world/life.js em camadas nativas.",
+    "Permitir seleção do modo ambiente com o mesmo menu original e salvar em configurações quando disponível."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/world/life.js",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Utiliza LegacyWorldLife canônica do Core, sem inventar fórmula."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Ordem de draw reconstituída da 1.8.4: multiply antes dos rótulos."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "CI por produto, handoff e branch separada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara DEVICE aprovado pelo novo renderer."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 permanece incompleto com fauna e eventos por portar."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Somente desenho de mundo e relógio em UI Avalonia; sem alterações de dados, vault ou governança."
+  }
+}
