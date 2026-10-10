@@ -1125,3 +1125,73 @@ a:focus-visible {
         align-items: center;
     }
 }
+
+
+/* UC-19 — lightweight, fully C#-driven city viewport. */
+.world-surface { max-width: none; min-width: 0; }
+.world-header { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 1rem; }
+.world-header .surface-copy { max-width: 36rem; }
+.world-counters { display: flex; flex-wrap: wrap; gap: .45rem; align-self: end; }
+.world-counters span {
+    padding: .45rem .65rem; border: 1px solid #345a42;
+    border-radius: 999px; background: #1b3428; color: #bcdfca; font-size: .75rem;
+}
+.world-toolbar {
+    display: flex; align-items: center; flex-wrap: wrap; gap: .5rem;
+    padding: .8rem 0;
+}
+.world-toolbar button, .world-explorer-link {
+    min-height: 2.75rem; min-width: 2.75rem; display: inline-flex;
+    align-items: center; justify-content: center;
+    padding: .55rem .85rem; border: 1px solid #44684f;
+    border-radius: .7rem; color: #d9f6e5; background: #1d372a;
+    text-decoration: none; font-weight: 700; cursor: pointer;
+}
+.world-toolbar button:disabled { opacity: .4; cursor: default; }
+.world-zoom-level { min-width: 5.8rem; text-align: center; color: #bfdeca; font-size: .84rem; }
+.world-explorer-link { margin-left: auto; font-size: .78rem; }
+.world-viewport {
+    width: 100%; height: min(62dvh, 43rem); min-height: 18rem;
+    overflow: auto; overscroll-behavior: contain; touch-action: pan-x pan-y;
+    border: 2px solid #456c51; border-radius: 1rem;
+    background: #162d23; scrollbar-width: thin;
+}
+.world-map { display: block; max-width: none; touch-action: pan-x pan-y; }
+.city-district { cursor: pointer; outline: none; }
+.city-district rect { fill: #2a5135; stroke: #71956a; stroke-width: 3; stroke-dasharray: 11 8; }
+.city-district.is-selected rect { stroke: #dbeeb2; stroke-width: 4; fill: #365c37; }
+.city-district:focus-visible rect { stroke: #f7e9a8; stroke-width: 5; }
+.city-district-title { fill: #effad9; font-size: 23px; font-weight: 800; pointer-events: none; }
+.city-district-count { fill: #a9caad; font-size: 14px; pointer-events: none; }
+.city-district-divider { fill: none; stroke: #74936b; stroke-width: 2; pointer-events: none; }
+.city-road-shadow { stroke: #14261e; stroke-width: 18; stroke-linecap: round; pointer-events: none; }
+.city-road { stroke: #cfb675; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 13 10; pointer-events: none; }
+.city-building { cursor: pointer; outline: none; }
+.city-building-shadow { fill: #152a20; }
+.city-building-walls { fill: #dfc6a0; stroke: #4f3e32; stroke-width: 2; }
+.city-building-roof { fill: #aa5e49; stroke: #573b35; stroke-width: 2; }
+.city-building-window { fill: #85baca; stroke: #456f76; stroke-width: 1.5; }
+.city-building-door { fill: #645447; }
+.city-building-title { fill: #fffde8; font-size: 12px; font-weight: 700; paint-order: stroke; stroke: #153024; stroke-width: 4px; }
+.city-building:hover .city-building-walls,
+.city-building:focus-visible .city-building-walls { stroke: #fdf0ac; stroke-width: 5; }
+.city-building:focus-visible .city-building-roof { stroke: #fdf0ac; stroke-width: 4; }
+.world-builder {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end; gap: .8rem; margin-top: 1rem;
+    padding: 1rem; border: 1px solid #365744; border-radius: .9rem; background: #18291f;
+}
+.world-builder > div { grid-column: 1 / -1; }
+.world-builder h2 { margin: 0; font-size: 1.1rem; }
+.world-builder p { margin: .35rem 0 0; color: #a7c2b0; font-size: .82rem; }
+.world-builder .surface-action { margin: 0; min-height: 2.75rem; cursor: pointer; }
+.world-builder .world-notice { grid-column: 1 / -1; }
+.world-empty, .world-note, .world-notice {
+    color: #aecbb6; line-height: 1.5; font-size: .82rem; overflow-wrap: anywhere;
+}
+@media (max-width: 520px) {
+    .world-builder { grid-template-columns: minmax(0, 1fr); }
+    .world-builder > div, .world-builder .world-notice { grid-column: 1; }
+    .world-explorer-link { margin-left: 0; }
+    .world-viewport { height: min(57dvh, 29rem); }
+}
