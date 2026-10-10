@@ -102,19 +102,18 @@
         <div class="world-map-frame" aria-label="Mapa top-down da cidade e dos bairros"
              tabindex="0" style="@ZoomStyle">
             <div class="world-map">
-                <div class="world-road world-road-top" aria-hidden="true"></div>
                 <div class="world-plots world-tiles">
                     @foreach (var tile in CityTiles)
                     {
                         var entry = tile.Entry;
                         if (entry is null)
                         {
-                            <button type="button" class="world-plot world-empty-lot"
+                            <button type="button" class="world-plot world-empty-lot @WorldArt.TerrainClass(tile.Column, tile.Row)"
                                     disabled="@(!CanCreate || (_positionMode && _selectedHouse is null))"
                                     aria-label="@($"Terreno vazio, coluna {tile.Column + 1}, linha {tile.Row + 1}. " +
                                         (_positionMode ? "Reposicionar casa" : "Construir casa"))"
                                     @onclick="() => ActivateEmptyLot(tile)">
-                                <span aria-hidden="true" class="world-grass">✦</span>
+                                <span aria-hidden="true" class="world-grass"></span>
                                 <span class="world-plot-kind">@(_positionMode ? "Posicionar aqui" : "Construir aqui")</span>
                             </button>
                         }
@@ -125,11 +124,7 @@
                                     disabled="@_positionMode"
                                     aria-label="@($"Entrar no bairro {entry.Name}")"
                                     @onclick="() => EnterBairro(entry.Path)">
-                                <span class="world-building world-district-building" aria-hidden="true">
-                                    <span class="world-building-top"></span>
-                                    <span class="world-building-front"></span>
-                                    <span class="world-building-door"></span>
-                                </span>
+                                <span class="world-building world-sprite-hall" aria-hidden="true"></span>
                                 <span class="world-plot-label">@entry.Name</span>
                                 <span class="world-plot-kind">Bairro</span>
                             </button>
@@ -143,19 +138,19 @@
                                     aria-pressed="@(_positionMode && string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase))"
                                     aria-label="@(_positionMode ? $"Selecionar casa {entry.Name} para reposicionar" : $"Abrir nota {entry.Name}")"
                                     @onclick="() => SelectOrOpenHouse(entry.Path)">
-                                <span class="world-building world-house-building" aria-hidden="true">
-                                    <span class="world-building-top"></span>
-                                    <span class="world-building-front"></span>
-                                    <span class="world-building-door"></span>
-                                </span>
+                                <span class="world-building @WorldArt.BuildingClass(entry.Path, false)" aria-hidden="true"></span>
                                 <span class="world-plot-label">@entry.Name</span>
                                 <span class="world-plot-kind">@(_positionMode ? "Selecionar" : "Abrir nota")</span>
                             </button>
                         }
                     }
                 </div>
-                <div class="world-road world-road-bottom" aria-hidden="true"></div>
             </div>
+        </div>
+        <div class="world-map-legend" aria-label="Legenda da cidade">
+            <span><i class="world-legend-house" aria-hidden="true"></i> Casa · nota</span>
+            <span><i class="world-legend-district" aria-hidden="true"></i> Bairro · pasta</span>
+            <span><i class="world-legend-empty" aria-hidden="true"></i> Terreno livre</span>
         </div>
         <div class="world-footer">
             <span>@AllPlots.Count construção(ões) · @CityTileLayout.Capacity terreno(s)</span>
