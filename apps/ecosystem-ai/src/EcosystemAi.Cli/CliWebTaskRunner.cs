@@ -232,8 +232,13 @@ public sealed class CliWebTaskRunner
                 || !afterReviewer.Runs[^1].Verified
                 || afterReviewer.Turns[^1].Role != "assistant")
                 return new WebTaskResult(WebTaskState.ReviewIncomplete);
-            // Revisado por segundo run distinto; não implica aprovado,
-            // não chama ChangeIntegrator e não fabrica IntegrationReceipt.
+            // Parecer persistido APENAS se dois runs novos, verificados e
+            // respostas diferentes estão comprovados no catálogo canônico.
+            // Uma anotação do operador é separada do IntegrationReceipt.
+            new LocalTeamReviewStore(_catalog).Record(
+                projectId, sessionId, selectedTeam!.Id,
+                afterProducer.Runs[^1].RunId, afterReviewer.Runs[^1].RunId,
+                afterProducer.Turns.Count - 1, afterReviewer.Turns.Count - 1);
             return new WebTaskResult(WebTaskState.Reviewed);
         }
         finally { Volatile.Write(ref _busy, 0); }
