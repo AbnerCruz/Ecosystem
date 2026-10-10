@@ -45,6 +45,8 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
   HABILITA envios reais pelo painel. Requer --web-process-budget-cents N.
   Somente files.read; nunca fs.write. --web-with-history reenvia contexto (opt-in).
   --web-max-runs N (1..100, padrão 8) limita o total por sessão do processo.
+  --web-review-teams faz segundo run independente em tarefas atribuídas a equipes.
+  Requer dois budgets completos; nunca faz integração/aprovação automática.
 --chat --catalog DIR --project DIR --project-id ID --session-id ID com as opções
   de provedor/modelo/orçamento de execução abre um chat interativo no terminal.
   Cada mensagem gera um run real; histórico é reutilizado explicitamente nesse modo.
@@ -81,6 +83,7 @@ histórico local existe somente mediante --catalog explícito.
         bool webUi = false;
         bool webTasks = false;
         bool webWithHistory = false;
+        bool webReviewTeams = false;
         bool chatMode = false;
         bool listHistory = false;
         bool showHistory = false;
@@ -97,6 +100,7 @@ histórico local existe somente mediante --catalog explícito.
             if (args[i] == "--web-ui") { webUi = true; continue; }
             if (args[i] == "--web-tasks") { webTasks = true; continue; }
             if (args[i] == "--web-with-history") { webWithHistory = true; continue; }
+            if (args[i] == "--web-review-teams") { webReviewTeams = true; continue; }
             if (args[i] == "--chat") { chatMode = true; continue; }
             if (args[i] == "--list") { listHistory = true; continue; }
             if (args[i] == "--show") { showHistory = true; continue; }
@@ -153,18 +157,18 @@ histórico local existe somente mediante --catalog explícito.
                         long.Parse(Need("--web-process-budget-cents"), CultureInfo.InvariantCulture),
                         fields.TryGetValue("--web-max-runs", out var maxRuns)
                             ? int.Parse(maxRuns, CultureInfo.InvariantCulture) : 8,
-                        webWithHistory);
+                        webWithHistory, webReviewTeams);
                     taskRunner = new CliWebTaskRunner(Need("--catalog"),
                         fields.GetValueOrDefault("--journal"), settings);
                 }
-                else if (webWithHistory)
-                    throw new ArgumentException("--web-with-history exige --web-tasks.");
+                else if (webWithHistory || webReviewTeams)
+                    throw new ArgumentException("--web-with-history e --web-review-teams exigem --web-tasks.");
                 await CliWebUi.ServeAsync(Need("--catalog"), port,
                     journalDirectory: fields.GetValueOrDefault("--journal"),
                     embedTextPreviews: embedTextArtifacts, taskRunner: taskRunner);
                 return 0;
             }
-            if (webTasks || webWithHistory || fields.ContainsKey("--web-process-budget-cents")
+            if (webTasks || webWithHistory || webReviewTeams || fields.ContainsKey("--web-process-budget-cents")
                 || fields.ContainsKey("--web-max-runs"))
                 throw new ArgumentException("Opções de tarefas web exigem --web-ui.");
             if (fields.ContainsKey("--port"))
