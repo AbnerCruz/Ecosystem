@@ -126,6 +126,55 @@ public sealed class HeadlessUiTests : IDisposable
             return true;
         }, CancellationToken.None));
 
+
+    [Fact]
+    public async Task NativeExplorer_ListsFoldersSearchesAndOpensSelectedNote() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var view = new MainView();
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            await view.LoadAsync(TutorialNotes.Load());
+            view.ShowNotes();
+            Assert.True(view.Explorer.IsVisible);
+            Assert.Contains("Tutorial", view.Explorer.VisibleFolderPaths);
+            Assert.True(view.Explorer.TryEnterFolder("Tutorial"));
+            Assert.Equal("Tutorial", view.Explorer.CurrentFolder);
+            Assert.Contains("Tutorial/Comece aqui.md", view.Explorer.VisibleNotePaths);
+            view.Explorer.SearchText = "Comece";
+            Assert.Contains("Tutorial/Comece aqui.md", view.Explorer.VisibleNotePaths);
+            Assert.True(view.Explorer.TryOpenNote("Tutorial/Comece aqui.md"));
+            Assert.False(view.Explorer.IsVisible);
+            Assert.True(view.Editor.IsVisible);
+            Assert.Equal("Tutorial/Comece aqui.md", view.Editor.Current?.Path);
+            return true;
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task NativeExplorer_PreventsOpeningInvisibleOrUnknownPaths() =>
+        Assert.True(await Session.Dispatch<bool>(() =>
+        {
+            var explorer = new NotesExplorer();
+            var window = new Window { Width = 410, Height = 760, Content = explorer };
+            window.Show();
+            explorer.SetNotes([
+                new CityNote("Raiz.md", "# raiz"),
+                new CityNote("Bairro/Um.md", "# um"),
+                new CityNote("Bairro/Sub/Dois.md", "# dois")
+            ]);
+            Assert.Equal(new[] { "Raiz.md" }, explorer.VisibleNotePaths);
+            Assert.Equal(new[] { "Bairro" }, explorer.VisibleFolderPaths);
+            Assert.False(explorer.TryOpenNote("Bairro/Um.md"));
+            Assert.True(explorer.TryEnterFolder("Bairro"));
+            Assert.Contains("Bairro/Um.md", explorer.VisibleNotePaths);
+            Assert.Contains("Bairro/Sub", explorer.VisibleFolderPaths);
+            Assert.False(explorer.TryEnterFolder("Bairro/Sub/ausente"));
+            explorer.SearchText = "Dois";
+            Assert.Contains("Bairro/Sub/Dois.md", explorer.VisibleNotePaths);
+            Assert.True(explorer.TryOpenNote("Bairro/Sub/Dois.md"));
+            return true;
+        }, CancellationToken.None));
+
     [Fact]
     public async Task CityMap_OnPhoneNavigatesOriginalWorldWithoutChangingZoom() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
