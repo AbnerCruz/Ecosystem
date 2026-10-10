@@ -135,3 +135,12 @@ Há limite de execuções e orçamento reservado por instância do servidor,
 sem fila nem retry automático. Isto amplia a fronteira de confiança por
 permitir gastos através de HTTP local e **depende de autorização crítica
 para integrar**. [Uso, segurança e limitações](docs-r4-web-task-execution.md).
+
+## Agentes e equipes no painel (R4)
+
+O painel local agora cadastra **agentes e equipes por projeto**, com produtor e
+revisor distintos. A execução supervisionada permite escolher um agente ou o
+produtor da equipe, usando o **mesmo Runner, modelo, orçamento e grants read-only**.
+A revisão de equipe não é automática nesta etapa. Os perfis são gravados em
+`roster.json` ao lado do catálogo, sem alterar o schema de `catalog.json` v1.
+[Limites e testes](docs-r4-project-agents-teams.md).
