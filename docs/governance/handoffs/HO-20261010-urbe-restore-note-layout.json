@@ -1,0 +1,88 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-restore-note-layout",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T21:40:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-map-layout-restorer",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-restore-note-layout-20261010",
+  "base_commit": "932796641e673076214ede3c0e0bc5b645889ccc",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacySavedMapCamera.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacySavedMapTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261010-urbe-restore-note-layout.json"
+  ],
+  "work_completed": [
+    "Reabertura nativa do vault pode ler coordenadas x/y projetadas de .urbe/mapa.json via VaultReader e preservar posições de notas quando compatíveis com terreno, região e espaçamento.",
+    "Validação atômica de todas as posições; se o mapa divergir das regiões regeneradas, mantém a cidade gerada e recusa aplicar posicionamento parcial.",
+    "Ruas [[wikilinks]] são recalculadas pelo LegacyCity canônico após mover casas, sem escrever mapa ou Markdown.",
+    "Câmera x/y/zoom da 1.8.4 restaurada exclusivamente em mapa v1-v4 legível, sem alteração persistida.",
+    "Testes Core e headless cobrem layouts salvos, recusa de colisão/mapa futuro e câmera Android."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks / consistency",
+      "result": "pending",
+      "evidence": "CI deve validar compilação Core, native Android/Windows, headless e suite de paridade."
+    }
+  ],
+  "known_issues": [
+    "Leitura parcial do mapa (coordenadas de notas e câmera): geometria orgânica/regiões salvas, assets, pastas vazias e gravação do mapa ainda não foram restauradas no cliente C#; nenhuma paridade completa de mapa é alegada.",
+    "A implementação rejeita posições salvas incompatíveis com regiões regeneradas para evitar mapas visualmente quebrados; próxima fatia deverá reconstruir regiões do mapa salvo com fidelidade 1.8.4.",
+    "MainView também é modificado pelas PRs #467/#470 em andamento; integrador deve conciliar todas as funcionalidades e testes antes do merge.",
+    "DEVICE/G-N0/G-C3 continuam abertos; não publicar APK beta com escrita de mapa sem autorização crítica. "
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Reconstruir regiões e geometria completas do v4 de mapa.json sem perder proteção de versões futuras.",
+    "Integrar mapa vivo, criação segura de notas e restauro de posição à APK beta opt-in.",
+    "Validar fisicamente persistência real Android em aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "VaultReader e .urbe/mapa.json permanecem fonte única; código não grava nada."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Sem novo visual, apenas coordenadas/câmera e roads da 1.8.4."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Headless/Core/tests em PR e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não equivale DEVICE Android."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 segue aberto até paridade."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Apenas leitura projetada pelo leitor canônico e posicionamento visual, sem gravar ou alterar formato persistido."
+  }
+}

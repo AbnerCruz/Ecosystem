@@ -199,6 +199,29 @@ public sealed class HeadlessUiTests : IDisposable
             return true;
         }, CancellationToken.None));
 
+    [Fact]
+    public async Task City_ReopensCameraFromPhysicalVaultMapWithoutWritingOrRetilingWorld() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var files = new[]
+            {
+                new VaultFile("A.md", System.Text.Encoding.UTF8.GetBytes("# A")),
+                new VaultFile(".urbe/mapa.json", System.Text.Encoding.UTF8.GetBytes(
+                    """{"v":4,"mundo":"urbe","camera":{"x":1100,"y":750,"z":1.35}}"""))
+            };
+            var snapshot = VaultReader.Read(files);
+            var view = new MainView();
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            await view.LoadAsync([new CityNote("A.md", "# A")], "urbe", snapshot);
+            Assert.True(view.World.City!.Buildings.Count > 0);
+            Assert.Equal(1100, view.World.Camera.X);
+            Assert.Equal(750, view.World.Camera.Y);
+            Assert.Equal(1.35, view.World.Camera.Zoom);
+            Assert.Equal("# A", snapshot.Documents.Single().Text);
+            return true;
+        }, CancellationToken.None));
+
     private static async Task Settle(Window window, MainView view)
     {
         for (int i = 0; i < 600; i++)

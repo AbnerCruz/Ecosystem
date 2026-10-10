@@ -1208,6 +1208,87 @@ public sealed class LegacyCity
         return store;
     }
 
+    /// <summary>
+    /// Restore note positions projected by the canonical VaultReader from
+    /// .urbe/mapa.json. This is read-only: it does not write or migrate a vault.
+    /// Reject an invalid set atomically instead of leaving half of the city
+    /// moved or rewriting a bad/future map on the next save.
+    /// </summary>
+    /// <returns>Number of moved buildings, or zero if there is nothing safe to apply.</returns>
+    public int RestoreSavedNotePositions(
+        IReadOnlyList<VaultDocument> documents, DocumentStore store)
+    {
+        ArgumentNullException.ThrowIfNull(documents);
+        ArgumentNullException.ThrowIfNull(store);
+        var byPath = documents.ToDictionary(d => d.Path, StringComparer.OrdinalIgnoreCase);
+        var desired = new List<(LegacyCityBuilding Building, int X, int Y)>();
+        int changed = 0;
+        foreach (var b in Buildings)
+        {
+            int x = b.X, y = b.Y;
+            if (byPath.TryGetValue(b.Path, out var doc) &&
+                (doc.X.HasValue || doc.Y.HasValue))
+            {
+                if (doc.X is not { } dx || doc.Y is not { } dy ||
+                    !double.IsFinite(dx) || !double.IsFinite(dy) ||
+                    dx != Math.Truncate(dx) || dy != Math.Truncate(dy) ||
+                    dx < -1_000_000 || dx > 1_000_000 ||
+                    dy < -1_000_000 || dy > 1_000_000)
+                    return 0;
+                x = (int)dx;
+                y = (int)dy;
+            }
+            if (x != b.X || y != b.Y) changed++;
+            desired.Add((b, x, y));
+        }
+        if (changed == 0) return 0;
+
+        // All candidates are validated together, including unchanged houses.
+        // Do not compare against the old generated positions: that would prevent
+        // moving two notes that swap lots in the saved layout.
+        foreach (var (building, x, y) in desired)
+        {
+            var region = building.RegionId is null
+                ? null : Regions.Find(r => r.Id == building.RegionId);
+            if (building.RegionId is not null && region is null) return 0;
+            for (int yy = y; yy < y + building.H; yy++)
+            for (int xx = x; xx < x + building.W; xx++)
+            {
+                if (!_terrain.Buildable(xx, yy)) return 0;
+                if (region is not null)
+                {
+                    if (!RegionHasTile(region, xx, yy)) return 0;
+                    var innermost = RegionAt(xx, yy);
+                    if (innermost is not null && innermost.Id != region.Id) return 0;
+                }
+                else if (RegionAt(xx, yy) is not null)
+                    return 0;
+            }
+        }
+        for (int i = 0; i < desired.Count; i++)
+        for (int j = i + 1; j < desired.Count; j++)
+        {
+            var a = desired[i];
+            var b = desired[j];
+            if (a.X < b.X + b.Building.W + LotGap &&
+                a.X + a.Building.W + LotGap > b.X &&
+                a.Y < b.Y + b.Building.H + LotGap &&
+                a.Y + a.Building.H + LotGap > b.Y)
+                return 0;
+        }
+
+        foreach (var (building, x, y) in desired)
+        {
+            building.X = x;
+            building.Y = y;
+        }
+        // Semantic [[wikilink]] roads must connect to the saved locations,
+        // rather than to the temporary first-open layout.
+        using var index = new KnowledgeIndex(store);
+        RebuildRoads(store, index);
+        return changed;
+    }
+
     /// <summary>urbeNomeDoc: the title without the file extension.</summary>
     public static string NoteName(string title, string path)
     {
