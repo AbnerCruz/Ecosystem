@@ -1,0 +1,146 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-p6-5-desktop-self-contained-distribution",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T08:27:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-desktop-distribution",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-self-contained-desktop-distribution-20261010",
+  "base_commit": "f91683a48fc2ed1a8eed4adeb23b0237628cf468",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    ".github/workflows/ecosystem-ai-release.yml",
+    "apps/ecosystem-ai/docs-r4-desktop-distribution.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261010-p6-5-desktop-self-contained-distribution.json"
+  ],
+  "work_completed": [
+    "Acrescentada workflow dedicada ao Product Ecosystem AI para builds self-contained net10.0 sem SDK no dispositivo, consumindo exatamente o mesmo projeto CLI, WorkspaceSession/AgentRunner, Store e Provider já testados.",
+    "CI em pull requests executa os dois testes C# e publica apenas artefatos para win-x64, linux-x64 e osx-arm64; Linux executa smoke --help no app publicado sem provider externo.",
+    "Empacotamento de desenvolvimento preserva serialização e Runtime ASP.NET com PublishTrimmed=false, distribui README/START/VERSION e checksums SHA256 por RID.",
+    "Somente após integração autorizada na main, workflow produz prerelease de desenvolvimento GitHub com arquivos versionados. Token com permissão de escrita existe apenas no job de release, nunca nos builds da PR.",
+    "Não inclui segredo, credencial, workspace, catálogo, eventos ou dados do usuário; interface continua loopback e execução/modelo opt-in.",
+    "Docs de limitações: cross-publish não é teste no aparelho, binários sem assinatura/notarização, sem Android APK."
+  ],
+  "verification": [
+    {
+      "check": "Product + Runtime: dotnet test em CI",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI PR abre e executa suites existentes."
+    },
+    {
+      "check": "Cross publish linux-x64, win-x64, osx-arm64",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do novo workflow; não há SDK .NET instalado no executor deste agente."
+    },
+    {
+      "check": "Linux self-contained --help",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Job da matrix linux-x64 confirma execução do binário sem configurar chave."
+    },
+    {
+      "check": "Foundation consistency e integrator simulation",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI PR necessária antes de merge."
+    }
+  ],
+  "known_issues": [
+    "Não publica APK Android; MAUI/native host e teste no dispositivo permanecem pendentes de roadmap.",
+    "Build Windows/macOS é cross-publish em Linux, sem smoke nativo nem assinatura/notarização.",
+    "Workflow publica prerelease em push main após autorização crítica; não há release em PR.",
+    "Os pacotes precisam de configuração explícita de catálogo, provider e budget no dispositivo, e não são serviços remotos."
+  ],
+  "blockers": [
+    "Mudança de distribuição/release adiciona workflow com permissão contents:write na main e exige aprovação crítica explícita do proprietário via label integrar; não presumir autorização."
+  ],
+  "next_actions": [
+    "Verificar build de cada RID e consistência, corrigir erros de empacotamento.",
+    "Solicitar label integrar do proprietário quando CI verde antes de integrar.",
+    "Validar binários Windows/macOS e avançar com Host Android, sem declarar APK agora."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-desktop-distribution.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Mesmo Core/Workspace/Runner e Store; distribuído sem segunda implementação."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Executáveis desktop standalone, sem Hub obrigatório."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Não adiciona permissões runtime nem auto-habilita tool grants."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Nenhuma execução automática do modelo, deploy de workspace ou serviço remoto."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "P6-5, PR, README, handoff e gates rastreáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma migração do catálogo ou breaking change de código."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Binários sem segredo, prévia e execução continuam locais sob opt-in explícito."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara APK Android, assinatura, teste device nem R4 concluído."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Mudança de distribuição classificada crítica e bloqueada até CI e autorização proprietária."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "CLI original empacotada sem novo loop/provider/ledger paralelo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Mudança específica Product, sem promover/duplicar abstrações na plataforma."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ecosystem-ai-desktop-artifacts",
+      "status": "product-specific",
+      "rationale": "Workflow empacota Product já aprovado. Não introduz interfaces/SDK nem novas capabilities compartilhadas."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Workflow pode publicar prereleases executáveis na main e usa contents:write; alteração de distribuição requer autorização explícita do proprietário."
+  },
+  "cost": null
+}
