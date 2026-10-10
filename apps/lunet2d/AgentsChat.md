@@ -358,4 +358,4 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - LUNET-429 / Issue #410: lista 2D mobile por composição de `TouchScrollArea` existente, em branch `chatgpt/lunet-touch-list-20261010` baseada em main `3f4b6422a4b4d68b22126a4bcb1f453934319050`.
 - `TouchListView` separa tap/drag/multitouch, expõe seleção, hit-test, viewport, scrolling, range de render e Draw com clip. Os itens e a fonte continuam pertencendo ao jogo.
 - Testes de precisão, Cancel, desabilitação, boundaries, zero GC e compilação/execução real de Game.cs no GameHost; verificação do CI/APK/DEVICE deve ser observada após abertura do PR.
-- Sem alteração de ProjectStore, arquivos do usuário, Android, Hub, workflows ou contratos de plataforma. Reuso específico do Lunet; NN-002/008/017/018/022. A Fase 4 permanece aberta.
+- Sem alteração de ProjectStore, arquivos do usuário, Android, workflows ou contratos de plataforma. Reuso específico do Lunet; NN-002/008/017/018/022. A Fase 4 permanece aberta.
