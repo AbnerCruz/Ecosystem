@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Head Desktop do cliente nativo (Windows; também executa em Linux para desenvolvimento). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Urbe.Desktop</RootNamespace>
+    <AssemblyName>Urbe</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Urbe.Client/Urbe.Client.csproj" />
+  </ItemGroup>
+</Project>

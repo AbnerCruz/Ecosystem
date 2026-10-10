@@ -40,3 +40,14 @@ RECOMENDAÇÃO PARA A INVESTIGAÇÃO, não decisão: comparar uma UI C# de contr
 ## Aceite de UC-4 e trabalho subsequente
 
 O inventário registra uso real, opções por ambiente, riscos e prova para todas as dependências exigidas pelo item. Não promete substituto direto onde não foi verificado. UC-5 decide a pilha; UC-16/20 tratam matemática/plugins; UC-23–27 implementam hosts/canais; UC-29 prova aparelhos. Custos/licenças de bibliotecas candidatas serão auditados antes de adoção, sem trocar a licença consolidada do produto.
+
+## Adendo DEC-0043 / ADR-0032 (2026-10-10) — Avalonia no cliente nativo
+
+| Dependência | Versão | Licença | Uso | Onde |
+|---|---|---|---|---|
+| Avalonia, Avalonia.Themes.Fluent | 12.1.3 (fixa em `csharp/Directory.Build.props`) | MIT | Interface nativa sem WebView, compartilhada por Desktop e Android | `src/Urbe.Client` |
+| Avalonia.Desktop | 12.1.3 | MIT | Head Windows (executa também em Linux para desenvolvimento) | `src/Urbe.Desktop` |
+| Avalonia.Android | 12.1.3 | MIT | Head Android | `src/Urbe.Android` |
+| Avalonia.Headless, Avalonia.Skia | 12.1.3 | MIT | Testes de interface com renderização Skia real, sem janela | `tests/Urbe.Client.Tests` |
+
+Dependências transitivas relevantes: SkiaSharp e HarfBuzzSharp (MIT), AndroidX AppCompat/DocumentFile/Window (Apache-2.0) no head Android. Os avisos de terceiros do pacote distribuído entram no item de release (UC-27); as prévias do UC-33 são artefatos de CI, não distribuição.
