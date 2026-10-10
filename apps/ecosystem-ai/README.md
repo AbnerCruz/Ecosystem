@@ -123,3 +123,15 @@ não é devolvida. Não é teto distribuído entre processos e não substitui a
 fiscalização do Ledger nem garante valores faturados pelo provedor.
 
 [Limites e exemplos](docs-r4-chat-session-budget.md).
+
+## Enviar tarefas reais diretamente pelo painel local (P6-5)
+
+O painel web C# agora pode receber tarefas **explicitamente** através de
+`--web-tasks` junto com endpoint, modelo, preço e limites fixados pelo
+operador na inicialização. Não recebe credenciais nem concede `fs.write`
+no navegador; o formulário só escolhe projeto, sessão e tarefa.
+
+Há limite de execuções e orçamento reservado por instância do servidor,
+sem fila nem retry automático. Isto amplia a fronteira de confiança por
+permitir gastos através de HTTP local e **depende de autorização crítica
+para integrar**. [Uso, segurança e limitações](docs-r4-web-task-execution.md).
