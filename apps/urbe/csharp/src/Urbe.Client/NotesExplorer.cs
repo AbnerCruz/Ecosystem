@@ -94,7 +94,11 @@ public sealed class NotesExplorer : Grid
     public string SearchText
     {
         get => _search.Text ?? string.Empty;
-        set => _search.Text = value;
+        set
+        {
+            _search.Text = value;
+            Rebuild(); // deterministic API even before Avalonia raises TextChanged on dispatcher
+        }
     }
     public IReadOnlyList<string> VisibleNotePaths => _visibleNotes.Select(n => n.Path).ToArray();
     public IReadOnlyList<string> VisibleFolderPaths => _visibleFolders.ToArray();
