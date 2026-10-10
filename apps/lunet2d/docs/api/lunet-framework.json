@@ -15023,6 +15023,694 @@
         }
       ]
     },
+  {
+        "id": "T:Lunet.Physics.Collider2D",
+        "name": "Collider2D",
+        "namespace": "Lunet.Physics",
+        "kind": "struct",
+        "signature": "public readonly struct Collider2D",
+        "summary": "Geometria imut\u00E1vel de c\u00EDrculo ou caixa, em unidades do mundo f\u00EDsico.",
+        "remarks": "",
+        "examples": [
+          "\u0060\u0060\u0060\nvar shape = Lunet.Physics.Collider2D.Circle(0.5f);\n\u0060\u0060\u0060"
+        ],
+        "related": [],
+        "since": "0.0.1",
+        "members": [
+          {
+            "id": "P:Lunet.Physics.Collider2D.HalfExtents",
+            "name": "HalfExtents",
+            "kind": "property",
+            "signature": "public Vector2 HalfExtents { get; }",
+            "summary": "Metade da largura/altura para caixas.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.Collider2D.IsCircle",
+            "name": "IsCircle",
+            "kind": "property",
+            "signature": "public bool IsCircle { get; }",
+            "summary": "Verdadeiro para c\u00EDrculo; falso para caixa.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.Collider2D.Radius",
+            "name": "Radius",
+            "kind": "property",
+            "signature": "public float Radius { get; }",
+            "summary": "Raio para c\u00EDrculos, zero para caixas.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.Collider2D.Box(System.Single,System.Single)",
+            "name": "Box",
+            "kind": "method",
+            "signature": "public static Collider2D Box(float width, float height)",
+            "summary": "Cria caixa com largura e altura positivas.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "width",
+                "type": "float",
+                "description": "Largura total."
+              },
+              {
+                "name": "height",
+                "type": "float",
+                "description": "Altura total."
+              }
+            ],
+            "returns": "Colisor retangular validado.",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.Collider2D.Circle(System.Single)",
+            "name": "Circle",
+            "kind": "method",
+            "signature": "public static Collider2D Circle(float radius)",
+            "summary": "Cria uma forma circular com raio positivo.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "radius",
+                "type": "float",
+                "description": "Raio em metros do jogo."
+              }
+            ],
+            "returns": "Colisor circular validado.",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          }
+        ]
+      },
+      {
+        "id": "T:Lunet.Physics.Contact",
+        "name": "Contact",
+        "namespace": "Lunet.Physics",
+        "kind": "struct",
+        "signature": "public readonly struct Contact",
+        "summary": "Contato iniciado durante o \u00FAltimo passo entre duas fixtures.",
+        "remarks": "",
+        "examples": [
+          "\u0060\u0060\u0060\nLunet.Physics.Contact contact = default;\nvar fixture = contact.A;\n\u0060\u0060\u0060"
+        ],
+        "related": [],
+        "since": "0.0.1",
+        "members": [
+          {
+            "id": "P:Lunet.Physics.Contact.A",
+            "name": "A",
+            "kind": "property",
+            "signature": "public Fixture2D A { get; }",
+            "summary": "Primeira fixture em contato.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.Contact.B",
+            "name": "B",
+            "kind": "property",
+            "signature": "public Fixture2D B { get; }",
+            "summary": "Segunda fixture em contato.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          }
+        ]
+      },
+      {
+        "id": "T:Lunet.Physics.Fixture2D",
+        "name": "Fixture2D",
+        "namespace": "Lunet.Physics",
+        "kind": "class",
+        "signature": "public sealed class Fixture2D",
+        "summary": "Fixture f\u00EDsica pertencente a um corpo, com material e sensor opcionais.",
+        "remarks": "",
+        "examples": [
+          "\u0060\u0060\u0060\nusing var world = new Lunet.Physics.PhysicsWorld(System.Numerics.Vector2.Zero);\nvar body = world.CreateBody(Lunet.Physics.PhysicsBodyType.Static, System.Numerics.Vector2.Zero);\nvar fixture = body.AddFixture(Lunet.Physics.Collider2D.Circle(1));\n\u0060\u0060\u0060"
+        ],
+        "related": [],
+        "since": "0.0.1",
+        "members": [
+          {
+            "id": "P:Lunet.Physics.Fixture2D.IsValid",
+            "name": "IsValid",
+            "kind": "property",
+            "signature": "public bool IsValid { get; }",
+            "summary": "Verdadeiro enquanto a fixture e o mundo existem.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          }
+        ]
+      },
+      {
+        "id": "T:Lunet.Physics.Joint2D",
+        "name": "Joint2D",
+        "namespace": "Lunet.Physics",
+        "kind": "class",
+        "signature": "public sealed class Joint2D",
+        "summary": "Junta de dist\u00E2ncia entre dois corpos; destru\u00EDda com o mundo ou um corpo conectado.",
+        "remarks": "",
+        "examples": [
+          "\u0060\u0060\u0060\nusing var world = new Lunet.Physics.PhysicsWorld(System.Numerics.Vector2.Zero);\nvar a = world.CreateBody(Lunet.Physics.PhysicsBodyType.Dynamic, System.Numerics.Vector2.Zero);\nvar b = world.CreateBody(Lunet.Physics.PhysicsBodyType.Dynamic, new System.Numerics.Vector2(2, 0));\na.AddFixture(Lunet.Physics.Collider2D.Circle(1)); b.AddFixture(Lunet.Physics.Collider2D.Circle(1));\nvar joint = world.CreateDistanceJoint(a, b, 2);\n\u0060\u0060\u0060"
+        ],
+        "related": [],
+        "since": "0.0.1",
+        "members": [
+          {
+            "id": "P:Lunet.Physics.Joint2D.IsValid",
+            "name": "IsValid",
+            "kind": "property",
+            "signature": "public bool IsValid { get; }",
+            "summary": "Verdadeiro enquanto a junta continua registrada no backend.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.Joint2D.Destroy",
+            "name": "Destroy",
+            "kind": "method",
+            "signature": "public void Destroy()",
+            "summary": "Remove a junta sem remover os corpos.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          }
+        ]
+      },
+      {
+        "id": "T:Lunet.Physics.PhysicsBodyType",
+        "name": "PhysicsBodyType",
+        "namespace": "Lunet.Physics",
+        "kind": "enum",
+        "signature": "public enum PhysicsBodyType",
+        "summary": "Tipo de movimento de um corpo f\u00EDsico.",
+        "remarks": "",
+        "examples": [],
+        "related": [],
+        "since": "0.0.1",
+        "members": [
+          {
+            "id": "F:Lunet.Physics.PhysicsBodyType.Dynamic",
+            "name": "Dynamic",
+            "kind": "enum value",
+            "signature": "public const PhysicsBodyType Dynamic = 2",
+            "summary": "Corpo com massa e din\u00E2mica simulada.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "F:Lunet.Physics.PhysicsBodyType.Kinematic",
+            "name": "Kinematic",
+            "kind": "enum value",
+            "signature": "public const PhysicsBodyType Kinematic = 1",
+            "summary": "Corpo movido pelo jogo, n\u00E3o pela gravidade.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "F:Lunet.Physics.PhysicsBodyType.Static",
+            "name": "Static",
+            "kind": "enum value",
+            "signature": "public const PhysicsBodyType Static = 0",
+            "summary": "Corpo im\u00F3vel, massa zero.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          }
+        ]
+      },
+      {
+        "id": "T:Lunet.Physics.PhysicsWorld",
+        "name": "PhysicsWorld",
+        "namespace": "Lunet.Physics",
+        "kind": "class",
+        "signature": "public sealed class PhysicsWorld : IDisposable",
+        "summary": "Mundo f\u00EDsico Box2D em C# gerenciado, independente de Android e do renderizador.",
+        "remarks": "Use metros/unidades consistentes, um Step por Update fixo e descarte com Dispose. Os contatos de in\u00EDcio pertencem ao \u00FAltimo Step e devem ser consumidos antes do pr\u00F3ximo.",
+        "examples": [
+          "\u0060\u0060\u0060\nusing var world = new Lunet.Physics.PhysicsWorld(new System.Numerics.Vector2(0, 9.8f));\nvar ball = world.CreateBody(Lunet.Physics.PhysicsBodyType.Dynamic, new System.Numerics.Vector2(0, 0));\nball.AddFixture(Lunet.Physics.Collider2D.Circle(0.5f));\nworld.Step(1f / 60f);\n\u0060\u0060\u0060"
+        ],
+        "related": [],
+        "since": "0.0.1",
+        "members": [
+          {
+            "id": "M:Lunet.Physics.PhysicsWorld.#ctor(System.Numerics.Vector2)",
+            "name": "PhysicsWorld",
+            "kind": "constructor",
+            "signature": "public PhysicsWorld(Vector2 gravity)",
+            "summary": "Cria mundo determin\u00EDstico de thread \u00FAnica, com gravidade informada.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "gravity",
+                "type": "Vector2",
+                "description": "Gravidade em unidades por segundo ao quadrado."
+              }
+            ],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.PhysicsWorld.BodyCount",
+            "name": "BodyCount",
+            "kind": "property",
+            "signature": "public int BodyCount { get; }",
+            "summary": "N\u00FAmero de corpos ainda existentes no mundo.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.PhysicsWorld.ContactBeginCount",
+            "name": "ContactBeginCount",
+            "kind": "property",
+            "signature": "public int ContactBeginCount { get; }",
+            "summary": "Quantidade de pares cujo contato come\u00E7ou no \u00FAltimo Step.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.PhysicsWorld.Gravity",
+            "name": "Gravity",
+            "kind": "property",
+            "signature": "public Vector2 Gravity { get; set; }",
+            "summary": "Gravidade do mundo.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.PhysicsWorld.IsDisposed",
+            "name": "IsDisposed",
+            "kind": "property",
+            "signature": "public bool IsDisposed { get; }",
+            "summary": "Verdadeiro ap\u00F3s Dispose; objetos do mundo deixam de ser v\u00E1lidos.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.PhysicsWorld.CopyContactBegins(System.Span{Lunet.Physics.Contact})",
+            "name": "CopyContactBegins",
+            "kind": "method",
+            "signature": "public int CopyContactBegins(Span\u003CContact\u003E destination)",
+            "summary": "Copia contatos iniciados no \u00FAltimo Step, sem alocar no destino.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "destination",
+                "type": "Span\u003CContact\u003E",
+                "description": "Buffer de contatos."
+              }
+            ],
+            "returns": "Quantidade de contatos copiados.",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.PhysicsWorld.CreateBody(Lunet.Physics.PhysicsBodyType,System.Numerics.Vector2)",
+            "name": "CreateBody",
+            "kind": "method",
+            "signature": "public RigidBody2D CreateBody(PhysicsBodyType type, Vector2 position)",
+            "summary": "Cria corpo est\u00E1tico, cinem\u00E1tico ou din\u00E2mico na posi\u00E7\u00E3o informada.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "type",
+                "type": "PhysicsBodyType",
+                "description": "Tipo de movimento."
+              },
+              {
+                "name": "position",
+                "type": "Vector2",
+                "description": "Origem do corpo."
+              }
+            ],
+            "returns": "Corpo rec\u00E9m-criado.",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.PhysicsWorld.CreateDistanceJoint(Lunet.Physics.RigidBody2D,Lunet.Physics.RigidBody2D,System.Single)",
+            "name": "CreateDistanceJoint",
+            "kind": "method",
+            "signature": "public Joint2D CreateDistanceJoint(RigidBody2D a, RigidBody2D b, float length)",
+            "summary": "Une dois corpos deste mundo por uma dist\u00E2ncia fixa entre suas origens.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "a",
+                "type": "RigidBody2D",
+                "description": "Primeiro corpo."
+              },
+              {
+                "name": "b",
+                "type": "RigidBody2D",
+                "description": "Segundo corpo."
+              },
+              {
+                "name": "length",
+                "type": "float",
+                "description": "Dist\u00E2ncia positiva."
+              }
+            ],
+            "returns": "Junta ativa entre os corpos.",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.PhysicsWorld.Dispose",
+            "name": "Dispose",
+            "kind": "method",
+            "signature": "public void Dispose()",
+            "summary": "Destr\u00F3i todos os recursos f\u00EDsicos de forma idempotente.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.PhysicsWorld.Raycast(System.Numerics.Vector2,System.Numerics.Vector2,System.Single,Lunet.Physics.RaycastHit@)",
+            "name": "Raycast",
+            "kind": "method",
+            "signature": "public bool Raycast(Vector2 origin, Vector2 direction, float distance, out RaycastHit hit)",
+            "summary": "Consulta o primeiro objeto interceptado por um raio de comprimento limitado.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "origin",
+                "type": "Vector2",
+                "description": "Origem do raio."
+              },
+              {
+                "name": "direction",
+                "type": "Vector2",
+                "description": "Dire\u00E7\u00E3o n\u00E3o nula; normalizada internamente."
+              },
+              {
+                "name": "distance",
+                "type": "float",
+                "description": "Alcance positivo."
+              },
+              {
+                "name": "hit",
+                "type": "RaycastHit",
+                "description": "Resultado quando encontra um objeto."
+              }
+            ],
+            "returns": "True quando uma fixture \u00E9 atingida.",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.PhysicsWorld.Step(System.Single,System.Int32)",
+            "name": "Step",
+            "kind": "method",
+            "signature": "public void Step(float deltaSeconds, int subSteps = 4)",
+            "summary": "Avan\u00E7a a simula\u00E7\u00E3o; recomenda\u00E7\u00E3o: delta fixo de 1/60 e quatro subpassos.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "deltaSeconds",
+                "type": "float",
+                "description": "Tempo estritamente positivo."
+              },
+              {
+                "name": "subSteps",
+                "type": "int",
+                "description": "Subpassos positivos."
+              }
+            ],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          }
+        ]
+      },
+      {
+        "id": "T:Lunet.Physics.RaycastHit",
+        "name": "RaycastHit",
+        "namespace": "Lunet.Physics",
+        "kind": "struct",
+        "signature": "public readonly struct RaycastHit",
+        "summary": "Resultado do primeiro obst\u00E1culo encontrado por um raycast.",
+        "remarks": "",
+        "examples": [
+          "\u0060\u0060\u0060\nLunet.Physics.RaycastHit ray = default;\nvar point = ray.Point;\n\u0060\u0060\u0060"
+        ],
+        "related": [],
+        "since": "0.0.1",
+        "members": [
+          {
+            "id": "P:Lunet.Physics.RaycastHit.Distance",
+            "name": "Distance",
+            "kind": "property",
+            "signature": "public float Distance { get; }",
+            "summary": "Dist\u00E2ncia percorrida pelo raio.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.RaycastHit.Fixture",
+            "name": "Fixture",
+            "kind": "property",
+            "signature": "public Fixture2D Fixture { get; }",
+            "summary": "Fixture interceptada.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.RaycastHit.Normal",
+            "name": "Normal",
+            "kind": "property",
+            "signature": "public Vector2 Normal { get; }",
+            "summary": "Normal de superf\u00EDcie.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.RaycastHit.Point",
+            "name": "Point",
+            "kind": "property",
+            "signature": "public Vector2 Point { get; }",
+            "summary": "Ponto no mundo.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          }
+        ]
+      },
+      {
+        "id": "T:Lunet.Physics.RigidBody2D",
+        "name": "RigidBody2D",
+        "namespace": "Lunet.Physics",
+        "kind": "class",
+        "signature": "public sealed class RigidBody2D",
+        "summary": "Corpo r\u00EDgido de Box2D oculto atr\u00E1s da API port\u00E1til do Lunet.",
+        "remarks": "",
+        "examples": [
+          "\u0060\u0060\u0060\nusing var world = new Lunet.Physics.PhysicsWorld(System.Numerics.Vector2.Zero);\nvar body = world.CreateBody(Lunet.Physics.PhysicsBodyType.Dynamic, System.Numerics.Vector2.Zero);\nbody.AddFixture(Lunet.Physics.Collider2D.Circle(1));\n\u0060\u0060\u0060"
+        ],
+        "related": [],
+        "since": "0.0.1",
+        "members": [
+          {
+            "id": "P:Lunet.Physics.RigidBody2D.LinearVelocity",
+            "name": "LinearVelocity",
+            "kind": "property",
+            "signature": "public Vector2 LinearVelocity { get; set; }",
+            "summary": "Velocidade linear no sistema de coordenadas do mundo.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.RigidBody2D.Mass",
+            "name": "Mass",
+            "kind": "property",
+            "signature": "public float Mass { get; }",
+            "summary": "Massa calculada das fixtures n\u00E3o sensoriais.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "P:Lunet.Physics.RigidBody2D.Position",
+            "name": "Position",
+            "kind": "property",
+            "signature": "public Vector2 Position { get; }",
+            "summary": "Posi\u00E7\u00E3o do centro/origem do corpo.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.RigidBody2D.AddFixture(Lunet.Physics.Collider2D,System.Single,System.Single,System.Single,System.Boolean)",
+            "name": "AddFixture",
+            "kind": "method",
+            "signature": "public Fixture2D AddFixture(Collider2D collider, float density = 1f, float friction = 0.4f, float restitution = 0f, bool sensor = false)",
+            "summary": "Adiciona forma, densidade, atrito e restitui\u00E7\u00E3o.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "collider",
+                "type": "Collider2D",
+                "description": "Forma circular ou retangular."
+              },
+              {
+                "name": "density",
+                "type": "float",
+                "description": "Massa por \u00E1rea; n\u00E3o negativa."
+              },
+              {
+                "name": "friction",
+                "type": "float",
+                "description": "Atrito n\u00E3o negativo."
+              },
+              {
+                "name": "restitution",
+                "type": "float",
+                "description": "Rebote no intervalo de zero a um."
+              },
+              {
+                "name": "sensor",
+                "type": "bool",
+                "description": "Quando true detecta contato, sem resposta f\u00EDsica."
+              }
+            ],
+            "returns": "Fixture pertencente ao corpo.",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.RigidBody2D.ApplyImpulse(System.Numerics.Vector2)",
+            "name": "ApplyImpulse",
+            "kind": "method",
+            "signature": "public void ApplyImpulse(Vector2 impulse)",
+            "summary": "Aplica impulso instant\u00E2neo ao centro do corpo.",
+            "remarks": "",
+            "parameters": [
+              {
+                "name": "impulse",
+                "type": "Vector2",
+                "description": "Impulso em unidades f\u00EDsicas."
+              }
+            ],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          },
+          {
+            "id": "M:Lunet.Physics.RigidBody2D.Destroy",
+            "name": "Destroy",
+            "kind": "method",
+            "signature": "public void Destroy()",
+            "summary": "Remove este corpo, as fixtures e as juntas conectadas.",
+            "remarks": "",
+            "parameters": [],
+            "returns": "",
+            "examples": [],
+            "related": [],
+            "since": "0.0.1"
+          }
+        ]
+      },
     {
       "id": "T:Lunet.Scenes.Component2D",
       "name": "Component2D",
