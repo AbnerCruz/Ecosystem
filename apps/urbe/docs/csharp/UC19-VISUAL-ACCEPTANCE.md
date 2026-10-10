@@ -15,14 +15,20 @@ Não há liberdade criativa para **nenhum agente** substituir esse material por 
 
 ## Implementação sem voltar a publicar Web
 
-O aplicativo distribuído continua **C# MAUI Android** e depois Windows. Não construir nova distribuição Web/PWA. O JS antigo **não será o motor do produto**; ele pode rodar exclusivamente em ferramenta **de build offline** para exportar diretamente imagens PNG, preservando os pixels e as variantes oficiais, ou em testes de comparação. O extrator `apps/urbe/csharp/tools/export-legacy-v184.mjs` trava a versão e SHA da fonte e usa o Canvas original do Chromium para gerar texturas e sprites; o app recebe **imagens estáticas**, não o gerador JS.
+O produto distribuído usa **.NET MAUI / C# no Android**, depois Windows, e **não** terá nova distribuição Web/PWA. O único motor canônico de arte do novo aplicativo é a **geração procedural C# em execução**, portando os algoritmos de `pixel-art.js` e `terrain.js` sem redesenho. Os dados de imagem RGBA podem ser codificados temporariamente como PNG `data:image/png;base64` **em memória** para transporte ao WebView, não como sprites PNG estáticos preparados, empacotados ou referenciados em CSS.
+
+O JavaScript original é somente **oráculo de comparação** em testes offline; não é o renderer final nem motor executado no APK. Scripts históricos de exportação, caso existam, só podem gerar fixtures de **teste**, nunca a fonte de arte do produto. PR #423 (PNG pré-gerado) foi rejeitado/fechado; PRs #421 e #425 integraram geradores Core e a primeira ponte da UI. A grade provisória 8×8 não substitui o mundo contínuo original.
 
 ## Etapas obrigatórias, em ordem
 
-- [~] **LEGACY-1 — Arte original:** exportar PNGs fiéis de `pixel-art.js` (todas as variantes, árvores e texturas), mapear metadado `sprite=house1/house2/house3`, preservar e comparar hashes. Em andamento; não equivale à interface toda.
+- [~] **LEGACY-1 — Arte original:** portar geradores procedurais de `pixel-art.js` para C# em tempo de execução, incluindo texturas, árvores, construções e `sprite=house1/house2/house3`, confrontando os pixels RGBA com o legado. Fundação integrada em #421/#425; diferenças de rasterização/antialias e composição integral ainda abertas.
 - [~] **LEGACY-2 — Mundo original:** port C# em andamento, reproduzindo `terrain.js` 1.8.4-beta. Implementados: hash UTF-16, mulberry32, gradientes/FBM, 19 biomas, placas/limites, elevação/mar/clima, priority-flood, lagos, fluxo, spawn original, **segmentos/largura de rios, amostragem contínua por tile e vegetação/decoração original**, com golden tests extraídos do runtime JS para `urbe` e `Cidade Alpha`. Classes `LegacyTerrainMath`, `LegacyTectonicField`, `LegacyElevationClimateField`, `LegacyHydrologyField`, `LegacyWorldSpawn`, `LegacyRiverField`, `LegacyTileSampler`, `LegacyVegetation`. **Ainda faltam** construção da cena/renderizador top-down contínuo, regiões/estradas dos wikilinks, cidadãos, câmera e correspondência visual integral; tabuleiro 8×8 continua provisório. Não substituir a cena visível antes do aceite técnico.
 - [ ] **LEGACY-3 — Interface original:** copiar o aspecto de 1.8.4-beta dos painéis, HUD, toolbar, telas, ícones, cores e CSS sem reformular a composição; adaptar apenas os handlers para C#.
 - [ ] **LEGACY-4 — Aceite pixel a pixel:** capturas do mesmo cenário no mesmo viewport, densidade e dispositivo (Android horizontal), comparação de cores/pixels, pan, zoom e fluidez. G-C3 fica não aprovado até validação humana do proprietário.
+
+## Acompanhamento do desenvolvimento
+
+Um agente acionado somente com "continue o Urbe" deve aplicar o **Contrato de continuidade** no `docs/csharp/ROADMAP.md`, confrontar `main`/PRs/Issues atuais e avançar sem rediscutir a direção. Este arquivo é o **contrato de paridade visual**, não um segundo roadmap ou uma autorização de release.
 
 ## Bloqueios de qualidade
 
