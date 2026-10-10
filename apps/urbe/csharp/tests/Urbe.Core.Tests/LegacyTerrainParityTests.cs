@@ -192,6 +192,24 @@ public sealed class LegacyTerrainParityTests
         AssertClose(expectedAccumulation, field.AccumulationAt(x, y), 0.02);
     }
 
+    [Theory]
+    [InlineData("urbe", 2143, -90, -109)]
+    [InlineData("Cidade Alpha", 3158, -54, -173)]
+    public void OriginalWorldSpawnMatchesTerrainJs(
+        string seed, int spawnCell, double originX, double originY)
+    {
+        // Captured after the original terrain.js stage 6 score loop.
+        var hydrology = LegacyHydrologyField.Generate(
+            LegacyElevationClimateField.Generate(seed, gridSize: 64));
+        var spawn = LegacyWorldSpawn.Choose(hydrology);
+        Assert.Equal(spawnCell, spawn.CellIndex);
+        AssertClose(originX, spawn.OriginX, 0);
+        AssertClose(originY, spawn.OriginY, 0);
+        Assert.Equal(4, spawn.CellSize);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            LegacyWorldSpawn.Choose(hydrology, cellSize: 0));
+    }
+
     [Fact]
     public void SeedOrGridNeverChangesTheStoredVault()
     {
