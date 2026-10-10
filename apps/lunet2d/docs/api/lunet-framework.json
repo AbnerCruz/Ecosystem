@@ -17232,6 +17232,308 @@
       ]
     },
     {
+      "id": "T:Lunet.UI.TouchRadialMenu",
+      "name": "TouchRadialMenu",
+      "namespace": "Lunet.UI",
+      "kind": "class",
+      "signature": "public sealed class TouchRadialMenu",
+      "summary": "Menu radial de acoes mobile; selecao arrastando e confirmacao ao soltar.",
+      "remarks": "O setor zero aponta para cima e os demais seguem no sentido horario. Um dedo iniciado no centro pode arrastar ate a coroa. O jogo deve cancelar ao esconder ou pausar. Nao consome input de controles vizinhos. Update e consultas nao alocam por quadro.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar menu = new TouchRadialMenu(new Vector2(160, 240), 30, 100, 4);\nmenu.Update(Input);\nif (menu.ActivatedIndex \u003E= 0) Log.Info(\u0022Acao\u0022);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.TouchRadialMenu.#ctor(System.Numerics.Vector2,System.Single,System.Single,System.Int32)",
+          "name": "TouchRadialMenu",
+          "kind": "constructor",
+          "signature": "public TouchRadialMenu(Vector2 center, float innerRadius, float outerRadius, int itemCount)",
+          "summary": "Cria o menu com geometria e quantidade de setores validas.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "center",
+              "type": "Vector2",
+              "description": "Centro em coordenadas virtuais."
+            },
+            {
+              "name": "innerRadius",
+              "type": "float",
+              "description": "Zona morta, raio nao negativo."
+            },
+            {
+              "name": "outerRadius",
+              "type": "float",
+              "description": "Raio externo maior que o interno."
+            },
+            {
+              "name": "itemCount",
+              "type": "int",
+              "description": "Setores de 1 a 16."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchRadialMenu.ActivatedIndex",
+          "name": "ActivatedIndex",
+          "kind": "property",
+          "signature": "public int ActivatedIndex { get; }",
+          "summary": "Indice confirmado neste Update apenas, ou -1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchRadialMenu.Center",
+          "name": "Center",
+          "kind": "property",
+          "signature": "public Vector2 Center { get; }",
+          "summary": "Centro atual do menu.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchRadialMenu.InnerRadius",
+          "name": "InnerRadius",
+          "kind": "property",
+          "signature": "public float InnerRadius { get; }",
+          "summary": "Raio interno da coroa.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchRadialMenu.IsCaptured",
+          "name": "IsCaptured",
+          "kind": "property",
+          "signature": "public bool IsCaptured { get; }",
+          "summary": "Existe um dedo capturado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchRadialMenu.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Permite ou bloqueia toques; desabilitar cancela o gesto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchRadialMenu.ItemCount",
+          "name": "ItemCount",
+          "kind": "property",
+          "signature": "public int ItemCount { get; set; }",
+          "summary": "Quantidade de setores; alteracoes cancelam um gesto.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchRadialMenu.OuterRadius",
+          "name": "OuterRadius",
+          "kind": "property",
+          "signature": "public float OuterRadius { get; }",
+          "summary": "Raio externo da coroa.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchRadialMenu.SelectedIndex",
+          "name": "SelectedIndex",
+          "kind": "property",
+          "signature": "public int SelectedIndex { get; }",
+          "summary": "Setor apontado atualmente, ou -1 fora da coroa.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchRadialMenu.Cancel()",
+          "name": "Cancel",
+          "kind": "method",
+          "signature": "public void Cancel()",
+          "summary": "Encerra o gesto, mantendo os IDs acompanhados contra recaptura fantasma.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchRadialMenu.Draw(Lunet.Graphics.SpriteBatch,Lunet.Graphics.SpriteFont,System.Collections.Generic.IReadOnlyList{System.String},Lunet.Graphics.Color,Lunet.Graphics.Color,Lunet.Graphics.Color,System.Single)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(SpriteBatch batch, SpriteFont font, IReadOnlyList\u003Cstring\u003E labels, Color border, Color highlight, Color foreground, float textScale = 1f)",
+          "summary": "Desenha a coroa, divisoes, rotulos e arco do item apontado.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "SpriteBatch ativo entre Begin e End."
+            },
+            {
+              "name": "font",
+              "type": "SpriteFont",
+              "description": "Fonte administrada pelo jogo."
+            },
+            {
+              "name": "labels",
+              "type": "IReadOnlyList\u003Cstring\u003E",
+              "description": "Um rotulo nao nulo por setor."
+            },
+            {
+              "name": "border",
+              "type": "Color",
+              "description": "Cor do contorno."
+            },
+            {
+              "name": "highlight",
+              "type": "Color",
+              "description": "Cor do setor apontado."
+            },
+            {
+              "name": "foreground",
+              "type": "Color",
+              "description": "Cor do texto."
+            },
+            {
+              "name": "textScale",
+              "type": "float",
+              "description": "Escala positiva do texto."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchRadialMenu.GetItemPosition(System.Int32)",
+          "name": "GetItemPosition",
+          "kind": "method",
+          "signature": "public Vector2 GetItemPosition(int index)",
+          "summary": "Ponto de referencia para icones e rotulos no meio de um setor.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "Setor existente."
+            }
+          ],
+          "returns": "Coordenadas virtuais do centro angular do setor.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchRadialMenu.HitTest(System.Numerics.Vector2)",
+          "name": "HitTest",
+          "kind": "method",
+          "signature": "public int HitTest(Vector2 position)",
+          "summary": "Retorna o setor sob a posicao ou -1 na zona morta ou fora do anel.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Toque em coordenadas virtuais."
+            }
+          ],
+          "returns": "Setor zero baseado no topo, sentido horario.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchRadialMenu.SetGeometry(System.Numerics.Vector2,System.Single,System.Single)",
+          "name": "SetGeometry",
+          "kind": "method",
+          "signature": "public void SetGeometry(Vector2 center, float innerRadius, float outerRadius)",
+          "summary": "Recalcula o menu sem cancelar toques quando a geometria permanece identica.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "center",
+              "type": "Vector2",
+              "description": "Novo centro."
+            },
+            {
+              "name": "innerRadius",
+              "type": "float",
+              "description": "Novo raio interno."
+            },
+            {
+              "name": "outerRadius",
+              "type": "float",
+              "description": "Novo raio externo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchRadialMenu.Update(Lunet.Input.InputState)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(InputState input)",
+          "summary": "Processa o dedo capturado; somente Released dentro da coroa confirma o setor.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Snapshot dos dedos para o passo do jogo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.UI.TouchScrollArea",
       "name": "TouchScrollArea",
       "namespace": "Lunet.UI",
