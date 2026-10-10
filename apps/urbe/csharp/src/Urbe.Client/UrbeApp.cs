@@ -9,6 +9,9 @@ namespace Urbe.Client;
 /// <summary>Avalonia application shared by the Desktop and Android heads (ADR-0032).</summary>
 public sealed class UrbeApp : Application
 {
+    /// <summary>Injected by each native head; remains null for headless/desktop previews.</summary>
+    public static Func<IUrbeVaultStorage>? VaultStorageFactory { get; set; }
+
     public override void Initialize()
     {
         RequestedThemeVariant = ThemeVariant.Dark;
@@ -42,7 +45,7 @@ public sealed class UrbeApp : Application
     public static MainView CreateMainView()
     {
         var view = new MainView();
-        _ = view.LoadAsync(TutorialNotes.Load());
+        _ = view.InitializeAsync();
         return view;
     }
 }
