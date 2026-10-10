@@ -402,3 +402,18 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 ### 20261010-chatgpt-lunet-432-slider-compat — ChatGPT → integrador — review
 - CI inicial da PR #424 detectou falha em TouchSliderTests.NewBoundsApplyOnNextUpdateAndNoTravelCancels: comportamento preexistente é continuar arraste sobre novos Bounds. Reconciliado: slider preserva contrato, controle de captura deve usar Cancel() pelo jogo ao ocultar UI.
 - Teste novo LUNET-432 alterado para cobrir continuidade intencional, sem enfraquecer teste preexistente. Botões/listas/scroll permanecem protegidos contra interação fantasma ao relayout. Revalidar CI; DEVICE pendente.
+
+### 20261010-chatgpt-lunet-grid — ChatGPT → integrador — review
+- LUNET-433 / Issue #427 / Fase 4: UiGridLayout para distribuição responsiva de itens de inventário/menu, com colunas automáticas, altura fixa, padding, spacing, maxColumns e GetContentHeight para TouchScrollArea.
+- Testes de colunas retrato/paisagem, limites, geometria nula, prevenção de overflow/escrita parcial e hot path zero GC; exemplo offline Game.cs compilado e executado em GameHost, sem fontes/servidores externos.
+- Product-specific; sem alterar ProjectStore, Android, dados persistidos, outros Products ou contratos de plataforma. NN-002/008/017/018/022. CI e DEVICE pendentes até checagem externa; apenas o agente nesta tarefa, nenhum paralelismo presumido.
+
+### 20261010-chatgpt-lunet-grid-virtualization — ChatGPT → integrador — review
+- Complemento da PR #429 / Issue #427: `GetVisibleRange` e `GetCellBounds` para UI de inventário virtualizado com rolagem, em O(1), sem armazenar milhões de retângulos ou alocar por quadro.
+- Testes novos de interseção estrita, gaps vazios, offsets inválidos, paridade com Arrange, 100 milhões de itens e zero GC; documentação da API e guia atualizados.
+- Não altera contrato anterior, dados persistidos ou outra Product; 17 falhas da simulação do integrador foram reproduzidas também na CI da main anterior ao PR, não atribuíveis ao Lunet. CI de revisão pendente, não declarar gate integrado/DEVICE.
+
+### 20261010-chatgpt-lunet-grid-interactive — ChatGPT → integrador — review
+- PR #429, Issue #427, Fase 4: TouchGridView com seleção e ativação por toque, rolagem inercial, captura de dedo, redimensionamento seguro, hit-test O(1), desenho recortado de itens visíveis, sem arrays por célula.
+- Testes de multitouch, cancelamento, arraste, layouts, milhões de itens, invalid bounds, clipping e GC. Guia Game.cs interativo compilado via GameCompiler/GameHost, API JSON atualizada.
+- Sem ProjectStore ou dependência externa; CI de revisão e DEVICE pendentes. Issue #430 registra bloqueio de consistency preexistente na main.
