@@ -57,7 +57,6 @@ public sealed class ArchitectureTests
     [Theory]
     [InlineData("Urbe.Core", "")]
     [InlineData("Urbe.UI", "Urbe.Core")]
-    [InlineData("Urbe.Web", "Urbe.UI")]
     [InlineData("Urbe.App", "Urbe.UI")]
     public void ReferencesRespectApprovedBoundaries(string name, string dependency)
     {
@@ -89,10 +88,8 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void BothHostsComposeTheSameRazorRoot()
+    public void NativeAppComposesCanonicalRazorRoot()
     {
-        var web = File.ReadAllText(Path.Combine(Root, "src/Urbe.Web/App.razor"));
-        Assert.Contains("Urbe.UI.UrbeRoutes", web);
         var native = XDocument.Load(Path.Combine(Root, "src/Urbe.App/MainPage.xaml"));
         var root = native.Descendants().Single(element => element.Name.LocalName == "RootComponent");
         Assert.Equal("{x:Type ui:UrbeRoutes}", root.Attribute("ComponentType")?.Value);

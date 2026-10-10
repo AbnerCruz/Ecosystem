@@ -1,6 +1,7 @@
 name: urbe-checks
 
-# Produto atual + composição C# UC-8. Builds nativos apenas de verificação; sem assinatura/release.
+# Legado JS continua com seus checks; C# usa Core/UI + Android/Windows, sem Web/PWA.
+# Releases Android C#: urbe-csharp-mobile-release.yml.
 
 on:
   push:
@@ -79,17 +80,6 @@ jobs:
       - run: dotnet restore Urbe.Portable.slnx
       - run: dotnet build Urbe.Portable.slnx -c Release --no-restore
       - run: dotnet test --project tests/Urbe.Core.Tests -c Release --no-build
-      - run: dotnet publish src/Urbe.Web -c Release --no-restore -o artifacts/web
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: apps/urbe/package-lock.json
-      - run: npm ci
-        working-directory: apps/urbe
-      - run: npx playwright install --with-deps chromium
-        working-directory: apps/urbe
-      - run: node tests/web-smoke.mjs artifacts/web/wwwroot
 
   csharp-native:
     strategy:

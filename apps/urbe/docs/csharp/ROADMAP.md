@@ -5,6 +5,10 @@
 > **Estado de um gate:** linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` logo depois de cada `**Gate:**`.
 > **Nenhuma fase escolhe a pilha de UI ou de hosts antes de UC-5**, e nenhum código C# de produto entra antes de UC-7 e do gate G-C0.
 
+## Direção de plataforma — proprietário, 09/10/2026
+
+**Urbe C# será entregue para Android e desktop/Windows, sem versão Web/PWA.** Prioridade atual: desenvolvimento e releases Android; Windows vem depois. UC-23 permanece no documento apenas como ID histórico, sem nova entrega. O preview Web antigo não é alvo de release do produto C#. A retirada formal do host Web das ADRs consolidadas exige reconciliação crítica; esta direção já foi expressamente aprovada pelo proprietário.
+
 ## Próxima tarefa
 
 **M3 — Interface e extensões.** UC-17 foi integrada em `9143b239` com shell compartilhado e navegação canônica. Próxima tarefa: UC-18 — Editor Visual/Fonte e Explorer sobre a sessão C# compartilhada; validação humana de UI/toque continua reservada ao G-C3.
@@ -63,7 +67,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 ## M4 — Hosts e distribuição
 
-- [ ] UC-23 — Web/PWA (offline, service worker ou equivalente).
+- [ ] UC-23 — Web/PWA: **não aplicável** após a direção do proprietário de 09/10/2026; ID preservado somente para rastreabilidade.
 - [ ] UC-24 — Windows (instalação e atualização).
 - [ ] UC-25 — Android.
 - [ ] UC-26 — Atualização das instalações existentes e compatibilidade de dados entre clientes.
