@@ -4,6 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Urbe.Client;
+using Urbe.Client.World;
 using Urbe.Core;
 
 namespace Urbe.Client.Tests;
@@ -146,7 +147,7 @@ public sealed class HeadlessUiTests : IDisposable
             world.LightingMode = "entardecer";
             var dusk = world.CurrentLight;
             Assert.True(dusk.Red > dusk.Blue);
-            Assert.Throws<ArgumentOutOfRangeException>(() => world.LightingMode = "unsupported");
+            Assert.Throws<ArgumentOutOfRangeException>(() => { world.LightingMode = "unsupported"; });
             return true;
         }, CancellationToken.None));
 
