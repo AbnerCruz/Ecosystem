@@ -146,8 +146,10 @@ public sealed class CliWebTaskRunner
             // Garantir capacidade PARA DOIS runs ANTES de começar uma equipe.
             // Não consumir orçamento produzindo quando a revisão não cabe.
             var count = review ? 2 : 1;
+            var remaining = _settings.ProcessBudgetCents - _reserved;
             if (_runs > _settings.ProcessMaxRuns - count
-                || _settings.ProcessBudgetCents - _reserved < _settings.BudgetCents * count)
+                || remaining <= 0
+                || (review && remaining / _settings.BudgetCents < 2))
                 return new WebTaskResult(WebTaskState.QuotaExceeded);
 
             List<string> Args(string text, string? profileId, long allocation)
@@ -175,7 +177,8 @@ public sealed class CliWebTaskRunner
             // Reserva conservadora sem refund, também se o provider falhar.
             // A execução não tem retries nem tarefas agendadas.
             var before = project.Sessions.Single(s => s.Id == sessionId);
-            var allocation = _settings.BudgetCents;
+            var allocation = review ? _settings.BudgetCents
+                : Math.Min(_settings.BudgetCents, remaining);
             _reserved += allocation;
             _runs++;
             var code = await _execute(Args(goal, agentProfileId, allocation).ToArray());
