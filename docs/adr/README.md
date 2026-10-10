@@ -47,10 +47,11 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0022](0022-tabletop-rpg-product-solo-first.md) | Tabletop RPG como Product C# solo-first | Aceito (DEC-0033; ADD-0016) |
 | [0023](0023-capability-runtime-local-no-hub.md) | Capability Runtime experimental local no Hub | Proposto |
 | [0024](0024-host-api-publica-product-shell.md) | Host API pública e neutra de transporte para Product Shells | Aceito (DEC-0034-A) |
-| [0025](0025-urbe-pilha-ui-hosts-csharp.md) | Pilha de UI e hosts do Urbe em C# | Aceito (DEC-0035-A) |
+| [0025](0025-urbe-pilha-ui-hosts-csharp.md) | Pilha de UI e hosts do Urbe em C# | Substituído (UI/hosts por ADR-0032, DEC-0043) |
 | [0026](0026-urbe-transicao-cliente-csharp.md) | Transição do Urbe JavaScript para o cliente C# | Aceito (DEC-0036-C) |
 | [0027](0027-primeiro-ipc-local-android.md) | Primeiro IPC local autenticado entre Hub e Lunet | Aceito (DEC-0037-A) |
 | [0028](0028-text-inspect-core-compartilhado.md) | Núcleo compartilhado de `text.inspect` para o segundo Host | Aceito (DEC-0038-A) |
 | [0029](0029-product-de-autoria-matematica-temporal.md) | Product independente de autoria matemática temporal | Aceito (DEC-0040-A) |
 | [0030](0030-documento-canonico-de-autoria-matematica.md) | Documento canônico e autoria textual da matemática temporal | Aceito (DEC-0040-A) |
 | [0031](0031-p6-4-piloto-headless-lunet.md) | Piloto headless do Host Lunet para P6-4 | Aceito (DEC-0041, piloto restrito) |
+| [0032](0032-urbe-ui-nativa-sem-webview.md) | Urbe C#: interface nativa sem WebView, com a 1.8.4-beta como especificação | Aceito (DEC-0043) |

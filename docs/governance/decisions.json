@@ -1563,6 +1563,41 @@
       "decidedAt": "2026-10-09",
       "record": "docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0043",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": true,
+      "title": "O Urbe é a 1.8.4-beta, em C# nativo sem tecnologia web na interface",
+      "context": "O proprietário declarou (2026-10-10, nesta conversa) que o cliente C# do Ecosystem 'é outro aplicativo' e que a 1.8.4-beta é o Urbe e o ponto de partida. Rejeitou tecnologia web ('é desenvolvido para a web, eu quero um aplicativo desktop e mobile feito em C#', como o Lunet). FATO: DEC-0035-A/ADR-0025 escolheu Blazor WebAssembly + MAUI Blazor Hybrid (UI em HTML/CSS numa WebView), motivada principalmente pelo alvo Web/PWA, retirado em 09/10. FATO: o shell C# atual é um app de abas (Início/Explorer/Editor/Cidade/Mais), enquanto na 1.8.4 a cidade em tela cheia é o aplicativo. O domínio, incluindo o motor de mundo da 1.8.4, já está em C# puro em Urbe.Core.",
+      "question": "O cliente C# do Urbe deve reproduzir a experiência da 1.8.4-beta com interface nativa (sem WebView) em Android e Windows, reaproveitando o Urbe.Core e abandonando a casca Blazor?",
+      "alternatives": [
+        {
+          "option": "A — 1.8.4-beta como especificação; UI C# nativa sem WebView (pilha escolhida tecnicamente, ADR-0032); Urbe.Core preservado; casca Blazor congelada e removida após substituição",
+          "consequences": "O app volta a ser o Urbe que o proprietário usa: cidade em tela cheia com painéis sobrepostos, agora em C# nativo. Exige um spike (G-N0) que prove mundo e editor com teclado virtual em Android e desktop. A casca Blazor (≈5,8 mil linhas) é descartada; o domínio (≈17 mil linhas, 274 testes) segue."
+        },
+        {
+          "option": "B — manter MAUI Blazor Hybrid e redesenhar as telas para parecer a 1.8.4",
+          "consequences": "Menor troca imediata, mas a interface continua sendo web por baixo, contra o pedido do proprietário."
+        }
+      ],
+      "consequences": "DECISÃO DO PROPRIETÁRIO: A. Substitui DEC-0035-A na parte de UI/hosts (ADR-0025 → ADR-0032). Escolha concreta da pilha delegada pelo proprietário ('contanto que funcione em ambos'), registrada no ADR-0032 (Avalonia, condicionada ao gate G-N0; contingência: caminho do Lunet). Direção de produto registrada: experiência da 1.8.4 + Urbe como criador e produtor de artefatos sobre o sistema de edição de texto, com o editor Visual como peça central, depois da paridade. Não altera DEC-0042, a 1.8.4 publicada, o APK beta MAUI já distribuído, nem a exigência de autorização para PRs críticos.",
+      "manifestCompatibility": "Mudança arquitetural explícita do proprietário (NN-009/NN-011) com ADR-0032. C# continua padrão (NN-005) e o domínio existente é preservado em vez de reescrito; abstrações ficam locais em apps/urbe (NN-020/NN-022); produto standalone sem Hub (NN-003/NN-023); validação em aparelho não é substituída por CI (NN-017). A ordem de direção não é autorização de merge de PR crítico (ADD-0012/ADR-0015).",
+      "recommendation": "A — UI nativa sobre o Urbe.Core existente, com spike G-N0 antes de portar telas.",
+      "related": [
+        "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+        "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+        "docs/adr/0025-urbe-pilha-ui-hosts-csharp.md",
+        "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+        "apps/urbe/docs/csharp/ROADMAP.md"
+      ],
+      "raisedBy": "Proprietário do Ecosystem — instrução explícita nesta conversa",
+      "raisedAt": "2026-10-10",
+      "decision": "A — o Urbe é a 1.8.4-beta; o cliente C# a reproduz com interface nativa sem WebView em Android e Windows, sobre o Urbe.Core; a pilha concreta foi delegada e registrada no ADR-0032; a produção de artefatos é a direção seguinte, após a paridade.",
+      "decidedAt": "2026-10-10",
+      "record": "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+      "consequencesApplied": true
     }
   ]
 }

@@ -2,7 +2,7 @@
 
 ## Status
 
-Aceito — **DEC-0035-A** escolhida pelo proprietário em 2026-10-04. O código de produto continua condicionado ao gate G-C0.
+Substituído — na parte de UI e hosts, por [ADR-0032](0032-urbe-ui-nativa-sem-webview.md) (DEC-0043, 2026-10-10): o proprietário retirou o Web/PWA (09/10) e a tecnologia web da interface (10/10). Histórico: **DEC-0035-A** escolhida pelo proprietário em 2026-10-04. A fronteira `Urbe.Core` C# puro continua válida.
 
 ## Contexto
 

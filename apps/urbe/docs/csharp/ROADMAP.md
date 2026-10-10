@@ -5,6 +5,16 @@
 > **Estado de um gate:** linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` logo depois de cada `**Gate:**`.
 > **Nenhuma fase escolhe a pilha de UI ou de hosts antes de UC-5**, e nenhum código C# de produto entra antes de UC-7 e do gate G-C0.
 
+## O Urbe é a 1.8.4-beta, em C# nativo — proprietário, 10/10/2026 (DEC-0043)
+
+**Esta seção prevalece sobre as seções abaixo onde houver conflito.** Fonte: DEC-0043, [ADD-0020](../../../../docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md), [ADR-0032](../../../../docs/adr/0032-urbe-ui-nativa-sem-webview.md), [`PRODUCT-DIRECTION.md`](PRODUCT-DIRECTION.md).
+
+- **O Urbe é a 1.8.4-beta.** Ela é a especificação de experiência e visual: a cidade em tela cheia é o aplicativo; barra de ferramentas, busca, minimapa/mapa, HUD, painel da casa, explorador lateral e editor aparecem **por cima** dela. Toda tela é comparada lado a lado com a 1.8.4.
+- **Interface nativa, sem WebView/HTML/CSS**, em Android e Windows (Avalonia, condicionada ao gate G-N0 do UC-33). `Urbe.Core` é preservado e continua sendo o único lugar do domínio.
+- **Casca Blazor congelada:** `Urbe.UI`, `Urbe.App` e `Urbe.Web` não recebem funcionalidade nova; saem no UC-34. O shell de abas do UC-17 não é o Urbe.
+- **Direção seguinte, depois da paridade:** o Urbe como criador e produtor de artefatos sobre o sistema de edição de texto, com o editor Visual no centro (UC-35).
+- **Ordem:** UC-33 (G-N0) → UC-19 cidade da 1.8.4 em tela cheia → vault real no cliente nativo → UC-18 painel da casa, explorador e editor sobrepostos → UC-25 beta Android → UC-24 Windows → paridade restante → UC-34 → UC-35.
+
 ## Direção de plataforma — proprietário, 09/10/2026
 
 **Urbe C# será entregue para Android e desktop/Windows, sem versão Web/PWA.** Prioridade atual: desenvolvimento e releases Android; Windows vem depois. UC-23 permanece no documento apenas como ID histórico, sem nova entrega. O preview Web antigo não é alvo de release do produto C#. A retirada formal do host Web das ADRs consolidadas exige reconciliação crítica; esta direção já foi expressamente aprovada pelo proprietário.
@@ -15,7 +25,7 @@
 
 **Caminho crítico imediato:** (1) Issue #386 — ligar `WorkspaceSession` ao filesystem/vault **real** no Android, abrir/editar/salvar/reabrir sem depender de banco de dados de notas; (2) terminar UC-18 Editor/Explorer e UC-19 Cidade utilizáveis com posições atuais em `.urbe`; (3) disponibilizar **APK beta opt-in separado e link direto**, com testes de dados e validação física; (4) continuar UC-20/21/22 e a paridade funcional até o produto completo. O beta próprio pode sair **antes** de G-C5 sem virar automaticamente o produto distribuído; gates, CI, integração crítica e validação humana não são dispensados.
 
-**M3 — Interface e extensões.** UC-17 foi integrada em `9143b239` com shell compartilhado e navegação canônica. Próxima tarefa: UC-18 — Editor Visual/Fonte e Explorer sobre a sessão C# compartilhada; validação humana de UI/toque continua reservada ao G-C3.
+**M3 — Interface e extensões.** Próxima tarefa: **UC-33** — spike do cliente nativo (G-N0), conforme DEC-0043/ADR-0032. UC-18 e UC-19 passam a ser implementados no cliente nativo; validação humana de UI/toque continua reservada ao G-C3.
 
 ---
 
@@ -59,10 +69,13 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 ## M3 — Interface e extensões
 
-- [x] UC-17 — Shell e navegação. PR #280 integrado automaticamente em `9143b239`: shell compartilhado Web/MAUI, navegação Início/Explorer/Editor/Cidade/Mais, base path `/` e `/preview/`, online/offline e regressão Web/Android/Windows/E2E/checks/consistency verdes. Issue #279 encerrada; validação humana de layout/toque continua G-C3.
-- [ ] UC-18 — Editor (visual e fonte) e Explorer. Issue #281 em andamento; sessão compartilhada, Explorer real, edição Fonte, render Visual, relações e autocomplete C# de `[[` com criação de nota ausente (REQ-027/REQ-109) implementados em fatias. CI e validação humana de toque/layout ainda necessários para encerrar o item.
-- [ ] UC-19 — Mundo: desenho e toque. **ORDEM DO PROPRIETÁRIO (10/10/2026): copiar o visual EXATO da versão 1.8.4-beta, sem qualquer redesenho.** A direção própria de SVGs da beta.7 foi rejeitada. Reutilizar sprites, paleta, textura, terreno, edifícios, ruas, HUD, ícones, tipografia e interações originais; apenas a implementação migra para C# Android/Windows. Exportador de assets originais é a primeira etapa, não a paridade integral. Etapas LEGACY-1 a LEGACY-4 em `docs/csharp/UC19-VISUAL-ACCEPTANCE.md`; G-C3 continua aberto até comparação real aprovada.
+- [x] UC-17 — Shell e navegação. PR #280 integrado automaticamente em `9143b239`: shell compartilhado Web/MAUI, navegação Início/Explorer/Editor/Cidade/Mais, base path `/` e `/preview/`, online/offline e regressão Web/Android/Windows/E2E/checks/consistency verdes. Issue #279 encerrada; validação humana de layout/toque continua G-C3. **Substituído por DEC-0043/ADR-0032:** o shell de abas Blazor não é a experiência do Urbe; a casca nativa nasce no UC-33 e o shell Blazor sai no UC-34.
+- [ ] UC-18 — Editor (visual e fonte) e Explorer. **Superfície: cliente nativo (ADR-0032), como na 1.8.4: painel da casa, explorador lateral e editor sobrepostos à cidade.** A lógica já em `Urbe.Core` é reaproveitada; a UI Blazor desta fatia não é continuada. Issue #281 em andamento; sessão compartilhada, Explorer real, edição Fonte, render Visual, relações e autocomplete C# de `[[` com criação de nota ausente (REQ-027/REQ-109) implementados em fatias. CI e validação humana de toque/layout ainda necessários para encerrar o item.
+- [ ] UC-19 — Mundo: desenho e toque. **Superfície: cliente nativo (ADR-0032), cidade em tela cheia desenhada a partir do motor do `Urbe.Core`.** **ORDEM DO PROPRIETÁRIO (10/10/2026): copiar o visual EXATO da versão 1.8.4-beta, sem qualquer redesenho.** A direção própria de SVGs da beta.7 foi rejeitada. Reutilizar sprites, paleta, textura, terreno, edifícios, ruas, HUD, ícones, tipografia e interações originais; apenas a implementação migra para C# Android/Windows. Exportador de assets originais é a primeira etapa, não a paridade integral. Etapas LEGACY-1 a LEGACY-4 em `docs/csharp/UC19-VISUAL-ACCEPTANCE.md`; G-C3 continua aberto até comparação real aprovada.
 - [ ] UC-20 — Personalização, tema e **plugins** (decisão do modelo de confiança em C#).
+- [ ] UC-33 — **Cliente nativo sem WebView — spike e gate G-N0** (DEC-0043, ADR-0032). Projetos `Urbe.Client` (Avalonia), `Urbe.Desktop` e `Urbe.Android` sobre `Urbe.Core`: mundo da 1.8.4 desenhado nativamente em tela cheia com pan/pinch, editor de texto nativo com teclado virtual/IME, builds Android e Windows no CI. **Gate G-N0:** os três pontos provados, com validação humana em Android real (mundo e digitação).
+- [ ] UC-34 — **Remover a casca Blazor** (`Urbe.UI`, `Urbe.App`, `Urbe.Web`, smoke Web) quando o cliente nativo cobrir o que ela faz, mantendo uma única UI. Depende de UC-25 aprovado no aparelho.
+- [ ] UC-35 — **Produção de artefatos** (direção DEC-0043): páginas, livros, composições e documentos produzidos a partir das notas pelo editor Visual, dentro da experiência da cidade. Começa depois da paridade da 1.8.4; cada melhoria vira fatia própria com aprovação do proprietário.
 - [ ] UC-21 — IA: providers e agente.
 - [ ] UC-22 — Tutorial e primeira abertura.
 
