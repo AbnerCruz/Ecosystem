@@ -44,6 +44,8 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
 --chat --catalog DIR --project DIR --project-id ID --session-id ID com as opções
   de provedor/modelo/orçamento de execução abre um chat interativo no terminal.
   Cada mensagem gera um run real; histórico é reutilizado explicitamente nesse modo.
+  --session-budget-cents N limita conservadoramente a soma de runs desta instância
+  de chat; reserva o orçamento INTEIRO por mensagem (não devolve sobra).
 --show --catalog /pasta/historico --project-id ID --session-id ID mostra o histórico.
 --export-html --catalog /pasta/historico --output /outra/pasta/historico.html
   gera um snapshot offline e responsivo, sem servidor, rede nem código executável.
@@ -108,7 +110,7 @@ histórico local existe somente mediante --catalog explícito.
             var allowed = new[] { "--project", "--goal", "--endpoint", "--model", "--budget-cents",
                 "--max-call-cents", "--input-usd-per-million", "--output-usd-per-million", "--accept-exists",
                 "--catalog", "--project-id", "--session-id", "--project-name", "--session-title",
-                "--journal", "--run-id", "--output", "--port" };
+                "--journal", "--run-id", "--output", "--port", "--session-budget-cents" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
             if ((createProject ? 1 : 0) + (createSession ? 1 : 0) + (manageCatalog ? 1 : 0) + (chatMode ? 1 : 0) + (webUi ? 1 : 0) > 1)
@@ -131,12 +133,19 @@ histórico local existe somente mediante --catalog explícito.
             }
             if (fields.ContainsKey("--port"))
                 throw new ArgumentException("--port exige --web-ui.");
+            if (fields.ContainsKey("--session-budget-cents") && !chatMode)
+                throw new ArgumentException("--session-budget-cents exige --chat.");
             if (chatMode)
             {
                 if (listHistory || showHistory || showRun || exportHtml || embedTextArtifacts || useHistory || createProject || createSession || manageCatalog)
                     throw new ArgumentException("--chat não combina com modos de consulta, exportação ou gestão.");
-                return await CliInteractiveChat.RunAsync(fields, allowCreate,
-                    Console.In, Console.Out, RunAsync);
+                var hasSessionCeiling = fields.TryGetValue("--session-budget-cents", out var rawSessionCeiling);
+                var sessionCeiling = hasSessionCeiling
+                    ? long.Parse(rawSessionCeiling!, CultureInfo.InvariantCulture) : (long?)null;
+                var chatFields = fields.Where(kv => kv.Key != "--session-budget-cents")
+                    .ToDictionary(kv => kv.Key, kv => kv.Value, StringComparer.Ordinal);
+                return await CliInteractiveChat.RunAsync(chatFields, allowCreate,
+                    Console.In, Console.Out, RunAsync, sessionCeiling);
             }
             if (createProject || createSession || manageCatalog)
             {
