@@ -152,7 +152,7 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         ArgumentNullException.ThrowIfNull(content);
         var segments = Segments(path);
         if (segments.Length != 1 || !path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
-            path.StartsWith('.', StringComparison.Ordinal) ||
+            path.StartsWith(".", StringComparison.Ordinal) ||
             path.Length > 120 || path.Any(char.IsControl))
             throw new InvalidDataException("A primeira etapa permite apenas uma nota .md na raiz, sem nomes especiais.");
         var expectedBytes = Encoding.UTF8.GetBytes(content);
