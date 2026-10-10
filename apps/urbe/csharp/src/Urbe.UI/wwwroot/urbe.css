@@ -1137,3 +1137,42 @@ a:focus-visible {
 @media (max-width: 700px) { .vault-host-controls { padding: .35rem .6rem; } .vault-host-actions button { flex: 1 1 auto; } .vault-host-actions span { flex: 1 0 100%; } }
 
 .vault-unsaved { border-radius: .35rem; padding: .15rem .45rem; color: #ffe9ac; background: rgba(178,114,16,.18); font-weight: 600; }
+
+
+/* UC-19: mobile-first world map. Houses are projections of Markdown files. */
+.world-surface { max-width: 64rem; }
+.world-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1rem; }
+.world-head p:not(.surface-eyebrow) { margin: .65rem 0 0; color: #a9c6b4; line-height: 1.45; }
+.world-head h1 { font-size: clamp(1.75rem, 6vw, 2.9rem); overflow-wrap: anywhere; }
+.world-population { background: #213b2a; border: 1px solid #547f62; border-radius: 100px; padding: .4rem .65rem; font-size: .75rem; color: #d4ffe0; }
+.world-toolbar { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+.world-nav-button, .world-builder button { min-height: 2.75rem; padding: .65rem .85rem; border: 1px solid #628a70; border-radius: .7rem; color: #ebfff2; background: #23452f; font-weight: 700; cursor: pointer; }
+.world-build-button { background: #3b5936; }
+.world-nav-button:focus-visible, .world-plot:focus-visible, .world-builder button:focus-visible { outline: 3px solid #faf1aa; outline-offset: 2px; }
+.world-builder { display: grid; gap: .5rem; padding: .85rem; border-radius: .75rem; border: 1px solid #547a58; background: #233b2d; margin-bottom: 1rem; }
+.world-builder label { font-size: .85rem; font-weight: 700; }
+.world-builder-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.world-builder-row input { flex: 1 1 11rem; min-width: 0; min-height: 2.75rem; padding: .55rem .7rem; border: 1px solid #618269; border-radius: .55rem; background: #10231a; color: #f6fff8; }
+.world-message, .world-welcome { margin: 1rem 0; border: 1px solid #5b8b63; border-radius: .65rem; padding: .85rem; background: #1f3529; }
+.world-welcome p { color: #b6cfb9; line-height: 1.55; }
+.world-map-frame { border: 3px solid #4d6f57; border-radius: .7rem; overflow: auto; max-height: min(65dvh, 48rem); overscroll-behavior: contain; background: #243e31; box-shadow: inset 0 0 0 3px #1b3027; }
+.world-map { min-height: 16rem; padding: .4rem; background-color: #476f4b; background-image: repeating-linear-gradient(0deg, transparent 0 31px, #416a46 32px), repeating-linear-gradient(90deg, transparent 0 31px, #416a46 32px); }
+.world-road { height: 1.45rem; border: 2px solid #3e4845; background: repeating-linear-gradient(90deg, #5d6763 0 2.7rem, #cad9be 2.7rem 3.5rem, #5d6763 3.5rem 6rem); opacity: .87; }
+.world-plots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.2rem), 1fr)); gap: .5rem; padding: .75rem 0; min-height: 13rem; }
+.world-plot { display: grid; grid-template-rows: 6rem minmax(2.2rem,auto) auto; justify-items: center; align-items: center; gap: .15rem; min-width: 0; min-height: 10rem; padding: .45rem .3rem .6rem; color: #e7ffec; border: 2px solid #315739; border-radius: .25rem; background: repeating-linear-gradient(90deg,#5e8a5c 0 14px,#668f60 14px 28px); cursor: pointer; text-align: center; touch-action: manipulation; transition: transform .08s ease, filter .08s ease; }
+.world-plot:active { transform: scale(.96); filter: brightness(1.15); }
+.world-plot:disabled { opacity: .6; cursor: not-allowed; }
+.world-district { background: repeating-linear-gradient(90deg, #638b70 0 16px, #6d9878 16px 32px); border-color: #ccab6c; }
+.world-building { width: 4.25rem; height: 5rem; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; filter: drop-shadow(6px 7px 0 #24412e); }
+.world-building-top { display: block; height: 2.5rem; width: 4.4rem; background: #ac5c49; border: 4px solid #6e3028; box-shadow: inset 0 3px 0 #cf8560, inset 0 -5px 0 #944339; }
+.world-building-front { display: block; height: 2rem; width: 3.9rem; background: #dbc9a2; border: 4px solid #7f795f; border-top: 0; }
+.world-building-door { position: absolute; bottom: .2rem; left: 1.8rem; height: 1.3rem; width: .75rem; background: #52482f; border: 2px solid #292f23; }
+.world-district-building .world-building-top { background: #778fa7; border-color: #3e6077; box-shadow: inset 0 3px 0 #abc5ce, inset 0 -5px 0 #526f87; }
+.world-district-building .world-building-front { background: #c4d1bd; }
+.world-plot-label { font-size: .81rem; font-weight: 800; overflow-wrap: anywhere; max-width: 100%; line-height: 1.2; text-shadow: 0 1px 2px #10251b; }
+.world-plot-kind { font-size: .67rem; font-weight: 700; color: #ddf1d9; text-shadow: 0 1px 2px #182b1d; }
+.world-vacant { align-self: center; justify-self: center; display: grid; gap: .4rem; padding: 1rem; background: #335341; border: 2px dashed #a2ba8e; border-radius: .5rem; text-align: center; }
+.world-vacant span { color: #c4ddc1; font-size: .85rem; }
+.world-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin-top: .5rem; font-size: .75rem; color: #accab3; }
+@media (max-width: 520px) { .world-plots { grid-template-columns: repeat(2,minmax(0,1fr)); gap: .35rem; } .world-plot { min-height: 9.5rem; } .world-head { align-items: start; } }
+@media (prefers-reduced-motion: reduce) { .world-plot { transition: none; } }
