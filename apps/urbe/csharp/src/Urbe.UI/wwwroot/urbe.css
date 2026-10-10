@@ -1180,15 +1180,15 @@ a:focus-visible {
 
 /* UC-19 native City: fixed bounded tile board, swipe/pan via native WebView scrolling. */
 .world-plots.world-tiles {
-    grid-template-columns: repeat(8, minmax(5.25rem, 1fr));
-    min-width: 46rem;
+    grid-template-columns: repeat(8, minmax(var(--world-tile-width, 5.25rem), 1fr));
+    min-width: var(--world-board-width, 46rem);
     min-height: 0;
     gap: .3rem;
     padding: .6rem .15rem;
 }
 .world-tiles .world-plot {
-    grid-template-rows: 4.25rem minmax(1.8rem, auto) 1.1rem;
-    min-height: 8.75rem;
+    grid-template-rows: minmax(2.75rem, 1fr) minmax(1.8rem, auto) 1.1rem;
+    min-height: var(--world-tile-height, 8.75rem);
     padding: .3rem .2rem;
     border-width: 2px;
 }
@@ -1202,6 +1202,17 @@ a:focus-visible {
 .world-plot-selected { outline: 3px solid #f8de6b; outline-offset: -5px; }
 .world-position-hint { margin: .6rem 0; padding: .7rem; border: 1px solid #c7b477; background: #3b4227; border-radius: .55rem; color: #fff3c7; }
 @media (max-width: 520px) {
-    .world-plots.world-tiles { grid-template-columns: repeat(8,minmax(5.25rem,1fr)); }
+    .world-plots.world-tiles { grid-template-columns: repeat(8,minmax(var(--world-tile-width, 5.25rem),1fr)); }
     .world-map-frame { max-height: min(59dvh, 32rem); }
 }
+
+/* City build/zoom actions remain at least 44px for native touch input. */
+.world-zoom-controls { display: inline-flex; align-items: center; gap: .4rem; margin-left: auto; border: 1px solid #53705e; border-radius: .65rem; background: #1b3026; padding: .15rem; }
+.world-zoom-controls button { min-width: 2.75rem; min-height: 2.75rem; border-radius: .5rem; border: 0; color: #e6f9ed; background: #2a4935; font-size: 1.4rem; cursor: pointer; }
+.world-zoom-controls button:disabled { opacity: .35; cursor: not-allowed; }
+.world-zoom-controls span { min-width: 3rem; font-size: .75rem; font-weight: 800; color: #bde6cb; text-align: center; }
+.world-builder-target { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; color: #f6e6ac; margin: 0; font-size: .8rem; }
+.world-builder-target button { min-height: 2.5rem; border-radius: .45rem; border: 1px solid #82774b; color: #fff3c7; background: #51452c; padding: .35rem .55rem; }
+.world-empty-lot:not(:disabled) { opacity: 1; }
+.world-tiles .world-plot { touch-action: manipulation; }
+@media (max-width: 520px) { .world-zoom-controls { margin-left: 0; } }
