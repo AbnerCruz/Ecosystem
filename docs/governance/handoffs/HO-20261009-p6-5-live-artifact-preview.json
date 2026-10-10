@@ -14,7 +14,7 @@
   "branch": "feat/p6-5-live-artifact-preview-20261009",
   "base_commit": "e50f60a1b95e791f3d381c7f42381486f63d16b5",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/404",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
@@ -46,15 +46,15 @@
     }
   ],
   "known_issues": [
-    "Depende da integração da PR #403; branch temporariamente empilhada sobre seu último commit.",
+    "PR #403 integrada à main; esta PR usa a base main, mas continua limitada ao recurso de prévias textuais.",
     "Prévia é texto atual no disco, não representa o conteúdo histórico da execução.",
     "P6-5 ainda requer criação de tarefas e UI de agentes/equipes/execução; não é APK."
   ],
   "blockers": [],
   "next_actions": [
-    "Validar CI e corrigir failures.",
-    "Após #403 integrada, retarget para main e integrar apenas com checks verdes.",
-    "Prosseguir com execução UI autorizada e controle de orçamento sem criar segundo Runtime."
+    "Validar testes finais desta PR com base main.",
+    "Integrar somente após CI e consistência verdes.",
+    "Prosseguir para UX de equipes e submissão supervisionada de tarefas, respeitando permissões/orçamentos."
   ],
   "decisions_required": [],
   "normative_sources": [
