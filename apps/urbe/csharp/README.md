@@ -4,7 +4,7 @@
 
 **Direção do proprietário (09/10/2026):** não criar ou distribuir uma versão Web/PWA do cliente C#. Android é prioridade; desktop/Windows vem depois. O MAUI Blazor Hybrid renderiza os componentes em uma WebView interna, não em um site com backend. O vault Android é uma pasta real, selecionada pelo usuário.
 
-**Release Android:** versão `2.0.0-beta.8`, ID `app.urbe.csharp`, versionCode `2000008`. PNGs dos sprites/terrenos gerados diretamente de 1.8.4-beta. Ainda não é a paridade completa do mundo/câmera/HUD; tais itens continuam UC-19.
+**Release Android:** versão `2.0.0-beta.9`, ID `app.urbe.csharp`, versionCode `2000009`. Os 206 PNGs de sprites e texturas são gerados diretamente da arte 1.8.4-beta e o próprio APK assinado é inspecionado no CI para garantir presença, dimensões e SHA-256. A paridade do mundo/câmera/HUD continua pendente em UC-19.
 
 **Verificação:** `dotnet restore Urbe.Portable.slnx && dotnet test --project tests/Urbe.Core.Tests -c Release`. Build Android: `dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-android -p:UrbeBuildTarget=net10.0-android`. Windows usa `net10.0-windows10.0.19041.0`. Não há build ou release C# para Web.
 
