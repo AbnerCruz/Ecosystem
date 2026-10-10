@@ -138,7 +138,7 @@
                                     aria-pressed="@(_positionMode && string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase))"
                                     aria-label="@(_positionMode ? $"Selecionar casa {entry.Name} para reposicionar" : $"Abrir nota {entry.Name}")"
                                     @onclick="() => SelectOrOpenHouse(entry.Path)">
-                                <span class="world-building @WorldArt.BuildingClass(entry.Path, false)" aria-hidden="true"></span>
+                                <span class="world-building @WorldArt.BuildingClass(entry.Path, false, Workspace.World.ProjectDocument(entry.Path)?.Sprite)" aria-hidden="true"></span>
                                 <span class="world-plot-label">@entry.Name</span>
                                 <span class="world-plot-kind">@(_positionMode ? "Selecionar" : "Abrir nota")</span>
                             </button>
