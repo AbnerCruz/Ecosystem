@@ -107,7 +107,7 @@ public sealed class R4PlannedTaskBoardTests
                 Assert.Equal("planned-run-1", Assert.Single(attempt.RunIds));
                 Assert.Equal(20, runner.Board.ReservedCents);
                 Assert.Equal("inalterado", File.ReadAllText(original));
-                Assert.Equal(1, store.Read().Projects.Single().Sessions.Single().Runs.Count);
+                Assert.Single(store.Read().Projects.Single().Sessions.Single().Runs);
                 var updatedHtml = await http.GetStringAsync("/");
                 Assert.Contains("Resposta presente e verificada", updatedHtml);
                 Assert.Contains("Critério: Citar evidências em texto", updatedHtml);
