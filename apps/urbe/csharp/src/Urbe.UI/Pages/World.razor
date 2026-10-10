@@ -134,13 +134,13 @@
                 }
                 <div class="world-plots world-tiles @(TerrainReady ? "world-continuous-plots" : "")"
                      style="@(TerrainReady ? LotsStyle : string.Empty)">
-                    @foreach (var tile in CityTiles)
+                    @foreach (var tile in VisibleLots)
                     {
                         var entry = tile.Entry;
                         if (entry is null)
                         {
                             <button type="button" class="world-plot world-empty-lot @WorldArt.TerrainClass(tile.Column, tile.Row)"
-                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
+                                    style="@(TerrainReady ? LotStyle(tile) : WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row))"
                                     disabled="@(!CanCreate || (_positionMode && _selectedHouse is null))"
                                     aria-label="@($"Terreno vazio, coluna {tile.Column + 1}, linha {tile.Row + 1}. " +
                                         (_positionMode ? "Reposicionar casa" : "Construir casa"))"
@@ -153,7 +153,7 @@
                         else if (entry.IsFolder)
                         {
                             <button type="button" class="world-plot world-district"
-                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
+                                    style="@(TerrainReady ? LotStyle(tile) : WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row))"
                                     title="@entry.Path"
                                     disabled="@_positionMode"
                                     aria-label="@($"Entrar no bairro {entry.Name}")"
@@ -168,7 +168,7 @@
                         {
                             <button type="button"
                                     class="world-plot world-house @(string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase) ? "world-plot-selected" : "")"
-                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
+                                    style="@(TerrainReady ? LotStyle(tile) : WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row))"
                                     title="@entry.Path"
                                     disabled="@(!entry.Editable)"
                                     aria-pressed="@(_positionMode && string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase))"
@@ -190,14 +190,14 @@
             <span><i class="world-legend-empty" aria-hidden="true"></i> Terreno livre</span>
         </div>
         <div class="world-footer">
-            <span>@AllPlots.Count construção(ões) · @CityTileLayout.Capacity terrenos editáveis</span>
+            <span>@AllPlots.Count construção(ões) · @((TerrainReady ? "terreno contínuo" : "64 terrenos iniciais"))</span>
             @if (TerrainReady)
             {
                 <span>Terreno procedural C# 1.8.4-beta · câmera (@_cameraTileX, @_cameraTileY) · arraste para explorar</span>
             }
-            @if (AllPlots.Count > CityTileLayout.Capacity)
+            @if (!TerrainReady && AllPlots.Count > CityTileLayout.Capacity)
             {
-                <span>Mapa limitado a @CityTileLayout.Capacity terrenos; veja outras notas no Explorer.</span>
+                <span>Mapa inicial limitado a @CityTileLayout.Capacity terrenos; veja outras notas no Explorer.</span>
             }
         </div>
     }
@@ -289,6 +289,21 @@
 
     private IReadOnlyList<CityTileLayout.Tile> CityTiles =>
         CityTileLayout.Build(AllPlots, Workspace.World);
+
+    private IReadOnlyList<CityTileLayout.Tile> VisibleLots =>
+        TerrainReady
+            ? CityWorldLayout.Visible(AllPlots, Workspace.World,
+                _cameraTileX - HomeX, _cameraTileY - HomeY,
+                SceneWidthTiles, SceneHeightTiles,
+                _positionMode || _builderOpen)
+            : CityTiles;
+
+    private string LotStyle(CityTileLayout.Tile tile) =>
+        "left:" + Px((tile.Column + HomeX - _cameraTileX) * TilePixels) +
+        ";top:" + Px((tile.Row + HomeY - _cameraTileY) * TilePixels) +
+        ";width:" + Px(TilePixels) +
+        ";height:" + Px(TilePixels) +
+        ";background-image:none;";
 
     protected override void OnInitialized()
     {
@@ -408,7 +423,10 @@
             Workspace.World.IsReadOnly || _selectedHouse is null || !tile.IsEmpty)
             return;
 
-        if (!Workspace.PlaceHouse(_selectedHouse, tile.Column, tile.Row))
+        bool placed = TerrainReady
+            ? Workspace.PlaceHouseInWorld(_selectedHouse, tile.Column, tile.Row)
+            : Workspace.PlaceHouse(_selectedHouse, tile.Column, tile.Row);
+        if (!placed)
         {
             _message = "Terreno indisponível ou mapa protegido.";
             return;
@@ -510,7 +528,11 @@
         var title = string.IsNullOrWhiteSpace(_newNoteTitle)
             ? "Nova casa" : _newNoteTitle.Trim();
         var note = _targetLot is { } target && !Workspace.World.IsReadOnly
-            ? Workspace.CreateHouseAt(title, CurrentBairro, target.Column, target.Row)
+            ? (TerrainReady
+                ? Workspace.CreateHouseInWorld(title, CurrentBairro,
+                    target.Column, target.Row)
+                : Workspace.CreateHouseAt(title, CurrentBairro,
+                    target.Column, target.Row))
             : Workspace.CreateNote(title, CurrentBairro);
         if (note is null)
         {
