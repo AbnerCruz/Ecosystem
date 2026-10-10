@@ -21,15 +21,22 @@
     "apps/urbe/docs/csharp/UC19-CHUNK-PIXELS.md",
     "docs/governance/handoffs/HO-20261010-urbe-uc19-chunk-pixels.json",
     "apps/urbe/csharp/tools/chunk-pixels-oracle.mjs",
-    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelOracleTests.cs"
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelOracleTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyChunkViewport.cs",
+    "apps/urbe/csharp/src/Urbe.UI/LegacyWorldScene.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/World.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkViewportTests.cs"
   ],
   "work_completed": [
     "UC-19 LEGACY-2: portado o compositor original de pixel-art.js::chunkPixels para C# puro, com chunks RGBA 256×256 e terreno seedado pelas autoridades C# existentes.",
     "Reproduz texturas 19 biomas × 4 variantes, halo, sombreamento de declive, tint de ruído, transições orgânicas, ecótono, linha costeira, espuma, água profunda e decoração por slot no buffer.",
     "Testes xUnit abrangem água uniforme com pixels esperados, alpha, coordenadas negativas, determinismo, transição litoral, decoração e entradas inválidas.",
-    "Não modifica World.razor/grade beta, filesystem SAF, modelo de dados, scripts de release nem cliente JS 1.8.4-beta; conserva paridade visual como gate ainda aberto.",
     "Cria documento específico UC19-CHUNK-PIXELS e próximo incremento verificável, isolado dos arquivos do PR #426.",
-    "Oráculo original pixel-art.js::chunkPixels executado exclusivamente no teste Node, com comparação xUnit de todos os bytes RGBA C# em quatro cenários, inclusive chunks negativos e água/terra."
+    "Oráculo original pixel-art.js::chunkPixels executado exclusivamente no teste Node, com comparação xUnit de todos os bytes RGBA C# em quatro cenários, inclusive chunks negativos e água/terra.",
+    "Câmera com viewport de 24×20 tiles, pan de 8 tiles, zoom pixelated e scroll nativo; 4–9 chunks C# gerados fora da thread Blazor, cache FIFO limitado a 16 imagens e fallback à grade anterior em falha.",
+    "Overlay de 64 terrenos clicáveis mantido inicialmente sobre o mapa original: casa abre nota, bairro navega, criar/reposicionar chama as mesmas operações físicas no Workspace/SAF.",
+    "Teste de plano de chunks inclui coordenadas negativas, linha divisória exata e overflow; nenhuma alteração em build/release, vault ou permissões."
   ],
   "verification": [
     {
@@ -55,20 +62,26 @@
       "check": "Urbe.Core.Tests LegacyChunkPixelOracleTests via Node 22 + pixel-art.js imutável",
       "result": "pending",
       "evidence": "Novo caso de igualdade RGBA byte a byte submetido no PR #428; verificar CI após commit."
+    },
+    {
+      "kind": "automated",
+      "check": "LegacyChunkViewportTests camera bounds/negative coordinates",
+      "result": "pending",
+      "evidence": "Incluído no PR #428; confirmar C# portable CI atualizado."
     }
   ],
   "known_issues": [
-    "Grade interativa 8×8 da Cidade permanece temporária; o novo compositor não está ligado à tela para evitar regressões sem paridade.",
-    "Faltam oráculo pixel-a-pixel de chunks com seeds legados, integração de câmera/chunks à Cidade, árvores/ruas/cidadãos/HUD e validação Android física.",
     "AGENTSCHAT.md não foi modificado neste PR para evitar conflito com a alteração concorrente do PR #426; este handoff canônico registra a execução.",
-    "Paridade byte a byte está implementada como teste, mas não validada até o resultado positivo do job portátil atualizado; diferenças exigem correção técnica, não redefinição do oráculo."
+    "Terreno contínuo está ligado à tela, mas somente 64 lotes continuam clicáveis na área inicial; implantação de casas/estradas/árvores/cidadãos/HUD na cena original segue pendente.",
+    "Novo carregamento de mundo original é assíncrono e não altera dados, porém performance real e gestos precisos ainda exigem Android físico.",
+    "Compositor tem oráculo byte a byte verde em urbe-checks portátil anterior, mas o código do viewport/câmera ainda precisa de validação completa Android/Windows nesta revisão."
   ],
   "blockers": [],
   "next_actions": [
-    "Verificar checks e corrigir falhas no PR #428 sem promover paridade ainda não comprovada.",
-    "Verificar oráculo byte a byte JS contra C#, depurar primeiro pixel divergente e corrigir o port sem mexer na fonte original.",
-    "Conectar mapa contínuo e câmera à Cidade somente após equivalência suficiente; preservar organização de casas e salvamento SAF.",
-    "Coordenar a continuação com o PR #426, mantendo visual 1.8.4-beta e foco Android."
+    "Aguardar e corrigir CI do PR #428: portable, build Android/Windows, E2E e checks; não fazer merge manual contra integrador global vermelho.",
+    "Executar DEVICE G-C3: screenshot/zoom/pan, tempo de geração inicial, retomada, rotação horizontal, toque casa/bairro, criação e persistência no vault Android.",
+    "Portar overlay de casas e bairros para coordenadas contínuas, árvores/estradas/wikilinks/cidadãos e HUD exatamente 1.8.4-beta; remover limite 8×8 somente com regressões cobertas.",
+    "Não alterar fonte pixel-art.js/terrain.js nem tratar CI como aprovação visual do proprietário."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -116,7 +129,7 @@
   ],
   "criticality": {
     "declared": "routine",
-    "reason": "Apenas algoritmo gráfico novo específico do Core Urbe, documentação e teste. Não toca persistência, host, identidade, CI ou release."
+    "reason": "Compositor/viewport/UI específicos do Urbe, sem alterar dados persistidos, contratos, permissão, host, CI ou release. Testes de pixel e câmera mantêm legacy 1.8.4-beta como autoridade."
   },
   "reuse_assessment": [
     {
