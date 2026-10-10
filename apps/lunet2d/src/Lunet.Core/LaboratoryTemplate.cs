@@ -14,6 +14,7 @@ internal static class LaboratoryTemplate
         using Lunet.UI;
         using Lunet.Scenes;
         using Lunet.Pathfinding;
+        using Lunet.Physics;
         using System.Collections.Generic;
 
         // Laboratório 2.0: áreas independentes, índice tocável e navegação anterior/próxima.
@@ -36,7 +37,7 @@ internal static class LaboratoryTemplate
             {
                 "Audio / sensores", "Shader / render", "Zoom / mundo", "Dois dedos / steps",
                 "Clique / layout", "Entidades / estado", "Raios / eixos", "Tween / particulas",
-                "Path / camera", "SAT / overlap", "Bitmap / nine-slice", "Paletas / estados"
+                "Path / camera", "SAT / Box2D", "Bitmap / nine-slice", "Paletas / estados"
             };
             readonly RectangleF pixelButton = new(8, 440, 344, 30);
             readonly RectangleF resolutionButton = new(8, 474, 344, 30);
@@ -156,6 +157,13 @@ internal static class LaboratoryTemplate
             Vector2 collisionDesired = new(140, 268);
             Vector2 collisionResolved = new(140, 268);
             Vector2 collisionPush;
+            // Demonstração de física real no módulo 10, sem substituir o SAT já aceito.
+            readonly TouchButton physicsMode = new(new RectangleF(24, 134, 312, 42));
+            readonly TouchButton physicsRestart = new(new RectangleF(24, 518, 312, 42));
+            bool physicsVisible;
+            PhysicsWorld physicsWorld = null!;
+            RigidBody2D physicsBall = null!;
+            int physicsSensorEvents;
 
             // Módulo 11: nine-slice redimensionável e fonte bitmap customizada.
             NineSlice skin = null!;
@@ -198,6 +206,7 @@ internal static class LaboratoryTemplate
                 fire = new VirtualButton(new Circle(new Vector2(290, 560), 36));
                 minimap = new RenderTarget2D(GraphicsDevice, 96, 96);
                 InitializeAdvancedDemos();
+                ResetPhysics();
                 gray = Shader.FromFragmentSource(GraphicsDevice,
                     "uniform float uAmount; void main() { vec4 c = texture(uTex, vUv) * vColor; float g = dot(c.rgb, vec3(0.3, 0.59, 0.11)); outColor = vec4(mix(c.rgb, vec3(g), uAmount), c.a); }");
             }
@@ -210,10 +219,12 @@ internal static class LaboratoryTemplate
                 scenePause.Cancel(); sceneHide.Cancel(); sceneAttach.Cancel();
                 debugToggle.Cancel(); debugRotate.Cancel(); debugReflect.Cancel(); debugView.Cancel();
                 themeDemoButton.Cancel(); themeDemoSlider.Cancel();
+                physicsMode.Cancel(); physicsRestart.Cancel();
             }
 
             protected override void UnloadContent()
             {
+                physicsWorld?.Dispose();
                 minimap.Dispose();
                 gray.Dispose();
                 tileTexture.Dispose();
@@ -322,6 +333,21 @@ internal static class LaboratoryTemplate
             }
 
 
+            // Fase 4: a simulação usa somente a API pública PhysicsWorld.
+            // É um teste real de gravidade/contato/sensor para o aparelho, separado do SAT.
+            void ResetPhysics()
+            {
+                physicsWorld?.Dispose();
+                physicsWorld = new PhysicsWorld(new Vector2(0f, 9.8f));
+                var floor = physicsWorld.CreateBody(PhysicsBodyType.Static, new Vector2(0, 2.4f));
+                floor.AddFixture(Collider2D.Box(8, 0.5f), friction: 0.65f);
+                var detector = physicsWorld.CreateBody(PhysicsBodyType.Static, new Vector2(0, 0.75f));
+                detector.AddFixture(Collider2D.Box(1.2f, 0.25f), sensor: true);
+                physicsBall = physicsWorld.CreateBody(PhysicsBodyType.Dynamic, new Vector2(0, -2.0f));
+                physicsBall.AddFixture(Collider2D.Circle(0.38f), restitution: 0.65f);
+                physicsSensorEvents = 0;
+            }
+
             void SetPage(int value)
             {
                 page = (value + PageCount) % PageCount;
@@ -333,6 +359,7 @@ internal static class LaboratoryTemplate
                 scenePause.Cancel(); sceneHide.Cancel(); sceneAttach.Cancel();
                 debugToggle.Cancel(); debugRotate.Cancel(); debugReflect.Cancel(); debugView.Cancel();
                 themeDemoButton.Cancel(); themeDemoSlider.Cancel();
+                physicsMode.Cancel(); physicsRestart.Cancel();
             }
 
             bool UpdateNavigation()
@@ -443,6 +470,10 @@ internal static class LaboratoryTemplate
                 themeDemoSlider.IsEnabled = page == 11;
                 themeDemoButton.Update(Input);
                 themeDemoSlider.Update(Input);
+                physicsMode.IsEnabled = page == 9;
+                physicsRestart.IsEnabled = page == 9 && physicsVisible;
+                physicsMode.Update(Input);
+                physicsRestart.Update(Input);
                 if (page >= 7) { UpdateAdvancedPage(time); return; }
                 if (page == 6)
                 {
@@ -610,6 +641,17 @@ internal static class LaboratoryTemplate
                 }
                 else if (page == 9)
                 {
+                    if (physicsMode.WasClicked) physicsVisible = !physicsVisible;
+                    if (physicsVisible)
+                    {
+                        if (physicsRestart.WasClicked) ResetPhysics();
+                        if (time.DeltaSeconds > 0)
+                        {
+                            physicsWorld.Step(System.MathF.Min(time.DeltaSeconds, 1f / 30f));
+                            physicsSensorEvents += physicsWorld.SensorBeginCount;
+                        }
+                        return;
+                    }
                     if (Input.TryGetPointer(out var pointer) && pointer.Y >= 145 && pointer.Y < 520)
                         collisionDesired = pointer;
                     collisionBody[0] = collisionDesired;
@@ -647,7 +689,7 @@ internal static class LaboratoryTemplate
             {
                 if (page == 7) DrawAnimationParticles();
                 else if (page == 8) DrawTilemap();
-                else if (page == 9) DrawCollision();
+                else if (page == 9) { if (physicsVisible) DrawPhysics(); else DrawCollision(); }
                 else if (page == 10) DrawFontsAndPanels();
                 else DrawThemes();
             }
@@ -693,6 +735,7 @@ internal static class LaboratoryTemplate
             {
                 batch.Begin();
                 Title("Colisao geometrica", "SAT: tentativa, separacao e contato");
+                DrawAction(physicsMode.Bounds, "VER FISICA BOX2D");
                 batch.FillRect(new RectangleF(102, 216, 156, 162), new Color(44, 54, 79));
                 batch.Rect(new RectangleF(102, 216, 156, 162), Color.Yellow, 3);
                 batch.Rect(new RectangleF(collisionDesired.X, collisionDesired.Y, 32, 32), Color.Red, 2);
@@ -701,6 +744,24 @@ internal static class LaboratoryTemplate
                 batch.DrawString(font, $"Separacao: {collisionPush.Length():0.0}", new Vector2(24, 452), Color.Yellow, 2);
                 batch.DrawString(font, "Arraste o vermelho dentro do obstaculo.", new Vector2(24, 500), Color.White, 1.4f);
                 batch.DrawString(font, "O corpo verde e reposicionado pelo SAT.", new Vector2(24, 530), Color.White, 1.4f);
+                batch.End();
+            }
+
+            void DrawPhysics()
+            {
+                batch.Begin();
+                Title("Fisica Box2D", "Fase 4: gravidade, contatos e sensor");
+                DrawAction(physicsMode.Bounds, "VOLTAR PARA SAT");
+                batch.FillRect(new RectangleF(24, 186, 312, 306), new Color(27, 38, 58));
+                // Referência 1 m = 40 px; simulação e render separados.
+                batch.FillRect(new RectangleF(32, 386, 296, 20), new Color(74, 156, 91));
+                batch.Rect(new RectangleF(156, 325, 48, 10), Color.Yellow, 2);
+                var point = new Vector2(180, 300) + physicsBall.Position * 40;
+                batch.Draw(dot, new RectangleF(point.X - 15, point.Y - 15, 30, 30), null,
+                    Color.Yellow, physicsBall.Rotation, Vector2.Zero);
+                batch.DrawString(font, "Bola sob gravidade e rebote real", new Vector2(24, 450), Color.White, 1.25f);
+                batch.DrawString(font, "Sensor acionado: " + physicsSensorEvents, new Vector2(24, 472), Color.Yellow, 1.25f);
+                DrawAction(physicsRestart.Bounds, "REINICIAR SIMULACAO");
                 batch.End();
             }
 
