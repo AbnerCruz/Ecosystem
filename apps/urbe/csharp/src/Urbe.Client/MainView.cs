@@ -29,6 +29,8 @@ public sealed class MainView : Grid
     private readonly IUrbeVaultStorage? _vault;
     private readonly TextBlock _vaultName = new();
     private VaultSnapshot? _snapshot;
+    private bool _editorOpenedFromNotes;
+
     private string _today = DateTime.Now.ToString("yyyy-MM-dd");
 
     public MainView(IUrbeVaultStorage? storage = null)
@@ -39,8 +41,25 @@ public sealed class MainView : Grid
         RowDefinitions = new RowDefinitions("*,Auto");
 
         World = new WorldView();
+        Explorer = new NotesExplorer { IsVisible = false };
         Editor = new EditorOverlay { IsVisible = false };
-        Editor.Closed += (_, _) => SaveEditorToMemory();
+        Explorer.Closed += () => Explorer.IsVisible = false;
+        Explorer.NoteRequested += note =>
+        {
+            _editorOpenedFromNotes = true;
+            Explorer.IsVisible = false;
+            Editor.Open(note);
+        };
+        Editor.Closed += (_, _) =>
+        {
+            SaveEditorToMemory();
+            if (_editorOpenedFromNotes)
+            {
+                _editorOpenedFromNotes = false;
+                Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+                Explorer.IsVisible = true;
+            }
+        };
         if (_vault is not null) Editor.SaveRequested += SaveNoteAsync;
 
         _stage.Children.Add(World);
@@ -48,6 +67,7 @@ public sealed class MainView : Grid
         _stage.Children.Add(Fab());
         _stage.Children.Add(HousePanel());
         _stage.Children.Add(LoadingLabel());
+        _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
         SetColumn(_stage, 1);
         Children.Add(_stage);
@@ -65,7 +85,17 @@ public sealed class MainView : Grid
     }
 
     public WorldView World { get; }
+    public NotesExplorer Explorer { get; }
     public EditorOverlay Editor { get; }
+
+    /// <summary>Open the native hierarchical vault Explorer (1.8.4 Notas), not a web panel.</summary>
+    public void ShowNotes()
+    {
+        if (Editor.IsVisible) return;
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
+        _housePanel.IsVisible = false;
+        Explorer.IsVisible = true;
+    }
 
     public async Task InitializeAsync()
     {
@@ -137,6 +167,7 @@ public sealed class MainView : Grid
                 return (w, city);
             });
             World.Load(world, city);
+            Explorer.SetNotes(files);
             World.FitNotes();
             _biome.Text = World.BiomeNameAtCentre();
             _loading.IsVisible = false;
@@ -391,7 +422,7 @@ public sealed class MainView : Grid
         }
     }
 
-    private static Control NavItem(string icon, string label, bool active)
+    private Control NavItem(string icon, string label, bool active)
     {
         var ico = new Border
         {
@@ -411,7 +442,29 @@ public sealed class MainView : Grid
             HorizontalAlignment = HorizontalAlignment.Center
         };
         var item = new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Children = { ico, text } };
-        if (!active) ToolTip.SetTip(item, label + " (em portabilidade)");
-        return item;
+        var button = new Button
+        {
+            Content = item,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(0)
+        };
+        if (label == "Notas")
+        {
+            ToolTip.SetTip(button, "Explorador de notas e pastas");
+            button.Click += (_, _) => ShowNotes();
+        }
+        else if (label == "Cidade")
+        {
+            button.Click += (_, _) => { if (!Editor.IsVisible) Explorer.IsVisible = false; };
+        }
+        else
+        {
+            ToolTip.SetTip(button, "Assistente: em portabilidade");
+            button.IsEnabled = false;
+        }
+        return button;
     }
 }
