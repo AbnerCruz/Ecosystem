@@ -1,5 +1,7 @@
 # Partículas
 
+**Atalho opcional:** na criação de projeto, escolha **Demo: Partículas** para gerar automaticamente o mesmo código do exemplo. Projetos existentes preservam o próprio código; criar um modelo novo não os modifica.
+
 Pool fixo de quads para efeitos code-first, sem Studio obrigatório.
 
 ## Teste no celular

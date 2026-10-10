@@ -1,5 +1,7 @@
 # Animação de sprites e tweening
 
+**Atalho opcional:** na criação de projeto, escolha **Demo: Animação e tween** para gerar automaticamente o mesmo código do exemplo. Projetos existentes preservam o próprio código; criar um modelo novo não os modifica.
+
 As APIs funcionam só com código. Não precisam de Studio, servidor ou scheduler global.
 
 ## Teste rápido no celular
