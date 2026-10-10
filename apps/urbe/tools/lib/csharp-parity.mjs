@@ -80,6 +80,7 @@ export function renderParity(corpus) {
     'O inventário abaixo inclui todos os testes atuais de comportamento e todos os tópicos do tutorial. Cada fonte permanece disponível na base do oráculo; as expectativas detalhadas são as suas asserções/instruções. Uma linha no inventário não significa cobertura automatizada de todos os seus fluxos.', '',
     '| Fonte | Critério observável | Superfície / prova |', '|---|---|---|');
   for (const p of [...files('tests'), ...files('tutorial')].filter((p) =>
+    p !== 'tests/continuation-contract.mjs' &&
     /^tests\/(?:[^/]+\.mjs|security\/[^/]+\.mjs|e2e\/[^/]+\.e2e\.mjs)$/.test(p) || /^tutorial\/.*\.md$/.test(p))) {
     const s = read(p);
     const title = p.startsWith('tutorial/') ? (s.match(/^#\s+(.+)$/m)?.[1] || p) :
