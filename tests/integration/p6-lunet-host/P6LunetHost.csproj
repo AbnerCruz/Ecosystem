@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Test-only composition root. No Product references another Product in shipping code. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../apps/lunet2d/src/Lunet.Core/Lunet.Core.csproj" />
+    <ProjectReference Include="../../../apps/ecosystem-ai/src/AgentRuntime.Core/AgentRuntime.Core.csproj" />
+    <ProjectReference Include="../../../apps/ecosystem-ai/src/AgentRuntime.Testing/AgentRuntime.Testing.csproj" />
+    <ProjectReference Include="../../../apps/ecosystem-ai/src/AgentWorkspace/AgentWorkspace.csproj" />
+  </ItemGroup>
+</Project>

@@ -233,6 +233,12 @@ public class LabTemplateTests : IDisposable
         Tap(100, 489);
         Assert.Equal((360, 640), (host.GraphicsDevice.VirtualWidth, host.GraphicsDevice.VirtualHeight));
 
+        // Modo Fit/Fill: a escolha visual preserva os toques e pode ser revertida sem alterar o projeto.
+        Tap(170, 300);
+        Assert.Equal(ViewportScalingMode.Fill, host.GraphicsDevice.ViewportScaling);
+        Tap(170, 300);
+        Assert.Equal(ViewportScalingMode.Fit, host.GraphicsDevice.ViewportScaling);
+
         // Página 3: câmera testável sem copiar código. Preserva as páginas 1/2.
         Tap(100, 23);
         var type = loaded.Game.GetType();
@@ -254,6 +260,12 @@ public class LabTemplateTests : IDisposable
         Assert.Equal(expected.Y, actual.Y, 3);
         host.SetSurfaceTouches([]);
         Frame();
+        Tap(100, 554);
+        Assert.True((bool)type.GetField("cameraBounded", fields)!.GetValue(loaded.Game)!);
+        Assert.InRange(camera.Position.X, 0, 2000);
+        Assert.InRange(camera.Position.Y, 0, 2000);
+        Tap(100, 554);
+        Assert.False((bool)type.GetField("cameraBounded", fields)!.GetValue(loaded.Game)!);
         Tap(100, 23);
         Assert.Equal(3, type.GetField("page", fields)!.GetValue(loaded.Game));
         Tap(100, 23);
@@ -262,7 +274,13 @@ public class LabTemplateTests : IDisposable
         Assert.Equal(5, type.GetField("page", fields)!.GetValue(loaded.Game));
         Tap(100, 23);
         Assert.Equal(6, type.GetField("page", fields)!.GetValue(loaded.Game));
-        Tap(100, 23); // sétima página volta aos dispositivos
+        // As sete áreas antigas continuam nas mesmas posições; as cinco novas vêm depois.
+        for (int next = 7; next < 12; next++)
+        {
+            Tap(100, 23);
+            Assert.Equal(next, type.GetField("page", fields)!.GetValue(loaded.Game));
+        }
+        Tap(100, 23);
         Assert.Equal(0, type.GetField("page", fields)!.GetValue(loaded.Game));
         Assert.False(host.IsFaulted, host.Fault?.ToString());
 

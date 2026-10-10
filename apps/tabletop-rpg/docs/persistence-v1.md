@@ -71,3 +71,11 @@ A recuperação nunca cria uma campanha vazia silenciosamente.
 Export e import usam exatamente o mesmo envelope v1. Importar não exige backend nem conta e pode opcionalmente persistir a campanha no store local.
 
 Arquivos binários, mapas e mídia não são incorporados neste formato em RPG-002; quando esses domínios chegarem, precisam de estratégia própria de assets e compatibilidade.
+
+## Sucessor v2
+
+O formato v1 continua legível pelo novo `CampaignCodec` (RPG-003), mas o encoder
+passa a gravar schemaVersion 2 com mundo, relógio ficcional, missões, inventário,
+condições e recursos. Consulte [`persistence-v2.md`](persistence-v2.md) para
+política de migração/compatibilidade e limitações; o documento v1 continua
+imutável como descrição do contrato legado.

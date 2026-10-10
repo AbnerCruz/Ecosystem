@@ -14,7 +14,7 @@ public sealed class CampaignFormatException : Exception
 public sealed class CampaignCodec
 {
     public const string FormatId = "tabletop-rpg-campaign";
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 
     private static readonly JsonSerializerOptions CanonicalOptions = CreateOptions(writeIndented: false);
     private static readonly JsonSerializerOptions EnvelopeOptions = CreateOptions(writeIndented: true);
@@ -65,7 +65,7 @@ public sealed class CampaignCodec
         if (!string.Equals(envelope.Format, FormatId, StringComparison.Ordinal))
             throw new CampaignFormatException($"Unsupported campaign format '{envelope.Format}'.");
 
-        if (envelope.SchemaVersion != CurrentSchemaVersion)
+        if (envelope.SchemaVersion is not (1 or CurrentSchemaVersion))
             throw new CampaignFormatException(
                 $"Unsupported campaign schema version {envelope.SchemaVersion}; expected {CurrentSchemaVersion}.");
 
@@ -79,6 +79,9 @@ public sealed class CampaignCodec
 
         if (!string.Equals(actualChecksum, envelope.PayloadSha256, StringComparison.OrdinalIgnoreCase))
             throw new CampaignFormatException("Campaign checksum does not match the payload.");
+
+        if (envelope.SchemaVersion == 2)
+            ValidateV2WorldShape(envelope.Payload);
 
         CampaignDto dto;
         try
@@ -97,7 +100,7 @@ public sealed class CampaignCodec
 
         try
         {
-            return Campaign.Restore(ToState(dto));
+            return Campaign.Restore(ToState(dto, envelope.SchemaVersion));
         }
         catch (CampaignFormatException)
         {
@@ -177,9 +180,10 @@ public sealed class CampaignCodec
                 session.Name,
                 session.StartedAt,
                 session.EndedAt)).ToArray(),
-            state.ActiveSessionId?.Value);
+            state.ActiveSessionId?.Value,
+            ToWorldDto(state.World));
 
-    private static CampaignState ToState(CampaignDto dto)
+    private static CampaignState ToState(CampaignDto dto, int schemaVersion)
     {
         var characters = RequiredArray(dto.Characters, "characters")
             .Select(character => new CharacterState(
@@ -240,6 +244,18 @@ public sealed class CampaignCodec
                 session.EndedAt))
             .ToArray();
 
+        WorldSnapshot world;
+        if (schemaVersion == 1)
+        {
+            if (dto.World is not null)
+                throw new CampaignFormatException("Schema v1 cannot declare world state.");
+            world = WorldSnapshot.Empty;
+        }
+        else
+        {
+            world = ToWorldState(dto.World ?? throw new CampaignFormatException("Campaign field 'world' is required in v2."));
+        }
+
         return new CampaignState(
             new CampaignId(dto.Id),
             RequiredText(dto.Name, "name"),
@@ -250,8 +266,84 @@ public sealed class CampaignCodec
             perspectives,
             events,
             sessions,
-            dto.ActiveSessionId is { } activeSessionId ? new SessionId(activeSessionId) : null);
+            dto.ActiveSessionId is { } activeSessionId ? new SessionId(activeSessionId) : null)
+        { World = world };
     }
+
+
+
+    private static void ValidateV2WorldShape(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("world", out var world))
+            throw new CampaignFormatException("Campaign field 'world' is required in v2.");
+
+        RequireShape(world, "world",
+            ["fictionMinutes", "activeSceneId", "scenes", "quests", "inventory", "conditions", "resources"]);
+
+        RequireItems("scenes", ["id", "title", "description"]);
+        RequireItems("quests", ["id", "title", "status", "sceneId"]);
+        RequireItems("inventory", ["id", "owner", "itemKey", "quantity"]);
+        RequireItems("conditions", ["characterId", "key", "expiresAtMinute"]);
+        RequireItems("resources", ["characterId", "key", "current", "maximum"]);
+
+        void RequireItems(string key, string[] names)
+        {
+            var array = world.GetProperty(key);
+            if (array.ValueKind != JsonValueKind.Array || array.GetArrayLength() > 4096)
+                throw new CampaignFormatException($"World '{key}' is not a bounded array.");
+            foreach (var item in array.EnumerateArray())
+                RequireShape(item, "world." + key + "[]", names);
+        }
+    }
+
+    private static void RequireShape(JsonElement element, string context, string[] names)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+            throw new CampaignFormatException($"Campaign {context} must be a JSON object.");
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var property in element.EnumerateObject())
+        {
+            if (!seen.Add(property.Name) || !names.Contains(property.Name, StringComparer.Ordinal))
+                throw new CampaignFormatException($"Campaign {context} has a duplicate or unknown field.");
+        }
+        if (names.Any(name => !seen.Contains(name)))
+            throw new CampaignFormatException($"Campaign {context} has a missing field.");
+    }
+
+    private static WorldDto ToWorldDto(WorldSnapshot world) => new(
+        world.FictionMinutes,
+        world.ActiveSceneId?.Value,
+        world.Scenes.Select(x => new SceneDto(x.Id.Value, x.Title, x.Description)).ToArray(),
+        world.Quests.Select(x => new QuestDto(x.Id.Value, x.Title, x.Status, x.SceneId?.Value)).ToArray(),
+        world.Inventory.Select(x => new InventoryDto(x.Id.Value, x.Owner.Value, x.ItemKey, x.Quantity)).ToArray(),
+        world.Conditions.Select(x => new ConditionDto(x.CharacterId.Value, x.Key, x.ExpiresAtMinute)).ToArray(),
+        world.Resources.Select(x => new ResourceDto(x.CharacterId.Value, x.Key, x.Current, x.Maximum)).ToArray());
+
+    private static WorldSnapshot ToWorldState(WorldDto dto) => new(
+        dto.FictionMinutes,
+        dto.ActiveSceneId is { } active ? new SceneId(active) : null,
+        RequiredArray(dto.Scenes, "world.scenes")
+            .Select(x => new CampaignScene(
+                new SceneId(x.Id),
+                RequiredText(x.Title, "world.scene.title"),
+                x.Description ?? throw new CampaignFormatException("world.scene.description is required.")))
+            .ToArray(),
+        RequiredArray(dto.Quests, "world.quests")
+            .Select(x => new CampaignQuest(
+                new QuestId(x.Id),
+                RequiredText(x.Title, "world.quest.title"),
+                x.Status,
+                x.SceneId is { } scene ? new SceneId(scene) : null))
+            .ToArray(),
+        RequiredArray(dto.Inventory, "world.inventory")
+            .Select(x => new InventoryEntry(new InventoryId(x.Id), new CharacterId(x.Owner),
+                RequiredText(x.ItemKey, "world.inventory.itemKey"), x.Quantity)).ToArray(),
+        RequiredArray(dto.Conditions, "world.conditions")
+            .Select(x => new CharacterCondition(new CharacterId(x.CharacterId),
+                RequiredText(x.Key, "world.condition.key"), x.ExpiresAtMinute)).ToArray(),
+        RequiredArray(dto.Resources, "world.resources")
+            .Select(x => new CharacterResource(new CharacterId(x.CharacterId),
+                RequiredText(x.Key, "world.resource.key"), x.Current, x.Maximum)).ToArray());
 
     private static IReadOnlyDictionary<string, int> ReadAttributes(
         Dictionary<string, int>? attributes)

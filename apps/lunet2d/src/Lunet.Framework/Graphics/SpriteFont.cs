@@ -209,35 +209,66 @@ public sealed class SpriteFont
     public Vector2 Measure(string text, float scale = 1f)
     {
         ArgumentNullException.ThrowIfNull(text);
+        CheckScale(scale);
         if (_custom is not null) return MeasureCustom(text, scale);
-        var lineWidth = 0;
-        var maxWidth = 0;
-        var lines = 1;
-        foreach (var c in text)
+
+        // CR, LF, CRLF e Unicode por escalar: mesma regra de FromBitmap.
+        double lineWidth = 0, maxWidth = 0, lines = 1;
+        bool afterCr = false;
+        foreach (var rune in text.EnumerateRunes())
         {
-            if (c == '\n') { maxWidth = Math.Max(maxWidth, lineWidth); lineWidth = 0; lines++; }
-            else lineWidth += CellWidth;
+            if (NewLine(rune.Value, ref afterCr))
+            {
+                maxWidth = Math.Max(maxWidth, lineWidth);
+                lineWidth = 0;
+                lines++;
+            }
+            else if (rune.Value != '\n')
+                lineWidth += CellWidth;
         }
-        maxWidth = Math.Max(maxWidth, lineWidth);
-        return new Vector2(Math.Max(0, maxWidth - 1) * scale, lines * LineHeight * scale);
+        double width = Math.Max(0, Math.Max(maxWidth, lineWidth) - 1) * scale;
+        double height = lines * LineHeight * scale;
+        if (width > float.MaxValue || height > float.MaxValue)
+            throw new OverflowException("O layout não cabe em coordenadas float.");
+        return new Vector2((float)width, (float)height);
     }
 
     internal void Draw(SpriteBatch batch, string text, Vector2 position, Color color, float scale)
     {
+        ArgumentNullException.ThrowIfNull(text);
+        CheckScale(scale);
+        if (!float.IsFinite(position.X) || !float.IsFinite(position.Y))
+            throw new ArgumentOutOfRangeException(nameof(position));
+        if (_texture.IsDisposed) throw new ObjectDisposedException(nameof(Texture2D));
         if (_custom is not null) { DrawCustom(batch, text, position, color, scale); return; }
-        var x = 0f;
-        var y = 0f;
-        var size = new Vector2(5, CellHeight) * scale;
-        foreach (var c in text)
+
+        double x = 0, y = 0;
+        bool afterCr = false;
+        foreach (var rune in text.EnumerateRunes())
         {
-            if (c == '\n') { x = 0; y += LineHeight * scale; continue; }
-            var i = _index.TryGetValue(c, out var found) ? found : _index['?'];
-            if (c != ' ')
+            if (NewLine(rune.Value, ref afterCr))
             {
-                var source = new RectangleF(i % Columns * CellWidth, i / Columns * CellHeight, 5, CellHeight);
-                batch.Draw(_texture, new RectangleF(position.X + x, position.Y + y, size.X, size.Y), source, color, 0f, Vector2.Zero);
+                x = 0;
+                y += LineHeight;
+                continue;
             }
-            x += CellWidth * scale;
+            if (rune.Value == '\n') continue;
+            char code = rune.Value <= char.MaxValue ? (char)rune.Value : '?';
+            var i = _index.TryGetValue(code, out var found) ? found : _index['?'];
+            if (code != ' ')
+            {
+                double left = position.X + x * scale, top = position.Y + y * scale;
+                double width = 5.0 * scale, height = CellHeight * (double)scale;
+                if (left >= -float.MaxValue && top >= -float.MaxValue
+                    && left + width <= float.MaxValue && top + height <= float.MaxValue
+                    && width <= float.MaxValue && height <= float.MaxValue)
+                {
+                    var source = new RectangleF(i % Columns * CellWidth, i / Columns * CellHeight, 5, CellHeight);
+                    batch.Draw(_texture, new RectangleF((float)left, (float)top, (float)width, (float)height),
+                        source, color, 0f, Vector2.Zero);
+                }
+            }
+            x += CellWidth;
         }
     }
 

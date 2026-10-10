@@ -1,0 +1,145 @@
+name: ecosystem-ai-release
+
+# Distribuição independente do Hub: SDK .NET NÃO requerido no dispositivo.
+# PR: testes/build apenas, sem release, credenciais, endpoint ou provider real.
+# main: prerelease development por versão e run de GitHub Actions.
+on:
+  pull_request:
+    paths:
+      - 'apps/ecosystem-ai/**'
+      - '.github/workflows/ecosystem-ai-release.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/ecosystem-ai/**'
+      - '.github/workflows/ecosystem-ai-release.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: ecosystem-ai-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Product and Runtime tests (no provider network)
+        working-directory: apps/ecosystem-ai
+        run: |
+          dotnet test --project tests/AgentRuntime.Tests
+          dotnet test --project tests/EcosystemAi.ProjectStore.Tests
+
+  self-contained:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [linux-x64, win-x64, osx-arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Publish Product with bundled .NET runtime (without trimming)
+        working-directory: apps/ecosystem-ai
+        run: |
+          dotnet publish src/EcosystemAi.Cli/EcosystemAi.Cli.csproj \
+            -c Release -r "${{ matrix.runtime }}" --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:PublishTrimmed=false \
+            -p:PublishReadyToRun=false \
+            -p:DebugType=None \
+            -p:IncludeNativeLibrariesForSelfExtract=true \
+            -o "dist/${{ matrix.runtime }}"
+      - name: Confirm expected executable and runtime independence
+        working-directory: apps/ecosystem-ai
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="dist/${{ matrix.runtime }}"
+          if [[ "${{ matrix.runtime }}" == win-* ]]; then
+            test -s "$dir/EcosystemAi.Cli.exe"
+            test ! -e "$dir/EcosystemAi.Cli.runtimeconfig.dev.json"
+          else
+            test -s "$dir/EcosystemAi.Cli"
+            test -x "$dir/EcosystemAi.Cli"
+          fi
+          # Single-file pode embutir runtimeconfig; exe é o contrato.
+          # Em Linux runner, checar também que o binário inicia sem o SDK.
+          if [[ "${{ matrix.runtime }}" == "linux-x64" ]]; then
+            "$dir/EcosystemAi.Cli" --help > /tmp/ecosystem-ai-help.txt
+            grep -q 'Ecosystem AI' /tmp/ecosystem-ai-help.txt
+          fi
+      - name: Archive binary, instructions and version
+        working-directory: apps/ecosystem-ai
+        shell: bash
+        run: |
+          set -euo pipefail
+          rid="${{ matrix.runtime }}"
+          version="$(tr -d '[:space:]' < VERSION)"
+          dev_version="$version-dev.${GITHUB_RUN_NUMBER}"
+          dir="dist/$rid"
+          cp README.md "$dir/README.md"
+          cp VERSION "$dir/VERSION"
+          printf '%s\n' 'Ecosystem AI - `--help` mostra comandos.' \
+            'Interface local: --web-ui --catalog DIRETORIO (127.0.0.1).' \
+            'API key: ECOAI_API_KEY apenas via variável de ambiente.' \
+            'Sem execução automática ou escrita habilitada por padrão.' \
+            'Não é APK Android; não necessita Hub.' > "$dir/START.txt"
+          mkdir -p release
+          if [[ "$rid" == win-* ]]; then
+            (cd "$dir" && zip -qr "../../release/ecosystem-ai-$dev_version-$rid.zip" .)
+          else
+            tar -C "$dir" -czf "release/ecosystem-ai-$dev_version-$rid.tar.gz" .
+          fi
+          (cd release && sha256sum * > "SHA256SUMS-$rid.txt")
+          ls -lh release/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ecosystem-ai-${{ matrix.runtime }}
+          path: apps/ecosystem-ai/release/*
+          if-no-files-found: error
+          retention-days: 30
+
+  prerelease:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: [test, self-contained]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ecosystem-ai-*
+          path: apps/ecosystem-ai/release
+          merge-multiple: true
+      - name: Publish versioned development prerelease
+        working-directory: apps/ecosystem-ai
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < VERSION)"
+          tag="ecosystem-ai-v$version-dev.$GITHUB_RUN_NUMBER"
+          gh release view "$tag" >/dev/null 2>&1 && exit 0
+          printf 'Ecosystem AI %s (development)\n\n' "$version" > release-notes.txt
+          printf 'Execução standalone C# desktop com Runtime .NET embutido.\n' >> release-notes.txt
+          printf 'Somente localhost; configuração do provider e chave são do operador.\n' >> release-notes.txt
+          printf 'Não é APK Android. Testes de Runtime e Product aprovados no CI.\n' >> release-notes.txt
+          gh release create "$tag" release/* \
+            --repo "${{ github.repository }}" --target "$GITHUB_SHA" \
+            --prerelease --latest=false \
+            --title "Ecosystem AI $version-dev.$GITHUB_RUN_NUMBER" \
+            --notes-file release-notes.txt

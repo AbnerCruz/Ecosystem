@@ -1,0 +1,111 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-procedural-city",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T09:00:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-procedural-city",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc19-procedural-render-20261010",
+  "base_commit": "1f99d4f4a9b32f3ffb4686f12bedb70d3bf6fd2c",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldBuildings.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldGroundDecor.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldPixelTextures.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldSprites.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldBuildingsTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldGroundDecorTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldPixelTexturesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldSpritesTests.cs",
+    "apps/urbe/csharp/src/Urbe.UI/WorldArt.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/World.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorldArtProceduralRenderTests.cs",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/docs/csharp/UC19-PROCEDURAL-CITY.md",
+    "docs/governance/handoffs/HO-20261010-urbe-procedural-city.json"
+  ],
+  "work_completed": [
+    "Fechado PR #423 sem merge: sprites PNG pré-gerados não são a arquitetura procedural exigida pelo proprietário.",
+    "Transposto para a branch Android o motor Core C# já integrado em main no PR #421, sem modificar seus algoritmos ou testes.",
+    "Cidade interativa MAUI Blazor renderiza em execução, por C#, terreno de quatro variações, flores, copas e edifícios por RGBA gerado, PNG data URI em memória e cache; CSS sem referência a sprites estáticos.",
+    "Testes unitários verificam pixels gerados versus funções Core e smoke executa a Cidade viva em runtime."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI urbe-checks Android Windows C# Core xUnit smoke Playwright e consistency",
+      "result": "pending",
+      "evidence": "Revisão da branch empilhada submetida, não houve validação física."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3/G-C4 Android dispositivo real e comparação visual com 1.8.4-beta",
+      "result": "not-applicable",
+      "evidence": "Não executado, gates permanecem abertos."
+    }
+  ],
+  "known_issues": [
+    "A grade da Cidade é provisória e não usa ainda o world terrain generator/chunkPixels completo do legado.",
+    "Rasterizador procedural C# contém arestas de polígonos de amostragem sem antialias idêntico ao Canvas2D, precisa comparação física.",
+    "PR #397 é crítico e permanece não integrado: base atual contém snapshot de suas funcionalidades, sem merge do PR original.",
+    "URLs PNG em memória são transportes de pixels para MAUI WebView, não assets pré-gerados ou fontes da arte."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI da branch empilhada, corrigir erros de compilação sem alterar arte por aproximação.",
+    "Depois da integração crítica do PR #397, retarget para main e remover cópias redundantes de Core antes de integrar.",
+    "Implementar terrain.js e chunkPixels C# com biome/elevação para Cidade contínua e fazer comparativo de screenshots.",
+    "Validar Android físico, toque, zoom, FPS e editor conectado antes de nova release."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Nenhum caminho ou conteúdo do vault foi modificado; imagens transitórias só em memória."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Implementação C# específica do Urbe sem dependência externa."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Procedural original é a fonte, JS não é executado em mobile."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Mudança documentada com branch, tests, handoff, PR e CI."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação física e igualdade visual 1.8.4-beta explicitamente abertas."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Modifica apenas a composição visual do mundo em C#, mantendo interações, vault, permissões, formatos, integração e release inalterados; empilhada para revisão sobre PR crítico Android."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-world-art-procedural",
+      "status": "product-specific",
+      "rationale": "Algoritmos gráficos da versão 1.8.4-beta e desenho da Cidade são específicos do Urbe, sem segundo consumidor."
+    }
+  ]
+}

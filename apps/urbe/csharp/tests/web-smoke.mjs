@@ -95,6 +95,24 @@ async function assertShell(page, journey = false) {
         'rgb(18, 26, 25)',
         'Estilos da RCL carregados');
 
+
+    // UC-19: the installed RCL must render procedural C# art at runtime,
+    // not request baked PNG files or silently show CSS fallback blocks.
+    smokeStage('city-procedural-pixels');
+    await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
+    const tile = page.locator('.world-tiles .world-empty-lot').first();
+    await tile.waitFor();
+    assert.match(await tile.getAttribute('style'),
+        /data:image\/png;base64,/, 'Terrain pixels must come from C# runtime');
+    const tree = page.locator('.world-terrain-tree .world-grass').first();
+    await tree.waitFor();
+    assert.match(await tree.getAttribute('style'),
+        /data:image\/png;base64,/, 'Tree pixels must come from C# runtime');
+    assert.match(await page.locator('.world-map').getAttribute('style'),
+        /data:image\/png;base64,/, 'Map background must be procedural');
+    await nav.getByRole('link', { name: 'Início', exact: true }).click();
+    await page.getByRole('heading', { name: 'Urbe', exact: true }).waitFor();
+
     if (journey) {
     smokeStage('explorer-open');
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
@@ -104,9 +122,12 @@ async function assertShell(page, journey = false) {
     // UC-18: prove that the shared in-memory workspace really connects
     // Explorer → folder actions/move → Editor → Markdown domain → Visual.
     smokeStage('create-folder');
+    await page.getByRole('button', { name: 'Criar pasta', exact: true }).click();
+    await page.getByRole('alert').filter({ hasText: /Não foi possível criar a pasta/ }).waitFor();
     await page.getByLabel('Nova pasta').fill('Destino');
     await page.getByRole('button', { name: 'Criar pasta', exact: true }).click();
     await page.getByLabel('Ações de Destino').waitFor();
+    assert.equal(await page.getByRole('alert').filter({ hasText: /Não foi possível criar a pasta/ }).count(), 0);
 
     await page.getByLabel('Nova nota').fill('Smoke');
     await page.getByRole('button', { name: 'Criar', exact: true }).click();
@@ -116,6 +137,36 @@ async function assertShell(page, journey = false) {
     smokeStage('source-edit');
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
     const source = page.getByLabel('Markdown da nota');
+    smokeStage('source-inline-code');
+    await source.fill('antes palavra depois');
+    await source.evaluate(element => element.setSelectionRange(6, 13));
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    try {
+        await page.waitForFunction(
+            () => document.querySelector('.editor-source-field textarea')?.value === 'antes `palavra` depois',
+            null,
+            { timeout: 5500 });
+    } catch (error) {
+        const alert = await page.getByRole('alert').allInnerTexts();
+        const status = await page.getByRole('status').allInnerTexts();
+        throw new Error(`Código em linha não atualizou o textarea: alert=${JSON.stringify(alert)}; status=${JSON.stringify(status)}; atual=${JSON.stringify(await source.inputValue())}`, { cause: error });
+    }
+    assert.equal(await source.inputValue(), 'antes `palavra` depois');
+    assert.deepEqual(
+        await source.evaluate(element => [element.selectionStart, element.selectionEnd]),
+        [7, 14]);
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes palavra depois');
+
+    await source.evaluate(element => element.setSelectionRange(6, 6));
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes ``palavra depois');
+    assert.deepEqual(
+        await source.evaluate(element => [element.selectionStart, element.selectionEnd]),
+        [7, 7]);
+    await page.getByRole('button', { name: 'Código em linha', exact: true }).click();
+    assert.equal(await source.inputValue(), 'antes palavra depois');
+
     await source.fill('# Primeira versão\\n\\nTexto inicial.');
     await source.fill('# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]');
     assert.equal(await source.inputValue(), '# Título smoke\\n\\nTexto **forte**. [[Nova ligada]]');
@@ -211,7 +262,7 @@ async function assertShell(page, journey = false) {
 
     await page.getByRole('button', { name: '← Voltar', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
-    const smokeRow = page.getByRole('button', { name: /Smoke\.md/ });
+    const smokeRow = page.locator('.explorer-row').filter({ hasText: 'Smoke.md' });
     await smokeRow.waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Explorer/);
 
@@ -238,7 +289,8 @@ async function assertShell(page, journey = false) {
         await page.getByText(/alteração\(ões\) aguardando persistência pelo host/).innerText(),
         /alteração/);
 
-    await page.getByRole('button', { name: '← Raiz', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Caminho da pasta' })
+        .getByRole('button', { name: 'Raiz', exact: true }).click();
 
     await page.getByLabel('Nova nota').fill('Outra');
     await page.getByRole('button', { name: 'Criar', exact: true }).click();
@@ -250,7 +302,25 @@ async function assertShell(page, journey = false) {
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
 
-    const anotherRow = page.getByRole('button', { name: /Outra\.md/ });
+    const anotherRow = page.locator('.explorer-row').filter({ hasText: 'Outra.md' });
+    smokeStage('touch-gesture-safety');
+    await anotherRow.dispatchEvent('pointerdown', {
+        pointerType: 'mouse', button: 0, isPrimary: true
+    });
+    await page.waitForTimeout(650);
+    await anotherRow.dispatchEvent('pointerup', { pointerType: 'mouse' });
+    assert.equal(await page.locator('.explorer-move-banner').count(), 0, 'Segurar mouse não arma movimentação');
+    await anotherRow.dispatchEvent('pointerdown', {
+        pointerType: 'touch', button: 0, isPrimary: true,
+        clientX: 0, clientY: 0
+    });
+    await anotherRow.dispatchEvent('pointermove', {
+        pointerType: 'touch', clientX: 0, clientY: 24
+    });
+    await page.waitForTimeout(650);
+    await anotherRow.dispatchEvent('pointerup', { pointerType: 'touch' });
+    assert.equal(await page.locator('.explorer-move-banner').count(), 0, 'Rolagem por toque não arma movimentação');
+
     smokeStage('touch-long-press-move');
     await anotherRow.dispatchEvent('pointerdown', {
         pointerType: 'touch',
@@ -270,8 +340,92 @@ async function assertShell(page, journey = false) {
     await movedFolder.click();
     await page.getByLabel('Ações de Destino').waitFor();
     await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
-    await page.getByRole('button', { name: /Outra\.md/ }).waitFor();
-    await page.getByRole('button', { name: /Smoke\.md/ }).waitFor();
+    await page.locator('.explorer-row').filter({ hasText: 'Outra.md' }).waitFor();
+    await page.locator('.explorer-row').filter({ hasText: 'Smoke.md' }).waitFor();
+
+    smokeStage('explicit-move-action');
+    await page.getByRole('button', { name: 'Mover Smoke.md', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: /Movendo Smoke\.md/ }).waitFor();
+    await page.getByRole('navigation', { name: 'Caminho da pasta' })
+        .getByRole('button', { name: 'Raiz', exact: true }).click();
+    await page.getByRole('button', { name: 'Mover aqui', exact: true }).click();
+    await page.locator('[data-path="Smoke.md"]').waitFor();
+    assert.equal(await page.locator('[data-path="Destino/Smoke.md"]').count(), 0);
+
+    // UC-18 / REQ-096: navigate nested paths without repeated parent clicks.
+    // Global search must disambiguate identical filenames across folders.
+    smokeStage('explorer-breadcrumb-search');
+    await page.locator('[data-path="Destino"]').click();
+    await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
+    await page.getByLabel('Nova pasta').fill('Profunda');
+    await page.getByRole('button', { name: 'Criar pasta', exact: true }).click();
+    await page.getByLabel('Ações de Profunda').waitFor();
+    await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
+
+    const breadcrumbs = page.getByRole('navigation', { name: 'Caminho da pasta' });
+    assert.deepEqual((await breadcrumbs.getByRole('button').allTextContents()).map(s => s.trim()),
+        ['Raiz', 'Destino', 'Profunda']);
+    assert.equal(await breadcrumbs.getByRole('button', { name: 'Profunda' }).getAttribute('aria-current'),
+        'location');
+
+    await page.getByLabel('Nova nota').fill('Outra');
+    await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Outra', exact: true }).waitFor();
+    await page.getByRole('button', { name: '← Voltar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
+    console.log('UC-18 folder roundtrip diagnostics', JSON.stringify({
+        url: page.url(),
+        folder: await page.locator('.explorer-location strong').innerText(),
+        rows: await page.locator('[data-path]').evaluateAll(nodes => nodes.map(n => n.getAttribute('data-path'))),
+        query: await page.getByLabel('Buscar').inputValue()
+    }));
+    console.log('UC-18 deep file render diagnostics', JSON.stringify(
+        await page.locator('[data-path="Destino/Profunda/Outra.md"]').evaluate(element => ({
+            html: element.outerHTML.slice(0, 380),
+            style: {
+                display: getComputedStyle(element).display,
+                visibility: getComputedStyle(element).visibility,
+                opacity: getComputedStyle(element).opacity,
+                parentDisplay: getComputedStyle(element.parentElement).display,
+                grandparentDisplay: getComputedStyle(element.parentElement.parentElement).display
+            },
+            rect: element.getBoundingClientRect().toJSON()
+        }))));
+    await page.locator('[data-path="Destino/Profunda/Outra.md"]').waitFor();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const breadcrumbOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - innerWidth);
+    assert.ok(breadcrumbOverflow <= 0,
+        'Breadcrumbs devem rolar internamente sem expandir a viewport móvel');
+    await breadcrumbs.getByRole('button', { name: 'Destino', exact: true }).click();
+    await page.waitForFunction(
+        () => document.querySelector('.explorer-location strong')?.textContent.trim() === 'Destino');
+    await breadcrumbs.getByRole('button', { name: 'Raiz', exact: true }).click();
+    await page.waitForFunction(
+        () => document.querySelector('.explorer-location strong')?.textContent.trim() === 'Raiz');
+    await page.setViewportSize(previousViewport);
+
+    await page.getByLabel('Buscar').fill('Outra');
+    assert.match(await page.getByRole('status').filter({ hasText: /2 resultado/ }).innerText(),
+        /todo o vault/);
+    const upperResult = page.locator('[data-path="Destino/Outra.md"]');
+    const nestedResult = page.locator('[data-path="Destino/Profunda/Outra.md"]');
+    await upperResult.waitFor();
+    await nestedResult.waitFor();
+    assert.match(await upperResult.locator('.explorer-main small').innerText(), /em Destino$/);
+    assert.match(await nestedResult.locator('.explorer-main small').innerText(), /em Destino\/Profunda$/);
+
+    await nestedResult.click();
+    await page.getByRole('heading', { name: 'Outra', exact: true }).waitFor();
+    await page.getByRole('button', { name: '← Voltar', exact: true }).click();
+    await nestedResult.waitFor();
+    assert.equal(await page.getByLabel('Buscar').inputValue(), 'Outra',
+        'Retorno do editor restaura o filtro de origem');
+    await page.getByRole('button', { name: 'Limpar busca', exact: true }).click();
+    assert.equal(await page.getByLabel('Buscar').inputValue(), '');
+    await page.locator('[data-path="Destino"]').waitFor();
+    assert.equal(await page.locator('[data-path="Destino/Profunda/Outra.md"]').count(), 0);
 
     }
 
@@ -295,7 +449,7 @@ async function assertShell(page, journey = false) {
     const sessionCards = page.getByRole('group', { name: 'Sessão de trabalho' });
     // A journey builds three in-memory notes/tabs. Reload and fresh online
     // or offline pages start empty until host persistence is implemented.
-    const expectedSessionCount = journey ? '3' : '0';
+    const expectedSessionCount = journey ? '4' : '0';
     assert.equal(await sessionCards.locator('article').nth(0).locator('span').innerText(), expectedSessionCount);
     assert.equal(await sessionCards.locator('article').nth(1).locator('span').innerText(), expectedSessionCount);
     assert.match(await page.getByText('UC-17 integrado').innerText(), /UC-17 integrado/);
@@ -305,6 +459,47 @@ async function assertShell(page, journey = false) {
         content: document.documentElement.scrollWidth
     }));
     assert.ok(metrics.content <= metrics.width, 'Shell não pode causar overflow horizontal');
+}
+
+async function assertNoteTemplates(page) {
+    const nav = page.getByRole('navigation', { name: 'Navegação principal' });
+    smokeStage('note-template-create-source');
+    await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
+    await page.getByLabel('Nova nota').fill('Modelo base');
+    await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Modelo base', exact: true }).waitFor();
+
+    await page.getByRole('button', { name: 'Fonte', exact: true }).click();
+    await page.getByLabel('Markdown da nota').fill('# {{Tema}}\n\nPessoa: {{Pessoa}}\n{{Tema}}');
+    await page.getByRole('button', { name: 'Salvar como modelo', exact: true }).click();
+    await page.getByRole('status').filter({ hasText: /Modelo criado: Modelos\/Modelo base\.md/ }).waitFor();
+
+    smokeStage('note-template-fill');
+    await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
+    await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
+    await page.getByRole('combobox', { name: 'Selecionar modelo de nota' })
+        .selectOption('Modelos/Modelo base.md');
+    await page.getByLabel('Tema', { exact: true }).fill('Teste');
+    await page.getByLabel('Pessoa', { exact: true }).fill('Alice $&');
+    await page.getByLabel('Nova nota').fill('Nota gerada');
+    await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Nota gerada', exact: true }).waitFor();
+
+    await page.getByRole('button', { name: 'Fonte', exact: true }).click();
+    assert.equal(
+        await page.getByLabel('Markdown da nota').inputValue(),
+        '# Teste\n\nPessoa: Alice $&\nTeste');
+
+    const metrics = await page.evaluate(() => ({
+        width: innerWidth,
+        content: document.documentElement.scrollWidth
+    }));
+    assert.ok(metrics.content <= metrics.width, 'Campos de modelo não devem provocar overflow');
+
+    // The in-memory preview deliberately cannot restore an editor session
+    // across a reload. Return Home before the existing PWA reload checks.
+    await nav.getByRole('link', { name: 'Início', exact: true }).click();
+    await page.getByRole('heading', { name: 'Urbe', exact: true }).waitFor();
 }
 
 let browser;
@@ -336,6 +531,8 @@ try {
         console.log('UC-17/18 shell + editor online:', base);
         await page.goto(origin + base);
         await assertShell(page, base === '/preview/');
+        if (base === '/preview/')
+            await assertNoteTemplates(page);
 
         await page.evaluate(async () => {
             await Promise.race([

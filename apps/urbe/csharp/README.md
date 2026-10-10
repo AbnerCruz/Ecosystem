@@ -1,3 +1,19 @@
+**Diretriz visual:** manter o visual EXATO do Urbe 1.8.4-beta, sem redesenho. Sprites/texturas são extraídos no build a partir do código original via `tools/export-legacy-v184.mjs` e empacotados no Android C#. O mundo contínuo e a HUD ainda requerem portabilidade fiel C#; ver `../docs/csharp/UC19-VISUAL-ACCEPTANCE.md`.
+
+# Urbe C# — somente Android e Windows (beta 2.0.0-beta.8)
+
+**Direção do proprietário (09/10/2026):** não criar ou distribuir uma versão Web/PWA do cliente C#. Android é prioridade; desktop/Windows vem depois. O MAUI Blazor Hybrid renderiza os componentes em uma WebView interna, não em um site com backend. O vault Android é uma pasta real, selecionada pelo usuário.
+
+**Release Android:** versão `2.0.0-beta.9`, ID `app.urbe.csharp`, versionCode `2000009`. Os 206 PNGs de sprites e texturas são gerados diretamente da arte 1.8.4-beta e o próprio APK assinado é inspecionado no CI para garantir presença, dimensões e SHA-256. A paridade do mundo/câmera/HUD continua pendente em UC-19.
+
+**Verificação:** `dotnet restore Urbe.Portable.slnx && dotnet test --project tests/Urbe.Core.Tests -c Release`. Build Android: `dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-android -p:UrbeBuildTarget=net10.0-android`. Windows usa `net10.0-windows10.0.19041.0`. Não há build ou release C# para Web.
+
+**Dados:** testar a primeira beta em pasta vazia e confirmar abrir/editar/salvar/reabrir no Android físico. A identidade nova não sobrescreve a instalação JS 1.8.4-beta.
+
+---
+
+**Arquivo histórico de implementação UC-8 a UC-18:** as menções antigas a Urbe.Web/WASM/PWA abaixo não refletem a direção atual do produto.
+
 # Cliente C# do Urbe — UC-8 a UC-16
 
 Base de composição aprovada por DEC-0035-A / ADR-0025. O roadmap e os gates
@@ -229,6 +245,53 @@ no próprio Urbe. Não há VectSharp, Skia ou interop matemático em JavaScript.
 Falhas de TeX viram diagnóstico, o texto original é preservado e o SVG exportado
 é formado por paths/linhas/retângulos autocontidos. A dependência permanece
 sujeita à autorização crítica do ADR-0012.
+
+## UC-18 — Código em linha na Fonte (REQ-090, primeira fatia)
+
+A barra do modo **Fonte** (também presente no **Dividido**) inclui
+**Código em linha**. Com uma seleção de uma linha, envolve somente o
+trecho em crases; pressionar novamente sobre a mesma seleção remove o
+envoltório. Sem seleção, insere duas crases sem texto de reserva e deixa
+o cursor entre elas; pressionar novamente remove o par vazio. Trechos
+com crases recebem delimitador de tamanho apropriado. Uma seleção de
+múltiplas linhas é recusada sem alterar o texto — código em bloco é
+outro comando.
+
+A operação é calculada em `Urbe.Core/InlineCodeEditing` usando
+offsets UTF-16, compatíveis com o cursor do navegador. Um módulo JS
+mínimo lê/restaura somente a seleção do `textarea`, sem lógica Markdown,
+persistência ou segundo estado canônico. O fluxo mantém o histórico da
+`WorkspaceSession`. Há testes de domínio e smoke Web real para seleção,
+alternância e cursor.
+
+Esta fatia não habilita a bolha/formatação sob o cursor no modo Visual,
+nem conclui a totalidade de REQ-090, REQ-095 ou G-C3. Persistência
+física dos hosts C# permanece pendente.
+
+## UC-18 — modelos de nota (REQ-093)
+
+No Editor C#, **Salvar como modelo** clona a nota Markdown atual para
+`Modelos/` (sem alterar o original). Esse diretório contém **notas comuns**:
+`Modelos/Reunião.md` pode ter, por exemplo, `# {{Assunto}}` e
+`Responsável: {{Pessoa}}`. O Explorer oferece **Modelo da nota** ao criar
+uma nota e pede o valor de cada campo uma única vez, mesmo que ele apareça
+várias vezes. Campos sem valor produzem texto vazio; sintaxe não reconhecida
+permanece literal. O nome/caminho da nota criada é independente do modelo.
+É possível editar diretamente a nota-modelo como qualquer outro Markdown.
+
+A expansão preserva exatamente a fonte fora dos marcadores: quebras CRLF,
+frontmatter, links, códigos e espaços não são normalizados. Se o modelo
+desaparecer, mudar de campos durante o formulário, contiver mais de 32
+campos distintos, ou o destino não for válido, a criação é recusada antes
+de modificar o documento. Os testes do Core exercitam fidelidade, valores
+literais e falhas fechadas.
+
+**Limite da UC-18:** o Explorer/Editor C# ainda usa uma sessão em memória.
+A criação de modelos e notas usa `WorkspaceSession`/`DocumentStore`
+canônicos; a gravação física e a recuperação após reiniciar o host dependem
+do adapter planejado de persistência. Não usar este cliente experimental
+para notas reais. REQ-093 e G-C3 não são declarados concluídos antes de
+persistência e validação visual/toque no dispositivo.
 
 ## UC-18 — painel de referência (REQ-091)
 
