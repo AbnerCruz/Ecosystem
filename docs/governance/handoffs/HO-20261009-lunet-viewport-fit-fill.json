@@ -59,10 +59,10 @@
     {
       "kind": "human",
       "check": "DEVICE no celular",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/graficos.md",
-      "evidence": "Conferir HUD recortado, orientação e touch no aparelho; CI não valida ergonomia."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/436); registro em docs/governance/responses/VAL-HO-20261009-lunet-viewport-fit-fill-db84bd83dbf1.md."
     }
   ],
   "known_issues": [

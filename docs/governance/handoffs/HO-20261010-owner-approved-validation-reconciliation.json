@@ -1,0 +1,111 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-owner-approved-validation-reconciliation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T18:35:00Z",
+  "agent": {
+    "id": "chatgpt-owner-validation-reconciliation",
+    "kind": "ai-agent"
+  },
+  "task_id": "P1-19",
+  "component": "ecosystem",
+  "state": "review",
+  "branch": "fix/owner-validation-backlog-20261010",
+  "base_commit": "f1db20f4ccdb1f39b8f0459e02cb51da12aa3794",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "docs/governance/handoffs/HO-20261010-lunet-touch-relayout.json",
+    "docs/governance/responses/VAL-HO-20261010-lunet-touch-relayout-e52d9f8b4894.md",
+    "docs/governance/handoffs/HO-20261010-lunet-touch-list.json",
+    "docs/governance/responses/VAL-HO-20261010-lunet-touch-list-822e1ec611e4.md",
+    "docs/governance/handoffs/HO-20261009-lunet-virtual-controls.json",
+    "docs/governance/responses/VAL-HO-20261009-lunet-virtual-controls-fbb24928c6fc.md",
+    "docs/governance/handoffs/HO-20261009-lunet-viewport-fit-fill.json",
+    "docs/governance/responses/VAL-HO-20261009-lunet-viewport-fit-fill-db84bd83dbf1.md",
+    "docs/governance/handoffs/HO-20261009-lunet-touch-scroll.json",
+    "docs/governance/responses/VAL-HO-20261009-lunet-touch-scroll-b0ea2c50d59a.md",
+    "docs/governance/handoffs/HO-20261009-lunet-frame-pacing.json",
+    "docs/governance/responses/VAL-HO-20261009-lunet-frame-pacing-75a930c65fd0.md",
+    "docs/governance/handoffs/HO-20261009-lunet-default-font.json",
+    "docs/governance/responses/VAL-HO-20261009-lunet-default-font-3404855d3a93.md",
+    "docs/governance/handoffs/HO-20261008-lunet-touch-slider.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-touch-slider-1a5aab708ca5.md",
+    "docs/governance/handoffs/HO-20261008-lunet-tilemaps.json",
+    "docs/governance/responses/VAL-HO-20261008-lunet-tilemaps-636ac6157f1f.md",
+    "docs/governance/handoffs/HO-20261010-owner-approved-validation-reconciliation.json",
+    ".github/workflows/decision.yml"
+  ],
+  "work_completed": [
+    "Reconciliadas as aprovações humanas de Issues #432, #433, #435, #436, #438, #440, #442, #444, #445; origem é a resposta explícita do dono no GitHub, nunca declaração do agente.",
+    "Verificadas origem OWNER, task_id, check_hash SHA256(check+newline+object) e estado pending; sem promoção dos gates.",
+    "Corrigido controle de concorrência que cancelava aprovações de Issues diferentes no workflow decision."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Cálculo de hash e validação de proprietário das Issues",
+      "result": "passed",
+      "evidence": "Hash SHA256 compatível com apply-decision.cs; conferência de cada Issue."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency e validações no estado combinado",
+      "result": "pending",
+      "evidence": "CI do PR."
+    }
+  ],
+  "known_issues": [
+    "Demais Issues de validação exigem reconciliação no mesmo PR.",
+    "Fechamento de Issues originais somente após a integração dos registros na main."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Reconciliar o lote restante.",
+    "CI combinado e integrador após autorização crítica do proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/communication.md",
+    ".github/scripts/apply-decision.cs",
+    ".github/workflows/decision.yml",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Handoff é autoridade do resultado; resposta registra a fonte."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Audit trail com Issues autorais e hashes."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Resposta humana já registrada pelo proprietário nas Issues."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Corrigido mecanismo sem relaxar a verificação de OWNER."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não aprovou verificação inexistente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Nenhuma tarefa é declarada done apenas com a aprovação de parte do gate."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "constitution",
+      "control-plane"
+    ],
+    "reason": "Correção de workflow de decisões e resposta de aprovação por OWNER, exige integração governada."
+  }
+}
