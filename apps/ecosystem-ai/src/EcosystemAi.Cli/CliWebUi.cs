@@ -222,6 +222,7 @@ public static class CliWebUi
                     switch (result.State)
                     {
                         case WebTaskState.Succeeded:
+                        case WebTaskState.Reviewed:
                             ctx.Response.StatusCode = StatusCodes.Status303SeeOther;
                             ctx.Response.Headers.Location = "/#s-" +
                                 Uri.EscapeDataString(form["sessionId"].ToString());
@@ -237,6 +238,13 @@ public static class CliWebUi
                                 "Limite desta sessão do servidor atingido.",
                                 "Reinicie com uma autorização explícita de orçamento ou número de tarefas."),
                                 StatusCodes.Status429TooManyRequests);
+                            return;
+                        case WebTaskState.ReviewIncomplete:
+                            await RespondHtml(ctx, CliWebUiHtml.RenderError(
+                                "Revisão independente não concluída.",
+                                "O produtor pode ter sido executado. Confira runs e recibos no catálogo; " +
+                                "não há aprovação ou integração automática."),
+                                StatusCodes.Status422UnprocessableEntity);
                             return;
                         case WebTaskState.Invalid:
                             await RespondHtml(ctx, CliWebUiHtml.RenderError(
@@ -281,6 +289,8 @@ public static class CliWebUi
             Console.WriteLine("PRÉVIAS ATIVADAS: conteúdo de arquivos textuais atuais será exibido no browser local.");
         if (taskRunner is not null)
             Console.WriteLine("EXECUÇÃO OPT-IN: tarefas manuais via browser; somente files.read, teto local limitado.");
+        if (taskRunner?.Board.ReviewTeams == true)
+            Console.WriteLine("REVISÃO DE EQUIPE: produtor seguido do revisor, dois runs pagos; nenhuma aprovação ou integração automática.");
         await ((IHost)app).RunAsync(cancellationToken);
     }
 
