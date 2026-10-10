@@ -17384,7 +17384,7 @@
           "since": "0.0.1"
         },
         {
-          "id": "M:Lunet.UI.TouchRadialMenu.Cancel()",
+          "id": "M:Lunet.UI.TouchRadialMenu.Cancel",
           "name": "Cancel",
           "kind": "method",
           "signature": "public void Cancel()",
