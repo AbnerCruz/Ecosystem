@@ -1,0 +1,101 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-all-agents-native-v184",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T18:02:30Z",
+  "agent": {
+    "id": "chatgpt-urbe-native-continuation",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-33",
+  "component": "urbe",
+  "state": "review",
+  "branch": "fix/urbe-all-agents-native-parity-20261010",
+  "base_commit": "0895dd496295786599901d5f53f0c78b86e86d41",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/463",
+  "files_changed": [
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/tools/native-continuation-policy.mjs",
+    "apps/urbe/tools/check-all.mjs",
+    "docs/governance/handoffs/HO-20261010-urbe-all-agents-native-v184.json"
+  ],
+  "work_completed": [
+    "Direção DEC-0043/ADR-0032 ampliada formalmente a TODOS os agentes do Urbe por instrução do proprietário; fonte de produto 1.8.4-beta e alvo Avalonia C# nativo Android/Windows.",
+    "Proibida continuidade de UI Blazor/WebView/grade de notas, preservado Urbe.Core, fluxo de vault físico, mundo vivo, mapa.json, HUD/Explorer/Editor e beta nativo condicionada a validação humana.",
+    "Guard automatizado de continuidade executado por tools/check-all.mjs fora do inventário congelado de testes JS."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "tools/native-continuation-policy.mjs pelo npm run check",
+      "result": "pending",
+      "evidence": "Teste novo em tools/, sem alterar os paths congelados de tests/."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks e consistency no estado combinado",
+      "result": "pending",
+      "evidence": "CI do PR #463 reexecuta após correção do inventário."
+    }
+  ],
+  "known_issues": [],
+  "blockers": [],
+  "next_actions": [
+    "Integrador automático após CI verde.",
+    "Todo agente novo que receber 'continue o Urbe' deve executar a próxima fatia do roadmap nativo, verificando main/PRs/CI."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma UI ativa, Core canônico; cliente Blazor congelado."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Porte incremental reutiliza as regras C# e referencia 1.8.4, sem redesenho."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR, commit base, arquivos e evidência em handoff."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Mandato do proprietário já consolidado em DEC-0043."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Respeita ADR-0032; não escolhe nova pilha."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não equivale a validação física; gates abertos."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem marcar UC/DEVICE como concluídas."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Produto funciona separado do Hub; nenhuma release publicada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Sincroniza ordem já decidida; sem mudança runtime ou dados de usuário."
+  }
+}

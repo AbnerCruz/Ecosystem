@@ -17,6 +17,7 @@ const steps = [
   ['fixtures de vaults em dia', 'tools/make-fixtures.mjs', '--check'],
   ['tutorial em dia', 'tools/build-tutorial.mjs', '--check'],
   ['paridade C# e oráculo congelado', 'tools/csharp-parity.mjs', 'check'],
+  ['mandato universal do Urbe nativo', 'tools/native-continuation-policy.mjs'],
   ['contrato C# do vault e manifesto', 'tools/vault-contract.mjs', 'check'],
   ['regressão de importação crítica', 'csharp/tests/import-legacy.mjs'],
   ['testes (tests/*.mjs)', 'tools/run-tests.mjs'],

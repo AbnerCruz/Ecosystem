@@ -5,6 +5,14 @@
 > **Estado de um gate:** linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` logo depois de cada `**Gate:**`.
 > **Nenhuma fase escolhe a pilha de UI ou de hosts antes de UC-5**, e nenhum código C# de produto entra antes de UC-7 e do gate G-C0.
 
+## Mandato universal de continuidade — TODOS os agentes (proprietário, 10/10/2026)
+
+A diretriz de DEC-0043/ADD-0020/ADR-0032 e a ordem de desenvolvimento abaixo **vinculam todo agente do Urbe**, em qualquer plataforma/agente/sessão. Antes de qualquer implementação, leia `AGENTS.md` (raiz §1.2), `apps/urbe/AGENTS.md` §10 e `PRODUCT-DIRECTION.md`; verifique `main`, PRs e CI. A referência de arte/experiência/funcionalidades é exclusivamente **1.8.4-beta**, e o alvo é **Avalonia nativo + Urbe.Core**, Android primeiro e depois Windows. Não continuar nenhuma UI Blazor, Web/PWA, mapa estático, produto de notas genérico ou redesign.
+
+**Próxima entrega independente e verificável:** prova G-N0 no aparelho e ligação do **vault físico ao novo cliente Avalonia**, reutilizando as operações SAF e `VaultReader`/`VaultWriter` existentes sem dependências com Blazor. Persistir e reler uma nota real é gate de beta. Em paralelo, completar `mapa.json`, a simulação de `life.js`, as ferramentas/overlays e o editor Visual conforme 1.8.4. Não marcar UC-18/19/25/33 concluídas nem publicar beta utilizável até provas reais correspondentes.
+
+**PRs remanescentes de Blazor:** reconciliar escopo e extrair apenas Core/testes antes de qualquer merge; jamais integrar a casca obsoleta. Uma ordem simples para continuar significa **implementar o próximo incremento da lista, com testes/handoff**, e não reiniciar planejamento ou reabrir decisões de UI.
+
 ## O Urbe é a 1.8.4-beta, em C# nativo — proprietário, 10/10/2026 (DEC-0043)
 
 **Esta seção prevalece sobre as seções abaixo onde houver conflito.** Fonte: DEC-0043, [ADD-0020](../../../../docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md), [ADR-0032](../../../../docs/adr/0032-urbe-ui-nativa-sem-webview.md), [`PRODUCT-DIRECTION.md`](PRODUCT-DIRECTION.md).
