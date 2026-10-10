@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>EcosystemAi.Cli</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AgentRuntime.Core/AgentRuntime.Core.csproj" />
+    <ProjectReference Include="../EcosystemAi.ProjectStore/EcosystemAi.ProjectStore.csproj" />
+    <ProjectReference Include="../EcosystemAi.RunJournal/EcosystemAi.RunJournal.csproj" />
+    <ProjectReference Include="../AgentWorkspace/AgentWorkspace.csproj" />
+    <ProjectReference Include="../AgentRuntime.Tools.Files/AgentRuntime.Tools.Files.csproj" />
+    <ProjectReference Include="../AgentRuntime.Providers.ChatCompletions/AgentRuntime.Providers.ChatCompletions.csproj" />
+  </ItemGroup>
+</Project>

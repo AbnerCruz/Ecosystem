@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-urbe-uc18-pin-tabs",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T15:15:39.464Z",
+  "agent": {
+    "id": "chatgpt-urbe-uc18-pin-tabs",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc18-pin-tabs",
+  "base_commit": "4966481372efcdb2dedd7816806621d48ba51eab",
+  "commit": "8b874d391f0bbb02d65114f5c3015a6bb89f92e9",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/337",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261008-urbe-uc18-pin-tabs.json"
+  ],
+  "work_completed": [
+    "Exposto controle de fixar/desafixar aba com estado aria-pressed, label dinâmico e affordance touch.",
+    "Reutilizado PinTab e política de retenção existentes na única WorkspaceSession; nenhum modelo extra.",
+    "Smoke Web cobre fixar, navegar entre notas e desafixar mantendo a mesma sessão."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks Web/Android/Windows/E2E/checks",
+      "result": "pending",
+      "evidence": "PR #337, CI pendente."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency",
+      "result": "pending",
+      "evidence": "PR #337, CI pendente."
+    },
+    {
+      "kind": "human",
+      "check": "toque e layout real G-C3",
+      "result": "not-applicable",
+      "evidence": "Validação humana reservada ao gate G-C3; não indicada como pronta por smoke automatizado."
+    }
+  ],
+  "known_issues": [
+    "Fixação de aba somente na sessão volátil da prévia C#: não persiste entre recarregamentos.",
+    "UC-18, persistência física por host e G-C3 ainda abertos."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir falhas de CI no estado combinado, se houver.",
+    "Após CI verde, tirar do draft para integração automática rotineira.",
+    "Continuar UC-18 com toolbar/seleção e exportação/sidecars sob classificações apropriadas."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "PinTab opera apenas em sessão UI já existente; sem segunda autoridade documental."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Registro de PR, handoff e AGENTSCHAT com escopo e CI."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Toque real permanece sob G-C3, não substituído por teste Web."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying até validação automatizada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-editor-pinned-tabs",
+      "status": "product-specific",
+      "rationale": "Affordance de abas do editor Urbe em C#, sem consumidor externo concreto."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "UI de abas e smoke, sem alteração de contratos, vault, segurança, distribuição ou regra de integração."
+  },
+  "cost": null
+}

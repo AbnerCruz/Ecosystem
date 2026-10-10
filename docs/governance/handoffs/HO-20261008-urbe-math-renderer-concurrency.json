@@ -1,0 +1,98 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-urbe-math-renderer-concurrency",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T13:23:18.109Z",
+  "agent": {
+    "id": "chatgpt-urbe-math-concurrency",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-16",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "fix/urbe-math-renderer-concurrent-typesetting",
+  "base_commit": "85006817ff8dcd6258913a20566a28722133e95b",
+  "commit": "a70314e41f218091784d1d4e19099438ba323463",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/334",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/MathRenderer.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MathRendererTests.cs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261008-urbe-math-renderer-concurrency.json"
+  ],
+  "work_completed": [
+    "Eliminado acesso simultâneo ao painter CSharpMath 1.0.0-pre.2 por porta lock limitada ao typesetting e emissão de SVG.",
+    "Análise de compatibilidade e expansão de macros permanecem fora da região crítica; sem mudanças de API.",
+    "Adicionado teste de 48 renders concorrentes com validação de geometria e saída determinísticas."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe .NET tests Web Android Windows and E2E",
+      "result": "pending",
+      "evidence": "CI PR #334."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency",
+      "result": "pending",
+      "evidence": "CI PR #334."
+    },
+    {
+      "kind": "human",
+      "check": "visual toque/layout G-C3",
+      "result": "not-applicable",
+      "evidence": "Correção de concorrência no Core, sem reivindicar validação humana."
+    }
+  ],
+  "known_issues": [
+    "O gate de UI/toque real G-C3 permanece aberto para a UC-18.",
+    "Conexão do vault nos hosts ainda não faz parte deste PR."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI de PR #334; investigar qualquer falha de renderização matemática que persistir.",
+    "Depois de CI verde, tirar do draft para integração automática, sem merge manual.",
+    "Revalidar PR #287 contra main após integração desta correção."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "MathRenderer não altera DocumentStore, vault nem cria outra autoridade de dado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #334, handoff e AGENTSCHAT descrevem regressão e mitigação."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegação de aceite humano por testes automatizados."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado verifying até CI."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "urbe-math-typesetting-concurrency",
+      "status": "product-specific",
+      "rationale": "Isolamento do renderer local ao Urbe e sua dependência CSharpMath; não existe consumidor comprovado fora deste produto."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Serialização interna de renderização no Core, sem migração, formato persistido, infraestrutura, host, distribuição ou mudança de contrato público."
+  },
+  "cost": null
+}

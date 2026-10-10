@@ -11,6 +11,11 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder().UseMauiApp<App>();
         builder.Services.AddMauiBlazorWebView();
         builder.Services.AddSingleton<WorkspaceSession>();
+#if ANDROID
+        builder.Services.AddSingleton<IVaultHost, AndroidVaultHost>();
+#else
+        builder.Services.AddSingleton<IVaultHost, PreviewVaultHost>();
+#endif
         return builder.Build();
     }
 }

@@ -1,0 +1,107 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-p6-5-run-journal",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T19:18:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-journal",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-r4-durable-event-log-20261008",
+  "base_commit": "9d54881ec0ef57a723d8dfd525a44e4ae0d6c60d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.RunJournal/EcosystemAi.RunJournal.csproj",
+    "apps/ecosystem-ai/src/EcosystemAi.RunJournal/LocalRunEventLog.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/AgentRuntime.Tests.csproj",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/DurableRunJournalTests.cs",
+    "apps/ecosystem-ai/docs-r4-run-journal.md",
+    "docs/governance/handoffs/HO-20261008-p6-5-run-journal.json"
+  ],
+  "work_completed": [
+    "Implementa IEventLog local do Product, sem duplicar AgentRuntime.Core, Provider, RunState nem AgentRunner.",
+    "Journal por run com path derivado por SHA-256, versionamento e checksum, eventos de EventSerializer, validação EventContract e RunState.Replay do Core.",
+    "Gravação em temp + flush + rename sob lock exclusivo, fail closed para corrupção/versão futura/ordem/symlink; dados limitados por run.",
+    "Testes de round trip, reabertura em outra instância, snapshot órfão, lock, symlink e mutação/versão inválida."
+  ],
+  "verification": [
+    {
+      "check": "ecosystem-ai-ci suite",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests na branch e estado combinado."
+    },
+    {
+      "check": "Foundation consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Verificar em GitHub Actions no PR."
+    }
+  ],
+  "known_issues": [
+    "Este adapter é persistência do EventLog, não fluxo de retomada autônoma de tools com side effects.",
+    "Payloads ainda podem conter dados do usuário em claro; o AgentRunner precisa redigir segredos antes de registrar.",
+    "Não há UI, projeto visual nem Worker neste slice; P6-5 permanece aberta.",
+    "Registrar o journal no EcosystemAI.slnx após a integração do PR #360 para evitar conflito semântico concorrente; CI compila pelo ProjectReference do teste."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Rodar os testes e corrigir incompatibilidades de serializer/contrato.",
+    "Depois da integração, conectar o journal a sessões explicitamente habilitadas do Ecosystem AI, preservando event sourcing e controls.",
+    "Provar retomada segura após interrupção com política de reconciliation antes de anunciar execução persistente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "apps/ecosystem-ai/README.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "RunState.Replay e EventContract existentes permanecem fontes únicas de regras."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Novo adapter sob apps/ecosystem-ai; não importa outros Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #361, PR e testes rastreáveis em handoff."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Sem mudanças em concessões/permissões; armazena eventos já autorizados pelo Runtime."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara DEVICE por não alterar Android."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Slice em revisão, sem alegar P6-5 done."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reusa IEventLog, EventSerializer, EventContract e RunState.Replay em vez de duplicá-los."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Introduz persistência local de eventos de agentes, sem alteração de formatos existentes. Exige avaliação de política e autorização crítica se classificada."
+  },
+  "cost": null
+}

@@ -37,7 +37,7 @@ jobs:
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
       RESULT_FILE: /tmp/decision-result.md
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch }}
 

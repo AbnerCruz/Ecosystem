@@ -1,13 +1,16 @@
 :root {
+    /* Urbe 1.8.4-beta original palette, from src/styles/base.css. */
+    --bg:#0b1116;--panel:#101923;--panel2:#16242f;--line:#304654;
+    --text:#eef5f8;--muted:#9db0bc;--accent:#4db7ff;--danger:#b74f4f;
     color-scheme: dark;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #121a19;
-    color: #edf5ee;
+    font-family: ui-monospace,SFMono-Regular,Consolas,monospace;
+    background: #0b1116;
+    color: #eef5f8;
 }
 
 html, body, #app { min-height: 100%; }
-html { background: #121a19; }
-body { margin: 0; min-width: 0; overflow-x: hidden; background: #121a19; color: #edf5ee; }
+html { background: #0b1116; }
+body { margin: 0; min-width: 0; overflow-x: hidden; background: #0b1116; color: #eef5f8; }
 * { box-sizing: border-box; }
 button, input, textarea, select { font: inherit; }
 a { color: inherit; }
@@ -137,6 +140,47 @@ a { color: inherit; }
 }
 
 .surface { max-width: 54rem; }
+
+.editor-reference-layout { display: grid; gap: 1rem; align-items: start; }
+.editor-reference-main { min-width: 0; }
+.editor-reference-panel {
+    position: sticky;
+    top: calc(4.5rem + env(safe-area-inset-top));
+    z-index: 10;
+    min-width: 0;
+    border: 1px solid #55785f;
+    border-radius: .8rem;
+    background: #17271f;
+    overflow: hidden;
+}
+.reference-panel-header, .reference-entry > header {
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    padding: .5rem .65rem;
+}
+.reference-panel-header button, .reference-entry button, .editor-pin-reference {
+    min-height: 2.75rem;
+    border: 1px solid #55785f;
+    border-radius: .5rem;
+    background: #233b2d;
+    color: #edf5ee;
+    padding: .4rem .6rem;
+    cursor: pointer;
+}
+.reference-panel-note { margin: 0 .65rem .4rem; font-size: .72rem; color: #abc5b2; }
+.reference-panel-scroll { max-height: 24dvh; overflow: auto; overscroll-behavior: contain; }
+.reference-entry { border-top: 1px solid #395643; }
+.reference-entry > header > div { min-width: 0; }
+.reference-entry small { display: block; overflow-wrap: anywhere; color: #abc5b2; font-size: .7rem; }
+.reference-markdown { padding: 0 .65rem .5rem; overflow-wrap: anywhere; }
+.reference-markdown pre { overflow: auto; }
+.reference-markdown img { max-width: 100%; }
+
+@media (min-width: 1000px) {
+    .editor-reference-layout.has-references { grid-template-columns: minmax(0, 1fr) 16rem; }
+    .editor-reference-panel { grid-column: 2; grid-row: 1; }
+    .editor-reference-main { grid-column: 1; grid-row: 1; }
+    .reference-panel-scroll { max-height: 60dvh; }
+}
 .surface-eyebrow {
     margin: 0 0 .4rem;
     color: #93c7a5;
@@ -293,7 +337,8 @@ a:focus-visible {
     font-weight: 700;
 }
 
-.field input {
+.field input,
+.field select {
     width: 100%;
     min-height: 2.75rem;
     padding: .65rem .75rem;
@@ -304,9 +349,26 @@ a:focus-visible {
     outline: none;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
     border-color: #8bc9a1;
     box-shadow: 0 0 0 3px rgba(139, 201, 161, .12);
+}
+
+.explorer-template-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: .7rem;
+    grid-column: 1 / -1;
+    padding: .8rem;
+    border: 1px solid #355445;
+    border-radius: .8rem;
+    background: #172720;
+}
+
+.explorer-create-error {
+    color: #ffd6bf;
+    font-size: .8rem;
 }
 
 .new-note {
@@ -335,10 +397,111 @@ a:focus-visible {
     cursor: pointer;
 }
 
+.explorer-search-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: .5rem;
+    min-width: 0;
+}
+
+.explorer-clear-search,
+.explorer-breadcrumb {
+    min-height: 2.75rem;
+    padding: .55rem .75rem;
+    border: 1px solid #355445;
+    border-radius: .7rem;
+    background: #1b3026;
+    color: #c5e5ce;
+    font: inherit;
+    font-size: .8rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.explorer-clear-search:focus-visible,
+.explorer-breadcrumb:focus-visible {
+    outline: 3px solid #b6efcd;
+    outline-offset: 2px;
+}
+
+.explorer-breadcrumbs {
+    display: flex;
+    gap: .4rem;
+    min-width: 0;
+    margin-top: .8rem;
+    padding: .2rem 0 .4rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+}
+
+.explorer-breadcrumb {
+    flex: 0 0 auto;
+    max-width: 14rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.explorer-breadcrumb[aria-current="location"] {
+    border-color: #75a386;
+    background: #20342a;
+}
+
+.explorer-search-caption {
+    margin: .7rem 0 -.3rem;
+    font-size: .76rem;
+    color: #9fb5a8;
+}
+
+.explorer-row.search-result .explorer-main small {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
 .explorer-list {
     display: grid;
     gap: .45rem;
     margin-top: .75rem;
+}
+
+.explorer-list-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+    gap: .45rem;
+    min-width: 0;
+}
+
+.explorer-row-action {
+    min-width: 3.75rem;
+    min-height: 2.75rem;
+    padding: .6rem .65rem;
+    border: 1px solid #355445;
+    border-radius: .8rem;
+    background: #1b3026;
+    color: #c5e5ce;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.explorer-row-action:focus-visible {
+    outline: 3px solid #b6efcd;
+    outline-offset: 2px;
+}
+
+.explorer-row-action:disabled {
+    cursor: default;
+    opacity: .45;
+}
+
+.explorer-row-action[aria-pressed="true"] {
+    border-color: #9aa86b;
+    background: #2a301f;
 }
 
 .explorer-row {
@@ -440,6 +603,42 @@ a:focus-visible {
 .editor-mode.active {
     background: #21372c;
     color: #d9f4e2;
+}
+
+.editor-source-container {
+    min-width: 0;
+}
+
+.editor-source-tools {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin-top: .75rem;
+}
+
+.editor-source-tools button {
+    padding: .55rem .8rem;
+    border: 1px solid #436a51;
+    border-radius: .65rem;
+    color: #d8f8e3;
+    background: #203b2a;
+    cursor: pointer;
+}
+
+.editor-source-tools button:focus-visible {
+    outline: 2px solid #a7e2b8;
+    outline-offset: 2px;
+}
+
+.editor-source-tools button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+.editor-source-tools span {
+    color: #a6bdae;
+    font-size: .75rem;
 }
 
 .editor-source-field {
@@ -575,7 +774,7 @@ a:focus-visible {
 .editor-tab {
     flex: 0 0 auto;
     display: inline-grid;
-    grid-template-columns: minmax(0, auto) auto;
+    grid-template-columns: minmax(0, auto) auto auto;
     align-items: center;
     border: 1px solid #2d4439;
     border-radius: .7rem;
@@ -590,6 +789,7 @@ a:focus-visible {
 }
 
 .editor-tab-open,
+.editor-tab-pin,
 .editor-tab-close,
 .editor-history-actions button {
     border: 0;
@@ -613,6 +813,7 @@ a:focus-visible {
     white-space: nowrap;
 }
 
+.editor-tab-pin,
 .editor-tab-close {
     width: 2rem;
     height: 2rem;
@@ -624,6 +825,13 @@ a:focus-visible {
     cursor: pointer;
 }
 
+.editor-tab-pin[aria-pressed="true"] {
+    color: #9dd5b1;
+    background: #254433;
+}
+
+.editor-tab-pin:hover,
+.editor-tab-pin:focus-visible,
 .editor-tab-close:hover,
 .editor-tab-close:focus-visible {
     background: #294035;
@@ -992,3 +1200,99 @@ a:focus-visible {
         align-items: center;
     }
 }
+
+/* Android SAF vault: compact tap targets on horizontal phones and desktop. */
+.vault-host-controls { padding: .5rem 1rem; border-bottom: 1px solid rgba(255,255,255,.12); }
+.vault-host-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.vault-host-actions button { min-height: 42px; padding: .45rem .8rem; border: 1px solid rgba(255,255,255,.24); border-radius: .5rem; background: #263b37; color: #fff; cursor: pointer; }
+.vault-host-actions button:disabled { opacity: .55; cursor: default; }
+.vault-host-actions span { font-size: .83rem; opacity: .8; }
+.vault-host-status, .vault-host-error { margin: .35rem 0 0; font-size: .85rem; }
+.vault-host-error { color: #ffb9b9; }
+@media (max-width: 700px) { .vault-host-controls { padding: .35rem .6rem; } .vault-host-actions button { flex: 1 1 auto; } .vault-host-actions span { flex: 1 0 100%; } }
+
+.vault-unsaved { border-radius: .35rem; padding: .15rem .45rem; color: #ffe9ac; background: rgba(178,114,16,.18); font-weight: 600; }
+
+
+/* UC-19 ART-1: medieval pixel-art style. The world is not a grid of cards.
+   Assets follow the historical Urbe 16px-tile grass and material palette.
+   Bundled SVG sprites, no external resource, no JS render loop. */
+.world-surface { max-width: none; min-width: 0; }
+.world-head { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: flex-end; gap: .5rem 1rem; }
+.world-head h1 { font-size: clamp(1.65rem,4vw,2.5rem); margin: 0; overflow-wrap: anywhere; }
+.world-head p:not(.surface-eyebrow) { color: #b1c9ae; margin: .3rem 0; line-height: 1.3; }
+.world-population { padding: .35rem .65rem; border-radius: .4rem; border: 1px solid #668453; background: #1a3327; color: #deedb8; font-size: .78rem; }
+.world-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin: .7rem 0; }
+.world-nav-button, .world-builder button { min-height: 44px; padding: .5rem .7rem; color: #f3f0d7; border: 1px solid #819368; border-radius: .4rem; background: #304c39; font-size: .82rem; font-weight: 700; cursor: pointer; }
+.world-build-button { background: #685333; border-color: #bda464; }
+.world-nav-button:focus-visible,.world-plot:focus-visible,.world-builder button:focus-visible,.world-zoom-controls button:focus-visible { outline: 3px solid #ffdf83; outline-offset: 2px; }
+.world-builder { display: grid; gap: .55rem; padding: .7rem; margin-bottom: .75rem; border: 1px solid #788f62; border-radius: .4rem; background: #1c3528; }
+.world-builder label { font-size: .82rem; font-weight: 700; }
+.world-builder-row { display: flex; flex-wrap: wrap; gap: .5rem; }
+.world-builder-row input { flex: 1 1 11rem; min-width: 0; min-height: 44px; padding: .5rem .7rem; background: #10231a; color: #fffbea; border: 1px solid #718969; border-radius: .3rem; }
+.world-builder-target { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0; color: #f4e4a7; font-size: .8rem; }
+.world-message,.world-welcome,.world-position-hint { margin: .65rem 0; padding: .65rem; border: 1px solid #9b9f69; border-radius: .4rem; color: #f9efbe; background: #243a29; }
+.world-welcome p { color: #cce3bf; }
+.world-zoom-controls { display: inline-flex; align-items: center; gap: .35rem; padding: .15rem; margin-left: auto; border: 1px solid #7a8c66; border-radius: .4rem; background: #1c3025; }
+.world-zoom-controls button { min-width: 44px; min-height: 44px; font-size: 1.3rem; color: #f2e8b7; background: #365540; border: 0; border-radius: .3rem; cursor: pointer; }
+.world-zoom-controls button:disabled { opacity: .35; cursor: not-allowed; }
+.world-zoom-controls span { min-width: 3.1rem; text-align: center; color: #f0e1b1; font-size: .78rem; font-weight: 800; }
+/* MAUI WebView uses native scroll for pan, no JavaScript animation or hundreds of terrain elements. */
+.world-map-frame { position: relative; overflow: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; max-height: min(65dvh,42rem); border: 4px solid #70805b; border-radius: .25rem; background: #817359; box-shadow: inset 0 0 0 3px #454c33, 0 7px 20px #09170f88; }
+.world-map { width: max-content; min-width: 100%; min-height: 14rem; padding: .25rem; background: #6e9a47 repeat; background-size:32px 32px; image-rendering:pixelated; }
+.world-plots.world-tiles { display: grid; grid-template-columns: repeat(8,var(--world-tile-width,5.25rem)); grid-auto-rows: var(--world-tile-height,8.75rem); width: max-content; min-width: var(--world-board-width,46rem); min-height: 0; gap: .55rem; padding: .65rem; }
+.world-tiles .world-plot { position: relative; display: block; min-width: 0; min-height: 0; width: 100%; height: 100%; padding: 0; margin: 0; border: 0; border-radius: 0; text-align: center; overflow: hidden; color: #fff4d1; cursor: pointer; touch-action: manipulation; background: #6e9a47 repeat; background-size:32px 32px; box-shadow: inset 0 0 0 2px #50783b, inset 0 0 0 4px #81ad54; }
+.world-tiles .world-plot:active { filter: brightness(1.13); }
+.world-tiles .world-plot:disabled { opacity: .6; cursor: not-allowed; }
+.world-tiles .world-district { box-shadow: inset 0 0 0 3px #bdad6a, inset 0 0 0 5px #647f45; }
+.world-tiles .world-plot-selected { outline: 4px solid #ffe48f; outline-offset: -5px; box-shadow: inset 0 0 0 6px #433d27; }
+.world-tiles .world-building { position: absolute; display: block; top: 4%; left: 9%; width: 82%; height: 80%; pointer-events: none; background-position: center; background-repeat: no-repeat; background-size: contain; image-rendering: pixelated; filter: drop-shadow(3px 5px 0 #1b35266b); }
+.world-sprite-red { /* painted by the C# runtime */ }
+.world-sprite-ochre { /* painted by the C# runtime */ }
+.world-sprite-slate { /* painted by the C# runtime */ }
+.world-sprite-hall { /* painted by the C# runtime */ }
+.world-tiles .world-plot-label { position: absolute; z-index: 1; display: block; left: 3px; right: 3px; bottom: 1.25rem; padding: .16rem .2rem; border: 1px solid #95916b; background: #263826df; color: #fff0bd; font-weight: 800; font-size: .73rem; line-height: 1.15; max-height: 2.5em; overflow: hidden; overflow-wrap: anywhere; text-shadow: 1px 1px #162616; }
+.world-tiles .world-plot-kind { position: absolute; bottom: .2rem; left: 2px; right: 2px; font-size: .62rem; font-weight: 700; color: #e5eaca; text-shadow: 1px 1px #223324; }
+.world-tiles .world-empty-lot:not(:disabled) { box-shadow: inset 0 0 0 2px #568043, inset 0 0 0 4px #9dbf71; }
+.world-tiles .world-empty-lot:not(:disabled)::after { content: "+"; position: absolute; right: .3rem; top: .3rem; display: grid; place-items: center; width: 1.3rem; height: 1.3rem; background: #294d3acb; border: 1px solid #a8c875; color: #f5e5af; font-size: 1rem; font-weight: 900; }
+.world-tiles .world-grass { display: block; position: absolute; inset: 13% 13% 21%; pointer-events: none; }
+.world-tiles .world-terrain-tree .world-grass { background-position:center; background-size:contain; background-repeat:no-repeat; image-rendering: pixelated; }
+.world-tiles .world-terrain-flowers .world-grass { background-position:center; background-size:contain; background-repeat:no-repeat; image-rendering:pixelated; }
+.world-tiles .world-empty-lot .world-plot-kind { display: none; }
+.world-tiles .world-empty-lot:focus-visible .world-plot-kind { display: block; z-index: 2; background: #283e2b; }
+.world-map-legend { display: flex; flex-wrap: wrap; gap: .85rem; margin: .6rem 0 .2rem; color: #d0e3b8; font-size: .76rem; }
+.world-map-legend span { display: inline-flex; align-items: center; gap: .3rem; }
+.world-map-legend i { display: inline-block; width: .65rem; height: .65rem; border: 1px solid #354734; }
+.world-legend-house { background: #bd6948; }
+.world-legend-district { background: #819eae; }
+.world-legend-empty { background: #83ad55; }
+.world-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; margin-top: .35rem; color: #acbea4; font-size: .74rem; }
+@media (max-width: 700px) { .world-map-frame { max-height: min(57dvh,32rem); } .world-toolbar { gap: .3rem; } .world-nav-button { padding: .4rem .55rem; } .world-zoom-controls { margin-left: 0; } .world-head p:not(.surface-eyebrow) { font-size: .82rem; } }
+@media (prefers-reduced-motion: reduce) { .world-tiles .world-plot { transition: none; } }
+
+
+/* UC-18 / REQ-027,109: native-editor wikilink search from canonical Markdown. */
+.editor-wikilink-suggestions {
+    display: grid; gap: .35rem;
+    margin: .45rem 0 .85rem; padding: .7rem;
+    background: #1c3428; border: 1px solid #6e946e; border-radius: .6rem;
+}
+.editor-wikilink-suggestions strong {
+    color: #d4f7de; font-size: .83rem; overflow-wrap: anywhere;
+}
+.editor-wikilink-suggestions button {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    gap: .3rem .65rem; min-height: 2.75rem; padding: .55rem .75rem;
+    background: #294b35; color: #f1fff2; border: 1px solid #6a9175;
+    border-radius: .45rem; cursor: pointer; text-align: left;
+}
+.editor-wikilink-suggestions button small {
+    color: #c5dac6; font-size: .73rem; overflow-wrap: anywhere;
+}
+.editor-wikilink-suggestions button.editor-wikilink-create {
+    background: #465b33; border-color: #a5b16a;
+}
+.editor-wikilink-suggestions button:focus-visible {
+    outline: 3px solid #ffdf88; outline-offset: 2px;
+}
+.editor-wikilink-suggestions button:disabled { opacity: .5; cursor: not-allowed; }

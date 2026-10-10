@@ -33,7 +33,7 @@ jobs:
       run:
         working-directory: apps/lunet2d
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
       - uses: actions/setup-dotnet@v4

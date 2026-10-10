@@ -1,0 +1,23 @@
+{
+  "version": "1.8.4-beta",
+  "policy": "exact-visual-parity-no-redesign",
+  "sources": [
+    {
+      "path": "apps/urbe/src/world/pixel-art.js",
+      "git_blob": "d47cf2902e8aeb5ca2c529d2e4c9617fb71ca931"
+    },
+    {
+      "path": "apps/urbe/src/world/terrain.js",
+      "git_blob": "7d4a1e88b153a6d942f968572a0260d5154e42ef"
+    },
+    {
+      "path": "apps/urbe/src/styles/base.css",
+      "git_blob": "5947d429f8d907947cd0f6484abc640f1a69a14f"
+    },
+    {
+      "path": "apps/urbe/index.html",
+      "git_blob": "4a5ab0065cebd8bbc832cc976bf8a8068072dac3"
+    }
+  ],
+  "notes": "Source pixel sprites are exported exactly; complete world/HUD parity still requires a C# port and user screenshot acceptance."
+}

@@ -71,7 +71,7 @@
     "Pool cheio descarta excedentes; passos diferentes sob saturação podem reter conjuntos diferentes. Seed determinística exige mesma sequência de passos/operações, sem promessa de determinismo universal.",
     "Remoção pode reordenar quads; sem depth sorting, culling ou colisão. Origem contínua é a Position no Update, sem interpolação do caminho arrastado.",
     "Posições fora do intervalo float são omitidas do desenho até expirar. Cor RGBA linear sem correção gamma. HUD/criação do modelo podem alocar.",
-    "Novo modelo de criação fora desta fatia: PR #317 crítico. Guia funciona pela edição normal de um projeto Em branco.",
+    "Novo modelo de criação fora desta fatia: PR #307 crítico. Guia funciona pela edição normal de um projeto Em branco.",
     "SDK Android ausente localmente; APK vem do CI, DEVICE permanece pendente."
   ],
   "blockers": [],
