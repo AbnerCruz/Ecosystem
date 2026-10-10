@@ -5,6 +5,27 @@
 > **Estado de um gate:** linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` logo depois de cada `**Gate:**`.
 > **Nenhuma fase escolhe a pilha de UI ou de hosts antes de UC-5**, e nenhum código C# de produto entra antes de UC-7 e do gate G-C0.
 
+## Contrato de continuidade — comando "continue o Urbe" (proprietário, 10/10/2026)
+
+Este bloco é a **ordem operacional única** para qualquer agente que receba "continue o Urbe" ou equivalente sem tarefa mais específica. Não cria novo roadmap nem substitui MANIFEST/ADRs/SPEC; **escolhe a próxima tarefa do ROADMAP UC-n** conforme decisões já aprovadas. O comando do proprietário deve produzir implementação e testes, não apenas relatórios, documentação, planejamento ou uma nova proposta estética.
+
+**Inicialização obrigatória em toda sessão (sem voltar a perguntar decisões tomadas):**
+
+1. Ler o `AGENTS.md` raiz, `apps/urbe/AGENTS.md`, este ROADMAP, `UC19-VISUAL-ACCEPTANCE.md`, `UC19-PROCEDURAL-CITY.md`, DEC-0042 e as regras de integração. Verificar `main`, Issues, PRs abertos/fechados recentemente, CI e handoffs **ao vivo** antes de escolher trabalho; relatos antigos em PR não prevalecem sobre o estado atual do Git.
+2. **Continuar o item já em curso**, corrigindo CI, dependências ou conflitos reais antes de abrir PR concorrente para o mesmo arquivo/objetivo. Se uma branch divergiu ou ficou obsoleta, preservar as implementações comprovadamente úteis e os testes; fechar/substituir apenas o PR incompatível com referência explícita à sucessão. Nunca misturar o SVG experimental (#385), o tabuleiro provisório e o renderer definitivo como três direções de produto.
+3. Selecionar o menor incremento executável que desbloqueia a experiência **Android C# utilizável**. Ordem de desempate:
+   - **Integridade:** abertura, edição, persistência física SAF, autosave, reabertura e segurança de `.md`/`.urbe`; corrigir regressão real de dados antes da UI. A base SAF do PR #397 foi integrada, mas teste físico continua obrigatório.
+   - **UC-19:** substituir gradualmente a grade 8×8 provisória pelo **mundo top-down contínuo original 1.8.4-beta** usando `terrain.js` + `pixel-art.js` como oráculos; `Legacy*` C# como implementação. Reproduzir biomas/elevação/chunks, casas/bairros, estradas, vegetação, sprites, câmera e toque sem redesenho. PRs #421 e #425 são fundações integradas, **não** paridade completa.
+   - **UC-18:** concluir Editor Visual/Fonte e Explorer sobre vault real, preservando bytes/round-trip e seleção/caret; corrigir PRs empilhados/confusos (notadamente #287/#333/#337) antes de duplicar UI.
+   - **UC-19/UC-18:** restaurar composição visual completa da 1.8.4-beta (HUD, menus, ícones, cores, tipografia, layout e gestos), apenas substituindo handlers pelo C#; sem alternativas gráficas.
+   - **UC-25/UC-27 e G-C3/G-C4:** distribuir APK Android *opt-in* com link direto e testar no aparelho físico, screenshots comparáveis, toque, FPS, armazenamento e reabertura. Só depois avançar UC-20/21/22, UC-28 e corte UC-31 pelo roteiro e gates.
+4. **Sem bifurcar decisões:** Android primeiro; Windows depois; nenhum novo Web/PWA público. O Web de teste existente pode continuar como *harness*, não como Product a distribuir. Vault novo com cópia manual de Markdown é permitido por DEC-0042, sem migração histórica obrigatória; dados **atuais** continuam protegidos.
+5. **Arte = algoritmos em C# executados no dispositivo.** PNG `data:` produzido em memória pode transportar pixels RGBA ao WebView; **PNG exportado/empacotado não é a fonte da arte**. JavaScript legado só serve como oráculo de testes; não recriar o runtime JS no APK. Para mudança visual, provar equivalência com imagens/casos congelados da 1.8.4-beta; diferença não verificada permanece aberta, nunca "resolvida" por aproximação.
+6. Uma entrega = código + teste relevante + checagens aplicáveis + PR pequeno + evidência/handoff + próxima ação exata. `npm run check`, testes .NET/Android, E2E e `consistency` quando aplicáveis; respeitar integrador automático e autorização específica de mudanças críticas. **CI verde não aprova automaticamente qualidade visual nem DEVICE** (NN-017). Sem publish/corte silencioso.
+7. Na resposta ao proprietário, informar objetivamente: **implementado / integrado / testado / bloqueado / próximo incremento**. Se ferramenta, autorização ou teste físico faltar, dizer exatamente o quê; continuar em outras tarefas seguras sem transformar bloqueio localizado em paralisação geral.
+
+**Regra contra regressão de processo:** não iniciar nova reescrita, framework, redesign, nova versão web, sistema de assets estáticos ou feature lateral para contornar um teste quebrado, um conflito de branch ou a paridade da Cidade. Os requisitos do Urbe original continuam fonte de produto, independentemente de quantos protótipos C# já existirem.
+
 ## Direção de plataforma — proprietário, 09/10/2026
 
 **Urbe C# será entregue para Android e desktop/Windows, sem versão Web/PWA.** Prioridade atual: desenvolvimento e releases Android; Windows vem depois. UC-23 permanece no documento apenas como ID histórico, sem nova entrega. O preview Web antigo não é alvo de release do produto C#. A retirada formal do host Web das ADRs consolidadas exige reconciliação crítica; esta direção já foi expressamente aprovada pelo proprietário.
@@ -13,9 +34,9 @@
 
 **Ordem do proprietário DEC-0042 (2026-10-09) — beta utilizável prioritário, sem retrocompatibilidade histórica obrigatória.** Paridade **de funcionalidades** com o cliente JS é mantida como objetivo do produto C# final. O proprietário é o único usuário da beta, fará backup manual e copiará poucos arquivos `.md` a um vault novo; **migração de estado/configurações de versões antigas, IndexedDB, lixeira/histórico/layout e atualização in-place JS→C# NÃO são bloqueadores** do beta nem do corte. Isto modifica a obrigação anterior de DEC-0036-C/ADR-0026 para o cliente C#; ver ADD-0019/DEC-0042. Não apagar código pronto de compatibilidade; apenas evitar nova infraestrutura legada sem benefício. Manter leitura/gravação segura dos arquivos reais e persistência do estado **novo**. O cliente JS publicado permanece intacto até validação do beta opt-in e posterior corte aprovado.
 
-**Caminho crítico imediato:** (1) Issue #386 — ligar `WorkspaceSession` ao filesystem/vault **real** no Android, abrir/editar/salvar/reabrir sem depender de banco de dados de notas; (2) terminar UC-18 Editor/Explorer e UC-19 Cidade utilizáveis com posições atuais em `.urbe`; (3) disponibilizar **APK beta opt-in separado e link direto**, com testes de dados e validação física; (4) continuar UC-20/21/22 e a paridade funcional até o produto completo. O beta próprio pode sair **antes** de G-C5 sem virar automaticamente o produto distribuído; gates, CI, integração crítica e validação humana não são dispensados.
+**Caminho crítico imediato:** a fundação de vault real SAF e APK beta opt-in já entrou na `main` pelo PR #397, e o raster procedural inicial já entrou pelos PRs #421/#425. **Verificar o estado vivo dessas entregas, sem refazê-las.** Em seguida: corrigir pendências de CI/PR; fechar UC-18 e UC-19 com dados físicos e mundo *contínuo* visualmente idêntico ao legado; provar toque, armazenamento, desempenho e composição na máquina Android; prosseguir UC-20/21/22 e a paridade funcional. O beta próprio pode sair **antes** de G-C5 sem virar automaticamente o produto distribuído; gates, CI, integração crítica e validação humana não são dispensados. O beta próprio pode sair **antes** de G-C5 sem virar automaticamente o produto distribuído; gates, CI, integração crítica e validação humana não são dispensados.
 
-**M3 — Interface e extensões.** UC-17 foi integrada em `9143b239` com shell compartilhado e navegação canônica. Próxima tarefa: UC-18 — Editor Visual/Fonte e Explorer sobre a sessão C# compartilhada; validação humana de UI/toque continua reservada ao G-C3.
+**M3 — Interface e extensões.** UC-17 está integrada. UC-18 e UC-19 são as frentes ativas; escolher o próximo incremento conforme o contrato de continuidade acima, reconciliando PRs em andamento. Validação humana de UI/toque continua reservada ao G-C3.
 
 ---
 
@@ -61,7 +82,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 - [x] UC-17 — Shell e navegação. PR #280 integrado automaticamente em `9143b239`: shell compartilhado Web/MAUI, navegação Início/Explorer/Editor/Cidade/Mais, base path `/` e `/preview/`, online/offline e regressão Web/Android/Windows/E2E/checks/consistency verdes. Issue #279 encerrada; validação humana de layout/toque continua G-C3.
 - [ ] UC-18 — Editor (visual e fonte) e Explorer. Issue #281 em andamento; sessão compartilhada, Explorer real, edição Fonte, render Visual, relações e autocomplete C# de `[[` com criação de nota ausente (REQ-027/REQ-109) implementados em fatias. CI e validação humana de toque/layout ainda necessários para encerrar o item.
-- [ ] UC-19 — Mundo: desenho e toque. **ORDEM DO PROPRIETÁRIO (10/10/2026): copiar o visual EXATO da versão 1.8.4-beta, sem qualquer redesenho.** A direção própria de SVGs da beta.7 foi rejeitada. Reutilizar sprites, paleta, textura, terreno, edifícios, ruas, HUD, ícones, tipografia e interações originais; apenas a implementação migra para C# Android/Windows. Exportador de assets originais é a primeira etapa, não a paridade integral. Etapas LEGACY-1 a LEGACY-4 em `docs/csharp/UC19-VISUAL-ACCEPTANCE.md`; G-C3 continua aberto até comparação real aprovada.
+- [ ] UC-19 — Mundo: desenho e toque. **ORDEM DO PROPRIETÁRIO (10/10/2026): copiar o visual EXATO da versão 1.8.4-beta, sem qualquer redesenho.** A direção própria de SVGs da beta.7 foi rejeitada. Reutilizar sprites, paleta, textura, terreno, edifícios, ruas, HUD, ícones, tipografia e interações originais; apenas a implementação migra para C# Android/Windows. Geradores procedurais C# e oráculos de pixels são a base, não paridade integral. Etapas LEGACY-1 a LEGACY-4 em `docs/csharp/UC19-VISUAL-ACCEPTANCE.md`; G-C3 continua aberto até comparação real aprovada.
 - [ ] UC-20 — Personalização, tema e **plugins** (decisão do modelo de confiança em C#).
 - [ ] UC-21 — IA: providers e agente.
 - [ ] UC-22 — Tutorial e primeira abertura.
@@ -83,7 +104,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 ## M5 — Paridade total e corte
 
 - [ ] UC-28 — **Paridade funcional** da matriz UC-1 e aceites relevantes UC-2 (editor, Explorer, cidade, ferramentas, IA, páginas, matemática, personalização etc.); testes de migração histórica de estado 1.x/2.x deixam de ser gate para o novo cliente C# (DEC-0042). Arquivos .md e estado novo continuam protegidos.
-- [ ] UC-29 — Validação humana por superfície (Android real, Windows instalação/atualização, Web offline/PWA, toque, layout).
+- [ ] UC-29 — Validação humana por superfície (Android real, Windows instalação/atualização, toque, layout).
 - [ ] UC-30 — Plano e ensaio de corte e de volta (rollback).
 - [ ] UC-31 — **Corte:** o produto distribuído passa a ser o cliente C# (decisão crítica do proprietário; muda canais e atualizações).
 - [ ] UC-32 — Encerramento do JS: arquivar o código antigo, `ecosystem.json` (`language`), documentação.
