@@ -134,6 +134,28 @@ public sealed class LegacyTerrainParityTests
         Assert.Equal((ushort)3, field.DistanceToBoundaryAt(0, 0));
     }
 
+    [Theory]
+    [InlineData("urbe", 0, 0, 0.0, 0.05999999865889549, 0.5540939569473267)]
+    [InlineData("urbe", 10, 10, 0.1953205019235611, 0.4951981008052826, 1.0)]
+    [InlineData("urbe", 20, 30, 0.4504302144050598, 0.9992938041687012, 0.7269940376281738)]
+    [InlineData("urbe", 37, 17, 0.40330493450164795, 0.7520030736923218, 0.5160609483718872)]
+    [InlineData("urbe", 45, 49, 0.6160016655921936, 0.43059277534484863, 0.39735063910484314)]
+    [InlineData("Cidade Alpha", 10, 10, 0.24912603199481964, 0.4976107180118561, 0.9544620513916016)]
+    [InlineData("Cidade Alpha", 20, 30, 0.44103723764419556, 1.0, 0.7157834768295288)]
+    [InlineData("Cidade Alpha", 37, 17, 0.47160425782203674, 0.6961960792541504, 0.6506929993629456)]
+    [InlineData("Cidade Alpha", 45, 49, 0.6704723834991455, 0.37539437413215637, 0.4477229416370392)]
+    public void ElevationTemperatureAndMoistureMatchOriginalTerrainJs(
+        string seed, int x, int y, double expectedElevation,
+        double expectedTemperature, double expectedMoisture)
+    {
+        // Original terrain.js was instrumented after climate rankLand(),
+        // before hydrology. These are the actual original Float32Array values.
+        var stage4 = LegacyElevationClimateField.Generate(seed, gridSize: 64);
+        AssertClose(expectedElevation, stage4.ElevationAt(x, y), 5e-4);
+        AssertClose(expectedTemperature, stage4.TemperatureAt(x, y), 5e-4);
+        AssertClose(expectedMoisture, stage4.MoistureAt(x, y), 5e-4);
+    }
+
     [Fact]
     public void SeedOrGridNeverChangesTheStoredVault()
     {
