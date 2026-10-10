@@ -105,7 +105,7 @@
     }
   ],
   "criticality": {
-    "declared": "routine",
-    "reason": "Somente leitura de .urbe/mapa.json e do vault; nenhum formato persistido é escrito ou alterado."
+    "declared": "critical",
+    "reason": "Toca apps/urbe/csharp/src/Urbe.Core/VaultReader.cs (zona crítica *Vault*.cs): só expõe o texto de .urbe/mapa.json já lido (VaultSnapshot.MapJson). Nada é gravado no vault e o formato persistido não muda."
   }
 }
