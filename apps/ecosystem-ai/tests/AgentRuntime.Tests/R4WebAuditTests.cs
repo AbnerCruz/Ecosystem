@@ -119,7 +119,7 @@ public sealed class R4WebAuditTests
                 using var http = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{port}") };
                 var html = await http.GetStringAsync("/");
                 Assert.Contains("Sem evidência de journal para este run", html);
-                Assert.Contains("Sem evidência no journal", html);
+                Assert.Contains("Sem evidência no journal", WebUtility.HtmlDecode(html));
                 Assert.DoesNotContain("Ver auditoria da tarefa", html);
 
                 await Seed(journal, id, "resultado.md");
