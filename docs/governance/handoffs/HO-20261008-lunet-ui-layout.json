@@ -1,0 +1,124 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-ui-layout",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T11:54:03Z",
+  "agent": {
+    "id": "codex-lunet-ui-layout",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-409",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-ui-layout-20261008",
+  "base_commit": "29fbc892197882ec8de180ba90cd90f0d344e7d8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/layout-ui.md",
+    "apps/lunet2d/src/Lunet.Framework/UI/LayoutRect.cs",
+    "apps/lunet2d/tests/Lunet.Tests/UiLayoutTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-ui-layout.json"
+  ],
+  "work_completed": [
+    "LayoutRect imutável com âncoras normalizadas/offsets e fábricas Fixed (tamanho/pivô/ponto) e Stretch (margens); composição aninhada sobre RectangleF existente.",
+    "GetBounds sem alocação, validação finita/faixas, pai zero, colapso de limites invertidos e OverflowException para resultados não representáveis. Não faz clipping automático nem input/eventos próprios.",
+    "11 casos novos: margens/pais deslocados/pivôs, redimensionamento e aninhamento, limites zero/pequenos/fora do pai, argumentos/extremos, zero bytes de cálculo/fábricas, guia compilado/executado no GameHost com toque físico 2× e desenho consistente com hit testing.",
+    "Guia offline completo de painel redimensionável e botão ancorado; XML/API JSON regenerados. Entrega independente dos PRs #324/#328, sem alterar ProjectStore, modelos, backend, formato persistente ou gates."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "dotnet build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false: zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão xUnit v3: 411/411, zero falhas/erros/skips. Base main 400 + 11 casos novos; #324/#328 são revisões independentes ainda não presentes na base. Guia compilado/executado, desenho/hit testing após resize, zero bytes medidos."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram; ROADMAP × Issues não verificado localmente por ausência de snapshot, verificação remota pendente no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Layout UI no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/layout-ui.md",
+      "evidence": "Alternar área, botão fixo/canto, centro/margens/cabeçalho, toque fora da posição antiga, Preview rápido/isolado offline e regressão. Testes portáteis não comprovam GL/aparelho."
+    }
+  ],
+  "known_issues": [
+    "Layout é geometria explícita; não é árvore de UI, flow/flex/grid/stack, texto com wrap, clipping, eventos, foco, controles completos ou temas. Item UI/gate Fase 4 permanecem abertos.",
+    "Limites invertidos colapsam no limite mínimo; offsets podem ficar fora do pai. GetBounds não garante contenção ou recorte. Precisão segue coordenadas float.",
+    "ViewSize virtual é fixa/letterbox; orientação física não muda ViewSize automaticamente. O guia altera uma área interna explicitamente, sem alegar resolução adaptativa do host.",
+    "HUD do exemplo concatena texto e aloca por quadro; zero bytes é garantia das APIs de layout. SDK Android ausente localmente; CI APK e DEVICE separados."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR pronto após checks e acompanhar integração pelo integrador automático.",
+    "Confirmar APK público exato antes do roteiro Android; acompanhar #324/#328 reconciliados na main 29fbc89.",
+    "Validar DEVICE sem inferir aprovação; continuar Fase 4 sem fechar gate."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API matemática de UI local no Framework, sem dependências de outros Products/Editor/Studio."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-409 / Issue #329, branch/base/handoff/guia explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, nenhum gate/validação inferido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/guia comprovados; CI/integração/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reutiliza RectangleF, SpriteBatch e input existentes; nenhum componente compartilhado novo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ui-layout-rectangles",
+      "status": "product-specific",
+      "rationale": "Geometria de UI de jogo no Framework autorizada na Fase 4. Sem segundo consumidor real; nenhuma extração de Tool/Library genérica."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva de UI prevista no plano; sem efeito em dados, contratos existentes, boundary ou áreas protegidas."
+  },
+  "cost": null
+}

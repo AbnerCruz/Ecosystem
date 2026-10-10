@@ -1,0 +1,137 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-p6-5-independent-team-review",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T03:52:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-independent-team-review",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-independent-team-review-20261010",
+  "base_commit": "3f4b6422a4b4d68b22126a4bcb1f453934319050",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebTaskRunner.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4IndependentTeamReviewTests.cs",
+    "apps/ecosystem-ai/docs-r4-independent-team-review.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261010-p6-5-independent-team-review.json"
+  ],
+  "work_completed": [
+    "P6-5 agora suporta revisão material por segundo agente real quando equipe é selecionada e Host ativa --web-review-teams, além de --web-tasks já autorizado.",
+    "Antes de executar produtor, verifica orçamento/slots para dois runs inteiros, valida produtor e revisor distintos pelo TeamPlan do AgentRuntime.Core. Cada run chama exatamente CLI original e AgentWorkspace.WorkspaceSession.",
+    "Após produtor, exige que o Store registre um run novo succeeded/verified e nova resposta assistant; somente então revisor recebe trecho limitado da resposta redigida (não payload bruto do log).",
+    "Revisor usa identidade/instruções diferentes, orçamento próprio e precisa também produzir um segundo run distinto no catálogo; senão responde revisão incompleta.",
+    "Sem ChangeSet revisado, não inventa IntegrationReceipt, não chama TeamPlan.Record e não declara aprovação ou integração; documentação distingue parecer de verificação técnica.",
+    "UI mostra revisão opt-in e dois runs potenciais, sem permitir grants, modelos nem budget no POST; regressão modo padrão preservada.",
+    "Testes de dois runs, recibos, sem verificação, quotas, flag sem permissão e cenário antigo sem flag."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI GitHub pendente no momento da criação."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI GitHub e integrator simulation."
+    }
+  ],
+  "known_issues": [
+    "Revisão é parecer de outro agente; não prova aceitação da resposta e não integra arquivos.",
+    "Emprega o verificador estrutural resposta-presente existente; verificação de qualidade continua pendente.",
+    "Cada dupla exige orçamento e quota para duas execuções completas, reservados conservadoramente por instância.",
+    "UI continua localhost .NET, não APK Android; ISSUE #354 P6-5 aberta."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir eventuais falhas do CI de produto e consistência.",
+    "Integrar PR somente após checks verdes.",
+    "Continuar integração comprovada com ChangeSet e revisão técnica, e Android."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-independent-team-review.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Runs e respostas apenas no catálogo canônico e AgentRuntime; sem novo store/ledger."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Product standalone com execução local opt-in."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Sem capability ampliada; ambos somente fs.read no mesmo ToolGrant existente."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Nenhum job em background, agente dispara somente após gesto humano explícito."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "P6-5/Issue #354, docs, testes, PR e handoff rastreáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem schemas alterados; uma flag opt-in e comportamento antigo preservado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Revisor recebe apenas texto redigido do Store, limitado; somente localhost com CSRF, modelos pré-configurados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não se declara integração comprovada, APK ou fim de P6-5."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Integração apenas com CI e governança verde."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "TeamPlan e WorkspaceSession/Core reusados, sem runner ou scheduler paralelo."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Orquestração específica do Product sem extensão de plataforma não justificada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "two-stage-team-review",
+      "status": "product-specific",
+      "rationale": "UI Product integra TeamPlan + CLI e Store existentes; nenhum componente paralelo."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Ampliação opt-in da execução web já autorizada na PR #406; sempre dois runs sob teto preexistente do operador, sem novas permissões ou acesso à rede."
+  },
+  "cost": null
+}

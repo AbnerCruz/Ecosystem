@@ -1,0 +1,132 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-pr332-slider-reconciliation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T13:58:48.506199+00:00",
+  "agent": {
+    "id": "codex-lunet-reconciliation",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-410",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-touch-buttons-20261008",
+  "base_commit": "c21cf7bff20e03ae2d4995e52b81edbfc911bfe7",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/332",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/sliders-ui.md",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchSlider.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchSliderStyle.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchSliderTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-touch-slider.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr332-slider-reconciliation.json"
+  ],
+  "work_completed": [
+    "PR #332 combinado com main b614d94c39a1ec7ad133718d7af184eef7670003, slider #336 e página 4 do Laboratório; código específico anterior preservado.",
+    "Conflitos de metadados resolvidos preservando registros; API JSON regenerada pela suíte padrão.",
+    "Código/testes de slider importados da main exatamente; ProjectTemplates no PR #317 conserva demos anteriores e recebe só mudanças do Laboratório.",
+    "Slider e página do Laboratório publicados na release 1000160, target main b614d94c39a1ec7ad133718d7af184eef7670003; pipeline 37788348867 test/apk/release success."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "Build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false, zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão completo: 451/451, zero erros/falhas/skips, incluindo 15 casos de slider e casos específicos anteriores."
+    },
+    {
+      "kind": "automated",
+      "check": "Código preservado",
+      "result": "passed",
+      "evidence": "Delta de source/tests frente ao head anterior contém somente TouchSlider/Style, TouchSliderTests, DemoTemplateTests e mudança do Laboratório em ProjectTemplates da main. APIs próprias e ProjectStore protegida preservados."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram; ROADMAP × Issues não verificado localmente sem snapshot, verificação remota no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Botões UI no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/botoes-ui.md",
+      "evidence": "Soltura/arraste/multi-touch, disable/paleta, pausa/retomada, Preview rápido/isolado offline e regressão; portable não comprova GL/aparelho."
+    }
+  ],
+  "known_issues": [
+    "Revisões independentes podem exigir nova reconciliação quando a main mudar; quem integra é o integrador automático.",
+    "DEVICE continua pendente, sem mudança de regras/gates. Preferência de entrega não significa aprovação das APIs no aparelho."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Enviar reconciliação ao PR existente com lease, sem force/merge manual/label integrar.",
+    "Acompanhar checks combinados e release; PR crítico #317 conserva exigência de autorização do proprietário.",
+    "DEVICE e Fase 4 permanecem abertos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API matemática de UI local no Framework, sem dependências de outros Products/Editor/Studio."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-410 / Issue #331, branch/base/handoff/guia explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, nenhum gate/validação inferido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/guia comprovados; CI/integração/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reutiliza RectangleF, TouchPoint/InputState, SpriteBatch e SpriteFont; nenhum componente compartilhado novo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "touch-ui-buttons",
+      "status": "product-specific",
+      "rationale": "Controle local de UI no Framework, autorizado na Fase 4. Sem segundo consumidor real; não extrai Tool/Library genérica."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva de UI prevista no plano; sem efeito em dados, contratos existentes, boundary ou áreas protegidas."
+  },
+  "cost": null
+}

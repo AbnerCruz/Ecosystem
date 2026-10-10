@@ -1493,6 +1493,76 @@
       "decidedAt": "2026-10-06",
       "record": "docs/governance/responses/DEC-0040.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0041",
+      "status": "decided",
+      "component": "ecosystem",
+      "blocking": true,
+      "title": "Piloto antecipado restrito do Host Lunet para desbloquear P6-4",
+      "context": "O Lunet possui Host API em processo e capability text.inspect real na Fase 4, mas seu Agentic Workspace completo está previsto na Fase 8. A prova R3/P6-4 precisa exercitar Host real sem antecipar a UI/IA. Após discutir o bloqueio e comparar as alternativas, o proprietário autorizou explicitamente prosseguir até desbloquear P6-4, escolhendo o piloto restrito descrito em docs/architecture/p6-4-host-eligibility.md.",
+      "question": "Permitir somente o piloto headless de integração com o Host Lunet real antes da Fase 8?",
+      "alternatives": [
+        {
+          "option": "A — piloto técnico headless em processo agora",
+          "consequences": "Prova Context, text.inspect, grants, cancel/revoke em Lunet.Core com AgentWorkspace e provider simulado; sem UI, client de LLM, SDK compartilhado ou mudança do gate da Fase 4 do Product. CI e portão crítico permanecem."
+        },
+        {
+          "option": "B — esperar Fase 8 ou UC-21",
+          "consequences": "Mantém a ordem integral, mas bloqueia a prova técnica P6-4 apesar da Host API já funcional."
+        }
+      ],
+      "consequences": "Autoriza o teste técnico limitado ADR-0031 sem declarar automaticamente P6-4 done. A experiência de IA continua na Fase 8 do Lunet, o User Agent no Urbe continua UC-21. Toda mudança crítica aguarda a label integrar aplicada pelo próprio proprietário após avaliação do CI.",
+      "manifestCompatibility": "Preserva NN-001/002/003/006/008/009/010/011/016/017/018/020/022/023; nenhuma mudança em schemas públicos, Product Core ou grants automáticos.",
+      "recommendation": "A — separação explícita entre prova técnica de Host e UX completa de IA.",
+      "related": [
+        "docs/governance/addenda/ADD-0018-p6-4-piloto-headless.md",
+        "docs/adr/0031-p6-4-piloto-headless-lunet.md",
+        "docs/architecture/p6-4-host-eligibility.md",
+        "https://github.com/AbnerCruz/Ecosystem/issues/144"
+      ],
+      "raisedBy": "AbnerCruz (proprietário, instrução em conversa)",
+      "raisedAt": "2026-10-08",
+      "decision": "Alternativa A — proprietário autorizou executar até desbloquear P6-4 após a recomendação de piloto restrito Lunet. Implementação de agente real na UI não foi autorizada.",
+      "decidedAt": "2026-10-08",
+      "record": "docs/governance/addenda/ADD-0018-p6-4-piloto-headless.md",
+      "consequencesApplied": false
+    },
+    {
+      "id": "DEC-0042",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": true,
+      "title": "Priorizar Urbe C# completo com beta utilizável sem migração obrigatória de estado histórico",
+      "context": "O proprietário é o único usuário da beta, informou ter poucos documentos Markdown importantes e rejeitou usar compatibilidade histórica de instalações, formatos e configurações como bloqueador da entrega do novo Urbe C#. Distinguiu explicitamente migração de funcionalidades (obrigatória) de migração de dados/estado legados (dispensável). A decisão atual DEC-0036-C/ADR-0026 impunha backup/export/import completo e validação de estado antigo; a execução de UC-18 e a Issue #386 mostram que o C# ainda precisa acessar um vault físico.",
+      "question": "O novo Urbe C# deve manter todas as funcionalidades do antigo, mas deixar de exigir retrocompatibilidade/migração integral de dados e estados anteriores para disponibilizar um beta opt-in e para seu futuro corte?",
+      "alternatives": [
+        {
+          "option": "A — paridade funcional; vault novo com .md comuns; sem migração histórica obrigatória",
+          "consequences": "Beta instalável é priorizado no Android, com filesystem real e armazenamento seguro dos dados novos; notas .md antigas podem ser copiadas manualmente; formatos e estados legados não bloqueiam beta nem corte. O produto completo continua exigindo paridade de funcionalidades e validação real."
+        },
+        {
+          "option": "B — compatibilidade de instalações e todos os estados 1.x/2.x obrigatória antes do beta/corte",
+          "consequences": "Mantém export/import, fixtures de todos os estados antigos e compatibilidade entre versões como bloqueadores; aumenta esforço e posterga utilização, apesar de só haver um usuário na beta."
+        }
+      ],
+      "consequences": "DECISÃO DO PROPRIETÁRIO: A. Supersede a obrigatoriedade de migração integral de estados/instalações antigas na transição C# de DEC-0036-C/ADR-0026 e a exigência de compatibilidade histórica como gate do cliente C#. Não revoga ADR-0004 para o JS legado; não dispensa persistência funcional de novos dados, proteção de .md, segurança de escrita, controle de integração, testes aplicáveis ou paridade funcional completa do produto final. A implementação existente de retrocompatibilidade pode permanecer, mas não precisa ser ampliada como pré-condição.",
+      "manifestCompatibility": "Alteração explícita autorizada pelo proprietário sob NN-009/011, com escopo C# e testes de compatibilidade com arquivos .md comuns (NN-005), sem descartar dados/versões antigas automaticamente (NN-001/013/017/018); C# standalone NN-003/023. A autorização de direção não representa aprovação de merge de PR crítico (ADD-0012/ADR-0015).",
+      "recommendation": "A — priorizar Issue #386, UC-18/19/25 e beta opt-in, deixando paridade funcional total para o corte futuro.",
+      "related": [
+        "docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md",
+        "docs/adr/0026-urbe-transicao-cliente-csharp.md",
+        "apps/urbe/docs/v2/adr/0010-migracao-para-csharp.md",
+        "apps/urbe/docs/csharp/ROADMAP.md",
+        "https://github.com/AbnerCruz/Ecosystem/issues/386",
+        "https://github.com/AbnerCruz/Ecosystem/issues/281"
+      ],
+      "raisedBy": "Proprietário do Ecosystem — instrução explícita nesta conversa",
+      "raisedAt": "2026-10-09",
+      "decision": "A — migração de funcionalidades sim; migração/retrocompatibilidade de estado histórico não é requisito para beta C# nem para o corte; poucos arquivos .md podem ser copiados manualmente para novo vault. O proprietário ordenou que todos os agentes do Urbe recebam esta orientação.",
+      "decidedAt": "2026-10-09",
+      "record": "docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md",
+      "consequencesApplied": true
     }
   ]
 }

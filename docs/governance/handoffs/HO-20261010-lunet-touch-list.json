@@ -1,0 +1,110 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-touch-list",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T04:10:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-429",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "chatgpt/lunet-touch-list-20261010",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/411",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchListView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchListViewTests.cs",
+    "apps/lunet2d/docs/guides/lista-ui.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261010-lunet-touch-list.json"
+  ],
+  "work_completed": [
+    "Lista mobile selecionável por toque com Viewport, linhas virtuais, rolagem com inércia, seleção em Released, cancelamento, multitouch e faixa visível.",
+    "Desenho SpriteBatch recortado com rótulos fornecidos pelo jogo e estado visual selecionado, sem persistência nem asset novo.",
+    "Testes portáteis de input/multitouch/scroll/no-GC e guia C# testado por GameCompiler/GameHost; metadata API, roadmap e changelog.",
+    "Reconciliação com a main atual sem sobrescrever TouchToggle já integrado."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests e compilação do guia pelo GameCompiler",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Ecosystem foundation consistency",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Android APK CI",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Clipping, toque e inércia de lista no Motorola Android",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/lista-ui.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Lista com linhas de altura uniforme; não substitui árvore de UI, data-binding ou Studio.",
+    "A validação de toque/ergonomia no aparelho não é provada pelo CI."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar CI combinado após a reconciliação.",
+    "Integrar pelo integrador automático após checks verdes.",
+    "Publicar release APK e validar a ergonomia no dispositivo Android."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Somente Lunet2D, sem referenciar Urbe/Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #410, branch, testes, API, guia, handoff e PR."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Device separado de CI, não presume teste físico."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review enquanto integração e aparelho pendentes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Código permanece em UI do Product, sem extração de infraestrutura."
+    }
+  ],
+  "base_commit": "b8a0bdb7cad30bbbf39dee610bf487af4d57ed8d",
+  "criticality": {
+    "declared": "routine"
+  },
+  "reuse_assessment": [
+    {
+      "subject": "lunet-touch-list",
+      "status": "product-specific",
+      "rationale": "Compõe tipos e gráficos do Lunet; nenhum segundo consumidor externo existe."
+    }
+  ]
+}

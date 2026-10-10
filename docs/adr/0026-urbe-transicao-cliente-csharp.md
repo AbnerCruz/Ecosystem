@@ -74,3 +74,15 @@ Rejeitadas por DEC-0036: A (ponte preservando identidade/origem), B (cliente par
 - `apps/urbe/docs/csharp/ROADMAP.md`, `acceptance/surface-protocol.json`.
 - Urbe ADR-0004 (dados/forward/backup) e ADR-0010 (migração C#).
 - MANIFEST NN-001, NN-003, NN-011, NN-014, NN-017, NN-019, NN-023.
+## Adendo do proprietário — DEC-0042 (2026-10-09): sem migração histórica obrigatória
+
+**DECISÃO POSTERIOR E PREVALECENTE** para o novo cliente Urbe C#: o proprietário ordenou priorizar a entrega de um beta opt-in utilizável e manter a **paridade funcional** do produto, mas **dispensar a obrigação de migração integral dos dados e estados de instalações anteriores**. A opção C/DEC-0036-C permanece como registro histórico da estratégia anteriormente escolhida; seus passos obrigatórios de exportação, reinstalação, importação e validação de estado legado **não bloqueiam** o beta C# nem seu futuro corte. A nova transição aceita **vault limpo** e **cópia manual dos arquivos Markdown importantes**, mantendo o vault antigo intacto e o cliente JS disponível como recuperação.
+
+Não confundir:
+- **Paridade funcional:** editor, Explorer, cidade, IA, páginas, matemática, personalização e recursos equivalentes continuam objetivos mandatórios para o produto C# final.
+- **Retrocompatibilidade histórica dispensada:** preservação automática de preferências, posições de casas, históricos, lixeira, IndexedDB, sidecars, dados de plugins e formatos obsoletos das instalações antigas.
+- **Persistência operacional obrigatória:** ler e escrever `.md` reais na pasta escolhida, preservar arquivos do usuário, reabrir dados gravados pelo próprio C# e manter metadados atuais da cidade. Se detectar legado incompatível, não editar nem apagar silenciosamente: permitir copiar `.md` para uma pasta limpa.
+
+A prioridade é o acesso físico ao vault (Issue #386; UC-18/25), seguido da Cidade C# (UC-19) e beta Android opt-in. O **beta experimental de uso próprio** não substitui o canal distribuído 1.8.4-beta nem autoriza declarar UC-31/G-C5 concluído sem paridade funcional e validações aplicáveis. Esta decisão está registrada em `docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md` e `docs/governance/decisions.json` (DEC-0042).
+
+Mudança crítica da direção já aprovada pelo proprietário **não é** autorização automática para o PR crítico entrar: o integrador exige a label `integrar` aplicada posteriormente pelo próprio proprietário, após CI.

@@ -21,10 +21,11 @@
   versão futura falha sem sobrescrever dados; mudanças textuais/visuais usam
   as mesmas transações. Depende de MA-001 e ADR-0030 legitimado.
   - Slice iniciado na Issue #294: codec JSON v1 estrito, schema, validação de AST/refs/limites, sessão de edição em memória, revisões e undo/redo. Migration hooks opt-in, copy-on-write e regressões incluídos; falta CI no head atual e integração antes de marcar [x].
-- [ ] MA-003 — Arquivo portável, assets por ID/hash, save/autosave, backup e
+- [~] MA-003 — Arquivo portável, assets por ID/hash, save/autosave, backup e
   recovery. Gate: falhas injetadas antes/depois de replace preservam ao menos
   uma revisão válida; reopen completo, migrations, import/export, traversal,
   tamanho e corrupção testados. Efeito em dados do usuário escala como crítico.
+  - Issue #299: implementação inicial de pacote ZIP v1, catálogo por hash, adapter de save/autosave/backup/recovery e testes injetados em branch separada. CI, integrador e ausência de DEVICE/SAF ainda impedem marcar [x].
 
 ## Engine, Stage e tempo
 

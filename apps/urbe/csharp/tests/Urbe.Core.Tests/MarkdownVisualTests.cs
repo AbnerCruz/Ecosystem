@@ -104,6 +104,23 @@ public sealed class MarkdownVisualTests
                 "<span>qualquer render visual</span></span></p>"));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("# Título\n")]
+    public void RichHtmlEditRoundTripCanBeEnabledOnlyForIdenticalMarkdown(string source)
+    {
+        Assert.True(VisualMarkdown.IsLosslessEditorRoundTrip(source));
+    }
+
+    [Theory]
+    [InlineData("Texto sem quebra final")]
+    [InlineData("# Título\r\n")]
+    [InlineData("Texto com espaço final.  \n")]
+    public void RichHtmlEditRejectsMarkdownThatWouldBeNormalized(string source)
+    {
+        Assert.False(VisualMarkdown.IsLosslessEditorRoundTrip(source));
+    }
+
     [Fact]
     public void FrontmatterIsExternalAuthorityInVisualMode()
     {

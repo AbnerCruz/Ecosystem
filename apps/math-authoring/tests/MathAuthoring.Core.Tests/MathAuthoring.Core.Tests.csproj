@@ -12,5 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/MathAuthoring.Core/MathAuthoring.Core.csproj" />
+    <ProjectReference Include="../../src/MathAuthoring.Persistence/MathAuthoring.Persistence.csproj" />
   </ItemGroup>
 </Project>

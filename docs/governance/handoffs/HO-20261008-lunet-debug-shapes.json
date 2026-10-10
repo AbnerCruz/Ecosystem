@@ -1,0 +1,129 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-debug-shapes",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T16:18:41Z",
+  "agent": {
+    "id": "codex-lunet-debug-shapes",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-413",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-debug-shapes-20261008",
+  "base_commit": "62baa859c210b15a1a54c47ea20260d79391abc5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/laboratorio-cenas.md",
+    "apps/lunet2d/docs/guides/laboratorio-debug.md",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/DebugDraw.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/DebugShapes.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ButtonLaboratoryTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DebugShapeTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/SceneTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchSliderTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-debug-shapes.json"
+  ],
+  "work_completed": [
+    "Helpers aditivos Polygon/Ray/Axes/Grid com validação antes do desenho, limites explícitos e geometria transformada sobre SpriteBatch existente.",
+    "Polígono/linha aberta com matriz e ReadOnlySpan; raio de comprimento explícito; eixos no pivô com escala assinada; grade com bordas e orçamento. Sem alocação no loop.",
+    "Sétima página pronta para Run no Laboratório; girar/refletir/câmera/ocultar, Circle.Intersects existente para hit do raio e input convertido para mundo. Sem ProjectStore/escrita em projetos existentes.",
+    "10 casos novos, exemplos/cobertura XML/API JSON e guia da página pronta; navegação antiga preservada."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "dotnet build tests/Lunet.Tests --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false: zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner xUnit v3 padrão: 485/485, zero falhas/erros/skips. Main 475 + 10 casos novos, geometria/câmera/clip/extremos/budget/zero bytes; Laboratório compilado/executado no GameHost com toque físico 2×."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram; snapshot ROADMAP × Issues segue verificação remota obrigatória no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Debug visual no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/laboratorio-debug.md",
+      "evidence": "Novo Laboratório, Run, página 7/7; girar/refletir/raio/câmera/toggle/pausa e regressão. Proprietário adiou DEVICE em 2026-10-08, sem inferir aprovação."
+    }
+  ],
+  "known_issues": [
+    "Helpers mostram geometria; não triangulam, preenchem, fazem física ou substituem raycast. Grade começa no canto da área. Limite de 4096 linhas/vértices e margem conservadora para float extremo.",
+    "APIs Line/Circle/Rect/Cross antigas preservadas. Recursos/câmera/clipping/Begin-End continuam sob controle do jogo; HUD do Laboratório formata texto por quadro.",
+    "DEVICE foi adiado pelo usuário, sem aprovação; continuar trabalho independente. Fase 4 aberta. SDK Android local ausente; APK é responsabilidade do CI."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Publicar PR e acompanhar CI/integrador automático e release.",
+    "Não exigir teste DEVICE agora; seguir pendências independentes da Fase 4 sem fechar gate."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API local ao Framework, sem dependência entre Products."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-413 / Issue #340, branch/base/arquivos/handoff explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, gate Fase 4 não fechado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build e suíte comprovados, CI/integração/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reutiliza GameTime/Transform2D/SpriteBatch, sem extração compartilhada sem consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "debug-drawing-game-geometry",
+      "status": "product-specific",
+      "rationale": "APIs de debug do Framework previstas no SPEC §7. Reutiliza SpriteBatch e matemática do jogo; nenhum segundo consumidor ou extração transversal."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Helpers aditivos previstos no plano, sem mudança de formato/persistência/boundary/contrato estável/área protegida."
+  },
+  "cost": null
+}

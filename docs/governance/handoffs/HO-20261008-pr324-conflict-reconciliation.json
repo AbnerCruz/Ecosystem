@@ -1,22 +1,22 @@
 {
   "$schema": "../../contracts/schemas/handoff.schema.json",
   "schemaVersion": 1,
-  "message_id": "HO-20261008-pr315-conflict-reconciliation",
+  "message_id": "HO-20261008-pr324-conflict-reconciliation",
   "category": "HANDOFF",
-  "timestamp": "2026-10-08T11:32:18.334297Z",
+  "timestamp": "2026-10-08T11:38:34.094779Z",
   "agent": {
     "id": "codex-pr-conflict-reconciliation",
     "kind": "ai-agent"
   },
-  "task_id": "RPG-004",
-  "component": "tabletop-rpg",
+  "task_id": "LUNET-407",
+  "component": "lunet2d",
   "state": "review",
-  "branch": "feat/tabletop-rpg-rpg004-combat-runtime",
+  "branch": "agent/lunet-nine-slice-20261008",
   "base_commit": "29fbc892197882ec8de180ba90cd90f0d344e7d8",
   "commit": null,
-  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/315",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/324",
   "files_changed": [
-    "docs/governance/handoffs/HO-20261008-pr315-conflict-reconciliation.json"
+    "docs/governance/handoffs/HO-20261008-pr324-conflict-reconciliation.json"
   ],
   "work_completed": [
     "Incorporada a main atual na branch do PR sem rebase, force-push, descarte de alterações concorrentes ou integração manual.",
@@ -25,27 +25,19 @@
   "verification": [
     {
       "kind": "automated",
-      "check": "Build e suíte C# do Product no estado combinado",
+      "check": "Preservação do código do Product",
       "result": "passed",
-      "evidence": "Build .NET 10 sem warnings/errors; execução direta do assembly xUnit: 47/47 testes passaram. Runner dotnet test local falhou no IPC do ambiente; mesmo assembly executado diretamente."
+      "evidence": "git diff --cached HEAD altera apenas documentos de plataforma e handoff; nenhum arquivo apps/* mudou nesta combinação."
     },
     {
       "kind": "automated",
-      "check": "Consistency",
+      "check": "Consistency após a main avançar",
       "result": "passed",
-      "evidence": "Todos os 22 checks locais passaram; snapshot ROADMAP × Issues é validado remotamente pelo integrador."
-    },
-    {
-      "kind": "automated",
-      "check": "Self-test",
-      "result": "passed",
-      "evidence": "Self-test: todos os checks provaram detectar suas violações. Executado localmente com main d25bcebf combinada; a atualização posterior para main 29fbc892 modifica apenas documentos de estado. CI remoto continua obrigatório."
+      "evidence": "Todos os 22 checks locais passaram; snapshot de Issues é conferido remotamente pelo integrador."
     }
   ],
   "known_issues": [],
-  "blockers": [
-    "PR #310 ainda não integrado; manter draft para não antecipar sua autorização."
-  ],
+  "blockers": [],
   "next_actions": [
     "Reavaliar CI e estado combinado pelo integrador automático. Não realizar merge manual nem adicionar integrar."
   ],
@@ -55,7 +47,7 @@
     "AGENTS.md",
     "ecosystem.json",
     "docs/governance/multi-agent.md",
-    "apps/tabletop-rpg/AGENTS.md"
+    "apps/lunet2d/AGENTS.md"
   ],
   "invariants": [
     {

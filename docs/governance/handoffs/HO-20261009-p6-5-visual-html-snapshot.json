@@ -1,0 +1,136 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-visual-html-snapshot",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T18:42:16.715Z",
+  "agent": {
+    "id": "chatgpt-ecosystem-ai-visual-snapshot",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-readonly-mobile-html-snapshot-20261009",
+  "base_commit": "ac600f84c215678016e347e9890050e125735066",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/383",
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliHtmlSnapshot.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4VisualSnapshotTests.cs",
+    "apps/ecosystem-ai/docs-r4-visual-snapshot.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-visual-html-snapshot.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: P6-5 já possui LocalProjectStore, catálogo, CLI e receipts, mas não experiência visual de navegação.",
+    "Implementado snapshot HTML offline mobile-first gerado explicitamente pela CLI com projetos, sessões expansíveis, mensagens e receipts/custos por moeda; dados vêm exclusivamente do catálogo, sem outro Runtime nem ledger.",
+    "HTML sem JavaScript/HTTP/recursos externos; strings são HTML-encoded e CSP bloqueia carga remota e scripts.",
+    "Export só cria arquivo novo fora do catálogo e de workspaces acessíveis aos agentes; recusa caminhos/ancestrais simbólicos de saída e de workspaces.",
+    "Testes automatizados adicionados para renderização, XSS, preservação do catálogo, modo CLI sem rede, inexistência, sobrescrita, sandbox e symlinks."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI de PR necessário; SDK dotnet indisponível no container desta conversa."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI de PR necessário; SDK dotnet indisponível no container desta conversa."
+    },
+    {
+      "check": "Android DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Este incremento exporta HTML estático e não altera Android, touchscreen, lifecycle ou APK."
+    }
+  ],
+  "known_issues": [
+    "P6-5 ainda não conclui UI interativa Android, criação/edição de agentes, equipes, tarefas, memória, grants UX ou artefatos navegáveis.",
+    "HTML contém mensagens/evidências em texto claro, com opt-in explícito e sem criptografia.",
+    "A PR #380 também modifica Program.cs: conciliação necessária se integrada antes deste slice.",
+    "Execução local não comprovada; CI deverá validar compilação e testes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI e revisar falhas no estado combinado antes de integração.",
+    "Reconciliar alterações da PR #380 caso o integrador avance a main.",
+    "Continuar P6-5 com navegação e controle de tarefas via Product UI, mediante decisão de UX/plataforma aplicável."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-local-store.md",
+    "apps/ecosystem-ai/docs-r4-cli.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "HTML deriva somente de LocalProjectStore.Read(), sem novo estado persistente autoritativo."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Arquivo offline independente do Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff/PR auditáveis e receipts expostos como registros, não execução de agentes invisível."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escopo P6-5 no ROADMAP/Issue #354; documentação e handoff persistidos."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Fluxo visual read-only dentro de Product existente, sem alterar protocolo/boundaries ou modelo de dados."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Exportação explícita, sem segredo/modelo/rede; destino fora do sandbox; encoding e CSP."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegar validação humana de dispositivo; HTML ainda requer verificação real de UX caso distribuído."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review até integração e CI, sem alegar done."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Projeção pura do catálogo existente evita backend/frontend paralelos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem extração, nova Library/Service ou dependência entre Products."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "project-catalog-html-snapshot",
+      "status": "product-specific",
+      "rationale": "Projeção visual do catálogo Ecosystem AI, sem segundo consumidor nem justificativa para componente platform."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Nova saída HTML explícita e aditiva, sem mudança de formato de catálogo, migração, autorização, execução nem nova dependência estrutural."
+  },
+  "cost": null
+}

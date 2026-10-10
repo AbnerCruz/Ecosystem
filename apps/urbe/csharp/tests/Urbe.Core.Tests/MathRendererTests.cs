@@ -220,6 +220,29 @@ public sealed class MathRendererTests
         Assert.Equal(first.CompatibilityDiagnostics, second.CompatibilityDiagnostics);
     }
 
+    [Fact]
+    public void ConcurrentTypesettingDoesNotCorruptSharedCaches()
+    {
+        const string tex = @"\sum_{i=1}^{n}i=\frac{n(n+1)}{2}";
+        const int count = 48;
+        var outputs = new MathRenderResult[count];
+
+        // The UI may render many note previews simultaneously, while other
+        // tests render formulas in parallel across xUnit classes.
+        Parallel.For(0, count, new ParallelOptions { MaxDegreeOfParallelism = 8 },
+            index => outputs[index] = MathRenderer.RenderSvg(tex));
+
+        var reference = outputs[0];
+        Assert.True(reference.Success, reference.Diagnostic);
+        Assert.All(outputs, result =>
+        {
+            Assert.True(result.Success, result.Diagnostic);
+            Assert.Equal(reference.Svg, result.Svg);
+            Assert.Equal(reference.Width, result.Width);
+            Assert.Equal(reference.Height, result.Height);
+        });
+    }
+
     private static string CSharpRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
