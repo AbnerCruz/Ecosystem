@@ -731,6 +731,12 @@ public sealed class WorkspaceSession : IDisposable
         return true;
     }
 
+    private static string NoteFolder(string path)
+    {
+        var index = path.LastIndexOf('/');
+        return index < 0 ? string.Empty : path[..index];
+    }
+
     /// <summary>
     /// Places one Markdown house on the eight-by-eight City tile map.
     /// No bytes are written until the native host commits metadata.json.
@@ -751,11 +757,14 @@ public sealed class WorkspaceSession : IDisposable
         if (current.X == column && current.Y == row)
             return true;
 
-        // The UI resolves the visible tile occupancy. Repeat the collision
-        // guard here so other callers cannot overlap two saved coordinates.
+        // Coordinates are LOCAL to the current bairro, not global across
+        // different folders. A house in another bairro may use the same lot.
+        var thisFolder = NoteFolder(document.Path);
         if (Documents.List().Any(other =>
         {
-            if (other.Id == document.Id)
+            if (other.Id == document.Id ||
+                !string.Equals(NoteFolder(other.Path), thisFolder,
+                    StringComparison.OrdinalIgnoreCase))
                 return false;
             var position = World.ProjectDocument(other.Id);
             return position?.X == column && position.Y == row;
@@ -778,10 +787,14 @@ public sealed class WorkspaceSession : IDisposable
     public UrbeDocument? CreateHouseAt(
         string? title, string? folder, int column, int row)
     {
+        var normalizedFolder = DocumentModel.NormalizePath(folder);
         if (IsReadOnly || World.IsReadOnly ||
             column is < 0 or >= 8 || row is < 0 or >= 8 ||
             Documents.List().Any(document =>
             {
+                if (!string.Equals(NoteFolder(document.Path), normalizedFolder,
+                        StringComparison.OrdinalIgnoreCase))
+                    return false;
                 var position = World.ProjectDocument(document.Id);
                 return position?.X == column && position.Y == row;
             }))
