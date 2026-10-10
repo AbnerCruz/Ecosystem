@@ -50,6 +50,7 @@ public sealed class LegacyTileSampler
         _rivers = new LegacyRiverField(hydrology, spawn);
     }
 
+    public string SeedText => _hydrology.Climate.SeedText;
     public LegacyRiverField Rivers => _rivers;
     public LegacyWorldSpawn Spawn => _spawn;
 
