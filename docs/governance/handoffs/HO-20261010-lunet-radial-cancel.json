@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-434",
   "component": "lunet2d",
-  "state": "cancelled",
+  "state": "review",
   "branch": "revert/lunet-434-unsolicited-feature-20261010",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/476",
@@ -50,7 +50,8 @@
   ],
   "known_issues": [
     "A reversao ainda precisa passar CI e entrar em main.",
-    "Releases ja publicadas nao sao reescritas; uma nova release do Lunet apos a reversao retirara o recurso indevido."
+    "Releases ja publicadas nao sao reescritas; uma nova release do Lunet apos a reversao retirara o recurso indevido.",
+    "O objeto da tarefa foi cancelado; o estado review indica que a REVERSAO aguarda a integracao de CI, nao que o LUNET-434 voltou ao backlog."
   ],
   "blockers": [],
   "next_actions": [
