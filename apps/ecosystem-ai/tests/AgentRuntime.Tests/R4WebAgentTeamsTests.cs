@@ -42,7 +42,7 @@ public sealed class R4WebAgentTeamsTests
             var other = roster.CreateAgent(p2.Id, "Fora", "Outro projeto.");
             Assert.Throws<ArgumentException>(() => roster.CreateTeam(p1.Id, "Equipe inválida", a.Id, a.Id));
             Assert.Throws<ArgumentException>(() => roster.CreateTeam(p1.Id, "Equipe inválida", a.Id, other.Id));
-            Assert.Throws<ArgumentException>(() => roster.CreateAgent(p1.Id, "Revisor", "Duplicado."));
+            Assert.Throws<InvalidOperationException>(() => roster.CreateAgent(p1.Id, "Revisor", "Duplicado."));
             Assert.Throws<KeyNotFoundException>(() => roster.CreateAgent(
                 Guid.NewGuid().ToString("N"), "Sem projeto", "Recusado."));
             var team = roster.CreateTeam(p1.Id, "<img onerror=1>", a.Id, b.Id);
@@ -138,7 +138,7 @@ public sealed class R4WebAgentTeamsTests
                 Assert.Equal(producer.Id, args[Array.IndexOf(args, "--agent-profile-id") + 1]);
                 Assert.DoesNotContain("--allow-create", args);
                 Assert.Equal("intocado", File.ReadAllText(source));
-                Assert.Equal(1, runner.Board.RemainingRuns == 4 ? 1 : 0);
+                Assert.Equal(4, runner.Board.RemainingRuns);
                 using (var malformed = await Post("/tasks", new()
                 {
                     ["csrf"] = csrf, ["projectId"] = project.Id,
