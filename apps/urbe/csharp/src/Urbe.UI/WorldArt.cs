@@ -14,7 +14,7 @@ public static class WorldArt
                 hash ^= char.ToUpperInvariant(character);
                 hash *= 16777619;
             }
-            return hash % 3 switch
+            return (hash % 3) switch
             {
                 0 => "world-sprite-red",
                 1 => "world-sprite-ochre",

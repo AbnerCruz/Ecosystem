@@ -1,4 +1,5 @@
 name: urbe-csharp-mobile-release
+# ART-1: re-run beta.7 after C# expression compile fix; no prior tag was published.
 
 # UC-25/UC-27 — Urbe 2 native Android beta releases only; desktop is later.
 # No WASM, Pages or JS product is distributed by this workflow.
