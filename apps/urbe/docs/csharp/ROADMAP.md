@@ -5,6 +5,10 @@
 > **Estado de um gate:** linha `*Estado do gate:* **aprovado**`, `**aguardando**` ou `**não iniciado**` logo depois de cada `**Gate:**`.
 > **Nenhuma fase escolhe a pilha de UI ou de hosts antes de UC-5**, e nenhum código C# de produto entra antes de UC-7 e do gate G-C0.
 
+## Direção de plataforma — proprietário, 09/10/2026
+
+**Urbe C# será entregue para Android e desktop/Windows, sem versão Web/PWA.** Prioridade atual: desenvolvimento e releases Android; Windows vem depois. UC-23 permanece no documento apenas como ID histórico, sem nova entrega. O preview Web antigo não é alvo de release do produto C#. A retirada formal do host Web das ADRs consolidadas exige reconciliação crítica; esta direção já foi expressamente aprovada pelo proprietário.
+
 ## Próxima tarefa
 
 **Ordem do proprietário DEC-0042 (2026-10-09) — beta utilizável prioritário, sem retrocompatibilidade histórica obrigatória.** Paridade **de funcionalidades** com o cliente JS é mantida como objetivo do produto C# final. O proprietário é o único usuário da beta, fará backup manual e copiará poucos arquivos `.md` a um vault novo; **migração de estado/configurações de versões antigas, IndexedDB, lixeira/histórico/layout e atualização in-place JS→C# NÃO são bloqueadores** do beta nem do corte. Isto modifica a obrigação anterior de DEC-0036-C/ADR-0026 para o cliente C#; ver ADD-0019/DEC-0042. Não apagar código pronto de compatibilidade; apenas evitar nova infraestrutura legada sem benefício. Manter leitura/gravação segura dos arquivos reais e persistência do estado **novo**. O cliente JS publicado permanece intacto até validação do beta opt-in e posterior corte aprovado.
@@ -56,8 +60,8 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 ## M3 — Interface e extensões
 
 - [x] UC-17 — Shell e navegação. PR #280 integrado automaticamente em `9143b239`: shell compartilhado Web/MAUI, navegação Início/Explorer/Editor/Cidade/Mais, base path `/` e `/preview/`, online/offline e regressão Web/Android/Windows/E2E/checks/consistency verdes. Issue #279 encerrada; validação humana de layout/toque continua G-C3.
-- [ ] UC-18 — Editor (visual e fonte) e Explorer. Issue #281 em andamento; primeira fatia cria sessão compartilhada, Explorer real, edição Fonte, render Visual e relações sem antecipar persistência específica de host.
-- [ ] UC-19 — Mundo: desenho e toque.
+- [ ] UC-18 — Editor (visual e fonte) e Explorer. Issue #281 em andamento; sessão compartilhada, Explorer real, edição Fonte, render Visual, relações e autocomplete C# de `[[` com criação de nota ausente (REQ-027/REQ-109) implementados em fatias. CI e validação humana de toque/layout ainda necessários para encerrar o item.
+- [ ] UC-19 — Mundo: desenho e toque. **ORDEM DO PROPRIETÁRIO (10/10/2026): copiar o visual EXATO da versão 1.8.4-beta, sem qualquer redesenho.** A direção própria de SVGs da beta.7 foi rejeitada. Reutilizar sprites, paleta, textura, terreno, edifícios, ruas, HUD, ícones, tipografia e interações originais; apenas a implementação migra para C# Android/Windows. Exportador de assets originais é a primeira etapa, não a paridade integral. Etapas LEGACY-1 a LEGACY-4 em `docs/csharp/UC19-VISUAL-ACCEPTANCE.md`; G-C3 continua aberto até comparação real aprovada.
 - [ ] UC-20 — Personalização, tema e **plugins** (decisão do modelo de confiança em C#).
 - [ ] UC-21 — IA: providers e agente.
 - [ ] UC-22 — Tutorial e primeira abertura.
@@ -67,7 +71,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 ## M4 — Hosts e distribuição
 
-- [ ] UC-23 — Web/PWA (offline, service worker ou equivalente).
+- [ ] UC-23 — Web/PWA: **não aplicável** após a direção do proprietário de 09/10/2026; ID preservado somente para rastreabilidade.
 - [ ] UC-24 — Windows (instalação e atualização).
 - [ ] UC-25 — Android.
 - [ ] UC-26 — Transição deliberada dos clientes sem migração histórica obrigatória (DEC-0042): suporte a vault limpo e cópia manual de Markdown; preservar instalação e dados legados sem conversão/sobrescrita automática. Não bloquear beta/corte por estados históricos.
