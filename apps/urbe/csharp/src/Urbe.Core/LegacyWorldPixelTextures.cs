@@ -127,7 +127,7 @@ public static class LegacyWorldPixelTextures
     // JavaScript Math.imul(), signed 32-bit wrap and >>> unsigned shift.
     // Do not replace with System.HashCode, Random or unbounded integer math:
     // the resulting pixels would no longer match Urbe 1.8.4-beta.
-    private static double Hash(int x, int y, int seed)
+    internal static double Hash(int x, int y, int seed)
     {
         var h = unchecked((uint)(
             x * 374761393 + y * 668265263 +
