@@ -83,14 +83,14 @@ public static class LegacyChunkPixels
                            biome[k - Halo - 1] == id && biome[k - Halo + 1] == id &&
                            biome[k + Halo - 1] == id && biome[k + Halo + 1] == id;
             var own = Textures.Value[(int)id][variants[k]];
-            double s00 = slope[k - Halo - 1] + slope[k - Halo] + slope[k - 1] + slope[k];
-            double s10 = slope[k - Halo] + slope[k - Halo + 1] + slope[k] + slope[k + 1];
-            double s01 = slope[k - 1] + slope[k] + slope[k + Halo - 1] + slope[k + Halo];
-            double s11 = slope[k] + slope[k + 1] + slope[k + Halo] + slope[k + Halo + 1];
-            double t00 = tint[k - Halo - 1] + tint[k - Halo] + tint[k - 1] + tint[k];
-            double t10 = tint[k - Halo] + tint[k - Halo + 1] + tint[k] + tint[k + 1];
-            double t01 = tint[k - 1] + tint[k] + tint[k + Halo - 1] + tint[k + Halo];
-            double t11 = tint[k] + tint[k + 1] + tint[k + Halo] + tint[k + Halo + 1];
+            double s00 = (double)slope[k - Halo - 1] + slope[k - Halo] + slope[k - 1] + slope[k];
+            double s10 = (double)slope[k - Halo] + slope[k - Halo + 1] + slope[k] + slope[k + 1];
+            double s01 = (double)slope[k - 1] + slope[k] + slope[k + Halo - 1] + slope[k + Halo];
+            double s11 = (double)slope[k] + slope[k + 1] + slope[k + Halo] + slope[k + Halo + 1];
+            double t00 = (double)tint[k - Halo - 1] + tint[k - Halo] + tint[k - 1] + tint[k];
+            double t10 = (double)tint[k - Halo] + tint[k - Halo + 1] + tint[k] + tint[k + 1];
+            double t01 = (double)tint[k - 1] + tint[k] + tint[k + Halo - 1] + tint[k + Halo];
+            double t11 = (double)tint[k] + tint[k + 1] + tint[k + Halo] + tint[k + Halo + 1];
 
             for (int py = 0; py < TilePx; py++)
             {
