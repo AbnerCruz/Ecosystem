@@ -14,7 +14,7 @@
   "branch": "feat/p6-5-chat-session-budget-cap-20261009",
   "base_commit": "3b82a31bf9e6080e90c0eee9d6b724f599b28e95",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/405",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliInteractiveChat.cs",
     "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
@@ -45,15 +45,15 @@
     }
   ],
   "known_issues": [
-    "PR empilhada sobre #404 até sua integração. Após integração, ajustar base para main.",
+    "PR #404 integrada; esta PR agora possui base main, sem modificar a interface web.",
     "Teto é reserva local conservadora e não garante total real faturado entre múltiplos processos/provedores, estimativas e falhas sem receipt.",
     "Não há execução visual de tarefas, nem criação de equipes, nem APK."
   ],
   "blockers": [],
   "next_actions": [
-    "Aprovar checks de P6-5 e corrigir falhas.",
-    "Integrar após #404 e CI verde.",
-    "Evoluir os controles de orçamento e submissão de tarefas na UI de forma autorizada."
+    "Validar CI do Product e consistência após retarget main.",
+    "Integrar apenas quando os checks exigidos estiverem verdes.",
+    "Avançar P6-5 para fluxos de tarefas/agentes supervisionados, preservando grants e orçamento."
   ],
   "decisions_required": [],
   "normative_sources": [
