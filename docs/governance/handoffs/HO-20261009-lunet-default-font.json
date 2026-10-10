@@ -42,9 +42,10 @@
     {
       "check": "Preview real: CRLF, acentos e legibilidade no telefone",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/lunet2d/docs/guides/fontes-bitmap.md"
+      "object": "apps/lunet2d/docs/guides/fontes-bitmap.md",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/442); registro em docs/governance/responses/VAL-HO-20261009-lunet-default-font-3404855d3a93.md."
     }
   ],
   "known_issues": [

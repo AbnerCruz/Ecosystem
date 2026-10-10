@@ -63,10 +63,10 @@
     {
       "kind": "human",
       "check": "Botões e navegação no Laboratório Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/laboratorio-botoes.md",
-      "evidence": "Novo projeto Laboratório, Run, página 5/5. Clique/arraste/disable/relocação/pausa/troca de página; segundo dedo no cabeçalho enquanto outro segura controle. Offline, Preview rápido/isolado; aparência/GL/aparelho pendentes."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/456); registro em docs/governance/responses/VAL-HO-20261008-lunet-buttons-laboratory-ce5ed1025be4.md."
     }
   ],
   "known_issues": [

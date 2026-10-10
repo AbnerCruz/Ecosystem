@@ -56,10 +56,10 @@
     {
       "kind": "human",
       "check": "Slider no Preview Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/sliders-ui.md",
-      "evidence": "Novo Laboratório → Run → página 4/4; arrastar, passos, disable, dois dedos, pausa e troca de página; Preview rápido/isolado. CI não comprova DEVICE/GL."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/444); registro em docs/governance/responses/VAL-HO-20261008-lunet-touch-slider-1a5aab708ca5.md."
     }
   ],
   "known_issues": [

@@ -49,9 +49,10 @@
     {
       "check": "Clipping, toque e inércia de lista no Motorola Android",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/lista-ui.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/433); registro em docs/governance/responses/VAL-HO-20261010-lunet-touch-list-822e1ec611e4.md."
     }
   ],
   "known_issues": [

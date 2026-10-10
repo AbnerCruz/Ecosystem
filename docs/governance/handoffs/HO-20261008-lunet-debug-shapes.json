@@ -60,10 +60,10 @@
     {
       "kind": "human",
       "check": "Debug visual no Preview Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/laboratorio-debug.md",
-      "evidence": "Novo Laboratório, Run, página 7/7; girar/refletir/raio/câmera/toggle/pausa e regressão. Proprietário adiou DEVICE em 2026-10-08, sem inferir aprovação."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/452); registro em docs/governance/responses/VAL-HO-20261008-lunet-debug-shapes-c47f4dfe79c9.md."
     }
   ],
   "known_issues": [

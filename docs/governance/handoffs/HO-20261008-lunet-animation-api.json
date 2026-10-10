@@ -61,10 +61,10 @@
     {
       "kind": "human",
       "check": "animation no Preview Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/animacao.md",
-      "evidence": "Criar projeto Em branco e substituir Game.cs pelo exemplo completo; validar roteiro offline/rápido/isolado. Testes portáteis não comprovam GL/performance/toque real."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/458); registro em docs/governance/responses/VAL-HO-20261008-lunet-animation-api-423c7e822cd6.md."
     }
   ],
   "known_issues": [
