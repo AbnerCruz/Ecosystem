@@ -435,6 +435,75 @@ async function assertNoteTemplates(page) {
 let browser;
 try {
     browser = await chromium.launch({ headless: true });
+
+    // UC-19: the browser is the authoritative Canvas2D pixel oracle, not a
+    // reimplementation of its antialiasing. This runs ONLY in CI, never in
+    // Android. Any mismatch logs a fresh canonical PNG for the affected asset.
+    const artPage = await browser.newPage();
+    const v184Source = await readFile(
+        new URL('../../src/world/pixel-art.js', import.meta.url), 'utf8');
+    await artPage.addScriptTag({ content: v184Source });
+    const sourceImages = await Promise.all(requiredArt.map(async ([name]) => ({
+        name,
+        base64: (await readFile(resolve(v184, name))).toString('base64')
+    })));
+    const mismatches = await artPage.evaluate(async images => {
+        const art = window.UrbeArt;
+        if (!art) throw new Error('Legacy 1.8.4-beta pixel-art.js did not initialize');
+        const reference = new Map();
+        const terrain = new OffscreenCanvas(16, 16);
+        terrain.getContext('2d').putImageData(
+            new ImageData(new Uint8ClampedArray(art.texture('grass', 0)), 16, 16), 0, 0);
+        reference.set('terrain-grass-0.png', terrain);
+        reference.set('tree-oak-0.png', art.tree('oak', 0, false));
+        for (const variant of [0, 1, 2])
+            reference.set('building-house-temperate-' + variant + '.png',
+                art.building('house', 'temperate', variant, false));
+        reference.set('building-hall-temperate-0.png',
+            art.building('hall', 'temperate', 0, false));
+
+        const result = [];
+        for (const { name, base64 } of images) {
+            const expectedCanvas = reference.get(name);
+            const binary = atob(base64);
+            const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+            const bitmap = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+            const actualCanvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+            actualCanvas.getContext('2d').drawImage(bitmap, 0, 0);
+            const expected = expectedCanvas.getContext('2d').getImageData(
+                0, 0, expectedCanvas.width, expectedCanvas.height).data;
+            const actual = actualCanvas.getContext('2d').getImageData(
+                0, 0, bitmap.width, bitmap.height).data;
+            let changed = 0;
+            if (bitmap.width !== expectedCanvas.width ||
+                bitmap.height !== expectedCanvas.height) changed++;
+            else for (let i = 0; i < expected.length; i++)
+                if (expected[i] !== actual[i]) changed++;
+            if (changed) {
+                const png = await expectedCanvas.convertToBlob({ type: 'image/png' });
+                const dataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(png);
+                });
+                result.push({
+                    name,
+                    changed,
+                    canonical: dataUrl.substring(dataUrl.indexOf(',') + 1)
+                });
+            }
+            bitmap.close();
+        }
+        return result;
+    }, sourceImages);
+    await artPage.close();
+    for (const diff of mismatches)
+        console.log('UC19_CANONICAL_PNG ' + diff.name + ' ' + diff.canonical);
+    assert.deepEqual(
+        mismatches.map(({name, changed}) => ({name, changed})), [],
+        'Sprites empacotados devem reproduzir exatamente os pixels Canvas2D da 1.8.4-beta');
+
     const context = await browser.newContext({ viewport: { width: 800, height: 360 } });
     const errors = [];
     const origin = `http://127.0.0.1:${server.address().port}`;
