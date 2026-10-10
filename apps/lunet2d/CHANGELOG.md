@@ -15,6 +15,8 @@
 
 ### Added
 
+- LUNET-429 (em revisão): `TouchListView` para listas grandes de missão/inventário com scroll inercial, hit-test por linha, seleção sem clique acidental ao arrastar e desenho apenas das linhas visíveis.
+
 - LUNET-428 (em revisão): TouchToggle para menus mobile de opções, com paletas on/off, captura por dedo, testes e guia offline executável.
 
 - LUNET-427 (em revisão): TouchScrollArea para painéis verticais de inventário, missão e menus mobile, com inércia, limites, multitoque, indicador visual proporcional de scroll (GetThumbBounds) e clip por SpriteBatch; testes e guia offline.

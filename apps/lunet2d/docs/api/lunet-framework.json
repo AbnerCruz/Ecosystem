@@ -16226,6 +16226,441 @@
       ]
     },
     {
+      "id": "T:Lunet.UI.TouchListView",
+      "name": "TouchListView",
+      "namespace": "Lunet.UI",
+      "kind": "class",
+      "signature": "public sealed class TouchListView",
+      "summary": "Lista vertical de sele\u00E7\u00E3o por toque, com linhas virtuais e rolagem por in\u00E9rcia.",
+      "remarks": "N\u00E3o guarda os itens, n\u00E3o consome input de outros controles e n\u00E3o altera arquivos de jogos. Um toque breve ativa a linha; arrastar rola sem ativ\u00E1-la. Atualize mesmo desabilitada. O desenho abre seus pr\u00F3prios lotes SpriteBatch com clipping; chame Draw fora de Begin/End. Nenhuma aloca\u00E7\u00E3o gerenciada no Update, hit-test ou consulta de linhas vis\u00EDveis.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar list = new Lunet.UI.TouchListView(new RectangleF(0, 0, 200, 120), 8, 40);\nlist.Update(input, (float)time.DeltaSeconds);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.TouchListView.#ctor(Lunet.RectangleF,System.Int32,System.Single,System.Single)",
+          "name": "TouchListView",
+          "kind": "constructor",
+          "signature": "public TouchListView(RectangleF bounds, int itemCount, float rowHeight, float spacing = 0f)",
+          "summary": "Cria lista com altura uniforme e espa\u00E7amento em coordenadas virtuais.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "bounds",
+              "type": "RectangleF",
+              "description": "Viewport finita com largura e altura n\u00E3o negativas."
+            },
+            {
+              "name": "itemCount",
+              "type": "int",
+              "description": "Quantidade de linhas, inclusive zero."
+            },
+            {
+              "name": "rowHeight",
+              "type": "float",
+              "description": "Altura positiva finita de uma linha."
+            },
+            {
+              "name": "spacing",
+              "type": "float",
+              "description": "Espa\u00E7o vertical finito n\u00E3o negativo entre linhas."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.ActivatedIndex",
+          "name": "ActivatedIndex",
+          "kind": "property",
+          "signature": "public int ActivatedIndex { get; }",
+          "summary": "\u00CDndice ativado no \u00FAltimo Update, ou -1. Uma ativa\u00E7\u00E3o pode repetir a sele\u00E7\u00E3o atual.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.Bounds",
+          "name": "Bounds",
+          "kind": "property",
+          "signature": "public RectangleF Bounds { get; set; }",
+          "summary": "\u00C1rea do viewport. Mudan\u00E7as de layout cancelam gesto sem limpar sele\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.IsCaptured",
+          "name": "IsCaptured",
+          "kind": "property",
+          "signature": "public bool IsCaptured { get; }",
+          "summary": "H\u00E1 um dedo reservado para um gesto da lista.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.IsDragging",
+          "name": "IsDragging",
+          "kind": "property",
+          "signature": "public bool IsDragging { get; }",
+          "summary": "A \u00E1rea subjacente est\u00E1 sendo arrastada pelo dedo capturado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Habilita/desabilita a intera\u00E7\u00E3o sem perder sele\u00E7\u00E3o ou posi\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.ItemCount",
+          "name": "ItemCount",
+          "kind": "property",
+          "signature": "public int ItemCount { get; set; }",
+          "summary": "Quantidade de linhas. Altera\u00E7\u00F5es limitam scroll e invalidam sele\u00E7\u00E3o fora da lista.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.MaximumOffsetY",
+          "name": "MaximumOffsetY",
+          "kind": "property",
+          "signature": "public float MaximumOffsetY { get; }",
+          "summary": "Maior deslocamento vertical poss\u00EDvel.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.OffsetY",
+          "name": "OffsetY",
+          "kind": "property",
+          "signature": "public float OffsetY { get; }",
+          "summary": "Deslocamento desde o in\u00EDcio, limitado ao conte\u00FAdo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.RowHeight",
+          "name": "RowHeight",
+          "kind": "property",
+          "signature": "public float RowHeight { get; }",
+          "summary": "Altura uniforme das linhas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.SelectedIndex",
+          "name": "SelectedIndex",
+          "kind": "property",
+          "signature": "public int SelectedIndex { get; }",
+          "summary": "\u00CDndice selecionado, ou -1 se nenhum.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.Spacing",
+          "name": "Spacing",
+          "kind": "property",
+          "signature": "public float Spacing { get; }",
+          "summary": "Espa\u00E7o entre linhas, que n\u00E3o responde a toques.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchListView.WasSelectionChanged",
+          "name": "WasSelectionChanged",
+          "kind": "property",
+          "signature": "public bool WasSelectionChanged { get; }",
+          "summary": "Verdadeiro apenas no Update que mudou a sele\u00E7\u00E3o por toque.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.Cancel",
+          "name": "Cancel",
+          "kind": "method",
+          "signature": "public void Cancel()",
+          "summary": "Cancela o gesto atual e momentum sem alterar a sele\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.Draw(Lunet.Graphics.SpriteBatch,Lunet.Graphics.SpriteFont,System.Collections.Generic.IReadOnlyList{System.String},Lunet.UI.TouchButtonStyle,Lunet.Graphics.Color,System.Single)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(SpriteBatch batch, SpriteFont font, IReadOnlyList\u003Cstring\u003E labels, TouchButtonStyle style, Color selectedBackground, float textScale = 1f)",
+          "summary": "Desenha apenas linhas vis\u00EDveis e a barra, recortadas na \u00E1rea, com dados fornecidos pelo jogo.",
+          "remarks": "Inicia e encerra os pr\u00F3prios lotes, portanto n\u00E3o pode ser chamado entre Begin/End. N\u00E3o cria ou libera fonte/textura. O chamador controla o conte\u00FAdo e a paleta.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote gr\u00E1fico pr\u00F3prio do jogo."
+            },
+            {
+              "name": "font",
+              "type": "SpriteFont",
+              "description": "Fonte de propriedade do jogo."
+            },
+            {
+              "name": "labels",
+              "type": "IReadOnlyList\u003Cstring\u003E",
+              "description": "R\u00F3tulos de cada linha, sem r\u00F3tulos nulos."
+            },
+            {
+              "name": "style",
+              "type": "TouchButtonStyle",
+              "description": "Paleta de fundo e primeiro plano."
+            },
+            {
+              "name": "selectedBackground",
+              "type": "Color",
+              "description": "Cor da linha selecionada e da barra."
+            },
+            {
+              "name": "textScale",
+              "type": "float",
+              "description": "Escala positiva finita do texto."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.GetItemBounds(System.Int32)",
+          "name": "GetItemBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetItemBounds(int index)",
+          "summary": "Retorna o ret\u00E2ngulo virtual de uma linha, deslocado pelo scroll.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice a consultar."
+            }
+          ],
+          "returns": "Ret\u00E2ngulo virtual deslocado pelo scroll.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.GetThumbBounds(System.Single,System.Single)",
+          "name": "GetThumbBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetThumbBounds(float width = 5f, float minimumHeight = 24f)",
+          "summary": "Geometria proporcional da barra, vazia se n\u00E3o h\u00E1 overflow.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "float",
+              "description": "Largura solicitada da barra."
+            },
+            {
+              "name": "minimumHeight",
+              "type": "float",
+              "description": "Altura m\u00EDnima da barra."
+            }
+          ],
+          "returns": "Ret\u00E2ngulo da barra ou valor default sem overflow.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.GetVisibleRange(System.Int32@,System.Int32@)",
+          "name": "GetVisibleRange",
+          "kind": "method",
+          "signature": "public void GetVisibleRange(out int first, out int endExclusive)",
+          "summary": "Intervalo [first, endExclusive) de linhas que podem intersectar o viewport.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "first",
+              "type": "int",
+              "description": "Primeiro \u00EDndice potencialmente vis\u00EDvel."
+            },
+            {
+              "name": "endExclusive",
+              "type": "int",
+              "description": "\u00CDndice final exclusivo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.HitTest(System.Numerics.Vector2)",
+          "name": "HitTest",
+          "kind": "method",
+          "signature": "public int HitTest(Vector2 position)",
+          "summary": "Retorna a linha sob um ponto, ou -1 fora do viewport, sobre intervalo ou \u00E1rea vazia.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Coordenadas virtuais do toque."
+            }
+          ],
+          "returns": "\u00CDndice atingido, ou -1 se n\u00E3o houver linha.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.ScrollTo(System.Single)",
+          "name": "ScrollTo",
+          "kind": "method",
+          "signature": "public void ScrollTo(float offsetY)",
+          "summary": "Posiciona a lista dentro dos limites, cancelando momentum.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "offsetY",
+              "type": "float",
+              "description": "Dist\u00E2ncia finita desejada a partir do topo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.ScrollToItem(System.Int32,System.Boolean)",
+          "name": "ScrollToItem",
+          "kind": "method",
+          "signature": "public void ScrollToItem(int index, bool center = false)",
+          "summary": "Torna uma linha vis\u00EDvel, opcionalmente centralizada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice da linha."
+            },
+            {
+              "name": "center",
+              "type": "bool",
+              "description": "Centraliza a linha quando verdadeiro."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.Select(System.Int32)",
+          "name": "Select",
+          "kind": "method",
+          "signature": "public void Select(int index)",
+          "summary": "Altera a sele\u00E7\u00E3o por c\u00F3digo, sem emitir pulsos de ativa\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice da sele\u00E7\u00E3o, ou -1 para limpar."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchListView.Update(Lunet.Input.InputState,System.Single)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(InputState input, float deltaSeconds)",
+          "summary": "Atualiza sele\u00E7\u00E3o e arraste uma vez por passo fixo, preservando o ID de dedo original.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Snapshot de toque em coordenadas virtuais."
+            },
+            {
+              "name": "deltaSeconds",
+              "type": "float",
+              "description": "Delta finito n\u00E3o negativo do passo, em segundos."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.UI.TouchScrollArea",
       "name": "TouchScrollArea",
       "namespace": "Lunet.UI",
