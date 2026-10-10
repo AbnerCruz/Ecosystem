@@ -20,7 +20,7 @@
     "apps/urbe/csharp/src/Urbe.Core/LegacyFauna.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyLifeHost.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyLifeSprites.cs",
-    "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
+    "apps/urbe/csharp/src/Urbe.Core/AssemblyInfo.cs",
     "apps/urbe/csharp/src/Urbe.Client/World/LifeRenderer.cs",
     "apps/urbe/csharp/src/Urbe.Client/World/CityLifeHost.cs",
     "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
