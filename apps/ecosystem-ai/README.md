@@ -144,3 +144,14 @@ produtor da equipe, usando o **mesmo Runner, modelo, orçamento e grants read-on
 A revisão de equipe não é automática nesta etapa. Os perfis são gravados em
 `roster.json` ao lado do catálogo, sem alterar o schema de `catalog.json` v1.
 [Limites e testes](docs-r4-project-agents-teams.md).
+
+## Revisão independente opcional para equipes (R4)
+
+`--web-ui --web-tasks --web-review-teams` executa primeiro o **produtor** e,
+se houver recibo verificado e resultado real, executa um **segundo run com o
+revisor independente**. A quota da instância deve suportar ambos; cada run
+usa o mesmo Runtime, modelo e grants de somente leitura. O parecer não
+aprova nem integra arquivos automaticamente. Sem a flag, as equipes continuam
+no comportamento anterior (somente produtor).
+
+Detalhes e evidências: [docs-r4-independent-team-review.md](docs-r4-independent-team-review.md).
