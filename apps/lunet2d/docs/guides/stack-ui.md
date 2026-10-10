@@ -66,6 +66,6 @@ O CI garante consistência matemática e execução no GameHost. A ergonomia e a
 
 ## Captura de toque e relayout (LUNET-432)
 
-Reatribuir os mesmos `Bounds` a cada `Update` preserva a captura dos botões, sliders, listas e áreas roláveis. Quando os limites realmente mudam (rotação, alteração de SafeArea ou painel reposicionado), a captura é cancelada. O `Released` do gesto antigo não confirma clique nem altera slider na nova posição. Scroll interrompe a inércia e preserva o deslocamento dentro dos novos limites. Só outro `Pressed` inicia nova interação; isso não é um roteador geral de input.
+Reatribuir os mesmos `Bounds` a cada `Update` preserva a captura dos botões, sliders, listas e áreas roláveis. Quando os limites realmente mudam (rotação, alteração de SafeArea ou painel reposicionado), botões e listas cancelam o gesto anterior. O `Released` antigo não confirma clique; sliders continuam seguindo o dedo durante relayout, conforme o contrato anterior (use `slider.Cancel()` ao esconder ou trocar o painel). Scroll interrompe a inércia e preserva o deslocamento dentro dos novos limites. Só outro `Pressed` inicia nova interação; isso não é um roteador geral de input.
 
-No Android, pressione um botão e mude a geometria antes de soltar: não deve clicar. Repita com slider e lista; sem mudança geométrica, o toque deve continuar normalmente.
+No Android, pressione um botão e mude a geometria antes de soltar: não deve clicar. Repita com lista; no slider, confira que o arraste permanece e que `Cancel()` o interrompe quando necessário. Sem mudança geométrica, o toque deve continuar normalmente.

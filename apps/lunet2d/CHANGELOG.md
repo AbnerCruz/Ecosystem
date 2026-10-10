@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- LUNET-432 (em revisão): toques capturados deixam de provocar clique fantasma, slider deslocado ou inércia antiga após mudar o layout; a reatribuição de Bounds iguais não interrompe gestos.
+- LUNET-432 (em revisão): toques capturados não provocam clique fantasma em botões nem inércia antiga após mudar o layout; Bounds iguais não interrompem gestos, e sliders continuam seguindo o dedo como na API anterior.
 
 - LUNET-426 (em revisão): corrigir CRLF, Unicode fora do BMP e validação de layout/escala na fonte bitmap embutida; medida e desenho coerentes, sem enviar coordenadas infinitas ao OpenGL.
 

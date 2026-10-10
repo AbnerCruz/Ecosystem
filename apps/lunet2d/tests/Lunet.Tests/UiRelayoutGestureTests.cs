@@ -29,21 +29,19 @@ public sealed class UiRelayoutGestureTests
     }
 
     [Fact]
-    public void SliderCancelsStaleGestureButNewTouchStillWorks()
+    public void SliderKeepsItsDocumentedCaptureAcrossRelayout()
     {
         var slider = new TouchSlider(new(0, 0, 200, 48), 0, 100, 25);
         var input = new InputState();
         Frame(input, T(1, TouchPhase.Pressed, 45, 20)); slider.Update(input);
         slider.Bounds = new(0, 0, 200, 48);
         Assert.True(slider.IsCaptured);
-        float oldValue = slider.Value;
         slider.Bounds = new(100, 0, 200, 48);
-        Assert.False(slider.IsCaptured);
+        Assert.True(slider.IsCaptured);
+        Frame(input, T(1, TouchPhase.Moved, 270, 20)); slider.Update(input);
+        Assert.InRange(slider.Value, 80, 100);
         Frame(input, T(1, TouchPhase.Released, 270, 20)); slider.Update(input);
-        Assert.Equal(oldValue, slider.Value);
-        Assert.False(slider.WasChanged);
-        Frame(input, T(2, TouchPhase.Pressed, 280, 20)); slider.Update(input);
-        Assert.True(slider.Value > oldValue);
+        Assert.False(slider.IsCaptured);
     }
 
     [Fact]

@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "chatgpt/lunet-432-touch-relayout-20261010",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/424",
   "files_changed": [
     "apps/lunet2d/src/Lunet.Framework/UI/TouchButton.cs",
     "apps/lunet2d/src/Lunet.Framework/UI/TouchSlider.cs",
@@ -27,14 +27,16 @@
     "docs/governance/handoffs/HO-20261010-lunet-touch-relayout.json"
   ],
   "work_completed": [
-    "Cancelamento de captura obsoleta de botão, slider, scroll e lista quando Bounds mudam; preservação do toque quando iguais.",
-    "Testes de regressão e zero alocação, atualização do guia e roteiro Android."
+    "Cancelamento de clique obsoleto em botão e listas e de gesto/inércia em scroll quando Bounds mudam, preservando gestos em Bounds idênticos.",
+    "Slider mantém seu contrato de arraste durante relayout, protegido contra regressão pelo teste preexistente; Cancel() explícito continua disponível.",
+    "Testes e documentação de compatibilidade atualizados."
   ],
   "verification": [
     {
       "check": "Lunet.Tests",
       "kind": "automated",
-      "result": "pending"
+      "result": "pending",
+      "evidence": "CI inicial falhou no contrato do slider; revisão de compatibilidade aplicada, novo CI pendente."
     },
     {
       "check": "Ecosystem consistency",
@@ -55,8 +57,8 @@
     }
   ],
   "known_issues": [
-    "Não cria árvore de UI ou roteador de gestos.",
-    "DEVICE necessário antes do aceite final."
+    "Sliders continuam seguindo o dedo durante relayout, como já era esperado pelo teste preexistente; para ocultar/trocar o painel, chamar Cancel().",
+    "DEVICE pendente para validar ergonomia."
   ],
   "blockers": [],
   "next_actions": [
