@@ -55,10 +55,10 @@
     {
       "kind": "human",
       "check": "DEVICE — precisão do Preview",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/entrada.md",
-      "evidence": "Toque curtíssimo e dois polegares, 60/90/120 Hz, reinício sem captura presa."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/439); registro em docs/governance/responses/VAL-HO-20261009-lunet-touch-frame-buffer-f1f924da7031.md."
     }
   ],
   "known_issues": [
