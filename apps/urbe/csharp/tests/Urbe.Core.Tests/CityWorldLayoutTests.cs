@@ -85,7 +85,7 @@ public sealed class CityWorldLayoutTests
         Assert.Equal(80, session.World.ProjectDocument(created.Path)?.X);
         Assert.Equal(-6, session.World.ProjectDocument(created.Path)?.Y);
         Assert.Null(session.CreateHouseInWorld("Falhou", "Bairro", 80, -6));
-        Assert.Single(session.Documents.List().Where(d => d.Title == "Nova"));
+        Assert.Single(session.Documents.List(), d => d.Title == "Nova");
     }
 
     [Fact]
