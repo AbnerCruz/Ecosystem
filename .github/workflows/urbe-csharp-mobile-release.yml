@@ -115,9 +115,11 @@ jobs:
           from pathlib import Path
           import os, shutil
           p = Path('src/Urbe.App/bin/Release/net10.0-android')
-          signed = sorted(p.rglob('*-Signed.apk'))
+          signed = sorted((p / 'publish').glob('*-Signed.apk'))
+          if not signed:
+              signed = sorted(p.glob('*-Signed.apk'))
           if len(signed) != 1:
-              raise SystemExit(f'Expected exactly one signed APK; found {signed}')
+              raise SystemExit(f'Expected one published, signed APK; found {signed}')
           out = Path('artifacts/mobile-release')
           out.mkdir(parents=True, exist_ok=True)
           dest = out / f'Urbe-CSharp-{os.environ["VERSION"]}-Android.apk'
