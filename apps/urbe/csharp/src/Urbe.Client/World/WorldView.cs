@@ -41,8 +41,15 @@ public sealed class WorldView : Control
     private bool _dragged;
     private double _pinchDistance;
     private int _worldGeneration;
-    private readonly LegacyWorldLife _life = new();
-    private readonly DispatcherTimer _lightTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private readonly LegacyFauna _fauna = new();
+    private readonly LegacyWorldLife _life;
+    private readonly LifeRenderer _lifeArt = new();
+    private readonly CityLifeHost _lifeHost;
+    // life.js tick every 33 ms and the app.js fauna ciclo every 40 ms (scheduler intervals)
+    private readonly DispatcherTimer _lifeTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
+    private readonly DispatcherTimer _faunaTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
+    private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
+    private double _lastTick, _lagAverage = 33, _lagT, _faunaMs, _faunaLast;
     private Bitmap? _lightTint;
     private int _lightKey = -1;
 
@@ -53,7 +60,11 @@ public sealed class WorldView : Control
     {
         ClipToBounds = true;
         Focusable = true;
-        _lightTimer.Tick += (_, _) => RefreshLighting();
+        _lifeHost = new CityLifeHost(this);
+        _life = new LegacyWorldLife(_lifeHost, _fauna);
+        _life.Notice += text => Notice?.Invoke(this, text);
+        _lifeTimer.Tick += (_, _) => LifeTick();
+        _faunaTimer.Tick += (_, _) => FaunaTick();
         RefreshLighting();
     }
 
@@ -61,22 +72,25 @@ public sealed class WorldView : Control
     {
         base.OnAttachedToVisualTree(e);
         RefreshLighting();
-        _lightTimer.Start();
+        _lastTick = 0;
+        _lifeTimer.Start();
+        _faunaTimer.Start();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
-        _lightTimer.Stop();
+        _lifeTimer.Stop();
+        _faunaTimer.Stop();
         base.OnDetachedFromVisualTree(e);
     }
 
-    /// <summary>The same 'ambiente' modes as the original 1.8.4 world/life.js.</summary>
+    /// <summary>The 'ambiente' modes of the 1.8.4 (Personalização → Luz): ciclo, dia, entardecer, noite, auto.</summary>
     public string LightingMode
     {
         get => _life.TimeMode;
         set
         {
-            if (value is not ("real" or "ciclo" or "dia" or "entardecer" or "noite"))
+            if (value is not ("auto" or "ciclo" or "dia" or "entardecer" or "noite"))
                 throw new ArgumentOutOfRangeException(nameof(value));
             _life.TimeMode = value;
             RefreshLighting();
@@ -84,12 +98,78 @@ public sealed class WorldView : Control
     }
 
     public LegacyWorldLife.Light CurrentLight => _life.CurrentLight;
+    /// <summary>The life of the world (weather, water, animals, events, lamps).</summary>
+    public LegacyWorldLife Life => _life;
+    public LegacyFauna Fauna => _fauna;
+    /// <summary>The discreet event notice of life.js avisar() ("🌧 Chuva passageira", …).</summary>
+    public event EventHandler<string>? Notice;
+    /// <summary>v25MapaVisivel(): false while the editor, explorer or a menu covers the city.</summary>
+    public Func<bool> CityVisible { get; set; } = () => true;
+
+    /// <summary>The camera as life.js view() sees it.</summary>
+    public LegacyLifeView LifeView()
+    {
+        Camera.Viewport = Bounds.Size;
+        var (x0, y0, x1, y1) = Camera.VisibleTiles();
+        return new LegacyLifeView(Camera.X, Camera.Y, Camera.Zoom, Bounds.Width, Bounds.Height, x0, y0, x1, y1);
+    }
+
+    /// <summary>life.js tick(): adaptive quality, light, then one simulation step.</summary>
+    public void LifeTick()
+    {
+        double now = _clock.Elapsed.TotalMilliseconds;
+        if (!CityVisible() || World is null || City is null || Bounds.Width <= 0) { _lastTick = 0; return; }
+        if (_lastTick == 0) _lastTick = now;
+        double dt = Math.Min(.1, (now - _lastTick) / 1000), interval = now - _lastTick;
+        _lastTick = now;
+        _lagAverage = _lagAverage * .92 + interval * .08;
+        _lagT += dt;
+        if (_lagT > 2)
+        {
+            _lagT = 0;
+            if (_lagAverage > 58) _life.Quality = Math.Max(.35, _life.Quality - .15);
+            else if (_lagAverage < 40) _life.Quality = Math.Min(1, _life.Quality + .05);
+        }
+        _life.Tick(dt, LifeView());
+        RefreshLighting();
+        InvalidateVisual();
+    }
+
+    /// <summary>app.js fauna ciclo().</summary>
+    public void FaunaTick()
+    {
+        if (!CityVisible() || World is null || City is null || Bounds.Width <= 0) return;
+        double now = _clock.Elapsed.TotalMilliseconds;
+        _faunaMs += _faunaLast == 0 ? 0 : now - _faunaLast;
+        _faunaLast = now;
+        bool had = _fauna.Animals.Count > 0;
+        if (_fauna.Tick(1000 + _faunaMs, LifeView(), _life.Options.Fauna, _lifeHost) || had) InvalidateVisual();
+    }
+
+    /// <summary>Runs the life and the fauna for <paramref name="seconds"/> of simulated time
+    /// (33 ms life steps, 40 ms fauna cycles), independent of the wall clock.</summary>
+    public void AdvanceLife(double seconds)
+    {
+        if (World is null || City is null) return;
+        var v = LifeView();
+        for (double t = 0, nextFauna = 0; t < seconds; t += .033)
+        {
+            _life.Tick(.033, v);
+            while (nextFauna <= t)
+            {
+                nextFauna += .04;
+                _faunaMs += 40;
+                _fauna.Tick(1000 + _faunaMs, v, _life.Options.Fauna, _lifeHost);
+            }
+        }
+        RefreshLighting();
+        InvalidateVisual();
+    }
 
     private void RefreshLighting()
     {
-        // The light is sampled from the real clock; the timestep only advances weather
-        // easing. Do not tie the day/night clock to frame rate or create render loops.
-        _life.Advance(.1, DateTimeOffset.Now);
+        // The light comes from life.js luz: the clock (or the fixed 'ambiente') and the rain.
+        _life.UpdateLight();
         var light = _life.CurrentLight;
         int key = (light.Red << 16) | (light.Green << 8) | light.Blue;
         if (key == _lightKey) return;
@@ -136,8 +216,12 @@ public sealed class WorldView : Control
         World = world;
         City = city;
         _shapes.Clear();
+        _fauna.Animals.Clear();
         InvalidateVisual();
     }
+
+    internal bool ChunkReady(int x, int y) =>
+        _chunks.ContainsKey((FloorDiv(x, LegacyWorld.ChunkTiles), FloorDiv(y, LegacyWorld.ChunkTiles)));
 
     public string BiomeNameAtCentre()
     {
@@ -184,10 +268,19 @@ public sealed class WorldView : Control
             missing = DrawGround(context);
         DrawRegions(context);
         DrawRoads(context);
+        var life = LifeView();
+        _lifeArt.Ground(context, _life, life);
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
             DrawTrees(context);
+        _lifeArt.Fauna(context, _fauna, life);
         DrawBuildings(context);
+        // app.js urbeAntesDosRotulos: céu, multiply light, lit windows, brilho, then the names
+        _lifeArt.Sky(context, _life, _lifeHost.People, life);
         DrawWorldLighting(context);
+        var light = _life.CurrentLight;
+        if (light.Darkness > .25 && Camera.Zoom >= .3)
+            _lifeArt.Windows(context, City.Buildings, life, Math.Min(1, (light.Darkness - .25) / .6), _clock.Elapsed.TotalMilliseconds);
+        _lifeArt.Glow(context, _life, _lifeHost.People, life);
         DrawWorldLabels(context);
         RequestChunks(missing);
     }

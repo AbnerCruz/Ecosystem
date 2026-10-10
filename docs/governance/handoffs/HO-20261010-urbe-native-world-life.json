@@ -1,0 +1,99 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-native-world-life",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T22:37:37Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-world-life",
+  "base_commit": "155073e5959e258df76696eb424361b7da3638b7",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldLife.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyFauna.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyLifeHost.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyLifeSprites.cs",
+    "apps/urbe/csharp/src/Urbe.Core/Urbe.Core.csproj",
+    "apps/urbe/csharp/src/Urbe.Client/World/LifeRenderer.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/CityLifeHost.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tools/life-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldLifeOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldLifeTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261010-urbe-native-world-life.json"
+  ],
+  "work_completed": [
+    "Porte integral de src/world/life.js da 1.8.4 para Urbe.Core (LegacyWorldLife): vento, nuvens, chuva/neve com arco-íris, neblina, brilhos e peixes na água, marolas, borboletas, vaga-lumes, folhas, rajadas, fumaça das chaminés, pombos, cachorro, raposa, balão, festa (balões, confete, fogos), barco à vela, estrelas cadentes, emotes, lampiões e luz com chuva.",
+    "Porte da fauna do app.js (LegacyFauna: ovelhas, vacas, cervos, patos, pássaros), com interações da raposa e dos cervos.",
+    "Oráculo tools/life-oracle.mjs executa o life.js e o bloco de fauna originais com Math.random semeado; o teste C# reproduz 1500 passos (dia e noite, com eventos e moradores roteirizados) e compara cada partícula, animal, evento e lampião: idêntico.",
+    "Desenho nativo (LifeRenderer) na ordem do app.js: chão antes das árvores, fauna depois das árvores, céu sobre as casas, luz multiply, janelas acesas (urbeJanelasAcesas) e brilho aditivo ('lighter' = BitmapBlendingMode.Plus, só respeitado em bitmaps no Skia, por isso desenhado com bitmaps).",
+    "Relógios nativos de 33 ms (vida, com qualidade adaptativa) e 40 ms (fauna); vida pausa sob editor/explorer como v25MapaVisivel; aviso discreto dos eventos (avisar) no topo; modo de luz padrão 'ciclo' como urbeOpcoes."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (482) e Urbe.Client.Tests (14) locais; dotnet run tests/consistency/Check.cs (22)",
+      "result": "pass",
+      "evidence": "LegacyWorldLifeOracleTests dia/noite e NativeWorld_LifeOfTheWorldRunsOverTheCityAndPausesUnderTheEditor verdes; snapshots native-life-night/rain/day no artefato do CI."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks no PR",
+      "result": "pending",
+      "evidence": "CI do PR ainda precisa executar."
+    }
+  ],
+  "known_issues": [
+    "Moradores (v25Povo) ainda não andam: a interface ILegacyLifePerson está pronta e é a próxima fatia (cachorro, emotes, guarda-chuvas e lanternas dependem deles).",
+    "Imagens de brilho/nuvem são calculadas por fórmula equivalente aos gradientes do canvas; sem comparação pixel-a-pixel com o Chromium.",
+    "Desempenho do redesenho a 30 quadros/s em Android físico precisa de DEVICE (G-N0)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Portar os moradores do app.js v25 (andarilhos, ociosos, conversa) e UrbeArt.villager com oráculo.",
+    "Validar em aparelho físico a fluidez da vida do mundo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "apps/urbe/src/world/life.js",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Regras da vida só em Urbe.Core; o cliente apenas desenha e encaminha o relógio."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Porte linha a linha da 1.8.4 provado por oráculo, sem redesenho."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes headless não substituem validação em aparelho; G-N0 continua pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 permanece em progresso; moradores pendentes."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI nativa e domínio de simulação; sem vault, formato persistido ou publicação."
+  }
+}

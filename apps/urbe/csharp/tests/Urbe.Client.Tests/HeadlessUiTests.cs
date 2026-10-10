@@ -200,6 +200,56 @@ public sealed class HeadlessUiTests : IDisposable
         }, CancellationToken.None));
 
     [Fact]
+    public async Task NativeWorld_LifeOfTheWorldRunsOverTheCityAndPausesUnderTheEditor() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var view = new MainView();
+            var window = new Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            await view.LoadAsync(TutorialNotes.Load());
+            await Settle(window, view);
+            var world = view.World;
+            world.Camera.SetZoom(1);
+            await Settle(window, view);
+
+            // night: the party becomes fireworks, the lamps and windows light up
+            world.LightingMode = "noite";
+            var v = world.LifeView();
+            world.Life.Start("festa", v);
+            Assert.NotNull(world.Life.TheParty);
+            Assert.True(world.Life.TheParty!.Night);
+            Assert.StartsWith("🎆 Fogos sobre ", view.LifeNoticeText);
+            world.AdvanceLife(6);
+            Assert.True(world.Life.Rockets.Count + world.Life.Sparks.Count + world.Life.Flashes.Count > 0, $"fogos: T={world.Life.Time} festa={world.Life.TheParty?.Name}");
+            Assert.NotEmpty(world.Life.Lamps());
+            Assert.NotEmpty(world.Life.Clouds);
+            await Settle(window, view);
+            Snapshot(window, "native-life-night.png");
+
+            // day: rain over the city, animals and butterflies around it
+            world.LightingMode = "dia";
+            world.Life.Start("chuva", world.LifeView());
+            world.AdvanceLife(8);
+            Assert.True(world.Life.Rain.K > .2, $"chuva {world.Life.Rain.K}");
+            Assert.NotEmpty(world.Life.Drops);
+            Assert.True(world.Life.CurrentLight.Red < 255, "luz");
+            await Settle(window, view);
+            Snapshot(window, "native-life-rain.png");
+            world.AdvanceLife(30);
+            Assert.NotEmpty(world.Fauna.Animals);
+            await Settle(window, view);
+            Snapshot(window, "native-life-day.png");
+
+            // v25MapaVisivel(): under the editor the city does not live
+            view.Editor.Open(new CityNote("Tutorial/Comece aqui.md", "x"));
+            double t = world.Life.Time;
+            world.LifeTick();
+            world.LifeTick();
+            Assert.Equal(t, world.Life.Time);
+            return true;
+        }, CancellationToken.None));
+
+    [Fact]
     public async Task CityMap_OnPhoneNavigatesOriginalWorldWithoutChangingZoom() =>
         Assert.True(await Session.Dispatch<bool>(async () =>
         {

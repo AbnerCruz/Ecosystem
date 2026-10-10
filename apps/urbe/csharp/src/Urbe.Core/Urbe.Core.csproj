@@ -4,4 +4,7 @@
     <PackageReference Include="CSharpMath" Version="[1.0.0-pre.2]" />
     <PackageReference Include="CSharpMath.Rendering" Version="[1.0.0-pre.2]" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Urbe.Core.Tests" />
+  </ItemGroup>
 </Project>
