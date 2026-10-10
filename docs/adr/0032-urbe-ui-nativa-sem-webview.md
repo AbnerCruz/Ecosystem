@@ -12,7 +12,7 @@ FATO: em 09/10/2026 o proprietário retirou o alvo Web/PWA do cliente C#. Em 10/
 
 FATO: o cliente atual (`apps/urbe/csharp/src/Urbe.UI`) apresenta um shell de abas Início/Explorer/Editor/Cidade/Mais (`ShellNavigation.cs`), com a tela inicial mostrando o estado da migração (`Pages/Foundation.razor`) e a cidade como uma aba de botões HTML (`Pages/World.razor`). A 1.8.4 é o oposto: a cidade em canvas de tela cheia é o aplicativo (`apps/urbe/index.html`: `#game`, `#hud`, `#mini`, `#mapao`, `#tools`, `#housePanel`, `#fileSidebar`, `#editorFull`).
 
-FATO: o domínio está em C# puro, sem UI, em `Urbe.Core` (≈17 mil linhas, 274 testes), incluindo o motor de mundo da 1.8.4 (`LegacyTectonicField`, `LegacyHydrologyField`, `LegacyRiverField`, `LegacyTileSampler`, `LegacyTileChunks`, `LegacyVegetation`, `LegacyWorldPixelTextures`, `LegacyWorldSprites`, `LegacyWorldBuildings`, `LegacyWorldGroundDecor`). Hoje esse motor gera RGBA que a UI Blazor converte em PNG `data:` para a WebView.
+FATO: o domínio está em C# puro, sem UI, em `Urbe.Core` (≈17 mil linhas, 464 casos de teste), incluindo o motor de mundo da 1.8.4 (`LegacyTectonicField`, `LegacyHydrologyField`, `LegacyRiverField`, `LegacyTileSampler`, `LegacyTileChunks`, `LegacyVegetation`, `LegacyWorldPixelTextures`, `LegacyWorldSprites`, `LegacyWorldBuildings`, `LegacyWorldGroundDecor`). Hoje esse motor gera RGBA que a UI Blazor converte em PNG `data:` para a WebView.
 
 INFERÊNCIA: um mundo 2D contínuo, animado e com pan/pinch é desenhado de forma mais direta e eficiente numa superfície nativa do que por imagens transportadas a uma WebView; e o pedido do proprietário elimina o motivo original do Blazor.
 

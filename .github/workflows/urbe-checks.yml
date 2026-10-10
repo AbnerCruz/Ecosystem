@@ -80,6 +80,76 @@ jobs:
       - run: dotnet restore Urbe.Portable.slnx
       - run: dotnet build Urbe.Portable.slnx -c Release --no-restore
       - run: dotnet test --project tests/Urbe.Core.Tests -c Release --no-build
+      # DEC-0043 / ADR-0032 (UC-33): native client, headless Skia rendering; frames kept as review evidence.
+      - run: dotnet test --project tests/Urbe.Client.Tests -c Release --no-build
+        env:
+          URBE_SNAPSHOT_DIR: ${{ github.workspace }}/apps/urbe/csharp/artifacts/native-snapshots
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: urbe-native-client-snapshots
+          path: apps/urbe/csharp/artifacts/native-snapshots
+          if-no-files-found: warn
+          retention-days: 14
+
+  # DEC-0043 / ADR-0032 (UC-33, gate G-N0): native client without WebView on Android and Windows.
+  # Preview artifacts for the owner's device test only; never signed for a channel, never published.
+  csharp-client-native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: android
+          - os: windows-latest
+            target: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: apps/urbe/csharp
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-java@v6
+        if: matrix.target == 'android'
+        with:
+          distribution: temurin
+          java-version: '21'
+      - if: matrix.target == 'android'
+        run: dotnet workload install android
+      - name: Package native Android preview APK
+        if: matrix.target == 'android'
+        run: |
+          dotnet publish src/Urbe.Android/Urbe.Android.csproj -c Release -p:AndroidPackageFormat=apk -p:AndroidCreatePackagePerAbi=false -o artifacts/native-android
+          mkdir -p artifacts/native-preview
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          apks = sorted(Path("artifacts/native-android").rglob("*-Signed.apk")) or sorted(Path("artifacts/native-android").rglob("*.apk"))
+          if not apks:
+              raise SystemExit("ERROR: .NET Android did not produce an APK")
+          out = Path("artifacts/native-preview/Urbe-Nativo-Previa.apk")
+          shutil.copy2(apks[-1], out)
+          print(f"APK de prévia: {apks[-1]} -> {out} ({out.stat().st_size} bytes)")
+          PY
+      - name: Package native Windows preview
+        if: matrix.target == 'windows'
+        shell: pwsh
+        run: |
+          dotnet publish src/Urbe.Desktop/Urbe.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o artifacts/native-windows
+          New-Item -ItemType Directory -Force artifacts/native-preview | Out-Null
+          Compress-Archive -Path artifacts/native-windows/* -DestinationPath artifacts/native-preview/Urbe-Nativo-Previa-Windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: urbe-native-preview-${{ matrix.target }}
+          path: apps/urbe/csharp/artifacts/native-preview
+          if-no-files-found: error
+          retention-days: 14
 
   csharp-native:
     strategy:

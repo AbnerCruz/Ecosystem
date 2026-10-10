@@ -1575,7 +1575,7 @@
       "alternatives": [
         {
           "option": "A — 1.8.4-beta como especificação; UI C# nativa sem WebView (pilha escolhida tecnicamente, ADR-0032); Urbe.Core preservado; casca Blazor congelada e removida após substituição",
-          "consequences": "O app volta a ser o Urbe que o proprietário usa: cidade em tela cheia com painéis sobrepostos, agora em C# nativo. Exige um spike (G-N0) que prove mundo e editor com teclado virtual em Android e desktop. A casca Blazor (≈5,8 mil linhas) é descartada; o domínio (≈17 mil linhas, 274 testes) segue."
+          "consequences": "O app volta a ser o Urbe que o proprietário usa: cidade em tela cheia com painéis sobrepostos, agora em C# nativo. Exige um spike (G-N0) que prove mundo e editor com teclado virtual em Android e desktop. A casca Blazor (≈5,8 mil linhas) é descartada; o domínio (≈17 mil linhas, 464 casos de teste) segue."
         },
         {
           "option": "B — manter MAUI Blazor Hybrid e redesenhar as telas para parecer a 1.8.4",
