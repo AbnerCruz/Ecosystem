@@ -503,6 +503,12 @@ public sealed class VaultWriterTests
                 Files = files,
                 Documents = [note with { Path = "Bairro/Legado.md" }]
             }));
+        Assert.Throws<InvalidDataException>(() =>
+            VaultWriter.Plan(new VaultWriteRequest
+            {
+                Files = files,
+                Documents = []
+            }));
         Assert.Equal(new byte[] { 0xE9, 0xF1 }, files[0].Bytes.ToArray());
     }
 
