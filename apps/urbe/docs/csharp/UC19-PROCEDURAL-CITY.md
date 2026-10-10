@@ -6,11 +6,13 @@
 
 O PR de sprites estáticos #423 foi **fechado sem merge por decisão do proprietário**. Nunca reabrir ou reintroduzir a arquitetura de sprites pré-gerados como substituto para o motor procedural.
 
-## Integração concreta
+## Integração concreta — situação consolidada
 
-Este PR é uma mudança **empilhada sobre a branch Android do PR #397**, não sobre `main`, pois apenas esse branch contém a Cidade clicável e o vault SAF beta. As quatro classes procedurais + seus testes foram trazidas sem mudanças, a partir do já integrado PR #421. Em `World.razor` os elementos visuais passam a usar `WorldArt` C#: base do mapa, terreno em quatro variantes, detalhes de flores, carvalhos e os edifícios `house`/`hall`. `urbe.css` remove as referências à pasta inexistente `world/v184`, mantendo regras de posicionamento, escala `image-rendering:pixelated`, zoom e toque. A UI mantém os comandos de abrir nota/bairro, criar, organizar e voltar ao Explorer.
-
-Testes xUnit decodificam os PNGs **gerados em runtime** e conferem os bytes RGBA exatos contra cada procedimento Core (sem snapshots construídos manualmente); smoke Playwright confirma que a Cidade carrega URLs `data:image/png;base64` nos terrenos, copa e fundo, e que a navegação de volta funciona. A publicação para o WebView e a compilação Android/Windows são verificadas pelo CI; **não existe nova versão web pública**.
+- PR #397 **integrado**: cliente C# Android com armazenamento físico SAF, Cidade clicável e grade transitória 8×8.
+- PR #421 **integrado**: texturas/decorativos/sprites/construções procedurais em `Urbe.Core`.
+- PR #425 **integrado**: a UI de `World.razor` recebe buffers RGBA de C#, codificados em PNG `data:` na memória; não depende dos PNGs estáticos ausentes `world/v184/*`. Os testes `WorldArtProceduralRenderTests` comprovam *pixels do gerador C#*, não equivalência visual de toda a Cidade.
+- PR #423 **fechado sem merge**: sprites pré-gerados não correspondem à arquitetura aprovada. O PR #385 (Cidade SVG experimental) não define a estética da versão final.
+- Este documento registra a **fatia integrada** e suas lacunas; a ordem de prioridade para próximos agentes permanece somente no `ROADMAP.md`, contrato de continuidade. O contrato de aceite é `UC19-VISUAL-ACCEPTANCE.md`.
 
 ## Limites e aceitação
 
@@ -18,8 +20,10 @@ Testes xUnit decodificam os PNGs **gerados em runtime** e conferem os bytes RGBA
 
 Próximas frentes: portar `terrain.js` + `chunkPixels` para C# puro usando seed, altitude, água, bioma e transições orgânicas, integrar tilemap contínuo no mundo, otimizar buffers e validar orientação móvel e frames. Depois controlar paletas/editabilidade. Não alterar dados de vault nem executar migração histórica.
 
+## Próximos incrementos
+
+Implementar a geração real de `terrain.js` + `chunkPixels` em C# com seed, elevação, água, biomas e transições; conectar mundo top-down contínuo, sprites, casas/bairros, ruas/wikilinks, câmera e toque à sessão do vault real. Restaurar HUD, tipografia e composição sem substituição artística. Otimizar alocação/frame e executar comparativo de screenshots no Android real. Nenhum incremento altera o vault só por estética.
+
 ## Integração responsável
 
-- PR subordinado à branch funcional Android #397 até decisão de integrar esse PR crítico. **Não aplicar merge manual nem rótulo de autorização**; o proprietário deve manter a autoridade de gates críticos.
-- Após integração de #397 em main, atualizar base e eliminar o transporte duplicado das classes Core já presentes em main; nunca reverter o conteúdo Core do PR #421.
-- Testes físicos de toque, zoom, FPS, screenshot, armazenamento Android (G-C3/G-C4) permanecem pendentes, mesmo com CI verde.
+Antes de criar novos PRs, verificar `main`, a fila de PRs e o CI em tempo real, recuperar testes/funcionalidades úteis e encerrar ramos obsoletos sem *force push*. Seguir o integrador automático e a política de autorização crítica para alterações de dados, governança ou release. A evidência automática dos PRs #397/#421/#425 não substitui toque, FPS, salvamento e fidelidade visual humana G-C3/G-C4.
