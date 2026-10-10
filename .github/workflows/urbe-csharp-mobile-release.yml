@@ -157,7 +157,7 @@ jobs:
           - salvamento automático com atraso curto e salvamento manual com verificação;
           - movimentação individual de notas Markdown, com guardas contra sobrescrita;
           - proteção de arquivos não UTF-8 e backup antes de regravações;
-          - **Cidade 2D top-down:** bairros são pastas e casas são notas Markdown; mapa 8×8 com organização dos terrenos por dois toques, coordenadas salvas em `.urbe/mapa.json`, retomada das posições após reabrir o vault e bloqueio de sobreposição de casas;
+          - **Cidade 2D top-down:** bairros são pastas e casas são notas Markdown; mapa 8×8 com organização por toque, construção direta no terreno vazio, criação de bairros na Cidade e zoom ajustável; coordenadas salvas em `.urbe/mapa.json` e posições restauradas ao reabrir o vault;
 
           **Beta inicial:** teste primeiro com uma pasta vazia e faça backup das notas. O comportamento real ainda depende de validação em aparelho; nem todas as funções do Urbe antigo estão implementadas. O app usa uma identidade Android própria (app.urbe.csharp), sem substituir o Urbe 1.8.4-beta.
 
