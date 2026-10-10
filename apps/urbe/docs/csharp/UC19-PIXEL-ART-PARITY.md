@@ -30,3 +30,13 @@ dotnet test --project apps/urbe/csharp/tests/Urbe.Core.Tests -c Release --filter
 ```
 
 **Sem mudança de autoridade:** `src/world/pixel-art.js` continua intocado para recuperação do cliente legado; a nova função C# é a implementação-alvo incremental, não um segundo escritor de dados ou um serviço compartilhado do Ecosystem. A portabilidade para outros Products não foi declarada sem segundo consumidor (NN-022).
+
+## Segunda fatia: detalhes do terreno
+
+`LegacyWorldGroundDecor.Paint` transpõe os **20 tipos de detalhes** da rotina `paintDecor` em `src/world/pixel-art.js`: `flowers`, `rock`, `boulder`, `pebbles`, `bush`, `tallgrass`, `drygrass`, `fern`, `mushroom`, `log`, `stump`, `reeds`, `puddle`, `lily`, `shorerock`, `drybush`, `driftwood`, `snowpatch`, `tuft` e `shell`.
+
+O painter recebe um buffer RGBA **quadrado**, a posição pixel do tile no destino, coordenadas absolutas do mundo e `slot`, permitindo renderizar múltiplos tiles sem confundir posição de desenho com semente determinística. Reutiliza o hash do gerador C# e preserva os limites da imagem. `Uint8ClampedArray` do JavaScript aplica arredondamento para o par mais próximo nos pixels sombreados; o C# usa `MidpointRounding.ToEven` para manter a equivalência.
+
+O teste `LegacyWorldGroundDecorTests` tem oráculos FNV-1a32 extraídos executando a própria rotina JavaScript antiga: **20 tipos × 3 coordenadas/slots = 60 amostras** de imagem RGBA 16×16, mais teste de canvas RGBA 32×32 com duas decorações em tiles distintos e validação de entradas inválidas. Hash FNV complementa, **não substitui**, o teste SHA-256 das 76 texturas base.
+
+O desenho de **árvores, prédios, personagens, terreno composto/chunks e HUD** continua pendente. A função nova não modifica a Cidade Razor nem publica APK; a aparência final só pode ser aprovada por validação de screenshots + toque em Android real.
