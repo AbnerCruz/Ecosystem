@@ -74,7 +74,8 @@ public sealed class CliWebTaskRunner
         _settings.BudgetCents,
         _settings.UseHistory);
 
-    public async Task<WebTaskResult> SubmitAsync(string projectId, string sessionId, string goal)
+    public async Task<WebTaskResult> SubmitAsync(string projectId, string sessionId, string goal,
+        string assignee = "default")
     {
         // Não manter fila invisível. Uma tentativa já rodando devolve Busy.
         if (Interlocked.CompareExchange(ref _busy, 1, 0) != 0)
@@ -92,6 +93,32 @@ public sealed class CliWebTaskRunner
             if (project is null || !project.Sessions.Any(s => s.Id == sessionId)
                 || !Directory.Exists(project.WorkspaceDirectory))
                 return new WebTaskResult(WebTaskState.Invalid);
+            // ID enviado pelo navegador só seleciona uma definição já validada
+            // no roster local. Não aceita modelo, prompt ou permissões no POST.
+            string? agentProfileId = null;
+            if (!string.Equals(assignee, "default", StringComparison.Ordinal))
+            {
+                var roster = new LocalAgentRosterStore(_catalog).Read();
+                if (assignee.StartsWith("agent:", StringComparison.Ordinal))
+                {
+                    var id = assignee["agent:".Length..];
+                    if (!roster.Agents.Any(a => a.ProjectId == projectId && a.Id == id))
+                        return new WebTaskResult(WebTaskState.Invalid);
+                    agentProfileId = id;
+                }
+                else if (assignee.StartsWith("team:", StringComparison.Ordinal))
+                {
+                    var id = assignee["team:".Length..];
+                    var team = roster.Teams.FirstOrDefault(t => t.ProjectId == projectId && t.Id == id);
+                    if (team is null || !roster.Agents.Any(a =>
+                        a.Id == team.ProducerId && a.ProjectId == projectId)
+                        || !roster.Agents.Any(a => a.Id == team.ReviewerId && a.ProjectId == projectId)
+                        || team.ProducerId == team.ReviewerId)
+                        return new WebTaskResult(WebTaskState.Invalid);
+                    agentProfileId = team.ProducerId;
+                }
+                else return new WebTaskResult(WebTaskState.Invalid);
+            }
             CliRunJournalCommands.RequireOutsideWorkspace(_catalog, project.WorkspaceDirectory);
             if (_journal is not null)
                 CliRunJournalCommands.RequireOutsideWorkspace(_journal, project.WorkspaceDirectory);
@@ -123,6 +150,11 @@ public sealed class CliWebTaskRunner
                 "--output-usd-per-million", _settings.OutputUsdPerMillion.ToString(CultureInfo.InvariantCulture)
             };
             if (_journal is not null) { args.Add("--journal"); args.Add(_journal); }
+            if (agentProfileId is not null)
+            {
+                args.Add("--agent-profile-id");
+                args.Add(agentProfileId);
+            }
             if (_settings.UseHistory) args.Add("--use-history");
             // Intencional: NUNCA passar --allow-create ao executor web.
             // O usuário pode liberar fs.write apenas na CLI separada.
