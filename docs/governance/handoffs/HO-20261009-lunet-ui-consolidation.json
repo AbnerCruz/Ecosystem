@@ -8,57 +8,59 @@
     "id": "chatgpt",
     "kind": "ai-agent"
   },
-  "task_id": "LUNET-427",
+  "task_id": "LUNET-428",
   "component": "lunet2d",
   "state": "review",
   "branch": "chatgpt/lunet-scroll-toggle-clean-20261009",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/407",
   "files_changed": [
-    "apps/lunet2d/src/Lunet.Framework/UI/TouchScrollArea.cs",
     "apps/lunet2d/src/Lunet.Framework/UI/TouchToggle.cs",
-    "apps/lunet2d/tests/Lunet.Tests/TouchScrollAreaTests.cs",
     "apps/lunet2d/tests/Lunet.Tests/TouchToggleTests.cs",
-    "apps/lunet2d/docs/guides/scroll-ui.md",
     "apps/lunet2d/docs/guides/toggle-ui.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
     "apps/lunet2d/ROADMAP.md",
     "apps/lunet2d/CHANGELOG.md",
     "apps/lunet2d/AgentsChat.md",
-    "apps/lunet2d/docs/api/lunet-framework.json",
     "docs/governance/handoffs/HO-20261009-lunet-ui-consolidation.json"
   ],
   "work_completed": [
-    "Consolidação dos recursos LUNET-427 e LUNET-428 oriundos dos PRs #394/#401 após reconciliação da main corrente.",
-    "Portados TouchScrollArea, TouchToggle, testes e guias com CI verde nas branches originais; referências API mescladas apenas nas duas entradas ausentes.",
-    "ROADMAP, CHANGELOG e AgentsChat atualizados sem perda de alterações de terceiros."
+    "LUNET-427/PR #394 já integrado: eliminar sobreposição antiga no PR #407.",
+    "TouchToggle/Issue #399 com testes, guia e catálogo API aditivo.",
+    "Reconciliar roadmap, changelog e comunicação de agentes sobre main corrente."
   ],
   "verification": [
     {
-      "check": "Lunet.Tests + Foundation consistency (PR consolidado)",
+      "check": "Lunet.Tests no PR #407 reconciliado",
       "kind": "automated",
       "result": "pending"
     },
     {
-      "check": "Lunet Android APK CI (PR consolidado)",
+      "check": "Foundation consistency combinado",
       "kind": "automated",
       "result": "pending"
     },
     {
-      "check": "Arraste, inertia, multitouch e alternância on/off no aparelho",
+      "check": "Android APK combinado",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Toggle on/off e multitouch no aparelho",
       "kind": "human",
       "result": "pending",
-      "object": "apps/lunet2d/docs/guides/scroll-ui.md",
+      "object": "apps/lunet2d/docs/guides/toggle-ui.md",
       "critical": false
     }
   ],
   "known_issues": [
-    "Não fornece árvore UI nem arbitragem automática de controles sobrepostos.",
-    "A aprovação DEVICE é independente do CI."
+    "Sem árvore UI ou roteamento de controles sobrepostos.",
+    "Validação em aparelho pendente."
   ],
   "blockers": [],
   "next_actions": [
-    "Validar CI combinado; integrador automático deve aplicar merge apenas com checks satisfatórios.",
-    "Confirmar release APK e coletar validação DEVICE antes de marcar item concluído."
+    "Revalidar CI e integrar automaticamente conforme política.",
+    "Confirmar release Lunet e teste em dispositivo Android."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -91,7 +93,7 @@
       "evidence": "Controles permanecem Product-specific no Lunet."
     }
   ],
-  "base_commit": "cd5a3619623f0293f41c2a19868fdbc5103b7458",
+  "base_commit": "4a39ec28b2c0296f86dbe0b7adac9407ebe89f4c",
   "criticality": {
     "declared": "routine"
   },

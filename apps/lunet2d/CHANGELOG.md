@@ -15,8 +15,9 @@
 
 ### Added
 
-- LUNET-427 (em revisão): painel rolável vertical `TouchScrollArea`, arraste por dedo, inércia limitada, scrollbar proporcional, clip e guia C# para interfaces mobile.
-- LUNET-428 (em revisão): controle `TouchToggle` ligado/desligado com captura multitouch, estilos visuais e evento de alteração apenas após soltura válida.
+- LUNET-428 (em revisão): `TouchToggle` com on/off por toque, pulso de alteração, estilos distintos, cancelamento e testes de multitouch.
+
+- LUNET-427 (em revisão): TouchScrollArea para painéis verticais de inventário, missão e menus mobile, com inércia, limites, multitoque, indicador visual proporcional de scroll (GetThumbBounds) e clip por SpriteBatch; testes e guia offline.
 
 - LUNET-425 (em revisão): mediana/P95, pior frame e engasgos por cadência observada no Profiler de Preview Android, com janela circular sem GC e cobertura para 60/90/120 Hz. Não confundir frame pacing com tempo GPU.
 

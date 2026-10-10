@@ -337,7 +337,24 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Novos testes para newline/emoji/acentos, validação, escala extrema, batching e ausência de alocação; CI/APK/DEVICE a verificar. PRs #384 e #388 independentes; reconciliar ROADMAP/CHANGELOG quando integrarem.
 - Reuso product-specific; NN-002, NN-008, NN-017, NN-018, NN-022; ProjectStore e origem espelho intactos.
 
-### 20261009-chatgpt-lunet-ui-consolidation — ChatGPT → integrador — review
-- Reconciliação limpa de LUNET-427/#394 e LUNET-428/#401 em `chatgpt/lunet-scroll-toggle-clean-20261009` sobre `main` `cd5a3619623f0293f41c2a19868fdbc5103b7458`, sem reescrever arquivos já modificados por outros agentes.
-- Portados os dois controles C#, testes de toque/zero GC e guias dos PRs com CI/test/APK verdes. Referência de API recebeu apenas os dois tipos ausentes; entradas pré-existentes preservadas sem regeneração.
-- `ProjectStore`, modelos do usuário, workflow e repositório espelho preservados. Próxima ação: CI combinado do PR, integração pelo integrador e APK/DEVICE; Fase 4 continua aberta.
+### 20261009-chatgpt-lunet-touch-scroll — ChatGPT → próximos agentes — review
+- LUNET-427 / Issue #393 / Fase 4 §7/23. Branch `agent/lunet-ui-touch-scroll-20261009` baseada na main atual consultada ao iniciar.
+- `TouchScrollArea`: controle vertical sem árvore ou roteamento implícito, ID de dedo, limiar para preservar toque rápido, inércia por delta, saturação de limites, Cancel/disable e posição independente da pintura.
+- Integração com SpriteBatch.Begin(clip: Bounds) demonstrada em guia executável; arbitragem com botões filhos permanece responsabilidade do jogo via IsDragging/WasDragged.
+- Testes sintéticos para tap, drag, release, multitouch, cancel, resize, bounds e nenhuma alocação gerenciada por Update. CI, docs API, APK e DEVICE pendentes; não declarar fase concluída.
+- ProjectStore, arquivos dos projetos, distribuição, outros apps e repo espelho não alterados. Reuse product-specific, NN-002/008/017/018/022.
+
+### 20261009-chatgpt-lunet-touch-scroll-runtime — ChatGPT → próximos agentes — review
+- Complemento LUNET-427 / PR #394: correção de fase de toque desconhecida e Cancelled, mantendo a mesma semântica de TouchButton/TouchSlider.
+- Regressão adicional: o exemplo do guia é compilado por GameCompiler e rodado em GameHost real com eventos de toque e backend de desenho, além de teste de inércia cancelada.
+- Revisão estática; CI/release/DEVICE continuam sujeitos a execução e aprovação. Nenhum arquivo de projeto, plataforma ou formato alterado.
+
+### 20261009-chatgpt-lunet-scroll-thumb — ChatGPT → próximos agentes — review
+- Complemento LUNET-427 / PR #394: GetThumbBounds fornece indicador de posição proporcional à quantidade de conteúdo e respeita viewport, mínimo visual, redimensionamento e saturação.
+- Guia exibe a barra por cima do conteúdo com SpriteBatch.FillRect; sem nova textura, estado persistido ou consumo de input. Testes verificam geometria exata e ausência de GC.
+- CI/API docs/APK/DEVICE devem ser revalidados nesta revisão, sem afirmar resultado antes dos jobs.
+
+### 20261010-chatgpt-lunet-407-reconcile — ChatGPT → integrador — review
+- PR #407 reconciliado sobre main `4a39ec28b2c0296f86dbe0b7adac9407ebe89f4c`: LUNET-427/PR #394 já integrado, este delta entrega somente LUNET-428/Issue #399.
+- `TouchToggle`, testes e guia intactos; catálogo de API recebe somente novo tipo, ROADMAP/CHANGELOG/AgentsChat preservam todas as entradas preexistentes.
+- CI anterior dos PRs originais verde; estado combinado desta revisão/DEVICE ainda pendente. Sem alteração de ProjectStore, dados do usuário, outros Products ou distribuição. NN-002/008/017/018/022.
