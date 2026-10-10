@@ -155,3 +155,13 @@ aprova nem integra arquivos automaticamente. Sem a flag, as equipes continuam
 no comportamento anterior (somente produtor).
 
 Detalhes e evidências: [docs-r4-independent-team-review.md](docs-r4-independent-team-review.md).
+
+## Pareceres e decisões explícitas do operador (R4)
+
+Após uma dupla produtor/revisor verificada, o painel mostra um **inbox de
+pareceres** com RunIds e permite ao operador **aceitar ou rejeitar o parecer**
+com justificativa. O Product grava metadados e hashes em `team-reviews.json`,
+sem copiar conteúdo privado nem alterar o catálogo v1. Decisão sobre parecer
+**não significa aprovação técnica, integração ou permissão de escrita**.
+
+[Uso e garantias](docs-r4-team-review-decisions.md).
