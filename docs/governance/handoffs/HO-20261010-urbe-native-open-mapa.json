@@ -1,0 +1,111 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-native-open-mapa",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T23:13:24Z",
+  "agent": {
+    "id": "claude-code-urbe-native-open-mapa",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-open-mapa",
+  "base_commit": "24802bff6fade8d05a625b964480e5bdc9d41830",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Core/VaultReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tools/legacy-open-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/open-vault-run-a.json",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/open-vault-run-b.json",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyCityOpenOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261010-urbe-native-open-mapa.json"
+  ],
+  "work_completed": [
+    "LegacyCity.Open porta a abertura de um vault real da 1.8.4 (app.js, última definição vale): abrirCidade ≈4704 → abrirCidade ≈3740 → v21OpenCity ≈2495–2498 (regiões restauradas de mapa.regioes ou criadas com criarRegiaoOrganica + urbeOrigemPelasCasas, casas com x/y salvos e as demais por posicaoAleatoriaNaRegiao/vagaAleatoria, construcoes, câmera com z em [.22, 2.8]), ligação documentId (urbeBuildingPath/urbeReconcileWorld), rebuildRoadNetwork e urbeCasasNosBairros/urbeTaparTodos (urbeTaparBuracos, urbeAbsorverEmVolta, urbeDistanciaAoBairro, urbeDentroDe).",
+    "LegacyCity: regiões sem cells (r.cells null) e urbeCelulas; construções com tamanho/tipo/documentId; índice espacial idxB reproduzido (bAt, tileBlockedByBuilding, isHouseAccessGap, v22LoteConflita não veem a casa movida até o próximo indexar).",
+    "Oráculo legacy-open-oracle.mjs: roda a 1.8.4 SEM modificação no Chromium, semeia o vault no IndexedDB do próprio adaptador idb.js e grava três aberturas por execução: vault sem mapa.json, reabertura com o mapa.json produzido pelo app parcialmente esquecido (região sem geometria, filha ausente, região sem cells, notas sem lugar, pasta nova, construção de arquivo, câmera a ser limitada) e mapa que quebra a regra dos bairros (casa longe, casa na borda, buraco fechado, filha fora do pai). Duas execuções (ids diferentes) viram fixtures.",
+    "Cliente Avalonia: vault real abre com LegacyCity.Open usando VaultSnapshot.MapJson (novo; metadados do journal recuperado ou .urbe/mapa.json lido) e ids de documento do snapshot; câmera salva aplicada sem enquadramento; terreno sempre createWorld('urbe') (antes usava mapa.mundo como semente por engano). Tutorial continua em OpenFirstTime + city.fit.",
+    "Nada é gravado: mapa.json, notas e renomeações que a 1.8.4 faria ao salvar ficam para a fatia de escrita."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test --project tests/Urbe.Core.Tests (inclui LegacyCityOpenOracleTests: 6 aberturas idênticas à 1.8.4 em regiões/cells/cores/casas/ruas/links/câmera + mapa de outro mundo sinalizado)",
+      "result": "passed",
+      "evidence": "487 testes, 0 falhas (apps/urbe/csharp)."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test --project tests/Urbe.Client.Tests (Vault_OpensWithItsSavedMapAndCamera)",
+      "result": "passed",
+      "evidence": "14 testes, 0 falhas; headless Skia, não é validação em aparelho."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "passed",
+      "evidence": "22 checks passaram."
+    },
+    {
+      "kind": "human",
+      "check": "Abrir no Android físico um vault real da 1.8.4-beta com .urbe/mapa.json e comparar bairros, casas, ruas e câmera com a 1.8.4 instalada",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Core/LegacyCityOpen.cs",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "urbeReorganizarCidade (mapa.mundo ≠ 'placas-1') não portada: LegacyCity.WorldReorganizationPending sinaliza e a geometria salva é usada como está.",
+    "v21IndexBinary não portada: anexos binários sem entrada em mapa.construcoes não viram construções; construções de arquivo restauradas ocupam lugar mas não são desenhadas nem selecionáveis.",
+    "Ordem dos arquivos: a 1.8.4 usa a ordem da listagem do adaptador (IndexedDB = ordem de chaves; pasta = ordem do sistema de arquivos); o cliente usa a ordem ordinal do VaultReader, igual ao IndexedDB.",
+    "A 1.8.4 renomeia/cria documentos ao salvar quando o caminho calculado da casa difere do arquivo (urbeReconcileWorld); aqui só se liga o documentId, sem escrever.",
+    "Reabrir outro vault no mesmo processo: a 1.8.4 parte da câmera da cidade anterior para vagaAleatoria; o cliente parte da câmera inicial."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar pelo integrador governado após CI.",
+    "Fatia crítica seguinte: gravar .urbe/mapa.json (estadoDesejado) com backup e verificação.",
+    "Portar v21IndexBinary/arte de construções de arquivo e urbeReorganizarCidade com o mesmo oráculo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Abertura do mapa vive só em Urbe.Core (LegacyCity); o cliente apenas chama Open e aplica a câmera."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Porte linha a linha das definições finais de app.js, com oráculo executando o JS original."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação em aparelho registrada como pendente; testes headless não a substituem."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 permanece aberta; ROADMAP lista o que falta."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Somente leitura de .urbe/mapa.json e do vault; nenhum formato persistido é escrito ou alterado."
+  }
+}

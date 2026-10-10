@@ -164,6 +164,17 @@ public sealed class WorldView : Control
         CameraChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>The camera the city opened with (abrirCidade: mapa.camera, z clamped).</summary>
+    public void ShowCityCamera()
+    {
+        if (City is null) return;
+        Camera.X = City.CameraX;
+        Camera.Y = City.CameraY;
+        Camera.SetZoom(City.CameraZoom);
+        InvalidateVisual();
+        CameraChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     public void CenterOn(LegacyCityBuilding house)
     {
         Camera.X = (house.X + house.W / 2.0) * T;
@@ -414,6 +425,8 @@ public sealed class WorldView : Control
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
             foreach (var b in city.Buildings)
             {
+                // file buildings (mapa.construcoes) take their room but their art is not ported yet
+                if (!b.IsNote) continue;
                 if (b.X > x1 || b.X + b.W < x0 || b.Y > y1 || b.Y + b.H < y0) continue;
                 if (b == Selected)
                 {
@@ -435,7 +448,7 @@ public sealed class WorldView : Control
         var city = City!;
         var (x0, y0, x1, y1) = Camera.VisibleTiles();
         double z = Camera.Zoom;
-        var labels = city.Buildings.Where(b =>
+        var labels = city.Buildings.Where(b => b.IsNote &&
             !(b.X > x1 || b.X + b.W < x0 || b.Y > y1 || b.Y + b.H < y0) &&
             (z >= .42 || b == Selected)).ToList();
         var used = DistrictLabelLayout();
@@ -641,7 +654,7 @@ public sealed class WorldView : Control
         if (_pointers.Count == 0 && _pressAt is { } start && !_dragged && City is not null)
         {
             var (tx, ty) = Camera.TileAt(start);
-            Select(City.BuildingAt(tx, ty));
+            Select(City.BuildingAt(tx, ty) is { IsNote: true } house ? house : null);
         }
         if (_pointers.Count < 2) _pinchDistance = 0;
         if (_pointers.Count == 0) _pressAt = null;

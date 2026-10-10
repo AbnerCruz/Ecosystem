@@ -152,9 +152,16 @@ public sealed class MainView : Grid
     {
         _snapshot = snapshot;
         Editor.SaveOnClose = !snapshot.IsReadOnly;
-        var notes = snapshot.Documents.Where(d => d.Text is not null)
-            .Select(d => new CityNote(d.Path, d.Text!)).ToArray();
-        await LoadAsync(notes, snapshot.Mundo ?? "urbe");
+        var texts = snapshot.Documents.Where(d => d.Text is not null).ToArray();
+        var notes = texts.Select(d => new CityNote(d.Path, d.Text!)).ToArray();
+        var ids = texts.ToDictionary(d => d.Path, d => d.Id, StringComparer.Ordinal);
+        // 1.8.4 abrirCidade: the saved map (.urbe/mapa.json) is respected, never rewritten here.
+        // The terrain is always UrbeTerrain.createWorld('urbe'); mapa.mundo only names its version.
+        await LoadAsync(notes, city =>
+        {
+            city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), snapshot.MapJson, ids);
+            return true;
+        });
         _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "Pasta conectada";
     }
 
@@ -169,29 +176,43 @@ public sealed class MainView : Grid
     }
 
     /// <summary>
-    /// Generates the 1.8.4 world and opens the files as on the first open of a vault
-    /// (LegacyCity.OpenFirstTime), off the UI thread; then frames all houses (city.fit).
+    /// Generates the 1.8.4 world and opens the files as the Tutorial's first open
+    /// (LegacyCity.OpenFirstTime), off the UI thread; then frames all houses (city.fit, as
+    /// tutorial.js semear does on an empty city).
     /// </summary>
-    public async Task LoadAsync(IReadOnlyList<CityNote> files, string seed = "urbe")
+    public Task LoadAsync(IReadOnlyList<CityNote> files, string seed = "urbe") =>
+        LoadAsync(files, city =>
+        {
+            city.OpenFirstTime(files.Select(f => (f.Path, f.Content)).ToList());
+            return false;
+        }, seed);
+
+    /// <summary>
+    /// Generates the world and lets <paramref name="open"/> build the city off the UI thread. When it
+    /// returns true the camera is the city's (abrirCidade: mapa.camera or the 1.8.4 start, no
+    /// framing: urbeEnquadrarNotas runs on workspace:loaded, before the houses exist); otherwise
+    /// all houses are framed.
+    /// </summary>
+    private async Task LoadAsync(IReadOnlyList<CityNote> files, Func<LegacyCity, bool> open, string seed = "urbe")
     {
         _contents.Clear();
         foreach (var f in files) _contents[f.Path] = f.Content;
         _today = DateTime.Now.ToString("yyyy-MM-dd");
         try
         {
-            var (world, city) = await Task.Run(() =>
+            var (world, city, ownCamera) = await Task.Run(() =>
             {
                 var w = new LegacyWorld(seed);
                 int next = 0;
                 // app.js id(): ids seed lot order and growth; deterministic here so the same files give the same city.
                 var city = new LegacyCity(new LegacyCityTerrain((x, y) => w.At(x, y).Biome), prefix => prefix + (++next).ToString("x"));
-                city.OpenFirstTime(files.Select(f => (f.Path, f.Content)).ToList());
-                return (w, city);
+                return (w, city, open(city));
             });
             World.Load(world, city);
             CityMap.IsVisible = false;
             Explorer.SetNotes(files);
-            World.FitNotes();
+            if (ownCamera) World.ShowCityCamera();
+            else World.FitNotes();
             _biome.Text = World.BiomeNameAtCentre();
             _loading.IsVisible = false;
         }

@@ -241,6 +241,59 @@ public sealed class HeadlessUiTests : IDisposable
         Assert.InRange(limits.Width / limits.Height, 1.7777, 1.7779);
     }
 
+    /// <summary>
+    /// A real vault opens as 1.8.4 abrirCidade: the saved .urbe/mapa.json geometry and camera are
+    /// respected (fixture recorded from the original, csharp/tools/legacy-open-oracle.mjs), the
+    /// terrain is the 'urbe' world even though mapa.mundo names its version, and nothing is framed.
+    /// </summary>
+    [Fact]
+    public async Task Vault_OpensWithItsSavedMapAndCamera() => Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "csharp", "Urbe.Portable.slnx"))) dir = dir.Parent;
+            using var json = System.Text.Json.JsonDocument.Parse(File.ReadAllBytes(
+                Path.Combine(dir!.FullName, "csharp", "tests", "fixtures", "legacy-city", "open-vault-run-a.json")));
+            var o = json.RootElement.GetProperty("mapa");
+            var files = o.GetProperty("files").EnumerateObject()
+                .Select(p => new VaultFile(p.Name, System.Text.Encoding.UTF8.GetBytes(p.Value.GetString()!)))
+                .Append(new VaultFile(".urbe/mapa.json", System.Text.Encoding.UTF8.GetBytes(o.GetProperty("mapaJson").GetString()!)))
+                .ToList();
+            var view = new MainView(new SnapshotStorage(VaultReader.Read(files)));
+            var window = new Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            await view.InitializeAsync();
+            await Settle(window, view);
+            Snapshot(window, "native-vault-mapa.png");
+
+            var city = view.World.City!;
+            using var mapa = System.Text.Json.JsonDocument.Parse(o.GetProperty("mapaJson").GetString()!);
+            var saved = mapa.RootElement.GetProperty("notas").GetProperty("Comece.md");
+            var comece = city.Buildings.Single(b => b.Path == "Comece.md");
+            Assert.Equal((saved.GetProperty("x").GetInt32(), saved.GetProperty("y").GetInt32()), (comece.X, comece.Y));
+            var projetos = mapa.RootElement.GetProperty("regioes").EnumerateArray().Single(r => r.GetProperty("caminho").GetString() == "Projetos");
+            Assert.Equal(projetos.GetProperty("cells").EnumerateArray().Select(c => c.GetString()!),
+                city.Regions.Single(r => r.Name == "Projetos").Cells.Select(c => c.X + "," + c.Y));
+            Assert.Equal(9, city.Buildings.Count(b => b.IsNote));
+            Assert.Single(city.Buildings, b => !b.IsNote); // the file building of mapa.construcoes
+            Assert.NotEmpty(city.Roads);
+            var camera = o.GetProperty("camera");
+            Assert.Equal((camera.GetProperty("x").GetDouble(), camera.GetProperty("y").GetDouble(), camera.GetProperty("z").GetDouble()),
+                (view.World.Camera.X, view.World.Camera.Y, view.World.Camera.Zoom));
+            Assert.Equal(LegacyCity.WorldVersion, mapa.RootElement.GetProperty("mundo").GetString());
+            Assert.Equal(new LegacyWorld("urbe").Spawn.CellIndex, view.World.World!.Spawn.CellIndex);
+            window.Close();
+            return true;
+        }, CancellationToken.None));
+
+    private sealed class SnapshotStorage(VaultSnapshot snapshot) : IUrbeVaultStorage
+    {
+        public bool IsConnected => true;
+        public Task<VaultSnapshot?> PickAsync(CancellationToken cancellationToken = default) => Task.FromResult<VaultSnapshot?>(snapshot);
+        public Task<VaultSnapshot?> RestoreAsync(CancellationToken cancellationToken = default) => Task.FromResult<VaultSnapshot?>(snapshot);
+        public Task SaveExistingNoteAsync(string path, string content, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read-only test storage");
+    }
+
     private static async Task Settle(Window window, MainView view)
     {
         for (int i = 0; i < 600; i++)
