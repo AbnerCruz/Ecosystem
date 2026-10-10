@@ -1176,3 +1176,32 @@ a:focus-visible {
 .world-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin-top: .5rem; font-size: .75rem; color: #accab3; }
 @media (max-width: 520px) { .world-plots { grid-template-columns: repeat(2,minmax(0,1fr)); gap: .35rem; } .world-plot { min-height: 9.5rem; } .world-head { align-items: start; } }
 @media (prefers-reduced-motion: reduce) { .world-plot { transition: none; } }
+
+
+/* UC-19 native City: fixed bounded tile board, swipe/pan via native WebView scrolling. */
+.world-plots.world-tiles {
+    grid-template-columns: repeat(8, minmax(5.25rem, 1fr));
+    min-width: 46rem;
+    min-height: 0;
+    gap: .3rem;
+    padding: .6rem .15rem;
+}
+.world-tiles .world-plot {
+    grid-template-rows: 4.25rem minmax(1.8rem, auto) 1.1rem;
+    min-height: 8.75rem;
+    padding: .3rem .2rem;
+    border-width: 2px;
+}
+.world-tiles .world-building { transform: scale(.72); transform-origin: center; }
+.world-tiles .world-plot-label { font-size: .72rem; }
+.world-tiles .world-plot-kind { font-size: .6rem; }
+.world-empty-lot { border-color: #5c8764; background: #446f48; }
+.world-empty-lot:not(:disabled) { background: #79994e; border: 2px dashed #ffeb96; color: #fff9c6; }
+.world-empty-lot:disabled { opacity: .7; }
+.world-grass { font-size: 1.4rem; color: #c0d397; opacity: .5; }
+.world-plot-selected { outline: 3px solid #f8de6b; outline-offset: -5px; }
+.world-position-hint { margin: .6rem 0; padding: .7rem; border: 1px solid #c7b477; background: #3b4227; border-radius: .55rem; color: #fff3c7; }
+@media (max-width: 520px) {
+    .world-plots.world-tiles { grid-template-columns: repeat(8,minmax(5.25rem,1fr)); }
+    .world-map-frame { max-height: min(59dvh, 32rem); }
+}
