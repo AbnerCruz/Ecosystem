@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- LUNET-426 (em revisão): corrigir CRLF, Unicode fora do BMP e validação de layout/escala na fonte bitmap embutida; medida e desenho coerentes, sem enviar coordenadas infinitas ao OpenGL.
+
 - LUNET-424 (em revisão): Preview Android agora preserva o início e o fim de toques rápidos entre eventos de 90/120 Hz e os Updates fixos, mesmo quando o dedo move antes da atualização. Buffer interno sem List/ToArray por MotionEvent; evita falhas intermitentes de captura Pressed nos joysticks opt-in.
 
 - SAT calcula separação correta quando um polígono contém outro; polígonos sem área não produzem empurrão inválido.
@@ -14,6 +16,9 @@
 ### Added
 
 - LUNET-427 (em revisão): TouchScrollArea para painéis verticais de inventário, missão e menus mobile, com inércia, limites, multitoque, indicador visual proporcional de scroll (GetThumbBounds) e clip por SpriteBatch; testes e guia offline.
+
+- LUNET-425 (em revisão): mediana/P95, pior frame e engasgos por cadência observada no Profiler de Preview Android, com janela circular sem GC e cobertura para 60/90/120 Hz. Não confundir frame pacing com tempo GPU.
+
 - LUNET-423 (em revisão): precisão dos controles virtuais, resposta exponencial/sensibilidade, zona morta contínua opcional, identificação/reserva do dedo multitouch e cancelamento; padrões antigos preservados.
 
 - LUNET-422 (em revisão): escala Fit/Fill em GraphicsDevice e GameConfiguration para preencher a tela preservando proporção (Fill recorta excedentes); alternância testável no módulo Gráficos do Laboratório 2.0 e compatibilidade dos toques.
