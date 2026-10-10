@@ -104,6 +104,11 @@ public sealed class AndroidVaultHost : IVaultHost
             .Where(mutation => mutation.Kind == WorkspaceMutationKind.Move)
             .ToArray();
         var initialRevision = session.PersistenceRevision;
+        // Capture metadata alongside the document snapshot; never generate
+        // map JSON from a newer session revision part-way through filesystem IO.
+        var metadataJson = session.HasSpatialChanges
+            ? session.World.Metadata().ToJsonString()
+            : null;
 
         await _gate.WaitAsync(cancellationToken);
         try
@@ -140,6 +145,7 @@ public sealed class AndroidVaultHost : IVaultHost
                 {
                     Files = current,
                     Documents = documents,
+                    MetadataJson = metadataJson,
                     AppVersion = "urbe-csharp-beta"
                 });
                 if (!plan.Writable)
