@@ -136,6 +136,17 @@ jobs:
           rm artifacts/mobile-release/cert-info.txt
           (cd artifacts/mobile-release && sha256sum *.apk > SHA256SUMS.txt)
 
+      - name: Preserve verified Android beta APK as workflow artifact
+        if: steps.version.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: urbe-csharp-v${{ steps.version.outputs.version }}-android
+          path: |
+            apps/urbe/csharp/artifacts/mobile-release/Urbe-CSharp-${{ steps.version.outputs.version }}-Android.apk
+            apps/urbe/csharp/artifacts/mobile-release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Publish numbered Android prerelease, never a Web build
         if: steps.version.outputs.skip != 'true'
         env:
@@ -145,7 +156,7 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          cat > artifacts/mobile-release/release-notes.md <<EOF
+          cat > artifacts/mobile-release/release-notes.md <<'EOF'
           # Urbe C# $VERSION — Android beta
 
           Primeiro canal versionado da edição nativa C# para Android. **Não contém uma versão Web**.
@@ -162,8 +173,11 @@ jobs:
           **Beta inicial:** teste primeiro com uma pasta vazia e faça backup das notas. O comportamento real ainda depende de validação em aparelho; nem todas as funções do Urbe antigo estão implementadas. O app usa uma identidade Android própria (app.urbe.csharp), sem substituir o Urbe 1.8.4-beta.
 
           O canal beta usa um certificado de desenvolvimento público e fixo para permitir atualizações da mesma família de APKs. Não é uma identidade de publicação privada.
-          Commit de origem: $SHA
+          Commit de origem: __COMMIT_SHA__
           EOF
+          # Markdown code ticks in release notes must never execute shell commands.
+          sed -i -e "s/__COMMIT_SHA__/$SHA/g" \
+            -e "s/\$VERSION/$VERSION/g" artifacts/mobile-release/release-notes.md
           gh release create "$TAG" \
             "artifacts/mobile-release/Urbe-CSharp-$VERSION-Android.apk" \
             "artifacts/mobile-release/SHA256SUMS.txt" \
