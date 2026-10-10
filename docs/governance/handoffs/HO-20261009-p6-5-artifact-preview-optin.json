@@ -1,0 +1,134 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-artifact-preview-optin",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T19:35:37.696Z",
+  "agent": {
+    "id": "chatgpt-p6-5-artifact-preview",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-optin-artifact-text-previews-20261009",
+  "base_commit": "a8cf368b4d72951e6671f90e7e0d42cc402bb8ff",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/396",
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliArtifactTextPreview.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliVisualRunDetails.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliHtmlSnapshot.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4ArtifactTextPreviewTests.cs",
+    "apps/ecosystem-ai/docs-r4-visual-snapshot.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-artifact-preview-optin.json"
+  ],
+  "work_completed": [
+    "P6-5 possui catálogo, run journal e HTML offline auditado; falta navegação de conteúdo dos artefatos e experiência móvel interativa.",
+    "Adicionada opção explícita --embed-text-artifacts à exportação HTML auditada; reutiliza os artefatos de RunState.Replay e FileSandbox existente.",
+    "Exibe apenas arquivos de texto reais atualmente existentes dentro do workspace vinculado, dentro de details/pre escapados, sem scripts e sem backend.",
+    "Flag opt-in separa o fluxo normal que não lê arquivos. Restringe extensões, recusa links simbólicos, textos inválidos e arquivos grandes; orçamento global 128 KiB, 16 KiB/arquivo e 16 previews.",
+    "Documenta a diferença entre conteúdo atual e prova histórica de artefato, além de risco de incluir dados privados no HTML.",
+    "Testes novos cobrem comportamento padrão, renderização, limite cumulativo, XSS, arquivo fora da raiz, symlink, binários, UTF-8 inválido, flags e não mutação de dados."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI requerido; sem .NET SDK disponível na sessão local."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI requerido; sem .NET SDK disponível na sessão local."
+    },
+    {
+      "check": "DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "HTML offline de visualização, sem APK ou app nativo distribuído."
+    }
+  ],
+  "known_issues": [
+    "P6-5 continua aberta: interface interativa de agentes/equipes/tarefas e secret store ainda não implementados.",
+    "Pré-visualização exibe conteúdo em texto claro e pode conter segredos inseridos manualmente, sem filtro genérico; usuário opta explicitamente.",
+    "Não há garantia histórica sobre conteúdo de arquivo, que pode ter mudado após o run.",
+    "Exibição textual suporta apenas extensões permitidas e não incorpora imagem, vídeo ou arquivo binário.",
+    "TOCTOU de filesystem sob modificações adversariais simultâneas não é mitigado por snapshot atômico de descritor; operação local opt-in."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar compilation e tests via CI; corrigir qualquer falha.",
+    "Integrar caso o gate verde e política permitam.",
+    "Evoluir UI interativa mobile-first da P6-5 sem novo runtime ou armazenamento."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-visual-snapshot.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Catalog e RunState.Replay existentes são autoridades, HTML é somente projeção; nenhuma memória ou schema novo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff e PR de feature com testes verificáveis, sem manipular resultado do Runtime."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Issue #354 e ROADMAP P6-5, documentação e checks previstos."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança aditiva no Product, flags opt-in, sem interface pública nova."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Pasta de origem limitada por FileSandbox, links recusados, sem rede/executor; texto opt-in."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegar teste DEVICE ou release nova."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Review até CI e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reuso direto do mesmo journal/Runtime sem segundo runner."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Preview específica do Product, não promove tool/service novo sem segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "artifact-text-preview",
+      "status": "product-specific",
+      "rationale": "Superfície de UI específica do Ecosystem AI, limitada a arquivos do usuário. Não há segundo consumidor que justifique uma Tool compartilhada agora."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Aditivo, opt-in, read-only, sem alterar contratos, persistência canônica, permissões ou esquema de distribuição."
+  },
+  "cost": null
+}

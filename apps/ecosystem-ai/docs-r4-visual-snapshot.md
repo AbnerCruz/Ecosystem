@@ -96,3 +96,39 @@ a autoridade do estado.
 
 Esta entrega **não implementa** a navegação/abertura real dos artefatos,
 gestão de tarefas nem UI interativa. Essas etapas permanecem em P6-5.
+
+
+## Pré-visualização textual opcional de artefatos (P6-5)
+
+Por padrão, mesmo com `--journal`, o relatório mostra **somente nomes e tipos**.
+Para visualizar no celular os textos dos artefatos *atualmente presentes no disco*,
+o usuário precisa consentir explicitamente com `--embed-text-artifacts`:
+
+```bash
+dotnet run --project src/EcosystemAi.Cli -- \
+  --export-html --catalog /pasta/privada/catalogo \
+  --journal /pasta/privada/runs \
+  --output /pasta/privada/exports/painel-com-textos.html \
+  --embed-text-artifacts
+```
+
+O mesmo `RunState.Replay` valida a proveniência das **referências** de artefatos.
+A leitura usa `FileSandbox`, dentro do workspace canônico vinculado ao projeto,
+e recusa symlinks em arquivo e diretórios. Apenas extensões textuais declaradas
+(`.md`, `.txt`, `.json`, `.csv`, `.cs`, `.html`, `.xml`) entram no preview:
+até 16 KiB por arquivo, 128 KiB no total e no máximo 16 arquivos por relatório.
+Arquivos ausentes, com texto inválido (UTF-8), binários, grandes ou sem permissão
+continuam com a referência, sem incluir conteúdo. Cada texto é escapado para
+HTML, colocado dentro de `<details>` e `<pre>`, e não executa scripts.
+
+**Privacidade:** esta opção insere o conteúdo completo dos arquivos selecionados
+no HTML em texto claro. O HTML pode conter segredos ou outros dados privados;
+não o publique. Não há sanitização confiável de segredos arbitrários, nem
+criptografia. O recurso não tem efeito no catálogo, journal ou arquivos de origem.
+
+**Integridade:** o conteúdo visualizado é o **estado atual do arquivo** na hora
+da exportação; o journal comprova que uma referência foi registrada, mas
+**não** comprova que o texto não foi modificado depois do run. Não se trata
+de snapshot histórico imutável nem de aprovação de tarefas. O usuário pode
+abrir e fechar previews pelo navegador, inclusive em celular, sem servidor
+ou código JavaScript. Para um texto atualizado é necessário gerar novo HTML.

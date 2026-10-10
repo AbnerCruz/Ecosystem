@@ -55,3 +55,143 @@ mensagens e recibos são lidos do `EcosystemAi.ProjectStore`, não do Runtime.
 Essa projeção não encerra P6-5 nem substitui a futura UI interativa.
 
 Uso, segurança e limitações: [docs-r4-visual-snapshot.md](docs-r4-visual-snapshot.md).
+
+## Gestão local de projetos e sessões (R4)
+
+A CLI também permite vincular um workspace existente como projeto, criar sessões
+independentes e navegar nos registros do catálogo pelo terminal sem executar
+agentes, acessar rede ou exigir token. Os registros são do mesmo
+`LocalProjectStore` usado por runs, histórico e visualização offline.
+
+Comandos `--create-project`, `--create-session` e `--manage`, limites e exemplos:
+[docs-r4-catalog-management.md](docs-r4-catalog-management.md).
+É um passo funcional intermediário, **não** a UI Android definitiva.
+
+## Chat interativo no terminal (R4)
+
+O modo `--chat` permite enviar várias mensagens em uma sessão existente, usando
+**o mesmo `AgentWorkspace.WorkspaceSession`** e as políticas de cada execução.
+Cada mensagem gera seu próprio run/receipt; o histórico anterior só é reenviado
+ao provider no modo chat solicitado, com limites explícitos. A interface C# de
+terminal não substitui a futura UI gráfica mobile-first.
+
+Exemplo de comandos, isolamento, custos por mensagem e restrições:
+[docs-r4-interactive-chat.md](docs-r4-interactive-chat.md).
+
+## Painel gráfico local (R4)
+
+A interface responsiva de projetos/sessões agora pode ser servida **somente em loopback**
+pelo próprio Product C# (sem modelo ou JavaScript):
+
+```bash
+dotnet run --project src/EcosystemAi.Cli -- --web-ui --catalog /dados/privados/catalogo --port 8765
+```
+
+No mesmo dispositivo, abra `http://127.0.0.1:8765/` no navegador. A tela
+permite vincular pastas preexistentes como projetos, criar sessões, ler
+conversas, execuções e custos; grava diretamente no `LocalProjectStore` atual.
+Isso **não é APK nem acesso remoto** e ainda não habilita execução de agentes
+no navegador. Documentação e riscos: [docs-r4-local-web-ui.md](docs-r4-local-web-ui.md).
+
+## Quadro de atividade real de agentes e tarefas (R4)
+
+Com `--web-ui --catalog /dados/privados/catalogo --journal /dados/privados/runs`
+o painel local exibe agentes, tarefas, verificações, ferramentas e artefatos
+**de execuções reais**, reconstruídos diretamente do `RunState.Replay`.
+Não lê prompts/payloads nem cria motor, ledger ou armazenamento paralelo;
+ainda não permite disparar agentes pelo navegador. Ausências ou divergências de
+journal são sinalizadas, e a UI padrão sem `--journal` não é alterada.
+
+Uso, limites e testes: [docs-r4-live-task-board.md](docs-r4-live-task-board.md).
+
+## Prévias textuais opcionais no painel local (R4)
+
+A flag `--web-ui --catalog DIR --journal DIR --embed-text-artifacts` habilita
+prévia **do conteúdo atual** de arquivos textuais referenciados nos runs do
+Runtime. O leitor reutiliza os limites já testados de 16 KiB por arquivo,
+128 KiB por consulta e 16 arquivos, sem acesso fora do workspace ou por
+symlinks, e HTML escapado. Desativada por padrão; pode revelar dados privados.
+
+Limites e uso: [docs-r4-live-artifact-previews.md](docs-r4-live-artifact-previews.md).
+
+## Teto de orçamento da instância de chat (R4)
+
+`--chat ... --session-budget-cents N` contabiliza os recibos anteriores em USD
+e **reserva o limite inteiro de cada próximo run** antes de enviá-lo ao
+Workspace. Reduz o orçamento por turno quando o teto está próximo; a sobra
+não é devolvida. Não é teto distribuído entre processos e não substitui a
+fiscalização do Ledger nem garante valores faturados pelo provedor.
+
+[Limites e exemplos](docs-r4-chat-session-budget.md).
+
+## Enviar tarefas reais diretamente pelo painel local (P6-5)
+
+O painel web C# agora pode receber tarefas **explicitamente** através de
+`--web-tasks` junto com endpoint, modelo, preço e limites fixados pelo
+operador na inicialização. Não recebe credenciais nem concede `fs.write`
+no navegador; o formulário só escolhe projeto, sessão e tarefa.
+
+Há limite de execuções e orçamento reservado por instância do servidor,
+sem fila nem retry automático. Isto amplia a fronteira de confiança por
+permitir gastos através de HTTP local e **depende de autorização crítica
+para integrar**. [Uso, segurança e limitações](docs-r4-web-task-execution.md).
+
+## Agentes e equipes no painel (R4)
+
+O painel local agora cadastra **agentes e equipes por projeto**, com produtor e
+revisor distintos. A execução supervisionada permite escolher um agente ou o
+produtor da equipe, usando o **mesmo Runner, modelo, orçamento e grants read-only**.
+A revisão de equipe não é automática nesta etapa. Os perfis são gravados em
+`roster.json` ao lado do catálogo, sem alterar o schema de `catalog.json` v1.
+[Limites e testes](docs-r4-project-agents-teams.md).
+
+## Revisão independente opcional para equipes (R4)
+
+`--web-ui --web-tasks --web-review-teams` executa primeiro o **produtor** e,
+se houver recibo verificado e resultado real, executa um **segundo run com o
+revisor independente**. A quota da instância deve suportar ambos; cada run
+usa o mesmo Runtime, modelo e grants de somente leitura. O parecer não
+aprova nem integra arquivos automaticamente. Sem a flag, as equipes continuam
+no comportamento anterior (somente produtor).
+
+Detalhes e evidências: [docs-r4-independent-team-review.md](docs-r4-independent-team-review.md).
+
+## Pareceres e decisões explícitas do operador (R4)
+
+Após uma dupla produtor/revisor verificada, o painel mostra um **inbox de
+pareceres** com RunIds e permite ao operador **aceitar ou rejeitar o parecer**
+com justificativa. O Product grava metadados e hashes em `team-reviews.json`,
+sem copiar conteúdo privado nem alterar o catálogo v1. Decisão sobre parecer
+**não significa aprovação técnica, integração ou permissão de escrita**.
+
+[Uso e garantias](docs-r4-team-review-decisions.md).
+
+## Quadro de tarefas planejadas (P6-5 R4)
+
+Planeje tarefas com título, objetivo, **critério de aceite** e responsável no
+painel localhost. Criar ou cancelar planejamento **não chama IA**. O botão
+**Executar agora** aparece apenas com `--web-ui --web-tasks` e delega ao
+mesmo Runner/ledger seguro; o quadro registra tentativas e RunIds canônicos.
+Respostas presentes não são declaradas como aceite técnico automático.
+
+[Uso, garantias e testes](docs-r4-planned-task-board.md).
+
+## Exportar respostas e custos no dispositivo (R4)
+
+Cada resposta do assistente no painel C# localhost pode ser **salva em `.md`
+ou `.txt`**, preservando exatamente o texto redigido no catálogo. O painel
+também oferece exportação **`.csv` dos RunReceipts** (status, verificação,
+moeda, valor registrado e indicação de estimativa). Downloads não chamam
+modelos, não escrevem no workspace e só permitem IDs de projetos/sessões
+já existentes. [Garantias e testes](docs-r4-downloadable-results.md).
+
+## Executáveis autossuficientes desktop — P6-5
+
+Após autorização crítica da distribuição e CI verde, as releases de
+**desenvolvimento** oferecem pacotes do Ecosystem AI para Windows x64, Linux
+x64 e macOS Apple Silicon sem instalar o SDK .NET. Em PR são disponibilizados
+apenas artefatos de build; releases são criadas na `main` quando o workflow
+for integrado. O Runtime e o catálogo não mudam; a chave de API é configurada
+somente pelo operador. **Ainda não há APK Android** ou executáveis assinados.
+
+[Instruções de uso e limites](docs-r4-desktop-distribution.md).

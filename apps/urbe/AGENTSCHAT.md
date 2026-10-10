@@ -581,3 +581,11 @@
 - Testes: csharp/tests/web-smoke.mjs cobre os gestos, o botão explícito e o feedback; .NET SDK indisponível no ambiente de edição, CI do PR pendente. Handoff HO-20261009-urbe-uc18-explorer-touch-actions.
 - Invariantes: DocumentStore/WorkspaceSession são autoridade única; nenhuma persistência física, schema, migração, release ou autorização de gate humano foi antecipada.
 - Próximos passos: revisar urbe-checks e consistency combinados, corrigir falhas e permitir apenas integração automática; prosseguir UC-18 e G-C3 com validação real no dispositivo.
+
+### 2026-10-09 — ChatGPT — UC-18 / REQ-096 breadcrumbs e busca com origem
+- Estado: verifying; PR #382 sobre main, sem integração manual ou release.
+- Fato: Explorer C# não identificava diretórios nos resultados da busca global e exigir retorno repetido dificultava chegar aos ancestrais de pastas profundas.
+- Feito: trilha navegável Raiz / ancestral / pasta com rolagem horizontal no toque; pesquisa mostra caminho de origem e contagem; Limpar busca preserva pasta atual; sessão C# permanece autoridade.
+- Testes: web-smoke cobre notas homônimas em pastas diferentes, navegação por ancestrais, retorno Editor→busca, filtros e viewport móvel de 390px. CI e validação física ainda pendentes.
+- Invariantes: sem mudanças de vault físico, migração, backup, release, JS de domínio, plugins ou dados do usuário. G-C3 e UC-18 continuam abertos.
+- Handoff: HO-20261009-urbe-uc18-explorer-breadcrumb-search. Próximos passos: CI combinado, correções, integração automática e continuidade dos recortes UC-18.

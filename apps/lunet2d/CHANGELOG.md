@@ -4,12 +4,28 @@
 
 ### Fixed
 
+- LUNET-432 (em revisão): toques capturados não provocam clique fantasma em botões nem inércia antiga após mudar o layout; Bounds iguais não interrompem gestos, e sliders continuam seguindo o dedo como na API anterior.
+
+- LUNET-426 (em revisão): corrigir CRLF, Unicode fora do BMP e validação de layout/escala na fonte bitmap embutida; medida e desenho coerentes, sem enviar coordenadas infinitas ao OpenGL.
+
+- LUNET-424 (em revisão): Preview Android agora preserva o início e o fim de toques rápidos entre eventos de 90/120 Hz e os Updates fixos, mesmo quando o dedo move antes da atualização. Buffer interno sem List/ToArray por MotionEvent; evita falhas intermitentes de captura Pressed nos joysticks opt-in.
+
 - SAT calcula separação correta quando um polígono contém outro; polígonos sem área não produzem empurrão inválido.
 - Medições de alocação isoladas de outras coleções de testes, preservando a exigência de zero bytes no loop; falha concorrente reproduzida também na base anterior.
 - Correções rápidas removem apenas a diretiva using, preservando código na mesma linha e comentários; ordenação preserva global using, CRLF e comentários, e recusa blocos ambíguos/condicionais.
 
 
 ### Added
+
+- LUNET-431 (em revisão): layout responsivo de UI horizontal/vertical com flex, espaçamento, padding e alinhamento transversal; converte safe area em bounds para controles mobile, sem GC por quadro.
+
+- LUNET-429 (em revisão): `TouchListView` para listas grandes de missão/inventário com scroll inercial, hit-test por linha, seleção sem clique acidental ao arrastar e desenho apenas das linhas visíveis.
+
+- LUNET-428 (em revisão): TouchToggle para menus mobile de opções, com paletas on/off, captura por dedo, testes e guia offline executável.
+
+- LUNET-427 (em revisão): TouchScrollArea para painéis verticais de inventário, missão e menus mobile, com inércia, limites, multitoque, indicador visual proporcional de scroll (GetThumbBounds) e clip por SpriteBatch; testes e guia offline.
+
+- LUNET-425 (em revisão): mediana/P95, pior frame e engasgos por cadência observada no Profiler de Preview Android, com janela circular sem GC e cobertura para 60/90/120 Hz. Não confundir frame pacing com tempo GPU.
 
 - LUNET-423 (em revisão): precisão dos controles virtuais, resposta exponencial/sensibilidade, zona morta contínua opcional, identificação/reserva do dedo multitouch e cancelamento; padrões antigos preservados.
 

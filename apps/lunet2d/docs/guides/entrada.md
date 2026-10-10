@@ -64,3 +64,10 @@ fire.Update(Input, aim.TouchId);
 - Isso é uma API de controles do Framework, não uma interface para mudar a sensibilidade no aplicativo Lunet. Os valores podem ser expostos no menu de cada jogo.
 
 Teste no Laboratório ou num projeto `Em branco` no Android: arraste os dois analógicos simultaneamente, solte apenas um, passe dedos atravessando a área do outro, pause e chame `Cancel()`. Confira toque rápido, diagonal e reabertura do Preview.
+
+
+## Transições rápidas no Preview Android (LUNET-424)
+
+No Preview, o host guarda a posição original de um `Pressed` até o primeiro `Update`/ `Step` que realmente executar, mesmo que o Android envie vários `Moved` antes disso. Um toque completo entre dois updates é apresentado em duas atualizações sucessivas: primeiro `Pressed`, depois `Released` (ou `Cancelled`). Isso evita perder o toque por diferença entre refresh da tela e passo fixo do jogo. O jogo continua recebendo `InputState` e `VirtualStick` sem qualquer mudança de API.
+
+Para verificar no celular: use `RequireFreshPress = true`, toque e arraste rapidamente dentro da área de um analógico, depois faça toques curtíssimos e dois toques independentes; confira que nenhum dedo captura o analógico vizinho. Teste a 60 e 90/120 Hz, se disponível. Ao reiniciar o Preview, dedos de uma sessão anterior não devem ficar capturados. Validação DEVICE permanece pendente até o teste real.

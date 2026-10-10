@@ -315,3 +315,71 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Verificação: .NET 10 SDK não disponível no ambiente da sessão; testes, consistency e APK Android deverão ser conferidos pelo CI do PR. Não declarar dispositivo aprovado.
 - Riscos/escopo: um único ID reservado por Update; não mexe em ProjectStore, MainActivity, configuração persistida nem código dos jogos. Defaults legados preservados.
 - Próximo passo: verificar e corrigir CI, integrar pela política do repositório; confirmar APK e solicitar roteiro DEVICE no celular.
+
+### 20261009-chatgpt-lunet-424 — 2026-10-09 (America/Sao_Paulo) — ChatGPT → próximos agentes — em revisão
+- Item LUNET-424 / Issue #381 / Fase 4 §7/§23. Base main `ac600f84c215`, branch `agent/lunet-touch-frame-buffer-20261009`.
+- FATO OBSERVADO: `PreviewHost.OnTouch` alocava List/ToArray por MotionEvent e `PreviewRenderer.SetTouches` substituía o último snapshot; `Pressed` podia ser perdido antes de Update fixo.
+- Trabalho: buffer interno de transições em Lunet.Framework.Input, integração no Preview Android, revisão das fases apenas depois de Update/Step real, regressões xUnit de press/move/release simultâneos e caminho sem alocação. Nenhuma API pública, ProjectStore, jogo salvo, ferramenta compartilhada ou Host API alterados.
+- Verificação: revisão estática nesta sessão; .NET e Android SDK indisponíveis localmente. CI, consistency, APK e DEVICE pendentes (não declarar concluídos). Handoff HO-20261009-lunet-touch-frame-buffer.
+- Próximo passo: conferir CI, integrar sem regressão, publicar APK e validar toque no aparelho. Reuse assessment product-specific; NN-002/008/017/018/022.
+
+### 20261009-chatgpt-lunet-frame-pacing — ChatGPT → próximos agentes — review
+- LUNET-425 / Issue #387 / Fase 4, branch `agent/lunet-profiler-frame-pacing-20261009`, base main `e96fee5c964b933e85b49d4796747066d12f4275`.
+- Profiler do Preview ganha P50/P95, pior quadro e contagem de hitches em janela circular de até 600 frames; detecção usa 1,75× a mediana e margem absoluta mínima de 2 ms para não assumir 60 Hz em telas 90/120 Hz. Medidas incluem todos os frames desenhados, inclusive Preview pausado.
+- Métricas calculadas em Span alocado na pilha dentro de Snapshot; nenhum novo heap/telemetria/alteração persistida; painel Perf permanece opt-in.
+- Testes de 60/90/120 Hz, pico raro, rolling window, mediana par e GC; suite/CI/aparelho pendentes. Não atribuir os hitches à GPU/Android/GC sem diagnóstico independente.
+- Reuse assessment product-specific, NN-002/008/017/018/022; não altera ProjectStore, assinatura APK, workflow, outro Product ou API pública do Framework.
+
+### 20261009-chatgpt-lunet-default-font — ChatGPT → próximos agentes — review
+- LUNET-426 / Issue #390 / Fase 4 §7; branch `agent/lunet-default-font-text-fix-20261009`, base main `e96fee5c964b933e85b49d4796747066d12f4275`.
+- `SpriteFont.CreateDefault` agora usa o mesmo CR/LF/CRLF e escalares Unicode do caminho FromBitmap: CR não vira '?', emoji e UTF-16 inválido fazem um fallback único; layout extremo protegido contra overflow e GPU não recebe geometria infinita. Sem alocação no caminho quente.
+- Preservadas métricas 5×7, glifos acentuados, batching/câmera, API pública e projetos existentes; sem TrueType, wrapping ou mudanças de formatos.
+- Novos testes para newline/emoji/acentos, validação, escala extrema, batching e ausência de alocação; CI/APK/DEVICE a verificar. PRs #384 e #388 independentes; reconciliar ROADMAP/CHANGELOG quando integrarem.
+- Reuso product-specific; NN-002, NN-008, NN-017, NN-018, NN-022; ProjectStore e origem espelho intactos.
+
+### 20261009-chatgpt-lunet-touch-scroll — ChatGPT → próximos agentes — review
+- LUNET-427 / Issue #393 / Fase 4 §7/23. Branch `agent/lunet-ui-touch-scroll-20261009` baseada na main atual consultada ao iniciar.
+- `TouchScrollArea`: controle vertical sem árvore ou roteamento implícito, ID de dedo, limiar para preservar toque rápido, inércia por delta, saturação de limites, Cancel/disable e posição independente da pintura.
+- Integração com SpriteBatch.Begin(clip: Bounds) demonstrada em guia executável; arbitragem com botões filhos permanece responsabilidade do jogo via IsDragging/WasDragged.
+- Testes sintéticos para tap, drag, release, multitouch, cancel, resize, bounds e nenhuma alocação gerenciada por Update. CI, docs API, APK e DEVICE pendentes; não declarar fase concluída.
+- ProjectStore, arquivos dos projetos, distribuição, outros apps e repo espelho não alterados. Reuse product-specific, NN-002/008/017/018/022.
+
+### 20261009-chatgpt-lunet-touch-scroll-runtime — ChatGPT → próximos agentes — review
+- Complemento LUNET-427 / PR #394: correção de fase de toque desconhecida e Cancelled, mantendo a mesma semântica de TouchButton/TouchSlider.
+- Regressão adicional: o exemplo do guia é compilado por GameCompiler e rodado em GameHost real com eventos de toque e backend de desenho, além de teste de inércia cancelada.
+- Revisão estática; CI/release/DEVICE continuam sujeitos a execução e aprovação. Nenhum arquivo de projeto, plataforma ou formato alterado.
+
+### 20261009-chatgpt-lunet-scroll-thumb — ChatGPT → próximos agentes — review
+- Complemento LUNET-427 / PR #394: GetThumbBounds fornece indicador de posição proporcional à quantidade de conteúdo e respeita viewport, mínimo visual, redimensionamento e saturação.
+- Guia exibe a barra por cima do conteúdo com SpriteBatch.FillRect; sem nova textura, estado persistido ou consumo de input. Testes verificam geometria exata e ausência de GC.
+- CI/API docs/APK/DEVICE devem ser revalidados nesta revisão, sem afirmar resultado antes dos jobs.
+
+### 20261009-chatgpt-lunet-touch-toggle — ChatGPT → próximos agentes — review
+- LUNET-428 / Issue #399. Branch agent/lunet-ui-touch-toggle-20261009, UI da Fase 4.
+- Composição de TouchButton em TouchToggle: valor booleano, Released válido, WasChanged, Cancel/disable, desenho com paletas. Sem alterações no input existente ou ProjectStore.
+- Testes sintéticos de estados, multitouch, zero GC e guia integrado GameHost. CI/consistency/APK/DEVICE pendentes; não declarar Fase 4 encerrada. Product-specific, NN-002/008/017/018/022.
+
+### 20261010-chatgpt-lunet-touch-list — ChatGPT → integrador — review
+- LUNET-429 / Issue #410: lista 2D mobile por composição de `TouchScrollArea` existente, em branch `chatgpt/lunet-touch-list-20261010` baseada em main `3f4b6422a4b4d68b22126a4bcb1f453934319050`.
+- `TouchListView` separa tap/drag/multitouch, expõe seleção, hit-test, viewport, scrolling, range de render e Draw com clip. Os itens e a fonte continuam pertencendo ao jogo.
+- Testes de precisão, Cancel, desabilitação, boundaries, zero GC e compilação/execução real de Game.cs no GameHost; verificação do CI/APK/DEVICE deve ser observada após abertura do PR.
+- Sem alteração de ProjectStore, arquivos do usuário, Android, workflows ou contratos de plataforma. Reuso específico do Lunet; NN-002/008/017/018/022. A Fase 4 permanece aberta.
+
+### 20261010-chatgpt-lunet-touch-list-reconciled — ChatGPT → integrador — review
+- PR #411 sincronizado à main `b8a0bdb7cad30bbbf39dee610bf487af4d57ed8d` com catálogo API aditivo e histórico de agentes preservado, sem sobrescrever integração existente do TouchToggle/LUNET-428.
+- CI original do PR #411: Lunet.Tests, consistency e APK verdes; CI de versão reconciliada deve ser verificado. DEVICE pendente.
+- Somente Product Lunet2D e handoff, sem dados do usuário nem contratos alterados. NN-002/008/017/018/022.
+
+### 20261010-chatgpt-lunet-ui-stack — ChatGPT → integrador — review
+- LUNET-431 / Issue #417 / Fase 4: `UiStackLayout` responsivo por coluna e linha, tamanhos fixos e flex, padding/spacing finitos e alinhamento transversal.
+- Composição da geometria resultante com `GraphicsDevice.SafeArea`, `LayoutRect` e os Bounds dos controles existentes, sem gerenciar dedos, estado de jogo ou persistência.
+- Testes para proporções, overflow, viewport zero, retrato/paisagem, zero alocação de managed heap em Arrange e guia Game.cs compilado/executado no GameHost com saída de desenho.
+- Product-specific, sem tocar ProjectStore, Android host, outros Products, dados ou interfaces públicas existentes. NN-002/008/017/018/022; CI e DEVICE pendentes. Fase 4 permanece aberta.
+
+### 20261010-chatgpt-lunet-432-relayout — ChatGPT → integrador — review
+- LUNET-432, Issue #422, Fase 4: correção de captura obsoleta ao mudar Bounds de TouchButton, TouchSlider e TouchScrollArea; TouchListView não cancela com geometria idêntica atribuída por frame.
+- Testes cobrem clique fantasma, alteração de slider, scroll/inércia, seleção, limites inválidos e hot path sem GC. CI, APK e DEVICE pendentes. Nenhum formato ou arquivo de projeto do usuário alterado. Somente Product Lunet2D.
+
+### 20261010-chatgpt-lunet-432-slider-compat — ChatGPT → integrador — review
+- CI inicial da PR #424 detectou falha em TouchSliderTests.NewBoundsApplyOnNextUpdateAndNoTravelCancels: comportamento preexistente é continuar arraste sobre novos Bounds. Reconciliado: slider preserva contrato, controle de captura deve usar Cancel() pelo jogo ao ocultar UI.
+- Teste novo LUNET-432 alterado para cobrir continuidade intencional, sem enfraquecer teste preexistente. Botões/listas/scroll permanecem protegidos contra interação fantasma ao relayout. Revalidar CI; DEVICE pendente.

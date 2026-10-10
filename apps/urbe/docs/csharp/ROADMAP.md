@@ -11,6 +11,10 @@
 
 ## Próxima tarefa
 
+**Ordem do proprietário DEC-0042 (2026-10-09) — beta utilizável prioritário, sem retrocompatibilidade histórica obrigatória.** Paridade **de funcionalidades** com o cliente JS é mantida como objetivo do produto C# final. O proprietário é o único usuário da beta, fará backup manual e copiará poucos arquivos `.md` a um vault novo; **migração de estado/configurações de versões antigas, IndexedDB, lixeira/histórico/layout e atualização in-place JS→C# NÃO são bloqueadores** do beta nem do corte. Isto modifica a obrigação anterior de DEC-0036-C/ADR-0026 para o cliente C#; ver ADD-0019/DEC-0042. Não apagar código pronto de compatibilidade; apenas evitar nova infraestrutura legada sem benefício. Manter leitura/gravação segura dos arquivos reais e persistência do estado **novo**. O cliente JS publicado permanece intacto até validação do beta opt-in e posterior corte aprovado.
+
+**Caminho crítico imediato:** (1) Issue #386 — ligar `WorkspaceSession` ao filesystem/vault **real** no Android, abrir/editar/salvar/reabrir sem depender de banco de dados de notas; (2) terminar UC-18 Editor/Explorer e UC-19 Cidade utilizáveis com posições atuais em `.urbe`; (3) disponibilizar **APK beta opt-in separado e link direto**, com testes de dados e validação física; (4) continuar UC-20/21/22 e a paridade funcional até o produto completo. O beta próprio pode sair **antes** de G-C5 sem virar automaticamente o produto distribuído; gates, CI, integração crítica e validação humana não são dispensados.
+
 **M3 — Interface e extensões.** UC-17 foi integrada em `9143b239` com shell compartilhado e navegação canônica. Próxima tarefa: UC-18 — Editor Visual/Fonte e Explorer sobre a sessão C# compartilhada; validação humana de UI/toque continua reservada ao G-C3.
 
 ---
@@ -70,7 +74,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 - [ ] UC-23 — Web/PWA: **não aplicável** após a direção do proprietário de 09/10/2026; ID preservado somente para rastreabilidade.
 - [ ] UC-24 — Windows (instalação e atualização).
 - [ ] UC-25 — Android.
-- [ ] UC-26 — Atualização das instalações existentes e compatibilidade de dados entre clientes.
+- [ ] UC-26 — Transição deliberada dos clientes sem migração histórica obrigatória (DEC-0042): suporte a vault limpo e cópia manual de Markdown; preservar instalação e dados legados sem conversão/sobrescrita automática. Não bloquear beta/corte por estados históricos.
 - [ ] UC-27 — Pipeline de release do cliente novo, sem exigir nenhum componente do plano de controle do ecossistema (NN-023).
 
 **Gate G-C4:** build instalável por superfície; **validação humana** de instalação e atualização.
@@ -78,11 +82,11 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 
 ## M5 — Paridade total e corte
 
-- [ ] UC-28 — Matriz de paridade (UC-1) 100% verde e suíte de aceite (UC-2) verde.
+- [ ] UC-28 — **Paridade funcional** da matriz UC-1 e aceites relevantes UC-2 (editor, Explorer, cidade, ferramentas, IA, páginas, matemática, personalização etc.); testes de migração histórica de estado 1.x/2.x deixam de ser gate para o novo cliente C# (DEC-0042). Arquivos .md e estado novo continuam protegidos.
 - [ ] UC-29 — Validação humana por superfície (Android real, Windows instalação/atualização, Web offline/PWA, toque, layout).
 - [ ] UC-30 — Plano e ensaio de corte e de volta (rollback).
 - [ ] UC-31 — **Corte:** o produto distribuído passa a ser o cliente C# (decisão crítica do proprietário; muda canais e atualizações).
 - [ ] UC-32 — Encerramento do JS: arquivar o código antigo, `ecosystem.json` (`language`), documentação.
 
-**Gate G-C5 (crítico, proprietário):** paridade total provada e validada por humano; autoriza o corte.
+**Gate G-C5 (crítico, proprietário):** paridade **de funcionalidades** provada e validada por humano, com escrita de arquivos reais e estado C# atual íntegros; **não exige retrocompatibilidade/migração de estado histórico** (DEC-0042); autoriza o corte.
 *Estado do gate:* **não iniciado**

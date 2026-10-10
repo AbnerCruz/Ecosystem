@@ -26,7 +26,7 @@ jobs:
       run:
         working-directory: apps/urbe
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -61,7 +61,7 @@ jobs:
       run:
         working-directory: apps/urbe
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
           path: apps/urbe/artefatos
@@ -72,7 +72,7 @@ jobs:
           [ -s notas.md ] || { echo "::error::CHANGELOG.md sem notas para v$V"; exit 1; }
           printf '\n---\n**Instalar:** Windows → `Urbe-Setup-%s.exe` · Android → `Urbe-%s.apk`\n' "$V" "$V" >> notas.md
           cat notas.md
-      - uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v3
         with:
           tag_name: urbe-v${{ needs.verificar.outputs.version }}
           name: Urbe ${{ needs.verificar.outputs.version }}

@@ -45,7 +45,7 @@ jobs:
       pages: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Em release.published, github.ref/github.sha apontam para a tag; a projeção usa sempre a SOURCE canônica.
           ref: ${{ github.event.repository.default_branch }}
