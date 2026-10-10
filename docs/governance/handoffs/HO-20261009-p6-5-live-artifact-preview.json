@@ -1,0 +1,133 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-live-artifact-preview",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T02:15:54.377Z",
+  "agent": {
+    "id": "chatgpt-p6-5-artifact-preview-ui",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-live-artifact-preview-20261009",
+  "base_commit": "e50f60a1b95e791f3d381c7f42381486f63d16b5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4WebArtifactPreviewTests.cs",
+    "apps/ecosystem-ai/docs-r4-live-artifact-previews.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-live-artifact-preview.json"
+  ],
+  "work_completed": [
+    "P6-5 inclui HTML snapshot com preview textual opt-in (PR #396) e quadro web de runs auditados na dependência PR #403.",
+    "Habilitada mesma prévia no painel C# local via --web-ui --journal DIR --embed-text-artifacts, com validação explícita e sem mudança de Store, schema ou Runtime.",
+    "Reuso direto de CliVisualRunDetails.ReadAsync(includeTextPreviews) e CliArtifactTextPreview.Read para limites de 16 arquivos, 16 KiB por arquivo e 128 KiB totais.",
+    "Conteúdo do arquivo atual exibido dentro de <pre> com HTML escaping e sem execução; flag desativada por padrão e nenhum preview sem journal.",
+    "Testes HTTP de leitura de arquivo real, escaping, arquivo maior que o limite, privacidade sem flag e catálogo/workspace imutáveis."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions desta PR, .NET local não disponível."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions da PR."
+    }
+  ],
+  "known_issues": [
+    "Depende da integração da PR #403; branch temporariamente empilhada sobre seu último commit.",
+    "Prévia é texto atual no disco, não representa o conteúdo histórico da execução.",
+    "P6-5 ainda requer criação de tarefas e UI de agentes/equipes/execução; não é APK."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI e corrigir failures.",
+    "Após #403 integrada, retarget para main e integrar apenas com checks verdes.",
+    "Prosseguir com execução UI autorizada e controle de orçamento sem criar segundo Runtime."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-live-artifact-previews.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O conteúdo é lido do workspace registrado no ProductStore, não salvo em fonte paralela."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "UI Product em loopback sem Hub obrigatório."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Sem capabilities novas, apenas visualização explicitamente autorizada por flag do operador."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Sem jobs, cronômetros, autoexecução ou chamadas de provedor."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Issue #354 P6-5, docs/testes/handoff e PR rastreáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum schema persistido ou contrato público modificado; apenas flag opcional."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Sem traversal ou symlink; escaping/CSP, somente arquivos pequenos e textuais permitidos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "P6-5 e DEVICE não declarados concluídos."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Estado review até CI/integrador."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reuso do leitor do mesmo Product, sem runner e store paralelos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "UI exclusiva do Product, sem extrair Service ou Tool prematuramente."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "web-artifact-preview",
+      "status": "product-specific",
+      "rationale": "Interface do Product que reusa CliArtifactTextPreview do exportador offline existente."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature de prévia de arquivos já autorizada por CLI opt-in, agora apenas em loopback com flag opt-in específica e limites idênticos."
+  },
+  "cost": null
+}
