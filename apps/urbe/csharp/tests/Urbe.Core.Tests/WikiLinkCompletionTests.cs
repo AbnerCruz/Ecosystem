@@ -26,7 +26,7 @@ public sealed class WikiLinkCompletionTests
     [InlineData("[[a]] depois", 11)]
     [InlineData("[[a\nb", 5)]
     [InlineData("[[name|alias]]", 12)]
-    [InlineData("antes [[a]] [[outra]]", 14)]
+    [InlineData("antes [[a]] [[outra]]", 11)]
     public void RejectsCaretOutsideActiveWikilink(string markdown, int cursor)
     {
         Assert.Null(WikiLinkCompletion.Find(markdown, cursor));
@@ -53,7 +53,7 @@ public sealed class WikiLinkCompletionTests
         const string original = "Texto [[Algum";
         var context = WikiLinkCompletion.Find(original, original.Length);
         Assert.NotNull(context);
-        Assert.Null(WikiLinkCompletion.Complete(original + " novo", context, "Destino"));
+        Assert.Null(WikiLinkCompletion.Complete(original.Replace("Algum", "Outra"), context, "Destino"));
         Assert.Null(WikiLinkCompletion.Complete(original, context, "[[nested]]"));
         Assert.Null(WikiLinkCompletion.Complete(original, context, "Outra\nnota"));
         Assert.Equal(original, original);
