@@ -1216,3 +1216,30 @@ a:focus-visible {
 .world-empty-lot:not(:disabled) { opacity: 1; }
 .world-tiles .world-plot { touch-action: manipulation; }
 @media (max-width: 520px) { .world-zoom-controls { margin-left: 0; } }
+
+
+/* UC-18 / REQ-027,109: native-editor wikilink search from canonical Markdown. */
+.editor-wikilink-suggestions {
+    display: grid; gap: .35rem;
+    margin: .45rem 0 .85rem; padding: .7rem;
+    background: #1c3428; border: 1px solid #6e946e; border-radius: .6rem;
+}
+.editor-wikilink-suggestions strong {
+    color: #d4f7de; font-size: .83rem; overflow-wrap: anywhere;
+}
+.editor-wikilink-suggestions button {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    gap: .3rem .65rem; min-height: 2.75rem; padding: .55rem .75rem;
+    background: #294b35; color: #f1fff2; border: 1px solid #6a9175;
+    border-radius: .45rem; cursor: pointer; text-align: left;
+}
+.editor-wikilink-suggestions button small {
+    color: #c5dac6; font-size: .73rem; overflow-wrap: anywhere;
+}
+.editor-wikilink-suggestions button.editor-wikilink-create {
+    background: #465b33; border-color: #a5b16a;
+}
+.editor-wikilink-suggestions button:focus-visible {
+    outline: 3px solid #ffdf88; outline-offset: 2px;
+}
+.editor-wikilink-suggestions button:disabled { opacity: .5; cursor: not-allowed; }
