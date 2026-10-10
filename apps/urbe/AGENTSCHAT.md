@@ -542,6 +542,14 @@
 - Decisões: guardas de sessão host-neutral, sem mudanças no formato do vault, storage físico, migração, backup ou publicação; nenhum gate humano declarado aprovado.
 - Pendências: validar CI C#/Web/Android/Windows/E2E e consistency, retomar integração automática da UC-18 após verde.
 
+### 2026-10-08 — ChatGPT — isolamento da renderização matemática concorrente
+
+- Estado: verifying, branch `fix/urbe-math-renderer-concurrent-typesetting` sobre main.
+- Diagnóstico: `urbe-checks` no PR #287 falhou em três testes de matemática, com exceção de modificação simultânea em coleção não-concorrente durante CSharpMath 1.0.0-pre.2; testes da UI do editor não eram a causa observada.
+- Implementação: porta crítica `lock` somente ao redor de `UrbeSvgMathPainter` (criação, Medida, Draw/SVG) para que dois renders não modifiquem caches mutáveis da biblioteca em paralelo. Análise de compatibilidade e expansão de macros permanecem fora do lock.
+- Teste: 48 renderizações paralelas (até 8 workers) exigem sucesso e SVG/geometria determinísticos; guardas originais preservadas, sem formato novo, host ou JS.
+- Validação pendente: checks em CI, inclusive Windows/Android, com classificação routine; nenhuma validação humana G-C3 declarada.
+
 ### 2026-10-08 — ChatGPT — UC-18 guarda para editor HTML inline
 
 - Estado: `verifying`; branch `fix/urbe-uc18-visual-html-lossless` empilhada sobre #286.

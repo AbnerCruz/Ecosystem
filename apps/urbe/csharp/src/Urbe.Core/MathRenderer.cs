@@ -24,6 +24,10 @@ public sealed record MathRenderResult(
 /// </summary>
 public static class MathRenderer
 {
+    // CSharpMath 1.0.0-pre.2 uses process-wide mutable typesetting caches.
+    // Serialize access to its painter to prevent concurrent dictionary corruption.
+    private static readonly object TypesettingGate = new();
+
     public const string CSharpMathVersion = "1.0.0-pre.2";
     public const int MaxTexLength = 32_768;
 
@@ -85,44 +89,47 @@ public static class MathRenderer
 
         try
         {
-            var painter = new UrbeSvgMathPainter
+            lock (TypesettingGate)
             {
-                DisplayErrorInline = false,
-                FontSize = fontSize,
-                LineStyle = display ? LineStyle.Display : LineStyle.Text,
-                LaTeX = renderSource
-            };
+                var painter = new UrbeSvgMathPainter
+                {
+                    DisplayErrorInline = false,
+                    FontSize = fontSize,
+                    LineStyle = display ? LineStyle.Display : LineStyle.Text,
+                    LaTeX = renderSource
+                };
 
-            if (!string.IsNullOrWhiteSpace(painter.ErrorMessage))
-                return Failure(source, display, painter.ErrorMessage!, compatibility);
+                if (!string.IsNullOrWhiteSpace(painter.ErrorMessage))
+                    return Failure(source, display, painter.ErrorMessage!, compatibility);
 
-            var bounds = painter.Measure(float.NaN);
-            var width = Math.Max(1, bounds.Width);
-            var height = Math.Max(1, bounds.Height);
-            if (!float.IsFinite(width) || !float.IsFinite(height) ||
-                width > 100_000 || height > 100_000)
-            {
-                return Failure(
+                var bounds = painter.Measure(float.NaN);
+                var width = Math.Max(1, bounds.Width);
+                var height = Math.Max(1, bounds.Height);
+                if (!float.IsFinite(width) || !float.IsFinite(height) ||
+                    width > 100_000 || height > 100_000)
+                {
+                    return Failure(
+                        source,
+                        display,
+                        "Dimensões de renderização inválidas.",
+                        compatibility);
+                }
+
+                var canvas = new SvgMathCanvas(width, height);
+                painter.Draw(canvas, TextAlignment.TopLeft);
+
+                return new MathRenderResult(
                     source,
                     display,
-                    "Dimensões de renderização inválidas.",
-                    compatibility);
+                    true,
+                    canvas.ToSvg(source),
+                    null,
+                    width,
+                    height)
+                {
+                    CompatibilityDiagnostics = compatibility
+                };
             }
-
-            var canvas = new SvgMathCanvas(width, height);
-            painter.Draw(canvas, TextAlignment.TopLeft);
-
-            return new MathRenderResult(
-                source,
-                display,
-                true,
-                canvas.ToSvg(source),
-                null,
-                width,
-                height)
-            {
-                CompatibilityDiagnostics = compatibility
-            };
         }
         catch (Exception error)
         {
