@@ -369,3 +369,9 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - PR #411 sincronizado à main `b8a0bdb7cad30bbbf39dee610bf487af4d57ed8d` com catálogo API aditivo e histórico de agentes preservado, sem sobrescrever integração existente do TouchToggle/LUNET-428.
 - CI original do PR #411: Lunet.Tests, consistency e APK verdes; CI de versão reconciliada deve ser verificado. DEVICE pendente.
 - Somente Product Lunet2D e handoff, sem dados do usuário nem contratos alterados. NN-002/008/017/018/022.
+
+### 20261010-chatgpt-lunet-ui-stack — ChatGPT → integrador — review
+- LUNET-431 / Issue #417 / Fase 4: `UiStackLayout` responsivo por coluna e linha, tamanhos fixos e flex, padding/spacing finitos e alinhamento transversal.
+- Composição da geometria resultante com `GraphicsDevice.SafeArea`, `LayoutRect` e os Bounds dos controles existentes, sem gerenciar dedos, estado de jogo ou persistência.
+- Testes para proporções, overflow, viewport zero, retrato/paisagem, zero alocação de managed heap em Arrange e guia Game.cs compilado/executado no GameHost com saída de desenho.
+- Product-specific, sem tocar ProjectStore, Android host, outros Products, dados ou interfaces públicas existentes. NN-002/008/017/018/022; CI e DEVICE pendentes. Fase 4 permanece aberta.

@@ -15,6 +15,8 @@
 
 ### Added
 
+- LUNET-431 (em revisão): layout responsivo de UI horizontal/vertical com flex, espaçamento, padding e alinhamento transversal; converte safe area em bounds para controles mobile, sem GC por quadro.
+
 - LUNET-429 (em revisão): `TouchListView` para listas grandes de missão/inventário com scroll inercial, hit-test por linha, seleção sem clique acidental ao arrastar e desenho apenas das linhas visíveis.
 
 - LUNET-428 (em revisão): TouchToggle para menus mobile de opções, com paletas on/off, captura por dedo, testes e guia offline executável.
