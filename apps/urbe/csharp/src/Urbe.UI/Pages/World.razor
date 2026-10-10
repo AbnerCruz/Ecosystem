@@ -1,4 +1,5 @@
 @page "/cidade"
+@implements IDisposable
 @inject WorkspaceSession Workspace
 @inject IVaultHost Vault
 @inject NavigationManager Navigation
@@ -23,6 +24,13 @@
         <button type="button" class="world-nav-button" @onclick="OpenExplorer">
             Explorer <span aria-hidden="true">↗</span>
         </button>
+        @if (CanCreate && !Workspace.World.IsReadOnly)
+        {
+            <button type="button" class="world-nav-button"
+                    aria-pressed="@_positionMode" @onclick="TogglePositionMode">
+                @(_positionMode ? "Concluir organização" : "Organizar terreno")
+            </button>
+        }
         @if (CanCreate)
         {
             <button type="button" class="world-nav-button world-build-button" @onclick="ToggleBuilder"
@@ -41,6 +49,14 @@
             </div>
         </div>
     }
+    @if (_positionMode)
+    {
+        <p class="world-position-hint" role="status">
+            @(_selectedHouse is null
+                ? "Toque em uma casa para selecioná-la. Depois toque em um terreno vazio para posicioná-la."
+                : "Casa selecionada: " + _selectedHouse + ". Toque em um terreno vazio ou selecione outra casa.")
+        </p>
+    }
     @if (_message is not null)
     {
         <p class="world-message" role="status">@_message</p>
@@ -55,16 +71,29 @@
     }
     else
     {
-        <div class="world-map-frame" aria-label="Mapa da cidade e dos bairros">
+        <div class="world-map-frame" aria-label="Mapa top-down da cidade e dos bairros"
+             tabindex="0">
             <div class="world-map">
                 <div class="world-road world-road-top" aria-hidden="true"></div>
-                <div class="world-plots">
-                    @foreach (var entry in VisiblePlots)
+                <div class="world-plots world-tiles">
+                    @foreach (var tile in CityTiles)
                     {
-                        if (entry.IsFolder)
+                        var entry = tile.Entry;
+                        if (entry is null)
+                        {
+                            <button type="button" class="world-plot world-empty-lot"
+                                    disabled="@(!_positionMode || _selectedHouse is null)"
+                                    aria-label="@($"Terreno vazio, coluna {tile.Column + 1}, linha {tile.Row + 1}")"
+                                    @onclick="() => PositionOn(tile)">
+                                <span aria-hidden="true" class="world-grass">✦</span>
+                                <span class="world-plot-kind">@( _positionMode && _selectedHouse is not null ? "Posicionar aqui" : "Terreno")</span>
+                            </button>
+                        }
+                        else if (entry.IsFolder)
                         {
                             <button type="button" class="world-plot world-district"
                                     title="@entry.Path"
+                                    disabled="@_positionMode"
                                     aria-label="@($"Entrar no bairro {entry.Name}")"
                                     @onclick="() => EnterBairro(entry.Path)">
                                 <span class="world-building world-district-building" aria-hidden="true">
@@ -73,51 +102,46 @@
                                     <span class="world-building-door"></span>
                                 </span>
                                 <span class="world-plot-label">@entry.Name</span>
-                                <span class="world-plot-kind">Bairro · abrir</span>
+                                <span class="world-plot-kind">Bairro</span>
                             </button>
                         }
                         else
                         {
-                            <button type="button" class="world-plot world-house"
+                            <button type="button"
+                                    class="world-plot world-house @(string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase) ? "world-plot-selected" : "")"
                                     title="@entry.Path"
                                     disabled="@(!entry.Editable)"
-                                    aria-label="@($"Abrir nota {entry.Name}")"
-                                    @onclick="() => OpenHouse(entry.Path)">
+                                    aria-pressed="@(_positionMode && string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase))"
+                                    aria-label="@(_positionMode ? $"Selecionar casa {entry.Name} para reposicionar" : $"Abrir nota {entry.Name}")"
+                                    @onclick="() => SelectOrOpenHouse(entry.Path)">
                                 <span class="world-building world-house-building" aria-hidden="true">
                                     <span class="world-building-top"></span>
                                     <span class="world-building-front"></span>
                                     <span class="world-building-door"></span>
                                 </span>
                                 <span class="world-plot-label">@entry.Name</span>
-                                <span class="world-plot-kind">Casa · nota</span>
+                                <span class="world-plot-kind">@(_positionMode ? "Selecionar" : "Abrir nota")</span>
                             </button>
                         }
-                    }
-                    @if (VisiblePlots.Count == 0)
-                    {
-                        <div class="world-vacant">
-                            <strong>Terreno livre</strong>
-                            <span>@(CanCreate
-                                ? "Construa a primeira casa por aqui."
-                                : "Não há bairros ou notas nesta região.")</span>
-                        </div>
                     }
                 </div>
                 <div class="world-road world-road-bottom" aria-hidden="true"></div>
             </div>
         </div>
         <div class="world-footer">
-            <span>@AllPlots.Count lote(s) neste bairro</span>
-            @if (AllPlots.Count > MaxVisiblePlots)
+            <span>@AllPlots.Count construção(ões) · @CityTileLayout.Capacity terreno(s)</span>
+            @if (AllPlots.Count > CityTileLayout.Capacity)
             {
-                <span>Exibindo @MaxVisiblePlots lotes para manter o mapa fluido. Use o Explorer para os demais.</span>
+                <span>Mapa limitado a @CityTileLayout.Capacity terrenos; veja outras notas no Explorer.</span>
             }
         </div>
     }
 </section>
 
 @code {
-    private const int MaxVisiblePlots = 96;
+    private bool _positionMode;
+    private string? _selectedHouse;
+    private bool _disposed;
     private string CurrentBairro { get; set; } = string.Empty;
     private bool _builderOpen;
     private string _newNoteTitle = string.Empty;
@@ -142,11 +166,61 @@
             .Where(entry => entry.IsFolder || ArtifactModel.IsNote(entry.Path))
             .ToArray();
 
-    private IReadOnlyList<WorkspaceExplorerEntry> VisiblePlots =>
-        AllPlots.Take(MaxVisiblePlots).ToArray();
+    private IReadOnlyList<CityTileLayout.Tile> CityTiles =>
+        CityTileLayout.Build(AllPlots, Workspace.World);
 
-    protected override void OnInitialized() =>
+    protected override void OnInitialized()
+    {
         CurrentBairro = Workspace.CurrentFolder;
+        Workspace.PersistenceChanged += OnWorkspaceChanged;
+    }
+
+    private void OnWorkspaceChanged(object? sender, EventArgs args)
+    {
+        if (!_disposed)
+            _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        Workspace.PersistenceChanged -= OnWorkspaceChanged;
+    }
+
+    private void TogglePositionMode()
+    {
+        _positionMode = !_positionMode;
+        _selectedHouse = null;
+        _message = null;
+    }
+
+    private void SelectOrOpenHouse(string path)
+    {
+        if (!_positionMode)
+        {
+            OpenHouse(path);
+            return;
+        }
+
+        _selectedHouse = path;
+        _message = null;
+    }
+
+    private void PositionOn(CityTileLayout.Tile tile)
+    {
+        if (!_positionMode || !CanCreate ||
+            Workspace.World.IsReadOnly || _selectedHouse is null || !tile.IsEmpty)
+            return;
+
+        if (!Workspace.PlaceHouse(_selectedHouse, tile.Column, tile.Row))
+        {
+            _message = "Terreno indisponível ou mapa protegido.";
+            return;
+        }
+
+        _message = "Casa posicionada. O salvamento automático atualizará o mapa físico.";
+        _selectedHouse = null;
+    }
 
     private void EnterBairro(string path)
     {
@@ -157,6 +231,8 @@
         }
         CurrentBairro = path;
         _builderOpen = false;
+        _selectedHouse = null;
+        _positionMode = false;
         _message = null;
     }
 
