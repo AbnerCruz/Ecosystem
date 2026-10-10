@@ -86,11 +86,11 @@ public sealed class LegacyRiverField
         double qx = (tileX + .5 +
             LegacyTerrainMath.Fbm(_drainageNoise,
                 tileX / 11.0, tileY / 11.0, 2, 2, .5) * 1.8 -
-            _originX) / _cellSize;
+            _originX) / _cellSize - .5 + .5; // terrain.js keeps the -.5+.5 (it changes the last bit)
         double qy = (tileY + .5 +
             LegacyTerrainMath.Fbm(_drainageNoise,
                 tileX / 11.0 + 40, tileY / 11.0 - 40, 2, 2, .5) * 1.8 -
-            _originY) / _cellSize;
+            _originY) / _cellSize - .5 + .5;
         int key = unchecked((int)Math.Floor(qy) * _gridSize + (int)Math.Floor(qx));
         if (!_buckets.TryGetValue(key, out var bucket))
             return 0;
@@ -102,11 +102,11 @@ public sealed class LegacyRiverField
             double projection = ((qx - segment.Ax) * dx +
                 (qy - segment.Ay) * dy) / (dx * dx + dy * dy == 0 ? 1 : dx * dx + dy * dy);
             double t = Math.Clamp(projection, 0, 1);
-            double px = segment.Ax + dx * t - qx;
-            double py = segment.Ay + dy * t - qy;
+            // terrain.js: ddx=(ax+vx*t-qx)*CELL, ddy=...; ddx*ddx+ddy*ddy<half*half (same float order).
+            double ddx = (segment.Ax + dx * t - qx) * _cellSize;
+            double ddy = (segment.Ay + dy * t - qy) * _cellSize;
             double half = Math.Max(.72, segment.Width / 2);
-            if ((px * px + py * py) * _cellSize * _cellSize <
-                half * half && segment.Width > best)
+            if (ddx * ddx + ddy * ddy < half * half && segment.Width > best)
                 best = segment.Width;
         }
         return best;

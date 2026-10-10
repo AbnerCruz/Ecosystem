@@ -96,7 +96,7 @@ public sealed class LegacyElevationClimateField
                     4, 2, .5) * .07;
             double dx = x / (double)n - .5, dy = y / (double)n - .5;
             double rr = Math.Max(Math.Abs(dx), Math.Abs(dy)) * .55 +
-                Math.Sqrt(dx * dx + dy * dy) * .45 +
+                LegacyJsMath.Hypot(dx, dy) * .45 + // terrain.js Math.hypot (V8), not sqrt(x²+y²)
                 LegacyTerrainMath.Fbm(
                     nWarp, x / 60.0 - 200, y / 60.0 + 200,
                     3, 2, .5) * .07;
@@ -117,8 +117,9 @@ public sealed class LegacyElevationClimateField
         for (int i = 0; i < size; i++)
         {
             if (!land[i])
+                // terrain.js: (E[i]-lo)/(seaQ-lo)*SEA in double; only the store is float32.
                 elevation[i] = (float)(
-                    (elevation[i] - lowest) / (double)(seaQuantile - lowest) *
+                    ((double)elevation[i] - lowest) / ((double)seaQuantile - lowest) *
                     LegacyBiomeRules.SeaLevel);
         }
         RankLand(elevation, land, r =>
@@ -154,7 +155,7 @@ public sealed class LegacyElevationClimateField
                 float previous = direction > 0
                     ? (x > 0 ? elevation[i - 1] : elevation[i])
                     : (x < n - 1 ? elevation[i + 1] : elevation[i]);
-                double rise = Math.Max(0, elevation[i] - previous);
+                double rise = Math.Max(0, (double)elevation[i] - previous);
                 double rain = Math.Min(humidity,
                     humidity * (.006 + rise * 7));
                 humidity -= rain * .72;
@@ -228,7 +229,8 @@ public sealed class LegacyElevationClimateField
                 for (int x = 0; x < n; x++)
                 {
                     temp[row + x] = (float)(sum / denominator);
-                    sum += field[row + Math.Min(n - 1, x + radius + 1)] -
+                    // JS: acc+=f[a]-f[b] subtracts in double, not float.
+                    sum += (double)field[row + Math.Min(n - 1, x + radius + 1)] -
                            field[row + Math.Max(0, x - radius)];
                 }
             }
@@ -240,7 +242,7 @@ public sealed class LegacyElevationClimateField
                 for (int y = 0; y < n; y++)
                 {
                     field[y * n + x] = (float)(sum / denominator);
-                    sum += temp[Math.Min(n - 1, y + radius + 1) * n + x] -
+                    sum += (double)temp[Math.Min(n - 1, y + radius + 1) * n + x] -
                            temp[Math.Max(0, y - radius) * n + x];
                 }
             }
