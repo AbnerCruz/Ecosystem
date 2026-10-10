@@ -145,6 +145,16 @@ jobs:
           rm artifacts/mobile-release/cert-info.txt
           (cd artifacts/mobile-release && sha256sum *.apk > SHA256SUMS.txt)
 
+      - name: Verify original Urbe 1.8.4-beta art INSIDE signed Android APK
+        if: steps.version.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          python3 tools/verify-legacy-v184-apk.py \
+            "artifacts/mobile-release/Urbe-CSharp-$VERSION-Android.apk" \
+            "artifacts/mobile-release/SHA256SUMS.txt"
+
       - name: Preserve verified Android beta APK as workflow artifact
         if: steps.version.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
