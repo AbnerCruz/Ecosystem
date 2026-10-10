@@ -86,6 +86,55 @@ public sealed class TrueTypeFontTests
         Assert.True(baked.Font.Measure("Á\r\nA").Y > baked.Font.Measure("A").Y);
     }
 
+    private sealed class FontSource(byte[] data) : Lunet.Content.IContentSource
+    {
+        public int OpenCount { get; private set; }
+        public bool Exists(string path) => path == "Fonts/ui.ttf";
+        public Stream Open(string path)
+        {
+            if (!Exists(path)) throw new FileNotFoundException(path);
+            OpenCount++;
+            return new MemoryStream(data, writable: false);
+        }
+    }
+
+    [Fact]
+    public void ContentManagerCachesTtfByOptionsAndDisposesAllAtlases()
+    {
+        var bytes = ReadSystemFont();
+        if (bytes is null) return;
+        var source = new FontSource(bytes);
+        var device = new GraphicsDevice(new NoOpBackend(), 360, 640);
+        var content = new Lunet.Content.ContentManager(source, device);
+        var first = content.LoadTrueTypeFont("Fonts/ui.ttf", 22, "Olá ?");
+        var same = content.LoadTrueTypeFont("Fonts/ui.ttf", 22, "Olá ?");
+        Assert.Same(first, same);
+        Assert.Equal(1, source.OpenCount);
+        var second = content.LoadTrueTypeFont("Fonts/ui.ttf", 32, "Olá ?");
+        Assert.NotSame(first, second);
+        Assert.Equal(2, source.OpenCount);
+        content.Dispose();
+        Assert.True(first.IsDisposed);
+        Assert.True(second.IsDisposed);
+    }
+
+    [Fact]
+    public void OfflineGameGuideCompilesAgainstActualFramework()
+    {
+        var root = new DirectoryInfo(AppContext.BaseDirectory);
+        while (root is not null && !File.Exists(Path.Combine(root.FullName, "docs", "guides", "fontes-truetype.md")))
+            root = root.Parent;
+        Assert.NotNull(root);
+        var guide = File.ReadAllText(Path.Combine(root!.FullName, "docs", "guides", "fontes-truetype.md"));
+        var code = guide.Split("```csharp\n")[1].Split("```")[0];
+        var compiler = new Lunet.Compiler.GameCompiler(
+            new Lunet.Compiler.LoadedAssembliesReferenceProvider(typeof(Game).Assembly));
+        var result = compiler.Compile("TrueTypeGuide", [new Lunet.Compiler.SourceFile("Game.cs", code)]);
+        Assert.True(result.Success, string.Join("\n", result.Diagnostics));
+        Assert.DoesNotContain(result.Diagnostics,
+            d => d.Severity == Lunet.Compiler.DiagnosticSeverity.Warning);
+    }
+
     [Fact]
     public void FontMeasureAndDrawAreAllocationFreeAfterPrebaking()
     {
