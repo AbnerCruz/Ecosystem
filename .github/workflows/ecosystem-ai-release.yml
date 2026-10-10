@@ -72,7 +72,7 @@ jobs:
             test -s "$dir/EcosystemAi.Cli"
             test -x "$dir/EcosystemAi.Cli"
           fi
-          test -f "$dir/EcosystemAi.Cli.runtimeconfig.json" || test -s "$dir/EcosystemAi.Cli"
+          # Single-file pode embutir runtimeconfig; exe é o contrato.
           # Em Linux runner, checar também que o binário inicia sem o SDK.
           if [[ "${{ matrix.runtime }}" == "linux-x64" ]]; then
             "$dir/EcosystemAi.Cli" --help > /tmp/ecosystem-ai-help.txt
@@ -120,7 +120,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           pattern: ecosystem-ai-*
-          path: release
+          path: apps/ecosystem-ai/release
           merge-multiple: true
       - name: Publish versioned development prerelease
         working-directory: apps/ecosystem-ai
