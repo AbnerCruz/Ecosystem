@@ -18,6 +18,11 @@ assert.match(roadmap, /## Contrato de continuidade — comando "continue o Urbe"
 assert.match(roadmap, /Android primeiro; Windows depois; nenhum novo Web\/PWA público/);
 assert.match(roadmap, /mundo top-down contínuo original 1\.8\.4-beta/);
 assert.match(roadmap, /CI verde não aprova automaticamente qualidade visual nem DEVICE/);
+assert.match(roadmap, /Identidade obrigatória do produto — jogo\/simulador de mundo aberto/);
+assert.match(roadmap, /src\/world\/life\.js/);
+assert.match(roadmap, /JOGO PRIMEIRO/);
+assert.match(roadmap, /simulação temporal/);
+assert.match(roadmap, /Não aceitar como produto pronto/);
 assert.match(visual, /geração procedural C# em execução/);
 assert.match(visual, /oráculo de comparação/);
 assert.match(visual, /PR #423 .*rejeitado\/fechado/);
