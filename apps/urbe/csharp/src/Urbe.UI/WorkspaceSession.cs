@@ -771,6 +771,36 @@ public sealed class WorkspaceSession : IDisposable
         return true;
     }
 
+    /// <summary>
+    /// Build a house at a specific map lot. Validate placement before creating
+    /// any note, so a rejected lot never leaves an unexpected file pending.
+    /// </summary>
+    public UrbeDocument? CreateHouseAt(
+        string? title, string? folder, int column, int row)
+    {
+        if (IsReadOnly || World.IsReadOnly ||
+            column is < 0 or >= 8 || row is < 0 or >= 8 ||
+            Documents.List().Any(document =>
+            {
+                var position = World.ProjectDocument(document.Id);
+                return position?.X == column && position.Y == row;
+            }))
+            return null;
+
+        var created = CreateNote(title, folder);
+        if (created is null)
+            return null;
+
+        // Coordinates were validated above, and the UI session is single
+        // threaded. Failure would be a programming error rather than a
+        // user-input condition: it must not be reported as successful.
+        if (!PlaceHouse(created.Path, column, row))
+            throw new InvalidOperationException(
+                "A nota foi criada, mas o posicionamento da casa falhou.");
+
+        return created;
+    }
+
     public UrbeDocument? CreateNote(
         string? title,
         string? folder = null,
