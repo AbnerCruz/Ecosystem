@@ -15,14 +15,16 @@ public static class WikiLinkCompletion
         if (markdown is null || cursor < 0 || cursor > markdown.Length)
             return null;
 
-        var open = markdown.LastIndexOf("[[", Math.Max(0, cursor - 1),
-            Math.Max(0, cursor));
+        if (cursor < 2)
+            return null;
+
+        var open = markdown.LastIndexOf("[[", cursor - 1, cursor);
         if (open < 0 || cursor < open + 2)
             return null;
 
         var fragment = markdown[(open + 2)..cursor];
         if (fragment.Length > 90 ||
-            fragment.Contains('\\n') || fragment.Contains('\\r') ||
+            fragment.Contains('\n') || fragment.Contains('\r') ||
             fragment.Contains("[[", StringComparison.Ordinal) ||
             fragment.Contains("]]", StringComparison.Ordinal) ||
             fragment.Contains('|'))
@@ -33,7 +35,7 @@ public static class WikiLinkCompletion
         var end = cursor;
         while (end < markdown.Length && end - cursor <= 90)
         {
-            if (markdown[end] is '\\n' or '\\r' ||
+            if (markdown[end] is '\n' or '\r' ||
                 (markdown[end] == '[' && end + 1 < markdown.Length &&
                  markdown[end + 1] == '['))
                 break;
@@ -62,7 +64,7 @@ public static class WikiLinkCompletion
         if (markdown is null || string.IsNullOrWhiteSpace(target) ||
             target.Contains("[[", StringComparison.Ordinal) ||
             target.Contains("]]", StringComparison.Ordinal) ||
-            target.Contains('\\n') || target.Contains('\\r') ||
+            target.Contains('\n') || target.Contains('\r') ||
             target.Contains('|') || target.Length > 160)
             return null;
 
