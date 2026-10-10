@@ -68,10 +68,10 @@
     {
       "check": "Android real — permissões SAF, escrita e reabertura",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": true,
       "object": "apps/urbe/csharp/src/Urbe.App/Platforms/Android/AndroidVaultHost.cs",
-      "evidence": "Dispositivo Android real não disponível nesta execução; bloquear declaração de gate G-C4 e publicação beta até validação."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/459); registro em docs/governance/responses/VAL-HO-20261009-urbe-uc25-android-saf-vault-80a0747b0e55.md."
     }
   ],
   "known_issues": [
