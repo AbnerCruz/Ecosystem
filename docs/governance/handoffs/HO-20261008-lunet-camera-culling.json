@@ -1,0 +1,111 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-camera-culling",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T19:58:59Z",
+  "agent": {
+    "id": "chatgpt-lunet-camera-culling",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-416",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-camera-culling-20261008",
+  "base_commit": "61309b902472c99410133e04c02360a4b32dd725",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Graphics/Camera2D.cs",
+    "apps/lunet2d/tests/Lunet.Tests/CameraTests.cs",
+    "apps/lunet2d/docs/guides/camera.md",
+    "apps/lunet2d/docs/guides/tilemaps.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261008-lunet-camera-culling.json"
+  ],
+  "work_completed": [
+    "API Camera2D.GetWorldViewBounds, sem alocação, com zoom/rotação e precisão conservadora.",
+    "Testes de cantos, rotação, viewport tilemap e alocação.",
+    "Guias offline, API, roadmap e histórico atualizados."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "Aguardar CI; SDK .NET 10 não disponível no executor."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "pending",
+      "evidence": "Aguardar CI do PR."
+    },
+    {
+      "kind": "human",
+      "check": "Camera2D / TileMap no Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/tilemaps.md",
+      "evidence": "DEVICE depende de teste no aparelho."
+    }
+  ],
+  "known_issues": [
+    "AABB conservadora inclui tiles extras nos cantos quando a câmera gira.",
+    "DEVICE e Tile Studio seguem pendentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar CI e corrigir falhas.",
+    "Integrar pela política automática, verificar release/APK; DEVICE permanece pendente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Somente código Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #363, branch e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CI/merge/release ainda não reivindicados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "API local sem extração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "camera-world-view-bounds",
+      "status": "product-specific",
+      "rationale": "API interna do Lunet usada pelo TileMap; sem segundo Product."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva sem alterar dados, segurança ou áreas protegidas."
+  },
+  "cost": null
+}

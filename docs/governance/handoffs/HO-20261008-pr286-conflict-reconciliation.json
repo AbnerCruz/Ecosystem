@@ -39,7 +39,8 @@
   "known_issues": [],
   "blockers": [],
   "next_actions": [
-    "Reavaliar CI e estado combinado pelo integrador automático. Não realizar merge manual nem adicionar integrar."
+    "Reavaliar CI e estado combinado pelo integrador automático. Não realizar merge manual nem adicionar integrar.",
+    "Abrir/acompanhar Extraction Review da necessidade compartilhada pr-conflict-reconciliation; a extração não é autorizada por este handoff."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -47,7 +48,7 @@
     "AGENTS.md",
     "ecosystem.json",
     "docs/governance/multi-agent.md",
-    "apps/lunet2d/AGENTS.md"
+    "apps/urbe/AGENTS.md"
   ],
   "invariants": [
     {
@@ -66,8 +67,12 @@
   "reuse_assessment": [
     {
       "subject": "pr-conflict-reconciliation",
-      "status": "product-specific",
-      "rationale": "Reconciliação dos PRs existentes sem extração nem novo contrato."
+      "status": "external-consumer-exists",
+      "rationale": "A necessidade de reconciliar branches conflitantes ocorre em Urbe (#286) e Lunet2D (#324). Registrar a segunda utilização para Extraction Review conforme ADR-0011, sem extrair código automaticamente nem alterar o integrador.",
+      "consumers": [
+        "lunet2d"
+      ],
+      "extraction_review": "pending"
     }
   ]
 }

@@ -44,6 +44,116 @@ public class FrameworkTests
     }
 
     [Fact]
+    public void ViewportScaling_FitHasBars_FillCoversWithoutDistortionAndMapsTouches()
+    {
+        var device = new GraphicsDevice(new RecordingBackend(), 360, 640);
+        device.Resize(1920, 1080);
+        Assert.Equal(ViewportScalingMode.Fit, device.ViewportScaling);
+        var fitted = device.Viewport;
+        Assert.True(fitted.Width <= 1920);
+        Assert.True(fitted.Height <= 1080);
+
+        device.ViewportScaling = ViewportScalingMode.Fill;
+        var filled = device.Viewport;
+        Assert.True(filled.X <= 0 && filled.Y <= 0);
+        Assert.True(filled.X + filled.Width >= 1920);
+        Assert.True(filled.Y + filled.Height >= 1080);
+        Assert.Equal(new Vector2(180, 320), device.SurfaceToVirtual(new Vector2(960, 540)));
+        var point = new Vector2(24, 556);
+        var actual = device.SurfaceToVirtual(device.VirtualToSurface(point));
+        Assert.InRange(actual.X, point.X - .001f, point.X + .001f);
+        Assert.InRange(actual.Y, point.Y - .001f, point.Y + .001f);
+        Assert.True(device.SafeArea.Y > 0);
+        Assert.True(device.SafeArea.Height < 640);
+        Assert.True(device.SafeArea.Width <= 360);
+        device.ViewportScaling = ViewportScalingMode.Fit;
+        Assert.Equal(fitted, device.Viewport);
+    }
+
+    [Fact]
+    public void ViewportScaling_FillHandlesPortraitAndPixelPerfect()
+    {
+        var device = new GraphicsDevice(new RecordingBackend(), 360, 640);
+        device.Resize(412, 915);
+        device.ViewportScaling = ViewportScalingMode.Fill;
+        Assert.True(device.Viewport.Width >= 412);
+        Assert.True(device.Viewport.Height >= 915);
+        device.PixelPerfect = true;
+        Assert.True(device.Viewport.Width >= 412);
+        Assert.True(device.Viewport.Height >= 915);
+        Assert.Equal(MathF.Ceiling(MathF.Max(412f / 360, 915f / 640)), device.Scale);
+        device.Resize(1920, 1080);
+        Assert.True(device.Viewport.Width >= 1920);
+        Assert.True(device.Viewport.Height >= 1080);
+        device.ViewportScaling = ViewportScalingMode.Fit;
+        Assert.True(device.Viewport.Width <= 1920);
+        Assert.True(device.Viewport.Height <= 1080);
+        Assert.Throws<ArgumentOutOfRangeException>(() => device.ViewportScaling = (ViewportScalingMode)999);
+        Assert.Equal(ViewportScalingMode.Fit, device.ViewportScaling);
+    }
+
+    private sealed class FillConfigGame : Game
+    {
+        protected override void Initialize() => Configuration.ViewportScaling = ViewportScalingMode.Fill;
+    }
+
+    [Fact]
+    public void GameHost_RespectsInitialFillConfigAndClipsScissor()
+    {
+        var backend = new RecordingBackend();
+        var host = new GameHost(new FillConfigGame(), backend);
+        Assert.True(host.Start(1920, 1080));
+        var device = host.GraphicsDevice!;
+        Assert.Equal(ViewportScalingMode.Fill, device.ViewportScaling);
+        var scissor = device.ToScissor(new RectangleF(0, 0, 360, 640));
+        Assert.Equal(0, scissor.X);
+        Assert.Equal(0, scissor.Y);
+        Assert.Equal(1920, scissor.Width);
+        Assert.Equal(1080, scissor.Height);
+        using var target = new RenderTarget2D(device, 128, 64);
+        device.SetRenderTarget(target);
+        Assert.Equal(new Vector2(128, 64), device.ViewSize);
+        device.SetRenderTarget(null);
+        Assert.Equal(new Vector2(360, 640), device.ViewSize);
+        host.Stop();
+    }
+
+    [Fact]
+    public void RenderTargetRestoreUsesScreenViewportForFitAndFillWithoutClear()
+    {
+        var backend = new RecordingBackend();
+        var device = new GraphicsDevice(backend, 360, 640);
+        device.Resize(1920, 1080);
+        using var target = new RenderTarget2D(device, 64, 64);
+        foreach (var mode in new[] { ViewportScalingMode.Fit, ViewportScalingMode.Fill })
+        {
+            device.ViewportScaling = mode;
+            var expected = device.Viewport;
+            device.SetRenderTarget(target);
+            Assert.Equal((0, 0, 64, 64), backend.Viewports[^1]);
+            device.SetRenderTarget(null); // sem Clear entre a volta e o próximo desenho
+            Assert.Equal((expected.X, expected.Y, expected.Width, expected.Height), backend.Viewports[^1]);
+        }
+    }
+
+    [Fact]
+    public void ViewportScaling_NoPerFrameAllocationAfterWarmup()
+    {
+        var device = new GraphicsDevice(new NoOpBackend(), 360, 640);
+        device.Resize(412, 915);
+        for (int i = 0; i < 40; i++) { device.ViewportScaling = ViewportScalingMode.Fill; device.ViewportScaling = ViewportScalingMode.Fit; }
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++)
+        {
+            device.ViewportScaling = ViewportScalingMode.Fill;
+            _ = device.SurfaceToVirtual(new Vector2(170, 360));
+            _ = device.Viewport;
+            device.ViewportScaling = ViewportScalingMode.Fit;
+        }
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
     public void SpriteBatch_GroupsSameTextureAndSplitsOnTextureChange()
     {
         var backend = new RecordingBackend();

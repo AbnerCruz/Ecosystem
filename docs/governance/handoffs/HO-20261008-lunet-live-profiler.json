@@ -1,0 +1,122 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-live-profiler",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T00:12:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-profiler",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-419",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-live-profiler-20261008",
+  "base_commit": "c00ae11dfdbdcd9ba671a9704673203fbd24b2a2",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Runtime/Profiling/PreviewFrameStatistics.cs",
+    "apps/lunet2d/src/Lunet.Android/Gles/GlesBackend.cs",
+    "apps/lunet2d/src/Lunet.Android/Gles/PreviewRenderer.cs",
+    "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
+    "apps/lunet2d/tests/Lunet.Tests/PreviewFrameStatisticsTests.cs",
+    "apps/lunet2d/docs/guides/profiler-preview.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261008-lunet-live-profiler.json"
+  ],
+  "work_completed": [
+    "Instrumentação GL opt-in de submissões de desenho e triângulos por quadro, sem mexer no framework ou em jogos.",
+    "Medição de cadência, duração CPU Tick e alocações da thread GL em buffer circular fixo e thread-safe.",
+    "Overlay de Profiler com memória e contadores de coleta GC no Preview Android; controles show/hide, Pause/Step, reinício.",
+    "Casos determinísticos de janela, validação, reset e ausência de alocações no fluxo crítico.",
+    "Registrada aprovação humana dos 12 módulos do Laboratório 2.0, APK 1000193, encerrando Issue #367 e atualizando ROADMAP."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "Aguardando CI do PR #370."
+    },
+    {
+      "kind": "automated",
+      "check": "Android APK build",
+      "result": "pending",
+      "evidence": "Aguardando lunet2d-release do PR #370."
+    },
+    {
+      "kind": "automated",
+      "check": "Ecosystem consistency",
+      "result": "pending",
+      "evidence": "Aguardando consistency do PR #370."
+    },
+    {
+      "kind": "human",
+      "check": "Profiler no Android real",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/profiler-preview.md",
+      "evidence": "Frequência de refresh, interações Android, desempenho real e layout não podem ser fechados por CI."
+    }
+  ],
+  "known_issues": [
+    "Update e Draw ainda não medidos separadamente; GPU timer query, audio underrun, memória nativa/GPU e painel persistente no workspace ainda não existem.",
+    "LUNET-414 Issue #343 continua aberto para instrumentação mais completa do GameHost/Framework; implementação LUNET-419 não reivindica esse escopo.",
+    "DEVICE do Laboratório 2.0 aprovado explicitamente pelo proprietário na Issue #367; isso não valida o novo overlay do Profiler nem fecha a Fase 4."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar e corrigir CI/testes Android e integrador.",
+    "Confirmar tag APK após PR integrado, fornecer link ao usuário.",
+    "Solicitar validação opcional no dispositivo sem bloquear desenvolvimento independente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Métricas locais somente do Lunet2D."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #369, branch, PR #370 e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE real não foi testado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CI, distribuição e ergonomia seguem gate próprio."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem infraestrutura compartilhada."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "live-preview-profiling",
+      "status": "product-specific",
+      "rationale": "Preview Android Lunet; não há segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Overlay e coleta opt-in de observabilidade local; sem dados persistidos, API pública Framework, contrato, permissões ou formato."
+  },
+  "cost": null
+}

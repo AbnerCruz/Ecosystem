@@ -1,0 +1,102 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-lunet-touch-scroll",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T19:16:07Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-427",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-ui-touch-scroll-20261009",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/394",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchScrollArea.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchScrollAreaTests.cs",
+    "apps/lunet2d/docs/guides/scroll-ui.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "docs/governance/handoffs/HO-20261009-lunet-touch-scroll.json"
+  ],
+  "work_completed": [
+    "Novo controle TouchScrollArea vertical portátil e explícito: captura de ID, limiar, momentum com delta, saturação de limites, cancelamento/disable e zero GC no Update.",
+    "Testes para toque breve, movimento, soltura e inércia, multitouch, resize, edge clamp e alocação.",
+    "Guia offline C#, referência de API, changelog, roadmap e comunicação de agentes."
+  ],
+  "verification": [
+    {
+      "check": "Lunet2D CI + consistency",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Build do APK",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Rolagem visual, suavidade, recorte e ergonomia no Android",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/scroll-ui.md"
+    }
+  ],
+  "known_issues": [
+    "Não há árvore de UI, gesto de scroll aninhado ou arbitragem automática com botões.",
+    "Sem validação de sensação de inércia em aparelho real."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir eventuais falhas CI/doc snapshot e integrar PR pela política automática.",
+    "Confirmar APK e encaminhar roteiro Android, mantendo DEVICE pendente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "UI reutiliza InputState e RectangleF, sem novo sistema compartilhado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue, handoff, docs de API, guia, roadmap e AgentsChat associados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validações automatizadas e em aparelho não reivindicadas como aprovadas."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Fase 4 e item review até integração e aprovação em aparelho."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Somente arquivos Lunet2D e handoff; sem alterar fronteiras ou outros Products."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  },
+  "base_commit": "cd6a9926c2de0005628183be2b2d0c58322487b6",
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ui-touch-scroll",
+      "status": "product-specific",
+      "rationale": "Controle de jogo 2D usando entrada e viewport do Lunet, sem consumidor extra-Product comprovado."
+    }
+  ]
+}

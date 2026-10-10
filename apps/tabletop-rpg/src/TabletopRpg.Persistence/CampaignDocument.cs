@@ -65,4 +65,19 @@ internal sealed record CampaignDto(
     PerspectiveDto[]? Perspectives,
     GameEventDto[]? Events,
     SessionDto[]? Sessions,
-    Guid? ActiveSessionId);
+    Guid? ActiveSessionId,
+    WorldDto? World = null);
+
+internal sealed record SceneDto(Guid Id, string? Title, string? Description);
+internal sealed record QuestDto(Guid Id, string? Title, QuestStatus Status, Guid? SceneId);
+internal sealed record InventoryDto(Guid Id, Guid Owner, string? ItemKey, int Quantity);
+internal sealed record ConditionDto(Guid CharacterId, string? Key, long? ExpiresAtMinute);
+internal sealed record ResourceDto(Guid CharacterId, string? Key, int Current, int Maximum);
+internal sealed record WorldDto(
+    long FictionMinutes,
+    Guid? ActiveSceneId,
+    SceneDto[]? Scenes,
+    QuestDto[]? Quests,
+    InventoryDto[]? Inventory,
+    ConditionDto[]? Conditions,
+    ResourceDto[]? Resources);

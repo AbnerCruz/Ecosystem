@@ -60,6 +60,20 @@ internal sealed class GlesBackend : IGraphicsBackend, IDisposable
     private readonly byte[] _vertexBytes = new byte[SpriteBatch.MaxQuads * 4 * SpriteVertex.SizeInBytes];
     private readonly float[] _matrix = new float[16];
 
+    // Contadores GL reais, reiniciados pela thread de desenho apenas quando o Profiler está ligado.
+    private bool _profilerActive;
+    internal int FrameDrawCalls { get; private set; }
+    internal int FrameTriangles { get; private set; }
+
+    internal void BeginProfileFrame()
+    {
+        FrameDrawCalls = 0;
+        FrameTriangles = 0;
+        _profilerActive = true;
+    }
+
+    internal void EndProfileFrame() => _profilerActive = false;
+
     public GlesBackend()
     {
         _defaultProgram = LinkProgram(FragmentShader);
@@ -163,6 +177,11 @@ internal sealed class GlesBackend : IGraphicsBackend, IDisposable
         GLES30.GlBindBuffer(GLES30.GlArrayBuffer, _vbo);
         GLES30.GlBufferSubData(GLES30.GlArrayBuffer, 0, bytes.Length, _vertexStaging);
         GLES30.GlDrawElements(GLES30.GlTriangles, quadCount * 6, GLES30.GlUnsignedShort, 0);
+        if (_profilerActive)
+        {
+            FrameDrawCalls++;
+            FrameTriangles += quadCount * 2;
+        }
     }
 
     public void SetDrawState(DrawState state)

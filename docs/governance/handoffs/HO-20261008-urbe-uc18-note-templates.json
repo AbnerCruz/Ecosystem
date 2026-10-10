@@ -1,0 +1,127 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-urbe-uc18-note-templates",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T18:21:04.285Z",
+  "agent": {
+    "id": "chatgpt-urbe-note-templates",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc18-note-templates-req093",
+  "base_commit": "af7f3bd25e2ee7d3cde54c05953dcaaec45f19e6",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/352",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/NoteTemplateEngine.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/NoteTemplateEngineTests.cs",
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261008-urbe-uc18-note-templates.json"
+  ],
+  "work_completed": [
+    "UC-18/REQ-093/SPEC §15.1: modelos como notas Markdown comuns em Modelos/; SaveCurrentAsTemplate clona conteúdo sem alterar origem.",
+    "Explorer seleciona modelo, solicita campos e cria documento pela WorkspaceSession/DocumentStore, sem filesystem.",
+    "Engine preserva conteúdo fora dos marcadores, substitui valores literalmente e recusa valores faltantes/extras e excesso de campos.",
+    "Formulário responsivo, erros visíveis e suíte de domínio incluídos.",
+    "Smoke Chromium Web atualizado para percorrer criação de template a partir de nota, preencher campos e verificar o conteúdo final no editor real."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests / NoteTemplateEngineTests",
+      "result": "pending",
+      "evidence": "Testes escritos; SDK .NET indisponível neste ambiente. Aguardar execução no CI do PR #352."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks Core/Web/Android/Windows/E2E",
+      "result": "pending",
+      "evidence": "CI do head final do PR #352 ainda não confirmado; novo teste de jornada web adicionado (não executado localmente)."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency e estado combinado do integrador",
+      "result": "pending",
+      "evidence": "Aguardar checks e reconciliar com PRs UC-18 simultâneos."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3 toque/layout por dispositivo",
+      "result": "not-applicable",
+      "evidence": "Fatia não fecha o gate e não declara DEVICE realizado."
+    }
+  ],
+  "known_issues": [
+    "O cliente C# ainda não persiste fisicamente o WorkspaceSession no host; modelos/novas notas permanecem na sessão até adapters futuros.",
+    "REQ-093 e G-C3 dependem de persistência física, integração e validação real.",
+    "Outros PRs UC-18 podem tocar as mesmas telas; CI combinado é indispensável."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar e corrigir CI no PR #352.",
+    "Aguardar integração automática rotineira após checks do estado combinado; não aplicar label integrar.",
+    "Seguir UC-18 com persistência física por host respeitando gate crítico user-data."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Modelos derivados da fonte canônica DocumentStore; sem registry/storage paralelo."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Fatia UC-18 no cliente C# autorizado, preservando cliente legado JS."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Handoff e PR documentam arquivos, base, status, gates e próximos passos."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem alteração de fronteira, permissão, formato persistido ou ADR consolidado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Nenhuma aprovação CI/DEVICE presumida."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-18, REQ-093 e G-C3 mantidos abertos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Feature específica em apps/urbe; nenhuma extração para áreas compartilhadas."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature local prevista em UC-18/REQ-093 sem mudança de schema, storage, migração, trust boundary ou distribuição."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "note-template-fields",
+      "status": "product-specific",
+      "rationale": "A UI Urbe é o único consumidor real; não há extração nem novo contrato."
+    }
+  ]
+}

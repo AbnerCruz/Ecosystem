@@ -1,6 +1,11 @@
-# P6-4 — Qualificação técnica do primeiro Host real (auditoria sem integração)
+# P6-4 — Qualificação técnica e resultado do primeiro Host real
 
-> Levantamento de código para desbloqueio do R3. **Não aprova nem executa a integração** e não altera ADR-0017 D7 ou as fases locais dos Products. Autoridade de status: ROADMAP.md e Issue #144.
+> Auditoria original de candidatos, preservada abaixo como histórico, seguida de resultado da decisão e integração. Autoridade de status: ROADMAP.md e Issue #144.
+
+## Resultado posterior (2026-10-08)
+
+A DEC-0041 escolheu o **piloto headless do Lunet** antes da Fase 8, apenas para provar P6-4 (ADD-0018 / ADR-0031). O PR #344 foi integrado na main em `cb554ccad53c5183f5f8c887c5ec6a8ce40342fa`; o workflow de integração (run `37818341813`) e os checks do piloto passaram. Código executável em `tests/integration/p6-lunet-host` compõe o Host **real** `LunetCapabilityHost.OpenForProject` de dois projetos e o Workspace/Runtime existentes, com `text.inspect`, Context do GameId, segurança e verificação independente. A experiência de agente dentro da UI do Lunet permanece na Fase 8. Nenhuma capability adicional nem IPC foram publicados. P6-5 é a próxima entrega de Product.
+
 
 ## Código observado
 

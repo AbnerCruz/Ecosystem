@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-touch-buttons",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T12:10:17.923266Z",
+  "agent": {
+    "id": "codex-lunet-touch-buttons",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-410",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-touch-buttons-20261008",
+  "base_commit": "29fbc892197882ec8de180ba90cd90f0d344e7d8",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/botoes-ui.md",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchButton.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchButtonStyle.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchButtonTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-touch-buttons.json"
+  ],
+  "work_completed": [
+    "TouchButton: captura por ID iniciada dentro, clique na soltura dentro dos limites atuais, arraste/retorno, cancelamento/ausência/posição inválida, disable e Cancel; histórico fixo de IDs evita recaptura de Pressed retido.",
+    "TouchButtonStyle imutável de cores; Draw reutiliza SpriteBatch/SpriteFont para fundo/texto centralizado e estados. Sem alocação por Update/Draw após aquecimento.",
+    "13 casos novos cobrem pulso único, multi-touch/ordem/IDs negativos, arraste, cancelamento/fases desconhecidas, limites/validação/extremos, cores/centralização, zero bytes e guia compilado/executado no GameHost com toque físico 2× e pausa/retomada.",
+    "Guia offline completo, XML/API JSON, ROADMAP/CHANGELOG. Independente de #324/#328/#330, sem mudar InputState/VirtualButton/ProjectStore/formato/backend/gates."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "dotnet build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false: zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão xUnit v3: 413/413, zero erros/falhas/skips. Base main 400 + 13 novos; guia compilado/executado no GameHost, zero bytes Update/Draw aquecidos, cores e centralização verificadas."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram; ROADMAP × Issues não verificado localmente sem snapshot, verificação remota pendente no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Botões UI no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/botoes-ui.md",
+      "evidence": "Soltura/arraste/multi-touch, disable/paleta, pausa/retomada, Preview rápido/isolado offline e regressão; portable não comprova GL/aparelho."
+    }
+  ],
+  "known_issues": [
+    "Não consome input nem arbitra controles sobrepostos: o jogo define áreas/atualização. Não há foco, teclado/gamepad, árvore de UI, tema global, wrap, ajuste automático de texto, recorte ou skins.",
+    "Snapshots do host não preservam ciclo inteiro de toque substituído entre Updates. Nova instância desconhece snapshots anteriores; atualize inclusive desabilitado e chame Cancel em OnPause/ao ocultar.",
+    "HUD do guia concatena texto e aloca; garantia de zero bytes cobre Update/Draw da API com recursos aquecidos e backend sem alocação. Fonte e batch pertencem ao jogo.",
+    "SDK Android ausente localmente; APK candidato, publicação e DEVICE separados. Limites devem estar no mesmo espaço do input; câmera/clip de desenho não convertem toque automaticamente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Abrir PR pronto após checks; acompanhar CI/integrador e confirmar release pública exata.",
+    "Preservar reconciliados #324/#328/#330 e acompanhar suas integrações sem merge manual/label integrar.",
+    "Validar roteiro DEVICE sem inferir aprovação; UI completa e Fase 4 permanecem abertas."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API matemática de UI local no Framework, sem dependências de outros Products/Editor/Studio."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-410 / Issue #331, branch/base/handoff/guia explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, nenhum gate/validação inferido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/guia comprovados; CI/integração/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reutiliza RectangleF, TouchPoint/InputState, SpriteBatch e SpriteFont; nenhum componente compartilhado novo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "touch-ui-buttons",
+      "status": "product-specific",
+      "rationale": "Controle local de UI no Framework, autorizado na Fase 4. Sem segundo consumidor real; não extrai Tool/Library genérica."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva de UI prevista no plano; sem efeito em dados, contratos existentes, boundary ou áreas protegidas."
+  },
+  "cost": null
+}

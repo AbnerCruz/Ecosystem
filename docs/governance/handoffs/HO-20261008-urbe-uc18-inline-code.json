@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-urbe-uc18-inline-code",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T18:47:25.733Z",
+  "agent": {
+    "id": "chatgpt-urbe-inline-code",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc18-req090-inline-code-source",
+  "base_commit": "97eefdeac179884478cb790339e3234e707a4915",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/357",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/InlineCodeEditing.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/InlineCodeEditingTests.cs",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/editor-source-selection.js",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Editor.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/csharp/README.md",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261008-urbe-uc18-inline-code.json"
+  ],
+  "work_completed": [
+    "Comando Código em linha em modo Fonte/Dividido do editor C#, com seleção e toggle de crases sem texto de reserva.",
+    "Engine puro C# usa índice UTF-16, delimitadores seguros para crases internas e rejeita seleção multiline ou limites inválidos sem mutação.",
+    "JS somente para captura/restauração de textarea; Markdown e histórico continuam pertencendo a WorkspaceSession/DocumentStore.",
+    "Suítes de Core e smoke Web para seleção/toggle/caret adicionadas."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests / InlineCodeEditingTests",
+      "result": "pending",
+      "evidence": "Testes novos incluídos, CI do PR #357 ainda não verificado."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks (Web/Android/Windows/E2E)",
+      "result": "pending",
+      "evidence": "Aguardando job do PR #357, incluindo smoke de textarea real."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency + combinados/integrador",
+      "result": "pending",
+      "evidence": "Checks de estado combinado do PR #357 pendentes."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3 toque/caret Android real",
+      "result": "not-applicable",
+      "evidence": "Esta fatia não declara validação física nem fechamento de UC-18/REQ-090."
+    }
+  ],
+  "known_issues": [
+    "Fonte/Dividido implementados; rich inline/bolha em Visual e REQ-095 dependem de outro slice.",
+    "Persistência física dos hosts C# e G-C3 permanecem abertos.",
+    "Falhas intermitentes de CSharpMath em CI têm PR específico #334; não modificar nem encobrir nessa tarefa."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Revisar CI do head final e corrigir falhas de domínio/interop/smoke.",
+    "Aguardar integrador automático, não fazer merge manual nem label integrar.",
+    "Continuar editor Visual e UX de formatação após coordenação com PR #287/REQ-095."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Documento sempre editado pela WorkspaceSession/DocumentStore; interop JS não é autoridade do texto."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Incremento pequeno de editor C# dentro UC-18, sem reescrita da 1.x."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR, branch, head, arquivos e verificações persistidos neste handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma mudança de contratos públicos, ownership, trust boundary ou formato persistido."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE/toque físico não reivindicado nem usado para encerrar gate."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "REQ-090/UC-18/G-C3 abertos até integração e aceite total."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Helper específico de Urbe.Core, sem promoção para Tool compartilhada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Feature UI e domínio aprovada no roadmap UC-18/REQ-090, sem alteração de formato/backup/migração/permissões/release."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "markdown-inline-code-editing",
+      "status": "product-specific",
+      "rationale": "Comando específico do Editor Urbe em C#; único consumidor real, sem segundo Host contratual para extração."
+    }
+  ]
+}
