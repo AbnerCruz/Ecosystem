@@ -47,10 +47,10 @@
     {
       "kind": "human",
       "check": "Camera2D / TileMap no Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/tilemaps.md",
-      "evidence": "DEVICE depende de teste no aparelho."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/455); registro em docs/governance/responses/VAL-HO-20261008-lunet-camera-culling-2ce740972b78.md."
     }
   ],
   "known_issues": [

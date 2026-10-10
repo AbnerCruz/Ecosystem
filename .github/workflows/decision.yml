@@ -8,7 +8,7 @@ name: decision
 
 on:
   issues:
-    types: [opened]
+    types: [opened, reopened]
 
 permissions:
   contents: write
@@ -16,7 +16,7 @@ permissions:
   actions: write
 
 concurrency:
-  group: decision
+  group: decision-${{ github.event.issue.number }}
   cancel-in-progress: false
 
 jobs:
@@ -88,7 +88,7 @@ jobs:
             exit 0
           fi
           pushed=false
-          for i in 1 2 3; do
+          for i in $(seq 1 12); do
             if git push origin "HEAD:${DEFAULT_BRANCH}"; then pushed=true; break; fi
             git pull -q --rebase origin "${DEFAULT_BRANCH}"
           done
