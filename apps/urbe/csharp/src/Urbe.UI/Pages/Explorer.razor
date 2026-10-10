@@ -30,11 +30,11 @@
                 <input value="@NewNoteTitle"
                        @oninput="OnNewNoteTitleInput"
                        placeholder="Título"
-                       disabled="@Workspace.IsReadOnly" />
+                       disabled="@(!CanWriteWorkspace)" />
             </label>
             <button type="button"
                     class="surface-action"
-                    disabled="@Workspace.IsReadOnly"
+                    disabled="@(!CanWriteWorkspace)"
                     @onclick="CreateNote">
                 Criar
             </button>
@@ -45,7 +45,7 @@
                 <span>Modelo da nota (opcional)</span>
                 <select value="@SelectedTemplatePath"
                         @onchange="OnTemplateSelected"
-                        disabled="@Workspace.IsReadOnly"
+                        disabled="@(!CanWriteWorkspace)"
                         aria-label="Selecionar modelo de nota">
                     <option value="">Nota em branco</option>
                     @foreach (var template in Workspace.Templates)
@@ -72,7 +72,7 @@
                             <span>@field</span>
                             <input value="@GetTemplateField(field)"
                                    @oninput="args => SetTemplateField(field, args)"
-                                   disabled="@Workspace.IsReadOnly" />
+                                   disabled="@(!CanWriteWorkspace)" />
                         </label>
                     }
                 </div>
@@ -85,11 +85,11 @@
                 <input value="@NewFolderName"
                        @oninput="OnNewFolderNameInput"
                        placeholder="Nome"
-                       disabled="@Workspace.IsReadOnly" />
+                       disabled="@(!CanWriteWorkspace)" />
             </label>
             <button type="button"
                     class="surface-action"
-                    disabled="@Workspace.IsReadOnly"
+                    disabled="@(!CanWriteWorkspace)"
                     @onclick="CreateFolder">
                 Criar pasta
             </button>
@@ -109,7 +109,7 @@
         @if (_moveSource is not null)
         {
             <button type="button"
-                    disabled="@Workspace.IsReadOnly"
+                    disabled="@(!CanWriteWorkspace)"
                     @onclick="MoveArmedToCurrentFolder">
                 Mover aqui
             </button>
@@ -140,7 +140,7 @@
             </div>
             <button type="button" @onclick="OpenSelectedFolder">Abrir pasta</button>
             <button type="button"
-                    disabled="@Workspace.IsReadOnly"
+                    disabled="@(!CanWriteWorkspace)"
                     @onclick="CreateNoteInSelectedFolder">
                 Nova nota aqui
             </button>
@@ -148,7 +148,7 @@
                  !string.Equals(_moveSource, _selectedFolder.Path, StringComparison.OrdinalIgnoreCase))
             {
                 <button type="button"
-                        disabled="@Workspace.IsReadOnly"
+                        disabled="@(!CanWriteWorkspace)"
                         @onclick="MoveArmedToSelectedFolder">
                     Mover para cá
                 </button>
@@ -213,7 +213,7 @@
                 </button>
                 <button type="button"
                         class="explorer-row-action"
-                        disabled="@Workspace.IsReadOnly"
+                        disabled="@(!CanArmMove(entry.Path))"
                         aria-label="@($"Mover {entry.Name}")"
                         aria-pressed="@(string.Equals(_moveSource, entry.Path, StringComparison.OrdinalIgnoreCase))"
                         @onclick="() => ArmMove(entry.Path)">
@@ -401,6 +401,12 @@
 
     private void CreateNote()
     {
+        if (!CanWriteWorkspace)
+        {
+            _createError = "Conecte uma pasta do dispositivo antes de criar notas.";
+            return;
+        }
+
         var document = CreateWithSelectedTemplate(
             NewNoteTitle,
             Workspace.CurrentFolder);
@@ -424,6 +430,12 @@
 
     private void CreateNoteInSelectedFolder()
     {
+        if (!CanWriteWorkspace)
+        {
+            _createError = "Conecte uma pasta do dispositivo antes de criar notas.";
+            return;
+        }
+
         if (_selectedFolder is null)
             return;
 
@@ -453,6 +465,12 @@
 
     private void CreateFolder()
     {
+        if (!CanWriteWorkspace)
+        {
+            _createError = "Conecte uma pasta do dispositivo antes de criar bairros.";
+            return;
+        }
+
         var created = Workspace.CreateFolder(
             NewFolderName,
             Workspace.CurrentFolder);
@@ -524,8 +542,15 @@
         Move(_moveSource, _selectedFolder.Path);
     }
 
+    private bool CanWriteWorkspace =>
+        !Workspace.IsReadOnly && (!Vault.IsAvailable || Vault.IsConnected);
+
     private bool CanArmMove(string path) =>
-        !Workspace.IsReadOnly &&
+        CanWriteWorkspace &&
+        (!Vault.IsAvailable ||
+            (ArtifactModel.IsNote(path) &&
+             (path.EndsWith(".md", StringComparison.OrdinalIgnoreCase) ||
+              path.EndsWith(".markdown", StringComparison.OrdinalIgnoreCase)))) &&
         !(Vault.IsAvailable && Workspace.Folders.Any(folder =>
             string.Equals(folder, path, StringComparison.OrdinalIgnoreCase)));
 
@@ -533,7 +558,7 @@
     {
         if (!CanArmMove(source))
         {
-            _createError = "Mover pastas ainda não está disponível no Android; as notas Markdown podem ser movidas.";
+            _createError = "No Android, apenas notas Markdown existentes podem ser movidas; pastas e anexos ficam protegidos.";
             return;
         }
 
