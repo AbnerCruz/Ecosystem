@@ -126,6 +126,30 @@ public sealed class HeadlessUiTests : IDisposable
             return true;
         }, CancellationToken.None));
 
+
+    [Fact]
+    public async Task NativeWorld_LightingMatchesLegacyRgbWithoutTintingHouseLabels() =>
+        Assert.True(await Session.Dispatch<bool>(() =>
+        {
+            var world = new WorldView();
+            var window = new Window { Width = 800, Height = 480, Content = world };
+            window.Show();
+            world.LightingMode = "dia";
+            var day = world.CurrentLight;
+            Assert.Equal((255, 255, 255), (day.Red, day.Green, day.Blue));
+            Assert.Equal(0, day.Darkness);
+            world.LightingMode = "noite";
+            var night = world.CurrentLight;
+            var expected = LegacyWorldLife.LightAt(23);
+            Assert.Equal(expected, night);
+            Assert.True(night.Darkness > .9);
+            world.LightingMode = "entardecer";
+            var dusk = world.CurrentLight;
+            Assert.True(dusk.Red > dusk.Blue);
+            Assert.Throws<ArgumentOutOfRangeException>(() => world.LightingMode = "unsupported");
+            return true;
+        }, CancellationToken.None));
+
     private static async Task Settle(Window window, MainView view)
     {
         for (int i = 0; i < 600; i++)
