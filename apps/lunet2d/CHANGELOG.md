@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- LUNET-432 (em revisão): toques capturados não provocam clique fantasma em botões nem inércia antiga após mudar o layout; Bounds iguais não interrompem gestos, e sliders continuam seguindo o dedo como na API anterior.
+
 - LUNET-426 (em revisão): corrigir CRLF, Unicode fora do BMP e validação de layout/escala na fonte bitmap embutida; medida e desenho coerentes, sem enviar coordenadas infinitas ao OpenGL.
 
 - LUNET-424 (em revisão): Preview Android agora preserva o início e o fim de toques rápidos entre eventos de 90/120 Hz e os Updates fixos, mesmo quando o dedo move antes da atualização. Buffer interno sem List/ToArray por MotionEvent; evita falhas intermitentes de captura Pressed nos joysticks opt-in.
@@ -16,6 +18,8 @@
 ### Added
 
 - LUNET-430 (em revisão): font atlas TrueType gerado offline em C# (`TrueTypeFont.Bake` e `Content.LoadTrueTypeFont`), integração com SpriteBatch, métricas proporcionais, cache de fonte, testes e limites de memória.
+
+- LUNET-431 (em revisão): layout responsivo de UI horizontal/vertical com flex, espaçamento, padding e alinhamento transversal; converte safe area em bounds para controles mobile, sem GC por quadro.
 
 - LUNET-429 (em revisão): `TouchListView` para listas grandes de missão/inventário com scroll inercial, hit-test por linha, seleção sem clique acidental ao arrastar e desenho apenas das linhas visíveis.
 

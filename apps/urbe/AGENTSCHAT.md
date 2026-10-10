@@ -542,6 +542,14 @@
 - Decisões: guardas de sessão host-neutral, sem mudanças no formato do vault, storage físico, migração, backup ou publicação; nenhum gate humano declarado aprovado.
 - Pendências: validar CI C#/Web/Android/Windows/E2E e consistency, retomar integração automática da UC-18 após verde.
 
+### 2026-10-08 — ChatGPT — isolamento da renderização matemática concorrente
+
+- Estado: verifying, branch `fix/urbe-math-renderer-concurrent-typesetting` sobre main.
+- Diagnóstico: `urbe-checks` no PR #287 falhou em três testes de matemática, com exceção de modificação simultânea em coleção não-concorrente durante CSharpMath 1.0.0-pre.2; testes da UI do editor não eram a causa observada.
+- Implementação: porta crítica `lock` somente ao redor de `UrbeSvgMathPainter` (criação, Medida, Draw/SVG) para que dois renders não modifiquem caches mutáveis da biblioteca em paralelo. Análise de compatibilidade e expansão de macros permanecem fora do lock.
+- Teste: 48 renderizações paralelas (até 8 workers) exigem sucesso e SVG/geometria determinísticos; guardas originais preservadas, sem formato novo, host ou JS.
+- Validação pendente: checks em CI, inclusive Windows/Android, com classificação routine; nenhuma validação humana G-C3 declarada.
+
 ### 2026-10-08 — ChatGPT — UC-18 guarda para editor HTML inline
 
 - Estado: `verifying`; branch `fix/urbe-uc18-visual-html-lossless` empilhada sobre #286.
@@ -581,3 +589,11 @@
 - Testes: csharp/tests/web-smoke.mjs cobre os gestos, o botão explícito e o feedback; .NET SDK indisponível no ambiente de edição, CI do PR pendente. Handoff HO-20261009-urbe-uc18-explorer-touch-actions.
 - Invariantes: DocumentStore/WorkspaceSession são autoridade única; nenhuma persistência física, schema, migração, release ou autorização de gate humano foi antecipada.
 - Próximos passos: revisar urbe-checks e consistency combinados, corrigir falhas e permitir apenas integração automática; prosseguir UC-18 e G-C3 com validação real no dispositivo.
+
+### 2026-10-09 — ChatGPT — UC-18 / REQ-096 breadcrumbs e busca com origem
+- Estado: verifying; PR #382 sobre main, sem integração manual ou release.
+- Fato: Explorer C# não identificava diretórios nos resultados da busca global e exigir retorno repetido dificultava chegar aos ancestrais de pastas profundas.
+- Feito: trilha navegável Raiz / ancestral / pasta com rolagem horizontal no toque; pesquisa mostra caminho de origem e contagem; Limpar busca preserva pasta atual; sessão C# permanece autoridade.
+- Testes: web-smoke cobre notas homônimas em pastas diferentes, navegação por ancestrais, retorno Editor→busca, filtros e viewport móvel de 390px. CI e validação física ainda pendentes.
+- Invariantes: sem mudanças de vault físico, migração, backup, release, JS de domínio, plugins ou dados do usuário. G-C3 e UC-18 continuam abertos.
+- Handoff: HO-20261009-urbe-uc18-explorer-breadcrumb-search. Próximos passos: CI combinado, correções, integração automática e continuidade dos recortes UC-18.

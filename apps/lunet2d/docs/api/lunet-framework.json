@@ -17666,6 +17666,330 @@
       ]
     },
     {
+      "id": "T:Lunet.UI.UiStackAlignment",
+      "name": "UiStackAlignment",
+      "namespace": "Lunet.UI",
+      "kind": "enum",
+      "signature": "public enum UiStackAlignment",
+      "summary": "Alinhamento das linhas ou colunas na dire\u00E7\u00E3o transversal da pilha.",
+      "remarks": "",
+      "examples": [],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "F:Lunet.UI.UiStackAlignment.Center",
+          "name": "Center",
+          "kind": "enum value",
+          "signature": "public const UiStackAlignment Center = 2",
+          "summary": "Centraliza na extens\u00E3o transversal.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.UI.UiStackAlignment.End",
+          "name": "End",
+          "kind": "enum value",
+          "signature": "public const UiStackAlignment End = 3",
+          "summary": "Alinha ao final da extens\u00E3o transversal.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.UI.UiStackAlignment.Start",
+          "name": "Start",
+          "kind": "enum value",
+          "signature": "public const UiStackAlignment Start = 1",
+          "summary": "Alinha ao in\u00EDcio da extens\u00E3o transversal.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "F:Lunet.UI.UiStackAlignment.Stretch",
+          "name": "Stretch",
+          "kind": "enum value",
+          "signature": "public const UiStackAlignment Stretch = 0",
+          "summary": "Ocupa toda a extens\u00E3o transversal dispon\u00EDvel.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.UI.UiStackItem",
+      "name": "UiStackItem",
+      "namespace": "Lunet.UI",
+      "kind": "struct",
+      "signature": "public readonly struct UiStackItem",
+      "summary": "Uma linha/coluna de tamanho fixo ou flex\u00EDvel em um layout de pilha.",
+      "remarks": "N\u00E3o guarda controle ou texto. Tamanho transversal zero significa usar todo o espa\u00E7o dispon\u00EDvel. default equivale a Fixed(0). Imut\u00E1vel.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar rows = new[] { Lunet.UI.UiStackItem.Fixed(48), Lunet.UI.UiStackItem.Flex(), Lunet.UI.UiStackItem.Fixed(48) };\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.UI.UiStackItem.CrossAxisSize",
+          "name": "CrossAxisSize",
+          "kind": "property",
+          "signature": "public float CrossAxisSize { get; }",
+          "summary": "Tamanho transversal preferido, ou zero para preencher.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiStackItem.Extent",
+          "name": "Extent",
+          "kind": "property",
+          "signature": "public float Extent { get; }",
+          "summary": "Tamanho fixo na dire\u00E7\u00E3o principal ou peso, se flex\u00EDvel.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiStackItem.IsFlexible",
+          "name": "IsFlexible",
+          "kind": "property",
+          "signature": "public bool IsFlexible { get; }",
+          "summary": "Se verdadeiro, Extent representa peso proporcional no espa\u00E7o restante.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiStackItem.Fixed(System.Single,System.Single)",
+          "name": "Fixed",
+          "kind": "method",
+          "signature": "public static UiStackItem Fixed(float size, float crossAxisSize = 0f)",
+          "summary": "Cria item com tamanho principal fixo n\u00E3o negativo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "size",
+              "type": "float",
+              "description": "Extens\u00E3o fixa positiva ou zero, em coordenadas virtuais."
+            },
+            {
+              "name": "crossAxisSize",
+              "type": "float",
+              "description": "Extens\u00E3o transversal opcional; zero preenche."
+            }
+          ],
+          "returns": "Uma descri\u00E7\u00E3o imut\u00E1vel para Arrange.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiStackItem.Flex(System.Single,System.Single)",
+          "name": "Flex",
+          "kind": "method",
+          "signature": "public static UiStackItem Flex(float weight = 1f, float crossAxisSize = 0f)",
+          "summary": "Cria item que recebe parte proporcional do espa\u00E7o livre.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "weight",
+              "type": "float",
+              "description": "Peso positivo finito relativo aos demais itens flex\u00EDveis."
+            },
+            {
+              "name": "crossAxisSize",
+              "type": "float",
+              "description": "Extens\u00E3o transversal opcional; zero preenche."
+            }
+          ],
+          "returns": "Uma descri\u00E7\u00E3o imut\u00E1vel para Arrange.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
+      "id": "T:Lunet.UI.UiStackLayout",
+      "name": "UiStackLayout",
+      "namespace": "Lunet.UI",
+      "kind": "struct",
+      "signature": "public readonly struct UiStackLayout",
+      "summary": "Distribui controles em coluna ou linha responsiva, sem alocar mem\u00F3ria a cada layout.",
+      "remarks": "Compat\u00EDvel com LayoutRect (use GetBounds como \u00E1rea), SafeArea e Bounds dos controles por toque. Itens fixos maiores que a \u00E1rea n\u00E3o s\u00E3o reduzidos: excedem o viewport e devem ser recortados ao desenhar. Itens flex\u00EDveis recebem zero quando n\u00E3o h\u00E1 espa\u00E7o. Margens s\u00E3o limitadas a metade da \u00E1rea, e o espa\u00E7amento n\u00E3o \u00E9 reduzido. N\u00E3o cria uma \u00E1rvore de UI nem consome eventos.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar layout = Lunet.UI.UiStackLayout.Vertical(spacing: 8, padding: 12);\nvar specs = new[] { Lunet.UI.UiStackItem.Fixed(48), Lunet.UI.UiStackItem.Flex(), Lunet.UI.UiStackItem.Fixed(48) };\nvar rectangles = new RectangleF[specs.Length];\nlayout.Arrange(device.SafeArea, specs, rectangles);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "P:Lunet.UI.UiStackLayout.Alignment",
+          "name": "Alignment",
+          "kind": "property",
+          "signature": "public UiStackAlignment Alignment { get; }",
+          "summary": "Regra transversal de alinhamento.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiStackLayout.IsHorizontal",
+          "name": "IsHorizontal",
+          "kind": "property",
+          "signature": "public bool IsHorizontal { get; }",
+          "summary": "Se verdadeiro, itens s\u00E3o posicionados da esquerda para a direita.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiStackLayout.Padding",
+          "name": "Padding",
+          "kind": "property",
+          "signature": "public float Padding { get; }",
+          "summary": "Margem uniforme interna nas duas dire\u00E7\u00F5es; colapsa em \u00E1reas muito pequenas.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.UiStackLayout.Spacing",
+          "name": "Spacing",
+          "kind": "property",
+          "signature": "public float Spacing { get; }",
+          "summary": "Espa\u00E7o n\u00E3o negativo entre itens consecutivos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiStackLayout.Arrange(Lunet.RectangleF,System.ReadOnlySpan{Lunet.UI.UiStackItem},System.Span{Lunet.RectangleF})",
+          "name": "Arrange",
+          "kind": "method",
+          "signature": "public void Arrange(RectangleF area, ReadOnlySpan\u003CUiStackItem\u003E items, Span\u003CRectangleF\u003E results)",
+          "summary": "Calcula ret\u00E2ngulos no espa\u00E7o do pai usando somente spans preexistentes.",
+          "remarks": "O c\u00E1lculo \u00E9 determin\u00EDstico e sem aloca\u00E7\u00E3o. Tamanho flex\u00EDvel \u00E9 distribu\u00EDdo por peso depois de reservar margens, espa\u00E7amento e itens fixos. Sa\u00EDdas fora do intervalo float geram OverflowException.",
+          "parameters": [
+            {
+              "name": "area",
+              "type": "RectangleF",
+              "description": "Viewport ou Bounds do painel, com limites finitos e tamanho n\u00E3o negativo."
+            },
+            {
+              "name": "items",
+              "type": "ReadOnlySpan\u003CUiStackItem\u003E",
+              "description": "Descri\u00E7\u00F5es dos itens, por ordem de exibi\u00E7\u00E3o."
+            },
+            {
+              "name": "results",
+              "type": "Span\u003CRectangleF\u003E",
+              "description": "Buffer de sa\u00EDda com capacidade para todos os itens; excedente n\u00E3o \u00E9 alterado."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiStackLayout.Horizontal(System.Single,System.Single,Lunet.UI.UiStackAlignment)",
+          "name": "Horizontal",
+          "kind": "method",
+          "signature": "public static UiStackLayout Horizontal(float spacing = 0f, float padding = 0f, UiStackAlignment alignment = UiStackAlignment.Stretch)",
+          "summary": "Cria pilha horizontal da esquerda para a direita.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "spacing",
+              "type": "float",
+              "description": "Espa\u00E7o finito n\u00E3o negativo entre itens."
+            },
+            {
+              "name": "padding",
+              "type": "float",
+              "description": "Margem interna finita n\u00E3o negativa."
+            },
+            {
+              "name": "alignment",
+              "type": "UiStackAlignment",
+              "description": "Alinhamento transversal dos itens."
+            }
+          ],
+          "returns": "Layout horizontal imut\u00E1vel.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiStackLayout.Vertical(System.Single,System.Single,Lunet.UI.UiStackAlignment)",
+          "name": "Vertical",
+          "kind": "method",
+          "signature": "public static UiStackLayout Vertical(float spacing = 0f, float padding = 0f, UiStackAlignment alignment = UiStackAlignment.Stretch)",
+          "summary": "Cria pilha vertical de cima para baixo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "spacing",
+              "type": "float",
+              "description": "Espa\u00E7o finito n\u00E3o negativo entre itens."
+            },
+            {
+              "name": "padding",
+              "type": "float",
+              "description": "Margem interna finita n\u00E3o negativa."
+            },
+            {
+              "name": "alignment",
+              "type": "UiStackAlignment",
+              "description": "Alinhamento transversal dos itens."
+            }
+          ],
+          "returns": "Layout vertical imut\u00E1vel.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.UI.UiTheme",
       "name": "UiTheme",
       "namespace": "Lunet.UI",

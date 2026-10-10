@@ -388,3 +388,17 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 ### 20261010-chatgpt-lunet-truetype-reconcile-again — ChatGPT → integrador — review
 - PR #415 conciliado à main `f91683a48` sem regressão do Framework; checks anteriores completos verdes, nova CI/APK/DEVICE a conferir.
+
+### 20261010-chatgpt-lunet-ui-stack — ChatGPT → integrador — review
+- LUNET-431 / Issue #417 / Fase 4: `UiStackLayout` responsivo por coluna e linha, tamanhos fixos e flex, padding/spacing finitos e alinhamento transversal.
+- Composição da geometria resultante com `GraphicsDevice.SafeArea`, `LayoutRect` e os Bounds dos controles existentes, sem gerenciar dedos, estado de jogo ou persistência.
+- Testes para proporções, overflow, viewport zero, retrato/paisagem, zero alocação de managed heap em Arrange e guia Game.cs compilado/executado no GameHost com saída de desenho.
+- Product-specific, sem tocar ProjectStore, Android host, outros Products, dados ou interfaces públicas existentes. NN-002/008/017/018/022; CI e DEVICE pendentes. Fase 4 permanece aberta.
+
+### 20261010-chatgpt-lunet-432-relayout — ChatGPT → integrador — review
+- LUNET-432, Issue #422, Fase 4: correção de captura obsoleta ao mudar Bounds de TouchButton, TouchSlider e TouchScrollArea; TouchListView não cancela com geometria idêntica atribuída por frame.
+- Testes cobrem clique fantasma, alteração de slider, scroll/inércia, seleção, limites inválidos e hot path sem GC. CI, APK e DEVICE pendentes. Nenhum formato ou arquivo de projeto do usuário alterado. Somente Product Lunet2D.
+
+### 20261010-chatgpt-lunet-432-slider-compat — ChatGPT → integrador — review
+- CI inicial da PR #424 detectou falha em TouchSliderTests.NewBoundsApplyOnNextUpdateAndNoTravelCancels: comportamento preexistente é continuar arraste sobre novos Bounds. Reconciliado: slider preserva contrato, controle de captura deve usar Cancel() pelo jogo ao ocultar UI.
+- Teste novo LUNET-432 alterado para cobrir continuidade intencional, sem enfraquecer teste preexistente. Botões/listas/scroll permanecem protegidos contra interação fantasma ao relayout. Revalidar CI; DEVICE pendente.

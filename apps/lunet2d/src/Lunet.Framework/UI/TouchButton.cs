@@ -36,7 +36,11 @@ public sealed class TouchButton
                 || value.Width < 0 || value.Height < 0
                 || !float.IsFinite(value.Right) || !float.IsFinite(value.Bottom))
                 throw new ArgumentOutOfRangeException(nameof(value));
-            _bounds = value;
+            if (_bounds != value)
+            {
+                _bounds = value;
+                Cancel(); // impedir clique de um dedo capturado antes do relayout.
+            }
         }
     }
 

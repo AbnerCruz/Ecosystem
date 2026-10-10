@@ -95,6 +95,24 @@ async function assertShell(page, journey = false) {
         'rgb(18, 26, 25)',
         'Estilos da RCL carregados');
 
+
+    // UC-19: the installed RCL must render procedural C# art at runtime,
+    // not request baked PNG files or silently show CSS fallback blocks.
+    smokeStage('city-procedural-pixels');
+    await nav.getByRole('link', { name: 'Cidade', exact: true }).click();
+    const tile = page.locator('.world-tiles .world-empty-lot').first();
+    await tile.waitFor();
+    assert.match(await tile.getAttribute('style'),
+        /data:image\/png;base64,/, 'Terrain pixels must come from C# runtime');
+    const tree = page.locator('.world-terrain-tree .world-grass').first();
+    await tree.waitFor();
+    assert.match(await tree.getAttribute('style'),
+        /data:image\/png;base64,/, 'Tree pixels must come from C# runtime');
+    assert.match(await page.locator('.world-map').getAttribute('style'),
+        /data:image\/png;base64,/, 'Map background must be procedural');
+    await nav.getByRole('link', { name: 'Início', exact: true }).click();
+    await page.getByRole('heading', { name: 'Urbe', exact: true }).waitFor();
+
     if (journey) {
     smokeStage('explorer-open');
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
@@ -271,7 +289,8 @@ async function assertShell(page, journey = false) {
         await page.getByText(/alteração\(ões\) aguardando persistência pelo host/).innerText(),
         /alteração/);
 
-    await page.getByRole('button', { name: '← Raiz', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Caminho da pasta' })
+        .getByRole('button', { name: 'Raiz', exact: true }).click();
 
     await page.getByLabel('Nova nota').fill('Outra');
     await page.getByRole('button', { name: 'Criar', exact: true }).click();
@@ -327,10 +346,86 @@ async function assertShell(page, journey = false) {
     smokeStage('explicit-move-action');
     await page.getByRole('button', { name: 'Mover Smoke.md', exact: true }).click();
     await page.getByRole('status').filter({ hasText: /Movendo Smoke\.md/ }).waitFor();
-    await page.getByRole('button', { name: '← Raiz', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Caminho da pasta' })
+        .getByRole('button', { name: 'Raiz', exact: true }).click();
     await page.getByRole('button', { name: 'Mover aqui', exact: true }).click();
     await page.locator('[data-path="Smoke.md"]').waitFor();
     assert.equal(await page.locator('[data-path="Destino/Smoke.md"]').count(), 0);
+
+    // UC-18 / REQ-096: navigate nested paths without repeated parent clicks.
+    // Global search must disambiguate identical filenames across folders.
+    smokeStage('explorer-breadcrumb-search');
+    await page.locator('[data-path="Destino"]').click();
+    await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
+    await page.getByLabel('Nova pasta').fill('Profunda');
+    await page.getByRole('button', { name: 'Criar pasta', exact: true }).click();
+    await page.getByLabel('Ações de Profunda').waitFor();
+    await page.getByRole('button', { name: 'Abrir pasta', exact: true }).click();
+
+    const breadcrumbs = page.getByRole('navigation', { name: 'Caminho da pasta' });
+    assert.deepEqual((await breadcrumbs.getByRole('button').allTextContents()).map(s => s.trim()),
+        ['Raiz', 'Destino', 'Profunda']);
+    assert.equal(await breadcrumbs.getByRole('button', { name: 'Profunda' }).getAttribute('aria-current'),
+        'location');
+
+    await page.getByLabel('Nova nota').fill('Outra');
+    await page.getByRole('button', { name: 'Criar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Outra', exact: true }).waitFor();
+    await page.getByRole('button', { name: '← Voltar', exact: true }).click();
+    await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();
+    console.log('UC-18 folder roundtrip diagnostics', JSON.stringify({
+        url: page.url(),
+        folder: await page.locator('.explorer-location strong').innerText(),
+        rows: await page.locator('[data-path]').evaluateAll(nodes => nodes.map(n => n.getAttribute('data-path'))),
+        query: await page.getByLabel('Buscar').inputValue()
+    }));
+    console.log('UC-18 deep file render diagnostics', JSON.stringify(
+        await page.locator('[data-path="Destino/Profunda/Outra.md"]').evaluate(element => ({
+            html: element.outerHTML.slice(0, 380),
+            style: {
+                display: getComputedStyle(element).display,
+                visibility: getComputedStyle(element).visibility,
+                opacity: getComputedStyle(element).opacity,
+                parentDisplay: getComputedStyle(element.parentElement).display,
+                grandparentDisplay: getComputedStyle(element.parentElement.parentElement).display
+            },
+            rect: element.getBoundingClientRect().toJSON()
+        }))));
+    await page.locator('[data-path="Destino/Profunda/Outra.md"]').waitFor();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const breadcrumbOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - innerWidth);
+    assert.ok(breadcrumbOverflow <= 0,
+        'Breadcrumbs devem rolar internamente sem expandir a viewport móvel');
+    await breadcrumbs.getByRole('button', { name: 'Destino', exact: true }).click();
+    await page.waitForFunction(
+        () => document.querySelector('.explorer-location strong')?.textContent.trim() === 'Destino');
+    await breadcrumbs.getByRole('button', { name: 'Raiz', exact: true }).click();
+    await page.waitForFunction(
+        () => document.querySelector('.explorer-location strong')?.textContent.trim() === 'Raiz');
+    await page.setViewportSize(previousViewport);
+
+    await page.getByLabel('Buscar').fill('Outra');
+    assert.match(await page.getByRole('status').filter({ hasText: /2 resultado/ }).innerText(),
+        /todo o vault/);
+    const upperResult = page.locator('[data-path="Destino/Outra.md"]');
+    const nestedResult = page.locator('[data-path="Destino/Profunda/Outra.md"]');
+    await upperResult.waitFor();
+    await nestedResult.waitFor();
+    assert.match(await upperResult.locator('.explorer-main small').innerText(), /em Destino$/);
+    assert.match(await nestedResult.locator('.explorer-main small').innerText(), /em Destino\/Profunda$/);
+
+    await nestedResult.click();
+    await page.getByRole('heading', { name: 'Outra', exact: true }).waitFor();
+    await page.getByRole('button', { name: '← Voltar', exact: true }).click();
+    await nestedResult.waitFor();
+    assert.equal(await page.getByLabel('Buscar').inputValue(), 'Outra',
+        'Retorno do editor restaura o filtro de origem');
+    await page.getByRole('button', { name: 'Limpar busca', exact: true }).click();
+    assert.equal(await page.getByLabel('Buscar').inputValue(), '');
+    await page.locator('[data-path="Destino"]').waitFor();
+    assert.equal(await page.locator('[data-path="Destino/Profunda/Outra.md"]').count(), 0);
 
     }
 
@@ -354,7 +449,7 @@ async function assertShell(page, journey = false) {
     const sessionCards = page.getByRole('group', { name: 'Sessão de trabalho' });
     // A journey builds three in-memory notes/tabs. Reload and fresh online
     // or offline pages start empty until host persistence is implemented.
-    const expectedSessionCount = journey ? '3' : '0';
+    const expectedSessionCount = journey ? '4' : '0';
     assert.equal(await sessionCards.locator('article').nth(0).locator('span').innerText(), expectedSessionCount);
     assert.equal(await sessionCards.locator('article').nth(1).locator('span').innerText(), expectedSessionCount);
     assert.match(await page.getByText('UC-17 integrado').innerText(), /UC-17 integrado/);

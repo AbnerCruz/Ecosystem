@@ -45,8 +45,12 @@ public sealed class TouchScrollArea
                 || value.Width < 0 || value.Height < 0
                 || !float.IsFinite(value.Right) || !float.IsFinite(value.Bottom))
                 throw new ArgumentOutOfRangeException(nameof(value));
-            _bounds = value;
-            ClampOffset();
+            if (_bounds != value)
+            {
+                _bounds = value;
+                Cancel(); // não transportar gesto nem inércia para novo viewport.
+                ClampOffset();
+            }
         }
     }
 
