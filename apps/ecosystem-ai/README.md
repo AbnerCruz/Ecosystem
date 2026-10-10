@@ -113,3 +113,13 @@ Runtime. O leitor reutiliza os limites já testados de 16 KiB por arquivo,
 symlinks, e HTML escapado. Desativada por padrão; pode revelar dados privados.
 
 Limites e uso: [docs-r4-live-artifact-previews.md](docs-r4-live-artifact-previews.md).
+
+## Teto de orçamento da instância de chat (R4)
+
+`--chat ... --session-budget-cents N` contabiliza os recibos anteriores em USD
+e **reserva o limite inteiro de cada próximo run** antes de enviá-lo ao
+Workspace. Reduz o orçamento por turno quando o teto está próximo; a sobra
+não é devolvida. Não é teto distribuído entre processos e não substitui a
+fiscalização do Ledger nem garante valores faturados pelo provedor.
+
+[Limites e exemplos](docs-r4-chat-session-budget.md).
