@@ -17,8 +17,6 @@
 
 ### Added
 
-- LUNET-434 (em revisao): TouchRadialMenu para selecao de comandos/armas por toque com zona morta, geometria segura, cancelamento, destaque visual e testes sem alocacao por quadro.
-
 - LUNET-433 (em revisão): grade de interface 2D responsiva para menus e inventários, com cálculo de colunas por largura, altura total e consulta virtualizada O(1), hit-test e TouchGridView com seleção, rolagem e renderização de janela, compatível com TouchScrollArea; exemplo C# offline e sem alocação no layout.
 
 - LUNET-430 (em revisão): font atlas TrueType gerado offline em C# (`TrueTypeFont.Bake` e `Content.LoadTrueTypeFont`), integração com SpriteBatch, métricas proporcionais, cache de fonte, testes e limites de memória.
