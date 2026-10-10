@@ -148,6 +148,26 @@ public sealed class CityTileLayoutTests
     }
 
     [Fact]
+    public void SameSpatialCoordinatesAreAllowedInDifferentBairros()
+    {
+        using var session = new WorkspaceSession();
+        session.Load(VaultReader.Read([
+            File("Centro/Uma.md", "um"),
+            File("Floresta/Duas.md", "dois")
+        ]), ["Centro", "Floresta"]);
+
+        Assert.True(session.PlaceHouse("Centro/Uma.md", 3, 4));
+        Assert.True(session.PlaceHouse("Floresta/Duas.md", 3, 4));
+        Assert.Null(session.CreateHouseAt("Conflito", "Centro", 3, 4));
+
+        var created = session.CreateHouseAt("Terceira", "Floresta", 4, 4);
+        Assert.NotNull(created);
+        Assert.Equal(3, session.World.ProjectDocument("Centro/Uma.md")?.X);
+        Assert.Equal(3, session.World.ProjectDocument("Floresta/Duas.md")?.X);
+        Assert.Equal(4, session.World.ProjectDocument(created!.Path)?.X);
+    }
+
+    [Fact]
     public void FutureMapRemainsReadOnlyAndOriginalBytesUntouched()
     {
         var files = new[]
