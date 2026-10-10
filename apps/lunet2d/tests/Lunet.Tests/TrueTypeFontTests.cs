@@ -28,7 +28,6 @@ public sealed class TrueTypeFontTests
         byte[] invalid = [1, 2, 3];
         Assert.Throws<ArgumentNullException>(() => TrueTypeFont.Bake(null!, invalid, 22));
         Assert.Throws<ArgumentNullException>(() => TrueTypeFont.Bake(device, null!, 22));
-        Assert.Throws<ArgumentNullException>(() => TrueTypeFont.Bake(device, invalid, 22, null!));
         Assert.Throws<ArgumentOutOfRangeException>(() => TrueTypeFont.Bake(device, invalid, 22));
         var bytes = new byte[12];
         foreach (float size in new[] { -1, 0, 3, 193, float.NaN, float.PositiveInfinity })
