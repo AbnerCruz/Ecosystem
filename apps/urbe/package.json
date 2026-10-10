@@ -27,7 +27,7 @@
     "@capacitor/cli": "^8.0.0",
     "@capacitor/core": "^8.0.0",
     "@capacitor/filesystem": "^8.1.4",
-    "electron": "^38.2.0",
+    "electron": "^44.6.0",
     "electron-builder": "^26.0.12",
     "playwright": "^1.56.1"
   },
