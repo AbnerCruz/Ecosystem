@@ -260,7 +260,7 @@ internal sealed class PixelCanvas
         for (var x = 0; x < Width; x++)
         {
             var inside = false;
-            for (var i = 0, j = count - 1; i < count; j = i++)
+            for (int i = 0, j = count - 1; i < count; j = i++)
             {
                 var yi = xy[2 * i + 1];
                 var yj = xy[2 * j + 1];
