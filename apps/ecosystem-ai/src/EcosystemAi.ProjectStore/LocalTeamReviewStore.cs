@@ -157,7 +157,8 @@ public sealed class LocalTeamReviewStore
         var second = session.Runs.SingleOrDefault(r => r.RunId == reviewerRunId);
         return first is { Status: "succeeded", Verified: true }
             && second is { Status: "succeeded", Verified: true }
-            && Array.FindIndex(session.Runs.ToArray(), r => r.RunId == producerRunId)\n                < Array.FindIndex(session.Runs.ToArray(), r => r.RunId == reviewerRunId)
+            && Array.FindIndex(session.Runs.ToArray(), r => r.RunId == producerRunId)
+                < Array.FindIndex(session.Runs.ToArray(), r => r.RunId == reviewerRunId)
             && session.Turns[producerTurnIndex].Role == "assistant"
             && session.Turns[reviewerTurnIndex].Role == "assistant"
             && !string.IsNullOrWhiteSpace(session.Turns[producerTurnIndex].Text)
@@ -239,7 +240,8 @@ public sealed class LocalTeamReviewStore
                 || !runIds.Add(x.ReviewerRunId)
                 || x.ProducerRunId == x.ReviewerRunId
                 || x.ProducerTurnIndex < 0 || x.ReviewerTurnIndex <= x.ProducerTurnIndex
-                || x.ProducerHash is null || x.ReviewerHash is null\n                || x.ProducerHash.Length != 64 || x.ReviewerHash.Length != 64
+                || x.ProducerHash is null || x.ReviewerHash is null
+                || x.ProducerHash.Length != 64 || x.ReviewerHash.Length != 64
                 || x.Decision is not ("pending_owner" or "owner_accepted" or "owner_rejected")
                 || (x.Decision == "pending_owner" && (x.Note is not null || x.DecidedAt is not null))
                 || (x.Decision != "pending_owner"
