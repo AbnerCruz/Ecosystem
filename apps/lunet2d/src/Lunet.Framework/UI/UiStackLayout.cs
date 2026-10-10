@@ -17,7 +17,7 @@ public enum UiStackAlignment
 
 /// <summary>Uma linha/coluna de tamanho fixo ou flexível em um layout de pilha.</summary>
 /// <example><code>
-/// var rows = new[] { UiStackItem.Fixed(48), UiStackItem.Flex(), UiStackItem.Fixed(48) };
+/// var rows = new[] { Lunet.UI.UiStackItem.Fixed(48), Lunet.UI.UiStackItem.Flex(), Lunet.UI.UiStackItem.Fixed(48) };
 /// </code></example>
 /// <remarks>Não guarda controle ou texto. Tamanho transversal zero significa usar todo o espaço disponível.
 /// default equivale a Fixed(0). Imutável.</remarks>
@@ -65,10 +65,10 @@ public readonly struct UiStackItem
 
 /// <summary>Distribui controles em coluna ou linha responsiva, sem alocar memória a cada layout.</summary>
 /// <example><code>
-/// var layout = UiStackLayout.Vertical(spacing: 8, padding: 12);
-/// var specs = new[] { UiStackItem.Fixed(48), UiStackItem.Flex(), UiStackItem.Fixed(48) };
+/// var layout = Lunet.UI.UiStackLayout.Vertical(spacing: 8, padding: 12);
+/// var specs = new[] { Lunet.UI.UiStackItem.Fixed(48), Lunet.UI.UiStackItem.Flex(), Lunet.UI.UiStackItem.Fixed(48) };
 /// var rectangles = new RectangleF[specs.Length];
-/// layout.Arrange(graphics.SafeArea, specs, rectangles);
+/// layout.Arrange(device.SafeArea, specs, rectangles);
 /// </code></example>
 /// <remarks>Compatível com LayoutRect (use GetBounds como área), SafeArea e Bounds dos controles por toque.
 /// Itens fixos maiores que a área não são reduzidos: excedem o viewport e devem ser recortados ao desenhar.

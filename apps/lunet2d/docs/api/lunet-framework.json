@@ -17586,7 +17586,7 @@
       "summary": "Uma linha/coluna de tamanho fixo ou flex\u00EDvel em um layout de pilha.",
       "remarks": "N\u00E3o guarda controle ou texto. Tamanho transversal zero significa usar todo o espa\u00E7o dispon\u00EDvel. default equivale a Fixed(0). Imut\u00E1vel.",
       "examples": [
-        "\u0060\u0060\u0060\nvar rows = new[] { UiStackItem.Fixed(48), UiStackItem.Flex(), UiStackItem.Fixed(48) };\n\u0060\u0060\u0060"
+        "\u0060\u0060\u0060\nvar rows = new[] { Lunet.UI.UiStackItem.Fixed(48), Lunet.UI.UiStackItem.Flex(), Lunet.UI.UiStackItem.Fixed(48) };\n\u0060\u0060\u0060"
       ],
       "related": [],
       "since": "0.0.1",
@@ -17689,7 +17689,7 @@
       "summary": "Distribui controles em coluna ou linha responsiva, sem alocar mem\u00F3ria a cada layout.",
       "remarks": "Compat\u00EDvel com LayoutRect (use GetBounds como \u00E1rea), SafeArea e Bounds dos controles por toque. Itens fixos maiores que a \u00E1rea n\u00E3o s\u00E3o reduzidos: excedem o viewport e devem ser recortados ao desenhar. Itens flex\u00EDveis recebem zero quando n\u00E3o h\u00E1 espa\u00E7o. Margens s\u00E3o limitadas a metade da \u00E1rea, e o espa\u00E7amento n\u00E3o \u00E9 reduzido. N\u00E3o cria uma \u00E1rvore de UI nem consome eventos.",
       "examples": [
-        "\u0060\u0060\u0060\nvar layout = UiStackLayout.Vertical(spacing: 8, padding: 12);\nvar specs = new[] { UiStackItem.Fixed(48), UiStackItem.Flex(), UiStackItem.Fixed(48) };\nvar rectangles = new RectangleF[specs.Length];\nlayout.Arrange(graphics.SafeArea, specs, rectangles);\n\u0060\u0060\u0060"
+        "\u0060\u0060\u0060\nvar layout = Lunet.UI.UiStackLayout.Vertical(spacing: 8, padding: 12);\nvar specs = new[] { Lunet.UI.UiStackItem.Fixed(48), Lunet.UI.UiStackItem.Flex(), Lunet.UI.UiStackItem.Fixed(48) };\nvar rectangles = new RectangleF[specs.Length];\nlayout.Arrange(device.SafeArea, specs, rectangles);\n\u0060\u0060\u0060"
       ],
       "related": [],
       "since": "0.0.1",
