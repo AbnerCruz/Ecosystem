@@ -336,3 +336,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Preservadas métricas 5×7, glifos acentuados, batching/câmera, API pública e projetos existentes; sem TrueType, wrapping ou mudanças de formatos.
 - Novos testes para newline/emoji/acentos, validação, escala extrema, batching e ausência de alocação; CI/APK/DEVICE a verificar. PRs #384 e #388 independentes; reconciliar ROADMAP/CHANGELOG quando integrarem.
 - Reuso product-specific; NN-002, NN-008, NN-017, NN-018, NN-022; ProjectStore e origem espelho intactos.
+
+### 20261009-chatgpt-lunet-ui-consolidation — ChatGPT → integrador — review
+- Reconciliação limpa de LUNET-427/#394 e LUNET-428/#401 em `chatgpt/lunet-scroll-toggle-clean-20261009` sobre `main` `cd5a3619623f0293f41c2a19868fdbc5103b7458`, sem reescrever arquivos já modificados por outros agentes.
+- Portados os dois controles C#, testes de toque/zero GC e guias dos PRs com CI/test/APK verdes. Referência de API recebeu apenas os dois tipos ausentes; entradas pré-existentes preservadas sem regeneração.
+- `ProjectStore`, modelos do usuário, workflow e repositório espelho preservados. Próxima ação: CI combinado do PR, integração pelo integrador e APK/DEVICE; Fase 4 continua aberta.

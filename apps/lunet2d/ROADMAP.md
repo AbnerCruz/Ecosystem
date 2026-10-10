@@ -204,6 +204,8 @@ Integração transversal autorizada pelo Ecosystem (não altera o gate de Framew
 - [~] **LUNET-422 — Viewport Fit/Fill e mapeamento de toque** (§7, §23): Issue #375, Fill opt-in sem distorção de sprites para tela sem letterbox; Fit default retrocompatível, PixelPerfect, SafeArea, scissor, config e opção no Laboratório com testes. CI/integração/APK/DEVICE pendentes; Fill pode recortar HUD e não promete mostrar toda cena.
 - [~] **LUNET-423 — Controles virtuais precisos e captura multitouch** (§7, §23): Issue #377; `VirtualStick` com curva/sensibilidade/zona morta contínua opt-in, `TouchId`, exclusão de dedo, captura somente Pressed opt-in e Cancel; `VirtualButton` com mesma reserva de dedo e cancelamento. Testes, documentação e CI/Android pendentes; DEVICE necessário para ergonomia e regressão do toque.
 - [~] **LUNET-424 — Buffer de transições touch no Preview Android** (§7, §23): Issue #381; manter Pressed/Released até Update/Step, sem List/ToArray por MotionEvent; testes portáteis e documentação incluídos. CI/APK/DEVICE pendentes. Não altera InputState público nem códigos salvos.
+- [~] **LUNET-427 — Área de rolagem vertical por toque** (§7, §23): Issue #393; `TouchScrollArea` com captura de dedo, limiar de arraste, inércia, limite de conteúdo e indicador proporcional; guia e testes de toque/multitouch/no-GC. CI/integração/release/DEVICE a verificar. Não é árvore de UI.
+- [~] **LUNET-428 — Alternância on/off por toque** (§7, §23): Issue #399; `TouchToggle` por composição de `TouchButton`, pulso WasChanged, estilos de On/Off, cancelamento e multitouch; guia e testes. CI/integração/release/DEVICE a verificar. Não altera dados de projetos.
 - [ ] Auditoria de fechamento da Fase 4 registrada em `docs/audits/`.
 
 ## Fase 5 — Lunet Studio (§13)
