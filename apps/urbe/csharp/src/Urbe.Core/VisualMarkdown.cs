@@ -245,6 +245,19 @@ public static partial class VisualMarkdown
         return FromHtml(html, frontmatter);
     }
 
+    /// <summary>
+    /// True only when the rendered HTML can be converted back to the exact
+    /// original Markdown. The rich DOM editor must not normalize unsupported
+    /// or non-canonical source when a user edits a different part of the page.
+    /// </summary>
+    public static bool IsLosslessEditorRoundTrip(string? markdown)
+    {
+        var original = markdown ?? string.Empty;
+        var rendered = MarkdownEngine.Render(original);
+        var reconstructed = FromHtmlUsingEditorSource(rendered, original);
+        return string.Equals(original, reconstructed, StringComparison.Ordinal);
+    }
+
     private static void Block(VisualHtmlNode node, List<string> output)
     {
         if (node is VisualHtmlText textNode)

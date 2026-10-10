@@ -1,0 +1,134 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-buttons-laboratory",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T15:13:08.502073+00:00",
+  "agent": {
+    "id": "codex-lunet-buttons-laboratory",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-410",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-touch-buttons-20261008",
+  "base_commit": "4966481372efcdb2dedd7816806621d48ba51eab",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/332",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/laboratorio-botoes.md",
+    "apps/lunet2d/docs/guides/layout-ui.md",
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/LayoutRect.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ButtonLaboratoryTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchSliderTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/UiLayoutTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-buttons-laboratory.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr330-bitmap-reconciliation.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr330-nine-slice-reconciliation.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr330-slider-reconciliation.json",
+    "docs/governance/handoffs/HO-20261008-lunet-ui-layout.json"
+  ],
+  "work_completed": [
+    "Reconciliação com main 4966481, LayoutRect #330 publicado em 1000164; API TouchButton/Style preservada.",
+    "Página 5 do Laboratório existente para clique, drag-out/retorno, disable, reposicionamento/LayoutRect, contador e cancelamento.",
+    "Cabeçalho com TouchButton permite navegar com segundo dedo e cancela captura ao esconder página; sem alteração de GestureRecognizer.",
+    "Novo teste executa projeto gerado sem editar fonte: físico 2×, clique/arraste/disable/pausa/relocação/resize/navegação simultânea; regressões das quatro páginas mantidas.",
+    "API JSON regenerada e guia novo com roteiro do projeto pronto; guia anterior não reformado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "Build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false, zero warnings/errors; pacotes restaurados após cache local ausente."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão completo: 463/463, zero falhas/erros/skips. Main 449 + 13 casos de botões + fluxo novo do Laboratório; API JSON regenerada."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22 checks locais passaram; ROADMAP × Issues requer snapshot remoto do CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Botões e navegação no Laboratório Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/laboratorio-botoes.md",
+      "evidence": "Novo projeto Laboratório, Run, página 5/5. Clique/arraste/disable/relocação/pausa/troca de página; segundo dedo no cabeçalho enquanto outro segura controle. Offline, Preview rápido/isolado; aparência/GL/aparelho pendentes."
+    }
+  ],
+  "known_issues": [
+    "Projetos existentes preservam seu código e número de páginas; novo projeto recebe página 5.",
+    "Foco, teclado, consumo/arbitragem central de input e temas completos continuam pendentes; sem concluir UI/Fase 4.",
+    "Texto formatado no HUD aloca; zero bytes é exigido nas APIs TouchButton.Update/Draw, com recursos aquecidos.",
+    "SDK Android ausente localmente; CI gera APK e DEVICE não é inferido."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Enviar reconciliação e página executável ao PR #332 existente, com lease, sem force/merge manual/label integrar.",
+    "Acompanhar checks combinados, integração automática e confirmar release real antes de indicar página 5 no APK.",
+    "DEVICE e UI/Fase 4 permanecem abertos; #317 crítico conserva autorização do proprietário."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API matemática de UI local no Framework, sem dependências de outros Products/Editor/Studio."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-410 / Issue #331, branch/base/handoff/guia explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, nenhum gate/validação inferido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/guia comprovados; CI/integração/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reutiliza RectangleF, TouchPoint/InputState, SpriteBatch e SpriteFont; nenhum componente compartilhado novo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "touch-ui-buttons",
+      "status": "product-specific",
+      "rationale": "Controle local de UI no Framework, autorizado na Fase 4. Sem segundo consumidor real; não extrai Tool/Library genérica."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva de UI e código de novo Laboratório em ProjectTemplates; ProjectStore, persistência, formatos, backend e áreas protegidas preservados."
+  },
+  "cost": null
+}

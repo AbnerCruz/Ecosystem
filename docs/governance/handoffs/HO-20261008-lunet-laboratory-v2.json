@@ -1,0 +1,115 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-laboratory-v2",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T20:12:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-lab-v2",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-418",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-laboratory-v2-20261008",
+  "base_commit": "8a71937e9f1fda7ba986c596d8037f23f4e6ff7d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/ProjectTemplates.cs",
+    "apps/lunet2d/src/Lunet.Core/LaboratoryTemplate.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LaboratoryV2Tests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DemoTemplateTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/ButtonLaboratoryTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/DebugShapeTests.cs",
+    "apps/lunet2d/docs/guides/laboratorio.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261008-lunet-laboratory-v2.json"
+  ],
+  "work_completed": [
+    "Template independente e navegável de 12 módulos pronto para Run.",
+    "Demos avançadas end-to-end para animação, partículas, tilemaps, A*, SAT, fontes/nine-slice e temas de cores.",
+    "Regressão das sete áreas anteriores atualizada e teste integrado que verifica novo projeto sem alterar projeto existente.",
+    "Reconciliada a demo Temas com UiTheme oficial do PR #366 sem sobrescrever código de Camera2D ou alterações da main."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "Verificar lunet2d-ci do PR #368."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "pending",
+      "evidence": "Verificar consistency do PR #368."
+    },
+    {
+      "kind": "human",
+      "check": "Laboratório Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/laboratorio.md",
+      "evidence": "Teste físico de aparência, toque, desempenho e preview continua pendente."
+    }
+  ],
+  "known_issues": [
+    "UiTheme oficial do PR #366 integrado na main e adotado pela demo de temas do Laboratório.",
+    "Física contínua/TrueType/Tile Studio ainda não completos, não anunciar como testes existentes."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar CI de combinação Lab #368 + UiTheme #366 após reconciliação da main.",
+    "Integrar somente conforme mecanismo automático e confirmar versão/artefatos publicados.",
+    "Executar roteiro de validação no aparelho quando o proprietário puder testar."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Somente produto Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #367 / PR #368 / handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE aberto."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "CI/merge/release só após verificação."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem Tool transversal."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "lunet-laboratory-v2",
+      "status": "product-specific",
+      "rationale": "Projeto demonstra APIs Lunet e não tem outro consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Somente código de template e testes; ProjectStore, formato de dados, Android e pipelines intactos."
+  },
+  "cost": null
+}

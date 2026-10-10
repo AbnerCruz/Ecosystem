@@ -37,6 +37,8 @@ internal sealed record CampaignState(
     IReadOnlyList<CampaignSession> Sessions,
     SessionId? ActiveSessionId)
 {
+    internal WorldSnapshot World { get; init; } = WorldSnapshot.Empty;
+
     internal static IReadOnlyDictionary<string, int> ReadOnlyAttributes(
         IEnumerable<KeyValuePair<string, int>> attributes) =>
         new ReadOnlyDictionary<string, int>(

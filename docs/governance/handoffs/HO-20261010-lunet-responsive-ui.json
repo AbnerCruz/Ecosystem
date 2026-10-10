@@ -1,0 +1,108 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-responsive-ui",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T09:20:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-431",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "chatgpt/lunet-responsive-ui-layout-20261010",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/418",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/UI/UiStackLayout.cs",
+    "apps/lunet2d/tests/Lunet.Tests/UiStackLayoutTests.cs",
+    "apps/lunet2d/docs/guides/stack-ui.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261010-lunet-responsive-ui.json"
+  ],
+  "work_completed": [
+    "Layout por pilha horizontal/vertical responsiva com filhos fixos/flex, padding/spacings, alinhamento transversal, validação finita e zero alocação do hot path.",
+    "Testes de matemática, layout sem clipping implícito, limite/overflow, resize/tela e Game.cs compilado/executado no GameHost.",
+    "API offline, guia mobile e roadmap atualizados."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests incluindo documentação e jogo offline",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Foundation consistency / regras de integração",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "APK Android arm64 CI",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Layout seguro + toque no aparelho Android",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/stack-ui.md"
+    }
+  ],
+  "known_issues": [
+    "Não cria árvore/roteador de interface, foco, navegação automática nem editor de UI.",
+    "Itens fixos acima da altura do container podem ultrapassar viewport; clipping cabe à composição do jogo."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar CI e corrigir falhas de snapshot/API/tests.",
+    "Integrar pelo integrador automático depois de checks verdes.",
+    "Testar layout em aparelhos Android portrait/landscape."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Componentes ficam somente na API gráfica de UI do Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #417, código C#, testes, API, guia e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI separado de validação física mobile."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "State review até CI/merge/release/DEVICE."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhum contrato da plataforma ou projeto salvo modificado."
+    }
+  ],
+  "base_commit": "785e0d3e032ecf9bfe749871cd18785096c46ebc",
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ui-stack-layout",
+      "status": "product-specific",
+      "rationale": "Resolve bounds de controles C# do Lunet e não requer extração para plataforma sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

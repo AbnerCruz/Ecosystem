@@ -57,7 +57,6 @@ public sealed class ArchitectureTests
     [Theory]
     [InlineData("Urbe.Core", "")]
     [InlineData("Urbe.UI", "Urbe.Core")]
-    [InlineData("Urbe.Web", "Urbe.UI")]
     [InlineData("Urbe.App", "Urbe.UI")]
     public void ReferencesRespectApprovedBoundaries(string name, string dependency)
     {
@@ -77,7 +76,12 @@ public sealed class ArchitectureTests
     public void NativeBuildCannotReplaceExistingAndroidInstallation()
     {
         var project = XDocument.Load(Path.Combine(Root, "src/Urbe.App/Urbe.App.csproj"));
-        Assert.Equal("app.urbe.csharp.dev", project.Descendants("ApplicationId").Single().Value);
+        Assert.Equal("app.urbe.csharp", project.Descendants("ApplicationId").Single().Value);
+        var version = project.Descendants("ApplicationDisplayVersion").Single().Value;
+        var code = int.Parse(project.Descendants("ApplicationVersion").Single().Value);
+        Assert.Matches(@"^2\.\d+\.\d+-beta\.\d+$", version);
+        Assert.True(code >= 2000001, "O versionCode Android deve ser crescente.");
+        Assert.NotEqual("app.urbe", project.Descendants("ApplicationId").Single().Value);
         var manifest = XDocument.Load(Path.Combine(Root, "src/Urbe.App/Platforms/Android/AndroidManifest.xml"));
         XNamespace android = "http://schemas.android.com/apk/res/android";
         Assert.Equal("false", manifest.Descendants("application").Single().Attribute(android + "allowBackup")?.Value);
@@ -86,10 +90,8 @@ public sealed class ArchitectureTests
     }
 
     [Fact]
-    public void BothHostsComposeTheSameRazorRoot()
+    public void NativeAppComposesCanonicalRazorRoot()
     {
-        var web = File.ReadAllText(Path.Combine(Root, "src/Urbe.Web/App.razor"));
-        Assert.Contains("Urbe.UI.UrbeRoutes", web);
         var native = XDocument.Load(Path.Combine(Root, "src/Urbe.App/MainPage.xaml"));
         var root = native.Descendants().Single(element => element.Name.LocalName == "RootComponent");
         Assert.Equal("{x:Type ui:UrbeRoutes}", root.Attribute("ComponentType")?.Value);

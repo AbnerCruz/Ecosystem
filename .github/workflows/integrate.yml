@@ -57,7 +57,7 @@ jobs:
       trusted_failures: ${{ steps.prepare.outputs.trusted_failures }}
       gate_reason: ${{ steps.prepare.outputs.gate_reason }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch || 'main' }}
           fetch-depth: 0
@@ -194,7 +194,7 @@ jobs:
       R_TABLETOP_RPG: ${{ needs.tabletop-rpg.result }}
       R_MATH_AUTHORING: ${{ needs.math-authoring.result }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch || 'main' }}
           fetch-depth: 0

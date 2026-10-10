@@ -1,0 +1,122 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-p6-5-project-sessions",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T19:06:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-local-store",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-local-project-sessions-20261008",
+  "base_commit": "0110aaafb5afad433b7262379084ce6791a4d4df",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.ProjectStore/EcosystemAi.ProjectStore.csproj",
+    "apps/ecosystem-ai/src/EcosystemAi.ProjectStore/LocalProjectStore.cs",
+    "apps/ecosystem-ai/tests/EcosystemAi.ProjectStore.Tests/EcosystemAi.ProjectStore.Tests.csproj",
+    "apps/ecosystem-ai/tests/EcosystemAi.ProjectStore.Tests/LocalProjectStoreTests.cs",
+    "apps/ecosystem-ai/docs-r4-local-store.md",
+    ".github/workflows/ecosystem-ai-ci.yml",
+    "docs/governance/handoffs/HO-20261008-p6-5-project-sessions.json",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliSessionPersistence.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/EcosystemAi.Cli.csproj",
+    "apps/ecosystem-ai/EcosystemAI.slnx",
+    "apps/ecosystem-ai/docs-r4-cli.md",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliHistoryCommands.cs"
+  ],
+  "work_completed": [
+    "Implementa Product-local catálogo de projetos, sessões, mensagens e recibos sem duplicar AgentRunner, IEventLog ou orçamento.",
+    "Persistência local explícita com revisões, schema, integridade SHA-256, lock exclusivo entre processos, escrita em temp/flush/rename, limites e recusa de symlink/corrupção/versão futura.",
+    "Cria testes xUnit de round-trip, retomada após reabrir, corrupção sem sobrescrita, versão futura, crash temp orphan, concorrência e recibos inválidos.",
+    "Adiciona projeto de teste ao CI Ecosystem AI; mantém P6-5 aberta, sem implantar rede nem UI artificial.",
+    "Com a CLI R4 já integrada na main por PR #356, reconciliou a branch e conectou --catalog opt-in a projetos/sessões persistentes com IDs de reabertura, vínculo de workspace e receipt + resposta atômicos; adicionou teste real sem rede.",
+    "Adiciona comandos reais CLI --list e --show para consulta offline dos projetos, sessões, mensagens e receipts (com verificação de catálogo existente); teste sem endpoint nem modelo."
+  ],
+  "verification": [
+    {
+      "check": "CI Ecosystem AI Product Store",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Workflow ecosystem-ai-ci.yml passa a executar dotnet test --project tests/EcosystemAi.ProjectStore.Tests; conferir status real do PR."
+    },
+    {
+      "check": "Ecosystem consistency e integrador combinado",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando estado combinado no integrador."
+    },
+    {
+      "check": "DEVICE/UI/segredo real",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Apenas biblioteca local headless, sem APK/UI nem provider de rede neste slice."
+    }
+  ],
+  "known_issues": [
+    "A pasta usa JSON em claro; o checksum não garante confidencialidade, criptografia nem autenticidade.",
+    "Fluxos concorrentes recebem erro de lock, não entram em fila; sem dependência de background worker.",
+    "Nova etapa em workflow altera zona de controle crítico e pode exigir label integrar do proprietário.",
+    "O histórico opt-in da CLI não repõe contexto no modelo nem reconstitui event logs e limites de orçamento entre runs. A versão v1 guarda mensagens em claro no catálogo escolhido."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir e corrigir CI do novo projeto.",
+    "Construir UX do Product com seleção de projeto/sessão e histórico; UI real e DEVICE em gates próprios.",
+    "Próximo slice: UI local de seleção de projetos/sessões e consulta de histórico sem depender do modelo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json",
+    "apps/ecosystem-ai/README.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Módulo restrito ao Product Ecosystem AI sem dependência de outro Product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #359, branch, PR e handoff rastreiam a entrega."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Mudança de CI crítica sujeita à autorização legítima do proprietário."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Não amplia grants nem executa comandos ou rede."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara teste de aparelho que não aconteceu."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "P6-5 permanece aberta; handoff em review até CI e merge."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Persistência é experiência específica de Product, não reescreve runtime/ledger."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "control-plane"
+    ],
+    "reason": "Altera .github/workflows/ecosystem-ai-ci.yml; integrador exige aprovação explícita conforme política. Não aplicar label em nome do proprietário."
+  },
+  "cost": null
+}

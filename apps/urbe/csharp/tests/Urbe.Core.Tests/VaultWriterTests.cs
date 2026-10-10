@@ -410,6 +410,141 @@ public sealed class VaultWriterTests
                 appVersion: "1.8.3-beta"));
     }
 
+    [Fact]
+    public void MovingMarkdownWritesAndVerifiesDestinationBeforeRemovingSourceAndKeepsAssets()
+    {
+        var files = LoadFixture("v1-mapa-v4")
+            .Append(TextFile("Bairro/foto.png", "imagem conservada"))
+            .ToArray();
+        var original = VaultReader.Read(files);
+        var documents = ToWriteDocuments(original)
+            .Select(note => string.Equals(note.Path, "Alfa.md", StringComparison.Ordinal)
+                ? note with { Path = "Bairro/Alfa.md" }
+                : note)
+            .ToArray();
+
+        var plan = VaultWriter.Plan(new VaultWriteRequest
+        {
+            Files = files,
+            Documents = documents,
+            AppVersion = "urbe-csharp-beta",
+            Now = new DateTimeOffset(2026, 10, 9, 12, 0, 0, TimeSpan.Zero)
+        });
+
+        Assert.True(plan.Writable);
+        Assert.True(plan.Files.ContainsKey("Bairro/Alfa.md"));
+        Assert.False(plan.Files.ContainsKey("Alfa.md"));
+        Assert.Equal(
+            Text(files, "Alfa.md"),
+            Encoding.UTF8.GetString(plan.Files["Bairro/Alfa.md"].Bytes.Span));
+        Assert.Equal(
+            "imagem conservada",
+            Encoding.UTF8.GetString(plan.Files["Bairro/foto.png"].Bytes.Span));
+
+        var writeAt = plan.Operations.ToList().FindIndex(operation =>
+            operation.Kind == VaultOperationKind.Write &&
+            operation.Path == "Bairro/Alfa.md");
+        var removeAt = plan.Operations.ToList().FindIndex(operation =>
+            operation.Kind == VaultOperationKind.Remove &&
+            operation.Path == "Alfa.md");
+
+        Assert.True(writeAt >= 0, "Nova nota deve constar do plano");
+        Assert.True(removeAt > writeAt,
+            "O original não pode ser removido antes de o destino ser gravado.");
+    }
+
+
+    [Fact]
+    public void UntouchedLegacyEncodingBytesArePreservedWhileAnotherNoteIsEdited()
+    {
+        var latin1 = new byte[] { (byte)'C', (byte)'a', (byte)'f', 0xE9, (byte)'\n' };
+        var files = new[]
+        {
+            new VaultFile("Legado.md", latin1),
+            TextFile("Atual.md", "início")
+        };
+        var snapshot = VaultReader.Read(files);
+        var desired = ToWriteDocuments(snapshot)
+            .Select(doc => doc.Path == "Atual.md"
+                ? doc with { Content = "editado" }
+                : doc)
+            .ToArray();
+
+        var result = VaultWriter.Plan(new VaultWriteRequest
+        {
+            Files = files,
+            Documents = desired,
+            AppVersion = "urbe-csharp-beta"
+        });
+
+        Assert.Equal(latin1, result.Files["Legado.md"].Bytes.ToArray());
+        Assert.DoesNotContain(result.Operations, op =>
+            op.Kind == VaultOperationKind.Write && op.Path == "Legado.md");
+        Assert.Equal("editado",
+            Encoding.UTF8.GetString(result.Files["Atual.md"].Bytes.Span));
+    }
+
+    [Fact]
+    public void EditingOrMovingNonUtf8MarkdownFailsClosedInsteadOfReplacingOriginalBytes()
+    {
+        var files = new[] { new VaultFile("Legado.md", new byte[] { 0xE9, 0xF1 }) };
+        var snapshot = VaultReader.Read(files);
+        var note = ToWriteDocuments(snapshot).Single();
+
+        Assert.Throws<InvalidDataException>(() =>
+            VaultWriter.Plan(new VaultWriteRequest
+            {
+                Files = files,
+                Documents = [note with { Content = "novo texto" }]
+            }));
+        Assert.Throws<InvalidDataException>(() =>
+            VaultWriter.Plan(new VaultWriteRequest
+            {
+                Files = files,
+                Documents = [note with { Path = "Bairro/Legado.md" }]
+            }));
+        Assert.Throws<InvalidDataException>(() =>
+            VaultWriter.Plan(new VaultWriteRequest
+            {
+                Files = files,
+                Documents = []
+            }));
+        Assert.Equal(new byte[] { 0xE9, 0xF1 }, files[0].Bytes.ToArray());
+    }
+
+    [Fact]
+    public void RecoveryJournalIsNotCreatedFromLossyNonUtf8DocumentStrings()
+    {
+        var latin1 = new byte[] { 0xC0, (byte)'X' };
+        var files = new[]
+        {
+            new VaultFile("Antigo.md", latin1),
+            TextFile("NovoA.md", "a"),
+            TextFile("NovoB.md", "b")
+        };
+        var snapshot = VaultReader.Read(files);
+        var docs = ToWriteDocuments(snapshot)
+            .Select(doc => doc.Path switch
+            {
+                "NovoA.md" => doc with { Content = "aa" },
+                "NovoB.md" => doc with { Content = "bb" },
+                _ => doc
+            })
+            .ToArray();
+
+        var result = VaultWriter.Plan(new VaultWriteRequest
+        {
+            Files = files,
+            Documents = docs
+        });
+
+        Assert.False(result.JournalUsed);
+        Assert.Equal(latin1, result.Files["Antigo.md"].Bytes.ToArray());
+        Assert.DoesNotContain(result.Operations, op =>
+            op.Path == ".urbe/journal.v2.json" &&
+            op.Kind == VaultOperationKind.Write);
+    }
+
     private static VaultWriteDocument[] ToWriteDocuments(VaultSnapshot snapshot) =>
         snapshot.Documents.Select(document =>
             new VaultWriteDocument(
