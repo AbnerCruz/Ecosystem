@@ -385,3 +385,6 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 ### 20261010-chatgpt-lunet-truetype-reconciled — ChatGPT → integrador — review
 - PR #415 reconciliado à main `785e0d3`: API atual e histórico preservados.
 - CI anterior verde em `c1f6dce`; revisão combinada necessita nova validação e DEVICE pendente.
+
+### 20261010-chatgpt-lunet-truetype-reconcile-again — ChatGPT → integrador — review
+- PR #415 conciliado à main `f91683a48` sem regressão do Framework; checks anteriores completos verdes, nova CI/APK/DEVICE a conferir.

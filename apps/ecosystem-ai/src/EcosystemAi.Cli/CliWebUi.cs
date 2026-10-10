@@ -98,6 +98,40 @@ public static class CliWebUi
             }
         });
 
+        // Os downloads são snapshots do catálogo privado, sem chamadas ao
+        // provider ou leitura de paths fornecidos pelo navegador.
+        app.MapGet("/exports/responses/{projectId}/{sessionId}/{turnIndex}/{format}",
+            async ctx =>
+            {
+                try
+                {
+                    var route = ctx.Request.RouteValues;
+                    if (!int.TryParse(route["turnIndex"]?.ToString(), out var index))
+                    {
+                        ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+                        return;
+                    }
+                    var download = CliProductDownloads.Response(ReadCatalog(),
+                        route["projectId"]?.ToString() ?? "",
+                        route["sessionId"]?.ToString() ?? "", index,
+                        route["format"]?.ToString() ?? "");
+                    await SendDownload(ctx, download);
+                }
+                catch (Exception e) when (IsExpectedError(e))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status404NotFound;
+                }
+            });
+
+        app.MapGet("/exports/costs.csv", async ctx =>
+        {
+            try { await SendDownload(ctx, CliProductDownloads.Costs(ReadCatalog())); }
+            catch (Exception e) when (IsExpectedError(e))
+            {
+                ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+            }
+        });
+
         app.MapPost("/projects", async ctx =>
         {
             if (!await VerifyPost(ctx, port, csrfToken)) return;
@@ -502,6 +536,17 @@ public static class CliWebUi
     private static bool ValidForm(IFormCollection form, params string[] keys) =>
         form.Count == keys.Length
         && keys.All(key => form.TryGetValue(key, out var value) && value.Count == 1);
+
+    private static async Task SendDownload(HttpContext ctx, CliProductDownload download)
+    {
+        // Nome gerado internamente por CliProductDownloads, jamais um
+        // filename do usuário ou path arbitrário do workspace.
+        ctx.Response.ContentType = download.ContentType;
+        ctx.Response.Headers["Content-Disposition"] =
+            "attachment; filename=\"" + download.FileName + "\"";
+        ctx.Response.ContentLength = download.Bytes.Length;
+        await ctx.Response.Body.WriteAsync(download.Bytes.AsMemory(), ctx.RequestAborted);
+    }
 
     private static async Task RespondHtml(HttpContext ctx, string html, int status = 200)
     {
