@@ -419,3 +419,6 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Sem ProjectStore ou dependência externa; CI de revisão e DEVICE pendentes. Issue #430 registra bloqueio de consistency preexistente na main.
 
 - 2026-10-10 — ChatGPT / LUNET-435: após reversão #476, retomado o próximo item REAL da Fase 4, física completa (SPEC §7). Backend Box2D.NET gerenciado; primeiro incremento com PhysicsWorld, corpos/fixtures, gravidade, colisão, raycast e junta de distância; CI/DEVICE pendentes, não encerrar gate. Issue #477; sem mudanças em outros produtos ou projetos salvos.
+
+
+- 2026-10-10 — ChatGPT / LUNET-435 fase 4: continuação da física existente #477; desenvolvimento de cápsulas/segmentos, juntas revoluta/prismática, contatos de fim/sensores, filtros e controle de corpo; testes de regressão e API, entrega por PR e CI. Não é função nova fora do roadmap. DEVICE e gate da Fase 4 continuam pendentes.

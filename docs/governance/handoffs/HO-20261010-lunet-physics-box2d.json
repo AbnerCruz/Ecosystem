@@ -45,9 +45,10 @@
     {
       "check": "PhysicsWorld em Android no Laboratório",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/fisica-box2d.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/482); registro em docs/governance/responses/VAL-HO-20261010-lunet-physics-box2d-6c229e20a344.md."
     }
   ],
   "known_issues": [

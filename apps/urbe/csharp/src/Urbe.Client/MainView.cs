@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Threading;
 using Urbe.Client.World;
 using Urbe.Core;
 
@@ -74,6 +75,7 @@ public sealed class MainView : Grid
         _stage.Children.Add(World);
         _stage.Children.Add(TopBar());
         _stage.Children.Add(Fab());
+        _stage.Children.Add(LifeNotice());
         _stage.Children.Add(HousePanel());
         _stage.Children.Add(LoadingLabel());
         _stage.Children.Add(CityMap);
@@ -90,11 +92,66 @@ public sealed class MainView : Grid
         SetColumnSpan(_dock, 2);
         Children.Add(_dock);
 
+        World.CityVisible = () => !Editor.IsVisible && !Explorer.IsVisible;
+        World.Notice += (_, text) => ShowLifeNotice(text);
         World.CameraChanged += (_, _) => _biome.Text = World.BiomeNameAtCentre();
         World.SelectionChanged += (_, house) => ShowHouse(house);
     }
 
     public WorldView World { get; }
+
+    // ---- life.js avisar(): a discreet pill under the top bar, 4.5 s, fading in .6 s
+    private readonly Border _notice = new();
+    private readonly TextBlock _noticeText = new();
+    private DispatcherTimer? _noticeTimer;
+
+    /// <summary>The text of the event notice currently shown, or null.</summary>
+    public string? LifeNoticeText => _noticeShown ? _noticeText.Text : null;
+    private bool _noticeShown;
+
+    private Control LifeNotice()
+    {
+        _noticeText.Foreground = UrbeTheme.Brush("#eef2fa");
+        _noticeText.FontFamily = UrbeTheme.UiFont;
+        _noticeText.FontWeight = FontWeight.SemiBold;
+        _noticeText.FontSize = 13;
+        _noticeText.TextTrimming = TextTrimming.CharacterEllipsis;
+        _notice.Child = _noticeText;
+        _notice.Background = new SolidColorBrush(Color.FromArgb(189, 14, 18, 26));
+        _notice.CornerRadius = new CornerRadius(999);
+        _notice.Padding = new Thickness(14, 7);
+        _notice.HorizontalAlignment = HorizontalAlignment.Center;
+        _notice.VerticalAlignment = VerticalAlignment.Top;
+        _notice.Margin = new Thickness(0, 62, 0, 0);
+        _notice.IsHitTestVisible = false;
+        _notice.Opacity = 0;
+        _notice.BoxShadow = BoxShadows.Parse("0 4 18 0 #40000000");
+        _notice.Transitions =
+        [
+            new Avalonia.Animation.DoubleTransition { Property = OpacityProperty, Duration = TimeSpan.FromSeconds(.6) },
+            new Avalonia.Animation.ThicknessTransition { Property = MarginProperty, Duration = TimeSpan.FromSeconds(.6) }
+        ];
+        return _notice;
+    }
+
+    private void ShowLifeNotice(string text)
+    {
+        _noticeText.Text = text;
+        _notice.MaxWidth = Math.Max(120, Bounds.Width * .8);
+        _notice.Opacity = 1;
+        _noticeShown = true;
+        _notice.Margin = new Thickness(0, 70, 0, 0);
+        _noticeTimer?.Stop();
+        _noticeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4.5) };
+        _noticeTimer.Tick += (_, _) =>
+        {
+            _noticeTimer?.Stop();
+            _notice.Opacity = 0;
+            _noticeShown = false;
+            _notice.Margin = new Thickness(0, 62, 0, 0);
+        };
+        _noticeTimer.Start();
+    }
     public CityMapOverlay CityMap { get; }
 
     /// <summary>The 1.8.4 full city map, not a second world or grid of notes.</summary>

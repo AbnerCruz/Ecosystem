@@ -44,27 +44,40 @@ public sealed class LegacyWorldLifeTests
     }
 
     [Fact]
-    public void RainAndFog_UpdateIndependentOfRendering()
+    public void Rain_DarkensAndCoolsTheLight()
     {
-        var sim = new LegacyWorldLife { TimeMode = "dia" };
-        var t = new DateTimeOffset(2026, 10, 10, 12, 0, 0, TimeSpan.FromHours(-3));
-        sim.StartRain(10);
-        sim.StartFog(10);
-        sim.Advance(.1, t);
-        Assert.True(sim.Rain > 0);
-        Assert.True(sim.Fog > 0);
-        Assert.True(sim.CurrentLight.Darkness > 0);
-        Assert.True(sim.CurrentLight.Red < 255);
-        Assert.Equal(.1, sim.ElapsedSeconds, 8);
+        var host = new EmptyHost();
+        var life = new LegacyWorldLife(host, options: new LegacyLifeOptions { TimeMode = "dia" }, random: LegacyJsMath.Rng(3));
+        var view = new LegacyLifeView(0, 0, 1, 800, 600, -14, -11, 14, 11);
+        life.Start("chuva", view);
+        for (int i = 0; i < 30; i++) life.Tick(.1, view);
+        Assert.True(life.Rain.K > 0);
+        Assert.True(life.CurrentLight.Darkness > 0);
+        Assert.True(life.CurrentLight.Red < 255);
+        Assert.True(life.Hurry > 1);
+        Assert.Equal(3, life.Time, 8);
     }
 
     [Fact]
-    public void InvalidDurationsAndTimeSteps_AreRejected()
+    public void InvalidTimeSteps_AreRejected_AndLongStepsClamped()
     {
-        var sim = new LegacyWorldLife();
-        Assert.Throws<ArgumentOutOfRangeException>(() => sim.StartRain(0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => sim.StartFog(double.NaN));
-        Assert.Throws<ArgumentOutOfRangeException>(() => sim.Advance(-1, DateTimeOffset.UtcNow));
-        Assert.Throws<ArgumentOutOfRangeException>(() => sim.Advance(.2, DateTimeOffset.UtcNow));
+        var life = new LegacyWorldLife();
+        Assert.Throws<ArgumentOutOfRangeException>(() => life.Tick(-1, default));
+        Assert.Throws<ArgumentOutOfRangeException>(() => life.Tick(double.NaN, default));
+        life.Tick(5, default);
+        Assert.Equal(.1, life.Time, 8);
+    }
+
+    private sealed class EmptyHost : ILegacyLifeHost
+    {
+        public bool Water(int x, int y) => false;
+        public int Biome(int x, int y) => (int)LegacyBiome.Grass;
+        public bool Road(int x, int y) => false;
+        public bool House(int x, int y) => false;
+        public bool District(int x, int y) => false;
+        public IReadOnlyList<LegacyCityBuilding> Buildings => [];
+        public IReadOnlyCollection<(int X, int Y)> Roads => [];
+        public IEnumerable<LegacyLifeDistrict> Districts => [];
+        public IReadOnlyList<ILegacyLifePerson> People => [];
     }
 }
