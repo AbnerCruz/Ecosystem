@@ -17,6 +17,8 @@
 
 ### Added
 
+- LUNET-433 (em revisão): grade de interface 2D responsiva para menus e inventários, com cálculo de colunas por largura, altura total e consulta virtualizada O(1), hit-test e TouchGridView com seleção, rolagem e renderização de janela, compatível com TouchScrollArea; exemplo C# offline e sem alocação no layout.
+
 - LUNET-430 (em revisão): font atlas TrueType gerado offline em C# (`TrueTypeFont.Bake` e `Content.LoadTrueTypeFont`), integração com SpriteBatch, métricas proporcionais, cache de fonte, testes e limites de memória.
 
 - LUNET-431 (em revisão): layout responsivo de UI horizontal/vertical com flex, espaçamento, padding e alinhamento transversal; converte safe area em bounds para controles mobile, sem GC por quadro.

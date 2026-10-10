@@ -1,0 +1,115 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-ui-grid",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T14:12:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-433",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "chatgpt/lunet-ui-grid-20261010",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/tests/Lunet.Tests/UiGridLayoutTests.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/src/Lunet.Framework/UI/UiGridLayout.cs",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/grade-ui.md",
+    "docs/governance/handoffs/HO-20261010-lunet-ui-grid.json",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchGridView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchGridViewTests.cs"
+  ],
+  "work_completed": [
+    "UiGridLayout responsivo com colunas automáticas, altura fixa, spacing/padding/MaxColumns, buffers Span e GetContentHeight.",
+    "Testes de retrato/paisagem, clipping externo, overflow, entradas inválidas, zero GC e compilação do guia pelo GameCompiler + GameHost.",
+    "API offline e ROADMAP/CHANGELOG/AgentsChat atualizados.",
+    "GetVisibleRange e GetCellBounds O(1) para virtualização de inventários com 100 milhões de itens; testes sem alocação.",
+    "TouchGridView com selecao por dedo, scroll, draw clipado, teste de milhões de itens e guia Game.cs."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests e GameCompiler example",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Foundation consistency checks",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "APK Android arm64",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Layout/inventário e toque em aparelho",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/grade-ui.md"
+    }
+  ],
+  "known_issues": [
+    "Não cria UI Studio nem árvore de UI, gerenciamento de input compartilhado, rolagem ou clipping implícito.",
+    "Telas estreitas podem produzir uma única célula menor que MinimumCellWidth; este é o comportamento intencional.",
+    "CI da main anterior ao PR já falha em 17 simulações do integrador; incidente de governança fora do escopo deste Product."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar CI e corrigir falhas de snapshot/API/build.",
+    "Integrar PR após checks verdes pelo integrador.",
+    "Validar exemplo no aparelho Android.",
+    "Reconciliar problema herdado do integrador na zona de governança por fluxo crítico separado, sem enfraquecer check do Lunet.",
+    "Validar controle mobile no aparelho real após integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Apenas Lunet Framework e documentação Product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #427, branch, PR e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE distinto de CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "review até testes/integração."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "API de UI Product-specific, sem abstração transversal."
+    }
+  ],
+  "base_commit": "60b854d43a76ed3d6db8ab97ba7cda4c1d0632c8",
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ui-grid",
+      "status": "product-specific",
+      "rationale": "Geometria para controles Lunet e seus apps, sem segundo consumidor aprovado no Ecosystem."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}
