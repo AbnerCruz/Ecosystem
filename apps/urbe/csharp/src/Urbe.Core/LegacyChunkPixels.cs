@@ -47,6 +47,11 @@ public static class LegacyChunkPixels
         var tint = new float[Halo * Halo];
         var variants = new byte[Halo * Halo];
         var result = new byte[Side * Side * 4];
+        // Reused for all boundary pixels: per-pixel array allocations would
+        // cause avoidable GC pauses in the mobile rendering path.
+        var indices = new int[4];
+        var weights = new double[4];
+        var blends = new double[4];
 
         int Idx(int x, int y) => y * Halo + x;
         for (int y = 0; y < Halo; y++)
@@ -132,16 +137,14 @@ public static class LegacyChunkPixels
                         int iv = Math.Clamp((int)Math.Floor(cv), -1, Tiles - 1);
                         double fu = Math.Clamp(cu - iu, 0, 1);
                         double fv = Math.Clamp(cv - iv, 0, 1);
-                        int[] indices =
-                        [
-                            Idx(iu + 1, iv + 1), Idx(iu + 2, iv + 1),
-                            Idx(iu + 1, iv + 2), Idx(iu + 2, iv + 2)
-                        ];
-                        double[] weights =
-                        [
-                            (1 - fu) * (1 - fv), fu * (1 - fv),
-                            (1 - fu) * fv, fu * fv
-                        ];
+                        indices[0] = Idx(iu + 1, iv + 1);
+                        indices[1] = Idx(iu + 2, iv + 1);
+                        indices[2] = Idx(iu + 1, iv + 2);
+                        indices[3] = Idx(iu + 2, iv + 2);
+                        weights[0] = (1 - fu) * (1 - fv);
+                        weights[1] = fu * (1 - fv);
+                        weights[2] = (1 - fu) * fv;
+                        weights[3] = fu * fv;
                         double wet = 0, most = -1;
                         int wetIndex = -1;
                         for (int q = 0; q < 4; q++)
@@ -181,11 +184,10 @@ public static class LegacyChunkPixels
                         else
                         {
                             double au = Smooth(fu), av = Smooth(fv);
-                            double[] blends =
-                            [
-                                (1 - au) * (1 - av), au * (1 - av),
-                                (1 - au) * av, au * av
-                            ];
+                            blends[0] = (1 - au) * (1 - av);
+                            blends[1] = au * (1 - av);
+                            blends[2] = (1 - au) * av;
+                            blends[3] = au * av;
                             double sr = 0, sg = 0, sb = 0, sum = 0, rockSum = 0;
                             for (int q = 0; q < 4; q++)
                             {
