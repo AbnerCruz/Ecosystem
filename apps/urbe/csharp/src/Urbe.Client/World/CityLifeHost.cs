@@ -4,12 +4,11 @@ namespace Urbe.Client.World;
 
 /// <summary>
 /// app.js 'world.life.host' over the native world: terrain from LegacyWorld (biome -1 while
-/// the chunk is not ready, as MUNDO.has), city from LegacyCity. Read-only.
+/// the chunk is not ready, as MUNDO.has), city from LegacyCity; also the town the villagers
+/// walk (app.js v25). Read-only.
 /// </summary>
-internal sealed class CityLifeHost(WorldView view) : ILegacyLifeHost
+internal sealed class CityLifeHost(WorldView view) : ILegacyLifeHost, ILegacyTownMap
 {
-    private static readonly IReadOnlyList<ILegacyLifePerson> NoPeople = [];
-
     private LegacyWorld? World => view.World;
     private LegacyCity? City => view.City;
 
@@ -50,6 +49,10 @@ internal sealed class CityLifeHost(WorldView view) : ILegacyLifeHost
         }
     }
 
-    /// <summary>v25Povo: the villagers are the next port (app.js v25); none walk yet.</summary>
-    public IReadOnlyList<ILegacyLifePerson> People => NoPeople;
+    /// <summary>v25Povo.</summary>
+    public IReadOnlyList<ILegacyLifePerson> People => view.Villagers.People;
+
+    public IReadOnlyList<(string From, string To)> Links => City?.Links ?? (IReadOnlyList<(string, string)>)[];
+
+    public LegacyCityBuilding? BuildingAt(int x, int y) => City?.BuildingAt(x, y);
 }

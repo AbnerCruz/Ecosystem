@@ -29,21 +29,26 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldLifeOracleTests.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldLifeTests.cs",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
-    "docs/governance/handoffs/HO-20261010-urbe-native-world-life.json"
+    "docs/governance/handoffs/HO-20261010-urbe-native-world-life.json",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVillagers.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVillagerSprite.cs",
+    "apps/urbe/csharp/tools/villagers-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyVillagersOracleTests.cs"
   ],
   "work_completed": [
     "Porte integral de src/world/life.js da 1.8.4 para Urbe.Core (LegacyWorldLife): vento, nuvens, chuva/neve com arco-íris, neblina, brilhos e peixes na água, marolas, borboletas, vaga-lumes, folhas, rajadas, fumaça das chaminés, pombos, cachorro, raposa, balão, festa (balões, confete, fogos), barco à vela, estrelas cadentes, emotes, lampiões e luz com chuva.",
     "Porte da fauna do app.js (LegacyFauna: ovelhas, vacas, cervos, patos, pássaros), com interações da raposa e dos cervos.",
     "Oráculo tools/life-oracle.mjs executa o life.js e o bloco de fauna originais com Math.random semeado; o teste C# reproduz 1500 passos (dia e noite, com eventos e moradores roteirizados) e compara cada partícula, animal, evento e lampião: idêntico.",
     "Desenho nativo (LifeRenderer) na ordem do app.js: chão antes das árvores, fauna depois das árvores, céu sobre as casas, luz multiply, janelas acesas (urbeJanelasAcesas) e brilho aditivo ('lighter' = BitmapBlendingMode.Plus, só respeitado em bitmaps no Skia, por isso desenhado com bitmaps).",
-    "Relógios nativos de 33 ms (vida, com qualidade adaptativa) e 40 ms (fauna); vida pausa sob editor/explorer como v25MapaVisivel; aviso discreto dos eventos (avisar) no topo; modo de luz padrão 'ciclo' como urbeOpcoes."
+    "Relógios nativos de 33 ms (vida, com qualidade adaptativa) e 40 ms (fauna); vida pausa sob editor/explorer como v25MapaVisivel; aviso discreto dos eventos (avisar) no topo; modo de luz padrão 'ciclo' como urbeOpcoes.",
+    "Moradores do app.js v25 (LegacyVillagers): andarilhos entre notas ligadas pela malha viária (BFS), ociosos na porta, conversas, aparência por hash, pressa na chuva; sprite UrbeArt.villager (LegacyVillagerSprite). Oráculo tools/villagers-oracle.mjs: 1500 passos em duas sementes e todos os sprites idênticos byte a byte. Desenho v25Desenhar (sombra, passo, balão de conversa) entre árvores e fauna; cachorro, emotes, guarda-chuvas e lanternas agora seguem os moradores reais."
   ],
   "verification": [
     {
       "kind": "automated",
-      "check": "dotnet test Urbe.Core.Tests (482) e Urbe.Client.Tests (14) locais; dotnet run tests/consistency/Check.cs (22)",
-      "result": "pass",
-      "evidence": "LegacyWorldLifeOracleTests dia/noite e NativeWorld_LifeOfTheWorldRunsOverTheCityAndPausesUnderTheEditor verdes; snapshots native-life-night/rain/day no artefato do CI."
+      "check": "dotnet test Urbe.Core.Tests (484) e Urbe.Client.Tests (14) locais; dotnet run tests/consistency/Check.cs (22)",
+      "result": "passed",
+      "evidence": "LegacyWorldLifeOracleTests (dia/noite), LegacyVillagersOracleTests (2 sementes, sprites byte a byte) e NativeWorld_LifeOfTheWorldRunsOverTheCityAndPausesUnderTheEditor verdes; snapshots native-life-night/rain/day no artefato do CI."
     },
     {
       "kind": "automated",
@@ -53,14 +58,13 @@
     }
   ],
   "known_issues": [
-    "Moradores (v25Povo) ainda não andam: a interface ILegacyLifePerson está pronta e é a próxima fatia (cachorro, emotes, guarda-chuvas e lanternas dependem deles).",
     "Imagens de brilho/nuvem são calculadas por fórmula equivalente aos gradientes do canvas; sem comparação pixel-a-pixel com o Chromium.",
     "Desempenho do redesenho a 30 quadros/s em Android físico precisa de DEVICE (G-N0)."
   ],
   "blockers": [],
   "next_actions": [
-    "Portar os moradores do app.js v25 (andarilhos, ociosos, conversa) e UrbeArt.villager com oráculo.",
-    "Validar em aparelho físico a fluidez da vida do mundo."
+    "Validar em aparelho físico a fluidez da vida do mundo (G-N0).",
+    "Próximas lacunas de paridade: persistência .urbe/mapa.json, ferramentas de construção/bairro, minimapa, editor Visual."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -89,7 +93,7 @@
     },
     {
       "id": "NN-018",
-      "evidence": "UC-19 permanece em progresso; moradores pendentes."
+      "evidence": "UC-19 permanece em progresso; validação em aparelho pendente."
     }
   ],
   "criticality": {

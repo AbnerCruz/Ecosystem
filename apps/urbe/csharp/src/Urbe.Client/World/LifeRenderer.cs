@@ -258,6 +258,57 @@ public sealed class LifeRenderer
         }
     }
 
+    // ---------------------------------------------------------------- villagers (app.js v25Desenhar)
+    private readonly Dictionary<(LegacyVillagerLook, string, int, bool), Bitmap> _villagers = [];
+
+    private Bitmap Villager(LegacyVillagerLook look, string dir, int frame, bool flip)
+    {
+        if (!_villagers.TryGetValue((look, dir, frame, flip), out var b))
+            _villagers[(look, dir, frame, flip)] = b = Pixels.ToBitmap(LegacyVillagerSprite.Render(look, dir, frame, flip), LegacyVillagerSprite.Width, LegacyVillagerSprite.Height);
+        return b;
+    }
+
+    public void Villagers(DrawingContext c, IReadOnlyList<LegacyVillager> people, LegacyLifeView v, double nowMs)
+    {
+        double z = v.Zoom;
+        if (people.Count == 0 || z < .38) return;
+        double sp = TILE * z / 20;
+        using var _ = c.PushRenderOptions(Pixelated);
+        foreach (var a in people.OrderBy(a => a.PosY))
+        {
+            if (a.PosX == 0 && a.PosY == 0) continue;
+            if (a.Kind == "andarilho" && a.Indoors) continue;   // went inside: visiting
+            if (a.PosX < v.X0 - 2 || a.PosX > v.X1 + 2 || a.PosY < v.Y0 - 2 || a.PosY > v.Y1 + 3) continue;
+            bool still = a.PauseTime > 0;
+            int fr = still ? 0 : (int)Math.Floor(a.Step) & 3;
+            string dir = a.DirX != 0 ? "side" : a.DirY < 0 ? "up" : "down";
+            var im = Villager(a.Look, dir, fr, dir == "side" && a.DirX < 0);
+            var q = v.P(a.PosX, a.PosY);
+            double w = LegacyVillagerSprite.Width * sp, h = LegacyVillagerSprite.Height * sp, bob = !still && (fr & 1) != 0 ? sp : 0;
+            c.DrawEllipse(Rgba(0, 0, 0, .22), null, Pt(q), w * .34, sp * 1.6);
+            Img(c, im, Math.Round(q.X - w / 2), Math.Round(q.Y - h + sp * 1.2 - bob), Math.Ceiling(w), Math.Ceiling(h));
+            if (a.Conversation > 0 && z >= .55)
+            {
+                // a speech bubble with blinking dots
+                double bx = q.X + w * .25, by = q.Y - h - sp * 2, bw = sp * 9, bh = sp * 6;
+                c.DrawRectangle(Rgba(255, 252, 240, .95), new Pen(Rgba(40, 30, 25, .8), Math.Max(1, sp * .6)), new Rect(bx, by - bh, bw, bh), sp * 2, sp * 2);
+                var tail = new StreamGeometry();
+                using (var g = tail.Open())
+                {
+                    g.BeginFigure(new Point(bx + sp * 1.5, by), true);
+                    g.LineTo(new Point(bx, by + sp * 2));
+                    g.LineTo(new Point(bx + sp * 3.5, by));
+                    g.EndFigure(true);
+                }
+                c.DrawGeometry(Rgba(255, 252, 240, .95), null, tail);
+                int on = (int)(Math.Floor(nowMs / 350 + (int)(a.PosX * 7)) % 4);
+                for (int d = 0; d < 3; d++)
+                    if (d < on || on == 0)
+                        c.FillRectangle(Brush("#3a2e28"), new Rect(Math.Round(bx + sp * (1.8 + d * 2.2)), Math.Round(by - bh / 2 - sp * .6), Math.Ceiling(sp * 1.2), Math.Ceiling(sp * 1.2)));
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- fauna (app.js urbeDesenharFauna)
     public void Fauna(DrawingContext c, LegacyFauna fauna, LegacyLifeView v)
     {

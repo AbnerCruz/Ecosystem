@@ -237,6 +237,8 @@ public sealed class HeadlessUiTests : IDisposable
             Snapshot(window, "native-life-rain.png");
             world.AdvanceLife(30);
             Assert.NotEmpty(world.Fauna.Animals);
+            // the tutorial notes link to each other: villagers walk the streets between them
+            Assert.Contains(world.Villagers.People, p => p.Kind == "andarilho");
             await Settle(window, view);
             Snapshot(window, "native-life-day.png");
 

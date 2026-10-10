@@ -43,13 +43,16 @@ public sealed class WorldView : Control
     private int _worldGeneration;
     private readonly LegacyFauna _fauna = new();
     private readonly LegacyWorldLife _life;
+    private readonly LegacyVillagers _villagers = new();
+    // app.js v25Ciclo every V25_FPS (33 ms)
+    private readonly DispatcherTimer _villagerTimer = new() { Interval = TimeSpan.FromMilliseconds(LegacyVillagers.FrameMs) };
     private readonly LifeRenderer _lifeArt = new();
     private readonly CityLifeHost _lifeHost;
     // life.js tick every 33 ms and the app.js fauna ciclo every 40 ms (scheduler intervals)
     private readonly DispatcherTimer _lifeTimer = new() { Interval = TimeSpan.FromMilliseconds(33) };
     private readonly DispatcherTimer _faunaTimer = new() { Interval = TimeSpan.FromMilliseconds(40) };
     private readonly System.Diagnostics.Stopwatch _clock = System.Diagnostics.Stopwatch.StartNew();
-    private double _lastTick, _lagAverage = 33, _lagT, _faunaMs, _faunaLast;
+    private double _lastTick, _lagAverage = 33, _lagT, _faunaMs, _faunaLast, _villagerMs = 3000, _villagerLast;
     private Bitmap? _lightTint;
     private int _lightKey = -1;
 
@@ -65,6 +68,7 @@ public sealed class WorldView : Control
         _life.Notice += text => Notice?.Invoke(this, text);
         _lifeTimer.Tick += (_, _) => LifeTick();
         _faunaTimer.Tick += (_, _) => FaunaTick();
+        _villagerTimer.Tick += (_, _) => VillagerTick();
         RefreshLighting();
     }
 
@@ -75,12 +79,14 @@ public sealed class WorldView : Control
         _lastTick = 0;
         _lifeTimer.Start();
         _faunaTimer.Start();
+        _villagerTimer.Start();
     }
 
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         _lifeTimer.Stop();
         _faunaTimer.Stop();
+        _villagerTimer.Stop();
         base.OnDetachedFromVisualTree(e);
     }
 
@@ -101,6 +107,8 @@ public sealed class WorldView : Control
     /// <summary>The life of the world (weather, water, animals, events, lamps).</summary>
     public LegacyWorldLife Life => _life;
     public LegacyFauna Fauna => _fauna;
+    /// <summary>v25Povo: who walks between linked notes and who idles at the door.</summary>
+    public LegacyVillagers Villagers => _villagers;
     /// <summary>The discreet event notice of life.js avisar() ("🌧 Chuva passageira", …).</summary>
     public event EventHandler<string>? Notice;
     /// <summary>v25MapaVisivel(): false while the editor, explorer or a menu covers the city.</summary>
@@ -146,6 +154,17 @@ public sealed class WorldView : Control
         if (_fauna.Tick(1000 + _faunaMs, LifeView(), _life.Options.Fauna, _lifeHost) || had) InvalidateVisual();
     }
 
+    /// <summary>app.js v25Ciclo().</summary>
+    public void VillagerTick()
+    {
+        if (World is null || City is null || Bounds.Width <= 0) return;
+        if (!CityVisible()) { _villagers.People.Clear(); _villagerLast = 0; return; }
+        double now = _clock.Elapsed.TotalMilliseconds;
+        _villagerMs += _villagerLast == 0 ? 0 : now - _villagerLast;
+        _villagerLast = now;
+        if (_villagers.Tick(_villagerMs, LifeView(), _life.Options.People, _life.Hurry, _lifeHost)) InvalidateVisual();
+    }
+
     /// <summary>Runs the life and the fauna for <paramref name="seconds"/> of simulated time
     /// (33 ms life steps, 40 ms fauna cycles), independent of the wall clock.</summary>
     public void AdvanceLife(double seconds)
@@ -155,6 +174,8 @@ public sealed class WorldView : Control
         for (double t = 0, nextFauna = 0; t < seconds; t += .033)
         {
             _life.Tick(.033, v);
+            _villagerMs += 33;
+            _villagers.Tick(_villagerMs, v, _life.Options.People, _life.Hurry, _lifeHost);
             while (nextFauna <= t)
             {
                 nextFauna += .04;
@@ -217,6 +238,7 @@ public sealed class WorldView : Control
         City = city;
         _shapes.Clear();
         _fauna.Animals.Clear();
+        _villagers.Reset();
         InvalidateVisual();
     }
 
@@ -272,6 +294,7 @@ public sealed class WorldView : Control
         _lifeArt.Ground(context, _life, life);
         using (context.PushRenderOptions(new RenderOptions { BitmapInterpolationMode = BitmapInterpolationMode.None }))
             DrawTrees(context);
+        _lifeArt.Villagers(context, _villagers.People, life, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         _lifeArt.Fauna(context, _fauna, life);
         DrawBuildings(context);
         // app.js urbeAntesDosRotulos: céu, multiply light, lit windows, brilho, then the names
