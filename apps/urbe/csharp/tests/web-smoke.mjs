@@ -134,6 +134,14 @@ async function assertShell(page, journey = false) {
     await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
     assert.match(await nav.locator('a.active').innerText(), /Editor/);
 
+    // UC-18: pin/unpin is an explicit UI action, not only a read-only
+    // marker. Pinned status must survive opening other notes in this session.
+    const pinSmoke = page.getByRole('button', { name: 'Fixar Smoke', exact: true });
+    await pinSmoke.click();
+    assert.equal(
+        await page.getByRole('button', { name: 'Desafixar Smoke', exact: true })
+            .getAttribute('aria-pressed'), 'true');
+
     smokeStage('source-edit');
     await page.getByRole('button', { name: 'Fonte', exact: true }).click();
     const source = page.getByLabel('Markdown da nota');
@@ -298,6 +306,12 @@ async function assertShell(page, journey = false) {
     assert.equal(await page.locator('.editor-tab').count(), 3);
     await page.locator('.editor-tab-open').filter({ hasText: 'Smoke' }).click();
     await page.getByRole('heading', { name: 'Smoke', exact: true }).waitFor();
+    const unpinSmoke = page.getByRole('button', { name: 'Desafixar Smoke', exact: true });
+    assert.equal(await unpinSmoke.getAttribute('aria-pressed'), 'true');
+    await unpinSmoke.click();
+    assert.equal(
+        await page.getByRole('button', { name: 'Fixar Smoke', exact: true })
+            .getAttribute('aria-pressed'), 'false');
 
     await nav.getByRole('link', { name: 'Explorer', exact: true }).click();
     await page.getByRole('heading', { name: 'Explorer', exact: true }).waitFor();

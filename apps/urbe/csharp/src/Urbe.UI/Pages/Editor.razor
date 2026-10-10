@@ -30,11 +30,15 @@
                                 class="editor-tab-open"
                                 aria-current="@(tab.Active ? "page" : null)"
                                 @onclick="() => ActivateTab(tab)">
-                            @if (tab.Pinned)
-                            {
-                                <span aria-hidden="true">◆</span>
-                            }
                             <span>@tab.Title</span>
+                        </button>
+                        <button type="button"
+                                class="editor-tab-pin"
+                                aria-label="@($"{(tab.Pinned ? "Desafixar" : "Fixar")} {tab.Title}")"
+                                aria-pressed="@(tab.Pinned ? "true" : "false")"
+                                title="@(tab.Pinned ? "Desafixar aba" : "Preservar aba ao abrir muitas notas")"
+                                @onclick="() => Workspace.PinTab(tab.Id, !tab.Pinned)">
+                            <span aria-hidden="true">◆</span>
                         </button>
                         <button type="button"
                                 class="editor-tab-close"
