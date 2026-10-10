@@ -62,10 +62,10 @@
     {
       "kind": "human",
       "check": "Fontes bitmap no Preview Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/fontes-bitmap.md",
-      "evidence": "Offline, dígito 1 proporcional, Pontos/escala 2×/3×, Preview rápido/isolado e regressão com fonte embutida. CI portátil não comprova aparência/GL/aparelho."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/457); registro em docs/governance/responses/VAL-HO-20261008-lunet-pr328-nine-slice-reconciliation-327304d8e175.md."
     }
   ],
   "known_issues": [
