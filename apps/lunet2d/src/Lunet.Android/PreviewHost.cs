@@ -146,6 +146,8 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
             _profiler.Text =
                 $"PROFILER  |  {current.Samples} quadros{paused}\n" +
                 $"FPS: {current.FramesPerSecond:F1}  Frame: {current.FrameMilliseconds:F2} ms\n" +
+                $"Frame P50/P95: {current.P50FrameMilliseconds:F1}/{current.P95FrameMilliseconds:F1} ms\n" +
+                $"Pior: {current.WorstFrameMilliseconds:F1} ms | engasgos: {current.HitchFrames}\n" +
                 $"CPU Tick: {current.CpuTickMilliseconds:F2} ms\n" +
                 (current.PhasedSamples == 0 ? "CPU Update/Draw: nao medidos\n"
                     : $"CPU Update: {current.UpdateCpuMilliseconds:F2} ms  ({current.UpdateStepsPerFrame:F1} passos)\n" +
@@ -350,20 +352,18 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
     {
         var e = args.Event;
         if (e is null) return;
-        // Evita List/ToArray por MotionEvent e preserva Pressed até o Update fixo.
-        Span<TouchPoint> touches = stackalloc TouchPoint[InputState.MaxTouches];
-        var count = Math.Min(e.PointerCount, InputState.MaxTouches);
+        var touches = new List<TouchPoint>(e.PointerCount);
         var action = e.ActionMasked;
         var index = e.ActionIndex;
-        for (var i = 0; i < count; i++)
+        for (var i = 0; i < e.PointerCount; i++)
         {
             var phase = TouchPhase.Moved;
             if (action is MotionEventActions.Down or MotionEventActions.PointerDown && i == index) phase = TouchPhase.Pressed;
             else if (action is MotionEventActions.Up or MotionEventActions.PointerUp && i == index) phase = TouchPhase.Released;
             else if (action == MotionEventActions.Cancel) phase = TouchPhase.Cancelled;
-            touches[i] = new TouchPoint(e.GetPointerId(i), phase, new System.Numerics.Vector2(e.GetX(i), e.GetY(i)));
+            touches.Add(new TouchPoint(e.GetPointerId(i), phase, new System.Numerics.Vector2(e.GetX(i), e.GetY(i))));
         }
-        _renderer.SetTouches(touches[..count]);
+        _renderer.SetTouches(touches.ToArray());
         args.Handled = true;
     }
 }

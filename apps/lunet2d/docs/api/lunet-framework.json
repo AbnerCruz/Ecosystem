@@ -16226,6 +16226,230 @@
       ]
     },
     {
+      "id": "T:Lunet.UI.TouchScrollArea",
+      "name": "TouchScrollArea",
+      "namespace": "Lunet.UI",
+      "kind": "class",
+      "signature": "public sealed class TouchScrollArea",
+      "summary": "\u00C1rea de conte\u00FAdo vertical rol\u00E1vel por toque, com arraste e in\u00E9rcia limitada.",
+      "remarks": "Use SpriteBatch.Begin(clip: area.Bounds) e subtraia area.OffsetY das posi\u00E7\u00F5es dos filhos. N\u00E3o consome eventos nem arbitra bot\u00F5es filhos; use IsDragging e WasDragged para evitar cliques durante arraste. N\u00E3o cria texturas nem altera dados de projetos. Sem aloca\u00E7\u00F5es no Update.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar area = new Lunet.UI.TouchScrollArea(new RectangleF(12, 72, 336, 400), 900);\narea.Update(input, (float)time.DeltaSeconds);\nif (area.IsDragging) log.Info(\u0022rolando\u0022);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.TouchScrollArea.#ctor(Lunet.RectangleF,System.Single)",
+          "name": "TouchScrollArea",
+          "kind": "constructor",
+          "signature": "public TouchScrollArea(RectangleF bounds, float contentHeight)",
+          "summary": "Cria \u00E1rea com limites finitos e altura de conte\u00FAdo finita n\u00E3o negativa.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "bounds",
+              "type": "RectangleF",
+              "description": "Ret\u00E2ngulo de rolagem em coordenadas virtuais."
+            },
+            {
+              "name": "contentHeight",
+              "type": "float",
+              "description": "Altura vertical total do conte\u00FAdo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchScrollArea.Bounds",
+          "name": "Bounds",
+          "kind": "property",
+          "signature": "public RectangleF Bounds { get; set; }",
+          "summary": "\u00C1rea do painel; redimensionar limita automaticamente o deslocamento.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchScrollArea.ContentHeight",
+          "name": "ContentHeight",
+          "kind": "property",
+          "signature": "public float ContentHeight { get; set; }",
+          "summary": "Altura completa do conte\u00FAdo; alterar recalcula os limites da rolagem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchScrollArea.IsCaptured",
+          "name": "IsCaptured",
+          "kind": "property",
+          "signature": "public bool IsCaptured { get; }",
+          "summary": "Um dedo iniciado dentro da \u00E1rea est\u00E1 reservado para a rolagem.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchScrollArea.IsDragging",
+          "name": "IsDragging",
+          "kind": "property",
+          "signature": "public bool IsDragging { get; }",
+          "summary": "O dedo ultrapassou o limiar de 6 unidades e move o conte\u00FAdo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchScrollArea.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Desabilitar cancela o gesto e a in\u00E9rcia, preservando a posi\u00E7\u00E3o atual.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchScrollArea.MaximumOffsetY",
+          "name": "MaximumOffsetY",
+          "kind": "property",
+          "signature": "public float MaximumOffsetY { get; }",
+          "summary": "M\u00E1ximo deslocamento vertical permitido, em unidades virtuais.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchScrollArea.OffsetY",
+          "name": "OffsetY",
+          "kind": "property",
+          "signature": "public float OffsetY { get; }",
+          "summary": "Dist\u00E2ncia positiva j\u00E1 rolada desde o topo do conte\u00FAdo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchScrollArea.WasDragged",
+          "name": "WasDragged",
+          "kind": "property",
+          "signature": "public bool WasDragged { get; }",
+          "summary": "Pulso no Update em que um arraste terminou com Released; \u00FAtil para inibir clique de filhos.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchScrollArea.Cancel",
+          "name": "Cancel",
+          "kind": "method",
+          "signature": "public void Cancel()",
+          "summary": "Interrompe captura e in\u00E9rcia sem zerar o deslocamento.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchScrollArea.GetThumbBounds(System.Single,System.Single)",
+          "name": "GetThumbBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetThumbBounds(float width = 5f, float minimumHeight = 24f)",
+          "summary": "Geometria do indicador vertical de rolagem; default quando n\u00E3o h\u00E1 transbordamento.",
+          "remarks": "Desenhe por cima do conte\u00FAdo usando SpriteBatch.FillRect(GetThumbBounds(), color) somente se Width maior que zero. O indicador n\u00E3o captura input; arraste permanece na \u00E1rea do conte\u00FAdo.",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "float",
+              "description": "Largura positiva da barra, limitada \u00E0 largura da \u00E1rea."
+            },
+            {
+              "name": "minimumHeight",
+              "type": "float",
+              "description": "Altura visual m\u00EDnima positiva, limitada \u00E0 \u00E1rea."
+            }
+          ],
+          "returns": "Ret\u00E2ngulo do indicador dentro de Bounds, sem gerar aloca\u00E7\u00F5es.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchScrollArea.ScrollTo(System.Single)",
+          "name": "ScrollTo",
+          "kind": "method",
+          "signature": "public void ScrollTo(float offsetY)",
+          "summary": "Define posi\u00E7\u00E3o de rolagem e zera a in\u00E9rcia, respeitando o topo e a base.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "offsetY",
+              "type": "float",
+              "description": "Dist\u00E2ncia finita desejada desde o topo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchScrollArea.Update(Lunet.Input.InputState,System.Single)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(InputState input, float deltaSeconds)",
+          "summary": "Processa toques por ID, soltura, limites e in\u00E9rcia usando delta do passo fixo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Estado dos dedos em coordenadas virtuais da \u00E1rea."
+            },
+            {
+              "name": "deltaSeconds",
+              "type": "float",
+              "description": "Delta finito n\u00E3o negativo, em segundos; n\u00E3o pressup\u00F5e 60 Hz."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.UI.TouchSlider",
       "name": "TouchSlider",
       "namespace": "Lunet.UI",

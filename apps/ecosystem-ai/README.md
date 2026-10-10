@@ -55,3 +55,40 @@ mensagens e recibos são lidos do `EcosystemAi.ProjectStore`, não do Runtime.
 Essa projeção não encerra P6-5 nem substitui a futura UI interativa.
 
 Uso, segurança e limitações: [docs-r4-visual-snapshot.md](docs-r4-visual-snapshot.md).
+
+## Gestão local de projetos e sessões (R4)
+
+A CLI também permite vincular um workspace existente como projeto, criar sessões
+independentes e navegar nos registros do catálogo pelo terminal sem executar
+agentes, acessar rede ou exigir token. Os registros são do mesmo
+`LocalProjectStore` usado por runs, histórico e visualização offline.
+
+Comandos `--create-project`, `--create-session` e `--manage`, limites e exemplos:
+[docs-r4-catalog-management.md](docs-r4-catalog-management.md).
+É um passo funcional intermediário, **não** a UI Android definitiva.
+
+## Chat interativo no terminal (R4)
+
+O modo `--chat` permite enviar várias mensagens em uma sessão existente, usando
+**o mesmo `AgentWorkspace.WorkspaceSession`** e as políticas de cada execução.
+Cada mensagem gera seu próprio run/receipt; o histórico anterior só é reenviado
+ao provider no modo chat solicitado, com limites explícitos. A interface C# de
+terminal não substitui a futura UI gráfica mobile-first.
+
+Exemplo de comandos, isolamento, custos por mensagem e restrições:
+[docs-r4-interactive-chat.md](docs-r4-interactive-chat.md).
+
+## Painel gráfico local (R4)
+
+A interface responsiva de projetos/sessões agora pode ser servida **somente em loopback**
+pelo próprio Product C# (sem modelo ou JavaScript):
+
+```bash
+dotnet run --project src/EcosystemAi.Cli -- --web-ui --catalog /dados/privados/catalogo --port 8765
+```
+
+No mesmo dispositivo, abra `http://127.0.0.1:8765/` no navegador. A tela
+permite vincular pastas preexistentes como projetos, criar sessões, ler
+conversas, execuções e custos; grava diretamente no `LocalProjectStore` atual.
+Isso **não é APK nem acesso remoto** e ainda não habilita execução de agentes
+no navegador. Documentação e riscos: [docs-r4-local-web-ui.md](docs-r4-local-web-ui.md).
