@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-v184-assets",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T12:30:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-v184-asset-delivery",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-visual-assets-mobile-20261010",
+  "base_commit": "c6837117494c2a48870eac1d091d643f40261160",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/world/v184/terrain-grass-0.png",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/world/v184/tree-oak-0.png",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/world/v184/building-house-temperate-0.png",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/world/v184/building-house-temperate-1.png",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/world/v184/building-house-temperate-2.png",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/world/v184/building-hall-temperate-0.png",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/docs/csharp/UC19-V184-STATIC-ASSETS.md",
+    "docs/governance/handoffs/HO-20261010-urbe-v184-assets.json"
+  ],
+  "work_completed": [
+    "Diagnóstico reprodutível: a UI atual no PR Android #397 referencia seis PNGs world/v184 inexistentes no monorepo; fundos e sprites ficam faltando.",
+    "Geração de seis PNGs RGBA estáticos a partir de pixel-art.js da 1.8.4-beta, adicionados à RCL Urbe.UI; sem execução JS no app.",
+    "Teste do output publicado do host verifica presença real, assinatura PNG, dimensões e RGBA no path de static web assets RCL."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Geração/serialização PNG dos seis recursos de pixel art",
+      "result": "passed",
+      "evidence": "Blob binário GitHub criado e incluído em árvore: 6 arquivos 16×16, 24×32, 48×56."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks: publish + web-smoke + Android + Windows + E2E / consistency",
+      "result": "pending",
+      "evidence": "CI acionado via PR; aguardar resultado."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3/G-C4 screenshot paridade 1.8.4-beta e fluidez Android",
+      "result": "not-applicable",
+      "evidence": "Pendente análise comparativa em dispositivo físico."
+    }
+  ],
+  "known_issues": [
+    "PNG criado a partir de operações pixel-art.js com emulação canvas 4x AA; equivalência byte a byte dos polígonos com Canvas2D não foi comprovada.",
+    "O pacote cobre somente seis caminhos atualmente referenciados pelo CSS do PR #397, não o mundo completo da 1.8.4-beta.",
+    "Não melhora release anterior até a branch C# Android consumir recursos da base atualizada e o APK ser reconstruído.",
+    "PR crítico #397 requer fluxo decisório próprio; não editar sua branch."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar publicação das seis imagens como static web assets no CI e resolver eventuais diferenças de empacotamento.",
+    "Coordenar com agente do PR #397 para rebuild Android após merge rotineiro dos recursos.",
+    "Reproduzir screenshot do mundo original e Android no mesmo cenário; checar textura, nearest-neighbor, sprites e composição de chunk."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Somente conteúdo estático na RCL; nenhum arquivo/vault alterado."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Sem dependência de outras aplicações."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Reuso de funções/identidade visual legada sem redesenho e sem alterar motor C#."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch, PR, CI, documentação e handoff rastreáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Paridade visual e validação humana não declaradas sem comprovação."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Acrescenta PNGs estáticos faltantes + asserção de pacote e docs; não modifica fluxos, API, vault, permissão, governança ou releases."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-v184-sprites",
+      "status": "product-specific",
+      "rationale": "Sprites específicos do Urbe 1.8.4-beta, sem segundo consumidor nem utilidade independente."
+    }
+  ]
+}
