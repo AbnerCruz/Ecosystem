@@ -1,0 +1,96 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-physics-advanced",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T22:54:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-435",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-physics-completion-p4-20261010",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/480",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Physics/PhysicsWorld.cs",
+    "apps/lunet2d/tests/Lunet.Tests/AdvancedPhysicsTests.cs",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/fisica-box2d.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261010-lunet-physics-advanced.json"
+  ],
+  "work_completed": [
+    "Fase 4: continuar item Fisica completa preexistente e Issue #477, backend Box2D.NET ja aprovado no PR #478.",
+    "Adicionar juntas revoluta/prismatica, segment/capsule, rotacao e forca, filtros de colisao, raycast filtrado, eventos de contato fim e sensor inicio/fim, lifecycle de fixture.",
+    "Testes de gravidade, juntas, sensores, filtros, contatos e erros, mais documentacao offline."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests e API docs",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Consistency e integracao main",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Validacao visual DEVICE dos sistemas fisicos",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/fisica-box2d.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Fase 4 nao concluida: demonstracao fisica integrada ao Laboratorio, teste Android, auditoria.",
+    "Documentacao API JSON deve ser sincronizada com gerador apos CI."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Sincronizar snapshot de API e corrigir testes sem burlar checks.",
+    "Integrar PR #480 quando CI verde; continuar pendencias reais da Fase 4."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "AGENTS.md",
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Alteracoes de produto so no Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #480 e handoff de continuidade."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE pendentes ate aprovacao."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Fase 4 permanece aberta."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem modificacoes em projetos salvos ou formatacao persistida."
+    }
+  ],
+  "base_commit": "24802bff6fade8d05a625b964480e5bdc9d41830",
+  "criticality": {
+    "declared": "routine"
+  }
+}
