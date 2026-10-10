@@ -1,0 +1,93 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-radial-cancel",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T22:13:38Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-434",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "revert/lunet-434-unsolicited-feature-20261010",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/476",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/menu-radial.md",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchRadialMenu.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchRadialMenuTests.cs",
+    "docs/governance/handoffs/HO-20261010-lunet-radial.json",
+    "docs/governance/handoffs/HO-20261010-lunet-radial-cancel.json"
+  ],
+  "work_completed": [
+    "Cancelada por falta de autorizacao/escopo: a tarefa LUNET-434 e o menu radial foram inventados pelo agente, nao constavam no roadmap original.",
+    "Restaurada a arvore Product da main anterior ao merge do PR #473, removendo implementacao, testes, API offline, guia e referencias indevidas no ROADMAP, CHANGELOG e AgentsChat.",
+    "Issue #472 encerrada como not_planned; reversao auditavel pelo PR #476, sem reescrever historico e sem tocar nos demais produtos."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests e build da reversao",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Ecosystem consistency e integracao automatica",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Revisao do diff contra o estado anterior ao PR #473",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "A arvore do revert b47ea4d corresponde exatamente a e1019e9fab3163c065d7f121493bd80bcc93cb82, primeiro pai do merge 9d82e4d."
+    }
+  ],
+  "known_issues": [
+    "A reversao ainda precisa passar CI e entrar em main.",
+    "Releases ja publicadas nao sao reescritas; uma nova release do Lunet apos a reversao retirara o recurso indevido.",
+    "O objeto da tarefa foi cancelado; o estado review indica que a REVERSAO aguarda a integracao de CI, nao que o LUNET-434 voltou ao backlog."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Integrar PR #476 por fluxo rotineiro apos checks verdes.",
+    "Continuar somente os itens reais abertos no roadmap da Fase 4, sem inventar features para preencher o trabalho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-008",
+      "evidence": "Rastreabilidade do erro e da reversao por Issue #472, PR #476 e este handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes e integracao ainda pendentes, sem declarar release aprovada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Reversao nao tratada como concluida ate integracao."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Documentado que nao houve autorizacao de produto para a feature."
+    }
+  ],
+  "base_commit": "9d82e4d864ea33e83606c740643ab5e13110a5e1",
+  "criticality": {
+    "declared": "routine"
+  }
+}

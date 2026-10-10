@@ -417,8 +417,3 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - PR #429, Issue #427, Fase 4: TouchGridView com seleção e ativação por toque, rolagem inercial, captura de dedo, redimensionamento seguro, hit-test O(1), desenho recortado de itens visíveis, sem arrays por célula.
 - Testes de multitouch, cancelamento, arraste, layouts, milhões de itens, invalid bounds, clipping e GC. Guia Game.cs interativo compilado via GameCompiler/GameHost, API JSON atualizada.
 - Sem ProjectStore ou dependência externa; CI de revisão e DEVICE pendentes. Issue #430 registra bloqueio de consistency preexistente na main.
-
-### 20261010-chatgpt-lunet-radial — ChatGPT → integrador — review
-- LUNET-434 / Issue #472 / Fase 4: menu radial de 1 a 16 setores, captura exclusiva TouchId, centro morto, ativacao somente em Released, Cancel e relayout sem cliques fantasmas.
-- Base main 300efea652538f11b5e321713846c2441e4e57cc; branch chatgpt/lunet-touch-radial-menu-20261010. API de hit-test e desenho somente Lunet.Framework; sem ProjectStore, arquivos de jogos salvos ou workflows.
-- Testes de orientacao, multitouch, cancelamento, relayout, rendering e zero GC. SDK .NET indisponivel na sessao; CI/APK/DEVICE pendentes, nao declarar fase concluida. Reuso product-specific; NN-002/008/017/018/022.
