@@ -56,16 +56,14 @@
     "Agentes e equipes configuráveis ainda não concluídos; P6-5 permanece aberta."
   ],
   "blockers": [
-    "Revisão/label integrar do proprietário para ampliação de fronteira de confiança de execução HTTP com potencial gasto, após CI verde."
+    "Integração crítica exige label integrar do proprietário após checks verdes; a decisão não foi presumida nem criada nesta PR."
   ],
   "next_actions": [
     "Analisar CI do Product e consistência e corrigir falhas.",
     "Solicitar exclusivamente aprovação crítica ao proprietário para integrar PR validada.",
     "Após integração, entregar perfis de agentes/equipes e ações supervisionadas na mesma UI."
   ],
-  "decisions_required": [
-    "Autorizar integração da execução de tarefas reais, read-only, via POST HTTP loopback com custos limitados e opt-in --web-tasks (alteração de fronteira de confiança)."
-  ],
+  "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
     "AGENTS.md",
