@@ -1,8 +1,8 @@
-# Urbe C# — somente Android e Windows (beta 2.0.0-beta.5)
+# Urbe C# — somente Android e Windows (beta 2.0.0-beta.6)
 
 **Direção do proprietário (09/10/2026):** não criar ou distribuir uma versão Web/PWA do cliente C#. Android é prioridade; desktop/Windows vem depois. O MAUI Blazor Hybrid renderiza os componentes em uma WebView interna, não em um site com backend. O vault Android é uma pasta real, selecionada pelo usuário.
 
-**Release Android:** versão `2.0.0-beta.5`, identificador `app.urbe.csharp`, código `2000005`, tag `urbe-csharp-v2.0.0-beta.5`. Beta.5 consolida criação de casas no terreno e criação de bairros com zoom 80–160%, além de isolar colisões e posições por bairro: bairros diferentes podem usar a mesma coordenada sem bloquear a construção. A cada versão, incrementar `ApplicationDisplayVersion` e `ApplicationVersion` em `src/Urbe.App/Urbe.App.csproj`. Publicação do APK + SHA256SUMS no GitHub Releases por `.github/workflows/urbe-csharp-mobile-release.yml`, com assinatura beta fixa e testes C#.
+**Release Android:** versão `2.0.0-beta.6`, identificador `app.urbe.csharp`, código `2000006`, tag `urbe-csharp-v2.0.0-beta.6`. Beta.6 avança UC-18/REQ-027/REQ-109: sugestões de wikilinks em Markdown no editor Fonte, completar nota existente sem perder texto/cursor e criar nota inexistente na mesma pasta, com regras em C# e testes para estado obsoleto. A cada versão, incrementar `ApplicationDisplayVersion` e `ApplicationVersion` em `src/Urbe.App/Urbe.App.csproj`. Publicação do APK + SHA256SUMS no GitHub Releases por `.github/workflows/urbe-csharp-mobile-release.yml`, com assinatura beta fixa e testes C#.
 
 **Verificação:** `dotnet restore Urbe.Portable.slnx && dotnet test --project tests/Urbe.Core.Tests -c Release`. Build Android: `dotnet build src/Urbe.App/Urbe.App.csproj -c Debug -f net10.0-android -p:UrbeBuildTarget=net10.0-android`. Windows usa `net10.0-windows10.0.19041.0`. Não há build ou release C# para Web.
 

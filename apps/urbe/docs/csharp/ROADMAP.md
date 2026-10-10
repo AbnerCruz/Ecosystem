@@ -56,7 +56,7 @@ Objetivo: o C# lê e escreve o vault exatamente como o JS.
 ## M3 — Interface e extensões
 
 - [x] UC-17 — Shell e navegação. PR #280 integrado automaticamente em `9143b239`: shell compartilhado Web/MAUI, navegação Início/Explorer/Editor/Cidade/Mais, base path `/` e `/preview/`, online/offline e regressão Web/Android/Windows/E2E/checks/consistency verdes. Issue #279 encerrada; validação humana de layout/toque continua G-C3.
-- [ ] UC-18 — Editor (visual e fonte) e Explorer. Issue #281 em andamento; primeira fatia cria sessão compartilhada, Explorer real, edição Fonte, render Visual e relações sem antecipar persistência específica de host.
+- [ ] UC-18 — Editor (visual e fonte) e Explorer. Issue #281 em andamento; sessão compartilhada, Explorer real, edição Fonte, render Visual, relações e autocomplete C# de `[[` com criação de nota ausente (REQ-027/REQ-109) implementados em fatias. CI e validação humana de toque/layout ainda necessários para encerrar o item.
 - [ ] UC-19 — Mundo: desenho e toque.
 - [ ] UC-20 — Personalização, tema e **plugins** (decisão do modelo de confiança em C#).
 - [ ] UC-21 — IA: providers e agente.
