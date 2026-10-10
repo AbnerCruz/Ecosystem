@@ -20,6 +20,8 @@ public sealed class Camera
     public Point ScreenToWorld(Point p) =>
         new((p.X - Viewport.Width / 2) / Zoom + X, (p.Y - Viewport.Height / 2) / Zoom + Y);
 
+    public void SetZoom(double zoom) => Zoom = Math.Clamp(zoom, MinZoom, MaxZoom);
+
     public void Pan(Vector screenDelta)
     {
         X -= screenDelta.X / Zoom;

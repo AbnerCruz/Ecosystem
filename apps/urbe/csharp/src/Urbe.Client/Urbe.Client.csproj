@@ -10,7 +10,7 @@
   </ItemGroup>
   <ItemGroup>
     <!-- Conteúdo da prévia UC-33: a pasta Tutorial da 1.8.4, somente leitura. -->
-    <EmbeddedResource Include="../../../tutorial/**/*.md" LogicalName="tutorial/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../../tutorial/**/*" LogicalName="tutorial/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Urbe.Core/Urbe.Core.csproj" />

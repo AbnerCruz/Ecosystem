@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
-using Urbe.Client.City;
 
 namespace Urbe.Client;
 
@@ -49,7 +48,8 @@ public sealed class UrbeApp : Application
 }
 
 /// <summary>
-/// UC-33 spike content: the 1.8.4 Tutorial folder (apps/urbe/tutorial), embedded read-only.
+/// Preview content: the 1.8.4 Tutorial folder (apps/urbe/tutorial), embedded read-only, in the
+/// order of tutorial.js C.files (build-tutorial.mjs: ordinal sort of the paths).
 /// Opening a real vault folder is the next UC-19/UC-25 slice; nothing is written anywhere.
 /// </summary>
 public static class TutorialNotes
@@ -63,11 +63,10 @@ public static class TutorialNotes
         foreach (var name in assembly.GetManifestResourceNames())
         {
             var normalized = name.Replace('\\', '/');
-            if (!normalized.StartsWith(Prefix, StringComparison.Ordinal) || !normalized.EndsWith(".md", StringComparison.Ordinal))
-                continue;
+            if (!normalized.StartsWith(Prefix, StringComparison.Ordinal)) continue;
             using var stream = assembly.GetManifestResourceStream(name)!;
             using var reader = new StreamReader(stream);
-            notes.Add(new CityNote("Tutorial/" + normalized[Prefix.Length..], reader.ReadToEnd()));
+            notes.Add(new CityNote("Tutorial/" + normalized[Prefix.Length..], reader.ReadToEnd().Replace("\r\n", "\n")));
         }
         return notes.OrderBy(n => n.Path, StringComparer.Ordinal).ToList();
     }

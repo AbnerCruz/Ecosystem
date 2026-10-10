@@ -1,6 +1,4 @@
-using System.Diagnostics;
 using Urbe.Client;
-using Urbe.Client.City;
 using Urbe.Client.World;
 using Urbe.Core;
 
@@ -24,67 +22,37 @@ public sealed class WorldAndCityTests(WorldFixture fixture) : IClassFixture<Worl
     }
 
     [Fact]
-    public void ChunkGround_IsOpaqueDeterministicAndUsesOriginalTextures()
+    public void TutorialFiles_AreThe184TutorialInContentOrder()
     {
-        var a = ChunkGround.Paint(_world, 2, 1);
-        var b = ChunkGround.Paint(_world, 2, 1);
-        Assert.Equal(ChunkGround.Side * ChunkGround.Side * 4, a.Length);
-        Assert.Equal(a, b);
-        for (int i = 3; i < a.Length; i += 4) Assert.Equal(255, a[i]);
+        var files = TutorialNotes.Load();
+        Assert.Equal(48, files.Count);
+        Assert.Equal(files.Select(f => f.Path).OrderBy(p => p, StringComparer.Ordinal), files.Select(f => f.Path));
+        Assert.Contains(files, n => n.Path == "Tutorial/Comece aqui.md" && n.Content.Contains("Bem-vindo ao **Urbe**"));
+        Assert.Contains(files, n => n.Path == "Tutorial/Páginas/Página de exemplo.page.json");
+        Assert.DoesNotContain(files, n => n.Content.Contains('\r'));
+    }
 
-        // A tile without decoration is exactly the 1.8.4 texture for its biome/variant.
-        for (int ty = 0; ty < 16; ty++)
-        for (int tx = 0; tx < 16; tx++)
+    [Fact]
+    public void FirstOpen_PutsEveryFileInsideItsNeighbourhood()
+    {
+        int next = 0;
+        var city = new LegacyCity(new LegacyCityTerrain((x, y) => _world.At(x, y).Biome), p => p + ++next);
+        city.OpenFirstTime(TutorialNotes.Load().Select(f => (f.Path, f.Content)).ToList());
+        Assert.Equal(48, city.Buildings.Count);
+        Assert.Equal(9, city.Regions.Count);
+        var paths = city.RegionPaths();
+        foreach (var b in city.Buildings)
         {
-            int wx = 32 + tx, wy = 16 + ty;
-            if (_world.DecorAt(wx, wy).Count > 0) continue;
-            var tile = _world.At(wx, wy);
-            int variant = (int)Math.Floor(LegacyTerrainMath.TileHash(wx, wy, 5) * 4);
-            var texture = LegacyWorldPixelTextures.CreateTile(LegacyBiomeRules.Id(tile.Biome), variant);
-            for (int row = 0; row < 16; row++)
-                Assert.Equal(texture.AsSpan(row * 64, 64).ToArray(),
-                    a.AsSpan(((ty * 16 + row) * ChunkGround.Side + tx * 16) * 4, 64).ToArray());
-            return;
+            var folder = b.Path[..b.Path.LastIndexOf('/')];
+            var region = city.Regions.Single(r => r.Id == b.RegionId);
+            Assert.Equal(folder, paths[region.Id]);
+            for (int y = b.Y; y < b.Y + b.H; y++)
+            for (int x = b.X; x < b.X + b.W; x++)
+                Assert.Same(region, city.RegionAt(x, y));
         }
-        Assert.Fail("No undecorated tile found in the sampled chunk.");
-    }
-
-    [Fact]
-    public void ChunkGround_FitsAMobileFrameBudget()
-    {
-        ChunkGround.Paint(_world, 5, 5); // warm-up (textures, terrain cache)
-        var sw = Stopwatch.StartNew();
-        for (int i = 0; i < 8; i++) ChunkGround.Paint(_world, 10 + i, 7);
-        sw.Stop();
-        // Generated off the UI thread; generous bound only to catch pathological regressions.
-        Assert.True(sw.ElapsedMilliseconds / 8.0 < 400, $"{sw.ElapsedMilliseconds / 8.0:F1} ms per chunk");
-    }
-
-    [Fact]
-    public void TutorialNotes_AreThe184TutorialFolder()
-    {
-        var notes = TutorialNotes.Load();
-        Assert.True(notes.Count >= 40, $"{notes.Count} notes");
-        Assert.Contains(notes, n => n.Path == "Tutorial/Comece aqui.md" && n.Content.Contains("Bem-vindo ao **Urbe**"));
-        Assert.All(notes, n => Assert.StartsWith("Tutorial/", n.Path));
-    }
-
-    [Fact]
-    public void City_PlacesEveryNoteOnBuildableLotsWithoutOverlap()
-    {
-        var notes = TutorialNotes.Load();
-        var city = CityModel.Build(notes, _world);
-        Assert.Equal(notes.Count, city.Houses.Count);
-        foreach (var h in city.Houses)
-        {
-            for (int y = h.Y; y < h.Y + h.H; y++)
-            for (int x = h.X; x < h.X + h.W; x++)
-                Assert.True(_world.Buildable(x, y), $"{h.Note.Path} on water/mountain at {x},{y}");
-            Assert.DoesNotContain(city.Houses, o => o != h && o.X < h.X + h.W && h.X < o.X + o.W && o.Y < h.Y + h.H && h.Y < o.Y + o.H);
-        }
-        Assert.Contains(city.Districts, d => d.Name == "Matemática");
-        var any = city.Houses[0];
-        Assert.Same(any, city.HouseAt(any.X + 1, any.Y + 1));
+        Assert.NotEmpty(city.Roads);
+        Assert.Equal("Página de exemplo.page.json", WorldView.HouseLabel(city.Buildings.Single(b => b.Path.EndsWith(".json"))));
+        Assert.Equal("Comece aqui", WorldView.HouseLabel(city.Buildings.Single(b => b.Path == "Tutorial/Comece aqui.md")));
     }
 
     [Fact]

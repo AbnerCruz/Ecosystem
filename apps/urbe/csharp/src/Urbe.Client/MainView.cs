@@ -2,8 +2,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Media;
-using Urbe.Client.City;
+using Avalonia.Media.Imaging;
 using Urbe.Client.World;
+using Urbe.Core;
 
 namespace Urbe.Client;
 
@@ -22,8 +23,10 @@ public sealed class MainView : Grid
     private readonly Border _housePanel = new();
     private readonly TextBlock _houseTitle = new();
     private readonly TextBlock _houseMeta = new();
+    private readonly Image _houseImage = new() { Width = 72, Height = 84, Stretch = Stretch.Uniform };
     private readonly TextBlock _loading = new();
-    private List<CityNote> _notes = [];
+    private readonly Dictionary<string, string> _contents = new(StringComparer.Ordinal);
+    private string _today = DateTime.Now.ToString("yyyy-MM-dd");
 
     public MainView()
     {
@@ -59,20 +62,27 @@ public sealed class MainView : Grid
     public WorldView World { get; }
     public EditorOverlay Editor { get; }
 
-    /// <summary>Generates the world off the UI thread and shows the notes as a city.</summary>
-    public async Task LoadAsync(IReadOnlyList<CityNote> notes, string seed = "urbe")
+    /// <summary>
+    /// Generates the 1.8.4 world and opens the files as on the first open of a vault
+    /// (LegacyCity.OpenFirstTime), off the UI thread; then frames all houses (city.fit).
+    /// </summary>
+    public async Task LoadAsync(IReadOnlyList<CityNote> files, string seed = "urbe")
     {
-        _notes = [.. notes];
+        foreach (var f in files) _contents[f.Path] = f.Content;
+        _today = DateTime.Now.ToString("yyyy-MM-dd");
         try
         {
             var (world, city) = await Task.Run(() =>
             {
                 var w = new LegacyWorld(seed);
-                return (w, CityModel.Build(_notes, w));
+                int next = 0;
+                // app.js id(): ids seed lot order and growth; deterministic here so the same files give the same city.
+                var city = new LegacyCity(new LegacyCityTerrain((x, y) => w.At(x, y).Biome), prefix => prefix + (++next).ToString("x"));
+                city.OpenFirstTime(files.Select(f => (f.Path, f.Content)).ToList());
+                return (w, city);
             });
             World.Load(world, city);
-            var start = city.Houses.FirstOrDefault(h => h.Note.Name == "Comece aqui") ?? city.Houses.FirstOrDefault();
-            if (start is not null) World.CenterOn(start);
+            World.FitNotes();
             _biome.Text = World.BiomeNameAtCentre();
             _loading.IsVisible = false;
         }
@@ -88,6 +98,7 @@ public sealed class MainView : Grid
         bool wide = e.NewSize.Width >= WideBreakpoint;
         _rail.IsVisible = wide;
         _dock.IsVisible = !wide;
+        PlaceHousePanel(wide);
     }
 
     // ---------------- city chrome ----------------
@@ -168,67 +179,121 @@ public sealed class MainView : Grid
         return _loading;
     }
 
+    /// <summary>
+    /// app.js openHouseSummary in the 1.8.4 look: "ARQUIVO" card with the house art, name,
+    /// type, folder and dates, "Abrir e editar", "Copiar" and "Excluir". Floating card on wide
+    /// screens, bottom sheet on phones.
+    /// </summary>
     private Control HousePanel()
     {
-        _houseTitle.FontWeight = FontWeight.SemiBold;
-        _houseTitle.FontSize = 15;
-        _houseTitle.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
-        _houseTitle.TextTrimming = TextTrimming.CharacterEllipsis;
-        _houseMeta.FontSize = 12;
-        _houseMeta.Foreground = UrbeTheme.Brush(UrbeTheme.Text2);
-        _houseMeta.TextWrapping = TextWrapping.Wrap;
-        var open = new Button
-        {
-            Content = "Abrir nota",
-            Background = UrbeTheme.Brush(UrbeTheme.Accent),
-            Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk),
-            FontWeight = FontWeight.SemiBold,
-            CornerRadius = new CornerRadius(8),
-            Padding = new Thickness(14, 8),
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center
-        };
-        open.Click += (_, _) =>
-        {
-            if (World.Selected is { } house) Editor.Open(house.Note);
-        };
-        var close = new Button { Content = UrbeTheme.Icon(UrbeTheme.Icons.Close, 16), Background = Brushes.Transparent, Padding = new Thickness(6) };
+        var label = new TextBlock { Text = "ARQUIVO", FontSize = 12, FontWeight = FontWeight.SemiBold, LetterSpacing = 1.2,
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text3), VerticalAlignment = VerticalAlignment.Center };
+        var close = new Button { Content = UrbeTheme.Icon(UrbeTheme.Icons.Close, 18, UrbeTheme.Text2), Background = Brushes.Transparent, Padding = new Thickness(6) };
         close.Click += (_, _) => World.Select(null);
         var head = new DockPanel();
         DockPanel.SetDock(close, Dock.Right);
         head.Children.Add(close);
-        head.Children.Add(_houseTitle);
-        _housePanel.Child = new StackPanel { Spacing = 10, Children = { head, _houseMeta, open } };
-        _housePanel.Background = UrbeTheme.Brush(UrbeTheme.Surface, .97);
+        head.Children.Add(label);
+
+        RenderOptions.SetBitmapInterpolationMode(_houseImage, BitmapInterpolationMode.None);
+        var art = new Border
+        {
+            Width = 92, Height = 92, CornerRadius = new CornerRadius(12),
+            Background = UrbeTheme.Brush(UrbeTheme.Bg), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
+            Child = _houseImage
+        };
+        _houseTitle.FontWeight = FontWeight.Bold;
+        _houseTitle.FontSize = 18;
+        _houseTitle.Foreground = UrbeTheme.Brush(UrbeTheme.Text);
+        _houseTitle.TextTrimming = TextTrimming.CharacterEllipsis;
+        _houseMeta.FontSize = 13;
+        _houseMeta.LineHeight = 19.5;
+        _houseMeta.Foreground = UrbeTheme.Brush(UrbeTheme.Text3);
+        _houseMeta.TextWrapping = TextWrapping.Wrap;
+        var info = new StackPanel { Spacing = 4, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), Children = { _houseTitle, _houseMeta } };
+        var summary = new DockPanel();
+        DockPanel.SetDock(art, Dock.Left);
+        summary.Children.Add(art);
+        summary.Children.Add(info);
+
+        var open = new Button
+        {
+            Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = {
+                UrbeTheme.Icon(UrbeTheme.Icons.Pencil, 18, UrbeTheme.AccentInk),
+                new TextBlock { Text = "Abrir e editar", FontSize = 16, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk) } } },
+            Background = UrbeTheme.Brush(UrbeTheme.Accent),
+            CornerRadius = new CornerRadius(12),
+            Height = 52,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center
+        };
+        open.Click += (_, _) =>
+        {
+            if (World.Selected is { } house) Editor.Open(new CityNote(house.Path, _contents.GetValueOrDefault(house.Path, "")));
+        };
+        Button Secondary(string text, string color)
+        {
+            var b = new Button
+            {
+                Content = text, FontSize = 15, FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(color),
+                Background = UrbeTheme.Brush(UrbeTheme.Surface2), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(12), Height = 48,
+                HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+            };
+            ToolTip.SetTip(b, "Chega com a pasta real do vault (UC-19/UC-25)");
+            return b;
+        }
+        var actions = new Grid { ColumnDefinitions = new ColumnDefinitions("*,8,*") };
+        var copy = Secondary("Copiar", UrbeTheme.Text);
+        var delete = Secondary("Excluir", UrbeTheme.Danger);
+        Grid.SetColumn(delete, 2);
+        actions.Children.Add(copy);
+        actions.Children.Add(delete);
+
+        _housePanel.Child = new StackPanel { Spacing = 14, Children = { head, summary, open, actions } };
+        _housePanel.Background = UrbeTheme.Brush(UrbeTheme.Surface);
         _housePanel.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
         _housePanel.BorderThickness = new Thickness(1);
-        _housePanel.CornerRadius = new CornerRadius(16);
-        _housePanel.Padding = new Thickness(16, 12);
-        _housePanel.Width = 320;
-        _housePanel.Margin = new Thickness(12, 0, 12, 92);
-        _housePanel.HorizontalAlignment = HorizontalAlignment.Center;
-        _housePanel.VerticalAlignment = VerticalAlignment.Bottom;
+        _housePanel.Padding = new Thickness(20, 14, 20, 20);
         _housePanel.IsVisible = false;
         return _housePanel;
     }
 
-    private void ShowHouse(CityHouse? house)
+    private void PlaceHousePanel(bool wide)
+    {
+        if (wide)
+        {
+            _housePanel.Width = 380;
+            _housePanel.CornerRadius = new CornerRadius(16);
+            _housePanel.Margin = new Thickness(0, 0, 24, 24);
+            _housePanel.HorizontalAlignment = HorizontalAlignment.Right;
+        }
+        else
+        {
+            _housePanel.Width = double.NaN;
+            _housePanel.CornerRadius = new CornerRadius(20, 20, 0, 0);
+            _housePanel.Margin = new Thickness(0);
+            _housePanel.HorizontalAlignment = HorizontalAlignment.Stretch;
+        }
+        _housePanel.VerticalAlignment = VerticalAlignment.Bottom;
+    }
+
+    private void ShowHouse(LegacyCityBuilding? house)
     {
         _housePanel.IsVisible = house is not null;
-        if (house is null) return;
-        var text = house.Note.Content;
-        int words = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
-        _houseTitle.Text = house.Note.Name;
-        _houseMeta.Text = (house.Note.Folder.Length > 0 ? house.Note.Folder + " · " : "") + $"{words} palavras";
+        if (house is null || World.City is null) return;
+        var paths = World.City.RegionPaths();
+        var region = house.RegionId is { } rid ? World.City.Regions.Find(r => r.Id == rid) : null;
+        var folder = region is not null ? paths[region.Id] : "raiz";
+        _houseTitle.Text = house.Name;
+        _houseMeta.Text = $"Tipo: Nota Markdown\nPasta: {folder}\nCriado: {_today}\nEditado: {_today}";
+        _houseImage.Source = World.ArtOf(house);
     }
 
     private void SaveEditorToMemory()
     {
-        if (Editor.Current is not { } edited || World.Selected is not { } house) return;
-        house.Note = edited;
-        int i = _notes.FindIndex(n => n.Path == edited.Path);
-        if (i >= 0) _notes[i] = edited;
-        ShowHouse(house);
+        if (Editor.Current is { } edited) _contents[edited.Path] = edited.Content;
     }
 
     // ---------------- navigation (1.8.4 rail / dock) ----------------

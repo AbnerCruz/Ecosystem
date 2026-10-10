@@ -4,7 +4,7 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Urbe.Client;
-using Urbe.Client.City;
+using Urbe.Core;
 
 namespace Urbe.Client.Tests;
 
@@ -37,12 +37,19 @@ public sealed class HeadlessUiTests : IDisposable
             await Settle(window, view);
             Snapshot(window, "native-desktop-city.png");
 
-            // The city fills the stage and the generated ground arrived from Urbe.Core.
+            // city.fit: the whole tutorial city at the 1.8.4 framing zoom (clamped to [.45, 1.3])
+            Assert.InRange(view.World.Camera.Zoom, .45, 1.3);
             Assert.True(view.World.ReadyChunks > 0);
             Assert.True(view.World.Bounds.Width > 1100 && view.World.Bounds.Height > 700);
 
-            // Tap the "Comece aqui" house → house panel → "Abrir nota" → editor over the city.
-            var house = FindHouse(view, "Comece aqui");
+            // closer: near ground, individual trees, roads with pebbles
+            view.World.Camera.SetZoom(1.15);
+            var house = view.World.City!.Buildings.Single(b => b.Path == "Tutorial/Comece aqui.md");
+            view.World.CenterOn(house);
+            await Settle(window, view);
+            Snapshot(window, "native-desktop-near.png");
+
+            // tap the house → 1.8.4 house card → "Abrir e editar" → editor over the city
             var centre = view.World.Camera.WorldToScreen((house.X + 1.5) * 32, (house.Y + 1.5) * 32);
             var p = view.World.TranslatePoint(centre, window)!.Value;
             window.MouseDown(p, MouseButton.Left);
@@ -52,7 +59,7 @@ public sealed class HeadlessUiTests : IDisposable
             await Settle(window, view);
             Snapshot(window, "native-desktop-house.png");
 
-            view.Editor.Open(house.Note);
+            view.Editor.Open(new CityNote(house.Path, TutorialNotes.Load().Single(f => f.Path == house.Path).Content));
             await Settle(window, view);
             Assert.True(view.Editor.IsVisible);
             Assert.True(view.Editor.Editor.IsFocused);
@@ -93,14 +100,6 @@ public sealed class HeadlessUiTests : IDisposable
             Assert.Equal("**linha** um\n## linha dois", editor.Editor.Text);
             return true;
         }, CancellationToken.None));
-
-    private static CityHouse FindHouse(MainView view, string name)
-    {
-        var field = typeof(Urbe.Client.World.WorldView).GetField("_city",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        var city = (CityModel)field.GetValue(view.World)!;
-        return city.Houses.Single(h => h.Note.Name == name);
-    }
 
     private static async Task Settle(Window window, MainView view)
     {

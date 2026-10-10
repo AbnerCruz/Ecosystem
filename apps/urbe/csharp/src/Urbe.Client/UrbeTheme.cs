@@ -19,6 +19,7 @@ public static class UrbeTheme
     public const string Accent = "#8fb3ff";
     public const string AccentInk = "#0b1325";
     public const string Ok = "#7fdca6";
+    public const string Danger = "#ff7b86";
     public const double EditorSize = 17;
 
     private static readonly Dictionary<string, IBrush> Brushes = new(StringComparer.Ordinal);
@@ -72,5 +73,6 @@ public static class UrbeTheme
         public const string Back = "M15 18l-6-6 6-6";
         public const string Close = "M6 6l12 12 M18 6L6 18";
         public const string More = "M5 12h.01 M12 12h.01 M19 12h.01";
+        public const string Pencil = "M4 20h4L19 9l-4-4L4 16z M14 6l4 4";
     }
 }

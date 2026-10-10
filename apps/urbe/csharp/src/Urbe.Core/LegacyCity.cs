@@ -77,6 +77,10 @@ public sealed class LegacyCityBuilding
     public int W => 3;
     public int H => 3;
     public string Sprite { get; }
+
+    /// <summary>urbeCasaParaDocumento b.ext: the file extension, '.md' when there is none.</summary>
+    public string Ext => System.Text.RegularExpressions.Regex.Match(Path, @"\.[^.]+$") is { Success: true } m ? m.Value : ".md";
+
     public bool Contains(int x, int y) => x >= X && x < X + W && y >= Y && y < Y + H;
 }
 

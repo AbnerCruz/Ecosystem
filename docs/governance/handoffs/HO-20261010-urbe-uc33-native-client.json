@@ -3,7 +3,7 @@
   "schemaVersion": 1,
   "message_id": "HO-20261010-urbe-uc33-native-client",
   "category": "HANDOFF",
-  "timestamp": "2026-10-10T16:25:00Z",
+  "timestamp": "2026-10-10T17:40:00Z",
   "agent": {
     "id": "claude-code-urbe-native",
     "kind": "ai-agent"
@@ -34,26 +34,46 @@
     "apps/urbe/csharp/src/Urbe.Android/**",
     "apps/urbe/csharp/tests/Urbe.Client.Tests/**",
     ".github/workflows/urbe-checks.yml",
-    "docs/governance/handoffs/HO-20261010-urbe-uc33-native-client.json"
+    "docs/governance/handoffs/HO-20261010-urbe-uc33-native-client.json",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyJsMath.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyChunkPixels.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyChunkFarPixels.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyElevationClimateField.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldSpawn.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyRiverField.cs",
+    "apps/urbe/csharp/tools/legacy-city-oracle.mjs",
+    "apps/urbe/csharp/tools/world-chunks-oracle.mjs",
+    "apps/urbe/csharp/tools/chunk-pixels-oracle.mjs",
+    "apps/urbe/csharp/tests/fixtures/legacy-city/**",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyCityOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldChunksOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelsTests.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/RegionShape.cs"
   ],
   "work_completed": [
     "Registrada a ordem do proprietário de 2026-10-10 (ADD-0020, DEC-0043): o Urbe é a 1.8.4-beta; interface C# nativa sem tecnologia web; pilha delegada; direção de produção de artefatos após a paridade.",
     "ADR-0032 aceito: Avalonia sobre Urbe.Core, condicionado ao gate G-N0; ADR-0025 substituído na parte de UI/hosts; casca Blazor congelada (UC-34 a remove).",
     "Cliente nativo criado (Urbe.Client/Urbe.Desktop/Urbe.Android): cidade em tela cheia desenhada do motor 1.8.4 do Urbe.Core (createWorld('urbe'), texturas, decoração, árvores e prédios originais), câmera com arrastar/pinça/roda e limites originais, seleção de casa, painel, editor Fonte sobreposto com barra Markdown, pílula de bioma, botões e trilho/dock da 1.8.4.",
-    "CI: testes do cliente com renderização Skia headless e capturas como artefato; job novo gera APK de prévia (identidade app.urbe.nativepreview, lado a lado com as versões atuais) e pacote Windows, sem publicar release."
+    "CI: testes do cliente com renderização Skia headless e capturas como artefato; job novo gera APK de prévia (identidade app.urbe.nativepreview, lado a lado com as versões atuais) e pacote Windows, sem publicar release.",
+    "Pedido do proprietário ('é só ver o código dessa versão'): removidas as aproximações (chão em tiles uniformes e layout em blocos). Cidade portada das definições em vigor do app.js 1.8.4 (LegacyCity: bairros, cores, lotes orgânicos, casas, ruas A* v22) e desenho portado de drawGround/drawRegions(urbeForma+Chaikin)/drawRoads+pontes/drawTrees/drawBuildings/urbeRotulo/urbePilulaBairro, enquadramento city.fit e painel ARQUIVO.",
+    "Oráculo da cidade: tools/legacy-city-oracle.mjs roda a 1.8.4 sem modificações no Chromium (primeira abertura com Math.random/Date.now fixos); duas execuções viraram fixtures e o C#, com os mesmos ids, reproduz exatamente células, cores, casas, links e cada tile de rua.",
+    "Terreno corrigido: 525/225000 tiles divergiam do terrain.js (rios) porque o port fazia em float contas que o JS faz em double (blur, mar, chuva). Agora E/T/M/escoamento/vazão/lagos batem em 262144 células e biomas em 100% de 300x300 tiles. LegacyChunkFarPixels portado (chão de longe com copas).",
+    "LegacyChunkPixels adotado sem alterações do PR #428 (mesmo conteúdo, mescla sem conflito) e conferido contra o JS no mundo real."
   ],
   "verification": [
     {
       "kind": "automated",
-      "check": "dotnet test tests/Urbe.Client.Tests -c Release (9 testes: mundo, textura original por tile, cidade sem sobreposição em terreno edificável, câmera, UI headless com toque na casa e digitação acentuada no editor)",
+      "check": "dotnet test tests/Urbe.Client.Tests -c Release (7 testes: mundo, tutorial na ordem do content.js, primeira abertura com casas dentro dos bairros, câmera, UI headless com toque na casa, painel e digitação acentuada)",
       "result": "passed",
-      "evidence": "Execução local com .NET SDK 10.0.112 em 2026-10-10: 9/9."
+      "evidence": "Execução local 2026-10-10: 7/7."
     },
     {
       "kind": "automated",
-      "check": "dotnet test tests/Urbe.Core.Tests -c Release (regressão do domínio)",
+      "check": "dotnet test tests/Urbe.Core.Tests -c Release (inclui oráculos JS: cidade da primeira abertura em 2 fixtures, chão perto/longe e biomas do mundo real)",
       "result": "passed",
-      "evidence": "Execução local: 464/464."
+      "evidence": "Execução local: 472/472; mutações (LOTE_GAP=3; blur em float) fazem os oráculos falharem."
     },
     {
       "kind": "automated",
@@ -77,18 +97,18 @@
     }
   ],
   "known_issues": [
-    "Chão provisório: só o caminho de tile uniforme do chunkPixels (sem bordas orgânicas, ecótono, sombreamento por declive e espuma). A porta fiel é LegacyChunkPixels do PR #428; quando integrada, ChunkGround passa a delegar a ela e a aproximação é apagada.",
-    "Posicionamento das casas e bairros é um layout em blocos provisório; lotes, regiões orgânicas e ruas por [[links]] da 1.8.4 são UC-19.",
-    "Prévia sem vault real e sem gravação: o conteúdo é a pasta Tutorial embutida; editar não grava. Vault real é a próxima fatia (UC-19/UC-25).",
-    "Editor Visual nativo, busca, mapa, personalização, Notas e Assistente ainda não portados (botões presentes, sem ação).",
-    "Moradores, fauna, dia/noite e clima ainda não portados (UC-19)."
+    "Vida do mundo ainda não portada (life.js e app.js: moradores, fauna, dia/noite, clima, luzes).",
+    "Mapa/minimapa, busca, personalização, edição de bairro/casa (mover/copiar/excluir), .urbe/mapa.json e pasta real do vault ainda não portados; Copiar/Excluir aparecem como na 1.8.4, sem ação.",
+    "Ids do cliente são determinísticos (prefixo + contador); na 1.8.4 eram aleatórios (Date.now+Math.random), por isso a cidade original mudava a cada abertura. Mesmo algoritmo; ids persistidos virão do mapa.json.",
+    "Editor Visual nativo ainda não portado (UC-18).",
+    "Autores dos PRs #421/#428: o terreno de main tinha divergência de float × double; corrigido aqui com oráculo. O LegacyChunkPixels do #428 entra idêntico."
   ],
   "blockers": [],
   "next_actions": [
-    "CI do PR: confirmar builds Android/Windows e baixar o APK de prévia para o G-N0.",
-    "Proprietário: validar G-N0 no aparelho (validação humana pendente neste handoff).",
-    "Após G-N0: ligar o LegacyChunkPixels (PR #428) ao ChunkGround, portar lotes/regiões/ruas e abrir pasta real do vault no Android.",
-    "Autores dos PRs Blazor abertos (#287, #333, #426, #428): reconciliar com DEC-0043 — manter o que é Urbe.Core, não continuar a casca Blazor."
+    "CI do PR #461 (APK e Windows de prévia).",
+    "Proprietário: G-N0 no aparelho.",
+    "Portar life.js (moradores, fauna, dia/noite, clima, luzes) com oráculo.",
+    "Portar mapa/minimapa e busca; depois pasta real e .urbe/mapa.json."
   ],
   "decisions_required": [],
   "normative_sources": [

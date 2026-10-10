@@ -4,7 +4,6 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Threading;
-using Urbe.Client.City;
 
 namespace Urbe.Client;
 
