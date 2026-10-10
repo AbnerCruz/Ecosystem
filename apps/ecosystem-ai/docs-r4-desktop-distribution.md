@@ -1,7 +1,7 @@
 # P6-5 — Distribuição desktop independente (.NET 10 autossuficiente)
 
 O Product **Ecosystem AI** dispõe de builds self-contained em três
-runtimes, sem exigir instalação do SDK .NET nem do Hub no computador
+runtimes, sem exigir instalação do SDK .NET nem de outro aplicativo no computador
 destino. Este slice não inventa outro Runner, ProductStore ou Provider:
 empacota exatamente `src/EcosystemAi.Cli` com o Runtime já existente.
 
