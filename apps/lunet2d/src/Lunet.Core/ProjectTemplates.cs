@@ -20,7 +20,7 @@ public static class ProjectTemplates
     /// <summary>Demonstração code-first de animação, pausa e tween por toque.</summary>
     /// <param name="className">Identificador C# válido para a classe do jogo.</param>
     /// <returns>Código completo do jogo procedural de animação/tween.</returns>
-    public static string AnimationSource(string className) => $"""
+    public static string AnimationSource(string className) => $$"""
         using System.Numerics;
         using Lunet;
         using Lunet.Graphics;
@@ -118,7 +118,7 @@ public static class ProjectTemplates
     /// <summary>Demonstração de partículas com burst, fluxo contínuo e pool fixo.</summary>
     /// <param name="className">Identificador C# válido para a classe do jogo.</param>
     /// <returns>Código completo do jogo procedural de partículas.</returns>
-    public static string ParticlesSource(string className) => $"""
+    public static string ParticlesSource(string className) => $$"""
         using System.Numerics;
         using Lunet;
         using Lunet.Graphics;
