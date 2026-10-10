@@ -48,3 +48,11 @@ O desenho de **árvores, prédios, personagens, terreno composto/chunks e HUD** 
 **Precisão visual:** a primitiva `Polygon` usa rasterização de pixels-centro, enquanto o Canvas2D legado suaviza contornos das formas poligonais. A paridade geométrica de pinheiros **ainda não equivale a igualdade byte a byte**; validação por imagem real Android/Chrome e eventual correção dos contornos são necessárias antes do aceite. Nenhum componente Razor consome as imagens nesta fatia: a entrega é **C# Core**, não alteração visível no APK.
 
 **Próximas ações:** integrar sprites de edifícios 48×56; conectar RGBA/PNG ao renderer mobile, conferir zoom nearest-neighbor, posição de construção, clipping e screenshot comparativo contra o cliente 1.8.4-beta. Não remover o JS antes do gate de corte aprovado.
+
+## Quarta fatia: construções e estilos originais
+
+`LegacyWorldBuildings` transpõe `STYLE`, `styleFor`, `roofRows`, `window2` e `house` do JS legado. Gera RGBA 48×56 em sete formatos (casa, torre, salão, oficina, mercado, depósito e tinturaria), cinco materiais por bioma (temperado, frio, seco, costeiro e úmido), variantes de telhado e opção de flores. Saída em bytes ou PNG lossless com o encoder do Core; nenhum JS no cliente nativo. As construções compartilham o mesmo rasterizador de árvores.
+
+Regressão C# `LegacyWorldBuildingsTests`: 105 combinações mínimas (7×5×3), determinismo, PNG de saída, escolha de material por bioma, amostras de telhado/porta/janelas e entrada inválida. **Não declarado como teste de screenshot/pixel-exact para polígonos antialiased** (especialmente torre); executar diff visual em Android antes da integração do renderer e aceite de UC-19/G-C3.
+
+O C# contém os dados e sprites, mas ainda não pinta a tela Cidade nem substitui o renderer legado. Não abrir versão Web nem criar release automaticamente.
