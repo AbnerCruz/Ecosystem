@@ -23,7 +23,8 @@ public static class CliInteractiveChat
 
     public static async Task<int> RunAsync(
         IReadOnlyDictionary<string, string> fields, bool allowCreate,
-        TextReader input, TextWriter output, Func<string[], Task<int>> execute)
+        TextReader input, TextWriter output, Func<string[], Task<int>> execute,
+        long? sessionBudgetCents = null)
     {
         ArgumentNullException.ThrowIfNull(fields);
         ArgumentNullException.ThrowIfNull(input);
@@ -60,6 +61,9 @@ public static class CliInteractiveChat
                 CultureInfo.InvariantCulture, out var outputPrice) || outputPrice < 0)
             throw new ArgumentException("Preços inválidos.");
 
+        if (sessionBudgetCents is <= 0)
+            throw new ArgumentException("Teto da sessão precisa ser positivo.", nameof(sessionBudgetCents));
+
         var store = new LocalProjectStore(catalog);
         var snapshot = store.Read();
         var projectId = fields["--project-id"];
@@ -71,6 +75,22 @@ public static class CliInteractiveChat
             throw new ArgumentException("Workspace atual não corresponde à pasta vinculada ao projeto.");
         var session = project.Sessions.FirstOrDefault(s => s.Id == sessionId)
             ?? throw new KeyNotFoundException("Sessão não pertence ao projeto.");
+
+        long remaining = long.MaxValue;
+        if (sessionBudgetCents is { } ceiling)
+        {
+            long alreadyRecorded = 0;
+            foreach (var receipt in session.Runs)
+            {
+                if (receipt.Currency != "USD")
+                    throw new InvalidDataException("Teto de sessão em USD não aceita recibo de outra moeda.");
+                alreadyRecorded = checked(alreadyRecorded + receipt.CostMinor);
+            }
+            remaining = alreadyRecorded >= ceiling ? 0 : ceiling - alreadyRecorded;
+            output.WriteLine($"Teto conservador da sessão: {ceiling} centavos USD; " +
+                $"recibos prévios: {alreadyRecorded}; disponível: {remaining}.");
+            output.WriteLine("Cada tarefa reserva seu limite inteiro; saldo não utilizado não é devolvido.");
+        }
 
         output.WriteLine($"Ecosystem AI — {project.Name} / {session.Title}");
         output.WriteLine("Mensagens são executadas individualmente, com orçamento por tarefa.");
@@ -99,17 +119,38 @@ public static class CliInteractiveChat
             // em sessão vazia não deve requisitar histórico que não existe.
             var current = store.Read().Projects
                 .First(p => p.Id == projectId).Sessions.First(s => s.Id == sessionId);
+            // Teto opt-in do processo: reservar ANTES do provedor, usando o limite
+            // máximo do run, nunca a fatura estimada que chega depois.
+            // Não é lock distribuído entre instâncias nem orçamento de plataforma.
+            var reserved = Math.Min(budget, remaining);
+            if (reserved <= 0)
+            {
+                output.WriteLine("Teto da sessão atingido. Nenhuma outra tarefa será enviada.");
+                return hadFailure ? 1 : 0;
+            }
             var args = new List<string>();
             foreach (var (key, value) in fields)
             {
                 args.Add(key);
-                args.Add(value);
+                args.Add(key switch
+                {
+                    "--budget-cents" when sessionBudgetCents is not null =>
+                        reserved.ToString(CultureInfo.InvariantCulture),
+                    "--max-call-cents" when sessionBudgetCents is not null =>
+                        Math.Min(perCall, reserved).ToString(CultureInfo.InvariantCulture),
+                    _ => value
+                });
             }
             if (allowCreate) args.Add("--allow-create");
             if (current.Turns.Count > 0) args.Add("--use-history");
             args.Add("--goal");
             args.Add(text);
 
+            if (sessionBudgetCents is not null)
+            {
+                remaining -= reserved;
+                output.WriteLine($"Reserva do turno: {reserved} centavos USD; teto restante: {remaining}.");
+            }
             var result = await execute(args.ToArray());
             if (result == 130) return 130; // Cancelamento nunca vira repetição automática.
             if (result == 2) return 2;     // Parâmetros/credenciais inválidos: não insistir.
