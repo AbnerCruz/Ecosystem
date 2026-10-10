@@ -1,0 +1,111 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-uc19-pixel-art-parity",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T10:36:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-pixel-parity",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc19-pixel-art-texture-parity-20261010",
+  "base_commit": "c6837117494c2a48870eac1d091d643f40261160",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldPixelTextures.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldPixelTexturesTests.cs",
+    "apps/urbe/docs/csharp/UC19-PIXEL-ART-PARITY.md",
+    "docs/governance/handoffs/HO-20261010-urbe-uc19-pixel-art-parity.json"
+  ],
+  "work_completed": [
+    "UC-19 / Issue #420: porta para C# puro as 19 paletas e 4 variantes determinísticas de texturas 16×16 RGBA do Urbe 1.8.4-beta sem alterar o renderer C# ativo ou o JS legado.",
+    "Teste cruza SHA-256 calculado por Node 22 a partir do algoritmo original pixel-art.js para o corpus completo de 76 tiles; cinco exemplos independentes e isolamento de buffers.",
+    "Documenta limite estrito: sprites, sombras, chunks, HUD, mundo e validação humana Android ainda pendentes; pixel textures não estão conectadas à UI."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Node 22 — oráculo makeTexture legacy",
+      "result": "passed",
+      "evidence": "SHA256 do corpus: 84d2e9695bba78e69f1a60b17bba8d5fee8c56c5efc8a4d71877f5771a820d05; 19×4 tiles"
+    },
+    {
+      "kind": "automated",
+      "check": "CI urbe-checks / .NET portable / consistency combinado",
+      "result": "pending",
+      "evidence": "Aguardar PR e CI remoto; SDK .NET não disponível no executor local."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3/G-C4 — fidelidade de screenshots, toque, desempenho, instalação Android",
+      "result": "not-applicable",
+      "evidence": "Sem teste em dispositivo físico; gates permanecem abertos."
+    }
+  ],
+  "known_issues": [
+    "O C# ainda não renderiza estas texturas; pixel parity parcial do Core não equivale à paridade de tela da 1.8.4-beta.",
+    "Composição de terreno/sombras/bioma custom, sprites e HUD exigem passos independentes de UC-19.",
+    "PR crítico de filesystem/Android #397 é outra trilha; este PR não deve competir com ela nem contornar autorização do proprietário."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar testes C# portáteis, CI urbe-checks e consistency na branch; corrigir qualquer divergência de compilação ou hash.",
+    "Após integração rotineira, consumir texturas no renderizador C# nativo com pixel nearest-neighbor e registrar prova de screenshot idêntico do cenário de referência.",
+    "Manter G-C3/G-C4 abertos até validação física; não alterar release beta automaticamente."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Vault e projeção mantêm suas autoridades atuais; a textura é cálculo puro de pixels."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nenhuma dependência ou acesso a Lunet2D ou Hub."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Port incremental de uma primitiva visual, preservando JS de recuperação e contrato de dados."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #420, branch, testes, PR e handoff rastreáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declarar validação visual ou dispositivo Android; G-C3 e G-C4 abertos."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 não marcada concluída; entrega parcial verificada por corpus de pixels."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Implementação isolada no Product Urbe; sem extração genérica de componente."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Código aditivo de função pura e testes/doc; não altera vault, formatos, UI, distribuição, segurança, workflows ou decisões consolidadas."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-legacy-pixel-textures",
+      "status": "product-specific",
+      "rationale": "Algoritmo, hashes, paletas e pixels pertencem ao Urbe 1.8.4; segundo consumidor inexistente."
+    }
+  ]
+}
