@@ -20,13 +20,13 @@ Nenhum formato de arquivo, contrato de vault, saída de release, host, importaç
 
 **Fatia de integração:** `LegacyChunkViewport` seleciona apenas os chunks que cruzam a câmera, inclusive em coordenadas negativas. `LegacyWorldScene` constrói uma única vez em tarefa assíncrona o mundo original com seed `urbe` e spawn `(36,25)`, usa cache FIFO limitado a 16 PNGs transportados como data URI e projeta seus chunks no componente `World.razor`. Pan em saltos de 8 tiles, scroll nativo e zoom de pixel próximo ao original funcionam sem invocar o gerador JS no runtime. Os handlers para casas, bairros, seleção, criação e salvamento SAF foram preservados.
 
-**Limite explícito:** somente o terreno é contínuo. Os 64 lotes clicáveis continuam sendo o overlay provisório `CityTileLayout` 8×8, agora posicionado no espaço do mundo no ponto de origem `(32,24)`; fora dessa área o terreno pode ser explorado, mas não se constroem novas notas por toque ainda. Árvores com sprites altos, estradas `[[wikilink]]`, cidadãos, regiões e HUD original ainda precisam ser compostos. A interface permanece pendente de aceite visual Android. Se a geração falhar, `World.razor` preserva o tabuleiro anterior como fallback. Nenhum PNG estático é fonte da arte; data URI serve somente como transporte dos pixels C# ao WebView.
+**Avanço de interação:** `CityWorldLayout` substitui o limite de 64 lotes na camada contínua: projeta todas as casas e bairros, respeita coordenadas explícitas de `.urbe/mapa.json` (inclusive negativas), atribui posições estáveis aos itens sem metadados e renderiza apenas os ocupados na navegação normal. No modo construir/organizar, os lotes vazios do viewport tornam-se selecionáveis. `WorkspaceSession.PlaceHouseInWorld`/`CreateHouseInWorld` permitem construir e mover fora do 8×8, com validação de colisão e persistência usando o contrato existente. O `CityTileLayout` e seus métodos antigos são preservados para o fallback e seus testes de regressão. Ainda faltam árvores com sprites altos, estradas `[[wikilink]]`, cidadãos, regiões, pan por gesto e HUD original; o aceite visual Android está pendente. Nenhum PNG estático é fonte da arte; data URI serve somente como transporte dos pixels C# ao WebView.
 
 ## Próxima ação
 
 1. Executar o CI .NET e consistency no estado combinado da PR, corrigindo regressões.
 2. Conferir o resultado da comparação byte a byte do oráculo JS `chunk-pixels-oracle.mjs` contra o C# e corrigir qualquer discrepância sem alterar os algoritmos ou as expectativas legadas.
 3. Testar o novo viewport/câmera/cache com a compilação Android e Windows e smoke no dispositivo; corrigir diferenças de posicionamento e interação antes de ampliar a área de edição.
-4. Integrar estradas e árvores procedurais e restaurar o layout/HUD originais; concluir apenas após DEVICE Android e paridade visual G-C3.
+4. Integrar estradas e árvores procedurais, pan por gesto e restaurar o layout/HUD originais; concluir apenas após DEVICE Android e paridade visual G-C3.
 
 Reuso: `product-specific` ao Urbe; nenhuma extração para plataforma sem segundo consumidor (NN-022).
