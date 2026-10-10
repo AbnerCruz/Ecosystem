@@ -1,0 +1,82 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-native-city-map",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T19:20:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-native-map",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-city-map-20261010",
+  "base_commit": "5f6dc0aa1a8272390c648d1dc42a1591d02bcc54",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CityMapOverlay.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261010-urbe-native-city-map.json"
+  ],
+  "work_completed": [
+    "Botão Mapa do Urbe original agora abre a sobreposição nativa Avalonia e permite tocar para reposicionar a câmera.",
+    "A sobreposição reproduz os limites da 1.8.4 e desenha biomas amostrados no Urbe.Core, áreas, ruas, casas e enquadramento da câmera.",
+    "Pixels de terreno são gerados fora da thread de UI; testes headless cobrem navegação e zoom."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks + consistency",
+      "result": "pending",
+      "evidence": "CI do PR ainda precisa executar."
+    }
+  ],
+  "known_issues": [
+    "Map overlay usa paleta original e biomas canônicos, mas padrão detalhado de ruído suave no plano de fundo do mapa ainda precisa de comparação pixel-a-pixel.",
+    "Ainda faltam mapa.json persistido, minimapa, edição de construção/bairro e DEVICE G-C3.",
+    "PR #467 e #468 também alteram MainView; integrador deve conciliar sem perdas."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Reconciliar/validar PRs do cliente nativo; completar persistência de mapa.json e editor Visual.",
+    "Submeter APK opt-in à prova em aparelho físico antes de beta público."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/src/app.js"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "CityMap recebe as mesmas instâncias de LegacyCity/LegacyWorld/Camera do renderer."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "UX segue mapao do JS 1.8.4."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "CI, testes e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não é teste de aparelho."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 permanece em progresso."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI nativa sem alteração de vault ou esquema persistido."
+  }
+}
