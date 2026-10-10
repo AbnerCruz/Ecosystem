@@ -48,7 +48,12 @@ public sealed class TouchListView
     public RectangleF Bounds
     {
         get => _scroll.Bounds;
-        set { _scroll.Bounds = value; Cancel(); }
+        set
+        {
+            if (_scroll.Bounds == value) return;
+            _scroll.Bounds = value;
+            Cancel();
+        }
     }
 
     /// <summary>Quantidade de linhas. Alterações limitam scroll e invalidam seleção fora da lista.</summary>
