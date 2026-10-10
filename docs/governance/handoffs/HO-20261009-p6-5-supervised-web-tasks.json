@@ -14,7 +14,7 @@
   "branch": "feat/p6-5-web-supervised-task-execution-20261009",
   "base_commit": "cd5a3619623f0293f41c2a19868fdbc5103b7458",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/406",
   "files_changed": [
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebTaskRunner.cs",
     "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
