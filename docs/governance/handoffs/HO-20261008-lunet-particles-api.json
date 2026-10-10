@@ -61,10 +61,10 @@
     {
       "kind": "human",
       "check": "particles no Preview Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/particulas.md",
-      "evidence": "Criar projeto Em branco e substituir Game.cs pelo exemplo completo; validar roteiro offline/rápido/isolado. Testes portáteis não comprovam GL/performance/toque real."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/449); registro em docs/governance/responses/VAL-HO-20261008-lunet-particles-api-a8ad5761d083.md."
     }
   ],
   "known_issues": [
