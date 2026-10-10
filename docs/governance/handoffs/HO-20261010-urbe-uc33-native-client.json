@@ -13,7 +13,7 @@
   "state": "review",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "ce9cda92ed51e2cb7f8e00ce927d18fe3cc2b6f2",
-  "commit": "7711f7e",
+  "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/461",
   "files_changed": [
     "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
