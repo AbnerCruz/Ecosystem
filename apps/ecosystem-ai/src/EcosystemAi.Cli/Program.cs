@@ -119,7 +119,7 @@ histórico local existe somente mediante --catalog explícito.
                 "--max-call-cents", "--input-usd-per-million", "--output-usd-per-million", "--accept-exists",
                 "--catalog", "--project-id", "--session-id", "--project-name", "--session-title",
                 "--journal", "--run-id", "--output", "--port", "--session-budget-cents",
-                "--web-process-budget-cents", "--web-max-runs" };
+                "--web-process-budget-cents", "--web-max-runs", "--agent-profile-id" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
             if ((createProject ? 1 : 0) + (createSession ? 1 : 0) + (manageCatalog ? 1 : 0) + (chatMode ? 1 : 0) + (webUi ? 1 : 0) > 1)
@@ -247,6 +247,9 @@ histórico local existe somente mediante --catalog explícito.
 
             if (fields.ContainsKey("--run-id"))
                 throw new ArgumentException("--run-id exige --show-run.");
+            if (fields.ContainsKey("--agent-profile-id") && (!fields.ContainsKey("--catalog")
+                || !fields.ContainsKey("--project-id") || !fields.ContainsKey("--session-id")))
+                throw new ArgumentException("--agent-profile-id exige projeto e sessão existentes.");
             var root = Path.GetFullPath(Need("--project"));
             if (fields.TryGetValue("--journal", out var journalDirectory))
                 CliRunJournalCommands.RequireOutsideWorkspace(journalDirectory, root);
@@ -317,9 +320,17 @@ histórico local existe somente mediante --catalog explícito.
             var workspace = new WorkspaceSession("cli:" + contextId, runner, context, grant, grant, [scope]);
             var profile = new ModelProfile(provider.ProviderId, model,
                 new ModelCapabilities(true, false, true, false, false, 32_000), new Money(callCents, "USD"));
+            var localAgent = fields.TryGetValue("--agent-profile-id", out var agentProfileId)
+                ? new LocalAgentRosterStore(catalogDirectory!).Read().Agents.SingleOrDefault(a =>
+                    a.Id == agentProfileId && a.ProjectId == fields["--project-id"])
+                    ?? throw new ArgumentException("Agente inexistente ou de outro projeto.")
+                : null;
+            var baseInstructions = "Você opera no projeto autorizado. Use apenas as ferramentas anunciadas; sem autorização para sobrescrever ou excluir. Relate resultados e limites. Não invente testes ou verificações.";
             var agent = new AgentDefinition(
-                new AgentIdentity("cli-assistant", "Assistente", "executor"), profile,
-                "Você opera no projeto autorizado. Use apenas as ferramentas anunciadas; sem autorização para sobrescrever ou excluir. Relate resultados e limites. Não invente testes ou verificações.",
+                localAgent is null ? new AgentIdentity("cli-assistant", "Assistente", "executor")
+                    : new AgentIdentity(localAgent.Id, localAgent.Name, "executor"),
+                profile, localAgent is null ? baseInstructions
+                    : baseInstructions + "\nFunção do agente: " + localAgent.Instructions,
                 8, grant);
             // Captura um snapshot ANTES de adicionar a solicitação atual ao catálogo.
             // O histórico só vira contexto do modelo quando o usuário pede explicitamente.
