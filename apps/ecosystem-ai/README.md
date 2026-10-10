@@ -165,3 +165,13 @@ sem copiar conteúdo privado nem alterar o catálogo v1. Decisão sobre parecer
 **não significa aprovação técnica, integração ou permissão de escrita**.
 
 [Uso e garantias](docs-r4-team-review-decisions.md).
+
+## Quadro de tarefas planejadas (P6-5 R4)
+
+Planeje tarefas com título, objetivo, **critério de aceite** e responsável no
+painel localhost. Criar ou cancelar planejamento **não chama IA**. O botão
+**Executar agora** aparece apenas com `--web-ui --web-tasks` e delega ao
+mesmo Runner/ledger seguro; o quadro registra tentativas e RunIds canônicos.
+Respostas presentes não são declaradas como aceite técnico automático.
+
+[Uso, garantias e testes](docs-r4-planned-task-board.md).

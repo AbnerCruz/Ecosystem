@@ -1,0 +1,134 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-p6-5-planned-task-board",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T08:22:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-planned-task-board",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-planned-task-board-20261010",
+  "base_commit": "66377a83547a3db92dc2129646d45d1776a020f5",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.ProjectStore/LocalPlannedTaskStore.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4PlannedTaskBoardTests.cs",
+    "apps/ecosystem-ai/docs-r4-planned-task-board.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261010-p6-5-planned-task-board.json"
+  ],
+  "work_completed": [
+    "P6-5 avança quadro de tarefas por projeto/sessão com título, objetivo, critério de aceite e assignee válido no roster canônico.",
+    "PlannedTaskStore auxiliar guarda somente definições e referências aos receipts; checksum SHA-256, revisão, lock e gravação atômica, sem migrar catalog.json v1.",
+    "Formulário C# localhost permite planejar/cancelar sem execução e sem custo; execução exige gesto humano e --web-tasks pré-autorizado e delega ao mesmo CliWebTaskRunner, WorkspaceSession, AgentRunner e ledger.",
+    "Após execução, compara snapshot do catálogo e somente marca response_verified com um recibo succeeded/verified; review_recorded requer dois receipts e registro de parecer independente.",
+    "Resultado e critério de aceite declarados não significam integração ou TaskRecord.Completed; nenhum scheduler, loop, grant ou provider paralelo.",
+    "Testes HTTP reais com executor mockado e leitura do Store, isolamento, CSRF, sanitização, cancelamento, integridade e modo sem execução."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions após abertura da PR; SDK .NET indisponível local."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions após abertura da PR."
+    }
+  ],
+  "known_issues": [
+    "Correlações com runs são conservadoras dentro do Host local; múltiplos escritores independentes no catálogo podem impedir associação em vez de aprovar falsamente.",
+    "Status response_verified verifica somente resposta estrutural, não critérios de aceite materialmente; fluxo de ChangeSet/ChangeIntegrator e Android permanecem pendentes.",
+    "Formulários web continuam apenas loopback e não adicionam fs.write; dados persistidos na pasta do catálogo selecionado."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Verificar GitHub Actions CI e consistência; corrigir regressões antes da integração.",
+    "Integrar com checks verdes; manter P6-5 aberta.",
+    "Avançar validação de critérios, artefatos e experiência Android conforme ROADMAP."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-planned-task-board.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uso de LocalProjectStore como fonte de receipts, sem alterar o schema."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "UI Product standalone sem Hub obrigatório."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Executor usa somente grants read-only; nenhuma permissão criada."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Tarefa somente executa por POST explícito; sem retry/worker."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "P6-5 Issue #354, docs, testes, handoff e PR."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Catálogo v1 inalterado; formato auxiliar novo e opt-in."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Host/Origin/CSRF, HTML escaping, restrições de symlinks e integridade de arquivo."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara TaskRecord.Completed, ChangeIntegrator, APK nem P6-5 encerrada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Integração após gates verdes."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Mesmo AgentRunner e Session Runtime; sem ledger/scheduler paralelos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Persistência de planejamento específica do Product."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "local-planned-tasks",
+      "status": "product-specific",
+      "rationale": "Somente metadados de UX, associados a receipts do Runtime existente."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "CRUD de planejamento e dispatch web sob capability e orçamento já autorizados, sem nova permissão, execução autônoma ou fronteira externa."
+  },
+  "cost": null
+}

@@ -87,8 +87,9 @@ public static class CliWebUi
                         cancellationToken: ctx.RequestAborted);
                 var roster = new LocalAgentRosterStore(catalogPath).Read();
                 var reviews = new LocalTeamReviewStore(catalogPath).Read();
+                var planned = new LocalPlannedTaskStore(catalogPath).Read();
                 await RespondHtml(ctx, CliWebUiHtml.Render(snapshot, csrfToken, audited,
-                    taskRunner?.Board, roster, reviews));
+                    taskRunner?.Board, roster, reviews, planned));
             }
             catch (Exception e) when (IsExpectedError(e))
             {
@@ -226,8 +227,149 @@ public static class CliWebUi
             }
         });
 
+        // Criar, vincular e cancelar definições de tarefas não usa rede/modelo.
+        app.MapPost("/planned-tasks", async ctx =>
+        {
+            if (!await VerifyPost(ctx, port, csrfToken)) return;
+            try
+            {
+                _ = ReadCatalog();
+                var form = await ctx.Request.ReadFormAsync();
+                if (!ValidForm(form, "csrf", "projectId", "sessionId", "title",
+                    "goal", "acceptance", "assignee"))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    return;
+                }
+                var item = new LocalPlannedTaskStore(catalogPath).Create(
+                    form["projectId"].ToString(), form["sessionId"].ToString(),
+                    form["title"].ToString(), form["goal"].ToString(),
+                    form["acceptance"].ToString(), form["assignee"].ToString());
+                ctx.Response.StatusCode = StatusCodes.Status303SeeOther;
+                ctx.Response.Headers.Location = "/#s-" + Uri.EscapeDataString(item.SessionId);
+            }
+            catch (Exception e) when (IsExpectedError(e))
+            {
+                await RespondHtml(ctx, CliWebUiHtml.RenderError("Tarefa não planejada.",
+                    "Verifique sessão, critérios, executor e limites dos campos."),
+                    StatusCodes.Status400BadRequest);
+            }
+        });
+
+        app.MapPost("/task-cancel", async ctx =>
+        {
+            if (!await VerifyPost(ctx, port, csrfToken)) return;
+            try
+            {
+                _ = ReadCatalog();
+                var form = await ctx.Request.ReadFormAsync();
+                if (!ValidForm(form, "csrf", "taskId"))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    return;
+                }
+                var item = new LocalPlannedTaskStore(catalogPath)
+                    .Cancel(form["taskId"].ToString());
+                ctx.Response.StatusCode = StatusCodes.Status303SeeOther;
+                ctx.Response.Headers.Location = "/#s-" + Uri.EscapeDataString(item.SessionId);
+            }
+            catch (Exception e) when (IsExpectedError(e))
+            {
+                await RespondHtml(ctx, CliWebUiHtml.RenderError("Tarefa não cancelada.",
+                    "Confirme se existe e se já não foi cancelada."),
+                    StatusCodes.Status400BadRequest);
+            }
+        });
+
         if (taskRunner is not null)
         {
+            app.MapPost("/task-run", async ctx =>
+            {
+                if (!await VerifyPost(ctx, port, csrfToken)) return;
+                try
+                {
+                    var catalog = ReadCatalog();
+                    var form = await ctx.Request.ReadFormAsync();
+                    if (!ValidForm(form, "csrf", "taskId"))
+                    {
+                        ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                        return;
+                    }
+                    var tasks = new LocalPlannedTaskStore(catalogPath);
+                    var item = tasks.Read().Tasks.SingleOrDefault(t =>
+                        t.Id == form["taskId"].ToString());
+                    if (item is null || item.Cancelled || item.Attempts.Count >= 20)
+                    {
+                        ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                        return;
+                    }
+                    var before = catalog.Projects.SingleOrDefault(p => p.Id == item.ProjectId)
+                        ?.Sessions.SingleOrDefault(t => t.Id == item.SessionId);
+                    if (before is null)
+                    {
+                        ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                        return;
+                    }
+                    var outcome = await taskRunner.SubmitAsync(
+                        item.ProjectId, item.SessionId, item.Goal, item.Assignee);
+                    if (outcome.State is WebTaskState.Busy or WebTaskState.QuotaExceeded
+                        or WebTaskState.Invalid)
+                    {
+                        ctx.Response.StatusCode = outcome.State switch
+                        {
+                            WebTaskState.Busy => StatusCodes.Status409Conflict,
+                            WebTaskState.QuotaExceeded => StatusCodes.Status429TooManyRequests,
+                            _ => StatusCodes.Status400BadRequest
+                        };
+                        return;
+                    }
+                    var after = ReadCatalog().Projects.Single(p => p.Id == item.ProjectId)
+                        .Sessions.Single(t => t.Id == item.SessionId);
+                    var compatible = after.Runs.Count >= before.Runs.Count
+                        && after.Runs.Take(before.Runs.Count)
+                            .Select(r => r.RunId).SequenceEqual(before.Runs.Select(r => r.RunId))
+                        && after.Turns.Skip(before.Turns.Count).Any(t =>
+                            t.Role == "user" && t.Text == item.Goal);
+                    var added = compatible ? after.Runs.Skip(before.Runs.Count)
+                        .Select(r => r.RunId).Take(3).ToArray() : [];
+                    var verified = added.Length > 0 && added.All(id =>
+                        after.Runs.Any(r => r.RunId == id &&
+                            r.Status == "succeeded" && r.Verified));
+                    var reviewRecorded = added.Length == 2 &&
+                        new LocalTeamReviewStore(catalogPath).Read().Reviews.Any(r =>
+                            r.ProjectId == item.ProjectId && r.SessionId == item.SessionId
+                            && r.ProducerRunId == added[0] && r.ReviewerRunId == added[1]);
+                    var state = outcome.State switch
+                    {
+                        WebTaskState.Succeeded when added.Length == 1 && verified
+                            => "response_verified",
+                        WebTaskState.Reviewed when verified && reviewRecorded
+                            => "review_recorded",
+                        WebTaskState.Failed or WebTaskState.ReviewIncomplete
+                            => "failed",
+                        _ => "unverified"
+                    };
+                    tasks.RecordAttempt(item.Id, state, added.Length <= 2 ? added : []);
+                    if (state is "response_verified" or "review_recorded")
+                    {
+                        ctx.Response.StatusCode = StatusCodes.Status303SeeOther;
+                        ctx.Response.Headers.Location = "/#s-" +
+                            Uri.EscapeDataString(item.SessionId);
+                        return;
+                    }
+                    await RespondHtml(ctx, CliWebUiHtml.RenderError("Tarefa registrada sem aceite.",
+                        "Consulte os recibos na sessão; somente resposta verificada ou " +
+                        "revisão comprovada recebe esse rótulo. Nenhum retry automático."),
+                        StatusCodes.Status422UnprocessableEntity);
+                }
+                catch (Exception e) when (IsExpectedError(e))
+                {
+                    await RespondHtml(ctx, CliWebUiHtml.RenderError("Execução planejada indisponível.",
+                        "Confira catálogo e recibos. Nenhuma autorização adicional foi concedida."),
+                        StatusCodes.Status400BadRequest);
+                }
+            });
+
             app.MapPost("/tasks", async ctx =>
             {
                 if (!await VerifyPost(ctx, port, csrfToken)) return;
