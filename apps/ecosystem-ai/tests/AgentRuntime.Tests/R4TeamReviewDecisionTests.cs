@@ -141,7 +141,7 @@ public sealed class R4TeamReviewDecisionTests
             var catalog = Path.Combine(root, "catalog");
             var records = new LocalTeamReviewStore(catalog);
             AppendRun(store, project.Id, session.Id, "producer", "Texto");
-            Assert.Throws<InvalidOperationException>(() => records.Record(
+            Assert.Throws<ArgumentException>(() => records.Record(
                 project.Id, session.Id, team.Id, "producer", "reviewer", 1, 3));
             AppendRun(store, project.Id, session.Id, "reviewer", "Parecer");
             var entry = records.Record(project.Id, session.Id, team.Id,
