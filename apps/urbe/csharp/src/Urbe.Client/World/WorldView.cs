@@ -39,6 +39,7 @@ public sealed class WorldView : Control
     private Point? _pressAt;
     private bool _dragged;
     private double _pinchDistance;
+    private int _worldGeneration;
 
     private sealed record ChunkImage(Bitmap Near, Bitmap Far, (int X, int Y, LegacyVegetation.Tree Tree)[] Trees);
 
@@ -60,6 +61,13 @@ public sealed class WorldView : Control
 
     public void Load(LegacyWorld world, LegacyCity city)
     {
+        _worldGeneration++;
+        foreach (var image in _chunks.Values) { image.Near.Dispose(); image.Far.Dispose(); }
+        _chunks.Clear();
+        _chunkOrder.Clear();
+        _pending.Clear();
+        _texts.Clear();
+        Selected = null;
         World = world;
         City = city;
         _shapes.Clear();
@@ -474,8 +482,9 @@ public sealed class WorldView : Control
             if (_pending.Count >= 6) break;
             if (!_pending.Add(key)) continue;
             var world = World;
+            var generation = _worldGeneration;
             Task.Run(() => GenerateChunk(world, key.X, key.Y)).ContinueWith(task =>
-                Dispatcher.UIThread.Post(() => AcceptChunk(key, task)), TaskScheduler.Default);
+                Dispatcher.UIThread.Post(() => AcceptChunk(key, generation, task)), TaskScheduler.Default);
         }
     }
 
@@ -494,8 +503,9 @@ public sealed class WorldView : Control
         return (near, far, trees.ToArray());
     }
 
-    private void AcceptChunk((int, int) key, Task<(byte[] Near, byte[] Far, (int, int, LegacyVegetation.Tree)[] Trees)> task)
+    private void AcceptChunk((int, int) key, int generation, Task<(byte[] Near, byte[] Far, (int, int, LegacyVegetation.Tree)[] Trees)> task)
     {
+        if (generation != _worldGeneration) return;
         _pending.Remove(key);
         if (task.IsCompletedSuccessfully && !_chunks.ContainsKey(key))
         {

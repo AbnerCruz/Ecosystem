@@ -1,0 +1,125 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-native-android-vault-first-save",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T18:03:30Z",
+  "agent": {
+    "id": "chatgpt-urbe-native-continuation",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-33",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-android-vault-first-save-20261010",
+  "base_commit": "0895dd496295786599901d5f53f0c78b86e86d41",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/464",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeApp.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261010-urbe-native-android-vault-first-save.json"
+  ],
+  "work_completed": [
+    "Conectado primeiro fluxo de vault físico ao novo cliente Avalonia em Android: picker SAF, URI persistente, RestoreAsync, snapshots canônicos do VaultReader e cidade procedural da 1.8.4 alimentada por notas reais.",
+    "Edição Fonte possui salvamento explícito, retorno de sucesso só após gravação e releitura/verificação do arquivo; SaveOnClose evita descartar mudanças de vault conectado.",
+    "Gravação intencionalmente limitada a nota Markdown existente; recusa divergência externa/futuro/path traversal; usa VaultWriter.Plan como guarda e WriteVerified com backup no mesmo diretório. Nenhuma exclusão, criação ou mudança em mapa.json.",
+    "Troca de vault invalida chunks e ignora tarefas assíncronas do mundo anterior."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks csharp-portable na PR #464 head 7e22627d",
+      "result": "passed",
+      "evidence": "GitHub Actions run 38074103733: csharp-portable success."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks csharp-client-native Android/Windows na PR #464 head 7e22627d",
+      "result": "passed",
+      "evidence": "GitHub Actions run 38074103733: Android native preview e Windows native preview success."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks E2E, checks e consistency combinados",
+      "result": "pending",
+      "evidence": "Demais jobs ainda rodando; alterações do handoff exigem CI no novo head."
+    },
+    {
+      "kind": "human",
+      "check": "Instalar APK nativo no Android: selecionar pasta real, abrir, editar, salvar, forçar fechamento/reabertura e confirmar bytes; G-N0/DEVICE pinça e IME.",
+      "result": "pending",
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/464",
+      "critical": true,
+      "evidence": "Ainda não executado por humano; não declarar beta utilizável."
+    }
+  ],
+  "known_issues": [
+    "Integração da persistência é deliberadamente apenas para .md/.markdown existentes; criação/exclusão e mapa.json não fazem parte desta PR.",
+    "Não há validação humana do dispositivo; integração crítica de user-data requer autorização formal do proprietário."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI combinado e exigir aprovação crítica do proprietário via fluxo de integração do Ecosystem.",
+    "Validar armazenamento no dispositivo e prosseguir com mapa.json, criação de notas e vida do mundo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma UI ativa, Core canônico; cliente Blazor congelado."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Porte incremental reutiliza as regras C# e referencia 1.8.4, sem redesenho."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR, commit base, arquivos e evidência em handoff."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Mandato do proprietário já consolidado em DEC-0043."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Respeita ADR-0032; não escolhe nova pilha."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI não equivale a validação física; gates abertos."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem marcar UC/DEVICE como concluídas."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Produto funciona separado do Hub; nenhuma release publicada."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data"
+    ],
+    "reason": "Novo adapter de acesso SAF a arquivos físicos de usuário, em zona crítica de vault; CI não substitui validação humana."
+  }
+}

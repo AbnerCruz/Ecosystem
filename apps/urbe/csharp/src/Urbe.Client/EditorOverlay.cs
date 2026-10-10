@@ -19,6 +19,11 @@ public sealed class EditorOverlay : Grid
     private readonly TextBlock _status = new();
     private readonly TextBlock _saveState = new();
     private CityNote? _note;
+    private string _savedContent = string.Empty;
+    private bool _saving;
+    public bool SaveOnClose { get; set; }
+    public bool HasChanges => _note is not null && !string.Equals(Editor.Text, _savedContent, StringComparison.Ordinal);
+    public event Func<CityNote, Task>? SaveRequested;
 
     public EditorOverlay()
     {
@@ -66,6 +71,7 @@ public sealed class EditorOverlay : Grid
     public void Open(CityNote note)
     {
         _note = note;
+        _savedContent = note.Content;
         _title.Text = note.Name + ".md";
         Editor.Text = note.Content;
         UpdateStatus(changed: false);
@@ -86,7 +92,12 @@ public sealed class EditorOverlay : Grid
     private Control TopBar()
     {
         var back = IconButton(UrbeTheme.Icons.Back, "Voltar para a cidade");
-        back.Click += (_, _) => { IsVisible = false; Closed?.Invoke(this, EventArgs.Empty); };
+        back.Click += async (_, _) =>
+        {
+            if (SaveOnClose && HasChanges && !await SaveAsync()) return;
+            IsVisible = false;
+            Closed?.Invoke(this, EventArgs.Empty);
+        };
         _title.FontFamily = UrbeTheme.UiFont;
         _title.FontWeight = FontWeight.SemiBold;
         _title.FontSize = 16;
@@ -108,9 +119,19 @@ public sealed class EditorOverlay : Grid
         };
         var bar = new DockPanel { Margin = new Thickness(8, 0, 12, 0), LastChildFill = true };
         DockPanel.SetDock(back, Dock.Left);
-        DockPanel.SetDock(seg, Dock.Right);
+        var save = new Button
+        {
+            Content = "Salvar", MinWidth = 64, Height = 36, Margin = new Thickness(4, 0),
+            Foreground = UrbeTheme.Brush(UrbeTheme.AccentInk),
+            Background = UrbeTheme.Brush(UrbeTheme.Accent),
+            CornerRadius = new CornerRadius(9)
+        };
+        save.Click += async (_, _) => await SaveAsync();
+        var right = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4,
+            Children = { save, seg } };
+        DockPanel.SetDock(right, Dock.Right);
         bar.Children.Add(back);
-        bar.Children.Add(seg);
+        bar.Children.Add(right);
         bar.Children.Add(_title);
         _title.Margin = new Thickness(6, 0);
         return new Border
@@ -190,7 +211,35 @@ public sealed class EditorOverlay : Grid
         var text = Editor.Text ?? "";
         int lines = text.Length == 0 ? 0 : text.Count(c => c == '\n') + 1;
         _status.Text = $"MD · {lines} linhas";
-        _saveState.Text = changed ? "Alterado (prévia: não grava no vault)" : "Prévia: não grava no vault";
+        _saveState.Text = _saving ? "Salvando…" :
+            SaveOnClose ? (HasChanges ? "Alterado · não salvo" : "Sem alterações") :
+            (changed ? "Alterado (prévia: não grava no vault)" : "Prévia: não grava no vault");
+    }
+
+    /// <summary>Save only via the native vault adapter, never silently to an in-memory preview.</summary>
+    public async Task<bool> SaveAsync()
+    {
+        if (_saving || Current is not { } note) return false;
+        if (SaveRequested is null)
+        {
+            _saveState.Text = "Sem armazenamento conectado";
+            return false;
+        }
+        _saving = true;
+        _saveState.Text = "Salvando…";
+        try
+        {
+            await SaveRequested(note);
+            _savedContent = note.Content;
+            _saveState.Text = "Salvo e verificado no vault";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _saveState.Text = "Falha ao salvar: " + ex.Message;
+            return false;
+        }
+        finally { _saving = false; }
     }
 
     // ---- Markdown editing helpers (Fonte mode) ----
