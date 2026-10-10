@@ -249,7 +249,7 @@ public sealed class MainView : Grid
         return b;
     }
 
-    private static Control Fab()
+    private Control Fab()
     {
         var b = new Button
         {
