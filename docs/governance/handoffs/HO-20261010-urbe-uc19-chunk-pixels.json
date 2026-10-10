@@ -1,0 +1,152 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-uc19-chunk-pixels",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T14:10:00Z",
+  "agent": {
+    "id": "chatgpt-urbe-legacy-chunk-pixels",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc19-continuous-chunk-pixels-20261010",
+  "base_commit": "60b854d43a76ed3d6db8ab97ba7cda4c1d0632c8",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/428",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyChunkPixels.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelsTests.cs",
+    "apps/urbe/docs/csharp/UC19-CHUNK-PIXELS.md",
+    "docs/governance/handoffs/HO-20261010-urbe-uc19-chunk-pixels.json",
+    "apps/urbe/csharp/tools/chunk-pixels-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelOracleTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyChunkViewport.cs",
+    "apps/urbe/csharp/src/Urbe.UI/LegacyWorldScene.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/World.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkViewportTests.cs",
+    "apps/urbe/csharp/src/Urbe.UI/CityWorldLayout.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/CityWorldLayoutTests.cs",
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs"
+  ],
+  "work_completed": [
+    "UC-19 LEGACY-2: portado o compositor original de pixel-art.js::chunkPixels para C# puro, com chunks RGBA 256×256 e terreno seedado pelas autoridades C# existentes.",
+    "Reproduz texturas 19 biomas × 4 variantes, halo, sombreamento de declive, tint de ruído, transições orgânicas, ecótono, linha costeira, espuma, água profunda e decoração por slot no buffer.",
+    "Testes xUnit abrangem água uniforme com pixels esperados, alpha, coordenadas negativas, determinismo, transição litoral, decoração e entradas inválidas.",
+    "Cria documento específico UC19-CHUNK-PIXELS e próximo incremento verificável, isolado dos arquivos do PR #426.",
+    "Oráculo original pixel-art.js::chunkPixels executado exclusivamente no teste Node, com comparação xUnit de todos os bytes RGBA C# em quatro cenários, inclusive chunks negativos e água/terra.",
+    "Câmera com viewport de 24×20 tiles, pan de 8 tiles, zoom pixelated e scroll nativo; 4–9 chunks C# gerados fora da thread Blazor, cache FIFO limitado a 16 imagens e fallback à grade anterior em falha.",
+    "Overlay de 64 terrenos clicáveis mantido inicialmente sobre o mapa original: casa abre nota, bairro navega, criar/reposicionar chama as mesmas operações físicas no Workspace/SAF.",
+    "Teste de plano de chunks inclui coordenadas negativas, linha divisória exata e overflow; nenhuma alteração em build/release, vault ou permissões.",
+    "Eliminada a limitação de 64 células no modo de Cidade contínua: CityWorldLayout posiciona todas as notas com coordenadas explícitas ou fallback estável determinístico além da 8ª linha, viewport seletivo e lotes vazios editáveis somente em modo construir/organizar.",
+    "Métodos C# PlaceHouseInWorld/CreateHouseInWorld permitem casas e persistência `.urbe/mapa.json` em [-4096,4096], sem alterar a API antiga 8×8 nem o esquema, com prevenção de colisão dentro do bairro.",
+    "Novos testes xUnit de overflow (>64 notas), lotes no mapa fora da tela, coordenadas negativas, colisão, persistência após reabrir e modo construção viewport. Corrigido aviso xUnit2031 com CI."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "CI urbe-checks C# portable Android Windows E2E e consistency",
+      "result": "pending",
+      "evidence": "PR #428 aberto; SDK dotnet não disponível no executor local, aguardar workflow do GitHub."
+    },
+    {
+      "kind": "automated",
+      "check": "C# LegacyChunkPixelsTests e paridade integral contra golden JS",
+      "result": "pending",
+      "evidence": "Testes foram adicionados, CI pendente; corpus golden chunkPixels ainda é etapa posterior e não foi inventado."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3/G-C4 — screenshots, toque, performance e instalação Android",
+      "result": "not-applicable",
+      "evidence": "Não executado neste incremento; requer dispositivo real e cena contínua integrada."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests LegacyChunkPixelOracleTests via Node 22 + pixel-art.js imutável",
+      "result": "pending",
+      "evidence": "Novo caso de igualdade RGBA byte a byte submetido no PR #428; verificar CI após commit."
+    },
+    {
+      "kind": "automated",
+      "check": "LegacyChunkViewportTests camera bounds/negative coordinates",
+      "result": "pending",
+      "evidence": "Incluído no PR #428; confirmar C# portable CI atualizado."
+    },
+    {
+      "kind": "automated",
+      "check": "CityWorldLayoutTests, C# portable, coordenadas negativas, >64 lotes e persistência física",
+      "result": "success",
+      "evidence": "CI run 38062412212 csharp-portable success para commit c598bc13 (teste e implementação sem alterações posteriores em C#)."
+    }
+  ],
+  "known_issues": [
+    "AGENTSCHAT.md não foi modificado neste PR para evitar conflito com a alteração concorrente do PR #426; este handoff canônico registra a execução.",
+    "Novo carregamento de mundo original é assíncrono e não altera dados, porém performance real e gestos precisos ainda exigem Android físico.",
+    "Novo componente CityWorldLayout e métodos de world placement estão implementados; estado visual final permanece sem árvores, estradas, cidadãos, regiões e HUD original; G-C3 DEVICE ainda pendente."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Acompanhar CI atualizado do PR #428 e corrigir regressões de Core/UI/Android/Windows sem ignorar o consistency vermelho preexistente (Issue #430).",
+    "Portar árvores, estradas e camada de interação por gestos mantendo os pixels/câmera exatamente conforme 1.8.4-beta, validar em Android físico.",
+    "Documentar estabilidade de FPS e toques no modo construção e verificar reabertura real do mapa .urbe/mapa.json, antes de publicar release.",
+    "Coordenar PR #426 após os checks, sem merge manual, estado G-C3/G-C4 aguardando."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UC19-VISUAL-ACCEPTANCE.md",
+    "apps/urbe/docs/csharp/UC19-PROCEDURAL-CITY.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Arte procedimental usa bioma/elevação original e não cria nova autoridade persistida."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "C# Core próprio do Urbe, sem dependência de Hub ou Lunet."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Port incremental de um renderizador original, mantendo cliente anterior."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "PR #428, branch, testes e handoff tornam o trabalho observável."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem alteração de dados, formato, trust boundary, sistema de plugins ou distribuição."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE e paridade visual não foram declarados concluídos."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 e gates G-C3/G-C4 permanecem abertos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem abstração compartilhada ou segundo contrato."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Amplia apenas coordenadas bairro-local em métodos opcionais e frontend específicos Urbe, preservando schema v4, proteção de leitura, APIs legadas, host, permissões e releases. Revisar diffs e testes C# antes de integrar."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-legacy-chunk-pixels",
+      "status": "product-specific",
+      "rationale": "Arte e transição dos biomas do Urbe 1.8.4-beta, sem segundo consumidor."
+    }
+  ]
+}

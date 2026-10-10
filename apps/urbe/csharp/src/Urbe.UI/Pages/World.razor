@@ -39,6 +39,16 @@
             <button type="button" class="world-nav-button" @onclick="ToggleDistrictBuilder"
                     aria-expanded="@_districtBuilderOpen">+ Criar bairro</button>
         }
+        @if (TerrainReady)
+        {
+            <div class="world-camera-controls" role="group" aria-label="Mover câmera pelo mundo">
+                <button type="button" disabled="@_sceneBusy" @onclick="() => Pan(-8, 0)" aria-label="Câmera à esquerda">←</button>
+                <button type="button" disabled="@_sceneBusy" @onclick="() => Pan(0, -8)" aria-label="Câmera para cima">↑</button>
+                <button type="button" disabled="@_sceneBusy" @onclick="() => Pan(0, 8)" aria-label="Câmera para baixo">↓</button>
+                <button type="button" disabled="@_sceneBusy" @onclick="() => Pan(8, 0)" aria-label="Câmera à direita">→</button>
+                <button type="button" disabled="@_sceneBusy" @onclick="ResetCamera" aria-label="Retornar à cidade">⌂</button>
+            </div>
+        }
         <div class="world-zoom-controls" role="group" aria-label="Zoom do mapa">
             <button type="button" @onclick="ZoomOut" disabled="@(_zoomLevel == MinZoom)"
                     aria-label="Diminuir zoom">−</button>
@@ -85,6 +95,16 @@
                 : "Casa selecionada: " + _selectedHouse + ". Toque em um terreno vazio ou selecione outra casa.")
         </p>
     }
+    @if (_sceneBusy)
+    {
+        <p class="world-scene-status" role="status">Preparando terreno procedural original…</p>
+    }
+    @if (_sceneError is not null)
+    {
+        <p class="world-scene-status" role="status">
+            A renderização contínua não carregou. Os terrenos interativos permanecem disponíveis.
+        </p>
+    }
     @if (_message is not null)
     {
         <p class="world-message" role="status">@_message</p>
@@ -101,15 +121,26 @@
     {
         <div class="world-map-frame" aria-label="Mapa top-down da cidade e dos bairros"
              tabindex="0" style="@ZoomStyle">
-            <div class="world-map" style="@WorldArt.BoardBackgroundStyle">
-                <div class="world-plots world-tiles">
-                    @foreach (var tile in CityTiles)
+            <div class="world-map @(TerrainReady ? "world-continuous-map" : "")"
+                 style="@(TerrainReady ? SceneStyle : WorldArt.BoardBackgroundStyle)">
+                @if (TerrainReady)
+                {
+                    @foreach (var chunk in _visibleChunks)
+                    {
+                        <img class="world-terrain-chunk" alt="" aria-hidden="true"
+                             src="@chunk.DataUri"
+                             style="@ChunkStyle(chunk)" draggable="false" />
+                    }
+                }
+                <div class="world-plots world-tiles @(TerrainReady ? "world-continuous-plots" : "")"
+                     style="@(TerrainReady ? LotsStyle : string.Empty)">
+                    @foreach (var tile in VisibleLots)
                     {
                         var entry = tile.Entry;
                         if (entry is null)
                         {
                             <button type="button" class="world-plot world-empty-lot @WorldArt.TerrainClass(tile.Column, tile.Row)"
-                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
+                                    style="@(TerrainReady ? LotStyle(tile) : WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row))"
                                     disabled="@(!CanCreate || (_positionMode && _selectedHouse is null))"
                                     aria-label="@($"Terreno vazio, coluna {tile.Column + 1}, linha {tile.Row + 1}. " +
                                         (_positionMode ? "Reposicionar casa" : "Construir casa"))"
@@ -122,7 +153,7 @@
                         else if (entry.IsFolder)
                         {
                             <button type="button" class="world-plot world-district"
-                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
+                                    style="@(TerrainReady ? LotStyle(tile) : WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row))"
                                     title="@entry.Path"
                                     disabled="@_positionMode"
                                     aria-label="@($"Entrar no bairro {entry.Name}")"
@@ -137,7 +168,7 @@
                         {
                             <button type="button"
                                     class="world-plot world-house @(string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase) ? "world-plot-selected" : "")"
-                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
+                                    style="@(TerrainReady ? LotStyle(tile) : WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row))"
                                     title="@entry.Path"
                                     disabled="@(!entry.Editable)"
                                     aria-pressed="@(_positionMode && string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase))"
@@ -159,10 +190,14 @@
             <span><i class="world-legend-empty" aria-hidden="true"></i> Terreno livre</span>
         </div>
         <div class="world-footer">
-            <span>@AllPlots.Count construção(ões) · @CityTileLayout.Capacity terreno(s)</span>
-            @if (AllPlots.Count > CityTileLayout.Capacity)
+            <span>@AllPlots.Count construção(ões) · @((TerrainReady ? "terreno contínuo" : "64 terrenos iniciais"))</span>
+            @if (TerrainReady)
             {
-                <span>Mapa limitado a @CityTileLayout.Capacity terrenos; veja outras notas no Explorer.</span>
+                <span>Terreno procedural C# 1.8.4-beta · câmera (@_cameraTileX, @_cameraTileY) · arraste para explorar</span>
+            }
+            @if (!TerrainReady && AllPlots.Count > CityTileLayout.Capacity)
+            {
+                <span>Mapa inicial limitado a @CityTileLayout.Capacity terrenos; veja outras notas no Explorer.</span>
             }
         </div>
     }
@@ -173,10 +208,43 @@
     private const int MaxZoom = 5;
     private int _zoomLevel = 3;
     private int ZoomPercent => 60 + _zoomLevel * 20;
+    private const int SceneWidthTiles = 24;
+    private const int SceneHeightTiles = 20;
+    // Legacy app.js uses world 32 px/tile (texture is 16 px, drawn x2).
+    private const int OriginalTilePixels = 32;
+    private const int HomeX = 32;
+    private const int HomeY = 24;
+    private int _cameraTileX = HomeX;
+    private int _cameraTileY = HomeY;
+    private bool _sceneBusy;
+    private string? _sceneError;
+    private int _sceneRequest;
+    private IReadOnlyList<LegacyWorldScene.VisibleChunk> _visibleChunks =
+        Array.Empty<LegacyWorldScene.VisibleChunk>();
+    private bool TerrainReady => _visibleChunks.Count > 0;
+    private double TilePixels => OriginalTilePixels * ZoomPercent / 100d;
+    private static string Px(double value) =>
+        value.ToString("0.###", CultureInfo.InvariantCulture) + "px";
+    private string SceneStyle =>
+        "width:" + Px(SceneWidthTiles * TilePixels) +
+        ";height:" + Px(SceneHeightTiles * TilePixels) +
+        ";min-width:0;min-height:0;";
+    private string LotsStyle =>
+        "left:" + Px((HomeX - _cameraTileX) * TilePixels) +
+        ";top:" + Px((HomeY - _cameraTileY) * TilePixels) + ";";
+    private string ChunkStyle(LegacyWorldScene.VisibleChunk chunk) =>
+        "left:" + Px(chunk.LeftTiles * TilePixels) +
+        ";top:" + Px(chunk.TopTiles * TilePixels) +
+        ";width:" + Px(LegacyChunkPixels.Side / 16d * TilePixels) +
+        ";height:" + Px(LegacyChunkPixels.Side / 16d * TilePixels) + ";";
     private string ZoomStyle
     {
         get
         {
+            if (TerrainReady)
+                return "--world-tile-width:" + Px(TilePixels) +
+                       ";--world-tile-height:" + Px(TilePixels) +
+                       ";--world-board-width:" + Px(8 * TilePixels) + ";";
             var width = 3.4m + _zoomLevel * 0.75m;
             var height = 6.0m + _zoomLevel * 0.8m;
             var board = width * 8 + 3.4m;
@@ -222,10 +290,73 @@
     private IReadOnlyList<CityTileLayout.Tile> CityTiles =>
         CityTileLayout.Build(AllPlots, Workspace.World);
 
+    private IReadOnlyList<CityTileLayout.Tile> VisibleLots =>
+        TerrainReady
+            ? CityWorldLayout.Visible(AllPlots, Workspace.World,
+                _cameraTileX - HomeX, _cameraTileY - HomeY,
+                SceneWidthTiles, SceneHeightTiles,
+                _positionMode || _builderOpen)
+            : CityTiles;
+
+    private string LotStyle(CityTileLayout.Tile tile) =>
+        "left:" + Px((tile.Column + HomeX - _cameraTileX) * TilePixels) +
+        ";top:" + Px((tile.Row + HomeY - _cameraTileY) * TilePixels) +
+        ";width:" + Px(TilePixels) +
+        ";height:" + Px(TilePixels) +
+        ";background-image:none;";
+
     protected override void OnInitialized()
     {
         CurrentBairro = Workspace.CurrentFolder;
         Workspace.PersistenceChanged += OnWorkspaceChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshTerrainAsync();
+    }
+
+    private async Task RefreshTerrainAsync()
+    {
+        int request = ++_sceneRequest;
+        _sceneBusy = true;
+        _sceneError = null;
+        try
+        {
+            var chunks = await LegacyWorldScene.LoadAsync(
+                _cameraTileX, _cameraTileY, SceneWidthTiles, SceneHeightTiles);
+            if (_disposed || request != _sceneRequest)
+                return;
+            _visibleChunks = chunks;
+        }
+        catch (Exception ex)
+        {
+            if (!_disposed && request == _sceneRequest)
+                _sceneError = ex.GetType().Name;
+        }
+        finally
+        {
+            if (!_disposed && request == _sceneRequest)
+            {
+                _sceneBusy = false;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+    }
+
+    private async Task Pan(int dx, int dy)
+    {
+        if (_sceneBusy) return;
+        _cameraTileX = Math.Clamp(_cameraTileX + dx, -4096, 4096);
+        _cameraTileY = Math.Clamp(_cameraTileY + dy, -4096, 4096);
+        await RefreshTerrainAsync();
+    }
+
+    private async Task ResetCamera()
+    {
+        _cameraTileX = HomeX;
+        _cameraTileY = HomeY;
+        await RefreshTerrainAsync();
     }
 
     private void OnWorkspaceChanged(object? sender, EventArgs args)
@@ -237,6 +368,7 @@
     public void Dispose()
     {
         _disposed = true;
+        ++_sceneRequest;
         Workspace.PersistenceChanged -= OnWorkspaceChanged;
     }
 
@@ -291,7 +423,10 @@
             Workspace.World.IsReadOnly || _selectedHouse is null || !tile.IsEmpty)
             return;
 
-        if (!Workspace.PlaceHouse(_selectedHouse, tile.Column, tile.Row))
+        bool placed = TerrainReady
+            ? Workspace.PlaceHouseInWorld(_selectedHouse, tile.Column, tile.Row)
+            : Workspace.PlaceHouse(_selectedHouse, tile.Column, tile.Row);
+        if (!placed)
         {
             _message = "Terreno indisponível ou mapa protegido.";
             return;
@@ -393,7 +528,11 @@
         var title = string.IsNullOrWhiteSpace(_newNoteTitle)
             ? "Nova casa" : _newNoteTitle.Trim();
         var note = _targetLot is { } target && !Workspace.World.IsReadOnly
-            ? Workspace.CreateHouseAt(title, CurrentBairro, target.Column, target.Row)
+            ? (TerrainReady
+                ? Workspace.CreateHouseInWorld(title, CurrentBairro,
+                    target.Column, target.Row)
+                : Workspace.CreateHouseAt(title, CurrentBairro,
+                    target.Column, target.Row))
             : Workspace.CreateNote(title, CurrentBairro);
         if (note is null)
         {

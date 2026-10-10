@@ -814,6 +814,73 @@ public sealed class WorkspaceSession : IDisposable
         return created;
     }
 
+    /// <summary>
+    /// Continuous-city placement. Kept separate from PlaceHouse so the old
+    /// 8x8 API and its safeguards remain backwards compatible.
+    /// Coordinates are bairro-local, including negative values.
+    /// </summary>
+    public bool PlaceHouseInWorld(string? path, int column, int row)
+    {
+        if (IsReadOnly || World.IsReadOnly ||
+            column is < -CityWorldLayout.MaxCoordinate or > CityWorldLayout.MaxCoordinate ||
+            row is < -CityWorldLayout.MaxCoordinate or > CityWorldLayout.MaxCoordinate)
+            return false;
+
+        var document = Documents.Get(path);
+        if (document is null || !ArtifactModel.IsNote(document.Path))
+            return false;
+        var current = World.ProjectDocument(document.Id);
+        if (current is null)
+            return false;
+        if (current.X == column && current.Y == row)
+            return true;
+        var folder = NoteFolder(document.Path);
+        if (Documents.List().Any(other =>
+        {
+            if (other.Id == document.Id ||
+                !string.Equals(NoteFolder(other.Path), folder,
+                    StringComparison.OrdinalIgnoreCase))
+                return false;
+            var pos = World.ProjectDocument(other.Id);
+            return pos?.X == column && pos.Y == row;
+        }))
+            return false;
+
+        if (World.SetSpatial(document.Id, column, row) is null)
+            return false;
+        _spatialChanges = true;
+        OnMutationChanged();
+        Revision++;
+        return true;
+    }
+
+    public UrbeDocument? CreateHouseInWorld(
+        string? title, string? folder, int column, int row)
+    {
+        var normalizedFolder = DocumentModel.NormalizePath(folder);
+        if (IsReadOnly || World.IsReadOnly ||
+            column is < -CityWorldLayout.MaxCoordinate or > CityWorldLayout.MaxCoordinate ||
+            row is < -CityWorldLayout.MaxCoordinate or > CityWorldLayout.MaxCoordinate ||
+            Documents.List().Any(document =>
+            {
+                if (!string.Equals(NoteFolder(document.Path), normalizedFolder,
+                        StringComparison.OrdinalIgnoreCase))
+                    return false;
+                var position = World.ProjectDocument(document.Id);
+                return position?.X == column && position.Y == row;
+            }))
+            return null;
+
+        var created = CreateNote(title, folder);
+        if (created is null)
+            return null;
+
+        if (!PlaceHouseInWorld(created.Path, column, row))
+            throw new InvalidOperationException(
+                "A nota foi criada, mas o posicionamento no mundo falhou.");
+        return created;
+    }
+
     public UrbeDocument? CreateNote(
         string? title,
         string? folder = null,

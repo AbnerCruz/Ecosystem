@@ -1296,3 +1296,42 @@ a:focus-visible {
     outline: 3px solid #ffdf88; outline-offset: 2px;
 }
 .editor-wikilink-suggestions button:disabled { opacity: .5; cursor: not-allowed; }
+
+/* UC-19 continuous 1.8.4-beta terrain; 16px source texture at the legacy
+   32px world-tile scale. No new palette, SVG or hand-painted ground assets.
+   Overlay intentionally reuses existing note/folder interaction handlers. */
+.world-camera-controls { display: inline-flex; gap: .2rem; align-items: center; }
+.world-camera-controls button { min-width: 44px; min-height: 44px; padding: 0 .35rem; border: 1px solid #819368; background: #304c39; color: #f3f0d7; border-radius: .3rem; font-size: 1.15rem; cursor: pointer; }
+.world-camera-controls button:disabled { opacity: .4; }
+.world-camera-controls button:focus-visible { outline: 3px solid #ffdf83; outline-offset: 2px; }
+.world-scene-status { margin: .5rem 0; color: #deedb8; font-size: .8rem; }
+.world-map.world-continuous-map { position: relative; isolation: isolate; display: block; padding: 0; overflow: hidden; background: transparent !important; }
+.world-terrain-chunk { display: block; position: absolute; z-index: 0; max-width: none; user-select: none; pointer-events: none; image-rendering: pixelated; }
+.world-plots.world-tiles.world-continuous-plots {
+    position: absolute; inset: 0; z-index: 1; display: block;
+    width: 100%; height: 100%; min-width: 0; min-height: 0;
+    gap: 0; padding: 0; margin: 0; pointer-events: none;
+}
+.world-plots.world-tiles.world-continuous-plots .world-plot {
+    position: absolute; display: block; pointer-events: auto;
+    touch-action: manipulation;
+}
+.world-continuous-plots .world-plot { background: transparent !important; box-shadow: none !important; overflow: visible; }
+.world-continuous-plots .world-grass { display: none; }
+.world-continuous-plots .world-empty-lot { color: transparent; }
+.world-continuous-plots .world-empty-lot:not(:disabled)::after { opacity: 0; }
+.world-continuous-plots .world-empty-lot:not(:disabled):focus-visible::after { opacity: 1; }
+.world-continuous-plots .world-empty-lot:not(:disabled):hover { outline: 1px dashed #ffdf83; outline-offset: -1px; }
+.world-continuous-plots .world-empty-lot:disabled { opacity: 1; }
+.world-continuous-plots .world-building {
+    top: -60%; left: -25%; width: 150%; height: 175%;
+    background-position: center bottom; background-size: contain;
+    filter: none; pointer-events: none;
+}
+.world-continuous-plots .world-plot-label {
+    bottom: -2px; padding: .12rem; font-size: .65rem;
+    max-height: 2.2em; line-height: 1.05;
+}
+.world-continuous-plots .world-plot-kind { display: none; }
+.world-continuous-plots .world-plot-selected { outline: 2px solid #ffe48f; outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) { .world-terrain-chunk { transition: none; } }
