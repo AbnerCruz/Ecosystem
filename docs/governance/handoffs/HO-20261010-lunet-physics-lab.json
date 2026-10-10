@@ -1,0 +1,95 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-physics-lab",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T23:14:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-435",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-physics-laboratory-p4-20261010",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/484",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/LaboratoryTemplate.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LaboratoryV2Tests.cs",
+    "apps/lunet2d/docs/guides/laboratorio.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261010-lunet-physics-lab.json"
+  ],
+  "work_completed": [
+    "Item Fase 4 Física completa: extensão para teste em DEVICE sem inventar features.",
+    "Página Colisões mantém SAT aprovado e alterna para gravidade Box2D, bounce de bola, sensor e reinício com PhysicsWorld.",
+    "Mantidos 12 módulos existentes, sem alteração em ProjectStore ou projetos antigos."
+  ],
+  "verification": [
+    {
+      "check": "Testes de geração do Laboratório e suíte completa do Lunet",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Consistency e CI combinado",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Teste visual DEVICE da página Colisões",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/laboratorio.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Requer validação em aparelho, perfilamento, encerramento de física após auditoria.",
+    "Esta mudança não conclui o gate da Fase 4."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir CI mantendo SAT e 12 módulos.",
+    "Integrar PR #484 e gerar release candidata para dispositivo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Somente produto Lunet e handoff governança."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Rastreabilidade PR #484 e issue #477."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE aguardando validação."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Fase 4 não concluída antecipadamente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Template novo muda somente projetos Laboratório criados após release."
+    }
+  ],
+  "base_commit": "e7269b3ab1aa3fa23e5e482b0584ebcab139d289",
+  "criticality": {
+    "declared": "routine"
+  }
+}

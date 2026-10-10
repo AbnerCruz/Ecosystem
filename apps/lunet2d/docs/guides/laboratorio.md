@@ -28,3 +28,7 @@ Os tiles, sprites e fontes de exemplo são gerados em memória, sem arquivos ext
 Instale a release de desenvolvimento e faça backup dos projetos importantes. Teste sem internet em **Preview rápido** e **isolado**. Visite todas as páginas e confirme renderização e reação dos controles. Em Animação, alterne pausa/explosão; em Tilemap, toque atrás da parede, gire e dê zoom; em Colisões, arraste o quadrado para dentro do obstáculo; em Fontes e Temas, alterne escalas e cores. Navegue pelo índice, use o segundo dedo e teste pausar/retomar. Reabra o laboratório e um projeto antigo, verificando que os dados anteriores permanecem inalterados.
 
 Registre **passou / falhou / não testado** por módulo e informe APK, Android e modo Preview. Falhas visuais, ergonomia, toque e desempenho só são aprovados no aparelho: os testes CI compilam/executam o template, mas não substituem DEVICE.
+
+## Módulo Colisões — validação de física Box2D
+
+A página 10/12 agora alterna entre **SAT** (padrão e intocado) e **Física Box2D**. No aparelho, abra Novo projeto → Laboratório → Run, selecione Colisões, toque **VER FÍSICA BOX2D** e observe a bola cair, atravessar o sensor e rebater no chão. Toque **REINICIAR SIMULAÇÃO** para repetir. A contagem de eventos do sensor deve subir quando a bola passar pela faixa amarela. Volte para **SAT** e confirme que arrastar o quadrado vermelho continua resolvendo a colisão original. O jogo gerado funciona offline. Só novos projetos Laboratório incluem essa demonstração; projetos salvos continuam intactos.

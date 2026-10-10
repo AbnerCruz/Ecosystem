@@ -422,3 +422,5 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 
 
 - 2026-10-10 — ChatGPT / LUNET-435 fase 4: continuação da física existente #477; desenvolvimento de cápsulas/segmentos, juntas revoluta/prismática, contatos de fim/sensores, filtros e controle de corpo; testes de regressão e API, entrega por PR e CI. Não é função nova fora do roadmap. DEVICE e gate da Fase 4 continuam pendentes.
+
+- 2026-10-10 — ChatGPT / LUNET-435: teste Android da física real dentro do Laboratório existente (módulo Colisões, sem 13ª página). Mantidos os 12 módulos e o SAT original; mundo físico, sensor e botão de reinício via API pública. Inclui testes de geração/compilação e roteiro DEVICE; aprovação no aparelho continua pendente.
