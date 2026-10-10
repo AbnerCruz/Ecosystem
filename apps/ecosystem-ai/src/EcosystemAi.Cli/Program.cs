@@ -41,6 +41,10 @@ Sem --catalog nenhum projeto ou mensagem é salvo no disco.
   e artefatos auditados do Runtime sem executar IA.
 --web-ui ... --journal /pasta/runs --embed-text-artifacts habilita prévias
   dos arquivos textuais ATUAIS (opt-in; potencialmente privados) no navegador local.
+--web-ui --web-tasks com endpoint, modelo, preço, budget e cap global
+  HABILITA envios reais pelo painel. Requer --web-process-budget-cents N.
+  Somente files.read; nunca fs.write. --web-with-history reenvia contexto (opt-in).
+  --web-max-runs N (1..100, padrão 8) limita o total por sessão do processo.
 --chat --catalog DIR --project DIR --project-id ID --session-id ID com as opções
   de provedor/modelo/orçamento de execução abre um chat interativo no terminal.
   Cada mensagem gera um run real; histórico é reutilizado explicitamente nesse modo.
@@ -75,6 +79,8 @@ histórico local existe somente mediante --catalog explícito.
         bool createSession = false;
         bool manageCatalog = false;
         bool webUi = false;
+        bool webTasks = false;
+        bool webWithHistory = false;
         bool chatMode = false;
         bool listHistory = false;
         bool showHistory = false;
@@ -89,6 +95,8 @@ histórico local existe somente mediante --catalog explícito.
             if (args[i] == "--create-session") { createSession = true; continue; }
             if (args[i] == "--manage") { manageCatalog = true; continue; }
             if (args[i] == "--web-ui") { webUi = true; continue; }
+            if (args[i] == "--web-tasks") { webTasks = true; continue; }
+            if (args[i] == "--web-with-history") { webWithHistory = true; continue; }
             if (args[i] == "--chat") { chatMode = true; continue; }
             if (args[i] == "--list") { listHistory = true; continue; }
             if (args[i] == "--show") { showHistory = true; continue; }
@@ -110,7 +118,8 @@ histórico local existe somente mediante --catalog explícito.
             var allowed = new[] { "--project", "--goal", "--endpoint", "--model", "--budget-cents",
                 "--max-call-cents", "--input-usd-per-million", "--output-usd-per-million", "--accept-exists",
                 "--catalog", "--project-id", "--session-id", "--project-name", "--session-title",
-                "--journal", "--run-id", "--output", "--port", "--session-budget-cents" };
+                "--journal", "--run-id", "--output", "--port", "--session-budget-cents",
+                "--web-process-budget-cents", "--web-max-runs" };
             if (fields.Keys.Except(allowed, StringComparer.Ordinal).Any())
                 throw new ArgumentException("Parâmetro desconhecido.");
             if ((createProject ? 1 : 0) + (createSession ? 1 : 0) + (manageCatalog ? 1 : 0) + (chatMode ? 1 : 0) + (webUi ? 1 : 0) > 1)
@@ -118,19 +127,46 @@ histórico local existe somente mediante --catalog explícito.
             if (webUi)
             {
                 if (listHistory || showHistory || showRun || exportHtml || allowCreate
-                    || useHistory || createProject || createSession || manageCatalog || chatMode
-                    || fields.Keys.Any(k => k is not ("--catalog" or "--port" or "--journal")))
-                    throw new ArgumentException("--web-ui aceita apenas --catalog, --port e --journal.");
+                    || useHistory || createProject || createSession || manageCatalog || chatMode)
+                    throw new ArgumentException("--web-ui não aceita outro modo nem grant de escrita.");
+                var uiKeys = webTasks
+                    ? new[] { "--catalog", "--port", "--journal", "--endpoint", "--model",
+                        "--budget-cents", "--max-call-cents", "--input-usd-per-million",
+                        "--output-usd-per-million", "--web-process-budget-cents", "--web-max-runs" }
+                    : new[] { "--catalog", "--port", "--journal" };
+                if (fields.Keys.Except(uiKeys, StringComparer.Ordinal).Any())
+                    throw new ArgumentException("Opções de modelo/custo da UI exigem --web-tasks.");
                 if (embedTextArtifacts && !fields.ContainsKey("--journal"))
                     throw new ArgumentException("--embed-text-artifacts exige --journal.");
                 var port = fields.TryGetValue("--port", out var rawPort)
                     ? int.Parse(rawPort, NumberStyles.None, CultureInfo.InvariantCulture)
                     : CliWebUi.DefaultPort;
+                CliWebTaskRunner? taskRunner = null;
+                if (webTasks)
+                {
+                    var settings = new WebTaskSettings(
+                        Need("--endpoint"), Need("--model"),
+                        long.Parse(Need("--budget-cents"), CultureInfo.InvariantCulture),
+                        long.Parse(Need("--max-call-cents"), CultureInfo.InvariantCulture),
+                        decimal.Parse(Need("--input-usd-per-million"), CultureInfo.InvariantCulture),
+                        decimal.Parse(Need("--output-usd-per-million"), CultureInfo.InvariantCulture),
+                        long.Parse(Need("--web-process-budget-cents"), CultureInfo.InvariantCulture),
+                        fields.TryGetValue("--web-max-runs", out var maxRuns)
+                            ? int.Parse(maxRuns, CultureInfo.InvariantCulture) : 8,
+                        webWithHistory);
+                    taskRunner = new CliWebTaskRunner(Need("--catalog"),
+                        fields.GetValueOrDefault("--journal"), settings);
+                }
+                else if (webWithHistory)
+                    throw new ArgumentException("--web-with-history exige --web-tasks.");
                 await CliWebUi.ServeAsync(Need("--catalog"), port,
                     journalDirectory: fields.GetValueOrDefault("--journal"),
-                    embedTextPreviews: embedTextArtifacts);
+                    embedTextPreviews: embedTextArtifacts, taskRunner: taskRunner);
                 return 0;
             }
+            if (webTasks || webWithHistory || fields.ContainsKey("--web-process-budget-cents")
+                || fields.ContainsKey("--web-max-runs"))
+                throw new ArgumentException("Opções de tarefas web exigem --web-ui.");
             if (fields.ContainsKey("--port"))
                 throw new ArgumentException("--port exige --web-ui.");
             if (fields.ContainsKey("--session-budget-cents") && !chatMode)

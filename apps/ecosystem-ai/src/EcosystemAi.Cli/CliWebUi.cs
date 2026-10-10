@@ -11,8 +11,8 @@ namespace EcosystemAi.Cli;
 
 /// <summary>
 /// UI HTTP local opt-in, somente loopback. Não expõe AgentRunner, modelo,
-/// segredos, execução de tarefas ou permissão remota no navegador.
-/// Os POSTs apenas delegam ao LocalProjectStore já existente.
+/// segredos nem permissão remota no navegador. A execução opt-in de
+/// tarefas usa os mesmos comandos CLI/Workspace, sem grants de escrita.
 /// </summary>
 public static class CliWebUi
 {
@@ -20,7 +20,8 @@ public static class CliWebUi
     public const int MaxFormBytes = 32 * 1024;
 
     public static WebApplication CreateApp(string catalogDirectory, int port = DefaultPort,
-        string? journalDirectory = null, bool embedTextPreviews = false)
+        string? journalDirectory = null, bool embedTextPreviews = false,
+        CliWebTaskRunner? taskRunner = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(catalogDirectory);
         if (port is < 1024 or > 65535)
@@ -84,7 +85,8 @@ public static class CliWebUi
                     : await CliVisualRunDetails.ReadAsync(snapshot, journalPath,
                         includeTextPreviews: embedTextPreviews,
                         cancellationToken: ctx.RequestAborted);
-                await RespondHtml(ctx, CliWebUiHtml.Render(snapshot, csrfToken, audited));
+                await RespondHtml(ctx, CliWebUiHtml.Render(snapshot, csrfToken, audited,
+                    taskRunner?.Board));
             }
             catch (Exception e) when (IsExpectedError(e))
             {
@@ -141,20 +143,86 @@ public static class CliWebUi
             }
         });
 
+        if (taskRunner is not null)
+        {
+            app.MapPost("/tasks", async ctx =>
+            {
+                if (!await VerifyPost(ctx, port, csrfToken)) return;
+                try
+                {
+                    _ = ReadCatalog(); // Mesmo guard do GET, antes da execução.
+                    var form = await ctx.Request.ReadFormAsync();
+                    if (!ValidForm(form, "csrf", "projectId", "sessionId", "goal"))
+                    {
+                        ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
+                        return;
+                    }
+                    var result = await taskRunner.SubmitAsync(
+                        form["projectId"].ToString(),
+                        form["sessionId"].ToString(),
+                        form["goal"].ToString());
+                    switch (result.State)
+                    {
+                        case WebTaskState.Succeeded:
+                            ctx.Response.StatusCode = StatusCodes.Status303SeeOther;
+                            ctx.Response.Headers.Location = "/#s-" +
+                                Uri.EscapeDataString(form["sessionId"].ToString());
+                            return;
+                        case WebTaskState.Busy:
+                            await RespondHtml(ctx, CliWebUiHtml.RenderError(
+                                "Já existe uma tarefa ativa.",
+                                "O painel não cria fila automática. Volte após a execução."),
+                                StatusCodes.Status409Conflict);
+                            return;
+                        case WebTaskState.QuotaExceeded:
+                            await RespondHtml(ctx, CliWebUiHtml.RenderError(
+                                "Limite desta sessão do servidor atingido.",
+                                "Reinicie com uma autorização explícita de orçamento ou número de tarefas."),
+                                StatusCodes.Status429TooManyRequests);
+                            return;
+                        case WebTaskState.Invalid:
+                            await RespondHtml(ctx, CliWebUiHtml.RenderError(
+                                "Tarefa recusada.",
+                                "Confira projeto, sessão e configurações locais. Nenhuma permissão extra foi concedida."),
+                                StatusCodes.Status400BadRequest);
+                            return;
+                        default:
+                            await RespondHtml(ctx, CliWebUiHtml.RenderError(
+                                "Tarefa não concluída.",
+                                "Confira o histórico da sessão e a auditoria do Runtime."),
+                                StatusCodes.Status422UnprocessableEntity);
+                            return;
+                    }
+                }
+                catch (Exception e) when (IsExpectedError(e))
+                {
+                    // Não transmitir detalhes do provider, caminho de projeto,
+                    // segredo ou estado interno no body HTTP.
+                    await RespondHtml(ctx, CliWebUiHtml.RenderError(
+                        "Execução indisponível.",
+                        "Confira a configuração local e o terminal do Product."),
+                        StatusCodes.Status400BadRequest);
+                }
+            });
+        }
+
         return app;
     }
 
     public static async Task ServeAsync(string catalogDirectory, int port = DefaultPort,
         CancellationToken cancellationToken = default, string? journalDirectory = null,
-        bool embedTextPreviews = false)
+        bool embedTextPreviews = false, CliWebTaskRunner? taskRunner = null)
     {
-        await using var app = CreateApp(catalogDirectory, port, journalDirectory, embedTextPreviews);
+        await using var app = CreateApp(catalogDirectory, port, journalDirectory,
+            embedTextPreviews, taskRunner);
         Console.WriteLine($"Ecosystem AI — UI local: http://127.0.0.1:{port}");
         Console.WriteLine("Somente neste dispositivo, sem IA, rede externa ou gasto de modelo. Ctrl+C encerra.");
         if (journalDirectory is not null)
             Console.WriteLine("Auditoria do Runtime ativa: agentes, tarefas, verificações e artefatos, sem payloads.");
         if (embedTextPreviews)
             Console.WriteLine("PRÉVIAS ATIVADAS: conteúdo de arquivos textuais atuais será exibido no browser local.");
+        if (taskRunner is not null)
+            Console.WriteLine("EXECUÇÃO OPT-IN: tarefas manuais via browser; somente files.read, teto local limitado.");
         await ((IHost)app).RunAsync(cancellationToken);
     }
 
