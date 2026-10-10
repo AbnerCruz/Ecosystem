@@ -20,6 +20,10 @@
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldPixelTexturesTests.cs",
     "apps/urbe/csharp/src/Urbe.Core/LegacyWorldGroundDecor.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldGroundDecorTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldSprites.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldBuildings.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldSpritesTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldBuildingsTests.cs",
     "apps/urbe/docs/csharp/UC19-PIXEL-ART-PARITY.md",
     "docs/governance/handoffs/HO-20261010-urbe-uc19-pixel-art-parity.json"
   ],
@@ -28,7 +32,9 @@
     "Teste cruza SHA-256 calculado por Node 22 a partir do algoritmo original pixel-art.js para o corpus completo de 76 tiles; cinco exemplos independentes e isolamento de buffers.",
     "Documenta limite estrito: sprites, sombras, chunks, HUD, mundo e validação humana Android ainda pendentes; pixel textures não estão conectadas à UI.",
     "UC-19 segunda fatia no mesmo PR: 20 tipos de decoração do chão transpostos para C# puro com seed/slot e clipping; sem alterar arquivos da Cidade ou do host Android.",
-    "60 casos de oráculo FNV-1a32 extraídos da função paintDecor do JS, mais composição em canvas 32×32 e guardas de input."
+    "60 casos de oráculo FNV-1a32 extraídos da função paintDecor do JS, mais composição em canvas 32×32 e guardas de input.",
+    "UC-19 terceira fatia: sprites RGBA 24×32 em C# para 8 espécies de árvores, 3 variantes, neve opcional (48 combinações), ponte 16×16 e codificador PNG sem runtime JavaScript.",
+    "UC-19 quarta fatia: 7 construções 48×56 em 5 estilos de bioma, até 3 variantes de telhado, flores opcionais, detalhes de fachadas, sombras e neve; 105 combinações mínimas."
   ],
   "verification": [
     {
@@ -54,18 +60,26 @@
       "check": "C# LegacyWorldGroundDecorTests — 20 tipos × 3 seeds = 60 amostras",
       "result": "pending",
       "evidence": "Oráculo JS original calculado; execução dotnet e CI remoto após novo commit ainda pendentes."
+    },
+    {
+      "kind": "automated",
+      "check": "C# árvores/ponte/PNG/prédios — nova revisão 2d952071",
+      "result": "pending",
+      "evidence": "CI urbe-checks e consistency no novo head aguardam conclusão; não declarar aceite antes da execução."
     }
   ],
   "known_issues": [
     "O C# ainda não renderiza estas texturas; pixel parity parcial do Core não equivale à paridade de tela da 1.8.4-beta.",
     "Composição de terreno/sombras/bioma custom, sprites e HUD exigem passos independentes de UC-19.",
-    "PR crítico de filesystem/Android #397 é outra trilha; este PR não deve competir com ela nem contornar autorização do proprietário."
+    "PR crítico de filesystem/Android #397 é outra trilha; este PR não deve competir com ela nem contornar autorização do proprietário.",
+    "As bordas antialiased de Polygon no Canvas2D do legado não foram comprovadas byte-a-byte pelo C# (amostragem de centro de pixel). Necessário diff de screenshots e ajuste de rasterizador.",
+    "Sprites ainda não são conectados ao UI Android/Razor; mudança não melhora visual do APK até integração explícita em PR coordenado com #397."
   ],
   "blockers": [],
   "next_actions": [
-    "Confirmar novo CI C# portátil para 60 testes adicionais, Android/Windows/E2E e consistency após atualização do PR.",
-    "Após integração rotineira, consumir texturas no renderizador C# nativo com pixel nearest-neighbor e registrar prova de screenshot idêntico do cenário de referência.",
-    "Manter G-C3/G-C4 abertos até validação física; não alterar release beta automaticamente."
+    "Confirmar CI urbe-checks e consistency na revisão exata; corrigir falhas C# (sem atualizar oráculos para mascarar bugs).",
+    "Conectar sprites por API RGBA/PNG à Cidade C# em coordenação com #397, sem sobrescrever estado do host, sem JS e sem alterar dados.",
+    "Executar diffs visuais do mesmo cenário legado/Android para composições, bordas poligonais, nearest-neighbor e performance; manter G-C3/G-C4 abertos até DEVICE."
   ],
   "decisions_required": [],
   "normative_sources": [
@@ -121,6 +135,11 @@
       "subject": "urbe-ground-decor",
       "status": "product-specific",
       "rationale": "Port de primitives pixel art de 1.8.4-beta, apenas Urbe, sem segundo consumidor."
+    },
+    {
+      "subject": "urbe-sprite-raster-png",
+      "status": "product-specific",
+      "rationale": "Raster local do Urbe para sprites do legado; encoder PNG não declarado Tool host-neutra sem segundo consumidor e contrato."
     }
   ]
 }
