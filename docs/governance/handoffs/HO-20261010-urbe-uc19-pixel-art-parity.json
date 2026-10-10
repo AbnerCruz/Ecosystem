@@ -14,17 +14,21 @@
   "branch": "feat/urbe-uc19-pixel-art-texture-parity-20261010",
   "base_commit": "c6837117494c2a48870eac1d091d643f40261160",
   "commit": null,
-  "pr": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/421",
   "files_changed": [
     "apps/urbe/csharp/src/Urbe.Core/LegacyWorldPixelTextures.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldPixelTexturesTests.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldGroundDecor.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyWorldGroundDecorTests.cs",
     "apps/urbe/docs/csharp/UC19-PIXEL-ART-PARITY.md",
     "docs/governance/handoffs/HO-20261010-urbe-uc19-pixel-art-parity.json"
   ],
   "work_completed": [
     "UC-19 / Issue #420: porta para C# puro as 19 paletas e 4 variantes determinísticas de texturas 16×16 RGBA do Urbe 1.8.4-beta sem alterar o renderer C# ativo ou o JS legado.",
     "Teste cruza SHA-256 calculado por Node 22 a partir do algoritmo original pixel-art.js para o corpus completo de 76 tiles; cinco exemplos independentes e isolamento de buffers.",
-    "Documenta limite estrito: sprites, sombras, chunks, HUD, mundo e validação humana Android ainda pendentes; pixel textures não estão conectadas à UI."
+    "Documenta limite estrito: sprites, sombras, chunks, HUD, mundo e validação humana Android ainda pendentes; pixel textures não estão conectadas à UI.",
+    "UC-19 segunda fatia no mesmo PR: 20 tipos de decoração do chão transpostos para C# puro com seed/slot e clipping; sem alterar arquivos da Cidade ou do host Android.",
+    "60 casos de oráculo FNV-1a32 extraídos da função paintDecor do JS, mais composição em canvas 32×32 e guardas de input."
   ],
   "verification": [
     {
@@ -44,6 +48,12 @@
       "check": "G-C3/G-C4 — fidelidade de screenshots, toque, desempenho, instalação Android",
       "result": "not-applicable",
       "evidence": "Sem teste em dispositivo físico; gates permanecem abertos."
+    },
+    {
+      "kind": "automated",
+      "check": "C# LegacyWorldGroundDecorTests — 20 tipos × 3 seeds = 60 amostras",
+      "result": "pending",
+      "evidence": "Oráculo JS original calculado; execução dotnet e CI remoto após novo commit ainda pendentes."
     }
   ],
   "known_issues": [
@@ -53,7 +63,7 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Executar testes C# portáteis, CI urbe-checks e consistency na branch; corrigir qualquer divergência de compilação ou hash.",
+    "Confirmar novo CI C# portátil para 60 testes adicionais, Android/Windows/E2E e consistency após atualização do PR.",
     "Após integração rotineira, consumir texturas no renderizador C# nativo com pixel nearest-neighbor e registrar prova de screenshot idêntico do cenário de referência.",
     "Manter G-C3/G-C4 abertos até validação física; não alterar release beta automaticamente."
   ],
@@ -106,6 +116,11 @@
       "subject": "urbe-legacy-pixel-textures",
       "status": "product-specific",
       "rationale": "Algoritmo, hashes, paletas e pixels pertencem ao Urbe 1.8.4; segundo consumidor inexistente."
+    },
+    {
+      "subject": "urbe-ground-decor",
+      "status": "product-specific",
+      "rationale": "Port de primitives pixel art de 1.8.4-beta, apenas Urbe, sem segundo consumidor."
     }
   ]
 }
