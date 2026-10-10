@@ -9,9 +9,9 @@ namespace Lunet.UI;
 /// iniciado no centro pode arrastar ate a coroa. O jogo deve cancelar ao esconder ou pausar.
 /// Nao consome input de controles vizinhos. Update e consultas nao alocam por quadro.</remarks>
 /// <example><code>
-/// var menu = new TouchRadialMenu(new Vector2(160, 240), 30, 100, 4);
-/// menu.Update(Input);
-/// if (menu.ActivatedIndex >= 0) Log.Info("Acao");
+/// var menu = new Lunet.UI.TouchRadialMenu(new Vector2(160, 240), 30, 100, 4);
+/// menu.Update(input);
+/// if (menu.ActivatedIndex >= 0) log.Info("Acao");
 /// </code></example>
 public sealed class TouchRadialMenu
 {

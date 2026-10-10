@@ -17240,7 +17240,7 @@
       "summary": "Menu radial de acoes mobile; selecao arrastando e confirmacao ao soltar.",
       "remarks": "O setor zero aponta para cima e os demais seguem no sentido horario. Um dedo iniciado no centro pode arrastar ate a coroa. O jogo deve cancelar ao esconder ou pausar. Nao consome input de controles vizinhos. Update e consultas nao alocam por quadro.",
       "examples": [
-        "\u0060\u0060\u0060\nvar menu = new TouchRadialMenu(new Vector2(160, 240), 30, 100, 4);\nmenu.Update(Input);\nif (menu.ActivatedIndex \u003E= 0) Log.Info(\u0022Acao\u0022);\n\u0060\u0060\u0060"
+        "\u0060\u0060\u0060\nvar menu = new Lunet.UI.TouchRadialMenu(new Vector2(160, 240), 30, 100, 4);\nmenu.Update(input);\nif (menu.ActivatedIndex \u003E= 0) log.Info(\u0022Acao\u0022);\n\u0060\u0060\u0060"
       ],
       "related": [],
       "since": "0.0.1",
