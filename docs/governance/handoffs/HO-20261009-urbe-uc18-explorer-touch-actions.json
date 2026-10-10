@@ -1,0 +1,109 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-urbe-uc18-explorer-touch-actions",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T18:16:20Z",
+  "agent": {
+    "id": "chatgpt-urbe-explorer-touch",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-18",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc18-explorer-touch-actions-20261009",
+  "base_commit": "c26498dd1898e2b85383b883afa416f1ee5894ac",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/379",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "apps/urbe/AGENTSCHAT.md",
+    "docs/governance/handoffs/HO-20261009-urbe-uc18-explorer-touch-actions.json"
+  ],
+  "work_completed": [
+    "Ação Mover explícita em cada linha do Explorer C#, utilizável via toque e teclado sem depender de drag-and-drop.",
+    "Pressão longa aceita somente pointer touch/pen; rolagem com deslocamento maior que 12px cancela ação; clique pós-gesto suprimido temporariamente.",
+    "Erros ao criar pasta e ao mover passam a ser expostos por alerta visual; sem alteração do WorkspaceSession ou dos dados.",
+    "Smoke Web ampliado para criar pasta vazia, mouse hold, touch scroll, long press e ação explícita de mover."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "urbe-checks / Web smoke / portable Core / Android / Windows / E2E",
+      "result": "pending",
+      "evidence": "PR #379; CI pendente, sem .NET SDK local."
+    },
+    {
+      "kind": "automated",
+      "check": "consistency e integrador no estado combinado",
+      "result": "pending",
+      "evidence": "Verificar após CI da branch #379."
+    },
+    {
+      "kind": "human",
+      "check": "G-C3 Android: precisão de toque e movimentação",
+      "result": "not-applicable",
+      "evidence": "Não foi feito teste físico; gate não declarado aprovado."
+    }
+  ],
+  "known_issues": [
+    "No C# a sessão permanece em memória até conexão física dos hosts; alterações não são persistidas e não existe autorização para tratar o C# como cliente final.",
+    "Gestos e viewport requerem validação física Android; C# Core math concurrent PR #334 segue independente.",
+    "UC-18 e G-C3 continuam abertos; sem release ou mudança de corte."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar urbe-checks, consistency e smoke reais no PR #379; corrigir falhas se houver.",
+    "Deixar integração a cargo do integrador automático, sem merge manual nem label integrar.",
+    "Prosseguir UC-18 nas superfícies restantes; conectar persistência real em etapa de dados explicitamente autorizada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/v2/REQUIREMENTS.md",
+    "apps/urbe/docs/v2/SPEC.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "WorkspaceSession e DocumentStore continuam autoridade; mudanças ficam em Razor/CSS."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Incremento localizado UC-18, sem alterações no JS legado."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch, PR, arquivos e verificações registrados."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum contrato público, formato persistido, migração ou boundary alterado."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação física não alegada; G-C3 permanece aberto."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "REQ-096 e UC-18 seguem em andamento; smoke é parcial."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Controles UI de UC-18/REQ-096 e smoke, sem dados, segurança, licenças, integração, arquitetura ou distribuição."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "urbe-explorer-touch-actions",
+      "status": "product-specific",
+      "rationale": "Controles e eventos do Explorer deste Product; não há segundo consumidor de contrato de ferramenta."
+    }
+  ]
+}

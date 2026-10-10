@@ -45,7 +45,7 @@ jobs:
       pages: read
       pull-requests: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Em release.published, github.ref/github.sha apontam para a tag; a projeção usa sempre a SOURCE canônica.
           ref: ${{ github.event.repository.default_branch }}
@@ -113,7 +113,7 @@ jobs:
           find _site -maxdepth 2 -type f -printf '%P\n' | sort
           grep -Fq '<title>Ecosystem — Portal</title>' _site/index.html
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
 

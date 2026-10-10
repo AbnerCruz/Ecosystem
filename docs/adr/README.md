@@ -53,3 +53,4 @@ Um ADR `Aceito` só muda por outro ADR que o substitua (`Substituído por ADR-XX
 | [0028](0028-text-inspect-core-compartilhado.md) | Núcleo compartilhado de `text.inspect` para o segundo Host | Aceito (DEC-0038-A) |
 | [0029](0029-product-de-autoria-matematica-temporal.md) | Product independente de autoria matemática temporal | Aceito (DEC-0040-A) |
 | [0030](0030-documento-canonico-de-autoria-matematica.md) | Documento canônico e autoria textual da matemática temporal | Aceito (DEC-0040-A) |
+| [0031](0031-p6-4-piloto-headless-lunet.md) | Piloto headless do Host Lunet para P6-4 | Aceito (DEC-0041, piloto restrito) |

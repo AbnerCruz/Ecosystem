@@ -1,8 +1,409 @@
 @page "/cidade"
+@using System.Globalization
+@implements IDisposable
+@inject WorkspaceSession Workspace
+@inject IVaultHost Vault
+@inject NavigationManager Navigation
 
-<section class="surface" data-surface="world">
-    <PlannedSurface
-        Title="Cidade"
-        Description="A projeção do vault já existe no Core; desenho, toque e interação visual entram nesta superfície depois."
-        OwnerUseCase="UC-19" />
+<section class="surface world-surface" data-surface="world">
+    <div class="world-head">
+        <div>
+            <p class="surface-eyebrow">Urbe · Cidade viva</p>
+            <h1>@(CurrentBairro.Length == 0 ? "Minha cidade" : BairroName)</h1>
+            <p>Toque em um bairro para entrar. Toque em uma casa para editar sua nota.</p>
+        </div>
+        <span class="world-population">@Workspace.Documents.List().Count nota(s)</span>
+    </div>
+
+    <div class="world-toolbar">
+        @if (CurrentBairro.Length > 0)
+        {
+            <button type="button" class="world-nav-button" @onclick="BackToParent">
+                ← @(ParentBairro.Length == 0 ? "Cidade" : ParentBairro)
+            </button>
+        }
+        <button type="button" class="world-nav-button" @onclick="OpenExplorer">
+            Explorer <span aria-hidden="true">↗</span>
+        </button>
+        @if (CanCreate && !Workspace.World.IsReadOnly)
+        {
+            <button type="button" class="world-nav-button"
+                    aria-pressed="@_positionMode" @onclick="TogglePositionMode">
+                @(_positionMode ? "Concluir organização" : "Organizar terreno")
+            </button>
+        }
+        @if (CanCreate)
+        {
+            <button type="button" class="world-nav-button world-build-button" @onclick="ToggleBuilder"
+                    aria-expanded="@_builderOpen">+ Construir casa</button>
+            <button type="button" class="world-nav-button" @onclick="ToggleDistrictBuilder"
+                    aria-expanded="@_districtBuilderOpen">+ Criar bairro</button>
+        }
+        <div class="world-zoom-controls" role="group" aria-label="Zoom do mapa">
+            <button type="button" @onclick="ZoomOut" disabled="@(_zoomLevel == MinZoom)"
+                    aria-label="Diminuir zoom">−</button>
+            <span aria-live="polite">@ZoomPercent%</span>
+            <button type="button" @onclick="ZoomIn" disabled="@(_zoomLevel == MaxZoom)"
+                    aria-label="Aumentar zoom">+</button>
+        </div>
+    </div>
+
+    @if (_builderOpen && CanCreate)
+    {
+        <div class="world-builder">
+            @if (_targetLot is { } target)
+            {
+                <p class="world-builder-target">
+                    Construir no terreno da coluna @(target.Column + 1), linha @(target.Row + 1).
+                    <button type="button" @onclick="ClearTargetLot">Escolher automaticamente</button>
+                </p>
+            }
+            <label for="world-new-note">Nome da nova casa (nota Markdown)</label>
+            <div class="world-builder-row">
+                <input id="world-new-note" value="@_newNoteTitle"
+                       @oninput="ChangeNoteTitle" placeholder="Minha nova nota" />
+                <button type="button" @onclick="CreateHouse">Criar e editar</button>
+            </div>
+        </div>
+    }
+    @if (_districtBuilderOpen && CanCreate)
+    {
+        <div class="world-builder">
+            <label for="world-new-district">Nome do novo bairro (pasta)</label>
+            <div class="world-builder-row">
+                <input id="world-new-district" value="@_newDistrictName"
+                       @oninput="ChangeDistrictName" placeholder="Novo bairro" />
+                <button type="button" @onclick="CreateDistrict">Criar e entrar</button>
+            </div>
+        </div>
+    }
+    @if (_positionMode)
+    {
+        <p class="world-position-hint" role="status">
+            @(_selectedHouse is null
+                ? "Toque em uma casa para selecioná-la. Depois toque em um terreno vazio para posicioná-la."
+                : "Casa selecionada: " + _selectedHouse + ". Toque em um terreno vazio ou selecione outra casa.")
+        </p>
+    }
+    @if (_message is not null)
+    {
+        <p class="world-message" role="status">@_message</p>
+    }
+
+    @if (!Vault.IsConnected && Vault.IsAvailable && Workspace.Paths.Count == 0)
+    {
+        <div class="world-welcome">
+            <strong>Sua cidade começa com uma pasta</strong>
+            <p>Selecione uma pasta do dispositivo usando o botão acima. Cada bairro será uma pasta, e cada casa, uma nota Markdown.</p>
+        </div>
+    }
+    else
+    {
+        <div class="world-map-frame" aria-label="Mapa top-down da cidade e dos bairros"
+             tabindex="0" style="@ZoomStyle">
+            <div class="world-map" style="@WorldArt.BoardBackgroundStyle">
+                <div class="world-plots world-tiles">
+                    @foreach (var tile in CityTiles)
+                    {
+                        var entry = tile.Entry;
+                        if (entry is null)
+                        {
+                            <button type="button" class="world-plot world-empty-lot @WorldArt.TerrainClass(tile.Column, tile.Row)"
+                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
+                                    disabled="@(!CanCreate || (_positionMode && _selectedHouse is null))"
+                                    aria-label="@($"Terreno vazio, coluna {tile.Column + 1}, linha {tile.Row + 1}. " +
+                                        (_positionMode ? "Reposicionar casa" : "Construir casa"))"
+                                    @onclick="() => ActivateEmptyLot(tile)">
+                                <span aria-hidden="true" class="world-grass"
+                                      style="@WorldArt.DecorationBackgroundStyle(tile.Column, tile.Row)"></span>
+                                <span class="world-plot-kind">@(_positionMode ? "Posicionar aqui" : "Construir aqui")</span>
+                            </button>
+                        }
+                        else if (entry.IsFolder)
+                        {
+                            <button type="button" class="world-plot world-district"
+                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
+                                    title="@entry.Path"
+                                    disabled="@_positionMode"
+                                    aria-label="@($"Entrar no bairro {entry.Name}")"
+                                    @onclick="() => EnterBairro(entry.Path)">
+                                <span class="world-building world-sprite-hall" aria-hidden="true"
+                                      style="@WorldArt.BuildingBackgroundStyle(entry.Path, true)"></span>
+                                <span class="world-plot-label">@entry.Name</span>
+                                <span class="world-plot-kind">Bairro</span>
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="world-plot world-house @(string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase) ? "world-plot-selected" : "")"
+                                    style="@WorldArt.TerrainBackgroundStyle(tile.Column, tile.Row)"
+                                    title="@entry.Path"
+                                    disabled="@(!entry.Editable)"
+                                    aria-pressed="@(_positionMode && string.Equals(_selectedHouse, entry.Path, StringComparison.OrdinalIgnoreCase))"
+                                    aria-label="@(_positionMode ? $"Selecionar casa {entry.Name} para reposicionar" : $"Abrir nota {entry.Name}")"
+                                    @onclick="() => SelectOrOpenHouse(entry.Path)">
+                                <span class="world-building @WorldArt.BuildingClass(entry.Path, false, Workspace.World.ProjectDocument(entry.Path)?.Sprite)" aria-hidden="true"
+                                      style="@WorldArt.BuildingBackgroundStyle(entry.Path, false, Workspace.World.ProjectDocument(entry.Path)?.Sprite)"></span>
+                                <span class="world-plot-label">@entry.Name</span>
+                                <span class="world-plot-kind">@(_positionMode ? "Selecionar" : "Abrir nota")</span>
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="world-map-legend" aria-label="Legenda da cidade">
+            <span><i class="world-legend-house" aria-hidden="true"></i> Casa · nota</span>
+            <span><i class="world-legend-district" aria-hidden="true"></i> Bairro · pasta</span>
+            <span><i class="world-legend-empty" aria-hidden="true"></i> Terreno livre</span>
+        </div>
+        <div class="world-footer">
+            <span>@AllPlots.Count construção(ões) · @CityTileLayout.Capacity terreno(s)</span>
+            @if (AllPlots.Count > CityTileLayout.Capacity)
+            {
+                <span>Mapa limitado a @CityTileLayout.Capacity terrenos; veja outras notas no Explorer.</span>
+            }
+        </div>
+    }
 </section>
+
+@code {
+    private const int MinZoom = 1;
+    private const int MaxZoom = 5;
+    private int _zoomLevel = 3;
+    private int ZoomPercent => 60 + _zoomLevel * 20;
+    private string ZoomStyle
+    {
+        get
+        {
+            var width = 3.4m + _zoomLevel * 0.75m;
+            var height = 6.0m + _zoomLevel * 0.8m;
+            var board = width * 8 + 3.4m;
+            return "--world-tile-width:" +
+                width.ToString("0.##", CultureInfo.InvariantCulture) +
+                "rem;--world-tile-height:" +
+                height.ToString("0.##", CultureInfo.InvariantCulture) +
+                "rem;--world-board-width:" +
+                board.ToString("0.##", CultureInfo.InvariantCulture) + "rem;";
+        }
+    }
+
+    private CityTileLayout.Tile? _targetLot;
+    private bool _districtBuilderOpen;
+    private string _newDistrictName = string.Empty;
+    private bool _positionMode;
+    private string? _selectedHouse;
+    private bool _disposed;
+    private string CurrentBairro { get; set; } = string.Empty;
+    private bool _builderOpen;
+    private string _newNoteTitle = string.Empty;
+    private string? _message;
+
+    private bool CanCreate =>
+        !Workspace.IsReadOnly && (!Vault.IsAvailable || Vault.IsConnected);
+
+    private string BairroName => CurrentBairro.Split('/').Last();
+
+    private string ParentBairro
+    {
+        get
+        {
+            var last = CurrentBairro.LastIndexOf('/');
+            return last < 0 ? string.Empty : CurrentBairro[..last];
+        }
+    }
+
+    private IReadOnlyList<WorkspaceExplorerEntry> AllPlots =>
+        Workspace.ExplorerEntries(CurrentBairro)
+            .Where(entry => entry.IsFolder || ArtifactModel.IsNote(entry.Path))
+            .ToArray();
+
+    private IReadOnlyList<CityTileLayout.Tile> CityTiles =>
+        CityTileLayout.Build(AllPlots, Workspace.World);
+
+    protected override void OnInitialized()
+    {
+        CurrentBairro = Workspace.CurrentFolder;
+        Workspace.PersistenceChanged += OnWorkspaceChanged;
+    }
+
+    private void OnWorkspaceChanged(object? sender, EventArgs args)
+    {
+        if (!_disposed)
+            _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        Workspace.PersistenceChanged -= OnWorkspaceChanged;
+    }
+
+    private void ZoomIn() => _zoomLevel = Math.Min(MaxZoom, _zoomLevel + 1);
+    private void ZoomOut() => _zoomLevel = Math.Max(MinZoom, _zoomLevel - 1);
+
+    private void TogglePositionMode()
+    {
+        _positionMode = !_positionMode;
+        _selectedHouse = null;
+        _targetLot = null;
+        _builderOpen = false;
+        _message = null;
+    }
+
+    private void ActivateEmptyLot(CityTileLayout.Tile tile)
+    {
+        if (!CanCreate || !tile.IsEmpty)
+            return;
+
+        if (_positionMode)
+        {
+            PositionOn(tile);
+            return;
+        }
+
+        _targetLot = Workspace.World.IsReadOnly ? null : tile;
+        _builderOpen = true;
+        _districtBuilderOpen = false;
+        _message = Workspace.World.IsReadOnly
+            ? "O mapa está protegido; a nota pode ser criada sem posição fixa."
+            : null;
+    }
+
+    private void ClearTargetLot() => _targetLot = null;
+
+    private void SelectOrOpenHouse(string path)
+    {
+        if (!_positionMode)
+        {
+            OpenHouse(path);
+            return;
+        }
+
+        _selectedHouse = path;
+        _message = null;
+    }
+
+    private void PositionOn(CityTileLayout.Tile tile)
+    {
+        if (!_positionMode || !CanCreate ||
+            Workspace.World.IsReadOnly || _selectedHouse is null || !tile.IsEmpty)
+            return;
+
+        if (!Workspace.PlaceHouse(_selectedHouse, tile.Column, tile.Row))
+        {
+            _message = "Terreno indisponível ou mapa protegido.";
+            return;
+        }
+
+        _message = "Casa posicionada. O salvamento automático atualizará o mapa físico.";
+        _selectedHouse = null;
+    }
+
+    private void EnterBairro(string path)
+    {
+        if (!Workspace.SetFolder(path))
+        {
+            _message = "Não foi possível abrir este bairro.";
+            return;
+        }
+        CurrentBairro = path;
+        _builderOpen = false;
+        _districtBuilderOpen = false;
+        _targetLot = null;
+        _selectedHouse = null;
+        _positionMode = false;
+        _message = null;
+    }
+
+    private void BackToParent() => EnterBairro(ParentBairro);
+
+    private void OpenExplorer()
+    {
+        Workspace.SetFolder(CurrentBairro);
+        Navigation.NavigateTo("explorer" +
+            (CurrentBairro.Length == 0 ? string.Empty :
+                "?folder=" + Uri.EscapeDataString(CurrentBairro)));
+    }
+
+    private void OpenHouse(string path)
+    {
+        if (!Workspace.Open(path,
+                new EditorOpenOrigin(EditorOpenOriginKind.Explorer,
+                    "cidade")))
+        {
+            _message = "Não foi possível abrir esta nota.";
+            return;
+        }
+
+        Navigation.NavigateTo("editor?path=" + Uri.EscapeDataString(path));
+    }
+
+    private void ToggleBuilder()
+    {
+        _builderOpen = !_builderOpen;
+        _targetLot = null;
+        _districtBuilderOpen = false;
+        _message = null;
+    }
+
+    private void ToggleDistrictBuilder()
+    {
+        _districtBuilderOpen = !_districtBuilderOpen;
+        _builderOpen = false;
+        _targetLot = null;
+        _message = null;
+    }
+
+    private void ChangeNoteTitle(ChangeEventArgs args) =>
+        _newNoteTitle = args.Value?.ToString() ?? string.Empty;
+
+    private void ChangeDistrictName(ChangeEventArgs args) =>
+        _newDistrictName = args.Value?.ToString() ?? string.Empty;
+
+    private void CreateDistrict()
+    {
+        if (!CanCreate || string.IsNullOrWhiteSpace(_newDistrictName))
+        {
+            _message = "Informe o nome do bairro e conecte uma pasta.";
+            return;
+        }
+
+        var created = Workspace.CreateFolder(_newDistrictName.Trim(), CurrentBairro);
+        if (created is null)
+        {
+            _message = "Não foi possível criar o bairro; confira o nome e a pasta.";
+            return;
+        }
+
+        _newDistrictName = string.Empty;
+        _districtBuilderOpen = false;
+        EnterBairro(created);
+    }
+
+    private void CreateHouse()
+    {
+        if (!CanCreate)
+        {
+            _message = "Conecte uma pasta antes de criar uma nota.";
+            return;
+        }
+
+        var title = string.IsNullOrWhiteSpace(_newNoteTitle)
+            ? "Nova casa" : _newNoteTitle.Trim();
+        var note = _targetLot is { } target && !Workspace.World.IsReadOnly
+            ? Workspace.CreateHouseAt(title, CurrentBairro, target.Column, target.Row)
+            : Workspace.CreateNote(title, CurrentBairro);
+        if (note is null)
+        {
+            _message = "Não foi possível criar a nota; confira o nome e o bairro.";
+            return;
+        }
+
+        _newNoteTitle = string.Empty;
+        _builderOpen = false;
+        _targetLot = null;
+        OpenHouse(note.Path);
+    }
+}

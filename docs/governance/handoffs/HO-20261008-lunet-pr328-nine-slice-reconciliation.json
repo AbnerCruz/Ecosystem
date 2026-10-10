@@ -1,0 +1,131 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-pr328-nine-slice-reconciliation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T13:19:51.035348Z",
+  "agent": {
+    "id": "codex-lunet-reconciliation",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-408",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-bitmap-fonts-20261008",
+  "base_commit": "7622f5352267c1c5a5d0773c245399b932c2b1e0",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/328",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/nine-slice.md",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/NineSlice.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteBatch.cs",
+    "apps/lunet2d/tests/Lunet.Tests/NineSliceTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-nine-slice.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr328-nine-slice-reconciliation.json",
+    "docs/governance/handoffs/HO-20261008-pr324-conflict-reconciliation.json"
+  ],
+  "work_completed": [
+    "PR #328 reconciliado com main f3392f2a3e111de7f7bcd36fc78073a84bf375e7, preservando seu código específico e integrando NineSlice já publicado no APK 1000150.",
+    "Conflitos de AgentsChat/CHANGELOG/ROADMAP resolvidos preservando registros de ambos; changelog de APIs sem duplicação, ROADMAP 404/405/407 alinhado às integrações reais sem fechar DEVICE.",
+    "API JSON regenerada pela suíte completa; código/testes da main importados exatamente, sem modificações locais de backend/persistência/modelos protegidos além da revisão existente.",
+    "Preferência explícita do proprietário registrada em AgentsChat: próximas demonstrações executáveis no Laboratório ou template, prontas para Run, sem reforma de documentação agora."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "Build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false, zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão: 423/423, zero erros/falhas/skips. Base NineSlice 410 mais casos próprios preservados; API JSON regenerada."
+    },
+    {
+      "kind": "automated",
+      "check": "Código preservado",
+      "result": "passed",
+      "evidence": "Delta de source/tests frente ao head anterior contém somente NineSlice.cs/SpriteBatch.cs/NineSliceTests.cs da main, byte idênticos ao commit f3392f2. Código específico do PR não reescrito."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram; ROADMAP × Issues não verificado localmente sem snapshot, verificação remota no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Fontes bitmap no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/fontes-bitmap.md",
+      "evidence": "Offline, dígito 1 proporcional, Pontos/escala 2×/3×, Preview rápido/isolado e regressão com fonte embutida. CI portátil não comprova aparência/GL/aparelho."
+    }
+  ],
+  "known_issues": [
+    "Revisões independentes podem exigir nova reconciliação quando a main mudar; quem integra é o integrador automático.",
+    "DEVICE continua pendente, sem mudança de regras/gates. Preferência de entrega não significa aprovação das APIs no aparelho."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Enviar merge de reconciliação ao mesmo PR com lease, sem force/merge manual/label integrar.",
+    "Acompanhar checks combinados, integração e release reais; PR #317 continua crítico e requer autorização do proprietário quando verde.",
+    "Continuar Fase 4; validação Android e gates não inferidos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API de jogo local no Framework, sem dependências de Products/Editor/Studio."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-408 / Issue #327, branch/base/handoff e roteiro explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, nenhuma aprovação inferida da conversa."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/guia verificados, integração/CI/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Fonte bitmap autorizada na Fase 4; reutiliza SpriteFont/SpriteBatch/ContentManager, sem extração ou novo backend."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "bitmap-fonts",
+      "status": "product-specific",
+      "rationale": "Métricas/renderização de fontes do framework de jogos Lunet; nenhum segundo consumidor real exige extração. Reutiliza textura e batching existentes."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva de fontes prevista na Fase 4, comportamento da fonte embutida preservado; sem persistência, formato/contrato existente, boundary ou área protegida."
+  },
+  "cost": null
+}

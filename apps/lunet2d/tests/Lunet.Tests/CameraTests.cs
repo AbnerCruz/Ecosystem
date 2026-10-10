@@ -13,6 +13,68 @@ public class CameraTests
     }
 
     [Fact]
+    public void FollowIsFrameRateIndependentAndValidatesInputs()
+    {
+        var once = new Camera2D();
+        var many = new Camera2D();
+        once.Follow(new(100, 200), 4, 1);
+        for (int i = 0; i < 4; i++) many.Follow(new(100, 200), 4, .25f);
+        Close(once.Position, many.Position, .0001f);
+        Vector2 old = once.Position;
+        once.Follow(new(10, 20), 0, 1);
+        once.Follow(new(10, 20), 5, 0);
+        Assert.Equal(old, once.Position);
+        Assert.Throws<ArgumentOutOfRangeException>(() => once.Follow(new(float.NaN, 0), 1, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => once.Follow(new(1, 2), -1, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => once.Follow(new(1, 2), float.NaN, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => once.Follow(new(1, 2), 1, -1));
+        Assert.Equal(old, once.Position);
+    }
+
+    [Theory]
+    [InlineData(1f, 0f)]
+    [InlineData(2f, .7f)]
+    [InlineData(.75f, -1.3f)]
+    public void ClampToWorldKeepsRotatedCornersInWorld(float zoom, float rotation)
+    {
+        var camera = new Camera2D { Position = new(-1000, 9000), Zoom = zoom, Rotation = rotation };
+        var size = new Vector2(360, 640);
+        var world = new RectangleF(0, 0, 2000, 2000);
+        camera.ClampToWorld(world, size);
+        foreach (var corner in new[] { Vector2.Zero, new Vector2(size.X, 0), new Vector2(0, size.Y), size })
+        {
+            var p = camera.ScreenToWorld(corner, size);
+            Assert.InRange(p.X, world.X - .002f, world.Right + .002f);
+            Assert.InRange(p.Y, world.Y - .002f, world.Bottom + .002f);
+        }
+    }
+
+    [Fact]
+    public void ClampToWorldCentersSmallScenesAndRejectsInvalidBounds()
+    {
+        var camera = new Camera2D { Position = new(-100, 800), Rotation = .4f };
+        camera.ClampToWorld(new RectangleF(10, 20, 40, 50), new Vector2(360, 640));
+        Close(new Vector2(30, 45), camera.Position);
+        var old = camera.Position;
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.ClampToWorld(new RectangleF(0, 0, 0, 1), new Vector2(360, 640)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.ClampToWorld(new RectangleF(float.NaN, 0, 20, 20), new Vector2(360, 640)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.ClampToWorld(new RectangleF(0, 0, 20, 20), Vector2.Zero));
+        Assert.Equal(old, camera.Position);
+    }
+
+    [Fact]
+    public void FollowAndClampAreAllocationFree()
+    {
+        var camera = new Camera2D { Position = new(500, 500), Zoom = 1.5f, Rotation = .7f };
+        var world = new RectangleF(0, 0, 2000, 2000);
+        var size = new Vector2(360, 640);
+        for (int i = 0; i < 100; i++) { camera.Follow(new(100, 300), 5, 1f / 60); camera.ClampToWorld(world, size); }
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++) { camera.Follow(new(100, 300), 5, 1f / 60); camera.ClampToWorld(world, size); }
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
     public void Camera_CentersPosition_AndZoomsAroundTheCenter()
     {
         var camera = new Camera2D { Position = new(500, 400), Zoom = 2 };
@@ -62,6 +124,70 @@ public class CameraTests
             Assert.Throws<ArgumentOutOfRangeException>(() => camera.GetViewMatrix(size));
             Assert.Throws<ArgumentOutOfRangeException>(() => camera.ScreenToWorld(Vector2.Zero, size));
         }
+    }
+
+    [Theory]
+    [InlineData(1f, 0f)]
+    [InlineData(2f, 0.6f)]
+    [InlineData(0.5f, -1.3f)]
+    [InlineData(4f, 1.5707963f)]
+    public void WorldViewBounds_ContainAllCornersWithZoomAndRotation(float zoom, float rotation)
+    {
+        var camera = new Camera2D { Position = new(145, -72), Zoom = zoom, Rotation = rotation };
+        var size = new Vector2(360, 640);
+        var bounds = camera.GetWorldViewBounds(size);
+        Assert.True(bounds.Width > 0 && bounds.Height > 0);
+        foreach (var corner in new[] { Vector2.Zero, new Vector2(size.X, 0), new Vector2(0, size.Y), size })
+        {
+            var world = camera.ScreenToWorld(corner, size);
+            Assert.InRange((double)world.X, (double)bounds.X, (double)bounds.X + bounds.Width);
+            Assert.InRange((double)world.Y, (double)bounds.Y, (double)bounds.Y + bounds.Height);
+        }
+    }
+
+    [Fact]
+    public void WorldViewBounds_HandleCameraTranslationAndInvalidExtents()
+    {
+        var camera = new Camera2D { Position = new(500, 400), Zoom = 2 };
+        var bounds = camera.GetWorldViewBounds(new(200, 100));
+        Assert.InRange(450f, bounds.X, bounds.X + bounds.Width);
+        Assert.InRange(550f, bounds.X, bounds.X + bounds.Width);
+        Assert.InRange(375f, bounds.Y, bounds.Y + bounds.Height);
+        Assert.InRange(425f, bounds.Y, bounds.Y + bounds.Height);
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.GetWorldViewBounds(Vector2.Zero));
+        camera.Position = new(float.MaxValue, float.MaxValue);
+        camera.Zoom = 0.0001f;
+        Assert.Throws<ArgumentOutOfRangeException>(() => camera.GetWorldViewBounds(new(320, 200)));
+    }
+
+    [Fact]
+    public void WorldViewBounds_CullsTilesUsingRotatedCamera()
+    {
+        var map = TileMap.Parse("""
+            {"version":1,"texture":"tiles.png","width":3,"height":2,
+             "tileWidth":8,"tileHeight":8,"layers":[{"name":"ground","tiles":[1,1,1,1,1,1]}]}
+            """);
+        var backend = new RecordingBackend();
+        var device = new GraphicsDevice(backend, 64, 64);
+        using var texture = Texture2D.CreateSolid(device, 8, 8, Color.White);
+        var batch = new SpriteBatch(device);
+        var camera = new Camera2D { Position = new(4, 4), Zoom = 16, Rotation = 0.7f };
+        batch.Begin(camera);
+        map.Draw(batch, texture, camera.GetWorldViewBounds(device.ViewSize), Vector2.Zero, Color.White);
+        batch.End();
+        Assert.Single(backend.Batches);
+        Assert.Equal(1, backend.Batches[0].QuadCount);
+    }
+
+    [Fact]
+    public void WorldViewBounds_DoesNotAllocateAfterWarmup()
+    {
+        var camera = new Camera2D { Position = new(120, 80), Zoom = 1.5f, Rotation = 0.4f };
+        var size = new Vector2(360, 640);
+        for (int i = 0; i < 300; i++) camera.GetWorldViewBounds(size);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++) camera.GetWorldViewBounds(size);
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
     }
 
     [Fact]

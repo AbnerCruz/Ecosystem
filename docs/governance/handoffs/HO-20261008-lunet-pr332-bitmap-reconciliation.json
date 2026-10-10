@@ -1,0 +1,138 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261008-lunet-pr332-bitmap-reconciliation",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-08T13:52:46.149333+00:00",
+  "agent": {
+    "id": "codex-lunet-reconciliation",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-410",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-touch-buttons-20261008",
+  "base_commit": "b3c2f934932853a5fc805c595ba8bc088a3361b2",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/332",
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/fontes-bitmap.md",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/BitmapGlyph.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteFont.cs",
+    "apps/lunet2d/tests/Lunet.Tests/BitmapFontTests.cs",
+    "apps/urbe/AGENTSCHAT.md",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/tests/web-smoke.mjs",
+    "docs/governance/handoffs/HO-20261007-urbe-uc18-explorer-move.json",
+    "docs/governance/handoffs/HO-20261008-lunet-bitmap-fonts.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr328-nine-slice-reconciliation.json",
+    "docs/governance/handoffs/HO-20261008-pr286-conflict-reconciliation.json",
+    "docs/governance/handoffs/HO-20261008-pr328-conflict-reconciliation.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr332-bitmap-reconciliation.json"
+  ],
+  "work_completed": [
+    "PR #332 combinado com main 2e62f554fdd13525e9489f07386862ee39e5d298, incluindo fontes bitmap #328 e atualização Urbe #286, preservando código específico anterior.",
+    "Conflitos de metadados resolvidos preservando registros e apenas uma entrada por API no changelog; API JSON regenerada pela suíte padrão.",
+    "Fonte bitmap publicada no APK 1000155; DEVICE e gate da Fase 4 não aprovados."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Build .NET 10",
+      "result": "passed",
+      "evidence": "Build --no-restore -m:1 -p:MSBuildEnableWorkloadResolver=false, zero warnings/errors."
+    },
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "passed",
+      "evidence": "Runner padrão completo: 436/436, zero erros/falhas/skips, incluindo 13 casos bitmap e casos específicos anteriores."
+    },
+    {
+      "kind": "automated",
+      "check": "Código preservado",
+      "result": "passed",
+      "evidence": "Delta de source/tests frente ao head anterior contém somente BitmapGlyph.cs, SpriteFont.cs e BitmapFontTests.cs da main, byte idênticos; código específico preservado."
+    },
+    {
+      "kind": "automated",
+      "check": "Consistency",
+      "result": "passed",
+      "evidence": "22/22 checks locais passaram; ROADMAP × Issues não verificado localmente sem snapshot, verificação remota no CI/integrador."
+    },
+    {
+      "kind": "human",
+      "check": "Botões UI no Preview Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/botoes-ui.md",
+      "evidence": "Soltura/arraste/multi-touch, disable/paleta, pausa/retomada, Preview rápido/isolado offline e regressão; portable não comprova GL/aparelho."
+    }
+  ],
+  "known_issues": [
+    "Revisões independentes podem exigir nova reconciliação quando a main mudar; quem integra é o integrador automático.",
+    "DEVICE continua pendente, sem mudança de regras/gates. Preferência de entrega não significa aprovação das APIs no aparelho."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Enviar reconciliação ao PR existente com lease, sem force/merge manual/label integrar.",
+    "Acompanhar checks combinados e release; PR crítico #317 conserva exigência de autorização do proprietário.",
+    "DEVICE e Fase 4 permanecem abertos."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/addenda/ADD-0012-automatico-por-padrao-humano-para-o-critico.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "API matemática de UI local no Framework, sem dependências de outros Products/Editor/Studio."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "LUNET-410 / Issue #331, branch/base/handoff/guia explícitos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE pendente, nenhum gate/validação inferido."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Build/suíte/guia comprovados; CI/integração/release separados."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Reutiliza RectangleF, TouchPoint/InputState, SpriteBatch e SpriteFont; nenhum componente compartilhado novo."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "touch-ui-buttons",
+      "status": "product-specific",
+      "rationale": "Controle local de UI no Framework, autorizado na Fase 4. Sem segundo consumidor real; não extrai Tool/Library genérica."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "API aditiva de UI prevista no plano; sem efeito em dados, contratos existentes, boundary ou áreas protegidas."
+  },
+  "cost": null
+}

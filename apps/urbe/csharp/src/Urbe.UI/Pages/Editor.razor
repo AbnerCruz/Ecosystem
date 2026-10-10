@@ -1,4 +1,8 @@
 @page "/editor"
+@implements IAsyncDisposable
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+@inject IVaultHost Vault
 @inject WorkspaceSession Workspace
 @inject NavigationManager Navigation
 
@@ -55,7 +59,20 @@
             }
         </div>
 
+        <div class="editor-reference-layout @(Workspace.References.Entries.Count > 0 ? "has-references" : null)">
+        <EditorReferencePanel Entries="Workspace.References.Entries" Changed="RefreshReferences" />
+        <div class="editor-reference-main">
         <div class="editor-actions">
+            <button type="button" class="editor-pin-reference" @onclick="PinDocument">Fixar nota em painel</button>
+            @if (!Workspace.IsReadOnly && ArtifactModel.IsNote(document.Path) &&
+                 !NoteTemplateEngine.IsTemplatePath(document.Path))
+            {
+                <button type="button" class="editor-pin-reference" @onclick="SaveAsTemplate">Salvar como modelo</button>
+            }
+            @if (_templateStatus is not null)
+            {
+                <span role="status" class="surface-chip">@_templateStatus</span>
+            }
             <div class="editor-history-actions" role="group" aria-label="Histórico do editor">
                 <button type="button"
                         disabled="@(!history.CanUndo || Workspace.IsReadOnly)"
@@ -94,13 +111,58 @@
         <div class="editor-stage-layout @(Workspace.Mode == EditorSurfaceMode.Split ? "split" : "")">
         @if (Workspace.Mode != EditorSurfaceMode.Visual)
         {
-            <label class="editor-source-field">
-                <span class="sr-only">Markdown da nota</span>
-                <textarea value="@document.Content"
-                          disabled="@Workspace.IsReadOnly"
-                          @oninput="OnSourceInput"
-                          spellcheck="true"></textarea>
-            </label>
+            <div class="editor-source-container">
+                <div class="editor-source-tools" role="toolbar" aria-label="Formatação da fonte Markdown">
+                    <button type="button"
+                            disabled="@Workspace.IsReadOnly"
+                            @onclick="ToggleInlineCode"
+                            aria-label="Código em linha">Código em linha</button>
+                    <span>Seleção: envolve com crases. Cursor: insere duas crases.</span>
+                </div>
+                @if (_inlineCodeError is not null)
+                {
+                    <p class="editor-stage-note" role="alert">@_inlineCodeError</p>
+                }
+                <label class="editor-source-field">
+                    <span class="sr-only">Markdown da nota</span>
+                    <textarea @ref="_sourceTextarea"
+                              value="@document.Content"
+                              disabled="@Workspace.IsReadOnly"
+                              @oninput="OnSourceInput"
+                              @onkeyup="OnSourceKeyUp"
+                              @onclick="OnSourceCaretClicked"
+                              spellcheck="true"></textarea>
+                </label>
+                @if (_wikiContext is not null && Workspace.CurrentDocument is not null)
+                {
+                    <div class="editor-wikilink-suggestions"
+                         role="group" aria-label="Sugestões de links entre notas">
+                        <strong>Conectar nota: [[@_wikiContext.Query]]</strong>
+                        @foreach (var suggestion in _wikiSuggestions)
+                        {
+                            <button type="button" disabled="@Workspace.IsReadOnly" @onclick="() => CompleteWikilink(suggestion)">
+                                <span>@suggestion.Title</span>
+                                <small>@suggestion.Path</small>
+                            </button>
+                        }
+                        @if (CanCreateWikiNote)
+                        {
+                            <button type="button" class="editor-wikilink-create"
+                                    @onclick="CreateWikiNote">
+                                + Criar nota "@_wikiContext.Query" e abrir
+                            </button>
+                        }
+                        @if (_wikiSuggestions.Count == 0 && !CanCreateWikiNote)
+                        {
+                            <span>Nenhuma nota correspondente.</span>
+                        }
+                    </div>
+                }
+                @if (_wikiError is not null)
+                {
+                    <p class="editor-stage-note" role="alert">@_wikiError</p>
+                }
+            </div>
         }
         @if (Workspace.Mode != EditorSurfaceMode.Source)
         {
@@ -161,6 +223,7 @@
                                         <option value="@VisualBlockKind.Raw">Avançado</option>
                                     </select>
                                     <span class="visual-block-label">@VisualBlockLabel(block.Kind)</span>
+                                    <button type="button" @onclick="() => PinBlock(blockIndex)" aria-label="@($"Fixar trecho {blockIndex + 1} em painel")">Fixar trecho</button>
                                     <button type="button" @onclick="() => MoveVisualBlock(blockIndex, -1)" disabled="@(!canEditVisual || blockIndex == 0)" aria-label="Mover bloco para cima">↑</button>
                                     <button type="button" @onclick="() => MoveVisualBlock(blockIndex, 1)" disabled="@(!canEditVisual || blockIndex == VisualBlocks.Count - 1)" aria-label="Mover bloco para baixo">↓</button>
                                     <button type="button" @onclick="() => RemoveVisualBlock(blockIndex)" disabled="@(!canEditVisual)" aria-label="Excluir bloco">Excluir</button>
@@ -276,6 +339,8 @@
                 }
             </section>
         </div>
+        </div>
+        </div>
     }
 </section>
 
@@ -284,23 +349,264 @@
     [SupplyParameterFromQuery(Name = "path")]
     public string? Path { get; set; }
 
+    private void RefreshReferences() => StateHasChanged();
 
-    private void OnSourceInput(ChangeEventArgs args)
+    private string? _templateStatus;
+
+    private void SaveAsTemplate()
     {
+        var saved = Workspace.SaveCurrentAsTemplate();
+        _templateStatus = saved is null
+            ? "Não foi possível criar o modelo."
+            : "Modelo criado: " + saved.Path;
+    }
+
+    private void PinDocument()
+    {
+        if (Workspace.CurrentDocument is { } document)
+            Workspace.References.PinDocument(document);
+    }
+
+    private void PinBlock(int index)
+    {
+        if (Workspace.CurrentDocument is { } document)
+            Workspace.References.PinBlock(document, index);
+    }
+
+
+    private ElementReference _sourceTextarea;
+    private IJSObjectReference? _sourceSelectionModule;
+    private string? _inlineCodeError;
+    private string? _wikiError;
+    private WikiLinkCompletion.Context? _wikiContext;
+    private string? _wikiDocumentId;
+    private string? _wikiMarkdown;
+    private IReadOnlyList<UrbeDocument> _wikiSuggestions = [];
+    private bool CanCreateWikiNote =>
+        !Workspace.IsReadOnly &&
+        (!Vault.IsAvailable || Vault.IsConnected) &&
+        _wikiContext?.Query.Length > 0;
+
+    private sealed record SourceSelectionSnapshot(string Text, int Start, int End);
+
+    private async Task ToggleInlineCode()
+    {
+        var original = Workspace.CurrentDocument;
+        if (original is null || Workspace.IsReadOnly ||
+            Workspace.Mode == EditorSurfaceMode.Visual)
+            return;
+
+        try
+        {
+            _sourceSelectionModule ??= await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./_content/Urbe.UI/editor-source-selection.js");
+            var selection = await _sourceSelectionModule.InvokeAsync<SourceSelectionSnapshot?>(
+                "capture", _sourceTextarea);
+
+            // Refuse stale DOM values instead of overwriting concurrent edits.
+            if (selection is null ||
+                !string.Equals(selection.Text, original.Content, StringComparison.Ordinal) ||
+                Workspace.CurrentDocument?.Id != original.Id ||
+                !string.Equals(Workspace.CurrentDocument?.Content, original.Content, StringComparison.Ordinal))
+            {
+                _inlineCodeError = "O editor mudou durante o comando. Tente novamente.";
+                return;
+            }
+
+            var changed = InlineCodeEditing.Toggle(
+                original.Content, selection.Start, selection.End);
+            if (changed is null)
+            {
+                _inlineCodeError = "Selecione texto de uma única linha para código em linha.";
+                return;
+            }
+
+            if (Workspace.UpdateSource(changed.Markdown) is null)
+                return;
+
+            _inlineCodeError = null;
+            if (Workspace.Mode == EditorSurfaceMode.Split)
+                SyncVisualModel();
+
+            await _sourceSelectionModule.InvokeVoidAsync(
+                "restore", _sourceTextarea, changed.Markdown,
+                changed.SelectionStart, changed.SelectionEnd);
+        }
+        catch (JSDisconnectedException)
+        {
+            _inlineCodeError = "Editor indisponível durante a navegação.";
+        }
+        catch (JSException)
+        {
+            _inlineCodeError = "Não foi possível acessar a seleção do editor.";
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_sourceSelectionModule is null)
+            return;
+        try
+        {
+            await _sourceSelectionModule.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            // The native WebView or browser circuit is already gone.
+        }
+    }
+
+    private async Task OnSourceInput(ChangeEventArgs args)
+    {
+        _inlineCodeError = null;
+        _wikiError = null;
         Workspace.UpdateSource(args.Value?.ToString() ?? string.Empty);
         if (Workspace.Mode == EditorSurfaceMode.Split)
             SyncVisualModel();
+        await RefreshWikiSuggestionsAsync();
+    }
+
+    private Task OnSourceKeyUp(KeyboardEventArgs _) => RefreshWikiSuggestionsAsync();
+    private Task OnSourceCaretClicked(MouseEventArgs _) => RefreshWikiSuggestionsAsync();
+
+    private void ClearWikiSuggestions()
+    {
+        _wikiContext = null;
+        _wikiDocumentId = null;
+        _wikiMarkdown = null;
+        _wikiSuggestions = [];
+    }
+
+    private async Task RefreshWikiSuggestionsAsync()
+    {
+        var document = Workspace.CurrentDocument;
+        if (document is null || Workspace.Mode == EditorSurfaceMode.Visual)
+        {
+            ClearWikiSuggestions();
+            return;
+        }
+
+        try
+        {
+            _sourceSelectionModule ??= await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./_content/Urbe.UI/editor-source-selection.js");
+            var captured = await _sourceSelectionModule.InvokeAsync<SourceSelectionSnapshot?>(
+                "capture", _sourceTextarea);
+            if (captured is null || captured.Start != captured.End ||
+                !string.Equals(captured.Text, document.Content, StringComparison.Ordinal) ||
+                Workspace.CurrentDocument?.Id != document.Id)
+            {
+                ClearWikiSuggestions();
+                return;
+            }
+
+            _wikiContext = WikiLinkCompletion.Find(captured.Text, captured.Start);
+            _wikiDocumentId = _wikiContext is null ? null : document.Id;
+            _wikiMarkdown = _wikiContext is null ? null : captured.Text;
+            _wikiSuggestions = _wikiContext is null
+                ? []
+                : Workspace.Documents.List()
+                    .Where(note => ArtifactModel.IsNote(note.Path) &&
+                        note.Id != document.Id &&
+                        (note.Title.Contains(_wikiContext.Query, StringComparison.OrdinalIgnoreCase) ||
+                         ArtifactModel.WithoutNoteExtension(note.Path)
+                             .Contains(_wikiContext.Query, StringComparison.OrdinalIgnoreCase)))
+                    .OrderBy(note => note.Title, StringComparer.OrdinalIgnoreCase)
+                    .ThenBy(note => note.Path, StringComparer.OrdinalIgnoreCase)
+                    .Take(6).ToArray();
+        }
+        catch (JSDisconnectedException)
+        {
+            ClearWikiSuggestions();
+        }
+        catch (JSException)
+        {
+            ClearWikiSuggestions();
+        }
+    }
+
+    private async Task CompleteWikilink(UrbeDocument suggestion)
+    {
+        if (Workspace.CurrentDocument is not { } document ||
+            _wikiContext is null || _wikiDocumentId != document.Id ||
+            !string.Equals(_wikiMarkdown, document.Content, StringComparison.Ordinal))
+        {
+            ClearWikiSuggestions();
+            _wikiError = "A nota mudou. Reabra as sugestões antes de inserir o link.";
+            return;
+        }
+
+        var result = WikiLinkCompletion.Complete(
+            document.Content, _wikiContext,
+            ArtifactModel.WithoutNoteExtension(suggestion.Path));
+        if (result is null || Workspace.UpdateSource(result.Markdown) is null)
+        {
+            _wikiError = "Não foi possível inserir o link.";
+            return;
+        }
+
+        ClearWikiSuggestions();
+        _wikiError = null;
+        if (Workspace.Mode == EditorSurfaceMode.Split)
+            SyncVisualModel();
+        try
+        {
+            await _sourceSelectionModule!.InvokeVoidAsync(
+                "restore", _sourceTextarea, result.Markdown,
+                result.Cursor, result.Cursor);
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException) { }
+    }
+
+    private async Task CreateWikiNote()
+    {
+        if (!CanCreateWikiNote || Workspace.CurrentDocument is not { } source ||
+            _wikiContext is null || _wikiDocumentId != source.Id ||
+            !string.Equals(_wikiMarkdown, source.Content, StringComparison.Ordinal))
+        {
+            ClearWikiSuggestions();
+            _wikiError = "A nota mudou ou a pasta não está conectada.";
+            return;
+        }
+
+        var context = _wikiContext;
+        var created = Workspace.CreateLinkedNote(context.Query);
+        if (created is null)
+        {
+            _wikiError = "Não foi possível criar a nota vinculada.";
+            return;
+        }
+
+        var result = WikiLinkCompletion.Complete(
+            source.Content, context, ArtifactModel.WithoutNoteExtension(created.Path));
+        if (result is null || Workspace.UpdateSource(result.Markdown) is null)
+        {
+            _wikiError = "A nota vinculada foi criada, mas o link não pôde ser inserido.";
+            return;
+        }
+
+        ClearWikiSuggestions();
+        _wikiError = null;
+        if (!Workspace.Open(created.Id, new EditorOpenOrigin(
+            EditorOpenOriginKind.Link,
+            "editor?path=" + Uri.EscapeDataString(source.Path))))
+            return;
+        Navigation.NavigateTo("editor?path=" + Uri.EscapeDataString(created.Path));
+        await Task.CompletedTask;
     }
 
     private void Undo()
     {
         Workspace.Undo();
+        ClearWikiSuggestions();
         SyncVisualModel();
     }
 
     private void Redo()
     {
         Workspace.Redo();
+        ClearWikiSuggestions();
         SyncVisualModel();
     }
 
@@ -393,6 +699,7 @@
                 DocumentModel.NormalizePath(Path),
                 StringComparison.OrdinalIgnoreCase))
         {
+            ClearWikiSuggestions();
             Workspace.Restore(Path);
         }
 
@@ -409,6 +716,7 @@
 
     private void SetEditorMode(EditorSurfaceMode mode)
     {
+        ClearWikiSuggestions();
         if (mode != EditorSurfaceMode.Source)
             SyncVisualModel();
 

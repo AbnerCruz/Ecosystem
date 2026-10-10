@@ -1,5 +1,6 @@
 @page "/"
 @inject WorkspaceSession Workspace
+@inject IVaultHost Vault
 
 <section class="surface home-surface" data-surface="home">
     <p class="surface-eyebrow">Workspace de conhecimento</p>
@@ -13,15 +14,31 @@
         <span>O domínio C# está fechado até G-C2. As superfícies são portadas incrementalmente sem cortar o cliente atual.</span>
     </div>
 
-    <section class="surface-planned" aria-label="Persistência da prévia C#">
-        <strong>Prévia sem salvamento permanente</strong>
-        <span>
-            O Editor e o Explorer C# ainda funcionam sobre uma sessão em memória.
-            Recarregar ou fechar esta prévia pode descartar alterações.
-            Não use esta prévia como armazenamento único de documentos importantes;
-            mantenha seus dados no cliente Urbe publicado até a integração dos hosts.
-        </span>
-    </section>
+    @if (Vault.IsAvailable)
+    {
+        <section class="surface-planned" aria-label="Vault físico Android">
+            <strong>Beta Android: pasta física do dispositivo</strong>
+            <span>
+                Conecte a pasta acima. Alterações em documentos e bairros são salvas
+                automaticamente após um curto período sem edições; o botão Salvar arquivos
+                permite confirmar a gravação imediatamente. O aplicativo informa quando uma
+                gravação falha. Faça backup manual antes de testar esta beta.
+                A versão 1.8.4-beta permanece independente.
+            </span>
+        </section>
+    }
+    else
+    {
+        <section class="surface-planned" aria-label="Persistência da prévia C#">
+            <strong>Prévia sem salvamento permanente</strong>
+            <span>
+                O Editor e o Explorer C# ainda funcionam sobre uma sessão em memória.
+                Recarregar ou fechar esta prévia pode descartar alterações.
+                Não use esta prévia como armazenamento único de documentos importantes;
+                mantenha seus dados no cliente Urbe publicado até a integração dos hosts.
+            </span>
+        </section>
+    }
 
     <div class="surface-grid" role="group" aria-label="Sessão de trabalho">
         <article>
