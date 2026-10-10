@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 
@@ -15,7 +16,7 @@ public sealed class NotesExplorer : Grid
     private readonly StackPanel _entries = new() { Spacing = 6, Margin = new Thickness(12, 8) };
     private readonly TextBox _search = new()
     {
-        Watermark = "Buscar notas e pastas",
+        PlaceholderText = "Buscar notas e pastas",
         FontSize = 15,
         MinHeight = 42,
         Margin = new Thickness(12, 6),
