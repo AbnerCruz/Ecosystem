@@ -23,6 +23,11 @@ public sealed class LaboratoryV2Tests
             string source = File.ReadAllText(Path.Combine(project.Directory, project.Manifest.EntryPoint));
             Assert.Contains("PageCount = 12", source);
             Assert.Contains("TileMap.Parse", source);
+            Assert.Contains("using Lunet.Physics;", source);
+            Assert.Contains("new PhysicsWorld(", source);
+            Assert.Contains("physicsWorld.Step(", source);
+            Assert.Contains("physicsSensorEvents", source);
+            Assert.Contains("DrawPhysics()", source);
             Assert.Contains("ParticleEmitter", source);
             Assert.Contains("UiTheme.Dark", source);
             Assert.Contains("UiTheme.HighContrast", source);
