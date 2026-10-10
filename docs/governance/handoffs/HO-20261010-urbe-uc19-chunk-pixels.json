@@ -19,14 +19,17 @@
     "apps/urbe/csharp/src/Urbe.Core/LegacyChunkPixels.cs",
     "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelsTests.cs",
     "apps/urbe/docs/csharp/UC19-CHUNK-PIXELS.md",
-    "docs/governance/handoffs/HO-20261010-urbe-uc19-chunk-pixels.json"
+    "docs/governance/handoffs/HO-20261010-urbe-uc19-chunk-pixels.json",
+    "apps/urbe/csharp/tools/chunk-pixels-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyChunkPixelOracleTests.cs"
   ],
   "work_completed": [
     "UC-19 LEGACY-2: portado o compositor original de pixel-art.js::chunkPixels para C# puro, com chunks RGBA 256×256 e terreno seedado pelas autoridades C# existentes.",
     "Reproduz texturas 19 biomas × 4 variantes, halo, sombreamento de declive, tint de ruído, transições orgânicas, ecótono, linha costeira, espuma, água profunda e decoração por slot no buffer.",
     "Testes xUnit abrangem água uniforme com pixels esperados, alpha, coordenadas negativas, determinismo, transição litoral, decoração e entradas inválidas.",
     "Não modifica World.razor/grade beta, filesystem SAF, modelo de dados, scripts de release nem cliente JS 1.8.4-beta; conserva paridade visual como gate ainda aberto.",
-    "Cria documento específico UC19-CHUNK-PIXELS e próximo incremento verificável, isolado dos arquivos do PR #426."
+    "Cria documento específico UC19-CHUNK-PIXELS e próximo incremento verificável, isolado dos arquivos do PR #426.",
+    "Oráculo original pixel-art.js::chunkPixels executado exclusivamente no teste Node, com comparação xUnit de todos os bytes RGBA C# em quatro cenários, inclusive chunks negativos e água/terra."
   ],
   "verification": [
     {
@@ -46,17 +49,24 @@
       "check": "G-C3/G-C4 — screenshots, toque, performance e instalação Android",
       "result": "not-applicable",
       "evidence": "Não executado neste incremento; requer dispositivo real e cena contínua integrada."
+    },
+    {
+      "kind": "automated",
+      "check": "Urbe.Core.Tests LegacyChunkPixelOracleTests via Node 22 + pixel-art.js imutável",
+      "result": "pending",
+      "evidence": "Novo caso de igualdade RGBA byte a byte submetido no PR #428; verificar CI após commit."
     }
   ],
   "known_issues": [
     "Grade interativa 8×8 da Cidade permanece temporária; o novo compositor não está ligado à tela para evitar regressões sem paridade.",
     "Faltam oráculo pixel-a-pixel de chunks com seeds legados, integração de câmera/chunks à Cidade, árvores/ruas/cidadãos/HUD e validação Android física.",
-    "AGENTSCHAT.md não foi modificado neste PR para evitar conflito com a alteração concorrente do PR #426; este handoff canônico registra a execução."
+    "AGENTSCHAT.md não foi modificado neste PR para evitar conflito com a alteração concorrente do PR #426; este handoff canônico registra a execução.",
+    "Paridade byte a byte está implementada como teste, mas não validada até o resultado positivo do job portátil atualizado; diferenças exigem correção técnica, não redefinição do oráculo."
   ],
   "blockers": [],
   "next_actions": [
     "Verificar checks e corrigir falhas no PR #428 sem promover paridade ainda não comprovada.",
-    "Construir golden oracle JS para pixels de chunks e executar comparação byte a byte com o C# em diferentes transições.",
+    "Verificar oráculo byte a byte JS contra C#, depurar primeiro pixel divergente e corrigir o port sem mexer na fonte original.",
     "Conectar mapa contínuo e câmera à Cidade somente após equivalência suficiente; preservar organização de casas e salvamento SAF.",
     "Coordenar a continuação com o PR #426, mantendo visual 1.8.4-beta e foco Android."
   ],
