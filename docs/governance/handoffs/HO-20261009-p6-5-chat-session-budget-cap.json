@@ -1,0 +1,132 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-chat-session-budget-cap",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T02:22:43.421Z",
+  "agent": {
+    "id": "chatgpt-p6-5-session-budget",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-chat-session-budget-cap-20261009",
+  "base_commit": "3b82a31bf9e6080e90c0eee9d6b724f599b28e95",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliInteractiveChat.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4ChatSessionBudgetTests.cs",
+    "apps/ecosystem-ai/docs-r4-chat-session-budget.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-chat-session-budget-cap.json"
+  ],
+  "work_completed": [
+    "O chat interativo atual possui Ledger por run, mas ausência de contenção cumulativa entre mensagens de uma instância.",
+    "Adicionado --chat --session-budget-cents N, opt-in, calculando recibos existentes em USD na sessão selecionada, incluindo estimados, sem contar outras sessões.",
+    "Reserva conservadora antes de cada envio: mínimo de limite normal do run e saldo da sessão; reduz --budget-cents e --max-call-cents enviados ao executor do mesmo Product; saldo reservado não é devolvido.",
+    "Sem segundo ledger ou garantia global distribuída: proteção apenas de uma instância de CLI; outras instâncias e runs sem receipt após crash não são agregados automaticamente.",
+    "Testes de reserva, ajuste de último turno, ausência de refund, recibos existentes, moeda estranha e incompatibilidade de flags, sem provider ou rede."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do GitHub pendente, sem dotnet SDK no executor local."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI do GitHub pendente."
+    }
+  ],
+  "known_issues": [
+    "PR empilhada sobre #404 até sua integração. Após integração, ajustar base para main.",
+    "Teto é reserva local conservadora e não garante total real faturado entre múltiplos processos/provedores, estimativas e falhas sem receipt.",
+    "Não há execução visual de tarefas, nem criação de equipes, nem APK."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aprovar checks de P6-5 e corrigir falhas.",
+    "Integrar após #404 e CI verde.",
+    "Evoluir os controles de orçamento e submissão de tarefas na UI de forma autorizada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-chat-session-budget.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O chat usa Store e recibos atuais; não introduz schema, banco de dados nem duplicação de Ledger."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Product .NET standalone, sem Hub."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Nenhuma permissão nova nem alteração de ToolGrant."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Somente execução sob mensagem explícita, com reserva local antes do Run; sem agendamento."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Issue #354 e roadmap P6-5, testes, docs e handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Flag opcional, comandos existentes preservados; sem alteração de contratos."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Segredos via ambiente e endpoint original; reserva limita, não amplia gasto."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara controle de faturamento global, UI Android nem conclusão P6-5."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Revisão/CI pendente."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Executor, RunPolicy e AgentRunner não alterados; apenas pré-condição financeira."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Flag específica do Product, sem extração prematura ou segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "chat-session-ceiling",
+      "status": "product-specific",
+      "rationale": "Controle adicional local específico da CLI; ledger real permanece AgentRuntime.Core."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Mudança aditiva reduz limite permitido pelo operador, sem conceder nova capability, acesso, segredo ou gasto."
+  },
+  "cost": null
+}
