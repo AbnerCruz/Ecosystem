@@ -97,7 +97,7 @@
   },
   "reuse_assessment": [
     {
-      "subject": "Lunet.UI.TouchScrollArea e TouchToggle",
+      "subject": "lunet-ui-scroll-toggle",
       "status": "product-specific",
       "rationale": "Controles 2D específicos do framework Lunet, sem consumidor externo real."
     }
