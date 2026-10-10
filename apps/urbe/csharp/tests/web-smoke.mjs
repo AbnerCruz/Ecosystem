@@ -22,6 +22,31 @@ setTimeout(() => {
 const root = resolve(process.argv[2] || 'artifacts/web/wwwroot');
 await stat(resolve(root, 'index.html'));
 
+/* UC-19: the original City sprite URLs must resolve in packaged RCL output.
+ * These are static PNG resources generated from the 1.8.4-beta artwork;
+ * no legacy JS is shipped or invoked by the Android/WebView runtime. */
+const v184 = resolve(root, '_content', 'Urbe.UI', 'world', 'v184');
+const requiredArt = [
+    ['terrain-grass-0.png', 16, 16],
+    ['tree-oak-0.png', 24, 32],
+    ['building-house-temperate-0.png', 48, 56],
+    ['building-house-temperate-1.png', 48, 56],
+    ['building-house-temperate-2.png', 48, 56],
+    ['building-hall-temperate-0.png', 48, 56]
+];
+for (const [name, width, height] of requiredArt) {
+    const image = await readFile(resolve(v184, name));
+    assert.ok(image.length > 200, name + ' deve conter PNG real, não placeholder');
+    assert.deepEqual([...image.subarray(0, 8)],
+        [137, 80, 78, 71, 13, 10, 26, 10],
+        name + ': assinatura PNG');
+    assert.equal(image.readUInt32BE(16), width, name + ': largura');
+    assert.equal(image.readUInt32BE(20), height, name + ': altura');
+    assert.equal(image[25], 6, name + ': RGBA');
+}
+console.log('UC-19: seis sprites 1.8.4-beta empacotados na RCL.');
+
+
 const types = {
     '.wasm': 'application/wasm',
     '.js': 'text/javascript',
