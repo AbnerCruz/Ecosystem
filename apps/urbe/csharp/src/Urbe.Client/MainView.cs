@@ -29,6 +29,7 @@ public sealed class MainView : Grid
     private readonly IUrbeVaultStorage? _vault;
     private readonly TextBlock _vaultName = new();
     private VaultSnapshot? _snapshot;
+    private bool _creatingNote;
     private string _today = DateTime.Now.ToString("yyyy-MM-dd");
 
     public MainView(IUrbeVaultStorage? storage = null)
@@ -217,7 +218,7 @@ public sealed class MainView : Grid
         return b;
     }
 
-    private static Control Fab()
+    private Control Fab()
     {
         var b = new Button
         {
@@ -232,8 +233,42 @@ public sealed class MainView : Grid
             VerticalContentAlignment = VerticalAlignment.Center,
             Margin = new Thickness(0, 0, 20, 20)
         };
-        ToolTip.SetTip(b, "Nova nota (em portabilidade)");
+        ToolTip.SetTip(b, "Criar nota Markdown na pasta do vault");
+        b.Click += async (_, _) => await CreateNoteAsync();
         return b;
+    }
+
+
+    /// <summary>Create a new real Markdown note from the same '+' action as Urbe 1.8.4.
+    /// The Android SAF adapter acknowledges persistence before the editor or city is updated.</summary>
+    public async Task CreateNoteAsync()
+    {
+        if (_creatingNote) return;
+        if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
+        {
+            _loading.Text = "Selecione uma pasta do vault com permissão de escrita para criar notas.";
+            _loading.IsVisible = true;
+            return;
+        }
+
+        _creatingNote = true;
+        try
+        {
+            var names = new HashSet<string>(_snapshot.Files.Keys, StringComparer.OrdinalIgnoreCase);
+            var path = "Nova nota.md";
+            for (var i = 2; names.Contains(path); i++)
+                path = $"Nova nota {i}.md";
+            var newContent = "# Nova nota\n";
+            var updated = await _vault.CreateNoteAsync(path, newContent);
+            await ShowVaultAsync(updated);
+            Editor.Open(new CityNote(path, newContent));
+        }
+        catch (Exception ex)
+        {
+            _loading.Text = "Não foi possível criar a nota: " + ex.Message;
+            _loading.IsVisible = true;
+        }
+        finally { _creatingNote = false; }
     }
 
     private Control LoadingLabel()
