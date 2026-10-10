@@ -607,7 +607,7 @@
 - Handoff: HO-20261009-urbe-uc18-explorer-breadcrumb-search. Próximos passos: CI combinado, correções, integração automática e continuidade dos recortes UC-18.
 
 ### 2026-10-10 — Claude — UC-33 (DEC-0043 / ADR-0032): o Urbe é a 1.8.4, em C# nativo
-- Estado: verifying; branch ccr-2e1b58fa-7mhpmx; Issue #460; PR a confirmar no handoff HO-20261010-urbe-uc33-native-client.
+- Estado: verifying; branch ccr-2e1b58fa-7mhpmx; Issue #460; PR #461; handoff HO-20261010-urbe-uc33-native-client.
 - Feito: registrada a ordem do proprietário (ADD-0020, DEC-0043, ADR-0032, PRODUCT-DIRECTION.md); ADR-0025 substituído na parte de UI/hosts. Cliente nativo Avalonia (`src/Urbe.Client`, `Urbe.Desktop`, `Urbe.Android`) desenha a cidade da 1.8.4 em tela cheia a partir do motor do `Urbe.Core` (terreno, texturas, decoração, árvores, prédios), com pílula de bioma, botões redondos, "+", trilho/dock Cidade/Notas/Assistente, painel da casa e editor Fonte sobreposto. Conteúdo da prévia: a pasta Tutorial embutida, somente leitura.
 - Decisões (com fonte): pilha delegada pelo proprietário ("contanto que funcione em ambos") → Avalonia condicionada ao G-N0 (ADR-0032). Casca Blazor congelada.
 - Pendências: chão com bordas orgânicas depende do LegacyChunkPixels (PR #428); layout de lotes/regiões/ruas, vida, vault real e editor Visual nativo são UC-19/UC-18/UC-25. G-N0 exige validação no aparelho.

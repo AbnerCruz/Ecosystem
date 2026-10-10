@@ -13,8 +13,8 @@
   "state": "review",
   "branch": "ccr-2e1b58fa-7mhpmx",
   "base_commit": "ce9cda92ed51e2cb7f8e00ce927d18fe3cc2b6f2",
-  "commit": null,
-  "pr": null,
+  "commit": "7711f7e",
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/461",
   "files_changed": [
     "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
     "docs/governance/decisions.json",
@@ -71,7 +71,7 @@
       "kind": "human",
       "check": "Gate G-N0 no aparelho: instalar a prévia nativa (APK do CI), mover/pinçar a cidade, tocar numa casa, abrir a nota e digitar com o teclado do Android (acentos, seleção, colar). Comparar a aparência com a 1.8.4.",
       "result": "pending",
-      "object": "apps/urbe/docs/csharp/ROADMAP.md",
+      "object": "https://github.com/AbnerCruz/Ecosystem/pull/461",
       "critical": true,
       "evidence": "Pendente: depende do APK gerado pelo CI deste PR."
     }
