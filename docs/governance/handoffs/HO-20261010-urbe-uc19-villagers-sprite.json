@@ -1,0 +1,107 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-urbe-uc19-villagers-sprite",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T19:00:00Z",
+  "agent": {
+    "id": "claude-code-urbe-native",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "ccr-2e1b58fa-7mhpmx",
+  "base_commit": "932796641e673076214ede3c0e0bc5b645889ccc",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVillagerSprite.cs",
+    "apps/urbe/csharp/tools/villager-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyVillagerSpriteOracleTests.cs",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/governance/handoffs/HO-20261010-urbe-uc19-villagers-sprite.json"
+  ],
+  "work_completed": [
+    "UC-19 (vida do mundo), primeira fatia: sprite dos moradores portado de villager()/villagerFlip() do pixel-art.js 1.8.4-beta para Urbe.Core (LegacyVillagerSprite), 14x20 RGBA com contorno.",
+    "Oráculo Node (tools/villager-oracle.mjs) executa o pixel-art.js original sem modificações com um canvas falso: 6 aparências (short/long/straw/bald/cap/hood, vestido, 5 acessórios) x 3 direções x 4 quadros = 72 sprites, todos idênticos byte a byte ao C#. O espelhamento do quadro lateral também é testado."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test tests/Urbe.Core.Tests --filter LegacyVillager",
+      "result": "passed",
+      "evidence": "Execução local 2026-10-10: 2/2 (72 sprites idênticos ao JS)."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "pending",
+      "evidence": "Executado antes do commit; ver resultado no PR/CI."
+    },
+    {
+      "kind": "human",
+      "check": "Aparência e animação dos moradores no aparelho (G-C3/G-N0)",
+      "result": "not-applicable",
+      "evidence": "O sprite ainda não é desenhado no cliente; sem validação humana possível nesta fatia."
+    }
+  ],
+  "known_issues": [
+    "Moradores ainda não aparecem na cidade: faltam rotas pelas estradas, passo/ritmo, conversas, ociosos e desenho no WorldView (v25* do app.js).",
+    "A geração da aparência (v25Visual, ofícios por guilda) ainda não foi portada.",
+    "Fauna, clima visual (nuvens/chuva/neve), luzes e eventos de life.js seguem não portados; só relógio de luz e chuva/neblina de estado existem no Core."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Portar v25Visual (FNV + ofícios) com oráculo e o modelo de rotas/passeio dos moradores sobre as estradas de LegacyCity.",
+    "Desenhar moradores no WorldView entre árvores e prédios, como o v25Desenhar.",
+    "Depois fauna e clima de life.js."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "docs/governance/communication.md",
+    "docs/governance/addenda/ADD-0019-urbe-csharp-sem-retrocompatibilidade-historica-no-beta.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/UC19-VISUAL-ACCEPTANCE.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Uma autoridade: o sprite C# substitui nada no JS legado e é provado contra ele; domínio só no Urbe.Core."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Sem referência ao Hub."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Teste automático não vale como paridade visual; validação humana segue aberta."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 permanece [ ] no ROADMAP."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Tudo local em apps/urbe; sem extração."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "villager-sprite",
+      "status": "product-specific",
+      "rationale": "Arte e regras dos moradores do Urbe; nenhum outro Product consome."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "classes": [],
+    "reason": "Item autorizado do ROADMAP (UC-19), código novo isolado em Urbe.Core, sem formato persistido, sem zona crítica."
+  }
+}
