@@ -1,0 +1,108 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-lunet-touch-relayout",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T11:35:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-432",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "chatgpt/lunet-432-touch-relayout-20261010",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchButton.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchSlider.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchScrollArea.cs",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchListView.cs",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/docs/guides/stack-ui.md",
+    "apps/lunet2d/tests/Lunet.Tests/UiRelayoutGestureTests.cs",
+    "docs/governance/handoffs/HO-20261010-lunet-touch-relayout.json"
+  ],
+  "work_completed": [
+    "Cancelamento de captura obsoleta de botão, slider, scroll e lista quando Bounds mudam; preservação do toque quando iguais.",
+    "Testes de regressão e zero alocação, atualização do guia e roteiro Android."
+  ],
+  "verification": [
+    {
+      "check": "Lunet.Tests",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Ecosystem consistency",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "APK CI",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Teste de toque/relayout no Android",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/stack-ui.md"
+    }
+  ],
+  "known_issues": [
+    "Não cria árvore de UI ou roteador de gestos.",
+    "DEVICE necessário antes do aceite final."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar e corrigir CI.",
+    "Integrar segundo políticas atuais.",
+    "Validar no Android sem regressão."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Código Lunet somente."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue, branch, PR e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Device distinto de CI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Review até validação."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Product-specific sem extração."
+    }
+  ],
+  "base_commit": "c6837117494c2a48870eac1d091d643f40261160",
+  "reuse_assessment": [
+    {
+      "subject": "lunet-ui-touch-relayout",
+      "status": "product-specific",
+      "rationale": "Controles exclusivos do Lunet."
+    }
+  ],
+  "criticality": {
+    "declared": "routine"
+  }
+}

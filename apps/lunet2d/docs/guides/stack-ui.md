@@ -63,3 +63,9 @@ Se itens fixos ultrapassarem o espaço, não são encolhidos automaticamente: os
 5. Abra um jogo existente que usa `LayoutRect` diretamente para confirmar que a API anterior permanece intacta.
 
 O CI garante consistência matemática e execução no GameHost. A ergonomia e a aparência no dispositivo só podem ser aprovadas depois do teste real.
+
+## Captura de toque e relayout (LUNET-432)
+
+Reatribuir os mesmos `Bounds` a cada `Update` preserva a captura dos botões, sliders, listas e áreas roláveis. Quando os limites realmente mudam (rotação, alteração de SafeArea ou painel reposicionado), a captura é cancelada. O `Released` do gesto antigo não confirma clique nem altera slider na nova posição. Scroll interrompe a inércia e preserva o deslocamento dentro dos novos limites. Só outro `Pressed` inicia nova interação; isso não é um roteador geral de input.
+
+No Android, pressione um botão e mude a geometria antes de soltar: não deve clicar. Repita com slider e lista; sem mudança geométrica, o toque deve continuar normalmente.

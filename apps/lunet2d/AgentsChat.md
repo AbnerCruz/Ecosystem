@@ -375,3 +375,7 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Composição da geometria resultante com `GraphicsDevice.SafeArea`, `LayoutRect` e os Bounds dos controles existentes, sem gerenciar dedos, estado de jogo ou persistência.
 - Testes para proporções, overflow, viewport zero, retrato/paisagem, zero alocação de managed heap em Arrange e guia Game.cs compilado/executado no GameHost com saída de desenho.
 - Product-specific, sem tocar ProjectStore, Android host, outros Products, dados ou interfaces públicas existentes. NN-002/008/017/018/022; CI e DEVICE pendentes. Fase 4 permanece aberta.
+
+### 20261010-chatgpt-lunet-432-relayout — ChatGPT → integrador — review
+- LUNET-432, Issue #422, Fase 4: correção de captura obsoleta ao mudar Bounds de TouchButton, TouchSlider e TouchScrollArea; TouchListView não cancela com geometria idêntica atribuída por frame.
+- Testes cobrem clique fantasma, alteração de slider, scroll/inércia, seleção, limites inválidos e hot path sem GC. CI, APK e DEVICE pendentes. Nenhum formato ou arquivo de projeto do usuário alterado. Somente Product Lunet2D.

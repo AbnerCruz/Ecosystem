@@ -4,6 +4,8 @@
 
 ### Fixed
 
+- LUNET-432 (em revisão): toques capturados deixam de provocar clique fantasma, slider deslocado ou inércia antiga após mudar o layout; a reatribuição de Bounds iguais não interrompe gestos.
+
 - LUNET-426 (em revisão): corrigir CRLF, Unicode fora do BMP e validação de layout/escala na fonte bitmap embutida; medida e desenho coerentes, sem enviar coordenadas infinitas ao OpenGL.
 
 - LUNET-424 (em revisão): Preview Android agora preserva o início e o fim de toques rápidos entre eventos de 90/120 Hz e os Updates fixos, mesmo quando o dedo move antes da atualização. Buffer interno sem List/ToArray por MotionEvent; evita falhas intermitentes de captura Pressed nos joysticks opt-in.
