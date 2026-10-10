@@ -26,7 +26,7 @@ const lineOf = (p, text) => `${p}:${read(p).split('\n').findIndex((s) => s.inclu
 
 // Inventário inclui arquivos ocultos das fixtures: .urbe e .pasta fazem parte do contrato.
 export function oraclePaths() {
-  return [...files('tests').filter((p) => !['tests/csharp-parity.mjs', 'tests/csharp-vault-parity.mjs', 'tests/csharp-vault-contract.mjs', 'tests/csharp-storage-parity.mjs', 'tests/csharp-domain-parity.mjs', 'tests/csharp-native-parity.mjs', 'tests/csharp-update-parity.mjs', 'tests/e2e/app-runtime-parity.e2e.mjs'].includes(p)),
+  return [...files('tests').filter((p) => !['tests/continuation-contract.mjs', 'tests/csharp-parity.mjs', 'tests/csharp-vault-parity.mjs', 'tests/csharp-vault-contract.mjs', 'tests/csharp-storage-parity.mjs', 'tests/csharp-domain-parity.mjs', 'tests/csharp-native-parity.mjs', 'tests/csharp-update-parity.mjs', 'tests/e2e/app-runtime-parity.e2e.mjs'].includes(p)),
     ...files('docs/v2/contracts'), ...files('tutorial'),
     'docs/v2/REQUIREMENTS.md', 'docs/v2/SPEC.md', 'docs/v2/ROADMAP.md',
     'docs/v2/discovery/DATA-CATALOG.md', 'docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md'].sort();
