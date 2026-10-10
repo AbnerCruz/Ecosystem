@@ -84,6 +84,14 @@ jobs:
           dotnet restore Urbe.Portable.slnx
           dotnet test --project tests/Urbe.Core.Tests -c Release
 
+      - name: Export EXACT Urbe 1.8.4-beta pixel art (build-time only)
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          npm install --prefix tools --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.1
+          node tools/node_modules/playwright/cli.js install --with-deps chromium
+          node tools/export-legacy-v184.mjs
+
       - name: Install native Android MAUI workload
         if: steps.version.outputs.skip != 'true'
         run: dotnet workload install maui-android
@@ -171,7 +179,7 @@ jobs:
           - proteção de arquivos não UTF-8 e backup antes de regravações;
           - **Cidade 2D top-down:** bairros são pastas e casas são notas Markdown; mapa 8×8 com organização por toque, construção direta no terreno vazio, criação de bairros e zoom 80–160%; coordenadas por bairro, salvas em `.urbe/mapa.json` e restauradas na reabertura do vault;
           - **Editor Fonte (UC-18):** sugestões de notas ao digitar dois colchetes, completar links existentes e criar/abrir notas inexistentes na mesma pasta, sem perder o restante do texto;
-          - **Arte ART-1 (UC-19):** primeiro pacote visual de pixel art medieval com construções variadas, vegetação, chão e estradas incorporados ao aplicativo, mantendo toque/zoom e sem serviços Web. Esta é uma fatia de transição, não a arte final do mundo;
+          - **Visuais de 1.8.4-beta (UC-19):** sprites, árvores e texturas PNG extraídos pixel a pixel do código original na compilação; renderizador de mundo contínuo e HUD equivalentes ainda em portabilidade C#, sem redesenho nem versão Web;
 
           **Beta inicial:** teste primeiro com uma pasta vazia e faça backup das notas. O comportamento real ainda depende de validação em aparelho; nem todas as funções do Urbe antigo estão implementadas. O app usa uma identidade Android própria (app.urbe.csharp), sem substituir o Urbe 1.8.4-beta.
 
