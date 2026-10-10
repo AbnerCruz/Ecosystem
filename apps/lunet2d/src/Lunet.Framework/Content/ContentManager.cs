@@ -17,6 +17,7 @@ public sealed class ContentManager : IDisposable
     private readonly IContentSource _source;
     private readonly GraphicsDevice _device;
     private readonly Dictionary<string, Texture2D> _textures = new(StringComparer.Ordinal);
+    private readonly Dictionary<(string Path, float Size, string Glyphs, int AtlasSize), TrueTypeFont> _trueTypeFonts = new();
 
     private readonly IAudioBackend _audio;
     private readonly Dictionary<string, Music> _music = new(StringComparer.Ordinal);
@@ -64,6 +65,29 @@ public sealed class ContentManager : IDisposable
         return texture;
     }
 
+    /// <summary>Carrega e guarda em cache uma fonte TrueType do Content do jogo.</summary>
+    /// <param name="path">Caminho TTF relativo à pasta Content, por exemplo Fonts/interface.ttf.</param>
+    /// <param name="pixelHeight">Altura nominal entre 4 e 192 pixels.</param>
+    /// <param name="characters">Conjunto de glifos pré-rasterizados; fallback '?' automático.</param>
+    /// <param name="atlasSize">Tamanho do atlas quadrado entre 128 e 2048 pixels.</param>
+    /// <returns>Fonte/atlas compartilhados até ContentManager.Dispose, sem reprocessamento em chamadas iguais.</returns>
+    /// <remarks>O rasterizador é portátil e só roda no carregamento. Não requer fontes do sistema Android.
+    /// Trate o resultado como emprestado: ao descarregar o conteúdo, o atlas é liberado.</remarks>
+    public TrueTypeFont LoadTrueTypeFont(string path, float pixelHeight,
+        string? characters = null, int atlasSize = 1024)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        characters ??= TrueTypeFont.DefaultCharacters;
+        var key = (path, pixelHeight, characters, atlasSize);
+        if (_trueTypeFonts.TryGetValue(key, out var cached) && !cached.IsDisposed) return cached;
+        using var input = _source.Open(path);
+        using var memory = new MemoryStream();
+        input.CopyTo(memory);
+        var loaded = TrueTypeFont.Bake(_device, memory.ToArray(), pixelHeight, characters, atlasSize);
+        _trueTypeFonts[key] = loaded;
+        return loaded;
+    }
+
     /// <summary>Carrega um efeito sonoro (ex.: <c>"Audio/jump.wav"</c>). Cacheado.</summary>
     /// <param name="path">Caminho do arquivo dentro de `Content/`, por exemplo `Textures/hero.png`.</param>
     /// <returns>O som carregado.</returns>
@@ -100,6 +124,15 @@ public sealed class ContentManager : IDisposable
         var text = ReadText(path);
         try { return JsonSerializer.Deserialize<T>(text, JsonOptions) ?? throw new InvalidDataException($"\"{path}\" está vazio."); }
         catch (JsonException ex) { throw new InvalidDataException($"Não foi possível ler \"{path}\": {ex.Message}", ex); }
+    }
+
+    /// <summary>Lê um mapa de tiles JSON v1 de Content/Data; o jogo pode carregar a textura por TexturePath.</summary>
+    /// <param name="path">Caminho relativo do JSON dentro de Content.</param>
+    /// <returns>Mapa imutável, independente de GPU e do Tile Studio.</returns>
+    public TileMap LoadTileMap(string path)
+    {
+        try { return TileMap.Parse(ReadText(path)); }
+        catch (InvalidDataException ex) { throw new InvalidDataException("Tilemap " + path + ": " + ex.Message, ex); }
     }
 
     /// <summary>Carrega um atlas de texturas (JSON com a textura e as regiões nomeadas). Cacheado.</summary>
@@ -142,6 +175,8 @@ public sealed class ContentManager : IDisposable
     {
         foreach (var texture in _textures.Values) texture.Dispose();
         _textures.Clear();
+        foreach (var font in _trueTypeFonts.Values) font.Dispose();
+        _trueTypeFonts.Clear();
         _atlases.Clear();
         Audio.StopMusic();
         foreach (var music in _music.Values) music.Dispose();

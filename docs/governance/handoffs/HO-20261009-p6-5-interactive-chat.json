@@ -1,0 +1,142 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-interactive-chat",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T21:17:31.083Z",
+  "agent": {
+    "id": "chatgpt-p6-5-interactive-chat",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-terminal-chat-session-workflow-20261009",
+  "base_commit": "e298ae14f5e960f443ab50c6612396ba64d92b08",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/400",
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliInteractiveChat.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4InteractiveChatTests.cs",
+    "apps/ecosystem-ai/docs-r4-interactive-chat.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-interactive-chat.json"
+  ],
+  "work_completed": [
+    "P6-5 inclui ProjectStore, execução CLI, histórico, painel, cadastro/sessão PR #398; ainda faltava diálogo multi-turno executável sem digitar novamente a linha de comando.",
+    "Implementado --chat com projeto e sessão existentes: cada mensagem chama o EcosystemAiCli.RunAsync já existente, o qual usa o MESMO WorkspaceSession, AgentRunner, verifier, ledger, journal e provider.",
+    "Modo chat explicita reuso de histórico opt-in, dentro de limites, somente se já houver mensagens; primeira pergunta de sessão vazia não inventa contexto.",
+    "Mantém fs.read padrão e --allow-create somente explícito, custos/limites por tarefa; cada falha impede retry automático e códigos de cancelamento/erro são propagados.",
+    "Pré-validação de sessão, projeto, workspace, catálogo fora do workspace, flags, endpoint HTTPS ou loopback, budgets e preços; sem chamadas de modelo com entrada vazia, ajuda ou EOF.",
+    "Testes de dispatch com callback injetável, múltiplos turnos, contexto, permissões, falhas, validações de root e flags, não mutação de arquivos."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI da PR empilhada sobre #398, testes locais não afirmados."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI da PR, com checks de foundation requeridos."
+    },
+    {
+      "check": "Provider real/DEVICE",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Slice de terminal sem Android/APK; provider real exige teste manual futuro."
+    }
+  ],
+  "known_issues": [
+    "P6-5 não conclui UI gráfica mobile-first nem gestão de agentes/equipes.",
+    "Orçamento por mensagem não é limite cumulativo de sessão e não há streaming parcial de tokens.",
+    "Reuso de histórico voluntário neste modo envia contexto ao provider; catálogo persiste em texto claro com opt-in.",
+    "Dependência: PR #398 deve integrar antes de integrar esta PR, ou reconciliar com main sem regressões."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Aguardar testes CI e corrigir erros se presentes.",
+    "Integrar após #398, preservando as invariantes do Runtime.",
+    "Prosseguir com UI visual mobile-first de agentes/equipes/tarefas sem backend paralelo."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-local-store.md",
+    "apps/ecosystem-ai/docs-r4-catalog-management.md",
+    "apps/ecosystem-ai/docs-r4-cli.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Os registros são apenas do LocalProjectStore; eventos vêm do mesmo Runtime/IEventLog."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Execução direta .NET no Product, sem Hub requerido."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "As capabilities vêm do grant já existente de ExecAsync, escrita opcional."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Cada turno é solicitado pelo usuário, sem ociosidade ou scheduler."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Issue #354/ROADMAP P6-5, PR e testes com handoff rastreável."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem novo protocolo, runtime, store ou permissão compartilhada."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Histórico passado como dado não confiável; segredo via variável ambiente, sem nova superfície remota."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem alegar validação Android ou UX completa."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Status review enquanto CI e integração não concluídos."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Cada turno reutiliza o mesmo executor Product, sem loop agêntico independente."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Interface de chat específica do Product, não promovida a Service sem segundo consumidor."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "interactive-chat-surface",
+      "status": "product-specific",
+      "rationale": "Componente superficial do Product que chama CLI existente; sem duplicar Core/Workspace."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Flag opt-in e fluxo de terminal existente, sem alterar schemas, grants, segredos ou API remota."
+  },
+  "cost": null
+}

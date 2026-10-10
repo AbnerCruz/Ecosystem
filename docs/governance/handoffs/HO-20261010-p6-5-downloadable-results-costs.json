@@ -1,0 +1,134 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-p6-5-downloadable-results-costs",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T09:05:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-downloads",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-downloadable-results-costs-20261010",
+  "base_commit": "785e0d3e032ecf9bfe749871cd18785096c46ebc",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/416",
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliProductDownloads.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4ProductDownloadsTests.cs",
+    "apps/ecosystem-ai/docs-r4-downloadable-results.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261010-p6-5-downloadable-results-costs.json"
+  ],
+  "work_completed": [
+    "P6-5 agora entrega downloads reais .md e .txt do conteúdo redigido de mensagens assistant, diretamente pela UI mobile-first do Product em localhost.",
+    "Somente mensagens assistant podem ser exportadas; projeto/sessão/índice/formato são resolvidos contra o LocalProjectStore original, sem acesso arbitrário ao filesystem, sem paths enviados ou geração de trabalho por modelo.",
+    "Relatório CSV de RunReceipts reais inclui moeda, status, valor em unidades mínimas, verificação e flag de custo estimado, com escapamento RFC 4180 e neutralização de CSV formula injection; até 2 MiB.",
+    "GET exclusivamente 127.0.0.1 sob Host/CSP/no-store já existentes; Content-Disposition attachment, UTF-8 sem BOM, tipos textuais estritos e nome do arquivo gerado pelo servidor.",
+    "Interface C# responsiva exibe links Salvar .md / Salvar .txt por resposta, e custos .csv, sem JavaScript e sem criar conteúdo no workspace.",
+    "Testes HTTP reais para bytes do arquivo, tipo MIME, cabeçalhos, escopo de projeto/sessão, rejeição de mensagem user, Host não confiável, CSV injection e integridade de workspace."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI da PR a seguir; SDK .NET não instalado neste ambiente."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI global de consistência após PR."
+    }
+  ],
+  "known_issues": [
+    "Downloads representam snapshots de respostas textuais redigidas, não arquivos gerados pelas ferramentas; artefatos do journal continuam referenciados separadamente.",
+    "CSV é um relatório de custos registrados/estimados, não reconciliação financeira real do provedor.",
+    "Produto segue loopback C# no dispositivo host; APK Android e provider real manual ainda pendentes.",
+    "P6-5 e Issue #354 continuam abertas."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI de produto e consistência e corrigir falhas antes de integrar.",
+    "Prosseguir conforme roadmap P6-5 sem duplicar Runner/Workspace, com critérios materiais e experiência Android."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-downloadable-results.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Respostas/custos são lidos apenas do catálogo canônico, sem nova fonte ou runtime."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Product standalone/localhost sem dependência de Hub."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "GET não invoca Tools nem amplia grants."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Exportação só por gesto explícito do usuário; não há background."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "P6-5/Issue #354, docs, testes, PR/handoff."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma migração ou alteração de schema de Store."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Host/CSP/no-store, ID canônico, conteúdo só de assistente, tamanho máximo e proteção CSV."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara APK nem provider real verificado ou fim de P6-5."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Integração somente após gates CI."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Reutiliza o mesmo Product e catálogo, sem segundo Runner/provider."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Exportação de snapshots privados é lógica local do Product, não Service."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "download-text-response-and-ledger-csv",
+      "status": "product-specific",
+      "rationale": "Leituras do catálogo do Ecosystem AI para experiência de Product, sem artefatos editáveis/compartilhados fora de contexto."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "GET loopback de dados que UI já mostrava, sem novos grants nem execução/integração de arquivos; downloads sob limites existentes."
+  },
+  "cost": null
+}

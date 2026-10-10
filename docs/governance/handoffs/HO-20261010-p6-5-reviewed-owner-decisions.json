@@ -1,0 +1,136 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261010-p6-5-reviewed-owner-decisions",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T06:55:00Z",
+  "agent": {
+    "id": "chatgpt-p6-5-review-decisions",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-reviewed-owner-decisions-20261010",
+  "base_commit": "b8a0bdb7cad30bbbf39dee610bf487af4d57ed8d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.ProjectStore/LocalTeamReviewStore.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebTaskRunner.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4TeamReviewDecisionTests.cs",
+    "apps/ecosystem-ai/docs-r4-team-review-decisions.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261010-p6-5-reviewed-owner-decisions.json"
+  ],
+  "work_completed": [
+    "PR #409 já integrada e testada; próxima etapa P6-5 conecta dupla producer/reviewer real a um inbox de pareceres por projeto/sessão.",
+    "Metadados persistidos em team-reviews.json privado com esquema versionado, checksum SHA-256, lock, limite de armazenamento e gravação atômica sem migração do catálogo v1.",
+    "Após dois runs sucedidos/verificados distintos, valida recibos mais recentes e respostas contíguas; registra IDs, índices e hashes dos textos redigidos em vez de duplicar conteúdos do modelo.",
+    "UI C# loopback mostra pareceres com status pendente e permite ao operador aceitar/rejeitar com justificativa, CSRF, Host/Origin e apenas quatro campos. Decisão é final por ID e valida novamente os recibos/turnos/hashes antes de gravar.",
+    "Decisão representa somente anotação humana sobre parecer, não é verificação de qualidade, TaskRecord.Completed, ChangeSet, IntegrationReceipt, autorização de merge ou nova ferramenta/grant.",
+    "Testes C# HTTP com duas execuções mockadas reais, recibos, decisão única, CSRF, recusa de falsos statuses, checksum adulterado, ausência de autorização e workspaces intocados."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions produto após PR; .NET SDK indisponível local."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions consistência/handoff após PR."
+    }
+  ],
+  "known_issues": [
+    "Um aceite é somente anotação de operador local sobre parecer; nenhum ChangeIntegrator ou aprovação técnica é reivindicada.",
+    "Checksum sem chave protege contra corrupção acidental, mas não autentica usuário com acesso de escrita ao dispositivo.",
+    "Não há gestão de ChangeSet ou escrita no workspace pelo navegador; Android APK continua pendente.",
+    "P6-5 permanece aberta para integração verificada e distribuição mobile."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar CI e corrigir eventuais falhas.",
+    "Integrar com gates verdes.",
+    "Usar ChangeIntegrator/ChangeSet somente quando houver diff real isolado e revisão comprovada, sem falsa integração."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-team-review-decisions.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Fonte primária de runs e textos segue LocalProjectStore; auxiliar só registra hashes e decisão do operador."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "UI local Product standalone sem Hub obrigatório."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Decisão não altera grants nem executa ferramentas."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Nenhuma execução automática: só formulário CSRF ou dupla autorizada."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "ROADMAP P6-5/Issue #354, docs, testes, PR e handoff rastreáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Schema catalog.json v1 inalterado e fluxo prévio preservado."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "localhost CSRF/Origin/Host e metadados sem texto sensível duplicado; checksums e sem symlinks."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara validação de qualidade, integração de arquivos nem APK Android."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Integrar depois dos gates verdes; sem inventar decisão ou selo de aprovação."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Mesmo Core/AgentRunner; sem novo runner, scheduler ou ledger."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Parecer e decisão específicos do Product, sem serviço compartilhado prematuro."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "verified-team-review-decision",
+      "status": "product-specific",
+      "rationale": "Metadados de aceite de parecer sobre dois runs já armazenados no mesmo Product, sem abstração paralela."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Anotação local explícita sobre parecer já executado, sem integração, escrita, custo, capability ou autoridade automática."
+  },
+  "cost": null
+}

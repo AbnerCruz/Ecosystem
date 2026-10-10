@@ -1,3 +1,12 @@
+### 2026-10-07 — ChatGPT — UC-18 terceira fatia: Explorer operacional
+
+- Base: `fab94d76` após integração das duas primeiras fatias de UC-18.
+- Implementado: criação de pastas vazias na sessão, enumeração de pastas, fila host-neutra de mutações `CreateFolder/Move`, movimento de arquivos e árvores de pasta preservando IDs e documentos abertos.
+- Explorer: seleção de pasta expõe ações; desktop usa drag-and-drop; toque usa long press para armar movimento e toque na pasta para concluir; local atual também aceita drop/movimento.
+- Segurança de dados: esta fatia NÃO escreve no filesystem; operações ficam em `PendingMutations` para o adapter canônico do host persistir depois. Nenhuma autoridade paralela de IO foi criada.
+- Smoke Web ampliado para criar pasta, mover por mouse, armar por long press/touch, verificar destino e manter Editor/abas/undo/redo funcionando.
+- Ainda falta em UC-18: edição Visual direta, toolbar/visualViewport, persistência física por host e requisitos avançados (comentários/painel/templates/timer/estado da toolbar).
+
 ### 2026-10-07 — ChatGPT — UC-18 / sessão de edição 2
 
 - Estado: segunda fatia preparada sobre a primeira fatia já integrada em `9efb5555`.
@@ -524,3 +533,67 @@
 - Testes: smoke Web valida o aviso e as contagens após criar três notas e usar três abas, incluindo `/`, `/preview/` e cenários offline; CI de PR pendente.
 - Invariantes: NN-001/017/018; sem escrita em disco, formato novo, release, alteração de integração ou alegação de gate humano.
 - Próximos passos: CI, retarget e integração automática após a cadeia do modo Dividido; conectar os hosts ao vault somente no escopo/autoridade apropriados.
+
+### 2026-10-08 — ChatGPT — UC-18 Explorer: proteção de caminhos
+
+- Estado: `verifying`, PR #286 em draft sobre main; CI reexecutando.
+- Fato: `ExplorerEntries` omitira arquivos de `.urbe` mas ainda podia apresentar a pasta interna. Corrigido filtro de pastas.
+- Correções: `CreateFolder`, `CreateNote` e `MoveItem` recusam pastas inexistentes, reservadas/internas e componentes de travessia `.`/`..`; movimentação de arquivo/pasta continua sobre a mesma sessão e preserva IDs.
+- Decisões: guardas de sessão host-neutral, sem mudanças no formato do vault, storage físico, migração, backup ou publicação; nenhum gate humano declarado aprovado.
+- Pendências: validar CI C#/Web/Android/Windows/E2E e consistency, retomar integração automática da UC-18 após verde.
+
+### 2026-10-08 — ChatGPT — isolamento da renderização matemática concorrente
+
+- Estado: verifying, branch `fix/urbe-math-renderer-concurrent-typesetting` sobre main.
+- Diagnóstico: `urbe-checks` no PR #287 falhou em três testes de matemática, com exceção de modificação simultânea em coleção não-concorrente durante CSharpMath 1.0.0-pre.2; testes da UI do editor não eram a causa observada.
+- Implementação: porta crítica `lock` somente ao redor de `UrbeSvgMathPainter` (criação, Medida, Draw/SVG) para que dois renders não modifiquem caches mutáveis da biblioteca em paralelo. Análise de compatibilidade e expansão de macros permanecem fora do lock.
+- Teste: 48 renderizações paralelas (até 8 workers) exigem sucesso e SVG/geometria determinísticos; guardas originais preservadas, sem formato novo, host ou JS.
+- Validação pendente: checks em CI, inclusive Windows/Android, com classificação routine; nenhuma validação humana G-C3 declarada.
+
+### 2026-10-08 — ChatGPT — UC-18 guarda para editor HTML inline
+
+- Estado: `verifying`; branch `fix/urbe-uc18-visual-html-lossless` empilhada sobre #286.
+- Implementado: `VisualMarkdown.IsLosslessEditorRoundTrip` exige que renderização Markdown → HTML → Markdown mantenha exatamente a fonte original antes de permitir mutação rich HTML.
+- Aplicado: `WorkspaceSession.CanEditVisualHtml` e `UpdateVisualHtml` rejeitam transformações quando não há garantia de fidelidade; Fonte continua disponível; nenhuma autoridade de documento nova.
+- Testes: casos canônicos e não canônicos (sem newline, CRLF, whitespace); CI do PR pendente.
+- Limite: não ativa o PR #287, que continua draft até reconciliar sua UI de `contenteditable` com o Editor estrutural e com esta guarda; G-C3 permanece não validado.
+
+### 2026-10-08 — Codex — UC-18 / REQ-091 painel de referência
+- Estado: verifying, branch `feat/urbe-uc18-reference-panel`, Issue #281.
+- Feito: nota inteira e bloco Visual fixáveis em painel de consulta, múltiplos snapshots, deduplicação, remoção/fechamento, posição sticky mobile e lateral desktop; referências sobrevivem à navegação e são limpas no load do workspace.
+- Decisões (fontes): UC-18, REQ-091, SPEC §15.1 e RM-F7-14 como critério de paridade; implementação apenas no cliente C#, respeitando DEC-0025-C. DocumentStore continua autoridade; painel é cópia volátil explícita.
+- Testes: regressão Core de snapshots/remoção/paridade documental e Web smoke de edição, undo, troca de nota, mobile e fechamento; execução registrada no handoff.
+- Pendências: seleção livre dentro de bloco e rich HTML/bolha ainda não entregues; não fecha REQ-091, UC-18 ou G-C3, não altera persistência ou release.
+- Próximos passos: CI combinado e integração rotineira, depois seleção/toolbar coordenada com #287.
+
+### 2026-10-08 — ChatGPT — UC-18 / REQ-093 modelos de nota C#
+- Estado: revisão na branch `feat/urbe-uc18-note-templates-req093`, sem integração, CI ou DEVICE presumidos.
+- Feito: mecanismo C# puro de campos `{{campo}}`, preservação do Markdown, modelos como notas ordinárias em `Modelos/`; Editor clona a nota em modelo; Explorer cria nova nota com formulário dinâmico, campos repetidos e validação antes de mutação.
+- Decisões (fontes): SPEC §15.1 / REQ-093 / roadmap UC-18, com DocumentStore como autoridade única. Nenhum formato persistido, migração, backend, integração de outro Product ou nova release.
+- Testes: adicionada suíte unitária de placeholders; execução .NET local indisponível neste ambiente, CI `urbe-checks`/consistency e smoke Web ainda devem rodar no PR e estado combinado.
+- Limites: sessão host-neutral em memória; persistência física futura, Android/toque real, e gate G-C3 seguem pendentes. Não marcar REQ-093 concluído.
+- Próximos passos: validar CI do PR, corrigir regressões, integrar somente pelo integrador automático e seguir com a persistência física da UC-18.
+
+### 2026-10-08 — ChatGPT — UC-18 / REQ-090 editor Fonte C#
+- Estado: branch `feat/urbe-uc18-req090-inline-code-source`, aguardando PR e CI; não integrado.
+- Implementado: núcleo C# aplica código em linha à seleção UTF-16, suporta envolver/desfazer, delimitadores com crases internas e par vazio com cursor entre as crases; não insere conteúdo de reserva.
+- Integração: botão em Fonte/Dividido lê caret por JS estritamente DOM, atualiza WorkspaceSession/DocumentStore e restaura a seleção; não cria segunda autoridade nem formato persistido.
+- Testes: nova suíte InlineCodeEditingTests e smoke Web real; aguarda execução CI e estado combinado.
+- Limites: modo Visual rich inline e estado da barra sob o cursor permanecem pendentes; não fecha REQ-090/095/UC-18/G-C3, não implementa adapter de persistência.
+- Próximos passos: validar PR, revisar falhas e integrar apenas por integrador automático; PR #334 continua responsável pela corrida no renderer matemático.
+
+### 2026-10-09 — ChatGPT — UC-18 / REQ-096 Explorer com ação explícita de mover
+- Estado: verifying; PR #379 sobre main; integração somente pelo integrador após CI combinado.
+- Fato: Explorer C# exigia drag/drop ou toque longo para mover, acionava press hold também com mouse e não sinalizava falha ao criar pasta inválida.
+- Feito: botão Mover por item, acionável por toque/teclado; toque longo limitado a touch/pen e cancelado se houver deslocamento de rolagem; supressão temporária de clique fantasma; mensagens de erro para criar pasta/movimentar.
+- Testes: csharp/tests/web-smoke.mjs cobre os gestos, o botão explícito e o feedback; .NET SDK indisponível no ambiente de edição, CI do PR pendente. Handoff HO-20261009-urbe-uc18-explorer-touch-actions.
+- Invariantes: DocumentStore/WorkspaceSession são autoridade única; nenhuma persistência física, schema, migração, release ou autorização de gate humano foi antecipada.
+- Próximos passos: revisar urbe-checks e consistency combinados, corrigir falhas e permitir apenas integração automática; prosseguir UC-18 e G-C3 com validação real no dispositivo.
+
+### 2026-10-09 — ChatGPT — UC-18 / REQ-096 breadcrumbs e busca com origem
+- Estado: verifying; PR #382 sobre main, sem integração manual ou release.
+- Fato: Explorer C# não identificava diretórios nos resultados da busca global e exigir retorno repetido dificultava chegar aos ancestrais de pastas profundas.
+- Feito: trilha navegável Raiz / ancestral / pasta com rolagem horizontal no toque; pesquisa mostra caminho de origem e contagem; Limpar busca preserva pasta atual; sessão C# permanece autoridade.
+- Testes: web-smoke cobre notas homônimas em pastas diferentes, navegação por ancestrais, retorno Editor→busca, filtros e viewport móvel de 390px. CI e validação física ainda pendentes.
+- Invariantes: sem mudanças de vault físico, migração, backup, release, JS de domínio, plugins ou dados do usuário. G-C3 e UC-18 continuam abertos.
+- Handoff: HO-20261009-urbe-uc18-explorer-breadcrumb-search. Próximos passos: CI combinado, correções, integração automática e continuidade dos recortes UC-18.

@@ -1,0 +1,115 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-lunet-virtual-controls",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T07:15:00Z",
+  "agent": {
+    "id": "chatgpt-lunet-touch-controls",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-423",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "agent/lunet-virtual-controls-20261009",
+  "base_commit": "61a9682fda8ce6bb36e932085cc22ca6f7c45a13",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Input/VirtualControls.cs",
+    "apps/lunet2d/tests/Lunet.Tests/VirtualControlPrecisionTests.cs",
+    "apps/lunet2d/docs/guides/entrada.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261009-lunet-virtual-controls.json"
+  ],
+  "work_completed": [
+    "Parâmetros opt-in de deadzone contínua, curva de resposta e sensibilidade com validação numérica.",
+    "Identificação do dedo, reserva de ID por Update e cancelamento explícito em joysticks/botões sem mudar os defaults legados.",
+    "Casos de regressão e alocação adicionados, guia offline, roadmap e changelog."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "Lunet.Tests",
+      "result": "pending",
+      "evidence": "Não há .NET SDK neste executor; aguardar CI."
+    },
+    {
+      "kind": "automated",
+      "check": "Ecosystem consistency",
+      "result": "pending",
+      "evidence": "Aguardar GitHub Actions."
+    },
+    {
+      "kind": "automated",
+      "check": "Android APK",
+      "result": "pending",
+      "evidence": "Aguardar GitHub Actions e integração."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE no Android",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/guides/entrada.md",
+      "evidence": "Toque simultâneo, soltura independente, zona morta, Cancel e regressão requerem celular."
+    }
+  ],
+  "known_issues": [
+    "A API de exclusão aceita um TouchId; três ou mais áreas sobrepostas requerem arbitragem explícita do jogo.",
+    "A configuração da sensibilidade pertence a cada jogo; não há painel global do Lunet nesta tarefa."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir CI e corrigir falhas.",
+    "Integrar pela política vigente após checks verdes.",
+    "Validar a release em Android e registrar resultado sem inferir aprovação."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "apps/lunet2d/ROADMAP.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudança restrita ao Lunet."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #377, branch, PR e handoff rastreáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "DEVICE explicitamente pendente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Nenhuma conclusão declarada sem CI."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Sem abstração nova na plataforma."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "virtual-touch-controls",
+      "status": "product-specific",
+      "rationale": "Captura de dedo e resposta direcional exclusivas do runtime do jogo Lunet; sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Parâmetros opt-in; APIs aditivas, sem ProjectStore nem alterações persistidas."
+  },
+  "cost": null
+}

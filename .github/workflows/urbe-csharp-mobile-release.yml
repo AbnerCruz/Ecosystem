@@ -1,0 +1,207 @@
+name: urbe-csharp-mobile-release
+# ART-1: re-run beta.7 after C# expression compile fix; no prior tag was published.
+
+# UC-25/UC-27 — Urbe 2 native Android beta releases only; desktop is later.
+# No WASM, Pages or JS product is distributed by this workflow.
+# Explicit owner request: initial beta can publish from the reviewed UC-25
+# delivery branch; subsequent versions normally publish from main.
+on:
+  push:
+    branches:
+      - main
+      - feat/urbe-uc25-android-saf-vault-20261009
+    paths:
+      - '.github/workflows/urbe-csharp-mobile-release.yml'
+      - 'apps/urbe/csharp/src/Urbe.App/Urbe.App.csproj'
+  workflow_dispatch:
+
+concurrency:
+  group: urbe-csharp-mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: apps/urbe/csharp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Verify canonical Android version and beta signing key
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+          import os, re
+          root = ET.parse('src/Urbe.App/Urbe.App.csproj').getroot()
+          vals = {x.tag: x.text for x in root.iter()}
+          assert vals['ApplicationId'] == 'app.urbe.csharp', 'Identidade Android alterada'
+          version = vals['ApplicationDisplayVersion']
+          code = int(vals['ApplicationVersion'])
+          assert re.fullmatch(r'\d+\.\d+\.\d+-beta\.\d+', version), version
+          assert code >= 2000001, code
+          tag = 'urbe-csharp-v' + version
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as out:
+              out.write(f'version={version}\nversion_code={code}\ntag={tag}\n')
+          print(f'Urbe C# {version} / versionCode {code} / {tag}')
+          PY
+          (cd ../tools && sha256sum -c urbe-dev.keystore.sha256)
+          tag="urbe-csharp-v$(python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          root=ET.parse('src/Urbe.App/Urbe.App.csproj').getroot()
+          print(next(x.text for x in root.iter('ApplicationDisplayVersion')))
+          PY
+          )"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Esta versão já foi publicada; tags/releases existentes são imutáveis."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test C# Core and shared native UI
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          dotnet restore Urbe.Portable.slnx
+          dotnet test --project tests/Urbe.Core.Tests -c Release
+
+      - name: Export EXACT Urbe 1.8.4-beta pixel art (build-time only)
+        if: steps.version.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          npm install --prefix tools --no-save --ignore-scripts --no-audit --no-fund playwright@1.56.1
+          node tools/node_modules/playwright/cli.js install --with-deps chromium
+          node tools/export-legacy-v184.mjs
+
+      - name: Install native Android MAUI workload
+        if: steps.version.outputs.skip != 'true'
+        run: dotnet workload install maui-android
+
+      - name: Build and sign Android beta APK
+        if: steps.version.outputs.skip != 'true'
+        env:
+          KEYSTORE: ${{ github.workspace }}/apps/urbe/tools/urbe-dev.keystore
+        run: |
+          set -euo pipefail
+          dotnet publish src/Urbe.App/Urbe.App.csproj \
+            -c Release -f net10.0-android \
+            -p:UrbeBuildTarget=net10.0-android \
+            -p:AndroidPackageFormat=apk \
+            -p:AndroidCreatePackagePerAbi=false \
+            -p:AndroidKeyStore=true \
+            -p:AndroidSigningKeyStore="$KEYSTORE" \
+            -p:AndroidSigningStorePass=urbe-dev \
+            -p:AndroidSigningKeyAlias=urbe \
+            -p:AndroidSigningKeyPass=urbe-dev
+
+      - name: Verify artifact and stable beta certificate
+        if: steps.version.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, shutil
+          p = Path('src/Urbe.App/bin/Release/net10.0-android')
+          signed = sorted((p / 'publish').glob('*-Signed.apk'))
+          if not signed:
+              signed = sorted(p.glob('*-Signed.apk'))
+          if len(signed) != 1:
+              raise SystemExit(f'Expected one published, signed APK; found {signed}')
+          out = Path('artifacts/mobile-release')
+          out.mkdir(parents=True, exist_ok=True)
+          dest = out / f'Urbe-CSharp-{os.environ["VERSION"]}-Android.apk'
+          shutil.copy2(signed[0], dest)
+          print(f'Signed Android APK: {dest} ({dest.stat().st_size} bytes)')
+          PY
+          apk="artifacts/mobile-release/Urbe-CSharp-$VERSION-Android.apk"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -1)"
+          test -x "$apksigner"
+          "$apksigner" verify --verbose --print-certs "$apk" | tee artifacts/mobile-release/cert-info.txt
+          expected="$(tr -d '[:space:]' < ../tools/urbe-dev.certificate.sha256 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          actual="$("$apksigner" verify --print-certs "$apk" | sed -n 's/.*certificate SHA-256 digest: //p' | head -1 | tr -d ':' | tr '[:lower:]' '[:upper:]')"
+          test -n "$actual" && test "$expected" = "$actual" || { echo "::error::Invalid Android signing certificate"; exit 1; }
+          rm artifacts/mobile-release/cert-info.txt
+          (cd artifacts/mobile-release && sha256sum *.apk > SHA256SUMS.txt)
+
+      - name: Verify original Urbe 1.8.4-beta art INSIDE signed Android APK
+        if: steps.version.outputs.skip != 'true'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          python3 tools/verify-legacy-v184-apk.py \
+            "artifacts/mobile-release/Urbe-CSharp-$VERSION-Android.apk" \
+            "artifacts/mobile-release/SHA256SUMS.txt"
+
+      - name: Preserve verified Android beta APK as workflow artifact
+        if: steps.version.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: urbe-csharp-v${{ steps.version.outputs.version }}-android
+          path: |
+            apps/urbe/csharp/artifacts/mobile-release/Urbe-CSharp-${{ steps.version.outputs.version }}-Android.apk
+            apps/urbe/csharp/artifacts/mobile-release/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish numbered Android prerelease, never a Web build
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          cat > artifacts/mobile-release/release-notes.md <<'EOF'
+          # Urbe C# $VERSION — Android beta
+
+          Primeiro canal versionado da edição nativa C# para Android. **Não contém uma versão Web**.
+          A arquitetura compartilha o domínio e a interface com o alvo desktop/Windows, ainda em desenvolvimento.
+
+          O que já pode ser testado:
+          - selecionar uma pasta física do Android, reabrir, visualizar e editar Markdown;
+          - criar bairros/pastas (inclusive vazias) e notas;
+          - salvamento automático com atraso curto e salvamento manual com verificação;
+          - movimentação individual de notas Markdown, com guardas contra sobrescrita;
+          - proteção de arquivos não UTF-8 e backup antes de regravações;
+          - **Cidade 2D top-down:** bairros são pastas e casas são notas Markdown; mapa 8×8 com organização por toque, construção direta no terreno vazio, criação de bairros e zoom 80–160%; coordenadas por bairro, salvas em `.urbe/mapa.json` e restauradas na reabertura do vault;
+          - **Editor Fonte (UC-18):** sugestões de notas ao digitar dois colchetes, completar links existentes e criar/abrir notas inexistentes na mesma pasta, sem perder o restante do texto;
+          - **Visuais de 1.8.4-beta (UC-19):** sprites, árvores e texturas PNG extraídos pixel a pixel do código original na compilação; renderizador de mundo contínuo e HUD equivalentes ainda em portabilidade C#, sem redesenho nem versão Web;
+
+          **Beta inicial:** teste primeiro com uma pasta vazia e faça backup das notas. O comportamento real ainda depende de validação em aparelho; nem todas as funções do Urbe antigo estão implementadas. O app usa uma identidade Android própria (app.urbe.csharp), sem substituir o Urbe 1.8.4-beta.
+
+          O canal beta usa um certificado de desenvolvimento público e fixo para permitir atualizações da mesma família de APKs. Não é uma identidade de publicação privada.
+          Commit de origem: __COMMIT_SHA__
+          EOF
+          # Markdown code ticks in release notes must never execute shell commands.
+          sed -i -e "s/__COMMIT_SHA__/$SHA/g" \
+            -e "s/\$VERSION/$VERSION/g" artifacts/mobile-release/release-notes.md
+          gh release create "$TAG" \
+            "artifacts/mobile-release/Urbe-CSharp-$VERSION-Android.apk" \
+            "artifacts/mobile-release/SHA256SUMS.txt" \
+            --repo "$GITHUB_REPOSITORY" --target "$SHA" \
+            --prerelease --latest=false --title "Urbe C# $VERSION (Android beta)" \
+            --notes-file artifacts/mobile-release/release-notes.md

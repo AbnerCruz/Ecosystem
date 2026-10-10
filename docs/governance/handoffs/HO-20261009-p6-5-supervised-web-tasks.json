@@ -1,0 +1,140 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-p6-5-supervised-web-tasks",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-10T02:38:36.819Z",
+  "agent": {
+    "id": "chatgpt-p6-5-supervised-web-tasks",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "feat/p6-5-web-supervised-task-execution-20261009",
+  "base_commit": "cd5a3619623f0293f41c2a19868fdbc5103b7458",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/406",
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebTaskRunner.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUi.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/Program.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4WebTaskExecutionTests.cs",
+    "apps/ecosystem-ai/docs-r4-web-task-execution.md",
+    "apps/ecosystem-ai/README.md",
+    "docs/governance/handoffs/HO-20261009-p6-5-supervised-web-tasks.json"
+  ],
+  "work_completed": [
+    "Desenvolvido fluxo operacional P6-5 para submissão manual de uma tarefa em projeto/sessão real via POST /tasks, exclusivamente após --web-tasks explícito do operador.",
+    "POST exige Host loopback, token CSRF, Origin, Content-Type e quatro campos exatos; IDs validados no Store contra projetos e sessões existentes.",
+    "Endpoint/modelo/custos/teto/quantidade de runs são configurações exclusivas de inicialização, nunca recebidas do navegador; segredo só da variável de ambiente pelo executor original.",
+    "O Product chama EcosystemAiCli.RunAsync → AgentWorkspace.WorkspaceSession/AgentRunner/Ledger originais; ferramentas por padrão somente files.read, sem fs.write nem operações destrutivas.",
+    "Orçamento conservador por instância de servidor e limite de número de runs, single-flight sem fila/retry; GET e UI sem opt-in jamais invocam modelo.",
+    "HTML responsivo apresenta formulário por sessão, cota restante e estado no catálogo canônico; HTTP mostra apenas mensagens genéricas, sem erros internos do provider.",
+    "Testes HTTP reais de POST/GET, execução por callback sem rede, quota, concorrência, CSRF/Origin/IDs e ausência de escrita.",
+    "Alteração na fronteira de confiança reconhecida como crítica; requer revisão de autorização do proprietário antes de integração."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/ecosystem-ai/tests/AgentRuntime.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI da PR; .NET SDK não instalado no ambiente local."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI da PR; simulação integrador exigida."
+    }
+  ],
+  "known_issues": [
+    "Novos POSTs de execução podem gerar custo monetário quando explicitamente habilitados; opção desligada por padrão.",
+    "Cap por processo não é limite financeiro distribuído; reiniciar instância reinicia a quota. Provider cobra custo conforme preços reais.",
+    "POST aguarda execução completa, sem streaming nem cancelamento do run pelo navegador; Host só em loopback.",
+    "Agentes e equipes configuráveis ainda não concluídos; P6-5 permanece aberta."
+  ],
+  "blockers": [
+    "Integração crítica exige label integrar do proprietário após checks verdes; a decisão não foi presumida nem criada nesta PR."
+  ],
+  "next_actions": [
+    "Analisar CI do Product e consistência e corrigir falhas.",
+    "Solicitar exclusivamente aprovação crítica ao proprietário para integrar PR validada.",
+    "Após integração, entregar perfis de agentes/equipes e ações supervisionadas na mesma UI."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ROADMAP.md",
+    "ARCHITECTURE.md",
+    "ecosystem.json",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "docs/governance/communication.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-web-task-execution.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Agente usa LocalProjectStore canônico e RunState/Core existentes; nenhum schema paralelo."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Product usa .NET + loopback sem Hub obrigatório."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Nenhuma capability nova; web executa fs.read apenas via grants do CLI original."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "POST exige gesto deliberado, sem jobs de background ou retry."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "ROADMAP P6-5/Issue #354, docs, testes, PR e handoff rastreáveis."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem alteração de contratos estáveis; opção web desligada por padrão."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "CSRF/Origin/Host loopback, sem segredo na web, limites de custo e quotas explícitas."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Não declara APK/DEVICE nem P6-5 completo."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "PR crítica só integrar após CI e label autoritativa do proprietário."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Mesmo AgentRunner e provider adapter, sem segundo runtime, scheduler ou ledger."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "UI é código interno ao Product, não Service compartilhado."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "supervised-web-tasks",
+      "status": "product-specific",
+      "rationale": "Formulários Product delegam apenas ao executor CLI já validado pelo AgentRuntime."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Nova rota local permite iniciar tarefas com potencial gasto e acesso ao workspace, alterando fronteira de confiança. Integração requer autorização do proprietário."
+  },
+  "cost": null
+}

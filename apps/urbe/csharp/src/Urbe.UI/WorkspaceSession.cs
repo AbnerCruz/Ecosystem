@@ -39,6 +39,17 @@ public sealed record EditorWorkspaceTab(
 
 public sealed record EditorHistoryStatus(bool CanUndo, bool CanRedo);
 
+public enum WorkspaceMutationKind
+{
+    CreateFolder,
+    Move
+}
+
+public sealed record WorkspaceMutation(
+    WorkspaceMutationKind Kind,
+    string? SourcePath,
+    string TargetPath);
+
 /// <summary>
 /// Host-neutral session shared by the Explorer and Editor surfaces.
 /// It owns no filesystem API: hosts load a VaultSnapshot and later persist
@@ -52,15 +63,54 @@ public sealed class WorkspaceSession : IDisposable
     private readonly List<EditorTabState> _tabs = [];
     private readonly Dictionary<string, EditorHistoryState> _history =
         new(StringComparer.Ordinal);
+    private readonly HashSet<string> _explicitFolders =
+        new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<WorkspaceMutation> _pendingMutations = [];
+    private bool _loading;
+    private long _persistenceRevision;
+    private long _savedPersistenceRevision;
+    private bool _spatialChanges;
+
+    /// <summary>True only if the physical map file needs a new write.</summary>
+    public bool HasSpatialChanges => _spatialChanges;
+    public WorldProjection World { get; }
+
+    /// <summary>Raised for actual note/folder changes, not navigation or editor tabs.</summary>
+    public event EventHandler? PersistenceChanged;
+
+    public long PersistenceRevision => _persistenceRevision;
+    public bool HasUnsavedChanges =>
+        _persistenceRevision != _savedPersistenceRevision ||
+        _pendingMutations.Count != 0;
+
+    private void OnDocumentChanged(object? sender, DocumentStoreChangedEventArgs change)
+    {
+        if (_loading)
+            return;
+
+        _persistenceRevision++;
+        PersistenceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnMutationChanged()
+    {
+        _persistenceRevision++;
+        PersistenceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private const int MaxTabs = 12;
     private const int HistoryLimit = 100;
 
     public WorkspaceSession()
     {
         Knowledge = new KnowledgeIndex(Documents);
+        World = new WorldProjection(Documents);
+        Documents.Changed += OnDocumentChanged;
     }
 
     public DocumentStore Documents { get; } = new();
+
+    public EditorReferenceSession References { get; } = new();
 
     public KnowledgeIndex Knowledge { get; }
 
@@ -78,6 +128,34 @@ public sealed class WorkspaceSession : IDisposable
         new ReadOnlyCollection<string>(
             _paths.OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray());
 
+    public IReadOnlyCollection<string> Folders =>
+        new ReadOnlyCollection<string>(
+            EnumerateFolders()
+                .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                .ToArray());
+
+    public IReadOnlyList<WorkspaceMutation> PendingMutations =>
+        new ReadOnlyCollection<WorkspaceMutation>(_pendingMutations.ToArray());
+
+    /// <summary>Called by a host only after filesystem writes were verified.</summary>
+    public void MarkSaved()
+    {
+        _savedPersistenceRevision = _persistenceRevision;
+        _pendingMutations.Clear();
+        _spatialChanges = false;
+        Revision++;
+        PersistenceChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+
+    // Derived from ordinary Markdown in Modelos/. DocumentStore stays the
+    // single authority; no second registry or persisted schema.
+    public IReadOnlyList<UrbeDocument> Templates =>
+        Documents.List()
+            .Where(document => NoteTemplateEngine.IsTemplatePath(document.Path))
+            .OrderBy(document => document.Path, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
     public string PreviewHtml =>
         MarkdownEngine.Render(CurrentDocument?.Content ?? string.Empty);
 
@@ -92,6 +170,16 @@ public sealed class WorkspaceSession : IDisposable
         !IsReadOnly &&
         CurrentDocument is not null &&
         VisualDocumentEditor.IsLosslessRoundTrip(CurrentDocument.Content);
+
+    /// <summary>
+    /// HTML visual editing must not normalize any untouched Markdown.
+    /// Independent of CanEditVisualBlocks: the HTML converter has its own
+    /// fidelity boundary and only the Source mode is always lossless.
+    /// </summary>
+    public bool CanEditVisualHtml =>
+        !IsReadOnly &&
+        CurrentDocument is not null &&
+        VisualMarkdown.IsLosslessEditorRoundTrip(CurrentDocument.Content);
 
     public IReadOnlyList<EditorWorkspaceTab> Tabs =>
         Array.AsReadOnly(
@@ -132,24 +220,59 @@ public sealed class WorkspaceSession : IDisposable
 
     public void Dispose()
     {
+        Documents.Changed -= OnDocumentChanged;
+        World.Dispose();
         Knowledge.Dispose();
         GC.SuppressFinalize(this);
     }
 
-    public void Load(VaultSnapshot snapshot)
+    public void Load(
+        VaultSnapshot snapshot,
+        IEnumerable<string>? physicalFolders = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
         _paths.Clear();
+        _explicitFolders.Clear();
+        _pendingMutations.Clear();
         foreach (var path in snapshot.Files.Keys)
             _paths.Add(DocumentModel.NormalizePath(path));
 
-        Documents.ReplaceFromVault(snapshot, "workspace-load");
+        // SAF can contain directories with no notes. Do not fabricate a
+        // sentinel Markdown file merely to make an empty bairro visible.
+        foreach (var folder in physicalFolders ?? Array.Empty<string>())
+        {
+            var normalized = DocumentModel.NormalizePath(folder);
+            if (normalized.Length == 0 ||
+                !string.Equals(normalized, folder.Replace('\\', '/'), StringComparison.Ordinal) ||
+                ContainsTraversal(normalized) ||
+                ArtifactModel.IsSystem(normalized) ||
+                _paths.Contains(normalized))
+                continue;
+
+            _explicitFolders.Add(normalized);
+        }
+
+        _loading = true;
+        try
+        {
+            Documents.ReplaceFromVault(snapshot, "workspace-load");
+        }
+        finally
+        {
+            _loading = false;
+        }
+        _savedPersistenceRevision = _persistenceRevision;
+        _spatialChanges = false;
+        World.Load(snapshot.RecoveredFromJournal
+            ? WorldMapMetadata.Empty(true)
+            : WorldMapMetadata.FromVault(snapshot));
         IsReadOnly = snapshot.IsReadOnly;
         CurrentDocument = null;
         CurrentFolder = string.Empty;
         ResetEditorState();
         Revision++;
+        PersistenceChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -161,9 +284,22 @@ public sealed class WorkspaceSession : IDisposable
         ArgumentNullException.ThrowIfNull(documents);
 
         var materialized = documents.ToArray();
-        Documents.ReplaceAll(materialized, "workspace-load-documents");
+        _loading = true;
+        try
+        {
+            Documents.ReplaceAll(materialized, "workspace-load-documents");
+        }
+        finally
+        {
+            _loading = false;
+        }
+        _savedPersistenceRevision = _persistenceRevision;
+        _spatialChanges = false;
+        World.Load(WorldMapMetadata.Empty(readOnly));
 
         _paths.Clear();
+        _explicitFolders.Clear();
+        _pendingMutations.Clear();
         foreach (var document in Documents.List())
             _paths.Add(document.Path);
 
@@ -201,6 +337,28 @@ public sealed class WorkspaceSession : IDisposable
         var folders = new Dictionary<string, WorkspaceExplorerEntry>(
             StringComparer.OrdinalIgnoreCase);
         var files = new List<WorkspaceExplorerEntry>();
+
+        foreach (var folderPath in EnumerateFolders())
+        {
+            if (!includeSystem && ArtifactModel.IsSystem(folderPath))
+                continue;
+            if (!folderPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var rest = folderPath[prefix.Length..];
+            if (rest.Length == 0 || rest.Contains('/'))
+                continue;
+
+            folders.TryAdd(
+                folderPath,
+                new WorkspaceExplorerEntry(
+                    folderPath,
+                    rest,
+                    true,
+                    null,
+                    string.Empty,
+                    false));
+        }
 
         foreach (var path in _paths.OrderBy(
                      path => path,
@@ -464,12 +622,13 @@ public sealed class WorkspaceSession : IDisposable
 
     public UrbeDocument? UpdateVisualHtml(string? html)
     {
-        if (CurrentDocument is null)
+        var current = CurrentDocument;
+        if (current is null || !CanEditVisualHtml)
             return null;
 
         var markdown = VisualMarkdown.FromHtmlUsingEditorSource(
             html,
-            CurrentDocument.Content);
+            current.Content);
         return UpdateSource(markdown);
     }
 
@@ -484,6 +643,177 @@ public sealed class WorkspaceSession : IDisposable
             VisualDocumentEditor.ToMarkdown(frontmatter, blocks));
     }
 
+    public string? CreateFolder(string? name, string? parent = null)
+    {
+        if (IsReadOnly)
+            return null;
+
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        var safeName = ArtifactModel.SafeName(name);
+
+        var normalizedParent = DocumentModel.NormalizePath(parent);
+        if (normalizedParent.Length > 0 &&
+            (!FolderExists(normalizedParent) ||
+             ArtifactModel.IsSystem(normalizedParent) ||
+             ContainsTraversal(normalizedParent)))
+            return null;
+
+        var candidate = normalizedParent.Length == 0
+            ? safeName
+            : normalizedParent + "/" + safeName;
+
+        var suffix = 2;
+        var baseCandidate = candidate;
+        while (PathOrFolderExists(candidate))
+            candidate = baseCandidate + "-" + suffix++;
+
+        _explicitFolders.Add(candidate);
+        _pendingMutations.Add(
+            new WorkspaceMutation(
+                WorkspaceMutationKind.CreateFolder,
+                null,
+                candidate));
+        OnMutationChanged();
+        Revision++;
+        return candidate;
+    }
+
+    public bool MoveItem(string? sourcePath, string? targetFolder)
+    {
+        if (IsReadOnly)
+            return false;
+
+        var source = DocumentModel.NormalizePath(sourcePath);
+        var target = DocumentModel.NormalizePath(targetFolder);
+
+        if (source.Length == 0 ||
+            ContainsTraversal(source) ||
+            ContainsTraversal(target) ||
+            ArtifactModel.IsSystem(source) ||
+            (target.Length > 0 &&
+             (ArtifactModel.IsSystem(target) || !FolderExists(target))))
+            return false;
+
+        var sourceIsFile = _paths.Contains(source);
+        var sourceIsFolder = FolderExists(source);
+        if (!sourceIsFile && !sourceIsFolder)
+            return false;
+
+        if (sourceIsFolder &&
+            (string.Equals(source, target, StringComparison.OrdinalIgnoreCase) ||
+             target.StartsWith(source + "/", StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        var slash = source.LastIndexOf('/');
+        var name = slash >= 0 ? source[(slash + 1)..] : source;
+        var destination = target.Length == 0 ? name : target + "/" + name;
+
+        if (string.Equals(source, destination, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (PathOrFolderExists(destination))
+            return false;
+
+        if (sourceIsFile)
+            MoveSinglePath(source, destination);
+        else
+            MoveFolderTree(source, destination);
+
+        _pendingMutations.Add(
+            new WorkspaceMutation(
+                WorkspaceMutationKind.Move,
+                source,
+                destination));
+        OnMutationChanged();
+        Revision++;
+        return true;
+    }
+
+    private static string NoteFolder(string path)
+    {
+        var index = path.LastIndexOf('/');
+        return index < 0 ? string.Empty : path[..index];
+    }
+
+    /// <summary>
+    /// Places one Markdown house on the eight-by-eight City tile map.
+    /// No bytes are written until the native host commits metadata.json.
+    /// </summary>
+    public bool PlaceHouse(string? path, int column, int row)
+    {
+        if (IsReadOnly || World.IsReadOnly ||
+            column is < 0 or >= 8 || row is < 0 or >= 8)
+            return false;
+
+        var document = Documents.Get(path);
+        if (document is null || !ArtifactModel.IsNote(document.Path))
+            return false;
+
+        var current = World.ProjectDocument(document.Id);
+        if (current is null)
+            return false;
+        if (current.X == column && current.Y == row)
+            return true;
+
+        // Coordinates are LOCAL to the current bairro, not global across
+        // different folders. A house in another bairro may use the same lot.
+        var thisFolder = NoteFolder(document.Path);
+        if (Documents.List().Any(other =>
+        {
+            if (other.Id == document.Id ||
+                !string.Equals(NoteFolder(other.Path), thisFolder,
+                    StringComparison.OrdinalIgnoreCase))
+                return false;
+            var position = World.ProjectDocument(other.Id);
+            return position?.X == column && position.Y == row;
+        }))
+            return false;
+
+        if (World.SetSpatial(document.Id, column, row) is null)
+            return false;
+
+        _spatialChanges = true;
+        OnMutationChanged();
+        Revision++;
+        return true;
+    }
+
+    /// <summary>
+    /// Build a house at a specific map lot. Validate placement before creating
+    /// any note, so a rejected lot never leaves an unexpected file pending.
+    /// </summary>
+    public UrbeDocument? CreateHouseAt(
+        string? title, string? folder, int column, int row)
+    {
+        var normalizedFolder = DocumentModel.NormalizePath(folder);
+        if (IsReadOnly || World.IsReadOnly ||
+            column is < 0 or >= 8 || row is < 0 or >= 8 ||
+            Documents.List().Any(document =>
+            {
+                if (!string.Equals(NoteFolder(document.Path), normalizedFolder,
+                        StringComparison.OrdinalIgnoreCase))
+                    return false;
+                var position = World.ProjectDocument(document.Id);
+                return position?.X == column && position.Y == row;
+            }))
+            return null;
+
+        var created = CreateNote(title, folder);
+        if (created is null)
+            return null;
+
+        // Coordinates were validated above, and the UI session is single
+        // threaded. Failure would be a programming error rather than a
+        // user-input condition: it must not be reported as successful.
+        if (!PlaceHouse(created.Path, column, row))
+            throw new InvalidOperationException(
+                "A nota foi criada, mas o posicionamento da casa falhou.");
+
+        return created;
+    }
+
     public UrbeDocument? CreateNote(
         string? title,
         string? folder = null,
@@ -494,6 +824,12 @@ public sealed class WorkspaceSession : IDisposable
 
         var safeTitle = ArtifactModel.SafeName(title);
         var normalizedFolder = DocumentModel.NormalizePath(folder);
+        if (normalizedFolder.Length > 0 &&
+            (ArtifactModel.IsSystem(normalizedFolder) ||
+             ContainsTraversal(normalizedFolder) ||
+             !FolderExists(normalizedFolder)))
+            return null;
+
         var path = normalizedFolder.Length == 0
             ? safeTitle + ".md"
             : normalizedFolder + "/" + safeTitle + ".md";
@@ -521,6 +857,58 @@ public sealed class WorkspaceSession : IDisposable
         _paths.Add(document.Path);
         Revision++;
         return document;
+    }
+
+    /// <summary>
+    /// Clones the current Markdown note into Modelos/, using the same
+    /// ordinary document creation path as the Explorer. The original stays
+    /// untouched. Host persistence is still owned by its future adapter.
+    /// </summary>
+    public UrbeDocument? SaveCurrentAsTemplate()
+    {
+        var source = CurrentDocument;
+        if (IsReadOnly || source is null ||
+            !ArtifactModel.IsNote(source.Path) ||
+            ArtifactModel.IsSystem(source.Path))
+            return null;
+
+        // Use the spelling of an existing folder, also on case-sensitive
+        // hosts, instead of accidentally creating a parallel Modelos tree.
+        var folder = Folders.FirstOrDefault(
+            path => string.Equals(
+                path, NoteTemplateEngine.Folder,
+                StringComparison.OrdinalIgnoreCase));
+        if (folder is null)
+        {
+            if (PathOrFolderExists(NoteTemplateEngine.Folder))
+                return null;
+            folder = CreateFolder(NoteTemplateEngine.Folder);
+            if (folder is null)
+                return null;
+        }
+
+        return CreateNote(source.Title, folder, source.Content);
+    }
+
+    /// <summary>
+    /// Rejects invalid templates/fields before CreateNote, so failure cannot
+    /// create a partial document or steal an existing note's identity.
+    /// </summary>
+    public UrbeDocument? CreateFromTemplate(
+        string? templatePath,
+        string? title,
+        string? folder,
+        IReadOnlyDictionary<string, string?>? fields)
+    {
+        if (IsReadOnly || !NoteTemplateEngine.IsTemplatePath(templatePath))
+            return null;
+
+        var template = Documents.Get(DocumentModel.NormalizePath(templatePath));
+        if (template is null ||
+            !NoteTemplateEngine.TryRender(template.Content, fields, out var content))
+            return null;
+
+        return CreateNote(title, folder, content);
     }
 
     public UrbeDocument? CreateLinkedNote(string? target)
@@ -576,6 +964,139 @@ public sealed class WorkspaceSession : IDisposable
             .ToArray();
 
         return Array.AsReadOnly(missing);
+    }
+
+    private IEnumerable<string> EnumerateFolders()
+    {
+        var folders = new HashSet<string>(
+            _explicitFolders,
+            StringComparer.OrdinalIgnoreCase);
+
+        foreach (var path in _paths)
+        {
+            var slash = path.LastIndexOf('/');
+            while (slash > 0)
+            {
+                var folder = path[..slash];
+                folders.Add(folder);
+                slash = folder.LastIndexOf('/');
+            }
+        }
+
+        return folders;
+    }
+
+    private static bool ContainsTraversal(string path) =>
+        path.Split('/').Any(segment => segment is "." or "..");
+
+    private bool FolderExists(string path) =>
+        _explicitFolders.Contains(path) ||
+        _paths.Any(
+            file =>
+                file.StartsWith(
+                    path + "/",
+                    StringComparison.OrdinalIgnoreCase));
+
+    private bool PathOrFolderExists(string path) =>
+        _paths.Contains(path) || FolderExists(path);
+
+    private void MoveSinglePath(string source, string destination)
+    {
+        _paths.Remove(source);
+        _paths.Add(destination);
+        MoveDocumentPath(source, destination);
+    }
+
+    private void MoveFolderTree(string source, string destination)
+    {
+        var fileMoves = _paths
+            .Where(
+                path =>
+                    path.StartsWith(
+                        source + "/",
+                        StringComparison.OrdinalIgnoreCase))
+            .Select(
+                path => new
+                {
+                    Source = path,
+                    Target = destination + path[source.Length..]
+                })
+            .ToArray();
+
+        foreach (var move in fileMoves)
+        {
+            _paths.Remove(move.Source);
+            _paths.Add(move.Target);
+            MoveDocumentPath(move.Source, move.Target);
+        }
+
+        var folderMoves = _explicitFolders
+            .Where(
+                path =>
+                    string.Equals(
+                        path,
+                        source,
+                        StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith(
+                        source + "/",
+                        StringComparison.OrdinalIgnoreCase))
+            .Select(
+                path => new
+                {
+                    Source = path,
+                    Target = destination + path[source.Length..]
+                })
+            .ToArray();
+
+        foreach (var move in folderMoves)
+        {
+            _explicitFolders.Remove(move.Source);
+            _explicitFolders.Add(move.Target);
+        }
+
+        if (folderMoves.Length == 0)
+            _explicitFolders.Add(destination);
+
+        if (string.Equals(
+                CurrentFolder,
+                source,
+                StringComparison.OrdinalIgnoreCase) ||
+            CurrentFolder.StartsWith(
+                source + "/",
+                StringComparison.OrdinalIgnoreCase))
+            CurrentFolder = destination + CurrentFolder[source.Length..];
+    }
+
+    private void MoveDocumentPath(string source, string destination)
+    {
+        var document = Documents.Get(source);
+        if (document is null)
+            return;
+
+        var wasCurrent = string.Equals(
+            CurrentDocument?.Id,
+            document.Id,
+            StringComparison.Ordinal);
+
+        Documents.Remove(source, "explorer-move");
+        var moved = Documents.Upsert(
+            new DocumentInput
+            {
+                Id = document.Id,
+                Path = destination,
+                Title = document.Title,
+                Content = document.Content,
+                Properties = document.Properties,
+                Tags = document.Tags,
+                Links = document.Links,
+                Created = document.Created,
+                Modified = document.Modified,
+                Revision = document.Revision
+            },
+            "explorer-move");
+
+        if (wasCurrent)
+            CurrentDocument = moved;
     }
 
     private UrbeDocument? ApplyCurrentContent(string content, string metadata)
@@ -648,6 +1169,7 @@ public sealed class WorkspaceSession : IDisposable
 
     private void ResetEditorState()
     {
+        References.Clear();
         _origins.Clear();
         _tabs.Clear();
         _history.Clear();

@@ -1,0 +1,163 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261009-urbe-uc25-android-saf-vault",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-09T19:38:27.529Z",
+  "agent": {
+    "id": "chatgpt-urbe-android-saf",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-25",
+  "component": "urbe",
+  "state": "verifying",
+  "branch": "feat/urbe-uc25-android-saf-vault-20261009",
+  "base_commit": "a8cf368b4d72951e6671f90e7e0d42cc402bb8ff",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/397",
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.UI/VaultHost.cs",
+    "apps/urbe/csharp/src/Urbe.UI/Shared/VaultControls.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Shared/MainLayout.razor",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Foundation.razor",
+    "apps/urbe/csharp/src/Urbe.UI/WorkspaceSession.cs",
+    "apps/urbe/csharp/src/Urbe.UI/wwwroot/urbe.css",
+    "apps/urbe/csharp/src/Urbe.App/MauiProgram.cs",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Android/MainActivity.cs",
+    "apps/urbe/csharp/src/Urbe.App/Platforms/Android/AndroidVaultHost.cs",
+    "apps/urbe/csharp/src/Urbe.Web/Program.cs",
+    "docs/governance/handoffs/HO-20261009-urbe-uc25-android-saf-vault.json",
+    "apps/urbe/csharp/src/Urbe.UI/Pages/Explorer.razor",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/VaultWriterTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/Urbe.Core.Tests.csproj",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/WorkspacePhysicalFoldersTests.cs",
+    ".github/workflows/urbe-checks.yml"
+  ],
+  "work_completed": [
+    "Implementado primeiro boundary Android Storage Access Framework em C# para selecionar diretório do dispositivo com permissão de leitura/escrita persistente e reabrir a pasta.",
+    "VaultReader monta o WorkspaceSession diretamente dos arquivos reais .md e metadados do vault, sem IndexedDB nem cópia canônica interna.",
+    "Ação explícita de Salvar usa VaultWriter.Plan; verifica que a pasta não mudou externamente antes de aplicar alterações, lê de volta arquivos gravados e tenta preservar backup recuperável de arquivo substituído.",
+    "Preview Web registra fallback sem persistência; prévia Android informa limitação e salvamento manual no layout compartilhado.",
+    "Movimentação física ainda não implementada é recusada com erro explícito em vez de confirmar falsamente o salvamento.",
+    "Movimentação de notas .md/.markdown individuais agora usa plano do VaultWriter e valida bytes do destino físico antes de excluir original; não são permitidos movimentos em cadeia ou pastas nesta fatia.",
+    "Explorer Android desabilita a ação Mover em pastas, preservando comportamento do Explorer Web; teste portátil de plano comprova gravação do novo caminho antes da remoção do anterior.",
+    "Host Android agora enumera diretórios físicos do SAF e os comunica à WorkspaceSession, inclusive pastas vazias após fechar e reabrir, sem sentinelas no vault.",
+    "Novos testes de sessão UI para diretórios vazios e rejeição de caminhos anômalos/protegidos, sem alterar o contrato público de arquivos Markdown.",
+    "Autosave Android com debounce de 1,6s após alterações reais de documentos/pastas; navegação, troca de abas e abertura de vault não disparam escrita; botão Salvar manual preservado.",
+    "WorkspaceSession agora publica PersistenceRevision/HasUnsavedChanges, distingue revisão de dados de revisão visual, e sinaliza conflitos durante gravação sem falso positivo de mudança de aba.",
+    "Testes de sessão adicionados para eventos dirty/clean de edição, criação, mudança de pasta, movimento, MarkSaved e Reload.",
+    "CI urbe-checks Android agora tenta gerar APK de depuração separado (app.urbe.csharp.dev) e anexar ZIP de artifact ao workflow, sem alterar canal de release ou assinar para produção.",
+    "Autosave agora distingue exceção de edição durante I/O (reagenda após debounce) de conflito externo no vault (NÃO tenta repetir em loop), preservando feedback e evitando falsas confirmações.",
+    "VaultWriter C# agora preserva bytes originais quando conteúdo da nota não mudou; alterações/movimentos de notas com codificação não UTF-8 são recusados explicitamente, em vez de gerar substituições U+FFFD e corromper arquivos.",
+    "Journal de recuperação não é emitido ao serializar estado contendo documentos existentes com bytes inválidos em UTF-8; evitamos a recuperação com conteúdo degradado.",
+    "Novos testes provam preservação de bytes Latin-1 inalterados, rejeição de edição/movimento de nota não UTF-8 e ausência de journal textual com dados incompatíveis."
+  ],
+  "verification": [
+    {
+      "check": "urbe-checks: Core, Web, Android, Windows, E2E",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Última revisão com autosave antes do CI de APK estava verde; esta revisão de integridade de bytes precisa executar todos os checks, inclusive build Android de APK e testes."
+    },
+    {
+      "check": "Foundation consistency",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Pendente de CI do PR e ref combinado."
+    },
+    {
+      "check": "Android real — permissões SAF, escrita e reabertura",
+      "kind": "human",
+      "result": "pending",
+      "critical": true,
+      "object": "apps/urbe/csharp/src/Urbe.App/Platforms/Android/AndroidVaultHost.cs",
+      "evidence": "Dispositivo Android real não disponível nesta execução; bloquear declaração de gate G-C4 e publicação beta até validação."
+    }
+  ],
+  "known_issues": [
+    "Autosave de 1,6s foi implementado nesta revisão, mas ainda precisa de CI e validação Android físico; fechar imediatamente após a última tecla ainda pode perder edições, conforme indicador 'alterações ainda não salvas'.",
+    "Mover NOTAS individuais agora possui implementação física, ainda sem teste no dispositivo; pastas, cadeias de movimentos e anexos continuam sem movimentação Android e são bloqueados explicitamente.",
+    "Leitura Android desta fatia cobre textos usuais e .urbe; outros assets no disco não são alterados nem carregados para Core; limites de tamanho protegem memória do beta.",
+    "Sem suporte de acesso físico Web ou Windows nesta fatia; PreviewVaultHost declara a limitação.",
+    "Escrita SAF não é transação atômica; backup de arquivo anterior é criado antes de truncar e mantido se houver falha de recuperação. Precisa de smoke real em aparelho.",
+    "A diretiva DEC-0042/ADD-0019 está em PR #392 ainda não integrado; este handoff referencia apenas fontes normativas já existentes na main.",
+    "Lista de pastas físicas é atualizada após seleção, reabertura e salvamento explícito; outros provedores SAF ainda exigem teste em dispositivo antes de liberar o beta.",
+    "A entrega de APK debug como artifact do GitHub Actions não é uma release nem arquivo de instalação por link direto; APK exige CI verde do empacotamento e teste físico.",
+    "O empacotamento de APK debug no urbe-checks ainda está sujeito ao job Android; não existe APK baixável até o CI concluir esse job com artifact."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar os novos testes de byte fidelity + empacotamento APK Android debug no CI deste PR antes de apresentar instalável de teste.",
+    "Verificar publicação do APK debug do workflow em PR #397, extraí-lo e instalar em um aparelho Android após autorização/consentimento explícito do proprietário para teste.",
+    "Corrigir erros de compilação CI e verificar status combinado.",
+    "Executar teste Android físico de selecionar pasta vazia, criar nota, salvar, fechar, reabrir e comprovar bytes no filesystem.",
+    "Executar no Android físico: mover uma nota .md entre bairros e verificar conteúdo original somente removido após confirmação do novo caminho; depois ampliar movimentação de pastas e anexos.",
+    "Validar autosave Android com pausa de digitação, status de falha, edição durante gravação e botão manual antes da distribuição de beta.",
+    "Não publicar release ou declarar gates concluídos sem validação física e autorização crítica."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "docs/adr/0016-migracao-do-urbe-para-csharp.md",
+    "docs/adr/0026-urbe-transicao-cliente-csharp.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/VAULT-CONTRACT.md",
+    "apps/urbe/docs/v2/adr/0004-compatibilidade-1x-e-protecao-forward.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Arquivos da pasta escolhida via SAF são a autoridade canônica; sessão C# é representação editável."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "App independente do Hub."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Branch, base, PR, verificações e limitações explícitas."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Escopo DEC-0042 aplicado sem alterar decisões canônicas nesta fatia."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "ADR, roadmap e contratos lidos diretamente antes da implementação."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum formato de dados alterado; VaultWriter usa formato existente; host é implementação física sob contrato atual."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Permissão de leitura/escrita somente para pasta concedida pelo seletor SAF Android."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação humana de aparelho segue pendente e crítica."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem declarar build, CI ou release concluídos prematuramente."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "O cliente nativo se instala e funciona sem Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "classes": [
+      "user-data",
+      "security",
+      "distribution",
+      "control-plane"
+    ],
+    "reason": "PR altera acesso e escrita Android SAF e passa a empacotar APK debug isolado em urbe-checks; controle de CI/distribuição exige autorização de integração do proprietário."
+  }
+}
