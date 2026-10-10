@@ -58,10 +58,10 @@
     {
       "kind": "human",
       "check": "DEVICE Profiler CPU phases",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/profiler-preview.md",
-      "evidence": "Retorno de dispositivo para overlay e timings precisa ser confirmado."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/453); registro em docs/governance/responses/VAL-HO-20261008-lunet-cpu-phases-99b61b6afd05.md."
     }
   ],
   "known_issues": [
