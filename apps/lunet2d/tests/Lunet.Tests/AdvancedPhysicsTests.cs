@@ -65,9 +65,13 @@ public sealed class AdvancedPhysicsTests
             world.Step(1f / 60f);
             if (world.ContactBeginCount > 0) began = true;
         }
-        dynamic.SetTransform(new Vector2(0, -10), 0);
-        world.Step(1f / 60f);
-        ended = world.ContactEndCount > 0;
+        // Afastar pelo solver: SetTransform descarta contatos imediatamente no backend.
+        dynamic.LinearVelocity = new Vector2(0, -8);
+        for (int i = 0; i < 60; i++)
+        {
+            world.Step(1f / 60f);
+            ended |= world.ContactEndCount > 0;
+        }
         Assert.True(began);
         Assert.True(ended);
     }
