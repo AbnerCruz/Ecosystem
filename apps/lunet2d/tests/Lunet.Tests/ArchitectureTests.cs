@@ -61,10 +61,15 @@ public class ArchitectureTests
     }
 
     [Fact]
-    public void FrameworkHasNoPackageReferences()
+    public void FrameworkAllowsOnlyReviewedPhysicsBackendPackage()
     {
+        // ADR 0009: única exceção nominal ao framework sem dependências.
+        // Reprova qualquer dependência de terceiros que não seja o backend Box2D gerenciado aprovado.
         var doc = XDocument.Load(Path.Combine(Src, "Lunet.Framework", "Lunet.Framework.csproj"));
-        Assert.Empty(doc.Descendants("PackageReference"));
+        var references = doc.Descendants("PackageReference").ToArray();
+        Assert.Single(references);
+        Assert.Equal("Box2D.NET", (string?)references[0].Attribute("Include"));
+        Assert.Equal("3.1.654", (string?)references[0].Attribute("Version"));
     }
 
     [Fact]

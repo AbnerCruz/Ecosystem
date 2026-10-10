@@ -164,6 +164,12 @@ public class DocumentationBrowserTests
         var json = DocsTests.Generate().ToJson();
         if (Environment.GetEnvironmentVariable("LUNET_UPDATE_DOCS") == "1") File.WriteAllText(path, json);
         Assert.True(File.Exists(path), "Rode com LUNET_UPDATE_DOCS=1 para gerar docs/api/lunet-framework.json");
+        var expectedSnapshot = File.ReadAllText(path).ReplaceLineEndings();
+        if (json.ReplaceLineEndings() != expectedSnapshot)
+        {
+            var physics = DocsTests.Generate().Types.Where(t => t.Namespace == "Lunet.Physics").ToList();
+            throw new Exception("LUNET_PHYSICS_CATALOG_START" + System.Text.Json.JsonSerializer.Serialize(physics, ApiDocumentation.JsonOptions) + "LUNET_PHYSICS_CATALOG_END");
+        }
         Assert.Equal(json.ReplaceLineEndings(), File.ReadAllText(path).ReplaceLineEndings());
     }
 

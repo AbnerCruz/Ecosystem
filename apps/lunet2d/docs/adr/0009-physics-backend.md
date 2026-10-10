@@ -20,3 +20,5 @@ Primeiro incremento: world/step, gravity, corpos estáticos/cinemáticos/dinâmi
 - Etapa usa metros/unidades físicas com `Step(1/60)`; o usuário converte pixels para metros.
 - Todas as alterações ficam no Framework e seus testes; jogos existentes não mudam.
 - Não marcar Física completa [x] sem os complementos e validação DEVICE.
+
+O teste de arquitetura da base exigia nenhuma dependência NuGet no framework. ADR 0009 registra exceção restrita e verificável: somente `Box2D.NET 3.1.654` é permitido; dependências adicionais continuam falhando na suíte. A exceção é necessária para usar um solver maduro sem distribuir bibliotecas nativas.

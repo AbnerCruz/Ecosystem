@@ -10,9 +10,20 @@ using static Box2D.NET.B2Worlds;
 namespace Lunet.Physics;
 
 /// <summary>Tipo de movimento de um corpo físico.</summary>
-public enum PhysicsBodyType { Static, Kinematic, Dynamic }
+public enum PhysicsBodyType
+{
+    /// <summary>Corpo imóvel, massa zero.</summary>
+    Static,
+    /// <summary>Corpo movido pelo jogo, não pela gravidade.</summary>
+    Kinematic,
+    /// <summary>Corpo com massa e dinâmica simulada.</summary>
+    Dynamic
+}
 
 /// <summary>Geometria imutável de círculo ou caixa, em unidades do mundo físico.</summary>
+/// <example><code>
+/// var shape = Lunet.Physics.Collider2D.Circle(0.5f);
+/// </code></example>
 public readonly struct Collider2D
 {
     /// <summary>Verdadeiro para círculo; falso para caixa.</summary>
@@ -27,6 +38,7 @@ public readonly struct Collider2D
 
     /// <summary>Cria uma forma circular com raio positivo.</summary>
     /// <param name="radius">Raio em metros do jogo.</param>
+    /// <returns>Colisor circular validado.</returns>
     public static Collider2D Circle(float radius)
     {
         CheckPositive(radius, nameof(radius));
@@ -36,6 +48,7 @@ public readonly struct Collider2D
     /// <summary>Cria caixa com largura e altura positivas.</summary>
     /// <param name="width">Largura total.</param>
     /// <param name="height">Altura total.</param>
+    /// <returns>Colisor retangular validado.</returns>
     public static Collider2D Box(float width, float height)
     {
         CheckPositive(width, nameof(width)); CheckPositive(height, nameof(height));
@@ -55,6 +68,11 @@ public readonly struct Collider2D
 }
 
 /// <summary>Fixture física pertencente a um corpo, com material e sensor opcionais.</summary>
+/// <example><code>
+/// using var world = new Lunet.Physics.PhysicsWorld(System.Numerics.Vector2.Zero);
+/// var body = world.CreateBody(Lunet.Physics.PhysicsBodyType.Static, System.Numerics.Vector2.Zero);
+/// var fixture = body.AddFixture(Lunet.Physics.Collider2D.Circle(1));
+/// </code></example>
 public sealed class Fixture2D
 {
     internal readonly B2ShapeId Id;
@@ -66,6 +84,11 @@ public sealed class Fixture2D
 }
 
 /// <summary>Corpo rígido de Box2D oculto atrás da API portátil do Lunet.</summary>
+/// <example><code>
+/// using var world = new Lunet.Physics.PhysicsWorld(System.Numerics.Vector2.Zero);
+/// var body = world.CreateBody(Lunet.Physics.PhysicsBodyType.Dynamic, System.Numerics.Vector2.Zero);
+/// body.AddFixture(Lunet.Physics.Collider2D.Circle(1));
+/// </code></example>
 public sealed class RigidBody2D
 {
     internal readonly B2BodyId Id;
@@ -94,6 +117,7 @@ public sealed class RigidBody2D
     /// <param name="friction">Atrito não negativo.</param>
     /// <param name="restitution">Rebote no intervalo de zero a um.</param>
     /// <param name="sensor">Quando true detecta contato, sem resposta física.</param>
+    /// <returns>Fixture pertencente ao corpo.</returns>
     public Fixture2D AddFixture(Collider2D collider, float density = 1f, float friction = 0.4f, float restitution = 0f, bool sensor = false)
     {
         EnsureAlive();
@@ -137,6 +161,13 @@ public sealed class RigidBody2D
 }
 
 /// <summary>Junta de distância entre dois corpos; destruída com o mundo ou um corpo conectado.</summary>
+/// <example><code>
+/// using var world = new Lunet.Physics.PhysicsWorld(System.Numerics.Vector2.Zero);
+/// var a = world.CreateBody(Lunet.Physics.PhysicsBodyType.Dynamic, System.Numerics.Vector2.Zero);
+/// var b = world.CreateBody(Lunet.Physics.PhysicsBodyType.Dynamic, new System.Numerics.Vector2(2, 0));
+/// a.AddFixture(Lunet.Physics.Collider2D.Circle(1)); b.AddFixture(Lunet.Physics.Collider2D.Circle(1));
+/// var joint = world.CreateDistanceJoint(a, b, 2);
+/// </code></example>
 public sealed class Joint2D
 {
     internal readonly B2JointId Id;
@@ -154,6 +185,10 @@ public sealed class Joint2D
 }
 
 /// <summary>Contato iniciado durante o último passo entre duas fixtures.</summary>
+/// <example><code>
+/// Lunet.Physics.Contact contact = default;
+/// var fixture = contact.A;
+/// </code></example>
 public readonly struct Contact
 {
     /// <summary>Primeira fixture em contato.</summary>
@@ -164,6 +199,10 @@ public readonly struct Contact
 }
 
 /// <summary>Resultado do primeiro obstáculo encontrado por um raycast.</summary>
+/// <example><code>
+/// Lunet.Physics.RaycastHit ray = default;
+/// var point = ray.Point;
+/// </code></example>
 public readonly struct RaycastHit
 {
     /// <summary>Fixture interceptada.</summary>
@@ -225,6 +264,7 @@ public sealed class PhysicsWorld : IDisposable
     /// <summary>Cria corpo estático, cinemático ou dinâmico na posição informada.</summary>
     /// <param name="type">Tipo de movimento.</param>
     /// <param name="position">Origem do corpo.</param>
+    /// <returns>Corpo recém-criado.</returns>
     public RigidBody2D CreateBody(PhysicsBodyType type, Vector2 position)
     {
         EnsureAlive(); Collider2D.CheckFinite(position, nameof(position));
@@ -260,6 +300,7 @@ public sealed class PhysicsWorld : IDisposable
     /// <param name="a">Primeiro corpo.</param>
     /// <param name="b">Segundo corpo.</param>
     /// <param name="length">Distância positiva.</param>
+    /// <returns>Junta ativa entre os corpos.</returns>
     public Joint2D CreateDistanceJoint(RigidBody2D a, RigidBody2D b, float length)
     {
         ArgumentNullException.ThrowIfNull(a); ArgumentNullException.ThrowIfNull(b);
