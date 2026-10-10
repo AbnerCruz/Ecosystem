@@ -101,6 +101,31 @@ public sealed class HeadlessUiTests : IDisposable
             return true;
         }, CancellationToken.None));
 
+    [Fact]
+    public async Task Editor_OnlyConfirmsSavedAfterVaultHostAcknowledges() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var editor = new EditorOverlay { SaveOnClose = true };
+            var window = new Window { Width = 800, Height = 500, Content = editor };
+            window.Show();
+            editor.Open(new CityNote("Notas/Exemplo.md", "original"));
+            editor.Editor.Text = "texto novo";
+            Assert.True(editor.HasChanges);
+            CityNote? written = null;
+            editor.SaveRequested += note => { written = note; return Task.CompletedTask; };
+            Assert.True(await editor.SaveAsync());
+            Assert.Equal("texto novo", written?.Content);
+            Assert.False(editor.HasChanges);
+
+            var failed = new EditorOverlay { SaveOnClose = true };
+            failed.Open(new CityNote("Notas/Exemplo.md", "original"));
+            failed.Editor.Text = "não salvar";
+            failed.SaveRequested += _ => throw new IOException("sem permissão");
+            Assert.False(await failed.SaveAsync());
+            Assert.True(failed.HasChanges);
+            return true;
+        }, CancellationToken.None));
+
     private static async Task Settle(Window window, MainView view)
     {
         for (int i = 0; i < 600; i++)
