@@ -29,7 +29,7 @@ public sealed class ListDemo : Game
     {
         list.Update(Input, (float)time.DeltaSeconds);
         if (list.ActivatedIndex >= 0)
-            GameLog.Info("Missao " + (list.ActivatedIndex + 1) + " ativada");
+            Log.Info("Missao " + (list.ActivatedIndex + 1) + " ativada");
     }
 
     protected override void Draw(GameTime time)
