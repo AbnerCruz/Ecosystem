@@ -57,10 +57,10 @@
     {
       "kind": "human",
       "check": "Modelos na criação de projetos Android",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
       "object": "apps/lunet2d/docs/guides/animacao.md",
-      "evidence": "Criar ambos os modelos em telas pequenas/rotacionadas e testar animacao.md/particulas.md no Preview rápido/isolado, offline; reabrir projeto existente. Aprovação de integração crítica é separada, pelo integrador."
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/475); registro em docs/governance/responses/VAL-HO-20261008-lunet-demo-templates-03588a9b07cf.md."
     }
   ],
   "known_issues": [
