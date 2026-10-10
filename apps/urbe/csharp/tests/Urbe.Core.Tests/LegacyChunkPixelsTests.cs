@@ -17,7 +17,7 @@ public sealed class LegacyChunkPixelsTests
             (_, _) => Sample(LegacyBiome.Deep, .1), NoDetails, 0, 0);
         Assert.Equal(256 * 256 * 4, pngPixels.Length);
 
-        int variant = (int)Math.Floor(LegacyWorldPixelTextures.Hash(0, 0, 5) * 4);
+        int variant = (int)Math.Floor(LegacyTerrainMath.TileHash(0, 0, 5) * 4);
         byte[] original = LegacyWorldPixelTextures.CreateTile("deep", variant);
         // Sea depth is clamped to one: 1 - .28 = .72.
         for (int y = 0; y < 16; y++)
