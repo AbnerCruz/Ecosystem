@@ -412,3 +412,8 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Complemento da PR #429 / Issue #427: `GetVisibleRange` e `GetCellBounds` para UI de inventário virtualizado com rolagem, em O(1), sem armazenar milhões de retângulos ou alocar por quadro.
 - Testes novos de interseção estrita, gaps vazios, offsets inválidos, paridade com Arrange, 100 milhões de itens e zero GC; documentação da API e guia atualizados.
 - Não altera contrato anterior, dados persistidos ou outra Product; 17 falhas da simulação do integrador foram reproduzidas também na CI da main anterior ao PR, não atribuíveis ao Lunet. CI de revisão pendente, não declarar gate integrado/DEVICE.
+
+### 20261010-chatgpt-lunet-grid-interactive — ChatGPT → integrador — review
+- PR #429, Issue #427, Fase 4: TouchGridView com seleção e ativação por toque, rolagem inercial, captura de dedo, redimensionamento seguro, hit-test O(1), desenho recortado de itens visíveis, sem arrays por célula.
+- Testes de multitouch, cancelamento, arraste, layouts, milhões de itens, invalid bounds, clipping e GC. Guia Game.cs interativo compilado via GameCompiler/GameHost, API JSON atualizada.
+- Sem ProjectStore ou dependência externa; CI de revisão e DEVICE pendentes. Issue #430 registra bloqueio de consistency preexistente na main.

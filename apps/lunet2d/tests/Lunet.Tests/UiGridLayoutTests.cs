@@ -188,7 +188,7 @@ public sealed class UiGridLayoutTests
         RectangleF bounds = new(20, 30, 200, 130);
         Assert.Equal(0, grid.HitTest(bounds, 100, 0, new Vector2(40, 60)));
         Assert.Equal(1, grid.HitTest(bounds, 100, 0, new Vector2(150, 60)));
-        Assert.Equal(-1, grid.HitTest(bounds, 100, 0, new Vector2(111, 60))); // horizontal gap
+        Assert.Equal(-1, grid.HitTest(bounds, 100, 0, new Vector2(120, 60))); // horizontal gap
         Assert.Equal(-1, grid.HitTest(bounds, 100, 0, new Vector2(40, 82))); // vertical gap
         Assert.Equal(-1, grid.HitTest(bounds, 100, 0, new Vector2(10, 60))); // outside viewport
         Assert.Equal(4, grid.HitTest(bounds, 100, 100, new Vector2(40, 60)));

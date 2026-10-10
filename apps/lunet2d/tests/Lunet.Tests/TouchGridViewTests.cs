@@ -48,7 +48,7 @@ public sealed class TouchGridViewTests
         var grid = new TouchGridView(new(20, 30, 200, 130), 100,
             new UiGridLayout(60, 40, spacing: 10, padding: 10));
         var input = new InputState();
-        Assert.Equal(-1, grid.HitTest(new Vector2(112, 60)));
+        Assert.Equal(-1, grid.HitTest(new Vector2(120, 60)));
         Assert.Equal(-1, grid.HitTest(new Vector2(40, 82)));
         Frame(grid, input, T(1, TouchPhase.Pressed, 40, 82));
         Frame(grid, input, T(1, TouchPhase.Released, 40, 82));

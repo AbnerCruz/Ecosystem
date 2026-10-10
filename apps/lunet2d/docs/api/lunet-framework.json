@@ -16380,6 +16380,423 @@
       ]
     },
     {
+      "id": "T:Lunet.UI.TouchGridView",
+      "name": "TouchGridView",
+      "namespace": "Lunet.UI",
+      "kind": "class",
+      "signature": "public sealed class TouchGridView",
+      "summary": "Invent\u00E1rio em grade por toque com sele\u00E7\u00E3o, rolagem por in\u00E9rcia e desenho virtualizado.",
+      "remarks": "Composi\u00E7\u00E3o de UiGridLayout e TouchScrollArea: n\u00E3o armazena itens nem cria controles por c\u00E9lula. Captura toque por ID; soltar na mesma c\u00E9lula ativa somente se n\u00E3o houve arraste. N\u00E3o consome eventos de controles vizinhos; evite \u00E1reas sobrepostas. Desenho com SpriteBatch.Begin/End pr\u00F3prios e clipping; chame Draw fora de Begin/End. Sem aloca\u00E7\u00F5es gerenciadas no Update, HitTest, GetVisibleRange ou GetItemBounds.",
+      "examples": [
+        "\u0060\u0060\u0060\nvar grid = new Lunet.UI.TouchGridView(new RectangleF(12, 80, 320, 380), 30,\n    new Lunet.UI.UiGridLayout(80, 52, spacing: 8, padding: 12));\ngrid.Update(input, (float)time.DeltaSeconds);\nif (grid.ActivatedIndex \u003E= 0) log.Info(\u0022Item ativado\u0022);\n\u0060\u0060\u0060"
+      ],
+      "related": [],
+      "since": "0.0.1",
+      "members": [
+        {
+          "id": "M:Lunet.UI.TouchGridView.#ctor(Lunet.RectangleF,System.Int32,Lunet.UI.UiGridLayout)",
+          "name": "TouchGridView",
+          "kind": "constructor",
+          "signature": "public TouchGridView(RectangleF bounds, int itemCount, UiGridLayout layout)",
+          "summary": "Cria invent\u00E1rio com tamanho, total e configura\u00E7\u00E3o de grade.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "bounds",
+              "type": "RectangleF",
+              "description": "Viewport finito, sem tamanhos negativos."
+            },
+            {
+              "name": "itemCount",
+              "type": "int",
+              "description": "Quantidade de itens n\u00E3o negativa."
+            },
+            {
+              "name": "layout",
+              "type": "UiGridLayout",
+              "description": "Configura\u00E7\u00E3o v\u00E1lida de colunas e alturas."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.ActivatedIndex",
+          "name": "ActivatedIndex",
+          "kind": "property",
+          "signature": "public int ActivatedIndex { get; }",
+          "summary": "\u00CDndice ativado ao soltar neste Update, ou -1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.Bounds",
+          "name": "Bounds",
+          "kind": "property",
+          "signature": "public RectangleF Bounds { get; set; }",
+          "summary": "Ret\u00E2ngulo vis\u00EDvel. Redimensionar recalcula colunas e cancela gestos e in\u00E9rcia.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.IsCaptured",
+          "name": "IsCaptured",
+          "kind": "property",
+          "signature": "public bool IsCaptured { get; }",
+          "summary": "O dedo da grade est\u00E1 capturado.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.IsDragging",
+          "name": "IsDragging",
+          "kind": "property",
+          "signature": "public bool IsDragging { get; }",
+          "summary": "O toque est\u00E1 arrastando o conte\u00FAdo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.IsEnabled",
+          "name": "IsEnabled",
+          "kind": "property",
+          "signature": "public bool IsEnabled { get; set; }",
+          "summary": "Controla a intera\u00E7\u00E3o; desabilitar cancela gesto e in\u00E9rcia.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.ItemCount",
+          "name": "ItemCount",
+          "kind": "property",
+          "signature": "public int ItemCount { get; set; }",
+          "summary": "Total de itens. Alterar reajusta o scroll e invalida sele\u00E7\u00E3o fora do intervalo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.Layout",
+          "name": "Layout",
+          "kind": "property",
+          "signature": "public UiGridLayout Layout { get; }",
+          "summary": "Layout imut\u00E1vel da grade.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.MaximumOffsetY",
+          "name": "MaximumOffsetY",
+          "kind": "property",
+          "signature": "public float MaximumOffsetY { get; }",
+          "summary": "Maior offset vertical poss\u00EDvel.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.OffsetY",
+          "name": "OffsetY",
+          "kind": "property",
+          "signature": "public float OffsetY { get; }",
+          "summary": "Deslocamento vertical a partir do topo do conte\u00FAdo.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.SelectedIndex",
+          "name": "SelectedIndex",
+          "kind": "property",
+          "signature": "public int SelectedIndex { get; }",
+          "summary": "\u00CDndice selecionado, ou -1.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "P:Lunet.UI.TouchGridView.WasSelectionChanged",
+          "name": "WasSelectionChanged",
+          "kind": "property",
+          "signature": "public bool WasSelectionChanged { get; }",
+          "summary": "Verdadeiro no Update que mudou a sele\u00E7\u00E3o por toque.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.Cancel",
+          "name": "Cancel",
+          "kind": "method",
+          "signature": "public void Cancel()",
+          "summary": "Cancela captura e in\u00E9rcia sem limpar sele\u00E7\u00E3o ou posi\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.Draw(Lunet.Graphics.SpriteBatch,Lunet.Graphics.SpriteFont,System.Collections.Generic.IReadOnlyList{System.String},Lunet.UI.TouchButtonStyle,Lunet.Graphics.Color,System.Single)",
+          "name": "Draw",
+          "kind": "method",
+          "signature": "public void Draw(SpriteBatch batch, SpriteFont font, IReadOnlyList\u003Cstring\u003E labels, TouchButtonStyle style, Color selectedBackground, float textScale = 1f)",
+          "summary": "Desenha apenas c\u00E9lulas vis\u00EDveis, texto e indicador de rolagem.",
+          "remarks": "O jogo pode desenhar suas pr\u00F3prias imagens e \u00EDcones usando GetVisibleRange e GetItemBounds, sem precisar de labels ou criar sprites por item.",
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote gr\u00E1fico do jogo, fora de um Begin/End ativo."
+            },
+            {
+              "name": "font",
+              "type": "SpriteFont",
+              "description": "Fonte de propriedade do jogo."
+            },
+            {
+              "name": "labels",
+              "type": "IReadOnlyList\u003Cstring\u003E",
+              "description": "R\u00F3tulos fornecidos pelo jogo para todos os itens, sem nulos."
+            },
+            {
+              "name": "style",
+              "type": "TouchButtonStyle",
+              "description": "Estilo de fundo e texto."
+            },
+            {
+              "name": "selectedBackground",
+              "type": "Color",
+              "description": "Cor da c\u00E9lula selecionada e da barra."
+            },
+            {
+              "name": "textScale",
+              "type": "float",
+              "description": "Escala positiva finita da fonte."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.GetItemBounds(System.Int32)",
+          "name": "GetItemBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetItemBounds(int index)",
+          "summary": "Retorna a geometria da c\u00E9lula no viewport, descontada a rolagem.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice existente."
+            }
+          ],
+          "returns": "Ret\u00E2ngulo virtual, possivelmente fora do viewport.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.GetThumbBounds(System.Single,System.Single)",
+          "name": "GetThumbBounds",
+          "kind": "method",
+          "signature": "public RectangleF GetThumbBounds(float width = 5f, float minimumHeight = 24f)",
+          "summary": "Obt\u00E9m a barra de rolagem, vazia sem overflow.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "width",
+              "type": "float",
+              "description": "Largura positiva desejada."
+            },
+            {
+              "name": "minimumHeight",
+              "type": "float",
+              "description": "Altura m\u00EDnima desejada."
+            }
+          ],
+          "returns": "Ret\u00E2ngulo para desenhar acima do conte\u00FAdo.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.GetVisibleRange(System.Int32@,System.Int32@)",
+          "name": "GetVisibleRange",
+          "kind": "method",
+          "signature": "public void GetVisibleRange(out int first, out int endExclusive)",
+          "summary": "Consulta \u00EDndices que podem ser desenhados, em O(1) sem aloca\u00E7\u00E3o.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "first",
+              "type": "int",
+              "description": "Primeiro \u00EDndice inclusivo."
+            },
+            {
+              "name": "endExclusive",
+              "type": "int",
+              "description": "Limite exclusivo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.HitTest(System.Numerics.Vector2)",
+          "name": "HitTest",
+          "kind": "method",
+          "signature": "public int HitTest(Vector2 position)",
+          "summary": "Encontra a c\u00E9lula sob o toque, ou -1 para espa\u00E7os vazios e margens.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Coordenadas virtuais do dedo."
+            }
+          ],
+          "returns": "\u00CDndice atingido, ou -1.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.ScrollTo(System.Single)",
+          "name": "ScrollTo",
+          "kind": "method",
+          "signature": "public void ScrollTo(float offsetY)",
+          "summary": "Posiciona a rolagem, limitando-a ao conte\u00FAdo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "offsetY",
+              "type": "float",
+              "description": "Deslocamento finito desejado."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.ScrollToItem(System.Int32,System.Boolean)",
+          "name": "ScrollToItem",
+          "kind": "method",
+          "signature": "public void ScrollToItem(int index, bool center = false)",
+          "summary": "Garante visibilidade da c\u00E9lula; opcionalmente centraliza na altura.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice da c\u00E9lula."
+            },
+            {
+              "name": "center",
+              "type": "bool",
+              "description": "Centraliza quando verdadeiro."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.Select(System.Int32)",
+          "name": "Select",
+          "kind": "method",
+          "signature": "public void Select(int index)",
+          "summary": "Altera sele\u00E7\u00E3o programaticamente sem emitir clique.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice v\u00E1lido, ou -1 para limpar sele\u00E7\u00E3o."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.TouchGridView.Update(Lunet.Input.InputState,System.Single)",
+          "name": "Update",
+          "kind": "method",
+          "signature": "public void Update(InputState input, float deltaSeconds)",
+          "summary": "Atualiza toque, rolagem e sele\u00E7\u00E3o por dedo e passo fixo.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Snapshot de entrada."
+            },
+            {
+              "name": "deltaSeconds",
+              "type": "float",
+              "description": "Delta finito n\u00E3o negativo do passo."
+            }
+          ],
+          "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        }
+      ]
+    },
+    {
       "id": "T:Lunet.UI.TouchListView",
       "name": "TouchListView",
       "namespace": "Lunet.UI",
@@ -17924,6 +18341,40 @@
             }
           ],
           "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.UI.UiGridLayout.HitTest(Lunet.RectangleF,System.Int32,System.Single,System.Numerics.Vector2)",
+          "name": "HitTest",
+          "kind": "method",
+          "signature": "public int HitTest(RectangleF area, int itemCount, float offsetY, Vector2 position)",
+          "summary": "Identifica uma c\u00E9lula tocada em uma grade rol\u00E1vel, sem percorrer itens.",
+          "remarks": "Consulta O(1) sem aloca\u00E7\u00E3o. O toque precisa estar dentro do viewport e da c\u00E9lula. N\u00E3o consome entrada, nem confere fases/captura de dedo; combine com TouchGridView.",
+          "parameters": [
+            {
+              "name": "area",
+              "type": "RectangleF",
+              "description": "Viewport do controle em coordenadas virtuais."
+            },
+            {
+              "name": "itemCount",
+              "type": "int",
+              "description": "N\u00FAmero total de c\u00E9lulas."
+            },
+            {
+              "name": "offsetY",
+              "type": "float",
+              "description": "Deslocamento vertical finito n\u00E3o negativo do conte\u00FAdo."
+            },
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Posi\u00E7\u00E3o do dedo no espa\u00E7o do viewport."
+            }
+          ],
+          "returns": "\u00CDndice da c\u00E9lula ou -1 para fora da \u00E1rea, entre c\u00E9lulas ou em espa\u00E7o vazio.",
           "examples": [],
           "related": [],
           "since": "0.0.1"

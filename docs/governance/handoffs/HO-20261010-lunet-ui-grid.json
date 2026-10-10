@@ -22,13 +22,16 @@
     "apps/lunet2d/AgentsChat.md",
     "apps/lunet2d/docs/api/lunet-framework.json",
     "apps/lunet2d/docs/guides/grade-ui.md",
-    "docs/governance/handoffs/HO-20261010-lunet-ui-grid.json"
+    "docs/governance/handoffs/HO-20261010-lunet-ui-grid.json",
+    "apps/lunet2d/src/Lunet.Framework/UI/TouchGridView.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TouchGridViewTests.cs"
   ],
   "work_completed": [
     "UiGridLayout responsivo com colunas automáticas, altura fixa, spacing/padding/MaxColumns, buffers Span e GetContentHeight.",
     "Testes de retrato/paisagem, clipping externo, overflow, entradas inválidas, zero GC e compilação do guia pelo GameCompiler + GameHost.",
     "API offline e ROADMAP/CHANGELOG/AgentsChat atualizados.",
-    "GetVisibleRange e GetCellBounds O(1) para virtualização de inventários com 100 milhões de itens; testes sem alocação."
+    "GetVisibleRange e GetCellBounds O(1) para virtualização de inventários com 100 milhões de itens; testes sem alocação.",
+    "TouchGridView com selecao por dedo, scroll, draw clipado, teste de milhões de itens e guia Game.cs."
   ],
   "verification": [
     {
@@ -64,7 +67,8 @@
     "Confirmar CI e corrigir falhas de snapshot/API/build.",
     "Integrar PR após checks verdes pelo integrador.",
     "Validar exemplo no aparelho Android.",
-    "Reconciliar problema herdado do integrador na zona de governança por fluxo crítico separado, sem enfraquecer check do Lunet."
+    "Reconciliar problema herdado do integrador na zona de governança por fluxo crítico separado, sem enfraquecer check do Lunet.",
+    "Validar controle mobile no aparelho real após integração."
   ],
   "decisions_required": [],
   "normative_sources": [
