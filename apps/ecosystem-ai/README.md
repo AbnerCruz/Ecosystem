@@ -175,3 +175,12 @@ mesmo Runner/ledger seguro; o quadro registra tentativas e RunIds canônicos.
 Respostas presentes não são declaradas como aceite técnico automático.
 
 [Uso, garantias e testes](docs-r4-planned-task-board.md).
+
+## Exportar respostas e custos no dispositivo (R4)
+
+Cada resposta do assistente no painel C# localhost pode ser **salva em `.md`
+ou `.txt`**, preservando exatamente o texto redigido no catálogo. O painel
+também oferece exportação **`.csv` dos RunReceipts** (status, verificação,
+moeda, valor registrado e indicação de estimativa). Downloads não chamam
+modelos, não escrevem no workspace e só permitem IDs de projetos/sessões
+já existentes. [Garantias e testes](docs-r4-downloadable-results.md).
