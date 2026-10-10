@@ -12,15 +12,17 @@ public sealed class LegacyElevationClimateField
     private readonly float[] _moisture;
 
     private LegacyElevationClimateField(
-        LegacyTectonicField tectonics,
+        string seedText, LegacyTectonicField tectonics,
         float[] elevation, float[] temperature, float[] moisture)
     {
+        SeedText = seedText;
         Tectonics = tectonics;
         _elevation = elevation;
         _temperature = temperature;
         _moisture = moisture;
     }
 
+    public string SeedText { get; }
     public LegacyTectonicField Tectonics { get; }
     public int GridSize => Tectonics.GridSize;
     public float ElevationAt(int x, int y) => _elevation[Index(x, y)];
@@ -193,7 +195,7 @@ public sealed class LegacyElevationClimateField
         RankLand(moisture, aboveSea, r => Math.Pow(r, .95));
 
         return new LegacyElevationClimateField(
-            tectonics, elevation, temperature, moisture);
+            seedName, tectonics, elevation, temperature, moisture);
     }
 
     private static void RankLand(
