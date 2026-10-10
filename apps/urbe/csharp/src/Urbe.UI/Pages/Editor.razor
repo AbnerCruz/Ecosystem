@@ -140,7 +140,7 @@
                         <strong>Conectar nota: [[@_wikiContext.Query]]</strong>
                         @foreach (var suggestion in _wikiSuggestions)
                         {
-                            <button type="button" @onclick="() => CompleteWikilink(suggestion)">
+                            <button type="button" disabled="@Workspace.IsReadOnly" @onclick="() => CompleteWikilink(suggestion)">
                                 <span>@suggestion.Title</span>
                                 <small>@suggestion.Path</small>
                             </button>
@@ -599,12 +599,14 @@
     private void Undo()
     {
         Workspace.Undo();
+        ClearWikiSuggestions();
         SyncVisualModel();
     }
 
     private void Redo()
     {
         Workspace.Redo();
+        ClearWikiSuggestions();
         SyncVisualModel();
     }
 
@@ -697,6 +699,7 @@
                 DocumentModel.NormalizePath(Path),
                 StringComparison.OrdinalIgnoreCase))
         {
+            ClearWikiSuggestions();
             Workspace.Restore(Path);
         }
 
