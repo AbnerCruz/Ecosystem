@@ -48,9 +48,10 @@
     {
       "check": "Opções on/off, toque real e regressão no aparelho",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/toggle-ui.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-10 (Issue https://github.com/AbnerCruz/Ecosystem/issues/437); registro em docs/governance/responses/VAL-HO-20261009-lunet-touch-toggle-1c5df4ee1fe2.md."
     }
   ],
   "known_issues": [
