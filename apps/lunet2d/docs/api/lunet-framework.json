@@ -16449,7 +16449,38 @@
           "signature": "public void Draw(SpriteBatch batch, SpriteFont font, IReadOnlyList\u003Cstring\u003E labels, TouchButtonStyle style, Color selectedBackground, float textScale = 1f)",
           "summary": "Desenha apenas linhas vis\u00EDveis e a barra, recortadas na \u00E1rea, com dados fornecidos pelo jogo.",
           "remarks": "Inicia e encerra os pr\u00F3prios lotes, portanto n\u00E3o pode ser chamado entre Begin/End. N\u00E3o cria ou libera fonte/textura. O chamador controla o conte\u00FAdo e a paleta.",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "batch",
+              "type": "SpriteBatch",
+              "description": "Lote gr\u00E1fico pr\u00F3prio do jogo."
+            },
+            {
+              "name": "font",
+              "type": "SpriteFont",
+              "description": "Fonte de propriedade do jogo."
+            },
+            {
+              "name": "labels",
+              "type": "IReadOnlyList\u003Cstring\u003E",
+              "description": "R\u00F3tulos de cada linha, sem r\u00F3tulos nulos."
+            },
+            {
+              "name": "style",
+              "type": "TouchButtonStyle",
+              "description": "Paleta de fundo e primeiro plano."
+            },
+            {
+              "name": "selectedBackground",
+              "type": "Color",
+              "description": "Cor da linha selecionada e da barra."
+            },
+            {
+              "name": "textScale",
+              "type": "float",
+              "description": "Escala positiva finita do texto."
+            }
+          ],
           "returns": "",
           "examples": [],
           "related": [],
@@ -16462,7 +16493,13 @@
           "signature": "public RectangleF GetItemBounds(int index)",
           "summary": "Retorna o ret\u00E2ngulo virtual de uma linha, deslocado pelo scroll.",
           "remarks": "",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice a consultar."
+            }
+          ],
           "returns": "Ret\u00E2ngulo virtual deslocado pelo scroll.",
           "examples": [],
           "related": [],
@@ -16475,7 +16512,18 @@
           "signature": "public RectangleF GetThumbBounds(float width = 5f, float minimumHeight = 24f)",
           "summary": "Geometria proporcional da barra, vazia se n\u00E3o h\u00E1 overflow.",
           "remarks": "",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "width",
+              "type": "float",
+              "description": "Largura solicitada da barra."
+            },
+            {
+              "name": "minimumHeight",
+              "type": "float",
+              "description": "Altura m\u00EDnima da barra."
+            }
+          ],
           "returns": "Ret\u00E2ngulo da barra ou valor default sem overflow.",
           "examples": [],
           "related": [],
@@ -16488,7 +16536,18 @@
           "signature": "public void GetVisibleRange(out int first, out int endExclusive)",
           "summary": "Intervalo [first, endExclusive) de linhas que podem intersectar o viewport.",
           "remarks": "",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "first",
+              "type": "int",
+              "description": "Primeiro \u00EDndice potencialmente vis\u00EDvel."
+            },
+            {
+              "name": "endExclusive",
+              "type": "int",
+              "description": "\u00CDndice final exclusivo."
+            }
+          ],
           "returns": "",
           "examples": [],
           "related": [],
@@ -16501,7 +16560,13 @@
           "signature": "public int HitTest(Vector2 position)",
           "summary": "Retorna a linha sob um ponto, ou -1 fora do viewport, sobre intervalo ou \u00E1rea vazia.",
           "remarks": "",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "position",
+              "type": "Vector2",
+              "description": "Coordenadas virtuais do toque."
+            }
+          ],
           "returns": "\u00CDndice atingido, ou -1 se n\u00E3o houver linha.",
           "examples": [],
           "related": [],
@@ -16514,7 +16579,13 @@
           "signature": "public void ScrollTo(float offsetY)",
           "summary": "Posiciona a lista dentro dos limites, cancelando momentum.",
           "remarks": "",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "offsetY",
+              "type": "float",
+              "description": "Dist\u00E2ncia finita desejada a partir do topo."
+            }
+          ],
           "returns": "",
           "examples": [],
           "related": [],
@@ -16527,7 +16598,18 @@
           "signature": "public void ScrollToItem(int index, bool center = false)",
           "summary": "Torna uma linha vis\u00EDvel, opcionalmente centralizada.",
           "remarks": "",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice da linha."
+            },
+            {
+              "name": "center",
+              "type": "bool",
+              "description": "Centraliza a linha quando verdadeiro."
+            }
+          ],
           "returns": "",
           "examples": [],
           "related": [],
@@ -16540,7 +16622,13 @@
           "signature": "public void Select(int index)",
           "summary": "Altera a sele\u00E7\u00E3o por c\u00F3digo, sem emitir pulsos de ativa\u00E7\u00E3o.",
           "remarks": "",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "index",
+              "type": "int",
+              "description": "\u00CDndice da sele\u00E7\u00E3o, ou -1 para limpar."
+            }
+          ],
           "returns": "",
           "examples": [],
           "related": [],
@@ -16553,7 +16641,18 @@
           "signature": "public void Update(InputState input, float deltaSeconds)",
           "summary": "Atualiza sele\u00E7\u00E3o e arraste uma vez por passo fixo, preservando o ID de dedo original.",
           "remarks": "",
-          "parameters": [],
+          "parameters": [
+            {
+              "name": "input",
+              "type": "InputState",
+              "description": "Snapshot de toque em coordenadas virtuais."
+            },
+            {
+              "name": "deltaSeconds",
+              "type": "float",
+              "description": "Delta finito n\u00E3o negativo do passo, em segundos."
+            }
+          ],
           "returns": "",
           "examples": [],
           "related": [],
