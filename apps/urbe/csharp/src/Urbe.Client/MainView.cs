@@ -132,7 +132,7 @@ public sealed class MainView : Grid
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var notes = snapshot.Documents.Where(d => d.Text is not null)
             .Select(d => new CityNote(d.Path, d.Text!)).ToArray();
-        await LoadAsync(notes, snapshot.Mundo ?? "urbe");
+        await LoadAsync(notes, snapshot.Mundo ?? "urbe", snapshot);
         _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "Pasta conectada";
     }
 
@@ -150,7 +150,7 @@ public sealed class MainView : Grid
     /// Generates the 1.8.4 world and opens the files as on the first open of a vault
     /// (LegacyCity.OpenFirstTime), off the UI thread; then frames all houses (city.fit).
     /// </summary>
-    public async Task LoadAsync(IReadOnlyList<CityNote> files, string seed = "urbe")
+    public async Task LoadAsync(IReadOnlyList<CityNote> files, string seed = "urbe", VaultSnapshot? persisted = null)
     {
         _contents.Clear();
         foreach (var f in files) _contents[f.Path] = f.Content;
@@ -163,12 +163,21 @@ public sealed class MainView : Grid
                 int next = 0;
                 // app.js id(): ids seed lot order and growth; deterministic here so the same files give the same city.
                 var city = new LegacyCity(new LegacyCityTerrain((x, y) => w.At(x, y).Biome), prefix => prefix + (++next).ToString("x"));
-                city.OpenFirstTime(files.Select(f => (f.Path, f.Content)).ToList());
+                var store = city.OpenFirstTime(files.Select(f => (f.Path, f.Content)).ToList());
+                if (persisted is { IsMapReadOnly: false })
+                    city.RestoreSavedNotePositions(persisted.Documents, store);
                 return (w, city);
             });
             World.Load(world, city);
             Explorer.SetNotes(files);
             World.FitNotes();
+            if (persisted is not null && LegacySavedMapCamera.TryRead(persisted, out var camera))
+            {
+                World.Camera.X = camera.X;
+                World.Camera.Y = camera.Y;
+                World.Camera.SetZoom(camera.Zoom);
+                World.InvalidateVisual();
+            }
             _biome.Text = World.BiomeNameAtCentre();
             _loading.IsVisible = false;
         }
