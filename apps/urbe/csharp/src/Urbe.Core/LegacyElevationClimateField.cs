@@ -30,6 +30,7 @@ public sealed class LegacyElevationClimateField
     public float MoistureAt(int x, int y) => _moisture[Index(x, y)];
     internal float[] Elevations() => (float[])_elevation.Clone();
     internal float[] Moistures() => (float[])_moisture.Clone();
+    internal float[] Temperatures() => (float[])_temperature.Clone();
 
     private int Index(int x, int y)
     {
