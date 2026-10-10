@@ -32,7 +32,8 @@
     "Backend managed TTF com StbTrueTypeSharp, rasterizado uma vez em atlas RGBA para SpriteFont.FromBitmap, sem alocar no loop Draw/Measure.",
     "Carregamento via ContentManager cacheado por path/opções e gerenciamento de vida da textura.",
     "Testes unitários de opções inválidas, atlas, medidas proporcionais, fallback Unicode, Dispose, cache e GameCompiler; guia Android offline, metadata pública e ADR.",
-    "Após regressão do CI, removida dependência NuGet do Framework por código-fonte público versionado com STBSHARP_INTERNAL; estrutura arquitetural preservada."
+    "Após regressão do CI, removida dependência NuGet do Framework por código-fonte público versionado com STBSHARP_INTERNAL; estrutura arquitetural preservada.",
+    "Correções de warnings em código vendorizado: buffers stackalloc fora de loops e contrato nullable correto."
   ],
   "verification": [
     {
@@ -105,7 +106,7 @@
   "base_commit": "66377a83547a3db92dc2129646d45d1776a020f5",
   "reuse_assessment": [
     {
-      "subject": "TrueTypeFont",
+      "subject": "true-type-font",
       "status": "product-specific",
       "rationale": "Font atlas integrado a Texture2D e SpriteFont do Lunet, sem consumidor comprovado fora dele."
     }
