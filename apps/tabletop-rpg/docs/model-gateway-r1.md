@@ -3,7 +3,7 @@
 ## Fronteira implementada
 
 `TabletopRpg.ModelGateway` é uma assembly C# própria do Product, sem
-`PackageReference`, rede, SDK de provedor, UI, Hub ou dependência de outro
+`PackageReference`, rede, SDK de provedor, UI ou dependência de outro
 Product. `IModelGateway.GenerateAsync` recebe um único `ModelTurnRequest`
 sob chamada explícita e devolve `ModelTurnResponse` **não confiável**.
 
