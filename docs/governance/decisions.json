@@ -1601,7 +1601,7 @@
     },
     {
       "id": "DEC-0044",
-      "status": "pending",
+      "status": "decided",
       "component": "urbe",
       "blocking": false,
       "title": "Plugins do Urbe no app nativo: o que fazer com o plugins.js da 1.8.4",
@@ -1621,15 +1621,21 @@
           "consequences": "Máxima compatibilidade com a 1.8.4, mas traz um motor JS novo ao app, com custo de segurança, tamanho e manutenção (NN-020/NN-022); exige ADR."
         }
       ],
-      "consequences": "Pendente. Nada muda no código até a decisão; a opção 1 já é o comportamento atual.",
+      "consequences": "DECISÃO DO PROPRIETÁRIO: 2. ADR-0033 (Proposto) abre as questões do desenho (formato, superfície, permissões, isolamento, contrato). Nada é implementado antes do aceite do ADR (NN-011); o comportamento atual (listar, aprovar, criar, ligar/desligar, sem executar) continua.",
       "manifestCompatibility": "Opções 2 e 3 alteram capacidade e superfície de segurança do produto (NN-011, NN-016) e exigem ADR antes de implementar; a opção 1 não muda nada.",
-      "recommendation": "1 — manter só o gerenciamento até haver demanda concreta; decidir 2 ou 3 depois da paridade.",
+      "recommendation": "2 — escolhida pelo proprietário (a recomendação original do agente era 1).",
       "related": [
+        "docs/governance/addenda/ADD-0021-urbe-plugins-api-nativa.md",
+        "docs/adr/0033-urbe-plugins-api-nativa.md",
         "apps/urbe/src/customize/plugins.js",
         "apps/urbe/docs/csharp/ROADMAP.md"
       ],
-      "raisedBy": "Claude Code — achado do porte da Personalização nativa (sessão do proprietário)",
-      "raisedAt": "2026-10-11"
+      "raisedBy": "Claude Code — achado do porte da Personalização nativa",
+      "raisedAt": "2026-10-11",
+      "decision": "2 — API nativa de plugins em C#, com permissões declaradas; os plugins .js da 1.8.4 não serão executados no app nativo. A API só é construída depois do aceite do ADR-0033.",
+      "decidedAt": "2026-10-11",
+      "record": "docs/governance/addenda/ADD-0021-urbe-plugins-api-nativa.md",
+      "consequencesApplied": true
     }
   ]
 }
