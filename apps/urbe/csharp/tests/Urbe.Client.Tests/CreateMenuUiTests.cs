@@ -117,6 +117,8 @@ public sealed partial class HeadlessUiTests
             var (view, window, vault, dir) = await OpenCreateVault();
             try
             {
+                // life events (neblina, ...) post to the same notice pill: keep it to the tool's own messages
+                view.World.Life.Options.Events = false;
                 var city = view.World.City!;
                 var (x0, y0) = FindDryRect(city, 6);
                 view.World.Camera.X = (x0 + 3) * 32;
