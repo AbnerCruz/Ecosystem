@@ -57,3 +57,24 @@ sem opt-in.
 material (não apenas resposta presente), integração real de ChangeSets
 pelo `ChangeIntegrator`, experiência Android distribuível e ensaio
 manual com provider real. A Issue #354 permanece aberta.
+
+## Auditoria de evidência no momento de visualizar (Issue #497)
+
+Na leitura do quadro, todo resultado histórico positivo é reavaliado **contra o
+catálogo atual**. Para `response_verified`, o recibo referenciado precisa
+continuar presente exatamente uma vez na sessão, com `succeeded` e
+`Verified=true`. Para `review_recorded`, os dois recibos precisam continuar
+verificados, em ordem, e o parecer correspondente precisa continuar existir
+com os hashes SHA-256 das respostas efetivamente presentes na conversa.
+
+Se algo não corresponder, a interface mostra **"Evidência histórica não
+confirmada no catálogo atual"** em vez de repetir o rótulo positivo.
+Essa checagem é read-only: não altera `planned-tasks.json`, o catálogo,
+os pareceres, custos ou execuções. Uma revisão registrada não significa
+aceite material do critério, e nenhum botão de aprovação ou integração
+automática é criado.
+
+A consulta não resolve atribuição inequívoca de respostas a runs antigos
+quando faltam identificadores de correlação; mantém as limitações
+de rastreabilidade já descritas acima. Teste de regressão:
+`R4PlannedTaskEvidenceTests`.

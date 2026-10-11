@@ -1,0 +1,115 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-p6-r4-task-evidence",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T09:16:26.449Z",
+  "agent": {
+    "id": "chatgpt-p6-r4-evidence",
+    "kind": "ai-agent"
+  },
+  "task_id": "P6-5",
+  "component": "ecosystem-ai",
+  "state": "review",
+  "branch": "agent/p6-r4-task-evidence-20261011",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/498",
+  "base_commit": "cfb19a3846c625ac73b54a306ab230b2c054e5da",
+  "files_changed": [
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliPlannedTaskEvidence.cs",
+    "apps/ecosystem-ai/src/EcosystemAi.Cli/CliWebUiHtml.cs",
+    "apps/ecosystem-ai/tests/AgentRuntime.Tests/R4PlannedTaskEvidenceTests.cs",
+    "apps/ecosystem-ai/docs-r4-planned-task-board.md",
+    "docs/governance/handoffs/HO-20261011-p6-r4-task-evidence.json"
+  ],
+  "work_completed": [
+    "FATO OBSERVADO: o painel R4 apresentava rótulos positivos históricos de planned-tasks.json sem confirmar os recibos atuais.",
+    "Implementado CliPlannedTaskEvidence: resposta somente com run único ainda sucedido/verificado; revisão somente com dois runs verificados e parecer vinculado, respostas atuais e hashes corretos.",
+    "Quadro agora diferencia evidência ainda comprovada de evidência histórica obsoleta com aviso visível, sem escrita, migração, grant, alteração de orçamento ou integração.",
+    "Novos testes cobrem recibo desaparecido ou desverificado, relação do parecer ausente, projeto incorreto e digest de resposta alterada."
+  ],
+  "verification": [
+    {
+      "check": "R4PlannedTaskEvidenceTests (.NET 10)",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Testes adicionados em apps/ecosystem-ai/tests/AgentRuntime.Tests/R4PlannedTaskEvidenceTests.cs; sem SDK .NET disponível neste ambiente; CI no PR deve executá-los."
+    },
+    {
+      "check": "Consistency + checks de integração combinados",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardando o integrador e o workflow de consistência sobre a main atual no PR."
+    },
+    {
+      "check": "Validação em aparelho",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Mudança de auditoria de recibos no Product local; não há artefato Android nesta entrega."
+    }
+  ],
+  "known_issues": [
+    "P6-5 continua aberta; não há validação material de critérios de aceite, integração de ChangeSets, nem distribuição Android.",
+    "Sem correlação histórica forte de runs/respostas em catálogo antigo; o check confirma as evidências que o formato atual permite.",
+    "Sem execução local de dotnet ou GitHub network no ambiente; resultado automatizado depende do CI no PR."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Conferir e, se necessário, corrigir o CI do PR antes da integração governada.",
+    "Prosseguir P6-5 em verificação material de resultados e integração supervisionada de ChangeSets sem antecipar permissões não autorizadas.",
+    "Testar fluxo com provider real e definir a trilha Android em decisão apropriada."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ROADMAP.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/platform-execution.md",
+    "docs/governance/multi-agent.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/ecosystem-ai/docs-r4-planned-task-board.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "O catálogo e os recibos permanecem fontes de verdade; o quadro é projeção efêmera."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Mudança restrita a apps/ecosystem-ai; sem referência direta a Lunet ou Urbe."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #497, branch, testes, PR e handoff auditáveis."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Testes pendentes explicitamente; nenhum gate DEVICE reivindicado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Trabalho em review, sem afirmar sucesso antes dos checks e integração."
+    },
+    {
+      "id": "NN-020",
+      "evidence": "Sem novo runtime, ledger ou provedor; validação é projeção de receipts existentes."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "ecosystem-ai-task-evidence-rendering",
+      "status": "product-specific",
+      "rationale": "Projeção exclusiva do catálogo e do painel Ecosystem AI; não há segundo consumidor real nem extração autorizada."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Apenas verificação read-only de rótulos na UI local do Product e testes; sem escrita de dados/contrato, grants, integração ou distribuição."
+  },
+  "cost": null
+}
