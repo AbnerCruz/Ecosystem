@@ -29,8 +29,8 @@
   ],
   "verification": [
     { "kind": "automated", "check": "dotnet test Urbe.Core.Tests -c Release (LegacySearchOracleTests: 4)", "result": "passed", "evidence": "Ranking, lista, paleta e keymap idênticos ao JavaScript original." },
-    { "kind": "automated", "check": "dotnet test Urbe.Client.Tests -c Release (Search_QuickOpenAndCommandPaletteWorkLikeTheOriginal)", "result": "pending", "evidence": "Ver resultado final no relatório do agente." },
-    { "kind": "automated", "check": "dotnet run tests/consistency/Check.cs", "result": "pending", "evidence": "Executar no estado combinado." },
+    { "kind": "automated", "check": "dotnet test Urbe.Client.Tests -c Release (35, incl. Search_QuickOpenAndCommandPaletteWorkLikeTheOriginal) e Urbe.Core.Tests (497)", "result": "passed", "evidence": "Após merge de origin/main: 35/35 e 497/497." },
+    { "kind": "automated", "check": "dotnet run tests/consistency/Check.cs", "result": "passed", "evidence": "22 checks passaram após o merge de origin/main." },
     { "kind": "human", "check": "Teclado virtual/IME e toque no Android e Windows reais", "result": "not-applicable", "evidence": "Depende de aparelho (DEVICE)." },
     { "kind": "automated", "check": "urbe-checks no PR", "result": "pending", "evidence": "CI do PR ainda precisa executar." }
   ],
