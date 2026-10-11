@@ -29,7 +29,7 @@ desconhecidos, chaves duplicadas ou identificadores arbitrários do Mestre:
 Somente código confiável do host pode chamar
 `ApprovedGameMasterTools.ApplyApproved(proposal)`. Essa camada delega às
 operações canônicas de `Campaign`, que verificam o assento de Mestre,
-a revisão lógica do estado, a existência dos fatos e o destino antes de
+a revisão composta (relógio lógico e contagens de fatos, personagens e participantes), a existência dos fatos e o destino antes de
 registrar um evento ou revelar conhecimento à personagem de destino.
 Falas propostas, inclusive segredos, **não** entram no histórico público
 até aprovação explícita. Mudanças na campanha após a proposta tornam sua
