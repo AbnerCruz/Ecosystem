@@ -1,4 +1,3 @@
-using System.Text;
 using TabletopRpg.Core;
 using TabletopRpg.Director;
 using TabletopRpg.Npc;
@@ -168,7 +167,8 @@ public sealed class QuickStartTests
         foreach (var thread in start.DirectorThreads) director.Track(thread);
         var frame = director.Observe(start.Campaign.CreateGameMasterView(start.GameMasterParticipantId));
         Assert.Equal(3, frame.Threads.Count);
-        Assert.Equal(0, frame.Cues.Count);
+        Assert.Contains(frame.Cues, cue => cue.Beat == DirectorBeatKind.Foreshadow);
+        Assert.Equal(0, start.Campaign.Events.Count(e => e.Kind == "speech"));
     }
 
     [Fact]
