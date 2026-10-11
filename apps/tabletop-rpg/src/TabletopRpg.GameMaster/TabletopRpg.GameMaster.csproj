@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TabletopRpg.GameMaster</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../TabletopRpg.Core/TabletopRpg.Core.csproj" />
+    <ProjectReference Include="../TabletopRpg.ModelGateway/TabletopRpg.ModelGateway.csproj" />
+  </ItemGroup>
+</Project>
