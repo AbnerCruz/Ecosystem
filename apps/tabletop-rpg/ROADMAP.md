@@ -29,8 +29,8 @@ Objetivo: provar o modelo de mesa sem UI e sem provedor real.
 
 ## R2 — Produto mobile
 
-- [ ] RPG-020 — Decidir e registrar shell mobile C# e targets iniciais.
-- [ ] RPG-021 — Home/campanhas/criação.
+- [~] RPG-020 — Decidir e registrar shell mobile C# e targets iniciais. Issue #527: shell Android nativo .NET 10/C# (arm64/API 29+), projeto compilável e workflow de APK prerelease; CI/DEVICE/integração pendentes.
+- [~] RPG-021 — Home/campanhas/criação. Issue #527: preview nativo com lista local e criação via RPG-016, tela de sessão com fala/d20/salvar/retomar; faltam UX completa, DEVICE e integração.
 - [ ] RPG-022 — Tela de sessão context-driven.
 - [ ] RPG-023 — Ficha, grupo, inventário, diário e regras.
 - [ ] RPG-024 — Dados e histórico visual de rolagens.

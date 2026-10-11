@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-tabletop-rpg-rpg020-android-preview",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T20:20:00Z",
+  "agent": {
+    "id": "chatgpt-rpg020-android",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-020",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg020-android-preview",
+  "base_commit": "f817707e4f8c8868150e1dc85c558a17001864cb",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/528",
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.Android/TabletopRpg.Android.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.Android/MainActivity.cs",
+    ".github/workflows/tabletop-rpg-android-preview.yml",
+    "apps/tabletop-rpg/docs/android-preview-r2.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261011-tabletop-rpg-rpg020-android-preview.json"
+  ],
+  "work_completed": [
+    "Decidido e documentado shell Android nativo C#/.NET 10 API 29+ arm64 sem WebView ou JS; Core isolado, Product sem dependência de outro Product.",
+    "Implementadas home com criação por 3 quickstarts, lista de campanhas salvas, visualização de cena/quest/HP e ações humanas SpeakIntent + SkillCheckIntent de percepção/força (d20 canônico).",
+    "Sessão pode ser encerrada/reaberta. FileCampaignStore v2 do Product salva automaticamente após ações e reabre com backup; sidecar privado armazena somente IDs necessários para associar UI ao personagem humano.",
+    "Workflow Android preview executa dotnet test, workload Android, gera APK standalone debug com verificação apksigner e SHA256, upload-artifact e prerelease de teste com link para APK, apenas após build bem-sucedido.",
+    "UI informa explicitamente que Player Agent, GM Agent, NPC AI, multiplayer e interface de ficha não operam com modelo real. Sem credenciais, rede, gasto de IA ou outra fonte de verdade."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar tabletop-rpg-ci e etapa de teste no Android preview no HEAD final."
+    },
+    {
+      "check": "dotnet build src/TabletopRpg.Android/TabletopRpg.Android.csproj -c Debug -f net10.0-android",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Workflow tabletop-rpg-android-preview em andamento. Primeira tentativa falhou por implicit-usings ausentes no projeto Android; corrigido em b952c05. Verificar próximo run e corrigir."
+    },
+    {
+      "check": "apksigner verify + prerelease APK",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Não comunicar link APK até GitHub Releases realmente publicar o asset validado."
+    },
+    {
+      "check": "tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar consistency no commit final do PR."
+    },
+    {
+      "check": "DEVICE Android",
+      "kind": "human",
+      "result": "pending",
+      "evidence": "Instalar o APK do preview depois de publicado e verificar abertura, toques, texto, d20, persistência, fechar/reabrir. Teste físico ainda não realizado.",
+      "object": "https://github.com/AbnerCruz/Ecosystem/actions/workflows/tabletop-rpg-android-preview.yml",
+      "critical": true
+    }
+  ],
+  "known_issues": [
+    "Shell é preview RPG-020/021, não Gate G-R1/G-R2, sem provedor real ou Mestre IA em execução.",
+    "Assinatura debug do workflow é efêmera e pode exigir reinstalação entre builds, perdendo dados locais; explicitar no release.",
+    "UI offline tem somente fala do humano e duas perícias d20; sem inventário detalhado, exportação, multiplayer, lifecycle completo e autosave em suspensão além da gravação por ação.",
+    "PR #528 fica draft sobre RPG-016 PR #526, e os PRs #523/#521/#519 devem ser integrados antes. Builds de branch são test-only."
+  ],
+  "blockers": [
+    "Confirmar APK standalone assinado no GitHub Actions e publicar prerelease antes de informar URL; corrigir CI caso falhe.",
+    "Gate R1 (LLM real)/R2 e política de arquitetura/distribuição ainda exigem revisão/validação; não mesclar manualmente o PR crítico."
+  ],
+  "next_actions": [
+    "Conferir erro/build no workflow Android e corrigir qualquer falha até conseguir um APK assinado real.",
+    "Validar release público com asset APK e SHA256 gerados no mesmo commit.",
+    "Após instalação pelo proprietário, corrigir bugs de toque, teclado, rotatividade, persistência e UX e continuar RPG-022/023/024/025 do roadmap com evidência.",
+    "Reconciliar PR #528 com main somente após PRs prévios integrarem e os gates/autorizações críticas cabíveis."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Persistência e ações delegadas somente ao Campaign/SessionEngine/FileCampaignStore existentes; sidecar de UI não replica fatos do mundo."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Android referencia apenas bibliotecas TabletopRpg do próprio Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "App independente do Hub e de outros Products."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Código da app é C# nativo, sem WebView/JS."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #527, branch, PR #528, workflow CI Android, handoff e roadmap."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "RPG-020 e incremento inicial RPG-021 previstos na R2, sem fechar demais etapas."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas e padrões de release Android do repo consultados."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhuma alteração do schema de campanha v2 nem contrato transversal."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Ações humanas passam pelo SessionEngine; nenhuma fala automática de GM ou agente é falsificada."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "APK exige validação real de dispositivo, marcada pending até usuário testar."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-020/021 ficam [~], PR draft não integrado, tests e gates pendentes."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Identidade Android própria app.tabletoprpg.preview e IDs canônicos mantidos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhum runtime ou código de outro Product consumido diretamente."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Distribuição prévia em GitHub Release separada do Hub; sem dependência de seu lifecycle."
+    }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Introdução do shell Android e canal público de prévia é decisão de arquitetura/distribuição. Pedido explícito de APK do proprietário permite gerar prévia em branch, não presumir aprovação para integração/produção."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "tabletop-rpg-android-native",
+      "status": "product-specific",
+      "rationale": "Apresentação Android para mesa de RPG, sem extração compartilhada ou segundo consumidor."
+    }
+  ]
+}

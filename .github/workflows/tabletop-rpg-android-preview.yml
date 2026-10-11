@@ -1,0 +1,117 @@
+name: tabletop-rpg-android-preview
+
+# Development-branch APK explicitly requested for mobile testing.
+# Does not claim RPG G-R1 or G-R2 acceptance, production signing or AI gameplay.
+on:
+  push:
+    branches:
+      - feat/tabletop-rpg-rpg020-android-preview
+    paths:
+      - 'apps/tabletop-rpg/**'
+      - '.github/workflows/tabletop-rpg-android-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tabletop-rpg-android-preview-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  android-apk:
+    name: Build and publish test APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: apps/tabletop-rpg
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Validate canonical tabletop RPG rules and saves
+        run: dotnet test --project tests/TabletopRpg.Core.Tests -c Release
+      - name: Install .NET Android workload
+        run: dotnet workload install android
+      - name: Build standalone arm64 Android APK
+        run: |
+          set -euo pipefail
+          dotnet build src/TabletopRpg.Android/TabletopRpg.Android.csproj \
+            -c Debug -f net10.0-android \
+            -p:AndroidSdkDirectory="$ANDROID_HOME" \
+            -p:GITHUB_RUN_NUMBER=$((1000000 + ${{ github.run_number }})) \
+            -p:AndroidPackageFormat=apk
+      - name: Verify APK signature and create checksum
+        id: apk
+        run: |
+          set -euo pipefail
+          mapfile -t signed < <(find src/TabletopRpg.Android/bin/Debug -type f -name '*-Signed.apk' | sort)
+          if [ "${#signed[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one signed APK; found ${#signed[@]}"
+            find src/TabletopRpg.Android/bin -name '*.apk' || true
+            exit 1
+          fi
+          mkdir -p dist
+          version="0.1.0-preview.${{ github.run_number }}"
+          apk="MesaRPG-${version}-Android-arm64.apk"
+          cp "${signed[0]}" "dist/$apk"
+          test -s "dist/$apk"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner -type f | sort -V | tail -1)"
+          test -x "$apksigner"
+          "$apksigner" verify --verbose --print-certs "dist/$apk" > dist/certificate.txt
+          grep -q 'Verified using v2 scheme' dist/certificate.txt
+          (cd dist && sha256sum "$apk" > SHA256SUMS.txt)
+          echo "apk=$apk" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=tabletop-rpg-v$version" >> "$GITHUB_OUTPUT"
+          echo "Verified $apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tabletop-rpg-android-${{ steps.apk.outputs.version }}
+          path: |
+            apps/tabletop-rpg/dist/*.apk
+            apps/tabletop-rpg/dist/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish installable Android preview as GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.apk.outputs.tag }}
+          APK: ${{ steps.apk.outputs.apk }}
+          VERSION: ${{ steps.apk.outputs.version }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Existing release is immutable; no overwrite."
+            exit 0
+          fi
+          cat > dist/release-notes.md <<'EOF'
+          ## Mesa RPG — Android preview
+
+          APK de teste Android arm64, feito em C# nativo e com a engine canônica do Tabletop RPG.
+
+          **Já é possível testar:** criar uma campanha imediata entre três cenários, abrir uma cena e missão,
+          falar com a personagem humana, lançar d20 via regras reais, encerrar/recomeçar a sessão e salvar/reabrir
+          campanhas localmente (formato v2 com backup). Funciona sem internet, conta ou credenciais.
+
+          **Não implementado nesta prévia:** Mestre e companheiros conectados a LLM, resposta automática de NPC,
+          interface completa de ficha/inventário, exportação, batalha tática, multiplayer e validação DEVICE.
+          Isto não é uma release do MVP completo nem fecha Gate G-R1/G-R2.
+
+          O APK usa assinatura de desenvolvimento efêmera deste CI. Uma próxima build poderá exigir desinstalar
+          a anterior para instalar; dados do aplicativo podem ser perdidos ao desinstalar. Faça testes com dados
+          descartáveis. Não há envio de dados à rede nem IA paga nesta prévia.
+          EOF
+          gh release create "$TAG" "dist/$APK" dist/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "${{ github.sha }}" --prerelease --latest=false \
+            --title "Mesa RPG $VERSION — Android preview" \
+            --notes-file dist/release-notes.md
