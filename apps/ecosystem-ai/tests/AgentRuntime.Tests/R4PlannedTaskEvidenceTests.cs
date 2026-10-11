@@ -44,7 +44,8 @@ public sealed class R4PlannedTaskEvidenceTests
             var edited = new ProjectCatalog(source.Revision,
                 [source.Projects[0] with { Sessions = [withoutReceipt] }]);
             var warning = CliWebUiHtml.Render(edited, new string('A', 64), planned: plan);
-            Assert.Contains("Evidência histórica não confirmada no catálogo atual", warning);
+            Assert.Contains(System.Text.Encodings.Web.HtmlEncoder.Default.Encode(
+                "Evidência histórica não confirmada no catálogo atual"), warning);
             Assert.DoesNotContain("Resposta presente e verificada", warning);
             Assert.Equal(plan.Revision, taskStore.Read().Revision); // GET e avaliação não gravam nada
         }
