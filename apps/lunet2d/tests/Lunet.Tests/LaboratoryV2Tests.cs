@@ -4,6 +4,7 @@ using Lunet.Core;
 using Lunet.Graphics;
 using Lunet.Input;
 using Lunet.Pathfinding;
+using Lunet.Physics;
 
 namespace Lunet.Tests;
 
@@ -80,6 +81,18 @@ public sealed class LaboratoryV2Tests
             Touch(TouchPhase.Moved, 150, 260);
             Assert.NotEqual(Read("collisionDesired"), Read("collisionResolved"));
             host.SetSurfaceTouches([]); host.Tick(1.0 / 60); // encerra o arraste antes do próximo toque
+            Tap(180, 156);
+            Assert.True((bool)Read("physicsVisible"));
+            Tap(180, 489);
+            Assert.True((bool)Read("physicsStress"));
+            var stressBodies = (RigidBody2D[])Read("physicsStressBodies");
+            Assert.Equal(64, stressBodies.Length);
+            Assert.All(stressBodies, body => Assert.NotNull(body));
+            for (int frame = 0; frame < 120; frame++) host.Tick(1.0 / 60);
+            Assert.False(host.IsFaulted, host.Fault?.ToString());
+            Tap(180, 489);
+            Assert.False((bool)Read("physicsStress"));
+            Assert.All(stressBodies, body => Assert.Null(body));
             Go(10);
             Tap(40, 104); Assert.Equal(1235, Read("score"));
             Go(11);
