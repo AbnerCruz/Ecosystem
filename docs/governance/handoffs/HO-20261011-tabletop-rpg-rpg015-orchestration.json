@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-tabletop-rpg-rpg015-orchestration",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T19:39:38Z",
+  "agent": {
+    "id": "chatgpt-rpg015",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-015",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg015-orchestration",
+  "base_commit": "6aa5da74bc6c6d97bcbb272611c50f313657a179",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/523",
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.Orchestration/TabletopRpg.Orchestration.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.Orchestration/ModelUsageJournal.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Orchestration/RpgEventOrchestrator.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.ModelGateway/ModelGateway.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/RpgEventOrchestratorTests.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+    "apps/tabletop-rpg/docs/orchestration-r1.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261011-tabletop-rpg-rpg015-orchestration.json"
+  ],
+  "work_completed": [
+    "RPG-015 do roadmap: orquestrador C# dirigido só por eventos explícitos que utiliza AgentTurnRunner/Player Agent e GameMasterAgent existentes, não aprova drafts por conta própria nem contorna SessionEngine.",
+    "Registro de agentes por assento, deduplicação por eventKey, exclusão de trabalho concorrente para mesmo participante, proteções contra wake repetido sem progresso em revisão canônica, nenhum polling ou timer.",
+    "Falhas de efeito/custo remoto incerto nunca são repetidas automaticamente. Apenas uma repetição quando provider confirma explicitamente no-charge e no-effect. Recibos omitem prompts, reasoning e dados privados.",
+    "ObservableModelGateway é decorator de porta IModelGateway independente de fornecedor, medindo tokens e USD quando informado pelo provider sem impor quotas financeiras. ModelTurnResponse possui metadado ModelTurnUsage opcional, com semântica de custo ausente = desconhecido.",
+    "Decisão do proprietário: Tabletop RPG é agnóstico a provider/model; pay-as-you-go sem teto financeiro obrigatório diário/mensal/total, priorizando otimização de chamadas. Preservado o padrão sem depender diretamente do Product Ecosystem AI ou criar ledger paralelo.",
+    "Testes de disparo, concorrência, idempotência, no-progress, retry seguro, falha desconhecida, papel GM/Player, drafts sem autoaprovação, medição opcionais, custos não inventados, resposta sem quota.",
+    "Documentação deixa clara a fronteira ADR-0017/ADR-0022: para consumir runtime/registry compartilhado do Ecosystem AI exigirá capability e Extraction Review/ADR antes de violar boundaries."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "CI tableau-rpg-ci no PR #523 success no head sem handoff 328f80d; aguardar CI no commit final com handoff."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar consistency do PR #523 no commit final e no estado combinado."
+    },
+    {
+      "check": "DEVICE Android",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "RPG-015 headless sem UI, APK, dispositivo ou distribuição."
+    }
+  ],
+  "known_issues": [
+    "O Ecosystem AI AgentRuntime ILedger exige limite configurado para autorizar gasto (deny-by-default). Este PR não integra nem contorna esse mecanismo; futura integração deve resolver autorização por operação e pay-as-you-go sem teto diário/mensal.",
+    "Sem implementação de provider HTTP real no RPG. O ModelTurnUsage depende de informação devolvida pelo Host/adapter concreto; ausente = custo desconhecido, não zero.",
+    "Cursor de eventos, indicadores de progresso e recibos são transitórios; máximo de 16384 event IDs guardados por instância antes de exigir checkpoint/resync do host, sem limite financeiro.",
+    "PR #523 draft sobre PR #521, empilhado sobre #519 e #517. Todos ainda requerem cadeia de integração governada; não declarar R1 encerrado, release, DEVICE ou IA operacional.",
+    "GM proposals preservam gate de aprovação e nunca executam ferramentas sem Host; falhas remotas incertas requerem evento explícito novo após reconciliação."
+  ],
+  "blockers": [
+    "Integrar sequencialmente RPG-012 PR #517, RPG-013 PR #519 e RPG-014 PR #521 (RPG-011 PR #511 já integrado) antes de liberar #523; CI/consistency do commit final."
+  ],
+  "next_actions": [
+    "Conferir tests e consistency do PR #523 no commit final e corrigir falhas específicas.",
+    "Após merge das dependências, reconciliar #523 com main e submeter ao integrador governado conforme política, sem merge manual.",
+    "Próxima tarefa do roadmap: RPG-016 criação rápida de campanha sem preparação."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+    "docs/adr/0017-agent-runtime-execution-runtime-e-organizacoes.md",
+    "docs/architecture/agent-runtime.md",
+    "apps/ecosystem-ai/README.md",
+    "apps/ecosystem-ai/src/AgentRuntime.Core/Model.cs",
+    "apps/ecosystem-ai/src/AgentRuntime.Core/Ledger.cs",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Nenhum ledger ou estado canônico duplicado; gateway wrapper é instrumento de medição opcional, campanha permanece autoridade sobre estado de jogo."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Orquestrador depende apenas de projetos dentro de apps/tabletop-rpg; sem Product-to-Product import."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "A execução do jogo é headless e independe do Hub."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Novo código inteiramente C#."
+    },
+    {
+      "id": "NN-006",
+      "evidence": "Não inventou capability nem método de acesso transversal: consumo do Ecosystem AI requer contrato futuro."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "RPG-015 Issue #522, branch, PR #523, testes e handoff."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "RPG-015 literal do roadmap com decisões do proprietário sobre pay-as-you-go preservadas."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "ADR-0017/0022, ARCHITECTURE, SPEC e fontes de Ecosystem AI consultadas diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem alterações na persistência do usuário, na capability pública ou na arquitetura de componentes compartilhados."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "GameMasterAgent retorna proposta sem autoaplicar e a execução Player Agent continua validada pelo SessionEngine."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Apenas testes headless; sem dispositivo Android ou UI."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-015 permanece [~], testes e integração governada em avaliação."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Usa ParticipantId, SeatRole e GameEvent do Core; evento de dispatch com ID estável do Host."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Não promoveu runtime de outro Product para shared sem consumidor/extraction review nem duplicou provider registry."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma dependência do mecanismo de distribuição/Hub do Ecosystem."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Trabalho Product-local explicitamente listado no roadmap, sem alterar schema persistido, infra compartilhada, credenciais ou permissão global."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "tabletop-rpg-event-orchestration",
+      "status": "product-specific",
+      "rationale": "Ponto de composição do gameplay com PlayAgent/GameMaster do RPG. O AgentRuntime do Ecosystem AI é similar mas extração/integração só por evidence/ADR; nenhuma dependência criada."
+    }
+  ]
+}
