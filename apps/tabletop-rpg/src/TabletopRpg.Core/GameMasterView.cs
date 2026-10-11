@@ -6,10 +6,21 @@ namespace TabletopRpg.Core;
 /// </summary>
 public sealed record GameMasterCharacter(CharacterId Id, string Name);
 
+/// <summary>
+/// Transient optimistic-concurrency stamp. Several foundation operations add
+/// characters/participants/private facts without advancing Campaign.Clock,
+/// so Clock alone is insufficient for guarding an approved GM proposal.
+/// </summary>
+public readonly record struct GameMasterRevision(
+    long Clock,
+    int FactCount,
+    int CharacterCount,
+    int ParticipantCount);
+
 public sealed record GameMasterView(
     CampaignId CampaignId,
     ParticipantId ParticipantId,
-    long Revision,
+    GameMasterRevision Revision,
     string CampaignName,
     long FictionMinutes,
     SceneId? ActiveSceneId,
@@ -30,7 +41,7 @@ public sealed partial class Campaign
         return new GameMasterView(
             Id,
             participant.Id,
-            Clock,
+            CurrentGameMasterRevision,
             Name,
             FictionMinutes,
             ActiveSceneId,
@@ -49,7 +60,7 @@ public sealed partial class Campaign
     /// </summary>
     public void PublishGameMasterNarration(
         ParticipantId participantId,
-        long expectedRevision,
+        GameMasterRevision expectedRevision,
         string narration)
     {
         RequireGameMasterAuthorization(participantId, expectedRevision);
@@ -60,7 +71,7 @@ public sealed partial class Campaign
 
     public void RevealGameMasterFact(
         ParticipantId participantId,
-        long expectedRevision,
+        GameMasterRevision expectedRevision,
         CharacterId targetCharacter,
         FactId factId)
     {
@@ -72,12 +83,15 @@ public sealed partial class Campaign
         RevealFactTo(targetCharacter, factId, "game-master");
     }
 
-    private void RequireGameMasterAuthorization(ParticipantId participantId, long expectedRevision)
+    private GameMasterRevision CurrentGameMasterRevision =>
+        new(Clock, _worldFacts.Count, _characters.Count, _participants.Count);
+
+    private void RequireGameMasterAuthorization(ParticipantId participantId, GameMasterRevision expectedRevision)
     {
         if (!_participants.TryGetValue(participantId, out var participant) ||
             participant.Role != SeatRole.GameMaster)
             throw new InvalidOperationException("GameMaster authorization is required.");
-        if (expectedRevision != Clock)
+        if (expectedRevision != CurrentGameMasterRevision)
             throw new InvalidOperationException("Stale GameMaster proposal; refresh campaign state.");
     }
 }
