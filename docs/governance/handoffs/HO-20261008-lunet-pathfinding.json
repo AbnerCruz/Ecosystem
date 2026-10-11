@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-406",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-pathfinding-20261008",
   "base_commit": "0dc9471293d1d17657c54b91c812e7be58f1b717",
   "commit": null,
@@ -30,7 +30,8 @@
     "A* portátil com custos de entrada/obstáculos, quatro/oito vizinhos sem cortar cantos e desempate estável.",
     "Buffers/heap reutilizáveis e saída Span; BufferTooSmall retorna tamanho necessário sem escrever parcialmente; entradas inválidas rejeitadas.",
     "Guia offline completo com toque e terreno ponderado; XML API/examples documentados, compilados e JSON regenerado.",
-    "12 casos novos, incluindo 200 mapas contra oracle Dijkstra independente e execução do guia compilado no GameHost com toque físico 2×."
+    "12 casos novos, incluindo 200 mapas contra oracle Dijkstra independente e execução do guia compilado no GameHost com toque físico 2×.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
@@ -74,10 +75,7 @@
     "SDK Android ausente localmente; CI APK e DEVICE são evidências separadas."
   ],
   "blockers": [],
-  "next_actions": [
-    "Validar roteiro pathfinding.md no aparelho com APK 1000133; registrar evidência sem inferir aprovação.",
-    "Continuar Fase 4 sem fechar gate."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

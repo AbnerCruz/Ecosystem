@@ -84,7 +84,9 @@ public sealed class MainView : Grid
         _stage.Children.Add(CityMap);
         _stage.Children.Add(Explorer);
         _stage.Children.Add(Editor);
-        _stage.Children.Add(Dialogs);
+        Customize = new CustomizePanel(Customization, Dialogs);
+        Customize.OpenFileRequested += path => Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+        Customization.Applied += ApplyCustomization;
         SetColumn(_stage, 1);
         Children.Add(_stage);
 
@@ -95,6 +97,14 @@ public sealed class MainView : Grid
         SetRow(_dock, 1);
         SetColumnSpan(_dock, 2);
         Children.Add(_dock);
+
+        // .uc and .udlg are position:fixed over the whole app, bottom navigation included
+        foreach (var overlay in new Control[] { Customize, Dialogs })
+        {
+            SetRowSpan(overlay, 2);
+            SetColumnSpan(overlay, 2);
+            Children.Add(overlay);
+        }
 
         World.CityVisible = () => !Editor.IsVisible && !Explorer.IsVisible;
         World.Notice += (_, text) => ShowLifeNotice(text);
@@ -342,6 +352,9 @@ public sealed class MainView : Grid
             Explorer.SetNotes(files);
             if (ownCamera) World.ShowCityCamera();
             else World.FitNotes();
+            // workspace:loaded → customize recarregar(); it writes only with a writable vault folder
+            Customization.Writer = _vault is { IsConnected: true } && _snapshot is { IsReadOnly: false } ? WriteVaultFileAsync : null;
+            Customization.Load(_contents);
             _biome.Text = World.BiomeNameAtCentre();
             _loading.IsVisible = false;
         }
@@ -387,7 +400,7 @@ public sealed class MainView : Grid
             Orientation = Orientation.Horizontal,
             Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Children = { RoundButton(UrbeTheme.Icons.Search, "Buscar"), MapButton(), RoundButton(UrbeTheme.Icons.Sliders, "Personalizar"), VaultButton() }
+            Children = { RoundButton(UrbeTheme.Icons.Search, "Buscar"), MapButton(), CustomizeButton(), VaultButton() }
         };
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10), VerticalAlignment = VerticalAlignment.Top };
         SetColumn(buttons, 2);
@@ -412,6 +425,14 @@ public sealed class MainView : Grid
         return button;
     }
 
+    private Button CustomizeButton()
+    {
+        var b = RoundButton(UrbeTheme.Icons.Sliders, "Personalizar");
+        ToolTip.SetTip(b, "Personalização");
+        b.Click += (_, _) => Customize.Open();
+        return b;
+    }
+
     private static Button RoundButton(string icon, string tip)
     {
         var b = new Button
@@ -427,6 +448,45 @@ public sealed class MainView : Grid
         };
         ToolTip.SetTip(b, tip + " (em portabilidade)");
         return b;
+    }
+
+    /// <summary>Personalização (customize.js): Personalização/tema.json of the open vault.</summary>
+    public Customization Customization { get; } = new();
+    public CustomizePanel Customize { get; }
+
+    /// <summary>aplicarCidade(c) → world.custom options (moradores, fauna, clima, eventos, nomes, bairros, ambiente).</summary>
+    private void ApplyCustomization()
+    {
+        var o = World.Life.Options;
+        o.People = Customization.City("moradores");
+        o.Fauna = Customization.City("fauna");
+        o.Weather = Customization.City("clima");
+        o.Events = Customization.City("eventos");
+        World.ShowHouseNames = Customization.City("nomes");
+        World.ShowDistrictNames = Customization.City("bairros");
+        World.LightingMode = Customization.Ambient;
+        World.InvalidateVisual();
+    }
+
+    /// <summary>The customize.js writer (docs.upsert of a Personalização file): the vault file, and,
+    /// as every 1.8.4 document, a house in its folder's neighbourhood when it is new.</summary>
+    private async Task WriteVaultFileAsync(string path, string content, bool exists)
+    {
+        if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
+            throw new InvalidOperationException("Selecione uma pasta real para gravar.");
+        if (exists) await _vault.SaveExistingTextFileAsync(path, content);
+        else
+        {
+            await _vault.CreateTextFileAsync(path, content);
+            if (World.City is { } city && city.Buildings.All(b => b.Path != path))
+            {
+                var title = new DocumentStore().Upsert(new DocumentInput { Path = path, Content = content }).Title;
+                city.AddDocument(path, LegacyCity.NoteName(title, path));
+                World.InvalidateVisual();
+            }
+        }
+        _contents[path] = content;
+        Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
     }
 
     /// <summary>UrbeDialogs: one dialog at a time over everything.</summary>

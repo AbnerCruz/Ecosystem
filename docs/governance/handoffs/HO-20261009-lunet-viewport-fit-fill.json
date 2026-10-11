@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-422",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-viewport-fit-fill-20261009",
   "base_commit": "d5eae81b7d832157397414c9de9efedafefeccb8",
   "commit": null,
@@ -35,26 +35,27 @@
     "Implementado modo Fit/Fill sem distorcer conteúdo; default Fit preserva todos os jogos antigos.",
     "Ativação via GameConfiguration e GraphicsDevice runtime, incluindo PixelPerfect ceil em Fill.",
     "Página Gráficos do Laboratório 2.0 permite alternar os modos por toque; testes de recorte, viewport, safe area, scissor, orientação, entradas e alocação.",
-    "Documentação da API e guia de uso por código e Laboratório."
+    "Documentação da API e guia de uso por código e Laboratório.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Lunet.Tests",
-      "result": "pending",
-      "evidence": "Aguardar CI após PR."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Android APK",
-      "result": "pending",
-      "evidence": "Aguardar build após PR."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Ecosystem consistency",
-      "result": "pending",
-      "evidence": "Aguardar consistency após PR."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "human",
@@ -71,11 +72,7 @@
     "Física completa, TrueType e UI tree seguem pendentes no gate Fase 4."
   ],
   "blockers": [],
-  "next_actions": [
-    "Confirmar CI e ajustar bugs reais.",
-    "Integrar pelo fluxo automático e publicar APK na main.",
-    "Obter teste DEVICE específico do Fit/Fill sem repetir outras validações."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

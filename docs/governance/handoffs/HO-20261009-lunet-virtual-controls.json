@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-423",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-virtual-controls-20261009",
   "base_commit": "61a9682fda8ce6bb36e932085cc22ca6f7c45a13",
   "commit": null,
@@ -27,26 +27,27 @@
   "work_completed": [
     "Parâmetros opt-in de deadzone contínua, curva de resposta e sensibilidade com validação numérica.",
     "Identificação do dedo, reserva de ID por Update e cancelamento explícito em joysticks/botões sem mudar os defaults legados.",
-    "Casos de regressão e alocação adicionados, guia offline, roadmap e changelog."
+    "Casos de regressão e alocação adicionados, guia offline, roadmap e changelog.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Lunet.Tests",
-      "result": "pending",
-      "evidence": "Não há .NET SDK neste executor; aguardar CI."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Ecosystem consistency",
-      "result": "pending",
-      "evidence": "Aguardar GitHub Actions."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Android APK",
-      "result": "pending",
-      "evidence": "Aguardar GitHub Actions e integração."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "human",
@@ -62,11 +63,7 @@
     "A configuração da sensibilidade pertence a cada jogo; não há painel global do Lunet nesta tarefa."
   ],
   "blockers": [],
-  "next_actions": [
-    "Conferir CI e corrigir falhas.",
-    "Integrar pela política vigente após checks verdes.",
-    "Validar a release em Android e registrar resultado sem inferir aprovação."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

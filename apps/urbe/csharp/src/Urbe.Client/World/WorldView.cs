@@ -219,6 +219,10 @@ public sealed class WorldView : Control
     public LegacyCity? City { get; private set; }
     public Camera Camera { get; } = new();
     public LegacyCityBuilding? Selected { get; private set; }
+    /// <summary>urbeOpcoes.nomes: the house name signs.</summary>
+    public bool ShowHouseNames { get; set; } = true;
+    /// <summary>urbeOpcoes.bairros: the neighbourhood name pills.</summary>
+    public bool ShowDistrictNames { get; set; } = true;
 
     /// <summary>Raised when a tap selects a house or clears the selection.</summary>
     public event EventHandler<LegacyCityBuilding?>? SelectionChanged;
@@ -566,7 +570,7 @@ public sealed class WorldView : Control
         double z = Camera.Zoom;
         var labels = city.Buildings.Where(b => b.IsNote &&
             !(b.X > x1 || b.X + b.W < x0 || b.Y > y1 || b.Y + b.H < y0) &&
-            (z >= .42 || b == Selected)).ToList();
+            ((z >= .42 && ShowHouseNames) || b == Selected)).ToList();
         var used = DistrictLabelLayout();
         var districts = used.ToList();
         labels = labels.Select((b, i) => (b, i)).OrderBy(p => p.b == Selected ? 0 : 1).ThenBy(p => p.i).Select(p => p.b).ToList();
@@ -625,7 +629,7 @@ public sealed class WorldView : Control
     private List<(Rect Box, LegacyCityRegion? Region, int Level, string Name)> DistrictLabelLayout()
     {
         var used = new List<(Rect Box, LegacyCityRegion? Region, int Level, string Name)>();
-        if (Camera.Zoom < .28) return used;
+        if (!ShowDistrictNames || Camera.Zoom < .28) return used;
         double px = T * Camera.Zoom;
         var vis = VisibleRegions(0);
         foreach (var (r, n) in vis.Select(r => (r, n: Level(r)))

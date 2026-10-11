@@ -160,9 +160,12 @@ internal static class LaboratoryTemplate
             // Demonstração de física real no módulo 10, sem substituir o SAT já aceito.
             readonly TouchButton physicsMode = new(new RectangleF(24, 134, 312, 42));
             readonly TouchButton physicsRestart = new(new RectangleF(24, 518, 312, 42));
+            readonly TouchButton physicsLoad = new(new RectangleF(24, 470, 312, 40));
             bool physicsVisible;
+            bool physicsStress;
             PhysicsWorld physicsWorld = null!;
             RigidBody2D physicsBall = null!;
+            readonly RigidBody2D[] physicsStressBodies = new RigidBody2D[64];
             int physicsSensorEvents;
 
             // Módulo 11: nine-slice redimensionável e fonte bitmap customizada.
@@ -219,7 +222,7 @@ internal static class LaboratoryTemplate
                 scenePause.Cancel(); sceneHide.Cancel(); sceneAttach.Cancel();
                 debugToggle.Cancel(); debugRotate.Cancel(); debugReflect.Cancel(); debugView.Cancel();
                 themeDemoButton.Cancel(); themeDemoSlider.Cancel();
-                physicsMode.Cancel(); physicsRestart.Cancel();
+                physicsMode.Cancel(); physicsRestart.Cancel(); physicsLoad.Cancel();
             }
 
             protected override void UnloadContent()
@@ -345,6 +348,25 @@ internal static class LaboratoryTemplate
                 detector.AddFixture(Collider2D.Box(1.2f, 0.25f), sensor: true);
                 physicsBall = physicsWorld.CreateBody(PhysicsBodyType.Dynamic, new Vector2(0, -2.0f));
                 physicsBall.AddFixture(Collider2D.Circle(0.38f), restitution: 0.65f);
+                System.Array.Clear(physicsStressBodies, 0, physicsStressBodies.Length);
+                if (physicsStress)
+                {
+                    // Carga de medição real: 64 corpos dinâmicos, sem substituir o SAT.
+                    // O Profiler do Preview mede CPU Update/Draw, GC e frame pacing.
+                    var left = physicsWorld.CreateBody(PhysicsBodyType.Static, new Vector2(-3.8f, 0f));
+                    left.AddFixture(Collider2D.Box(0.3f, 15f));
+                    var right = physicsWorld.CreateBody(PhysicsBodyType.Static, new Vector2(3.8f, 0f));
+                    right.AddFixture(Collider2D.Box(0.3f, 15f));
+                    for (int row = 0; row < 8; row++)
+                    for (int col = 0; col < 8; col++)
+                    {
+                        var body = physicsWorld.CreateBody(PhysicsBodyType.Dynamic,
+                            new Vector2(-2.8f + col * 0.8f, -2.8f - row * 0.65f));
+                        body.AddFixture(Collider2D.Circle(0.25f), density: 1f,
+                            friction: 0.4f, restitution: 0.2f);
+                        physicsStressBodies[row * 8 + col] = body;
+                    }
+                }
                 physicsSensorEvents = 0;
             }
 
@@ -359,7 +381,7 @@ internal static class LaboratoryTemplate
                 scenePause.Cancel(); sceneHide.Cancel(); sceneAttach.Cancel();
                 debugToggle.Cancel(); debugRotate.Cancel(); debugReflect.Cancel(); debugView.Cancel();
                 themeDemoButton.Cancel(); themeDemoSlider.Cancel();
-                physicsMode.Cancel(); physicsRestart.Cancel();
+                physicsMode.Cancel(); physicsRestart.Cancel(); physicsLoad.Cancel();
             }
 
             bool UpdateNavigation()
@@ -472,8 +494,10 @@ internal static class LaboratoryTemplate
                 themeDemoSlider.Update(Input);
                 physicsMode.IsEnabled = page == 9;
                 physicsRestart.IsEnabled = page == 9 && physicsVisible;
+                physicsLoad.IsEnabled = page == 9 && physicsVisible;
                 physicsMode.Update(Input);
                 physicsRestart.Update(Input);
+                physicsLoad.Update(Input);
                 if (page >= 7) { UpdateAdvancedPage(time); return; }
                 if (page == 6)
                 {
@@ -644,6 +668,7 @@ internal static class LaboratoryTemplate
                     if (physicsMode.WasClicked) physicsVisible = !physicsVisible;
                     if (physicsVisible)
                     {
+                        if (physicsLoad.WasClicked) { physicsStress = !physicsStress; ResetPhysics(); }
                         if (physicsRestart.WasClicked) ResetPhysics();
                         if (time.DeltaSeconds > 0)
                         {
@@ -759,8 +784,20 @@ internal static class LaboratoryTemplate
                 var point = new Vector2(180, 300) + physicsBall.Position * 40;
                 batch.Draw(dot, new RectangleF(point.X - 15, point.Y - 15, 30, 30), null,
                     Color.Yellow, physicsBall.Rotation, Vector2.Zero);
-                batch.DrawString(font, "Bola sob gravidade e rebote real", new Vector2(24, 450), Color.White, 1.25f);
-                batch.DrawString(font, "Sensor acionado: " + physicsSensorEvents, new Vector2(24, 472), Color.Yellow, 1.25f);
+                if (physicsStress)
+                {
+                    for (int i = 0; i < physicsStressBodies.Length; i++)
+                    {
+                        var body = physicsStressBodies[i];
+                        var p = new Vector2(180, 300) + body.Position * 40;
+                        if (p.X < 30 || p.X > 326 || p.Y < 194 || p.Y > 423) continue;
+                        batch.Draw(dot, new RectangleF(p.X - 8, p.Y - 8, 16, 16), null,
+                            new Color(89, 214, 230), body.Rotation, Vector2.Zero);
+                    }
+                }
+                batch.DrawString(font, "Sensor: " + physicsSensorEvents +
+                    (physicsStress ? "  |  64 corpos" : "  |  1 corpo"), new Vector2(24, 442), Color.Yellow, 1.25f);
+                DrawAction(physicsLoad.Bounds, physicsStress ? "CARGA: 64 CORPOS" : "CARGA: 1 CORPO");
                 DrawAction(physicsRestart.Bounds, "REINICIAR SIMULACAO");
                 batch.End();
             }

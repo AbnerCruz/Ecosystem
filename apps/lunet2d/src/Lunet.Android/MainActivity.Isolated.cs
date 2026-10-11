@@ -14,7 +14,7 @@ public sealed partial class MainActivity
         {
             var directory = IsolatedPreviewFiles.Directory(this);
             Directory.CreateDirectory(directory);
-            foreach (var stale in new[] { IsolatedPreviewFiles.Log(this), IsolatedPreviewFiles.Marker(this), IsolatedPreviewFiles.Symbols(this) })
+            foreach (var stale in new[] { IsolatedPreviewFiles.Log(this), IsolatedPreviewFiles.Marker(this), IsolatedPreviewFiles.Symbols(this), IsolatedPreviewFiles.Profiler(this) })
                 if (File.Exists(stale)) File.Delete(stale);
             File.WriteAllBytes(IsolatedPreviewFiles.Assembly(this), result.Assembly!);
             if (result.Symbols is not null) File.WriteAllBytes(IsolatedPreviewFiles.Symbols(this), result.Symbols);
@@ -50,6 +50,18 @@ public sealed partial class MainActivity
                     AppendConsole((LogLevel)Math.Clamp(level, 0, 2), line[(bar + 1)..].Replace("\\n", "\n"));
                 }
                 File.Delete(log);
+            }
+            var profiler = IsolatedPreviewFiles.Profiler(this);
+            if (File.Exists(profiler))
+            {
+                if (new FileInfo(profiler).Length <= 64 * 1024)
+                {
+                    _lastProfilerReport = File.ReadAllText(profiler);
+                    if (!string.IsNullOrWhiteSpace(_lastProfilerReport)) SetProfilerPanel();
+                    else _lastProfilerReport = null;
+                }
+                else AppendConsole(LogLevel.Warning, "Captura do Profiler excedeu o limite de leitura.");
+                File.Delete(profiler);
             }
             var marker = IsolatedPreviewFiles.Marker(this);
             if (File.Exists(marker))

@@ -20,6 +20,56 @@ public class TileMapTests
         """;
 
     [Fact]
+    public void Export_RoundTripsEveryCell_LayerOrder_VisibilityAndCollision()
+    {
+        var original = TileMap.Parse(MapJson);
+        var exported = original.ToJson();
+        var copy = TileMap.Parse(exported);
+        Assert.Equal(original.TexturePath, copy.TexturePath);
+        Assert.Equal((original.Width, original.Height, original.TileWidth, original.TileHeight),
+            (copy.Width, copy.Height, copy.TileWidth, copy.TileHeight));
+        Assert.Equal(original.LayerCount, copy.LayerCount);
+        for (int layer = 0; layer < copy.LayerCount; layer++)
+        {
+            Assert.Equal(original.GetLayerName(layer), copy.GetLayerName(layer));
+            Assert.Equal(original.IsLayerVisible(layer), copy.IsLayerVisible(layer));
+            Assert.Equal(original.IsCollisionLayer(layer), copy.IsCollisionLayer(layer));
+            for (int y = 0; y < copy.Height; y++)
+                for (int x = 0; x < copy.Width; x++)
+                    Assert.Equal(original.GetTile(layer, new(x, y)), copy.GetTile(layer, new(x, y)));
+        }
+        Assert.True(copy.OverlapsCollision(new(16, 0, 8, 8), Vector2.Zero));
+        var grid = new GridPathfinder(copy.Width, copy.Height);
+        copy.CopyCollisionTo(grid);
+        Assert.Equal(0f, grid.GetCost(new(2, 0)));
+        Assert.Equal(exported, copy.ToJson());
+    }
+
+    [Fact]
+    public void Export_PreservesUnicodeEscapesAndIntegerIds_IndependentOfCulture()
+    {
+        var map = TileMap.Parse("""
+            {"version":1,"texture":"Textures/chão.png","width":2,"height":1,"tileWidth":16,"tileHeight":16,
+            "layers":[{"name":"chão \"A\"\n雪","tiles":[0,2147483647]}]}
+            """);
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        string exported;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture = new("pt-BR");
+            exported = map.ToJson();
+        }
+        finally { System.Globalization.CultureInfo.CurrentCulture = culture; }
+        var copy = TileMap.Parse(exported);
+        Assert.Equal("chão \"A\"\n雪", copy.GetLayerName(0));
+        Assert.Equal("Textures/chão.png", copy.TexturePath);
+        Assert.Equal(int.MaxValue, copy.GetTile(0, new(1, 0)));
+        Assert.True(copy.IsLayerVisible(0));
+        Assert.False(copy.IsCollisionLayer(0));
+        Assert.Equal(exported, map.ToJson());
+    }
+
+    [Fact]
     public void Parse_PreservesLayersAndCollision_AndRejectsOutside()
     {
         var map = TileMap.Parse(MapJson);

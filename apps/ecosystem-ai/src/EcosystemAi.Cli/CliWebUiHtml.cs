@@ -260,17 +260,25 @@ public static class CliWebUiHtml
                             .Append("<p class='hint'>Critério: ").Append(Escape(task.Acceptance)).Append("</p>");
                         foreach (var attempt in task.Attempts)
                         {
-                            var status = attempt.Outcome switch
-                            {
-                                "response_verified" => "Resposta presente e verificada",
-                                "review_recorded" => "Revisão independente registrada",
-                                "failed" => "Tentativa falhou",
-                                _ => "Sem evidência suficiente"
-                            };
-                            output.Append("<div class='planned-attempt'><small>")
-                                .Append(Escape(status)).Append(" · ")
+                            // Recibos/pareceres são autoridades externas a planned-tasks.json.
+                            // Nunca promover uma evidência histórica a fato atual sem conferi-la.
+                            var historicalPositive = attempt.Outcome is "response_verified" or "review_recorded";
+                            var current = historicalPositive
+                                && CliPlannedTaskEvidence.IsCurrent(task, attempt, session, teamReviews);
+                            var status = historicalPositive && !current
+                                ? "Evidência histórica não confirmada no catálogo atual"
+                                : attempt.Outcome switch
+                                {
+                                    "response_verified" => "Resposta presente e verificada",
+                                    "review_recorded" => "Revisão independente registrada",
+                                    "failed" => "Tentativa falhou",
+                                    _ => "Sem evidência suficiente"
+                                };
+                            output.Append("<div class='planned-attempt'><small")
+                                .Append(historicalPositive && !current ? " class='warning'" : "")
+                                .Append(">").Append(Escape(status)).Append(" · ")
                                 .Append(attempt.RunIds.Count.ToString(CultureInfo.InvariantCulture))
-                                .Append(" recibos vinculados</small></div>");
+                                .Append(" recibos históricos</small></div>");
                         }
                         if (!task.Cancelled)
                         {

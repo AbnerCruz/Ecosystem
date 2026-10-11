@@ -7,6 +7,7 @@ using Android.Views;
 using Android.Widget;
 using Lunet.Android.Gles;
 using Lunet.Input;
+using Lunet.Runtime.Profiling;
 using AndroidColor = Android.Graphics.Color;
 
 namespace Lunet.Android;
@@ -23,8 +24,10 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
     private readonly InspectorPanel _inspector;
     private readonly TextView _console;
     private readonly TextView _profiler;
+    private readonly ScrollView _profilerScroll;
     private readonly Handler _profilerHandler = new(Looper.MainLooper!);
     private bool _profilerVisible;
+    private string? _lastProfilerReport;
     private int _gc0, _gc1, _gc2;
     private readonly bool _highRefresh;
     private SensorManager? _sensors;
@@ -74,11 +77,13 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
         _profiler.SetTextColor(AndroidColor.White);
         _profiler.SetBackgroundColor(AndroidColor.Argb(228, 15, 22, 33));
         _profiler.SetPadding((int)(10 * density), (int)(10 * density), (int)(10 * density), (int)(10 * density));
-        _profiler.Visibility = ViewStates.Gone;
-        AddView(_profiler, new LayoutParams((int)(238 * density),
-            ViewGroup.LayoutParams.WrapContent, GravityFlags.Top | GravityFlags.Right)
+        _profilerScroll = new ScrollView(activity) { Visibility = ViewStates.Gone };
+        _profilerScroll.AddView(_profiler);
+        AddView(_profilerScroll, new LayoutParams((int)(238 * density),
+            ViewGroup.LayoutParams.MatchParent, GravityFlags.Top | GravityFlags.Right)
         {
             TopMargin = (int)(56 * density),
+            BottomMargin = (int)(48 * density),
             RightMargin = (int)(8 * density)
         });
 
@@ -115,8 +120,9 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
             return;
         }
         _inspector.Visibility = ViewStates.Gone;
+        _lastProfilerReport = null;
         _profilerVisible = true;
-        _profiler.Visibility = ViewStates.Visible;
+        _profilerScroll.Visibility = ViewStates.Visible;
         _gc0 = GC.CollectionCount(0);
         _gc1 = GC.CollectionCount(1);
         _gc2 = GC.CollectionCount(2);
@@ -127,8 +133,9 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
 
     private void HideProfiler()
     {
+        CaptureProfilerReport();
         _profilerVisible = false;
-        _profiler.Visibility = ViewStates.Gone;
+        _profilerScroll.Visibility = ViewStates.Gone;
         _renderer.SetProfilingEnabled(false);
         _profilerHandler.RemoveCallbacksAndMessages(null);
     }
@@ -136,32 +143,23 @@ internal sealed class PreviewHost : FrameLayout, ISensorEventListener
     private void RefreshProfiler()
     {
         if (_disposed || !_profilerVisible) return;
-        var current = _renderer.Performance;
-        if (current.Samples == 0)
-            _profiler.Text = "PROFILER  |  coletando...";
-        else
-        {
-            double heapMb = GC.GetTotalMemory(false) / (1024.0 * 1024.0);
-            string paused = _renderer.ProfilerIsPaused ? "  [PAUSADO]" : "";
-            _profiler.Text =
-                $"PROFILER  |  {current.Samples} quadros{paused}\n" +
-                $"FPS: {current.FramesPerSecond:F1}  Frame: {current.FrameMilliseconds:F2} ms\n" +
-                $"Frame P50/P95: {current.P50FrameMilliseconds:F1}/{current.P95FrameMilliseconds:F1} ms\n" +
-                $"Pior: {current.WorstFrameMilliseconds:F1} ms | engasgos: {current.HitchFrames}\n" +
-                $"CPU Tick: {current.CpuTickMilliseconds:F2} ms\n" +
-                (current.PhasedSamples == 0 ? "CPU Update/Draw: nao medidos\n"
-                    : $"CPU Update: {current.UpdateCpuMilliseconds:F2} ms  ({current.UpdateStepsPerFrame:F1} passos)\n" +
-                      $"CPU Draw: {current.DrawCpuMilliseconds:F2} ms\n") +
-                $"Draw calls: {current.DrawCallsPerFrame:F1}  Tris: {current.TrianglesPerFrame:F0}\n" +
-                $"Alloc GL: {current.AllocatedBytesPerFrame:F0} B/frame\n" +
-                $"Heap .NET: {heapMb:F1} MiB\n" +
-                $"GPU texturas RGBA8 (estim.): {_renderer.EstimatedTextureBytes / 1048576.0:F2} MiB, {_renderer.LiveTextureCount} vivas\n" +
-                $"Pico texturas: {_renderer.PeakTextureBytes / 1048576.0:F2} MiB\n" +
-                $"GC (0/1/2): {GC.CollectionCount(0) - _gc0}/{GC.CollectionCount(1) - _gc1}/{GC.CollectionCount(2) - _gc2}\n" +
-                $"Frames > 33 ms: {current.SlowFrames}/{current.Samples}\n" +
-                "GPU total/tempo e audio underruns: nao medidos";
-        }
+        _profiler.Text = CaptureProfilerReport() ?? "PROFILER  |  coletando...";
         _profilerHandler.PostDelayed(RefreshProfiler, 300);
+    }
+
+    /// <summary>Última janela efetivamente medida, preservada ao ocultar Perf e antes de destruir o renderer.</summary>
+    public string? CaptureProfilerReport()
+    {
+        if (_profilerVisible)
+        {
+            var frame = _renderer.Performance;
+            if (frame.Samples > 0)
+                _lastProfilerReport = PreviewProfilerReport.Format(frame, DateTimeOffset.Now, _renderer.ProfilerIsPaused,
+                    GC.GetTotalMemory(false), _renderer.EstimatedTextureBytes, _renderer.PeakTextureBytes,
+                    _renderer.LiveTextureCount, GC.CollectionCount(0) - _gc0,
+                    GC.CollectionCount(1) - _gc1, GC.CollectionCount(2) - _gc2);
+        }
+        return _lastProfilerReport;
     }
 
     /// <summary>Mostra as últimas linhas do console sobre o jogo.</summary>

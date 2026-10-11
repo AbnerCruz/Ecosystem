@@ -1,0 +1,411 @@
+using System.Text.Json.Nodes;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.Layout;
+using Avalonia.Media;
+using Urbe.Core;
+
+namespace Urbe.Client;
+
+/// <summary>
+/// src/customize/panel.js natively: "Personalização" with its sections; a wide window with the
+/// section list on the left, full screen with scrolling tabs on a phone (≤ 760 px). Visual from
+/// styles/customize.css (.uc). Cidade and Arquivo are ported; the other sections say so.
+/// </summary>
+public sealed class CustomizePanel : Grid
+{
+    private const string AccentSoft = "#248fb3ff"; // rgba(143,179,255,.14)
+    private static readonly (string Id, string Name, string Icon)[] Sections =
+    [
+        ("aparencia", "Aparência", Icons.Palette), ("texto", "Texto", Icons.Type), ("editor", "Editor", Icons.Edit),
+        ("cidade", "Cidade", Icons.City), ("texturas", "Texturas", Icons.Image), ("estilos", "Estilos CSS", Icons.Brush),
+        ("plugins", "Plugins", Icons.Puzzle), ("arquivo", "Arquivo", Icons.Code)
+    ];
+
+    private readonly Border _card = new();
+    private readonly Grid _layout = new();
+    private readonly StackPanel _nav = new() { Spacing = 2 };
+    private ScrollViewer _navScroll = new();
+    private ScrollViewer _bodyScroll = new() { HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+    private readonly StackPanel _body = new();
+    private string _section = "aparencia";
+    private bool _narrow;
+    private TextBox? _json;
+    private TextBlock? _jsonState;
+
+    public CustomizePanel(Customization customization, UrbeDialogs dialogs)
+    {
+        Customization = customization;
+        Dialogs = dialogs;
+        IsVisible = false;
+        Background = new SolidColorBrush(Color.FromArgb(140, 5, 6, 8)); // rgba(5,6,8,.55)
+        _card.Background = UrbeTheme.Brush(UrbeTheme.Surface);
+        _card.BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2);
+        _card.BoxShadow = BoxShadows.Parse("0 18 60 0 #8C000000");
+        _card.ClipToBounds = true;
+        _card.Child = _layout;
+        Children.Add(_card);
+        PointerPressed += (_, e) => { if (e.Source == this) Close(); };
+        KeyDown += (_, e) => { if (e.Key == Key.Escape && !Dialogs.IsOpen) { e.Handled = true; Close(); } };
+        Focusable = true;
+        Customization.Applied += () => { if (IsVisible && _section != "arquivo") Render(); };
+    }
+
+    public Customization Customization { get; }
+    public UrbeDialogs Dialogs { get; }
+    public string Section => _section;
+    /// <summary>abrirNota(p): the panel asks the app to open a vault file.</summary>
+    public event Action<string>? OpenFileRequested;
+
+    /// <summary>abrir(qual).</summary>
+    public void Open(string? section = null)
+    {
+        if (section is not null && Sections.Any(s => s.Id == section)) _section = section;
+        IsVisible = true;
+        BuildFrame();
+        Render();
+        Focus();
+    }
+
+    /// <summary>fechar().</summary>
+    public void Close() => IsVisible = false;
+
+    protected override void OnSizeChanged(SizeChangedEventArgs e)
+    {
+        base.OnSizeChanged(e);
+        bool narrow = e.NewSize.Width <= 760;
+        if (narrow != _narrow || _layout.Children.Count == 0) { _narrow = narrow; if (IsVisible) { BuildFrame(); Render(); } }
+        SizeCard();
+    }
+
+    private void SizeCard()
+    {
+        if (_narrow)
+        {
+            _card.Width = double.NaN; _card.Height = double.NaN;
+            _card.HorizontalAlignment = HorizontalAlignment.Stretch; _card.VerticalAlignment = VerticalAlignment.Stretch;
+            _card.CornerRadius = new CornerRadius(0); _card.BorderThickness = new Thickness(0);
+        }
+        else
+        {
+            _card.Width = Math.Min(980, Math.Max(0, Bounds.Width - 32)); _card.Height = Math.Min(760, Math.Max(0, Bounds.Height - 32));
+            _card.HorizontalAlignment = HorizontalAlignment.Center; _card.VerticalAlignment = VerticalAlignment.Center;
+            _card.CornerRadius = new CornerRadius(22); _card.BorderThickness = new Thickness(1);
+        }
+    }
+
+    private void BuildFrame()
+    {
+        _narrow = Bounds.Width > 0 && Bounds.Width <= 760;
+        SizeCard();
+        _layout.Children.Clear();
+        // the section list and the body move to fresh scrollers (a control has one parent)
+        var offset = _bodyScroll.Offset;
+        _navScroll.Content = null;
+        _bodyScroll.Content = null;
+        _navScroll = new ScrollViewer { Content = _nav };
+        _bodyScroll = new ScrollViewer { Content = _body, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Offset = offset };
+        _layout.RowDefinitions.Clear();
+        _layout.ColumnDefinitions.Clear();
+        var title = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, VerticalAlignment = VerticalAlignment.Center,
+            Children = { UrbeTheme.Icon(Icons.Brush, 20, UrbeTheme.Accent), Label("Personalização", 17, FontWeight.Bold) } };
+        var close = new Button
+        {
+            Content = UrbeTheme.Icon(UrbeTheme.Icons.Close, 20, UrbeTheme.Text2), Width = 44, Height = 44, CornerRadius = new CornerRadius(12),
+            Background = Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(close, "Fechar");
+        close.Click += (_, _) => Close();
+        var head = new DockPanel { Margin = _narrow ? new Thickness(16, 8, 8, 4) : new Thickness(20, 12, 12, 12) };
+        DockPanel.SetDock(close, Dock.Right);
+        head.Children.Add(close);
+        head.Children.Add(title);
+        var headBox = new Border { Child = head, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line), BorderThickness = _narrow ? new Thickness(0) : new Thickness(0, 0, 0, 1) };
+
+        _nav.Children.Clear();
+        _nav.Orientation = _narrow ? Orientation.Horizontal : Orientation.Vertical;
+        _nav.Spacing = _narrow ? 6 : 2;
+        _nav.Margin = _narrow ? new Thickness(12, 4, 12, 10) : new Thickness(10);
+        foreach (var s in Sections) _nav.Children.Add(NavButton(s.Id, s.Name, s.Icon));
+        _navScroll.HorizontalScrollBarVisibility = _narrow ? ScrollBarVisibility.Hidden : ScrollBarVisibility.Disabled;
+        _navScroll.VerticalScrollBarVisibility = _narrow ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
+        var navBox = new Border { Child = _navScroll, BorderBrush = UrbeTheme.Brush(UrbeTheme.Line), BorderThickness = _narrow ? new Thickness(0, 0, 0, 1) : new Thickness(0, 0, 1, 0) };
+        _body.Margin = _narrow ? new Thickness(14, 14, 14, 40) : new Thickness(22, 18, 22, 40);
+
+        if (_narrow)
+        {
+            _layout.RowDefinitions = new RowDefinitions("Auto,Auto,*");
+            SetRow(navBox, 1);
+            SetRow(_bodyScroll, 2);
+        }
+        else
+        {
+            _layout.RowDefinitions = new RowDefinitions("Auto,*");
+            _layout.ColumnDefinitions = new ColumnDefinitions("220,*");
+            SetColumnSpan(headBox, 2);
+            SetRow(navBox, 1);
+            SetRow(_bodyScroll, 1);
+            SetColumn(_bodyScroll, 1);
+        }
+        _layout.Children.Add(headBox);
+        _layout.Children.Add(navBox);
+        _layout.Children.Add(_bodyScroll);
+    }
+
+    private Button NavButton(string id, string name, string icon)
+    {
+        bool on = id == _section;
+        var b = new Button
+        {
+            Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = _narrow ? 7 : 12, VerticalAlignment = VerticalAlignment.Center,
+                Children = { UrbeTheme.Icon(icon, _narrow ? 17 : 20, on ? UrbeTheme.Accent : UrbeTheme.Text2), Label(name, _narrow ? 13.5 : 14, FontWeight.SemiBold, on ? UrbeTheme.Accent : UrbeTheme.Text2) } },
+            MinHeight = _narrow ? 38 : 44, Padding = new Thickness(_narrow ? 14 : 12, 0), HorizontalAlignment = _narrow ? HorizontalAlignment.Left : HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center,
+            CornerRadius = new CornerRadius(_narrow ? 999 : 12), Background = on ? UrbeTheme.Brush(AccentSoft) : Brushes.Transparent,
+            BorderThickness = new Thickness(_narrow && !on ? 1 : 0), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2)
+        };
+        b.Click += (_, _) => { _section = id; BuildFrame(); _bodyScroll.Offset = default; Render(); };
+        return b;
+    }
+
+    // ---------------------------------------------------------------- render
+
+    /// <summary>render(): the current section.</summary>
+    public void Render()
+    {
+        _body.Children.Clear();
+        _json = null;
+        _jsonState = null;
+        switch (_section)
+        {
+            case "cidade": CitySection(); break;
+            case "arquivo": FileSection(); break;
+            default:
+                _body.Children.Add(Block(Sections.First(s => s.Id == _section).Name,
+                    Help("Esta seção ainda está em portabilidade para o app nativo. Tudo o que ela guarda já pode ser editado em Arquivo (tema.json).")));
+                break;
+        }
+    }
+
+    private void CitySection()
+    {
+        var c = (JsonObject)Customization.Config["cidade"]!;
+        bool B(string k) => c[k] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+        _body.Children.Add(Block("Vida na cidade",
+            Toggle("cidade.moradores", B("moradores"), "Moradores", "Pessoas andando entre notas ligadas"),
+            Toggle("cidade.fauna", B("fauna"), "Animais", "Rebanhos, cervos, patos, pássaros, peixes, borboletas, pombos e vaga-lumes"),
+            Toggle("cidade.clima", B("clima"), "Clima", "Nuvens, vento, folhas, chuva, neve, neblina e arco-íris"),
+            Toggle("cidade.eventos", B("eventos"), "Eventos", "Balão, festa e fogos, barcos, raposa, revoadas e estrelas cadentes"),
+            Toggle("cidade.nomes", B("nomes"), "Nomes das casas", "Letreiro com o nome da nota"),
+            Toggle("cidade.bairros", B("bairros"), "Nomes dos bairros", "Letreiro com o nome da pasta")));
+        _body.Children.Add(Block("Luz", Row("Hora do dia", "Ciclo: um dia inteiro a cada 24 minutos. Auto segue o relógio do aparelho",
+            Seg("cidade.ambiente", (string)c["ambiente"]!, [("ciclo", "Ciclo"), ("dia", "Dia"), ("entardecer", "Tarde"), ("noite", "Noite"), ("auto", "Auto")]))));
+    }
+
+    private void FileSection()
+    {
+        var text = Customization.FileContent ?? LegacyCustomize.Stringify(new JsonObject { ["$schema"] = "urbe-tema-1" }, 2) + "\n";
+        _json = new TextBox
+        {
+            Text = text, AcceptsReturn = true, TextWrapping = TextWrapping.NoWrap, MinHeight = 14 * 20, FontFamily = UrbeTheme.MonoFont, FontSize = 13,
+            Background = UrbeTheme.Brush(UrbeTheme.Bg), Foreground = UrbeTheme.Brush(UrbeTheme.Text), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2),
+            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(12)
+        };
+        _jsonState = new TextBlock { FontFamily = UrbeTheme.UiFont, FontSize = 13, Margin = new Thickness(2, 8, 2, 0), TextWrapping = TextWrapping.Wrap };
+        _json.TextChanged += (_, _) => ValidateJson();
+        var restore = SmallButton("Restaurar padrão", false);
+        restore.Click += async (_, _) =>
+        {
+            var ok = await Dialogs.ChooseAsync("Restaurar padrão?", [new DialogItem("Restaurar", Danger: true), new DialogItem("Cancelar")],
+                "Volta cores, texto, editor e cidade ao padrão. Temas salvos, estilos, texturas e plugins continuam na pasta.");
+            if (ok == 0) { await Customization.ResetAsync(); Render(); }
+        };
+        var openNote = SmallButton("Abrir como nota", false);
+        openNote.Click += async (_, _) =>
+        {
+            if (Customization.FileContent is null) await Customization.SetAsync(new JsonObject());
+            if (Customization.FileContent is not null) { Close(); OpenFileRequested?.Invoke(LegacyCustomize.FilePath); }
+        };
+        var apply = SmallButton("Aplicar", true);
+        apply.Click += async (_, _) =>
+        {
+            var n = ValidateJson();
+            if (n is null || n.Errors.Count > 0) { await Dialogs.AlertAsync("Personalização", "Corrija os erros antes de aplicar"); return; }
+            await Customization.WriteFileAsync(_json!.Text ?? "");
+            Render();
+        };
+        var actions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0), Children = { restore, openNote, apply } };
+        foreach (var child in actions.Children) child.Margin = new Thickness(8, 0, 0, 8);
+        _body.Children.Add(Block(LegacyCustomize.FilePath,
+            Help("Tudo desta tela fica neste arquivo. Você pode editar aqui, abrir como nota, copiar para outra cidade ou pedir ao Assistente que crie um tema para você."),
+            _json, _jsonState, actions));
+        if (Customization.Warnings.Count > 0)
+            _body.Children.Add(Block("Avisos", Issues(Customization.Warnings)));
+        _body.Children.Add(Block("Pedir ao Assistente", Help("Exemplos: “crie um tema sépia com fonte serifada e cantos retos”, “deixe o mapa sempre à noite e esconda os animais”, “faça um plugin que conta as palavras de hoje”. O Assistente conhece o formato e mostra a alteração antes de gravar.")));
+        ValidateJson();
+    }
+
+    /// <summary>validarJson().</summary>
+    private LegacyCustomize.Result? ValidateJson()
+    {
+        if (_json is null || _jsonState is null) return null;
+        var n = Customization.Normalize(_json.Text ?? "");
+        if (n.Errors.Count > 0)
+        {
+            _jsonState.Foreground = UrbeTheme.Brush(UrbeTheme.Danger);
+            _jsonState.Text = string.Join("\n", n.Errors.Select(e => (e.Path.Length > 0 ? e.Path : "(arquivo)") + " " + e.Message));
+        }
+        else
+        {
+            _jsonState.Foreground = UrbeTheme.Brush(UrbeTheme.Ok);
+            _jsonState.Text = "JSON válido" + (n.Warnings.Count > 0 ? " · " + n.Warnings.Count + " aviso(s)" : "");
+        }
+        return n;
+    }
+
+    // ---------------------------------------------------------------- pieces (customize.css)
+
+    private static TextBlock Label(string text, double size, FontWeight weight, string color = UrbeTheme.Text) =>
+        new() { Text = text, FontFamily = UrbeTheme.UiFont, FontSize = size, FontWeight = weight, Foreground = UrbeTheme.Brush(color), VerticalAlignment = VerticalAlignment.Center };
+
+    private static TextBlock Help(string text) =>
+        new() { Text = text, FontFamily = UrbeTheme.UiFont, FontSize = 13.5, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) };
+
+    private static Control Issues(IEnumerable<LegacyCustomize.Issue> issues)
+    {
+        var list = new StackPanel { Spacing = 4 };
+        foreach (var w in issues)
+            list.Children.Add(new TextBlock { Text = "• " + w.Path + " " + w.Message, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextWrapping = TextWrapping.Wrap });
+        return list;
+    }
+
+    /// <summary>bloco(titulo, corpo).</summary>
+    private static Border Block(string title, params Control[] body)
+    {
+        var stack = new StackPanel();
+        stack.Children.Add(new TextBlock
+        {
+            Text = title.ToUpperInvariant(), FontFamily = UrbeTheme.UiFont, FontSize = 13, FontWeight = FontWeight.Bold, LetterSpacing = .52,
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 0, 0, 10)
+        });
+        bool first = true;
+        foreach (var b in body)
+        {
+            if (b is Border row && row.Tag as string == "row")
+            {
+                row.BorderThickness = first ? new Thickness(0) : new Thickness(0, 1, 0, 0);
+                first = false;
+            }
+            stack.Children.Add(b);
+        }
+        return new Border
+        {
+            Child = stack, Margin = new Thickness(0, 0, 0, 18), Padding = new Thickness(16, 14), CornerRadius = new CornerRadius(16),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line), BorderThickness = new Thickness(1), Background = UrbeTheme.Brush(UrbeTheme.Surface2)
+        };
+    }
+
+    /// <summary>.uc-row: title and detail on the left, the control on the right.</summary>
+    private Border Row(string title, string? detail, Control control)
+    {
+        var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+        text.Children.Add(Label(title, 14.5, FontWeight.SemiBold));
+        if (detail is not null)
+            text.Children.Add(new TextBlock { Text = detail, FontFamily = UrbeTheme.UiFont, FontSize = 13, Foreground = UrbeTheme.Brush(UrbeTheme.Text3), TextWrapping = TextWrapping.Wrap });
+        Control content;
+        if (_narrow && control is Border { Tag: "seg" })
+            content = new StackPanel { Spacing = 8, Children = { text, control } };   // ≤520: column, segment stretched
+        else
+        {
+            var dock = new DockPanel();
+            control.Margin = new Thickness(14, 0, 0, 0);
+            DockPanel.SetDock(control, Dock.Right);
+            dock.Children.Add(control);
+            dock.Children.Add(text);
+            content = dock;
+        }
+        return new Border { Tag = "row", Child = content, MinHeight = 52, Padding = new Thickness(0, 6), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line) };
+    }
+
+    /// <summary>chave(nome, valor, rótulo, detalhe): an iOS-like switch.</summary>
+    private Border Toggle(string path, bool value, string title, string detail)
+    {
+        var knob = new Border { Width = 20, Height = 20, CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(value ? UrbeTheme.AccentInk : UrbeTheme.Text2),
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(value ? 21 : 3, 0, 0, 0) };
+        var track = new Border { Width = 46, Height = 28, CornerRadius = new CornerRadius(14), Child = knob,
+            Background = UrbeTheme.Brush(value ? UrbeTheme.Accent : UrbeTheme.Surface3), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(value ? 0 : 1) };
+        var row = Row(title, detail, track);
+        row.Background = Brushes.Transparent;
+        row.Cursor = new Cursor(StandardCursorType.Hand);
+        row.Tag = "row";
+        AutomationName(row, title);
+        row.PointerReleased += async (_, e) =>
+        {
+            e.Handled = true;
+            await Customization.SetAsync(Patch(path, JsonValue.Create(!value)));
+        };
+        return row;
+    }
+
+    /// <summary>seg(nome, valor, opções): a segmented control.</summary>
+    private Border Seg(string path, string value, (string Value, string Label)[] options)
+    {
+        var grid = new UniformGrid { Rows = 1 };
+        var stack = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
+        foreach (var (v, label) in options)
+        {
+            bool on = v == value;
+            var b = new Button
+            {
+                Content = label, MinHeight = 34, Padding = new Thickness(12, 0), CornerRadius = new CornerRadius(7), FontFamily = UrbeTheme.UiFont, FontSize = 13,
+                FontWeight = FontWeight.SemiBold, Foreground = UrbeTheme.Brush(on ? UrbeTheme.Text : UrbeTheme.Text2),
+                Background = on ? UrbeTheme.Brush(UrbeTheme.Surface3) : Brushes.Transparent, HorizontalContentAlignment = HorizontalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+            if (on) b.Classes.Add("on");
+            b.Click += async (_, _) => await Customization.SetAsync(Patch(path, JsonValue.Create(v)));
+            if (_narrow) grid.Children.Add(b); else stack.Children.Add(b);
+        }
+        return new Border
+        {
+            Tag = "seg", Child = _narrow ? grid : stack, Padding = new Thickness(3), CornerRadius = new CornerRadius(11), Background = UrbeTheme.Brush(UrbeTheme.Bg),
+            BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(1), VerticalAlignment = VerticalAlignment.Center
+        };
+    }
+
+    private static Button SmallButton(string text, bool primary) => new()
+    {
+        Content = text, MinHeight = 40, Padding = new Thickness(14, 0), CornerRadius = new CornerRadius(12), FontFamily = UrbeTheme.UiFont, FontSize = 14,
+        FontWeight = FontWeight.SemiBold, VerticalContentAlignment = VerticalAlignment.Center,
+        Background = UrbeTheme.Brush(primary ? UrbeTheme.Accent : UrbeTheme.Surface3), Foreground = UrbeTheme.Brush(primary ? UrbeTheme.AccentInk : UrbeTheme.Text),
+        BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(primary ? 0 : 1)
+    };
+
+    private static void AutomationName(Control c, string name) => Avalonia.Automation.AutomationProperties.SetName(c, name);
+
+    /// <summary>patchDe(path, v).</summary>
+    private static JsonObject Patch(string path, JsonNode value)
+    {
+        var keys = path.Split('.');
+        var root = new JsonObject();
+        var x = root;
+        for (int i = 0; i < keys.Length - 1; i++) { var n = new JsonObject(); x[keys[i]] = n; x = n; }
+        x[keys[^1]] = value;
+        return root;
+    }
+
+    /// <summary>ui/icons.js shapes used by the panel.</summary>
+    public static class Icons
+    {
+        public const string Palette = "M12 3a9 9 0 1 0 0 18c1.1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7h2A4.6 4.6 0 0 0 21 10.6C21 6.4 17 3 12 3z M8.7 11a1.2 1.2 0 1 0-2.4 0 1.2 1.2 0 1 0 2.4 0z M11.2 7a1.2 1.2 0 1 0-2.4 0 1.2 1.2 0 1 0 2.4 0z M16.2 7a1.2 1.2 0 1 0-2.4 0 1.2 1.2 0 1 0 2.4 0z";
+        public const string Type = "M5 7V5h14v2M12 5v14M9 19h6";
+        public const string Edit = "M4.5 19.5h4l10-10-4-4-10 10z M13 7l4 4";
+        public const string City = "M3 21h18 M5 21V9l5-3v15 M10 21V4l9 4v13 M13 10h3M13 14h3M13 18h3";
+        public const string Image = "M6 4.5h12a2.5 2.5 0 0 1 2.5 2.5v10a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 17V7A2.5 2.5 0 0 1 6 4.5z M10.6 10a1.6 1.6 0 1 0-3.2 0 1.6 1.6 0 1 0 3.2 0z M20.5 16l-5-5-8.5 8.5";
+        public const string Brush = "M18.4 3.6a2 2 0 0 1 2.9 2.9l-8.8 8.8-2.9-2.9z M9.6 12.4c-2 0-3.6 1.6-3.6 3.6 0 1.4-1 2.5-2.5 2.5 1 1.6 2.8 2.5 4.6 2.5 2.8 0 5-2.2 5-5z";
+        public const string Puzzle = "M9 4.5a2 2 0 1 1 4 0V6h4a1 1 0 0 1 1 1v4h-1.5a2 2 0 1 0 0 4H18v4a1 1 0 0 1-1 1h-4v-1.5a2 2 0 1 0-4 0V20H5a1 1 0 0 1-1-1v-4h1.5a2 2 0 1 0 0-4H4V7a1 1 0 0 1 1-1h4z";
+        public const string Code = "M9 7.5L4.5 12 9 16.5M15 7.5l4.5 4.5-4.5 4.5";
+    }
+}

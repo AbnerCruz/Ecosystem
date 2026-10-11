@@ -58,9 +58,10 @@
     {
       "kind": "human",
       "check": "Abrir no Android físico um vault real da 1.8.4-beta com .urbe/mapa.json e comparar bairros, casas, ruas e câmera com a 1.8.4 instalada",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/urbe/csharp/src/Urbe.Core/LegacyCityOpen.cs",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-11 (Issue https://github.com/AbnerCruz/Ecosystem/issues/491); registro em docs/governance/responses/VAL-HO-20261010-urbe-native-open-mapa-f8d253daf485.md."
     }
   ],
   "known_issues": [

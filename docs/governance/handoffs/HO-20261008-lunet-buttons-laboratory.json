@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-410",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-touch-buttons-20261008",
   "base_commit": "4966481372efcdb2dedd7816806621d48ba51eab",
   "commit": null,
@@ -39,7 +39,8 @@
     "Página 5 do Laboratório existente para clique, drag-out/retorno, disable, reposicionamento/LayoutRect, contador e cancelamento.",
     "Cabeçalho com TouchButton permite navegar com segundo dedo e cancela captura ao esconder página; sem alteração de GestureRecognizer.",
     "Novo teste executa projeto gerado sem editar fonte: físico 2×, clique/arraste/disable/pausa/relocação/resize/navegação simultânea; regressões das quatro páginas mantidas.",
-    "API JSON regenerada e guia novo com roteiro do projeto pronto; guia anterior não reformado."
+    "API JSON regenerada e guia novo com roteiro do projeto pronto; guia anterior não reformado.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
@@ -76,11 +77,7 @@
     "SDK Android ausente localmente; CI gera APK e DEVICE não é inferido."
   ],
   "blockers": [],
-  "next_actions": [
-    "Enviar reconciliação e página executável ao PR #332 existente, com lease, sem force/merge manual/label integrar.",
-    "Acompanhar checks combinados, integração automática e confirmar release real antes de indicar página 5 no APK.",
-    "DEVICE e UI/Fase 4 permanecem abertos; #317 crítico conserva autorização do proprietário."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

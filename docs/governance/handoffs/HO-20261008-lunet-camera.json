@@ -34,7 +34,8 @@
     "14 casos adicionais: round trips, rotação, batching/flush por textura e capacidade, texto/DebugDraw, HUD, target/clip, argumentos inválidos, zero alocações e guia compilado/executado com toque físico 2×.",
     "Guia offline camera.md interativo; API XML/JSON regenerada; Fase 4 explicitamente em andamento sem fechar gate.",
     "PR #291 integrado em 9c8e799 e release lunet2d-v0.0.1-dev.1000120 publicada; evidência automatizada adicionada ao handoff anterior sem inferir aceite do aparelho.",
-    "Modelo Laboratório ganha terceira página para testar câmera, zoom/rotação e HUD no celular sem copiar código; páginas anteriores preservadas e testadas."
+    "Modelo Laboratório ganha terceira página para testar câmera, zoom/rotação e HUD no celular sem copiar código; páginas anteriores preservadas e testadas.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
@@ -75,9 +76,7 @@
     "O usuário deve terminar o lote antes de mudar alvo ou tamanho da vista."
   ],
   "blockers": [],
-  "next_actions": [
-    "Continuar itens da Fase 4; fechamento de fase exige todos os itens e seu gate próprio."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
