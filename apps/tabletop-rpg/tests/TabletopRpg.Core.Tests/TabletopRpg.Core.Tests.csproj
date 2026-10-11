@@ -21,5 +21,6 @@
     <ProjectReference Include="../../src/TabletopRpg.GameMaster/TabletopRpg.GameMaster.csproj" />
     <ProjectReference Include="../../src/TabletopRpg.Director/TabletopRpg.Director.csproj" />
     <ProjectReference Include="../../src/TabletopRpg.Npc/TabletopRpg.Npc.csproj" />
+    <ProjectReference Include="../../src/TabletopRpg.Orchestration/TabletopRpg.Orchestration.csproj" />
   </ItemGroup>
 </Project>
