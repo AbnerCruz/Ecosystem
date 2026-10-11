@@ -35,6 +35,53 @@ public interface IUrbeVaultStorage
             throw new InvalidOperationException("Caminho interno ou inseguro no vault: " + path);
     }
 
+    /// <summary>
+    /// Writes .urbe/mapa.json, and only it (workspace.js is its single writer in 1.8.4, REQ-040),
+    /// with the same safeguards as a note: nothing changed outside Urbe since the open, a map of a
+    /// future/unknown format or a read-only vault is never rewritten, the canonical writer
+    /// (VaultWriter.Plan with MetadataJson) must produce exactly <paramref name="json"/>, a recovery
+    /// copy is kept while replacing, and every file of the vault is verified afterwards.
+    /// </summary>
+    Task SaveMapAsync(string json, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The bytes of .urbe/mapa.json the canonical writer plans for <paramref name="json"/> on these
+    /// files, refusing what the 1.8.4 refuses (vault.json of a future format, mapa.json of a future or
+    /// unknown version). Returns the existing path of the map (its case on disk) or the default path.
+    /// </summary>
+    static (string Path, byte[] Bytes) PlanMapWrite(IReadOnlyList<VaultFile> files, string json)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(json);
+        var snapshot = VaultReader.Read(files);
+        if (snapshot.IsReadOnly)
+            throw new InvalidOperationException("Formato futuro de vault: escrita recusada.");
+        if (snapshot.IsMapReadOnly || snapshot.FutureFiles.Contains(LegacyCityMap.Path, StringComparer.OrdinalIgnoreCase))
+            throw new InvalidOperationException("O mapa da cidade é de um formato futuro ou desconhecido: escrita recusada.");
+        // The 1.8.4 applies an interrupted operation's journal as a whole (every file) before anything
+        // else; writing only the map over it is not that, so it is refused.
+        if (snapshot.RecoveredFromJournal)
+            throw new InvalidOperationException("Há uma operação interrompida (diário de recuperação) neste vault: escrita do mapa recusada.");
+        var documents = snapshot.Documents.Where(d => d.Text is not null)
+            .Select(d => new VaultWriteDocument(d.Id, d.Path, d.Text!))
+            .ToList();
+        var plan = VaultWriter.Plan(new VaultWriteRequest
+        {
+            Files = files,
+            Documents = documents,
+            MetadataJson = json,
+            AppVersion = "urbe-native-preview"
+        });
+        var path = files.FirstOrDefault(f => string.Equals(f.Path, LegacyCityMap.Path, StringComparison.OrdinalIgnoreCase))?.Path
+                   ?? LegacyCityMap.Path;
+        if (!plan.Writable || !plan.Files.TryGetValue(path, out var planned))
+            throw new InvalidOperationException("O plano canônico recusou o mapa.");
+        var bytes = planned.Bytes.ToArray();
+        if (!bytes.AsSpan().SequenceEqual(System.Text.Encoding.UTF8.GetBytes(json)))
+            throw new InvalidDataException("O plano canônico modificaria o mapa inesperadamente.");
+        return (path, bytes);
+    }
+
     /// <summary>The user files Urbe may write: the 1.8.4 text types, inside the vault, never in
     /// .urbe/ or any hidden folder, never with traversal or drive syntax.</summary>
     static void EnsureWritableTextPath(string path)

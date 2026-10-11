@@ -1,0 +1,105 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-lunet-tilemap-edit-v1",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T17:32:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-415",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-f4-tilemap-edit-contract-20261011",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Framework/Graphics/TileMap.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TileMapEditingTests.cs",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/guides/tilemaps.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261011-lunet-tilemap-edit-v1.json"
+  ],
+  "work_completed": [
+    "Continuação do item de Tilemaps completos da Fase 4, sem implementar a UI Tile Studio da Fase 5.",
+    "TileMap.Create e operações imutáveis WithTile/WithLayerSettings/RenameLayer/AddLayer/RemoveLayer/MoveLayer criam versões compatíveis com JSON v1.",
+    "Camadas/células antigas nunca são modificadas; colisão e visibilidade independentes; ordem preservada; máximo ID recalculado após remover/reduzir.",
+    "Teste cobre round-trip via Parse/ToJson, A*, draw, original imutável, limites e regras de nomes.",
+    "Documentação offline, contrato e ROADMAP atualizados; mantém o gate Fase 4 aberto."
+  ],
+  "verification": [
+    {
+      "check": "Build .NET 10 e TileMapEditingTests",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Consistency e catálogo API offline",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "APK Android e integração na main",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Compatibilidade e conexão visual futura com Tile Studio",
+      "kind": "human",
+      "result": "pending",
+      "object": "apps/lunet2d/docs/guides/tilemaps.md",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "Studio gráfico ainda não implementado (Fase 5), logo ligação UI end-to-end não validável agora.",
+    "CI, APK e DEVICE não podem ser assumidos por testes de código.",
+    "Edições imutáveis fazem cópias; não devem ser usadas no loop de jogo."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar checks e corrigir falhas em código sem pular testes.",
+    "Integrar PR se CI verde e publicar APK.",
+    "Deixar gate de Tilemaps completos em aberto até conectar Tile Studio e validar no aparelho."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Mudanças apenas no Product Lunet e handoff."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #355 e roadmap Tilemaps completos."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI/APK/DEVICE pendentes explicitamente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem declarar fechamento de gate Fase 4."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhum arquivo de projeto de usuário modificado."
+    }
+  ],
+  "base_commit": "83de45db9c3f83353ed23c26e6f38e4df1538850",
+  "criticality": {
+    "declared": "routine"
+  }
+}

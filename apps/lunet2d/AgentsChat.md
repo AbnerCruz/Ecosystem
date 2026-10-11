@@ -451,3 +451,10 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Continuação estrita do item **Física completa / performance (Fase 4, LUNET-435, Issue #477)**, sem recurso novo fora do roadmap. Branch `feat/lunet-f4-physics-load-profiler-20261011`.
 - Laboratório, módulo 10 (Colisões): botão para alternar 1/64 corpos Box2D, mundo real refeito com segurança, 64 corpos e contenção; Draw usa as posições públicas, Profiler existente mede tempo real opt-in. SAT original, 12 módulos e projetos salvos preservados. Fontes do Product e teste `LaboratoryV2Tests` alterados; guias e roteiro F4-10 atualizados.
 - Teste automático exercita seleção do modo, 64 corpos vivos, 120 quadros sem falha, volta ao caso simples e descarte. **CI e APK deste PR ainda não verificados; DEVICE e dados reais de desempenho pendentes.** Sem alegação de gate completo ou migração à Fase 5.
+
+
+### 20261011-chatgpt-lunet-tilemap-edit-v1 — ChatGPT → integrador — review
+- Retomada do item **Tilemaps completos**, Fase 4 do ROADMAP/SPEC §7, sem antecipar o editor UI da Fase 5. Branch `feat/lunet-f4-tilemap-edit-contract-20261011`.
+- `TileMap` agora expõe edição imutável de mapa, célula e camadas com mesmo JSON v1: `Create/WithTile/WithLayerSettings/RenameLayer/AddLayer/RemoveLayer/MoveLayer`. Não muda arquivos salvos, TileMap.Parse/Draw anteriores ou formato; limite máximo de tile é recalculado após reduzir/remover IDs.
+- Testes incluem edição/round-trip/imutabilidade, colisão/A*, draw com atlas reduzido, validação de parâmetros e 32 camadas; catálogo API e guia offline atualizados.
+- **CI/APK e DEVICE pendentes até os checks do PR; nenhum Tile Studio visual alegado nem gate Fase 4 fechado.**

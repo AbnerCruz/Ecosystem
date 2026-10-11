@@ -23,14 +23,27 @@ public sealed class UrbeApp : Application
         switch (ApplicationLifetime)
         {
             case IClassicDesktopStyleApplicationLifetime desktop:
-                desktop.MainWindow = new Window
+                var view = CreateMainView();
+                var window = new Window
                 {
                     Title = "Urbe",
                     Width = 1280,
                     Height = 800,
                     Background = UrbeTheme.Brush(UrbeTheme.Bg),
-                    Content = CreateMainView()
+                    Content = view
                 };
+                // workspace.js flushPending on pagehide: a pending map save is written before the window closes
+                bool flushed = false;
+                window.Closing += async (_, e) =>
+                {
+                    if (flushed || view.MapSave is not { HasPending: true }) return;
+                    e.Cancel = true;
+                    try { await view.FlushMapAsync(); }
+                    catch { /* the error state was shown; closing must not be blocked forever */ }
+                    flushed = true;
+                    window.Close();
+                };
+                desktop.MainWindow = window;
                 break;
             case IActivityApplicationLifetime activity:
                 activity.MainViewFactory = CreateMainView;
@@ -42,11 +55,29 @@ public sealed class UrbeApp : Application
         base.OnFrameworkInitializationCompleted();
     }
 
+    /// <summary>The view of the running app (the Android head flushes its map on pause).</summary>
+    public static MainView? ActiveView { get; private set; }
+
     public static MainView CreateMainView()
     {
         var view = new MainView();
+        ActiveView = view;
         _ = view.InitializeAsync();
         return view;
+    }
+
+    /// <summary>
+    /// workspace.js flushPending (visibilitychange hidden): the app goes to the background, so a
+    /// pending map save is started now. Fire-and-forget: the platform does not wait for it.
+    /// </summary>
+    public static void FlushPendingOnBackground()
+    {
+        if (ActiveView is not { } view) return;
+        _ = Avalonia.Threading.Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            try { await view.FlushMapAsync(); }
+            catch { /* shown by the save state */ }
+        });
     }
 }
 

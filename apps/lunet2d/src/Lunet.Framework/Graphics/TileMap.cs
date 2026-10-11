@@ -196,6 +196,144 @@ public sealed class TileMap
         }
     }
 
+    /// <summary>Cria mapa vazio compatível com JSON v1, com uma camada "ground".</summary>
+    /// <param name="texturePath">Caminho seguro do tileset relativo a Content.</param>
+    /// <param name="width">Largura em células.</param>
+    /// <param name="height">Altura em células.</param>
+    /// <param name="tileWidth">Largura de cada tile em pixels.</param>
+    /// <param name="tileHeight">Altura de cada tile em pixels.</param>
+    /// <returns>Novo mapa vazio, pronto para exportação ou edição.</returns>
+    public static TileMap Create(string texturePath, int width, int height, int tileWidth, int tileHeight)
+    {
+        if (!ValidPath(texturePath)) throw new ArgumentException("Caminho de tileset inválido.", nameof(texturePath));
+        if (width <= 0 || height <= 0 || (long)width * height > MaxCells)
+            throw new ArgumentOutOfRangeException(nameof(width), "Dimensões do mapa excedem o limite.");
+        if (tileWidth is < 1 or > 4096 || tileHeight is < 1 or > 4096)
+            throw new ArgumentOutOfRangeException(nameof(tileWidth), "Tamanho de tile fora dos limites.");
+        return new TileMap(texturePath, width, height, tileWidth, tileHeight,
+            [new TileLayer("ground", true, false, new int[width * height])], 0);
+    }
+
+    /// <summary>Devolve uma nova versão do mapa com uma célula alterada, sem modificar a anterior.</summary>
+    /// <param name="layer">Índice da camada de destino.</param>
+    /// <param name="cell">Célula dentro dos limites do mapa.</param>
+    /// <param name="tileId">ID do tile: 0 vazio, 1 ou superior presente no tileset.</param>
+    /// <returns>Nova versão imutável do mapa, ou esta instância quando nada mudou.</returns>
+    /// <remarks>É uma operação de autoria que copia a camada editada e pode alocar; nunca chame a cada frame.</remarks>
+    public TileMap WithTile(int layer, GridPoint cell, int tileId)
+    {
+        CheckLayer(layer);
+        int index = Index(cell);
+        if (tileId < 0) throw new ArgumentOutOfRangeException(nameof(tileId));
+        int previous = _layers[layer].Tiles[index];
+        if (previous == tileId) return this;
+        var layers = (TileLayer[])_layers.Clone();
+        var tiles = (int[])layers[layer].Tiles.Clone();
+        tiles[index] = tileId;
+        layers[layer] = layers[layer] with { Tiles = tiles };
+        // Pincel do editor não deve varrer todas as camadas a cada célula alterada.
+        // Só é necessário recalcular se o maior ID conhecido foi reduzido.
+        return previous == _maximumTile && tileId < previous
+            ? CopyWith(layers)
+            : new TileMap(TexturePath, Width, Height, TileWidth, TileHeight, layers, Math.Max(_maximumTile, tileId));
+    }
+
+    /// <summary>Devolve novo mapa com visibilidade e colisão atualizadas para uma camada.</summary>
+    /// <param name="layer">Índice da camada.</param>
+    /// <param name="visible">Visibilidade do desenho; independente da colisão.</param>
+    /// <param name="collision">Células não vazias desta camada impedem passagem.</param>
+    /// <returns>Nova versão imutável do mapa.</returns>
+    public TileMap WithLayerSettings(int layer, bool visible, bool collision)
+    {
+        CheckLayer(layer);
+        var old = _layers[layer];
+        if (old.Visible == visible && old.Collision == collision) return this;
+        var layers = (TileLayer[])_layers.Clone();
+        layers[layer] = old with { Visible = visible, Collision = collision };
+        return new TileMap(TexturePath, Width, Height, TileWidth, TileHeight, layers, _maximumTile);
+    }
+
+    /// <summary>Renomeia uma camada sem perder células, ordem, visibilidade ou colisão.</summary>
+    /// <param name="layer">Índice da camada.</param>
+    /// <param name="name">Novo nome não vazio e único no mapa.</param>
+    /// <returns>Mapa com o nome alterado.</returns>
+    public TileMap RenameLayer(int layer, string name)
+    {
+        CheckLayer(layer);
+        CheckName(name, layer);
+        if (_layers[layer].Name == name) return this;
+        var layers = (TileLayer[])_layers.Clone();
+        layers[layer] = layers[layer] with { Name = name };
+        return new TileMap(TexturePath, Width, Height, TileWidth, TileHeight, layers, _maximumTile);
+    }
+
+    /// <summary>Acrescenta camada vazia no topo (até 32), sem alterar as camadas existentes.</summary>
+    /// <param name="name">Nome exclusivo da nova camada.</param>
+    /// <param name="visible">Se os tiles devem aparecer no desenho.</param>
+    /// <param name="collision">Se tiles não vazios bloqueiam passagem.</param>
+    /// <returns>Mapa com a camada acrescentada.</returns>
+    public TileMap AddLayer(string name, bool visible = true, bool collision = false)
+    {
+        if (_layers.Length >= MaxLayers) throw new InvalidOperationException("Limite de 32 camadas.");
+        CheckName(name);
+        var layers = new TileLayer[_layers.Length + 1];
+        Array.Copy(_layers, layers, _layers.Length);
+        layers[^1] = new TileLayer(name, visible, collision, new int[Width * Height]);
+        return new TileMap(TexturePath, Width, Height, TileWidth, TileHeight, layers, _maximumTile);
+    }
+
+    /// <summary>Remove uma camada; o mapa sempre preserva ao menos uma camada.</summary>
+    /// <param name="layer">Índice da camada a remover.</param>
+    /// <returns>Mapa sem a camada selecionada.</returns>
+    public TileMap RemoveLayer(int layer)
+    {
+        CheckLayer(layer);
+        if (_layers.Length == 1) throw new InvalidOperationException("Um tilemap precisa de uma camada.");
+        var layers = new TileLayer[_layers.Length - 1];
+        if (layer > 0) Array.Copy(_layers, 0, layers, 0, layer);
+        if (layer < layers.Length) Array.Copy(_layers, layer + 1, layers, layer, layers.Length - layer);
+        return CopyWith(layers);
+    }
+
+    /// <summary>Move a camada da posição atual para outra posição na ordem de desenho.</summary>
+    /// <param name="from">Índice atual.</param>
+    /// <param name="to">Novo índice.</param>
+    /// <returns>Mapa com a ordem de desenho atualizada.</returns>
+    public TileMap MoveLayer(int from, int to)
+    {
+        CheckLayer(from);
+        CheckLayer(to);
+        if (from == to) return this;
+        var layers = (TileLayer[])_layers.Clone();
+        var moved = layers[from];
+        if (from < to) Array.Copy(layers, from + 1, layers, from, to - from);
+        else Array.Copy(layers, to, layers, to + 1, from - to);
+        layers[to] = moved;
+        return new TileMap(TexturePath, Width, Height, TileWidth, TileHeight, layers, _maximumTile);
+    }
+
+    private void CheckLayer(int layer)
+    {
+        if ((uint)layer >= (uint)_layers.Length) throw new ArgumentOutOfRangeException(nameof(layer));
+    }
+
+    private void CheckName(string? name, int exclude = -1)
+    {
+        if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Nome de camada vazio.", nameof(name));
+        for (int i = 0; i < _layers.Length; i++)
+            if (i != exclude && string.Equals(_layers[i].Name, name, StringComparison.Ordinal))
+                throw new ArgumentException("Nome de camada duplicado.", nameof(name));
+    }
+
+    private TileMap CopyWith(TileLayer[] layers)
+    {
+        int maximum = 0;
+        foreach (var layer in layers)
+            foreach (int tile in layer.Tiles)
+                if (tile > maximum) maximum = tile;
+        return new TileMap(TexturePath, Width, Height, TileWidth, TileHeight, layers, maximum);
+    }
+
     /// <summary>Lê mapa JSON v1. Cada camada usa array row-major de Width × Height; zero significa vazio.</summary>
     /// <param name="json">Fonte JSON UTF-8 legível e versionada.</param>
     /// <returns>Mapa sem dependências de GPU.</returns>

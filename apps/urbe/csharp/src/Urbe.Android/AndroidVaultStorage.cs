@@ -188,6 +188,46 @@ public sealed class AndroidVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    /// <summary>Writes .urbe/mapa.json only; the same checks and verification as a note.</summary>
+    public async Task SaveMapAsync(string json, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var tree = _tree ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(tree, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            var (target, plannedBytes) = IUrbeVaultStorage.PlanMapWrite(files, json);
+            var create = !baseline.ContainsKey(target);
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (create && FindDocument(tree, target) is not null)
+                    throw new IOException("A pasta foi modificada fora do Urbe: " + target);
+                WriteVerified(tree, target, plannedBytes);
+                var persisted = ReadFiles(tree, cancellationToken);
+                var observed = Snapshot(persisted);
+                foreach (var pair in baseline)
+                {
+                    if (!observed.TryGetValue(pair.Key, out var actual) ||
+                        !actual.Bytes.Span.SequenceEqual(
+                            string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase)
+                                ? plannedBytes : pair.Value.Bytes.Span))
+                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
+                }
+                if (create && (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(plannedBytes)))
+                    throw new IOException("O mapa criado não passou na verificação: " + target);
+                if (observed.Count != baseline.Count + (create ? 1 : 0))
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     private static ContentResolver Resolver =>
         Android.App.Application.Context.ContentResolver
         ?? throw new IOException("ContentResolver indisponível.");

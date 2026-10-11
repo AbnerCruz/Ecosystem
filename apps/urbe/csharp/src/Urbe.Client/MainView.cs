@@ -31,6 +31,9 @@ public sealed partial class MainView : Grid
     private readonly TextBlock _vaultName = new();
     private VaultSnapshot? _snapshot;
     private bool _editorOpenedFromNotes;
+    private DocumentStore? _store;
+    private LegacyCityMap? _mapWriter;
+    private MapSaveScheduler? _mapSave;
 
     private string _today = DateTime.Now.ToString("yyyy-MM-dd");
 
@@ -52,7 +55,7 @@ public sealed partial class MainView : Grid
             CityMap.IsVisible = false;
         };
         Explorer = new NotesExplorer { IsVisible = false };
-        Editor = new EditorOverlay { IsVisible = false };
+        Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Explorer.Closed += () => Explorer.IsVisible = false;
         Explorer.NoteRequested += note =>
         {
@@ -103,6 +106,7 @@ public sealed partial class MainView : Grid
             SetColumnSpan(overlay, 2);
             Children.Add(overlay);
         }
+        Search = new SearchFeature(this, () => _contents.Select(n => new CityNote(n.Key, n.Value)).ToList());
 
         World.CityVisible = () => !Editor.IsVisible && !Explorer.IsVisible;
         World.Notice += (_, text) => ShowLifeNotice(text);
@@ -111,6 +115,17 @@ public sealed partial class MainView : Grid
     }
 
     public WorldView World { get; }
+
+    /// <summary>quick-open.js / command-palette.js / keymap.js: Buscar notas, Comandos and their shortcuts.</summary>
+    public SearchFeature Search { get; }
+
+    /// <summary>document.open for a note of the vault: the editor over the city.</summary>
+    public void OpenNoteByPath(string path)
+    {
+        CityMap.IsVisible = false;
+        Explorer.IsVisible = false;
+        Editor.Open(new CityNote(path, _contents.GetValueOrDefault(path, "")));
+    }
 
     // ---- life.js avisar(): a discreet pill under the top bar, 4.5 s, fading in .6 s
     private readonly Border _notice = new();
@@ -219,20 +234,77 @@ public sealed partial class MainView : Grid
 
     private async Task ShowVaultAsync(VaultSnapshot snapshot)
     {
+        // the previous vault's pending map is written first (abrirCidade: rodarSinc(true) + flush)
+        if (_mapSave is { } previous)
+        {
+            try { await previous.FlushAsync(); } catch { /* shown by the state; the new vault opens anyway */ }
+            previous.Stop();
+            _mapSave = null;
+        }
         _snapshot = snapshot;
+        _store = null;
         Editor.SaveOnClose = !snapshot.IsReadOnly;
         var texts = snapshot.Documents.Where(d => d.Text is not null).ToArray();
         var notes = texts.Select(d => new CityNote(d.Path, d.Text!)).ToArray();
         var ids = texts.ToDictionary(d => d.Path, d => d.Id, StringComparer.Ordinal);
-        // 1.8.4 abrirCidade: the saved map (.urbe/mapa.json) is respected, never rewritten here.
+        // 1.8.4 abrirCidade: the saved map (.urbe/mapa.json) is respected.
         // The terrain is always UrbeTerrain.createWorld('urbe'); mapa.mundo only names its version.
+        DocumentStore? store = null;
+        LegacyCity? opened = null;
         await LoadAsync(notes, city =>
         {
-            city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), snapshot.MapJson, ids);
+            store = city.Open(notes.Select(n => (n.Path, n.Content)).ToList(), snapshot.MapJson, ids,
+                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            opened = city;
             return true;
         });
         _vaultName.Text = snapshot.IsReadOnly ? "Vault: somente leitura" : "Pasta conectada";
+        if (store is null || opened is null || !ReferenceEquals(World.City, opened)) return;
+        _store = store;
+        StartMapSaves(snapshot, opened);
     }
+
+    /// <summary>
+    /// From now on the city's changes are written to .urbe/mapa.json like the 1.8.4 (workspace.js is
+    /// the single writer): only for a real, writable vault whose map the 1.8.4 would rewrite. Not for a
+    /// read-only vault or a map of a future/unknown format (REQ-035/REQ-040), and not while the map
+    /// belongs to another world: the 1.8.4 first reorganizes such a city (urbeReorganizarCidade, not
+    /// ported), so saving the old geometry as this world's would lose that reorganization.
+    /// </summary>
+    private void StartMapSaves(VaultSnapshot snapshot, LegacyCity city)
+    {
+        if (_vault is null || snapshot.IsReadOnly || snapshot.IsMapReadOnly || snapshot.RecoveredFromJournal ||
+            city.WorldReorganizationPending) return;
+        var writer = new LegacyCityMap();
+        MapSaveScheduler? scheduler = null;
+        scheduler = new MapSaveScheduler(() =>
+        {
+            if (World.City is not { } live || !ReferenceEquals(live, city) || _store is null) return null;
+            var text = writer.Produce(live, _store, World.Camera.X, World.Camera.Y, World.Camera.Zoom,
+                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), LegacyCityMap.ReferenceVersion, out var refusal);
+            if (text is null) scheduler!.Refused(refusal ?? "");
+            return text;
+        }, json => _vault.SaveMapAsync(json), snapshot.MapJson);
+        scheduler.StateChanged += (_, _) => _vaultName.Text = scheduler.State switch
+        {
+            "error" => "Erro ao salvar o mapa",
+            "refused" => "Mapa não salvo",
+            _ => "Pasta conectada"
+        };
+        _mapWriter = writer;
+        _mapSave = scheduler;
+        // abrirCidade ends with marcarSinc(): the first save writes the map of the opened city
+        scheduler.MarkSync();
+    }
+
+    /// <summary>The map save of the open vault (null for the Tutorial preview and read-only vaults).</summary>
+    public MapSaveScheduler? MapSave => _mapSave;
+
+    /// <summary>The documents of the open vault (DocumentStore of the city), or null.</summary>
+    public DocumentStore? Documents => _store;
+
+    /// <summary>flushPending: write a pending map now (window closing, app going to the background).</summary>
+    public Task FlushMapAsync() => _mapSave?.FlushAsync() ?? Task.CompletedTask;
 
     private async Task SaveNoteAsync(CityNote note)
     {
@@ -242,6 +314,17 @@ public sealed partial class MainView : Grid
             throw new InvalidOperationException("Vault em modo somente leitura.");
         await _vault.SaveExistingTextFileAsync(note.Path, note.Content);
         _contents[note.Path] = note.Content;
+        // 1.8.4 editor input: b.modified=nowDate(); session.record(..., {modified:b.modified}) →
+        // document:updated → persistence schedule() + marcarSinc()
+        if (_store?.Get(note.Path) is { } doc && doc.Content != note.Content && World.City is { } city)
+        {
+            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (city.Buildings.Find(b => b.IsNote && (b.DocumentId == doc.Id || (b.DocumentId is null && b.Path == doc.Path))) is { } house) city.NoteEdited(house, now);
+            _store.Upsert(new DocumentInput { Id = doc.Id, Path = doc.Path, Title = doc.Title, Content = note.Content,
+                Created = doc.Created, Modified = LegacyCity.NowDate(now) }, "editor.input");
+            _mapSave?.Schedule();
+            _mapSave?.MarkSync();
+        }
     }
 
     /// <summary>
@@ -330,13 +413,21 @@ public sealed partial class MainView : Grid
             Orientation = Orientation.Horizontal,
             Spacing = 10,
             HorizontalAlignment = HorizontalAlignment.Right,
-            Children = { RoundButton(UrbeTheme.Icons.Search, "Buscar"), MapButton(), CustomizeButton(), VaultButton() }
+            Children = { SearchButton(), MapButton(), CustomizeButton(), VaultButton() }
         };
         var bar = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), Margin = new Thickness(12, 10), VerticalAlignment = VerticalAlignment.Top };
         SetColumn(buttons, 2);
         bar.Children.Add(pill);
         bar.Children.Add(buttons);
         return bar;
+    }
+
+    private Button SearchButton()
+    {
+        var button = RoundButton(UrbeTheme.Icons.Search, "Buscar");
+        ToolTip.SetTip(button, "Buscar notas");
+        button.Click += (_, _) => Search.OpenQuickOpen();
+        return button;
     }
 
     private Button MapButton()
@@ -395,6 +486,7 @@ public sealed partial class MainView : Grid
         World.ShowHouseNames = Customization.City("nomes");
         World.ShowDistrictNames = Customization.City("bairros");
         World.LightingMode = Customization.Ambient;
+        if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
         World.InvalidateVisual();
     }
 
@@ -441,7 +533,7 @@ public sealed partial class MainView : Grid
     /// written to the vault, the camera on the house and the editor open. Nothing is created in
     /// memory only: without a writable vault folder the note is not created.
     /// </summary>
-    public async Task CreateNoteAsync(LegacyCityRegion? region)
+    public async Task CreateNoteAsync(LegacyCityRegion? region, string? typedName = null)
     {
         if (World.City is not { } city) return;
         if (_vault is null || !_vault.IsConnected || _snapshot is null || _snapshot.IsReadOnly)
@@ -449,10 +541,15 @@ public sealed partial class MainView : Grid
             await Dialogs.AlertAsync("Nova nota", "Abra a pasta do seu vault (botão Cidades) para criar notas. O Tutorial desta prévia é só leitura.");
             return;
         }
-        var typed = await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
+        var typed = typedName ?? await Dialogs.PromptAsync(new PromptOptions("Nova nota", Label: "Nome", Placeholder: "Ex.: Ideias",
             Hint: "Sem extensão, vira .md. Também aceita .txt, .html, .css, .js, .json, .yaml e .csv.", Confirm: "Criar nota"));
         if (typed is null) return;
-        if (city.CreateNote(region, typed, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) is not { } made)
+        // app.js has one camera: the loose lot is searched where the person is looking (centroBuscaRaiz)
+        city.CameraX = World.Camera.X;
+        city.CameraY = World.Camera.Y;
+        city.CameraZoom = World.Camera.Zoom;
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (city.CreateNote(region, typed, now) is not { } made)
         {
             await Dialogs.AlertAsync("Nova nota", "Não encontrei lote livre.");
             return;
@@ -469,6 +566,14 @@ public sealed partial class MainView : Grid
             return;
         }
         _contents[made.House.Path] = made.Content;
+        // urbeReconcileWorld: the new house gets its document ({path, content, created, modified} =
+        // the house's nowDate()); agendarSalvar() + marcarSinc() write the map with it
+        if (_store is not null)
+        {
+            var today = LegacyCity.NowDate(now);
+            _store.Upsert(new DocumentInput { Path = made.House.Path, Content = made.Content, Created = today, Modified = today }, "world.create");
+            _mapSave?.MarkSync();
+        }
         Explorer.SetNotes(_contents.Select(n => new CityNote(n.Key, n.Value)));
         World.CenterOn(made.House);
         World.Select(made.House);
