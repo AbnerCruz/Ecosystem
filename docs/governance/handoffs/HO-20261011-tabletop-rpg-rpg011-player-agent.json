@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-tabletop-rpg-rpg011-player-agent",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T18:07:29Z",
+  "agent": {
+    "id": "chatgpt-rpg011",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-011",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg011-player-agent",
+  "base_commit": "4fde0b138acbdf853474bfe738fffd8b2d697635",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/511",
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.PlayerAgent/TabletopRpg.PlayerAgent.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.PlayerAgent/PlayerAgentProfile.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.PlayerAgent/PlayerIntentDecoder.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.PlayerAgent/PlayerAgentDecisionSource.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/PlayerAgentTests.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+    "apps/tabletop-rpg/docs/player-agent-r1.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261011-tabletop-rpg-rpg011-player-agent.json"
+  ],
+  "work_completed": [
+    "RPG-011 PlayerAgentProfile valida e guarda snapshot local de persona/goals/relationships, sem duplicar conhecimento/memória canônicos do Campaign.",
+    "PlayerAgentDecisionSource implementa IAgentDecisionSource usando apenas CharacterView da personagem designada pelo PlayerView, sem WorldState ou outra personagem do mesmo participante.",
+    "Somente wake kinds explícitos disparam IModelGateway; contexto JSON contém memórias/conhecimento da perspectiva atual e não transmite fatos secretos não revelados.",
+    "PlayerIntentDecoder valida JSON sem chaves duplicadas/campos extras, vincula IDs via runtime e permite speak/end_turn/pass; nenhum texto de modelo decide DC, dados ou mutação direta.",
+    "Integration tests comprovam isolamento, event-driven, falha fechada, identidade, sem polling, cancelamento e autorização pelo SessionEngine; documentação e roadmap alinhados."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar tabletop-rpg-ci do PR #511. .NET SDK não disponível na sessão local."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar consistency e integrador no head e no estado combinado com main."
+    },
+    {
+      "check": "DEVICE Android",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Contrato headless sem cliente Android, build APK nem tela."
+    }
+  ],
+  "known_issues": [
+    "PR #511 está empilhado sobre PR #506 ainda não integrado; não mesclar nem tirar de draft antes da dependência ser resolvida e CI combined verde.",
+    "Perfis são transitórios: objetivos/persona/relações não entram na persistência v2. Uma evolução versionada futura exigirá revisão do risco a dados; não declarar Player Agent durável.",
+    "Provedor HTTP real, modelo conectado, Game Master Agent, contextos de ataque e dificuldade, budget/retry orquestração e UI continuam fora do slice RPG-011."
+  ],
+  "blockers": [
+    "Dependência RPG-010/PR #506 ainda aberta. Branch stacked e PR draft aguardam integração governada de #506."
+  ],
+  "next_actions": [
+    "Confirmar tabletop-rpg-ci e consistency do PR #511, corrigindo erros específicos.",
+    "Após #506 integrado, reconciliar #511 com main, retirar draft quando gates estiverem prontos e deixar integrador governado agir; nunca mesclar manualmente.",
+    "Próximo item permitido RPG-012 Mestre IA em branch separada, sem violar prioridades do Product ou pular gates."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/tabletop-rpg/docs/model-gateway-r1.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Conhecimento e memória são projetados de Campaign, não mantidos em segunda fonte pelo perfil."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Assembly local ao Product referencia apenas Core e ModelGateway do próprio Tabletop RPG."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Nenhuma dependência de runtime externo ao Product."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Código novo integral em C#."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #510, branch, PR #511, CI e handoff auditáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Tarefa prevista em SPEC/ROADMAP e ADR-0022 previamente aprovados."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Documentos normativos do Product e política de integração consultados."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Nenhum schema persistido ou contrato público transversal alterado; perfil transitório e limites explicitados."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "JSON não confiável aceita apenas speak/end_turn/pass, ids não escolhidos pelo modelo, SessionEngine continua autorizador."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Somente testes headless; DEVICE não aplicável e não declarado."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-011 permanece [~], PR draft/CI pendentes."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "IDs da personagem e participante são CharacterId e ParticipantId estáveis do Core."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nova assembly Product-local sem extração para plataforma ou segundo contrato."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Operação headless independente de distribuição de outros produtos."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Implementação prevista no RPG-011 sem mexer em dados persistidos, segurança/infra de credenciais ou capabilities públicas."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "player-agent-decision",
+      "status": "product-specific",
+      "rationale": "IA interpretativa e regras de domínio específicas do Tabletop RPG; sem consumidor externo e sem extração autorizada."
+    }
+  ]
+}
