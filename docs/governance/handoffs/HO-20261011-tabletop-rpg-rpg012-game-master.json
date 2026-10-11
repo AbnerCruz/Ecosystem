@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-tabletop-rpg-rpg012-game-master",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T18:38:50Z",
+  "agent": {
+    "id": "chatgpt-rpg012",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-012",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg012-game-master",
+  "base_commit": "38ac1999a69cc151861daaafd4140f281bbae9d3",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/517",
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.Core/GameMasterView.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.GameMaster/TabletopRpg.GameMaster.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.GameMaster/GameMasterProposals.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.GameMaster/GameMasterAgent.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/GameMasterAgentTests.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+    "apps/tabletop-rpg/docs/game-master-r1.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261011-tabletop-rpg-rpg012-game-master.json"
+  ],
+  "work_completed": [
+    "RPG-012: Campaign.CreateGameMasterView fornece snapshot privado de fatos, cenas, quests, personagens e eventos exclusivamente a assentos GM, distinto da visão Player.",
+    "GameMasterAgent exige participante agent-controller SeatRole.GameMaster, acionado por wake sinalizado explicitamente, e projeta contexto privado limitado para IModelGateway sem acesso mutável ao Campaign.",
+    "Decoder fail-closed limita resposta a rascunhos narrate, reveal_fact e pass; rejeita identidade forjada, operações arbitrárias, duplicatas e JSON malformado.",
+    "ApprovedGameMasterTools exige invocação separada por host confiável; o Core checa role GM, revisão atual e entidades canônicas antes de gravar narração ou revelar um fato à personagem específica.",
+    "Testes de isolamento privado/público, nenhuma mutação antes de aprovação, dados inexistentes, ações atrasadas, sinais ociosos, controle de identidade e cancelamento.",
+    "Documento do Product e roadmap atualizados; nenhuma alteração no schema v2, credenciais ou rede."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar tabletop-rpg-ci na PR #517; compilação local indisponível nesta sessão."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar consistency na PR #517 e sobre estado combinado do integrador."
+    },
+    {
+      "check": "DEVICE Android",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Game Master ainda headless, sem UI ou APK."
+    }
+  ],
+  "known_issues": [
+    "Dependência RPG-011 PR #511 ainda em draft, PR #517 empilhado; não mesclar/retirar draft antes de reconciliação após integração.",
+    "O texto narrado pode sugerir segredos; é rascunho privado e exige revisão pelo host antes da publicação. Ainda não há UI nem política de aprovação automatizada.",
+    "RPG-012 não implementa servidor de modelo, Director, gerenciamento durável de narrativa, budgets/retry nem estado de mestre persistido."
+  ],
+  "blockers": [
+    "RPG-011 PR #511 precisa ser integrado antes de reconciliar o branch RPG-012 na main."
+  ],
+  "next_actions": [
+    "Confirmar CI tabletop-rpg-ci e consistency no commit do PR #517, corrigindo eventuais falhas.",
+    "Quando RPG-011 PR #511 estiver na main, atualizar base do PR #517, validar o diff isolado e gates do integrador. Nunca integrar manualmente ou presumir autorização.",
+    "Avançar RPG-013 Director depois de estabelecer a fronteira do Mestre, sem antecipar UI e multiplayer."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Fatos privados provêm do Campaign; visão do Mestre é snapshot sem segunda fonte de verdade."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Assembly local referencia somente Core e ModelGateway do mesmo Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Produto mantém execução headless independente de outros produtos."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Somente C# no código novo."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #516, PR #517, branch, testes e handoff."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "RPG-012 está prevista na SPEC/ROADMAP e ADR-0022; nenhum novo produto criado."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas indicadas consultadas diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem mudança de contrato público entre Products nem schema de persistência."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Modelo retorna apenas propostas, e aprovação por host executa operações canônicas com role e revisão checados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "HEADLESS: DEVICE não aplicável neste incremento."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-012 segue [~] com PR draft, CI pendente e dependência explícita."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Reuso de ParticipantId, CharacterId, FactId e SceneId existentes."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Implementação permanece dentro do Product sem shared/extraction sem consumidor."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência de distribuição do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Incremento previsto no roadmap; não altera schema dos dados de usuário, integrações de segurança, distribuição ou contrato transversal."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "rpg-game-master-agent",
+      "status": "product-specific",
+      "rationale": "Mestre narrativo e ferramentas de campanha pertencem ao domínio do RPG; nenhum segundo consumidor demonstrado."
+    }
+  ]
+}

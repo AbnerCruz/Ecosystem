@@ -18,5 +18,6 @@
     <ProjectReference Include="../../src/TabletopRpg.Persistence/TabletopRpg.Persistence.csproj" />
     <ProjectReference Include="../../src/TabletopRpg.ModelGateway/TabletopRpg.ModelGateway.csproj" />
     <ProjectReference Include="../../src/TabletopRpg.PlayerAgent/TabletopRpg.PlayerAgent.csproj" />
+    <ProjectReference Include="../../src/TabletopRpg.GameMaster/TabletopRpg.GameMaster.csproj" />
   </ItemGroup>
 </Project>

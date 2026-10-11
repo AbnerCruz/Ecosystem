@@ -21,6 +21,7 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - `src/TabletopRpg.Persistence`: codec versionado e store local com save atômico, backup e recuperação.
 - `src/TabletopRpg.ModelGateway`: contrato local de geração por turno e configurações não secretas de modelo/provedor, sem rede/SDK.
 - `src/TabletopRpg.PlayerAgent`: perfil de personagem e decisão por gatilho explícito, com JSON estrito convertido em intents autorizadas.
+- `src/TabletopRpg.GameMaster`: Mestre IA com visão privada, propostas tipadas e ferramentas autorizadas apenas após aprovação explícita.
 - `tests/TabletopRpg.Core.Tests`: testes de domínio e persistência.
 - `SPEC.md`: requisitos do Product.
 - `ROADMAP.md`: fases e gates próprios.
@@ -29,6 +30,7 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - `docs/combat-r0.md`: runtime RPG-004, esquema neutro de regras, turnos, intents e limites de persistência.
 - `docs/model-gateway-r1.md`: contrato RPG-010, limites de contexto e credenciais fora da campanha.
 - `docs/player-agent-r1.md`: RPG-011, perspectiva restrita, parser, integrações e pendências.
+- `docs/game-master-r1.md`: RPG-012, visão privada do Mestre, rascunhos de narração/revelação e aprovação no host.
 
 ## Teste
 
@@ -65,3 +67,7 @@ comercial. RPG-004 depende da integração prévia de RPG-003 (PR #310).
 ## Player Agent (RPG-011)
 
 O novo `PlayerAgentDecisionSource` adapta o Gateway ao `AgentTurnRunner` existente. Usa apenas a perspectiva do personagem designado e decodifica JSON estrito (`speak`, `end_turn` ou `pass`), sem capacidade de escolher identidade, rolagem ou dificuldade. O motor continua sendo a única autoridade sobre ações e eventos. O perfil de persona/objetivos/relações ainda é transitório, sem novo formato de save; não existe provedor real nem sessão mobile com IA nesta fase.
+
+## Mestre IA (RPG-012)
+
+O `GameMasterAgent` consulta uma projeção canônica separada de `PlayerView`, podendo ver fatos secretos do mundo sem transmiti-los automaticamente aos jogadores. Suas respostas são somente propostas: texto narrativo ou revelação de um fato para uma personagem específica. A aplicação requer aprovação independente pelo host, papel de Mestre válido e revisão atual da campanha. O contrato ainda é headless, sem serviço de modelo real ou interface para aprovar propostas.
