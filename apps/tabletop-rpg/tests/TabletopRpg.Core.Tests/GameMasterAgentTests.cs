@@ -44,13 +44,13 @@ public sealed class GameMasterAgentTests
         var t = Table.Create();
         var gateway = new FakeGateway("{\"kind\":\"narrate\",\"text\":\"A distant bell rings.\"}");
         var agent = new GameMasterAgent(t.Campaign, gateway);
-        var oldRevision = t.Campaign.Clock;
+        var oldRevision = t.Campaign.CreateGameMasterView(t.GameMaster.Id).Revision;
 
         var draft = Assert.IsType<NarrationDraft>(await agent.ProposeAsync(
             t.GameMaster.Id, new AgentWakeSignal("player-action"),
             TestContext.Current.CancellationToken));
 
-        Assert.Equal(oldRevision, t.Campaign.Clock);
+        Assert.Equal(oldRevision, t.Campaign.CreateGameMasterView(t.GameMaster.Id).Revision);
         Assert.Empty(t.Campaign.Events);
         Assert.Equal(t.GameMaster.Id, draft.GameMasterId);
 
@@ -85,7 +85,7 @@ public sealed class GameMasterAgentTests
     public void Untrusted_output_does_not_control_identity_or_create_arbitrary_actions()
     {
         var id = ParticipantId.New();
-        var revision = 10L;
+        var revision = new GameMasterRevision(10, 0, 0, 0);
         foreach (var response in new[]
         {
             "{\"kind\":\"narrate\",\"text\":\"Hi\",\"participantId\":\"forged\"}",
@@ -112,7 +112,7 @@ public sealed class GameMasterAgentTests
     public void Unapproved_or_stale_proposals_cannot_change_world()
     {
         var t = Table.Create();
-        var draft = new NarrationDraft(t.GameMaster.Id, t.Campaign.Clock, "A drum sounds.");
+        var draft = new NarrationDraft(t.GameMaster.Id, t.Campaign.CreateGameMasterView(t.GameMaster.Id).Revision, "A drum sounds.");
         t.Campaign.AddWorldFact("New fact makes prior view stale.");
         var eventsBefore = t.Campaign.Events.Count;
 
@@ -127,13 +127,13 @@ public sealed class GameMasterAgentTests
         var t = Table.Create();
         var tools = new ApprovedGameMasterTools(t.Campaign);
         Assert.Throws<InvalidOperationException>(() =>
-            tools.ApplyApproved(new NarrationDraft(t.Player.Id, t.Campaign.Clock, "Fake GM")));
+            tools.ApplyApproved(new NarrationDraft(t.Player.Id, t.Campaign.CreateGameMasterView(t.GameMaster.Id).Revision, "Fake GM")));
         Assert.Throws<KeyNotFoundException>(() =>
             tools.ApplyApproved(new RevealFactDraft(
-                t.GameMaster.Id, t.Campaign.Clock, t.Hero.Id, FactId.New())));
+                t.GameMaster.Id, t.Campaign.CreateGameMasterView(t.GameMaster.Id).Revision, t.Hero.Id, FactId.New())));
         Assert.Throws<KeyNotFoundException>(() =>
             tools.ApplyApproved(new RevealFactDraft(
-                t.GameMaster.Id, t.Campaign.Clock, CharacterId.New(), FactId.New())));
+                t.GameMaster.Id, t.Campaign.CreateGameMasterView(t.GameMaster.Id).Revision, CharacterId.New(), FactId.New())));
         Assert.Empty(t.Campaign.Events);
     }
 
