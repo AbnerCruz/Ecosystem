@@ -11349,10 +11349,10 @@
       "namespace": "Lunet.Graphics",
       "kind": "class",
       "signature": "public sealed class TileMap",
-      "summary": "Mapa de tiles em camadas, com c\u00E9lulas vazias (0), tiles 1-based e camada de colis\u00E3o opcional.",
-      "remarks": "\u00C9 conte\u00FAdo declarativo do jogo, sem estado de GPU, edi\u00E7\u00E3o visual ou depend\u00EAncia do Tile Studio. O mapa \u00E9 imut\u00E1vel ap\u00F3s Parse. Desenho em viewport e consultas n\u00E3o alocam por quadro.",
+      "summary": "Mapa de tiles em camadas, com células vazias (0), tiles 1-based e camada de colisão opcional.",
+      "remarks": "É conteúdo declarativo do jogo, sem estado de GPU, edição visual ou dependência do Tile Studio. O mapa é imutável após Parse. Desenho em viewport e consultas não alocam por quadro.",
       "examples": [
-        "\u0060\u0060\u0060\nvar map = content.LoadTileMap(\u0022Data/level.tilemap.json\u0022);\nvar tiles = content.LoadTexture(map.TexturePath, TextureFilter.Point);\nvar grid = new Lunet.Pathfinding.GridPathfinder(map.Width, map.Height);\nmap.CopyCollisionTo(grid);\nbatch.Begin();\nmap.Draw(batch, tiles, new RectangleF(0, 0, 360, 640), Vector2.Zero, Color.White);\nbatch.End();\n\u0060\u0060\u0060"
+        "```\nvar map = content.LoadTileMap(\"Data/level.tilemap.json\");\nvar tiles = content.LoadTexture(map.TexturePath, TextureFilter.Point);\nvar grid = new Lunet.Pathfinding.GridPathfinder(map.Width, map.Height);\nmap.CopyCollisionTo(grid);\nbatch.Begin();\nmap.Draw(batch, tiles, new RectangleF(0, 0, 360, 640), Vector2.Zero, Color.White);\nbatch.End();\n```"
       ],
       "related": [],
       "since": "0.0.1",
@@ -11362,7 +11362,7 @@
           "name": "Height",
           "kind": "property",
           "signature": "public int Height { get; }",
-          "summary": "N\u00FAmero de linhas no mapa.",
+          "summary": "Número de linhas no mapa.",
           "remarks": "",
           "parameters": [],
           "returns": "",
@@ -11427,10 +11427,39 @@
           "name": "Width",
           "kind": "property",
           "signature": "public int Width { get; }",
-          "summary": "N\u00FAmero de colunas no mapa.",
+          "summary": "Número de colunas no mapa.",
           "remarks": "",
           "parameters": [],
           "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.TileMap.AddLayer(System.String,System.Boolean,System.Boolean)",
+          "name": "AddLayer",
+          "kind": "method",
+          "signature": "public TileMap AddLayer(string name, bool visible = true, bool collision = false)",
+          "summary": "Acrescenta camada vazia no topo (até 32), sem alterar as camadas existentes.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string",
+              "description": "Nome exclusivo da nova camada."
+            },
+            {
+              "name": "visible",
+              "type": "bool",
+              "description": "Se os tiles devem aparecer no desenho."
+            },
+            {
+              "name": "collision",
+              "type": "bool",
+              "description": "Se tiles não vazios bloqueiam passagem."
+            }
+          ],
+          "returns": "Mapa com a camada acrescentada.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11440,13 +11469,13 @@
           "name": "CellBounds",
           "kind": "method",
           "signature": "public RectangleF CellBounds(GridPoint cell, Vector2 origin)",
-          "summary": "Ret\u00E2ngulo de uma c\u00E9lula em coordenadas de mundo.",
+          "summary": "Retângulo de uma célula em coordenadas de mundo.",
           "remarks": "",
           "parameters": [
             {
               "name": "cell",
               "type": "GridPoint",
-              "description": "Coordenada v\u00E1lida da c\u00E9lula."
+              "description": "Coordenada válida da célula."
             },
             {
               "name": "origin",
@@ -11454,7 +11483,7 @@
               "description": "Deslocamento do mapa no mundo."
             }
           ],
-          "returns": "Limites da c\u00E9lula.",
+          "returns": "Limites da célula.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11470,15 +11499,54 @@
             {
               "name": "grid",
               "type": "GridPathfinder",
-              "description": "Grade com as mesmas dimens\u00F5es do mapa."
+              "description": "Grade com as mesmas dimensões do mapa."
             },
             {
               "name": "freeCost",
               "type": "float",
-              "description": "Custo finito e positivo das c\u00E9lulas livres."
+              "description": "Custo finito e positivo das células livres."
             }
           ],
           "returns": "",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.TileMap.Create(System.String,System.Int32,System.Int32,System.Int32,System.Int32)",
+          "name": "Create",
+          "kind": "method",
+          "signature": "public static TileMap Create(string texturePath, int width, int height, int tileWidth, int tileHeight)",
+          "summary": "Cria mapa vazio compatível com JSON v1, com uma camada ground.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "texturePath",
+              "type": "string",
+              "description": "Caminho seguro do tileset relativo a Content."
+            },
+            {
+              "name": "width",
+              "type": "int",
+              "description": "Largura em células."
+            },
+            {
+              "name": "height",
+              "type": "int",
+              "description": "Altura em células."
+            },
+            {
+              "name": "tileWidth",
+              "type": "int",
+              "description": "Largura de cada tile em pixels."
+            },
+            {
+              "name": "tileHeight",
+              "type": "int",
+              "description": "Altura de cada tile em pixels."
+            }
+          ],
+          "returns": "Novo mapa vazio, pronto para exportação ou edição.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11488,13 +11556,13 @@
           "name": "Draw",
           "kind": "method",
           "signature": "public void Draw(SpriteBatch batch, Texture2D texture, RectangleF viewport, Vector2 origin, Color tint)",
-          "summary": "Desenha apenas tiles dentro da viewport mundial, com camadas em ordem e um \u00FAnico tileset.",
+          "summary": "Desenha apenas tiles dentro da viewport mundial, com camadas em ordem e um único tileset.",
           "remarks": "",
           "parameters": [
             {
               "name": "batch",
               "type": "SpriteBatch",
-              "description": "SpriteBatch j\u00E1 iniciado (opcionalmente com Camera2D)."
+              "description": "SpriteBatch já iniciado (opcionalmente com Camera2D)."
             },
             {
               "name": "texture",
@@ -11504,7 +11572,7 @@
             {
               "name": "viewport",
               "type": "RectangleF",
-              "description": "AABB da \u00E1rea vis\u00EDvel em coordenadas mundiais; para c\u00E2mera girada, use AABB conservador."
+              "description": "AABB da área visível em coordenadas mundiais; para câmera girada, use AABB conservador."
             },
             {
               "name": "origin",
@@ -11527,13 +11595,13 @@
           "name": "GetLayerName",
           "kind": "method",
           "signature": "public string GetLayerName(int layer)",
-          "summary": "Nome est\u00E1vel da camada por \u00EDndice.",
+          "summary": "Nome estável da camada por índice.",
           "remarks": "",
           "parameters": [
             {
               "name": "layer",
               "type": "int",
-              "description": "\u00CDndice de 0 a LayerCount-1."
+              "description": "Índice de 0 a LayerCount-1."
             }
           ],
           "returns": "Nome do layer no JSON.",
@@ -11546,18 +11614,18 @@
           "name": "GetTile",
           "kind": "method",
           "signature": "public int GetTile(int layer, GridPoint cell)",
-          "summary": "Identificador do tile (0 vazio, demais come\u00E7ando em 1). Fora da grade lan\u00E7a exce\u00E7\u00E3o.",
+          "summary": "Identificador do tile (0 vazio, demais começando em 1). Fora da grade lança exceção.",
           "remarks": "",
           "parameters": [
             {
               "name": "layer",
               "type": "int",
-              "description": "\u00CDndice da camada."
+              "description": "Índice da camada."
             },
             {
               "name": "cell",
               "type": "GridPoint",
-              "description": "Coordenada da c\u00E9lula."
+              "description": "Coordenada da célula."
             }
           ],
           "returns": "ID do tile.",
@@ -11570,16 +11638,16 @@
           "name": "IsBlocked",
           "kind": "method",
           "signature": "public bool IsBlocked(GridPoint cell)",
-          "summary": "Fora do mapa tamb\u00E9m \u00E9 bloqueado. Dentro, qualquer tile em camada collision bloqueia.",
+          "summary": "Fora do mapa também é bloqueado. Dentro, qualquer tile em camada collision bloqueia.",
           "remarks": "",
           "parameters": [
             {
               "name": "cell",
               "type": "GridPoint",
-              "description": "C\u00E9lula da grade."
+              "description": "Célula da grade."
             }
           ],
-          "returns": "Verdadeiro quando a c\u00E9lula bloqueia o caminho.",
+          "returns": "Verdadeiro quando a célula bloqueia o caminho.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11589,16 +11657,16 @@
           "name": "IsCollisionLayer",
           "kind": "method",
           "signature": "public bool IsCollisionLayer(int layer)",
-          "summary": "Indica se qualquer tile n\u00E3o vazio da camada bloqueia passagem.",
+          "summary": "Indica se qualquer tile não vazio da camada bloqueia passagem.",
           "remarks": "",
           "parameters": [
             {
               "name": "layer",
               "type": "int",
-              "description": "\u00CDndice da camada."
+              "description": "Índice da camada."
             }
           ],
-          "returns": "Verdadeiro se participa da colis\u00E3o.",
+          "returns": "Verdadeiro se participa da colisão.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11608,16 +11676,40 @@
           "name": "IsLayerVisible",
           "kind": "method",
           "signature": "public bool IsLayerVisible(int layer)",
-          "summary": "Indica se a camada \u00E9 desenhada (a colis\u00E3o n\u00E3o depende de visibilidade).",
+          "summary": "Indica se a camada é desenhada (a colisão não depende de visibilidade).",
           "remarks": "",
           "parameters": [
             {
               "name": "layer",
               "type": "int",
-              "description": "\u00CDndice da camada."
+              "description": "Índice da camada."
             }
           ],
-          "returns": "Verdadeiro se desenh\u00E1vel.",
+          "returns": "Verdadeiro se desenhável.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.TileMap.MoveLayer(System.Int32,System.Int32)",
+          "name": "MoveLayer",
+          "kind": "method",
+          "signature": "public TileMap MoveLayer(int from, int to)",
+          "summary": "Move a camada da posição atual para outra posição na ordem de desenho.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "from",
+              "type": "int",
+              "description": "Índice atual."
+            },
+            {
+              "name": "to",
+              "type": "int",
+              "description": "Novo índice."
+            }
+          ],
+          "returns": "Mapa com a ordem de desenho atualizada.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11627,13 +11719,13 @@
           "name": "OverlapsCollision",
           "kind": "method",
           "signature": "public bool OverlapsCollision(RectangleF bounds, Vector2 origin)",
-          "summary": "Consulta colis\u00E3o de AABB em pixels de mundo; paredes invis\u00EDveis tamb\u00E9m contam e fora do mapa \u00E9 s\u00F3lido.",
-          "remarks": "Para mover um personagem, consulte o ret\u00E2ngulo desejado antes de atualizar a posi\u00E7\u00E3o. N\u00E3o resolve colis\u00E3o, acelera\u00E7\u00E3o ou movimento cont\u00EDnuo; chamadas n\u00E3o alocam mem\u00F3ria por quadro.",
+          "summary": "Consulta colisão de AABB em pixels de mundo; paredes invisíveis também contam e fora do mapa é sólido.",
+          "remarks": "Para mover um personagem, consulte o retângulo desejado antes de atualizar a posição. Não resolve colisão, aceleração ou movimento contínuo; chamadas não alocam memória por quadro.",
           "parameters": [
             {
               "name": "bounds",
               "type": "RectangleF",
-              "description": "Ret\u00E2ngulo mundial finito de largura/altura n\u00E3o negativas (contato de borda n\u00E3o conta)."
+              "description": "Retângulo mundial finito de largura/altura não negativas (contato de borda não conta)."
             },
             {
               "name": "origin",
@@ -11641,7 +11733,7 @@
               "description": "Deslocamento do canto superior esquerdo do mapa no mundo."
             }
           ],
-          "returns": "Verdadeiro se a \u00E1rea n\u00E3o vazia invade c\u00E9lula bloqueada ou ultrapassa os limites do mapa.",
+          "returns": "Verdadeiro se a área não vazia invade célula bloqueada ou ultrapassa os limites do mapa.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11651,16 +11743,59 @@
           "name": "Parse",
           "kind": "method",
           "signature": "public static TileMap Parse(string json)",
-          "summary": "L\u00EA mapa JSON v1. Cada camada usa array row-major de Width \u00D7 Height; zero significa vazio.",
+          "summary": "Lê mapa JSON v1. Cada camada usa array row-major de Width × Height; zero significa vazio.",
           "remarks": "",
           "parameters": [
             {
               "name": "json",
               "type": "string",
-              "description": "Fonte JSON UTF-8 leg\u00EDvel e versionada."
+              "description": "Fonte JSON UTF-8 legível e versionada."
             }
           ],
-          "returns": "Mapa sem depend\u00EAncias de GPU.",
+          "returns": "Mapa sem dependências de GPU.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.TileMap.RemoveLayer(System.Int32)",
+          "name": "RemoveLayer",
+          "kind": "method",
+          "signature": "public TileMap RemoveLayer(int layer)",
+          "summary": "Remove uma camada; o mapa sempre preserva ao menos uma camada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "layer",
+              "type": "int",
+              "description": "Índice da camada a remover."
+            }
+          ],
+          "returns": "Mapa sem a camada selecionada.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.TileMap.RenameLayer(System.Int32,System.String)",
+          "name": "RenameLayer",
+          "kind": "method",
+          "signature": "public TileMap RenameLayer(int layer, string name)",
+          "summary": "Renomeia uma camada sem perder células, ordem, visibilidade ou colisão.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "layer",
+              "type": "int",
+              "description": "Índice da camada."
+            },
+            {
+              "name": "name",
+              "type": "string",
+              "description": "Novo nome não vazio e único no mapa."
+            }
+          ],
+          "returns": "Mapa com o nome alterado.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11670,10 +11805,68 @@
           "name": "ToJson",
           "kind": "method",
           "signature": "public string ToJson()",
-          "summary": "Exporta o mapa no mesmo contrato JSON v1 aceito por Parse, preservando camadas, visibilidade e colis\u00E3o.",
-          "remarks": "Aloca mem\u00F3ria para exporta\u00E7\u00E3o; n\u00E3o chamar no loop do jogo. N\u00E3o grava arquivos nem modifica o mapa.",
+          "summary": "Exporta o mapa no mesmo contrato JSON v1 aceito por Parse, preservando camadas, visibilidade e colisão.",
+          "remarks": "Aloca memória para exportação; não chamar no loop do jogo. Não grava arquivos nem modifica o mapa.",
           "parameters": [],
-          "returns": "JSON UTF-8 leg\u00EDvel, com nomes de propriedades can\u00F4nicos e IDs de tiles sem altera\u00E7\u00E3o.",
+          "returns": "JSON UTF-8 legível, com nomes de propriedades canônicos e IDs de tiles sem alteração.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.TileMap.WithLayerSettings(System.Int32,System.Boolean,System.Boolean)",
+          "name": "WithLayerSettings",
+          "kind": "method",
+          "signature": "public TileMap WithLayerSettings(int layer, bool visible, bool collision)",
+          "summary": "Devolve novo mapa com visibilidade e colisão atualizadas para uma camada.",
+          "remarks": "",
+          "parameters": [
+            {
+              "name": "layer",
+              "type": "int",
+              "description": "Índice da camada."
+            },
+            {
+              "name": "visible",
+              "type": "bool",
+              "description": "Visibilidade do desenho; independente da colisão."
+            },
+            {
+              "name": "collision",
+              "type": "bool",
+              "description": "Células não vazias desta camada impedem passagem."
+            }
+          ],
+          "returns": "Nova versão imutável do mapa.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.TileMap.WithTile(System.Int32,Lunet.Pathfinding.GridPoint,System.Int32)",
+          "name": "WithTile",
+          "kind": "method",
+          "signature": "public TileMap WithTile(int layer, GridPoint cell, int tileId)",
+          "summary": "Devolve uma nova versão do mapa com uma célula alterada, sem modificar a anterior.",
+          "remarks": "Operação de autoria que copia a camada editada; não chamar a cada frame.",
+          "parameters": [
+            {
+              "name": "layer",
+              "type": "int",
+              "description": "Índice da camada de destino."
+            },
+            {
+              "name": "cell",
+              "type": "GridPoint",
+              "description": "Célula dentro dos limites do mapa."
+            },
+            {
+              "name": "tileId",
+              "type": "int",
+              "description": "ID do tile: 0 vazio, 1 ou superior presente no tileset."
+            }
+          ],
+          "returns": "Nova versão imutável do mapa, ou esta instância quando nada mudou.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11683,21 +11876,21 @@
           "name": "WorldToCell",
           "kind": "method",
           "signature": "public GridPoint WorldToCell(Vector2 world, Vector2 origin)",
-          "summary": "Transforma posi\u00E7\u00E3o do mundo em c\u00E9lula sem limitar \u00E0 grade; aplica floor para coordenadas negativas.",
+          "summary": "Transforma posição do mundo em célula sem limitar à grade; aplica floor para coordenadas negativas.",
           "remarks": "",
           "parameters": [
             {
               "name": "world",
               "type": "Vector2",
-              "description": "Posi\u00E7\u00E3o em pixels do mundo."
+              "description": "Posição em pixels do mundo."
             },
             {
               "name": "origin",
               "type": "Vector2",
-              "description": "Posi\u00E7\u00E3o do canto superior esquerdo do mapa."
+              "description": "Posição do canto superior esquerdo do mapa."
             }
           ],
-          "returns": "Coordenadas inteiras da c\u00E9lula, possivelmente fora da grade.",
+          "returns": "Coordenadas inteiras da célula, possivelmente fora da grade.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
