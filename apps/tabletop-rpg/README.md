@@ -19,12 +19,14 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 
 - `src/TabletopRpg.Core`: domínio e runtime headless, sem UI, rede ou SDK de provedor.
 - `src/TabletopRpg.Persistence`: codec versionado e store local com save atômico, backup e recuperação.
+- `src/TabletopRpg.ModelGateway`: contrato local de geração por turno e configurações não secretas de modelo/provedor, sem rede/SDK.
 - `tests/TabletopRpg.Core.Tests`: testes de domínio e persistência.
 - `SPEC.md`: requisitos do Product.
 - `ROADMAP.md`: fases e gates próprios.
 - `docs/persistence-v1.md`: formato legado, contratos originais e política de recuperação.
 - `docs/persistence-v2.md`: schema atual (RPG-003), mundo/quests/inventário e migração v1 segura.
 - `docs/combat-r0.md`: runtime RPG-004, esquema neutro de regras, turnos, intents e limites de persistência.
+- `docs/model-gateway-r1.md`: contrato RPG-010, limites de contexto e credenciais fora da campanha.
 
 ## Teste
 
@@ -33,7 +35,7 @@ cd apps/tabletop-rpg
 dotnet test --project tests/TabletopRpg.Core.Tests
 ```
 
-Requer .NET SDK 10+. O Product ainda não faz chamadas de rede nem contém provedor LLM real.
+Requer .NET SDK 10+. O gateway R1 define a fronteira de execução por turno, mas o Product ainda não faz chamadas a provedor LLM real.
 
 ## Mundo e campanhas (RPG-003)
 
@@ -53,3 +55,7 @@ ações/eventos/HP sobrevivem ao codec v2. O cursor de turno não é salvo nesta
 fase: a sessão de combate deve ser reiniciada explicitamente após retomar
 uma campanha. Sem IA real, multiplayer, app mobile ou biblioteca de regras
 comercial. RPG-004 depende da integração prévia de RPG-003 (PR #310).
+
+## Gateway de modelos (RPG-010)
+
+`IModelGateway` aceita somente mensagens projetadas pelo chamador e chamadas explícitas. Configuração é separada da campanha e o único vínculo com a credencial é o nome de uma variável de ambiente; segredos nunca entram no schema v2. Saídas de modelo são texto não confiável, sujeito a parsing de intent e autorização no `SessionEngine` em RPG-011. Ver `docs/model-gateway-r1.md`.
