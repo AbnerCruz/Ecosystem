@@ -77,8 +77,8 @@
     {
       "kind": "human",
       "check": "aparência, fontes e editor de pixels no Android e no Windows reais",
-      "result": "pending",
-      "evidence": "CI headless não valida toque, fonte instalada nem desempenho percebido (NN-017).",
+      "result": "passed",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-11 (Issue https://github.com/AbnerCruz/Ecosystem/issues/524); registro em docs/governance/responses/VAL-HO-20261011-urbe-native-customize-sections-0bd112796ae7.md.",
       "object": "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
       "critical": false
     }
