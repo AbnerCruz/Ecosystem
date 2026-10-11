@@ -100,6 +100,24 @@ public sealed class DirectorRuntimeTests
     }
 
     [Fact]
+    public void Failed_quest_increases_pressure_while_completed_quest_releases_it()
+    {
+        var failed = Table.Create();
+        var failedQuest = failed.Campaign.AddQuest(QuestId.New(), "Save the hostages");
+        failed.Campaign.ResolveQuest(failedQuest.Id, QuestStatus.Failed);
+        var failedFrame = failed.CreateDirector().Observe(failed.View());
+        Assert.Equal(3, failedFrame.Tension);
+        Assert.Equal(DirectorBeatKind.Consequence, Assert.Single(failedFrame.Cues).Beat);
+
+        var completed = Table.Create();
+        var completedQuest = completed.Campaign.AddQuest(QuestId.New(), "Save the hostages");
+        completed.Campaign.ResolveQuest(completedQuest.Id, QuestStatus.Completed);
+        var completedFrame = completed.CreateDirector().Observe(completed.View());
+        Assert.Equal(0, completedFrame.Tension);
+        Assert.Equal(DirectorBeatKind.Consequence, Assert.Single(completedFrame.Cues).Beat);
+    }
+
+    [Fact]
     public void Threads_can_be_resolved_without_changing_campaign()
     {
         var t = Table.Create();
