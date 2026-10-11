@@ -50,9 +50,10 @@
     {
       "check": "Compatibilidade e conexão visual futura com Tile Studio",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/docs/guides/tilemaps.md",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-11 (Issue https://github.com/AbnerCruz/Ecosystem/issues/515); registro em docs/governance/responses/VAL-HO-20261011-lunet-tilemap-edit-v1-22a6a9b1ee38.md."
     }
   ],
   "known_issues": [

@@ -36,8 +36,18 @@ public static class LegacyChunkPixels
     public static byte[] Render(
         Func<int, int, LegacyTileSampler.Tile> sample,
         Func<int, int, IReadOnlyList<string>> decor,
-        int chunkX, int chunkY)
+        int chunkX, int chunkY) => Render(sample, decor, chunkX, chunkY, null);
+
+    /// <summary>
+    /// Same pixels with a configured ground (UrbeArt.configure: palette and own textures per biome);
+    /// <paramref name="ground"/> null is the original art.
+    /// </summary>
+    public static byte[] Render(
+        Func<int, int, LegacyTileSampler.Tile> sample,
+        Func<int, int, IReadOnlyList<string>> decor,
+        int chunkX, int chunkY, LegacyGroundStyle? ground)
     {
+        var textures = ground?.Textures ?? Textures.Value;
         ArgumentNullException.ThrowIfNull(sample);
         ArgumentNullException.ThrowIfNull(decor);
         int x0 = checked(chunkX * Tiles), y0 = checked(chunkY * Tiles);
@@ -87,7 +97,7 @@ public static class LegacyChunkPixels
                            biome[k - Halo] == id && biome[k + Halo] == id &&
                            biome[k - Halo - 1] == id && biome[k - Halo + 1] == id &&
                            biome[k + Halo - 1] == id && biome[k + Halo + 1] == id;
-            var own = Textures.Value[(int)id][variants[k]];
+            var own = textures[(int)id][variants[k]];
             double s00 = (double)slope[k - Halo - 1] + slope[k - Halo] + slope[k - 1] + slope[k];
             double s10 = (double)slope[k - Halo] + slope[k - Halo + 1] + slope[k] + slope[k + 1];
             double s01 = (double)slope[k - 1] + slope[k] + slope[k + Halo - 1] + slope[k + Halo];
@@ -163,7 +173,7 @@ public static class LegacyChunkPixels
 
                         if (water)
                         {
-                            var wetTexture = Textures.Value[(int)biome[wetIndex]][variants[wetIndex]];
+                            var wetTexture = textures[(int)biome[wetIndex]][variants[wetIndex]];
                             red = wetTexture[from];
                             green = wetTexture[from + 1];
                             blue = wetTexture[from + 2];
@@ -194,7 +204,7 @@ public static class LegacyChunkPixels
                                 int selected = indices[q];
                                 double weight = blends[q];
                                 if (Water(biome[selected]) || weight <= 0) continue;
-                                var texture = Textures.Value[(int)biome[selected]][variants[selected]];
+                                var texture = textures[(int)biome[selected]][variants[selected]];
                                 sr += texture[from] * weight;
                                 sg += texture[from + 1] * weight;
                                 sb += texture[from + 2] * weight;
@@ -214,7 +224,7 @@ public static class LegacyChunkPixels
                                 for (int q = 0; q < 4; q++)
                                     if (!Water(biome[indices[q]]))
                                         landIndex = indices[q];
-                                var fallback = Textures.Value[(int)biome[landIndex]][variants[landIndex]];
+                                var fallback = textures[(int)biome[landIndex]][variants[landIndex]];
                                 red = fallback[from];
                                 green = fallback[from + 1];
                                 blue = fallback[from + 2];

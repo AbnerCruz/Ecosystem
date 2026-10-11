@@ -14,10 +14,9 @@ namespace Urbe.Client;
 /// section list on the left, full screen with scrolling tabs on a phone (≤ 760 px). Visual from
 /// styles/customize.css (.uc). Cidade and Arquivo are ported; the other sections say so.
 /// </summary>
-public sealed class CustomizePanel : Grid
+public sealed partial class CustomizePanel : Grid
 {
-    private const string AccentSoft = "#248fb3ff"; // rgba(143,179,255,.14)
-    private static readonly (string Id, string Name, string Icon)[] Sections =
+        private static readonly (string Id, string Name, string Icon)[] Sections =
     [
         ("aparencia", "Aparência", Icons.Palette), ("texto", "Texto", Icons.Type), ("editor", "Editor", Icons.Edit),
         ("cidade", "Cidade", Icons.City), ("texturas", "Texturas", Icons.Image), ("estilos", "Estilos CSS", Icons.Brush),
@@ -50,7 +49,7 @@ public sealed class CustomizePanel : Grid
         PointerPressed += (_, e) => { if (e.Source == this) Close(); };
         KeyDown += (_, e) => { if (e.Key == Key.Escape && !Dialogs.IsOpen) { e.Handled = true; Close(); } };
         Focusable = true;
-        Customization.Applied += () => { if (IsVisible && _section != "arquivo") Render(); };
+        Customization.Applied += () => { if (IsVisible && !Customization.IsPreview && _section != "arquivo") Render(); };
     }
 
     public Customization Customization { get; }
@@ -92,7 +91,7 @@ public sealed class CustomizePanel : Grid
         {
             _card.Width = Math.Min(980, Math.Max(0, Bounds.Width - 32)); _card.Height = Math.Min(760, Math.Max(0, Bounds.Height - 32));
             _card.HorizontalAlignment = HorizontalAlignment.Center; _card.VerticalAlignment = VerticalAlignment.Center;
-            _card.CornerRadius = new CornerRadius(22); _card.BorderThickness = new Thickness(1);
+            _card.CornerRadius = new CornerRadius(UrbeAppearance.Radius(3)); _card.BorderThickness = new Thickness(1);
         }
     }
 
@@ -163,7 +162,7 @@ public sealed class CustomizePanel : Grid
                 Children = { UrbeTheme.Icon(icon, _narrow ? 17 : 20, on ? UrbeTheme.Accent : UrbeTheme.Text2), Label(name, _narrow ? 13.5 : 14, FontWeight.SemiBold, on ? UrbeTheme.Accent : UrbeTheme.Text2) } },
             MinHeight = _narrow ? 38 : 44, Padding = new Thickness(_narrow ? 14 : 12, 0), HorizontalAlignment = _narrow ? HorizontalAlignment.Left : HorizontalAlignment.Stretch,
             HorizontalContentAlignment = HorizontalAlignment.Left, VerticalContentAlignment = VerticalAlignment.Center,
-            CornerRadius = new CornerRadius(_narrow ? 999 : 12), Background = on ? UrbeTheme.Brush(AccentSoft) : Brushes.Transparent,
+            CornerRadius = new CornerRadius(_narrow ? 999 : 12), Background = on ? UrbeTheme.AccentSoft : Brushes.Transparent,
             BorderThickness = new Thickness(_narrow && !on ? 1 : 0), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2)
         };
         b.Click += (_, _) => { _section = id; BuildFrame(); _bodyScroll.Offset = default; Render(); };
@@ -180,12 +179,14 @@ public sealed class CustomizePanel : Grid
         _jsonState = null;
         switch (_section)
         {
+            case "aparencia": AppearanceSection(); break;
+            case "texto": TextSection(); break;
+            case "editor": EditorSection(); break;
             case "cidade": CitySection(); break;
+            case "texturas": TexturesSection(); break;
+            case "estilos": StylesSection(); break;
+            case "plugins": PluginsSection(); break;
             case "arquivo": FileSection(); break;
-            default:
-                _body.Children.Add(Block(Sections.First(s => s.Id == _section).Name,
-                    Help("Esta seção ainda está em portabilidade para o app nativo. Tudo o que ela guarda já pode ser editado em Arquivo (tema.json).")));
-                break;
         }
     }
 
@@ -200,6 +201,7 @@ public sealed class CustomizePanel : Grid
             Toggle("cidade.eventos", B("eventos"), "Eventos", "Balão, festa e fogos, barcos, raposa, revoadas e estrelas cadentes"),
             Toggle("cidade.nomes", B("nomes"), "Nomes das casas", "Letreiro com o nome da nota"),
             Toggle("cidade.bairros", B("bairros"), "Nomes dos bairros", "Letreiro com o nome da pasta")));
+        _body.Children.Add(GroundColorsBlock());
         _body.Children.Add(Block("Luz", Row("Hora do dia", "Ciclo: um dia inteiro a cada 24 minutos. Auto segue o relógio do aparelho",
             Seg("cidade.ambiente", (string)c["ambiente"]!, [("ciclo", "Ciclo"), ("dia", "Dia"), ("entardecer", "Tarde"), ("noite", "Noite"), ("auto", "Auto")]))));
     }
@@ -282,14 +284,26 @@ public sealed class CustomizePanel : Grid
     }
 
     /// <summary>bloco(titulo, corpo).</summary>
-    private static Border Block(string title, params Control[] body)
+    private static Border Block(string title, params Control[] body) => BlockWith(title, null, body);
+
+    /// <summary>bloco(titulo, corpo, extra): <paramref name="extra"/> sits at the right of the header.</summary>
+    private static Border BlockWith(string title, Control? extra, params Control[] body)
     {
         var stack = new StackPanel();
-        stack.Children.Add(new TextBlock
+        var heading = new TextBlock
         {
             Text = title.ToUpperInvariant(), FontFamily = UrbeTheme.UiFont, FontSize = 13, FontWeight = FontWeight.Bold, LetterSpacing = .52,
-            Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 0, 0, 10)
-        });
+            Foreground = UrbeTheme.Brush(UrbeTheme.Text2), TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center
+        };
+        if (extra is null) { heading.Margin = new Thickness(0, 0, 0, 10); stack.Children.Add(heading); }
+        else
+        {
+            var head = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
+            DockPanel.SetDock(extra, Dock.Right);
+            head.Children.Add(extra);
+            head.Children.Add(heading);
+            stack.Children.Add(head);
+        }
         bool first = true;
         foreach (var b in body)
         {
@@ -329,14 +343,13 @@ public sealed class CustomizePanel : Grid
         return new Border { Tag = "row", Child = content, MinHeight = 52, Padding = new Thickness(0, 6), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line) };
     }
 
-    /// <summary>chave(nome, valor, rótulo, detalhe): an iOS-like switch.</summary>
-    private Border Toggle(string path, bool value, string title, string detail)
+    /// <summary>chave(nome, valor, rótulo, detalhe): an iOS-like switch that writes <paramref name="path"/> of tema.json.</summary>
+    private Border Toggle(string path, bool value, string title, string detail) =>
+        Toggle(value, title, detail, v => Customization.SetAsync(Patch(path, JsonValue.Create(v))));
+
+    private Border Toggle(bool value, string title, string detail, Func<bool, Task> change)
     {
-        var knob = new Border { Width = 20, Height = 20, CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(value ? UrbeTheme.AccentInk : UrbeTheme.Text2),
-            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(value ? 21 : 3, 0, 0, 0) };
-        var track = new Border { Width = 46, Height = 28, CornerRadius = new CornerRadius(14), Child = knob,
-            Background = UrbeTheme.Brush(value ? UrbeTheme.Accent : UrbeTheme.Surface3), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(value ? 0 : 1) };
-        var row = Row(title, detail, track);
+        var row = Row(title, detail, Switch(value));
         row.Background = Brushes.Transparent;
         row.Cursor = new Cursor(StandardCursorType.Hand);
         row.Tag = "row";
@@ -344,9 +357,18 @@ public sealed class CustomizePanel : Grid
         row.PointerReleased += async (_, e) =>
         {
             e.Handled = true;
-            await Customization.SetAsync(Patch(path, JsonValue.Create(!value)));
+            await change(!value);
         };
         return row;
+    }
+
+    /// <summary>The track and knob of .uc-toggle i.</summary>
+    private static Border Switch(bool value)
+    {
+        var knob = new Border { Width = 20, Height = 20, CornerRadius = new CornerRadius(10), Background = UrbeTheme.Brush(value ? UrbeTheme.AccentInk : UrbeTheme.Text2),
+            HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(value ? 21 : 3, 0, 0, 0) };
+        return new Border { Width = 46, Height = 28, CornerRadius = new CornerRadius(14), Child = knob,
+            Background = UrbeTheme.Brush(value ? UrbeTheme.Accent : UrbeTheme.Surface3), BorderBrush = UrbeTheme.Brush(UrbeTheme.Line2), BorderThickness = new Thickness(value ? 0 : 1) };
     }
 
     /// <summary>seg(nome, valor, opções): a segmented control.</summary>
@@ -407,5 +429,13 @@ public sealed class CustomizePanel : Grid
         public const string Brush = "M18.4 3.6a2 2 0 0 1 2.9 2.9l-8.8 8.8-2.9-2.9z M9.6 12.4c-2 0-3.6 1.6-3.6 3.6 0 1.4-1 2.5-2.5 2.5 1 1.6 2.8 2.5 4.6 2.5 2.8 0 5-2.2 5-5z";
         public const string Puzzle = "M9 4.5a2 2 0 1 1 4 0V6h4a1 1 0 0 1 1 1v4h-1.5a2 2 0 1 0 0 4H18v4a1 1 0 0 1-1 1h-4v-1.5a2 2 0 1 0-4 0V20H5a1 1 0 0 1-1-1v-4h1.5a2 2 0 1 0 0-4H4V7a1 1 0 0 1 1-1h4z";
         public const string Code = "M9 7.5L4.5 12 9 16.5M15 7.5l4.5 4.5-4.5 4.5";
+        public const string Check = "M5 12.5l4.5 4.5L19 7.5";
+        public const string Restore = "M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9 M4.5 4.5V9H9";
+        public const string Download = "M12 4.5v11M7.5 11l4.5 4.5 4.5-4.5 M4.5 15v3a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-3";
+        public const string Shield = "M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6z M9 12l2 2 4-4";
+        public const string Pencil = "M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19z M14.5 6.5l3 3";
+        public const string Bucket = "M5 11l7-7 7 7-7 7z M19.5 14.5s1.5 2 1.5 3a1.5 1.5 0 0 1-3 0c0-1 1.5-3 1.5-3z";
+        public const string Dropper = "M14.5 4.5l5 5M17 7l-9.5 9.5L5 19l2.5-2.5L17 7z M13 3l8 8";
+        public const string Plus = "M12 5v14M5 12h14";
     }
 }

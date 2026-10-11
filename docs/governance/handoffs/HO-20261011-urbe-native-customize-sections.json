@@ -1,0 +1,147 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-urbe-native-customize-sections",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T18:10:44Z",
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-customize-sections",
+  "base_commit": "8728f76196782f02a5f5f6fab43612791394eb9d",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/Customization.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizationExtras.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/PixelEditor.cs",
+    "apps/urbe/csharp/src/Urbe.Client/TextureImages.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeAppearance.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeDialogs.cs",
+    "apps/urbe/csharp/src/Urbe.Client/UrbeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyChunkPixels.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCustomizeTheme.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyGroundStyle.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyPlugins.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyTexturePack.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyWorldPixelTextures.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.Customize.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyCustomizeThemeOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyPluginsOracleTests.cs",
+    "apps/urbe/csharp/tools/customize-theme-oracle.mjs",
+    "apps/urbe/csharp/tools/plugins-oracle.mjs",
+    "docs/governance/handoffs/HO-20261011-urbe-native-customize-sections.json"
+  ],
+  "work_completed": [
+    "Urbe.Core LegacyCustomizeTheme porta customize.js (temas prontos, fontes, paleta() e variaveis(): destaque hover/tinta/suave, sombras, raios, fontes, tamanhos, largura do editor, atributos data-*, salvarTema). LegacyGroundStyle porta UrbeArt.configure (paleta por bioma com derivação da cor-base, texturas próprias 16x16) e LegacyChunkPixels.Render aceita esse chão; LegacyTexturePack porta carregarTexturas/grade/pixels16 (pacote JSON -> paleta, chão, construções); LegacyPlugins porta a parte de dados de plugins.js (modelos, leitura de nome/versão/descrição sem executar, impressão SHA-256).",
+    "Oráculos que rodam o JS ORIGINAL (customize.js, pixel-art.js, plugins.js em Node): customize-theme-oracle.mjs compara 40+ casos de paleta(), variaveis(), salvarTema, carregarTexturas (grades 16x16, 8x8, 2x2, 48x56, listas de variações, grupos de bioma, erros), as 19x4 texturas após configure() e os pixels de 2 chunks pintados com esse chão, byte a byte; plugins-oracle.mjs compara listagem, impressão digital e os 4 modelos de 'Novo plugin'.",
+    "Aparência: cards de temas (prontos + salvos), 'Salvar como tema', cor de destaque, Cores (principais/todas as 14, voltar à cor do tema, Restaurar) com seletor de cor e prévia ao vivo, Forma (cantos, densidade, vidro, animações). Texto: fontes da interface e das notas (+ 'Outra…'), tamanhos e altura da linha com prévia ao vivo, exemplo de nota. Editor: largura, modo inicial, ortografia. Cidade: Cores do chão. Texturas: pacotes (nenhum/lista/novo), 19 biomas e 7 construções com prévia, editor de pixels nativo (lápis, balde, conta-gotas, desfazer, grade, paleta), imagem do aparelho, voltar ao original, Ver JSON. Estilos CSS: lista, ligar/desligar, novo estilo, CSS rápido (guardados em tema.json). Plugins: lista com estado, aprovar/desligar, novo plugin por modelo, modo seguro.",
+    "Efeito no app: UrbeTheme usa pincéis compartilhados e mutáveis para os tokens, então tema/cores mudam ao vivo em todo controle existente e o ThemeVariant do Fluent acompanha claro/escuro; UrbeAppearance aplica fonte/tamanho herdados, fonte da interface, raios dos cantos (s/m/l/xl), densidade nas opções de diálogo, largura/tamanho/altura de linha do editor e o chão do mundo (WorldView.SetGround: paleta, texturas e arte própria das construções, chunks refeitos). MainView.cs recebeu 1 linha.",
+    "Plugins: só lista/aprovação/criação. A aprovação guarda o SHA-256 do código num arquivo local do aparelho (como o localStorage do original), não em tema.json: o original nunca guardou isso no tema.json e uma chave extra geraria aviso 'propriedade desconhecida'."
+  ],
+  "verification": [
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Core.Tests (Release)",
+      "result": "passed",
+      "evidence": "512 testes verdes, incluindo LegacyCustomizeThemeOracleTests (JS original: paleta, variáveis, tema salvo, pacote, chão, chunks) e LegacyPluginsOracleTests."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet test Urbe.Client.Tests (Release)",
+      "result": "passed",
+      "evidence": "Testes headless novos: tema/cores/fonte/cantos/editor chegam ao app em execução; todas as seções renderizam; Cores do chão e pacote de texturas repintam o mundo (captura com chão magenta); temas, estilos e plugins gravados no vault; editor de pixels. Urbe.Client.Tests: 50 verdes (Urbe.Core.Tests: 512)."
+    },
+    {
+      "kind": "automated",
+      "check": "canvas drawImage de redução (Chromium via Playwright) contra Pixels16 bilinear",
+      "result": "passed",
+      "evidence": "imagens 32x32, 64x64, 24x24 e 40x20 reduzidas a 16x16: diferença máxima de 1 nível em um canal; 16x16 e ampliações são exatas."
+    },
+    {
+      "kind": "automated",
+      "check": "dotnet run tests/consistency/Check.cs",
+      "result": "passed",
+      "evidence": "executado; ver resultado abaixo no relatório da sessão."
+    },
+    {
+      "kind": "human",
+      "check": "aparência, fontes e editor de pixels no Android e no Windows reais",
+      "result": "pending",
+      "evidence": "CI headless não valida toque, fonte instalada nem desempenho percebido (NN-017).",
+      "object": "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.Sections.cs",
+      "critical": false
+    }
+  ],
+  "known_issues": [
+    "NÃO APLICA NO NATIVO — Estilos CSS: o app nativo não tem CSS. A lista de estilos, o liga/desliga e o CSS rápido são guardados no tema.json (compatíveis com a versão web) mas não mudam a aparência aqui; a tela avisa isso. Um subconjunto de variáveis --ui-* seria possível, mas é um tempo de execução novo e precisa de decisão.",
+    "DECISÃO NECESSÁRIA — Plugins: plugins.js executa JavaScript com acesso total ao app; o C# nativo não pode rodar isso e nenhum runtime foi inventado. A tela lista, aprova (impressão SHA-256 por aparelho) e cria arquivos, e avisa que não executam. Opções para o proprietário: (a) manter só gerenciamento; (b) porta nativa de plugins em C# com API própria e modelo de permissões (NN-016, ADR); (c) motor de script isolado. Não há DEC registrada ainda.",
+    "Não aplicável no nativo: efeito de vidro (sem backdrop-filter), corretor ortográfico (TextBox do Avalonia não expõe), modo inicial Visual/Texto (o editor Visual nativo ainda não existe; só Fonte), animações 'reduzidas' (sem transições CSS; ReduceMotion fica disponível), densidade só nas opções de diálogo (as linhas do Explorer têm medidas próprias), tamanho da interface só afeta controles sem tamanho próprio (herança, como o body da 1.8.4).",
+    "Aproximações: raios dos cantos mapeiam controles cujo raio é 8/12/16/22 para os tokens atuais (a 1.8.4 usa var(--ui-r-*)); imagens embutidas só PNG/JPEG/GIF/WebP (SVG não decodifica) e reduções com suavização podem diferir em 1 nível do canvas. Em 'Cores do chão' o minimapa nativo ainda usa cores próprias (não lê a paleta).",
+    "tema.json e arquivos de Personalização só são gravados com pasta de vault conectada; sem ela o app avisa 'Selecione uma pasta real para gravar.' em vez de fingir salvamento."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Proprietário: decidir o destino dos plugins no nativo (ver known_issues) e registrar a DEC no portal.",
+    "Validar Personalização em Android e Windows reais (DEVICE).",
+    "Ligar modo inicial Visual/Texto e ortografia quando o editor Visual nativo existir; minimapa nativo ler a paleta do chão."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "apps/urbe/src/customize/customize.js",
+    "apps/urbe/src/customize/panel.js",
+    "apps/urbe/src/customize/plugins.js",
+    "apps/urbe/src/world/pixel-art.js",
+    "apps/urbe/src/styles/customize.css"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "tema.json e os arquivos de Personalização no vault seguem como autoridade; regras só em Urbe.Core; aprovações de plugin ficam por aparelho, como no original."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "nenhum runtime de plugins nem formato novo em tema.json; a decisão sobre plugins fica registrada como necessária."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "plugins nunca executam sem decisão e modelo de permissões."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "verificação humana em aparelho pendente; testes headless não a substituem."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "UC-19 segue em progresso; nada marcado concluído."
+    }
+  ],
+  "reuse_assessment": [
+    {
+      "subject": "appearance-theme-customization",
+      "status": "product-specific",
+      "rationale": "Porte do customize.js/pixel-art.js do Urbe (temas, paleta do chão, pacotes de texturas); sem segundo consumidor."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI, regras de configuração e oráculos; sem tocar Vault*/csproj nem formato persistido (tema.json segue igual)."
+  }
+}
