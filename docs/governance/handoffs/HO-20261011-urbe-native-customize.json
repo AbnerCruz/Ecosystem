@@ -1,0 +1,60 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-urbe-native-customize",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T08:44:12Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-customize",
+  "base_commit": "13d9bf1345f8309b2010863be646cc18eede59a6",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCustomize.cs",
+    "apps/urbe/csharp/src/Urbe.Client/Customization.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CustomizePanel.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/tools/customize-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyCustomizeOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261011-urbe-native-customize.json"
+  ],
+  "work_completed": [
+    "Urbe.Core LegacyCustomize porta customize.js: DEFAULT, normalize (configuração limpa, erros e avisos com caminho e texto originais, ordem de chaves do JavaScript, Number()/String()/trim do JS), merge/set e o texto de Personalização/tema.json (semPadroes + JSON.stringify).",
+    "Oráculo tools/customize-oracle.mjs roda o customize.js original: 43 casos (entradas inválidas, chaves desconhecidas e numéricas, cores, números, fontes, temas salvos, paleta, sequências de set que voltam ao padrão) com configuração, erros, avisos e texto gravado idênticos; só a mensagem do motor para JSON malformado difere (texto do V8).",
+    "Tela nativa Personalização (.uc da 1.8.4): janela com seções à esquerda e tela cheia com abas no celular, sobre o app inteiro; seções Cidade (Vida na cidade, Luz) e Arquivo (editar, validar, aplicar, restaurar, abrir como nota) funcionando; as demais informam que estão em portabilidade.",
+    "As opções valem no mundo (moradores, fauna, clima, eventos, nomes das casas e dos bairros, hora do dia). tema.json só é gravado quando muda e há pasta de vault conectada; quando é criado, vira casa no bairro Personalização, como na 1.8.4."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "dotnet test Urbe.Core.Tests (493) e Urbe.Client.Tests (34) locais; build Urbe.Desktop; dotnet run tests/consistency/Check.cs", "result": "passed", "evidence": "LegacyCustomizeOracleTests e Customize_CityOptionsAreAppliedAndKeptInTemaJsonOfTheVault (pasta real: criar, mudar, aplicar JSON, reabrir) verdes." },
+    { "kind": "automated", "check": "urbe-checks no PR", "result": "pending", "evidence": "CI do PR ainda precisa executar." }
+  ],
+  "known_issues": [
+    "Seções Aparência, Texto, Editor, Texturas, Estilos CSS e Plugins ainda não estão portadas (o tema.json já guarda e valida seus campos); Cores do chão também.",
+    "Depende do PR #490 (criação de arquivos no vault), cuja branch está na base desta."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Portar Aparência/Texto/Editor (tema de cores e fontes aplicados à interface nativa).",
+    "Validar no Android e no Windows reais (DEVICE)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md", "AGENTS.md", "apps/urbe/AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md", "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "apps/urbe/src/customize/customize.js", "apps/urbe/src/customize/panel.js", "apps/urbe/src/styles/customize.css"
+  ],
+  "invariants": [
+    { "id": "NN-001", "evidence": "tema.json no vault é a autoridade; regras só em Urbe.Core." },
+    { "id": "NN-017", "evidence": "Headless não substitui aparelho." },
+    { "id": "NN-018", "evidence": "UC-19 segue em progresso." }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI e regras de configuração; grava tema.json pelo armazenamento já revisado no PR #490, sem tocar zonas críticas."
+  }
+}
