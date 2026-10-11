@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-412",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-scene2d-20261008",
   "base_commit": "18debffa8c9d7858091078aae6d70e36efa2c2c8",
   "commit": null,
@@ -33,7 +33,8 @@
     "Scene2D/Entity2D/Component2D opcionais; ownership exclusivo e percursos em ordem de inserção sem alocação, flags independentes, Transform2D existente.",
     "Mutação estrutural e reentrada proibidas durante percurso; falha antes de mudar ownership, propagação de exceções com finally e remoção por referência mesmo quando componente sobrescreve Equals.",
     "Sexta página pronta para Run no Laboratório; componentes distintos de movimento/desenho, pause/hide/detach/reattach e cancelamento na pausa. Projetos existentes preservados.",
-    "12 casos novos, exemplos XML/API JSON atualizados e guia de teste da página executável."
+    "12 casos novos, exemplos XML/API JSON atualizados e guia de teste da página executável.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
@@ -69,10 +70,7 @@
     "SDK Android ausente localmente; build APK/CI e DEVICE separados. Fase 4 e item continuam abertos."
   ],
   "blockers": [],
-  "next_actions": [
-    "Publicar PR e acompanhar CI/integrador automático.",
-    "Confirmar release e APK público com a nova página antes de entrega de DEVICE."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

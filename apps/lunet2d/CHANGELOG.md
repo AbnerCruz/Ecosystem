@@ -17,6 +17,8 @@
 
 ### Added
 
+- LUNET-436 / Issue #495: jogo reproduzível de validação conjunta do gate, descarte seguro do atlas de `SpriteFont.CreateDefault` e exportação `TileMap.ToJson()` compatível com JSON v1, preservando camadas, visibilidade, colisão e Unicode; auditoria integral da Fase 4 e roteiro consolidado. Aprovações anteriores reconciliadas sem concluir o gate; underruns de áudio e demais bloqueios reais continuam explícitos.
+
 - Fase 4 / LUNET-414: aba Profiler no workspace preserva a última captura medida no Preview rápido/isolado após Stop e permite compartilhar o relatório; coleta continua opt-in em ▥ Perf. Não altera projetos ou executa jogo em segundo plano.
 
 - LUNET-414 (em revisão): métrica opt-in visível no Profiler do Preview para tamanho estimado RGBA8 de texturas vivas, pico e quantidade de objetos GL (inclui render targets sem double count), com testes. VRAM total, buffers, GPU time e áudio underruns continuam não medidos.

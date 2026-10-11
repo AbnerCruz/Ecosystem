@@ -14,7 +14,7 @@ namespace Lunet.Graphics;
 /// batch.DrawString(title, "Olá", (device.ViewSize - size) / 2, Color.White, 2f);
 /// </code>
 /// </example>
-public sealed class SpriteFont
+public sealed class SpriteFont : IDisposable
 {
     private const int CellWidth = 6;
     private const int CellHeight = 10; // 2 linhas para acentos de maiúsculas + 8 do glifo
@@ -124,6 +124,7 @@ public sealed class SpriteFont
 
     private readonly Dictionary<char, int> _index = new();
     private readonly Texture2D _texture;
+    private readonly bool _ownsTexture;
     private readonly Dictionary<int, BitmapGlyph>? _custom;
     private readonly int _lineHeight = CellHeight + 1;
     private readonly BitmapGlyph _fallback;
@@ -132,11 +133,19 @@ public sealed class SpriteFont
     {
         _texture = texture;
         _index = index;
+        _ownsTexture = true;
     }
 
     private SpriteFont(Texture2D texture, Dictionary<int, BitmapGlyph> glyphs, int lineHeight, BitmapGlyph fallback)
     {
         _texture = texture; _custom = glyphs; _lineHeight = lineHeight; _fallback = fallback;
+    }
+
+    /// <summary>Libera o atlas criado por CreateDefault. Fontes FromBitmap não possuem nem liberam a textura compartilhada.</summary>
+    /// <remarks>Idempotente. Métricas permanecem consultáveis; desenho exige textura viva. Fontes TrueType continuam pertencendo ao TrueTypeFont/ContentManager.</remarks>
+    public void Dispose()
+    {
+        if (_ownsTexture) _texture.Dispose();
     }
 
     /// <summary>Cria uma fonte bitmap personalizada copiando o mapa de glifos.</summary>

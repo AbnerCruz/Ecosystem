@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-433",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "chatgpt/lunet-ui-grid-20261010",
   "commit": null,
   "pr": null,
@@ -31,23 +31,27 @@
     "Testes de retrato/paisagem, clipping externo, overflow, entradas inválidas, zero GC e compilação do guia pelo GameCompiler + GameHost.",
     "API offline e ROADMAP/CHANGELOG/AgentsChat atualizados.",
     "GetVisibleRange e GetCellBounds O(1) para virtualização de inventários com 100 milhões de itens; testes sem alocação.",
-    "TouchGridView com selecao por dedo, scroll, draw clipado, teste de milhões de itens e guia Game.cs."
+    "TouchGridView com selecao por dedo, scroll, draw clipado, teste de milhões de itens e guia Game.cs.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "check": "Lunet.Tests e GameCompiler example",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Foundation consistency checks",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "APK Android arm64",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Layout/inventário e toque em aparelho",
@@ -64,13 +68,7 @@
     "CI da main anterior ao PR já falha em 17 simulações do integrador; incidente de governança fora do escopo deste Product."
   ],
   "blockers": [],
-  "next_actions": [
-    "Confirmar CI e corrigir falhas de snapshot/API/build.",
-    "Integrar PR após checks verdes pelo integrador.",
-    "Validar exemplo no aparelho Android.",
-    "Reconciliar problema herdado do integrador na zona de governança por fluxo crítico separado, sem enfraquecer check do Lunet.",
-    "Validar controle mobile no aparelho real após integração."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

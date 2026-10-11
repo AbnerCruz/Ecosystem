@@ -9,7 +9,7 @@
   },
   "task_id": "LUNET-405",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-advanced-api-20261008",
   "base_commit": "040dd8d0529c7546644bd5d97e0dda1b27f456c3",
   "commit": null,
@@ -37,7 +37,8 @@
   "work_completed": [
     "Entrega das APIs de particles e documentação XML/JSON, preservando implementação testada e compatibilidade existente.",
     "Guia completo code-first para projeto Em branco, compilado e executado por GameHost com toque físico 2×; sem depender do novo modelo de criação.",
-    "Fatia protegida de criação do modelo preservada no PR #307 para autorização, sem rebaixar classificação ou alterar fiscalização."
+    "Fatia protegida de criação do modelo preservada no PR #307 para autorização, sem rebaixar classificação ou alterar fiscalização.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
@@ -75,11 +76,7 @@
     "SDK Android ausente localmente; APK vem do CI, DEVICE permanece pendente."
   ],
   "blockers": [],
-  "next_actions": [
-    "Acompanhar CI/integração automática e confirmar release/APK desta fatia.",
-    "Validar particulas.md no aparelho sem fechar gate da Fase 4.",
-    "Após autorização dos PRs de modelos, preservar testes da criação dos modelos e reconciliar com as APIs integradas."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

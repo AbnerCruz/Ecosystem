@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-425",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-profiler-frame-pacing-20261009",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/388",
@@ -27,18 +27,21 @@
   "work_completed": [
     "Janela de medição de frame pacing P50/P95/máximo e hitch relativo ao refresh observado, sem alocação gerenciada em Record ou Snapshot.",
     "Overlay Android Perf e guia offline explicando interpretação, limites e roteiro de validação.",
-    "Testes automatizados para estabilidade 60/90/120 Hz, pico raro, rolagem da janela e mediana interpolada; compatibilidade das médias existentes."
+    "Testes automatizados para estabilidade 60/90/120 Hz, pico raro, rolagem da janela e mediana interpolada; compatibilidade das médias existentes.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "check": "Lunet.Tests e consistência no PR",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "APK Android do Lunet2D",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Leitura e ergonomia do Perf em aparelho",
@@ -54,10 +57,7 @@
     "Janela curta pode criar percentis instáveis; painel ocupa área visual e exige teste DEVICE."
   ],
   "blockers": [],
-  "next_actions": [
-    "Acompanhar CI e corrigir falhas sem ignorar testes.",
-    "Integrar PR como rotina pelo integrador do Ecosystem, confirmar APK e registrar avaliação no telefone."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

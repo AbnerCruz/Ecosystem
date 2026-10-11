@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-416",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-camera-culling-20261008",
   "base_commit": "61309b902472c99410133e04c02360a4b32dd725",
   "commit": null,
@@ -29,20 +29,21 @@
   "work_completed": [
     "API Camera2D.GetWorldViewBounds, sem alocação, com zoom/rotação e precisão conservadora.",
     "Testes de cantos, rotação, viewport tilemap e alocação.",
-    "Guias offline, API, roadmap e histórico atualizados."
+    "Guias offline, API, roadmap e histórico atualizados.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Lunet.Tests",
-      "result": "pending",
-      "evidence": "Aguardar CI; SDK .NET 10 não disponível no executor."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Consistency",
-      "result": "pending",
-      "evidence": "Aguardar CI do PR."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "human",
@@ -58,10 +59,7 @@
     "DEVICE e Tile Studio seguem pendentes."
   ],
   "blockers": [],
-  "next_actions": [
-    "Revisar CI e corrigir falhas.",
-    "Integrar pela política automática, verificar release/APK; DEVICE permanece pendente."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

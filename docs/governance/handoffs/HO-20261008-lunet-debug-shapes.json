@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-413",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-debug-shapes-20261008",
   "base_commit": "62baa859c210b15a1a54c47ea20260d79391abc5",
   "commit": null,
@@ -36,7 +36,8 @@
     "Helpers aditivos Polygon/Ray/Axes/Grid com validação antes do desenho, limites explícitos e geometria transformada sobre SpriteBatch existente.",
     "Polígono/linha aberta com matriz e ReadOnlySpan; raio de comprimento explícito; eixos no pivô com escala assinada; grade com bordas e orçamento. Sem alocação no loop.",
     "Sétima página pronta para Run no Laboratório; girar/refletir/câmera/ocultar, Circle.Intersects existente para hit do raio e input convertido para mundo. Sem ProjectStore/escrita em projetos existentes.",
-    "10 casos novos, exemplos/cobertura XML/API JSON e guia da página pronta; navegação antiga preservada."
+    "10 casos novos, exemplos/cobertura XML/API JSON e guia da página pronta; navegação antiga preservada.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
@@ -72,10 +73,7 @@
     "DEVICE foi adiado pelo usuário, sem aprovação; continuar trabalho independente. Fase 4 aberta. SDK Android local ausente; APK é responsabilidade do CI."
   ],
   "blockers": [],
-  "next_actions": [
-    "Publicar PR e acompanhar CI/integrador automático e release.",
-    "Não exigir teste DEVICE agora; seguir pendências independentes da Fase 4 sem fechar gate."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

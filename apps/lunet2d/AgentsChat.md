@@ -435,3 +435,13 @@ Não guarde tokens, senhas ou dados privados. Não marque validação de aparelh
 - Testes do formatter (métricas, fases ausentes, percentis, cultura, pausado) e round-trip do layout. CI/APK e DEVICE devem ser conferidos; não concluir gate da Fase 4 nem inventar GPU time/audio underruns.
 
 - Verificado localmente: build sem avisos/erros, 661/661 testes e 22/22 consistency. Overlay passa a rolar dentro da altura disponível no celular; saída normal do isolado remove marcador antes de retornar à IDE, evitando race com OnDestroy. CI/APK/DEVICE ainda pendentes.
+
+
+### 2026-10-11 — ChatGPT / LUNET-436 / Issue #495
+
+- Pedido do proprietário: concluir o roadmap sem incrementos arbitrários. Branch `feat/lunet-f4-audit-20261011`, base main `c68b9ae82a1b354351625319d60042fadea29e9f`; PR #493 do painel workspace já existe e não foi duplicado.
+- Auditoria integral de Framework Advanced em `docs/audits/fase-4.md`: código/testes/guias e aprovações canônicas do portal reconciliados. Handoffs com aprovação humana explícita atualizados; nove-slice específico, física avançada/performance, conexão Tile Studio, underruns e gate conjunto permanecem pendentes.
+- `TileMap.ToJson` fecha round-trip do contrato v1 existente; não grava arquivos, não muda projetos nem inventa Tile Studio. Testes reais preservam células/layers/Unicode/visibilidade/colisão/A*, catálogo API e guia regenerados.
+- Build 0 warnings/errors; 658/658 testes passaram após preservar o texto esperado do item de auditoria no ROADMAP. Consistency/CI/APK da revisão serão conferidos antes da entrega. Não simular DEVICE, release ou fechamento.
+- Guia `gate-framework-advanced`: jogo de prova do gate existente, com vitória/derrota/reinício e teste executando o código publicado em GameCompiler/GameHost. Não adiciona novo modelo nem antecipa jogos oficiais da Fase 11; usa assets do Coletor existente.
+- Verificação final: 661/661 testes (inclui vitória, hazard/timeout, input contra parede, reinício, pause/resume, ownership de fonte e ausência de recursos vivos após Stop), 22/22 checks e diff check. Corrigido atlas embutido sem descarte público: SpriteFont.Dispose libera apenas CreateDefault, preserva textura emprestada de FromBitmap. Sem alteração de outros produtos.
