@@ -4,7 +4,10 @@
   "message_id": "HO-20261011-urbe-native-save-mapa",
   "category": "HANDOFF",
   "timestamp": "2026-10-11T09:01:39Z",
-  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "agent": {
+    "id": "claude-code-urbe-native-port",
+    "kind": "ai-agent"
+  },
   "task_id": "UC-19",
   "component": "urbe",
   "state": "review",
@@ -45,10 +48,32 @@
     "MainView: depois de abrir um vault real gravável, a abertura, a Nova nota (documento criado como urbeReconcileWorld) e a gravação de uma nota editada (modified=nowDate) agendam a gravação do mapa como a 1.8.4; o Tutorial (prévia) nunca grava. A Nova nota agora procura lote onde a câmera ao vivo olha (centroBuscaRaiz), como a 1.8.4."
   ],
   "verification": [
-    { "kind": "automated", "check": "Oráculo legacy-mapa-oracle.mjs (1.8.4 sem modificação no Chromium, Math.random LCG, Date controlado) × LegacyCityMapOracleTests: texto de .urbe/mapa.json lido do IndexedDB do app depois do flush", "result": "passed", "evidence": "2 gravações × 2 execuções (run-a, run-b): vault sem mapa; sessão com mapa (abertura, edição que mantém 'salvo', só câmera sem gravação, edição com #tag, Nova nota pelo botão +) — bytes idênticos em todas as 5 gravações de cada execução." },
-    { "kind": "automated", "check": "cd apps/urbe/csharp && dotnet test --project tests/Urbe.Core.Tests && dotnet test --project tests/Urbe.Client.Tests; dotnet build src/Urbe.Desktop; dotnet run tests/consistency/Check.cs", "result": "passed", "evidence": "Core 509/509, Client 44/44 (inclui SaveMap* de FolderVaultStorageTests, MapSaveSchedulerTests e Map_IsSavedAfterANewNoteAndTheHouseIsThereOnReopen: pasta real, nota criada, debounce, reabertura com a casa e a câmera no lugar); 22 checks de consistência." },
-    { "kind": "automated", "check": "urbe-checks no PR (build do APK Android)", "result": "pending", "evidence": "AndroidVaultStorage.SaveMapAsync e MainActivity.OnPause só compilam no CI (sem Android SDK local)." },
-    { "kind": "human", "check": "DEVICE: Android e Windows reais — abrir vault, criar nota, fechar/pausar o app, reabrir: casa e câmera no lugar; .urbe/mapa.json legível pela 1.8.4 instalada", "result": "pending", "object": "Gravação de .urbe/mapa.json pelo cliente nativo (UC-19/UC-25)", "evidence": "Testes headless e em pasta temporária não substituem aparelho (NN-017); SAF real e ciclo de vida Android não exercitados localmente." }
+    {
+      "kind": "automated",
+      "check": "Oráculo legacy-mapa-oracle.mjs (1.8.4 sem modificação no Chromium, Math.random LCG, Date controlado) × LegacyCityMapOracleTests: texto de .urbe/mapa.json lido do IndexedDB do app depois do flush",
+      "result": "passed",
+      "evidence": "2 gravações × 2 execuções (run-a, run-b): vault sem mapa; sessão com mapa (abertura, edição que mantém 'salvo', só câmera sem gravação, edição com #tag, Nova nota pelo botão +) — bytes idênticos em todas as 5 gravações de cada execução."
+    },
+    {
+      "kind": "automated",
+      "check": "cd apps/urbe/csharp && dotnet test --project tests/Urbe.Core.Tests && dotnet test --project tests/Urbe.Client.Tests; dotnet build src/Urbe.Desktop; dotnet run tests/consistency/Check.cs",
+      "result": "passed",
+      "evidence": "Core 509/509, Client 44/44 (inclui SaveMap* de FolderVaultStorageTests, MapSaveSchedulerTests e Map_IsSavedAfterANewNoteAndTheHouseIsThereOnReopen: pasta real, nota criada, debounce, reabertura com a casa e a câmera no lugar); 22 checks de consistência."
+    },
+    {
+      "kind": "automated",
+      "check": "urbe-checks no PR (build do APK Android)",
+      "result": "pending",
+      "evidence": "AndroidVaultStorage.SaveMapAsync e MainActivity.OnPause só compilam no CI (sem Android SDK local)."
+    },
+    {
+      "kind": "human",
+      "check": "DEVICE: Android e Windows reais — abrir vault, criar nota, fechar/pausar o app, reabrir: casa e câmera no lugar; .urbe/mapa.json legível pela 1.8.4 instalada",
+      "result": "pending",
+      "object": "apps/urbe/csharp/src/Urbe.Core/LegacyCityMap.cs",
+      "evidence": "Testes headless e em pasta temporária não substituem aparelho (NN-017); SAF real e ciclo de vida Android não exercitados localmente.",
+      "critical": false
+    }
   ],
   "known_issues": [
     "Não idêntico por construção (recusado em vez de aproximado): quando a 1.8.4 criaria ou moveria um arquivo de nota no salvamento (urbeReconcileWorld: casa sem documento ou caminho da casa ≠ caminho do documento, ex.: 'X.MD' → 'X.md', nome que safeName altera), o mapa não é gravado e o motivo aparece ('Mapa não salvo').",
@@ -67,17 +92,40 @@
   ],
   "decisions_required": [],
   "normative_sources": [
-    "MANIFEST.md", "AGENTS.md", "apps/urbe/AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md",
-    "docs/adr/0032-urbe-ui-nativa-sem-webview.md", "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
-    "docs/governance/integration-policy.json", "apps/urbe/src/app.js", "apps/urbe/src/persistence/workspace.js",
-    "apps/urbe/src/world/stable-ids.js", "apps/urbe/src/core/documents.js", "apps/urbe/src/editor/session.js"
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/urbe/AGENTS.md",
+    "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md",
+    "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/integration-policy.json",
+    "apps/urbe/src/app.js",
+    "apps/urbe/src/persistence/workspace.js",
+    "apps/urbe/src/world/stable-ids.js",
+    "apps/urbe/src/core/documents.js",
+    "apps/urbe/src/editor/session.js"
   ],
   "invariants": [
-    { "id": "NN-001", "evidence": "workspace.js continua o modelo: um único escritor do mapa (MapSaveScheduler → SaveMapAsync), texto vindo de LegacyCityMap; a pasta do usuário é a autoridade." },
-    { "id": "NN-017", "evidence": "Validação em aparelho registrada como pendente; nada marcado como validado por teste headless." },
-    { "id": "NN-018", "evidence": "Oráculo com o JS original + testes; UC-19 segue em progresso." }
+    {
+      "id": "NN-001",
+      "evidence": "workspace.js continua o modelo: um único escritor do mapa (MapSaveScheduler → SaveMapAsync), texto vindo de LegacyCityMap; a pasta do usuário é a autoridade."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação em aparelho registrada como pendente; nada marcado como validado por teste headless."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Oráculo com o JS original + testes; UC-19 segue em progresso."
+    }
   ],
-  "reuse_assessment": "product-specific",
+  "reuse_assessment": [
+    {
+      "subject": "vault-map-writer",
+      "status": "product-specific",
+      "rationale": "Gravação do .urbe/mapa.json é porte do estadoDesejado/workspace.js da 1.8.4, específica do Urbe; sem segundo consumidor."
+    }
+  ],
   "criticality": {
     "declared": "critical",
     "reason": "Grava metadados do vault do usuário (.urbe/mapa.json) no Android e no Windows/desktop e muda o formato planejado pelo VaultWriter para o mapa."
