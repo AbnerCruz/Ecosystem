@@ -21,6 +21,12 @@ Para um personagem com corpo retangular, `map.OverlapsCollision(new RectangleF(x
 
 No `LoadContent`, execute `var map = Content.LoadTileMap("Data/level.json"); var tileset = Content.LoadTexture(map.TexturePath, TextureFilter.Point);` e uma única vez `map.CopyCollisionTo(grid);`. O método substitui os custos do A* (0 nas paredes e custo positivo nas livres), por isso atualize-o somente quando mudar o mapa. No `Draw` use `map.Draw(batch, tileset, visibleWorld, origin, Color.White)` entre `batch.Begin()` e `batch.End()`, com `visibleWorld` representando o retângulo visível em coordenadas de **mundo**. Com uma `Camera2D`, faça `batch.Begin(camera); map.Draw(batch, tileset, camera.GetWorldViewBounds(GraphicsDevice.ViewSize), origin, Color.White); batch.End();`. A API obtém a AABB conservadora também ao girar/alterar zoom. Use o tamanho virtual ou do render target, nunca a resolução física da tela. Tiles fora da viewport não são submetidos ao backend.
 
+## Contrato v1 e exportação sem perda
+
+`map.ToJson()` exporta o mesmo JSON v1 aceito por `TileMap.Parse`, com nomes canônicos em minúsculas e ordem das camadas preservada. Visibilidade, colisão, células vazias, IDs inteiros e nomes Unicode sobrevivem a `Parse(map.ToJson())`. Os campos `visible` e `collision` são escritos explicitamente; na leitura, sua ausência continua significando `true` e `false`, respectivamente. Comentários, formatação e campos desconhecidos não são preservados.
+
+A exportação é uma operação de conteúdo que aloca memória: use ao salvar/exportar, nunca a cada frame. Ela retorna texto, não grava arquivos nem muda o projeto. O formato continua v1 e compatível com os mapas existentes; campos futuros precisam de decisão de compatibilidade e testes de migração. Este round-trip define o contrato do runtime para um consumidor futuro, mas não implementa nem comprova a conexão com o Tile Studio da Fase 5.
+
 ## Demonstração imediata no Preview
 
 Crie um projeto **Em branco** e substitua a classe principal por esta implementação. Não precisa importar nenhum arquivo: o tileset é gerado em memória para testar o parser, as camadas, os obstáculos e o A*.

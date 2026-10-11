@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-428",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-ui-touch-toggle-20261009",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/401",
@@ -27,23 +27,27 @@
   "work_completed": [
     "TouchToggle composto de TouchButton, Value, WasChanged, estilos visuais e Cancel/disable.",
     "Testes para multitouch, desenho, zero GC e compilação/execução de exemplo no GameHost.",
-    "Guia offline, referência API, roadmap e changelog."
+    "Guia offline, referência API, roadmap e changelog.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "check": "Lunet.Tests",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Foundation consistency",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Android APK CI build",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Opções on/off, toque real e regressão no aparelho",
@@ -59,10 +63,7 @@
     "Persistência automática não fornecida."
   ],
   "blockers": [],
-  "next_actions": [
-    "Corrigir eventuais falhas CI e integrar automaticamente.",
-    "Verificar publicação APK e solicitar validação no aparelho."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

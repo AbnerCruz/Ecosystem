@@ -1,0 +1,152 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-lunet-f4-audit",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T09:10:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-436",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-f4-audit-20261011",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/lunet2d/AgentsChat.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/api/lunet-framework.json",
+    "apps/lunet2d/docs/audits/fase-4-roteiro.md",
+    "apps/lunet2d/docs/audits/fase-4.md",
+    "apps/lunet2d/docs/guides/fontes-bitmap.md",
+    "apps/lunet2d/docs/guides/gate-framework-advanced.md",
+    "apps/lunet2d/docs/guides/tilemaps.md",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/SpriteFont.cs",
+    "apps/lunet2d/src/Lunet.Framework/Graphics/TileMap.cs",
+    "apps/lunet2d/tests/Lunet.Tests/FontLifetimeTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/FrameworkAdvancedGateTests.cs",
+    "apps/lunet2d/tests/Lunet.Tests/TileMapTests.cs",
+    "docs/governance/handoffs/HO-20261008-lunet-animation-api.json",
+    "docs/governance/handoffs/HO-20261008-lunet-buttons-laboratory.json",
+    "docs/governance/handoffs/HO-20261008-lunet-camera-culling.json",
+    "docs/governance/handoffs/HO-20261008-lunet-camera-follow-bounds.json",
+    "docs/governance/handoffs/HO-20261008-lunet-camera.json",
+    "docs/governance/handoffs/HO-20261008-lunet-collision.json",
+    "docs/governance/handoffs/HO-20261008-lunet-cpu-phases.json",
+    "docs/governance/handoffs/HO-20261008-lunet-debug-shapes.json",
+    "docs/governance/handoffs/HO-20261008-lunet-laboratory-v2.json",
+    "docs/governance/handoffs/HO-20261008-lunet-live-profiler.json",
+    "docs/governance/handoffs/HO-20261008-lunet-particles-api.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pathfinding.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr328-nine-slice-reconciliation.json",
+    "docs/governance/handoffs/HO-20261008-lunet-pr330-slider-reconciliation.json",
+    "docs/governance/handoffs/HO-20261008-lunet-scene2d.json",
+    "docs/governance/handoffs/HO-20261008-lunet-tilemaps.json",
+    "docs/governance/handoffs/HO-20261008-lunet-touch-slider.json",
+    "docs/governance/handoffs/HO-20261008-lunet-ui-themes.json",
+    "docs/governance/handoffs/HO-20261009-lunet-default-font.json",
+    "docs/governance/handoffs/HO-20261009-lunet-frame-pacing.json",
+    "docs/governance/handoffs/HO-20261009-lunet-touch-frame-buffer.json",
+    "docs/governance/handoffs/HO-20261009-lunet-touch-scroll.json",
+    "docs/governance/handoffs/HO-20261009-lunet-touch-toggle.json",
+    "docs/governance/handoffs/HO-20261009-lunet-viewport-fit-fill.json",
+    "docs/governance/handoffs/HO-20261009-lunet-virtual-controls.json",
+    "docs/governance/handoffs/HO-20261010-lunet-responsive-ui.json",
+    "docs/governance/handoffs/HO-20261010-lunet-touch-list.json",
+    "docs/governance/handoffs/HO-20261010-lunet-touch-relayout.json",
+    "docs/governance/handoffs/HO-20261010-lunet-truetype.json",
+    "docs/governance/handoffs/HO-20261010-lunet-ui-grid.json",
+    "docs/governance/handoffs/HO-20261011-lunet-f4-audit.json"
+  ],
+  "work_completed": [
+    "Auditoria integral da Fase 4 com matriz código/testes/docs/aprovações humanas existentes, sem encerrar gate ou mover requisitos.",
+    "Reconciliar handoffs canônicos aprovados e subitens do roadmap, sem repetir trabalho já integrado.",
+    "TileMap.ToJson com round-trip JSON v1 sem I/O ou alteração de projetos, tests de camadas/células/Unicode/cultura/colisão/A* e API offline.",
+    "Jogo reproduzível para o gate existente: mapa, física/sensores, câmera, animação, partículas, UI/tema/fonte, áudio; vitória, derrota, restart e lifecycle exercitados com GameCompiler/GameHost.",
+    "Corrigido atlas criado por SpriteFont.CreateDefault sem descarte público: IDisposable possui apenas atlas embutido, preserva texturas compartilhadas de FromBitmap; 2 regressões de ownership."
+  ],
+  "verification": [
+    {
+      "check": "Build + suíte completa Lunet.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Build .NET 10 com 0 warnings/errors; 661/661 testes com 0 falhas/erros/skips. Inclui GameCompiler/GameHost executando código do guia e liberação de recursos após Stop."
+    },
+    {
+      "check": "22 checks consistency",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "Todos os 22 checks passaram em 2026-10-11; snapshot de Issues ausente localmente, CI faz verificação remota."
+    },
+    {
+      "check": "CI e APK Android desta revisão",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Round-trip e jogo conjunto no aparelho após integração/release",
+      "kind": "human",
+      "result": "pending",
+      "critical": false,
+      "object": "apps/lunet2d/docs/audits/fase-4-roteiro.md"
+    }
+  ],
+  "known_issues": [
+    "Fase 4 permanece aberta: áudio underruns sem medição real, conexão Tile Studio ausente, física avançada/performance e gate conjunto DEVICE pendentes.",
+    "PR #493 já implementa painel workspace, ainda aguardando integração governada; não duplicado aqui.",
+    "Suíte portátil não certifica GL, ergonomia, desempenho físico nem aprovação humana."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Corrigir verificações, publicar PR e acompanhar CI/integração.",
+    "Confirmar release exata antes de orientar teste desta revisão.",
+    "Resolver lacunas reais apontadas na auditoria sem inventar recursos ou marcar fase concluída."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "ARCHITECTURE.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/communication.md",
+    "docs/governance/definition-of-done.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "ROADMAP é autoridade de fase; gate permanece aberto."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Código restrito ao Framework Lunet; sem referência Product→Product."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #495, testes, guia, auditoria, PR e handoff."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Aprovações canônicas preservadas; ausência de novas medições explicitamente declarada."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Nova revisão em review até CI/integração/DEVICE, sem conclusão da fase."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Exportador usa TileMap existente, sem abstração comum."
+    }
+  ],
+  "base_commit": "c68b9ae82a1b354351625319d60042fadea29e9f",
+  "criticality": {
+    "declared": "routine"
+  }
+}

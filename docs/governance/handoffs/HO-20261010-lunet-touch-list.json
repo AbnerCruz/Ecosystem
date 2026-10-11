@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-429",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "chatgpt/lunet-touch-list-20261010",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/411",
@@ -28,23 +28,27 @@
     "Lista mobile selecionável por toque com Viewport, linhas virtuais, rolagem com inércia, seleção em Released, cancelamento, multitouch e faixa visível.",
     "Desenho SpriteBatch recortado com rótulos fornecidos pelo jogo e estado visual selecionado, sem persistência nem asset novo.",
     "Testes portáteis de input/multitouch/scroll/no-GC e guia C# testado por GameCompiler/GameHost; metadata API, roadmap e changelog.",
-    "Reconciliação com a main atual sem sobrescrever TouchToggle já integrado."
+    "Reconciliação com a main atual sem sobrescrever TouchToggle já integrado.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "check": "Lunet.Tests e compilação do guia pelo GameCompiler",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Ecosystem foundation consistency",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Android APK CI",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Clipping, toque e inércia de lista no Motorola Android",
@@ -60,11 +64,7 @@
     "A validação de toque/ergonomia no aparelho não é provada pelo CI."
   ],
   "blockers": [],
-  "next_actions": [
-    "Verificar CI combinado após a reconciliação.",
-    "Integrar pelo integrador automático após checks verdes.",
-    "Publicar release APK e validar a ergonomia no dispositivo Android."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

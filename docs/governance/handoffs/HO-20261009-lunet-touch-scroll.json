@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-427",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-ui-touch-scroll-20261009",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/394",
@@ -27,18 +27,21 @@
   "work_completed": [
     "Novo controle TouchScrollArea vertical portátil e explícito: captura de ID, limiar, momentum com delta, saturação de limites, cancelamento/disable e zero GC no Update.",
     "Testes para toque breve, movimento, soltura e inércia, multitouch, resize, edge clamp e alocação.",
-    "Guia offline C#, referência de API, changelog, roadmap e comunicação de agentes."
+    "Guia offline C#, referência de API, changelog, roadmap e comunicação de agentes.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "check": "Lunet2D CI + consistency",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Build do APK",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Rolagem visual, suavidade, recorte e ergonomia no Android",
@@ -54,10 +57,7 @@
     "Sem validação de sensação de inércia em aparelho real."
   ],
   "blockers": [],
-  "next_actions": [
-    "Corrigir eventuais falhas CI/doc snapshot e integrar PR pela política automática.",
-    "Confirmar APK e encaminhar roteiro Android, mantendo DEVICE pendente."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

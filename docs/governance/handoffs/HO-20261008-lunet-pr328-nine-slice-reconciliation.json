@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-408",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-bitmap-fonts-20261008",
   "base_commit": "7622f5352267c1c5a5d0773c245399b932c2b1e0",
   "commit": null,
@@ -32,7 +32,8 @@
     "PR #328 reconciliado com main f3392f2a3e111de7f7bcd36fc78073a84bf375e7, preservando seu código específico e integrando NineSlice já publicado no APK 1000150.",
     "Conflitos de AgentsChat/CHANGELOG/ROADMAP resolvidos preservando registros de ambos; changelog de APIs sem duplicação, ROADMAP 404/405/407 alinhado às integrações reais sem fechar DEVICE.",
     "API JSON regenerada pela suíte completa; código/testes da main importados exatamente, sem modificações locais de backend/persistência/modelos protegidos além da revisão existente.",
-    "Preferência explícita do proprietário registrada em AgentsChat: próximas demonstrações executáveis no Laboratório ou template, prontas para Run, sem reforma de documentação agora."
+    "Preferência explícita do proprietário registrada em AgentsChat: próximas demonstrações executáveis no Laboratório ou template, prontas para Run, sem reforma de documentação agora.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
@@ -73,11 +74,7 @@
     "DEVICE continua pendente, sem mudança de regras/gates. Preferência de entrega não significa aprovação das APIs no aparelho."
   ],
   "blockers": [],
-  "next_actions": [
-    "Enviar merge de reconciliação ao mesmo PR com lease, sem force/merge manual/label integrar.",
-    "Acompanhar checks combinados, integração e release reais; PR #317 continua crítico e requer autorização do proprietário quando verde.",
-    "Continuar Fase 4; validação Android e gates não inferidos."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

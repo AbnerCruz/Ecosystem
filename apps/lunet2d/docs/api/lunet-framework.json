@@ -10613,7 +10613,7 @@
       "name": "SpriteFont",
       "namespace": "Lunet.Graphics",
       "kind": "class",
-      "signature": "public sealed class SpriteFont",
+      "signature": "public sealed class SpriteFont : IDisposable",
       "summary": "Fonte bitmap embutida (5\u00D77 pixels, com acentos do portugu\u00EAs). Serve para HUD e depura\u00E7\u00E3o; SpriteFont.FromBitmap aceita fontes personalizadas; TrueType permanece separado.",
       "remarks": "",
       "examples": [
@@ -10650,6 +10650,19 @@
             }
           ],
           "returns": "A fonte.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.SpriteFont.Dispose",
+          "name": "Dispose",
+          "kind": "method",
+          "signature": "public void Dispose()",
+          "summary": "Libera o atlas criado por CreateDefault. Fontes FromBitmap n\u00E3o possuem nem liberam a textura compartilhada.",
+          "remarks": "Idempotente. M\u00E9tricas permanecem consult\u00E1veis; desenho exige textura viva. Fontes TrueType continuam pertencendo ao TrueTypeFont/ContentManager.",
+          "parameters": [],
+          "returns": "",
           "examples": [],
           "related": [],
           "since": "0.0.1"
@@ -11648,6 +11661,19 @@
             }
           ],
           "returns": "Mapa sem depend\u00EAncias de GPU.",
+          "examples": [],
+          "related": [],
+          "since": "0.0.1"
+        },
+        {
+          "id": "M:Lunet.Graphics.TileMap.ToJson",
+          "name": "ToJson",
+          "kind": "method",
+          "signature": "public string ToJson()",
+          "summary": "Exporta o mapa no mesmo contrato JSON v1 aceito por Parse, preservando camadas, visibilidade e colis\u00E3o.",
+          "remarks": "Aloca mem\u00F3ria para exporta\u00E7\u00E3o; n\u00E3o chamar no loop do jogo. N\u00E3o grava arquivos nem modifica o mapa.",
+          "parameters": [],
+          "returns": "JSON UTF-8 leg\u00EDvel, com nomes de propriedades can\u00F4nicos e IDs de tiles sem altera\u00E7\u00E3o.",
           "examples": [],
           "related": [],
           "since": "0.0.1"
