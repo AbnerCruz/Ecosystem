@@ -25,6 +25,14 @@ public sealed class EditorOverlay : Grid
     public bool HasChanges => _note is not null && !string.Equals(Editor.Text, _savedContent, StringComparison.Ordinal);
     public event Func<CityNote, Task>? SaveRequested;
 
+    /// <summary>Personalização → Editor and Texto: the text column width, the Fonte font size and the line height factor (--ui-editor-width, --ui-code-size, --ui-editor-line).</summary>
+    public void ApplyAppearance(double columnWidth, double codeSize, double lineHeight)
+    {
+        Editor.MaxWidth = columnWidth;
+        Editor.FontSize = codeSize;
+        Editor.LineHeight = codeSize * lineHeight;
+    }
+
     public EditorOverlay()
     {
         Background = UrbeTheme.Brush(UrbeTheme.Bg);

@@ -394,6 +394,7 @@ public sealed class MainView : Grid
         World.ShowHouseNames = Customization.City("nomes");
         World.ShowDistrictNames = Customization.City("bairros");
         World.LightingMode = Customization.Ambient;
+        UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma, editor e chão
         World.InvalidateVisual();
     }
 

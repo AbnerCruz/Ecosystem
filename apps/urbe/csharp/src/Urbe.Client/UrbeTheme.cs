@@ -20,6 +20,8 @@ public static class UrbeTheme
     public const string AccentInk = "#0b1325";
     public const string Ok = "#7fdca6";
     public const string Danger = "#ff7b86";
+    public const string Warn = "#f1c46e";
+    public const string Code = "#f0d9a8";
     public const double EditorSize = 17;
 
     private static readonly Dictionary<string, IBrush> Brushes = new(StringComparer.Ordinal);
@@ -32,7 +34,7 @@ public static class UrbeTheme
     private static readonly Dictionary<string, string> TokenKey = new(StringComparer.OrdinalIgnoreCase)
     {
         [Bg] = "fundo", [Surface] = "superficie", [Surface2] = "superficie2", [Surface3] = "superficie3", [Line] = "linha", [Line2] = "linha2",
-        [Text] = "texto", [Text2] = "texto2", [Text3] = "texto3", [Accent] = "destaque", [Ok] = "sucesso", [Danger] = "perigo", [AccentInk] = "destaque-tinta"
+        [Text] = "texto", [Text2] = "texto2", [Text3] = "texto3", [Accent] = "destaque", [Ok] = "sucesso", [Danger] = "perigo", [Warn] = "aviso", [Code] = "codigo", [AccentInk] = "destaque-tinta"
     };
     private static readonly Dictionary<string, string> CurrentColor = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<(string, double), SolidColorBrush> LiveBrushes = [];

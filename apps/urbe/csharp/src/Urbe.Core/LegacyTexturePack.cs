@@ -190,6 +190,7 @@ public static class LegacyTexturePack
                 foreach (var id in LegacyCustomize.BiomeId(k) ?? [])
                     pal[id] = (own[k] as JsonArray ?? []).Select(x => LegacyCustomize.Hex(x)!).ToArray();
         foreach (var kv in pack.Palette) if (!pal.ContainsKey(kv.Key)) pal[kv.Key] = kv.Value;
+        if (pal.Count == 0 && pack.Ground.Count == 0) return LegacyGroundStyle.Original;   // nothing configured: the original art
         return LegacyGroundStyle.Configure(pal, pack.Ground.ToDictionary(k => k.Key, k => (IReadOnlyList<byte[]>)k.Value));
     }
 }
