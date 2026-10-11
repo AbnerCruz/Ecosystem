@@ -1,0 +1,76 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-urbe-native-create-menu",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T17:45:00Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-create-menu",
+  "base_commit": "83de45db9c3f83353ed23c26e6f38e4df1538850",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCityCreate.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyCity.cs",
+    "apps/urbe/csharp/src/Urbe.Client/CreateMenu.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/MapTool.cs",
+    "apps/urbe/csharp/src/Urbe.Client/World/WorldView.cs",
+    "apps/urbe/csharp/src/Urbe.Client/IUrbeVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Android/AndroidVaultStorage.cs",
+    "apps/urbe/csharp/tools/create-oracle.mjs",
+    "apps/urbe/csharp/tools/import-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyCreateMenuOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyImportSelectionOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/CreateMenuUiTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261011-urbe-native-create-menu.json"
+  ],
+  "work_completed": [
+    "Nova pasta (criarPastaNoDestino v21): diálogo 'Nova pasta', nome único v21UniqueRegionName (oráculo contra o app.js original), região criada por criarRegiaoOrganica já portada (quantidade 1, semente nome+Date.now) e pasta criada no vault por IUrbeVaultStorage.CreateDirectoryAsync (Windows e Android); se a pasta falhar a região é retirada.",
+    "Desenhar pasta no mapa: ferramenta modal do canvas (MapTool/RegionDrawTool), arrasto de retângulo sem mover a câmera, mínimo 3x3 ('A região precisa ser maior.'), diálogo 'Nova região', máscara v20MascaraPrioritaria (água, lotes de outros bairros, sub-bairros, maior componente conexo, ordem BFS original), v20CederTerritorio e pasta no vault; desfazer devolve o território.",
+    "Adicionar construção: PlacementTool com casa-fantasma 62% e moldura verde/vermelha (canHouse), dock com Construir/Cancelar, diálogo 'Configurar arquivo' (v21OpenFileDialog), casa criada exatamente no tile escolhido no bairro sob ele (v21ConfirmPlacement), arquivo gravado no vault.",
+    "Importar: escolha Arquivos/Pasta inteira, seletor do sistema (StorageProvider do Avalonia, substituível em testes), ImportPipeline.InspectAsync (validação de caminho, duplicados/conflitos de origem, UTF-8, tipo), confirmação, e gravação verificada de cada documento novo por WriteVaultFileAsync (pastas viram bairros). Documentos já existentes e diferentes são MANTIDOS; anexos não-texto e metadados ficam de fora e isso é dito na confirmação; backup/restauração de vault é recusado sem alterar nada.",
+    "Armazenamento: novo IUrbeVaultStorage.CreateDirectoryAsync (implementação padrão que recusa; FolderVaultStorage e AndroidVaultStorage implementam). Recusa .urbe/, pastas ocultas, travessia, sintaxe de drive, nome que já é arquivo e atalhos; nenhum arquivo do vault é tocado."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "LegacyCreateMenuOracleTests: nomes únicos de região, máscara de 10 retângulos, território cedido, bounds e itens da raiz sob a região, contra o app.js 1.8.4 (create-oracle.mjs)", "result": "passed", "evidence": "dotnet test Urbe.Core.Tests" },
+    { "kind": "automated", "check": "LegacyImportSelectionOracleTests: 27 seleções (caminhos inválidos, duplicados, conflitos, UTF-8, metadados, JSON estruturado, zip falso) x arquivos/pasta contra import.js inspect() (import-oracle.mjs)", "result": "passed", "evidence": "dotnet test Urbe.Core.Tests" },
+    { "kind": "automated", "check": "Urbe.Client.Tests: menu Criar em pasta real (Nova pasta, Desenhar pasta com arrasto real, Adicionar construção com toque e Construir, Importar com conflito/anexos/metadados, recusas) e FolderVaultStorage.CreateDirectoryAsync", "result": "passed", "evidence": "dotnet test Urbe.Client.Tests; dotnet run tests/consistency/Check.cs" },
+    { "kind": "automated", "check": "urbe-checks no PR (compila o APK Android com AndroidVaultStorage.CreateDirectoryAsync)", "result": "pending", "evidence": "Sem Android SDK local." }
+  ],
+  "known_issues": [
+    "Divergência de rótulo conhecida: vault.json com formatVersion 1 é 'current-vault' no import.js original e HistoricalVault no ImportPipeline portado (testes existentes); não muda o que é gravado.",
+    "A geometria das regiões (nova pasta, região desenhada, território cedido) ainda não é gravada em .urbe/mapa.json (próxima fatia crítica); só a pasta física é gravada. Uma pasta vazia só reaparece como bairro depois que o mapa for gravado.",
+    "Região desenhada: casas da raiz sob a nova região (absorverConstrucoesDaRaiz) continuam na raiz e o aviso diz quantas; mover arquivos no vault não existe no armazenamento. O diálogo 'Nova região' pede só o nome (sem descrição e cor); cor padrão colors[n%5].",
+    "Importar: anexos não-texto, restauração de vault/backup/ZIP e 'substituir guardando backup' ainda não existem no armazenamento nativo (só texto); conflitos são mantidos.",
+    "Os testes headless novos são lentos neste ambiente (30 a 70 s cada)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Gravar .urbe/mapa.json (regiões, células, casas) para persistir pasta/região/construção.",
+    "Armazenamento: mover/renomear arquivo (adoção da raiz), gravar binários e transação de importação com backup (ImportTransaction) para anexos, ZIP e restauração.",
+    "Validar no Android e no Windows reais: toque/arrasto no mapa, seletor de arquivos e pasta (DEVICE)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md", "AGENTS.md", "apps/urbe/AGENTS.md", "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md", "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md", "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/integration-policy.json", "apps/urbe/src/app.js", "apps/urbe/src/persistence/import.js"
+  ],
+  "invariants": [
+    { "id": "NN-001", "evidence": "A pasta do usuário é a autoridade; nada é criado só em memória: sem vault gravável as quatro ações recusam." },
+    { "id": "NN-002", "evidence": "Só Urbe; sem dependência de Lunet2D ou do Hub." },
+    { "id": "NN-017", "evidence": "Testes headless e em pasta temporária não substituem aparelho; mapa e importação seguem DEVICE." },
+    { "id": "NN-018", "evidence": "UC-19 segue em progresso; limites acima declarados." }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Armazenamento de vault (zona *Vault*.cs): IUrbeVaultStorage ganha CreateDirectoryAsync, implementado em FolderVaultStorage e AndroidVaultStorage."
+  }
+}
