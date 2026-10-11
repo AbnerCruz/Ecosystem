@@ -88,4 +88,4 @@ NPCs são personagens canônicos vinculados a um GM controlador, não Player Age
 
 ## Orquestração agnóstica (RPG-015)
 
-O jogo continua independente do modelo ou provedor. Um Host fornece implementações de `IModelGateway`, e o `RpgEventOrchestrator` coordena jogadores/Mestre por eventos sem polling. Recibos podem registrar tokens e custo **apenas se reportados** por adapter, sem teto financeiro do RPG. O Agent Runtime do Ecosystem AI é uma referência semântica, sem dependência direta entre Products; sua futura integração requer contrato/capability aprovados. Consulte `docs/orchestration-r1.md`.
+O jogo continua independente do modelo ou provedor. Um Host fornece implementações de `IModelGateway`, e o `RpgEventOrchestrator` coordena jogadores/Mestre por eventos sem polling. Recibos podem registrar tokens e custo **apenas se reportados** por adapter, sem teto financeiro do RPG. O Agent Runtime do runtime de IA da plataforma é uma referência semântica, sem dependência direta entre Products; sua futura integração requer contrato/capability aprovados. Consulte `docs/orchestration-r1.md`.
