@@ -26,7 +26,9 @@ public static class HeadlessApp
 /// </summary>
 public sealed class HeadlessUiTests : IDisposable
 {
-    private static readonly HeadlessUnitTestSession Session = HeadlessUnitTestSession.StartNew(typeof(HeadlessApp));
+    // One application for the whole run: per-test isolation re-ran AppBuilder setup on every
+    // dispatch and intermittently built the compositor off the dispatcher thread (CI flake).
+    private static readonly HeadlessUnitTestSession Session = HeadlessUnitTestSession.StartNew(typeof(HeadlessApp), AvaloniaTestIsolationLevel.PerAssembly);
 
     public void Dispose() { }
 
