@@ -225,12 +225,17 @@ public sealed class TileMap
         CheckLayer(layer);
         int index = Index(cell);
         if (tileId < 0) throw new ArgumentOutOfRangeException(nameof(tileId));
-        if (_layers[layer].Tiles[index] == tileId) return this;
+        int previous = _layers[layer].Tiles[index];
+        if (previous == tileId) return this;
         var layers = (TileLayer[])_layers.Clone();
         var tiles = (int[])layers[layer].Tiles.Clone();
         tiles[index] = tileId;
         layers[layer] = layers[layer] with { Tiles = tiles };
-        return CopyWith(layers);
+        // Pincel do editor não deve varrer todas as camadas a cada célula alterada.
+        // Só é necessário recalcular se o maior ID conhecido foi reduzido.
+        return previous == _maximumTile && tileId < previous
+            ? CopyWith(layers)
+            : new TileMap(TexturePath, Width, Height, TileWidth, TileHeight, layers, Math.Max(_maximumTile, tileId));
     }
 
     /// <summary>Devolve novo mapa com visibilidade e colisão atualizadas para uma camada.</summary>
