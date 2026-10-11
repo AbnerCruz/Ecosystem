@@ -28,7 +28,7 @@ public sealed class HeadlessUiTests : IDisposable
 {
     // One application for the whole run: per-test isolation re-ran AppBuilder setup on every
     // dispatch and intermittently built the compositor off the dispatcher thread (CI flake).
-    private static readonly HeadlessUnitTestSession Session = HeadlessUnitTestSession.StartNew(typeof(HeadlessApp), AvaloniaTestIsolationLevel.PerAssembly);
+    internal static readonly HeadlessUnitTestSession Session = HeadlessUnitTestSession.StartNew(typeof(HeadlessApp), AvaloniaTestIsolationLevel.PerAssembly);
 
     public void Dispose() { }
 
@@ -67,6 +67,10 @@ public sealed class HeadlessUiTests : IDisposable
             view.Editor.Open(new CityNote(house.Path, TutorialNotes.Load().Single(f => f.Path == house.Path).Content));
             await Settle(window, view);
             Assert.True(view.Editor.IsVisible);
+            Assert.Equal(EditorMode.Visual, view.Editor.Mode);   // 1.8.4 opens notes in Visual (editor.modoInicial)
+            Snapshot(window, "native-desktop-editor-visual.png");
+            view.Editor.SetMode(EditorMode.Fonte);
+            await Settle(window, view);
             Assert.True(view.Editor.Editor.IsFocused);
             view.Editor.Editor.CaretIndex = 0;
             window.KeyTextInput("Olá, ação! ");
@@ -86,23 +90,6 @@ public sealed class HeadlessUiTests : IDisposable
             await Settle(window, view);
             Snapshot(window, "native-phone-city.png");
             Assert.True(view.World.Bounds.Width >= 400);
-            return true;
-        }, CancellationToken.None));
-
-    [Fact]
-    public async Task Editor_ToolbarEditsMarkdownSource() => Assert.True(await Session.Dispatch<bool>(() =>
-        {
-            var editor = new EditorOverlay();
-            var window = new Window { Width = 800, Height = 600, Content = editor };
-            window.Show();
-            editor.Open(new CityNote("Tutorial/x.md", "linha um\nlinha dois"));
-            editor.Editor.CaretIndex = 12;
-            editor.LinePrefix("## ");
-            Assert.Equal("linha um\n## linha dois", editor.Editor.Text);
-            editor.Editor.SelectionStart = 0;
-            editor.Editor.SelectionEnd = 5;
-            editor.Wrap("**");
-            Assert.Equal("**linha** um\n## linha dois", editor.Editor.Text);
             return true;
         }, CancellationToken.None));
 

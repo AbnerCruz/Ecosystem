@@ -55,7 +55,7 @@ public sealed class MainView : Grid
             CityMap.IsVisible = false;
         };
         Explorer = new NotesExplorer { IsVisible = false };
-        Editor = new EditorOverlay { IsVisible = false };
+        Editor = new EditorOverlay { IsVisible = false, Dialogs = Dialogs, Notes = () => _contents.Select(n => new CityNote(n.Key, n.Value)) };
         Explorer.Closed += () => Explorer.IsVisible = false;
         Explorer.NoteRequested += note =>
         {
@@ -485,6 +485,7 @@ public sealed class MainView : Grid
         World.ShowHouseNames = Customization.City("nomes");
         World.ShowDistrictNames = Customization.City("bairros");
         World.LightingMode = Customization.Ambient;
+        if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
         World.InvalidateVisual();
     }
 
