@@ -21,6 +21,23 @@ Para um personagem com corpo retangular, `map.OverlapsCollision(new RectangleF(x
 
 No `LoadContent`, execute `var map = Content.LoadTileMap("Data/level.json"); var tileset = Content.LoadTexture(map.TexturePath, TextureFilter.Point);` e uma única vez `map.CopyCollisionTo(grid);`. O método substitui os custos do A* (0 nas paredes e custo positivo nas livres), por isso atualize-o somente quando mudar o mapa. No `Draw` use `map.Draw(batch, tileset, visibleWorld, origin, Color.White)` entre `batch.Begin()` e `batch.End()`, com `visibleWorld` representando o retângulo visível em coordenadas de **mundo**. Com uma `Camera2D`, faça `batch.Begin(camera); map.Draw(batch, tileset, camera.GetWorldViewBounds(GraphicsDevice.ViewSize), origin, Color.White); batch.End();`. A API obtém a AABB conservadora também ao girar/alterar zoom. Use o tamanho virtual ou do render target, nunca a resolução física da tela. Tiles fora da viewport não são submetidos ao backend.
 
+## Edição programática segura para o futuro Tile Studio
+
+A Fase 4 disponibiliza operações **imutáveis** sobre o mesmo mapa usado pelo runtime: `TileMap.Create`, `WithTile`, `WithLayerSettings`, `RenameLayer`, `AddLayer`, `RemoveLayer` e `MoveLayer`. O resultado é um novo `TileMap`; referências anteriores continuam iguais e podem sustentar desfazer/refazer pelo futuro editor. Nenhuma operação acessa disco, escreve em projetos existentes ou altera o formato JSON v1.
+
+```csharp
+var before = TileMap.Create("Textures/terrain.png", 3, 2, 16, 16);
+var after = before.AddLayer("paredes", collision: true)
+    .WithTile(1, new Lunet.Pathfinding.GridPoint(2, 1), 4)
+    .MoveLayer(1, 0);
+string json = after.ToJson();
+var loaded = TileMap.Parse(json); // mesmo contrato aceito pelo jogo
+```
+
+Nomes de camada são únicos, não vazios e sensíveis a maiúsculas. O mapa exige de 1 a 32 camadas e no máximo 1.048.576 células; tiles negativos são recusados. Remover um layer ou substituir seu maior ID atualiza o limite de tileset necessário no desenho. Edições alocam cópias, adequadas à autoria fora do frame quente; as consultas do runtime permanecem sem alocação.
+
+**Escopo:** é uma ponte de dados funcional, não o editor gráfico da Fase 5. Importação/exportação JSON entre uma futura ferramenta e o runtime está especificada e testada; a UI Tile Studio, sua persistência e a validação em Android continuam pendentes.
+
 ## Contrato v1 e exportação sem perda
 
 `map.ToJson()` exporta o mesmo JSON v1 aceito por `TileMap.Parse`, com nomes canônicos em minúsculas e ordem das camadas preservada. Visibilidade, colisão, células vazias, IDs inteiros e nomes Unicode sobrevivem a `Parse(map.ToJson())`. Os campos `visible` e `collision` são escritos explicitamente; na leitura, sua ausência continua significando `true` e `false`, respectivamente. Comentários, formatação e campos desconhecidos não são preservados.
