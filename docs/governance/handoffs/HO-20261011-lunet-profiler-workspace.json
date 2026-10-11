@@ -48,12 +48,15 @@
       "check": "Consistency",
       "kind": "automated",
       "result": "passed",
-      "evidence": "dotnet run tests/consistency/Check.cs: 22/22 checks; diffs sem erro de whitespace."
+      "evidence": "22/22 locais; CI consistency concluído com success: https://github.com/AbnerCruz/Ecosystem/actions/runs/38125806321",
+      "tested_commit": "d33f9505d0b08ff3d4e69ca1bb63e39bfa5b1f6d"
     },
     {
       "check": "APK Android CI",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "test e apk success; assinatura estável conferida no job Collect APK. https://github.com/AbnerCruz/Ecosystem/actions/runs/38125806159",
+      "tested_commit": "d33f9505d0b08ff3d4e69ca1bb63e39bfa5b1f6d"
     },
     {
       "check": "Profiler no workspace, rápido/isolado, Stop, pausa, export e relayout",
@@ -69,9 +72,9 @@
   ],
   "blockers": [],
   "next_actions": [
-    "Verificar CI e build APK; reconciliação semântica se main mudar.",
-    "Integração automática e confirmar development release; validar roteiro Android.",
-    "Prosseguir nas lacunas reais restantes da Fase 4."
+    "Confirmar integração automática do PR #493 e development release; fila do integrador ainda processa PRs anteriores.",
+    "Validar roteiro Android não crítico publicado no portal.",
+    "Prosseguir nas lacunas reais restantes da Fase 4, sem avançar fases nem inventar funcionalidades."
   ],
   "decisions_required": [],
   "normative_sources": [
