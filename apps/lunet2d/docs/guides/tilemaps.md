@@ -25,7 +25,7 @@ No `LoadContent`, execute `var map = Content.LoadTileMap("Data/level.json"); var
 
 A Fase 4 disponibiliza operações **imutáveis** sobre o mesmo mapa usado pelo runtime: `TileMap.Create`, `WithTile`, `WithLayerSettings`, `RenameLayer`, `AddLayer`, `RemoveLayer` e `MoveLayer`. O resultado é um novo `TileMap`; referências anteriores continuam iguais e podem sustentar desfazer/refazer pelo futuro editor. Nenhuma operação acessa disco, escreve em projetos existentes ou altera o formato JSON v1.
 
-```csharp
+```cs
 var before = TileMap.Create("Textures/terrain.png", 3, 2, 16, 16);
 var after = before.AddLayer("paredes", collision: true)
     .WithTile(1, new Lunet.Pathfinding.GridPoint(2, 1), 4)
