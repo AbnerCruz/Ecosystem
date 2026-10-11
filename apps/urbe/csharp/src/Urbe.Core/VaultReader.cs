@@ -240,7 +240,10 @@ public static class VaultReader
         var mapReadOnly = false;
         if (root.TryGetProperty("v", out var version))
         {
-            mapReadOnly = !version.TryGetInt32(out var number) || number < 1 || number > CurrentMapVersion;
+            // workspace.js load: v > 4 = future; any other value that is not an integer ≥ 1 = unknown (a
+            // string or null included): both are preserved and never rewritten.
+            mapReadOnly = version.ValueKind != JsonValueKind.Number || !version.TryGetInt32(out var number) ||
+                          number < 1 || number > CurrentMapVersion;
         }
 
         string? mundo = null;

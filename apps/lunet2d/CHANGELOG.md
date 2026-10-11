@@ -17,6 +17,8 @@
 
 ### Added
 
+- Fase 4 / Tilemaps completos (em revisão): ponte imutável `TileMap.Create/WithTile/WithLayerSettings/RenameLayer/AddLayer/RemoveLayer/MoveLayer` para autoria de mapas JSON v1. Preserva dados antigos, valida camadas/células/IDs e atualiza maior tile após remoção; o Tile Studio visual continua Fase 5.
+
 - LUNET-435 (em revisão): cenário opcional de 64 corpos Box2D no módulo Colisões do Laboratório, comparável com o caso de 1 corpo pelo Profiler, reset seguro e testes de integração; desempenho no Android ainda precisa de medição real.
 
 - LUNET-436 / Issue #495: jogo reproduzível de validação conjunta do gate, descarte seguro do atlas de `SpriteFont.CreateDefault` e exportação `TileMap.ToJson()` compatível com JSON v1, preservando camadas, visibilidade, colisão e Unicode; auditoria integral da Fase 4 e roteiro consolidado. Aprovações anteriores reconciliadas sem concluir o gate; underruns de áudio e demais bloqueios reais continuam explícitos.

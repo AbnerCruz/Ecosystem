@@ -352,6 +352,8 @@ public sealed partial class HeadlessUiTests : IDisposable
             throw new InvalidOperationException("read-only test storage");
         public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("read-only test storage");
+        public Task SaveMapAsync(string json, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read-only test storage");
     }
 
     [Fact]
@@ -411,6 +413,101 @@ public sealed partial class HeadlessUiTests : IDisposable
                 Assert.Equal("# ", File.ReadAllText(Path.Combine(vault, "Ideias (2).md")));
                 Assert.Equal("# Ideias\n\nPrimeira.\n", File.ReadAllText(path));
                 window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    /// <summary>
+    /// The map is written like the 1.8.4 (marcarSinc 120 ms → schedule 900 ms → flush): after the open
+    /// and after a new note, with nothing but .urbe/mapa.json and the note touched; a camera move alone
+    /// saves nothing; reopening the folder in a new app puts the new house and the camera back.
+    /// </summary>
+    [Fact]
+    public async Task Map_IsSavedAfterANewNoteAndTheHouseIsThereOnReopen() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-save-map-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
+            File.WriteAllBytes(Path.Combine(vault, "foto.png"), [1, 2, 3]);
+            var mapa = Path.Combine(vault, ".urbe", "mapa.json");
+            async Task UntilSaved(MainView v)
+            {
+                for (int i = 0; i < 300 && (v.MapSave!.HasPending || v.MapSave.IsBusy); i++)
+                {
+                    Dispatcher.UIThread.RunJobs();
+                    await Task.Delay(20);
+                }
+                Dispatcher.UIThread.RunJobs();
+                Assert.False(v.MapSave!.HasPending);
+                Assert.Equal("saved", v.MapSave.State);
+            }
+            try
+            {
+                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+                var view = new MainView(storage);
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                Assert.NotNull(view.MapSave);
+
+                // abrirCidade → marcarSinc: the first save writes the map of the opened city
+                await UntilSaved(view);
+                var first = File.ReadAllText(mapa);
+                using (var m = System.Text.Json.JsonDocument.Parse(first))
+                {
+                    Assert.Equal(4, m.RootElement.GetProperty("v").GetInt32());
+                    var um = m.RootElement.GetProperty("notas").GetProperty("Bairro/Um.md");
+                    var house = view.World.City!.Buildings.Single(b => b.Path == "Bairro/Um.md");
+                    Assert.Equal((house.X, house.Y), (um.GetProperty("x").GetInt32(), um.GetProperty("y").GetInt32()));
+                }
+
+                // camera only: nothing is scheduled, the file stays as it was
+                view.World.Camera.X += 77.25;
+                Dispatcher.UIThread.RunJobs();
+                Assert.False(view.MapSave!.HasPending);
+                Assert.Equal(first, File.ReadAllText(mapa));
+
+                // + → Nova nota, loose in the root
+                var create = view.CreateNoteAsync(null);
+                Dispatcher.UIThread.RunJobs();
+                view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "Ideias";
+                ClickButtonWithText(view.Dialogs, "Criar nota");
+                await create;
+                var made = view.World.City!.Buildings.Single(b => b.Path == "Ideias.md");
+                Assert.True(view.MapSave.HasPending);
+                await UntilSaved(view);
+                var camera = (view.World.Camera.X, view.World.Camera.Y, view.World.Camera.Zoom);
+                var files = Directory.GetFiles(vault, "*", SearchOption.AllDirectories)
+                    .Select(f => Path.GetRelativePath(vault, f).Replace('\\', '/')).Order(StringComparer.Ordinal);
+                Assert.Equal([".urbe/mapa.json", "Bairro/Um.md", "Comece.md", "Ideias.md", "foto.png"], files);
+                Assert.Equal([1, 2, 3], File.ReadAllBytes(Path.Combine(vault, "foto.png")));
+                window.Close();
+
+                // a new app on the same folder: the house where it was, the camera where it was
+                var reopened = new MainView(new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app2", "sel.json")));
+                var window2 = new Window { Width = 1280, Height = 760, Content = reopened };
+                window2.Show();
+                await reopened.OpenVaultAsync();
+                await Settle(window2, reopened);
+                var again = reopened.World.City!.Buildings.Single(b => b.Path == "Ideias.md");
+                Assert.Equal((made.X, made.Y, made.Sprite), (again.X, again.Y, again.Sprite));
+                Assert.Equal(camera, (reopened.World.Camera.X, reopened.World.Camera.Y, reopened.World.Camera.Zoom));
+                foreach (var b in view.World.City.Buildings)
+                    Assert.Equal((b.X, b.Y), reopened.World.City.Buildings.Single(o => o.Path == b.Path) is var o ? (o.X, o.Y) : default);
+                // the reopened city's first save describes the same city (only "salvo", the instant, moves)
+                await UntilSaved(reopened);
+                using (var a = System.Text.Json.JsonDocument.Parse(File.ReadAllText(mapa)))
+                {
+                    var notas = a.RootElement.GetProperty("notas");
+                    Assert.Equal(3, notas.EnumerateObject().Count());
+                    Assert.Equal((made.X, made.Y), (notas.GetProperty("Ideias.md").GetProperty("x").GetInt32(), notas.GetProperty("Ideias.md").GetProperty("y").GetInt32()));
+                }
+                window2.Close();
                 return true;
             }
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }

@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 namespace Urbe.Core;
 
 /// <summary>Terrain questions the 1.8.4 city asks (terrain.js INFO: build, road, cost).</summary>
@@ -39,6 +41,12 @@ public sealed class LegacyCityRegion
     public int Y { get; internal set; }
     public int W { get; internal set; }
     public int H { get; internal set; }
+
+    /// <summary>r.uid: the stable id written to mapa.json regioes[].id (UrbeStableIds, REQ-041).</summary>
+    public string? Uid { get; internal set; }
+
+    /// <summary>r.description: mapa.json regioes[].descricao ('' for every neighbourhood the open creates).</summary>
+    public string Description { get; internal set; } = "";
 
     internal readonly List<(int X, int Y)> CellList = [];
     internal readonly HashSet<(int X, int Y)> CellSet = [];
@@ -118,6 +126,21 @@ public sealed class LegacyCityBuilding
 
     /// <summary>b.documentId: the document this house shows (seeds urbeCasasNosBairros).</summary>
     public string? DocumentId { get; internal set; }
+
+    /// <summary>b.uid of a file building: mapa.json construcoes[].id (UrbeStableIds).</summary>
+    public string? Uid { get; internal set; }
+
+    /// <summary>
+    /// What the 1.8.4 keeps on the building and writes back to mapa.json (estadoDesejado), carried from
+    /// the map that was read: b.tags, b.anexos, b.created, b.modified, b.aiLocal (notes) and, for a file
+    /// building, b.tipo, b.fileClass, b.fileName, b.description, b.files, b.created, b.modified. JSON
+    /// values exactly as read (JS truthiness decides the fallbacks); null = the JS field is undefined.
+    /// </summary>
+    internal JsonNode? Tags, Anexos, Created, Modified, AiLocal;
+    internal JsonNode? FileTipo, FileClass, FileName, FileDescription, Files;
+
+    /// <summary>b.parentNoteId of a file building: the id of the note house it belongs to.</summary>
+    internal string? ParentNoteId;
 
     /// <summary>
     /// Where app.js idxB last saw this building (indexar/indexarUm). bAt, tileBlockedByBuilding,
@@ -969,9 +992,29 @@ public sealed partial class LegacyCity
         var folder = region is not null ? RegionPaths().GetValueOrDefault(region.Id, region.Name) : "";
         var path = (folder.Length > 0 ? folder + "/" : "") + name + ext;
         var b = new LegacyCityBuilding(_newId("b"), path, name, region?.Id, pos.Value.X, pos.Value.Y, "house" + (Buildings.Count % 3 + 1));
+        // tags:[], created:nowDate(), modified:nowDate(), aiLocal:{instructions:'',memory:'',artifacts:[]}
+        var today = NowDate(nowMs);
+        b.Tags = new JsonArray();
+        b.Created = JsonValue.Create(today);
+        b.Modified = JsonValue.Create(today);
+        b.AiLocal = DefaultAiLocal();
         Buildings.Add(b);
         // v21DefaultContent
         return (b, ext is ".md" or ".markdown" ? "# " : "");
+    }
+
+    /// <summary>app.js nowDate(): the UTC date of the instant, "yyyy-MM-dd".</summary>
+    public static string NowDate(long unixMs) =>
+        DateTimeOffset.FromUnixTimeMilliseconds(unixMs).UtcDateTime.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>The aiLocal a note house gets when the map has none: {instructions:'',memory:'',artifacts:[]}.</summary>
+    internal static JsonObject DefaultAiLocal() => new() { ["instructions"] = "", ["memory"] = "", ["artifacts"] = new JsonArray() };
+
+    /// <summary>The note of this house was edited (editor input: b.modified=nowDate()).</summary>
+    public void NoteEdited(LegacyCityBuilding b, long nowMs)
+    {
+        ArgumentNullException.ThrowIfNull(b);
+        b.Modified = JsonValue.Create(NowDate(nowMs));
     }
 
     /// <summary>Undo a house that could not be written to the vault.</summary>

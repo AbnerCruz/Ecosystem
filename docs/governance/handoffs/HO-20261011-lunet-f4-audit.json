@@ -89,9 +89,10 @@
     {
       "check": "Round-trip e jogo conjunto no aparelho após integração/release",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "critical": false,
-      "object": "apps/lunet2d/docs/audits/fase-4-roteiro.md"
+      "object": "apps/lunet2d/docs/audits/fase-4-roteiro.md",
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-11 (Issue https://github.com/AbnerCruz/Ecosystem/issues/500); registro em docs/governance/responses/VAL-HO-20261011-lunet-f4-audit-d2585cfa124d.md."
     }
   ],
   "known_issues": [
