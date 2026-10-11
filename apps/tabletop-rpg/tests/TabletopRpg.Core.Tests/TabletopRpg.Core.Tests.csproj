@@ -22,5 +22,6 @@
     <ProjectReference Include="../../src/TabletopRpg.Director/TabletopRpg.Director.csproj" />
     <ProjectReference Include="../../src/TabletopRpg.Npc/TabletopRpg.Npc.csproj" />
     <ProjectReference Include="../../src/TabletopRpg.Orchestration/TabletopRpg.Orchestration.csproj" />
+    <ProjectReference Include="../../src/TabletopRpg.QuickStart/TabletopRpg.QuickStart.csproj" />
   </ItemGroup>
 </Project>

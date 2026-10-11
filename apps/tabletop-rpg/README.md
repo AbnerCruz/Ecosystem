@@ -25,6 +25,7 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - `src/TabletopRpg.Director`: Director de tensão e fios narrativos com cues privadas, determinísticas e acionadas por eventos; sem mutação de campanha.
 - `src/TabletopRpg.Npc`: NPC runtime determinístico com presença por cena, atitude e propostas de diálogo aprovadas pelo SessionEngine; não é Player Agent.
 - `src/TabletopRpg.Orchestration`: orquestração por eventos, deduplicação e medição opcional de uso por modelo/provedor, sem teto financeiro obrigatório.
+- `src/TabletopRpg.QuickStart`: criação zero-prep de uma campanha solo com sessão ativa, cenário/quest inicial, humano, companheiro agente, Mestre e NPC, sem modelo/rede.
 - `tests/TabletopRpg.Core.Tests`: testes de domínio e persistência.
 - `SPEC.md`: requisitos do Product.
 - `ROADMAP.md`: fases e gates próprios.
@@ -37,6 +38,7 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - `docs/director-r1.md`: RPG-013, tensão, ameaças, pistas, promessas, consequências e limites.
 - `docs/npc-runtime-r1.md`: RPG-014, NPCs independentes dos jogadores IA e publicação de fala governada.
 - `docs/orchestration-r1.md`: RPG-015, execução por evento, telemetria de uso, no-idle, retries e decisão pay-as-you-go.
+- `docs/quick-start-r1.md`: RPG-016, escolha opcional do tema/nome e campanha pronta com limites de save/IA.
 
 ## Teste
 
@@ -89,3 +91,7 @@ NPCs são personagens canônicos vinculados a um GM controlador, não Player Age
 ## Orquestração agnóstica (RPG-015)
 
 O jogo continua independente do modelo ou provedor. Um Host fornece implementações de `IModelGateway`, e o `RpgEventOrchestrator` coordena jogadores/Mestre por eventos sem polling. Recibos podem registrar tokens e custo **apenas se reportados** por adapter, sem teto financeiro do RPG. O Agent Runtime do runtime de IA da plataforma é uma referência semântica, sem dependência direta entre Products; sua futura integração requer contrato/capability aprovados. Consulte `docs/orchestration-r1.md`.
+
+## Criar uma campanha imediatamente (RPG-016)
+
+O método `QuickStartFactory.Create()` prepara um jogo solo com defaults e nenhuma configuração obrigatória, usando o motor já existente. Há três ganchos de aventura pré-definidos para iniciar sem roteiro fechado. Inclui companheiro agente, Mestre e NPC como assentos/entidades distintas, sessão ativa, cena, objetivo e pista inicial; verdades secretas são exclusivas da visão do Mestre. O formato v2 salva a campanha canônica, mas os perfis transitórios de NPC e agentes precisam ser reconstruídos pelo Host após retomar. Não há cliente mobile ou provedor de modelo ativo nesta etapa.

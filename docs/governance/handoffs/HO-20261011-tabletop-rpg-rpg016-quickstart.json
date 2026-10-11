@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-tabletop-rpg-rpg016-quickstart",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T19:59:00Z",
+  "agent": {
+    "id": "chatgpt-rpg016",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-016",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg016-quickstart",
+  "base_commit": "4d604d0a30281ae941639ea7cb14c86a42631e4e",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/526",
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.QuickStart/TabletopRpg.QuickStart.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.QuickStart/QuickStartModels.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.QuickStart/QuickStartFactory.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/QuickStartTests.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+    "apps/tabletop-rpg/docs/quick-start-r1.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261011-tabletop-rpg-rpg016-quickstart.json"
+  ],
+  "work_completed": [
+    "Implementada tarefa literal RPG-016: criar sessão solo imediata sem preparação, interface headless C# QuickStartFactory.Create() com tema/nome/título opcionais e defaults.",
+    "Três cenários de abertura (Fantasy, Mystery, Frontier) possuem gancho público, cena ativa, quest em aberto, HP, item e sessão ativa com IDs canônicos.",
+    "Uma mesa válida é construída com humano jogador, companheiro Player Agent, Mestre IA e NPC ligado explicitamente ao Mestre; agente jogador não controla NPC e NPC não se torna Player Agent automaticamente.",
+    "Fato secreto de mundo não vaza automaticamente para PlayerView. Apenas o herói recebe pista como crença de confiança moderada; companheiro começa sem conhecimento do fato e Mestre dispõe de GameMasterView privado.",
+    "RPG-016 entrega perfil transitório PlayerAgentProfile, NpcProfile e threads privadas de Director para futura montagem do Host, sem SDK, login, provedor, modelo, rede ou cobrança.",
+    "Testes cobrem três temas, defaults, autoridade de assentos, falta de vazamento, SessionEngine humano/companheiro, NPC/Director e roundtrip Codec v2, dados validados e IDs únicos.",
+    "README, ROADMAP e documentação declaram limites explícitos de persistência de perfis cognitivos e Gate G-R1 ainda não fechado."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "passed",
+      "evidence": "tabletop-rpg-ci success no commit com handoff dc13e562d654826c530565d7c0f7b188fe50340f, run 38170683883."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "GitHub Actions consistency no commit de README ainda executando; aguardar checks no commit de handoff."
+    },
+    {
+      "check": "DEVICE Android",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Código headless, não há UI Android, APK ou validação física nesta fase."
+    }
+  ],
+  "known_issues": [
+    "QuickStartResult contém perfis transitórios do companheiro, NPC e Director e OpeningText fora da serialização v2. CampaignCodec restaura todos os dados canônicos mas Host precisa reconstituir perfis sem substituir a campanha por uma nova.",
+    "Fábrica é offline e não ativa modelo/provedor real automaticamente: Mestre IA é assento criado, não sessão com LLM configurado.",
+    "Não há UI, Android, multiplayer ou release; Gate G-R1 requer sessão humana completa com agentes realmente ativos.",
+    "PR #526 stacked draft sobre PR #523 até integração da cadeia #519/#521/#523; nenhuma integração manual ou exclusão de PR."
+  ],
+  "blockers": [
+    "Integrar primeiro RPG-013 PR #519, RPG-014 PR #521 e RPG-015 PR #523 conforme política antes de RPG-016.",
+    "Confirmar tabletop-rpg-ci e consistency no commit final da branch RPG-016 e no estado combinado."
+  ],
+  "next_actions": [
+    "Conferir CI do head final e corrigir falhas específicas.",
+    "Após merges sequenciais, reconciliar PR #526 com main, verificar diff, remover draft e submeter ao integrador governado quando gates estiverem prontos.",
+    "Para completar Gate G-R1, testar uma sessão solo end-to-end com providers reais, Mestre e companheiros ativos, limites de privacidade, estabilidade e ausência de polling; não antecipar R2."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json",
+    "apps/tabletop-rpg/docs/persistence-v2.md",
+    "apps/tabletop-rpg/docs/orchestration-r1.md"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Todos os fatos e participantes nascem no Campaign; não cria ledger, runtime de regras ou mundo canônico concorrente."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Módulo TabletopRpg.QuickStart Product-local referencia só bibliotecas TabletopRpg existentes."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Início offline e headless independe do Hub e outros Products."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Código novo inteiramente C#."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #525, branch, PR #526, CI, testes e handoff auditáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Implementa RPG-016 literal da R1, sem adiantar UI/R2 ou multiplayer."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "SPEC, ROADMAP, AGENTS, ADR-0022 e contratos do Product consultados."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Criação é compatível com CampaignCodec schema v2, sem migração ou novos contratos públicos transversais."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Nenhum LLM executa ação diretamente; SessionEngine mantém a autoridade; fato de mundo não é revelado por conveniência."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Validação de Core headless; DEVICE não aplicável."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-016 permanece [~], PR draft, falta gate de integração e sessão completa G-R1."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Reutiliza CampaignId, ParticipantId, CharacterId, SceneId, QuestId, SessionId canônicos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Nenhum novo componente compartilhado ou referência cruzada de Products."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Criação não depende de launcher, distribuição ou sync."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Funcionalidade local do Tabletop RPG prevista no roadmap, sem alterar dados persistidos, contratos públicos, credenciais ou infraestrutura."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "tabletop-rpg-quickstart",
+      "status": "product-specific",
+      "rationale": "Ganchos, personagens e criação de campanha pertencem ao domínio da mesa de RPG; sem segundo consumidor identificado."
+    }
+  ]
+}
