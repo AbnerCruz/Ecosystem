@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Urbe.Client;
 using Urbe.Client.World;
 using Urbe.Core;
@@ -344,6 +345,102 @@ public sealed class HeadlessUiTests : IDisposable
         public Task<VaultSnapshot?> RestoreAsync(CancellationToken cancellationToken = default) => Task.FromResult<VaultSnapshot?>(snapshot);
         public Task SaveExistingNoteAsync(string path, string content, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("read-only test storage");
+        public Task CreateTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read-only test storage");
+        public Task SaveExistingTextFileAsync(string path, string content, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("read-only test storage");
+    }
+
+    [Fact]
+    public async Task NewNote_FromThePlusMenuIsBuiltInTheCityWrittenToTheVaultAndEdited() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "urbe-new-note-" + Guid.NewGuid().ToString("N"));
+            var vault = Path.Combine(dir, "vault");
+            Directory.CreateDirectory(Path.Combine(vault, "Bairro"));
+            File.WriteAllText(Path.Combine(vault, "Comece.md"), "# Comece\n\n[[Um]]\n");
+            File.WriteAllText(Path.Combine(vault, "Bairro", "Um.md"), "# Um\n");
+            try
+            {
+                var storage = new FolderVaultStorage(_ => Task.FromResult<string?>(vault), Path.Combine(dir, "app", "sel.json"));
+                var view = new MainView(storage);
+                var window = new Window { Width = 1280, Height = 760, Content = view };
+                window.Show();
+                await view.OpenVaultAsync();
+                await Settle(window, view);
+                int houses = view.World.City!.Buildings.Count;
+
+                // + → Criar → Nova nota
+                var menu = view.ShowCreateMenuAsync();
+                Dispatcher.UIThread.RunJobs();
+                Assert.True(view.Dialogs.IsOpen);
+                Snapshot(window, "native-create-menu.png");
+                ClickButtonWithText(view.Dialogs, "Nova nota");
+                Dispatcher.UIThread.RunJobs();
+                await Task.Delay(50);
+                Dispatcher.UIThread.RunJobs();
+                var input = view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single();
+                input.Text = "Ideias";
+                Snapshot(window, "native-new-note-dialog.png");
+                ClickButtonWithText(view.Dialogs, "Criar nota");
+                await menu;
+
+                var path = Path.Combine(vault, "Ideias.md");
+                Assert.Equal("# ", File.ReadAllText(path));
+                var house = view.World.City!.Buildings.Single(b => b.Path == "Ideias.md");
+                Assert.Equal(houses + 1, view.World.City.Buildings.Count);
+                Assert.Same(house, view.World.Selected);
+                Assert.True(view.Editor.IsVisible);
+                Assert.Equal("# ", view.Editor.Editor.Text);
+
+                // the new note is an ordinary vault file from now on
+                view.Editor.Editor.Text = "# Ideias\n\nPrimeira.\n";
+                Assert.True(await view.Editor.SaveAsync());
+                Assert.Equal("# Ideias\n\nPrimeira.\n", File.ReadAllText(path));
+
+                // a second note with the same name in the same place gets " (2)", never overwriting
+                view.Editor.IsVisible = false;
+                var again = view.CreateNoteAsync(null);
+                Dispatcher.UIThread.RunJobs();
+                view.Dialogs.GetVisualDescendants().OfType<TextBox>().Single().Text = "Ideias";
+                ClickButtonWithText(view.Dialogs, "Criar nota");
+                await again;
+                Assert.Equal("# ", File.ReadAllText(Path.Combine(vault, "Ideias (2).md")));
+                Assert.Equal("# Ideias\n\nPrimeira.\n", File.ReadAllText(path));
+                window.Close();
+                return true;
+            }
+            finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
+        }, CancellationToken.None));
+
+    [Fact]
+    public async Task NewNote_WithoutAWritableVaultIsNotCreatedInMemory() =>
+        Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var view = new MainView();
+            var window = new Window { Width = 412, Height = 860, Content = view };
+            window.Show();
+            await view.LoadAsync(TutorialNotes.Load());
+            await Settle(window, view);
+            int houses = view.World.City!.Buildings.Count;
+            var create = view.CreateNoteAsync(null);
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(view.Dialogs.IsOpen);
+            Assert.Empty(view.Dialogs.GetVisualDescendants().OfType<TextBox>());   // an explanation, not a name field
+            Snapshot(window, "native-new-note-readonly.png");
+            ClickButtonWithText(view.Dialogs, "Ok");
+            await create;
+            Assert.Equal(houses, view.World.City.Buildings.Count);
+            window.Close();
+            return true;
+        }, CancellationToken.None));
+
+    private static void ClickButtonWithText(Control root, string text)
+    {
+        var button = root.GetVisualDescendants().OfType<Button>()
+            .First(b => b.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == text) || b.Content as string == text);
+        button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
     }
 
     private static async Task Settle(Window window, MainView view)
