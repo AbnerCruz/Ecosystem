@@ -1,0 +1,53 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-urbe-native-desktop-vault",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T08:04:41Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-desktop-vault",
+  "base_commit": "a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Client/FolderVaultStorage.cs",
+    "apps/urbe/csharp/src/Urbe.Desktop/Program.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/FolderVaultStorageTests.cs",
+    "docs/governance/handoffs/HO-20261011-urbe-native-desktop-vault.json"
+  ],
+  "work_completed": [
+    "O head Desktop/Windows agora abre um vault real: FolderVaultStorage (System.IO) com o seletor de pasta nativo do Avalonia, seleção lembrada em AppData/Urbe/native-vault.json, sem cópia oculta das notas.",
+    "Mesmas garantias do AndroidVaultStorage: leitura limitada (32 níveis, 10 mil itens, 32/256 MB), links não seguidos, gravação somente de nota Markdown existente, recusa se a pasta mudou fora do Urbe, plano canônico do VaultWriter, cópia de recuperação ao lado, verificação de todos os arquivos após gravar."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "dotnet test Urbe.Client.Tests (24) local; build Urbe.Desktop; dotnet run tests/consistency/Check.cs", "result": "passed", "evidence": "FolderVaultStorageTests: abrir e lembrar, gravar só a nota sem sobras, bloqueio por mudança externa, recusa de caminhos inseguros/não suportados, seletor cancelado." },
+    { "kind": "automated", "check": "urbe-checks no PR", "result": "pending", "evidence": "CI do PR ainda precisa executar." }
+  ],
+  "known_issues": [
+    "Criação de notas e gravação de arquivos não-Markdown (ex.: Personalização/tema.json) continuam fora, como no Android; são a próxima fatia de gravação.",
+    "A lógica de gravação verificada está duplicada entre AndroidVaultStorage e FolderVaultStorage (I/O diferente: SAF × System.IO); unificar depois da validação em aparelho."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar no Windows real: escolher pasta, editar e salvar nota, reabrir o app (DEVICE).",
+    "Fatia seguinte: criar notas e gravar tema.json com as mesmas garantias, nos dois heads."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md", "AGENTS.md", "apps/urbe/AGENTS.md", "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md", "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    { "id": "NN-001", "evidence": "A pasta do usuário é a única autoridade das notas; leitura e escrita pelo VaultReader/VaultWriter do Core." },
+    { "id": "NN-017", "evidence": "Testes em pasta temporária não substituem validação no Windows real." },
+    { "id": "NN-018", "evidence": "UC-19 segue em progresso." }
+  ],
+  "criticality": {
+    "declared": "critical",
+    "reason": "Novo armazenamento de vault (zona *Vault*.cs): grava notas do usuário no Windows/desktop, com as mesmas salvaguardas já usadas no Android."
+  }
+}
