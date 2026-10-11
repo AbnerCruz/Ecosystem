@@ -4,21 +4,21 @@ using TabletopRpg.Core;
 namespace TabletopRpg.GameMaster;
 
 /// <summary>Non-authoritative draft proposed by an untrusted model.</summary>
-public abstract record GameMasterProposal(ParticipantId GameMasterId, long ExpectedRevision);
+public abstract record GameMasterProposal(ParticipantId GameMasterId, GameMasterRevision ExpectedRevision);
 public sealed record NarrationDraft(
-    ParticipantId GameMasterId, long ExpectedRevision, string Text)
+    ParticipantId GameMasterId, GameMasterRevision ExpectedRevision, string Text)
     : GameMasterProposal(GameMasterId, ExpectedRevision);
 public sealed record RevealFactDraft(
-    ParticipantId GameMasterId, long ExpectedRevision, CharacterId TargetCharacterId, FactId FactId)
+    ParticipantId GameMasterId, GameMasterRevision ExpectedRevision, CharacterId TargetCharacterId, FactId FactId)
     : GameMasterProposal(GameMasterId, ExpectedRevision);
 
 public static class GameMasterProposalDecoder
 {
     public static GameMasterProposal? TryDecode(
-        string? text, ParticipantId gmId, long revision)
+        string? text, ParticipantId gmId, GameMasterRevision revision)
     {
         if (string.IsNullOrWhiteSpace(text) || text.Length > 4096 ||
-            gmId.Value == Guid.Empty || revision < 0)
+            gmId.Value == Guid.Empty || revision.Clock < 0)
             return null;
         try
         {
