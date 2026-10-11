@@ -95,3 +95,7 @@ O jogo continua independente do modelo ou provedor. Um Host fornece implementaç
 ## Criar uma campanha imediatamente (RPG-016)
 
 O método `QuickStartFactory.Create()` prepara um jogo solo com defaults e nenhuma configuração obrigatória, usando o motor já existente. Há três ganchos de aventura pré-definidos para iniciar sem roteiro fechado. Inclui companheiro agente, Mestre e NPC como assentos/entidades distintas, sessão ativa, cena, objetivo e pista inicial; verdades secretas são exclusivas da visão do Mestre. O formato v2 salva a campanha canônica, mas os perfis transitórios de NPC e agentes precisam ser reconstruídos pelo Host após retomar. Não há cliente mobile ou provedor de modelo ativo nesta etapa.
+
+## Preview nativo Android (RPG-020/021)
+
+O projeto `src/TabletopRpg.Android` fornece um aplicativo C# nativo para Android arm64/API 29+, com tela de campanhas, quickstart, cena inicial, fala, d20 e retomada local via FileCampaignStore v2. A Action `tabletop-rpg-android-preview.yml` compila um APK assinado de desenvolvimento e publica uma **prerelease instalável** quando os testes e o build passam. Mestre IA e companheiro ainda **não estão conectados a modelos** neste preview; nenhuma solicitação de rede, credencial ou consumo pago é realizada. Consulte `docs/android-preview-r2.md` antes de instalar; builds com assinaturas Debug efêmeras podem exigir reinstalação e apagar dados.
