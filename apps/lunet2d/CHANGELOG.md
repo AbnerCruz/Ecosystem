@@ -17,6 +17,8 @@
 
 ### Added
 
+- Fase 4 / LUNET-414: aba Profiler no workspace preserva a última captura medida no Preview rápido/isolado após Stop e permite compartilhar o relatório; coleta continua opt-in em ▥ Perf. Não altera projetos ou executa jogo em segundo plano.
+
 - LUNET-414 (em revisão): métrica opt-in visível no Profiler do Preview para tamanho estimado RGBA8 de texturas vivas, pico e quantidade de objetos GL (inclui render targets sem double count), com testes. VRAM total, buffers, GPU time e áudio underruns continuam não medidos.
 
 - LUNET-435 (Fase 4, Laboratório em revisão): tela Colisões alterna SAT original e simulação real Box2D (bola, chão, sensor e reset) no mesmo módulo 10/12, sem alterar projetos existentes.

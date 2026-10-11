@@ -101,7 +101,7 @@ public sealed partial class MainActivity
         var form = Vertical();
         form.SetPadding(Dp(16), Dp(8), Dp(16), 0);
 
-        var show = new CheckBox(this) { Text = "Mostrar painel de Problemas / Console", Checked = draft.ShowPanel };
+        var show = new CheckBox(this) { Text = "Mostrar painel de Problemas / Console / Profiler", Checked = draft.ShowPanel };
         show.CheckedChange += (_, args) => draft.ShowPanel = args.IsChecked;
         form.AddView(show);
 
@@ -170,6 +170,8 @@ public sealed partial class MainActivity
         new AlertDialog.Builder(this)!.SetTitle("Carregar layout")!.SetItems(names, (_, args) =>
         {
             if (!_layoutStore.Apply(names[args.Which])) return;
+            if (_layoutStore.Current.PanelTab == "profiler") SetProfilerPanel();
+            else SetPanel(_layoutStore.Current.PanelTab == "console");
             ApplyWorkspaceLayout();
             SaveLayouts();
         })!.Show();

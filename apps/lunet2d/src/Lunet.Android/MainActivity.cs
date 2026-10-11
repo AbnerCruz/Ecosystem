@@ -53,6 +53,8 @@ public sealed partial class MainActivity : Activity
     private LinearLayout? _panelList;
     private Button? _problemsTab;
     private bool _showConsole;
+    private bool _showProfiler;
+    private string? _lastProfilerReport;
     private IReadOnlyList<LunetDiagnostic> _problems = [];
     private readonly List<string> _console = [];
     private int _compileCounter;
@@ -248,6 +250,7 @@ public sealed partial class MainActivity : Activity
         }
         _problems = [];
         _console.Clear();
+        _lastProfilerReport = null;
         _openFile = null;
         _assistant = new EditorAssistant();
         _ = _assistant.LoadProjectAsync(_project.LoadSources().Select(f => (f.Path, f.Text)).ToList());
@@ -337,6 +340,7 @@ public sealed partial class MainActivity : Activity
         _problemsTab = MakeBarButton("Problemas", () => SetPanel(false));
         tabs.AddView(_problemsTab);
         tabs.AddView(MakeBarButton("Console", () => SetPanel(true)));
+        tabs.AddView(MakeBarButton("Profiler", SetProfilerPanel));
 
         _panelList = Vertical();
         var panelScroll = new ScrollView(this);
@@ -349,7 +353,8 @@ public sealed partial class MainActivity : Activity
         frame.AddView(root, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MatchParent, ViewGroup.LayoutParams.MatchParent));
         BuildDrawer(frame);
         SetContentView(frame);
-        SetPanel(_showConsole);
+        if (_layoutStore.Current.PanelTab == "profiler") SetProfilerPanel();
+        else SetPanel(_showConsole);
         _status.Text = $"{project.Name}";
     }
 
@@ -595,6 +600,7 @@ public sealed partial class MainActivity : Activity
 
     private void SetPanel(bool console)
     {
+        _showProfiler = false;
         _showConsole = console;
         if (_layoutStore.Current.PanelTab != (console ? "console" : "problems"))
         {
@@ -672,7 +678,7 @@ public sealed partial class MainActivity : Activity
         {
             if (task.IsFaulted || _editor is null || _editor.Version != task.Result.Version || _openFile != path) return;
             _problems = task.Result.Diagnostics;
-            if (!_showConsole) SetPanel(false);
+            if (!_showConsole && !_showProfiler) SetPanel(false);
             ShowChips(task.Result.Completions);
             _assistant?.RunAsync(a => a.GetFoldRegions(path)).ContinueWith(folds => RunOnUiThread(() =>
             {
@@ -962,6 +968,7 @@ public sealed partial class MainActivity : Activity
     private void ShowPreview(CompileResult result)
     {
         DisposePreview();
+        _lastProfilerReport = null;
         _console.Clear();
         if (_settings.IsolatedPreview)
         {
@@ -1001,13 +1008,14 @@ public sealed partial class MainActivity : Activity
         _openFile = null;
         ShowWorkspace();
         if (file is not null) OpenFile(file);
-        _showConsole = true;
-        SetPanel(true);
+        if (_lastProfilerReport is not null) SetProfilerPanel();
+        else SetPanel(true);
     }
 
     private void DisposePreview()
     {
         if (_preview is null) return;
+        _lastProfilerReport = _preview.CaptureProfilerReport();
         _preview.Shutdown();
         _preview = null;
     }
