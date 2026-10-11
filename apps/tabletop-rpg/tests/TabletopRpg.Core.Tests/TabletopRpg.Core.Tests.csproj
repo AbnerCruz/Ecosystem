@@ -16,5 +16,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/TabletopRpg.Core/TabletopRpg.Core.csproj" />
     <ProjectReference Include="../../src/TabletopRpg.Persistence/TabletopRpg.Persistence.csproj" />
+    <ProjectReference Include="../../src/TabletopRpg.ModelGateway/TabletopRpg.ModelGateway.csproj" />
   </ItemGroup>
 </Project>
