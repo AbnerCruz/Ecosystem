@@ -1,0 +1,62 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-urbe-native-search",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T17:40:00Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-search",
+  "base_commit": "cfb19a3846c625ac73b54a306ab230b2c054e5da",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacySearch.cs",
+    "apps/urbe/csharp/src/Urbe.Client/QuickOpen.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tools/search-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacySearchOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261011-urbe-native-search.json"
+  ],
+  "work_completed": [
+    "Urbe.Core LegacySearch porta quick-open.js (fold sem acentos/caixa caractere a caractere, escada de pontuação 1000/700/500/400/300/100 + 5 por ocorrência até 50, trecho ao redor do primeiro acerto, Recentes, linha Criar nota e caminho de criação), command-palette.js (score, filtro de habilitados, deduplicação por categoria|título, 40 itens) e keymap.js (normalize, atalhos padrão na ordem original, regra de campo editável e comando registrado).",
+    "Oráculo tools/search-oracle.mjs roda os quick-open.js, command-palette.js, keymap.js e artifacts.js originais num DOM falso: 34 consultas x 10 notas (acentos, ß, İ, sigma final, HTML, cabeçalho repetido, ordem de empate por localeCompare) para ranking e lista renderizada; 19 consultas da paleta; 16 teclas x 6 combinações de modificadores x 4 alvos x comando registrado ou não; lista de atalhos. Resultados idênticos.",
+    "Cliente nativo QuickOpen.cs: painel sobreposto (folha inferior abaixo de 600 px, cartão acima) para Buscar notas e Comandos, setas/Enter/Esc, rodapé, botão Buscar da barra superior, Ctrl/Cmd+P e Ctrl/Cmd+K via keymap. Escolher uma nota centra a cidade na casa e abre o editor; Criar nota grava no vault pelo fluxo existente de Nova nota (sem pedir nome de novo).",
+    "MainView: diff mínimo (campo Search, botão Buscar, OpenNoteByPath, parâmetro opcional typedName em CreateNoteAsync)."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "dotnet test Urbe.Core.Tests -c Release (LegacySearchOracleTests: 4)", "result": "passed", "evidence": "Ranking, lista, paleta e keymap idênticos ao JavaScript original." },
+    { "kind": "automated", "check": "dotnet test Urbe.Client.Tests -c Release (35, incl. Search_QuickOpenAndCommandPaletteWorkLikeTheOriginal) e Urbe.Core.Tests (497)", "result": "passed", "evidence": "Após merge de origin/main: 35/35 e 497/497." },
+    { "kind": "automated", "check": "dotnet run tests/consistency/Check.cs", "result": "passed", "evidence": "22 checks passaram após o merge de origin/main." },
+    { "kind": "human", "check": "Teclado virtual/IME e toque no Android e Windows reais", "result": "not-applicable", "evidence": "Depende de aparelho (DEVICE)." },
+    { "kind": "automated", "check": "urbe-checks no PR", "result": "pending", "evidence": "CI do PR ainda precisa executar." }
+  ],
+  "known_issues": [
+    "A paleta lista só os comandos que o app nativo já possui (Buscar notas, Abrir comandos, Abrir notas, Abrir cidade, Nova nota, Enquadrar todas as notas, Personalização, Salvar workspace); os demais comandos da 1.8.4 entram quando suas telas forem portadas.",
+    "Atalhos cujo comando ainda não existe no nativo (Mod+F, Alt+setas, Mod+\\\\ etc.) ficam sem efeito, como na 1.8.4 quando o comando não está registrado.",
+    "Recentes do quick-open usam uma lista da sessão (touchRecent do Explorer ainda não existe no nativo); as datas de modificação não vêm do vault."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Validar no Android e no Windows reais (DEVICE): teclado, toque e rolagem da lista.",
+    "Registrar na paleta os comandos de cada tela à medida que forem portadas."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md", "AGENTS.md", "apps/urbe/AGENTS.md", "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md", "apps/urbe/docs/csharp/ROADMAP.md",
+    "docs/adr/0032-urbe-ui-nativa-sem-webview.md", "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "apps/urbe/src/ui/quick-open.js", "apps/urbe/src/ui/command-palette.js", "apps/urbe/src/core/keymap.js", "apps/urbe/src/styles/command-palette.css"
+  ],
+  "invariants": [
+    { "id": "NN-001", "evidence": "Regras de busca só em Urbe.Core; o cliente desenha e encaminha entrada." },
+    { "id": "NN-017", "evidence": "Headless não substitui aparelho." },
+    { "id": "NN-018", "evidence": "UC-19 segue em progresso." }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI e regras de busca/atalhos; nenhuma zona crítica (sem vault, armazenamento ou csproj)."
+  }
+}

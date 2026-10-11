@@ -613,6 +613,71 @@ public sealed class HeadlessUiTests : IDisposable
             finally { try { Directory.Delete(dir, true); } catch (IOException) { } }
         }, CancellationToken.None));
 
+    [Fact]
+    public async Task Search_QuickOpenAndCommandPaletteWorkLikeTheOriginal() => Assert.True(await Session.Dispatch<bool>(async () =>
+        {
+            var view = new MainView();
+            var window = new Window { Width = 1280, Height = 760, Content = view };
+            window.Show();
+            await view.LoadAsync(TutorialNotes.Load());
+            await Settle(window, view);
+
+            // the toolbar "Buscar" button opens Buscar notas; with nothing typed it lists the recent notes
+            var button = view.GetVisualDescendants().OfType<Button>().First(b => ToolTip.GetTip(b) as string == "Buscar notas");
+            button.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(view.Search.QuickOpen.IsOpen);
+            Assert.True(view.Search.QuickOpen.RowCount > 0);
+            Assert.Contains(view.Search.QuickOpen.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "RECENTES");
+            Snapshot(window, "native-quick-open.png");
+
+            // typing ranks (no accents, no case); the arrows move; Enter centres the city on the house and opens it
+            view.Search.QuickOpen.Input.Text = "COMECE";
+            Dispatcher.UIThread.RunJobs();
+            var docs = view.Search.QuickOpen.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+            Assert.Contains("Comece aqui", docs);
+            Assert.Contains(docs, t => t?.StartsWith("Criar nota “COMECE”") == true);
+            Assert.Equal(0, view.Search.QuickOpen.ActiveIndex);
+            window.KeyPress(Key.Down, RawInputModifiers.None, PhysicalKey.ArrowDown, null);
+            Assert.Equal(Math.Min(1, view.Search.QuickOpen.RowCount - 1), view.Search.QuickOpen.ActiveIndex);
+            window.KeyPress(Key.Up, RawInputModifiers.None, PhysicalKey.ArrowUp, null);
+            Assert.Equal(0, view.Search.QuickOpen.ActiveIndex);
+            var house = view.World.City!.Buildings.Single(b => b.Path == "Tutorial/Comece aqui.md");
+            view.World.Camera.X = 0;
+            view.World.Camera.Y = 0;
+            window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null);
+            Dispatcher.UIThread.RunJobs();
+            Assert.False(view.Search.QuickOpen.IsOpen);
+            Assert.True(view.Editor.IsVisible);
+            Assert.Equal("Tutorial/Comece aqui.md", view.Editor.Current!.Path);
+            Assert.Equal((house.X + house.W / 2.0) * 32, view.World.Camera.X);
+            view.Editor.IsVisible = false;
+
+            // keymap.js: Ctrl+K opens the palette, which filters the commands; Esc closes
+            window.KeyPress(Key.K, RawInputModifiers.Control, PhysicalKey.K, "k");
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(view.Search.Palette.IsOpen);
+            view.Search.Palette.Input.Text = "enquadrar";
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(1, view.Search.Palette.RowCount);
+            Snapshot(window, "native-command-palette.png");
+            window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+            Assert.False(view.Search.Palette.IsOpen);
+
+            // Ctrl+P opens Buscar notas; a name that does not exist offers "Criar nota"
+            window.KeyPress(Key.P, RawInputModifiers.Control, PhysicalKey.P, "p");
+            Dispatcher.UIThread.RunJobs();
+            Assert.True(view.Search.QuickOpen.IsOpen);
+            view.Search.QuickOpen.Input.Text = "zzz inexistente";
+            Dispatcher.UIThread.RunJobs();
+            Assert.Equal(1, view.Search.QuickOpen.RowCount);
+            Assert.Contains(view.Search.QuickOpen.GetVisualDescendants().OfType<TextBlock>(), t => t.Text == "Na raiz · vira uma casa nova na cidade");
+            window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+            Assert.False(view.Search.QuickOpen.IsOpen);
+            window.Close();
+            return true;
+        }, CancellationToken.None));
+
     private static void ClickButtonWithText(Control root, string text)
     {
         var button = root.GetLogicalDescendants().OfType<Button>()
