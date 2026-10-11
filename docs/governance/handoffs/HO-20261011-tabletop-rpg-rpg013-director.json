@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-tabletop-rpg-rpg013-director",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T18:55:37Z",
+  "agent": {
+    "id": "chatgpt-rpg013",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-013",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg013-director",
+  "base_commit": "49d9cf8cdd235b2fc83465530decf83cad4b395c",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/519",
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.Director/TabletopRpg.Director.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.Director/DirectorModels.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.Director/DirectorRuntime.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/DirectorRuntimeTests.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+    "apps/tabletop-rpg/docs/director-r1.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261011-tabletop-rpg-rpg013-director.json"
+  ],
+  "work_completed": [
+    "RPG-013 exatamente conforme roadmap: Director headless C# gerencia tensão, ameaças, pistas, promessas e consequências; não tem roteiro obrigatório.",
+    "DirectorRuntime observa apenas GameMasterView autorizado via chamada explícita do host após eventos; projeta cues privadas, com pressão, alternância de temas e idempotência por sequência.",
+    "Eventos reais de cena, combate, checagem e resolução de quest atualizam a tensão (0..10), criam beats Foreshadow, Escalation, Discovery e Consequence sem substituir o motor das regras.",
+    "Fios privados são transitórios e resolvidos por host; não existe alteração direta em Campaign, PlayerView, schemas de save, credenciais, UI ou rede.",
+    "Replay com eventos duplicados não repete cues, perda da janela de 24 eventos é recusada, estado regressivo ou GM incorreto falha; testes headless e docs incluídos."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "tabletop-rpg-ci PR #519 deve confirmar o commit final do handoff; execução preliminar no commit aceaaf5 foi success."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar consistency e simulação do integrador na PR #519."
+    },
+    {
+      "check": "DEVICE Android",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "Headless sem Android, UI, instalação nem distribuição."
+    }
+  ],
+  "known_issues": [
+    "Director transiente, sem serialização ou checkpoint durável; após processar mais eventos do que a janela do GM, a sincronização falha explicitamente; RPG-015 deverá tratar a orquestração e retomada.",
+    "Fios narrativos são registrados pelo host; Director não cria novas tramas automaticamente por modelo, não gera ações do mundo nem publica suas cues aos jogadores.",
+    "Depende dos PRs #511 (RPG-011) e #517 (RPG-012), ainda abertos; #519 é draft stacked e não pode ser integrado antecipadamente.",
+    "CI no commit com handoff ainda deve executar; não afirmar integração, release, DEVICE ou gate R1 concluído."
+  ],
+  "blockers": [
+    "Integrar primeiro RPG-011 PR #511 e RPG-012 PR #517 na sequência governada, reconciliando o PR #519 para main e executando gates."
+  ],
+  "next_actions": [
+    "Confirmar tableau-rpg-ci e consistency do PR #519 e corrigir eventuais falhas antes de torná-lo pronto para revisão.",
+    "Após integração de #511 e #517, reconciliar a branch RPG-013 com main, rever diffs e deixar o integrador automático governado agir; não mesclar manualmente.",
+    "Roadmap seguinte: RPG-014 NPC runtime, com comportamento próprio sem confundi-lo com um Player Agent."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Verdade do mundo e eventos continuam pertencendo somente ao Campaign; Director gera sugestões derivadas privadas sem persistir fonte canônica concorrente."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Novo projeto C# referencia exclusivamente TabletopRpg.Core, sem Product externo."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Director não precisa do launcher ou de outro Product para funcionar."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Implementação inteiramente C#."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #518, branch, PR #519, testes, documentação e handoff rastreáveis."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "RPG-013 é item literal da R1, nenhuma antecipação de RPG-014/015/020."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Constituição, AGENTS, SPEC, ROADMAP, ADR-0022, política de integração e schema de handoff lidos."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Sem mudança em formato dos dados do usuário, contratos públicos ou arquitetura compartilhada."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Cues privadas não chamam GameMaster tools, não executam intents, não modificam regras nem vazam automaticamente para PlayerView."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Apenas testes headless; validação DEVICE não aplicável."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-013 marcada [~], não declarada integrada antes de CI e integrador."
+    },
+    {
+      "id": "NN-019",
+      "evidence": "Reutiliza CampaignId, ParticipantId, GameEvent e GameMasterRevision canônicos."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Módulo permanece local ao Tabletop RPG, sem abstração compartilhada prematura."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Sem dependência de distribuição ou sincronização de outro Product."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Slice local explicitamente previsto no roadmap, sem alterações em dados persistentes, segredos, permissões globais, infraestrutura ou contratos públicos."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "tabletop-rpg-director",
+      "status": "product-specific",
+      "rationale": "Pacing, tramas, pistas e promessas específicas deste simulador de RPG de mesa; sem segundo consumidor nem extração requerida."
+    }
+  ]
+}
