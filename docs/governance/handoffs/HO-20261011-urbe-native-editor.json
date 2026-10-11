@@ -1,0 +1,71 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-urbe-native-editor",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T17:50:24Z",
+  "agent": { "id": "claude-code-urbe-native-port", "kind": "ai-agent" },
+  "task_id": "UC-19",
+  "component": "urbe",
+  "state": "review",
+  "branch": "feat/urbe-native-editor",
+  "base_commit": "83de45db9c3f83353ed23c26e6f38e4df1538850",
+  "commit": null,
+  "pr": null,
+  "files_changed": [
+    "apps/urbe/csharp/src/Urbe.Core/LegacyEditorTools.cs",
+    "apps/urbe/csharp/src/Urbe.Core/LegacyVisualEdit.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownEngine.Blocks.cs",
+    "apps/urbe/csharp/src/Urbe.Core/MarkdownTree.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorOverlay.cs",
+    "apps/urbe/csharp/src/Urbe.Client/VisualSurface.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MarkdownReader.cs",
+    "apps/urbe/csharp/src/Urbe.Client/EditorPopups.cs",
+    "apps/urbe/csharp/src/Urbe.Client/MainView.cs",
+    "apps/urbe/csharp/tools/editor-oracle.mjs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyEditorToolsOracleTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/LegacyVisualEditTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Core.Tests/MarkdownBlocksTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/EditorTests.cs",
+    "apps/urbe/csharp/tests/Urbe.Client.Tests/HeadlessUiTests.cs",
+    "docs/governance/handoffs/HO-20261011-urbe-native-editor.json"
+  ],
+  "work_completed": [
+    "Urbe.Core LegacyEditorTools porta do app.js/visual-tools.js: barra Markdown do modo Fonte (insertAtCursor no cursor, itálico com _, link [ ](url)), contexto e confirmação de wikilink (getWikiContext/commitWikiSuggestion), Indentar/Formatar (JSON/CSS), linha de estado 'MD · n linhas · m palavras' e o menu '/' do Visual (itens, fold e filtro).",
+    "Oráculo tools/editor-oracle.mjs executa o JS original (app.js, visual-tools.js, markdown.js) com um textarea mínimo: toolbar x 10 textos x 4 seleções, contexto/commit de wikilink em todas as posições do cursor, indent, format JSON/CSS, stats e filtro do menu '/' idênticos; MarkdownEngine.Render confere com markdown.js sobre todo o corpus .md do repositório (tutorial, docs).",
+    "MarkdownEngine.SplitBlocks divide a nota nos blocos que o renderBlocks gera, com o intervalo de origem (fórmulas não se partem); teste prova que renderizar bloco a bloco = renderizar a nota inteira em todo o corpus.",
+    "Cliente nativo: EditorOverlay com modos Visual (padrão, editor.modoInicial) e Fonte; barra da 1.8.4 só no Fonte e Indentar/Formatar em arquivos que não são Markdown; sugestões de [[ ; estado de gravação; autosave 400 ms pelo anfitrião do vault; largura (editor.largura).",
+    "Superfície Visual nativa: nota desenhada com o estilo da 1.8.4 (títulos, listas, tarefas clicáveis, tabelas, callouts, citações, código com linguagem, frontmatter em chips, wikilinks clicáveis, matemática SVG via MathRenderer em caminhos nativos); toque em um bloco o edita em Markdown com teclado nativo, bolha de seleção, menu '/' e [[ ; Enter continua listas/citações.",
+    "MainView.cs: 3 linhas (Dialogs/Notes do editor e ApplyOptions na personalização)."
+  ],
+  "verification": [
+    { "kind": "automated", "check": "dotnet test Urbe.Core.Tests (516) e Urbe.Client.Tests; dotnet run tests/consistency/Check.cs", "result": "passed", "evidence": "LegacyEditorToolsOracleTests, MarkdownBlocksTests, LegacyVisualEditTests, EditorTests verdes." },
+    { "kind": "automated", "check": "urbe-checks no PR", "result": "pending", "evidence": "PR ainda não aberto." }
+  ],
+  "known_issues": [
+    "Visual edita um bloco por vez em Markdown (TextBox nativo); a edição com cursor dentro do texto formatado (contenteditable) não foi portada. As ações da bolha e do menu '/' (LegacyVisualEdit) são aplicações da mesma transformação ao texto do bloco e têm testes unitários, mas não oráculo do DOM original.",
+    "Arquivos .html abrem só em Fonte (sem pré-visualização em iframe); imagens do vault aparecem como [imagem: alt]; matemática dentro de lista/tabela vira controle embutido.",
+    "Autosave a cada 400 ms (original: 120 ms) para limitar gravações verificadas; menu do editor (Renomear, Versões, Backlinks), abas e painel dividido não portados.",
+    "Soft keyboard/IME e toque no Android seguem DEVICE (NN-017)."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Oráculo de DOM (Playwright) para v23PrefixarBloco/v23Envolver e a serialização Visual->Markdown sobre o corpus.",
+    "Edição com cursor em texto formatado; imagens do vault; menu ⋯ do editor, abas e Estrutura/backlinks.",
+    "Validar no Android real (DEVICE)."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md", "AGENTS.md", "apps/urbe/docs/csharp/PRODUCT-DIRECTION.md", "docs/adr/0032-urbe-ui-nativa-sem-webview.md", "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
+    "apps/urbe/src/editor/markdown.js", "apps/urbe/src/editor/visual.js", "apps/urbe/src/editor/visual-tools.js", "apps/urbe/src/editor/session.js", "apps/urbe/src/app.js", "apps/urbe/src/styles/theme.css"
+  ],
+  "invariants": [
+    { "id": "NN-001", "evidence": "O texto da nota tem uma autoridade (Editor.Text); Visual e Fonte são visões dele." },
+    { "id": "NN-017", "evidence": "Headless não substitui aparelho." },
+    { "id": "NN-018", "evidence": "UC-19 segue em progresso." }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "UI e regras do editor; não toca Vault*/csproj nem zonas críticas."
+  }
+}
