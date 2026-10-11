@@ -229,6 +229,28 @@ public sealed class WorldView : Control
     /// <summary>Raised when the camera moves (biome pill refresh).</summary>
     public event EventHandler? CameraChanged;
 
+    private LegacyGroundStyle? _ground;
+    /// <summary>The ground set by Personalização; null is the original art.</summary>
+    public LegacyGroundStyle? Ground => _ground;
+    private readonly Dictionary<string, Bitmap> _ownArt = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// world.custom terrain() and sprites(): the ground palette/textures of Personalização and the
+    /// pack's own building images. The ground is painted again from scratch.
+    /// </summary>
+    public void SetGround(LegacyGroundStyle ground, IReadOnlyDictionary<string, LegacyTexturePack.Art> buildings)
+    {
+        _ground = ReferenceEquals(ground, LegacyGroundStyle.Original) ? null : ground;
+        _ownArt.Clear();
+        foreach (var (kind, art) in buildings) _ownArt[kind] = Pixels.ToBitmap(art.Rgba, art.Width, art.Height);
+        _worldGeneration++;
+        foreach (var image in _chunks.Values) { image.Near.Dispose(); image.Far.Dispose(); }
+        _chunks.Clear();
+        _chunkOrder.Clear();
+        _pending.Clear();
+        InvalidateVisual();
+    }
+
     public void Load(LegacyWorld world, LegacyCity city)
     {
         _worldGeneration++;
@@ -521,6 +543,7 @@ public sealed class WorldView : Control
         var ext = b.Ext.TrimStart('.').ToLowerInvariant();
         if (!Noted.Contains(ext)) ext = "md";
         var kind = Trade.GetValueOrDefault(ext, "house");
+        if (_ownArt.TryGetValue(kind, out var own)) return own;   // urbeSpritesProprios[kind]
         var biome = World!.At((int)Math.Floor(b.X + b.W / 2.0), (int)Math.Floor(b.Y + b.H / 2.0)).Biome;
         int variant = b.Sprite == "house2" ? 1 : b.Sprite == "house3" ? 2 : (int)(LegacyJsMath.Seed(b.Id.Length > 0 ? b.Id : b.Name) % 3);
         bool flowers = LegacyJsMath.Seed(b.Name) % 3 == 0;
@@ -692,14 +715,15 @@ public sealed class WorldView : Control
             if (!_pending.Add(key)) continue;
             var world = World;
             var generation = _worldGeneration;
-            Task.Run(() => GenerateChunk(world, key.X, key.Y)).ContinueWith(task =>
+            var ground = _ground;
+            Task.Run(() => GenerateChunk(world, key.X, key.Y, ground)).ContinueWith(task =>
                 Dispatcher.UIThread.Post(() => AcceptChunk(key, generation, task)), TaskScheduler.Default);
         }
     }
 
-    private static (byte[] Near, byte[] Far, (int, int, LegacyVegetation.Tree)[] Trees) GenerateChunk(LegacyWorld world, int cx, int cy)
+    private static (byte[] Near, byte[] Far, (int, int, LegacyVegetation.Tree)[] Trees) GenerateChunk(LegacyWorld world, int cx, int cy, LegacyGroundStyle? ground)
     {
-        var near = LegacyChunkPixels.Render(world.At, world.DecorAt, cx, cy);
+        var near = LegacyChunkPixels.Render(world.At, world.DecorAt, cx, cy, ground);
         var far = LegacyChunkFarPixels.Render(near, world.TreeAt, cx, cy);
         var trees = new List<(int, int, LegacyVegetation.Tree)>();
         const int ch = LegacyWorld.ChunkTiles;

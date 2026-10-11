@@ -485,6 +485,7 @@ public sealed class MainView : Grid
         World.ShowHouseNames = Customization.City("nomes");
         World.ShowDistrictNames = Customization.City("bairros");
         World.LightingMode = Customization.Ambient;
+        UrbeAppearance.Apply(this);   // Personalização: tema, texto, forma, editor e chão
         if (Customization.Config["editor"] is System.Text.Json.Nodes.JsonObject ed) Editor.ApplyOptions((string?)ed["largura"], (string?)ed["modoInicial"]);
         World.InvalidateVisual();
     }

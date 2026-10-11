@@ -48,7 +48,18 @@ public static class LegacyWorldPixelTextures
     /// Returns an independent 1,024-byte RGBA buffer in row-major order.
     /// Neither the palette nor this buffer is a vault authority.
     /// </summary>
-    public static byte[] CreateTile(string biome, int variant)
+    public static byte[] CreateTile(string biome, int variant) => CreateTile(biome, variant, null);
+
+    /// <summary>The original PAL of a biome: base, shadow, highlight, detail.</summary>
+    public static IReadOnlyList<string> DefaultPalette(string biome)
+    {
+        var index = Array.IndexOf(Ids, biome);
+        if (index < 0) throw new ArgumentException("Bioma desconhecido.", nameof(biome));
+        return Array.AsReadOnly(Palettes[index]);
+    }
+
+    /// <summary>makeTexture(id, variant) with a configured palette (UrbeArt.configure → PAL).</summary>
+    public static byte[] CreateTile(string biome, int variant, IReadOnlyList<string>? colors)
     {
         ArgumentNullException.ThrowIfNull(biome);
         var index = Array.IndexOf(Ids, biome);
@@ -57,7 +68,7 @@ public static class LegacyWorldPixelTextures
         if ((uint)variant >= VariantCount)
             throw new ArgumentOutOfRangeException(nameof(variant));
 
-        var palette = Palettes[index].Select(ParseRgb).ToArray();
+        var palette = (colors ?? Palettes[index]).Select(ParseRgb).ToArray();
         var seed = index * 97 + variant * 13;
         var result = new byte[TileSize * TileSize * 4];
 

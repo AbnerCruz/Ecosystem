@@ -54,6 +54,14 @@ public sealed class EditorOverlay : Grid
     public UrbeDialogs? Dialogs { get; set; }
     public VisualSurface Surface => _visual;
 
+    /// <summary>Personalização → Editor and Texto: the text column width, the Fonte font size and the line height factor (--ui-editor-width, --ui-code-size, --ui-editor-line).</summary>
+    public void ApplyAppearance(double columnWidth, double codeSize, double lineHeight)
+    {
+        Editor.MaxWidth = columnWidth;
+        Editor.FontSize = codeSize;
+        Editor.LineHeight = codeSize * lineHeight;
+    }
+
     public EditorOverlay()
     {
         Background = UrbeTheme.Brush(UrbeTheme.Bg);

@@ -24,7 +24,7 @@ public static class HeadlessApp
 /// Frames are saved to URBE_SNAPSHOT_DIR when set, as visual evidence for review.
 /// This is not device validation (NN-017): soft keyboard/IME on Android is G-N0 DEVICE.
 /// </summary>
-public sealed class HeadlessUiTests : IDisposable
+public sealed partial class HeadlessUiTests : IDisposable
 {
     // One application for the whole run: per-test isolation re-ran AppBuilder setup on every
     // dispatch and intermittently built the compositor off the dispatcher thread (CI flake).
