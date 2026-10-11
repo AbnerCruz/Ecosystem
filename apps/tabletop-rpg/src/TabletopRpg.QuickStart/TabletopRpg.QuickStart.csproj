@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>TabletopRpg.QuickStart</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../TabletopRpg.Core/TabletopRpg.Core.csproj" />
+    <ProjectReference Include="../TabletopRpg.PlayerAgent/TabletopRpg.PlayerAgent.csproj" />
+    <ProjectReference Include="../TabletopRpg.Npc/TabletopRpg.Npc.csproj" />
+    <ProjectReference Include="../TabletopRpg.Director/TabletopRpg.Director.csproj" />
+  </ItemGroup>
+</Project>
