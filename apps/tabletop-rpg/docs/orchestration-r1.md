@@ -53,6 +53,11 @@ explícita** desta camada. Nunca cria timer, polling, worker ou loop de LLM.
   incerto). Repetição retorna `Duplicate`, não cobra novamente.
 - Um participante já ocupado retorna `Busy`, sem consumir uma segunda
   chamada ao modelo. Outros participantes podem operar independentemente.
+- Se o mesmo gatilho (kind+detail, armazenado apenas como hash) aparece
+  novamente para o mesmo participante **sem mudança na revisão canônica**
+  desde a última resposta sem progresso, retorna `NoProgress` sem nova
+  chamada. O Host deve aprovar a proposta ou provocar mudança legítima
+  de estado antes de repeti-la; não existe restrição financeira configurada.
 - O fluxo preserva os gates dos agentes: intents de jogadores passam por
   `SessionEngine` (única autoridade de regras). Propostas do Mestre
   retornam **sem autoaprovação**, preservando a etapa `ApprovedGameMasterTools`.
