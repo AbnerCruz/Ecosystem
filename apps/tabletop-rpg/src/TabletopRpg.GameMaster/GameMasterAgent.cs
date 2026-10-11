@@ -57,7 +57,7 @@ public sealed class GameMasterAgent
         var context = JsonSerializer.Serialize(new
         {
             trigger = new { kind = signal.Kind, detail = signal.Detail },
-            campaign = new { name = view.CampaignName, clock = view.Revision,
+            campaign = new { name = view.CampaignName, clock = view.Revision.Clock,
                 fictionalMinutes = view.FictionMinutes,
                 activeSceneId = view.ActiveSceneId?.Value.ToString("N") },
             worldFacts = view.WorldFacts.TakeLast(16).Select(f => new {
