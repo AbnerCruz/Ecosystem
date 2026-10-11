@@ -31,7 +31,8 @@ Model Gateway nesta etapa: não existem chamadas de IA ociosas.
 | `combat-start` | +3 | Escalation | Ameaça |
 | `combat-attack` | +2 | Escalation | Ameaça |
 | `skill-check` | +1 | Discovery | Pista |
-| `quest-resolved` | -3 | Consequence | Promessa |
+| `quest-resolved` (Completed) | -3 | Consequence | Promessa |
+| `quest-resolved` (Failed) | +3 | Consequence | Promessa |
 | `combat-finished` | -2 | Consequence | Promessa |
 
 A tensão é limitada a 0–10 e a pressão de cada fio também. A
