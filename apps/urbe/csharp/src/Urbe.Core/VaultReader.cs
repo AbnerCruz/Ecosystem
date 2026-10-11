@@ -67,8 +67,10 @@ public sealed class VaultSnapshot
         string? mundo,
         int historyCount,
         int trashCount,
-        int compositionCount)
+        int compositionCount,
+        string? mapJson = null)
     {
+        MapJson = mapJson;
         Files = files;
         Documents = documents;
         FutureFiles = futureFiles;
@@ -94,6 +96,12 @@ public sealed class VaultSnapshot
     public bool RecoveredFromJournal { get; }
     public string? RecoveryJournalPath { get; }
     public string? Mundo { get; }
+
+    /// <summary>
+    /// The text of the map the 1.8.4 opens the city with (urbePersistence.meta): the metadata of a
+    /// recovered journal, else .urbe/mapa.json as read. Null when there is none. Never written here.
+    /// </summary>
+    public string? MapJson { get; }
     public int HistoryCount { get; }
     public int TrashCount { get; }
     public int CompositionCount { get; }
@@ -173,7 +181,10 @@ public static class VaultReader
             effectiveMap.Mundo,
             history.Count,
             trash.Count,
-            compositions.Count);
+            compositions.Count,
+            journal.IsRecovered && journal.Metadata is not null
+                ? journal.Metadata.Value.GetRawText()
+                : files.TryGetValue(MapPath, out var mapFile) ? TryDecode(mapFile.Bytes.ToArray()) : null);
     }
 
     private static (VaultFormatState State, int? Version) ReadVaultFormat(
