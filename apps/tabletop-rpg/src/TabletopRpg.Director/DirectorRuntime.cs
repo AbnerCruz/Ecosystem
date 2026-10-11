@@ -153,7 +153,9 @@ public sealed class DirectorRuntime
         "combat-start" => 3,
         "combat-attack" => 2,
         "skill-check" => 1,
-        "quest-resolved" => -3,
+        "quest-resolved" when item.Text.EndsWith(":Failed", StringComparison.Ordinal) => 3,
+        "quest-resolved" when item.Text.EndsWith(":Completed", StringComparison.Ordinal) => -3,
+        "quest-resolved" => 0,
         "combat-finished" => -2,
         _ => 0
     };
