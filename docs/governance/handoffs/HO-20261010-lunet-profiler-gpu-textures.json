@@ -44,9 +44,10 @@
     {
       "check": "Profiler Preview GPU RGBA8 Android device",
       "kind": "human",
-      "result": "pending",
+      "result": "passed",
       "object": "apps/lunet2d/src/Lunet.Android/PreviewHost.cs",
-      "critical": false
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-11 (Issue https://github.com/AbnerCruz/Ecosystem/issues/487); registro em docs/governance/responses/VAL-HO-20261010-lunet-profiler-gpu-textures-c7a4e66eec42.md."
     }
   ],
   "known_issues": [

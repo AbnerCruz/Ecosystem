@@ -44,8 +44,37 @@ public sealed class LegacyCityRegion
     internal readonly HashSet<(int X, int Y)> CellSet = [];
     internal (string Key, List<(int X, int Y, double S)> List)? Lots;
 
-    public IReadOnlyList<(int X, int Y)> Cells => CellList;
-    public bool Has(int x, int y) => CellSet.Contains((x, y));
+    /// <summary>
+    /// JS r.cells === null: a neighbourhood restored from .urbe/mapa.json without cells is its
+    /// whole rectangle (regionHasTile) until something calls urbeCelulas on it.
+    /// </summary>
+    internal bool CellsNull;
+
+    /// <summary>True while the neighbourhood has no cell list (JS r.cells null): it is its rectangle.</summary>
+    public bool IsRectangle => CellsNull;
+
+    /// <summary>The tiles of the neighbourhood (a null-cells region is its rectangle, row by row).</summary>
+    public IReadOnlyList<(int X, int Y)> Cells => CellsNull ? Rectangle() : CellList;
+    public bool Has(int x, int y) => CellsNull ? x >= X && x < X + W && y >= Y && y < Y + H : CellSet.Contains((x, y));
+
+    private List<(int X, int Y)> Rectangle()
+    {
+        var cells = new List<(int X, int Y)>();
+        for (int y = Y; y < Y + H; y++)
+        for (int x = X; x < X + W; x++) cells.Add((x, y));
+        return cells;
+    }
+
+    /// <summary>urbeCelulas: a null-cells region becomes its rectangle, row by row.</summary>
+    internal List<(int X, int Y)> Celulas()
+    {
+        if (CellsNull)
+        {
+            CellsNull = false;
+            foreach (var c in Rectangle()) Add(c);
+        }
+        return CellList;
+    }
 
     internal void Add((int X, int Y) cell)
     {
@@ -57,7 +86,8 @@ public sealed class LegacyCityRegion
 /// <summary>A note (or other file) drawn as a 3×3 building (app.js world.buildings).</summary>
 public sealed class LegacyCityBuilding
 {
-    internal LegacyCityBuilding(string id, string path, string name, string? regionId, int x, int y, string sprite)
+    internal LegacyCityBuilding(string id, string path, string name, string? regionId, int x, int y, string sprite,
+        bool isNote = true, int w = 3, int h = 3)
     {
         Id = id;
         Path = path;
@@ -66,6 +96,11 @@ public sealed class LegacyCityBuilding
         X = x;
         Y = y;
         Sprite = sprite;
+        IsNote = isNote;
+        W = w;
+        H = h;
+        IndexedX = x;
+        IndexedY = y;
     }
 
     public string Id { get; }
@@ -74,9 +109,22 @@ public sealed class LegacyCityBuilding
     public string? RegionId { get; }
     public int X { get; internal set; }
     public int Y { get; internal set; }
-    public int W => 3;
-    public int H => 3;
+    public int W { get; }
+    public int H { get; }
     public string Sprite { get; }
+
+    /// <summary>b.tipo==='nota'. False for a file building restored from mapa.json construcoes.</summary>
+    public bool IsNote { get; }
+
+    /// <summary>b.documentId: the document this house shows (seeds urbeCasasNosBairros).</summary>
+    public string? DocumentId { get; internal set; }
+
+    /// <summary>
+    /// Where app.js idxB last saw this building (indexar/indexarUm). bAt, tileBlockedByBuilding,
+    /// isHouseAccessGap and v22LoteConflita look buildings up through idxB, which is not rebuilt
+    /// when urbeCasasNosBairros moves a house; this reproduces that.
+    /// </summary>
+    internal int IndexedX, IndexedY;
 
     /// <summary>urbeCasaParaDocumento b.ext: the file extension, '.md' when there is none.</summary>
     public string Ext => System.Text.RegularExpressions.Regex.Match(Path, @"\.[^.]+$") is { Success: true } m ? m.Value : ".md";
@@ -91,7 +139,7 @@ public sealed class LegacyCityBuilding
 /// placement, folder creation (urbeGarantirPasta) and the road network
 /// (rebuildRoadNetwork with the v22 A*). No rule here is new.
 /// </summary>
-public sealed class LegacyCity
+public sealed partial class LegacyCity
 {
     public const int Tile = 32;
     private const int LotGap = 2; // app.js LOTE_GAP
@@ -137,10 +185,27 @@ public sealed class LegacyCity
 
     // ------------------------------------------------------------------ lookups
 
+    private const int Chunk = 16; // app.js CH
+
+    private static int ChunkOf(int v) => (int)Math.Floor(v / (double)Chunk);
+
+    /// <summary>idxB: is the building listed under chunk (cx, cy)?</summary>
+    private static bool Indexed(LegacyCityBuilding b, int cx, int cy) =>
+        cx >= ChunkOf(b.IndexedX) && cx <= ChunkOf(b.IndexedX + b.W - 1) &&
+        cy >= ChunkOf(b.IndexedY) && cy <= ChunkOf(b.IndexedY + b.H - 1);
+
+    /// <summary>indexar: idxB sees every building where it is now.</summary>
+    private void Reindex()
+    {
+        foreach (var b in Buildings) { b.IndexedX = b.X; b.IndexedY = b.Y; }
+    }
+
+    /// <summary>bAt: the last building (idxB order) on the tile.</summary>
     public LegacyCityBuilding? BuildingAt(int x, int y)
     {
+        int cx = ChunkOf(x), cy = ChunkOf(y);
         for (int i = Buildings.Count - 1; i >= 0; i--)
-            if (Buildings[i].Contains(x, y)) return Buildings[i];
+            if (Indexed(Buildings[i], cx, cy) && Buildings[i].Contains(x, y)) return Buildings[i];
         return null;
     }
 
@@ -150,13 +215,16 @@ public sealed class LegacyCity
     private bool IsHouseAccessGap(int x, int y)
     {
         if (_accessGaps is not null) return _accessGaps.Contains((x, y));
+        // the gap is just below the lot and may fall in the next chunk
+        int cx = ChunkOf(x);
+        foreach (var cy in new[] { ChunkOf(y), ChunkOf(y - 1) })
         foreach (var b in Buildings)
-            if (x == (int)LegacyJsMath.Round(b.X + (b.W - 1) / 2.0) && y == b.Y + b.H) return true;
+            if (Indexed(b, cx, cy) && x == (int)LegacyJsMath.Round(b.X + (b.W - 1) / 2.0) && y == b.Y + b.H) return true;
         return false;
     }
 
     private static bool RegionHasTile(LegacyCityRegion r, int x, int y) =>
-        x >= r.X && x < r.X + r.W && y >= r.Y && y < r.Y + r.H && r.CellSet.Contains((x, y));
+        x >= r.X && x < r.X + r.W && y >= r.Y && y < r.Y + r.H && (r.CellsNull || r.CellSet.Contains((x, y)));
 
     /// <summary>regAt: the innermost (smallest bounding box) neighbourhood holding the tile.</summary>
     public LegacyCityRegion? RegionAt(int x, int y)
@@ -226,6 +294,7 @@ public sealed class LegacyCity
 
     private static (double X, double Y) Centroid(LegacyCityRegion r)
     {
+        r.Celulas();
         if (r.CellList.Count == 0) return (r.X + r.W / 2.0, r.Y + r.H / 2.0);
         double sx = 0, sy = 0;
         foreach (var (x, y) in r.CellList) { sx += x; sy += y; }
@@ -234,6 +303,7 @@ public sealed class LegacyCity
 
     private static void Bounds(LegacyCityRegion r)
     {
+        r.Celulas();
         if (r.CellList.Count == 0) { r.W = 0; r.H = 0; return; }
         int x0 = int.MaxValue, y0 = int.MaxValue, x1 = int.MinValue, y1 = int.MinValue;
         foreach (var (x, y) in r.CellList)
@@ -271,6 +341,7 @@ public sealed class LegacyCity
             if (IsWater(x, y)) bl[(y - y0) * W + (x - x0)] = 1;
         if (parent is not null)
         {
+            parent.Celulas();
             var ps = parent.CellSet;
             for (int y = y0; y <= y1; y++)
             for (int x = x0; x <= x1; x++)
@@ -289,7 +360,7 @@ public sealed class LegacyCity
         {
             if (o == self || o == parent || o.ParentId != pid) continue;
             if (o.X > x1 + raio || o.Y > y1 + raio || o.X + o.W < x0 - raio || o.Y + o.H < y0 - raio) continue;
-            foreach (var (cx, cy) in o.CellList) Mark(cx, cy, raio);
+            foreach (var (cx, cy) in o.Celulas()) Mark(cx, cy, raio);
         }
         // loose houses of the same level are obstacles: the new neighbourhood goes around them
         foreach (var b in Buildings)
@@ -551,6 +622,7 @@ public sealed class LegacyCity
     /// <summary>expandirRegiao (final).</summary>
     public int ExpandRegion(LegacyCityRegion r, double extra)
     {
+        r.Celulas();
         var parent = Parent(r);
         int target = r.CellList.Count + (int)Math.Max(1, LegacyJsMath.Round(extra));
         int m = (int)Math.Ceiling(Math.Sqrt(target) * .7) + 6;
@@ -568,6 +640,7 @@ public sealed class LegacyCity
         foreach (var k in added) r.Add(k);
         Bounds(r);
         r.Lots = null;
+        Reindex();
         return added.Count;
     }
 
@@ -717,6 +790,7 @@ public sealed class LegacyCity
     /// <summary>urbeLotes: 3×3 lots inside the neighbourhood, in organic order around its centre.</summary>
     private List<(int X, int Y, double S)> Lots(LegacyCityRegion r)
     {
+        r.Celulas();
         var key = r.CellList.Count + ":" + r.X + ":" + r.Y + ":" + r.W + ":" + r.H;
         if (r.Lots is { } cached && cached.Key == key) return cached.List;
         var c = Centroid(r);
@@ -749,9 +823,13 @@ public sealed class LegacyCity
     /// <summary>v22LoteConflita: 2 tiles of spacing from every other building.</summary>
     private bool LotConflicts(int x, int y, ISet<string> ignore)
     {
+        // idxB chunks of the 8-tile window around the lot
+        int cx0 = ChunkOf(x - 8), cx1 = ChunkOf(x + 8), cy0 = ChunkOf(y - 8), cy1 = ChunkOf(y + 8);
         foreach (var b in Buildings)
         {
             if (ignore.Contains(b.Id)) continue;
+            if (ChunkOf(b.IndexedX + b.W - 1) < cx0 || ChunkOf(b.IndexedX) > cx1 ||
+                ChunkOf(b.IndexedY + b.H - 1) < cy0 || ChunkOf(b.IndexedY) > cy1) continue;
             if (x < b.X + b.W + LotGap && x + 3 + LotGap > b.X && y < b.Y + b.H + LotGap && y + 3 + LotGap > b.Y) return true;
         }
         return false;
