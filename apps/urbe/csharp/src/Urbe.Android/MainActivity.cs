@@ -40,6 +40,13 @@ public sealed class MainActivity : AvaloniaMainActivity
         base.OnCreate(savedInstanceState);
     }
 
+    /// <summary>workspace.js flushPending on visibilitychange hidden: write a pending map now.</summary>
+    protected override void OnPause()
+    {
+        UrbeApp.FlushPendingOnBackground();
+        base.OnPause();
+    }
+
     protected override void OnDestroy()
     {
         if (ReferenceEquals(Current, this)) Current = null;

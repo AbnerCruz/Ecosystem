@@ -196,7 +196,8 @@ public static class VaultWriter
         }
 
         if (!snapshot.IsMapReadOnly && metadataJson is not null)
-            desired[MapPath] = ValidateJsonObject(metadataJson, MapPath);
+            // workspace.js desired(): JSON.stringify(metadata, null, 1), the 1.8.4 bytes of the map
+            desired[MapPath] = Encoding.UTF8.GetBytes(LegacyJson.Stringify(ParseObject(metadataJson, MapPath), 1));
 
         WriteSidecarDesired(working, desired, future, "history", historyJson);
         WriteSidecarDesired(working, desired, future, "trash", trashJson);
@@ -757,9 +758,6 @@ public static class VaultWriter
             throw new InvalidDataException("Caminho inválido no vault: " + path);
         return string.Join('/', segments);
     }
-
-    private static byte[] ValidateJsonObject(string json, string path) =>
-        Serialize(ParseObject(json, path), indented: true);
 
     private static JsonObject ParseObject(string json, string path)
     {

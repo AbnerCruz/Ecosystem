@@ -151,6 +151,41 @@ public sealed class FolderVaultStorage : IUrbeVaultStorage
         finally { _gate.Release(); }
     }
 
+    public async Task SaveMapAsync(string json, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(json);
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var root = _root ?? throw new InvalidOperationException("Selecione a pasta do vault.");
+            var baseline = _baseline ?? throw new InvalidOperationException("Reabra a pasta do vault.");
+            var files = await Task.Run(() => ReadFiles(root, cancellationToken), cancellationToken);
+            EnsureUnchanged(baseline, files);
+            var (target, planned) = IUrbeVaultStorage.PlanMapWrite(files, json);
+            bool create = !baseline.ContainsKey(target);
+
+            await Task.Run(() =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                WriteVerified(root, target, planned, create);
+                var observed = Snapshot(ReadFiles(root, cancellationToken));
+                foreach (var pair in baseline)
+                {
+                    if (!observed.TryGetValue(pair.Key, out var actual) ||
+                        !actual.Bytes.Span.SequenceEqual(string.Equals(pair.Key, target, StringComparison.OrdinalIgnoreCase)
+                            ? planned : pair.Value.Bytes.Span))
+                        throw new IOException("Verificação pós-gravação detectou divergência em: " + pair.Key);
+                }
+                if (create && (!observed.TryGetValue(target, out var made) || !made.Bytes.Span.SequenceEqual(planned)))
+                    throw new IOException("O mapa criado não passou na verificação: " + target);
+                if (observed.Count != baseline.Count + (create ? 1 : 0))
+                    throw new IOException("Verificação pós-gravação encontrou arquivos inesperados.");
+                _baseline = observed;
+            }, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
     // ---------------------------------------------------------------- reading
 
     private static List<VaultFile> ReadFiles(string root, CancellationToken token)

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 namespace Urbe.Core;
@@ -8,7 +9,7 @@ namespace Urbe.Core;
 /// Opening a real vault, as the 1.8.4-beta does it (src/app.js; the last definition wins):
 /// abrirCidade (≈4704) → abrirCidade (≈3740: urbePersistence.load, then urbeOpenLegacy =
 /// v21OpenCity ≈2495–2498, documentId binding, rebuildRoadNetwork) → urbeCasasNosBairros +
-/// urbeTaparTodos. Reads .urbe/mapa.json (v:4, written by estadoDesejado ≈2493); never writes it.
+/// urbeTaparTodos. Reads .urbe/mapa.json (v:4, written by estadoDesejado ≈2493); writing it is LegacyCityMap.
 /// </summary>
 public sealed partial class LegacyCity
 {
@@ -36,13 +37,17 @@ public sealed partial class LegacyCity
     /// (persistence: mapa notas id or identity sidecar); otherwise the mapa id is used.
     /// Binary assets (v21IndexBinary) are not placed: callers pass text files only. File buildings
     /// saved in mapa.construcoes are restored (they take room) but are not notes.
+    /// <paramref name="nowMs"/> is Date.now() of the open (nowDate() of houses the map has no date for).
+    /// What the map holds and the native city does not use (stable ids, tags, aiLocal, anexos, dates,
+    /// file-building fields) is carried on the regions/buildings so LegacyCityMap can write it back.
     /// </summary>
     public DocumentStore Open(IReadOnlyList<(string Path, string Content)> files, string? mapaJson,
-        IReadOnlyDictionary<string, string>? documentIds = null)
+        IReadOnlyDictionary<string, string>? documentIds = null, long? nowMs = null)
     {
         ArgumentNullException.ThrowIfNull(files);
         using var parsed = ParseMap(mapaJson);
         JsonElement? mapa = parsed?.RootElement;
+        var today = NowDate(nowMs ?? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
         // urbePersistence.load: one document per editable file, with the id the vault knows.
         var texts = files.Where(f => ArtifactModel.IsText(f.Path) && !ArtifactModel.IsSystem(f.Path)).ToList();
@@ -53,11 +58,14 @@ public sealed partial class LegacyCity
         foreach (var (path, content) in texts)
         {
             string? id = documentIds is not null && documentIds.TryGetValue(path, out var known) ? known : null;
-            if (id is null && geoNota.TryGetValue(path, out var gm) && Str(gm, "id") is { Length: > 0 } mid) id = mid;
-            store.Upsert(new DocumentInput { Id = id, Path = path, Content = content });
+            geoNota.TryGetValue(path, out var gm);
+            if (id is null && Str(gm, "id") is { Length: > 0 } mid) id = mid;
+            // workspace.js load: {id, path, content, tags:m.tags||null, created:m.criado||null, modified:m.modificado||null}
+            store.Upsert(new DocumentInput { Id = id, Path = path, Content = content, Tags = StringArray(gm, "tags"),
+                Created = Str(gm, "criado"), Modified = Str(gm, "modificado") });
         }
 
-        OpenLegacy(texts.Select(t => t.Path).ToList(), mapa, geoNota);
+        OpenLegacy(texts.Select(t => t.Path).ToList(), mapa, geoNota, StableIds(mapaJson, mapa), today);
 
         // abrirCidade (≈3740): each note house shows the document at its path (urbeBuildingPath).
         var regionPaths = RegionPaths();
@@ -98,6 +106,39 @@ public sealed partial class LegacyCity
         return null;
     }
 
+    /// <summary>UrbeStableIds.assign(mapa): region id by caminho, the asset ids in order, and the used ids.</summary>
+    private static WorldStableIdAssignment StableIds(string? json, JsonElement? mapa)
+    {
+        if (mapa is null || json is null) return WorldStableIds.Assign(null);
+        return WorldStableIds.Assign(JsonNode.Parse(json.TrimStart('\uFEFF')) as JsonObject);
+    }
+
+    /// <summary>JS truthiness of a JSON value (undefined/null/false/0/NaN/'' are falsy).</summary>
+    internal static bool Truthy(JsonElement e) => e.ValueKind switch
+    {
+        JsonValueKind.Undefined or JsonValueKind.Null or JsonValueKind.False => false,
+        JsonValueKind.Number => e.GetDouble() != 0,
+        JsonValueKind.String => e.GetString()!.Length > 0,
+        _ => true
+    };
+
+    /// <summary>`g.name||fallback` as a JSON value: the saved value when truthy, else the fallback.</summary>
+    private static JsonNode? Or(JsonElement? o, string name, JsonNode? fallback) =>
+        o is { ValueKind: JsonValueKind.Object } g && g.TryGetProperty(name, out var v) && Truthy(v) ? JsonNode.Parse(v.GetRawText()) : fallback;
+
+    /// <summary>A list of strings saved in the map (m.tags); null when absent or not a list of strings.</summary>
+    private static IReadOnlyList<string>? StringArray(JsonElement o, string name)
+    {
+        if (o.ValueKind != JsonValueKind.Object || !o.TryGetProperty(name, out var v) || v.ValueKind != JsonValueKind.Array) return null;
+        var list = new List<string>();
+        foreach (var e in v.EnumerateArray())
+        {
+            if (e.ValueKind != JsonValueKind.String) return null;
+            list.Add(e.GetString()!);
+        }
+        return list;
+    }
+
     private static string? Str(JsonElement o, string name) =>
         o.ValueKind == JsonValueKind.Object && o.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
 
@@ -126,12 +167,17 @@ public sealed partial class LegacyCity
     private static string BuildingPath(LegacyCityBuilding b, IReadOnlyDictionary<string, string> regions)
     {
         var dir = b.RegionId is not null && regions.TryGetValue(b.RegionId, out var d) ? d : "";
-        return (dir.Length > 0 ? dir + "/" : "") + ArtifactModel.SafeName(b.Name) + b.Ext.ToLowerInvariant() switch
-        {
-            var e when Regex.IsMatch(e, @"\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$") => e,
-            _ => ".md"
-        };
+        return (dir.Length > 0 ? dir + "/" : "") + ArtifactModel.SafeName(b.Name) + ExtNota(b);
     }
+
+    internal static string BuildingPathOf(LegacyCityBuilding b, IReadOnlyDictionary<string, string> regions) => BuildingPath(b, regions);
+
+    /// <summary>extNota (final, ≈2394): the building's text extension, lower case, '.md' otherwise.</summary>
+    internal static string ExtNota(LegacyCityBuilding b) => b.Ext.Trim().ToLowerInvariant() switch
+    {
+        var e when Regex.IsMatch(e, @"\.(md|markdown|txt|html?|js|mjs|css|json|ya?ml|csv)$") => e,
+        _ => ".md"
+    };
 
     /// <summary>urbeOrigemPelasCasas: a neighbourhood recreated without a saved shape is born where its houses were.</summary>
     private static (double X, double Y)? OrigemPelasCasas(string cam, IReadOnlyList<string> rels, IReadOnlyDictionary<string, JsonElement> geo)
@@ -148,8 +194,10 @@ public sealed partial class LegacyCity
     }
 
     /// <summary>v21OpenCity (≈2495–2498), for the text files of the vault.</summary>
-    private void OpenLegacy(List<string> texts, JsonElement? mapa, Dictionary<string, JsonElement> geoNota)
+    private void OpenLegacy(List<string> texts, JsonElement? mapa, Dictionary<string, JsonElement> geoNota,
+        WorldStableIdAssignment sids, string today)
     {
+        var usedIds = new HashSet<string>(sids.Regions.Values.Concat(sids.Assets), StringComparer.Ordinal);
         Regions.Clear();
         Buildings.Clear();
         _roads.Clear();
@@ -209,6 +257,8 @@ public sealed partial class LegacyCity
                     }
                 }
                 else r.CellsNull = true;
+                r.Uid = sids.Regions.GetValueOrDefault(cam);
+                r.Description = Str(gs, "descricao") is { Length: > 0 } descricao ? descricao : "";
                 Regions.Add(r);
             }
             else
@@ -216,6 +266,9 @@ public sealed partial class LegacyCity
                 r = CreateRegion(nomeR, quantos, LegacyJsMath.Seed(cam + quantos.ToString(CultureInfo.InvariantCulture)), pai?.Id,
                     OrigemPelasCasas(cam, texts, geoNota));
             }
+            // if(r&&!r.uid)r.uid=g&&g.id||UrbeStableIds.regionFor(cam,usedIds)
+            if (r is not null && r.Uid is null)
+                r.Uid = g is not null && sids.Regions.TryGetValue(cam, out var gid) ? gid : WorldStableIds.RegionFor(cam, usedIds);
             regPorCaminho[cam] = r;
         }
 
@@ -229,20 +282,33 @@ public sealed partial class LegacyCity
             var sprite = g is { } gsp && Str(gsp, "sprite") is { Length: > 0 } sp ? sp : HouseSprites[LegacyJsMath.Seed(rel) % 3];
             var bid = _newId("b");
             var name = Stem(rel.Split('/')[^1]);
+            // tags:g&&g.tags||[], anexos:g&&g.anexos||[], created:g&&g.criado||nowDate(), modified:…,
+            // aiLocal:g&&g.aiLocal||{instructions:'',memory:'',artifacts:[]}
+            void Carry(LegacyCityBuilding house)
+            {
+                house.Tags = Or(g, "tags", new JsonArray());
+                house.Anexos = Or(g, "anexos", new JsonArray());
+                house.Created = Or(g, "criado", JsonValue.Create(today));
+                house.Modified = Or(g, "modificado", JsonValue.Create(today));
+                house.AiLocal = Or(g, "aiLocal", DefaultAiLocal());
+            }
             if (g is { } gp && Num(gp, "x") is { } x)
             {
                 var b = new LegacyCityBuilding(bid, rel, name, r?.Id, (int)x, (int)(Num(gp, "y") ?? 0), sprite)
                 {
                     DocumentId = Str(gp, "id") is { Length: > 0 } did ? did : null
                 };
+                Carry(b);
                 Buildings.Add(b);
             }
             else
             {
-                semLugar.Add((new LegacyCityBuilding(bid, rel, name, r?.Id, 0, 0, sprite)
+                var loose = new LegacyCityBuilding(bid, rel, name, r?.Id, 0, 0, sprite)
                 {
                     DocumentId = g is { } gd && Str(gd, "id") is { Length: > 0 } did ? did : null
-                }, r, rel));
+                };
+                Carry(loose);
+                semLugar.Add((loose, r, rel));
             }
         }
         foreach (var (b, r, rel) in semLugar)
@@ -258,14 +324,32 @@ public sealed partial class LegacyCity
         // file buildings saved in the map (drawn as files in 1.8.4; here they only take their room)
         if (mapa is { } mc && mc.TryGetProperty("construcoes", out var construcoes) && construcoes.ValueKind == JsonValueKind.Array)
         {
+            int asset = 0;
             foreach (var g in construcoes.EnumerateArray())
             {
                 var cam = Str(g, "caminho");
                 var r = !string.IsNullOrEmpty(cam) && regPorCaminho.TryGetValue(cam, out var rr) ? rr : null;
                 var name = Str(g, "name") is { Length: > 0 } n1 ? n1 : Str(g, "fileName") is { Length: > 0 } n2 ? n2 : "Arquivo";
                 var sprite = Str(g, "sprite") is { Length: > 0 } s ? s : "file-" + (Str(g, "fileClass") is { Length: > 0 } fc ? fc : "other");
-                Buildings.Add(new LegacyCityBuilding(_newId("b"), "", name, r?.Id, NumOr(g, "x", 0), NumOr(g, "y", 0), sprite,
-                    isNote: false, w: NumOr(g, "w", 3), h: NumOr(g, "h", 3)));
+                // paiNota: by g.parentId (the note's documentId), else by g.parentNoteName (the note's name)
+                var parentId = Str(g, "parentId") is { Length: > 0 } pid ? pid : null;
+                var parentName = Str(g, "parentNoteName") is { Length: > 0 } pn ? pn : null;
+                var paiNota = (parentId is not null ? Buildings.Find(n => n.IsNote && n.DocumentId == parentId) : null)
+                              ?? (parentName is not null ? Buildings.Find(n => n.IsNote && n.Name == parentName) : null);
+                var fileBuilding = new LegacyCityBuilding(_newId("b"), "", name, r?.Id, NumOr(g, "x", 0), NumOr(g, "y", 0), sprite,
+                    isNote: false, w: NumOr(g, "w", 3), h: NumOr(g, "h", 3))
+                {
+                    Uid = g.ValueKind == JsonValueKind.Object && asset < sids.Assets.Count ? sids.Assets[asset++] : null,
+                    ParentNoteId = paiNota?.Id,
+                    FileTipo = Or(g, "tipo", JsonValue.Create("arquivo")),
+                    FileClass = Or(g, "fileClass", JsonValue.Create("other")),
+                    FileName = Or(g, "fileName", null),
+                    FileDescription = Or(g, "description", JsonValue.Create("")),
+                    Files = Or(g, "files", Or(g, "anexos", new JsonArray())),
+                    Created = Or(g, "created", JsonValue.Create(today)),
+                    Modified = Or(g, "modified", JsonValue.Create(today))
+                };
+                Buildings.Add(fileBuilding);
             }
         }
 
