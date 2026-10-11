@@ -57,14 +57,39 @@ public sealed class ModelTurnRequest
 /// Untrusted output; a later decision adapter must parse it as an intent,
 /// and SessionEngine must authorize/execute that intent independently.
 /// </summary>
+/// <summary>
+/// Optional provider-normalized usage. Absence means "unknown", never free.
+/// BilledUsd is a measured/estimated amount from an adapter, not a limit.
+/// </summary>
+public sealed record ModelTurnUsage
+{
+    public ModelTurnUsage(long? inputTokens = null, long? outputTokens = null,
+        decimal? billedUsd = null, bool isEstimate = false)
+    {
+        if (inputTokens is < 0 || outputTokens is < 0 || billedUsd is < 0)
+            throw new ArgumentOutOfRangeException(nameof(inputTokens), "Usage cannot be negative.");
+        InputTokens = inputTokens;
+        OutputTokens = outputTokens;
+        BilledUsd = billedUsd;
+        IsEstimate = isEstimate;
+    }
+
+    public long? InputTokens { get; }
+    public long? OutputTokens { get; }
+    public decimal? BilledUsd { get; }
+    public bool IsEstimate { get; }
+}
+
 public sealed class ModelTurnResponse
 {
-    public ModelTurnResponse(string text)
+    public ModelTurnResponse(string text, ModelTurnUsage? usage = null)
     {
         Text = ModelTurnRequest.Required(text, nameof(text), 65_536);
+        Usage = usage;
     }
 
     public string Text { get; }
+    public ModelTurnUsage? Usage { get; }
 }
 
 /// <summary>

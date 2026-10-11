@@ -24,6 +24,7 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - `src/TabletopRpg.GameMaster`: Mestre IA com visão privada, propostas tipadas e ferramentas autorizadas apenas após aprovação explícita.
 - `src/TabletopRpg.Director`: Director de tensão e fios narrativos com cues privadas, determinísticas e acionadas por eventos; sem mutação de campanha.
 - `src/TabletopRpg.Npc`: NPC runtime determinístico com presença por cena, atitude e propostas de diálogo aprovadas pelo SessionEngine; não é Player Agent.
+- `src/TabletopRpg.Orchestration`: orquestração por eventos, deduplicação e medição opcional de uso por modelo/provedor, sem teto financeiro obrigatório.
 - `tests/TabletopRpg.Core.Tests`: testes de domínio e persistência.
 - `SPEC.md`: requisitos do Product.
 - `ROADMAP.md`: fases e gates próprios.
@@ -35,6 +36,7 @@ Identidade estável: `tabletop-rpg`. O nome de exibição é provisório e pode 
 - `docs/game-master-r1.md`: RPG-012, visão privada do Mestre, rascunhos de narração/revelação e aprovação no host.
 - `docs/director-r1.md`: RPG-013, tensão, ameaças, pistas, promessas, consequências e limites.
 - `docs/npc-runtime-r1.md`: RPG-014, NPCs independentes dos jogadores IA e publicação de fala governada.
+- `docs/orchestration-r1.md`: RPG-015, execução por evento, telemetria de uso, no-idle, retries e decisão pay-as-you-go.
 
 ## Teste
 
@@ -83,3 +85,7 @@ O `DirectorRuntime` consome uma `GameMasterView` somente quando o host o aciona,
 ## NPC runtime (RPG-014)
 
 NPCs são personagens canônicos vinculados a um GM controlador, não Player Agents automáticos. O módulo independente `TabletopRpg.Npc` reage a eventos e interações explícitas, calcula propostas privadas de fala e as executa somente quando o host aprova e o `SessionEngine` autoriza. O estado cognitivo local é transitório, sem alteração do formato de campanha nem modelo conectado. Consulte `docs/npc-runtime-r1.md`.
+
+## Orquestração agnóstica (RPG-015)
+
+O jogo continua independente do modelo ou provedor. Um Host fornece implementações de `IModelGateway`, e o `RpgEventOrchestrator` coordena jogadores/Mestre por eventos sem polling. Recibos podem registrar tokens e custo **apenas se reportados** por adapter, sem teto financeiro do RPG. O Agent Runtime do runtime de IA da plataforma é uma referência semântica, sem dependência direta entre Products; sua futura integração requer contrato/capability aprovados. Consulte `docs/orchestration-r1.md`.
