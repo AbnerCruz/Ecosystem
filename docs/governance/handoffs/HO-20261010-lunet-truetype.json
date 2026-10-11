@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-430",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "chatgpt/lunet-truetype-20261010",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/415",
@@ -34,23 +34,27 @@
     "Testes unitários de opções inválidas, atlas, medidas proporcionais, fallback Unicode, Dispose, cache e GameCompiler; guia Android offline, metadata pública e ADR.",
     "Após regressão do CI, removida dependência NuGet do Framework por código-fonte público versionado com STBSHARP_INTERNAL; estrutura arquitetural preservada.",
     "Correções de warnings em código vendorizado: buffers stackalloc fora de loops e contrato nullable correto.",
-    "Reconciliado com main preservando APIs e histórico integrado."
+    "Reconciliado com main preservando APIs e histórico integrado.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "check": "dotnet test Lunet.Tests / docs API snapshot",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Foundation consistency + integration policy",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Compilação arm64 APK Lunet",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Fonte real, acentos, UI e memória no Preview Android",
@@ -68,11 +72,7 @@
     "O código-fonte do rasterizador de domínio público está vendorizado no Framework, fixado em commit upstream; atualizações exigem revisão."
   ],
   "blockers": [],
-  "next_actions": [
-    "Verificar CI completo da revisão reconciliada.",
-    "Integração automática pelos gates do Ecosystem.",
-    "Confirmar release Android e avaliar legibilidade com fonte TTF real."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

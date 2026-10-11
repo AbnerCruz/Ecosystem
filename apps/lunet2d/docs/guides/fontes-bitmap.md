@@ -100,3 +100,8 @@ Não há TrueType, kerning, shaping tipográfico, ligaturas, bidi, quebra autom�
 3. Pare e repita no Preview isolado. Volte ao editor e rode um projeto anterior com a fonte embutida; nenhuma regressão ou falha de runtime.
 
 Registre passou/falhou/não testado, versão do APK e modo do Preview. GL, legibilidade e toque no aparelho permanecem separados dos testes portáteis.
+
+
+## Vida da fonte embutida
+
+`SpriteFont.CreateDefault(device)` cria e possui seu atlas. Chame `font.Dispose()` no `UnloadContent` para liberar esse atlas; chamadas repetidas são seguras. `SpriteFont.FromBitmap` usa textura compartilhada e não a libera ao descartar a fonte: o jogo ou ContentManager continua responsável pela textura. As métricas permanecem disponíveis; desenho requer textura viva. Fontes TrueType continuam sob posse de `TrueTypeFont`/ContentManager.

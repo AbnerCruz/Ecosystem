@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Text.Json;
+using System.Text;
 using Lunet.Pathfinding;
 
 namespace Lunet.Graphics;
@@ -232,6 +233,39 @@ public sealed class TileMap
             layers[i] = new TileLayer(item.Name, item.Visible, item.Collision, item.Tiles);
         }
         return new TileMap(source.Texture!, source.Width, source.Height, source.TileWidth, source.TileHeight, layers, maximum);
+    }
+
+    /// <summary>Exporta o mapa no mesmo contrato JSON v1 aceito por Parse, preservando camadas, visibilidade e colisão.</summary>
+    /// <returns>JSON UTF-8 legível, com nomes de propriedades canônicos e IDs de tiles sem alteração.</returns>
+    /// <remarks>Aloca memória para exportação; não chamar no loop do jogo. Não grava arquivos nem modifica o mapa.</remarks>
+    public string ToJson()
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
+        {
+            writer.WriteStartObject();
+            writer.WriteNumber("version", 1);
+            writer.WriteString("texture", TexturePath);
+            writer.WriteNumber("width", Width);
+            writer.WriteNumber("height", Height);
+            writer.WriteNumber("tileWidth", TileWidth);
+            writer.WriteNumber("tileHeight", TileHeight);
+            writer.WriteStartArray("layers");
+            foreach (var layer in _layers)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("name", layer.Name);
+                writer.WriteBoolean("visible", layer.Visible);
+                writer.WriteBoolean("collision", layer.Collision);
+                writer.WriteStartArray("tiles");
+                foreach (var tile in layer.Tiles) writer.WriteNumberValue(tile);
+                writer.WriteEndArray();
+                writer.WriteEndObject();
+            }
+            writer.WriteEndArray();
+            writer.WriteEndObject();
+        }
+        return Encoding.UTF8.GetString(stream.GetBuffer(), 0, checked((int)stream.Length));
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
