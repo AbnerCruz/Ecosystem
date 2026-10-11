@@ -1598,6 +1598,43 @@
       "decidedAt": "2026-10-10",
       "record": "docs/governance/addenda/ADD-0020-urbe-e-a-1-8-4-nativo-sem-web.md",
       "consequencesApplied": true
+    },
+    {
+      "id": "DEC-0044",
+      "status": "decided",
+      "component": "urbe",
+      "blocking": false,
+      "title": "Plugins do Urbe no app nativo: o que fazer com o plugins.js da 1.8.4",
+      "context": "FATO OBSERVADO: na 1.8.4, src/customize/plugins.js executa JavaScript do usuário com acesso total ao app. O app C# nativo não roda JavaScript. FATO: a Personalização nativa (PR #512) já lista, aprova por SHA-256 (guardado no aparelho), cria e liga/desliga plugins, mas avisa que não os executa; nenhum runtime foi inventado. INFERÊNCIA: executar plugins exige uma decisão de produto e de segurança (NN-011, NN-016).",
+      "question": "Como o app nativo deve tratar plugins?",
+      "alternatives": [
+        {
+          "option": "1 — Só gerenciamento (estado atual): listar, aprovar, criar e gravar no tema.json, sem executar",
+          "consequences": "Sem risco novo de segurança e sem código novo. Plugins existentes da 1.8.4 não funcionam no nativo."
+        },
+        {
+          "option": "2 — API nativa de plugins em C#, com permissões declaradas (NN-016) e ADR próprio",
+          "consequences": "Plugins passam a existir no nativo, mas escritos para a API nova (não são os .js da 1.8.4). Exige ADR, modelo de permissões e testes; é um trabalho grande."
+        },
+        {
+          "option": "3 — Motor de script isolado para rodar os plugins .js da 1.8.4",
+          "consequences": "Máxima compatibilidade com a 1.8.4, mas traz um motor JS novo ao app, com custo de segurança, tamanho e manutenção (NN-020/NN-022); exige ADR."
+        }
+      ],
+      "consequences": "DECISÃO DO PROPRIETÁRIO: 2. O desenho da API (formato, pontos de extensão, permissões, isolamento) é resolvido junto com a implementação, em itens do ROADMAP C#. O comportamento atual (listar, aprovar, criar, ligar/desligar, sem executar) continua até lá.",
+      "manifestCompatibility": "Opções 2 e 3 alteram capacidade e superfície de segurança do produto (NN-011, NN-016) e exigem ADR antes de implementar; a opção 1 não muda nada.",
+      "recommendation": "2 — escolhida pelo proprietário (a recomendação original do agente era 1).",
+      "related": [
+        "docs/governance/addenda/ADD-0021-urbe-plugins-api-nativa.md",
+        "apps/urbe/src/customize/plugins.js",
+        "apps/urbe/docs/csharp/ROADMAP.md"
+      ],
+      "raisedBy": "Claude Code — achado do porte da Personalização nativa",
+      "raisedAt": "2026-10-11",
+      "decision": "2 — API nativa de plugins em C#, com permissões declaradas; os plugins .js da 1.8.4 não serão executados no app nativo. Sem ADR separado, por ordem do proprietário.",
+      "decidedAt": "2026-10-11",
+      "record": "docs/governance/addenda/ADD-0021-urbe-plugins-api-nativa.md",
+      "consequencesApplied": true
     }
   ]
 }
