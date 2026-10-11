@@ -9,7 +9,7 @@ namespace Urbe.Client;
 /// through the vault only when it changes and a vault folder is connected (podeGravar), and
 /// apply it (aplicar). Rules and file text come from Urbe.Core LegacyCustomize.
 /// </summary>
-public sealed class Customization
+public sealed partial class Customization
 {
     private Func<string, bool> _savedTheme = _ => false;
 
@@ -28,6 +28,7 @@ public sealed class Customization
     /// <summary>recarregar(): from the vault documents (path → text).</summary>
     public void Load(IReadOnlyDictionary<string, string> documents)
     {
+        _documents = documents;
         _savedTheme = path => documents.TryGetValue(path, out var t) && IsObject(t);
         FileContent = documents.TryGetValue(LegacyCustomize.FilePath, out var text) ? text : null;
         var n = LegacyCustomize.Normalize(FileContent);
@@ -79,6 +80,7 @@ public sealed class Customization
     private void Apply(JsonObject config)
     {
         Config = config;
+        UpdateGround();
         Applied?.Invoke();
     }
 

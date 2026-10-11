@@ -24,19 +24,65 @@ public static class UrbeTheme
 
     private static readonly Dictionary<string, IBrush> Brushes = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Personalização: the design tokens above are the default theme. A token colour is drawn with a
+    /// shared mutable brush, so changing the theme (<see cref="SetColors"/>) repaints every control
+    /// that already uses it, like the --ui-* CSS variables did.
+    /// </summary>
+    private static readonly Dictionary<string, string> TokenKey = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [Bg] = "fundo", [Surface] = "superficie", [Surface2] = "superficie2", [Surface3] = "superficie3", [Line] = "linha", [Line2] = "linha2",
+        [Text] = "texto", [Text2] = "texto2", [Text3] = "texto3", [Accent] = "destaque", [Ok] = "sucesso", [Danger] = "perigo", [AccentInk] = "destaque-tinta"
+    };
+    private static readonly Dictionary<string, string> CurrentColor = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<(string, double), SolidColorBrush> LiveBrushes = [];
+
+    private static string Resolve(string hex) => CurrentColor.TryGetValue(hex, out var now) ? now : hex;
+
     public static IBrush Brush(string hex)
     {
+        if (TokenKey.ContainsKey(hex)) return Live(hex, 1);
         if (!Brushes.TryGetValue(hex, out var brush))
             Brushes[hex] = brush = new SolidColorBrush(Color.Parse(hex)).ToImmutable();
         return brush;
     }
 
     public static IBrush Brush(string hex, double opacity) =>
-        new SolidColorBrush(Color.Parse(hex), opacity).ToImmutable();
+        TokenKey.ContainsKey(hex) ? Live(hex, opacity) : new SolidColorBrush(Color.Parse(hex), opacity).ToImmutable();
+
+    private static SolidColorBrush Live(string hex, double opacity)
+    {
+        var key = (hex.ToLowerInvariant(), opacity);
+        if (!LiveBrushes.TryGetValue(key, out var brush))
+            LiveBrushes[key] = brush = new SolidColorBrush(Color.Parse(Resolve(hex)), opacity);
+        return brush;
+    }
+
+    /// <summary>The colour a token has now (default token hex in, current hex out).</summary>
+    public static string Current(string tokenHex) => Resolve(tokenHex);
+
+    /// <summary>Accent at 14 % (--ui-accent-soft), a live brush.</summary>
+    public static IBrush AccentSoft => Live(Accent, .14);
+
+    /// <summary>
+    /// Applies a palette (configuration colour name → hex; "destaque-tinta" is --ui-accent-ink) to the
+    /// shared token brushes. An empty map restores the default theme.
+    /// </summary>
+    public static void SetColors(IReadOnlyDictionary<string, string> colors)
+    {
+        foreach (var (token, key) in TokenKey)
+        {
+            if (colors.TryGetValue(key, out var hex)) CurrentColor[token] = hex; else CurrentColor.Remove(token);
+        }
+        foreach (var ((hex, opacity), brush) in LiveBrushes) brush.Color = Color.Parse(Resolve(hex));
+    }
 
     // --ui-font: system UI sans-serif (Segoe UI on Windows, Roboto on Android).
-    public static FontFamily UiFont { get; } = new("Segoe UI, Roboto, Inter, Helvetica Neue, Arial, sans-serif");
+    public static FontFamily UiFont { get; private set; } = new("Segoe UI, Roboto, Inter, Helvetica Neue, Arial, sans-serif");
     public static FontFamily MonoFont { get; } = new("Cascadia Mono, Consolas, JetBrains Mono, DejaVu Sans Mono, monospace");
+    /// <summary>--ui-editor-font: the font of the notes in the Visual editor.</summary>
+    public static FontFamily EditorFont { get; private set; } = UiFont;
+    public static void SetFonts(FontFamily ui, FontFamily editor) { UiFont = ui; EditorFont = editor; }
 
     public static Typeface UiTypeface(FontWeight weight = FontWeight.Normal) => new(UiFont, FontStyle.Normal, weight);
 
