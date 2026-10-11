@@ -102,7 +102,7 @@ public sealed class RpgEventOrchestratorTests
     {
         var t = Table.Create();
         var gateway = new ReplyGateway(new ModelTurnResponse(
-            "{\\"kind\\":\\"narrate\\",\\"text\\":\\"The fog rises.\\"}"));
+            "{\"kind\":\"narrate\",\"text\":\"The fog rises.\"}"));
         var coordinator = t.Coordinator();
         coordinator.RegisterGameMaster(t.Master.Id, new GameMasterAgent(t.Campaign, gateway));
 
