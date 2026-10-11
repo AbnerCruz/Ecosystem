@@ -32,3 +32,10 @@ Registre **passou / falhou / não testado** por módulo e informe APK, Android e
 ## Módulo Colisões — validação de física Box2D
 
 A página 10/12 agora alterna entre **SAT** (padrão e intocado) e **Física Box2D**. No aparelho, abra Novo projeto → Laboratório → Run, selecione Colisões, toque **VER FÍSICA BOX2D** e observe a bola cair, atravessar o sensor e rebater no chão. Toque **REINICIAR SIMULAÇÃO** para repetir. A contagem de eventos do sensor deve subir quando a bola passar pela faixa amarela. Volte para **SAT** e confirme que arrastar o quadrado vermelho continua resolvendo a colisão original. O jogo gerado funciona offline. Só novos projetos Laboratório incluem essa demonstração; projetos salvos continuam intactos.
+
+
+## Física sob carga (Fase 4 — desempenho real)
+
+Na página **Colisões**, toque **VER FÍSICA BOX2D** e depois **CARGA: 1 CORPO** para alternar para **CARGA: 64 CORPOS**. O mesmo mundo físico passa a simular 64 corpos dinâmicos adicionais, com paredes de contenção, mantendo a bola e o sensor da demonstração original. Toque de novo no botão para retornar ao caso simples. **REINICIAR SIMULAÇÃO** recria o mundo no modo ativo. O SAT original permanece acessível.
+
+Para medir desempenho de verdade no Android, ligue **▥ Perf** no Preview, mantenha o caso de 64 corpos por 60 segundos, depois registre FPS, CPU Update/Draw, P95, hitches, GC e memória. Repita com 1 corpo no mesmo aparelho. Registre modelo/Android, versão do APK, orientação e taxas de atualização. Os testes automáticos comprovam presença dos 64 corpos, simulação e descarte, mas **não fornecem FPS nem aprovam desempenho em dispositivo**. Crie um novo projeto Laboratório para receber o template atualizado; projetos anteriores não são reescritos.
