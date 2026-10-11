@@ -133,6 +133,43 @@ public sealed class FolderVaultStorageTests : IDisposable
         Assert.False(File.Exists(Path.Combine(_dir, "fora.md")));
     }
 
+    [Fact]
+    public async Task CreatingAFolderMakesOnlyThatFolderAndAcceptsOneThatExists()
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var before = Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).ToDictionary(f => f, File.ReadAllBytes);
+        await storage.CreateDirectoryAsync("Projetos/Sub pasta", Ct);
+        await storage.CreateDirectoryAsync("Bairro", Ct);   // already there: fine
+        Assert.True(Directory.Exists(Path.Combine(Vault, "Projetos", "Sub pasta")));
+        Assert.Equal(before.Keys.Order(), Directory.GetFiles(Vault, "*", SearchOption.AllDirectories).Order());
+        foreach (var (file, bytes) in before) Assert.Equal(bytes, File.ReadAllBytes(file));
+        // the vault stays writable: the baseline did not change
+        await storage.CreateTextFileAsync("Projetos/Nota.md", "# N\n", Ct);
+        Assert.Equal("# N\n", File.ReadAllText(Path.Combine(Vault, "Projetos", "Nota.md")));
+    }
+
+    [Theory]
+    [InlineData(".urbe/x")]
+    [InlineData(".obsidian")]
+    [InlineData("../fora")]
+    [InlineData("/abs")]
+    [InlineData("a\\b")]
+    [InlineData("c:/x")]
+    [InlineData("a//b")]
+    [InlineData("")]
+    [InlineData("Comece.md")]
+    [InlineData("Comece.md/Dentro")]
+    public async Task FolderCreationRefusesHiddenUnsafeOrFileNames(string path)
+    {
+        var storage = Storage();
+        await storage.PickAsync(Ct);
+        var dirs = Directory.GetDirectories(Vault, "*", SearchOption.AllDirectories).Length;
+        await Assert.ThrowsAnyAsync<Exception>(() => storage.CreateDirectoryAsync(path, Ct));
+        Assert.Equal(dirs, Directory.GetDirectories(Vault, "*", SearchOption.AllDirectories).Length);
+        Assert.False(Directory.Exists(Path.Combine(_dir, "fora")));
+    }
+
     private const string Map1 = "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"camera\": {\n  \"x\": 1152,\n  \"y\": 800.5,\n  \"z\": 1.15\n },\n \"notas\": {\n  \"Área/Ideias.md\": {\n   \"x\": 3\n  }\n },\n \"salvo\": \"2025-10-09T08:53:20.000Z\"\n}";
     private const string Map2 = "{\n \"v\": 4,\n \"app\": \"Urbe\",\n \"camera\": {\n  \"x\": 1200,\n  \"y\": 800.5,\n  \"z\": 1.15\n },\n \"notas\": {},\n \"salvo\": \"2025-10-09T08:54:20.000Z\"\n}";
 
