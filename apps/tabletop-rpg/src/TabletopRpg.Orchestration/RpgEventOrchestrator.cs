@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using TabletopRpg.Core;
 using TabletopRpg.GameMaster;
 using TabletopRpg.ModelGateway;
@@ -12,7 +14,8 @@ public enum OrchestratedTurnStatus
     Proposal,
     Duplicate,
     Busy,
-    Failed
+    Failed,
+    NoProgress
 }
 
 /// <summary>
@@ -54,6 +57,7 @@ public sealed class RpgEventOrchestrator
     private readonly Dictionary<ParticipantId, GameMasterAgent> _gameMasters = [];
     private readonly HashSet<(ParticipantId, string)> _seen = [];
     private readonly HashSet<ParticipantId> _busy = [];
+    private readonly Dictionary<ParticipantId, (string Trigger, string Revision)> _noProgress = [];
     private readonly List<OrchestratedTurnReceipt> _receipts = [];
 
     public RpgEventOrchestrator(Campaign campaign, SessionEngine session)
@@ -102,6 +106,8 @@ public sealed class RpgEventOrchestrator
 
         IAgentDecisionSource? player;
         GameMasterAgent? master;
+        var fingerprint = TriggerFingerprint(signal);
+        string initialRevision;
         lock (_gate)
         {
             _players.TryGetValue(participantId, out player);
@@ -114,6 +120,10 @@ public sealed class RpgEventOrchestrator
                 return Record(new(eventKey, participantId, OrchestratedTurnStatus.Duplicate, 0));
             if (_busy.Contains(participantId))
                 return Record(new(eventKey, participantId, OrchestratedTurnStatus.Busy, 0));
+            initialRevision = RevisionFor(participantId, master is not null);
+            if (_noProgress.TryGetValue(participantId, out var previous) &&
+                previous.Trigger == fingerprint && previous.Revision == initialRevision)
+                return Record(new(eventKey, participantId, OrchestratedTurnStatus.NoProgress, 0));
             if (_seen.Count >= MaxTrackedEvents)
                 throw new InvalidOperationException("Event checkpoint required before accepting more work.");
 
@@ -136,18 +146,18 @@ public sealed class RpgEventOrchestrator
                         var runner = new AgentTurnRunner(_campaign, _session, player);
                         var action = await runner.ReactAsync(participantId, signal, cancellationToken)
                             .ConfigureAwait(false);
-                        return Record(new(eventKey, participantId, action is null
+                        return RecordProgress(new(eventKey, participantId, action is null
                             ? OrchestratedTurnStatus.NoAction
                             : action.Accepted ? OrchestratedTurnStatus.Applied
                                 : OrchestratedTurnStatus.Rejected,
-                            attempts, Action: action));
+                            attempts, Action: action), fingerprint, initialRevision);
                     }
 
                     var proposal = await master!.ProposeAsync(
                         participantId, signal, cancellationToken).ConfigureAwait(false);
-                    return Record(new(eventKey, participantId,
+                    return RecordProgress(new(eventKey, participantId,
                         proposal is null ? OrchestratedTurnStatus.NoAction : OrchestratedTurnStatus.Proposal,
-                        attempts, Proposal: proposal));
+                        attempts, Proposal: proposal), fingerprint, initialRevision);
                 }
                 catch (NoChargeTransientModelException) when (attempts == 1 &&
                     !cancellationToken.IsCancellationRequested)
@@ -164,13 +174,39 @@ public sealed class RpgEventOrchestrator
         }
         catch
         {
-            return Record(new(eventKey, participantId, OrchestratedTurnStatus.Failed, attempts,
-                "provider-or-agent-failure"));
+            return RecordProgress(new(eventKey, participantId, OrchestratedTurnStatus.Failed, attempts,
+                "provider-or-agent-failure"), fingerprint, initialRevision);
         }
         finally
         {
             lock (_gate) _busy.Remove(participantId);
         }
+    }
+
+    private static string TriggerFingerprint(AgentWakeSignal signal)
+    {
+        var payload = (signal.Kind ?? "") + "\\n" + (signal.Detail ?? "");
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(payload)));
+    }
+
+    private string RevisionFor(ParticipantId id, bool isMaster) => isMaster
+        ? _campaign.CreateGameMasterView(id).Revision.ToString()
+        : _campaign.Clock.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private OrchestratedTurnReceipt RecordProgress(OrchestratedTurnReceipt receipt,
+        string fingerprint, string before)
+    {
+        var after = RevisionFor(receipt.ParticipantId, _gameMasters.ContainsKey(receipt.ParticipantId));
+        lock (_gate)
+        {
+            if (before == after && receipt.Status is
+                (OrchestratedTurnStatus.NoAction or OrchestratedTurnStatus.Proposal or
+                 OrchestratedTurnStatus.Rejected or OrchestratedTurnStatus.Failed))
+                _noProgress[receipt.ParticipantId] = (fingerprint, after);
+            else
+                _noProgress.Remove(receipt.ParticipantId);
+        }
+        return Record(receipt);
     }
 
     private OrchestratedTurnReceipt Record(OrchestratedTurnReceipt receipt)
