@@ -792,7 +792,7 @@ internal static class LaboratoryTemplate
                         var p = new Vector2(180, 300) + body.Position * 40;
                         if (p.X < 30 || p.X > 326 || p.Y < 194 || p.Y > 423) continue;
                         batch.Draw(dot, new RectangleF(p.X - 8, p.Y - 8, 16, 16), null,
-                            Color.Cyan, body.Rotation, Vector2.Zero);
+                            new Color(89, 214, 230), body.Rotation, Vector2.Zero);
                     }
                 }
                 batch.DrawString(font, "Sensor: " + physicsSensorEvents +
