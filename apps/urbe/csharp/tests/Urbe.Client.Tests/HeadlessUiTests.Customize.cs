@@ -150,7 +150,10 @@ public sealed partial class HeadlessUiTests
             Assert.Equal("#ff00ff", view.World.Ground!.BaseColor("deep"));
             Assert.Equal(0, view.World.ReadyChunks);   // the old ground is gone, chunks are painted again
             await Settle(window, view);
-            for (int i = 0; i < 10; i++) { AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); await Task.Delay(20); }
+            // the chunks are painted by a worker: on a slow runner the first ready chunk is not yet the whole ground,
+            // so wait for the condition itself (bounded) instead of a fixed number of frames
+            for (int i = 0; i < 600 && (i < 10 || MagentaShare(window) <= .25); i++)
+            { AvaloniaHeadlessPlatform.ForceRenderTimerTick(); Dispatcher.UIThread.RunJobs(); window.CaptureRenderedFrame(); await Task.Delay(20); }
             Snapshot(window, "native-customize-ground-magenta.png");
             Assert.True(MagentaShare(window) > .25, "o chão deveria ficar magenta, share=" + MagentaShare(window));
 
