@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-426",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-default-font-text-fix-20261009",
   "commit": null,
   "pr": "https://github.com/AbnerCruz/Ecosystem/pull/391",
@@ -26,18 +26,21 @@
   "work_completed": [
     "SpriteFont embutida trata CR, LF e CRLF conforme fonte personalizada, com Unicode escalar e fallback único.",
     "Valida escala/posição e evita quads não representáveis em float no backend GL.",
-    "Testes de layout/acentos/Unicode, limites e zero GC por frame; guia e roadmap."
+    "Testes de layout/acentos/Unicode, limites e zero GC por frame; guia e roadmap.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "check": "Lunet CI + consistency",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Build APK Android",
       "kind": "automated",
-      "result": "pending"
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "check": "Preview real: CRLF, acentos e legibilidade no telefone",
@@ -52,10 +55,7 @@
     "Fonte 5x7 pequena não é TrueType; item completo de fontes continua pendente."
   ],
   "blockers": [],
-  "next_actions": [
-    "Corrigir falhas de CI e integrar pela fila automática após checks.",
-    "Confirmar APK e obter validação Android antes de encerrar item."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

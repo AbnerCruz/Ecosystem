@@ -1,0 +1,100 @@
+{
+  "$schema": "../../contracts/schemas/handoff.schema.json",
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-lunet-physics-load",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T09:20:00Z",
+  "agent": {
+    "id": "chatgpt",
+    "kind": "ai-agent"
+  },
+  "task_id": "LUNET-435",
+  "component": "lunet2d",
+  "state": "review",
+  "branch": "feat/lunet-f4-physics-load-profiler-20261011",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/499",
+  "files_changed": [
+    "apps/lunet2d/src/Lunet.Core/LaboratoryTemplate.cs",
+    "apps/lunet2d/tests/Lunet.Tests/LaboratoryV2Tests.cs",
+    "apps/lunet2d/docs/guides/laboratorio.md",
+    "apps/lunet2d/docs/audits/fase-4-roteiro.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/CHANGELOG.md",
+    "apps/lunet2d/AgentsChat.md",
+    "docs/governance/handoffs/HO-20261011-lunet-physics-load.json"
+  ],
+  "work_completed": [
+    "Incremento de Física completa/performance na Fase 4: carga de 1 e 64 corpos físicos reais em Laboratório existente, alternável por toque.",
+    "Mundo Box2D recriado e descartado ao alternar modos, SAT original preservado e sem alterar projetos antigos.",
+    "Teste exercita UI, existência de 64 corpos, 120 ticks, volta ao modo simples e descarte do cenário de carga.",
+    "Guia e roteiro F4-10 orientam métricas reais via Profiler por 60 segundos no aparelho; nenhuma métrica fictícia."
+  ],
+  "verification": [
+    {
+      "check": "Testes Lunet .NET 10 (inclusive execução Lab)",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "Foundation consistency e Android APK",
+      "kind": "automated",
+      "result": "pending"
+    },
+    {
+      "check": "DEVICE F4-10: perf 1/64 corpos por 60s, Profiler e regressão SAT",
+      "kind": "human",
+      "result": "passed",
+      "object": "apps/lunet2d/docs/audits/fase-4-roteiro.md",
+      "critical": false,
+      "evidence": "Aprovada pelo proprietário pelo portal em 2026-10-11 (Issue https://github.com/AbnerCruz/Ecosystem/issues/503); registro em docs/governance/responses/VAL-HO-20261011-lunet-physics-load-afc7102e741c.md."
+    }
+  ],
+  "known_issues": [
+    "CI/consistency e APK ainda não verificados neste handoff.",
+    "Sem medição física do aparelho; Profiler não mede underruns do áudio.",
+    "Gate Fase 4 continua aberto até requisitos e aprovação integral."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Confirmar CI e APK do PR #499, corrigir falhas reais sem pular testes.",
+    "Integrar PR conforme política e confirmar release correspondente.",
+    "Solicitar F4-10 e regressão no aparelho com relatório real, não inferir aprovação."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "apps/lunet2d/AGENTS.md",
+    "apps/lunet2d/ROADMAP.md",
+    "apps/lunet2d/docs/SPEC.md",
+    "apps/lunet2d/docs/DEVELOPMENT.md",
+    "docs/governance/integration-policy.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-002",
+      "evidence": "Somente Lunet e handoff de governança."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #477 e PR #499 vinculados."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "CI e DEVICE pendentes explicitamente."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "Sem iniciar Fase 5 ou encerrar Fase 4."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Somente Laboratório novo usa opção de carga, dados antigos intactos."
+    }
+  ],
+  "base_commit": "ad3f2d736328714625fdf0e070f5aadf845160db",
+  "criticality": {
+    "declared": "routine"
+  }
+}

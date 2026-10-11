@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-418",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-laboratory-v2-20261008",
   "base_commit": "8a71937e9f1fda7ba986c596d8037f23f4e6ff7d",
   "commit": null,
@@ -32,20 +32,21 @@
     "Template independente e navegável de 12 módulos pronto para Run.",
     "Demos avançadas end-to-end para animação, partículas, tilemaps, A*, SAT, fontes/nine-slice e temas de cores.",
     "Regressão das sete áreas anteriores atualizada e teste integrado que verifica novo projeto sem alterar projeto existente.",
-    "Reconciliada a demo Temas com UiTheme oficial do PR #366 sem sobrescrever código de Camera2D ou alterações da main."
+    "Reconciliada a demo Temas com UiTheme oficial do PR #366 sem sobrescrever código de Camera2D ou alterações da main.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Lunet.Tests",
-      "result": "pending",
-      "evidence": "Verificar lunet2d-ci do PR #368."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Consistency",
-      "result": "pending",
-      "evidence": "Verificar consistency do PR #368."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "human",
@@ -61,11 +62,7 @@
     "Física contínua/TrueType/Tile Studio ainda não completos, não anunciar como testes existentes."
   ],
   "blockers": [],
-  "next_actions": [
-    "Confirmar CI de combinação Lab #368 + UiTheme #366 após reconciliação da main.",
-    "Integrar somente conforme mecanismo automático e confirmar versão/artefatos publicados.",
-    "Executar roteiro de validação no aparelho quando o proprietário puder testar."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

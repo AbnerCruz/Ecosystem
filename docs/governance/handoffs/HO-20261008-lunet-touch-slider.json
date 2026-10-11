@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-411",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-touch-slider-20261008",
   "base_commit": "2e62f554fdd13525e9489f07386862ee39e5d298",
   "commit": null,
@@ -32,7 +32,8 @@
     "TouchSlider e TouchSliderStyle: faixa/valor/passo, captura por dedo, cancelamento, disable e desenho sem alocação.",
     "Página 4 do Laboratório existente, pronta para Run, com raio contínuo, intensidade em passos e botão de disable; demais páginas e projetos existentes preservados.",
     "15 casos novos: geometria/renderização/zero bytes, IDs e snapshots, estados/extremos/entradas inválidas e execução real do Laboratório físico 2×; API XML/JSON atualizada.",
-    "Atualização de fontes bitmap da main incorporada, sem alterar seu código ou testes."
+    "Atualização de fontes bitmap da main incorporada, sem alterar seu código ou testes.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
@@ -69,11 +70,7 @@
     "HUD da demonstração formata texto; zero bytes aplica-se ao Update/Draw do controle. SDK Android ausente localmente."
   ],
   "blockers": [],
-  "next_actions": [
-    "Publicar PR pronto e acompanhar CI/integrador automático.",
-    "Confirmar release real antes de indicar página do slider no APK.",
-    "Registrar validação Android sem inferir aprovação; continuar Fase 4."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

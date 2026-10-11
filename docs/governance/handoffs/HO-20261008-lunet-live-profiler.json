@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-419",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-live-profiler-20261008",
   "base_commit": "c00ae11dfdbdcd9ba671a9704673203fbd24b2a2",
   "commit": null,
@@ -32,26 +32,27 @@
     "Medição de cadência, duração CPU Tick e alocações da thread GL em buffer circular fixo e thread-safe.",
     "Overlay de Profiler com memória e contadores de coleta GC no Preview Android; controles show/hide, Pause/Step, reinício.",
     "Casos determinísticos de janela, validação, reset e ausência de alocações no fluxo crítico.",
-    "Registrada aprovação humana dos 12 módulos do Laboratório 2.0, APK 1000193, encerrando Issue #367 e atualizando ROADMAP."
+    "Registrada aprovação humana dos 12 módulos do Laboratório 2.0, APK 1000193, encerrando Issue #367 e atualizando ROADMAP.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Lunet.Tests",
-      "result": "pending",
-      "evidence": "Aguardando CI do PR #370."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Android APK build",
-      "result": "pending",
-      "evidence": "Aguardando lunet2d-release do PR #370."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Ecosystem consistency",
-      "result": "pending",
-      "evidence": "Aguardando consistency do PR #370."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "human",
@@ -68,11 +69,7 @@
     "DEVICE do Laboratório 2.0 aprovado explicitamente pelo proprietário na Issue #367; isso não valida o novo overlay do Profiler nem fecha a Fase 4."
   ],
   "blockers": [],
-  "next_actions": [
-    "Verificar e corrigir CI/testes Android e integrador.",
-    "Confirmar tag APK após PR integrado, fornecer link ao usuário.",
-    "Solicitar validação opcional no dispositivo sem bloquear desenvolvimento independente."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

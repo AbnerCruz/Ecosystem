@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-421",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-camera-follow-bounds-20261008",
   "base_commit": "9edfec3a586414244a3feeeb3874180f7c0c179a",
   "commit": null,
@@ -33,26 +33,27 @@
     "Demonstração integrada na página Câmera do Laboratório, sem alteração de projetos salvos.",
     "Testes de estabilidade, entrada, limites, alocação e interação do template.",
     "Doc API JSON e guias offline atualizados.",
-    "Reconciliados os dois incrementos de GameHost CPU profiling #372 e Camera2D #374 por merge preservando histórico; docs API refletem ambos."
+    "Reconciliados os dois incrementos de GameHost CPU profiling #372 e Camera2D #374 por merge preservando histórico; docs API refletem ambos.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Lunet.Tests",
-      "result": "pending",
-      "evidence": "Aguardar lunet2d-ci do PR Camera."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "APK Android",
-      "result": "pending",
-      "evidence": "Aguardar lunet2d-release."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Ecosystem consistency",
-      "result": "pending",
-      "evidence": "Aguardar consistency."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "human",
@@ -68,11 +69,7 @@
     "ClampToWorld não promete esconder áreas externas ao mundo quando a câmera enxerga além do cenário."
   ],
   "blockers": [],
-  "next_actions": [
-    "Executar CI, corrigir falhas de precisão ou navegação.",
-    "Conciliar main pós-PR372 via dois pais Git, preservar docs API de ambos.",
-    "Publicar APK após integração automática e fornecer roteiro de DEVICE."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",

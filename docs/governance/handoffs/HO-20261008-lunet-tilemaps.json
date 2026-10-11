@@ -10,7 +10,7 @@
   },
   "task_id": "LUNET-415",
   "component": "lunet2d",
-  "state": "review",
+  "state": "done",
   "branch": "agent/lunet-tilemaps-20261008",
   "base_commit": "97eefdeac179884478cb790339e3234e707a4915",
   "commit": null,
@@ -29,20 +29,21 @@
   "work_completed": [
     "Mapas de tiles JSON v1 imutáveis com até 32 camadas, limites de validação, colisão, conversão de coordenadas, recorte por viewport e sincronização explícita para GridPathfinder.",
     "ContentManager.LoadTileMap, testes de JSON hostil, desenho/UV, colisão e exemplo que compila/executa no GameHost portátil.",
-    "Guia offline e referência de API atualizada; estado da Fase 4 ainda aberto."
+    "Guia offline e referência de API atualizada; estado da Fase 4 ainda aberto.",
+    "Estado reconciliado em 2026-10-11 pela auditoria da Fase 4: aprovação humana canônica preservada, tarefa implementada em main; isto não aprova o gate integral da fase."
   ],
   "verification": [
     {
       "kind": "automated",
       "check": "Lunet.Tests",
-      "result": "pending",
-      "evidence": "SDK .NET 10 indisponível nesta sessão; aguardar CI do PR."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "automated",
       "check": "Consistency",
-      "result": "pending",
-      "evidence": "dotnet run tests/consistency/Check.cs indisponível localmente; aguardar CI."
+      "result": "passed",
+      "evidence": "Reconciliação em 2026-10-11, auditoria apps/lunet2d/docs/audits/fase-4.md: código da entrega já integrado em main; suíte integral 658/658 e build sem warnings/errors. APK anterior que contém a entrega: release lunet2d-v0.0.1-dev.1000321, commit a7c1ab25180d51cf9d85e84f2a6fc5a7d07d3a21. Verificação de consistency registrada na auditoria. Não afirma publicação do novo ToJson nem do painel workspace."
     },
     {
       "kind": "human",
@@ -59,11 +60,7 @@
     "Sem .NET/Android para execução local; CI e DEVICE pendentes."
   ],
   "blockers": [],
-  "next_actions": [
-    "Revisar CI do PR e corrigir falhas de teste/docs.",
-    "Integrar apenas pelo integrador automático da main.",
-    "Validar roteiro Android e continuar a Fase 4."
-  ],
+  "next_actions": [],
   "decisions_required": [],
   "normative_sources": [
     "MANIFEST.md",
