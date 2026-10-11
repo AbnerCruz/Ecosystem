@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "message_id": "HO-20261011-tabletop-rpg-rpg010-model-gateway",
+  "category": "HANDOFF",
+  "timestamp": "2026-10-11T17:42:39Z",
+  "agent": {
+    "id": "chatgpt-rpg010",
+    "kind": "ai-agent"
+  },
+  "task_id": "RPG-010",
+  "component": "tabletop-rpg",
+  "state": "review",
+  "branch": "feat/tabletop-rpg-rpg010-model-gateway",
+  "base_commit": "83de45db9c3f83353ed23c26e6f38e4df1538850",
+  "commit": null,
+  "pr": "https://github.com/AbnerCruz/Ecosystem/pull/506",
+  "files_changed": [
+    "apps/tabletop-rpg/src/TabletopRpg.ModelGateway/TabletopRpg.ModelGateway.csproj",
+    "apps/tabletop-rpg/src/TabletopRpg.ModelGateway/ModelGateway.cs",
+    "apps/tabletop-rpg/src/TabletopRpg.ModelGateway/ModelGatewaySettings.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/ModelGatewayTests.cs",
+    "apps/tabletop-rpg/tests/TabletopRpg.Core.Tests/TabletopRpg.Core.Tests.csproj",
+    "apps/tabletop-rpg/docs/model-gateway-r1.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "apps/tabletop-rpg/README.md",
+    "docs/governance/handoffs/HO-20261011-tabletop-rpg-rpg010-model-gateway.json"
+  ],
+  "work_completed": [
+    "Novo contrato headless Product-local IModelGateway / ModelTurnRequest / ModelTurnResponse, acionado apenas por chamada explícita, sem dependência de outro Product nem acesso ao WorldState bruto.",
+    "Mensagens validadas, snapshot somente leitura, limite por mensagem e por turno; output textual é não confiável e nenhuma saída pode modificar estado sem SessionEngine no futuro RPG-011.",
+    "ModelGatewaySettings contém apenas provider/model/endpoint seguro e nome de variável de ambiente para credencial; EnvironmentModelCredentialSource lê o valor apenas sob demanda, nunca incorpora na campanha/schema v2.",
+    "Testes cobrem contratos, limites, loopback TLS, ausência de leitura antecipada da credencial e ausência de polling.",
+    "Documentação e README atualizados; ROADMAP reconcilia RPG-003/#310 e RPG-004/#315 integrados; RPG-010 permanece [~] até validação/integrador."
+  ],
+  "verification": [
+    {
+      "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "SDK dotnet não está disponível no ambiente local desta sessão. Aguardar tabletop-rpg-ci da PR #506 e corrigir qualquer falha."
+    },
+    {
+      "check": "dotnet run tests/consistency/Check.cs -- --self-test",
+      "kind": "automated",
+      "result": "pending",
+      "evidence": "Aguardar workflow consistency e execução sobre estado combinado."
+    },
+    {
+      "check": "DEVICE Android",
+      "kind": "human",
+      "result": "not-applicable",
+      "evidence": "RPG-010 implementa contrato C# headless sem host Android, UI ou distribuição."
+    }
+  ],
+  "known_issues": [
+    "Sem adaptador HTTP/provedor real, sem Player Agent e sem parser de intents até RPG-011; não anuncia IA jogável.",
+    "Configuração por variável de ambiente é adequada ao host headless; storage seguro do Android depende da futura escolha de shell RPG-020/025.",
+    "Sem compilador .NET neste ambiente; CI deve verificar build/testes no head da PR."
+  ],
+  "blockers": [],
+  "next_actions": [
+    "Executar CI/tabletop-rpg-ci e consistency no PR #506 e corrigir falhas.",
+    "Após testes aprovados e handoff consistente, tirar PR do draft e deixar integrador aplicar gates; nunca mesclar manualmente ou antecipar autorização crítica.",
+    "Após integração, marcar RPG-010 [x] com evidência e implementar RPG-011 mantendo fronteira de perspectiva e intents."
+  ],
+  "decisions_required": [],
+  "normative_sources": [
+    "MANIFEST.md",
+    "AGENTS.md",
+    "ecosystem.json",
+    "apps/tabletop-rpg/AGENTS.md",
+    "apps/tabletop-rpg/SPEC.md",
+    "apps/tabletop-rpg/ROADMAP.md",
+    "docs/adr/0022-tabletop-rpg-product-solo-first.md",
+    "docs/governance/communication.md",
+    "docs/governance/integration-policy.json",
+    "docs/contracts/schemas/handoff.schema.json"
+  ],
+  "invariants": [
+    {
+      "id": "NN-001",
+      "evidence": "Credencial é responsabilidade exclusiva da fonte de ambiente e nunca ganha segunda representação em Campaign/Persistence."
+    },
+    {
+      "id": "NN-002",
+      "evidence": "Nova assembly Product-local sem referência ao Hub, Ecosystem AI ou qualquer outro Product."
+    },
+    {
+      "id": "NN-003",
+      "evidence": "Gateway funciona como interface isolada sem Hub instalado."
+    },
+    {
+      "id": "NN-005",
+      "evidence": "Todo código novo é C# .NET 10."
+    },
+    {
+      "id": "NN-008",
+      "evidence": "Issue #504, branch, PR #506, testes e este handoff com pendências explícitas."
+    },
+    {
+      "id": "NN-009",
+      "evidence": "Direção já aprovada no SPEC/ROADMAP e ADR-0022, sem decisão inédita em chat."
+    },
+    {
+      "id": "NN-010",
+      "evidence": "Fontes normativas do Product, manifesto e governança consultados diretamente."
+    },
+    {
+      "id": "NN-011",
+      "evidence": "Não muda schema persistido, protocolo público nem boundary entre Products; contrato permanece interno ao Product."
+    },
+    {
+      "id": "NN-016",
+      "evidence": "Modelo não possui referência mutável a estado; resposta não confiável não é executada, e endpoint impede HTTP remoto/segredo em URI."
+    },
+    {
+      "id": "NN-017",
+      "evidence": "Sem DEVICE aplicável a código headless; não alega app Android."
+    },
+    {
+      "id": "NN-018",
+      "evidence": "RPG-010 segue [~], CI pendente e PR draft até gates."
+    },
+    {
+      "id": "NN-022",
+      "evidence": "Gateway fica em tabletop-rpg, não é extraído para plataforma sem segundo consumidor."
+    },
+    {
+      "id": "NN-023",
+      "evidence": "Nenhuma dependência de distribuição do Hub."
+    }
+  ],
+  "criticality": {
+    "declared": "routine",
+    "reason": "Contrato interno planejado no RPG-010, não altera permissões, storage, formato ou execução de rede; segredos só são lidos por fonte opcional de ambiente na futura invocação."
+  },
+  "reuse_assessment": [
+    {
+      "subject": "model-gateway-rpg",
+      "status": "product-specific",
+      "rationale": "Contrato inicial apenas do domínio de RPG, sem segundo consumidor ou benefício demonstrado para extração transversal."
+    }
+  ]
+}
