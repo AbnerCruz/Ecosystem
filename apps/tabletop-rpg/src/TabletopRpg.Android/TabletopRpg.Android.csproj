@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>TabletopRpg.Android</RootNamespace>
+    <RuntimeIdentifier>android-arm64</RuntimeIdentifier>
+    <SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+    <AndroidApplication>true</AndroidApplication>
+    <ApplicationId>app.tabletoprpg.preview</ApplicationId>
+    <ApplicationTitle>Mesa RPG</ApplicationTitle>
+    <ApplicationDisplayVersion>0.1.0-preview</ApplicationDisplayVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' != ''">$(GITHUB_RUN_NUMBER)</ApplicationVersion>
+    <ApplicationVersion Condition="'$(GITHUB_RUN_NUMBER)' == ''">1</ApplicationVersion>
+    <AndroidPackageFormat>apk</AndroidPackageFormat>
+    <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+    <AndroidUseSharedRuntime>false</AndroidUseSharedRuntime>
+    <PublishTrimmed>false</PublishTrimmed>
+    <AndroidLinkMode>None</AndroidLinkMode>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../TabletopRpg.Core/TabletopRpg.Core.csproj" />
+    <ProjectReference Include="../TabletopRpg.Persistence/TabletopRpg.Persistence.csproj" />
+    <ProjectReference Include="../TabletopRpg.QuickStart/TabletopRpg.QuickStart.csproj" />
+  </ItemGroup>
+</Project>
