@@ -4,7 +4,7 @@
 
 - Tabletop RPG é **totalmente agnóstico de modelo e provedor**, seguindo o
   padrão de separação de `IModelProvider`/`ModelProfile`/`ProviderRegistry`
-  do Ecosystem AI.
+  do runtime de IA da plataforma.
 - Consumo de IA é **pague pelo uso, sem teto obrigatório diário, mensal ou de
   gastos totais configurado pelo Tabletop RPG**. O usuário escolhe o provedor,
   modelo e credencial; preço informado pelo provedor pode variar.
@@ -18,7 +18,7 @@
 
 ## Contratos existentes e fronteira de componentes
 
-- Ecosystem AI: `apps/ecosystem-ai/src/AgentRuntime.Core/Model.cs` define
+- runtime de IA da plataforma: `AgentRuntime.Core/Model.cs, na implementação de referência da plataforma` define
   `IModelProvider`, `ProviderRegistry` e `ModelProfile`. Provedores são
   adapters separados. Essa é a **referência semântica**, não uma dependência
   de código do Tabletop RPG.
@@ -28,9 +28,9 @@
 - ADR-0017/ADR-0022/ADR-0011/NN-022 **proíbem a dependência direta de
   Product para Product** e a extração de runtime compartilhado sem
   contrato, review e aprovação. A ligação real com o provider registry do
-  Ecosystem AI deve ser feita **por capability/adapter aprovado**, não
+  runtime de IA da plataforma deve ser feita **por capability/adapter aprovado**, não
   por `ProjectReference` entre Products.
-- O ledger interno do Ecosystem AI atualmente exige pelo menos um escopo
+- O ledger interno do runtime de IA da plataforma atualmente exige pelo menos um escopo
   com limite (`deny-by-default` em `InMemoryLedger`). Não inventamos uma
   implementação paralela desse ledger nem suprimimos sua segurança. Quando
   existir uma integração aprovada, o Host deverá conciliar a preferência
@@ -94,7 +94,7 @@ existente**: mantém identificadores fornecidos pelo Host e captura um
 
 ## Limites de entrega
 
-- Sem dependência direta de `ecosystem-ai`, providers concretos, nova
+- Sem dependência direta de `runtime de IA da plataforma`, providers concretos, nova
   capability pública, migração no schema v2, UI/Android ou multiplayer.
 - Handoff local-first e tests: `dotnet test --project
   apps/tabletop-rpg/tests/TabletopRpg.Core.Tests`.
