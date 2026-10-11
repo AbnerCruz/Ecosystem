@@ -174,7 +174,7 @@ public sealed class MainActivity : Activity
                 new ParticipantId(meta.HumanParticipantId),
                 new CharacterId(meta.HeroCharacterId), words));
             if (!outcome.Accepted)
-                throw new InvalidOperationException(outcome.Reason ?? "Ação não autorizada.");
+                throw new InvalidOperationException(outcome.Message);
             await SaveAsync();
             RenderSession();
         });
@@ -222,7 +222,7 @@ public sealed class MainActivity : Activity
             new ParticipantId(_reference.HumanParticipantId),
             new CharacterId(_reference.HeroCharacterId), attribute, 12, action));
         if (!outcome.Accepted)
-            throw new InvalidOperationException(outcome.Reason ?? "Teste não autorizado.");
+            throw new InvalidOperationException(outcome.Message);
         await SaveAsync();
         RenderSession();
         Toast.MakeText(this, outcome.Success ? "Teste bem-sucedido" : "Teste falhou",
