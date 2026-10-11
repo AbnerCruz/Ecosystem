@@ -38,8 +38,8 @@
     {
       "check": "dotnet test --project apps/tabletop-rpg/tests/TabletopRpg.Core.Tests",
       "kind": "automated",
-      "result": "pass",
-      "evidence": "GitHub Actions tabletop-rpg-ci success no commit de README `4625972724e137966f86dfa5412dc6615bc21306` (run 38170596328). CI de commit com handoff deverá ser confirmado."
+      "result": "passed",
+      "evidence": "tabletop-rpg-ci success no commit com handoff dc13e562d654826c530565d7c0f7b188fe50340f, run 38170683883."
     },
     {
       "check": "dotnet run tests/consistency/Check.cs",
