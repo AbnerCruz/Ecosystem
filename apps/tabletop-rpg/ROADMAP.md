@@ -20,7 +20,7 @@ Objetivo: provar o modelo de mesa sem UI e sem provedor real.
 - [~] RPG-010 — Contrato local de Model Gateway do Product, configuração de provedor e segredo fora dos dados da campanha. Issue #504: contrato C# isolado e fonte de credencial por variável de ambiente em implementação; integração e CI pendentes.
 - [~] RPG-011 — Player Agent: persona, goals, relationships, knowledge, memory e intents estruturadas. Issue #510; adapter C# com perfil, projeção de perspectiva e parser estrito, dependente de RPG-010/#506. CI, integração e definição durável do perfil ainda pendentes.
 - [~] RPG-012 — Game Master Agent com visão própria e ferramentas limitadas. Issue #516; visão privada GM, propostas tipadas e aprovação explícita sobre Campaign em revisão, empilhado sobre RPG-011 PR #511; CI e integração pendentes.
-- [ ] RPG-013 — Director: tensão, ameaças, pistas, promessas e consequências sem roteiro rígido.
+- [~] RPG-013 — Director: tensão, ameaças, pistas, promessas e consequências sem roteiro rígido. Issue #518; motor C# headless, pistas/ameaças/promessas, tensão e cues privadas dirigidas por eventos, pendente CI e integração após PR #517.
 - [ ] RPG-014 — NPC runtime; NPC não é automaticamente Player Agent.
 - [ ] RPG-015 — Orquestração dirigida por eventos, budgets, retry/progress guards e observabilidade.
 - [ ] RPG-016 — Criação rápida de campanha sem preparação.
