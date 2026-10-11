@@ -7,7 +7,7 @@
     "id": "chatgpt-rpg020-android",
     "kind": "ai-agent"
   },
-  "task_id": "RPG-020/RPG-021",
+  "task_id": "RPG-020",
   "component": "tabletop-rpg",
   "state": "review",
   "branch": "feat/tabletop-rpg-rpg020-android-preview",
@@ -59,7 +59,9 @@
       "check": "DEVICE Android",
       "kind": "human",
       "result": "pending",
-      "evidence": "Não há evidência de execução em aparelho físico. Validar toque, layout, teclado, save/reopen."
+      "evidence": "Instalar o APK do preview depois de publicado e verificar abertura, toques, texto, d20, persistência, fechar/reabrir. Teste físico ainda não realizado.",
+      "object": "https://github.com/AbnerCruz/Ecosystem/actions/workflows/tabletop-rpg-android-preview.yml",
+      "critical": true
     }
   ],
   "known_issues": [
