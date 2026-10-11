@@ -22,7 +22,7 @@ Objetivo: provar o modelo de mesa sem UI e sem provedor real.
 - [~] RPG-012 — Game Master Agent com visão própria e ferramentas limitadas. Issue #516; visão privada GM, propostas tipadas e aprovação explícita sobre Campaign em revisão, empilhado sobre RPG-011 PR #511; CI e integração pendentes.
 - [~] RPG-013 — Director: tensão, ameaças, pistas, promessas e consequências sem roteiro rígido. Issue #518; motor C# headless, pistas/ameaças/promessas, tensão e cues privadas dirigidas por eventos, pendente CI e integração após PR #517.
 - [~] RPG-014 — NPC runtime; NPC não é automaticamente Player Agent. Issue #520: NPCs C# headless vinculados a Character/Scene e GM explícito, estado privado, interações determinísticas e diálogos autorizados via SessionEngine; testes, CI e integração pendentes após RPG-013 PR #519.
-- [ ] RPG-015 — Orquestração dirigida por eventos, budgets, retry/progress guards e observabilidade.
+- [~] RPG-015 — Orquestração dirigida por eventos, budgets, retry/progress guards e observabilidade. Issue #522: orquestrador C# local, deduplicação, anti-loop/retry seguro e recibos opcionais por modelo/provedor. Decisão do proprietário: sem teto financeiro obrigatório, cobrança pay-as-you-go e otimização de chamadas; sem integração direta com outro Product, CI/integração pendentes.
 - [ ] RPG-016 — Criação rápida de campanha sem preparação.
 
 **Gate G-R1:** um humano joga uma sessão solo completa com Mestre IA e companheiros IA, sem vazamento sistemático de informação e sem chamadas ociosas.
