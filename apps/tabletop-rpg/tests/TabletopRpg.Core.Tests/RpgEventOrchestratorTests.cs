@@ -74,6 +74,57 @@ public sealed class RpgEventOrchestratorTests
     }
 
     [Fact]
+    public async Task Equivalent_wake_without_state_progress_is_not_billed_again()
+    {
+        var t = Table.Create();
+        var source = new PassingAgent();
+        var coordinator = t.Coordinator();
+        coordinator.RegisterPlayer(t.Agent.Id, source);
+
+        var first = await coordinator.DispatchAsync("no-progress-1", t.Agent.Id,
+            new AgentWakeSignal("turn-started"), TestContext.Current.CancellationToken);
+        var second = await coordinator.DispatchAsync("no-progress-2", t.Agent.Id,
+            new AgentWakeSignal("turn-started"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(OrchestratedTurnStatus.NoAction, first.Status);
+        Assert.Equal(OrchestratedTurnStatus.NoProgress, second.Status);
+        Assert.Equal(1, source.Calls);
+
+        t.Campaign.Remember(t.Companion.Id, "I learned something during this pause.");
+        var third = await coordinator.DispatchAsync("no-progress-3", t.Agent.Id,
+            new AgentWakeSignal("turn-started"), TestContext.Current.CancellationToken);
+        Assert.Equal(OrchestratedTurnStatus.NoAction, third.Status);
+        Assert.Equal(2, source.Calls);
+    }
+
+    [Fact]
+    public async Task Gm_cannot_generate_equivalent_drafts_until_world_revision_changes()
+    {
+        var t = Table.Create();
+        var gateway = new ReplyGateway(new ModelTurnResponse(
+            "{\\"kind\\":\\"narrate\\",\\"text\\":\\"The fog rises.\\"}"));
+        var coordinator = t.Coordinator();
+        coordinator.RegisterGameMaster(t.Master.Id, new GameMasterAgent(t.Campaign, gateway));
+
+        var first = await coordinator.DispatchAsync("gm-first", t.Master.Id,
+            new AgentWakeSignal("scene-changed"), TestContext.Current.CancellationToken);
+        var redundant = await coordinator.DispatchAsync("gm-redundant", t.Master.Id,
+            new AgentWakeSignal("scene-changed"), TestContext.Current.CancellationToken);
+
+        Assert.Equal(OrchestratedTurnStatus.Proposal, first.Status);
+        Assert.Equal(OrchestratedTurnStatus.NoProgress, redundant.Status);
+        Assert.Equal(1, gateway.Calls);
+
+        new ApprovedGameMasterTools(t.Campaign).ApplyApproved(
+            Assert.IsType<NarrationDraft>(first.Proposal));
+
+        var next = await coordinator.DispatchAsync("gm-after-approval", t.Master.Id,
+            new AgentWakeSignal("scene-changed"), TestContext.Current.CancellationToken);
+        Assert.Equal(OrchestratedTurnStatus.Proposal, next.Status);
+        Assert.Equal(2, gateway.Calls);
+    }
+
+    [Fact]
     public async Task Unknown_remote_failure_is_never_retried_or_replayed()
     {
         var t = Table.Create();
@@ -270,6 +321,17 @@ public sealed class RpgEventOrchestratorTests
             Calls++;
             if (Calls == 1) throw new NoChargeTransientModelException();
             return Task.FromResult<GameIntent?>(new SpeakIntent(_participant, _character, "Ready."));
+        }
+    }
+
+    private sealed class PassingAgent : IAgentDecisionSource
+    {
+        public int Calls { get; private set; }
+        public Task<GameIntent?> DecideAsync(PlayerView view, AgentWakeSignal signal,
+            CancellationToken cancellationToken = default)
+        {
+            Calls++;
+            return Task.FromResult<GameIntent?>(null);
         }
     }
 
